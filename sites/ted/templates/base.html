@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}TED: Ideas change everything{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="{{ url_for('index') }}"><span>TED</span><small>Ideas change everything</small></a>
+    <nav>
+      <a href="{{ url_for('talks') }}">Watch</a>
+      <a href="{{ url_for('topics') }}">Topics</a>
+      <a href="{{ url_for('playlists') }}">Playlists</a>
+      <a href="{{ url_for('events') }}">Attend</a>
+    </nav>
+    <form class="quick-search" action="{{ url_for('search') }}" method="get">
+      <input name="q" value="{{ request.args.get('q', '') }}" placeholder="Search ideas">
+      <button type="submit">Search</button>
+    </form>
+    <div class="auth">
+      {% if current_user %}
+        <a href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+        <a href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a class="join" href="{{ url_for('register') }}">Join</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flashes">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>{% block content %}{% endblock %}</main>
+
+  <footer class="footer">
+    <div>
+      <strong>TED</strong>
+      <p>A local WebHarbor mirror for talks, topics, playlists, and event workflows.</p>
+    </div>
+    <div class="topic-strip">
+      {% for topic in nav_topics %}
+        <a href="{{ url_for('topic_detail', topic=topic) }}">{{ topic }}</a>
+      {% endfor %}
+    </div>
+  </footer>
+</body>
+</html>

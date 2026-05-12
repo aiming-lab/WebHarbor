@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Account</p>
+  <h1>{{ user.display_name }}</h1>
+</section>
+<section class="split">
+  <form class="panel" method="post">
+    <h2>Profile</h2>
+    <label>Name<input name="display_name" value="{{ user.display_name }}"></label>
+    <label>Role<input name="role" value="{{ user.role }}"></label>
+    <label>City<input name="city" value="{{ user.city }}"></label>
+    <label>Newsletter topic<input name="newsletter_topic" value="{{ user.newsletter_topic }}"></label>
+    <button type="submit">Update profile</button>
+  </form>
+  <div>
+    <h2>Event registrations</h2>
+    {% for reg in registrations %}
+      <div class="row-link"><strong>{{ reg.event.name }}</strong><span>{{ reg.status }} - {{ reg.event.city }}</span></div>
+    {% else %}
+      <p>No event registrations yet.</p>
+    {% endfor %}
+  </div>
+</section>
+<section class="band">
+  <div class="section-head"><h2>Saved talks</h2></div>
+  <div class="list">
+    {% for saved_item in saved %}
+      <div class="row-link">
+        <a href="{{ url_for('talk_detail', slug=saved_item.talk.slug) }}"><strong>{{ saved_item.talk.title }}</strong><span>{{ saved_item.note }}</span></a>
+        <form method="post" action="{{ url_for('unsave_talk', saved_id=saved_item.id) }}"><button type="submit">Remove</button></form>
+      </div>
+    {% else %}
+      <p>No saved talks yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

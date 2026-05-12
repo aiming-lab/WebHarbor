@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ talk.title }} | TED{% endblock %}
+{% block content %}
+<section class="detail-hero">
+  <img src="{{ url_for('static', filename=talk.image) }}" alt="">
+  <div>
+    <p class="eyebrow">{{ talk.event }} - {{ talk.talk_type }}</p>
+    <h1>{{ talk.title }}</h1>
+    <p class="speaker">{{ talk.speaker }}</p>
+    <p>{{ talk.description }}</p>
+    <dl class="stats">
+      <div><dt>Duration</dt><dd>{{ talk.minutes }} minutes</dd></div>
+      <div><dt>Published</dt><dd>{{ talk.published_at|date_label }}</dd></div>
+      <div><dt>Views</dt><dd>{{ talk.views_label }}</dd></div>
+    </dl>
+    <form method="post" action="{{ url_for('save_talk', slug=talk.slug) }}" class="save-form">
+      <input name="note" placeholder="Add a note for your saved list">
+      <button type="submit">{{ "Saved" if saved else "Save talk" }}</button>
+    </form>
+  </div>
+</section>
+<section class="split">
+  <article>
+    <h2>Transcript excerpt</h2>
+    <p>{{ talk.transcript }}</p>
+    <h2>Topics</h2>
+    <div class="chips">
+      {% for topic in talk.topics %}<a href="{{ url_for('topic_detail', topic=topic) }}">{{ topic }}</a>{% endfor %}
+    </div>
+  </article>
+  <aside>
+    <h2>Recommended for</h2>
+    <ul>
+      {% for item in talk.recommended_for %}<li>{{ item }}</li>{% endfor %}
+    </ul>
+    <h2>Related talks</h2>
+    {% for item in related %}
+      <a class="row-link" href="{{ url_for('talk_detail', slug=item.slug) }}"><strong>{{ item.title }}</strong><span>{{ item.speaker }}</span></a>
+    {% endfor %}
+  </aside>
+</section>
+{% endblock %}

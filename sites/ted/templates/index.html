@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div>
+    <p class="eyebrow">Newest from TED</p>
+    <h1>Ideas change everything</h1>
+    <p>Browse talks, save ideas to your account, compare speakers and topics, and register interest in TED events.</p>
+    <div class="hero-actions">
+      <a class="button primary" href="{{ url_for('talks') }}">Explore talks</a>
+      <a class="button" href="{{ url_for('playlists') }}">View playlists</a>
+    </div>
+  </div>
+  {% set lead = featured[0] %}
+  <a class="lead-card" href="{{ url_for('talk_detail', slug=lead.slug) }}">
+    <img src="{{ url_for('static', filename=lead.image) }}" alt="">
+    <span>{{ lead.event }}</span>
+    <h2>{{ lead.title }}</h2>
+    <p>{{ lead.speaker }}</p>
+  </a>
+</section>
+
+<section class="band">
+  <div class="section-head">
+    <h2>Latest talks</h2>
+    <a href="{{ url_for('talks') }}">See all</a>
+  </div>
+  <div class="grid">
+    {% for talk in featured %}
+      {% include "_talk_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="split">
+  <div>
+    <div class="section-head"><h2>Popular now</h2></div>
+    <div class="list">
+      {% for talk in popular %}
+        <a class="row-link" href="{{ url_for('talk_detail', slug=talk.slug) }}">
+          <strong>{{ talk.title }}</strong>
+          <span>{{ talk.speaker }} - {{ talk.minutes }} min - {{ talk.views_label }} views</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="section-head"><h2>Curated playlists</h2></div>
+    <div class="list">
+      {% for playlist in playlists %}
+        <a class="row-link" href="{{ url_for('playlist_detail', slug=playlist.slug) }}">
+          <strong>{{ playlist.title }}</strong>
+          <span>{{ playlist.description }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
