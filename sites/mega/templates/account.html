@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">{{ current_user.company }}</p>
+  <h1>{{ current_user.display_name }}</h1>
+  <p>{{ current_user.email }} · {{ current_user.plan.name if current_user.plan else 'No active plan' }}</p>
+</section>
+<section class="account-grid">
+  <article class="metric-card"><span>Storage used</span><strong>{{ "%.1f"|format(current_user.storage_used_gb) }} GB</strong></article>
+  <article class="metric-card"><span>Transfer used</span><strong>{{ "%.1f"|format(current_user.transfer_used_gb) }} GB</strong></article>
+  <article class="metric-card"><span>2FA</span><strong>{{ 'Enabled' if current_user.two_factor_enabled else 'Off' }}</strong></article>
+  <article class="metric-card"><span>Recovery key</span><strong>{{ 'Saved' if current_user.recovery_key_saved else 'Missing' }}</strong></article>
+</section>
+<section class="section columns">
+  <div>
+    <div class="section-heading"><h2>Recent files</h2><a href="{{ url_for('cloud_drive') }}">Open drive</a></div>
+    {% for item in recent_files %}<a class="list-item" href="{{ url_for('file_detail', slug=item.slug) }}"><span>{{ item.folder }}</span><strong>{{ item.name }}</strong></a>{% endfor %}
+  </div>
+  <div>
+    <div class="section-heading"><h2>Orders</h2><a href="{{ url_for('pricing') }}">Change plan</a></div>
+    {% for order in recent_orders %}<a class="list-item" href="{{ url_for('order_detail', order_number=order.order_number) }}"><span>{{ order.created_at }}</span><strong>{{ order.order_number }} · ${{ "%.2f"|format(order.total) }}</strong></a>{% endfor %}
+  </div>
+  <div>
+    <div class="section-heading"><h2>Support</h2><a href="{{ url_for('contact') }}">New ticket</a></div>
+    {% for ticket in tickets %}<a class="list-item" href="{{ url_for('ticket_detail', ticket_number=ticket.ticket_number) }}"><span>{{ ticket.status }}</span><strong>{{ ticket.subject }}</strong></a>{% endfor %}
+  </div>
+</section>
+<section class="section-tight">
+  <a class="button" href="{{ url_for('account_edit') }}">Edit account</a>
+  <a class="button ghost" href="{{ url_for('payment_methods') }}">Payment methods</a>
+</section>
+{% endblock %}

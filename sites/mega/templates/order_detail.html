@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_number }}{% endblock %}
+{% block content %}
+<section class="page-head"><h1>{{ order.order_number }}</h1><p>{{ order.status|title }} subscription order from {{ order.created_at }}.</p></section>
+<section class="info-table">
+  <div><span>Plan</span><strong>{{ order.plan.name }}</strong></div>
+  <div><span>Billing</span><strong>{{ order.billing_cycle }}</strong></div>
+  <div><span>Seats</span><strong>{{ order.seats }}</strong></div>
+  <div><span>Total</span><strong>${{ "%.2f"|format(order.total) }}</strong></div>
+</section>
+{% endblock %}

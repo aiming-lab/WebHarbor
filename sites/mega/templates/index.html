@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}MEGA: Protect your online privacy{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <p class="eyebrow">The Privacy Company</p>
+    <h1>Online privacy for everyone, with encrypted storage by default</h1>
+    <p>Store and share files, collaborate, browse privately, and protect passwords from one MEGA account.</p>
+    <div class="hero-actions">
+      <a class="button" href="{{ url_for('pricing') }}">Compare plans</a>
+      <a class="button ghost" href="{{ url_for('product_page', slug='storage') }}">Explore storage</a>
+    </div>
+  </div>
+  <div class="hero-media">
+    <img src="{{ image_url('woman-encrypted-2.png') }}" alt="Encrypted cloud storage">
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <h2>Do more with MEGA</h2>
+    <a href="{{ url_for('downloads') }}">Get apps</a>
+  </div>
+  <div class="feature-grid">
+    {% for page in products %}
+      <a class="feature-card" href="{{ url_for('product_page', slug=page.slug) }}">
+        <img src="{{ image_url(page.hero_image) }}" alt="{{ page.title }}">
+        <span>{{ page.section }}</span>
+        <h3>{{ page.title }}</h3>
+        <p>{{ page.summary }}</p>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section band">
+  <div class="section-heading">
+    <h2>Popular plans</h2>
+    <a href="{{ url_for('pricing') }}">All pricing</a>
+  </div>
+  <div class="plan-grid">
+    {% for plan in featured_plans %}
+      {% include "_plan_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section split">
+  <div>
+    <h2>Security that is always on</h2>
+    <p>MEGA surfaces recovery keys, two-factor authentication, sharing controls, and version recovery as everyday account tools.</p>
+    <a class="button ghost" href="{{ url_for('product_page', slug='security') }}">Security and privacy</a>
+  </div>
+  <img src="{{ image_url('Sec-img-1.png') }}" alt="Security and privacy">
+</section>
+
+<section class="section">
+  <div class="section-heading">
+    <h2>Help topics</h2>
+    <a href="{{ url_for('help_center') }}">Open help center</a>
+  </div>
+  <div class="list-grid">
+    {% for article in help_articles %}
+      <a class="list-item" href="{{ url_for('help_article', slug=article.slug) }}">
+        <span>{{ article.category }}</span>
+        <strong>{{ article.title }}</strong>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

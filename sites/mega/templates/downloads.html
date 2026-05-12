@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}MEGA Downloads{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Download MEGA apps</h1><p>Desktop, mobile, VPN, Pass, CMD, and NAS packages.</p></section>
+<form class="filters" action="{{ url_for('downloads') }}">
+  <select name="product"><option value="">All products</option>{% for p in ['Desktop','Mobile','VPN','Pass','CMD'] %}<option value="{{ p }}" {% if product == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select>
+  <select name="platform"><option value="">All platforms</option>{% for p in ['Windows','macOS','Linux','Android','iOS','Chrome','Firefox','Edge','QNAP','Synology'] %}<option value="{{ p }}" {% if platform == p %}selected{% endif %}>{{ p }}</option>{% endfor %}</select>
+  <button type="submit">Filter</button>
+</form>
+<section class="download-grid">
+  {% for d in downloads %}
+    <a class="download-card" href="{{ url_for('download_detail', download_id=d.id) }}">
+      <img src="{{ image_url(d.icon) }}" alt="{{ d.platform }}">
+      <span>{{ d.product }} · {{ d.platform }}</span>
+      <h3>{{ d.package_name }}</h3>
+      <p>{{ d.version }} · {{ d.size_mb }} MB · {{ d.architecture }}</p>
+      {% if d.recommended %}<strong>Recommended</strong>{% endif %}
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}
