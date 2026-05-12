@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Cloud Drive{% endblock %}
+{% block content %}
+<section class="page-head">
+  <h1>Cloud drive</h1>
+  <p>{{ items|length }} items{% if q %} matching "{{ q }}"{% endif %}</p>
+</section>
+<form class="filters" action="{{ url_for('cloud_drive') }}">
+  <input name="q" value="{{ q }}" placeholder="Search files, folders, summaries">
+  <select name="folder"><option value="">All folders</option>{% for f in folders %}<option value="{{ f }}" {% if folder == f %}selected{% endif %}>{{ f }}</option>{% endfor %}</select>
+  <button type="submit">Search</button>
+</form>
+<section class="columns two">
+  <div class="file-list">
+    {% for item in items %}
+      <a class="file-row" href="{{ url_for('file_detail', slug=item.slug) }}">
+        <span class="file-type">{{ item.item_type }}</span>
+        <strong>{{ item.name }}</strong>
+        <span>{{ item.folder }}</span>
+        <span>{{ item.size_mb|size }}</span>
+        <span>{{ item.sync_status }}</span>
+      </a>
+    {% endfor %}
+  </div>
+  <div class="stack">
+    <form class="form-card" method="post" action="{{ url_for('new_folder') }}">
+      <h2>New folder</h2>
+      <input name="name" placeholder="Folder name">
+      <input name="folder" value="{{ folder or '/' }}">
+      <button type="submit">Create folder</button>
+    </form>
+    <form class="form-card" method="post" action="{{ url_for('upload_file') }}">
+      <h2>Upload record</h2>
+      <input name="name" placeholder="filename.ext">
+      <input name="folder" value="{{ folder or '/' }}">
+      <input name="size_mb" type="number" step="0.1" value="12">
+      <textarea name="content_summary" placeholder="Summary"></textarea>
+      <button type="submit">Add file</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
