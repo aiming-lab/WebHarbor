@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Search{% if q %}: {{ q }}{% endif %} — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Search Berkeley</h1>
+    <p>Find programs, news, events, faculty, and research centers</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <!-- Search form -->
+  <form method="get" action="{{ url_for('search') }}" style="margin-bottom: 32px;">
+    <div style="display: flex; gap: 0; max-width: 600px;">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search programs, faculty, research..." class="form-control" style="border-radius: 4px 0 0 4px; font-size: 17px; padding: 12px 18px;">
+      <button type="submit" class="btn btn-primary" style="border-radius: 0 4px 4px 0; padding: 12px 24px; font-size: 16px;">Search</button>
+    </div>
+  </form>
+
+  {% if q %}
+  <p style="font-family: Arial, sans-serif; font-size: 15px; color: var(--gray-mid); margin-bottom: 32px;">
+    Found <strong>{{ total }}</strong> result{{ 's' if total != 1 else '' }} for "<strong>{{ q }}</strong>"
+  </p>
+
+  {% if total == 0 %}
+  <div style="text-align: center; padding: 60px; font-family: Arial, sans-serif; color: var(--gray-mid);">
+    <p style="font-size: 20px; margin-bottom: 16px;">No results found for "{{ q }}"</p>
+    <p>Try different keywords, or browse our content directly:</p>
+    <div style="display: flex; gap: 12px; justify-content: center; margin-top: 20px; flex-wrap: wrap;">
+      <a href="{{ url_for('programs') }}" class="btn btn-outline">Browse Programs</a>
+      <a href="{{ url_for('news') }}" class="btn btn-outline">Browse News</a>
+      <a href="{{ url_for('faculty') }}" class="btn btn-outline">Browse Faculty</a>
+      <a href="{{ url_for('events') }}" class="btn btn-outline">Browse Events</a>
+    </div>
+  </div>
+  {% else %}
+
+  <!-- Programs -->
+  {% if results.programs %}
+  <div style="margin-bottom: 40px;">
+    <h2 style="color: var(--blue); font-size: 22px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between;">
+      <span>&#127979; Degree Programs</span>
+      <span style="font-size: 14px; font-family: Arial, sans-serif; color: var(--gray-mid);">{{ results.programs|length }} result{{ 's' if results.programs|length != 1 else '' }}</span>
+    </h2>
+    <div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+      {% for p in results.programs %}
+      <div class="card">
+        <div class="card-body">
+          <span class="badge badge-blue" style="margin-bottom: 8px;">{{ p.degree_type }}</span>
+          <h3 class="card-title" style="font-size: 16px;"><a href="{{ url_for('program_detail', slug=p.slug) }}">{{ p.name }}</a></h3>
+          {% if p.college %}<p class="card-text" style="font-size: 13px; color: var(--light-blue);">{{ p.college.name }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mt-2"><a href="{{ url_for('programs') }}?q={{ q }}" style="font-family: Arial, sans-serif; font-size: 14px;">View all program results &rarr;</a></div>
+  </div>
+  {% endif %}
+
+  <!-- News -->
+  {% if results.news %}
+  <div style="margin-bottom: 40px;">
+    <h2 style="color: var(--blue); font-size: 22px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between;">
+      <span>&#128240; News Articles</span>
+      <span style="font-size: 14px; font-family: Arial, sans-serif; color: var(--gray-mid);">{{ results.news|length }} result{{ 's' if results.news|length != 1 else '' }}</span>
+    </h2>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for article in results.news %}
+      <div style="background: var(--off-white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 16px; display: flex; gap: 16px;">
+        <span class="card-category" style="white-space: nowrap; align-self: flex-start;">{{ article.category }}</span>
+        <div>
+          <h3 style="font-size: 16px; color: var(--blue);"><a href="{{ url_for('news_article', slug=article.slug) }}" style="color: var(--blue);">{{ article.title }}</a></h3>
+          <p style="font-family: Arial, sans-serif; font-size: 13px; color: var(--gray-mid); margin-top: 4px;">{{ article.published_date.strftime('%B %d, %Y') }} · {{ article.author }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mt-2"><a href="{{ url_for('news') }}?q={{ q }}" style="font-family: Arial, sans-serif; font-size: 14px;">View all news results &rarr;</a></div>
+  </div>
+  {% endif %}
+
+  <!-- Faculty -->
+  {% if results.faculty %}
+  <div style="margin-bottom: 40px;">
+    <h2 style="color: var(--blue); font-size: 22px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between;">
+      <span>&#128101; Faculty</span>
+      <span style="font-size: 14px; font-family: Arial, sans-serif; color: var(--gray-mid);">{{ results.faculty|length }} result{{ 's' if results.faculty|length != 1 else '' }}</span>
+    </h2>
+    <div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+      {% for member in results.faculty %}
+      <div class="card">
+        <div class="card-body">
+          <h3 class="card-title" style="font-size: 15px;"><a href="{{ url_for('faculty_profile', slug=member.slug) }}">{{ member.name }}</a></h3>
+          <p class="card-text">{{ member.title }}</p>
+          {% if member.department %}<p class="card-text" style="font-size: 12px; color: var(--light-blue);">{{ member.department.name }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="mt-2"><a href="{{ url_for('faculty') }}?q={{ q }}" style="font-family: Arial, sans-serif; font-size: 14px;">View all faculty results &rarr;</a></div>
+  </div>
+  {% endif %}
+
+  <!-- Events -->
+  {% if results.events %}
+  <div style="margin-bottom: 40px;">
+    <h2 style="color: var(--blue); font-size: 22px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between;">
+      <span>&#128197; Events</span>
+      <span style="font-size: 14px; font-family: Arial, sans-serif; color: var(--gray-mid);">{{ results.events|length }} result{{ 's' if results.events|length != 1 else '' }}</span>
+    </h2>
+    <div style="display: flex; flex-direction: column; gap: 12px;">
+      {% for event in results.events %}
+      <div style="background: var(--off-white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 16px; display: flex; gap: 16px; align-items: flex-start;">
+        <div style="background: var(--blue); color: white; padding: 10px; text-align: center; border-radius: 4px; min-width: 56px;">
+          <div style="font-family: Arial, sans-serif; font-size: 20px; font-weight: bold; color: var(--gold);">{{ event.start_datetime.strftime('%d') }}</div>
+          <div style="font-family: Arial, sans-serif; font-size: 11px;">{{ event.start_datetime.strftime('%b') }}</div>
+        </div>
+        <div>
+          <h3 style="font-size: 15px; color: var(--blue);"><a href="{{ url_for('event_detail', event_id=event.id) }}" style="color: var(--blue);">{{ event.title }}</a></h3>
+          <p style="font-family: Arial, sans-serif; font-size: 13px; color: var(--gray-mid);">{{ event.location }} · {{ event.category }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  <!-- Research Centers -->
+  {% if results.research %}
+  <div style="margin-bottom: 40px;">
+    <h2 style="color: var(--blue); font-size: 22px; margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gold); display: flex; justify-content: space-between;">
+      <span>&#128300; Research Centers</span>
+      <span style="font-size: 14px; font-family: Arial, sans-serif; color: var(--gray-mid);">{{ results.research|length }} result{{ 's' if results.research|length != 1 else '' }}</span>
+    </h2>
+    <div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));">
+      {% for center in results.research %}
+      <div class="card">
+        <div class="card-body">
+          <h3 class="card-title" style="font-size: 15px;"><a href="{{ url_for('research_center', slug=center.slug) }}">{{ center.name }}</a></h3>
+          <p class="card-text">Director: {{ center.director }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% endif %}
+  {% else %}
+  <!-- Empty state — no query yet -->
+  <div style="font-family: Arial, sans-serif; text-align: center; padding: 40px 0;">
+    <p style="font-size: 18px; color: var(--gray-mid); margin-bottom: 24px;">Enter a search term above to find programs, faculty, news, events, and research centers.</p>
+    <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+      <a href="{{ url_for('programs') }}" class="btn btn-outline">Browse Programs</a>
+      <a href="{{ url_for('faculty') }}" class="btn btn-outline">Browse Faculty</a>
+      <a href="{{ url_for('news') }}" class="btn btn-outline">Browse News</a>
+      <a href="{{ url_for('events') }}" class="btn btn-outline">Browse Events</a>
+      <a href="{{ url_for('research') }}" class="btn btn-outline">Browse Research</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

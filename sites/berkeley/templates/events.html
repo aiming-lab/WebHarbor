@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Events — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Berkeley Events</h1>
+    <p>Lectures, performances, career fairs, and more on and around campus</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="filter-bar">
+    <form method="get" action="{{ url_for('events') }}">
+      <input type="text" name="q" placeholder="Search events..." value="{{ q }}" style="min-width: 200px;">
+      <select name="category">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <select name="date">
+        <option value="upcoming" {% if date_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
+        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+        <option value="past" {% if date_filter == 'past' %}selected{% endif %}>Past Events</option>
+        <option value="" {% if not date_filter %}selected{% endif %}>All Events</option>
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      {% if q or current_category %}
+      <a href="{{ url_for('events') }}" class="btn btn-outline btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <div style="margin-bottom: 24px; display: flex; gap: 8px; flex-wrap: wrap;">
+    <a href="{{ url_for('events') }}?date=upcoming" class="btn btn-sm {% if date_filter == 'upcoming' %}btn-primary{% else %}btn-outline{% endif %}">Upcoming</a>
+    <a href="{{ url_for('events') }}?date=today" class="btn btn-sm {% if date_filter == 'today' %}btn-primary{% else %}btn-outline{% endif %}">Today</a>
+    <a href="{{ url_for('events') }}?date=past" class="btn btn-sm {% if date_filter == 'past' %}btn-primary{% else %}btn-outline{% endif %}">Past Events</a>
+    {% for cat in categories %}
+    <a href="{{ url_for('events') }}?category={{ cat }}&date={{ date_filter }}" class="btn btn-sm {% if current_category == cat %}btn-gold{% else %}btn-outline{% endif %}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+
+  <p style="font-family: Arial, sans-serif; font-size: 14px; color: var(--gray-mid); margin-bottom: 20px;">
+    Showing {{ events|length }} of {{ total }} events
+  </p>
+
+  {% if events %}
+  <div class="card-grid">
+    {% for event in events %}
+    <div class="card">
+      <div style="background: {% if event.category == 'Lecture' %}#003262{% elif event.category == 'Sports' %}#C4820A{% elif event.category == 'Arts' %}#6f3fa0{% elif event.category == 'Career' %}#28a745{% elif event.category == 'Health' %}#20c997{% elif event.category == 'Virtual' %}#6c757d{% else %}#3B7EA1{% endif %}; padding: 20px; color: white; display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <div style="font-family: Arial, sans-serif; font-size: 32px; font-weight: bold; line-height: 1;">{{ event.start_datetime.strftime('%d') }}</div>
+          <div style="font-family: Arial, sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px;">{{ event.start_datetime.strftime('%b %Y') }}</div>
+        </div>
+        <span class="badge" style="background: rgba(255,255,255,0.2); color: white; font-size: 11px;">{{ event.category }}</span>
+      </div>
+      <div class="card-body">
+        <h3 class="card-title" style="font-size: 16px; margin-bottom: 10px;">
+          <a href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.title }}</a>
+        </h3>
+        <p class="card-text" style="margin-bottom: 12px;">{{ event.description[:120] }}{% if event.description|length > 120 %}...{% endif %}</p>
+        <div class="card-meta">
+          <div>&#128336; {{ event.start_datetime.strftime('%I:%M %p') }}</div>
+          <div>&#128205; {{ event.location }}</div>
+          {% if event.registration_required %}<div style="color: #dc3545;">&#9888; Registration Required</div>{% endif %}
+          <div>&#128179; {{ event.cost }}</div>
+        </div>
+        <div class="mt-2">
+          <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-primary btn-sm">Details</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}{% if q %}&q={{ q }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}&date={{ date_filter }}">&laquo; Prev</a>
+    {% else %}<span class="disabled">&laquo; Prev</span>{% endif %}
+    {% for p in range(1, total_pages+1) %}
+      {% if p == page %}<span class="current">{{ p }}</span>
+      {% elif p == 1 or p == total_pages or (p >= page-2 and p <= page+2) %}
+      <a href="?page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}&date={{ date_filter }}">{{ p }}</a>
+      {% elif p == page-3 or p == page+3 %}<span class="disabled">...</span>{% endif %}
+    {% endfor %}
+    {% if page < total_pages %}
+    <a href="?page={{ page+1 }}{% if q %}&q={{ q }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}&date={{ date_filter }}">Next &raquo;</a>
+    {% else %}<span class="disabled">Next &raquo;</span>{% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div style="text-align: center; padding: 60px; font-family: Arial, sans-serif; color: var(--gray-mid);">
+    <p style="font-size: 18px;">No events found.</p>
+    <a href="{{ url_for('events') }}" class="btn btn-outline mt-3">View All Events</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

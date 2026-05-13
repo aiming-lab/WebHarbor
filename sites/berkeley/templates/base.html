@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}UC Berkeley{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --blue: #003262;
+      --gold: #FDB515;
+      --light-blue: #3B7EA1;
+      --dark-gold: #C4820A;
+      --white: #ffffff;
+      --off-white: #f8f7f5;
+      --gray-light: #e9ecef;
+      --gray-mid: #6c757d;
+      --gray-dark: #343a40;
+      --text: #212529;
+      --link: #0057A8;
+    }
+    body { font-family: 'Georgia', serif; color: var(--text); background: var(--white); line-height: 1.6; }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; height: auto; }
+    /* Layout */
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    /* Top bar */
+    .top-bar {
+      background: var(--blue);
+      color: #ccc;
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      padding: 4px 0;
+      border-bottom: 3px solid var(--gold);
+    }
+    .top-bar .container { display: flex; justify-content: space-between; align-items: center; }
+    .top-bar a { color: #ccc; }
+    .top-bar a:hover { color: var(--gold); text-decoration: none; }
+    .top-bar-left span { margin-right: 16px; }
+    .top-bar-right a { margin-left: 12px; }
+    /* Header */
+    header {
+      background: var(--blue);
+      color: var(--white);
+      padding: 12px 0 0;
+    }
+    .header-inner { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding-bottom: 12px; }
+    .site-logo { display: flex; align-items: center; gap: 12px; text-decoration: none; }
+    .logo-mark {
+      width: 48px; height: 48px;
+      background: var(--gold);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: Arial, sans-serif;
+      font-weight: 900; font-size: 20px;
+      color: var(--blue);
+      flex-shrink: 0;
+    }
+    .logo-text { color: var(--white); }
+    .logo-text .logo-uc { font-family: Arial, sans-serif; font-size: 11px; letter-spacing: 2px; opacity: 0.85; }
+    .logo-text .logo-berkeley { font-family: Georgia, serif; font-size: 24px; font-weight: bold; }
+    /* Search bar */
+    .header-search { display: flex; }
+    .header-search form { display: flex; }
+    .header-search input {
+      padding: 7px 12px;
+      border: none; border-radius: 4px 0 0 4px;
+      font-size: 14px; font-family: Arial, sans-serif;
+      width: 240px;
+    }
+    .header-search button {
+      padding: 7px 14px;
+      background: var(--gold); border: none; border-radius: 0 4px 4px 0;
+      color: var(--blue); font-weight: bold; cursor: pointer; font-size: 14px;
+    }
+    .header-search button:hover { background: var(--dark-gold); }
+    /* Nav */
+    nav.main-nav {
+      background: var(--blue);
+      border-top: 1px solid rgba(255,255,255,0.15);
+    }
+    nav.main-nav ul { list-style: none; display: flex; }
+    nav.main-nav ul li a {
+      display: block; padding: 10px 18px;
+      color: rgba(255,255,255,0.9); font-family: Arial, sans-serif;
+      font-size: 14px; font-weight: 600; letter-spacing: 0.5px;
+      text-transform: uppercase; text-decoration: none;
+    }
+    nav.main-nav ul li a:hover, nav.main-nav ul li a.active {
+      background: var(--gold); color: var(--blue);
+    }
+    /* Flash messages */
+    .flash-messages { padding: 12px 0; }
+    .alert {
+      padding: 12px 20px; border-radius: 4px; margin-bottom: 8px;
+      font-family: Arial, sans-serif; font-size: 14px;
+    }
+    .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .alert-danger  { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .alert-info    { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .alert-warning { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+    /* Page header */
+    .page-header {
+      background: var(--blue);
+      color: var(--white);
+      padding: 36px 0 28px;
+    }
+    .page-header h1 { font-size: 36px; margin-bottom: 8px; }
+    .page-header p { font-size: 16px; opacity: 0.85; font-family: Arial, sans-serif; }
+    /* Breadcrumb */
+    .breadcrumb {
+      background: var(--gray-light); padding: 10px 0;
+      font-family: Arial, sans-serif; font-size: 13px;
+    }
+    .breadcrumb a { color: var(--link); }
+    .breadcrumb span { color: var(--gray-mid); margin: 0 6px; }
+    /* Cards */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; }
+    .card {
+      background: var(--white); border: 1px solid var(--gray-light);
+      border-radius: 4px; overflow: hidden;
+      transition: box-shadow 0.2s;
+    }
+    .card:hover { box-shadow: 0 4px 20px rgba(0,50,98,0.12); }
+    .card-img { height: 160px; background: var(--blue); display: flex; align-items: center; justify-content: center; }
+    .card-img-label { color: rgba(255,255,255,0.7); font-family: Arial, sans-serif; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; }
+    .card-body { padding: 20px; }
+    .card-category {
+      display: inline-block; padding: 3px 10px; border-radius: 3px;
+      font-family: Arial, sans-serif; font-size: 11px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.5px; margin-bottom: 10px;
+      background: var(--gold); color: var(--blue);
+    }
+    .card-title { font-size: 18px; margin-bottom: 8px; color: var(--blue); }
+    .card-title a { color: var(--blue); }
+    .card-title a:hover { color: var(--light-blue); text-decoration: none; }
+    .card-text { font-size: 14px; color: var(--gray-mid); font-family: Arial, sans-serif; }
+    .card-meta { font-size: 12px; color: var(--gray-mid); font-family: Arial, sans-serif; margin-top: 10px; }
+    /* Buttons */
+    .btn {
+      display: inline-block; padding: 10px 22px; border-radius: 4px;
+      font-family: Arial, sans-serif; font-size: 14px; font-weight: 600;
+      text-decoration: none; cursor: pointer; border: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .btn-primary:hover { background: #002244; color: var(--white); text-decoration: none; }
+    .btn-gold { background: var(--gold); color: var(--blue); border-color: var(--gold); }
+    .btn-gold:hover { background: var(--dark-gold); color: var(--blue); text-decoration: none; }
+    .btn-outline { background: transparent; color: var(--blue); border-color: var(--blue); }
+    .btn-outline:hover { background: var(--blue); color: var(--white); text-decoration: none; }
+    .btn-sm { padding: 6px 14px; font-size: 13px; }
+    /* Forms */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 6px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; color: var(--gray-dark); }
+    .form-control {
+      width: 100%; padding: 10px 14px; border: 1px solid #ced4da;
+      border-radius: 4px; font-size: 15px; font-family: Arial, sans-serif;
+      transition: border-color 0.2s;
+    }
+    .form-control:focus { outline: none; border-color: var(--light-blue); box-shadow: 0 0 0 3px rgba(59,126,161,0.15); }
+    .form-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .form-text { font-size: 12px; color: var(--gray-mid); font-family: Arial, sans-serif; margin-top: 4px; }
+    /* Filter bar */
+    .filter-bar {
+      background: var(--off-white); border: 1px solid var(--gray-light);
+      border-radius: 4px; padding: 16px 20px; margin-bottom: 24px;
+    }
+    .filter-bar form { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+    .filter-bar select, .filter-bar input[type="text"] {
+      padding: 8px 12px; border: 1px solid #ced4da; border-radius: 4px;
+      font-size: 14px; font-family: Arial, sans-serif;
+    }
+    /* Pagination */
+    .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; margin: 32px 0 16px; flex-wrap: wrap; }
+    .pagination a, .pagination span {
+      padding: 7px 13px; border: 1px solid var(--gray-light);
+      border-radius: 4px; font-family: Arial, sans-serif; font-size: 14px;
+    }
+    .pagination a { color: var(--blue); }
+    .pagination a:hover { background: var(--blue); color: var(--white); text-decoration: none; }
+    .pagination span.current { background: var(--blue); color: var(--white); border-color: var(--blue); }
+    .pagination span.disabled { color: var(--gray-mid); }
+    /* Tags */
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-family: Arial, sans-serif; background: var(--gray-light); color: var(--gray-dark); margin: 2px; }
+    /* Stat boxes */
+    .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 16px; }
+    .stat-box { text-align: center; padding: 20px 10px; background: var(--blue); color: var(--white); border-radius: 4px; }
+    .stat-box .stat-number { font-size: 36px; font-weight: bold; color: var(--gold); display: block; }
+    .stat-box .stat-label { font-size: 13px; font-family: Arial, sans-serif; opacity: 0.85; margin-top: 4px; }
+    /* Section headings */
+    .section-heading {
+      font-size: 26px; color: var(--blue); margin-bottom: 20px;
+      padding-bottom: 10px; border-bottom: 3px solid var(--gold);
+    }
+    .section { padding: 48px 0; }
+    .section:nth-child(even) { background: var(--off-white); }
+    /* Badge */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 11px; font-family: Arial, sans-serif; font-weight: 700; }
+    .badge-gold { background: var(--gold); color: var(--blue); }
+    .badge-blue { background: var(--blue); color: var(--white); }
+    .badge-green { background: #28a745; color: white; }
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 14px; }
+    th { background: var(--blue); color: var(--white); padding: 12px 16px; text-align: left; }
+    td { padding: 10px 16px; border-bottom: 1px solid var(--gray-light); }
+    tr:hover td { background: var(--off-white); }
+    /* Sidebar layout */
+    .sidebar-layout { display: grid; grid-template-columns: 1fr 320px; gap: 32px; align-items: start; }
+    .sidebar { background: var(--off-white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 20px; }
+    .sidebar h3 { font-size: 16px; color: var(--blue); margin-bottom: 16px; padding-bottom: 8px; border-bottom: 2px solid var(--gold); }
+    .sidebar ul { list-style: none; }
+    .sidebar ul li { padding: 8px 0; border-bottom: 1px solid var(--gray-light); font-size: 14px; }
+    .sidebar ul li:last-child { border: none; }
+    /* Footer */
+    footer { background: var(--blue); color: rgba(255,255,255,0.8); font-family: Arial, sans-serif; }
+    .footer-main { padding: 48px 0 32px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 32px; }
+    .footer-brand .footer-logo { font-size: 22px; color: var(--white); font-family: Georgia, serif; margin-bottom: 12px; }
+    .footer-brand p { font-size: 13px; line-height: 1.7; opacity: 0.7; }
+    footer h4 { color: var(--gold); font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+    footer ul { list-style: none; }
+    footer ul li { margin-bottom: 8px; }
+    footer ul li a { color: rgba(255,255,255,0.7); font-size: 13px; }
+    footer ul li a:hover { color: var(--gold); text-decoration: none; }
+    .footer-bottom { border-top: 1px solid rgba(255,255,255,0.15); padding: 16px 0; display: flex; justify-content: space-between; align-items: center; }
+    .footer-bottom p { font-size: 12px; opacity: 0.6; }
+    /* Utility */
+    .mt-1{margin-top:8px} .mt-2{margin-top:16px} .mt-3{margin-top:24px} .mt-4{margin-top:32px}
+    .mb-1{margin-bottom:8px} .mb-2{margin-bottom:16px} .mb-3{margin-bottom:24px} .mb-4{margin-bottom:32px}
+    .py-2{padding:16px 0} .py-3{padding:24px 0} .py-4{padding:32px 0}
+    .text-center{text-align:center} .text-muted{color:var(--gray-mid)}
+    .fw-bold{font-weight:bold} .d-flex{display:flex} .gap-2{gap:16px}
+    .flex-wrap{flex-wrap:wrap} .align-center{align-items:center}
+    .justify-between{justify-content:space-between}
+    .gold-text { color: var(--gold); }
+    .blue-text { color: var(--blue); }
+    .list-unstyled { list-style: none; }
+    .detail-meta-item { display: flex; gap: 8px; font-family: Arial, sans-serif; font-size: 14px; margin-bottom: 8px; color: var(--gray-mid); }
+    .detail-meta-item strong { color: var(--gray-dark); min-width: 120px; }
+    @media (max-width: 768px) {
+      .header-inner { flex-direction: column; align-items: flex-start; }
+      .header-search input { width: 160px; }
+      nav.main-nav ul { flex-wrap: wrap; }
+      .footer-main { grid-template-columns: 1fr 1fr; }
+      .sidebar-layout { grid-template-columns: 1fr; }
+      .card-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- Top bar -->
+<div class="top-bar">
+  <div class="container">
+    <div class="top-bar-left">
+      <span>University of California, Berkeley</span>
+      <span>Berkeley, CA 94720</span>
+    </div>
+    <div class="top-bar-right">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}">{{ current_user.full_name or current_user.username }}</a>
+        <a href="{{ url_for('logout') }}">Sign Out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign In</a>
+        <a href="{{ url_for('register') }}">Create Account</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Header -->
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <a href="{{ url_for('index') }}" class="site-logo">
+        <div class="logo-mark">C</div>
+        <div class="logo-text">
+          <div class="logo-uc">UNIVERSITY OF CALIFORNIA</div>
+          <div class="logo-berkeley">Berkeley</div>
+        </div>
+      </a>
+      <div class="header-search">
+        <form action="{{ url_for('search') }}" method="get">
+          <input type="text" name="q" placeholder="Search Berkeley..." value="{{ request.args.get('q', '') }}">
+          <button type="submit">&#128269;</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <!-- Main nav -->
+  <nav class="main-nav">
+    <div class="container">
+      <ul>
+        <li><a href="{{ url_for('about') }}" {% if request.endpoint == 'about' %}class="active"{% endif %}>About</a></li>
+        <li><a href="{{ url_for('admissions') }}" {% if request.endpoint == 'admissions' %}class="active"{% endif %}>Admissions</a></li>
+        <li><a href="{{ url_for('academics') }}" {% if request.endpoint in ['academics','programs','program_detail'] %}class="active"{% endif %}>Academics</a></li>
+        <li><a href="{{ url_for('research') }}" {% if request.endpoint in ['research','research_center'] %}class="active"{% endif %}>Research</a></li>
+        <li><a href="{{ url_for('news') }}" {% if request.endpoint in ['news','news_article'] %}class="active"{% endif %}>News</a></li>
+        <li><a href="{{ url_for('events') }}" {% if request.endpoint in ['events','event_detail'] %}class="active"{% endif %}>Events</a></li>
+        <li><a href="{{ url_for('faculty') }}" {% if request.endpoint in ['faculty','faculty_profile'] %}class="active"{% endif %}>Faculty</a></li>
+        <li><a href="{{ url_for('departments') }}" {% if request.endpoint in ['departments','department_detail'] %}class="active"{% endif %}>Departments</a></li>
+      </ul>
+    </div>
+  </nav>
+</header>
+
+<!-- Flash messages -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container">
+    <div class="flash-messages">
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+{% endwith %}
+
+<!-- Main content -->
+<main>
+  {% block content %}{% endblock %}
+</main>
+
+<!-- Footer -->
+<footer>
+  <div class="container">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <div class="footer-logo">UC Berkeley</div>
+        <p>The University of California, Berkeley is a public research university located in Berkeley, California. Founded in 1868, it is the oldest of the University of California's campuses and is regarded as one of the world's leading universities.</p>
+      </div>
+      <div>
+        <h4>Academics</h4>
+        <ul>
+          <li><a href="{{ url_for('programs') }}">Degree Programs</a></li>
+          <li><a href="{{ url_for('departments') }}">Departments</a></li>
+          <li><a href="{{ url_for('academics') }}">Schools & Colleges</a></li>
+          <li><a href="{{ url_for('admissions') }}">Admissions</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Research</h4>
+        <ul>
+          <li><a href="{{ url_for('research') }}">Research Centers</a></li>
+          <li><a href="{{ url_for('faculty') }}">Faculty Directory</a></li>
+          <li><a href="{{ url_for('news') }}?category=Research">Research News</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Campus</h4>
+        <ul>
+          <li><a href="{{ url_for('events') }}">Events</a></li>
+          <li><a href="{{ url_for('news') }}">Berkeley News</a></li>
+          <li><a href="{{ url_for('about') }}">About Berkeley</a></li>
+          {% if current_user.is_authenticated %}
+          <li><a href="{{ url_for('account') }}">My Account</a></li>
+          {% else %}
+          <li><a href="{{ url_for('login') }}">Sign In</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; 2024 UC Regents. All rights reserved. | Berkeley, CA 94720</p>
+      <p>&#127968; 1232 Acres · 32 Libraries · 600,000+ Alumni</p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

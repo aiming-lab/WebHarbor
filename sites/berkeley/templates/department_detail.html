@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}{{ dept.name }} — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <div class="container">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('departments') }}">Departments</a><span>/</span>
+    {{ dept.name }}
+  </div>
+</div>
+
+<div class="page-header">
+  <div class="container">
+    <h1>{{ dept.name }}</h1>
+    {% if dept.college %}<p>{{ dept.college.name }}</p>{% endif %}
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="sidebar-layout">
+    <div>
+      <h2 class="section-heading">About the Department</h2>
+      <p style="font-size: 17px; line-height: 1.8; margin-bottom: 32px;">{{ dept.description }}</p>
+
+      {% if programs %}
+      <h2 class="section-heading">Degree Programs</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-bottom: 32px;">
+        {% for p in programs %}
+        <div style="background: var(--off-white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 16px;">
+          <span class="badge badge-blue">{{ p.degree_type }}</span>
+          <h4 style="font-size: 15px; color: var(--blue); margin-top: 8px;">
+            <a href="{{ url_for('program_detail', slug=p.slug) }}" style="color: var(--blue);">{{ p.name }}</a>
+          </h4>
+          {% if p.duration_years > 0 %}
+          <p style="font-family: Arial, sans-serif; font-size: 12px; color: var(--gray-mid); margin-top: 4px;">{{ p.duration_years|int if p.duration_years == p.duration_years|int else p.duration_years }} years</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if faculty_list %}
+      <h2 class="section-heading">Faculty</h2>
+      <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
+        {% for member in faculty_list %}
+        <div style="background: var(--off-white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 16px;">
+          <h4 style="font-size: 15px; color: var(--blue);">
+            <a href="{{ url_for('faculty_profile', slug=member.slug) }}" style="color: var(--blue);">{{ member.name }}</a>
+            {% if member.is_emeritus %}<span class="badge badge-gold" style="font-size: 10px;">Emeritus</span>{% endif %}
+          </h4>
+          <p style="font-family: Arial, sans-serif; font-size: 13px; color: var(--gray-mid); margin: 4px 0;">{{ member.title }}</p>
+          {% if member.research_interests %}
+          <p style="font-family: Arial, sans-serif; font-size: 12px; color: var(--gray-mid);">{{ member.research_interests[:80] }}{% if member.research_interests|length > 80 %}...{% endif %}</p>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <aside>
+      <div class="sidebar">
+        <h3>Department Info</h3>
+        <ul style="list-style: none;">
+          {% if dept.chair %}<li class="detail-meta-item"><strong>Chair:</strong> {{ dept.chair }}</li>{% endif %}
+          {% if dept.college %}<li class="detail-meta-item"><strong>College:</strong> {{ dept.college.name }}</li>{% endif %}
+          {% if dept.phone %}<li class="detail-meta-item"><strong>Phone:</strong> {{ dept.phone }}</li>{% endif %}
+          {% if dept.location %}<li class="detail-meta-item"><strong>Location:</strong> {{ dept.location }}</li>{% endif %}
+        </ul>
+      </div>
+
+      <div class="sidebar mt-3">
+        <h3>Related Links</h3>
+        <ul>
+          <li><a href="{{ url_for('departments') }}">All Departments</a></li>
+          <li><a href="{{ url_for('faculty') }}?dept={{ dept.slug }}">Department Faculty</a></li>
+          {% if dept.college %}<li><a href="{{ url_for('programs') }}?college={{ dept.college.slug }}">College Programs</a></li>{% endif %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

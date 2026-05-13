@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}{{ center.name }} — Berkeley Research{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <div class="container">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('research') }}">Research</a><span>/</span>
+    {{ center.name[:50] }}{% if center.name|length > 50 %}...{% endif %}
+  </div>
+</div>
+
+<div class="page-header">
+  <div class="container">
+    <h1>{{ center.name }}</h1>
+    {% if center.college %}<p>{{ center.college.name }}</p>{% endif %}
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="sidebar-layout">
+    <div>
+      <h2 class="section-heading">About the Center</h2>
+      <p style="font-size: 17px; line-height: 1.8; margin-bottom: 24px;">{{ center.description }}</p>
+
+      <!-- Focus areas -->
+      {% if center.focus_areas %}
+      <h2 class="section-heading">Focus Areas</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 32px;">
+        {% for area in center.focus_areas.split(',') %}
+        <span class="tag" style="background: var(--blue); color: white; padding: 6px 16px; border-radius: 20px; font-size: 14px;">{{ area.strip() }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if related %}
+      <h2 class="section-heading">Related Centers</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for r in related %}
+        <div style="background: var(--off-white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 16px;">
+          <h4 style="font-size: 15px; color: var(--blue);"><a href="{{ url_for('research_center', slug=r.slug) }}" style="color: var(--blue);">{{ r.name }}</a></h4>
+          <p style="font-size: 13px; color: var(--gray-mid); font-family: Arial, sans-serif;">Director: {{ r.director }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <aside>
+      <div class="sidebar">
+        <h3>Center Details</h3>
+        <ul style="list-style: none;">
+          <li class="detail-meta-item"><strong>Director:</strong> {{ center.director }}</li>
+          {% if center.college %}<li class="detail-meta-item"><strong>College:</strong> {{ center.college.name }}</li>{% endif %}
+          <li class="detail-meta-item"><strong>Founded:</strong> {{ center.founded_year }}</li>
+        </ul>
+      </div>
+
+      {% if current_user.is_authenticated %}
+      <div class="sidebar mt-3">
+        <h3>Save Center</h3>
+        <form method="post" action="{{ url_for('bookmark_add') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="item_type" value="research">
+          <input type="hidden" name="item_id" value="{{ center.id }}">
+          <button type="submit" class="btn btn-outline btn-sm" style="width: 100%;">&#9733; Save to Bookmarks</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <div class="sidebar mt-3">
+        <h3>Explore Research</h3>
+        <ul>
+          <li><a href="{{ url_for('research') }}">All Research Centers</a></li>
+          <li><a href="{{ url_for('faculty') }}">Faculty Directory</a></li>
+          <li><a href="{{ url_for('news') }}?category=Research">Research News</a></li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

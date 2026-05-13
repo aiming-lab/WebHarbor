@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}UC Berkeley — The University of California, Berkeley{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section style="background: var(--blue); color: white; padding: 60px 0; position: relative; overflow: hidden;">
+  <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(135deg, #003262 60%, #3B7EA1 100%); opacity: 0.9;"></div>
+  <div class="container" style="position: relative; z-index: 1;">
+    <div style="max-width: 640px;">
+      <p style="color: var(--gold); font-family: Arial, sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 16px;">Est. 1868 · Berkeley, California</p>
+      <h1 style="font-size: 52px; line-height: 1.15; margin-bottom: 20px;">Fiat Lux.<br><span style="color: var(--gold);">Let There Be Light.</span></h1>
+      <p style="font-size: 18px; opacity: 0.9; margin-bottom: 32px; font-family: Arial, sans-serif; line-height: 1.6;">UC Berkeley is the world's premier public university, where bold ideas, transformative research, and a deep commitment to the public good have shaped the world for over 155 years.</p>
+      <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+        <a href="{{ url_for('admissions') }}" class="btn btn-gold" style="font-size: 16px; padding: 12px 28px;">Explore Admissions</a>
+        <a href="{{ url_for('research') }}" class="btn btn-outline" style="color: white; border-color: white; font-size: 16px; padding: 12px 28px;">Discover Research</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Bar -->
+<section style="background: var(--gold); padding: 20px 0;">
+  <div class="container">
+    <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 16px; text-align: center;">
+      <div>
+        <div style="font-size: 28px; font-weight: bold; color: var(--blue); font-family: Arial, sans-serif;">{{ stats.nobel_laureates }}</div>
+        <div style="font-size: 12px; color: var(--blue); font-family: Arial, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Nobel Laureates on Faculty</div>
+      </div>
+      <div>
+        <div style="font-size: 28px; font-weight: bold; color: var(--blue); font-family: Arial, sans-serif;">#1</div>
+        <div style="font-size: 12px; color: var(--blue); font-family: Arial, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Public Research University</div>
+      </div>
+      <div>
+        <div style="font-size: 28px; font-weight: bold; color: var(--blue); font-family: Arial, sans-serif;">{{ stats.top_10_programs }}+</div>
+        <div style="font-size: 12px; color: var(--blue); font-family: Arial, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Top-10 Graduate Programs</div>
+      </div>
+      <div>
+        <div style="font-size: 28px; font-weight: bold; color: var(--blue); font-family: Arial, sans-serif;">{{ stats.degree_programs }}+</div>
+        <div style="font-size: 12px; color: var(--blue); font-family: Arial, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">Degree Programs</div>
+      </div>
+      <div>
+        <div style="font-size: 28px; font-weight: bold; color: var(--blue); font-family: Arial, sans-serif;">{{ stats.national_titles }}</div>
+        <div style="font-size: 12px; color: var(--blue); font-family: Arial, sans-serif; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">NCAA National Titles</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Featured News -->
+<section class="section">
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px;">
+      <h2 class="section-heading" style="margin-bottom: 0; border: none;">Berkeley News</h2>
+      <a href="{{ url_for('news') }}" style="font-family: Arial, sans-serif; font-size: 14px; color: var(--blue); font-weight: 600;">All News &rarr;</a>
+    </div>
+    {% if featured_news %}
+    <!-- Lead story -->
+    <div style="margin-bottom: 32px; background: var(--off-white); border-radius: 4px; overflow: hidden; border: 1px solid var(--gray-light);">
+      <div style="display: grid; grid-template-columns: 2fr 3fr;">
+        <div style="background: var(--blue); min-height: 240px; display: flex; align-items: center; justify-content: center; padding: 32px;">
+          <div style="text-align: center; color: rgba(255,255,255,0.5); font-family: Arial, sans-serif;">
+            <div style="font-size: 48px; margin-bottom: 8px;">&#127758;</div>
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px;">Berkeley News</div>
+          </div>
+        </div>
+        <div style="padding: 32px;">
+          <span class="card-category">{{ featured_news[0].category }}</span>
+          <h3 style="font-size: 24px; color: var(--blue); margin-bottom: 12px;">
+            <a href="{{ url_for('news_article', slug=featured_news[0].slug) }}" style="color: var(--blue);">{{ featured_news[0].title }}</a>
+          </h3>
+          <p style="font-family: Arial, sans-serif; font-size: 15px; color: #444; margin-bottom: 16px; line-height: 1.6;">{{ featured_news[0].summary }}</p>
+          <div style="font-family: Arial, sans-serif; font-size: 13px; color: var(--gray-mid);">
+            By {{ featured_news[0].author }} &middot; {{ featured_news[0].published_date.strftime('%B %d, %Y') }}
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- Other stories -->
+    <div class="card-grid">
+      {% for article in featured_news[1:] %}
+      <div class="card">
+        <div class="card-img" style="background: var(--{% if loop.index % 3 == 0 %}light-blue{% elif loop.index % 3 == 1 %}blue{% else %}blue{% endif %}); height: 120px;">
+          <span class="card-img-label">{{ article.category }}</span>
+        </div>
+        <div class="card-body">
+          <span class="card-category">{{ article.category }}</span>
+          <h3 class="card-title"><a href="{{ url_for('news_article', slug=article.slug) }}">{{ article.title }}</a></h3>
+          <p class="card-text">{{ article.summary[:120] }}{% if article.summary|length > 120 %}...{% endif %}</p>
+          <p class="card-meta">{{ article.published_date.strftime('%B %d, %Y') }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<!-- Upcoming Events -->
+<section class="section" style="background: var(--off-white);">
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px;">
+      <h2 class="section-heading" style="margin-bottom: 0; border: none;">Upcoming Events</h2>
+      <a href="{{ url_for('events') }}" style="font-family: Arial, sans-serif; font-size: 14px; color: var(--blue); font-weight: 600;">All Events &rarr;</a>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px;">
+      {% for event in upcoming_events %}
+      <div class="card">
+        <div style="background: var(--blue); padding: 20px; text-align: center; color: white;">
+          <div style="font-family: Arial, sans-serif; font-size: 36px; font-weight: bold; color: var(--gold);">{{ event.start_datetime.strftime('%d') }}</div>
+          <div style="font-family: Arial, sans-serif; font-size: 14px; text-transform: uppercase; letter-spacing: 1px;">{{ event.start_datetime.strftime('%B %Y') }}</div>
+        </div>
+        <div class="card-body">
+          <span class="card-category">{{ event.category }}</span>
+          <h3 class="card-title" style="font-size: 15px;"><a href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.title }}</a></h3>
+          <p class="card-meta">
+            &#128336; {{ event.start_datetime.strftime('%I:%M %p') }}<br>
+            &#128205; {{ event.location }}
+          </p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Research Highlights -->
+<section class="section">
+  <div class="container">
+    <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 24px;">
+      <h2 class="section-heading" style="margin-bottom: 0; border: none;">Research at Berkeley</h2>
+      <a href="{{ url_for('research') }}" style="font-family: Arial, sans-serif; font-size: 14px; color: var(--blue); font-weight: 600;">All Research Centers &rarr;</a>
+    </div>
+    <div class="card-grid" style="grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));">
+      {% for center in recent_research %}
+      <div class="card">
+        <div class="card-body">
+          <h3 class="card-title" style="font-size: 16px;"><a href="{{ url_for('research_center', slug=center.slug) }}">{{ center.name }}</a></h3>
+          <p class="card-text">{{ center.description[:140] }}{% if center.description|length > 140 %}...{% endif %}</p>
+          <p class="card-meta mt-2">Director: {{ center.director }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Schools & Colleges Quick Links -->
+<section class="section" style="background: var(--blue); color: white;">
+  <div class="container">
+    <h2 style="font-size: 30px; margin-bottom: 8px; color: white;">14 Schools & Colleges</h2>
+    <p style="font-family: Arial, sans-serif; opacity: 0.8; margin-bottom: 32px;">From humanities to engineering, law to public health — explore Berkeley's diverse academic community.</p>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px;">
+      {% for college in colleges %}
+      <a href="{{ url_for('programs') }}?college={{ college.slug }}" style="background: rgba(255,255,255,0.1); color: white; padding: 14px 18px; border-radius: 4px; font-family: Arial, sans-serif; font-size: 14px; font-weight: 600; text-decoration: none; border: 1px solid rgba(255,255,255,0.2); display: block;">
+        {{ college.name }}
+      </a>
+      {% endfor %}
+    </div>
+    <div class="mt-4">
+      <a href="{{ url_for('academics') }}" class="btn btn-gold">Explore All Colleges &rarr;</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Berkeley News{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Berkeley News</h1>
+    <p>The latest research discoveries, campus stories, and faculty achievements from UC Berkeley</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <form method="get" action="{{ url_for('news') }}">
+      <input type="text" name="q" placeholder="Search news..." value="{{ q }}" style="min-width: 220px;">
+      <select name="category">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if current_category == cat %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <select name="featured">
+        <option value="">All Articles</option>
+        <option value="1" {% if featured == '1' %}selected{% endif %}>Featured Only</option>
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      {% if q or current_category or featured %}
+      <a href="{{ url_for('news') }}" class="btn btn-outline btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Category quick links -->
+  <div style="margin-bottom: 24px; display: flex; gap: 8px; flex-wrap: wrap;">
+    <a href="{{ url_for('news') }}" class="btn btn-sm {% if not current_category %}btn-primary{% else %}btn-outline{% endif %}">All</a>
+    {% for cat in categories %}
+    <a href="{{ url_for('news') }}?category={{ cat }}" class="btn btn-sm {% if current_category == cat %}btn-primary{% else %}btn-outline{% endif %}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+
+  <p style="font-family: Arial, sans-serif; font-size: 14px; color: var(--gray-mid); margin-bottom: 20px;">
+    Showing {{ articles|length }} of {{ total }} articles
+    {% if q %} for "<strong>{{ q }}</strong>"{% endif %}
+    {% if current_category %} in <strong>{{ current_category }}</strong>{% endif %}
+  </p>
+
+  {% if articles %}
+  <div class="card-grid">
+    {% for article in articles %}
+    <div class="card">
+      <div class="card-img" style="background: {% if article.category == 'Research' %}#003262{% elif article.category == 'Science' %}#3B7EA1{% elif article.category == 'Athletics' %}#C4820A{% elif article.category == 'Arts' %}#6f3fa0{% else %}#003262{% endif %};">
+        <span class="card-img-label">{{ article.category }}</span>
+        {% if article.featured %}<span style="position: absolute; top: 8px; right: 8px;" class="badge badge-gold">Featured</span>{% endif %}
+      </div>
+      <div class="card-body" style="position: relative;">
+        <span class="card-category">{{ article.category }}</span>
+        <h3 class="card-title"><a href="{{ url_for('news_article', slug=article.slug) }}">{{ article.title }}</a></h3>
+        <p class="card-text">{{ article.summary[:140] }}{% if article.summary|length > 140 %}...{% endif %}</p>
+        <p class="card-meta">
+          By {{ article.author }} &middot; {{ article.published_date.strftime('%B %d, %Y') }}
+          &middot; {{ article.view_count }} views
+        </p>
+        <div class="mt-2">
+          {% for tag in article.tags.split(',')[:3] %}
+          <span class="tag">{{ tag.strip() }}</span>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Pagination -->
+  {% if total_pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}{% if q %}&q={{ q }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if featured %}&featured={{ featured }}{% endif %}">&laquo; Prev</a>
+    {% else %}
+    <span class="disabled">&laquo; Prev</span>
+    {% endif %}
+    {% for p in range(1, total_pages+1) %}
+      {% if p == page %}<span class="current">{{ p }}</span>
+      {% elif p == 1 or p == total_pages or (p >= page-2 and p <= page+2) %}
+      <a href="?page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if featured %}&featured={{ featured }}{% endif %}">{{ p }}</a>
+      {% elif p == page-3 or p == page+3 %}<span class="disabled">...</span>{% endif %}
+    {% endfor %}
+    {% if page < total_pages %}
+    <a href="?page={{ page+1 }}{% if q %}&q={{ q }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}{% if featured %}&featured={{ featured }}{% endif %}">Next &raquo;</a>
+    {% else %}
+    <span class="disabled">Next &raquo;</span>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div style="text-align: center; padding: 60px 20px; font-family: Arial, sans-serif; color: var(--gray-mid);">
+    <p style="font-size: 18px;">No articles found.</p>
+    <a href="{{ url_for('news') }}" class="btn btn-outline mt-3">View All News</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

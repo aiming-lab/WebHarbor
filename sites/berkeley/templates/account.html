@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}My Account — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>My Account</h1>
+    <p>Welcome, {{ current_user.full_name or current_user.username }}</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div style="display: grid; grid-template-columns: 1fr 3fr; gap: 32px;">
+    <!-- Profile sidebar -->
+    <div>
+      <div class="sidebar">
+        <div style="text-align: center; margin-bottom: 20px;">
+          <div style="width: 80px; height: 80px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: bold; color: var(--blue); margin: 0 auto 12px; font-family: Arial, sans-serif;">
+            {{ current_user.full_name[0] if current_user.full_name else current_user.username[0] }}
+          </div>
+          <h3 style="font-size: 16px; color: var(--blue);">{{ current_user.full_name or current_user.username }}</h3>
+          <p style="font-family: Arial, sans-serif; font-size: 13px; color: var(--gray-mid);">{{ current_user.email }}</p>
+          {% if current_user.role %}<p style="font-family: Arial, sans-serif; font-size: 12px;"><span class="badge badge-gold">{{ current_user.role.title() }}</span></p>{% endif %}
+        </div>
+        <h3>Account</h3>
+        <ul>
+          <li><a href="{{ url_for('account') }}">&#9733; My Bookmarks</a></li>
+          <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+        </ul>
+        <div class="mt-3">
+          <h3>Quick Browse</h3>
+          <ul>
+            <li><a href="{{ url_for('programs') }}">Programs</a></li>
+            <li><a href="{{ url_for('events') }}">Events</a></li>
+            <li><a href="{{ url_for('faculty') }}">Faculty</a></li>
+            <li><a href="{{ url_for('research') }}">Research</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div>
+      <h2 class="section-heading">Saved Bookmarks</h2>
+      {% if bookmark_details %}
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for detail in bookmark_details %}
+        <div style="background: var(--off-white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 20px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;">
+          <div>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 8px;">
+              <span class="badge badge-blue" style="font-size: 11px;">{{ detail.bookmark.item_type }}</span>
+              <a href="{{ detail.url }}" style="font-size: 16px; color: var(--blue); font-weight: bold;">{{ detail.title }}</a>
+            </div>
+            {% if detail.bookmark.note %}
+            <p style="font-family: Arial, sans-serif; font-size: 13px; color: var(--gray-mid); font-style: italic;">{{ detail.bookmark.note }}</p>
+            {% endif %}
+            <p style="font-family: Arial, sans-serif; font-size: 12px; color: var(--gray-mid); margin-top: 4px;">Saved {{ detail.bookmark.created_at.strftime('%B %d, %Y') }}</p>
+          </div>
+          <form method="post" action="{{ url_for('bookmark_remove') }}" style="flex-shrink: 0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="bookmark_id" value="{{ detail.bookmark.id }}">
+            <button type="submit" class="btn btn-outline btn-sm" style="color: #dc3545; border-color: #dc3545; white-space: nowrap;">&#215; Remove</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <div style="text-align: center; padding: 60px 20px; font-family: Arial, sans-serif; color: var(--gray-mid);">
+        <p style="font-size: 18px; margin-bottom: 16px;">No bookmarks yet</p>
+        <p style="font-size: 14px;">Save programs, faculty profiles, events, and research centers by clicking the "Save" button on any page.</p>
+        <div style="display: flex; gap: 12px; justify-content: center; margin-top: 24px; flex-wrap: wrap;">
+          <a href="{{ url_for('programs') }}" class="btn btn-primary">Browse Programs</a>
+          <a href="{{ url_for('faculty') }}" class="btn btn-outline">Browse Faculty</a>
+          <a href="{{ url_for('events') }}" class="btn btn-outline">Browse Events</a>
+        </div>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

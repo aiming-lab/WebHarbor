@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 15 Flask mirror sites + control plane on :8101.
+# 16 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -28,11 +28,17 @@ WORKDIR /opt/WebSyn
 # run scripts/fetch_assets.sh to pull them from Hugging Face first.
 COPY sites/ /opt/WebSyn/
 
+# Berkeley: all data is code-generated (no scraped images → no HF asset).
+# Build the seed DB once at image-build time so websyn_start.sh can copy it on boot.
+RUN cd /opt/WebSyn/berkeley && \
+    python3 -c "from app import app" && \
+    cp instance/berkeley.db instance_seed/berkeley.db
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
 RUN chmod +x /opt/websyn_start.sh
 
-EXPOSE 8101 40000-40014
+EXPOSE 8101 40000-40015
 
 CMD ["/opt/websyn_start.sh"]

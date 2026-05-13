@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }} — Berkeley Events{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <div class="container">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('events') }}">Events</a><span>/</span>
+    {{ event.title[:50] }}{% if event.title|length > 50 %}...{% endif %}
+  </div>
+</div>
+
+<div class="page-header">
+  <div class="container">
+    <span class="badge badge-gold" style="font-size: 13px; margin-bottom: 12px; display: inline-block;">{{ event.category }}</span>
+    <h1>{{ event.title }}</h1>
+    <p>{{ event.start_datetime.strftime('%A, %B %d, %Y at %I:%M %p') }}</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="sidebar-layout">
+    <div>
+      <h2 class="section-heading">About This Event</h2>
+      <p style="font-size: 17px; line-height: 1.8;">{{ event.description }}</p>
+
+      {% if related %}
+      <h2 class="section-heading mt-4">More {{ event.category }} Events</h2>
+      <div style="display: flex; flex-direction: column; gap: 12px;">
+        {% for r in related %}
+        <div style="background: var(--off-white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 16px; display: flex; gap: 16px; align-items: flex-start;">
+          <div style="background: var(--blue); color: white; padding: 10px; text-align: center; border-radius: 4px; min-width: 56px;">
+            <div style="font-family: Arial, sans-serif; font-size: 22px; font-weight: bold; color: var(--gold);">{{ r.start_datetime.strftime('%d') }}</div>
+            <div style="font-family: Arial, sans-serif; font-size: 11px;">{{ r.start_datetime.strftime('%b') }}</div>
+          </div>
+          <div>
+            <h4 style="font-size: 15px; color: var(--blue);"><a href="{{ url_for('event_detail', event_id=r.id) }}" style="color: var(--blue);">{{ r.title }}</a></h4>
+            <p style="font-size: 13px; color: var(--gray-mid); font-family: Arial, sans-serif;">{{ r.location }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <aside>
+      <div class="sidebar">
+        <h3>Event Details</h3>
+        <ul style="list-style: none;">
+          <li class="detail-meta-item"><strong>Date:</strong> {{ event.start_datetime.strftime('%B %d, %Y') }}</li>
+          <li class="detail-meta-item"><strong>Time:</strong> {{ event.start_datetime.strftime('%I:%M %p') }}{% if event.end_datetime %} – {{ event.end_datetime.strftime('%I:%M %p') }}{% endif %}</li>
+          <li class="detail-meta-item"><strong>Location:</strong> {{ event.location }}</li>
+          {% if event.building %}<li class="detail-meta-item"><strong>Building:</strong> {{ event.building }}</li>{% endif %}
+          <li class="detail-meta-item"><strong>Category:</strong> {{ event.category }}</li>
+          {% if event.organizer %}<li class="detail-meta-item"><strong>Organizer:</strong> {{ event.organizer }}</li>{% endif %}
+          <li class="detail-meta-item"><strong>Cost:</strong> {{ event.cost }}</li>
+          <li class="detail-meta-item"><strong>Registration:</strong> {{ 'Required' if event.registration_required else 'Not Required' }}</li>
+        </ul>
+        {% if event.registration_required %}
+        <div class="mt-3">
+          <a href="#" class="btn btn-gold" style="width: 100%; text-align: center;">Register Now</a>
+        </div>
+        {% endif %}
+      </div>
+
+      {% if current_user.is_authenticated %}
+      <div class="sidebar mt-3">
+        <h3>Save Event</h3>
+        <form method="post" action="{{ url_for('bookmark_add') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="item_type" value="event">
+          <input type="hidden" name="item_id" value="{{ event.id }}">
+          <button type="submit" class="btn btn-outline btn-sm" style="width: 100%;">&#9733; Save to Bookmarks</button>
+        </form>
+      </div>
+      {% endif %}
+
+      <div class="sidebar mt-3">
+        <h3>Browse Events</h3>
+        <ul>
+          <li><a href="{{ url_for('events') }}?date=upcoming">Upcoming Events</a></li>
+          <li><a href="{{ url_for('events') }}?date=today">Today's Events</a></li>
+          {% for cat in ['Lecture', 'Sports', 'Arts', 'Career', 'Health', 'Social', 'Virtual'] %}
+          <li><a href="{{ url_for('events') }}?category={{ cat }}">{{ cat }} Events</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

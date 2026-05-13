@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} — Berkeley News{% endblock %}
+
+{% block content %}
+<div class="breadcrumb">
+  <div class="container">
+    <a href="{{ url_for('index') }}">Home</a>
+    <span>/</span>
+    <a href="{{ url_for('news') }}">News</a>
+    <span>/</span>
+    <a href="{{ url_for('news') }}?category={{ article.category }}">{{ article.category }}</a>
+    <span>/</span>
+    {{ article.title[:50] }}{% if article.title|length > 50 %}...{% endif %}
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="sidebar-layout">
+    <!-- Main content -->
+    <article>
+      <span class="card-category" style="font-size: 13px; margin-bottom: 16px; display: inline-block;">{{ article.category }}</span>
+      {% if article.featured %}
+      <span class="badge badge-gold" style="margin-left: 8px;">Featured</span>
+      {% endif %}
+      <h1 style="font-size: 36px; color: var(--blue); margin-bottom: 16px; line-height: 1.25;">{{ article.title }}</h1>
+      <div style="display: flex; gap: 20px; font-family: Arial, sans-serif; font-size: 14px; color: var(--gray-mid); margin-bottom: 24px; flex-wrap: wrap;">
+        <span>By <strong style="color: var(--gray-dark);">{{ article.author }}</strong></span>
+        <span>{{ article.published_date.strftime('%B %d, %Y') }}</span>
+        <span>{{ article.view_count }} views</span>
+      </div>
+
+      <!-- Summary / lead -->
+      <div style="background: var(--off-white); border-left: 4px solid var(--gold); padding: 20px 24px; margin-bottom: 32px; border-radius: 0 4px 4px 0;">
+        <p style="font-size: 18px; font-style: italic; color: var(--gray-dark); line-height: 1.6; margin: 0;">{{ article.summary }}</p>
+      </div>
+
+      <!-- Article image placeholder -->
+      <div style="background: var(--blue); height: 280px; border-radius: 4px; display: flex; align-items: center; justify-content: center; margin-bottom: 32px;">
+        <div style="text-align: center; color: rgba(255,255,255,0.4); font-family: Arial, sans-serif;">
+          <div style="font-size: 56px;">&#127907;</div>
+          <div style="font-size: 13px; text-transform: uppercase; letter-spacing: 1px; margin-top: 8px;">Berkeley News</div>
+        </div>
+      </div>
+
+      <!-- Body content -->
+      <div style="font-size: 17px; line-height: 1.8; color: var(--text);">
+        {% for paragraph in article.content.split('. ') %}
+          {% if loop.index0 % 4 == 0 and loop.index0 > 0 %}
+          </p><p style="margin-bottom: 20px;">
+          {% endif %}
+          {{ paragraph }}{% if not paragraph.endswith('.') %}.{% endif %}
+        {% endfor %}
+      </div>
+
+      <!-- Tags -->
+      {% if article.tags %}
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--gray-light);">
+        <strong style="font-family: Arial, sans-serif; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray-mid);">Topics:</strong>
+        <div style="margin-top: 8px;">
+          {% for tag in article.tags.split(',') %}
+          <a href="{{ url_for('news') }}?q={{ tag.strip() }}" class="tag" style="text-decoration: none;">{{ tag.strip() }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Bookmark -->
+      {% if current_user.is_authenticated %}
+      <div style="margin-top: 24px;">
+        <form method="post" action="{{ url_for('bookmark_add') }}" style="display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="item_type" value="news">
+          <input type="hidden" name="item_id" value="{{ article.id }}">
+          <input type="hidden" name="next" value="{{ request.url }}">
+          <button type="submit" class="btn btn-outline btn-sm">&#9733; Save Article</button>
+        </form>
+      </div>
+      {% endif %}
+    </article>
+
+    <!-- Sidebar -->
+    <aside>
+      <div class="sidebar">
+        <h3>Related Articles</h3>
+        {% if related %}
+        <ul>
+          {% for r in related %}
+          <li>
+            <a href="{{ url_for('news_article', slug=r.slug) }}" style="font-size: 14px; color: var(--blue);">{{ r.title }}</a>
+            <div style="font-size: 12px; color: var(--gray-mid); margin-top: 4px;">{{ r.published_date.strftime('%b %d, %Y') }}</div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+        <p style="font-size: 14px; color: var(--gray-mid);">No related articles found.</p>
+        {% endif %}
+        <div class="mt-3">
+          <a href="{{ url_for('news') }}?category={{ article.category }}" class="btn btn-outline btn-sm">More {{ article.category }} News</a>
+        </div>
+      </div>
+
+      <div class="sidebar mt-3">
+        <h3>Browse News</h3>
+        <ul>
+          {% for cat in ['Research', 'Campus Life', 'Faculty', 'Student', 'Athletics', 'Science', 'Arts'] %}
+          <li><a href="{{ url_for('news') }}?category={{ cat }}">{{ cat }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

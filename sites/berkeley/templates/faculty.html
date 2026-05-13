@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}Faculty Directory — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Faculty Directory</h1>
+    <p>UC Berkeley's world-class faculty — researchers, scholars, and teachers</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="filter-bar">
+    <form method="get" action="{{ url_for('faculty') }}">
+      <input type="text" name="q" placeholder="Search by name or research area..." value="{{ q }}" style="min-width: 260px;">
+      <select name="dept">
+        <option value="">All Departments</option>
+        {% for dept in all_depts %}
+        <option value="{{ dept.slug }}" {% if current_dept == dept.slug %}selected{% endif %}>{{ dept.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      {% if q or current_dept %}
+      <a href="{{ url_for('faculty') }}" class="btn btn-outline btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <p style="font-family: Arial, sans-serif; font-size: 14px; color: var(--gray-mid); margin-bottom: 20px;">
+    Showing {{ faculty_list|length }} of {{ total }} faculty members
+    {% if q %} matching "<strong>{{ q }}</strong>"{% endif %}
+  </p>
+
+  {% if faculty_list %}
+  <div class="card-grid">
+    {% for member in faculty_list %}
+    <div class="card">
+      <div style="background: {% if member.is_emeritus %}#6c757d{% else %}var(--blue){% endif %}; height: 80px; display: flex; align-items: center; justify-content: center;">
+        <div style="width: 60px; height: 60px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; color: var(--blue); font-family: Arial, sans-serif;">
+          {{ member.name[0] }}
+        </div>
+      </div>
+      <div class="card-body">
+        {% if member.is_emeritus %}
+        <span class="badge badge-gold" style="margin-bottom: 8px; font-size: 10px;">Emeritus</span>
+        {% endif %}
+        <h3 class="card-title" style="font-size: 16px;"><a href="{{ url_for('faculty_profile', slug=member.slug) }}">{{ member.name }}</a></h3>
+        <p class="card-text" style="font-size: 13px; margin-bottom: 6px;">{{ member.title }}</p>
+        {% if member.department %}
+        <p class="card-text" style="font-size: 13px; color: var(--light-blue); margin-bottom: 8px;">{{ member.department.name }}</p>
+        {% endif %}
+        {% if member.research_interests %}
+        <p class="card-text" style="font-size: 13px;">{{ member.research_interests[:100] }}{% if member.research_interests|length > 100 %}...{% endif %}</p>
+        {% endif %}
+        <div class="mt-2">
+          <a href="{{ url_for('faculty_profile', slug=member.slug) }}" class="btn btn-primary btn-sm">View Profile</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}{% if q %}&q={{ q }}{% endif %}{% if current_dept %}&dept={{ current_dept }}{% endif %}">&laquo; Prev</a>
+    {% else %}<span class="disabled">&laquo; Prev</span>{% endif %}
+    {% for p in range(1, total_pages+1) %}
+      {% if p == page %}<span class="current">{{ p }}</span>
+      {% elif p == 1 or p == total_pages or (p >= page-2 and p <= page+2) %}
+      <a href="?page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if current_dept %}&dept={{ current_dept }}{% endif %}">{{ p }}</a>
+      {% elif p == page-3 or p == page+3 %}<span class="disabled">...</span>{% endif %}
+    {% endfor %}
+    {% if page < total_pages %}
+    <a href="?page={{ page+1 }}{% if q %}&q={{ q }}{% endif %}{% if current_dept %}&dept={{ current_dept }}{% endif %}">Next &raquo;</a>
+    {% else %}<span class="disabled">Next &raquo;</span>{% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div style="text-align: center; padding: 60px; font-family: Arial, sans-serif; color: var(--gray-mid);">
+    <p style="font-size: 18px;">No faculty members found.</p>
+    <a href="{{ url_for('faculty') }}" class="btn btn-outline mt-3">View All Faculty</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

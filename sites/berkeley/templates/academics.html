@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Academics — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Academics at Berkeley</h1>
+    <p>{{ colleges|length }} schools and colleges · {{ total_programs }}+ degree programs · {{ total_depts }}+ departments</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <!-- Overview stats -->
+  <div class="stats-grid mb-4" style="grid-template-columns: repeat(4, 1fr);">
+    <div class="stat-box"><span class="stat-number">{{ colleges|length }}</span><span class="stat-label">Schools & Colleges</span></div>
+    <div class="stat-box"><span class="stat-number">{{ total_programs }}+</span><span class="stat-label">Degree Programs</span></div>
+    <div class="stat-box"><span class="stat-number">115+</span><span class="stat-label">Undergraduate Majors</span></div>
+    <div class="stat-box"><span class="stat-number">{{ total_depts }}+</span><span class="stat-label">Academic Departments</span></div>
+  </div>
+
+  <div style="max-width: 800px; margin-bottom: 40px;">
+    <h2 class="section-heading">A World-Class Education</h2>
+    <p style="font-size: 16px; margin-bottom: 16px; line-height: 1.7;">UC Berkeley offers an unparalleled range of academic programs across its 14 schools and colleges. From the humanities to cutting-edge engineering, from law to optometry, a Berkeley education combines rigorous scholarship with a commitment to the public good.</p>
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+      <a href="{{ url_for('programs') }}" class="btn btn-primary">Browse All Programs</a>
+      <a href="{{ url_for('admissions') }}" class="btn btn-gold">Apply to Berkeley</a>
+    </div>
+  </div>
+
+  <h2 class="section-heading">Schools & Colleges</h2>
+
+  <div class="card-grid">
+    {% for college in colleges %}
+    <div class="card">
+      <div class="card-body">
+        <h3 class="card-title" style="font-size: 18px; margin-bottom: 12px;">
+          <a href="{{ url_for('programs') }}?college={{ college.slug }}">{{ college.name }}</a>
+        </h3>
+        <p class="card-text" style="margin-bottom: 16px;">{{ college.description[:180] }}{% if college.description|length > 180 %}...{% endif %}</p>
+        <div style="font-family: Arial, sans-serif; font-size: 13px; color: var(--gray-mid); margin-bottom: 16px;">
+          {% if college.dean %}<div>Dean: {{ college.dean }}</div>{% endif %}
+          <div>Founded: {{ college.founded_year }}</div>
+          <div>
+            {% if college.undergrad_count > 0 %}{{ "{:,}".format(college.undergrad_count) }} undergrads{% endif %}
+            {% if college.grad_count > 0 %}{% if college.undergrad_count > 0 %} · {% endif %}{{ "{:,}".format(college.grad_count) }} grad students{% endif %}
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <a href="{{ url_for('programs') }}?college={{ college.slug }}" class="btn btn-primary btn-sm">Programs</a>
+          <a href="{{ url_for('departments') }}" class="btn btn-outline btn-sm">Departments</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <!-- Quick links -->
+  <div style="background: var(--off-white); border-radius: 4px; padding: 32px; margin-top: 48px;">
+    <h3 style="color: var(--blue); margin-bottom: 20px;">Explore Academic Life</h3>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px;">
+      <a href="{{ url_for('programs') }}" class="btn btn-outline" style="text-align: center;">Degree Programs</a>
+      <a href="{{ url_for('departments') }}" class="btn btn-outline" style="text-align: center;">Departments</a>
+      <a href="{{ url_for('faculty') }}" class="btn btn-outline" style="text-align: center;">Faculty Directory</a>
+      <a href="{{ url_for('research') }}" class="btn btn-outline" style="text-align: center;">Research Centers</a>
+      <a href="{{ url_for('admissions') }}" class="btn btn-outline" style="text-align: center;">Admissions</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

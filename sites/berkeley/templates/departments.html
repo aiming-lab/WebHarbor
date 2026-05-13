@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Departments — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Academic Departments</h1>
+    <p>Explore Berkeley's departments, organized by school and college</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  {% for college, depts in depts_by_college.items() %}
+  {% if depts %}
+  <div style="margin-bottom: 40px;">
+    <h2 style="color: var(--blue); font-size: 22px; padding-bottom: 10px; border-bottom: 3px solid var(--gold); margin-bottom: 20px;">
+      <a href="{{ url_for('programs') }}?college={{ college.slug }}" style="color: var(--blue);">{{ college.name }}</a>
+    </h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px;">
+      {% for dept in depts %}
+      <div class="card">
+        <div class="card-body">
+          <h3 class="card-title" style="font-size: 16px; margin-bottom: 8px;">
+            <a href="{{ url_for('department_detail', slug=dept.slug) }}">{{ dept.name }}</a>
+          </h3>
+          <p class="card-text" style="font-size: 13px; margin-bottom: 12px;">{{ dept.description[:110] }}{% if dept.description|length > 110 %}...{% endif %}</p>
+          <div class="card-meta" style="font-size: 12px;">
+            {% if dept.chair %}<div>Chair: {{ dept.chair }}</div>{% endif %}
+            {% if dept.location %}<div>&#128205; {{ dept.location }}</div>{% endif %}
+          </div>
+          <div class="mt-2">
+            <a href="{{ url_for('department_detail', slug=dept.slug) }}" class="btn btn-outline btn-sm">View Department</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

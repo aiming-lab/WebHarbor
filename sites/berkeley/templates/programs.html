@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Programs — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>Degree Programs</h1>
+    <p>{{ total }} programs across 14 schools and colleges</p>
+  </div>
+</div>
+
+<div class="container py-4">
+  <div class="filter-bar">
+    <form method="get" action="{{ url_for('programs') }}">
+      <input type="text" name="q" placeholder="Search programs..." value="{{ q }}" style="min-width: 220px;">
+      <select name="college">
+        <option value="">All Schools</option>
+        {% for col in all_colleges %}
+        <option value="{{ col.slug }}" {% if current_college == col.slug %}selected{% endif %}>{{ col.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="degree">
+        <option value="">All Degrees</option>
+        {% for dt in degree_types %}
+        <option value="{{ dt }}" {% if current_degree == dt %}selected{% endif %}>{{ dt }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">Filter</button>
+      {% if q or current_college or current_degree %}
+      <a href="{{ url_for('programs') }}" class="btn btn-outline btn-sm">Clear</a>
+      {% endif %}
+    </form>
+  </div>
+
+  <!-- Degree type quick links -->
+  <div style="margin-bottom: 24px; display: flex; gap: 8px; flex-wrap: wrap;">
+    <span style="font-family: Arial, sans-serif; font-size: 13px; color: var(--gray-mid); align-self: center;">Degree:</span>
+    <a href="{{ url_for('programs') }}" class="btn btn-sm {% if not current_degree %}btn-primary{% else %}btn-outline{% endif %}">All</a>
+    {% for dt in degree_types %}
+    <a href="{{ url_for('programs') }}?degree={{ dt }}{% if q %}&q={{ q }}{% endif %}" class="btn btn-sm {% if current_degree == dt %}btn-primary{% else %}btn-outline{% endif %}">{{ dt }}</a>
+    {% endfor %}
+  </div>
+
+  <p style="font-family: Arial, sans-serif; font-size: 14px; color: var(--gray-mid); margin-bottom: 20px;">
+    Showing {{ programs|length }} of {{ total }} programs
+    {% if q %} matching "<strong>{{ q }}</strong>"{% endif %}
+  </p>
+
+  {% if programs %}
+  <div class="card-grid">
+    {% for program in programs %}
+    <div class="card">
+      <div class="card-body">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px;">
+          <span class="badge badge-blue">{{ program.degree_type }}</span>
+          {% if program.is_online %}<span class="badge badge-green">Online</span>{% endif %}
+        </div>
+        <h3 class="card-title">
+          <a href="{{ url_for('program_detail', slug=program.slug) }}">{{ program.name }}</a>
+        </h3>
+        {% if program.college %}
+        <p class="card-text" style="font-size: 13px; color: var(--light-blue); margin-bottom: 8px;">{{ program.college.name }}</p>
+        {% endif %}
+        <p class="card-text">{{ program.description[:130] }}{% if program.description|length > 130 %}...{% endif %}</p>
+        <div class="card-meta mt-2">
+          {% if program.duration_years > 0 %}<span>{{ program.duration_years|int if program.duration_years == program.duration_years|int else program.duration_years }} years</span>{% endif %}
+          {% if program.units > 0 %} &middot; <span>{{ program.units }} units</span>{% endif %}
+          {% if program.gre_required %} &middot; <span class="badge badge-gold" style="font-size: 11px;">GRE Required</span>{% endif %}
+        </div>
+        <div class="mt-2">
+          <a href="{{ url_for('program_detail', slug=program.slug) }}" class="btn btn-primary btn-sm">Program Details</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if total_pages > 1 %}
+  <div class="pagination">
+    {% if page > 1 %}
+    <a href="?page={{ page-1 }}{% if q %}&q={{ q }}{% endif %}{% if current_college %}&college={{ current_college }}{% endif %}{% if current_degree %}&degree={{ current_degree }}{% endif %}">&laquo; Prev</a>
+    {% else %}<span class="disabled">&laquo; Prev</span>{% endif %}
+    {% for p in range(1, total_pages+1) %}
+      {% if p == page %}<span class="current">{{ p }}</span>
+      {% elif p == 1 or p == total_pages or (p >= page-2 and p <= page+2) %}
+      <a href="?page={{ p }}{% if q %}&q={{ q }}{% endif %}{% if current_college %}&college={{ current_college }}{% endif %}{% if current_degree %}&degree={{ current_degree }}{% endif %}">{{ p }}</a>
+      {% elif p == page-3 or p == page+3 %}<span class="disabled">...</span>{% endif %}
+    {% endfor %}
+    {% if page < total_pages %}
+    <a href="?page={{ page+1 }}{% if q %}&q={{ q }}{% endif %}{% if current_college %}&college={{ current_college }}{% endif %}{% if current_degree %}&degree={{ current_degree }}{% endif %}">Next &raquo;</a>
+    {% else %}<span class="disabled">Next &raquo;</span>{% endif %}
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div style="text-align: center; padding: 60px; font-family: Arial, sans-serif; color: var(--gray-mid);">
+    <p style="font-size: 18px;">No programs found.</p>
+    <a href="{{ url_for('programs') }}" class="btn btn-outline mt-3">View All Programs</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
