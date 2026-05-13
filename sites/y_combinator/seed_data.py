@@ -7,6 +7,7 @@ COMPANIES_ALL = os.path.join(BASE_DIR, 'scraped_data', 'companies.json')
 COMPANIES_DETAILED = os.path.join(BASE_DIR, 'scraped_data', 'companies_final.json')
 EXTRA_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'extra_sections.json')
 DEEP_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'deep_sections.json')
+ULTRA_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'ultra_sections.json')
 
 def seed_database(db, Company, Founder):
     if Company.query.count() > 0:
@@ -117,7 +118,6 @@ def seed_deep_sections(db, Founder, Launch, LegalDocument):
     with open(DEEP_SECTIONS, 'r') as f:
         data = json.load(f)
 
-    # Seed extra founders from directory if they don't exist
     for item in data.get('founders', []):
         existing = Founder.query.filter_by(name=item['name']).first()
         if not existing:
@@ -127,13 +127,45 @@ def seed_deep_sections(db, Founder, Launch, LegalDocument):
                 bio=f"Founder of {item.get('company')}"
             ))
 
-    # Seed Launches
     for item in data.get('launches', []):
         db.session.add(Launch(title=item['title'], tagline=item.get('tagline'), url=item.get('href')))
 
-    # Seed Documents
     for item in data.get('documents', []):
         db.session.add(LegalDocument(title=item['title'], url=item.get('href')))
 
     db.session.commit()
     print("Seeded deep sections (Founders Directory, Launches, Documents).")
+
+def seed_ultra_sections(db, StaticPage):
+    if StaticPage.query.count() > 0:
+        return
+    
+    if not os.path.exists(ULTRA_SECTIONS):
+        return
+
+    with open(ULTRA_SECTIONS, 'r') as f:
+        data = json.load(f)
+
+    titles = {
+        "interviews": "YC Interview Guide",
+        "partners": "YC Partners",
+        "jobs": "Startup Jobs",
+        "verify": "Verify Founders",
+        "subscribe": "Newsletter",
+        "cofounder": "Find a Co-Founder",
+        "demoday": "Demo Day",
+        "press": "Press",
+        "contact": "Contact",
+        "legal": "Legal",
+        "software": "Software Careers"
+    }
+
+    for slug, content in data.items():
+        db.session.add(StaticPage(
+            slug=slug,
+            title=titles.get(slug, slug.capitalize()),
+            content=content
+        ))
+
+    db.session.commit()
+    print(f"Seeded {len(data)} ultra-deep sections.")
