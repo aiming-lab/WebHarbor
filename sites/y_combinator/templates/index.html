@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="hero">
+    <h1>Y Combinator</h1>
+    <p>YC created a new model for funding early stage startups. Twice a year we invest in a large number of startups.</p>
+</section>
+
+<section class="featured-companies">
+    <h2>Featured Companies</h2>
+    <div class="company-grid">
+        {% for company in companies %}
+            <div class="company-card">
+                {% if company.local_logo %}
+                    <img src="{{ url_for('static', filename='images/' + company.local_logo) }}" alt="{{ company.name }} logo">
+                {% endif %}
+                <div class="company-info">
+                    <h3><a href="{{ url_for('company_detail', slug=company.slug) }}">{{ company.name }}</a></h3>
+                    <span class="pill">{{ company.batch }}</span>
+                    <p>{{ company.description or (company.full_description[:150] + '...') if company.full_description else '' }}</p>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+    <a href="{{ url_for('companies') }}">View all companies &rarr;</a>
+</section>
+{% endblock %}
