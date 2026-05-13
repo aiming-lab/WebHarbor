@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import article_card %}
+{% block title %}{{ article.title }} — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="layout">
+  <article class="article-detail">
+    <div class="crumbs">
+      <a href="{{ url_for('index') }}">Home</a>
+      {% if article.category %}
+        / <a href="{{ url_for('category', slug=article.category.slug) }}">{{ article.category.name }}</a>
+      {% endif %}
+      {% if article.subsection %} / {{ article.subsection }}{% endif %}
+    </div>
+
+    <h1>{{ article.title }}</h1>
+    {% if article.subtitle %}<p class="subtitle">{{ article.subtitle }}</p>{% endif %}
+
+    <div class="byline">
+      <strong>{{ article.author_name }}</strong>
+      · Published {{ article.published_at.strftime('%b %d, %Y') if article.published_at else '' }}
+      · {{ article.reading_time }} min read
+      · {{ article.views }} view{{ '' if article.views == 1 else 's' }}
+    </div>
+
+    {% if article.image_filename %}
+      <div class="hero-image">
+        <img src="{{ url_for('static', filename='images/' ~ article.image_filename) }}" alt="">
+      </div>
+    {% endif %}
+
+    <div class="body">
+      {% for p in article.get_paragraphs() %}
+        <p>{{ p|sanitize }}</p>
+      {% endfor %}
+    </div>
+
+    <section class="source-block">
+      <dl>
+        {% if article.source_journal %}
+          <div><dt>Journal</dt><dd>{{ article.source_journal }}</dd></div>
+        {% endif %}
+        {% if article.source_institution %}
+          <div><dt>Provided by</dt><dd>{{ article.source_institution }}</dd></div>
+        {% endif %}
+        {% if article.doi_url %}
+          <div><dt>DOI</dt><dd><a href="{{ article.doi_url }}" rel="nofollow">{{ article.doi_url }}</a></dd></div>
+        {% endif %}
+      </dl>
+    </section>
+
+    <div class="action-bar">
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('save_article', article_id=article.id) }}" style="display:inline;">
+          {{ save_form.csrf_token }}
+          <input type="hidden" name="next" value="{{ url_for('article_detail', slug=article.slug) }}">
+          {% if is_saved %}
+            <button class="btn secondary" type="submit">★ Saved — click to remove</button>
+          {% else %}
+            <input type="text" name="note" placeholder="Add a note (optional)" style="padding:7px 8px;border:1px solid #ccc;border-radius:3px;width:240px;">
+            <button class="btn" type="submit">Save article</button>
+          {% endif %}
+        </form>
+      {% else %}
+        <a class="btn secondary" href="{{ url_for('login', next=url_for('article_detail', slug=article.slug)) }}">Sign in to save</a>
+      {% endif %}
+      <span style="margin-left:auto;color:#777;font-size:13px;">{{ article.comment_count }} comment{{ '' if article.comment_count == 1 else 's' }}</span>
+    </div>
+
+    <section class="comments-section" id="comments">
+      <h2>Comments</h2>
+      {% if comment_tree %}
+        {% for entry in comment_tree %}
+          {% set c = entry.comment %}
+          <div class="comment" id="comment-{{ c.id }}" style="margin-left: {{ entry.depth * 24 }}px;">
+            <div class="head">
+              <a class="author" href="{{ url_for('user_profile', username=c.user.username) }}">{{ c.user.username }}</a>
+              · {{ c.time_ago }}
+              {% if current_user.is_authenticated %}
+                · <a href="#reply-form" class="reply-link" data-parent="{{ c.id }}"
+                     data-author="{{ c.user.username }}">Reply</a>
+              {% endif %}
+            </div>
+            <div class="body">{{ c.text }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="text-muted">No comments yet.</p>
+      {% endif %}
+
+      {% if current_user.is_authenticated %}
+        <form class="comment-form" id="reply-form"
+              method="post" action="{{ url_for('post_comment', slug=article.slug) }}"
+              style="margin-top:18px;">
+          {{ form.csrf_token }}
+          <input type="hidden" name="parent_id" id="parent_id" value="">
+          <div id="reply-context" class="text-muted" style="display:none;margin-bottom:6px;">
+            Replying to <strong id="reply-author"></strong>
+            <a href="#" id="cancel-reply" style="margin-left:8px;">cancel</a>
+          </div>
+          <textarea name="text" placeholder="Share a thoughtful comment…" required></textarea>
+          <div style="margin-top:8px;"><button class="btn" type="submit">Post comment</button></div>
+        </form>
+        <script>
+          (function() {
+            var pid = document.getElementById('parent_id');
+            var ctx = document.getElementById('reply-context');
+            var who = document.getElementById('reply-author');
+            document.querySelectorAll('a.reply-link').forEach(function(a) {
+              a.addEventListener('click', function() {
+                pid.value = a.getAttribute('data-parent');
+                who.textContent = a.getAttribute('data-author');
+                ctx.style.display = 'block';
+              });
+            });
+            var cancel = document.getElementById('cancel-reply');
+            if (cancel) cancel.addEventListener('click', function(e) {
+              e.preventDefault();
+              pid.value = '';
+              ctx.style.display = 'none';
+            });
+          })();
+        </script>
+      {% else %}
+        <p class="text-muted"><a href="{{ url_for('login', next=url_for('article_detail', slug=article.slug)) }}">Sign in</a> to comment.</p>
+      {% endif %}
+    </section>
+  </article>
+
+  <aside class="sidebar">
+    <div class="widget">
+      <h3>Related</h3>
+      <ul>
+        {% for r in related %}
+          <li><a href="{{ url_for('article_detail', slug=r.slug) }}">{{ r.title }}</a></li>
+        {% else %}
+          <li class="text-muted">No related articles.</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="widget">
+      <h3>Share</h3>
+      <p style="margin:0;font-size:13px;color:#666;">Permalink: <code>{{ url_for('article_detail', slug=article.slug, _external=True) }}</code></p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

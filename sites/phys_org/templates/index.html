@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import article_card %}
+{% block title %}Phys.org Mirror — Science, Technology, Research news{% endblock %}
+
+{% block content %}
+
+{% if featured %}
+  <section class="featured-grid">
+    {% set main = featured[0] %}
+    <a class="feat-main" href="{{ url_for('article_detail', slug=main.slug) }}">
+      <div class="thumb">
+        {% if main.image_filename %}
+          <img src="{{ url_for('static', filename='images/' ~ main.image_filename) }}" alt="">
+        {% else %}
+          <img src="{{ url_for('static', filename='icons/placeholder.svg') }}" alt="">
+        {% endif %}
+      </div>
+      <div class="pad">
+        <span class="tag-pill">{{ main.category.name if main.category else 'Featured' }}</span>
+        <h2>{{ main.title }}</h2>
+        <div class="text-muted">{{ main.published_str }}{% if main.subsection %} · {{ main.subsection }}{% endif %}</div>
+      </div>
+    </a>
+    {% for a in featured[1:5] %}
+      <a class="feat-side" href="{{ url_for('article_detail', slug=a.slug) }}">
+        <div class="thumb">
+          {% if a.image_filename %}
+            <img src="{{ url_for('static', filename='images/' ~ a.image_filename) }}" alt="">
+          {% else %}
+            <img src="{{ url_for('static', filename='icons/placeholder.svg') }}" alt="">
+          {% endif %}
+        </div>
+        <div class="pad">
+          <span class="tag-pill">{{ a.category.name if a.category else '' }}</span>
+          <h3>{{ a.title }}</h3>
+          <div class="text-muted">{{ a.published_str }}</div>
+        </div>
+      </a>
+    {% endfor %}
+  </section>
+{% endif %}
+
+<div class="layout">
+  <div>
+    <div class="section-heading">
+      <h2>Latest News</h2>
+      <a class="see-all" href="{{ url_for('trending') }}">All recent →</a>
+    </div>
+    {% for a in latest %}{{ article_card(a) }}{% endfor %}
+
+    {% for cat, items in by_cat %}
+      <div class="section-heading">
+        <h2>{{ cat.name }}</h2>
+        <a class="see-all" href="{{ url_for('category', slug=cat.slug) }}">More in {{ cat.name }} →</a>
+      </div>
+      {% for a in items %}{{ article_card(a) }}{% endfor %}
+    {% endfor %}
+  </div>
+  <aside class="sidebar">
+    <div class="widget">
+      <h3>Trending now</h3>
+      <ol>
+        {% for a in sidebar_trending %}
+          <li>
+            <a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a>
+            <div class="text-muted">{{ a.views }} views</div>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+    <div class="widget">
+      <h3>Browse categories</h3>
+      <ul>
+        {% for c in all_categories %}
+          <li><a href="{{ url_for('category', slug=c.slug) }}">{{ c.name }}</a>
+            <span class="text-muted">({{ c.article_count }})</span></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% if not current_user.is_authenticated %}
+    <div class="widget">
+      <h3>Free account</h3>
+      <p style="margin:0 0 8px;">Save articles, comment on stories, build a reading list.</p>
+      <p style="margin:0;"><a class="btn" href="{{ url_for('register') }}">Create account</a></p>
+    </div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

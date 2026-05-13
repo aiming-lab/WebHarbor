@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import article_card, pager %}
+{% block title %}Trending — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="section-heading">
+  <h2>Trending articles</h2>
+  <span class="text-muted">Sorted by total views.</span>
+</div>
+{% for a in pagination.items %}{{ article_card(a) }}{% endfor %}
+{{ pager(pagination, 'trending') }}
+{% endblock %}
