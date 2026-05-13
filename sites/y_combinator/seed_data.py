@@ -5,6 +5,7 @@ import pathlib
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 COMPANIES_ALL = os.path.join(BASE_DIR, 'scraped_data', 'companies.json')
 COMPANIES_DETAILED = os.path.join(BASE_DIR, 'scraped_data', 'companies_final.json')
+EXTRA_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'extra_sections.json')
 
 def seed_database(db, Company, Founder):
     if Company.query.count() > 0:
@@ -28,11 +29,9 @@ def seed_database(db, Company, Founder):
         name = cdata['name']
         if not name: continue
         
-        # Merge with detailed if available
         detailed = detailed_map.get(name, {})
-        
         slug = name.lower().replace(' ', '-').replace('/', '-').replace('.', '')
-        # Ensure slug is unique (some might collide)
+        
         base_slug = slug
         count = 1
         while Company.query.filter_by(slug=slug).first():
@@ -84,3 +83,28 @@ def seed_benchmark_users(db, User, bcrypt):
     
     db.session.commit()
     print("Seeded benchmark users.")
+
+def seed_extra_sections(db, FAQ, LibraryItem, BlogPost):
+    if FAQ.query.count() > 0:
+        return
+    
+    if not os.path.exists(EXTRA_SECTIONS):
+        return
+
+    with open(EXTRA_SECTIONS, 'r') as f:
+        data = json.load(f)
+
+    # Seed FAQs
+    for item in data.get('faq', []):
+        db.session.add(FAQ(question=item['q'], answer=item['a']))
+
+    # Seed Library
+    for item in data.get('library', []):
+        db.session.add(LibraryItem(title=item['title'], url=item['href']))
+
+    # Seed Blog
+    for item in data.get('blog', []):
+        db.session.add(BlogPost(title=item['title'], date=item.get('date'), snippet=item.get('snippet')))
+
+    db.session.commit()
+    print("Seeded extra sections (FAQ, Library, Blog).")

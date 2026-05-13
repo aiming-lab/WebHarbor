@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from flask_bcrypt import Bcrypt
@@ -41,6 +41,22 @@ class Founder(db.Model):
     local_img = db.Column(db.String(200))
     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
 
+class FAQ(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question = db.Column(db.Text, nullable=False)
+    answer = db.Column(db.Text, nullable=False)
+
+class LibraryItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    url = db.Column(db.String(200))
+
+class BlogPost(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    date = db.Column(db.String(50))
+    snippet = db.Column(db.Text)
+
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
@@ -52,7 +68,6 @@ def index():
     return render_template('index.html', companies=companies)
 
 import re
-
 STOPWORDS = {'the', 'a', 'an', 'of', 'in', 'on', 'at', 'to', 'for', 'with', 'and', 'or', 'is', 'are'}
 
 def score_company(company, tokens):
@@ -61,7 +76,6 @@ def score_company(company, tokens):
     for token in tokens:
         if token in text:
             score += 1
-            # Bonus for name match
             if token in company.name.lower():
                 score += 2
     return score
@@ -130,12 +144,32 @@ def about():
 def people():
     return render_template('people.html')
 
+@app.route('/faq')
+def faq():
+    faqs = FAQ.query.all()
+    return render_template('faq.html', faqs=faqs)
+
+@app.route('/library')
+def library():
+    items = LibraryItem.query.all()
+    return render_template('library.html', items=items)
+
+@app.route('/blog')
+def blog():
+    posts = BlogPost.query.all()
+    return render_template('blog.html', posts=posts)
+
+@app.route('/apply')
+def apply():
+    return render_template('apply.html')
+
 # Bootstrap
 with app.app_context():
     db.create_all()
-    from seed_data import seed_database, seed_benchmark_users
+    from seed_data import seed_database, seed_benchmark_users, seed_extra_sections
     seed_database(db, Company, Founder)
     seed_benchmark_users(db, User, bcrypt)
+    seed_extra_sections(db, FAQ, LibraryItem, BlogPost)
 
 if __name__ == '__main__':
     app.run(debug=True, port=40015)
