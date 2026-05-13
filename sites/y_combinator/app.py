@@ -39,6 +39,7 @@ class Founder(db.Model):
     bio = db.Column(db.Text)
     image_url = db.Column(db.String(200))
     local_img = db.Column(db.String(200))
+    slug = db.Column(db.String(100), unique=True)
     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
 
 class FAQ(db.Model):
@@ -49,18 +50,24 @@ class FAQ(db.Model):
 class LibraryItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(100), unique=True)
+    content = db.Column(db.Text)
     url = db.Column(db.String(200))
 
 class BlogPost(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(100), unique=True)
     date = db.Column(db.String(50))
     snippet = db.Column(db.Text)
+    content = db.Column(db.Text)
 
 class Launch(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
+    slug = db.Column(db.String(100), unique=True)
     tagline = db.Column(db.Text)
+    content = db.Column(db.Text)
     url = db.Column(db.String(200))
 
 class LegalDocument(db.Model):
@@ -122,6 +129,46 @@ def company_detail(slug):
     company = Company.query.filter_by(slug=slug).first_or_404()
     return render_template('company_detail.html', company=company)
 
+@app.route('/founders')
+def founders():
+    all_founders = Founder.query.all()
+    return render_template('founders.html', founders=all_founders)
+
+@app.route('/founders/<slug>')
+def founder_detail(slug):
+    founder = Founder.query.filter_by(slug=slug).first_or_404()
+    return render_template('founder_detail.html', founder=founder)
+
+@app.route('/library')
+def library():
+    items = LibraryItem.query.all()
+    return render_template('library.html', items=items)
+
+@app.route('/library/<slug>')
+def library_detail(slug):
+    item = LibraryItem.query.filter_by(slug=slug).first_or_404()
+    return render_template('detail_page.html', item=item, type='Library')
+
+@app.route('/blog')
+def blog():
+    posts = BlogPost.query.all()
+    return render_template('blog.html', posts=posts)
+
+@app.route('/blog/<slug>')
+def blog_detail(slug):
+    item = BlogPost.query.filter_by(slug=slug).first_or_404()
+    return render_template('detail_page.html', item=item, type='Blog')
+
+@app.route('/launches')
+def launches():
+    items = Launch.query.all()
+    return render_template('launches.html', launches=items)
+
+@app.route('/launches/<slug>')
+def launch_detail(slug):
+    item = Launch.query.filter_by(slug=slug).first_or_404()
+    return render_template('detail_page.html', item=item, type='Launch')
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -162,52 +209,22 @@ def faq():
     faqs = FAQ.query.all()
     return render_template('faq.html', faqs=faqs)
 
-@app.route('/library')
-def library():
-    items = LibraryItem.query.all()
-    return render_template('library.html', items=items)
-
-@app.route('/blog')
-def blog():
-    posts = BlogPost.query.all()
-    return render_template('blog.html', posts=posts)
-
 @app.route('/apply')
 def apply():
     return render_template('apply.html')
-
-@app.route('/founders')
-def founders():
-    all_founders = Founder.query.all()
-    return render_template('founders.html', founders=all_founders)
-
-@app.route('/launches')
-def launches():
-    all_launches = Launch.query.all()
-    return render_template('launches.html', launches=all_launches)
 
 @app.route('/documents')
 def documents():
     docs = LegalDocument.query.all()
     return render_template('documents.html', docs=docs)
 
-# Standard route for ultra sections
 @app.route('/<page_slug>')
 def static_page(page_slug):
-    # Check if it's one of our ultra sections
     page = StaticPage.query.filter_by(slug=page_slug).first()
     if page:
         return render_template('static_page.html', page=page)
-    # Fallback to people/rfs/investors if they exist in DB
-    if page_slug in ['people', 'rfs', 'investors', 'interviews', 'partners', 'jobs', 'verify', 'subscribe', 'cofounder', 'demoday', 'press', 'contact', 'legal', 'software']:
-         page = StaticPage.query.filter_by(slug=page_slug).first()
-         if page:
-             return render_template('static_page.html', page=page)
-    
-    # Check for Hacker News mock
     if page_slug == 'hn':
         return render_template('hn_mock.html')
-        
     return redirect(url_for('index'))
 
 # Bootstrap

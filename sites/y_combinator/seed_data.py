@@ -1,20 +1,35 @@
 import json
 import os
 import pathlib
+import re
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 COMPANIES_ALL = os.path.join(BASE_DIR, 'scraped_data', 'companies.json')
 COMPANIES_DETAILED = os.path.join(BASE_DIR, 'scraped_data', 'companies_final.json')
-EXTRA_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'extra_sections.json')
-DEEP_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'deep_sections.json')
+EXTRA_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'extra_sections_enriched.json')
+DEEP_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'deep_sections_enriched.json')
 ULTRA_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'ultra_sections.json')
+
+def slugify(text):
+    if not text: return "unknown"
+    s = re.sub(r'[^\w\s-]', '', text.lower())
+    s = re.sub(r'[\s_-]+', '-', s).strip('-')
+    return s[:100] or "unknown"
+
+def get_unique_slug(model, text):
+    base_slug = slugify(text)
+    slug = base_slug
+    count = 1
+    while model.query.filter_by(slug=slug).first():
+        slug = f"{base_slug}-{count}"
+        count += 1
+    return slug
 
 def seed_database(db, Company, Founder):
     if Company.query.count() > 0:
         return
     
     if not os.path.exists(COMPANIES_ALL):
-        print(f"Warning: {COMPANIES_ALL} not found. Skipping company seeding.")
         return
 
     with open(COMPANIES_ALL, 'r') as f:
@@ -32,14 +47,8 @@ def seed_database(db, Company, Founder):
         if not name: continue
         
         detailed = detailed_map.get(name, {})
-        slug = name.lower().replace(' ', '-').replace('/', '-').replace('.', '')
+        slug = get_unique_slug(Company, name)
         
-        base_slug = slug
-        count = 1
-        while Company.query.filter_by(slug=slug).first():
-            slug = f"{base_slug}-{count}"
-            count += 1
-
         company = Company(
             name=name,
             batch=cdata.get('batch') or detailed.get('batch'),
@@ -54,12 +63,14 @@ def seed_database(db, Company, Founder):
         db.session.flush()
 
         for fdata in detailed.get('founders', []):
+            f_slug = get_unique_slug(Founder, fdata['name'])
             founder = Founder(
                 name=fdata['name'],
                 title=fdata.get('title'),
                 bio=fdata.get('bio'),
                 image_url=fdata.get('img'),
                 local_img=fdata.get('local_img'),
+                slug=f_slug,
                 company_id=company.id
             )
             db.session.add(founder)
@@ -100,10 +111,19 @@ def seed_extra_sections(db, FAQ, LibraryItem, BlogPost):
         db.session.add(FAQ(question=item['q'], answer=item['a']))
 
     for item in data.get('library', []):
-        db.session.add(LibraryItem(title=item['title'], url=item['href']))
+        slug = get_unique_slug(LibraryItem, item['title'])
+        db.session.add(LibraryItem(title=item['title'], slug=slug, content=item.get('content', ''), url=item['href']))
 
-    for item in data.get('blog', []):
-        db.session.add(BlogPost(title=item['title'], date=item.get('date'), snippet=item.get('snippet')))
+    posts = data.get('blog_detailed', data.get('blog', []))
+    for item in posts:
+        slug = get_unique_slug(BlogPost, item['title'])
+        db.session.add(BlogPost(
+            title=item['title'], 
+            slug=slug, 
+            date=item.get('date'), 
+            snippet=item.get('snippet', ''),
+            content=item.get('content', '')
+        ))
 
     db.session.commit()
     print("Seeded extra sections (FAQ, Library, Blog).")
@@ -119,16 +139,25 @@ def seed_deep_sections(db, Founder, Launch, LegalDocument):
         data = json.load(f)
 
     for item in data.get('founders', []):
-        existing = Founder.query.filter_by(name=item['name']).first()
+        f_slug = get_unique_slug(Founder, item['name'])
+        existing = Founder.query.filter_by(slug=f_slug).first()
         if not existing:
             db.session.add(Founder(
                 name=item['name'],
                 title=item.get('title'),
+                slug=f_slug,
                 bio=f"Founder of {item.get('company')}"
             ))
 
     for item in data.get('launches', []):
-        db.session.add(Launch(title=item['title'], tagline=item.get('tagline'), url=item.get('href')))
+        l_slug = get_unique_slug(Launch, item['title'])
+        db.session.add(Launch(
+            title=item['title'], 
+            slug=l_slug, 
+            tagline=item.get('tagline'), 
+            content=item.get('content', ''),
+            url=item.get('href')
+        ))
 
     for item in data.get('documents', []):
         db.session.add(LegalDocument(title=item['title'], url=item.get('href')))

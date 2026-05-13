@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+
+{% block title %}{{ item.title }} | Y Combinator {{ type }}{% endblock %}
+
+{% block content %}
+<article class="detail-container">
+    <header class="detail-header">
+        <h1>{{ item.title }}</h1>
+        {% if item.date %}
+            <p class="date">{{ item.date }}</p>
+        {% endif %}
+        {% if item.tagline %}
+            <p class="tagline"><em>{{ item.tagline }}</em></p>
+        {% endif %}
+    </header>
+
+    <section class="detail-content" style="background: white; padding: 40px; border-radius: 8px; line-height: 1.6;">
+        {% if item.content %}
+            {{ item.content | safe }}
+        {% else %}
+            <p>{{ item.snippet or "No content available for this preview." }}</p>
+        {% endif %}
+    </section>
+
+    {% if item.url %}
+        <footer class="detail-footer" style="margin-top: 20px;">
+            <a href="{{ item.url }}" target="_blank" class="button">View Original &rarr;</a>
+        </footer>
+    {% endif %}
+</article>
+{% endblock %}
