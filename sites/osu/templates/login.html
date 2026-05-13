@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Sign In — Ohio State{% endblock %}
+{% block content %}
+<div style="max-width:420px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:30px">
+    <div style="font-size:48px;color:var(--scarlet)">&#9400;</div>
+    <h1 style="font-size:26px;color:var(--scarlet)">Sign In</h1>
+    <p style="color:var(--gray);font-family:sans-serif;font-size:14px">Access your Ohio State account</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body" style="padding:30px">
+      <form method="post" action="{{ url_for('login') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+          {{ form.email.label }}
+          {{ form.email(placeholder='your.name@osu.edu', autocomplete='email') }}
+          {% for error in form.email.errors %}
+          <div class="form-errors">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          {{ form.password.label }}
+          {{ form.password(placeholder='Password', autocomplete='current-password') }}
+          {% for error in form.password.errors %}
+          <div class="form-errors">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;font-size:16px;padding:12px">Sign In</button>
+      </form>
+
+      <div style="text-align:center;margin-top:20px;font-family:sans-serif;font-size:14px;color:var(--gray)">
+        Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+      </div>
+    </div>
+  </div>
+
+  <div style="background:var(--gray-light);padding:16px;border-radius:6px;margin-top:20px;font-family:sans-serif;font-size:13px;color:var(--gray)">
+    <strong>Demo accounts:</strong> alice@osu.edu, bob@osu.edu, carol@osu.edu, dave@osu.edu &mdash; password: test1234
+  </div>
+</div>
+{% endblock %}

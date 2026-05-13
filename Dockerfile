@@ -33,6 +33,19 @@ COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
 RUN chmod +x /opt/websyn_start.sh
 
-EXPOSE 8101 40000-40014
+EXPOSE 8101 40000-40015
+
+# Generate OSU seed database at image build time so instance_seed/ is ready.
+RUN cd /opt/WebSyn/osu && python3 -c "
+from app import app, db
+from seed_data import seed
+with app.app_context():
+    db.create_all()
+    seed()
+import shutil, os
+os.makedirs('instance_seed', exist_ok=True)
+shutil.copy2('instance/osu.db', 'instance_seed/osu.db')
+print('OSU seed DB generated.')
+"
 
 CMD ["/opt/websyn_start.sh"]

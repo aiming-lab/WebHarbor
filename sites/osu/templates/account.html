@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}My Account — Ohio State{% endblock %}
+{% block content %}
+<div style="max-width:800px;margin:0 auto">
+  <h1 style="font-size:28px;color:var(--scarlet);margin-bottom:6px">My Account</h1>
+  <p style="color:var(--gray);font-family:sans-serif;margin-bottom:30px">Welcome, {{ current_user.full_name or current_user.username }}!</p>
+
+  <!-- Profile card -->
+  <div class="card" style="margin-bottom:30px">
+    <div class="card-body" style="padding:24px">
+      <div style="display:flex;align-items:center;gap:20px">
+        <div style="width:64px;height:64px;background:var(--scarlet);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:28px;font-weight:bold;font-family:sans-serif;flex-shrink:0">
+          {{ (current_user.full_name or current_user.username)[0].upper() }}
+        </div>
+        <div style="flex:1">
+          <div style="font-size:20px;font-weight:bold">{{ current_user.full_name or current_user.username }}</div>
+          <div style="font-size:14px;color:var(--gray);font-family:sans-serif">{{ current_user.email }}</div>
+          <div style="font-size:13px;color:#999;font-family:sans-serif">Member since {{ current_user.created_at.strftime('%B %Y') }}</div>
+          {% if current_user.bio %}<p style="font-size:14px;margin-top:8px;color:var(--gray)">{{ current_user.bio }}</p>{% endif %}
+        </div>
+        <div>
+          <span class="badge badge-scarlet">{{ current_user.role | title }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bookmarks -->
+  <h2 class="section-title">My Saved Items ({{ bookmark_details|length }})</h2>
+  {% if bookmark_details %}
+    {% for detail in bookmark_details %}
+    <div class="card" style="margin-bottom:12px">
+      <div class="card-body" style="padding:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <span class="badge badge-light" style="text-transform:capitalize;margin-bottom:6px">{{ detail.bookmark.item_type }}</span>
+            <div style="font-size:15px;font-weight:bold">
+              <a href="{{ detail.url }}">{{ detail.title or '(deleted item)' }}</a>
+            </div>
+            {% if detail.bookmark.note %}
+            <div style="font-size:13px;color:var(--gray);margin-top:4px;font-style:italic">Note: {{ detail.bookmark.note }}</div>
+            {% endif %}
+            <div style="font-size:12px;color:#999;margin-top:4px;font-family:sans-serif">Saved {{ detail.bookmark.created_at.strftime('%B %d, %Y') }}</div>
+          </div>
+          <form method="post" action="{{ url_for('bookmark_remove') }}" style="margin-left:16px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="bookmark_id" value="{{ detail.bookmark.id }}">
+            <button type="submit" class="btn btn-sm" style="background:none;border:1px solid #cc0000;color:#cc0000;cursor:pointer" onclick="return confirm('Remove this bookmark?')">Remove</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div class="empty-state">
+    <div class="icon">&#9733;</div>
+    <h3>No saved items yet</h3>
+    <p>Bookmark programs, news, faculty, events, and more to find them here.</p>
+    <div style="margin-top:20px;display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+      <a href="{{ url_for('programs') }}" class="btn btn-outline btn-sm">Browse Programs</a>
+      <a href="{{ url_for('news') }}" class="btn btn-outline btn-sm">Read News</a>
+      <a href="{{ url_for('faculty') }}" class="btn btn-outline btn-sm">Explore Faculty</a>
+    </div>
+  </div>
+  {% endif %}
+
+  <div style="margin-top:30px;padding-top:20px;border-top:1px solid var(--gray-mid)">
+    <form method="post" action="{{ url_for('logout') }}" style="display:inline">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn-outline btn-sm">Sign Out</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

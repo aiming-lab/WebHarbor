@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }} — Ohio State Events{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a><span>/</span>
+  <a href="{{ url_for('events') }}">Events</a><span>/</span>
+  <span>{{ event.title[:50] }}{% if event.title|length > 50 %}...{% endif %}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:30px">
+  <div>
+    <span class="badge badge-scarlet">{{ event.category }}</span>
+    {% if event.registration_required %}<span class="badge badge-gray" style="margin-left:6px">Registration Required</span>{% endif %}
+    <h1 style="font-size:32px;color:var(--scarlet);margin-top:12px;line-height:1.3">{{ event.title }}</h1>
+
+    <div style="background:var(--gray-light);padding:20px;border-radius:8px;margin-top:20px;font-family:sans-serif">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px">
+        <div>
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);margin-bottom:4px">Date &amp; Time</div>
+          <div style="font-weight:bold;color:var(--scarlet)">{{ event.start_datetime.strftime('%A, %B %d, %Y') }}</div>
+          <div>{{ event.start_datetime.strftime('%I:%M %p') }}{% if event.end_datetime %} – {{ event.end_datetime.strftime('%I:%M %p') }}{% endif %}</div>
+        </div>
+        {% if event.location %}
+        <div>
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);margin-bottom:4px">Location</div>
+          <div style="font-weight:bold">{{ event.location }}</div>
+          {% if event.building %}<div>{{ event.building }}</div>{% endif %}
+          <div>{{ event.campus }} Campus</div>
+        </div>
+        {% endif %}
+        {% if event.organizer %}
+        <div>
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);margin-bottom:4px">Organizer</div>
+          <div>{{ event.organizer }}</div>
+        </div>
+        {% endif %}
+        <div>
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--gray);margin-bottom:4px">Cost</div>
+          <div style="font-weight:bold;color:{% if event.cost == 'Free' %}#27ae60{% else %}var(--text){% endif %}">{{ event.cost or 'Free' }}</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:30px">
+      <h2 class="section-title">About This Event</h2>
+      <div style="line-height:1.8;font-size:16px">
+        {% for paragraph in event.description.split('\n\n') %}
+        <p style="margin-bottom:16px">{{ paragraph }}</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if current_user.is_authenticated %}
+    <form method="post" action="{{ url_for('bookmark_add') }}" style="margin-top:20px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="item_type" value="event">
+      <input type="hidden" name="item_id" value="{{ event.id }}">
+      <button type="submit" class="btn btn-outline btn-sm">&#9733; Save Event</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <aside class="sidebar" style="align-self:start">
+    {% if event.registration_required %}
+    <div style="background:var(--scarlet);color:#fff;padding:16px;border-radius:6px;text-align:center;margin-bottom:20px">
+      <div style="font-weight:bold;margin-bottom:8px">Registration Required</div>
+      <a href="{{ url_for('login') }}" class="btn btn-outline" style="border-color:#fff;color:#fff;font-size:13px">Register Now</a>
+    </div>
+    {% endif %}
+
+    <h3>Upcoming Events</h3>
+    {% for rel in related %}
+    <div style="margin-bottom:14px;padding-bottom:14px;border-bottom:1px solid var(--gray-mid)">
+      <div style="font-size:12px;color:var(--scarlet);font-weight:bold;font-family:sans-serif">{{ rel.start_datetime.strftime('%b %d') }}</div>
+      <a href="{{ url_for('event_detail', event_id=rel.id) }}" style="font-size:14px;color:var(--text)">{{ rel.title }}</a>
+      <div style="font-size:12px;color:#999;margin-top:2px">{{ rel.location }}</div>
+    </div>
+    {% else %}
+    <p style="font-size:13px;color:var(--gray)">No related events.</p>
+    {% endfor %}
+
+    <div style="margin-top:20px">
+      <a href="{{ url_for('events') }}" class="btn btn-outline btn-sm" style="width:100%;display:block;text-align:center">View All Events</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}

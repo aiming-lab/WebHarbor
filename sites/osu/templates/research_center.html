@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ center.name }} — Ohio State Research{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a><span>/</span>
+  <a href="{{ url_for('research') }}">Research</a><span>/</span>
+  <span>{{ center.name }}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:30px">
+  <div>
+    <h1 style="font-size:32px;color:var(--scarlet);margin-bottom:10px;line-height:1.3">{{ center.name }}</h1>
+    {% if center.college %}<p style="font-size:15px;color:var(--gray);font-family:sans-serif;margin-bottom:6px">{{ center.college.name }}</p>{% endif %}
+
+    {% if center.focus_areas %}
+    <div style="margin-bottom:16px">
+      {% for area in center.focus_areas.split(',') %}
+      <span class="tag">{{ area.strip() }}</span>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="border-top:3px solid var(--scarlet);margin-top:20px;padding-top:20px">
+      <h2 class="section-title">About This Center</h2>
+      <div style="line-height:1.8;font-size:16px">
+        {% for paragraph in center.description.split('\n\n') %}
+        <p style="margin-bottom:16px">{{ paragraph }}</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if current_user.is_authenticated %}
+    <form method="post" action="{{ url_for('bookmark_add') }}" style="margin-top:20px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="item_type" value="research">
+      <input type="hidden" name="item_id" value="{{ center.id }}">
+      <button type="submit" class="btn btn-outline btn-sm">&#9733; Save Center</button>
+    </form>
+    {% endif %}
+
+    {% if related %}
+    <div style="margin-top:40px">
+      <h2 class="section-title">Related Centers</h2>
+      <div class="grid-3">
+        {% for rel in related %}
+        <div class="card">
+          <div class="card-body">
+            <div class="card-title" style="font-size:14px"><a href="{{ url_for('research_center', slug=rel.slug) }}">{{ rel.name }}</a></div>
+            <p class="card-text" style="font-size:13px;margin-top:6px">{{ rel.description[:100] }}...</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <aside class="sidebar" style="align-self:start">
+    <h3>Center Details</h3>
+    <table style="font-size:13px">
+      {% if center.director %}<tr><td style="color:var(--gray);padding:6px 0">Director</td><td style="padding:6px 0">{{ center.director }}</td></tr>{% endif %}
+      <tr><td style="color:var(--gray);padding:6px 0">Founded</td><td style="padding:6px 0">{{ center.founded_year }}</td></tr>
+      {% if center.college %}<tr><td style="color:var(--gray);padding:6px 0">College</td><td style="padding:6px 0">{{ center.college.name }}</td></tr>{% endif %}
+      {% if center.url %}<tr><td colspan="2" style="padding:6px 0"><a href="{{ center.url }}" target="_blank" rel="noopener">Official Website</a></td></tr>{% endif %}
+    </table>
+
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--gray-mid)">
+      <a href="{{ url_for('research') }}" class="btn btn-outline btn-sm" style="width:100%;display:block;text-align:center">All Research Centers</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}Search — Ohio State{% endblock %}
+{% block content %}
+<h1 style="font-size:30px;color:var(--scarlet);margin-bottom:20px">Search Ohio State</h1>
+
+<form method="get" action="{{ url_for('search') }}" style="display:flex;gap:10px;margin-bottom:30px;max-width:600px">
+  <input type="text" name="q" value="{{ q }}" placeholder="Search programs, news, faculty, events..." style="flex:1;padding:12px 16px;font-size:16px;border:2px solid var(--gray-mid);border-radius:4px">
+  <button type="submit" class="btn btn-primary" style="padding:12px 24px;font-size:16px">Search</button>
+</form>
+
+{% if q %}
+<p style="font-size:15px;color:var(--gray);font-family:sans-serif;margin-bottom:30px">
+  Found <strong>{{ total }}</strong> result{% if total != 1 %}s{% endif %} for &ldquo;<strong>{{ q }}</strong>&rdquo;
+</p>
+
+{% if results.programs %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">Degree Programs ({{ results.programs|length }})</h2>
+  <div class="grid-2">
+    {% for prog in results.programs %}
+    <div class="card">
+      <div class="card-body">
+        <span class="badge badge-scarlet">{{ prog.degree_type }}</span>
+        <div class="card-title" style="margin-top:8px"><a href="{{ url_for('program_detail', slug=prog.slug) }}">{{ prog.name }}</a></div>
+        {% if prog.college %}<div class="card-meta">{{ prog.college.name }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="margin-top:10px"><a href="{{ url_for('programs') }}?q={{ q }}" style="font-size:13px">See all program results &rarr;</a></div>
+</section>
+{% endif %}
+
+{% if results.news %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">News ({{ results.news|length }})</h2>
+  {% for article in results.news %}
+  <div style="padding:12px 0;border-bottom:1px solid var(--gray-mid)">
+    <div style="margin-bottom:4px"><span class="badge badge-scarlet">{{ article.category }}</span> <span style="font-size:12px;color:#999;margin-left:8px">{{ article.published_date.strftime('%b %d, %Y') }}</span></div>
+    <a href="{{ url_for('news_article', slug=article.slug) }}" style="font-size:16px;font-weight:bold">{{ article.title }}</a>
+    <p style="font-size:13px;color:var(--gray);margin-top:4px">{{ article.summary[:150] }}{% if article.summary|length > 150 %}...{% endif %}</p>
+  </div>
+  {% endfor %}
+  <div style="margin-top:10px"><a href="{{ url_for('news') }}?q={{ q }}" style="font-size:13px">See all news results &rarr;</a></div>
+</section>
+{% endif %}
+
+{% if results.faculty %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">Faculty ({{ results.faculty|length }})</h2>
+  <div class="grid-3">
+    {% for member in results.faculty %}
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title" style="font-size:15px"><a href="{{ url_for('faculty_profile', slug=member.slug) }}">{{ member.name }}</a></div>
+        <div class="card-meta">{{ member.title }}</div>
+        {% if member.department %}<div class="card-meta">{{ member.department.name }}</div>{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="margin-top:10px"><a href="{{ url_for('faculty') }}?q={{ q }}" style="font-size:13px">See all faculty results &rarr;</a></div>
+</section>
+{% endif %}
+
+{% if results.events %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">Events ({{ results.events|length }})</h2>
+  {% for event in results.events %}
+  <div style="padding:12px 0;border-bottom:1px solid var(--gray-mid)">
+    <div style="display:flex;gap:12px;align-items:center">
+      <div style="background:var(--scarlet);color:#fff;padding:6px 10px;border-radius:4px;font-family:sans-serif;font-size:13px;text-align:center;min-width:48px">
+        <div style="font-size:10px">{{ event.start_datetime.strftime('%b') }}</div>
+        <div style="font-size:18px;font-weight:bold;line-height:1">{{ event.start_datetime.strftime('%d') }}</div>
+      </div>
+      <div>
+        <a href="{{ url_for('event_detail', event_id=event.id) }}" style="font-size:16px;font-weight:bold">{{ event.title }}</a>
+        <div style="font-size:12px;color:var(--gray)">{{ event.location }} &bull; {{ event.category }}</div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  <div style="margin-top:10px"><a href="{{ url_for('events') }}?q={{ q }}" style="font-size:13px">See all event results &rarr;</a></div>
+</section>
+{% endif %}
+
+{% if results.research %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">Research Centers ({{ results.research|length }})</h2>
+  <div class="grid-2">
+    {% for center in results.research %}
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title" style="font-size:15px"><a href="{{ url_for('research_center', slug=center.slug) }}">{{ center.name }}</a></div>
+        <p class="card-text" style="font-size:13px;margin-top:6px">{{ center.description[:100] }}...</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if results.athletics %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">Athletics ({{ results.athletics|length }})</h2>
+  <div class="grid-3">
+    {% for team in results.athletics %}
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title" style="font-size:15px"><a href="{{ url_for('athletics_team', slug=team.slug) }}">{{ team.name }}</a></div>
+        <div class="card-meta">{{ team.sport }} &bull; {{ team.gender }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if total == 0 %}
+<div class="empty-state">
+  <div class="icon">&#128269;</div>
+  <h3>No results found</h3>
+  <p>Try different keywords or browse our site using the navigation above.</p>
+</div>
+{% endif %}
+
+{% else %}
+<div style="background:var(--gray-light);padding:40px;border-radius:8px;text-align:center;max-width:600px">
+  <h2 style="font-size:20px;margin-bottom:10px">What are you looking for?</h2>
+  <p style="font-size:15px;color:var(--gray);margin-bottom:20px">Search across programs, news, faculty, events, research, and athletics.</p>
+  <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;font-size:14px">
+    <a href="{{ url_for('programs') }}" class="btn btn-outline btn-sm">Programs</a>
+    <a href="{{ url_for('news') }}" class="btn btn-outline btn-sm">News</a>
+    <a href="{{ url_for('faculty') }}" class="btn btn-outline btn-sm">Faculty</a>
+    <a href="{{ url_for('events') }}" class="btn btn-outline btn-sm">Events</a>
+    <a href="{{ url_for('research') }}" class="btn btn-outline btn-sm">Research</a>
+    <a href="{{ url_for('athletics') }}" class="btn btn-outline btn-sm">Athletics</a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
