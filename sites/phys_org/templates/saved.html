@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Saved articles — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="section-heading">
+  <h2>Your saved articles</h2>
+  <span class="text-muted">{{ items|length }} item{{ '' if items|length == 1 else 's' }}</span>
+</div>
+{% if items %}
+  {% for it in items %}
+    {% set a = it.article %}
+    <article class="article-card">
+      <a class="thumb" href="{{ url_for('article_detail', slug=a.slug) }}">
+        {% if a.image_filename %}
+          <img src="{{ url_for('static', filename='images/' ~ a.image_filename) }}" alt="">
+        {% else %}
+          <img src="{{ url_for('static', filename='icons/placeholder.svg') }}" alt="">
+        {% endif %}
+      </a>
+      <div class="body">
+        <div class="meta">
+          <span class="tag">{{ a.category.name if a.category else '' }}</span>
+          <span>Saved {{ it.created_at|time_ago }}</span>
+        </div>
+        <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+        {% if it.note %}<div class="summary"><em>Note:</em> {{ it.note }}</div>{% endif %}
+        <form method="post" action="{{ url_for('save_article', article_id=a.id) }}" style="margin-top:8px;display:inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ url_for('saved') }}">
+          <button class="btn secondary" type="submit">Remove from saved</button>
+        </form>
+      </div>
+    </article>
+  {% endfor %}
+{% else %}
+  <p class="text-muted">You haven't saved any articles yet. Browse <a href="{{ url_for('index') }}">the homepage</a> and click "Save article" on any story.</p>
+{% endif %}
+{% endblock %}

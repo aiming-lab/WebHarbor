@@ -1,0 +1,48 @@
+{% macro article_card(a) -%}
+<article class="article-card">
+  <a class="thumb" href="{{ url_for('article_detail', slug=a.slug) }}">
+    {% if a.image_filename %}
+      <img src="{{ url_for('static', filename='images/' ~ a.image_filename) }}" alt="">
+    {% else %}
+      <img src="{{ url_for('static', filename='icons/placeholder.svg') }}" alt="">
+    {% endif %}
+  </a>
+  <div class="body">
+    <div class="meta">
+      <span class="tag">{{ a.category.name if a.category else '' }}</span>
+      <span>{{ a.published_str }}</span>
+      {% if a.subsection %} · <span>{{ a.subsection }}</span>{% endif %}
+    </div>
+    <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+    {% if a.subtitle %}<div class="summary">{{ a.subtitle }}</div>{% endif %}
+  </div>
+</article>
+{%- endmacro %}
+
+{% macro pager(pagination, endpoint, kw={}) -%}
+{% if pagination.pages > 1 %}
+<div class="pagination">
+  {% if pagination.has_prev %}
+    <a class="arrow" href="{{ url_for(endpoint, page=pagination.prev_num, **kw) }}">‹ Prev</a>
+  {% else %}
+    <span class="arrow disabled">‹ Prev</span>
+  {% endif %}
+  {% for p in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+    {% if p %}
+      {% if p == pagination.page %}
+        <span class="page active">{{ p }}</span>
+      {% else %}
+        <a class="page" href="{{ url_for(endpoint, page=p, **kw) }}">{{ p }}</a>
+      {% endif %}
+    {% else %}
+      <span class="page">…</span>
+    {% endif %}
+  {% endfor %}
+  {% if pagination.has_next %}
+    <a class="arrow" href="{{ url_for(endpoint, page=pagination.next_num, **kw) }}">Next ›</a>
+  {% else %}
+    <span class="arrow disabled">Next ›</span>
+  {% endif %}
+</div>
+{% endif %}
+{%- endmacro %}

@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Create account — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Create account</h1>
+  <form method="post">
+    {{ form.csrf_token }}
+    <div class="field">
+      <label>Username</label>
+      {{ form.username(size=40) }}
+      {% if form.username.errors %}<div class="errors">{{ form.username.errors[0] }}</div>{% endif %}
+    </div>
+    <div class="field">
+      <label>Email</label>
+      {{ form.email(size=40) }}
+      {% if form.email.errors %}<div class="errors">{{ form.email.errors[0] }}</div>{% endif %}
+    </div>
+    <div class="field">
+      <label>Full name (optional)</label>
+      {{ form.full_name(size=40) }}
+    </div>
+    <div class="field">
+      <label>Password</label>
+      {{ form.password(size=40) }}
+      {% if form.password.errors %}<div class="errors">{{ form.password.errors[0] }}</div>{% endif %}
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">Create account</button>
+    </div>
+    <div class="alt">Already have an account? <a href="{{ url_for('login') }}">Sign in</a>.</div>
+  </form>
+</div>
+{% endblock %}

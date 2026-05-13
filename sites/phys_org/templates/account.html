@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Account settings — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="layout">
+  <div class="form-card" style="margin:0;max-width:none;">
+    <h1>Account settings</h1>
+    <form method="post">
+      {{ form.csrf_token }}
+      <div class="field">
+        <label>Username (read-only)</label>
+        <input type="text" value="{{ current_user.username }}" disabled>
+      </div>
+      <div class="field">
+        <label>Email (read-only)</label>
+        <input type="text" value="{{ current_user.email }}" disabled>
+      </div>
+      <div class="field">
+        <label>Full name</label>
+        {{ form.full_name(size=40) }}
+      </div>
+      <div class="field">
+        <label>Location</label>
+        {{ form.location(size=40) }}
+      </div>
+      <div class="field">
+        <label>Bio</label>
+        {{ form.bio(rows=4, cols=50) }}
+      </div>
+      <div class="field">
+        <label>Interests (comma-separated category slugs, e.g. <code>physics,astronomy</code>)</label>
+        {{ form.interests(size=50) }}
+      </div>
+      <div class="actions"><button type="submit" class="btn">Save changes</button></div>
+    </form>
+  </div>
+  <aside class="sidebar">
+    <div class="widget">
+      <h3>Recent searches</h3>
+      {% if search_history %}
+        <ul>
+          {% for s in search_history %}
+            <li><a href="{{ url_for('search', q=s.query_text) }}">{{ s.query_text }}</a>
+              <span class="text-muted">· {{ s.created_at|time_ago }}</span></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="text-muted">No searches yet.</p>
+      {% endif %}
+    </div>
+    <div class="widget">
+      <h3>Quick links</h3>
+      <ul>
+        <li><a href="{{ url_for('saved') }}">My saved articles</a></li>
+        <li><a href="{{ url_for('user_profile', username=current_user.username) }}">My public profile</a></li>
+        <li><a href="{{ url_for('logout') }}">Sign out</a></li>
+      </ul>
+    </div>
+  </aside>
+</div>
+{% endblock %}
