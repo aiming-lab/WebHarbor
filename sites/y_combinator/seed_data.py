@@ -6,6 +6,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 COMPANIES_ALL = os.path.join(BASE_DIR, 'scraped_data', 'companies.json')
 COMPANIES_DETAILED = os.path.join(BASE_DIR, 'scraped_data', 'companies_final.json')
 EXTRA_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'extra_sections.json')
+DEEP_SECTIONS = os.path.join(BASE_DIR, 'scraped_data', 'deep_sections.json')
 
 def seed_database(db, Company, Founder):
     if Company.query.count() > 0:
@@ -94,17 +95,45 @@ def seed_extra_sections(db, FAQ, LibraryItem, BlogPost):
     with open(EXTRA_SECTIONS, 'r') as f:
         data = json.load(f)
 
-    # Seed FAQs
     for item in data.get('faq', []):
         db.session.add(FAQ(question=item['q'], answer=item['a']))
 
-    # Seed Library
     for item in data.get('library', []):
         db.session.add(LibraryItem(title=item['title'], url=item['href']))
 
-    # Seed Blog
     for item in data.get('blog', []):
         db.session.add(BlogPost(title=item['title'], date=item.get('date'), snippet=item.get('snippet')))
 
     db.session.commit()
     print("Seeded extra sections (FAQ, Library, Blog).")
+
+def seed_deep_sections(db, Founder, Launch, LegalDocument):
+    if Launch.query.count() > 0:
+        return
+    
+    if not os.path.exists(DEEP_SECTIONS):
+        return
+
+    with open(DEEP_SECTIONS, 'r') as f:
+        data = json.load(f)
+
+    # Seed extra founders from directory if they don't exist
+    for item in data.get('founders', []):
+        existing = Founder.query.filter_by(name=item['name']).first()
+        if not existing:
+            db.session.add(Founder(
+                name=item['name'],
+                title=item.get('title'),
+                bio=f"Founder of {item.get('company')}"
+            ))
+
+    # Seed Launches
+    for item in data.get('launches', []):
+        db.session.add(Launch(title=item['title'], tagline=item.get('tagline'), url=item.get('href')))
+
+    # Seed Documents
+    for item in data.get('documents', []):
+        db.session.add(LegalDocument(title=item['title'], url=item.get('href')))
+
+    db.session.commit()
+    print("Seeded deep sections (Founders Directory, Launches, Documents).")

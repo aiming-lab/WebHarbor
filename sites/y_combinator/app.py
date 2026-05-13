@@ -39,7 +39,7 @@ class Founder(db.Model):
     bio = db.Column(db.Text)
     image_url = db.Column(db.String(200))
     local_img = db.Column(db.String(200))
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True) # Optional for directory
 
 class FAQ(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -56,6 +56,17 @@ class BlogPost(db.Model):
     title = db.Column(db.String(200), nullable=False)
     date = db.Column(db.String(50))
     snippet = db.Column(db.Text)
+
+class Launch(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    tagline = db.Column(db.Text)
+    url = db.Column(db.String(200))
+
+class LegalDocument(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(200), nullable=False)
+    url = db.Column(db.String(200))
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -140,10 +151,6 @@ def logout():
 def about():
     return render_template('about.html')
 
-@app.route('/people')
-def people():
-    return render_template('people.html')
-
 @app.route('/faq')
 def faq():
     faqs = FAQ.query.all()
@@ -163,13 +170,37 @@ def blog():
 def apply():
     return render_template('apply.html')
 
+@app.route('/founders')
+def founders():
+    all_founders = Founder.query.all()
+    return render_template('founders.html', founders=all_founders)
+
+@app.route('/launches')
+def launches():
+    all_launches = Launch.query.all()
+    return render_template('launches.html', launches=all_launches)
+
+@app.route('/documents')
+def documents():
+    docs = LegalDocument.query.all()
+    return render_template('documents.html', docs=docs)
+
+@app.route('/rfs')
+def rfs():
+    return render_template('rfs.html')
+
+@app.route('/investors')
+def investors():
+    return render_template('investors.html')
+
 # Bootstrap
 with app.app_context():
     db.create_all()
-    from seed_data import seed_database, seed_benchmark_users, seed_extra_sections
+    from seed_data import seed_database, seed_benchmark_users, seed_extra_sections, seed_deep_sections
     seed_database(db, Company, Founder)
     seed_benchmark_users(db, User, bcrypt)
     seed_extra_sections(db, FAQ, LibraryItem, BlogPost)
+    seed_deep_sections(db, Founder, Launch, LegalDocument)
 
 if __name__ == '__main__':
     app.run(debug=True, port=40015)
