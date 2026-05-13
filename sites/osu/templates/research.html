@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Research — Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>Research at Ohio State</h1>
+    <p>$1.3 billion in annual research expenditures. Tackling the world's most pressing challenges.</p>
+  </div>
+</div>
+
+<div style="background:var(--gray-light);padding:20px;border-radius:8px;margin-bottom:30px">
+  <div class="grid-4">
+    <div style="text-align:center"><span style="font-size:28px;font-weight:bold;color:var(--scarlet);display:block">$1.3B</span><span style="font-size:12px;font-family:sans-serif;color:var(--gray)">Annual Research Expenditure</span></div>
+    <div style="text-align:center"><span style="font-size:28px;font-weight:bold;color:var(--scarlet);display:block">{{ centers|length }}</span><span style="font-size:12px;font-family:sans-serif;color:var(--gray)">Research Centers &amp; Institutes</span></div>
+    <div style="text-align:center"><span style="font-size:28px;font-weight:bold;color:var(--scarlet);display:block">#1</span><span style="font-size:12px;font-family:sans-serif;color:var(--gray)">Fulbright Scholars Producing Institution</span></div>
+    <div style="text-align:center"><span style="font-size:28px;font-weight:bold;color:var(--scarlet);display:block">88</span><span style="font-size:12px;font-family:sans-serif;color:var(--gray)">Extension County Offices</span></div>
+  </div>
+</div>
+
+<h2 class="section-title">Research Centers &amp; Institutes</h2>
+<div class="grid-3">
+  {% for center in centers %}
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title"><a href="{{ url_for('research_center', slug=center.slug) }}">{{ center.name }}</a></h3>
+      {% if center.college %}<div class="card-meta" style="margin-bottom:8px">{{ center.college.name }}</div>{% endif %}
+      <p class="card-text">{{ center.description[:160] }}{% if center.description|length > 160 %}...{% endif %}</p>
+      {% if center.focus_areas %}
+      <div style="margin-top:10px">
+        {% for area in center.focus_areas.split(',')[:3] %}
+        <span class="tag">{{ area.strip() }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+      <div class="card-meta" style="margin-top:10px">
+        {% if center.director %}Director: {{ center.director }}<br>{% endif %}
+        Founded {{ center.founded_year }}
+      </div>
+      <div style="margin-top:12px">
+        <a href="{{ url_for('research_center', slug=center.slug) }}" class="btn btn-sm btn-outline">Learn More</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+{% if colleges %}
+<div style="margin-top:50px">
+  <h2 class="section-title">Research by College</h2>
+  <div class="grid-3">
+    {% for college in colleges %}
+    {% if college.research_centers %}
+    <div style="background:var(--gray-light);padding:16px;border-radius:6px">
+      <h3 style="font-size:15px;color:var(--scarlet);margin-bottom:10px">{{ college.name }}</h3>
+      {% for rc in college.research_centers %}
+      <a href="{{ url_for('research_center', slug=rc.slug) }}" style="display:block;font-size:13px;padding:4px 0;border-bottom:1px solid var(--gray-mid)">{{ rc.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

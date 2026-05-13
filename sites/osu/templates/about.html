@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}About Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>About The Ohio State University</h1>
+    <p>Founded in 1870 as a land-grant institution, Ohio State has grown into one of America's great universities.</p>
+  </div>
+</div>
+
+<!-- Key stats -->
+<div class="grid-4" style="margin-bottom:40px">
+  <div style="text-align:center;padding:20px;background:var(--gray-light);border-radius:8px;border-top:4px solid var(--scarlet)">
+    <div style="font-size:32px;font-weight:bold;color:var(--scarlet)">{{ stats.founded }}</div>
+    <div style="font-family:sans-serif;font-size:13px;color:var(--gray)">Year Founded</div>
+  </div>
+  <div style="text-align:center;padding:20px;background:var(--gray-light);border-radius:8px;border-top:4px solid var(--scarlet)">
+    <div style="font-size:32px;font-weight:bold;color:var(--scarlet)">{{ (stats.undergrad_count + stats.grad_count) | int }}</div>
+    <div style="font-family:sans-serif;font-size:13px;color:var(--gray)">Total Enrollment</div>
+  </div>
+  <div style="text-align:center;padding:20px;background:var(--gray-light);border-radius:8px;border-top:4px solid var(--scarlet)">
+    <div style="font-size:32px;font-weight:bold;color:var(--scarlet)">600K+</div>
+    <div style="font-family:sans-serif;font-size:13px;color:var(--gray)">Living Alumni</div>
+  </div>
+  <div style="text-align:center;padding:20px;background:var(--gray-light);border-radius:8px;border-top:4px solid var(--scarlet)">
+    <div style="font-size:32px;font-weight:bold;color:var(--scarlet)">{{ stats.acres }}</div>
+    <div style="font-family:sans-serif;font-size:13px;color:var(--gray)">Acres (Columbus Campus)</div>
+  </div>
+</div>
+
+<!-- History -->
+<div id="history" style="margin-bottom:50px">
+  <h2 class="section-title">Our History</h2>
+  <div class="grid-2">
+    <div style="line-height:1.8;font-size:16px">
+      <p style="margin-bottom:14px">The Ohio State University was established in 1870 as the Ohio Agricultural and Mechanical College under the Morrill Land-Grant Colleges Act. Since then, it has grown to become one of the largest universities in the United States.</p>
+      <p style="margin-bottom:14px">The university's flagship Columbus campus spans 1,665 acres in the heart of Ohio's capital city, with additional regional campuses in Lima, Mansfield, Marion, Newark, and Wooster.</p>
+      <p>As a leading public research university, Ohio State has been at the forefront of discovery, producing Nobel laureates, Rhodes Scholars, Fulbright Scholars, and countless innovators who have shaped American society and the world.</p>
+    </div>
+    <div>
+      <h3 style="font-size:18px;color:var(--scarlet);margin-bottom:16px">Timeline Highlights</h3>
+      <div style="font-size:14px;font-family:sans-serif">
+        {% for year, event in [
+          (1870, 'Founded as Ohio Agricultural and Mechanical College'),
+          (1878, 'Renamed The Ohio State University'),
+          (1916, 'Ohio Stadium built — The Horseshoe'),
+          (1930, 'Named to Association of American Universities'),
+          (1960, 'Jesse Owens wins 4 gold medals at Berlin Olympics (OSU alum)'),
+          (1967, 'Wexner Medical Center opens'),
+          (1980, 'National Supercomputer Center established'),
+          (1995, 'Online education programs launched'),
+          (2002, 'Football National Championship'),
+          (2014, 'Football National Championship'),
+          (2024, 'Research expenditure exceeds $1.3 billion')
+        ] %}
+        <div style="display:flex;gap:16px;padding:8px 0;border-bottom:1px solid var(--gray-mid)">
+          <div style="color:var(--scarlet);font-weight:bold;min-width:40px">{{ year }}</div>
+          <div>{{ event }}</div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Mission -->
+<div style="background:var(--gray-light);padding:40px;border-radius:8px;margin-bottom:50px">
+  <h2 class="section-title">Mission &amp; Values</h2>
+  <div class="grid-3">
+    <div>
+      <h3 style="color:var(--scarlet);margin-bottom:10px;font-size:18px">Mission</h3>
+      <p style="font-size:15px;line-height:1.7">The Ohio State University advances the well-being of the people of Ohio and the global community through the creation and dissemination of knowledge.</p>
+    </div>
+    <div>
+      <h3 style="color:var(--scarlet);margin-bottom:10px;font-size:18px">Vision</h3>
+      <p style="font-size:15px;line-height:1.7">To be the model 21st-century public research university — an institution that is as innovative, resourceful and diverse as the challenges we exist to solve.</p>
+    </div>
+    <div>
+      <h3 style="color:var(--scarlet);margin-bottom:10px;font-size:18px">Core Values</h3>
+      <ul style="list-style:none;font-size:15px;line-height:2">
+        <li>&#9670; Excellence in education</li>
+        <li>&#9670; Research and discovery</li>
+        <li>&#9670; Outreach and engagement</li>
+        <li>&#9670; Diversity and inclusion</li>
+        <li>&#9670; Integrity and ethics</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- Leadership -->
+<div id="leadership" style="margin-bottom:50px">
+  <h2 class="section-title">University Leadership</h2>
+  <div class="grid-3">
+    {% for title, name, desc in [
+      ('President', 'Dr. Ted Carter', 'The president provides executive leadership and is the chief administrative officer of the university.'),
+      ('Provost', 'Dr. Melissa Gilliam', 'The provost is the chief academic officer, overseeing educational programs and research.'),
+      ('Board of Trustees', 'John W. Zeiger, Chair', 'The Board of Trustees governs the university and ensures it fulfills its mission.')
+    ] %}
+    <div class="card">
+      <div class="card-body">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:1px;color:var(--scarlet);font-family:sans-serif;margin-bottom:6px">{{ title }}</div>
+        <div style="font-size:18px;font-weight:bold;margin-bottom:8px">{{ name }}</div>
+        <p style="font-size:14px;color:var(--gray);line-height:1.6">{{ desc }}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- By the Numbers -->
+<div style="margin-top:40px">
+  <h2 class="section-title">Ohio State by the Numbers</h2>
+  <div class="grid-4">
+    {% for num, label in [
+      (stats.undergrad_count | int, 'Undergraduates'),
+      (stats.grad_count | int, 'Graduate Students'),
+      (stats.faculty_count | int, 'Faculty Members'),
+      (stats.degree_programs, 'Degree Programs'),
+      (stats.national_titles, 'National Athletic Titles'),
+      (stats.varsity_sports, 'Varsity Sports'),
+      (stats.extension_offices, 'Extension Offices'),
+      (stats.campuses, 'Campuses')
+    ] %}
+    <div style="text-align:center;padding:16px">
+      <div style="font-size:28px;font-weight:bold;color:var(--scarlet)">{{ num }}</div>
+      <div style="font-size:12px;font-family:sans-serif;color:var(--gray);text-transform:uppercase;letter-spacing:1px;margin-top:4px">{{ label }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

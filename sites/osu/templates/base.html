@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
+  <title>{% block title %}The Ohio State University{% endblock %}</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --scarlet: #BB0000;
+      --scarlet-dark: #8B0000;
+      --gray: #666666;
+      --gray-light: #f5f5f5;
+      --gray-mid: #cccccc;
+      --white: #ffffff;
+      --text: #333333;
+      --link: #BB0000;
+    }
+    body { font-family: 'Georgia', serif; font-size: 16px; color: var(--text); background: var(--white); }
+    a { color: var(--link); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    img { max-width: 100%; height: auto; }
+
+    /* Top bar */
+    .top-bar { background: var(--scarlet); color: var(--white); padding: 6px 0; font-size: 12px; font-family: sans-serif; }
+    .top-bar .inner { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+    .top-bar a { color: var(--white); margin-left: 15px; }
+    .top-bar a:hover { opacity: 0.8; text-decoration: none; }
+
+    /* Header */
+    .site-header { background: var(--white); border-bottom: 4px solid var(--scarlet); padding: 15px 0; }
+    .site-header .inner { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; }
+    .site-logo { display: flex; align-items: center; gap: 12px; }
+    .site-logo .logo-text { font-size: 22px; font-weight: bold; color: var(--scarlet); font-family: sans-serif; }
+    .site-logo .logo-sub { font-size: 11px; color: var(--gray); font-family: sans-serif; letter-spacing: 1px; text-transform: uppercase; }
+    .header-search { display: flex; gap: 8px; }
+    .header-search input { padding: 8px 12px; border: 1px solid var(--gray-mid); border-radius: 4px; width: 220px; font-size: 14px; }
+    .header-search button { background: var(--scarlet); color: var(--white); border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+    .header-search button:hover { background: var(--scarlet-dark); }
+
+    /* Navigation */
+    .main-nav { background: var(--gray); }
+    .main-nav .inner { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; align-items: stretch; }
+    .main-nav a { color: var(--white); display: block; padding: 12px 16px; font-size: 14px; font-family: sans-serif; white-space: nowrap; }
+    .main-nav a:hover { background: var(--scarlet); text-decoration: none; }
+    .main-nav a.active { background: var(--scarlet); }
+
+    /* Flash */
+    .flash-container { max-width: 1200px; margin: 15px auto; padding: 0 20px; }
+    .flash { padding: 12px 16px; border-radius: 4px; margin-bottom: 8px; font-family: sans-serif; font-size: 14px; }
+    .flash-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .flash-danger { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .flash-info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .flash-warning { background: #fff3cd; color: #856404; border: 1px solid #ffc107; }
+
+    /* Main */
+    main { max-width: 1200px; margin: 0 auto; padding: 30px 20px; min-height: 400px; }
+
+    /* Footer */
+    .site-footer { background: #1a1a1a; color: #ccc; font-family: sans-serif; padding: 40px 0 20px; margin-top: 60px; }
+    .site-footer .inner { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+    .footer-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 30px; margin-bottom: 30px; }
+    .footer-col h4 { color: var(--white); font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; border-bottom: 2px solid var(--scarlet); padding-bottom: 6px; }
+    .footer-col a { display: block; color: #aaa; font-size: 13px; margin-bottom: 6px; }
+    .footer-col a:hover { color: var(--white); text-decoration: none; }
+    .footer-bottom { border-top: 1px solid #333; padding-top: 20px; text-align: center; font-size: 12px; color: #888; }
+
+    /* Utilities */
+    .btn { display: inline-block; padding: 9px 18px; border-radius: 4px; font-size: 14px; cursor: pointer; border: none; font-family: sans-serif; text-align: center; }
+    .btn-primary { background: var(--scarlet); color: var(--white); }
+    .btn-primary:hover { background: var(--scarlet-dark); text-decoration: none; color: var(--white); }
+    .btn-outline { background: transparent; border: 2px solid var(--scarlet); color: var(--scarlet); }
+    .btn-outline:hover { background: var(--scarlet); color: var(--white); text-decoration: none; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-family: sans-serif; font-weight: bold; }
+    .badge-scarlet { background: var(--scarlet); color: var(--white); }
+    .badge-gray { background: var(--gray); color: var(--white); }
+    .badge-light { background: var(--gray-light); color: var(--text); border: 1px solid var(--gray-mid); }
+    .card { background: var(--white); border: 1px solid var(--gray-mid); border-radius: 6px; overflow: hidden; }
+    .card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+    .card-body { padding: 16px; }
+    .card-title { font-size: 16px; font-weight: bold; margin-bottom: 8px; line-height: 1.3; }
+    .card-text { font-size: 14px; color: var(--gray); line-height: 1.5; }
+    .card-meta { font-size: 12px; color: #999; margin-top: 8px; font-family: sans-serif; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+    @media (max-width: 768px) { .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; } }
+    @media (max-width: 900px) { .grid-4 { grid-template-columns: repeat(2, 1fr); } }
+    .section-title { font-size: 24px; color: var(--scarlet); border-bottom: 3px solid var(--scarlet); padding-bottom: 8px; margin-bottom: 20px; }
+    .section-subtitle { font-size: 14px; color: var(--gray); margin-bottom: 20px; font-family: sans-serif; }
+    .breadcrumb { font-size: 13px; color: var(--gray); margin-bottom: 20px; font-family: sans-serif; }
+    .breadcrumb a { color: var(--scarlet); }
+    .breadcrumb span { margin: 0 6px; }
+    .page-header { background: var(--scarlet); color: var(--white); padding: 30px 0; margin: -30px -20px 30px; }
+    .page-header .inner { max-width: 1200px; margin: 0 auto; padding: 0 40px; }
+    .page-header h1 { font-size: 32px; margin-bottom: 6px; }
+    .page-header p { font-size: 15px; opacity: 0.9; font-family: sans-serif; }
+    .sidebar-layout { display: grid; grid-template-columns: 260px 1fr; gap: 30px; }
+    @media (max-width: 768px) { .sidebar-layout { grid-template-columns: 1fr; } }
+    .sidebar { background: var(--gray-light); border-radius: 6px; padding: 20px; }
+    .sidebar h3 { font-size: 14px; text-transform: uppercase; letter-spacing: 1px; color: var(--scarlet); border-bottom: 2px solid var(--scarlet); padding-bottom: 6px; margin-bottom: 12px; font-family: sans-serif; }
+    .filter-form select, .filter-form input[type=text] { width: 100%; padding: 8px; border: 1px solid var(--gray-mid); border-radius: 4px; font-size: 14px; margin-bottom: 10px; }
+    .filter-form button { width: 100%; }
+    .filter-form label { font-size: 13px; color: var(--gray); display: block; margin-bottom: 4px; font-family: sans-serif; }
+    .pagination { display: flex; gap: 6px; align-items: center; justify-content: center; margin-top: 30px; font-family: sans-serif; }
+    .pagination a, .pagination span { display: inline-block; padding: 6px 12px; border: 1px solid var(--gray-mid); border-radius: 4px; font-size: 14px; }
+    .pagination a { color: var(--scarlet); }
+    .pagination a:hover { background: var(--gray-light); text-decoration: none; }
+    .pagination .current { background: var(--scarlet); color: var(--white); border-color: var(--scarlet); }
+    .form-group { margin-bottom: 18px; }
+    .form-group label { display: block; font-size: 14px; font-weight: bold; margin-bottom: 6px; font-family: sans-serif; color: var(--text); }
+    .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--gray-mid); border-radius: 4px; font-size: 15px; }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus { outline: none; border-color: var(--scarlet); box-shadow: 0 0 0 2px rgba(187,0,0,0.15); }
+    .form-errors { color: #c0392b; font-size: 13px; margin-top: 4px; font-family: sans-serif; }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    table th { background: var(--scarlet); color: var(--white); padding: 10px 12px; text-align: left; font-family: sans-serif; }
+    table td { padding: 10px 12px; border-bottom: 1px solid var(--gray-mid); }
+    table tr:nth-child(even) { background: var(--gray-light); }
+    .text-scarlet { color: var(--scarlet); }
+    .text-gray { color: var(--gray); }
+    .text-center { text-align: center; }
+    .mt-1 { margin-top: 8px; } .mt-2 { margin-top: 16px; } .mt-3 { margin-top: 24px; } .mt-4 { margin-top: 32px; }
+    .mb-1 { margin-bottom: 8px; } .mb-2 { margin-bottom: 16px; } .mb-3 { margin-bottom: 24px; }
+    .p-3 { padding: 20px; }
+    .hero { background: linear-gradient(135deg, var(--scarlet) 0%, var(--scarlet-dark) 100%); color: var(--white); padding: 60px 20px; text-align: center; margin: -30px -20px 40px; }
+    .hero h1 { font-size: 42px; margin-bottom: 12px; }
+    .hero p { font-size: 18px; opacity: 0.9; font-family: sans-serif; max-width: 700px; margin: 0 auto 24px; }
+    .stats-bar { background: var(--gray-light); border-top: 3px solid var(--scarlet); padding: 20px 0; }
+    .stats-bar .inner { max-width: 1200px; margin: 0 auto; padding: 0 20px; display: flex; justify-content: space-around; flex-wrap: wrap; gap: 20px; }
+    .stat-item { text-align: center; font-family: sans-serif; }
+    .stat-item .num { font-size: 32px; font-weight: bold; color: var(--scarlet); display: block; }
+    .stat-item .label { font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--gray); }
+    .tag { display: inline-block; background: var(--gray-light); border: 1px solid var(--gray-mid); padding: 3px 8px; border-radius: 12px; font-size: 12px; margin: 2px; color: var(--gray); font-family: sans-serif; }
+    .alert { padding: 14px 18px; border-radius: 6px; margin-bottom: 20px; font-family: sans-serif; font-size: 14px; }
+    .alert-info { background: #e8f4f8; color: #1a6080; border-left: 4px solid var(--scarlet); }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--gray); font-family: sans-serif; }
+    .empty-state .icon { font-size: 48px; margin-bottom: 12px; }
+    .empty-state h3 { font-size: 20px; margin-bottom: 8px; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="top-bar">
+    <div class="inner">
+      <span>The Ohio State University — Columbus, Ohio 43210</span>
+      <div>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}">My Account</a>
+          <form method="post" action="{{ url_for('logout') }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" style="background:none;border:none;color:#fff;cursor:pointer;font-size:12px;padding:0;margin-left:15px;">Sign Out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login') }}">Sign In</a>
+          <a href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+        <a href="{{ url_for('search') }}">Search</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="inner">
+      <a href="{{ url_for('index') }}" class="site-logo" style="text-decoration:none">
+        <div>
+          <div class="logo-text">&#9400; THE OHIO STATE UNIVERSITY</div>
+          <div class="logo-sub">Columbus &bull; Lima &bull; Mansfield &bull; Marion &bull; Newark &bull; Wooster</div>
+        </div>
+      </a>
+      <form class="header-search" action="{{ url_for('search') }}" method="get">
+        <input type="text" name="q" placeholder="Search Ohio State..." aria-label="Search">
+        <button type="submit">Search</button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Main navigation -->
+  <nav class="main-nav">
+    <div class="inner">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('academics') }}">Academics</a>
+      <a href="{{ url_for('programs') }}">Programs</a>
+      <a href="{{ url_for('research') }}">Research</a>
+      <a href="{{ url_for('departments') }}">Departments</a>
+      <a href="{{ url_for('faculty') }}">Faculty</a>
+      <a href="{{ url_for('news') }}">News</a>
+      <a href="{{ url_for('events') }}">Events</a>
+      <a href="{{ url_for('athletics') }}">Athletics</a>
+      <a href="{{ url_for('admissions') }}">Admissions</a>
+      <a href="{{ url_for('about') }}">About</a>
+    </div>
+  </nav>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-container">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Main content -->
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="inner">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h4>Academics</h4>
+          <a href="{{ url_for('academics') }}">Colleges</a>
+          <a href="{{ url_for('programs') }}">Degree Programs</a>
+          <a href="{{ url_for('departments') }}">Departments</a>
+          <a href="{{ url_for('faculty') }}">Faculty</a>
+        </div>
+        <div class="footer-col">
+          <h4>Research</h4>
+          <a href="{{ url_for('research') }}">Research Centers</a>
+          <a href="{{ url_for('news') }}?category=Research">Research News</a>
+        </div>
+        <div class="footer-col">
+          <h4>Campus Life</h4>
+          <a href="{{ url_for('news') }}">News</a>
+          <a href="{{ url_for('events') }}">Events</a>
+          <a href="{{ url_for('athletics') }}">Athletics</a>
+        </div>
+        <div class="footer-col">
+          <h4>Admissions</h4>
+          <a href="{{ url_for('admissions') }}">Apply</a>
+          <a href="{{ url_for('admissions') }}#undergraduate">Undergraduate</a>
+          <a href="{{ url_for('admissions') }}#graduate">Graduate</a>
+        </div>
+        <div class="footer-col">
+          <h4>About OSU</h4>
+          <a href="{{ url_for('about') }}">About</a>
+          <a href="{{ url_for('about') }}#leadership">Leadership</a>
+          <a href="{{ url_for('about') }}#history">History</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; {{ now.year }} The Ohio State University. All rights reserved. Mirror site for research purposes.</p>
+        <p style="margin-top:6px">281 W. Lane Ave., Columbus, Ohio 43210 &bull; (614) 292-6446</p>
+      </div>
+    </div>
+  </footer>
+
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}Admissions — Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>Admissions</h1>
+    <p>Join a community of scholars, innovators, and leaders at The Ohio State University.</p>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="grid-3" style="margin-bottom:40px">
+  <div style="text-align:center;background:var(--gray-light);padding:24px;border-radius:8px;border-top:4px solid var(--scarlet)">
+    <div style="font-size:36px;font-weight:bold;color:var(--scarlet)">{{ undergrad_programs }}</div>
+    <div style="font-family:sans-serif;font-size:14px;color:var(--gray);margin-top:4px">Undergraduate Programs</div>
+  </div>
+  <div style="text-align:center;background:var(--gray-light);padding:24px;border-radius:8px;border-top:4px solid var(--scarlet)">
+    <div style="font-size:36px;font-weight:bold;color:var(--scarlet)">{{ grad_programs }}</div>
+    <div style="font-family:sans-serif;font-size:14px;color:var(--gray);margin-top:4px">Graduate Programs</div>
+  </div>
+  <div style="text-align:center;background:var(--gray-light);padding:24px;border-radius:8px;border-top:4px solid var(--scarlet)">
+    <div style="font-size:36px;font-weight:bold;color:var(--scarlet)">{{ online_programs }}</div>
+    <div style="font-family:sans-serif;font-size:14px;color:var(--gray);margin-top:4px">Online Programs</div>
+  </div>
+</div>
+
+<!-- Undergraduate -->
+<div id="undergraduate" style="margin-bottom:50px">
+  <h2 class="section-title">Undergraduate Admissions</h2>
+  <div class="grid-2">
+    <div>
+      <p style="line-height:1.8;font-size:16px;margin-bottom:16px">Ohio State welcomes applications from students across Ohio, the nation, and the world. Our comprehensive admissions process evaluates academic achievement, personal character, and potential for success.</p>
+      <h3 style="font-size:18px;color:var(--scarlet);margin-bottom:12px">Application Requirements</h3>
+      <ul style="list-style:disc;margin-left:20px;font-size:15px;line-height:2">
+        <li>Completed online application</li>
+        <li>Official high school transcripts</li>
+        <li>ACT or SAT scores (optional for 2024-2025)</li>
+        <li>Letters of recommendation</li>
+        <li>Personal essay</li>
+        <li>$60 application fee</li>
+      </ul>
+      <div style="margin-top:20px">
+        <a href="{{ url_for('programs') }}?degree=BA" class="btn btn-primary" style="margin-right:8px">BA Programs</a>
+        <a href="{{ url_for('programs') }}?degree=BS" class="btn btn-outline">BS Programs</a>
+      </div>
+    </div>
+    <div style="background:var(--gray-light);padding:24px;border-radius:8px">
+      <h3 style="font-size:18px;color:var(--scarlet);margin-bottom:16px;font-family:sans-serif">Key Dates</h3>
+      <table style="font-size:14px">
+        <tr><td style="padding:8px 0;border-bottom:1px solid var(--gray-mid)"><strong>Early Action Deadline</strong></td><td style="padding:8px 0 8px 16px;border-bottom:1px solid var(--gray-mid)">November 1</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid var(--gray-mid)"><strong>Regular Decision Deadline</strong></td><td style="padding:8px 0 8px 16px;border-bottom:1px solid var(--gray-mid)">February 1</td></tr>
+        <tr><td style="padding:8px 0;border-bottom:1px solid var(--gray-mid)"><strong>Notification Date</strong></td><td style="padding:8px 0 8px 16px;border-bottom:1px solid var(--gray-mid)">March – April</td></tr>
+        <tr><td style="padding:8px 0"><strong>Enrollment Deposit Due</strong></td><td style="padding:8px 0 8px 16px">May 1</td></tr>
+      </table>
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--gray-mid)">
+        <div style="font-size:13px;color:var(--gray)">Middle 50% GPA: 3.6–4.0</div>
+        <div style="font-size:13px;color:var(--gray)">Middle 50% ACT: 27–33</div>
+        <div style="font-size:13px;color:var(--gray)">Middle 50% SAT: 1270–1490</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Graduate -->
+<div id="graduate" style="margin-bottom:50px">
+  <h2 class="section-title">Graduate Admissions</h2>
+  <div class="grid-2">
+    <div>
+      <p style="line-height:1.8;font-size:16px;margin-bottom:16px">Ohio State's Graduate School offers master's, doctoral, and professional degree programs in virtually every field. Applications are reviewed by individual programs.</p>
+      <h3 style="font-size:18px;color:var(--scarlet);margin-bottom:12px">General Requirements</h3>
+      <ul style="list-style:disc;margin-left:20px;font-size:15px;line-height:2">
+        <li>Bachelor's degree from an accredited institution</li>
+        <li>Minimum undergraduate GPA of 3.0</li>
+        <li>Official transcripts from all institutions</li>
+        <li>Statement of purpose</li>
+        <li>Letters of recommendation (typically 3)</li>
+        <li>GRE scores (program-specific)</li>
+        <li>English proficiency for international applicants</li>
+      </ul>
+      <div style="margin-top:20px">
+        <a href="{{ url_for('programs') }}?degree=PhD" class="btn btn-primary" style="margin-right:8px">PhD Programs</a>
+        <a href="{{ url_for('programs') }}?degree=MS" class="btn btn-outline">MS Programs</a>
+      </div>
+    </div>
+    <div style="background:var(--gray-light);padding:24px;border-radius:8px">
+      <h3 style="font-size:18px;color:var(--scarlet);margin-bottom:16px;font-family:sans-serif">Professional Programs</h3>
+      <div style="font-size:14px;line-height:1.8">
+        <div style="padding:6px 0;border-bottom:1px solid var(--gray-mid)"><a href="{{ url_for('programs') }}?degree=MBA">MBA — Fisher College of Business</a></div>
+        <div style="padding:6px 0;border-bottom:1px solid var(--gray-mid)"><a href="{{ url_for('programs') }}?degree=JD">JD — Moritz College of Law</a></div>
+        <div style="padding:6px 0;border-bottom:1px solid var(--gray-mid)"><a href="{{ url_for('programs') }}?degree=MD">MD — College of Medicine</a></div>
+        <div style="padding:6px 0;border-bottom:1px solid var(--gray-mid)"><a href="{{ url_for('programs') }}?degree=PharmD">PharmD — College of Pharmacy</a></div>
+        <div style="padding:6px 0;border-bottom:1px solid var(--gray-mid)"><a href="{{ url_for('programs') }}?degree=DVM">DVM — College of Veterinary Medicine</a></div>
+        <div style="padding:6px 0"><a href="{{ url_for('programs') }}?degree=OD">OD — College of Optometry</a></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Financial Aid -->
+<div style="background:var(--scarlet);color:#fff;padding:40px;border-radius:8px;text-align:center">
+  <h2 style="font-size:28px;margin-bottom:12px">Financial Aid &amp; Scholarships</h2>
+  <p style="font-size:16px;opacity:0.9;max-width:600px;margin:0 auto 20px;font-family:sans-serif">Ohio State is committed to making a world-class education accessible. Over 60% of students receive some form of financial assistance.</p>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+    <a href="{{ url_for('search') }}?q=scholarship" class="btn" style="background:#fff;color:var(--scarlet)">Explore Scholarships</a>
+    <a href="{{ url_for('register') }}" class="btn btn-outline" style="border-color:#fff;color:#fff">Create Account</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}The Ohio State University{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>The Ohio State University</h1>
+  <p>A top-20 public research university and home to over 60,000 students and world-class faculty. Go Bucks!</p>
+  <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+    <a href="{{ url_for('admissions') }}" class="btn btn-outline" style="border-color:#fff;color:#fff">Apply Now</a>
+    <a href="{{ url_for('programs') }}" class="btn btn-outline" style="border-color:#fff;color:#fff">Explore Programs</a>
+    <a href="{{ url_for('research') }}" class="btn btn-outline" style="border-color:#fff;color:#fff">Our Research</a>
+  </div>
+</div>
+
+<!-- Stats bar -->
+<div class="stats-bar" style="margin:-30px -20px 40px">
+  <div class="inner">
+    <div class="stat-item"><span class="num">{{ stats.undergrad_count | default(46820) | int }}</span><span class="label">Undergraduates</span></div>
+    <div class="stat-item"><span class="num">{{ stats.grad_count | default(14000) | int }}</span><span class="label">Graduate Students</span></div>
+    <div class="stat-item"><span class="num">{{ stats.degree_programs | default(500) }}</span><span class="label">Degree Programs</span></div>
+    <div class="stat-item"><span class="num">{{ stats.faculty_count | default(7000) | int }}</span><span class="label">Faculty</span></div>
+    <div class="stat-item"><span class="num">#{{ stats.fulbright_rank | default(1) }}</span><span class="label">Fulbright Scholars</span></div>
+    <div class="stat-item"><span class="num">${{ stats.research_expenditure | default(1.3) }}B</span><span class="label">Research Expenditure</span></div>
+    <div class="stat-item"><span class="num">{{ stats.campuses | default(6) }}</span><span class="label">Campuses</span></div>
+  </div>
+</div>
+
+<!-- Featured News -->
+{% if featured_news %}
+<section>
+  <h2 class="section-title">Latest News</h2>
+  <div class="grid-3">
+    {% for article in featured_news[:3] %}
+    <div class="card">
+      <div class="card-body">
+        <div class="card-meta" style="margin-bottom:8px">
+          <span class="badge badge-scarlet">{{ article.category }}</span>
+          <span style="margin-left:8px">{{ article.published_date.strftime('%B %d, %Y') }}</span>
+        </div>
+        <div class="card-title"><a href="{{ url_for('news_article', slug=article.slug) }}">{{ article.title }}</a></div>
+        <p class="card-text">{{ article.summary[:150] }}{% if article.summary|length > 150 %}...{% endif %}</p>
+        <div style="margin-top:12px"><a href="{{ url_for('news_article', slug=article.slug) }}" class="btn btn-sm btn-outline">Read More</a></div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="text-align:right;margin-top:16px"><a href="{{ url_for('news') }}" class="btn btn-outline btn-sm">All News &rarr;</a></div>
+</section>
+{% endif %}
+
+<!-- Upcoming Events -->
+{% if upcoming_events %}
+<section style="margin-top:50px">
+  <h2 class="section-title">Upcoming Events</h2>
+  <div class="grid-2">
+    {% for event in upcoming_events %}
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;gap:12px;align-items:flex-start">
+          <div style="background:var(--scarlet);color:#fff;padding:8px 12px;border-radius:4px;text-align:center;min-width:52px;font-family:sans-serif">
+            <div style="font-size:11px;text-transform:uppercase">{{ event.start_datetime.strftime('%b') }}</div>
+            <div style="font-size:22px;font-weight:bold;line-height:1">{{ event.start_datetime.strftime('%d') }}</div>
+          </div>
+          <div>
+            <div class="card-title"><a href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.title }}</a></div>
+            <div class="card-meta">{{ event.start_datetime.strftime('%I:%M %p') }} &bull; {{ event.location }}</div>
+            <div style="margin-top:6px"><span class="badge badge-light">{{ event.category }}</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="text-align:right;margin-top:16px"><a href="{{ url_for('events') }}" class="btn btn-outline btn-sm">All Events &rarr;</a></div>
+</section>
+{% endif %}
+
+<!-- Research Highlights -->
+{% if recent_research %}
+<section style="margin-top:50px">
+  <h2 class="section-title">Research Excellence</h2>
+  <div class="grid-4">
+    {% for center in recent_research %}
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title" style="font-size:14px"><a href="{{ url_for('research_center', slug=center.slug) }}">{{ center.name }}</a></div>
+        <p class="card-text" style="font-size:13px;margin-top:6px">{{ center.description[:100] }}{% if center.description|length > 100 %}...{% endif %}</p>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="text-align:right;margin-top:16px"><a href="{{ url_for('research') }}" class="btn btn-outline btn-sm">All Research Centers &rarr;</a></div>
+</section>
+{% endif %}
+
+<!-- Quick Links -->
+<section style="margin-top:50px;background:var(--gray-light);padding:30px;border-radius:8px;margin-left:-20px;margin-right:-20px">
+  <h2 class="section-title" style="padding-left:20px">Explore Ohio State</h2>
+  <div class="grid-4" style="padding:0 20px">
+    <a href="{{ url_for('academics') }}" style="text-decoration:none">
+      <div style="text-align:center;padding:20px;background:#fff;border-radius:6px;border:1px solid var(--gray-mid)">
+        <div style="font-size:32px">&#127979;</div>
+        <div style="font-weight:bold;color:var(--scarlet);margin-top:8px;font-family:sans-serif">Academics</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px">{{ colleges|length }} colleges &amp; schools</div>
+      </div>
+    </a>
+    <a href="{{ url_for('research') }}" style="text-decoration:none">
+      <div style="text-align:center;padding:20px;background:#fff;border-radius:6px;border:1px solid var(--gray-mid)">
+        <div style="font-size:32px">&#128300;</div>
+        <div style="font-weight:bold;color:var(--scarlet);margin-top:8px;font-family:sans-serif">Research</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px">World-class research centers</div>
+      </div>
+    </a>
+    <a href="{{ url_for('athletics') }}" style="text-decoration:none">
+      <div style="text-align:center;padding:20px;background:#fff;border-radius:6px;border:1px solid var(--gray-mid)">
+        <div style="font-size:32px">&#127944;</div>
+        <div style="font-weight:bold;color:var(--scarlet);margin-top:8px;font-family:sans-serif">Athletics</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px">{{ stats.varsity_sports }} varsity sports</div>
+      </div>
+    </a>
+    <a href="{{ url_for('admissions') }}" style="text-decoration:none">
+      <div style="text-align:center;padding:20px;background:#fff;border-radius:6px;border:1px solid var(--gray-mid)">
+        <div style="font-size:32px">&#127891;</div>
+        <div style="font-weight:bold;color:var(--scarlet);margin-top:8px;font-family:sans-serif">Admissions</div>
+        <div style="font-size:12px;color:var(--gray);margin-top:4px">Apply for admission</div>
+      </div>
+    </a>
+  </div>
+</section>
+{% endblock %}
