@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+{% block title %}craigslist: SF bay area jobs, apartments, for sale, services, community{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+{% set ns = namespace(community=None, services=None, housing=None, for_sale=None, jobs=None) %}
+{% for group in category_groups() %}
+  {% if group.slug == "community" %}{% set ns.community = group %}{% endif %}
+  {% if group.slug == "services" %}{% set ns.services = group %}{% endif %}
+  {% if group.slug == "housing" %}{% set ns.housing = group %}{% endif %}
+  {% if group.slug == "for_sale" %}{% set ns.for_sale = group %}{% endif %}
+  {% if group.slug == "jobs" %}{% set ns.jobs = group %}{% endif %}
+{% endfor %}
+
+{% macro cat_list(group) -%}
+  <ul>
+  {% for cat in group.categories %}
+    <li><a href="{{ url_for('category_search', category_slug=cat.slug) }}">{{ cat.name }}</a></li>
+  {% endfor %}
+  </ul>
+{%- endmacro %}
+
+<section class="homepage-content">
+  <nav id="topban" class="regular">
+    <div class="regular-area">
+      <span class="pin-icon" aria-hidden="true"></span>
+      <h2 class="area">SF bay area</h2>
+      <ul class="sublinks">
+        <li><a href="{{ url_for('search', area='san francisco') }}" title="san francisco">sfc</a></li>
+        <li><a href="{{ url_for('search', area='south bay') }}" title="south bay">sby</a></li>
+        <li><a href="{{ url_for('search', area='east bay') }}" title="east bay">eby</a></li>
+        <li><a href="{{ url_for('search', area='peninsula') }}" title="peninsula">pen</a></li>
+        <li><a href="{{ url_for('search', area='north bay') }}" title="north bay">nby</a></li>
+        <li><a href="{{ url_for('search', area='santa cruz') }}" title="santa cruz">scz</a></li>
+      </ul>
+    </div>
+    <ul class="home-actions">
+      <li><a href="{{ url_for('saved') }}"><span class="action-symbol star" aria-hidden="true"></span><span>faves</span></a></li>
+      <li><a href="{{ url_for('post_listing') }}"><span class="action-symbol post-icon" aria-hidden="true"></span><span>post</span></a></li>
+      <li><a href="{{ url_for('login') if not current_user.is_authenticated else url_for('account') }}"><span class="action-symbol acct-icon" aria-hidden="true"></span><span>acct</span></a></li>
+    </ul>
+  </nav>
+
+  <aside id="leftbar" class="leftbar">
+    <h1 id="logo"><span class="peace-mark" aria-hidden="true">&#9774;</span><span>craigslist</span></h1>
+    <ul id="postlks">
+      <li><a href="{{ url_for('post_listing') }}"><span aria-hidden="true">&#9998;</span> post an ad</a></li>
+    </ul>
+
+    <form class="home-search" method="get" action="{{ url_for('search') }}">
+      <input name="q" placeholder="search craigslist">
+      <select name="area">
+        <option value="">all SF bay area</option>
+        <option value="san francisco">san francisco</option>
+        <option value="east bay">east bay</option>
+        <option value="south bay">south bay</option>
+        <option value="peninsula">peninsula</option>
+        <option value="north bay">north bay</option>
+        <option value="santa cruz">santa cruz</option>
+      </select>
+      <button type="submit">search</button>
+    </form>
+
+    <div>
+      <h4 id="calban"><a href="{{ url_for('category_search', category_slug='events') }}">event calendar</a></h4>
+      <table class="cal">
+        <tr class="days"><th>S</th><th>M</th><th>T</th><th>W</th><th>T</th><th>F</th><th>S</th></tr>
+        <tr><td>10</td><td>11</td><td class="today"><a href="{{ url_for('category_search', category_slug='events') }}">12</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">13</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">14</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">15</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">16</a></td></tr>
+        <tr><td><a href="{{ url_for('category_search', category_slug='events') }}">17</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">18</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">19</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">20</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">21</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">22</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">23</a></td></tr>
+        <tr><td><a href="{{ url_for('category_search', category_slug='events') }}">24</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">25</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">26</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">27</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">28</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">29</a></td><td><a href="{{ url_for('category_search', category_slug='events') }}">30</a></td></tr>
+        <tr><td><a href="{{ url_for('category_search', category_slug='events') }}">31</a></td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td></tr>
+      </table>
+    </div>
+
+    <ul class="leftlinks">
+      <li><a href="{{ url_for('search') }}">help, faq, abuse, legal</a></li>
+      <li><a href="{{ url_for('search') }}">avoid scams &amp; fraud</a></li>
+      <li><a href="{{ url_for('search') }}">personal safety tips</a></li>
+    </ul>
+    <ul class="leftlinks">
+      <li><a href="{{ url_for('search') }}">about craigslist</a></li>
+      <li><a href="{{ url_for('search') }}">best-of-craigslist</a></li>
+      <li><a href="{{ url_for('search') }}">craigslist is hiring</a></li>
+      <li><a href="{{ url_for('search') }}">what's new</a></li>
+      <li><a href="{{ url_for('search') }}">system status</a></li>
+    </ul>
+    <ul class="leftlinks charity-links">
+      <li><a href="{{ url_for('search') }}">craigslist charitable</a></li>
+      <li class="charity-icons" aria-hidden="true">🌎 🐮 🐷 🐔 🐟</li>
+      <li><a href="{{ url_for('search') }}">craig newmark<br>philanthropies</a></li>
+    </ul>
+  </aside>
+
+  <section id="center">
+    <div class="center-col community-stack">
+      <div class="col">
+        <h3 class="ban"><a href="{{ url_for('search') }}">community</a></h3>
+        <div class="cats two-col">
+          <ul>
+            <li><a href="{{ url_for('search', q='activities') }}">activities</a></li>
+            <li><a href="{{ url_for('category_search', category_slug='artists') }}">artists</a></li>
+            <li><a href="{{ url_for('search', q='childcare') }}">childcare</a></li>
+            <li><a href="{{ url_for('search', q='classes') }}">classes</a></li>
+            <li><a href="{{ url_for('category_search', category_slug='events') }}">events</a></li>
+            <li><a href="{{ url_for('search', q='general') }}">general</a></li>
+            <li><a href="{{ url_for('search', q='groups') }}">groups</a></li>
+            <li><a href="{{ url_for('search', q='local news') }}">local news</a></li>
+          </ul>
+          <ul>
+            <li><a href="{{ url_for('category_search', category_slug='lost-found') }}">lost+found</a></li>
+            <li><a href="{{ url_for('search', q='missed connections') }}">missed connections</a></li>
+            <li><a href="{{ url_for('search', q='musicians') }}">musicians</a></li>
+            <li><a href="{{ url_for('search', q='pets') }}">pets</a></li>
+            <li><a href="{{ url_for('search', q='politics') }}">politics</a></li>
+            <li><a href="{{ url_for('search', q='rants raves') }}">rants &amp; raves</a></li>
+            <li><a href="{{ url_for('search', q='rideshare') }}">rideshare</a></li>
+            <li><a href="{{ url_for('category_search', category_slug='volunteers') }}">volunteers</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col">
+        <h3 class="ban"><a href="{{ url_for('search') }}">services</a></h3>
+        <div class="cats two-col">
+          {{ cat_list(ns.services) }}
+          <ul>
+            <li><a href="{{ url_for('search', q='beauty') }}">beauty</a></li>
+            <li><a href="{{ url_for('search', q='cell mobile') }}">cell/mobile</a></li>
+            <li><a href="{{ url_for('search', q='cycle') }}">cycle</a></li>
+            <li><a href="{{ url_for('search', q='event') }}">event</a></li>
+            <li><a href="{{ url_for('search', q='farm garden') }}">farm+garden</a></li>
+            <li><a href="{{ url_for('search', q='financial') }}">financial</a></li>
+            <li><a href="{{ url_for('search', q='health well') }}">health/well</a></li>
+            <li><a href="{{ url_for('search', q='legal') }}">legal</a></li>
+            <li><a href="{{ url_for('search', q='pet') }}">pet</a></li>
+            <li><a href="{{ url_for('search', q='travel') }}">travel/vac</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col">
+        <h3 class="ban"><a href="{{ url_for('search') }}">discussion forums</a></h3>
+        <div class="cats three-col">
+          <ul>
+            <li><a href="{{ url_for('search', q='apple') }}">apple</a></li>
+            <li><a href="{{ url_for('search', q='arts') }}">arts</a></li>
+            <li><a href="{{ url_for('search', q='autos') }}">autos</a></li>
+            <li><a href="{{ url_for('search', q='bikes') }}">bikes</a></li>
+            <li><a href="{{ url_for('search', q='comp') }}">comp</a></li>
+            <li><a href="{{ url_for('search', q='diet') }}">diet</a></li>
+          </ul>
+          <ul>
+            <li><a href="{{ url_for('search', q='frugal') }}">frugal</a></li>
+            <li><a href="{{ url_for('search', q='gaming') }}">gaming</a></li>
+            <li><a href="{{ url_for('search', q='garden') }}">garden</a></li>
+            <li><a href="{{ url_for('search', q='help') }}">help</a></li>
+            <li><a href="{{ url_for('search', q='housing') }}">housing</a></li>
+            <li><a href="{{ url_for('search', q='jobs') }}">jobs</a></li>
+          </ul>
+          <ul>
+            <li><a href="{{ url_for('search', q='photo') }}">photo</a></li>
+            <li><a href="{{ url_for('search', q='politics') }}">politics</a></li>
+            <li><a href="{{ url_for('search', q='psych') }}">psych</a></li>
+            <li><a href="{{ url_for('search', q='science') }}">science</a></li>
+            <li><a href="{{ url_for('search', q='sports') }}">sports</a></li>
+            <li><a href="{{ url_for('search', q='super') }}">super</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="center-col market-stack">
+      <div class="col">
+        <h3 class="ban"><a href="{{ url_for('category_search', category_slug='apartments') }}">housing</a></h3>
+        {{ cat_list(ns.housing) }}
+        <ul class="extra-cats">
+          <li><a href="{{ url_for('search', q='housing wanted') }}">housing wanted</a></li>
+          <li><a href="{{ url_for('search', q='real estate') }}">real estate for sale</a></li>
+          <li><a href="{{ url_for('search', q='vacation') }}">vacation rentals</a></li>
+        </ul>
+      </div>
+      <div class="col wide-col">
+        <h3 class="ban"><a href="{{ url_for('search') }}">for sale</a></h3>
+        <div class="cats two-col">
+          <ul>
+            <li><a href="{{ url_for('search', q='antiques') }}">antiques</a></li>
+            <li><a href="{{ url_for('search', q='appliances') }}">appliances</a></li>
+            <li><a href="{{ url_for('search', q='arts crafts') }}">arts+crafts</a></li>
+            <li><a href="{{ url_for('search', q='atv utv sno') }}">atv/utv/sno</a></li>
+            <li><a href="{{ url_for('search', q='auto parts') }}">auto parts</a></li>
+            <li><a href="{{ url_for('search', q='aviation') }}">aviation</a></li>
+            <li><a href="{{ url_for('search', q='baby kid') }}">baby+kid</a></li>
+            <li><a href="{{ url_for('search', q='barter') }}">barter</a></li>
+            <li><a href="{{ url_for('search', q='beauty health') }}">beauty+hlth</a></li>
+            <li><a href="{{ url_for('search', q='bike parts') }}">bike parts</a></li>
+            <li><a href="{{ url_for('search', q='bikes') }}">bikes</a></li>
+            <li><a href="{{ url_for('search', q='boat parts') }}">boat parts</a></li>
+            <li><a href="{{ url_for('search', q='boats') }}">boats</a></li>
+            <li><a href="{{ url_for('search', q='books') }}">books</a></li>
+            <li><a href="{{ url_for('search', q='business') }}">business</a></li>
+            <li><a href="{{ url_for('search', q='cars trucks') }}">cars+trucks</a></li>
+            <li><a href="{{ url_for('search', q='cds dvd vhs') }}">cds/dvd/vhs</a></li>
+            <li><a href="{{ url_for('search', q='cell phones') }}">cell phones</a></li>
+            <li><a href="{{ url_for('search', q='clothes accessories') }}">clothes+acc</a></li>
+            <li><a href="{{ url_for('search', q='collectibles') }}">collectibles</a></li>
+          </ul>
+          <ul>
+            <li><a href="{{ url_for('search', q='farm garden') }}">farm+garden</a></li>
+            <li><a href="{{ url_for('search', q='free') }}">free</a></li>
+            <li><a href="{{ url_for('search', q='furniture') }}">furniture</a></li>
+            <li><a href="{{ url_for('search', q='garage sale') }}">garage sale</a></li>
+            <li><a href="{{ url_for('search', q='general') }}">general</a></li>
+            <li><a href="{{ url_for('search', q='heavy equipment') }}">heavy equip</a></li>
+            <li><a href="{{ url_for('search', q='household') }}">household</a></li>
+            <li><a href="{{ url_for('search', q='jewelry') }}">jewelry</a></li>
+            <li><a href="{{ url_for('search', q='materials') }}">materials</a></li>
+            <li><a href="{{ url_for('search', q='motorcycle parts') }}">motorcycle parts</a></li>
+            <li><a href="{{ url_for('search', q='motorcycles') }}">motorcycles</a></li>
+            <li><a href="{{ url_for('search', q='music instruments') }}">music instr</a></li>
+            <li><a href="{{ url_for('search', q='photo video') }}">photo+video</a></li>
+            <li><a href="{{ url_for('search', q='rvs camp') }}">rvs+camp</a></li>
+            <li><a href="{{ url_for('search', q='sporting goods') }}">sporting</a></li>
+            <li><a href="{{ url_for('search', q='tickets') }}">tickets</a></li>
+            <li><a href="{{ url_for('search', q='tools') }}">tools</a></li>
+            <li><a href="{{ url_for('search', q='toys games') }}">toys+games</a></li>
+            <li><a href="{{ url_for('search', q='trailers') }}">trailers</a></li>
+            <li><a href="{{ url_for('search', q='video gaming') }}">video gaming</a></li>
+            <li><a href="{{ url_for('search', q='wanted') }}">wanted</a></li>
+            <li><a href="{{ url_for('search', q='wheels tires') }}">wheels+tires</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="center-col jobs-stack">
+      <div class="col wide-col">
+        <h3 class="ban"><a href="{{ url_for('search') }}">jobs</a></h3>
+        <div class="cats two-col">
+          {{ cat_list(ns.jobs) }}
+          <ul>
+            <li><a href="{{ url_for('search', q='admin office') }}">admin / office</a></li>
+            <li><a href="{{ url_for('search', q='art media design') }}">art / media / design</a></li>
+            <li><a href="{{ url_for('search', q='business') }}">business / mgmt</a></li>
+            <li><a href="{{ url_for('search', q='government') }}">government</a></li>
+            <li><a href="{{ url_for('search', q='human resources') }}">human resources</a></li>
+            <li><a href="{{ url_for('search', q='legal paralegal') }}">legal / paralegal</a></li>
+            <li><a href="{{ url_for('search', q='manufacturing') }}">manufacturing</a></li>
+            <li><a href="{{ url_for('search', q='marketing pr ad') }}">marketing / pr / ad</a></li>
+            <li><a href="{{ url_for('search', q='medical health') }}">medical / health</a></li>
+            <li><a href="{{ url_for('search', q='nonprofit') }}">nonprofit sector</a></li>
+            <li><a href="{{ url_for('search', q='real estate') }}">real estate</a></li>
+            <li><a href="{{ url_for('search', q='retail') }}">retail / wholesale</a></li>
+            <li><a href="{{ url_for('search', q='sales biz dev') }}">sales / biz dev</a></li>
+            <li><a href="{{ url_for('search', q='salon spa fitness') }}">salon / spa / fitness</a></li>
+            <li><a href="{{ url_for('search', q='security') }}">security</a></li>
+            <li><a href="{{ url_for('search', q='skilled trade craft') }}">skilled trade / craft</a></li>
+            <li><a href="{{ url_for('search', q='software qa dba') }}">software / qa / dba</a></li>
+            <li><a href="{{ url_for('search', q='systems network') }}">systems / network</a></li>
+            <li><a href="{{ url_for('search', q='technical support') }}">technical support</a></li>
+            <li><a href="{{ url_for('search', q='transport') }}">transport</a></li>
+            <li><a href="{{ url_for('search', q='tv film video') }}">tv / film / video</a></li>
+            <li><a href="{{ url_for('search', q='web info design') }}">web / info design</a></li>
+            <li><a href="{{ url_for('search', q='writing editing') }}">writing / editing</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col">
+        <h3 class="ban"><a href="{{ url_for('search') }}">gigs</a></h3>
+        <div class="cats two-col gigs-list">
+          <ul>
+            <li><a href="{{ url_for('search', q='computer') }}">computer</a></li>
+            <li><a href="{{ url_for('search', q='creative') }}">creative</a></li>
+            <li><a href="{{ url_for('search', q='crew') }}">crew</a></li>
+            <li><a href="{{ url_for('search', q='domestic') }}">domestic</a></li>
+          </ul>
+          <ul>
+            <li><a href="{{ url_for('search', q='event') }}">event</a></li>
+            <li><a href="{{ url_for('search', q='labor') }}">labor</a></li>
+            <li><a href="{{ url_for('search', q='talent') }}">talent</a></li>
+            <li><a href="{{ url_for('search', q='writing') }}">writing</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="col resume-col">
+        <h3 class="ban"><a href="{{ url_for('search', q='resume') }}">resumes</a></h3>
+      </div>
+    </div>
+  </section>
+
+  <aside id="rightbar">
+    <div id="langlinks">
+      <select name="lang">
+        <option>english</option>
+        <option>espanol</option>
+        <option>francais</option>
+        <option>zhongwen</option>
+      </select>
+    </div>
+    <ul class="menu collapsible geoLinks">
+      <li>
+        <h5 class="ban">nearby cl</h5>
+        <ul>
+          <li><a href="{{ url_for('search', area='santa cruz') }}">santa cruz</a></li>
+          <li><a href="{{ url_for('search', area='north bay') }}">north bay</a></li>
+          <li><a href="{{ url_for('search', area='south bay') }}">south bay</a></li>
+          <li><a href="{{ url_for('search', area='east bay') }}">east bay</a></li>
+          <li><a href="{{ url_for('search', area='peninsula') }}">peninsula</a></li>
+          <li><a href="{{ url_for('search') }}">bakersfield</a></li>
+          <li><a href="{{ url_for('search') }}">chico</a></li>
+          <li><a href="{{ url_for('search') }}">fresno</a></li>
+          <li><a href="{{ url_for('search') }}">gold country</a></li>
+          <li><a href="{{ url_for('search') }}">hanford</a></li>
+          <li><a href="{{ url_for('search') }}">humboldt</a></li>
+          <li><a href="{{ url_for('search') }}">inland empire</a></li>
+          <li><a href="{{ url_for('search') }}">klamath falls</a></li>
+          <li><a href="{{ url_for('search') }}">las vegas</a></li>
+          <li><a href="{{ url_for('search') }}">los angeles</a></li>
+          <li><a href="{{ url_for('search') }}">medford</a></li>
+          <li><a href="{{ url_for('search') }}">mendocino co</a></li>
+          <li><a href="{{ url_for('search') }}">merced</a></li>
+          <li><a href="{{ url_for('search') }}">modesto</a></li>
+          <li><a href="{{ url_for('search') }}">monterey</a></li>
+          <li><a href="{{ url_for('search') }}">orange co</a></li>
+          <li><a href="{{ url_for('search') }}">palm springs</a></li>
+          <li><a href="{{ url_for('search') }}">redding</a></li>
+          <li><a href="{{ url_for('search') }}">reno</a></li>
+          <li><a href="{{ url_for('search') }}">roseburg</a></li>
+          <li><a href="{{ url_for('search') }}">sacramento</a></li>
+          <li><a href="{{ url_for('search') }}">san luis obispo</a></li>
+          <li><a href="{{ url_for('search') }}">santa barbara</a></li>
+          <li><a href="{{ url_for('search') }}">santa maria</a></li>
+          <li><a href="{{ url_for('search') }}">siskiyou co</a></li>
+          <li><a href="{{ url_for('search') }}">stockton</a></li>
+          <li><a href="{{ url_for('search') }}">susanville</a></li>
+          <li><a href="{{ url_for('search') }}">ventura</a></li>
+          <li><a href="{{ url_for('search') }}">visalia-tulare</a></li>
+          <li><a href="{{ url_for('search') }}">yuba-sutter</a></li>
+        </ul>
+      </li>
+    </ul>
+    <ul class="menu collapsible">
+      <li>
+        <h5 class="ban">us cities</h5>
+        <ul>
+          <li><a href="{{ url_for('search') }}">new york</a></li>
+          <li><a href="{{ url_for('search') }}">los angeles</a></li>
+          <li><a href="{{ url_for('search') }}">chicago</a></li>
+          <li><a href="{{ url_for('search') }}">seattle</a></li>
+          <li><a href="{{ url_for('search') }}">portland</a></li>
+        </ul>
+      </li>
+    </ul>
+    <ul class="menu quick-world">
+      <li><a href="{{ url_for('search') }}">us states</a></li>
+      <li><a href="{{ url_for('search') }}">canada</a></li>
+      <li><a href="{{ url_for('search') }}">cl worldwide</a></li>
+    </ul>
+  </aside>
+</section>
+{% endblock %}

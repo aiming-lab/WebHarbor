@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block title %}{% if category %}{{ category.name }}{% else %}search{% endif %} - craigslist{% endblock %}
+{% block body_class %}search-page{% endblock %}
+{% block content %}
+{% set requested_view = request.args.get('view', 'gallery') %}
+{% set active_view = 'thumb' if requested_view == 'grid' else requested_view %}
+{% if active_view not in ['list', 'thumb', 'gallery', 'map'] %}{% set active_view = 'gallery' %}{% endif %}
+{% set is_housing = category and category.group_slug == 'housing' %}
+{% set is_for_sale = category and category.group_slug == 'for_sale' %}
+{% set is_bikes = category and category.slug == 'bikes' %}
+{% set purveyor_label = 'dealer' if is_for_sale else 'broker' %}
+{% if is_housing %}
+  {% set quick_filters = ['price', 'beds', 'baths', 'type', 'furnished'] %}
+{% elif is_bikes %}
+  {% set quick_filters = ['price', 'sold by', 'type', 'electric assist', 'condition'] %}
+{% elif is_for_sale %}
+  {% set quick_filters = ['price', 'sold by', 'type', 'condition'] %}
+{% else %}
+  {% set quick_filters = ['price', 'type', 'posted today'] %}
+{% endif %}
+{% macro view_url(view_mode) -%}
+  {% if category -%}
+    {{ url_for('category_search', category_slug=category.slug, q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=view_mode) }}
+  {%- else -%}
+    {{ url_for('search', q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=view_mode) }}
+  {%- endif %}
+{%- endmacro %}
+<div class="search-shell">
+  <header class="cl-search-topbar">
+    <a class="cl-mini-logo cl-goto-home" href="{{ url_for('index') }}"><span class="icon icom-" aria-hidden="true"></span><span>CL</span></a>
+    <form class="top-selects" method="get" action="{% if category %}{{ url_for('category_search', category_slug=category.slug) }}{% else %}{{ url_for('search') }}{% endif %}">
+      <select name="region" aria-label="region">
+        <option>SF bay area</option>
+      </select>
+      <select name="area" aria-label="area">
+        <option value="">all SF bay area</option>
+        {% for area in areas %}
+        <option value="{{ area }}" {% if request.args.get('area') == area %}selected{% endif %}>{{ area }}</option>
+        {% endfor %}
+      </select>
+      <select name="section" aria-label="section">
+        {% for group in category_groups() %}
+        <option {% if category and category.group_slug == group.slug %}selected{% endif %}>{{ group.name }}</option>
+        {% endfor %}
+      </select>
+      <select name="category_label" aria-label="category">
+        <option>{% if category %}{{ category.name }}{% else %}all craigslist{% endif %}</option>
+      </select>
+      <input type="hidden" name="q" value="{{ request.args.get('q', '') }}">
+      <input type="hidden" name="min_price" value="{{ request.args.get('min_price', '') }}">
+      <input type="hidden" name="max_price" value="{{ request.args.get('max_price', '') }}">
+      <input type="hidden" name="view" value="{{ active_view }}">
+    </form>
+    <div class="top-actions">
+      <a class="top-icon top-post cl-goto-post" href="{{ url_for('post_listing') }}"><span class="icon icom-" aria-hidden="true"></span><small>post</small></a>
+      {% if current_user.is_authenticated %}
+      <a class="top-icon top-account cl-goto-account" href="{{ url_for('account') }}"><span class="icon icom-" aria-hidden="true"></span><small>acct</small></a>
+      {% else %}
+      <a class="top-icon top-account cl-goto-account" href="{{ url_for('login', next=request.full_path) }}"><span class="icon icom-" aria-hidden="true"></span><small>acct</small></a>
+      {% endif %}
+    </div>
+  </header>
+
+  <section class="search-command">
+    <div class="search-title-row">
+      <a class="search-back" href="{{ url_for('index') }}">{% if category %}{{ category.name }}{% else %}search craigslist{% endif %}</a>
+      <button class="filter-toggle" type="button" aria-label="toggle filters"><span class="icon icom-" aria-hidden="true"></span></button>
+    </div>
+    <form class="main-search-box" method="get" action="{% if category %}{{ url_for('category_search', category_slug=category.slug) }}{% else %}{{ url_for('search') }}{% endif %}">
+      <span class="search-glass icon icom-" aria-hidden="true"></span>
+      <input name="q" value="{{ request.args.get('q', '') }}" placeholder="search {% if category %}{{ category.name }}{% else %}craigslist{% endif %}">
+      <input type="hidden" name="area" value="{{ request.args.get('area', '') }}">
+      <input type="hidden" name="min_price" value="{{ request.args.get('min_price', '') }}">
+      <input type="hidden" name="max_price" value="{{ request.args.get('max_price', '') }}">
+      <input type="hidden" name="view" value="{{ active_view }}">
+      <button class="cl-icon-button cl-exec-search" type="submit" aria-label="search"><span class="icon icom-" aria-hidden="true"></span></button>
+      <button class="cl-icon-button cl-save-search" type="button" aria-label="save search"><span class="icon icom-" aria-hidden="true"></span></button>
+    </form>
+    <span class="result-count">{% if listings %}1 - {{ listings|length }} of {{ listings|length }}{% else %}0 results{% endif %}</span>
+  </section>
+
+  <section class="search-tools">
+    <div class="owner-tabs">
+      <button class="selected" type="button">all</button>
+      <button type="button">owner</button>
+      <button type="button">{{ purveyor_label }}</button>
+    </div>
+    <div class="view-buttons" aria-label="view mode">
+      <a class="cl-view-button cl-search-view-mode-list{% if active_view == 'list' %} selected{% endif %}" href="{{ view_url('list') }}" title="list view"><span class="icon icom-" aria-hidden="true"></span></a>
+      <a class="cl-view-button cl-search-view-mode-thumb{% if active_view == 'thumb' %} selected{% endif %}" href="{{ view_url('thumb') }}" title="thumb view"><span class="icon icom-" aria-hidden="true"></span></a>
+      <a class="cl-view-button cl-search-view-mode-gallery{% if active_view == 'gallery' %} selected{% endif %}" href="{{ view_url('gallery') }}" title="gallery view"><span class="icon icom-" aria-hidden="true"></span></a>
+      <a class="cl-view-button cl-search-view-mode-map{% if active_view == 'map' %} selected{% endif %}" href="{{ view_url('map') }}" title="map view"><span class="icon icom-" aria-hidden="true"></span></a>
+    </div>
+    <form class="sort-form" method="get" action="{% if category %}{{ url_for('category_search', category_slug=category.slug) }}{% else %}{{ url_for('search') }}{% endif %}">
+      <input type="hidden" name="q" value="{{ request.args.get('q', '') }}">
+      <input type="hidden" name="area" value="{{ request.args.get('area', '') }}">
+      <input type="hidden" name="min_price" value="{{ request.args.get('min_price', '') }}">
+      <input type="hidden" name="max_price" value="{{ request.args.get('max_price', '') }}">
+      <input type="hidden" name="view" value="{{ active_view }}">
+      <select name="sort" onchange="this.form.submit()">
+        {% for key, label in [("relevance", "relevance"), ("newest", "newest"), ("oldest", "oldest"), ("price_asc", "price low-high"), ("price_desc", "price high-low")] %}
+        <option value="{{ key }}" {% if request.args.get('sort', 'relevance') == key %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </form>
+    <div class="quick-filter-buttons">
+      {% for label in quick_filters %}
+      <button type="button">{{ label }}</button>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="modern-search-layout">
+    <aside class="filters modern-filters">
+      <form method="get" action="{% if category %}{{ url_for('category_search', category_slug=category.slug) }}{% else %}{{ url_for('search') }}{% endif %}">
+        <label class="check"><input type="checkbox" name="title_only" value="1"> search titles only</label>
+        <label class="check"><input type="checkbox" name="has_image" value="1" {% if request.args.get('has_image') == '1' %}checked{% endif %}> has image</label>
+        <label class="check"><input type="checkbox" name="posted_today" value="1"> posted today</label>
+        <label class="check"><input type="checkbox" name="hide_duplicates" value="1"> hide duplicates</label>
+
+        {% if is_housing %}
+        <label class="filter-heading">miles from location</label>
+        <div class="inline-inputs">
+          <input name="miles" placeholder="miles" inputmode="numeric">
+          <input name="zip" placeholder="from zip" inputmode="numeric">
+        </div>
+        <a class="use-map" href="{{ view_url('map') }}">use map...</a>
+        {% endif %}
+
+        <label class="filter-heading">price</label>
+        {% if is_for_sale %}
+        <label class="check"><input type="checkbox" name="free" value="1"> free</label>
+        {% endif %}
+        <div class="inline-inputs price-inputs">
+          <input name="min_price" value="{{ request.args.get('min_price', '') }}" placeholder="$ min" inputmode="numeric">
+          <span>-</span>
+          <input name="max_price" value="{{ request.args.get('max_price', '') }}" placeholder="$ max" inputmode="numeric">
+        </div>
+        {% if is_housing %}
+        <div class="price-histogram" aria-hidden="true">
+          <span style="height:44px"></span><span style="height:18px"></span><span style="height:21px"></span><span style="height:24px"></span><span style="height:12px"></span><span style="height:11px"></span><span style="height:9px"></span><span style="height:6px"></span>
+        </div>
+        {% endif %}
+
+        {% if is_housing %}
+        <label class="filter-heading">bedrooms</label>
+        <div class="inline-inputs"><input placeholder="min"><span>-</span><input placeholder="max"></div>
+        <label class="filter-heading">bathrooms</label>
+        <div class="inline-inputs"><input placeholder="min"><span>-</span><input placeholder="max"></div>
+        <label class="filter-heading">sq ft</label>
+        <div class="inline-inputs"><input placeholder="min"><span>-</span><input placeholder="max"></div>
+        <label class="check"><input type="checkbox" name="furnished"> furnished</label>
+        <label class="check"><input type="checkbox" name="no_smoking"> no smoking</label>
+        <label class="check"><input type="checkbox" name="wheelchair"> wheelchair accessible</label>
+        <label class="check"><input type="checkbox" name="air_conditioning"> air conditioning</label>
+        <label class="check"><input type="checkbox" name="ev_charging"> EV charging</label>
+        {% elif is_for_sale %}
+        <label class="filter-heading">make and model</label>
+        <input class="full-input" name="make_model" value="{{ request.args.get('make_model', '') }}">
+        {% if is_bikes %}
+        {% for label in ['bicycle type', 'wheel size', 'bicycle frame material', 'suspension', 'brake type', 'handlebar type', 'electric assist', 'condition'] %}
+        <button class="filter-disclosure" type="button"><span aria-hidden="true"></span>{{ label }}</button>
+        {% endfor %}
+        {% endif %}
+        <label class="check"><input type="checkbox" name="cryptocurrency_ok"> cryptocurrency ok</label>
+        <label class="check"><input type="checkbox" name="delivery_available"> delivery available</label>
+        <button class="filter-disclosure" type="button"><span aria-hidden="true"></span>language of posting</button>
+        {% endif %}
+
+        <input type="hidden" name="q" value="{{ request.args.get('q', '') }}">
+        <input type="hidden" name="area" value="{{ request.args.get('area', '') }}">
+        <input type="hidden" name="view" value="{{ active_view }}">
+        <button class="update-search" type="submit">update search</button>
+      </form>
+
+      {% if current_user.is_authenticated %}
+      <form class="save-search-form" method="post" action="{{ url_for('save_search') }}">
+        <input type="hidden" name="q" value="{{ request.args.get('q', '') }}">
+        <input type="hidden" name="area" value="{{ request.args.get('area', '') }}">
+        <input type="hidden" name="min_price" value="{{ request.args.get('min_price', '') }}">
+        <input type="hidden" name="max_price" value="{{ request.args.get('max_price', '') }}">
+        <input type="hidden" name="category_slug" value="{{ category.slug if category else '' }}">
+        <label>save this search as</label>
+        <input name="name" value="{{ query or (category.name if category else 'craigslist search') }}">
+        <button type="submit">save search</button>
+      </form>
+      {% endif %}
+    </aside>
+
+    <section class="results modern-results view-{{ active_view }}">
+      {% if active_view == 'map' %}
+      <div class="map-results-panel">
+        <div class="bay-map" aria-label="map of results">
+          <span class="map-water">bay</span>
+          <span class="map-label sf">SF</span>
+          <span class="map-label oakland">oakland</span>
+          <span class="map-label san-jose">san jose</span>
+          <span class="map-road road-1"></span>
+          <span class="map-road road-2"></span>
+          {% for listing in listings[:30] %}
+          {% set point = listing_map_point(listing) %}
+          <a class="map-pin" style="left: {{ point.x }}%; top: {{ point.y }}%;" href="#listing-{{ listing.id }}" title="{{ listing.title }}">
+            <span>{{ loop.index }}</span>
+          </a>
+          {% endfor %}
+        </div>
+        <ol class="map-result-index" aria-label="mapped results">
+          {% for listing in listings[:10] %}
+          <li><a href="#listing-{{ listing.id }}">{{ listing.title }}</a><span>{{ listing.neighborhood }}</span></li>
+          {% endfor %}
+        </ol>
+      </div>
+      {% endif %}
+
+      {% if listings %}
+        {% if active_view == 'list' %}
+        <div class="result-list list-results">
+          {% for listing in listings %}
+          {% set photos = listing_images(listing) %}
+          <div class="cl-search-result cl-search-view-mode-list" id="listing-{{ listing.id }}">
+            <div class="result-node">
+              <form method="post" action="{{ url_for('save_listing', listing_id=listing.id) }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <button class="cl-favorite-button icon-only" title="save listing" aria-label="save listing"><span class="icon icom-" aria-hidden="true"></span></button>
+              </form>
+              <a class="posting-title result-title" href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">{{ listing.title }}</a>
+              <span class="list-meta">
+                <span class="sep">•</span>
+                <span>{{ listing.neighborhood }}</span>
+                <span class="sep">•</span>
+                <span>{{ listing.age_label }}</span>
+                {% if listing.price is not none %}<span class="sep">•</span><span class="priceinfo">{{ listing.display_price }}</span>{% endif %}
+                {% if photos %}<span class="sep">•</span><span class="pic">pic</span>{% endif %}
+                <span class="sep">•</span>
+              </span>
+              <form class="banish-text-form" method="post" action="{{ url_for('hide_listing', listing_id=listing.id) }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <button class="cl-banish-button cl-banish-text-button" type="submit">hide</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% elif active_view == 'thumb' %}
+        <div class="result-list thumb-results">
+          {% for listing in listings %}
+          {% set photos = listing_images(listing) %}
+          <div class="cl-search-result cl-search-view-mode-thumb" id="listing-{{ listing.id }}">
+            <div class="thumb-node">
+              <a class="thumb-image" href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">
+                {% if photos %}
+                <img src="{{ url_for('static', filename=photos[0]) }}" alt="">
+                {% else %}
+                <span class="no-img">no image</span>
+                {% endif %}
+              </a>
+              <div class="thumb-content">
+                <div class="thumb-location">{{ listing.neighborhood }}</div>
+                <div class="thumb-title-line">
+                  <form method="post" action="{{ url_for('save_listing', listing_id=listing.id) }}">
+                    <input type="hidden" name="next" value="{{ request.full_path }}">
+                    <button class="cl-favorite-button icon-only" title="save listing" aria-label="save listing"><span class="icon icom-" aria-hidden="true"></span></button>
+                  </form>
+                  <a class="posting-title result-title" href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">{{ listing.title }}</a>
+                </div>
+                <div class="thumb-meta">
+                  <span>{{ listing.age_label }}</span>
+                  {% if listing.price is not none %}<span class="sep">•</span><span class="priceinfo">{{ listing.display_price }}</span>{% endif %}
+                  <form method="post" action="{{ url_for('hide_listing', listing_id=listing.id) }}">
+                    <input type="hidden" name="next" value="{{ request.full_path }}">
+                    <button class="cl-banish-button icon-only" type="submit" aria-label="hide listing"><span class="icon icom-" aria-hidden="true"></span></button>
+                  </form>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <ul class="result-list result-grid">
+          {% for listing in listings %}
+          {% set photos = listing_images(listing) %}
+          <li class="result-row result-card" id="listing-{{ listing.id }}" data-gallery>
+            <div class="card-photo">
+              <a class="card-image-link" href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">
+              {% if listing.price is not none %}<span class="card-price">{{ listing.display_price }}</span>{% endif %}
+              {% if photos %}
+              {% for photo in photos %}
+              <img class="gallery-frame{% if loop.first %} active{% endif %}" src="{{ url_for('static', filename=photo) }}" alt="">
+              {% endfor %}
+              {% else %}
+              <span class="no-img">no image</span>
+              {% endif %}
+              </a>
+              {% if photos|length > 1 %}
+              <button class="card-gallery-nav prev" type="button" data-gallery-prev aria-label="previous photo">&#8249;</button>
+              <button class="card-gallery-nav next" type="button" data-gallery-next aria-label="next photo">&#8250;</button>
+              {% endif %}
+            </div>
+            {% if photos|length > 1 %}
+            <div class="photo-dots" data-gallery-dots>
+              {% for photo in photos %}
+              <button class="{% if loop.first %}active{% endif %}" type="button" data-gallery-index="{{ loop.index0 }}" aria-label="show photo {{ loop.index }}"></button>
+              {% endfor %}
+            </div>
+            {% endif %}
+            <div class="card-body">
+              <a class="result-title" href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">{{ listing.title }}</a>
+              <div class="meta">
+                <span>{{ listing.age_label }}</span>
+                {% if listing.bedrooms %}<span>{{ listing.bedrooms }}br</span>{% endif %}
+                {% if listing.sqft %}<span>{{ listing.sqft }}ft<sup>2</sup></span>{% endif %}
+                <span>{{ listing.neighborhood }}</span>
+              </div>
+              <div class="card-actions">
+                <form method="post" action="{{ url_for('save_listing', listing_id=listing.id) }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button class="card-star icon-only" title="save listing" aria-label="save listing"><span class="icon icom-" aria-hidden="true"></span></button>
+                </form>
+                <form method="post" action="{{ url_for('hide_listing', listing_id=listing.id) }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button class="card-trash icon-only" aria-label="hide listing"><span class="icon icom-" aria-hidden="true"></span></button>
+                </form>
+              </div>
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      {% else %}
+      <div class="empty">no results matched this search</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}craigslist{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/icomoon.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</head>
+<body class="{% block body_class %}{% endblock %}">
+  <header class="global-header wide">
+    <a class="header-logo" href="{{ url_for('index') }}"><span aria-hidden="true">&#9774;</span><span>CL</span></a>
+    <nav class="breadcrumbs-container">
+      <ul class="breadcrumbs">
+        <li class="crumb area"><a href="{{ url_for('index') }}">SF bay area</a></li>
+      </ul>
+    </nav>
+    <form class="site-search" method="get" action="{{ url_for('search') }}">
+      <input name="q" value="{{ request.args.get('q', '') }}" placeholder="search craigslist">
+      <select name="area">
+        <option value="">all SF bay area</option>
+        {% for area in ["san francisco", "east bay", "south bay", "peninsula", "north bay", "santa cruz"] %}
+        <option value="{{ area }}" {% if request.args.get('area') == area %}selected{% endif %}>{{ area }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit">search</button>
+    </form>
+    <div class="userlinks header-actions">
+      <a class="header-action post-action" href="{{ url_for('post_listing') }}"><span aria-hidden="true"></span><small>post</small></a>
+      {% if current_user.is_authenticated %}
+        <a class="header-action account-action" href="{{ url_for('account') }}"><span aria-hidden="true"></span><small>acct</small></a>
+      {% else %}
+        <a class="header-action account-action" href="{{ url_for('login', next=request.full_path) }}"><span aria-hidden="true"></span><small>acct</small></a>
+      {% endif %}
+      <a class="header-action fave-action" href="{{ url_for('saved') }}"><span aria-hidden="true"></span><small>faves{% if saved_count() %} {{ saved_count() }}{% endif %}</small></a>
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-wrap">
+      {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <main class="page-container">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <nav class="footer-links" aria-label="footer">
+      <a href="{{ url_for('search') }}">help</a>
+      <a href="{{ url_for('search') }}">safety</a>
+      <a href="{{ url_for('search') }}">privacy</a>
+      <a href="{{ url_for('search') }}">terms</a>
+      <a href="{{ url_for('search') }}">about</a>
+      <a href="{{ url_for('search') }}">app</a>
+      <a href="{{ url_for('search') }}">sitemap</a>
+    </nav>
+    <div class="copyright">&copy; 2026 craigslist</div>
+  </footer>
+</body>
+</html>
