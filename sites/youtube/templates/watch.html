@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% block title %}{{ video.title }}{% endblock %}
+{% block content %}
+<div class="watch-layout">
+  <section class="watch-main">
+    <div class="player-frame">
+      <img src="{{ video.poster_path }}" alt="{{ video.title }} poster">
+      <div class="play-overlay">▶</div>
+    </div>
+    <h1 class="watch-title">{{ video.title }}</h1>
+    <div class="watch-actions">
+      <div>
+        <p class="video-subtitle">{{ video.view_label }} · {{ video.relative_date }}</p>
+        <p class="video-subtitle">Duration {{ video.duration }} · {{ '{:,}'.format(video.likes) }} likes · Comments {% if video.comments_enabled %}On{% else %}Off{% endif %}</p>
+      </div>
+      {% if current_user.is_authenticated %}
+      <div class="action-row">
+        <form action="{{ url_for('toggle_like', slug=video.slug) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+          <button class="ghost-btn" type="submit">{% if liked %}Unlike{% else %}Like{% endif %} · {{ video.likes }}</button>
+        </form>
+        <form action="{{ url_for('toggle_watch_later', slug=video.slug) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+          <button class="ghost-btn" type="submit">{% if in_watch_later %}Saved{% else %}Watch later{% endif %}</button>
+        </form>
+        <form action="{{ url_for('toggle_subscription', slug=video.channel.slug) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+          <button class="subscribe-btn" type="submit">{% if subscribed %}Subscribed{% else %}Subscribe{% endif %}</button>
+        </form>
+      </div>
+      {% endif %}
+    </div>
+    <div class="channel-panel">
+      <img class="channel-avatar large" src="{{ video.channel.avatar_path }}" alt="{{ video.channel.name }} avatar">
+      <div>
+        <a class="video-title" href="{{ url_for('channel', slug=video.channel.slug) }}">{{ video.channel.name }}</a>
+        <p class="video-subtitle">{{ '{:,}'.format(video.channel.subscriber_count) }} subscribers</p>
+      </div>
+    </div>
+    <section class="description-card">
+      <h2>About this video</h2>
+      <p>{{ video.description }}</p>
+      <div class="tag-row">
+        {% for tag in video.get_tags() %}<span class="chip small">{{ tag }}</span>{% endfor %}
+      </div>
+    </section>
+    <section class="comments-card">
+      <h2>Comments</h2>
+      <p class="video-subtitle">Comments {% if video.comments_enabled %}enabled{% else %}disabled{% endif %}</p>
+      {% if current_user.is_authenticated and video.comments_enabled %}
+      <form method="post" class="comment-form">
+        {{ form.hidden_tag() }}
+        {{ form.body(rows=4, placeholder='Add a public comment...') }}
+        <button type="submit">Comment</button>
+      </form>
+      {% endif %}
+      {% if not video.comments_enabled %}<p class="empty-state">Comments are disabled on this upload.</p>{% endif %}
+      {% for comment in comments %}
+        <article class="comment-row">
+          <div class="avatar-pill small">{{ comment.user.initials }}</div>
+          <div>
+            <strong>{{ comment.user.display_name }}</strong>
+            <p>{{ comment.body }}</p>
+            <span class="video-subtitle">{{ comment.like_count }} likes</span>
+          </div>
+        </article>
+      {% else %}
+        <p class="empty-state">No comments yet.</p>
+      {% endfor %}
+    </section>
+  </section>
+  <aside class="watch-sidebar">
+    {% for video in related %}
+      <article class="side-card">
+        <a href="{{ url_for('watch', slug=video.slug) }}"><img src="{{ video.thumbnail_path }}" alt="{{ video.title }} thumbnail"></a>
+        <div>
+          <a class="video-title" href="{{ url_for('watch', slug=video.slug) }}">{{ video.title }}</a>
+          <p class="video-subtitle">{{ video.channel.name }}</p>
+        </div>
+      </article>
+    {% endfor %}
+  </aside>
+</div>
+{% endblock %}

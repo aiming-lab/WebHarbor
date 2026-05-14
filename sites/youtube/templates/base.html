@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}YouTube{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/youtube-favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="yt-shell">
+  <header class="topbar">
+    <div class="brand-group">
+      <button class="icon-btn" aria-label="Open navigation">☰</button>
+      <a class="brand" href="{{ url_for('index') }}"><img class="brand-logo" src="{{ url_for('static', filename='icons/youtube-favicon.ico') }}" alt="YouTube icon"><span>YouTube</span></a>
+    </div>
+    <form class="searchbar" action="{{ url_for('results') }}" method="get">
+      <label class="sr-only" for="search_query">Search videos</label>
+      <input id="search_query" type="text" name="search_query" placeholder="Search" value="{{ request.args.get('search_query', '') }}">
+      <button class="search-submit" type="submit" aria-label="Search">
+        <span aria-hidden="true">🔍</span>
+      </button>
+    </form>
+    <div class="account-actions">
+      <button class="icon-btn create-btn" aria-label="Create">＋</button>
+      <button class="icon-btn" aria-label="Notifications">🔔</button>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}" class="avatar-pill">{{ current_user.initials }}</a>
+        <form action="{{ url_for('logout') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+          <button class="ghost-btn" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a class="ghost-btn sign-in-btn" href="{{ url_for('login') }}">Sign in</a>
+      {% endif %}
+    </div>
+  </header>
+  <div class="shell-body">
+    <aside class="sidebar">
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('trending') }}">Trending</a>
+      <a href="{{ url_for('subscriptions_feed') }}">Subscriptions</a>
+      <a href="{{ url_for('history_feed') }}">History</a>
+      <a href="{{ url_for('watch_later_feed') }}">Watch Later</a>
+      <a href="{{ url_for('liked_feed') }}">Liked videos</a>
+    </aside>
+    <main class="main-area">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

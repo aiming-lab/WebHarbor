@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}{{ channel.name }}{% endblock %}
+{% block content %}
+<section class="channel-hero" style="border-color: {{ channel.accent_color }};">
+  <img class="channel-banner" src="{{ channel.banner_path }}" alt="{{ channel.name }} banner">
+  <div class="channel-overview">
+    <img class="channel-avatar huge" src="{{ channel.avatar_path }}" alt="{{ channel.name }} avatar">
+    <div>
+      <h1>{{ channel.name }}{% if channel.verified %} ✓{% endif %}</h1>
+      <p class="video-subtitle">{{ '{:,}'.format(channel.subscriber_count) }} subscribers · {{ videos|length }} videos</p>
+      <p>{{ channel.description }}</p>
+    </div>
+  </div>
+</section>
+<h2 class="section-title">Uploads</h2>
+<section class="description-card">
+  <h3>Uploads summary</h3>
+  <ul class="evidence-list">
+    {% for video in videos %}
+      <li>{{ video.title }} — {{ video.view_label }} — Duration {{ video.duration }}</li>
+    {% endfor %}
+  </ul>
+</section>
+<section class="video-grid">
+  {% for video in videos %}
+    {% include '_video_card.html' %}
+  {% endfor %}
+</section>
+<h2 class="section-title">Playlists</h2>
+<section class="playlist-grid">
+  {% for playlist in playlists %}
+    <a class="playlist-card" href="{{ url_for('playlist', slug=playlist.slug) }}">
+      <strong>{{ playlist.title }}</strong>
+      <span>{{ playlist.items|length }} videos</span>
+      <p>{{ playlist.description }}</p>
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}

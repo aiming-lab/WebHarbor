@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% block title %}{{ location.city }} Weather{% endblock %}
+{% block content %}
+<section class="wx-page-hero">
+  <div>
+    <p class="wx-page-kicker">Today’s Weather</p>
+    <h1>{{ location.city }}, {{ location.region }}</h1>
+    <p>{{ location.country }} · As of 8:00 am</p>
+  </div>
+  <div class="wx-page-links">
+    <a href="{{ url_for('hourly', slug=location.slug) }}">Hourly</a>
+    <a href="{{ url_for('forecast', slug=location.slug) }}">10 Day</a>
+    <a href="{{ url_for('radar', slug=location.slug) }}">Radar</a>
+  </div>
+</section>
+
+<section class="wx-dashboard-grid">
+  <div class="wx-dashboard-main">
+    <section class="detail-card current-hero-card">
+      <div class="current-hero-media">
+        <img src="{{ location.hero_image }}" alt="{{ location.city }} skyline">
+      </div>
+      <div class="current-hero-body">
+        <div>
+          <div class="current-temp-line">{{ conditions.temperature_f }}°</div>
+          <div class="current-condition-label dark">{{ conditions.condition_label }}</div>
+          <p class="current-subline">Feels Like {{ conditions.feels_like_f }}° · Air Quality {{ conditions.air_quality }}</p>
+        </div>
+        <div class="current-hero-meta">
+          <div><strong>Humidity</strong><span>{{ conditions.humidity }}%</span></div>
+          <div><strong>Wind</strong><span>{{ conditions.wind_mph }} mph {{ conditions.wind_direction }}</span></div>
+          <div><strong>UV Index</strong><span>{{ conditions.uv_index }}</span></div>
+          <div><strong>Visibility</strong><span>{{ conditions.visibility_mi }} mi</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail-card wx-module-card">
+      <header class="module-header">
+        <div>
+          <p class="module-kicker">Hourly Weather</p>
+          <h2>Hourly Forecast</h2>
+        </div>
+        <a href="{{ url_for('hourly', slug=location.slug) }}">View all</a>
+      </header>
+      <div class="wx-hourly-row">
+        {% for hour in hourly %}
+          <article class="wx-hourly-card">
+            <strong>{{ hour.forecast_time.strftime('%-I %p') }}</strong>
+            <div class="wx-hourly-temp">{{ hour.temperature_f }}°</div>
+            <p>{{ hour.condition_label }}</p>
+            <span>{{ hour.precip_pct }}% Rain</span>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="detail-card wx-module-card">
+      <header class="module-header">
+        <div>
+          <p class="module-kicker">10 Day Weather</p>
+          <h2>Daily Forecast</h2>
+        </div>
+        <a href="{{ url_for('forecast', slug=location.slug) }}">Open 10 Day</a>
+      </header>
+      <div class="wx-forecast-table">
+        {% for day in forecast %}
+          <article class="wx-forecast-row">
+            <div class="wx-forecast-day">
+              <strong>{{ day.label }}</strong>
+              <span>{{ day.condition_label }}</span>
+            </div>
+            <div class="wx-forecast-rain">{{ day.precip_pct }}%</div>
+            <div class="wx-forecast-temps"><strong>{{ day.high_f }}°</strong><span>{{ day.low_f }}°</span></div>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="detail-card wx-module-card">
+      <header class="module-header">
+        <div>
+          <p class="module-kicker">Health &amp; Activities</p>
+          <h2>Air Quality, Allergy, and Outdoor Conditions</h2>
+        </div>
+      </header>
+      <div class="wx-home-module-grid compact">
+        <article class="wx-health-card">
+          <p class="module-kicker">Air Quality Index</p>
+          <h3>{{ health_modules.air_quality_module.label }}</h3>
+          <div class="wx-health-value">{{ health_modules.air_quality_module.value }}</div>
+          <p>{{ health_modules.air_quality_module.description }}</p>
+        </article>
+        <article class="wx-health-card">
+          <p class="module-kicker">Allergy Tracker</p>
+          <h3>{{ health_modules.allergy_module.label }}</h3>
+          <div class="wx-health-value">{{ health_modules.allergy_module.value }}</div>
+          <p>{{ health_modules.allergy_module.description }}</p>
+        </article>
+        <article class="wx-health-card">
+          <p class="module-kicker">Cold &amp; Flu</p>
+          <h3>{{ health_modules.flu_module.label }}</h3>
+          <div class="wx-health-value">{{ health_modules.flu_module.value }}°</div>
+          <p>{{ health_modules.flu_module.description }}</p>
+        </article>
+        <article class="wx-health-card">
+          <p class="module-kicker">Outdoor Activity</p>
+          <h3>{{ health_modules.outdoor_module.label }}</h3>
+          <div class="wx-health-value">{{ health_modules.outdoor_module.value }}°</div>
+          <p>{{ health_modules.outdoor_module.description }}</p>
+        </article>
+      </div>
+    </section>
+  </div>
+
+  <aside class="wx-dashboard-rail">
+    <section class="rail-card wx-side-module">
+      <h3>Weather Details</h3>
+      <div class="wx-side-list">
+        <div><span>Air Quality</span><strong>{{ conditions.air_quality }}</strong></div>
+        <div><span>Wind</span><strong>{{ conditions.wind_mph }} mph {{ conditions.wind_direction }}</strong></div>
+        <div><span>Humidity</span><strong>{{ conditions.humidity }}%</strong></div>
+        <div><span>UV Index</span><strong>{{ conditions.uv_index }}</strong></div>
+      </div>
+    </section>
+
+    <section class="rail-card wx-side-module">
+      <h3>Alerts</h3>
+      {% for alert in alerts %}
+        <article class="wx-alert-compact">
+          <span class="alert-badge">{{ alert.severity }}</span>
+          <p><strong>{{ alert.alert_type }}</strong></p>
+          <p>{{ alert.headline }}</p>
+          <p>Expires {{ alert.expires_at.strftime('%-I:%M %p') }}</p>
+        </article>
+      {% else %}
+        <p>No active alerts for this location.</p>
+      {% endfor %}
+    </section>
+
+    {% if media_sections.rail_cards %}
+    <section class="rail-card wx-side-module">
+      <h3>Editor's Pick</h3>
+      <a href="{{ (media_sections.editor_card.watch_url if media_sections.editor_card else media_sections.rail_cards[0].watch_url) or '#' }}">
+        <img src="{{ media_sections.editor_card.image if media_sections.editor_card else media_sections.rail_cards[0].image }}" alt="{{ media_sections.editor_card.title if media_sections.editor_card else media_sections.rail_cards[0].title }}">
+      </a>
+      <p><a href="{{ (media_sections.editor_card.watch_url if media_sections.editor_card else media_sections.rail_cards[0].watch_url) or '#' }}">{{ media_sections.editor_card.title if media_sections.editor_card else media_sections.rail_cards[0].title }}</a></p>
+    </section>
+    {% endif %}
+
+    {% if media_sections.video_cards %}
+    <section class="rail-card wx-side-module">
+      <h3>Video</h3>
+      {% for card in media_sections.video_cards %}
+        <article class="rail-card compact">
+          <a href="{{ card.watch_url or '#' }}">
+            <img src="{{ card.image }}" alt="{{ card.title }}">
+          </a>
+          <div>
+            <h4><a href="{{ card.watch_url or '#' }}">{{ card.title }}</a></h4>
+            <p><a href="{{ card.watch_url or '#' }}">Watch now</a></p>
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </aside>
+</section>
+{% endblock %}

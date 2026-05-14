@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Weather{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/weather-favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="weather-shell">
+  <div class="weather-app-shell">
+    <aside class="weather-sidebar">
+      <a class="weather-sidebar-brand" href="{{ url_for('index') }}" aria-label="The Weather Channel home">
+        <img class="weather-brand-logo" src="{{ brand_logo_path }}" alt="The Weather Channel">
+      </a>
+      <nav class="weather-sidebar-nav">
+        <a class="weather-sidebar-link {% if request.endpoint == 'index' %}active{% endif %}" href="{{ url_for('index') }}"><span>▦</span><span>Home</span></a>
+        {% if primary_location %}<a class="weather-sidebar-link {% if request.endpoint == 'location_detail' %}active{% endif %}" href="{{ url_for('location_detail', slug=primary_location.slug) }}"><span>☁</span><span>Today</span></a>{% endif %}
+        {% if primary_location %}<a class="weather-sidebar-link {% if request.endpoint == 'hourly' %}active{% endif %}" href="{{ url_for('hourly', slug=primary_location.slug) }}"><span>◔</span><span>Hourly</span></a>{% endif %}
+        {% if primary_location %}<a class="weather-sidebar-link {% if request.endpoint == 'forecast' %}active{% endif %}" href="{{ url_for('forecast', slug=primary_location.slug) }}"><span>☷</span><span>10 Day</span></a>{% endif %}
+        <a class="weather-sidebar-link" href="#"><span>▤</span><span>Monthly</span></a>
+        {% if primary_location %}<a class="weather-sidebar-link {% if request.endpoint == 'radar' %}active{% endif %}" href="{{ url_for('radar', slug=primary_location.slug) }}"><span>◎</span><span>Radar</span></a>{% endif %}
+        <a class="weather-sidebar-link" href="#"><span>▶</span><span>Video</span></a>
+        <a class="weather-sidebar-link" href="#"><span>◌</span><span>Explore</span></a>
+      </nav>
+      <div class="weather-sidebar-groups">
+        <section class="weather-sidebar-group">
+          <h3>Weather Forecasts</h3>
+          <a href="{{ url_for('index') }}">Home</a>
+          {% if primary_location %}<a href="{{ url_for('location_detail', slug=primary_location.slug) }}">Today</a>{% endif %}
+          {% if primary_location %}<a href="{{ url_for('hourly', slug=primary_location.slug) }}">Hourly</a>{% endif %}
+          {% if primary_location %}<a href="{{ url_for('forecast', slug=primary_location.slug) }}">10 Day</a>{% endif %}
+        </section>
+        <section class="weather-sidebar-group">
+          <h3>Radar &amp; Maps</h3>
+          <a href="{% if primary_location %}{{ url_for('radar', slug=primary_location.slug) }}{% else %}#{% endif %}">Interactive Radar Map</a>
+          <a href="#">US Forecast</a>
+          <a href="#">US Satellite &amp; Radar</a>
+        </section>
+        <section class="weather-sidebar-group">
+          <h3>News &amp; Media</h3>
+          <a href="#">Top Weather Stories</a>
+          <a href="#">Hurricane Central</a>
+          <a href="#">Tornado Central</a>
+          <a href="#">Safety &amp; Prep</a>
+        </section>
+        <section class="weather-sidebar-group">
+          <h3>Products &amp; Account</h3>
+          <a href="{{ url_for('account') }}">Account</a>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('account') }}">Saved Locations</a>
+          {% else %}
+            <a href="{{ url_for('login') }}">Sign in</a>
+            <a href="{{ url_for('register') }}">Create Account</a>
+          {% endif %}
+        </section>
+        <section class="weather-sidebar-group">
+          <h3>Lifestyle</h3>
+          <a href="#health-activity">Air Quality Index</a>
+          <a href="#health-activity">Allergy Tracker</a>
+          <a href="#">Travel &amp; Outdoors</a>
+          <a href="#">Product Reviews &amp; Deals</a>
+        </section>
+        <section class="weather-sidebar-group">
+          <h3>Specialty Forecasts</h3>
+          <a href="#">Hurricane Central</a>
+          <a href="#">Tornado Central</a>
+          <a href="#">Cold &amp; Flu Tracker</a>
+        </section>
+      </div>
+    </aside>
+    <div class="weather-page-column">
+      <header class="weather-header">
+        <form class="weather-search" action="{{ url_for('search') }}" method="get">
+          <input type="text" name="q" placeholder="Search City or Zip Code" value="{{ request.args.get('q', '') }}">
+          <button type="submit">⌕</button>
+        </form>
+        <nav class="weather-nav">
+          <span>US</span>
+          <span>°F</span>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('account') }}">Account</a>
+            <form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ generate_csrf() }}"><button type="submit">Sign out</button></form>
+          {% else %}
+            <a href="{{ url_for('login') }}">Sign in</a>
+          {% endif %}
+        </nav>
+      </header>
+      <main class="weather-main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-stack">
+              {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Account · YouTube{% endblock %}
+{% block content %}
+<div class="auth-card wide">
+  <h1>Your account</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+    <label>Display name <input type="text" name="display_name" value="{{ current_user.display_name }}"></label>
+    <label>Handle <input type="text" name="handle" value="{{ current_user.handle }}"></label>
+    <button type="submit">Save</button>
+  </form>
+  <section class="description-card" style="margin-top:1rem;">
+    <h2>Subscribed channels</h2>
+    {% if subscribed_channels %}
+      <ul>
+        {% for channel in subscribed_channels %}
+          <li><a href="{{ url_for('channel', slug=channel.slug) }}">{{ channel.name }}</a></li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="empty-state">No subscriptions yet.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

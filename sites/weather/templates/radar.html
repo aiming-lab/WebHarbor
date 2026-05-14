@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}Radar · {{ location.city }}{% endblock %}
+{% block content %}
+<section class="wx-page-hero">
+  <div>
+    <p class="wx-page-kicker">Radar</p>
+    <h1>{{ location.city }} Radar Map</h1>
+    <h2 class="wx-subheading">{{ location.city | upper }}, {{ location.region | upper }} RADAR MAP</h2>
+    <p>Radar map and precipitation view.</p>
+  </div>
+  <div class="wx-page-links">
+    <a href="{{ url_for('location_detail', slug=location.slug) }}">Today</a>
+    <a href="{{ url_for('hourly', slug=location.slug) }}">Hourly</a>
+    <a href="{{ url_for('forecast', slug=location.slug) }}">10 Day</a>
+  </div>
+</section>
+
+<section class="detail-card wx-radar-card">
+  <div class="radar-frame large">
+    <img src="{{ location.radar_image }}" alt="{{ location.city }} radar image">
+  </div>
+  <div class="wx-radar-caption">
+    <strong>Current Radar</strong>
+    <p>Current radar imagery for this area.</p>
+  </div>
+</section>
+
+<section class="detail-card wx-module-card" id="health-activity">
+  <header class="module-header">
+    <div>
+      <p class="module-kicker">Health &amp; Activities</p>
+      <h2>Air Quality and Allergy</h2>
+    </div>
+  </header>
+  <div class="wx-hourly-grid health-two-up">
+    <article class="wx-health-card">
+      <p class="module-kicker">Air Quality Index</p>
+      <h3>Air Quality Index</h3>
+      <p>Current air quality conditions.</p>
+    </article>
+    <article class="wx-health-card">
+      <p class="module-kicker">Allergy Tracker</p>
+      <h3>Allergy Tracker</h3>
+      <p>Allergy outlook for this location.</p>
+    </article>
+  </div>
+</section>
+
+{% if media_sections.hero_card %}
+<section class="story-block story-block.rich">
+  <p class="story-kicker">Top Stories</p>
+  <div class="wx-top-story-hero">
+    <img class="story-image" src="{{ media_sections.hero_card.image }}" alt="{{ media_sections.hero_card.title }}">
+    <h2>{{ media_sections.hero_card.title }}</h2>
+  </div>
+  <div class="wx-top-story-grid">
+    {% for card in media_sections.tile_cards %}
+      <article class="wx-top-story-tile">
+        <a href="{{ card.watch_url or '#' }}">
+          <img src="{{ card.image }}" alt="{{ card.title }}">
+        </a>
+        <p><a href="{{ card.watch_url or '#' }}">{{ card.title }}</a></p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if media_sections.video_cards %}
+<section class="rail-card">
+  <h3>Video</h3>
+  {% for card in media_sections.video_cards %}
+    <section class="rail-card compact">
+      <a href="{{ card.watch_url or '#' }}">
+        <img src="{{ card.image }}" alt="{{ card.title }}">
+      </a>
+      <div>
+        <h4><a href="{{ card.watch_url or '#' }}">{{ card.title }}</a></h4>
+        <p><a href="{{ card.watch_url or '#' }}">Watch now</a></p>
+      </div>
+    </section>
+  {% endfor %}
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}Account · Weather{% endblock %}
+{% block content %}
+<section class="wx-page-hero">
+  <div>
+    <p class="wx-page-kicker">Account</p>
+    <h1>Your weather profile</h1>
+    <p>Manage your account and saved locations.</p>
+  </div>
+</section>
+<section class="wx-dashboard-grid account">
+  <div class="wx-dashboard-main">
+    <section class="detail-card wx-module-card">
+      <header class="module-header">
+        <div>
+          <p class="module-kicker">Preferences</p>
+          <h2>Profile Settings</h2>
+        </div>
+      </header>
+      <form method="post" class="wx-account-form">
+        <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+        <label>Full name <input type="text" name="full_name" value="{{ current_user.full_name }}"></label>
+        <label>Preferred units
+          <select name="preferred_units">
+            <option value="imperial" {% if current_user.preferred_units == 'imperial' %}selected{% endif %}>Imperial</option>
+            <option value="metric" {% if current_user.preferred_units == 'metric' %}selected{% endif %}>Metric</option>
+          </select>
+        </label>
+        <button type="submit">Save preferences</button>
+      </form>
+    </section>
+  </div>
+  <aside class="wx-dashboard-rail">
+    <section class="rail-card wx-side-module">
+      <h3>Saved locations</h3>
+      <div class="saved-grid wx-saved-grid">
+        {% for item in saved %}
+          <div class="saved-card wx-saved-card">
+            <strong>{{ item.location.city }}, {{ item.location.region }}</strong>
+            <p>{{ item.location.country }}</p>
+            <div class="wx-saved-actions">
+              <a class="ghost-btn secondary" href="{{ url_for('location_detail', slug=item.location.slug) }}">Open</a>
+              <form action="{{ url_for('remove_location', slug=item.location.slug) }}" method="post">
+                <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+                <button type="submit">Remove</button>
+              </form>
+            </div>
+          </div>
+        {% else %}
+          <p>No saved locations yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </aside>
+</section>
+{% endblock %}
