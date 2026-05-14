@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+{% block title %}{{ movie.title }} ({{ movie.year }}) | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="movie-detail">
+    <div class="movie-header">
+        <div class="movie-poster-col">
+            <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" class="movie-poster-large" onerror="this.src='/static/icons/placeholder.png'">
+        </div>
+        <div class="movie-info-col">
+            <h1 class="movie-title-large">{{ movie.title }} <span class="movie-year">({{ movie.year }})</span></h1>
+
+            <div class="movie-meta">
+                <span class="pg-rating">{{ movie.pg_rating }}</span>
+                {% if movie.runtime_minutes %}<span class="runtime">{{ movie.runtime_minutes }} min</span>{% endif %}
+                <span class="genres">
+                    {% for genre in movie.genres %}
+                    <a href="/browse/movies/?genre={{ genre.slug }}">{{ genre.name }}</a>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </span>
+            </div>
+
+            <div class="score-boxes">
+                <div class="score-box tomatometer-box {{ movie.tomatometer_status }}">
+                    <div class="score-icon">
+                        {% if movie.certified_fresh %}🏆{% elif movie.tomatometer >= 60 %}🍅{% else %}🟢{% endif %}
+                    </div>
+                    <div class="score-value">{{ movie.tomatometer }}%</div>
+                    <div class="score-label">Tomatometer</div>
+                    {% if movie.certified_fresh %}<div class="certified-badge">✓ Certified Fresh</div>{% endif %}
+                </div>
+                <div class="score-box audience-box {{ movie.audience_status }}">
+                    <div class="score-icon">🍿</div>
+                    <div class="score-value">{{ movie.audience_score }}%</div>
+                    <div class="score-label">Audience Score</div>
+                </div>
+            </div>
+
+            {% if movie.synopsis %}
+            <div class="synopsis">
+                <p>{{ movie.synopsis }}</p>
+            </div>
+            {% endif %}
+
+            {% if movie.streaming_platform %}
+            <div class="where-to-watch">
+                <h3>Where to Watch</h3>
+                <span class="platform-badge">{{ movie.streaming_platform }}</span>
+            </div>
+            {% endif %}
+
+            <div class="movie-details-grid">
+                {% if directors %}
+                <div class="detail-item">
+                    <span class="detail-label">Director:</span>
+                    {% for d in directors %}
+                    <a href="/celebrity/{{ d.person.slug }}">{{ d.person.name }}</a>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                {% if movie.studio %}<div class="detail-item"><span class="detail-label">Studio:</span> {{ movie.studio }}</div>{% endif %}
+                {% if movie.release_date %}<div class="detail-item"><span class="detail-label">Release Date:</span> {{ movie.release_date }}</div>{% endif %}
+                {% if movie.box_office %}<div class="detail-item"><span class="detail-label">Box Office:</span> {{ movie.box_office }}</div>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- What to Know -->
+    <section class="what-to-know">
+        <h2>What to Know</h2>
+        <div class="consensus-grid">
+            {% if movie.consensus %}
+            <div class="consensus-card">
+                <h3>Critics Consensus</h3>
+                <p>{{ movie.consensus }}</p>
+            </div>
+            {% endif %}
+            {% if movie.audience_consensus %}
+            <div class="consensus-card">
+                <h3>Audience Says</h3>
+                <p>{{ movie.audience_consensus }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <!-- Cast -->
+    {% if actors %}
+    <section class="cast-section">
+        <h2>Cast & Crew</h2>
+        <div class="cast-grid">
+            {% for c in actors[:8] %}
+            <a href="/celebrity/{{ c.person.slug }}" class="cast-card">
+                <img src="{{ c.person.photo }}" alt="{{ c.person.name }}" onerror="this.src='/static/icons/placeholder.png'">
+                <div class="cast-name">{{ c.person.name }}</div>
+                <div class="cast-character">{{ c.character_name }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- User actions -->
+    {% if current_user.is_authenticated %}
+    <section class="user-actions">
+        <div class="action-row">
+            {% if in_watchlist %}
+            <form action="/user/watchlist/remove/{{ movie.id }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-outline">✓ In Watchlist</button>
+            </form>
+            {% else %}
+            <form action="/user/watchlist/add/{{ movie.id }}" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-primary">+ Add to Watchlist</button>
+            </form>
+            {% endif %}
+
+            <form action="/m/{{ movie.slug }}/rate" method="POST" class="rate-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <label>Rate: </label>
+                <select name="score">
+                    {% for s in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] %}
+                    <option value="{{ s }}" {% if user_rating and user_rating.score == s %}selected{% endif %}>{{ s }}⭐</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn btn-sm">Rate</button>
+            </form>
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Critic Reviews -->
+    {% if critic_reviews %}
+    <section class="reviews-section">
+        <h2>Critics Reviews</h2>
+        <div class="reviews-list">
+            {% for review in critic_reviews %}
+            <div class="review-card {{ 'fresh' if review.fresh else 'rotten' }}">
+                <div class="review-icon">{% if review.fresh %}🍅{% else %}🟢{% endif %}</div>
+                <div class="review-content">
+                    <p class="review-text">{{ review.text }}</p>
+                    <div class="review-meta">
+                        <span class="reviewer-name">{{ review.critic_name }}</span>
+                        <span class="reviewer-pub">{{ review.publication }}</span>
+                        {% if review.score %}<span class="review-score">{{ review.score }}</span>{% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Audience Reviews -->
+    <section class="reviews-section">
+        <h2>Audience Reviews</h2>
+        {% if audience_reviews %}
+        <div class="reviews-list">
+            {% for review in audience_reviews %}
+            <div class="review-card audience">
+                <div class="review-icon">🍿</div>
+                <div class="review-content">
+                    <p class="review-text">{{ review.text }}</p>
+                    <div class="review-meta">
+                        <span class="reviewer-name">{{ review.user.name }}</span>
+                        <span class="review-score">{{ review.score }}/5⭐</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if current_user.is_authenticated %}
+        <div class="write-review">
+            <h3>Write a Review</h3>
+            <form action="/m/{{ movie.slug }}/review" method="POST">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="form-group">
+                    <label>Rating:</label>
+                    <select name="score">
+                        {% for s in [0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0] %}
+                        <option value="{{ s }}">{{ s }}⭐</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Your Review:</label>
+                    <textarea name="text" rows="4" placeholder="Write your review (min 10 characters)..." required minlength="10"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Review</button>
+            </form>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Similar Movies -->
+    {% if similar_movies %}
+    <section class="similar-section">
+        <h2>More Like This</h2>
+        <div class="movie-row">
+            {% for movie in similar_movies %}
+            <a href="/m/{{ movie.slug }}" class="movie-card">
+                <div class="card-poster">
+                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.src='/static/icons/placeholder.png'">
+                </div>
+                <div class="card-scores">
+                    <span class="score tomatometer {{ movie.tomatometer_status }}">{{ movie.tomatometer_icon }} {{ movie.tomatometer }}%</span>
+                    <span class="score audience {{ movie.audience_status }}">{{ movie.audience_icon }} {{ movie.audience_score }}%</span>
+                </div>
+                <div class="card-title">{{ movie.title }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

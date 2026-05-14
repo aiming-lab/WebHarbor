@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}My Watchlist | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="watchlist-page">
+    <h1>My Watchlist</h1>
+    {% if movies %}
+    <div class="movie-grid">
+        {% for movie in movies %}
+        <div class="movie-card-with-remove">
+            <a href="/m/{{ movie.slug }}" class="movie-card">
+                <div class="card-poster">
+                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.src='/static/icons/placeholder.png'">
+                </div>
+                <div class="card-scores">
+                    <span class="score tomatometer {{ movie.tomatometer_status }}">{{ movie.tomatometer_icon }} {{ movie.tomatometer }}%</span>
+                    <span class="score audience {{ movie.audience_status }}">{{ movie.audience_icon }} {{ movie.audience_score }}%</span>
+                </div>
+                <div class="card-title">{{ movie.title }}</div>
+            </a>
+            <form action="/user/watchlist/remove/{{ movie.id }}" method="POST" class="remove-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">Your watchlist is empty. Browse movies and add some!</p>
+    <a href="/browse/movies/" class="btn btn-primary">Browse Movies</a>
+    {% endif %}
+</div>
+{% endblock %}

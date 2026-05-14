@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Register | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>Create Account</h1>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required placeholder="Your Name">
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="you@example.com">
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="6">
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Register</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="/login">Sign In</a></p>
+    </div>
+</div>
+{% endblock %}

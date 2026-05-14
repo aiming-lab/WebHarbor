@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Rotten Tomatoes: Movies | TV Shows | Reviews{% endblock %}
+{% block content %}
+<div class="hero-section">
+    <h1>Movies & TV Shows</h1>
+    <p>Reviews, ratings, and where to watch the best movies</p>
+</div>
+
+{% macro movie_card(movie) %}
+<a href="/m/{{ movie.slug }}" class="movie-card">
+    <div class="card-poster">
+        <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.src='/static/icons/placeholder.png'">
+    </div>
+    <div class="card-scores">
+        <span class="score tomatometer {{ movie.tomatometer_status }}">
+            {{ movie.tomatometer_icon }} {{ movie.tomatometer }}%
+        </span>
+        <span class="score audience {{ movie.audience_status }}">
+            {{ movie.audience_icon }} {{ movie.audience_score }}%
+        </span>
+    </div>
+    <div class="card-title">{{ movie.title }}</div>
+</a>
+{% endmacro %}
+
+<!-- New & Upcoming Movies -->
+{% if new_movies %}
+<section class="movie-section">
+    <div class="section-header">
+        <h2>🎬 New & Upcoming Movies</h2>
+        <a href="/browse/movies_in_theaters/" class="view-all">View All →</a>
+    </div>
+    <div class="movie-row">
+        {% for movie in new_movies %}
+        {{ movie_card(movie) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Popular Streaming -->
+{% if streaming_movies %}
+<section class="movie-section">
+    <div class="section-header">
+        <h2>📺 Popular Streaming Movies</h2>
+        <a href="/browse/movies_at_home/" class="view-all">View All →</a>
+    </div>
+    <div class="movie-row">
+        {% for movie in streaming_movies %}
+        {{ movie_card(movie) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Certified Fresh -->
+{% if certified_movies %}
+<section class="movie-section">
+    <div class="section-header">
+        <h2>🏆 Certified Fresh</h2>
+        <a href="/browse/movies/?certified_fresh=true" class="view-all">View All →</a>
+    </div>
+    <div class="movie-row">
+        {% for movie in certified_movies %}
+        {{ movie_card(movie) }}
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+<!-- Top Box Office -->
+{% if top_box_office %}
+<section class="movie-section">
+    <div class="section-header">
+        <h2>💰 Top Box Office</h2>
+    </div>
+    <div class="box-office-list">
+        {% for movie in top_box_office %}
+        <a href="/m/{{ movie.slug }}" class="box-office-item">
+            <span class="bo-rank">#{{ loop.index }}</span>
+            <span class="bo-title">{{ movie.title }}</span>
+            <span class="bo-gross">{{ movie.box_office }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% endblock %}

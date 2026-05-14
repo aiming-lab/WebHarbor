@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Search: {{ query }} | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="search-page">
+    <h1>Search Results for "{{ query }}"</h1>
+
+    {% if not movies and not people %}
+    <p class="no-results">No results found for "{{ query }}". Try a different search term.</p>
+    {% endif %}
+
+    {% if movies %}
+    <section class="search-section">
+        <h2>Movies ({{ movies|length }})</h2>
+        <div class="movie-grid">
+            {% for movie in movies %}
+            <a href="/m/{{ movie.slug }}" class="movie-card">
+                <div class="card-poster">
+                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.src='/static/icons/placeholder.png'">
+                </div>
+                <div class="card-info">
+                    <div class="card-title">{{ movie.title }}</div>
+                    <div class="card-year">{{ movie.year }}</div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    {% if people %}
+    <section class="search-section">
+        <h2>Celebrities ({{ people|length }})</h2>
+        <div class="people-grid">
+            {% for person in people %}
+            <a href="/celebrity/{{ person.slug }}" class="person-card">
+                <img src="{{ person.photo }}" alt="{{ person.name }}" onerror="this.src='/static/icons/placeholder.png'">
+                <div class="person-name">{{ person.name }}</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}
