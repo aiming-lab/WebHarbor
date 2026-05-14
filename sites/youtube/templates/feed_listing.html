@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} · YouTube{% endblock %}
+{% block content %}
+<header class="section-header">
+  <h1>{{ title }}</h1>
+  <p>{{ subtitle }}</p>
+</header>
+<section class="video-grid">
+  {% for video in videos %}
+    {% include '_video_card.html' %}
+  {% else %}
+    <p class="empty-state">Nothing to show yet on this feed.</p>
+  {% endfor %}
+</section>
+{% endblock %}

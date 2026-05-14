@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}Account · YouTube{% endblock %}
+{% block content %}
+<section class="account-hero">
+  {% set me_avatar = user_avatar_path(current_user) %}
+  {% if me_avatar %}
+    <img class="channel-avatar huge" src="{{ me_avatar }}" alt="{{ current_user.display_name }} avatar">
+  {% else %}
+    <div class="avatar-pill huge">{{ current_user.initials }}</div>
+  {% endif %}
+  <div>
+    <h1>{{ current_user.display_name }}</h1>
+    <p class="video-subtitle">@{{ current_user.handle }}</p>
+  </div>
+</section>
+<section class="account-grid">
+  <div class="auth-card wide">
+    <h2>Channel details</h2>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+      <label>Display name <input type="text" name="display_name" value="{{ current_user.display_name }}"></label>
+      <label>Handle <input type="text" name="handle" value="{{ current_user.handle }}"></label>
+      <button type="submit">Save</button>
+    </form>
+  </div>
+  <div class="description-card">
+    <h2>Library</h2>
+    <ul class="evidence-list">
+      <li>Subscriptions: {{ stats.subscriptions }}</li>
+      <li>Watch Later: {{ stats.watch_later }}</li>
+      <li>Liked videos: {{ stats.likes }}</li>
+      <li>History items: {{ stats.history }}</li>
+      <li>Comments posted: {{ stats.comments }}</li>
+    </ul>
+  </div>
+</section>
+<section class="description-card" style="margin-top:1rem;">
+  <h2>Subscribed channels</h2>
+  {% if subscribed_channels %}
+    <div class="subscriptions-list">
+      {% for channel in subscribed_channels %}
+        <a class="subscription-row" href="{{ url_for('channel', slug=channel.slug) }}">
+          <img class="channel-avatar" src="{{ channel.avatar_path }}" alt="{{ channel.name }} avatar">
+          <div>
+            <strong>{{ channel.name }}</strong>
+            <p class="video-subtitle">{{ '{:,}'.format(channel.subscriber_count) }} subscribers</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-state">No subscriptions yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

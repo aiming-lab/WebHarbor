@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+{% block title %}Weather{% endblock %}
+{% block content %}
+{% set lead = lead_location %}
+<section class="weather-home-grid">
+  <div class="weather-home-main">
+    <div class="ad-placeholder">
+      <span>Advertisement</span>
+    </div>
+    {% if lead and lead_condition %}
+    <section class="current-conditions-card">
+      <div class="current-conditions-top">
+        <h1>{{ lead.city }}, {{ lead.region }} {{ lead.country }}</h1>
+        <span>As of 8:00 am</span>
+      </div>
+      <div class="current-conditions-body">
+        <div>
+          <div class="current-temp-line">{{ fmt_temp(lead_condition.temperature_f) }}</div>
+          <div class="current-condition-label">{{ lead_condition.condition_label }}</div>
+          <div class="current-hi-low">Day {{ fmt_temp(forecast_hint.high_f if forecast_hint else lead_condition.temperature_f + 4) }} • Night {{ fmt_temp(forecast_hint.low_f if forecast_hint else lead_condition.temperature_f - 8) }}</div>
+        </div>
+        <a class="forecast-cta" href="{{ url_for('location_detail', slug=lead.slug) }}">See in-depth forecast</a>
+      </div>
+    </section>
+    {% endif %}
+
+    {% if spotlight_modules %}
+    <section class="detail-card wx-home-modules" id="health-activity">
+      <header class="module-header tight">
+        <div>
+          <p class="module-kicker">Health &amp; Activities</p>
+          <h2>Air Quality, Allergy, and Outdoor Conditions</h2>
+        </div>
+      </header>
+      <div class="wx-home-module-grid">
+        <article class="wx-health-card compact">
+          <p class="module-kicker">Air Quality Index</p>
+          <h3>{{ spotlight_modules.air_quality_module.label }}</h3>
+          <div class="wx-health-value">{{ spotlight_modules.air_quality_module.value }}</div>
+          <p>{{ spotlight_modules.air_quality_module.description }}</p>
+        </article>
+        <article class="wx-health-card compact">
+          <p class="module-kicker">Allergy Tracker</p>
+          <h3>{{ spotlight_modules.allergy_module.label }}</h3>
+          <div class="wx-health-value">{{ spotlight_modules.allergy_module.value }}</div>
+          <p>{{ spotlight_modules.allergy_module.description }}</p>
+        </article>
+        <article class="wx-health-card compact">
+          <p class="module-kicker">Cold &amp; Flu Tracker</p>
+          <h3>{{ spotlight_modules.flu_module.label }}</h3>
+          <div class="wx-health-value">{{ fmt_temp(spotlight_modules.flu_module.value) }}</div>
+          <p>{{ spotlight_modules.flu_module.description }}</p>
+        </article>
+        <article class="wx-health-card compact">
+          <p class="module-kicker">Outdoor Activity</p>
+          <h3>{{ spotlight_modules.outdoor_module.label }}</h3>
+          <div class="wx-health-value">{{ fmt_temp(spotlight_modules.outdoor_module.value) }}</div>
+          <p>{{ spotlight_modules.outdoor_module.description }}</p>
+        </article>
+      </div>
+    </section>
+    {% endif %}
+
+    <section class="story-block story-block.rich">
+      <p class="story-kicker">Top Stories</p>
+      <div class="wx-top-story-hero">
+        <img class="story-image" src="{{ hero_story.image }}" alt="{{ hero_story.title }}">
+        <h2>{{ hero_story.title }}</h2>
+        {% if hero_story.summary %}
+          <p class="story-summary">{{ hero_story.summary }}</p>
+        {% endif %}
+      </div>
+      <div class="wx-top-story-grid">
+        {% for item in top_story_tiles %}
+          <article class="wx-top-story-tile">
+            <img src="{{ item.image }}" alt="{{ item.title }}">
+            <p>{{ item.title }}</p>
+          </article>
+        {% endfor %}
+      </div>
+      <div class="wx-top-story-list">
+        {% for headline in top_story_headlines %}
+          <a href="#">{{ headline }}</a>
+        {% endfor %}
+      </div>
+    </section>
+    {% if video_cards %}
+    <section class="rail-card">
+      <h3>Video</h3>
+      {% for card in video_cards %}
+        <section class="rail-card compact">
+          <a href="{{ card.watch_url or url_for('video') }}">
+            <img src="{{ card.image }}" alt="{{ card.title }}">
+          </a>
+          <div>
+            <h4><a href="{{ card.watch_url or url_for('video') }}">{{ card.title }}</a></h4>
+            <p><a href="{{ card.watch_url or url_for('video') }}">Watch now</a></p>
+          </div>
+        </section>
+      {% endfor %}
+    </section>
+    {% endif %}
+  </div>
+
+  <aside class="weather-home-rail">
+    <section class="rail-card">
+      <h3>Editor's Pick</h3>
+      <img src="{{ editor_pick.image }}" alt="{{ editor_pick.title }}">
+      <p>{{ editor_pick.title }}</p>
+    </section>
+    <section class="rail-card">
+      <h3>Seasonal Tips</h3>
+      <img src="{{ seasonal_tip.image }}" alt="{{ seasonal_tip.title }}">
+      <p>{{ seasonal_tip.title }}</p>
+    </section>
+    {% if right_rail_cards|length > 0 %}
+      <section class="rail-card">
+        <h3>Weather Today Across the Country</h3>
+        <img src="{{ right_rail_cards[0].image }}" alt="{{ right_rail_cards[0].title }}">
+        <p>{{ right_rail_cards[0].title }}</p>
+      </section>
+    {% endif %}
+    {% if right_rail_cards|length > 1 %}
+      <section class="rail-card">
+        <h3>Lonely Planet</h3>
+        <img src="{{ right_rail_cards[1].image }}" alt="{{ right_rail_cards[1].title }}">
+        <p>{{ right_rail_cards[1].title }}</p>
+      </section>
+    {% endif %}
+    {% for card in right_rail_cards[2:] %}
+      <section class="rail-card compact">
+        <img src="{{ card.image }}" alt="{{ card.title }}">
+        <div>
+          <h4>{{ card.title }}</h4>
+          <p>Read more</p>
+        </div>
+      </section>
+    {% endfor %}
+  </aside>
+</section>
+{% endblock %}

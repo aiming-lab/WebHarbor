@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Explore · Weather{% endblock %}
+{% block content %}
+<section class="wx-topic-strip">
+  {% for topic in explore_topics %}
+    <a class="wx-topic-chip {% if topic.key == selected_explore_topic %}active{% endif %}" href="{{ url_for('explore_topic', topic_slug=topic.slug) }}">{{ topic.label }}</a>
+  {% endfor %}
+</section>
+
+<section class="wx-explore-hero">
+  <a class="wx-explore-hero-media" href="{{ explore_hero.watch_url }}">
+    <img src="{{ explore_hero.image }}" alt="{{ explore_hero.title }}">
+  </a>
+  <div class="wx-explore-hero-copy">
+    <h1>{{ explore_hero.title }}</h1>
+    <p>{{ explore_hero.description }}</p>
+    <a class="wx-readmore-btn" href="{{ explore_hero.watch_url }}">{{ explore_hero.cta }}</a>
+  </div>
+</section>
+
+<section class="wx-explore-articles">
+  {% for item in explore_items %}
+    <article class="wx-explore-article">
+      <a class="wx-explore-article-media" href="{{ item.watch_url or explore_hero.watch_url }}">
+        <img src="{{ item.image }}" alt="{{ item.title }}">
+      </a>
+      <h2>{{ item.title }}</h2>
+      <p>{{ item.description }}</p>
+      {% if item.duration %}
+        <span class="wx-video-duration">Video Player {{ item.duration }}</span>
+      {% endif %}
+    </article>
+  {% endfor %}
+</section>
+{% endblock %}
