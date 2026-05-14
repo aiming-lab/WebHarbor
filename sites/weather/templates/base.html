@@ -20,8 +20,8 @@
         {% if primary_location %}<a class="weather-sidebar-link {% if request.endpoint == 'forecast' %}active{% endif %}" href="{{ url_for('forecast', slug=primary_location.slug) }}"><span>☷</span><span>10 Day</span></a>{% endif %}
         <a class="weather-sidebar-link" href="#"><span>▤</span><span>Monthly</span></a>
         {% if primary_location %}<a class="weather-sidebar-link {% if request.endpoint == 'radar' %}active{% endif %}" href="{{ url_for('radar', slug=primary_location.slug) }}"><span>◎</span><span>Radar</span></a>{% endif %}
-        <a class="weather-sidebar-link" href="#"><span>▶</span><span>Video</span></a>
-        <a class="weather-sidebar-link" href="#"><span>◌</span><span>Explore</span></a>
+        <a class="weather-sidebar-link {% if request.endpoint == 'video' %}active{% endif %}" href="{{ url_for('video') }}"><span>▶</span><span>Video</span></a>
+        <a class="weather-sidebar-link {% if request.endpoint == 'explore' %}active{% endif %}" href="{{ url_for('explore') }}"><span>◌</span><span>Explore</span></a>
       </nav>
       <div class="weather-sidebar-groups">
         <section class="weather-sidebar-group">
@@ -39,7 +39,7 @@
         </section>
         <section class="weather-sidebar-group">
           <h3>News &amp; Media</h3>
-          <a href="#">Top Weather Stories</a>
+          <a href="{{ url_for('video') }}">Top Weather Stories</a>
           <a href="#">Hurricane Central</a>
           <a href="#">Tornado Central</a>
           <a href="#">Safety &amp; Prep</a>
@@ -58,7 +58,7 @@
           <h3>Lifestyle</h3>
           <a href="#health-activity">Air Quality Index</a>
           <a href="#health-activity">Allergy Tracker</a>
-          <a href="#">Travel &amp; Outdoors</a>
+          <a href="{{ url_for('explore') }}">Travel &amp; Outdoors</a>
           <a href="#">Product Reviews &amp; Deals</a>
         </section>
         <section class="weather-sidebar-group">
@@ -72,12 +72,12 @@
     <div class="weather-page-column">
       <header class="weather-header">
         <form class="weather-search" action="{{ url_for('search') }}" method="get">
-          <input type="text" name="q" placeholder="Search City or Zip Code" value="{{ request.args.get('q', '') }}">
+          <input type="text" name="q" placeholder="Search city" value="{{ request.args.get('q', '') }}">
           <button type="submit">⌕</button>
         </form>
         <nav class="weather-nav">
           <span>US</span>
-          <span>°F</span>
+          <span>{{ unit_label }}</span>
           {% if current_user.is_authenticated %}
             <a href="{{ url_for('account') }}">Account</a>
             <form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ generate_csrf() }}"><button type="submit">Sign out</button></form>

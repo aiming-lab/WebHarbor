@@ -18,10 +18,22 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MIRROR_REFERENCE_DATE = datetime(2024, 3, 1, 12, 0, 0)
 MIRROR_REFERENCE_DATE_LABEL = MIRROR_REFERENCE_DATE.strftime('%B %-d, %Y')
+BENCHMARK_USER_AVATAR_PATHS = {
+    'alice.j@test.com': '/static/images/youtube/upstream/channels/c_067_avatar.jpg',
+    'bob.c@test.com': '/static/images/youtube/upstream/channels/c_035_avatar.jpg',
+    'carol.d@test.com': '/static/images/youtube/upstream/channels/c_010_avatar.jpg',
+    'david.k@test.com': '/static/images/youtube/upstream/channels/c_007_avatar.jpg',
+}
 
 
 def mirror_now() -> datetime:
     return MIRROR_REFERENCE_DATE
+
+
+def user_avatar_path(user: UserMixin | None) -> str:
+    if not user or not getattr(user, 'email', None):
+        return ''
+    return BENCHMARK_USER_AVATAR_PATHS.get(user.email.lower(), '')
 
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'), static_folder=os.path.join(BASE_DIR, 'static'))
@@ -267,6 +279,7 @@ def inject_globals():
         'mirror_now': mirror_now,
         'nav_categories': nav_categories(),
         'generate_csrf': generate_csrf,
+        'user_avatar_path': user_avatar_path,
     }
 
 
@@ -285,6 +298,10 @@ def index():
 def results():
     search_query = (request.args.get('search_query') or '').strip()
     category = (request.args.get('category') or 'All').strip() or 'All'
+    active_filter = (request.args.get('filter') or 'All').strip() or 'All'
+    filter_options = ['All', 'Watched', 'Unwatched', 'Recently uploaded', 'Live']
+    if active_filter not in filter_options:
+        active_filter = 'All'
     videos = Video.query.options(db.joinedload(Video.channel)).all()
     if category != 'All':
         videos = [video for video in videos if video.category == category]
@@ -295,7 +312,28 @@ def results():
         videos = [video for _, video in ranked]
     else:
         videos.sort(key=lambda video: (video.is_trending, video.views), reverse=True)
-    return render_template('results.html', videos=videos, search_query=search_query, selected_category=category)
+    watched_ids = set()
+    if current_user.is_authenticated:
+        watched_ids = {
+            item.video_id
+            for item in WatchHistory.query.filter_by(user_id=current_user.id).all()
+        }
+    if active_filter == 'Watched':
+        videos = [video for video in videos if video.id in watched_ids]
+    elif active_filter == 'Unwatched':
+        videos = [video for video in videos if video.id not in watched_ids]
+    elif active_filter == 'Recently uploaded':
+        videos = sorted(videos, key=lambda video: video.published_at, reverse=True)
+    elif active_filter == 'Live':
+        videos = [video for video in videos if 'live' in video.category.lower() or 'live' in video.title.lower()]
+    return render_template(
+        'results.html',
+        videos=videos,
+        search_query=search_query,
+        selected_category=category,
+        active_filter=active_filter,
+        filter_options=filter_options,
+    )
 
 
 @app.route('/watch/<slug>', methods=['GET', 'POST'])
@@ -329,9 +367,12 @@ def watch(slug: str):
 @app.route('/channel/<slug>')
 def channel(slug: str):
     channel_obj = Channel.query.filter_by(slug=slug).first_or_404()
+    active_tab = (request.args.get('tab') or 'home').strip().lower()
+    if active_tab not in {'home', 'videos', 'playlists', 'about'}:
+        active_tab = 'home'
     videos = Video.query.filter_by(channel_id=channel_obj.id).order_by(Video.views.desc()).all()
     playlists = Playlist.query.filter_by(channel_id=channel_obj.id).all()
-    return render_template('channel.html', channel=channel_obj, videos=videos, playlists=playlists)
+    return render_template('channel.html', channel=channel_obj, videos=videos, playlists=playlists, active_tab=active_tab)
 
 
 @app.route('/playlist/<slug>')
@@ -344,7 +385,7 @@ def playlist(slug: str):
 @app.route('/feed/trending')
 def trending():
     videos = Video.query.filter_by(is_trending=True).order_by(Video.views.desc()).all()
-    return render_template('feed_listing.html', title='Trending', subtitle='Popular videos across the mirror date.', videos=videos)
+    return render_template('feed_listing.html', title='Trending', subtitle='Popular videos right now.', videos=videos)
 
 
 @app.route('/feed/subscriptions')
@@ -362,7 +403,7 @@ def subscriptions_feed():
 def history_feed():
     items = WatchHistory.query.filter_by(user_id=current_user.id).order_by(WatchHistory.watched_at.desc()).all()
     videos = [item.video for item in items]
-    return render_template('feed_listing.html', title='History', subtitle='Previously watched videos in this account.', videos=videos)
+    return render_template('feed_listing.html', title='History', subtitle='Videos you have watched recently.', videos=videos)
 
 
 @app.route('/feed/watch-later')
@@ -370,7 +411,7 @@ def history_feed():
 def watch_later_feed():
     items = WatchLater.query.filter_by(user_id=current_user.id).order_by(WatchLater.added_at.desc()).all()
     videos = [item.video for item in items]
-    return render_template('feed_listing.html', title='Watch Later', subtitle='Saved to return to later.', videos=videos)
+    return render_template('feed_listing.html', title='Watch Later', subtitle='Saved videos to watch later.', videos=videos)
 
 
 @app.route('/feed/liked')
@@ -395,7 +436,14 @@ def account():
                      .order_by(Channel.name.asc())
                      .all())
     subscribed_channels = [subscription.channel for subscription in subscriptions]
-    return render_template('account.html', subscribed_channels=subscribed_channels)
+    stats = {
+        'subscriptions': len(subscribed_channels),
+        'watch_later': WatchLater.query.filter_by(user_id=current_user.id).count(),
+        'likes': UserLike.query.filter_by(user_id=current_user.id).count(),
+        'history': WatchHistory.query.filter_by(user_id=current_user.id).count(),
+        'comments': Comment.query.filter_by(user_id=current_user.id).count(),
+    }
+    return render_template('account.html', subscribed_channels=subscribed_channels, stats=stats)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -499,7 +547,7 @@ seed_module = load_seed_module()
 with app.app_context():
     db.create_all()
     seed_module.seed_database(db, Channel, Video, Playlist, PlaylistVideo)
-    seed_module.seed_benchmark_users(db, User, Subscription, WatchLater, WatchHistory, UserLike, Video, Channel)
+    seed_module.seed_benchmark_users(db, User, Subscription, WatchLater, WatchHistory, UserLike, Comment, Video, Channel)
 
 @app.route('/_health')
 def health():

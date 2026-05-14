@@ -15,10 +15,179 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length, Optional
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 MIRROR_REFERENCE_DATE = datetime(2024, 2, 15, 8, 0, 0)
 MIRROR_REFERENCE_DATE_LABEL = MIRROR_REFERENCE_DATE.strftime('%B %-d, %Y')
+EXPLORE_TOPICS = [
+    {'key': 'top-stories', 'slug': 'top-stories', 'label': 'Top Stories'},
+    {'key': 'el-nino', 'slug': 'el-nino', 'label': 'El Nino'},
+    {'key': 'home-garden', 'slug': 'home-and-garden', 'label': 'Home & Garden'},
+    {'key': 'allergies', 'slug': 'allergies', 'label': 'Allergies'},
+    {'key': 'space', 'slug': 'space', 'label': 'Space'},
+    {'key': 'product-guides', 'slug': 'product-guides', 'label': 'Product Guides'},
+    {'key': 'animals', 'slug': 'animals', 'label': 'Animals'},
+    {'key': 'travel', 'slug': 'travel', 'label': 'Travel'},
+    {'key': 'bike', 'slug': 'bike', 'label': 'Bike'},
+    {'key': 'seasonal', 'slug': 'seasonal', 'label': 'Seasonal'},
+]
+EXPLORE_TOPIC_CONTENT = {
+    'top-stories': {
+        'hero_title': 'A Super El Niño Is Increasingly Likely, And It Could Be Record Strong',
+        'hero_description': "We’re trending toward El Niño, and by later this year, it could become one of the strongest on record.",
+        'hero_image': '/static/images/weather/upstream/explore/el-nino__00.jpg',
+        'items': [
+            {'title': 'El Niño: What It Is And How It Can Affect Your Weather', 'description': 'You may have heard the term El Niño thrown around quite a bit, but what exactly does it mean?', 'duration': '0:50', 'image': '/static/images/weather/upstream/explore/el-nino__01.jpg'},
+            {'title': 'Strong El Niño Years Can Bring May Hurricanes', 'description': 'In recent El Niño years, there has often been a named storm in May.', 'duration': '1:25', 'image': '/static/images/weather/upstream/explore/el-nino__02.png'},
+            {'title': 'Why Does El Niño Affect Summer Weather Significantly Less Than Winter?', 'description': 'The summer before El Niño can feel like a regular summer.', 'duration': '', 'image': '/static/images/weather/upstream/explore/el-nino__03.jpg'},
+        ],
+    },
+    'el-nino': {
+        'hero_title': 'A Super El Niño Is Increasingly Likely, And It Could Be Record Strong',
+        'hero_description': "We’re trending toward El Niño, and by later this year, it could become one of the strongest on record.",
+        'hero_image': '/static/images/weather/upstream/explore/el-nino__00.jpg',
+        'items': [
+            {'title': 'El Niño: What It Is And How It Can Affect Your Weather', 'description': 'You may have heard the term El Niño thrown around quite a bit, but what exactly does it mean?', 'duration': '0:50', 'image': '/static/images/weather/upstream/explore/el-nino__01.jpg'},
+            {'title': 'Strong El Niño Years Can Bring May Hurricanes', 'description': 'In recent El Niño years, there has often been a named storm in May.', 'duration': '1:25', 'image': '/static/images/weather/upstream/explore/el-nino__02.png'},
+            {'title': 'Why Does El Niño Affect Summer Weather Significantly Less Than Winter?', 'description': 'The summer before El Niño can feel like a regular summer.', 'duration': '', 'image': '/static/images/weather/upstream/explore/el-nino__03.jpg'},
+            {'title': "Eastern Pacific Hurricane Season Starts Friday. A Potential Super El Niño And A 'Wild Card' Could Boost It.", 'description': 'A strong El Niño could turbocharge the Eastern Pacific hurricane season.', 'duration': '', 'image': '/static/images/weather/upstream/explore/el-nino__04.png'},
+        ],
+    },
+    'home-garden': {
+        'hero_title': 'Farmer Shares the 5 Vegetables You Should Never Plant Together',
+        'hero_description': "It's not about what you plant, but where you plant it.",
+        'hero_image': '/static/images/weather/upstream/explore/home-and-garden__00.jpg',
+        'items': [
+            {'title': "Yelp's 2026 Home Trends: Smarter, stylish spaces for summer", 'description': 'Expect to see personality-driven homes with purpose.', 'duration': '', 'image': '/static/images/weather/upstream/explore/home-and-garden__01.jpg'},
+            {'title': '10 Vegetables You Can Grow in Part Shade', 'description': "Here's how to maximize your harvest with limited sunlight.", 'duration': '', 'image': '/static/images/weather/upstream/explore/home-and-garden__02.jpg'},
+            {'title': 'Aromatic Plants for a Home Garden Design', 'description': 'Easy-to-find scented plants for a romantic garden.', 'duration': '', 'image': '/static/images/weather/upstream/explore/home-and-garden__03.jpg'},
+        ],
+    },
+    'allergies': {
+        'hero_title': '5 Best Cities For Allergy Sufferers That Travelers Love',
+        'hero_description': 'Top destination picks for travelers who want fewer allergy symptoms.',
+        'hero_image': '/static/images/weather/upstream/explore/allergies__00.jpg',
+        'items': [
+            {'title': 'Allergy Season Grows Longer – Especially In These Places', 'description': 'Rising temperatures and shifting pollen windows are changing seasonal patterns.', 'duration': '', 'image': '/static/images/weather/upstream/explore/allergies__01.jpg'},
+            {'title': 'Here’s How To Really Get Allergy Relief From Nasal Spray', 'description': 'Simple technique changes can make treatment far more effective.', 'duration': '', 'image': '/static/images/weather/upstream/explore/allergies__02.jpg'},
+            {'title': 'The Worst European Summer Destinations For Allergy Sufferers', 'description': 'Some iconic summer routes can spike pollen and mold exposure.', 'duration': '', 'image': '/static/images/weather/upstream/explore/allergies__03.jpg'},
+        ],
+    },
+    'space': {
+        'hero_title': 'Lightning From Space? Storm Over Kansas Caught in Orbit',
+        'hero_description': 'Orbital imagery captured dramatic lightning activity over the Plains.',
+        'hero_image': '/static/images/weather/upstream/explore/space__00.jpg',
+        'items': [
+            {'title': "Here's The Best Way To Watch A Meteor Shower", 'description': 'Tips for timing, darkness, and viewing angles for meteor showers.', 'duration': '', 'image': '/static/images/weather/upstream/explore/space__01.jpg'},
+            {'title': 'Full Flower Moon Welcomes May: Best Pics From Around The Globe', 'description': 'A visual roundup of moonrise photos from around the world.', 'duration': '', 'image': '/static/images/weather/upstream/explore/space__02.jpg'},
+            {'title': 'Bright Fireball Streaks Over Washington, Oregon', 'description': 'Witness accounts describe a vivid streaking object lighting up the sky.', 'duration': '', 'image': '/static/images/weather/upstream/explore/space__03.jpg'},
+        ],
+    },
+    'product-guides': {
+        'hero_title': 'Product Reviews & Deals',
+        'hero_description': 'Practical weather-focused buying guides and product picks.',
+        'hero_image': '/static/images/weather/upstream/explore/seasonal__00.jpg',
+        'items': [
+            {'title': 'What You Need To Know To Be Prepared For Hurricane Season', 'description': 'Core preparation checklist before peak storm months.', 'duration': '0:48', 'image': '/static/images/weather/upstream/explore/seasonal__01.jpg'},
+            {'title': 'Could You Travel To The Caribbean This Hurricane Season?', 'description': 'Travel planning tips and risk windows for tropical trips.', 'duration': '1:33', 'image': '/static/images/weather/upstream/explore/seasonal__04.png'},
+            {'title': 'One Month Until Hurricane Season: What We Know', 'description': 'Latest outlook and key signals heading into the season.', 'duration': '1:22', 'image': '/static/images/weather/upstream/explore/seasonal__02.png'},
+        ],
+    },
+    'animals': {
+        'hero_title': '7 Rattlesnake Hotspots in Nevada Most People Don’t Know About',
+        'hero_description': 'From Lake Tahoe to Great Basin National Park, see where these snakes are most common.',
+        'hero_image': '/static/images/weather/upstream/explore/animals__00.jpg',
+        'items': [
+            {'title': 'The Best Cat Breeds for Young Kids', 'description': 'Find family-friendly cat breeds for households with children.', 'duration': '', 'image': '/static/images/weather/upstream/explore/animals__01.jpg'},
+            {'title': 'Tiny Baby Geese Get Blown Over by the Wind in Adorable Video', 'description': 'Windy conditions turn into a surprisingly cute moment.', 'duration': '', 'image': '/static/images/weather/upstream/explore/animals__02.jpg'},
+            {'title': 'What It Means When Crows Call Around Your Home', 'description': 'Why this behavior happens and what it may signal.', 'duration': '', 'image': '/static/images/weather/upstream/explore/animals__03.jpg'},
+        ],
+    },
+    'travel': {
+        'hero_title': 'Ask A Met: Why Is It Unsafe To Fly In A Winter Storm?',
+        'hero_description': 'Each week, meteorologists answer weather questions from readers.',
+        'hero_image': '/static/images/weather/upstream/explore/travel__00.jpg',
+        'items': [
+            {'title': 'Where In The World Is ... Fly Geyser?', 'description': 'Can you guess where in the world Fly Geyser is?', 'duration': '', 'image': '/static/images/weather/upstream/explore/travel__01.jpg'},
+            {'title': 'Forget Summer, These National Parks Are Even Better In The Snow', 'description': 'These parks transform into snow-dusted destinations in winter.', 'duration': '', 'image': '/static/images/weather/upstream/explore/travel__02.jpg'},
+            {'title': 'Where In The World Is ... Goblin Valley?', 'description': 'A landscape of unusual stone formations and surreal terrain.', 'duration': '', 'image': '/static/images/weather/upstream/explore/travel__03.jpg'},
+        ],
+    },
+    'bike': {
+        'hero_title': '5 Countries, 3 Continents, and One Tiny Bike: Our Long-Term Spawn Yoji Review',
+        'hero_description': 'What really makes a good first pedal bike for kids?',
+        'hero_image': '/static/images/weather/upstream/explore/bike__00.jpg',
+        'items': [
+            {'title': 'California Draws a Long-Overdue Line Between E-Bikes and E-Motos', 'description': 'A new bill aims to clearly separate classes of electric two-wheelers.', 'duration': '', 'image': '/static/images/weather/upstream/explore/bike__01.jpg'},
+            {'title': "Utah’s 3,100-Mile Bike 'Interstate' Could Revolutionize Riding Across the State", 'description': 'A statewide paved network promises safer access and broader connectivity.', 'duration': '', 'image': '/static/images/weather/upstream/explore/bike__02.jpg'},
+            {'title': 'Faster than Death – First Aid Meets Mountain Bikes', 'description': 'Why emergency readiness matters when riding remote trails.', 'duration': '', 'image': '/static/images/weather/upstream/explore/bike__03.jpg'},
+        ],
+    },
+    'seasonal': {
+        'hero_title': 'What You Need To Know To Be Prepared For Hurricane Season',
+        'hero_description': 'Actionable preparation guidance before storms ramp up.',
+        'hero_image': '/static/images/weather/upstream/explore/seasonal__00.jpg',
+        'items': [
+            {'title': 'The Anatomy of a Hurricane', 'description': 'A breakdown of storm structure and key parts of a hurricane.', 'duration': '2:35', 'image': '/static/images/weather/upstream/explore/seasonal__01.jpg'},
+            {'title': 'One Month Until Hurricane Season: What We Know', 'description': 'Current outlook details one month out from the season start.', 'duration': '1:22', 'image': '/static/images/weather/upstream/explore/seasonal__02.png'},
+            {'title': 'Why The Offseason Is Surprisingly Busy For Hurricane Experts', 'description': 'Forecast teams continue active preparation during the quieter months.', 'duration': '1:23', 'image': '/static/images/weather/upstream/explore/seasonal__03.jpg'},
+        ],
+    },
+}
+VIDEO_FEATURED = {
+    'title': 'Storm-Weary Plains, Midwest To See More Severe Weather',
+    'time_label': '1 day ago',
+    'updated': 'Updated: May 13, 2026, 9:23 am EDT',
+    'published': 'Published: May 13, 2026, 9:23 am EDT',
+    'description': 'The storm-weary Plains and Midwest are looking at the potential for more severe weather this weekend into early next week. Damaging wind gusts, large hail, tornadoes and heavy rain will all be possible each day.',
+    'duration': '0:37',
+    'image': '/static/images/weather/upstream/video/severe__00.jpg',
+    'upstream_url': 'https://weather.com/storms/severe/video/storm-weary-plains-midwest-more-severe-weather-weekend',
+}
+VIDEO_NEXT_UP = [
+    {'title': 'PGA Championship Weather Forecast: Cool Start, Then A Warmup', 'duration': '0:48', 'image': '/static/images/weather/upstream/video/severe__01.jpg'},
+    {'title': 'West Sizzles, But Heat Shifts East This Week-Weekend', 'duration': '0:50', 'image': '/static/images/weather/upstream/video/severe__02.jpg'},
+    {'title': 'What You Need To Know To Be Prepared For Hurricane Season', 'duration': '0:48', 'image': '/static/images/weather/upstream/video/severe__03.jpg'},
+    {'title': 'Could You Travel To The Caribbean This Hurricane Season?', 'duration': '1:33', 'image': '/static/images/weather/upstream/video/severe__04.jpg'},
+    {'title': 'One Month Until Hurricane Season: What We Know', 'duration': '1:22', 'image': '/static/images/weather/upstream/video/severe__05.png'},
+    {'title': 'Why The Major Shift In The May Temperature Outlook?', 'duration': '1:27', 'image': '/static/images/weather/upstream/video/severe__06.jpg'},
+    {'title': 'Tornado Wrecks Homes In Germantown, Illinois', 'duration': '0:31', 'image': '/static/images/weather/upstream/video/severe__07.jpg'},
+    {'title': 'Tornado Tosses Over Train Cars In Oswego, Kansas', 'duration': '0:27', 'image': '/static/images/weather/upstream/video/severe__08.jpg'},
+    {'title': 'Inside The Aftermath Of Deadly Tornado In Runaway Bay, Texas', 'duration': '0:34', 'image': '/static/images/weather/upstream/video/severe__09.jpg'},
+]
+
+MEDIA_IMAGE_PATH_ALIASES = {
+    '/static/images/weather/upstream/media/06-where-has-it-spread-dozens-of-passengers-left-hantavirus-cruise-ship-after-first.jpg':
+        '/static/images/weather/upstream/media/06-where-has-it-spread-dozens-of-passengers-left-hantavirus-cruise-ship-after-first-death.jpg',
+}
+
+
+def normalize_media_image_path(path: str) -> str:
+    return MEDIA_IMAGE_PATH_ALIASES.get(path, path)
 
 
 def mirror_now() -> datetime:
     return MIRROR_REFERENCE_DATE
+
+
+def prefers_metric_units() -> bool:
+    return bool(current_user.is_authenticated and current_user.preferred_units == 'metric')
+
+
+def format_temp(temp_f: int | float) -> str:
+    if prefers_metric_units():
+        return f"{round((temp_f - 32) * 5 / 9)}°C"
+    return f"{round(temp_f)}°F"
+
+
+def format_wind(speed_mph: int | float, direction: str | None = None) -> str:
+    if prefers_metric_units():
+        speed = f"{round(speed_mph * 1.60934)} km/h"
+    else:
+        speed = f"{round(speed_mph)} mph"
+    return f"{speed} {direction}".strip() if direction else speed
+
+
+def format_distance(distance_mi: int | float) -> str:
+    if prefers_metric_units():
+        return f"{round(distance_mi * 1.60934)} km"
+    return f"{round(distance_mi)} mi"
 
 
 def build_media_sections(cards: list[dict], offset: int = 0) -> dict:
@@ -50,10 +219,48 @@ def build_media_sections(cards: list[dict], offset: int = 0) -> dict:
 
 def get_media_sections(offset: int = 0) -> dict:
     cards = [
-        {'title': row.title, 'image': row.image_path, 'watch_url': row.watch_url}
+        {'title': row.title, 'image': normalize_media_image_path(row.image_path), 'watch_url': row.watch_url}
         for row in WeatherMediaCard.query.order_by(WeatherMediaCard.position.asc()).limit(16).all()
     ]
     return build_media_sections(cards, offset=offset)
+
+
+def get_topic_media_sections(topic_key: str, topic_map: dict[str, list[int]]) -> dict:
+    rows = WeatherMediaCard.query.order_by(WeatherMediaCard.position.asc()).all()
+    by_position = {row.position: row for row in rows}
+    selected_positions = topic_map.get(topic_key, [])
+
+    selected_cards = []
+    for position in selected_positions:
+        row = by_position.get(position)
+        if row is None:
+            continue
+        selected_cards.append({'title': row.title, 'image': normalize_media_image_path(row.image_path), 'watch_url': row.watch_url})
+
+    if len(selected_cards) < 6:
+        existing_titles = {card['title'] for card in selected_cards}
+        for row in rows:
+            if row.title in existing_titles:
+                continue
+            selected_cards.append({'title': row.title, 'image': normalize_media_image_path(row.image_path), 'watch_url': row.watch_url})
+            if len(selected_cards) >= 8:
+                break
+
+    return build_media_sections(selected_cards, offset=0)
+
+
+def resolve_topic(topics: list[dict], selected_key: str | None):
+    topic_map = {topic['key']: topic for topic in topics}
+    fallback = topics[0]
+    selected = topic_map.get((selected_key or '').strip(), fallback)
+    return selected
+
+
+def resolve_topic_by_slug(topics: list[dict], topic_slug: str | None):
+    topic_map = {topic['slug']: topic for topic in topics}
+    fallback = topics[0]
+    selected = topic_map.get((topic_slug or '').strip(), fallback)
+    return selected
 
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'), static_folder=os.path.join(BASE_DIR, 'static'))
@@ -249,12 +456,16 @@ def inject_globals():
         'primary_location': primary_location,
         'primary_conditions': primary_conditions,
         'brand_logo_path': brand_logo_path,
+        'unit_label': '°C' if prefers_metric_units() else '°F',
+        'fmt_temp': format_temp,
+        'fmt_wind': format_wind,
+        'fmt_distance': format_distance,
     }
 
 
 def homepage_story_data():
     scraped_cards = [
-        {'title': row.title, 'image': row.image_path, 'watch_url': row.watch_url}
+        {'title': row.title, 'image': normalize_media_image_path(row.image_path), 'watch_url': row.watch_url}
         for row in WeatherMediaCard.query.order_by(WeatherMediaCard.position.asc()).limit(16).all()
     ]
     media_sections = build_media_sections(scraped_cards, offset=0)
@@ -504,6 +715,53 @@ def radar(slug: str):
     return render_template('radar.html', location=location, media_sections=media_sections)
 
 
+@app.route('/video')
+def video():
+    return render_template(
+        'video.html',
+        featured_video=VIDEO_FEATURED,
+        next_up_videos=VIDEO_NEXT_UP,
+    )
+
+
+def _render_explore(selected_topic: dict):
+    topic_content = EXPLORE_TOPIC_CONTENT.get(selected_topic['key'], EXPLORE_TOPIC_CONTENT['top-stories'])
+    explore_items = topic_content['items']
+    explore_hero = {
+        'title': topic_content['hero_title'],
+        'description': topic_content['hero_description'],
+        'cta': 'Read more',
+        'image': topic_content['hero_image'],
+        'watch_url': f"https://weather.com/explore/{selected_topic['slug']}",
+    }
+    locations = Location.query.order_by(Location.city.asc()).all()
+    result_conditions = {
+        condition.location_id: condition
+        for condition in CurrentConditions.query.all()
+    }
+    return render_template(
+        'explore.html',
+        locations=locations,
+        result_conditions=result_conditions,
+        explore_topics=EXPLORE_TOPICS,
+        selected_explore_topic=selected_topic['key'],
+        explore_hero=explore_hero,
+        explore_items=explore_items,
+    )
+
+
+@app.route('/explore')
+def explore():
+    selected_topic = resolve_topic(EXPLORE_TOPICS, request.args.get('topic'))
+    return _render_explore(selected_topic)
+
+
+@app.route('/explore/<topic_slug>')
+def explore_topic(topic_slug: str):
+    selected_topic = resolve_topic_by_slug(EXPLORE_TOPICS, topic_slug)
+    return _render_explore(selected_topic)
+
+
 @app.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
@@ -514,7 +772,8 @@ def account():
         flash('Preferences updated.', 'success')
         return redirect(url_for('account'))
     saved = SavedLocation.query.filter_by(user_id=current_user.id).all()
-    return render_template('account.html', saved=saved)
+    home_location = db.session.get(Location, current_user.home_location_id) if current_user.home_location_id else None
+    return render_template('account.html', saved=saved, home_location=home_location)
 
 
 @app.route('/account/save-location/<slug>', methods=['POST'])

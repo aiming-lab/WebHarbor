@@ -15,9 +15,9 @@
       </div>
       <div class="current-conditions-body">
         <div>
-          <div class="current-temp-line">{{ lead_condition.temperature_f }}°</div>
+          <div class="current-temp-line">{{ fmt_temp(lead_condition.temperature_f) }}</div>
           <div class="current-condition-label">{{ lead_condition.condition_label }}</div>
-          <div class="current-hi-low">Day {{ forecast_hint.high_f if forecast_hint else lead_condition.temperature_f + 4 }}° • Night {{ forecast_hint.low_f if forecast_hint else lead_condition.temperature_f - 8 }}°</div>
+          <div class="current-hi-low">Day {{ fmt_temp(forecast_hint.high_f if forecast_hint else lead_condition.temperature_f + 4) }} • Night {{ fmt_temp(forecast_hint.low_f if forecast_hint else lead_condition.temperature_f - 8) }}</div>
         </div>
         <a class="forecast-cta" href="{{ url_for('location_detail', slug=lead.slug) }}">See in-depth forecast</a>
       </div>
@@ -48,13 +48,13 @@
         <article class="wx-health-card compact">
           <p class="module-kicker">Cold &amp; Flu Tracker</p>
           <h3>{{ spotlight_modules.flu_module.label }}</h3>
-          <div class="wx-health-value">{{ spotlight_modules.flu_module.value }}°</div>
+          <div class="wx-health-value">{{ fmt_temp(spotlight_modules.flu_module.value) }}</div>
           <p>{{ spotlight_modules.flu_module.description }}</p>
         </article>
         <article class="wx-health-card compact">
           <p class="module-kicker">Outdoor Activity</p>
           <h3>{{ spotlight_modules.outdoor_module.label }}</h3>
-          <div class="wx-health-value">{{ spotlight_modules.outdoor_module.value }}°</div>
+          <div class="wx-health-value">{{ fmt_temp(spotlight_modules.outdoor_module.value) }}</div>
           <p>{{ spotlight_modules.outdoor_module.description }}</p>
         </article>
       </div>
@@ -89,12 +89,12 @@
       <h3>Video</h3>
       {% for card in video_cards %}
         <section class="rail-card compact">
-          <a href="{{ card.watch_url or '#' }}">
+          <a href="{{ card.watch_url or url_for('video') }}">
             <img src="{{ card.image }}" alt="{{ card.title }}">
           </a>
           <div>
-            <h4><a href="{{ card.watch_url or '#' }}">{{ card.title }}</a></h4>
-            <p><a href="{{ card.watch_url or '#' }}">Watch now</a></p>
+            <h4><a href="{{ card.watch_url or url_for('video') }}">{{ card.title }}</a></h4>
+            <p><a href="{{ card.watch_url or url_for('video') }}">Watch now</a></p>
           </div>
         </section>
       {% endfor %}

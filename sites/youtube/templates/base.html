@@ -24,7 +24,14 @@
       <button class="icon-btn create-btn" aria-label="Create">＋</button>
       <button class="icon-btn" aria-label="Notifications">🔔</button>
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('account') }}" class="avatar-pill">{{ current_user.initials }}</a>
+        <a href="{{ url_for('account') }}" class="avatar-link">
+          {% set nav_avatar = user_avatar_path(current_user) %}
+          {% if nav_avatar %}
+            <img class="user-avatar" src="{{ nav_avatar }}" alt="{{ current_user.display_name }} avatar">
+          {% else %}
+            <span class="avatar-pill">{{ current_user.initials }}</span>
+          {% endif %}
+        </a>
         <form action="{{ url_for('logout') }}" method="post">
           <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
           <button class="ghost-btn" type="submit">Sign out</button>

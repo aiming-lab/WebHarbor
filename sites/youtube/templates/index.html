@@ -6,24 +6,6 @@
     <a class="chip {% if category == selected_category %}active{% endif %}" href="{{ url_for('index', category=category) }}">{{ category }}</a>
   {% endfor %}
 </div>
-<section class="hero-strip">
-  <div>
-    <p class="eyebrow">Recommended</p>
-    <h1>Recommended videos</h1>
-  </div>
-  <div class="trend-cards">
-    {% for video in trending[:3] %}
-      <a class="trend-card" href="{{ url_for('watch', slug=video.slug) }}">
-        <img src="{{ video.thumbnail_path }}" alt="{{ video.title }} thumbnail">
-        <div>
-          <strong>{{ video.title }}</strong>
-          <span>{{ video.channel.name }}</span>
-          <span>{{ video.view_label }} · {{ video.relative_date }}</span>
-        </div>
-      </a>
-    {% endfor %}
-  </div>
-</section>
 <section class="video-grid">
   {% for video in videos %}
     {% include '_video_card.html' %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Video · Weather{% endblock %}
+{% block content %}
+<section class="wx-video-detail-layout">
+  <div class="wx-video-detail-main">
+    <div class="wx-video-player-wrap">
+      <img src="{{ featured_video.image }}" alt="{{ featured_video.title }}">
+      <div class="wx-video-player-bar">
+        <span>Now Playing</span>
+        <strong>{{ featured_video.duration }}</strong>
+      </div>
+    </div>
+    <h1>{{ featured_video.title }}</h1>
+    <p class="wx-video-detail-time">{{ featured_video.time_label }}</p>
+    <p class="wx-video-detail-meta">{{ featured_video.updated }}</p>
+    <p class="wx-video-detail-meta">{{ featured_video.published }}</p>
+    <p class="wx-video-detail-desc">{{ featured_video.description }}</p>
+    <p><a class="ghost-btn secondary" href="{{ featured_video.upstream_url }}">Open upstream reference</a></p>
+  </div>
+
+  <aside class="wx-video-detail-rail">
+    <article class="wx-video-side-card now">
+      <p class="wx-video-side-kicker">Now Playing</p>
+      <h3>{{ featured_video.title }}</h3>
+      <p class="wx-video-duration">{{ featured_video.duration }}</p>
+    </article>
+    {% for item in next_up_videos %}
+      <article class="wx-video-side-card">
+        <img src="{{ item.image }}" alt="{{ item.title }}">
+        <p class="wx-video-side-kicker">Next Up</p>
+        <h3>{{ item.title }}</h3>
+        <p class="wx-video-duration">{{ item.duration }}</p>
+      </article>
+    {% endfor %}
+  </aside>
+</section>
+{% endblock %}

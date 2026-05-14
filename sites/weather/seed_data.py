@@ -34,7 +34,7 @@ WEATHER_MEDIA_CARDS = [
     },
     {
         'title': 'Where Has It Spread? Dozens Of Passengers Left Hantavirus Cruise Ship After First Death',
-        'image': '/static/images/weather/upstream/media/06-where-has-it-spread-dozens-of-passengers-left-hantavirus-cruise-ship-after-first.jpg',
+        'image': '/static/images/weather/upstream/media/06-where-has-it-spread-dozens-of-passengers-left-hantavirus-cruise-ship-after-first-death.jpg',
         'watch_url': 'https://weather.com/news/news/2026-05-05-hantavirus-cruise-ship-human-to-human-transmission',
     },
     {

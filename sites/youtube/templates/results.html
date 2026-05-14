@@ -7,7 +7,12 @@
 </header>
 <div class="chip-row compact">
   {% for category in nav_categories %}
-    <a class="chip {% if category == selected_category %}active{% endif %}" href="{{ url_for('results', search_query=search_query, category=category) }}">{{ category }}</a>
+    <a class="chip {% if category == selected_category %}active{% endif %}" href="{{ url_for('results', search_query=search_query, category=category, filter=active_filter) }}">{{ category }}</a>
+  {% endfor %}
+</div>
+<div class="chip-row compact">
+  {% for option in filter_options %}
+    <a class="chip {% if option == active_filter %}active{% endif %}" href="{{ url_for('results', search_query=search_query, category=selected_category, filter=option) }}">{{ option }}</a>
   {% endfor %}
 </div>
 <section class="results-list">

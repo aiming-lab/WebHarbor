@@ -22,15 +22,15 @@
       </div>
       <div class="current-hero-body">
         <div>
-          <div class="current-temp-line">{{ conditions.temperature_f }}°</div>
+          <div class="current-temp-line">{{ fmt_temp(conditions.temperature_f) }}</div>
           <div class="current-condition-label dark">{{ conditions.condition_label }}</div>
-          <p class="current-subline">Feels Like {{ conditions.feels_like_f }}° · Air Quality {{ conditions.air_quality }}</p>
+          <p class="current-subline">Feels Like {{ fmt_temp(conditions.feels_like_f) }} · Air Quality {{ conditions.air_quality }}</p>
         </div>
         <div class="current-hero-meta">
           <div><strong>Humidity</strong><span>{{ conditions.humidity }}%</span></div>
-          <div><strong>Wind</strong><span>{{ conditions.wind_mph }} mph {{ conditions.wind_direction }}</span></div>
+          <div><strong>Wind</strong><span>{{ fmt_wind(conditions.wind_mph, conditions.wind_direction) }}</span></div>
           <div><strong>UV Index</strong><span>{{ conditions.uv_index }}</span></div>
-          <div><strong>Visibility</strong><span>{{ conditions.visibility_mi }} mi</span></div>
+          <div><strong>Visibility</strong><span>{{ fmt_distance(conditions.visibility_mi) }}</span></div>
         </div>
       </div>
     </section>
@@ -47,7 +47,7 @@
         {% for hour in hourly %}
           <article class="wx-hourly-card">
             <strong>{{ hour.forecast_time.strftime('%-I %p') }}</strong>
-            <div class="wx-hourly-temp">{{ hour.temperature_f }}°</div>
+            <div class="wx-hourly-temp">{{ fmt_temp(hour.temperature_f) }}</div>
             <p>{{ hour.condition_label }}</p>
             <span>{{ hour.precip_pct }}% Rain</span>
           </article>
@@ -71,7 +71,7 @@
               <span>{{ day.condition_label }}</span>
             </div>
             <div class="wx-forecast-rain">{{ day.precip_pct }}%</div>
-            <div class="wx-forecast-temps"><strong>{{ day.high_f }}°</strong><span>{{ day.low_f }}°</span></div>
+            <div class="wx-forecast-temps"><strong>{{ fmt_temp(day.high_f) }}</strong><span>{{ fmt_temp(day.low_f) }}</span></div>
           </article>
         {% endfor %}
       </div>
@@ -100,13 +100,13 @@
         <article class="wx-health-card">
           <p class="module-kicker">Cold &amp; Flu</p>
           <h3>{{ health_modules.flu_module.label }}</h3>
-          <div class="wx-health-value">{{ health_modules.flu_module.value }}°</div>
+          <div class="wx-health-value">{{ fmt_temp(health_modules.flu_module.value) }}</div>
           <p>{{ health_modules.flu_module.description }}</p>
         </article>
         <article class="wx-health-card">
           <p class="module-kicker">Outdoor Activity</p>
           <h3>{{ health_modules.outdoor_module.label }}</h3>
-          <div class="wx-health-value">{{ health_modules.outdoor_module.value }}°</div>
+          <div class="wx-health-value">{{ fmt_temp(health_modules.outdoor_module.value) }}</div>
           <p>{{ health_modules.outdoor_module.description }}</p>
         </article>
       </div>
@@ -118,7 +118,7 @@
       <h3>Weather Details</h3>
       <div class="wx-side-list">
         <div><span>Air Quality</span><strong>{{ conditions.air_quality }}</strong></div>
-        <div><span>Wind</span><strong>{{ conditions.wind_mph }} mph {{ conditions.wind_direction }}</strong></div>
+          <div><span>Wind</span><strong>{{ fmt_wind(conditions.wind_mph, conditions.wind_direction) }}</strong></div>
         <div><span>Humidity</span><strong>{{ conditions.humidity }}%</strong></div>
         <div><span>UV Index</span><strong>{{ conditions.uv_index }}</strong></div>
       </div>
@@ -153,12 +153,12 @@
       <h3>Video</h3>
       {% for card in media_sections.video_cards %}
         <article class="rail-card compact">
-          <a href="{{ card.watch_url or '#' }}">
+          <a href="{{ card.watch_url or url_for('video') }}">
             <img src="{{ card.image }}" alt="{{ card.title }}">
           </a>
           <div>
-            <h4><a href="{{ card.watch_url or '#' }}">{{ card.title }}</a></h4>
-            <p><a href="{{ card.watch_url or '#' }}">Watch now</a></p>
+            <h4><a href="{{ card.watch_url or url_for('video') }}">{{ card.title }}</a></h4>
+            <p><a href="{{ card.watch_url or url_for('video') }}">Watch now</a></p>
           </div>
         </article>
       {% endfor %}

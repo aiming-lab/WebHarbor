@@ -44,24 +44,55 @@
         {% for tag in video.get_tags() %}<span class="chip small">{{ tag }}</span>{% endfor %}
       </div>
     </section>
-    <section class="comments-card">
-      <h2>Comments</h2>
-      <p class="video-subtitle">Comments {% if video.comments_enabled %}enabled{% else %}disabled{% endif %}</p>
-      {% if current_user.is_authenticated and video.comments_enabled %}
+    <section class="comments-card yt-comments">
+      <div class="comments-head">
+        <h2>{{ '{:,}'.format(video.comment_count) }} comments</h2>
+        <button class="sort-btn" type="button">Sort by</button>
+      </div>
+      {% if video.comments_enabled and current_user.is_authenticated %}
       <form method="post" class="comment-form">
         {{ form.hidden_tag() }}
-        {{ form.body(rows=4, placeholder='Add a public comment...') }}
-        <button type="submit">Comment</button>
+        <div class="comment-input-row">
+          {% set me_avatar = user_avatar_path(current_user) %}
+          {% if me_avatar %}
+            <img class="comment-avatar" src="{{ me_avatar }}" alt="{{ current_user.display_name }} avatar">
+          {% else %}
+            <div class="avatar-pill small">{{ current_user.initials }}</div>
+          {% endif %}
+          <div class="comment-input-stack">
+            {{ form.body(rows=1, placeholder='Add a public comment...') }}
+            <div class="comment-form-actions">
+              <button class="ghost-btn" type="submit">Comment</button>
+            </div>
+          </div>
+        </div>
       </form>
+      {% elif video.comments_enabled %}
+        <div class="comment-signin">
+          <p class="empty-state">Sign in to add a public comment.</p>
+          <a class="ghost-btn sign-in-btn" href="{{ url_for('login') }}">Sign in</a>
+        </div>
       {% endif %}
       {% if not video.comments_enabled %}<p class="empty-state">Comments are disabled on this upload.</p>{% endif %}
       {% for comment in comments %}
         <article class="comment-row">
-          <div class="avatar-pill small">{{ comment.user.initials }}</div>
+          {% set comment_avatar = user_avatar_path(comment.user) %}
+          {% if comment_avatar %}
+            <img class="comment-avatar" src="{{ comment_avatar }}" alt="{{ comment.user.display_name }} avatar">
+          {% else %}
+            <div class="avatar-pill small">{{ comment.user.initials }}</div>
+          {% endif %}
           <div>
-            <strong>{{ comment.user.display_name }}</strong>
+            <div class="comment-author-line">
+              <strong>{{ comment.user.display_name }}</strong>
+              <span class="video-subtitle">@{{ comment.user.handle }} · {{ comment.created_at.strftime('%b %-d, %Y') }}</span>
+            </div>
             <p>{{ comment.body }}</p>
-            <span class="video-subtitle">{{ comment.like_count }} likes</span>
+            <div class="comment-actions">
+              <button class="ghost-btn comment-action-btn" type="button">👍 {{ comment.like_count }}</button>
+              <button class="ghost-btn comment-action-btn" type="button">👎</button>
+              <button class="ghost-btn comment-action-btn" type="button">Reply</button>
+            </div>
           </div>
         </article>
       {% else %}

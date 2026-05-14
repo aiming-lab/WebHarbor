@@ -26,11 +26,11 @@
     {% for hour in hours %}
       <article class="wx-hourly-detail-card">
         <strong>{{ hour.forecast_time.strftime('%a %-I %p') }}</strong>
-        <div class="wx-hourly-temp large">{{ hour.temperature_f }}°</div>
+        <div class="wx-hourly-temp large">{{ fmt_temp(hour.temperature_f) }}</div>
         <p>{{ hour.condition_label }}</p>
         <div class="wx-hourly-meta">
           <span>Rain {{ hour.precip_pct }}%</span>
-          <span>Wind {{ hour.wind_mph }} mph</span>
+          <span>Wind {{ fmt_wind(hour.wind_mph) }}</span>
         </div>
       </article>
     {% endfor %}
@@ -68,10 +68,10 @@
   <div class="wx-top-story-grid">
     {% for card in media_sections.tile_cards %}
       <article class="wx-top-story-tile">
-        <a href="{{ card.watch_url or '#' }}">
+        <a href="{{ card.watch_url or url_for('video') }}">
           <img src="{{ card.image }}" alt="{{ card.title }}">
         </a>
-        <p><a href="{{ card.watch_url or '#' }}">{{ card.title }}</a></p>
+        <p><a href="{{ card.watch_url or url_for('video') }}">{{ card.title }}</a></p>
       </article>
     {% endfor %}
   </div>
@@ -83,12 +83,12 @@
   <h3>Video</h3>
   {% for card in media_sections.video_cards %}
     <section class="rail-card compact">
-      <a href="{{ card.watch_url or '#' }}">
+      <a href="{{ card.watch_url or url_for('video') }}">
         <img src="{{ card.image }}" alt="{{ card.title }}">
       </a>
       <div>
-        <h4><a href="{{ card.watch_url or '#' }}">{{ card.title }}</a></h4>
-        <p><a href="{{ card.watch_url or '#' }}">Watch now</a></p>
+        <h4><a href="{{ card.watch_url or url_for('video') }}">{{ card.title }}</a></h4>
+        <p><a href="{{ card.watch_url or url_for('video') }}">Watch now</a></p>
       </div>
     </section>
   {% endfor %}

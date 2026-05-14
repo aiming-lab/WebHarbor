@@ -50,19 +50,19 @@
   {% if media_sections.editor_card %}
   <article class="rail-card">
     <h3>Editor's Pick</h3>
-    <a href="{{ media_sections.editor_card.watch_url or '#' }}">
+    <a href="{{ media_sections.editor_card.watch_url or url_for('video') }}">
       <img src="{{ media_sections.editor_card.image }}" alt="{{ media_sections.editor_card.title }}">
     </a>
-    <p><a href="{{ media_sections.editor_card.watch_url or '#' }}">{{ media_sections.editor_card.title }}</a></p>
+    <p><a href="{{ media_sections.editor_card.watch_url or url_for('video') }}">{{ media_sections.editor_card.title }}</a></p>
   </article>
   {% endif %}
   {% if media_sections.seasonal_card %}
   <article class="rail-card">
     <h3>Lonely Planet</h3>
-    <a href="{{ media_sections.seasonal_card.watch_url or '#' }}">
+    <a href="{{ media_sections.seasonal_card.watch_url or url_for('video') }}">
       <img src="{{ media_sections.seasonal_card.image }}" alt="{{ media_sections.seasonal_card.title }}">
     </a>
-    <p><a href="{{ media_sections.seasonal_card.watch_url or '#' }}">{{ media_sections.seasonal_card.title }}</a></p>
+    <p><a href="{{ media_sections.seasonal_card.watch_url or url_for('video') }}">{{ media_sections.seasonal_card.title }}</a></p>
   </article>
   {% endif %}
 </section>
@@ -72,12 +72,12 @@
   <h3>Video</h3>
   {% for card in media_sections.video_cards %}
     <section class="rail-card compact">
-      <a href="{{ card.watch_url or '#' }}">
+      <a href="{{ card.watch_url or url_for('video') }}">
         <img src="{{ card.image }}" alt="{{ card.title }}">
       </a>
       <div>
-        <h4><a href="{{ card.watch_url or '#' }}">{{ card.title }}</a></h4>
-        <p><a href="{{ card.watch_url or '#' }}">Watch now</a></p>
+        <h4><a href="{{ card.watch_url or url_for('video') }}">{{ card.title }}</a></h4>
+        <p><a href="{{ card.watch_url or url_for('video') }}">Watch now</a></p>
       </div>
     </section>
   {% endfor %}
