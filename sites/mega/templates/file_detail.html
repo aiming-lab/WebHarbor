@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }}{% endblock %}
+{% block content %}
+<section class="detail-layout">
+  <div>
+    <p class="eyebrow">{{ item.folder }}</p>
+    <h1>{{ item.name }}</h1>
+    <p>{{ item.content_summary }}</p>
+    <dl class="info-table">
+      <div><span>Size</span><strong>{{ item.size_mb|size }}</strong></div>
+      <div><span>Modified</span><strong>{{ item.modified_at }}</strong></div>
+      <div><span>Sync</span><strong>{{ item.sync_status }}</strong></div>
+      <div><span>Backup source</span><strong>{{ item.backup_source or 'None' }}</strong></div>
+      <div><span>Shared with</span><strong>{{ item.shared_with or 'Not shared' }}</strong></div>
+      <div><span>Share link</span><strong>{{ item.share_link or 'No link' }}</strong></div>
+    </dl>
+  </div>
+  <form class="form-card" method="post">
+    <h2>Sharing settings</h2>
+    <label>Shared with <input name="shared_with" value="{{ item.shared_with }}"></label>
+    <label class="check-row"><input type="checkbox" name="favorite" {% if item.favorite %}checked{% endif %}> Favorite</label>
+    <label class="check-row"><input type="checkbox" name="create_link"> Create share link</label>
+    <button type="submit">Save settings</button>
+  </form>
+</section>
+{% endblock %}

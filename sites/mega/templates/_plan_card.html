@@ -1,0 +1,19 @@
+<article class="plan-card {% if plan.popular %}popular{% endif %}">
+  {% if plan.popular %}<span class="badge">Popular</span>{% endif %}
+  <h3>{{ plan.name }}</h3>
+  <p>{{ plan.tagline }}</p>
+  <div class="price">
+    {% if plan.monthly_price == 0 %}Free{% else %}${{ "%.2f"|format(plan.monthly_price) }}<small>/mo</small>{% endif %}
+  </div>
+  <dl>
+    <div><dt>Storage</dt><dd>{{ plan.storage_tb }} TB</dd></div>
+    <div><dt>Transfer</dt><dd>{{ plan.transfer_tb }} TB</dd></div>
+    <div><dt>Users</dt><dd>{{ plan.users_included }}</dd></div>
+  </dl>
+  <form method="post" action="{{ url_for('add_to_cart', slug=plan.slug) }}">
+    <input type="hidden" name="billing_cycle" value="{{ billing|default('monthly') }}">
+    <input type="hidden" name="seats" value="{{ plan.users_included or 1 }}">
+    <button type="submit">Choose plan</button>
+  </form>
+  <a class="text-link" href="{{ url_for('plan_detail', slug=plan.slug) }}">Details</a>
+</article>

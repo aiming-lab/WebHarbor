@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<article class="article">
+  <p class="eyebrow">{{ article.category }} · {{ article.difficulty }}</p>
+  <h1>{{ article.title }}</h1>
+  <p>{{ article.body }}</p>
+  <dl class="info-table">
+    <div><span>Applies to</span><strong>{{ article.applies_to }}</strong></div>
+    <div><span>Updated</span><strong>{{ article.updated_at }}</strong></div>
+  </dl>
+</article>
+<section class="section">
+  <h2>Related articles</h2>
+  <div class="list-grid">
+    {% for item in related %}
+      <a class="list-item" href="{{ url_for('help_article', slug=item.slug) }}"><span>{{ item.category }}</span><strong>{{ item.title }}</strong></a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
