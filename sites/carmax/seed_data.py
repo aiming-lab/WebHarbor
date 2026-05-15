@@ -12,9 +12,6 @@ scraper has run, templates fall back to _pending.svg via onerror.
 import json
 from datetime import date, datetime, timedelta
 
-from app import (Appraisal, Article, ComparisonItem, Comparison,
-                 FinancePreQual, Order, Reservation, Review, SavedVehicle,
-                 Store, TestDrive, User, Vehicle, bcrypt, db)
 
 # Frozen wall-clock so seeded rows are byte-stable across reset cycles.
 SEED_NOW = datetime(2026, 1, 15, 12, 0, 0)
@@ -524,7 +521,7 @@ def _build_vehicle_seeds():
         # Pick 5 vehicle variants per template (roughly): one per trim, varied year
         trims = t[3]
         years = t[4]
-        colors_count = len(t[14])
+        colors_count = len(t[16])
         n_variants = min(5, max(4, len(trims) + 1))
         for variant in range(n_variants):
             trim_idx = variant % len(trims)
@@ -671,6 +668,7 @@ REVIEW_TEMPLATES = [
 
 def seed_database():
     """Create stores, vehicles, articles, reviews. Early-return if populated."""
+    from app import (Article, Review, Store, Vehicle, db)
     if Vehicle.query.count() > 0:
         return
 
@@ -715,6 +713,9 @@ def seed_database():
 
 def seed_benchmark_users():
     """Five benchmark users used by WebVoyager tasks. Idempotent."""
+    from app import (Appraisal, FinancePreQual, Order, Reservation,
+                     Review, SavedVehicle, Store, TestDrive, User, Vehicle,
+                     bcrypt, db)
     if User.query.filter_by(email='alice.j@test.com').first():
         return
 

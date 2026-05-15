@@ -827,6 +827,7 @@ def inject_globals():
     compare_count = (ComparisonItem.query.filter_by(comparison_id=comp.id).count()
                      if comp else 0)
     return {
+        'current_user': current_user,
         'saved_count': saved_count,
         'compare_count': compare_count,
         'csrf_token': generate_csrf,
@@ -1976,6 +1977,12 @@ def server_error(e):
 # =============================================================================
 # Bootstrap
 # =============================================================================
+
+# Map this module under the name 'app' so seed_data's deferred
+# 'from app import ...' returns this same instance (not a fresh re-import
+# under __name__ == '__main__').
+import sys as _sys
+_sys.modules.setdefault('app', _sys.modules[__name__])
 
 from seed_data import seed_database, seed_benchmark_users  # noqa: E402
 
