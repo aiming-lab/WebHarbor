@@ -398,9 +398,12 @@ def _vehicle_for(template_idx, trim_idx, year_idx, store_idx, color_idx,
     sporty = any(w in trim for w in ('Sport', 'SI', 'AMG', 'Performance',
                                      'Mach', 'TRD', 'Rubicon', 'M340'))
     if sporty:
-        for f in ('Rear Spoiler', 'Alloy Wheels', 'Turbo Charged Engine'):
+        for f in ('Rear Spoiler', 'Alloy Wheels'):
             if f not in feats:
                 feats.append(f)
+    # Cross-field consistency: only claim Turbo feature when the engine actually is turbo
+    if 'Turbo' in engine and 'Turbo Charged Engine' not in feats:
+        feats.append('Turbo Charged Engine')
     if 'Electric' in fuel:
         feats = [f for f in feats if 'Turbo' not in f]
         feats.append('All-Electric Drivetrain')
