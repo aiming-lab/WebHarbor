@@ -810,7 +810,7 @@ def seed_benchmark_users():
     v37 = db.session.get(Vehicle, 37)
 
     if v1: db.session.add(SavedVehicle(user_id=alice.id, vehicle_id=v1.id, saved_at=SEED_NOW))
-    if v5: db.session.add(SavedVehicle(user_id=alice.id, vehicle_id=v5.id, saved_at=SEED_NOW))
+    if v11: db.session.add(SavedVehicle(user_id=alice.id, vehicle_id=v11.id, saved_at=SEED_NOW))  # 2021 Honda CR-V LX — disambig from v1
     if v7: db.session.add(SavedVehicle(user_id=bob.id, vehicle_id=v7.id, saved_at=SEED_NOW))
     if v11: db.session.add(SavedVehicle(user_id=bob.id, vehicle_id=v11.id, saved_at=SEED_NOW))
     if v23: db.session.add(SavedVehicle(user_id=carol.id, vehicle_id=v23.id, saved_at=SEED_NOW))
@@ -886,7 +886,7 @@ def seed_benchmark_users():
             tax=v37.price * 0.0625,
             title_fee=99, registration_fee=55,
             total=(v37.price + (v37.transfer_fee or 0) + v37.price * 0.0625
-                   + 99 + 55),
+                   + 99 + 55 + 1895),  # includes MaxCare gold
             maxcare_plan='gold', maxcare_price=1895,
             payment_method='carmax_auto_finance',
             payment_last4='1234', payment_apr=6.49,
