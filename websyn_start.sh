@@ -5,7 +5,7 @@ set -e
 
 SITES=(allrecipes amazon apple arxiv bbc_news booking github
        google_flights google_map google_search huggingface wolfram_alpha
-       cambridge_dictionary coursera espn)
+       cambridge_dictionary coursera espn carmax)
 BASE_PORT=40000
 PID_DIR=/tmp/websyn_pids
 mkdir -p "$PID_DIR"
@@ -17,7 +17,7 @@ for d in "${SITES[@]}"; do
     cp -a "/opt/WebSyn/$d/instance_seed" "/opt/WebSyn/$d/instance"
 done
 
-echo "[WebSyn] Starting 15 sites on ports ${BASE_PORT}-$((BASE_PORT + 14))..."
+echo "[WebSyn] Starting ${#SITES[@]} sites on ports ${BASE_PORT}-$((BASE_PORT + ${#SITES[@]} - 1))..."
 for i in "${!SITES[@]}"; do
     site="${SITES[$i]}"
     port=$((BASE_PORT + i))
@@ -51,8 +51,8 @@ except Exception: exit(1)
             ready=$((ready + 1))
         fi
     done
-    echo "  [${elapsed}/${max_wait}s] ${ready}/15 sites ready"
-    if [ $ready -eq 15 ]; then
+    echo "  [${elapsed}/${max_wait}s] ${ready}/${#SITES[@]} sites ready"
+    if [ $ready -eq ${#SITES[@]} ]; then
         break
     fi
 done

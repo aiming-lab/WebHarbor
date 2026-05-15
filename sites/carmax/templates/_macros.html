@@ -1,0 +1,34 @@
+{% macro vcard(v) %}
+<div class="vcard">
+  <a href="{{ url_for('vehicle_detail', slug=v.slug) }}" class="vcard-img">
+    <img src="{{ v.image or '/static/images/_pending.svg' }}" alt="{{ v.title }}"
+         onerror="this.src='/static/images/_pending.svg'">
+    <div class="badge-strip">
+      {% if v.is_certified %}<span class="badge cert">CarMax Certified</span>{% endif %}
+      {% if v.is_new_arrival %}<span class="badge">New arrival</span>{% endif %}
+      {% if v.savings() %}<span class="badge deal">Save {{ v.savings()|money }}</span>{% endif %}
+    </div>
+  </a>
+  <div class="vcard-body">
+    <a href="{{ url_for('vehicle_detail', slug=v.slug) }}">
+      <h3 class="vcard-title">{{ v.short_title }}</h3>
+      <div class="vcard-trim">{{ v.trim }} {{ v.body_style }}</div>
+      <div class="vcard-price">{{ v.price|money }}*</div>
+      <div class="vcard-mileage">{{ v.mileage|miles }} &middot; {{ v.exterior_color }} ext.</div>
+      <div class="vcard-store">{{ v.store.location_label if v.store else '' }}{% if v.transfer_fee %} &middot; transfer {{ v.transfer_fee|money }}{% endif %}</div>
+    </a>
+    <div class="vcard-actions">
+      <form method="post" action="{{ url_for('compare_add', vehicle_id=v.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-outline">+ Compare</button>
+      </form>
+      {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('saved_toggle', vehicle_id=v.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-sm btn-outline">&#9825; Save</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endmacro %}

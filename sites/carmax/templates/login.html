@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Sign in | CarMax{% endblock %}
+{% block content %}
+<div class="container-tight" style="padding:40px 16px">
+  <h1>Sign in to CarMax</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ next_url }}">
+    <div class="form-row"><label>Email</label>{{ form.email(class="") }}{% for e in form.email.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    <div class="form-row"><label>Password</label>{{ form.password() }}{% for e in form.password.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    <div class="form-row"><label>{{ form.remember() }} Keep me signed in</label></div>
+    <button class="btn btn-primary btn-block btn-lg" type="submit">Sign in</button>
+  </form>
+  <p style="margin-top:18px;text-align:center">New to CarMax? <a href="{{ url_for('register') }}">Create an account</a></p>
+</div>
+{% endblock %}

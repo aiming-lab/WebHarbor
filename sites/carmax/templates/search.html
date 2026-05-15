@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% from "_macros.html" import vcard %}
+{% block title %}{{ scope_label }} | CarMax{% endblock %}
+{% block content %}
+<div class="container">
+  <h1 style="margin:24px 0 4px">{{ scope_label }}</h1>
+  <p style="color:var(--cmx-text-light);margin:0 0 24px">{{ total }} vehicles matched{% if query %} for "{{ query }}"{% endif %}</p>
+
+  <div class="search-layout">
+    <aside class="facets">
+      <form method="get">
+        {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+        <div class="facet-section">
+          <h4>Price ($)</h4>
+          <div style="display:flex;gap:6px">
+            <input type="number" name="price_min" placeholder="Min" value="{{ filters.price_min }}">
+            <input type="number" name="price_max" placeholder="Max" value="{{ filters.price_max }}">
+          </div>
+        </div>
+        <div class="facet-section">
+          <h4>Year</h4>
+          <div style="display:flex;gap:6px">
+            <input type="number" name="year_min" placeholder="From" value="{{ filters.year_min }}">
+            <input type="number" name="year_max" placeholder="To" value="{{ filters.year_max }}">
+          </div>
+        </div>
+        <div class="facet-section">
+          <h4>Max mileage</h4>
+          <input type="number" name="mileage_max" placeholder="e.g. 50000" value="{{ filters.mileage_max }}">
+        </div>
+        <div class="facet-section">
+          <h4>Make</h4>
+          {% for make, slug, n in facets.makes %}
+            <label><input type="radio" name="make" value="{{ slug }}" {% if filters.make == slug %}checked{% endif %}> {{ make }} <span style="color:var(--cmx-text-light)">({{ n }})</span></label>
+          {% endfor %}
+        </div>
+        <div class="facet-section">
+          <h4>Body style</h4>
+          {% for b, n in facets.body_styles %}
+            <label><input type="radio" name="body_style" value="{{ b }}" {% if filters.body_style == b %}checked{% endif %}> {{ b }} <span style="color:var(--cmx-text-light)">({{ n }})</span></label>
+          {% endfor %}
+        </div>
+        <div class="facet-section">
+          <h4>Drive type</h4>
+          {% for dt, n in facets.drive_types %}
+            <label><input type="radio" name="drive_type" value="{{ dt }}" {% if filters.drive_type == dt %}checked{% endif %}> {{ dt }} <span style="color:var(--cmx-text-light)">({{ n }})</span></label>
+          {% endfor %}
+        </div>
+        <div class="facet-section">
+          <h4>Fuel</h4>
+          {% for ft, n in facets.fuel_types %}
+            <label><input type="radio" name="fuel_type" value="{{ ft }}" {% if filters.fuel_type == ft %}checked{% endif %}> {{ ft }} <span style="color:var(--cmx-text-light)">({{ n }})</span></label>
+          {% endfor %}
+        </div>
+        <div class="facet-section">
+          <h4>Color</h4>
+          <input type="text" name="exterior_color" placeholder="e.g. Black" value="{{ filters.exterior_color }}">
+        </div>
+        <div class="facet-section">
+          <label><input type="checkbox" name="certified" value="1" {% if filters.certified %}checked{% endif %}> CarMax Certified only</label>
+          <label><input type="checkbox" name="new_arrival" value="1" {% if filters.new_arrival %}checked{% endif %}> New arrivals</label>
+          <label><input type="checkbox" name="price_drop" value="1" {% if filters.price_drop %}checked{% endif %}> Price drops</label>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Apply filters</button>
+        <a class="btn btn-link btn-block" href="{{ url_for('cars_index') }}">Reset</a>
+      </form>
+    </aside>
+
+    <div class="search-results">
+      <div class="toolbar">
+        <div>Showing <strong>{{ items|length }}</strong> of <strong>{{ total }}</strong></div>
+        <form method="get" style="display:inline">
+          {% for k, v in filters.items() if v %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+          {% if query %}<input type="hidden" name="q" value="{{ query }}">{% endif %}
+          Sort:
+          <select name="sort" onchange="this.form.submit()">
+            <option value="best_match" {% if sort=='best_match' %}selected{% endif %}>Best match</option>
+            <option value="price_low" {% if sort=='price_low' %}selected{% endif %}>Price: low to high</option>
+            <option value="price_high" {% if sort=='price_high' %}selected{% endif %}>Price: high to low</option>
+            <option value="mileage_low" {% if sort=='mileage_low' %}selected{% endif %}>Mileage: low to high</option>
+            <option value="newest" {% if sort=='newest' %}selected{% endif %}>Year: newest first</option>
+          </select>
+        </form>
+      </div>
+
+      {% if items %}
+        <div class="grid grid-3">
+          {% for v in items %}{{ vcard(v) }}{% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <h2>No vehicles match your search</h2>
+          <p>Try widening your year range or removing a filter.</p>
+          <a class="btn btn-primary" href="{{ url_for('cars_index') }}">Reset filters</a>
+        </div>
+      {% endif %}
+
+      {% if pages > 1 %}
+        <div class="pagination">
+          {% set prev = page - 1 %}
+          {% set nxt = page + 1 %}
+          {% if page > 1 %}<a href="?{{ request.query_string.decode() }}&amp;page={{ prev }}">&laquo; Prev</a>{% endif %}
+          {% for p in range(1, pages + 1) %}
+            {% if p == page %}<span class="current">{{ p }}</span>
+            {% else %}<a href="?{{ request.query_string.decode() }}&amp;page={{ p }}">{{ p }}</a>{% endif %}
+          {% endfor %}
+          {% if page < pages %}<a href="?{{ request.query_string.decode() }}&amp;page={{ nxt }}">Next &raquo;</a>{% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

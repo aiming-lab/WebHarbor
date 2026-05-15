@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ year }} {{ make }} {{ model }} value | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <h1>{{ year }} {{ make }} {{ model }} value</h1>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="v">{{ avg_price|money }}</div><div class="l">CarMax average</div></div>
+    <div class="kpi"><div class="v">{{ min_price|money }}</div><div class="l">Lowest in stock</div></div>
+    <div class="kpi"><div class="v">{{ max_price|money }}</div><div class="l">Highest in stock</div></div>
+    <div class="kpi"><div class="v">{{ count }}</div><div class="l">In current inventory</div></div>
+  </div>
+  <div class="callout" style="margin-top:24px">
+    <strong>Sell or trade in?</strong> Get a real, written offer in under 2 minutes - good for 7 days.
+    <a class="btn btn-primary" href="{{ url_for('sell_my_car') }}" style="margin-top:8px">Get my offer</a>
+  </div>
+</div>
+{% endblock %}

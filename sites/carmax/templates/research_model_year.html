@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import vcard %}
+{% block title %}{{ year }} {{ make }} {{ model }} review, photos & specs | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <div class="breadcrumbs"><a href="{{ url_for('research_index') }}">Research</a> /
+    <a href="{{ url_for('research_make', make=make_slug) }}">{{ make }}</a> /
+    <a href="{{ url_for('research_model', make=make_slug, model=model_slug) }}">{{ model }}</a> / {{ year }}</div>
+  <h1>{{ year }} {{ make }} {{ model }} review</h1>
+  <div class="kpi-grid">
+    <div class="kpi"><div class="v">{{ '%.1f'|format(avg_rating) }}</div><div class="l">Customer rating ({{ review_count }})</div></div>
+    <div class="kpi"><div class="v">{{ '%.1f'|format(sample.repairpal_rating) }}</div><div class="l">RepairPal reliability</div></div>
+    <div class="kpi"><div class="v">{{ sample.mpg_combined }}</div><div class="l">Combined MPG</div></div>
+    <div class="kpi"><div class="v">{{ avg_price|money }}</div><div class="l">CarMax avg ({{ min_price|money }} - {{ max_price|money }})</div></div>
+  </div>
+
+  <h2 style="margin-top:32px">Available trims for {{ year }}</h2>
+  <ul>
+    {% for trim_name, trim_slug in trims %}
+    <li><a href="{{ url_for('cars_model_trim_year', make=make_slug, model=model_slug, trim=trim_slug, year=year) }}">{{ trim_name }}</a></li>
+    {% endfor %}
+  </ul>
+
+  <h2>Key specs (from sample {{ sample.trim }})</h2>
+  <div class="spec-grid">
+    <div><dt>Engine</dt><dd>{{ sample.engine_text }}</dd></div>
+    <div><dt>Horsepower</dt><dd>{{ sample.horsepower }} hp</dd></div>
+    <div><dt>Drive type</dt><dd>{{ sample.drive_type }}</dd></div>
+    <div><dt>Transmission</dt><dd>{{ sample.transmission }}</dd></div>
+    <div><dt>Fuel type</dt><dd>{{ sample.fuel_type }}</dd></div>
+    <div><dt>EPA MPG</dt><dd>{{ sample.mpg_city }} city / {{ sample.mpg_highway }} hwy</dd></div>
+    <div><dt>Seating capacity</dt><dd>{{ sample.seating_capacity }}</dd></div>
+    <div><dt>Body style</dt><dd>{{ sample.body_style }}</dd></div>
+  </div>
+
+  <h2 style="margin-top:32px">Available {{ year }} {{ model }} inventory</h2>
+  <div class="grid grid-3">{% for v in vehicles[:6] %}{{ vcard(v) }}{% endfor %}</div>
+
+  {% if reviews %}
+  <h2 style="margin-top:32px">Customer reviews</h2>
+  {% for r in reviews %}
+  <div style="border-bottom:1px solid var(--cmx-border);padding:14px 0">
+    <strong>{{ r.title }}</strong> <span style="color:var(--cmx-yellow-dark)">{{ r.rating|star_row }}</span>
+    <p>{{ r.body }}</p>
+    <div style="font-size:12px;color:var(--cmx-text-light)">{{ r.reviewer_name }} - {{ r.location }}</div>
+  </div>
+  {% endfor %}
+  <p><a class="btn btn-outline" href="{{ url_for('reviews_page', make=make_slug, model=model_slug, year=year) }}">All reviews</a></p>
+  {% endif %}
+</div>
+{% endblock %}

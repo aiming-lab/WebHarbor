@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}My orders | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>My orders</h1>
+  {% if orders %}
+    <table class="data">
+      <tr><th>Order #</th><th>Vehicle</th><th>Total</th><th>Status</th><th>Date</th><th></th></tr>
+      {% for o in orders %}
+      <tr>
+        <td>{{ o.order_number }}</td>
+        <td>{{ o.vehicle.short_title }}</td>
+        <td>{{ o.total|money }}</td>
+        <td>{{ o.status }}</td>
+        <td>{{ o.created_at.date() }}</td>
+        <td><a href="{{ url_for('order_confirmation', order_number=o.order_number) }}">View</a></td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="empty-state"><h2>No orders yet.</h2>
+    <a class="btn btn-primary" href="{{ url_for('cars_index') }}">Shop cars</a></div>
+  {% endif %}
+</div>
+{% endblock %}

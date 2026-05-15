@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import vcard %}
+{% block title %}{{ store.name }} | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <div class="breadcrumbs"><a href="{{ url_for('stores_index') }}">Stores</a> /
+    <a href="{{ url_for('stores_state', state_code=store.state) }}">{{ store.state }}</a> / {{ store.city }}</div>
+  <h1>{{ store.name }}</h1>
+  <div class="grid grid-3" style="margin-top:16px">
+    <div>
+      <h3>Address</h3>
+      <p>{{ store.street }}<br>{{ store.city }}, {{ store.state }} {{ store.zip_code }}</p>
+      <p><strong>Phone:</strong> {{ store.phone }}</p>
+    </div>
+    <div>
+      <h3>Hours</h3>
+      <p>Mon - Fri: {{ store.hours_weekday }}<br>Sat: {{ store.hours_saturday }}<br>Sun: {{ store.hours_sunday }}</p>
+    </div>
+    <div>
+      <h3>Services</h3>
+      <ul style="list-style:none;padding:0">
+        {% if store.has_appraisal %}<li>&#10003; In-store appraisal</li>{% endif %}
+        {% if store.has_express_pickup %}<li>&#10003; Express pickup</li>{% endif %}
+        {% if store.has_service %}<li>&#10003; Service center</li>{% endif %}
+        {% if store.has_home_delivery %}<li>&#10003; Home delivery</li>{% endif %}
+      </ul>
+    </div>
+  </div>
+  <h2 style="margin-top:32px">Inventory at this store ({{ inv_count }})</h2>
+  <div class="grid grid-3">{% for v in inventory %}{{ vcard(v) }}{% endfor %}</div>
+  {% if inv_count > inventory|length %}
+    <p style="text-align:center;margin-top:16px">
+      <a class="btn btn-secondary" href="{{ url_for('cars_index', store_id=store.id) }}">See all {{ inv_count }} cars at this store</a>
+    </p>
+  {% endif %}
+</div>
+{% endblock %}

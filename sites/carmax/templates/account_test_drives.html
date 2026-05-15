@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}My test drives | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>My test drives</h1>
+  {% if rows %}
+    <table class="data">
+      <tr><th>Vehicle</th><th>Store</th><th>When</th><th>Type</th><th>Status</th><th></th></tr>
+      {% for r in rows %}
+      <tr>
+        <td><a href="{{ url_for('vehicle_detail', slug=r.vehicle.slug) }}">{{ r.vehicle.short_title }}</a></td>
+        <td>{{ r.store.location_label }}</td>
+        <td>{{ r.scheduled_date }} {{ r.scheduled_time }}</td>
+        <td>{{ 'At store' if r.location_type == 'in_store' else 'At home' }}</td>
+        <td>{{ r.status }}</td>
+        <td>
+          {% if r.status == 'confirmed' %}
+          <form method="post" action="{{ url_for('test_drive_cancel', td_id=r.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-link">Cancel</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="empty-state"><h2>No test drives scheduled.</h2></div>
+  {% endif %}
+</div>
+{% endblock %}

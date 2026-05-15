@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_number }} | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <div class="callout" style="background:#e8f6f0;border-left-color:var(--cmx-success);text-align:center;padding:32px">
+    <h1 style="margin:0">Order placed!</h1>
+    <p style="font-size:18px;margin:12px 0 0">Confirmation number: <strong>{{ order.order_number }}</strong></p>
+  </div>
+
+  <h2 style="margin-top:32px">Your car</h2>
+  <div class="kpi" style="text-align:left">
+    <strong>{{ order.vehicle.title }}</strong><br>
+    {{ order.vehicle.mileage|miles }} &middot; {{ order.vehicle.exterior_color }}<br>
+    Pickup at: {{ order.store.name }} - {{ order.store.location_label }}<br>
+    {% if order.pickup_or_delivery == 'home_delivery' %}
+    Home delivery to: {{ order.delivery_address }}<br>
+    {% endif %}
+    Estimated pickup/delivery: {{ order.pickup_date }}
+  </div>
+
+  <h2 style="margin-top:32px">Totals</h2>
+  <table class="data">
+    <tr><td>Vehicle price</td><td style="text-align:right">{{ order.subtotal|money }}</td></tr>
+    {% if order.transfer_fee %}<tr><td>Transfer fee</td><td style="text-align:right">{{ order.transfer_fee|money }}</td></tr>{% endif %}
+    <tr><td>Sales tax</td><td style="text-align:right">{{ order.tax|money }}</td></tr>
+    <tr><td>Title fee</td><td style="text-align:right">{{ order.title_fee|money }}</td></tr>
+    <tr><td>Registration</td><td style="text-align:right">{{ order.registration_fee|money }}</td></tr>
+    {% if order.maxcare_plan %}<tr><td>MaxCare ({{ order.maxcare_plan|capitalize }})</td><td style="text-align:right">{{ order.maxcare_price|money }}</td></tr>{% endif %}
+    {% if order.trade_in_value %}<tr><td>Trade-in</td><td style="text-align:right">-{{ order.trade_in_value|money }}</td></tr>{% endif %}
+    <tr style="font-weight:700"><td>Total</td><td style="text-align:right">{{ order.total|money }}</td></tr>
+  </table>
+
+  {% if order.payment_method != 'cash' %}
+  <h2 style="margin-top:24px">Financing</h2>
+  <p>{{ order.payment_term_months }} months at {{ order.payment_apr }}% APR.
+  <strong>{{ order.monthly_payment|money }}/mo</strong> after {{ order.down_payment|money }} down.</p>
+  {% endif %}
+
+  <p style="margin-top:32px">
+    <a class="btn btn-primary" href="{{ url_for('account_orders') }}">View all orders</a>
+    <a class="btn btn-outline" href="{{ url_for('cars_index') }}">Keep browsing</a>
+  </p>
+</div>
+{% endblock %}

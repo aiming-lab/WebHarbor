@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Your CarMax offer | {{ appraisal.vehicle_label }}{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding:40px 16px">
+  <div class="callout" style="background:#fff5cf;text-align:center;padding:40px;font-size:18px">
+    <p style="margin:0;font-size:16px;color:var(--cmx-text-light)">Your offer for the {{ appraisal.vehicle_label }}</p>
+    <div style="font-size:48px;font-weight:900;color:var(--cmx-blue-darker);margin:16px 0">{{ appraisal.offer_amount|money }}</div>
+    <p style="margin:0">Good through <strong>{{ appraisal.offer_valid_until }}</strong></p>
+  </div>
+
+  <div class="kpi-grid" style="margin-top:24px">
+    <div class="kpi"><div class="v" style="font-size:16px">{{ appraisal.year }} {{ appraisal.make }}</div><div class="l">Year / make</div></div>
+    <div class="kpi"><div class="v" style="font-size:16px">{{ appraisal.model }} {{ appraisal.trim }}</div><div class="l">Model / trim</div></div>
+    <div class="kpi"><div class="v">{{ appraisal.mileage|miles }}</div><div class="l">Mileage</div></div>
+    <div class="kpi"><div class="v" style="font-size:16px">{{ appraisal.condition|capitalize }}</div><div class="l">Condition</div></div>
+  </div>
+
+  <div style="margin-top:24px">
+    <p>Next step: schedule a visit at any CarMax store for a quick verification. Bring the car, the title, and your ID.</p>
+    {% if current_user.is_authenticated %}
+    <form method="post" action="{{ url_for('sell_offer_redeem', appraisal_id=appraisal.id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-primary btn-lg">Schedule redemption</button>
+    </form>
+    {% else %}
+    <a class="btn btn-primary btn-lg" href="{{ url_for('login', next=request.path) }}">Sign in to redeem</a>
+    {% endif %}
+    <a class="btn btn-outline" href="{{ url_for('checkout', vehicle_id=1) if false else url_for('cars_index') }}">Apply offer as trade-in toward a CarMax car</a>
+  </div>
+</div>
+{% endblock %}

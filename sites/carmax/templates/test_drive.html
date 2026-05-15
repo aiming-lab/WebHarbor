@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Schedule a test drive | {{ vehicle.short_title }} | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <h1>Schedule a test drive</h1>
+  <div class="kpi" style="text-align:left;margin-bottom:16px">
+    <strong>{{ vehicle.title }}</strong><br>
+    {{ vehicle.headline_price }} - {{ vehicle.mileage|miles }}
+  </div>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row"><label>Where</label>{{ form.location_type() }}</div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Date (YYYY-MM-DD)</label>{{ form.scheduled_date() }}</div>
+      <div class="form-row"><label>Time</label>{{ form.scheduled_time() }}</div>
+    </div>
+    <div class="form-row"><label>Notes</label>{{ form.notes() }}</div>
+    <button class="btn btn-primary btn-lg">Book test drive</button>
+  </form>
+</div>
+{% endblock %}

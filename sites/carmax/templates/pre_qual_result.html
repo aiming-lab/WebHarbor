@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import vcard %}
+{% block title %}You're pre-qualified | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <div class="callout" style="background:#e8f6f0;border-left-color:var(--cmx-success)">
+    <h1 style="margin:0">You're pre-qualified.</h1>
+    <p style="margin:8px 0 0">
+      Up to <strong>{{ max_principal|money }}</strong> vehicle price at
+      <strong>{{ current_user.pre_qual_apr }}% APR</strong> for
+      <strong>{{ current_user.pre_qual_term_months }} months</strong>,
+      with <strong>{{ current_user.pre_qual_down_payment|money }}</strong> down.
+      Good through {{ current_user.pre_qual_expires_at }}.
+    </p>
+  </div>
+  <h2 style="margin-top:32px">Vehicles within your budget</h2>
+  <div class="grid grid-4">{% for v in affordable %}{{ vcard(v) }}{% endfor %}</div>
+</div>
+{% endblock %}

@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% from "_macros.html" import vcard %}
+{% block title %}{{ vehicle.title }} | {{ vehicle.mileage|miles }} | CarMax{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs">
+    <a href="{{ url_for('cars_index') }}">All cars</a> /
+    <a href="{{ url_for('cars_make', make=vehicle.make_slug) }}">{{ vehicle.make }}</a> /
+    <a href="{{ url_for('cars_model', make=vehicle.make_slug, model=vehicle.model_slug) }}">{{ vehicle.model }}</a> /
+    {{ vehicle.year }} {{ vehicle.trim }}
+  </div>
+
+  <div class="vdetail">
+    <div>
+      <div class="vdetail-gallery">
+        <div class="main-img">
+          <img id="vdetail-hero" src="{{ vehicle.image or '/static/images/_pending.svg' }}"
+               alt="{{ vehicle.title }}" onerror="this.src='/static/images/_pending.svg'">
+        </div>
+        {% if vehicle.all_images()|length > 1 %}
+        <div class="thumbs">
+          {% for p in vehicle.all_images() %}
+            <img src="{{ p }}" alt="thumb"
+                 onclick="document.getElementById('vdetail-hero').src=this.src"
+                 onerror="this.src='/static/images/_pending.svg'">
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <section class="section">
+        <h2>Highlights</h2>
+        <div class="spec-grid">
+          <div><dt>Year</dt><dd>{{ vehicle.year }}</dd></div>
+          <div><dt>Body style</dt><dd>{{ vehicle.body_style }}</dd></div>
+          <div><dt>Mileage</dt><dd>{{ vehicle.mileage|miles }}</dd></div>
+          <div><dt>Trim</dt><dd>{{ vehicle.trim or '-' }}</dd></div>
+          <div><dt>Exterior color</dt><dd>{{ vehicle.exterior_color }}</dd></div>
+          <div><dt>Interior color</dt><dd>{{ vehicle.interior_color }}</dd></div>
+          <div><dt>Engine</dt><dd>{{ vehicle.engine_text }}</dd></div>
+          <div><dt>Horsepower</dt><dd>{{ vehicle.horsepower }} hp / {{ vehicle.torque }} lb-ft</dd></div>
+          <div><dt>Transmission</dt><dd>{{ vehicle.transmission }}</dd></div>
+          <div><dt>Drive type</dt><dd>{{ vehicle.drive_type }}</dd></div>
+          <div><dt>Fuel type</dt><dd>{{ vehicle.fuel_type }}</dd></div>
+          <div><dt>Fuel economy</dt><dd>{{ vehicle.mpg_city }} city / {{ vehicle.mpg_highway }} hwy mpg</dd></div>
+          <div><dt>Seating capacity</dt><dd>{{ vehicle.seating_capacity }}</dd></div>
+          <div><dt>VIN</dt><dd>{{ vehicle.vin or '-' }}</dd></div>
+          <div><dt>Stock #</dt><dd>{{ vehicle.stock_number }}</dd></div>
+          <div><dt>Days at CarMax</dt><dd>{{ vehicle.days_on_lot }} days</dd></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <h2>Features</h2>
+        {% for f in vehicle.get_features() %}
+          <span class="feature-pill">{{ f }}</span>
+        {% else %}
+          <p style="color:var(--cmx-text-light)">No features listed.</p>
+        {% endfor %}
+      </section>
+
+      {% if vehicle.description %}
+      <section class="section">
+        <h2>About this {{ vehicle.short_title }}</h2>
+        <p>{{ vehicle.description }}</p>
+      </section>
+      {% endif %}
+
+      <section class="section">
+        <h2>Customer reviews ({{ reviews|length }})</h2>
+        {% for r in reviews %}
+        <div style="border-bottom:1px solid var(--cmx-border);padding:14px 0">
+          <div><strong>{{ r.title }}</strong> <span style="color:var(--cmx-yellow-dark)">{{ r.rating|star_row }}</span></div>
+          <p style="margin:6px 0;font-size:14px">{{ r.body }}</p>
+          <div style="font-size:12px;color:var(--cmx-text-light)">{{ r.reviewer_name }}{% if r.location %} - {{ r.location }}{% endif %}</div>
+        </div>
+        {% else %}
+        <p style="color:var(--cmx-text-light)">No reviews for the {{ vehicle.year }} {{ vehicle.model }} yet.</p>
+        {% endfor %}
+        <p style="margin-top:16px">
+          <a class="btn btn-outline" href="{{ url_for('reviews_page', make=vehicle.make_slug, model=vehicle.model_slug, year=vehicle.year) }}">See all reviews</a>
+        </p>
+      </section>
+    </div>
+
+    <aside class="vdetail-summary">
+      <h1>{{ vehicle.short_title }}</h1>
+      <div style="color:var(--cmx-text-light)">{{ vehicle.trim }} {{ vehicle.body_style }}</div>
+      <div class="price">{{ vehicle.price|money }}*</div>
+      <div class="meta">
+        {{ vehicle.mileage|miles }} &middot;
+        {{ vehicle.mpg_combined }} combined mpg &middot;
+        {{ vehicle.exterior_color }} ext.
+      </div>
+      <div style="margin:14px 0">
+        {% if vehicle.is_certified %}<span class="badge" style="background:var(--cmx-blue);color:#fff;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700">CarMax Certified</span>{% endif %}
+        {% if vehicle.is_no_haggle %}<span class="badge" style="background:var(--cmx-yellow);color:#000;padding:4px 10px;border-radius:4px;font-size:12px;font-weight:700;margin-left:6px">No-haggle pricing</span>{% endif %}
+      </div>
+      <div class="callout" style="margin-bottom:16px">
+        <strong>Est. {{ vehicle.estimated_monthly_payment(72, 0.0699, 2000)|money }}/mo</strong>
+        with $2,000 down, 72 months, 6.99% APR.
+        <a href="{{ url_for('pre_qual') }}" style="display:block;margin-top:6px">Get pre-qualified &raquo;</a>
+      </div>
+      <div class="cta-stack">
+        <a class="btn btn-primary btn-block btn-lg"
+           href="{{ url_for('reserve', vehicle_id=vehicle.id) }}">Reserve for 7 days</a>
+        <a class="btn btn-secondary btn-block"
+           href="{{ url_for('test_drive', vehicle_id=vehicle.id) }}">Schedule test drive</a>
+        <a class="btn btn-outline btn-block"
+           href="{{ url_for('checkout', vehicle_id=vehicle.id) }}">Buy online</a>
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('saved_toggle', vehicle_id=vehicle.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-link" type="submit">
+            {% if is_saved %}&#9829; Saved{% else %}&#9825; Save this car{% endif %}
+          </button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('compare_add', vehicle_id=vehicle.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-link" type="submit">+ Add to compare</button>
+        </form>
+      </div>
+      <div class="stock-info">
+        <strong>{{ vehicle.store.name if vehicle.store else 'CarMax store' }}</strong><br>
+        {{ vehicle.store.location_label if vehicle.store else '' }}<br>
+        Phone: {{ vehicle.store.phone if vehicle.store else BRAND_PHONE }}<br>
+        {% if vehicle.transfer_fee %}
+        Transfer fee to your area: {{ vehicle.transfer_fee|money }}
+        {% else %}
+        Free transfer in network
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  {% if similar %}
+  <section class="section section-soft">
+    <h2>Similar vehicles</h2>
+    <div class="grid grid-3">{% for v in similar %}{{ vcard(v) }}{% endfor %}</div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
