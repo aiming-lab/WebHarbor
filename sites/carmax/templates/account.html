@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}My CarMax account{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>Hi, {{ current_user.first_name or 'CarMax customer' }}</h1>
+  <p style="color:var(--cmx-text-light)">{{ current_user.email }}</p>
+
+  <div class="kpi-grid">
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('saved_view') }}">
+      <div class="v">{{ saved_n }}</div><div class="l">Saved cars</div>
+    </a>
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('account_reservations') }}">
+      <div class="v">{{ reservations_n }}</div><div class="l">Active reservations</div>
+    </a>
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('account_test_drives') }}">
+      <div class="v">{{ test_drives_n }}</div><div class="l">Test drives</div>
+    </a>
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('account_appraisals') }}">
+      <div class="v">{{ appraisals_n }}</div><div class="l">Open offers</div>
+    </a>
+  </div>
+
+  {% if current_user.pre_qual_active %}
+  <div class="callout">
+    <strong>You're pre-qualified.</strong>
+    Up to {{ current_user.pre_qual_monthly_max|money }}/mo at {{ current_user.pre_qual_apr }}% APR
+    for {{ current_user.pre_qual_term_months }} months. Expires {{ current_user.pre_qual_expires_at }}.
+    <a href="{{ url_for('pre_qual_result') }}">View matching cars</a>
+  </div>
+  {% else %}
+  <div class="callout">
+    <strong>Shop with your budget in mind.</strong>
+    <a href="{{ url_for('pre_qual') }}">Get pre-qualified</a> in 5 minutes - no impact to your credit.
+  </div>
+  {% endif %}
+
+  <div class="grid grid-3" style="margin-top:24px">
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('account_orders') }}">
+      <div class="v">{{ orders_n }}</div><div class="l">Orders</div>
+    </a>
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('account_edit') }}">
+      <div class="v" style="font-size:18px">Profile</div><div class="l">Edit info</div>
+    </a>
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('account_change_password') }}">
+      <div class="v" style="font-size:18px">Password</div><div class="l">Change password</div>
+    </a>
+  </div>
+
+  {% if recent_saved %}
+  <h2 style="margin-top:32px">Recently saved</h2>
+  {% from "_macros.html" import vcard with context %}
+  <div class="grid grid-4">{% for s in recent_saved %}{{ vcard(s.vehicle) }}{% endfor %}</div>
+  {% endif %}
+</div>
+{% endblock %}

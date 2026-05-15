@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Checkout | {{ vehicle.short_title }} | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>Buy this {{ vehicle.short_title }} online</h1>
+  <div class="vdetail">
+    <div>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+
+        <h2>Receive your car</h2>
+        <div class="form-row">{{ form.pickup_or_delivery() }}</div>
+        <div class="form-row"><label>Delivery address (if home delivery)</label>{{ form.delivery_address() }}</div>
+
+        <h2 style="margin-top:24px">Payment</h2>
+        <div class="form-row">{{ form.payment_method() }}</div>
+        <div class="form-grid-2">
+          <div class="form-row"><label>APR (%)</label>{{ form.apr() }}</div>
+          <div class="form-row"><label>Term</label>{{ form.term_months() }}</div>
+        </div>
+        <div class="form-grid-2">
+          <div class="form-row"><label>Down payment</label>{{ form.down_payment() }}</div>
+          <div class="form-row"><label>Card / loan last 4</label>{{ form.card_last4() }}{% for e in form.card_last4.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+        </div>
+
+        {% if trade_options %}
+        <h2 style="margin-top:24px">Trade-in</h2>
+        <div class="form-row">
+          <label>Apply an existing CarMax offer as trade-in</label>
+          <select name="trade_in_appraisal_id">
+            <option value="">No trade-in</option>
+            {% for a in trade_options %}
+            <option value="{{ a.id }}">{{ a.vehicle_label }} - {{ a.offer_amount|money }} (valid {{ a.offer_valid_until }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        {% endif %}
+
+        <h2 style="margin-top:24px">Add MaxCare</h2>
+        <div class="form-row">{{ form.maxcare_plan() }}</div>
+
+        <button class="btn btn-primary btn-lg btn-block">Place order</button>
+      </form>
+    </div>
+
+    <aside>
+      <div class="kpi" style="text-align:left">
+        <h3 style="margin-top:0">Order summary</h3>
+        <table style="width:100%;font-size:14px">
+          <tr><td>Vehicle price</td><td style="text-align:right">{{ preview.subtotal|money }}</td></tr>
+          {% if preview.transfer_fee %}<tr><td>Transfer fee</td><td style="text-align:right">{{ preview.transfer_fee|money }}</td></tr>{% endif %}
+          <tr><td>Estimated sales tax (6%)</td><td style="text-align:right">{{ preview.tax_estimate|money }}</td></tr>
+          <tr><td>Title fee</td><td style="text-align:right">{{ preview.title_fee|money }}</td></tr>
+          <tr><td>Registration fee</td><td style="text-align:right">{{ preview.registration_fee|money }}</td></tr>
+          <tr style="font-weight:700;border-top:1px solid var(--cmx-border)">
+            <td>Estimated total</td>
+            <td style="text-align:right">{{ preview.total_before_warranty|money }}</td>
+          </tr>
+        </table>
+        <p style="font-size:12px;color:var(--cmx-text-light);margin-top:12px">
+          MaxCare and trade-in adjustments apply on the next page.
+        </p>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

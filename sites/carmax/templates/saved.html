@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% from "_macros.html" import vcard with context %}
+{% block title %}Saved cars | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>Saved cars</h1>
+  {% if rows %}
+    <div class="grid grid-4">{% for s in rows %}{{ vcard(s.vehicle) }}{% endfor %}</div>
+  {% else %}
+    <div class="empty-state"><h2>No saved cars yet.</h2>
+    <p>Tap the heart on any car to save it for later.</p>
+    <a class="btn btn-primary" href="{{ url_for('cars_index') }}">Browse inventory</a></div>
+  {% endif %}
+</div>
+{% endblock %}

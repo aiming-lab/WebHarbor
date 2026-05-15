@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}FAQ | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>CarMax FAQ</h1>
+  <div class="grid grid-2" style="margin-top:24px">
+    {% for cat, items in categories.items() %}
+    <div class="kpi" style="text-align:left">
+      <h3 style="margin-top:0"><a href="{{ url_for('faq_category', category=cat) }}">{{ cat|replace('-', ' ')|capitalize }}</a></h3>
+      <ul style="padding-left:18px">
+        {% for slug, q, a in items %}
+        <li><a href="{{ url_for('faq_detail', category=cat, slug=slug) }}">{{ q }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

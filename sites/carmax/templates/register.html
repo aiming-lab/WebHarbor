@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Create an account | CarMax{% endblock %}
+{% block content %}
+<div class="container-tight" style="padding:40px 16px">
+  <h1>Create your CarMax account</h1>
+  <p style="color:var(--cmx-text-light)">Save cars, get pre-qualified, and reserve vehicles online.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid-2">
+      <div class="form-row"><label>First name</label>{{ form.first_name() }}{% for e in form.first_name.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+      <div class="form-row"><label>Last name</label>{{ form.last_name() }}{% for e in form.last_name.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    </div>
+    <div class="form-row"><label>Email</label>{{ form.email() }}{% for e in form.email.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Phone</label>{{ form.phone() }}</div>
+      <div class="form-row"><label>ZIP</label>{{ form.zip_code() }}</div>
+    </div>
+    <div class="form-row"><label>Password</label>{{ form.password() }}{% for e in form.password.errors %}<div class="errors">{{ e }}</div>{% endfor %}<div class="help">At least 8 characters.</div></div>
+    <div class="form-row"><label>Confirm password</label>{{ form.confirm() }}{% for e in form.confirm.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    <button class="btn btn-primary btn-block btn-lg">Create account</button>
+  </form>
+  <p style="margin-top:18px;text-align:center">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+</div>
+{% endblock %}

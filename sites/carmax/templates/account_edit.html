@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Edit profile | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <h1>Edit profile</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid-2">
+      <div class="form-row"><label>First name</label>{{ form.first_name() }}</div>
+      <div class="form-row"><label>Last name</label>{{ form.last_name() }}</div>
+    </div>
+    <div class="form-row"><label>Phone</label>{{ form.phone() }}</div>
+    <div class="form-row"><label>Street address</label>{{ form.address_line1() }}</div>
+    <div class="form-row"><label>Apt / Unit</label>{{ form.address_line2() }}</div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>City</label>{{ form.city() }}</div>
+      <div class="form-row"><label>State (2-letter)</label>{{ form.state() }}</div>
+    </div>
+    <div class="form-row"><label>ZIP</label>{{ form.zip_code() }}</div>
+    <button class="btn btn-primary">Save changes</button>
+    <a class="btn btn-link" href="{{ url_for('account') }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

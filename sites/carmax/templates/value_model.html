@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ make }} {{ model }} value | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>{{ make }} {{ model }} value</h1>
+  <p>Based on current CarMax {{ make }} {{ model }} inventory.</p>
+  <table class="data">
+    <tr><th>Year</th><th>Avg price</th><th>Min</th><th>Max</th><th>Count</th><th></th></tr>
+    {% for y, avg, mn, mx, c in rows %}
+    <tr>
+      <td>{{ y }}</td>
+      <td>{{ avg|money }}</td>
+      <td>{{ mn|money }}</td>
+      <td>{{ mx|money }}</td>
+      <td>{{ c }}</td>
+      <td><a href="{{ url_for('value_year', make=make|lower, model=model|lower|replace(' ', '-'), year=y) }}">Details</a></td>
+    </tr>
+    {% endfor %}
+  </table>
+  <p style="margin-top:24px"><a class="btn btn-primary" href="{{ url_for('sell_my_car') }}">Get my instant offer</a></p>
+</div>
+{% endblock %}

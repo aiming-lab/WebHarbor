@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ category|replace('-', ' ')|capitalize }} FAQ | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <div class="breadcrumbs"><a href="{{ url_for('faq_index') }}">FAQ</a> / {{ category|replace('-', ' ')|capitalize }}</div>
+  <h1>{{ category|replace('-', ' ')|capitalize }} questions</h1>
+  {% for slug, q, a in items %}
+  <details style="border-bottom:1px solid var(--cmx-border);padding:16px 0">
+    <summary style="font-size:16px;font-weight:700;cursor:pointer">{{ q }}</summary>
+    <p style="margin:12px 0 0">{{ a }}</p>
+    <a href="{{ url_for('faq_detail', category=category, slug=slug) }}" style="font-size:13px">Permalink</a>
+  </details>
+  {% endfor %}
+</div>
+{% endblock %}

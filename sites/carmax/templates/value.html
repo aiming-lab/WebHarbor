@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}How much is my car worth? | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>How much is my car worth?</h1>
+  <p style="color:var(--cmx-text-light)">Look up estimated CarMax value by make and model, or get a real instant offer in under 2 minutes.</p>
+  <p style="margin:18px 0"><a class="btn btn-primary btn-lg" href="{{ url_for('sell_my_car') }}">Get my instant offer</a></p>
+
+  <h2 style="margin-top:32px">Browse by make</h2>
+  <div class="grid grid-6">
+    {% for make, slug in makes %}
+      <a class="kpi" style="text-decoration:none;color:inherit;text-align:center" href="{{ url_for('cars_make', make=slug) }}">
+        <div class="v" style="font-size:16px">{{ make }}</div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

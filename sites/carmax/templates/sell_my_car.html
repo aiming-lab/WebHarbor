@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Sell My Car - Get an Instant Offer Online | CarMax{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <h1>Sell us your car. Get an instant offer.</h1>
+    <p>Real, upfront offer in under 2 minutes. Good for 7 days. We'll buy your car even if you don't buy ours.</p>
+  </div>
+</section>
+<div class="container-narrow" style="padding-top:32px">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Tell us about your car</h2>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Year</label>{{ form.year() }}{% for e in form.year.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+      <div class="form-row"><label>Mileage</label>{{ form.mileage() }}{% for e in form.mileage.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Make</label>{{ form.make() }}{% for e in form.make.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+      <div class="form-row"><label>Model</label>{{ form.model() }}{% for e in form.model.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Trim</label>{{ form.trim() }}</div>
+      <div class="form-row"><label>Exterior color</label>{{ form.exterior_color() }}</div>
+    </div>
+    <div class="form-row"><label>Condition</label>{{ form.condition() }}</div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>License plate</label>{{ form.license_plate() }}</div>
+      <div class="form-row"><label>License state</label>{{ form.license_state() }}</div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>VIN</label>{{ form.vin() }}</div>
+      <div class="form-row"><label>Number of owners</label>{{ form.owner_count() }}</div>
+    </div>
+    <div class="form-row"><label>ZIP code</label>{{ form.zip_code() }}{% for e in form.zip_code.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    <div class="form-row"><label>{{ form.has_accidents() }} Reported accidents</label></div>
+    <h3 style="margin-top:24px">Contact info</h3>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Email</label>{{ form.contact_email() }}</div>
+      <div class="form-row"><label>Phone</label>{{ form.contact_phone() }}</div>
+    </div>
+    <button class="btn btn-primary btn-lg btn-block">Get my offer</button>
+  </form>
+</div>
+{% endblock %}

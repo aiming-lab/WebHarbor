@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Compare vehicles | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>Compare vehicles</h1>
+  {% if items %}
+    <p style="color:var(--cmx-text-light)">{{ items|length }} of 4 vehicles. <a href="{{ url_for('cars_index') }}">Find more cars to compare</a>.</p>
+    <table class="data" style="margin-top:16px">
+      <tr>
+        <th></th>
+        {% for v in items %}
+        <th style="vertical-align:top;min-width:180px">
+          <a href="{{ url_for('vehicle_detail', slug=v.slug) }}">
+            <img src="{{ v.image or '/static/images/_pending.svg' }}" style="width:160px;border-radius:4px"
+                 onerror="this.src='/static/images/_pending.svg'"><br>
+            {{ v.short_title }}
+          </a>
+          <form method="post" action="{{ url_for('compare_remove', vehicle_id=v.id) }}" style="margin-top:6px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-sm btn-link">Remove</button>
+          </form>
+        </th>
+        {% endfor %}
+      </tr>
+      <tr><td>Price</td>{% for v in items %}<td><strong>{{ v.price|money }}</strong></td>{% endfor %}</tr>
+      <tr><td>Mileage</td>{% for v in items %}<td>{{ v.mileage|miles }}</td>{% endfor %}</tr>
+      <tr><td>Trim</td>{% for v in items %}<td>{{ v.trim }}</td>{% endfor %}</tr>
+      <tr><td>Body</td>{% for v in items %}<td>{{ v.body_style }}</td>{% endfor %}</tr>
+      <tr><td>Engine</td>{% for v in items %}<td>{{ v.engine_text }}</td>{% endfor %}</tr>
+      <tr><td>Horsepower</td>{% for v in items %}<td>{{ v.horsepower }} hp</td>{% endfor %}</tr>
+      <tr><td>Transmission</td>{% for v in items %}<td>{{ v.transmission }}</td>{% endfor %}</tr>
+      <tr><td>Drive type</td>{% for v in items %}<td>{{ v.drive_type }}</td>{% endfor %}</tr>
+      <tr><td>Fuel type</td>{% for v in items %}<td>{{ v.fuel_type }}</td>{% endfor %}</tr>
+      <tr><td>Combined MPG</td>{% for v in items %}<td>{{ v.mpg_combined }}</td>{% endfor %}</tr>
+      <tr><td>Exterior color</td>{% for v in items %}<td>{{ v.exterior_color }}</td>{% endfor %}</tr>
+      <tr><td>Seating</td>{% for v in items %}<td>{{ v.seating_capacity }}</td>{% endfor %}</tr>
+      <tr><td>Store</td>{% for v in items %}<td>{{ v.store.location_label if v.store else '-' }}</td>{% endfor %}</tr>
+      <tr><td>Transfer fee</td>{% for v in items %}<td>{{ v.transfer_fee|money if v.transfer_fee else 'Free' }}</td>{% endfor %}</tr>
+    </table>
+    <form method="post" action="{{ url_for('compare_clear') }}" style="margin-top:16px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline">Clear comparison</button>
+    </form>
+  {% else %}
+    <div class="empty-state"><h2>Nothing to compare yet.</h2>
+    <p>Add up to 4 vehicles by tapping "+ Compare" on any car.</p>
+    <a class="btn btn-primary" href="{{ url_for('cars_index') }}">Browse inventory</a></div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ year }} {{ make }} {{ model }} reviews | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <h1>{{ year }} {{ make }} {{ model }} reviews</h1>
+  <div class="kpi" style="display:inline-block;padding:14px 20px">
+    <div class="v">{{ '%.1f'|format(avg_rating) }} / 5</div>
+    <div class="l">{{ reviews|length }} review{{ 's' if reviews|length != 1 else '' }}</div>
+  </div>
+  <h2 style="margin-top:24px">Reviews</h2>
+  {% for r in reviews %}
+  <div style="border-bottom:1px solid var(--cmx-border);padding:16px 0">
+    <strong>{{ r.title }}</strong>
+    <span style="color:var(--cmx-yellow-dark);margin-left:8px">{{ r.rating|star_row }}</span>
+    <p>{{ r.body }}</p>
+    <div style="font-size:12px;color:var(--cmx-text-light)">{{ r.reviewer_name }}{% if r.location %} - {{ r.location }}{% endif %}</div>
+  </div>
+  {% else %}
+  <p style="color:var(--cmx-text-light)">Be the first to review the {{ year }} {{ model }}.</p>
+  {% endfor %}
+
+  <h2 style="margin-top:32px">Leave a review</h2>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row"><label>Rating</label>{{ form.rating() }}</div>
+    <div class="form-row"><label>Headline</label>{{ form.title() }}</div>
+    <div class="form-row"><label>Your review</label>{{ form.body() }}</div>
+    <div class="form-row"><label>Your city, state</label>{{ form.location() }}</div>
+    <button class="btn btn-primary">Submit review</button>
+  </form>
+</div>
+{% endblock %}

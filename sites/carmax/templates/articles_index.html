@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Articles | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>Articles &amp; advice</h1>
+  <div style="margin-bottom:24px">
+    <a href="{{ url_for('articles_index') }}" class="btn btn-sm {{ 'btn-secondary' if not current_cat else 'btn-outline' }}">All</a>
+    {% for cat, n in cats %}
+      <a href="{{ url_for('articles_index', category=cat) }}"
+         class="btn btn-sm {{ 'btn-secondary' if current_cat == cat else 'btn-outline' }}">{{ cat|capitalize }} ({{ n }})</a>
+    {% endfor %}
+  </div>
+  <div class="grid grid-3">
+    {% for a in posts %}
+    <a class="vcard" style="text-decoration:none;color:inherit" href="{{ url_for('article_detail', slug=a.slug) }}">
+      <div class="vcard-img">
+        <img src="{{ a.hero_image or '/static/images/_pending.svg' }}" onerror="this.src='/static/images/_pending.svg'" alt="{{ a.title }}">
+      </div>
+      <div class="vcard-body">
+        <div class="vcard-trim">{{ a.category|capitalize }} - {{ a.published_at }}</div>
+        <h3 class="vcard-title">{{ a.title }}</h3>
+        <p style="font-size:13px;color:var(--cmx-text-light)">{{ a.summary }}</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

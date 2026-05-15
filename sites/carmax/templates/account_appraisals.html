@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}My offers | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>My offers</h1>
+  {% if rows %}
+    <table class="data">
+      <tr><th>Vehicle</th><th>Mileage</th><th>Condition</th><th>Offer</th><th>Valid until</th><th>Status</th></tr>
+      {% for a in rows %}
+      <tr>
+        <td>{{ a.vehicle_label }}</td>
+        <td>{{ a.mileage|miles }}</td>
+        <td>{{ a.condition|capitalize }}</td>
+        <td><strong>{{ a.offer_amount|money }}</strong></td>
+        <td>{{ a.offer_valid_until }}</td>
+        <td>{{ a.status }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+  {% else %}
+    <div class="empty-state"><h2>No offers yet.</h2>
+    <a class="btn btn-primary" href="{{ url_for('sell_my_car') }}">Get an offer</a></div>
+  {% endif %}
+</div>
+{% endblock %}

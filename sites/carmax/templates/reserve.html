@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Reserve {{ vehicle.short_title }} | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <h1>Reserve this {{ vehicle.short_title }}</h1>
+  <p>Hold the vehicle for up to 7 days while you arrange financing or paperwork. No obligation to buy.</p>
+  <div class="kpi" style="text-align:left;margin-bottom:16px">
+    <strong>{{ vehicle.title }}</strong><br>
+    {{ vehicle.headline_price }} - {{ vehicle.mileage|miles }} - {{ vehicle.store.location_label if vehicle.store else '' }}
+  </div>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row"><label>Pick an appointment date (YYYY-MM-DD)</label>{{ form.appointment_date() }}<div class="help">Leave blank for the next available slot.</div></div>
+    <button class="btn btn-primary btn-lg">Reserve for 7 days</button>
+  </form>
+</div>
+{% endblock %}

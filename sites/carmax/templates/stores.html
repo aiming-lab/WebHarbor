@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Nationwide CarMax locations{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>Find a CarMax store</h1>
+  <p style="color:var(--cmx-text-light)">CarMax has stores across {{ states|length }} states.</p>
+  <div class="grid grid-4" style="margin-top:24px">
+    {% for state, n in states %}
+      <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('stores_state', state_code=state) }}">
+        <div class="v">{{ state }}</div><div class="l">{{ n }} store{{ 's' if n > 1 else '' }}</div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

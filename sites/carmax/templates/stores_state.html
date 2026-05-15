@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}CarMax stores in {{ state }}{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <div class="breadcrumbs"><a href="{{ url_for('stores_index') }}">Stores</a> / {{ state }}</div>
+  <h1>CarMax stores in {{ state }}</h1>
+  <div class="grid grid-3" style="margin-top:24px">
+    {% for s in stores %}
+    <a class="kpi" style="text-decoration:none;color:inherit;display:block" href="{{ url_for('store_detail', slug=s.slug) }}">
+      <div class="v" style="font-size:18px">{{ s.name }}</div>
+      <div class="l">{{ s.street }}</div>
+      <div class="l">{{ s.city }}, {{ s.state }} {{ s.zip_code }}</div>
+      <div class="l" style="margin-top:6px">{{ s.phone }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
