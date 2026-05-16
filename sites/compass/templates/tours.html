@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>Tour requests</h1>
+    {% if tours %}
+      <table class="table">
+        <thead><tr><th>Listing</th><th>Date</th><th>Time</th><th>Type</th><th>Status</th><th>Requested</th><th></th></tr></thead>
+        <tbody>
+          {% for t in tours %}
+            <tr>
+              <td><a href="{{ url_for('listing_detail', slug=t.listing.slug) }}">{{ t.listing.address }}</a><br><span style="color:var(--c-gray-4); font-size:12px">{{ t.listing.city }}, {{ t.listing.state }}</span></td>
+              <td>{{ t.requested_date }}</td>
+              <td>{{ t.requested_time }}</td>
+              <td>{{ t.tour_type }}</td>
+              <td>{{ t.status }}</td>
+              <td>{{ t.requested_at.strftime('%b %d') }}</td>
+              <td>
+                {% if t.status != 'cancelled' %}
+                <form method="post" action="{{ url_for('tour_cancel', tour_id=t.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn outline tiny" type="submit">Cancel</button>
+                </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty"><h3>No tour requests</h3><p>Find a home you like and request a tour.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

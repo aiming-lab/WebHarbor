@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ agent.name }} | Compass Agent{% endblock %}
+{% block content %}
+<div class="container section">
+  <div style="display:grid; grid-template-columns: 1fr 2fr; gap:48px;">
+    <div>
+      <div class="av" style="width:160px; height:160px; border-radius:50%; background:var(--c-gray-1); display:flex; align-items:center; justify-content:center; font-family:var(--serif); font-size:3rem; color:var(--c-gray-4);">{{ agent.name.split()[0][0] }}{{ agent.name.split()[-1][0] }}</div>
+      <h1 style="margin-top:18px">{{ agent.name }}</h1>
+      <p style="color:var(--c-gray-4)">{{ agent.title }} · {{ agent.city }}, {{ agent.state }}</p>
+      <p>{{ agent.bio }}</p>
+      <div class="fact-grid">
+        <div class="label">Phone</div><div class="value">{{ agent.phone }}</div>
+        <div class="label">Email</div><div class="value">{{ agent.email }}</div>
+        <div class="label">License</div><div class="value">{{ agent.license_number }}</div>
+        <div class="label">Years of experience</div><div class="value">{{ agent.years_experience }}</div>
+        <div class="label">Languages</div><div class="value">{{ agent.get_languages()|join(', ') }}</div>
+        <div class="label">Specialties</div><div class="value">{{ agent.get_specialties()|join(', ') }}</div>
+      </div>
+    </div>
+    <div>
+      <h2>Career stats</h2>
+      <div class="key-facts" style="border:1px solid var(--c-gray-2); padding:24px;">
+        <div><strong>{{ agent.transactions_count }}</strong>Transactions closed</div>
+        <div><strong>{{ agent.sales_volume_display() }}</strong>Total sales volume</div>
+        <div><strong>{{ agent.years_experience }}</strong>Years with Compass</div>
+        <div><strong>{{ listings|length }}</strong>Active listings</div>
+      </div>
+
+      <h2 style="margin-top:32px">Active listings</h2>
+      {% if listings %}
+        <div class="grid-cards" style="grid-template-columns: repeat(2, 1fr)">
+          {% for L in listings %}{% include "_card.html" %}{% endfor %}
+        </div>
+      {% else %}
+        <div class="empty">No active listings at the moment.</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

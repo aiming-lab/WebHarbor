@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.address }} | Compass{% endblock %}
+{% block content %}
+
+<div class="container section">
+
+  {% set gallery = listing.get_gallery() %}
+  <div class="detail-gallery">
+    <div>
+      {% if listing.hero_image %}
+        <img src="{{ listing.hero_image }}" alt="{{ listing.address }}">
+      {% endif %}
+    </div>
+    <div class="thumbs">
+      {% for g in gallery[1:4] %}
+        <img src="{{ g }}" alt="{{ listing.address }} photo {{ loop.index + 1 }}">
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="detail-grid">
+    <div class="detail-main">
+      <div class="price-big">{{ listing.price_display() }}</div>
+      <h1>{{ listing.address }}{% if listing.unit %}, Unit {{ listing.unit }}{% endif %}</h1>
+      <div style="color:var(--c-gray-4); margin-bottom:14px">
+        {{ listing.city }}, {{ listing.state }} {{ listing.zip }}
+        {% if listing.neighborhood %}· {{ listing.neighborhood }}{% endif %}
+      </div>
+
+      <div class="key-facts">
+        <div><strong>{{ listing.beds }}</strong>{{ 'Bedroom' if listing.beds == 1 else 'Bedrooms' }}</div>
+        <div><strong>{{ listing.baths_full + 0.5 * listing.baths_half }}</strong>{{ 'Bathroom' if (listing.baths_full + listing.baths_half) == 1 else 'Bathrooms' }}</div>
+        {% if listing.sqft %}<div><strong>{{ '{:,}'.format(listing.sqft) }}</strong>Sq. Ft.</div>{% endif %}
+        {% if listing.price_per_sqft() %}<div><strong>${{ '{:,}'.format(listing.price_per_sqft()) }}</strong>/Sq. Ft.</div>{% endif %}
+        <div><strong>{{ listing.year_built }}</strong>Year built</div>
+        <div><strong>{{ listing.property_type }}</strong>Property type</div>
+      </div>
+
+      <p class="lead">{{ listing.description }}</p>
+
+      <h3>Property details</h3>
+      <div class="fact-grid">
+        <div class="label">MLS #</div><div class="value">{{ listing.mls_number }}</div>
+        <div class="label">Status</div><div class="value">{{ listing.status|capitalize }}{% if listing.is_pending %} (Pending){% endif %}</div>
+        <div class="label">Days on Compass</div><div class="value">{{ listing.days_on_compass }}</div>
+        {% if listing.lot_sqft %}<div class="label">Lot size</div><div class="value">{{ '{:,}'.format(listing.lot_sqft) }} sq ft</div>{% endif %}
+        {% if listing.hoa_fee_usd_month %}<div class="label">HOA fee</div><div class="value">${{ listing.hoa_fee_usd_month }} / month</div>{% endif %}
+        <div class="label">Parking</div><div class="value">{% if listing.has_garage %}Garage{% elif listing.has_parking %}Driveway / off-street{% else %}Street{% endif %}</div>
+        <div class="label">Pool</div><div class="value">{{ 'Yes' if listing.has_pool else 'No' }}</div>
+        <div class="label">Pets</div><div class="value">{{ 'Allowed' if listing.pets_allowed else 'Not allowed' }}</div>
+      </div>
+
+      <h3>Features</h3>
+      <div style="margin-bottom:32px">
+        {% for f in listing.get_features() %}<span class="chip">{{ f }}</span>{% endfor %}
+      </div>
+
+      {% if listing.is_open_house %}
+        <h3>Open house</h3>
+        <p>{{ listing.open_house_date }} · {{ listing.open_house_time }}</p>
+      {% endif %}
+
+      {% if similar %}
+        <h3>Similar homes nearby</h3>
+        <div class="grid-cards">
+          {% for L in similar %}{% include "_card.html" %}{% endfor %}
+        </div>
+      {% endif %}
+    </div>
+
+    <aside class="agent-sidebar">
+      {% if listing.agent %}
+      <div class="name"><a href="{{ url_for('agent_detail', slug=listing.agent.slug) }}">{{ listing.agent.name }}</a></div>
+      <div class="title">{{ listing.agent.title }} · {{ listing.agent.city }}, {{ listing.agent.state }}</div>
+      <div class="stats">
+        <div><strong>{{ listing.agent.years_experience }}</strong>Years</div>
+        <div><strong>{{ listing.agent.transactions_count }}</strong>Transactions</div>
+        <div><strong>{{ listing.agent.sales_volume_display() }}</strong>Sold</div>
+      </div>
+      {% endif %}
+
+      <div class="action-stack">
+        <a class="btn" href="{{ url_for('tour_request', listing_id=listing.id) }}">Request a tour</a>
+        <a class="btn outline" href="{{ url_for('inquiry_send', listing_id=listing.id) }}">Contact agent</a>
+        {% if current_user.is_authenticated %}
+          {% if is_saved %}
+            <form method="post" action="{{ url_for('unsave_home', listing_id=listing.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn outline" type="submit">♥ Saved — remove</button>
+            </form>
+          {% else %}
+            <form method="post" action="{{ url_for('save_home', listing_id=listing.id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn outline" type="submit">♡ Save home</button>
+            </form>
+          {% endif %}
+        {% else %}
+          <a class="btn outline" href="{{ url_for('login') }}?next={{ url_for('listing_detail', slug=listing.slug) }}">Sign in to save</a>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}My account | Compass{% endblock %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>Welcome back, {{ user.name.split()[0] }}</h1>
+
+    <h2>Your profile</h2>
+    <div class="fact-grid">
+      <div class="label">Name</div><div class="value">{{ user.name }}</div>
+      <div class="label">Email</div><div class="value">{{ user.email }}</div>
+      <div class="label">Phone</div><div class="value">{{ user.phone or '—' }}</div>
+      <div class="label">Location</div><div class="value">{{ user.city }}{% if user.city and user.state %}, {{ user.state }}{% endif %}</div>
+      <div class="label">Move timeline</div><div class="value">{{ user.move_timeline or '—' }}</div>
+    </div>
+    <p><a class="btn outline tiny" href="{{ url_for('account_edit') }}">Edit profile</a> <a class="btn outline tiny" href="{{ url_for('change_password') }}">Change password</a> <a class="btn outline tiny" href="{{ url_for('preferences') }}">Preferences</a></p>
+
+    <h2 style="margin-top:48px">Recently saved homes</h2>
+    {% if saved %}
+      <div class="grid-cards" style="grid-template-columns: repeat(2, 1fr);">
+        {% for s in saved %}{% set L = s.listing %}{% include "_card.html" %}{% endfor %}
+      </div>
+    {% else %}<div class="empty">No saved homes yet. <a href="{{ url_for('search') }}">Start browsing →</a></div>{% endif %}
+
+    <h2 style="margin-top:48px">Recent tours</h2>
+    {% if tours %}
+      <table class="table">
+        <thead><tr><th>Listing</th><th>Date</th><th>Type</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for t in tours %}
+            <tr><td><a href="{{ url_for('listing_detail', slug=t.listing.slug) }}">{{ t.listing.address }}</a></td>
+                <td>{{ t.requested_date }} · {{ t.requested_time }}</td>
+                <td>{{ t.tour_type }}</td>
+                <td>{{ t.status }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}<div class="empty">No tours scheduled.</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

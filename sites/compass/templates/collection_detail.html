@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <div class="section-row" style="margin-top:0">
+      <div>
+        <h1>{{ collection.name }}</h1>
+        <p style="color:var(--c-gray-4)">{{ collection.description }}</p>
+        <p style="font-size:13px; color:var(--c-gray-4)">Share token: <code>{{ collection.share_token }}</code> ·
+          <a href="{{ url_for('collection_share', token=collection.share_token) }}">Public link</a>
+        </p>
+      </div>
+      <form method="post" action="{{ url_for('collection_delete', cid=collection.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn outline tiny" type="submit" onclick="return confirm('Delete this collection?');">Delete collection</button>
+      </form>
+    </div>
+
+    {% if listings %}
+      <div class="grid-cards" style="grid-template-columns: repeat(2, 1fr)">
+        {% for L in listings %}
+          <div>
+            {% include "_card.html" %}
+            <form method="post" action="{{ url_for('collection_remove', cid=collection.id, listing_id=L.id) }}" style="margin-top:6px">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn outline tiny" type="submit">Remove from collection</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">No homes in this collection yet. Visit a listing and add it to "{{ collection.name }}".</div>
+    {% endif %}
+
+    <h2 style="margin-top:48px">Add a home by id</h2>
+    <form method="post" action="" class="form-narrow" id="add-form" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label>Paste a listing slug to add</label>
+        <input type="text" name="slug" placeholder="e.g. 425-w-24th-st-..." required>
+      </div>
+      <button class="btn" type="submit" formaction="{{ url_for('collection_detail', cid=collection.id) }}/add-by-slug">Add to collection</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>Inquiries</h1>
+    {% if inquiries %}
+      <table class="table">
+        <thead><tr><th>Listing</th><th>Subject</th><th>Sent</th></tr></thead>
+        <tbody>
+          {% for i in inquiries %}
+            <tr><td><a href="{{ url_for('listing_detail', slug=i.listing.slug) }}">{{ i.listing.address }}</a></td>
+                <td>{{ i.subject }}</td>
+                <td>{{ i.sent_at.strftime('%b %d, %Y') }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty"><h3>No inquiries sent</h3><p>Contact an agent from a listing page.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

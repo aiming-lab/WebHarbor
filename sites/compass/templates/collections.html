@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <div class="section-row" style="margin-top:0">
+      <h1>Collections</h1>
+      <a class="btn" href="{{ url_for('collection_new') }}">New collection</a>
+    </div>
+    {% if collections %}
+      <table class="table">
+        <thead><tr><th>Name</th><th>Homes</th><th>Share link</th><th>Created</th></tr></thead>
+        <tbody>
+          {% for c in collections %}
+            <tr>
+              <td><a href="{{ url_for('collection_detail', cid=c.id) }}">{{ c.name }}</a></td>
+              <td>{{ c.get_listing_ids()|length }}</td>
+              <td><code>{{ c.share_token }}</code></td>
+              <td>{{ c.created_at.strftime('%b %d, %Y') }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty"><h3>No collections yet</h3><p>Curate homes into a collection and share with your partner or agent.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

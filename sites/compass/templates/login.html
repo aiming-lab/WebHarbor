@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="form-narrow" method="post" action="{{ url_for('login') }}">
+  <h1>Log in</h1>
+  {% if error %}<div class="flash warning">{{ error }}</div>{% endif %}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field"><label>Email</label><input type="email" name="email" required></div>
+  <div class="field"><label>Password</label><input type="password" name="password" required></div>
+  <div class="field"><label><input type="checkbox" name="remember"> Remember me</label></div>
+  <button class="btn" type="submit">Log in</button>
+  <p style="margin-top:24px">New to Compass? <a href="{{ url_for('register') }}">Join</a></p>
+</form>
+{% endblock %}

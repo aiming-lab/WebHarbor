@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Find a Compass Agent{% endblock %}
+{% block content %}
+<div class="container section">
+  <h1>Find a Compass Agent</h1>
+  <p style="color:var(--c-gray-4)">Local experts ready to help you find your next home or sell your current one.</p>
+
+  <form method="get" class="filter-bar">
+    <div class="filter-group">
+      <label>City</label>
+      <select name="city">
+        <option value="">All cities</option>
+        {% for c in all_cities %}
+          <option value="{{ c }}" {% if filter_city == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn tiny" type="submit">Filter</button>
+    <a class="btn outline tiny" href="?">Reset</a>
+  </form>
+
+  <div class="result-summary">{{ agents|length }} agents{% if filter_city %} in {{ filter_city }}{% endif %}.</div>
+
+  <div class="grid-cards" style="grid-template-columns: repeat(2, 1fr);">
+    {% for a in agents %}
+      <a class="agent-card" href="{{ url_for('agent_detail', slug=a.slug) }}" style="text-decoration:none; color:inherit;">
+        <div class="av">{{ a.name.split()[0][0] }}{{ a.name.split()[-1][0] }}</div>
+        <div>
+          <h3>{{ a.name }}{% if a.is_top_agent %} <span class="chip active" style="font-size:10px">Top Agent</span>{% endif %}</h3>
+          <div class="meta">{{ a.title }} · {{ a.city }}, {{ a.state }}</div>
+          <div style="margin-top:8px">
+            <span class="stat"><strong>{{ a.years_experience }}</strong>Years</span>
+            <span class="stat"><strong>{{ a.transactions_count }}</strong>Transactions</span>
+            <span class="stat"><strong>{{ a.sales_volume_display() }}</strong>Volume</span>
+          </div>
+          <div style="margin-top:8px">
+            {% for s in a.get_specialties()[:3] %}<span class="chip">{{ s }}</span>{% endfor %}
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>Saved homes</h1>
+    {% if saved %}
+      <div class="grid-cards" style="grid-template-columns: repeat(2, 1fr)">
+        {% for s in saved %}{% set L = s.listing %}
+          <div>
+            {% include "_card.html" %}
+            <form method="post" action="{{ url_for('unsave_home', listing_id=L.id) }}" style="margin-top:6px">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn outline tiny" type="submit">Remove</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">
+        <h3>You haven't saved any homes yet</h3>
+        <p>Save listings to compare them side-by-side.</p>
+        <a class="btn" href="{{ url_for('search') }}">Start browsing</a>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

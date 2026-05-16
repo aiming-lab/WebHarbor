@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>Edit profile</h1>
+    <form method="post" class="form-narrow" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label>Full name</label><input type="text" name="name" value="{{ user.name }}" required></div>
+      <div class="field"><label>Phone</label><input type="tel" name="phone" value="{{ user.phone }}"></div>
+      <div class="field"><label>City</label><input type="text" name="city" value="{{ user.city }}"></div>
+      <div class="field"><label>State</label><input type="text" name="state" value="{{ user.state }}" maxlength="2"></div>
+      <button class="btn" type="submit">Save changes</button>
+      <a class="btn outline" href="{{ url_for('account') }}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}
