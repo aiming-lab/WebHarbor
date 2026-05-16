@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>Saved searches</h1>
+    {% if searches %}
+      <table class="table">
+        <thead><tr><th>Name</th><th>Criteria</th><th>Notify</th><th></th></tr></thead>
+        <tbody>
+          {% for s in searches %}{% set c = s.get_criteria() %}
+            <tr>
+              <td>{{ s.name }}</td>
+              <td>{% if c.q %}"{{ c.q }}" · {% endif %}{% if c.city %}{{ c.city }} · {% endif %}{% if c.beds %}{{ c.beds }}+ bd · {% endif %}{% if c.price_max %}≤ ${{ c.price_max }} · {% endif %}{% if c.property_type %}{{ c.property_type }}{% endif %}</td>
+              <td>{{ 'Yes' if s.notify else 'No' }}</td>
+              <td>
+                <form method="post" action="{{ url_for('delete_saved_search', ssid=s.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn outline tiny" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty"><h3>No saved searches</h3><p>Save a search from the results page.</p></div>
+    {% endif %}
+
+    <h2 style="margin-top:48px">Save a new search</h2>
+    <form method="post" class="form-narrow" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label>Name</label><input type="text" name="name" required></div>
+      <div class="field"><label>Search terms</label><input type="text" name="q"></div>
+      <div class="field"><label>City</label><input type="text" name="city"></div>
+      <div class="field"><label>Max price ($)</label><input type="number" name="price_max"></div>
+      <div class="field"><label>Min beds</label><input type="number" name="beds"></div>
+      <div class="field"><label>Property type</label>
+        <select name="property_type">
+          <option value="">Any</option>
+          {% for t in ['Single Family','Condo','Co-op','Townhouse','Multi-Family','Apartment','Land'] %}
+            <option value="{{ t }}">{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn" type="submit">Save search</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

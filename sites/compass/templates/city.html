@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}{{ city_name }}, {{ state }} {{ status_label }} | Compass{% endblock %}
+{% block content %}
+<div class="container section">
+  <h1>{{ city_name }}, {{ state }} Homes {{ status_label }}</h1>
+  {% if city_row %}<p style="color:var(--c-gray-4); max-width:760px">{{ city_row.blurb }}</p>{% endif %}
+
+  <form class="filter-bar" method="get" action="">
+    <div class="filter-group">
+      <label>Type</label>
+      <select name="property_type">
+        <option value="">Any</option>
+        {% for t in ['Single Family','Condo','Co-op','Townhouse','Multi-Family','Apartment','Land'] %}
+          <option value="{{ t }}" {% if active_filters.get('property_type') == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Min beds</label>
+      <select name="beds">
+        <option value="">Any</option>
+        {% for n in [1,2,3,4,5] %}<option value="{{ n }}" {% if active_filters.get('beds')==n|string %}selected{% endif %}>{{ n }}+</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Min baths</label>
+      <select name="baths">
+        <option value="">Any</option>
+        {% for n in [1,2,3,4] %}<option value="{{ n }}" {% if active_filters.get('baths')==n|string %}selected{% endif %}>{{ n }}+</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Min price</label>
+      <input type="number" name="price_min" value="{{ active_filters.get('price_min','') }}" placeholder="$">
+    </div>
+    <div class="filter-group">
+      <label>Max price</label>
+      <input type="number" name="price_max" value="{{ active_filters.get('price_max','') }}" placeholder="$">
+    </div>
+    <div class="filter-group">
+      <label>Min sqft</label>
+      <input type="number" name="sqft_min" value="{{ active_filters.get('sqft_min','') }}">
+    </div>
+    <div class="filter-group">
+      <label>Year built ≥</label>
+      <input type="number" name="year_built_min" value="{{ active_filters.get('year_built_min','') }}">
+    </div>
+    <label class="ckb"><input type="checkbox" name="pool" {% if active_filters.get('pool') %}checked{% endif %}> Pool</label>
+    <label class="ckb"><input type="checkbox" name="garage" {% if active_filters.get('garage') %}checked{% endif %}> Garage</label>
+    <label class="ckb"><input type="checkbox" name="waterfront" {% if active_filters.get('waterfront') %}checked{% endif %}> Waterfront</label>
+    <label class="ckb"><input type="checkbox" name="doorman" {% if active_filters.get('doorman') %}checked{% endif %}> Doorman</label>
+    <label class="ckb"><input type="checkbox" name="open_house" {% if active_filters.get('open_house') %}checked{% endif %}> Open House</label>
+    <div class="filter-group">
+      <label>Sort</label>
+      <select name="sort">
+        {% for v,t in [('newest','Newest'),('price_asc','Price low→high'),('price_desc','Price high→low'),('beds_desc','Bedrooms'),('sqft_desc','Sqft'),('ppsf_asc','$/sqft low→high'),('ppsf_desc','$/sqft high→low')] %}
+          <option value="{{ v }}" {% if sort==v %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn tiny" type="submit">Apply</button>
+    <a class="btn outline tiny" href="?">Reset</a>
+  </form>
+
+  <div class="result-summary">{{ listings|length }} {{ status_label|lower }} listings in {{ city_name }}, {{ state }}.</div>
+
+  {% if listings %}
+    <div class="grid-cards">
+      {% for L in listings %}
+        {% include "_card.html" %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><h3>No matching homes</h3><p>Try widening your filters.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

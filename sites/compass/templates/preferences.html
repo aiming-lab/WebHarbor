@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>Search preferences</h1>
+    <form method="post" class="form-narrow" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label>Budget min</label><input type="number" name="budget_min" value="{{ user.budget_min }}"></div>
+      <div class="field"><label>Budget max</label><input type="number" name="budget_max" value="{{ user.budget_max }}"></div>
+      <div class="field"><label>Min bedrooms</label><input type="number" name="beds_min" value="{{ user.beds_min }}"></div>
+      <div class="field"><label>Property types of interest</label>
+        {% set my = user.get_property_types() %}
+        {% for t in ['Single Family','Condo','Co-op','Townhouse','Multi-Family','Apartment','Land'] %}
+          <label style="display:block; font-size:14px; padding:4px 0;"><input type="checkbox" name="property_types" value="{{ t }}" {% if t in my %}checked{% endif %}> {{ t }}</label>
+        {% endfor %}
+      </div>
+      <div class="field"><label>Move timeline</label>
+        <select name="move_timeline">
+          {% for v in ['', '0-3mo', '3-6mo', '6-12mo', '12mo+'] %}
+            <option value="{{ v }}" {% if user.move_timeline == v %}selected{% endif %}>{{ v or '—' }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field"><label><input type="checkbox" name="has_agent" {% if user.has_agent %}checked{% endif %}> I'm already working with a Compass agent</label></div>
+      <div class="field"><label><input type="checkbox" name="receive_alerts" {% if user.receive_alerts %}checked{% endif %}> Send me listing alerts</label></div>
+      <button class="btn" type="submit">Save preferences</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

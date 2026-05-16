@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="cx-hero">
+  <h1>Find your place</h1>
+  <p class="sub">Search homes for sale, rentals, and new developments — guided by Compass agents.</p>
+  <form class="search-box" action="{{ url_for('search') }}" method="get" role="search">
+    <input type="text" name="q" placeholder="City, neighborhood, ZIP, or address" autocomplete="off">
+    <button type="submit">Search</button>
+  </form>
+</section>
+
+<section class="section container">
+  <div class="section-row">
+    <h2>Featured cities</h2>
+    <a class="link-more" href="{{ url_for('homes_for_sale_index') }}">All cities →</a>
+  </div>
+  <div class="grid-cards">
+    {% for c in FEATURED_CITIES %}
+      <a class="card" href="{{ url_for('city_for_sale', city_state=c.slug) }}">
+        <div class="city-tile" style="background-image:url('{{ c.hero_image }}')">
+          <div class="label">{{ c.name }}, {{ c.state }}</div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% if featured %}
+<section style="background:var(--c-gray-1); margin: 0; padding: 64px 24px;">
+ <div class="container">
+  <div class="section-row">
+    <div>
+      <h2>Compass Exclusives</h2>
+      <p style="color:var(--c-gray-4); font-size:14px; margin-top:-8px">Homes you can only find with Compass.</p>
+    </div>
+  </div>
+  <div class="grid-cards">
+    {% for L in featured %}
+      {% include "_card.html" %}
+    {% endfor %}
+  </div>
+ </div>
+</section>
+{% endif %}
+
+{% if new_listings %}
+<section class="section container">
+  <div class="section-row">
+    <h2>New on Compass</h2>
+    <a class="link-more" href="{{ url_for('new_listings') }}">See all new →</a>
+  </div>
+  <div class="grid-cards">
+    {% for L in new_listings %}
+      {% include "_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if luxury %}
+<section class="section container">
+  <div class="section-row">
+    <h2>Compass Luxury</h2>
+    <a class="link-more" href="{{ url_for('luxury') }}">Explore →</a>
+  </div>
+  <div class="grid-cards">
+    {% for L in luxury[:6] %}
+      {% include "_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

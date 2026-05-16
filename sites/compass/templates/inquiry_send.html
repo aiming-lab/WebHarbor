@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container section" style="max-width:640px">
+  <h1>Contact agent</h1>
+  <p style="color:var(--c-gray-4)">About: {{ listing.address }}{% if listing.agent %} · Agent {{ listing.agent.name }}{% endif %}</p>
+  <form method="post" class="form-narrow" style="margin:0">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if not current_user.is_authenticated %}
+      <div class="field"><label>Your name</label><input type="text" name="name" required></div>
+      <div class="field"><label>Email</label><input type="email" name="email" required></div>
+    {% endif %}
+    <div class="field"><label>Phone</label><input type="tel" name="phone" value="{{ current_user.phone if current_user.is_authenticated else '' }}"></div>
+    <div class="field"><label>Subject</label><input type="text" name="subject" value="Inquiry about {{ listing.address }}"></div>
+    <div class="field"><label>Message</label><textarea name="message" required placeholder="I'm interested in this property and would like more information..."></textarea></div>
+    <button class="btn" type="submit">Send message</button>
+    <a class="btn outline" href="{{ url_for('listing_detail', slug=listing.slug) }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

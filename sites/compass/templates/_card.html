@@ -1,0 +1,13 @@
+<a class="card" href="{{ url_for('listing_detail', slug=L.slug) }}">
+  <div class="photo">
+    {% if L.is_compass_exclusive %}<span class="badge exclusive">Compass Exclusive</span>{% elif L.is_new %}<span class="badge">New</span>{% elif L.is_open_house %}<span class="badge">Open House</span>{% elif L.is_pending %}<span class="badge">Pending</span>{% endif %}
+    {% if L.hero_image %}<img src="{{ L.hero_image }}" alt="{{ L.address }}">{% endif %}
+  </div>
+  <div class="price">{{ L.price_display() }}</div>
+  <div class="addr">{{ L.address }}{% if L.neighborhood %} · {{ L.neighborhood }}{% endif %}</div>
+  <div class="meta">
+    {% if L.beds %}{{ L.beds }} bd · {% endif %}
+    {% if L.baths_full or L.baths_half %}{{ L.baths_full + 0.5 * L.baths_half }} ba · {% endif %}
+    {% if L.sqft %}{{ '{:,}'.format(L.sqft) }} sq ft{% endif %}
+  </div>
+</a>

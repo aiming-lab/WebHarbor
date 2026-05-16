@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container section" style="max-width:640px">
+  <h1>Request a tour</h1>
+  <p style="color:var(--c-gray-4)">{{ listing.address }} · {{ listing.city }}, {{ listing.state }}</p>
+  <form method="post" class="form-narrow" style="margin:0">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label>Date</label><input type="date" name="date" required></div>
+    <div class="field"><label>Time</label>
+      <select name="time" required>
+        {% for t in ['9:00 AM','10:00 AM','11:00 AM','12:00 PM','1:00 PM','2:00 PM','3:00 PM','4:00 PM','5:00 PM'] %}
+          <option>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field"><label>Tour type</label>
+      <select name="tour_type">
+        <option value="in-person">In-person</option>
+        <option value="video">Video tour</option>
+      </select>
+    </div>
+    <div class="field"><label>Phone</label><input type="tel" name="phone" value="{{ current_user.phone }}"></div>
+    <div class="field"><label>Notes for the agent</label><textarea name="notes"></textarea></div>
+    <button class="btn" type="submit">Submit request</button>
+    <a class="btn outline" href="{{ url_for('listing_detail', slug=listing.slug) }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

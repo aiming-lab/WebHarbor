@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>New collection</h1>
+    <form method="post" class="form-narrow" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label>Collection name</label><input type="text" name="name" required placeholder='e.g. "Austin top picks"'></div>
+      <div class="field"><label>Description (optional)</label><textarea name="description"></textarea></div>
+      <button class="btn" type="submit">Create collection</button>
+      <a class="btn outline" href="{{ url_for('collections_index') }}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

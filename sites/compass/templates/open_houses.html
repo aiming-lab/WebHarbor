@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Open Houses | Compass{% endblock %}
+{% block content %}
+<div class="container section">
+  <h1>Open Houses</h1>
+  <p style="color:var(--c-gray-4)">In-person tours scheduled by Compass agents.</p>
+
+  <form method="get" class="filter-bar">
+    <div class="filter-group">
+      <label>City</label>
+      <select name="city">
+        <option value="">All</option>
+        {% for c in all_cities %}
+          <option value="{{ c }}" {% if filter_city == c %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn tiny" type="submit">Filter</button>
+  </form>
+
+  <div class="result-summary">{{ listings|length }} open houses{% if filter_city %} in {{ filter_city }}{% endif %}.</div>
+
+  <table class="table">
+    <thead><tr><th>Date</th><th>Time</th><th>Address</th><th>City</th><th>Beds</th><th>Baths</th><th>Price</th></tr></thead>
+    <tbody>
+      {% for L in listings %}
+        <tr>
+          <td>{{ L.open_house_date }}</td>
+          <td>{{ L.open_house_time }}</td>
+          <td><a href="{{ url_for('listing_detail', slug=L.slug) }}">{{ L.address }}</a></td>
+          <td>{{ L.city }}, {{ L.state }}</td>
+          <td>{{ L.beds }}</td>
+          <td>{{ L.baths_full + 0.5 * L.baths_half }}</td>
+          <td>{{ L.price_display() }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
