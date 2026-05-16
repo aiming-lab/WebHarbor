@@ -1,15 +1,19 @@
 {% extends "base.html" %}
 {% block title %}My Watchlist | Rotten Tomatoes{% endblock %}
 {% block content %}
-<div class="watchlist-page">
+<div class="profile-page">
     <h1>My Watchlist</h1>
+
+    {% set active_tab = 'watchlist' %}
+    {% include 'profile_tabs.html' %}
+
     {% if movies %}
     <div class="movie-grid">
         {% for movie in movies %}
         <div class="movie-card-with-remove">
             <a href="/m/{{ movie.slug }}" class="movie-card">
                 <div class="card-poster">
-                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.src='/static/icons/placeholder.png'">
+                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
                 </div>
                 <div class="card-scores">
                     <span class="score tomatometer {{ movie.tomatometer_status }}">{{ movie.tomatometer_icon }} {{ movie.tomatometer }}%</span>

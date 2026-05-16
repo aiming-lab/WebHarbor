@@ -15,7 +15,7 @@
             {% for movie in movies %}
             <a href="/m/{{ movie.slug }}" class="movie-card">
                 <div class="card-poster">
-                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.src='/static/icons/placeholder.png'">
+                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
                 </div>
                 <div class="card-info">
                     <div class="card-title">{{ movie.title }}</div>
@@ -33,7 +33,7 @@
         <div class="people-grid">
             {% for person in people %}
             <a href="/celebrity/{{ person.slug }}" class="person-card">
-                <img src="{{ person.photo }}" alt="{{ person.name }}" onerror="this.src='/static/icons/placeholder.png'">
+                <img src="{{ person.photo if person.photo else '/static/icons/placeholder.png' }}" alt="{{ person.name }}" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
                 <div class="person-name">{{ person.name }}</div>
             </a>
             {% endfor %}

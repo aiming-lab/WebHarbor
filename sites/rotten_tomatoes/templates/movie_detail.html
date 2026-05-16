@@ -4,7 +4,7 @@
 <div class="movie-detail">
     <div class="movie-header">
         <div class="movie-poster-col">
-            <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" class="movie-poster-large" onerror="this.src='/static/icons/placeholder.png'">
+            <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" class="movie-poster-large" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
         </div>
         <div class="movie-info-col">
             <h1 class="movie-title-large">{{ movie.title }} <span class="movie-year">({{ movie.year }})</span></h1>
@@ -48,18 +48,30 @@
             </div>
             {% endif %}
 
-            <div class="movie-details-grid">
+            <div class="movie-details-grid movie-info-box">
+                <h3 class="info-box-title">Movie Info</h3>
                 {% if directors %}
                 <div class="detail-item">
-                    <span class="detail-label">Director:</span>
+                    <span class="detail-label">Director</span>
+                    <span class="detail-value">
                     {% for d in directors %}
                     <a href="/celebrity/{{ d.person.slug }}">{{ d.person.name }}</a>{% if not loop.last %}, {% endif %}
                     {% endfor %}
+                    </span>
                 </div>
                 {% endif %}
-                {% if movie.studio %}<div class="detail-item"><span class="detail-label">Studio:</span> {{ movie.studio }}</div>{% endif %}
-                {% if movie.release_date %}<div class="detail-item"><span class="detail-label">Release Date:</span> {{ movie.release_date }}</div>{% endif %}
-                {% if movie.box_office %}<div class="detail-item"><span class="detail-label">Box Office:</span> {{ movie.box_office }}</div>{% endif %}
+                {% if movie.producer %}<div class="detail-item"><span class="detail-label">Producer</span><span class="detail-value">{{ movie.producer }}</span></div>{% endif %}
+                {% if movie.screenwriter %}<div class="detail-item"><span class="detail-label">Screenwriter</span><span class="detail-value">{{ movie.screenwriter }}</span></div>{% endif %}
+                {% if movie.distributor %}<div class="detail-item"><span class="detail-label">Distributor</span><span class="detail-value">{{ movie.distributor }}</span></div>{% endif %}
+                {% if movie.production_co %}<div class="detail-item"><span class="detail-label">Production Co</span><span class="detail-value">{{ movie.production_co }}</span></div>{% endif %}
+                {% if movie.pg_rating %}<div class="detail-item"><span class="detail-label">Rating</span><span class="detail-value">{{ movie.pg_rating }}</span></div>{% endif %}
+                <div class="detail-item"><span class="detail-label">Genre</span><span class="detail-value">{% for genre in movie.genres %}<a href="/browse/movies/?genre={{ genre.slug }}">{{ genre.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</span></div>
+                {% if movie.original_language %}<div class="detail-item"><span class="detail-label">Original Language</span><span class="detail-value">{{ movie.original_language }}</span></div>{% endif %}
+                {% if movie.release_date %}<div class="detail-item"><span class="detail-label">Release Date (Theaters)</span><span class="detail-value">{{ movie.release_date }}</span></div>{% endif %}
+                {% if movie.release_date_streaming %}<div class="detail-item"><span class="detail-label">Release Date (Streaming)</span><span class="detail-value">{{ movie.release_date_streaming }}</span></div>{% endif %}
+                {% if movie.box_office %}<div class="detail-item"><span class="detail-label">Box Office (Gross USA)</span><span class="detail-value">{{ movie.box_office }}</span></div>{% endif %}
+                {% if movie.runtime_display %}<div class="detail-item"><span class="detail-label">Runtime</span><span class="detail-value">{{ movie.runtime_display }}</span></div>{% endif %}
+                {% if movie.studio %}<div class="detail-item"><span class="detail-label">Studio</span><span class="detail-value">{{ movie.studio }}</span></div>{% endif %}
             </div>
         </div>
     </div>
@@ -90,7 +102,11 @@
         <div class="cast-grid">
             {% for c in actors[:8] %}
             <a href="/celebrity/{{ c.person.slug }}" class="cast-card">
-                <img src="{{ c.person.photo }}" alt="{{ c.person.name }}" onerror="this.src='/static/icons/placeholder.png'">
+                {% if c.person.photo %}
+                <img src="{{ c.person.photo }}" alt="{{ c.person.name }}" onerror="this.onerror=null;this.parentElement.innerHTML='<div class=\'cast-placeholder\'>👤</div>'">
+                {% else %}
+                <div class="cast-placeholder">👤</div>
+                {% endif %}
                 <div class="cast-name">{{ c.person.name }}</div>
                 <div class="cast-character">{{ c.character_name }}</div>
             </a>
@@ -202,7 +218,7 @@
             {% for movie in similar_movies %}
             <a href="/m/{{ movie.slug }}" class="movie-card">
                 <div class="card-poster">
-                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.src='/static/icons/placeholder.png'">
+                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
                 </div>
                 <div class="card-scores">
                     <span class="score tomatometer {{ movie.tomatometer_status }}">{{ movie.tomatometer_icon }} {{ movie.tomatometer }}%</span>

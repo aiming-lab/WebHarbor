@@ -7,20 +7,34 @@
 </div>
 
 {% macro movie_card(movie) %}
-<a href="/m/{{ movie.slug }}" class="movie-card">
-    <div class="card-poster">
-        <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.src='/static/icons/placeholder.png'">
-    </div>
-    <div class="card-scores">
-        <span class="score tomatometer {{ movie.tomatometer_status }}">
-            {{ movie.tomatometer_icon }} {{ movie.tomatometer }}%
-        </span>
-        <span class="score audience {{ movie.audience_status }}">
-            {{ movie.audience_icon }} {{ movie.audience_score }}%
-        </span>
-    </div>
-    <div class="card-title">{{ movie.title }}</div>
-</a>
+<div class="movie-card-wrapper">
+    <a href="/m/{{ movie.slug }}" class="movie-card">
+        <div class="card-poster">
+            <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
+        </div>
+        <div class="card-scores">
+            <span class="score tomatometer {{ movie.tomatometer_status }}">
+                {{ movie.tomatometer_icon }} {{ movie.tomatometer }}%
+            </span>
+            <span class="score audience {{ movie.audience_status }}">
+                {{ movie.audience_icon }} {{ movie.audience_score }}%
+            </span>
+        </div>
+        <div class="card-title">{{ movie.title }}</div>
+    </a>
+    {% if current_user.is_authenticated %}
+        {% if movie.id in user_watchlist_ids %}
+        <span class="watchlist-badge added">✓ WATCHLIST</span>
+        {% else %}
+        <form action="/user/watchlist/add/{{ movie.id }}" method="POST" class="watchlist-inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="watchlist-badge">+ WATCHLIST</button>
+        </form>
+        {% endif %}
+    {% else %}
+    <a href="/login" class="watchlist-badge">+ WATCHLIST</a>
+    {% endif %}
+</div>
 {% endmacro %}
 
 <!-- New & Upcoming Movies -->

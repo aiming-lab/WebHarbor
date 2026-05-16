@@ -17,10 +17,11 @@
             </div>
             <div class="nav-right">
                 <form action="/search" method="GET" class="search-form">
-                    <input type="text" name="search" placeholder="Search movies & people..." value="{{ request.args.get('search', '') }}">
+                    <input type="text" name="search" placeholder="Search movies & people..." value="{{ request.args.get('q') or request.args.get('search', '') }}">
                     <button type="submit">🔍</button>
                 </form>
                 {% if current_user.is_authenticated %}
+                    <a href="/account" class="nav-user">My Account</a>
                     <a href="/user/watchlist" class="nav-user">My Watchlist</a>
                     <a href="/logout" class="nav-user">Logout</a>
                     <span class="nav-user-name">{{ current_user.name }}</span>

@@ -107,8 +107,13 @@ img { max-width: 100%; height: auto; }
 .where-to-watch h3 { font-size: 14px; margin-bottom: 6px; }
 .platform-badge { display: inline-block; background: var(--rt-dark); color: #FFF; padding: 4px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; }
 
-.movie-details-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 14px; }
-.detail-label { font-weight: 600; color: var(--text-light); }
+.movie-details-grid.movie-info-box { display: flex; flex-direction: column; gap: 0; font-size: 14px; margin-top: 20px; border-top: 2px solid var(--text); padding-top: 12px; }
+.info-box-title { font-size: 22px; font-weight: 700; margin: 0 0 12px 0; color: var(--text); }
+.movie-info-box .detail-item { display: flex; flex-direction: column; padding: 10px 0; border-bottom: 1px solid #e8e8e8; }
+.movie-info-box .detail-label { font-size: 12px; font-weight: 600; color: var(--text-light); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+.movie-info-box .detail-value { font-size: 14px; color: var(--text); line-height: 1.5; }
+.movie-info-box .detail-value a { color: var(--text); text-decoration: underline; }
+.movie-info-box .detail-value a:hover { color: var(--rt-red); }
 
 /* ── Consensus ── */
 .consensus-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
@@ -120,6 +125,7 @@ img { max-width: 100%; height: auto; }
 .cast-card { display: block; width: 100px; text-align: center; color: var(--text); }
 .cast-card:hover { text-decoration: none; }
 .cast-card img { width: 80px; height: 80px; border-radius: 50%; object-fit: cover; background: var(--bg-alt); }
+.cast-placeholder { width: 80px; height: 80px; border-radius: 50%; background: var(--bg-alt, #E0E0E0); display: flex; align-items: center; justify-content: center; font-size: 32px; margin: 0 auto; }
 .cast-name { font-size: 12px; font-weight: 600; margin-top: 6px; }
 .cast-character { font-size: 11px; color: var(--text-light); }
 
@@ -241,3 +247,60 @@ img { max-width: 100%; height: auto; }
 .what-to-know h2 { margin-bottom: 16px; }
 .cast-section { margin: 32px 0; }
 .cast-section h2 { margin-bottom: 16px; }
+
+
+/* ── Profile Pages ── */
+.profile-page { max-width: 900px; margin: 0 auto; }
+.profile-page h1 { margin-bottom: 8px; }
+
+.profile-header { display: flex; gap: 24px; align-items: center; margin-bottom: 24px; padding: 24px; background: var(--bg-alt); border-radius: var(--radius); }
+.profile-avatar { width: 80px; height: 80px; border-radius: 50%; background: var(--rt-dark); color: #FFF; display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 700; flex-shrink: 0; }
+.profile-info h1 { font-size: 24px; margin-bottom: 4px; }
+.profile-email { color: var(--text-light); font-size: 14px; }
+.profile-joined { color: var(--text-light); font-size: 13px; margin-bottom: 8px; }
+
+.profile-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+.profile-tab { padding: 12px 20px; font-size: 14px; font-weight: 600; color: var(--text-light); border-bottom: 3px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+.profile-tab:hover { color: var(--text); text-decoration: none; }
+.profile-tab.active { color: var(--rt-red); border-bottom-color: var(--rt-red); }
+
+.profile-stats { display: flex; gap: 16px; margin-top: 24px; }
+.stat-card { flex: 1; text-align: center; padding: 20px; background: var(--bg-alt); border-radius: var(--radius); }
+.stat-card .stat-number { font-size: 32px; font-weight: 700; color: var(--rt-dark); }
+.stat-card .stat-label { font-size: 13px; color: var(--text-light); text-transform: uppercase; margin-top: 4px; }
+
+/* ── Edit Profile ── */
+.edit-form-container { max-width: 500px; margin-top: 24px; }
+.edit-form .form-group { margin-bottom: 16px; }
+.form-hint { display: block; font-size: 12px; color: var(--text-light); margin-top: 4px; }
+.form-actions { display: flex; gap: 12px; margin-top: 24px; }
+
+/* ── User Star Ratings ── */
+.movie-card-rated { text-align: center; }
+.user-star-rating { margin-top: 6px; font-size: 14px; color: #F5C518; letter-spacing: 1px; }
+.user-star-rating .rating-value { color: var(--text-light); font-size: 12px; margin-left: 4px; }
+
+/* ── User Reviews ── */
+.user-review-card { display: flex; gap: 16px; padding: 16px; background: var(--bg-alt); border-radius: var(--radius); margin-bottom: 12px; }
+.review-poster { width: 60px; height: 90px; border-radius: 4px; object-fit: cover; flex-shrink: 0; }
+.review-movie-link { flex-shrink: 0; }
+.review-body { flex: 1; }
+.review-movie-title { font-weight: 700; font-size: 16px; color: var(--text); display: block; margin-bottom: 6px; }
+.review-movie-title:hover { color: var(--rt-red); }
+.review-body .review-text { font-size: 14px; line-height: 1.5; margin: 8px 0; }
+.review-date { font-size: 12px; color: var(--text-light); }
+.delete-review-form { margin-top: 6px; }
+.delete-review-btn { background: none; border: 1px solid #ddd; border-radius: 4px; padding: 3px 10px; font-size: 12px; color: var(--text-light); cursor: pointer; transition: all 0.15s; }
+.delete-review-btn:hover { border-color: #e74c3c; color: #e74c3c; }
+
+/* ── Watchlist Badge (on cards) ── */
+.movie-card-wrapper { display: flex; flex-direction: column; align-items: center; width: 160px; min-width: 160px; flex: 0 0 160px; }
+.movie-card-wrapper .movie-card { flex: 1; display: flex; flex-direction: column; width: 160px; }
+.movie-card-wrapper .card-title { flex: 1; min-height: 36px; }
+.watchlist-badge { display: inline-block; margin-top: 8px; padding: 6px 16px; border: 1.5px solid var(--border); border-radius: 20px; font-size: 12px; font-weight: 600; color: var(--text-light); background: transparent; cursor: pointer; transition: all 0.15s; text-align: center; text-decoration: none; white-space: nowrap; }
+.watchlist-badge:hover { border-color: var(--rt-red); color: var(--rt-red); text-decoration: none; }
+.watchlist-badge.added { border-color: var(--fresh); color: var(--fresh); cursor: default; }
+.watchlist-inline-form { margin: 0; padding: 0; }
+
+/* Grid wrapper fix for browse page with watchlist buttons */
+.movie-grid .movie-card-wrapper { width: auto; min-width: auto; }

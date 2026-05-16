@@ -88,6 +88,13 @@ class Movie(db.Model):
     box_office = db.Column(db.String(50), default='')
     release_date = db.Column(db.String(20), default='')
     in_theaters = db.Column(db.Boolean, default=False)
+    producer = db.Column(db.String(500), default='')
+    screenwriter = db.Column(db.String(500), default='')
+    production_co = db.Column(db.String(500), default='')
+    distributor = db.Column(db.String(200), default='')
+    original_language = db.Column(db.String(50), default='')
+    release_date_streaming = db.Column(db.String(50), default='')
+    runtime_display = db.Column(db.String(20), default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     genres = db.relationship('Genre', secondary=movie_genres, lazy='subquery',
@@ -227,7 +234,10 @@ def inject_csrf():
 @app.context_processor
 def inject_globals():
     genres = Genre.query.order_by(Genre.name).all()
-    return dict(all_genres=genres)
+    watchlist_ids = set()
+    if current_user.is_authenticated:
+        watchlist_ids = {w.movie_id for w in WatchlistItem.query.filter_by(user_id=current_user.id).all()}
+    return dict(all_genres=genres, user_watchlist_ids=watchlist_ids)
 
 
 # ──────────────────────────────────────────────
@@ -339,7 +349,7 @@ def index():
 @app.route('/search')
 def search():
     """Search movies and people."""
-    query = request.args.get('search', '').strip()
+    query = (request.args.get('q') or request.args.get('search') or '').strip()
     if not query:
         return render_template('search_results.html', query='', movies=[], people=[])
     movies = search_movies(query)
@@ -555,6 +565,49 @@ def logout():
     return redirect(url_for('index'))
 
 
+# ── Account / Profile routes ──
+
+@app.route('/account')
+@login_required
+def account():
+    rating_count = UserRating.query.filter_by(user_id=current_user.id).count()
+    review_count = AudienceReview.query.filter_by(user_id=current_user.id).count()
+    watchlist_count = WatchlistItem.query.filter_by(user_id=current_user.id).count()
+    return render_template('account.html', rating_count=rating_count,
+                           review_count=review_count, watchlist_count=watchlist_count)
+
+
+@app.route('/account/edit', methods=['GET', 'POST'])
+@login_required
+def account_edit():
+    if request.method == 'POST':
+        new_name = request.form.get('name', '').strip()
+        if new_name and len(new_name) >= 2:
+            current_user.name = new_name
+            db.session.commit()
+            flash('Profile updated.', 'success')
+            return redirect(url_for('account'))
+        else:
+            flash('Name must be at least 2 characters.', 'danger')
+    return render_template('account_edit.html')
+
+
+@app.route('/user/ratings')
+@login_required
+def user_ratings():
+    ratings = UserRating.query.filter_by(user_id=current_user.id)\
+        .order_by(UserRating.created_at.desc()).all()
+    return render_template('user_ratings.html', ratings=ratings)
+
+
+@app.route('/user/reviews')
+@login_required
+def user_reviews():
+    reviews = AudienceReview.query.filter_by(user_id=current_user.id)\
+        .order_by(AudienceReview.review_date.desc()).all()
+    return render_template('user_reviews.html', reviews=reviews)
+
+
 # ── Watchlist routes ──
 
 @app.route('/user/watchlist')
@@ -577,7 +630,8 @@ def add_to_watchlist(movie_id):
         flash(f'Added "{movie.title}" to your watchlist.', 'success')
     else:
         flash(f'"{movie.title}" is already in your watchlist.', 'info')
-    return redirect(url_for('movie_detail', slug=movie.slug))
+    next_url = request.form.get('next') or request.referrer or url_for('movie_detail', slug=movie.slug)
+    return redirect(next_url)
 
 
 @app.route('/user/watchlist/remove/<int:movie_id>', methods=['POST'])
@@ -635,6 +689,20 @@ def review_movie(slug):
             db.session.commit()
             flash('Review submitted!', 'success')
     return redirect(url_for('movie_detail', slug=slug))
+
+
+@app.route('/user/reviews/delete/<int:review_id>', methods=['POST'])
+@login_required
+def delete_review(review_id):
+    review = AudienceReview.query.get_or_404(review_id)
+    if review.user_id != current_user.id:
+        flash('You can only delete your own reviews.', 'danger')
+        return redirect(url_for('user_reviews'))
+    movie_title = review.movie.title
+    db.session.delete(review)
+    db.session.commit()
+    flash(f'Your review for "{movie_title}" has been deleted.', 'success')
+    return redirect(url_for('user_reviews'))
 
 
 # ── Health check ──
