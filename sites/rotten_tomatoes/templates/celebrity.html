@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}{{ person.name }} | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="celebrity-detail">
+    <div class="celeb-header">
+        <div class="celeb-photo-col">
+            <img src="{{ person.photo if person.photo else '/static/icons/placeholder.png' }}" alt="{{ person.name }}" class="celeb-photo" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
+        </div>
+        <div class="celeb-info-col">
+            <h1>{{ person.name }}</h1>
+            {% if person.birthplace %}<p class="celeb-birthplace">📍 {{ person.birthplace }}</p>{% endif %}
+            {% if person.birth_date %}<p class="celeb-birthdate">🎂 {{ person.birth_date }}</p>{% endif %}
+
+            {% if highest_rated %}
+            <div class="celeb-stats">
+                <div class="stat">
+                    <span class="stat-label">Highest Rated:</span>
+                    <a href="/m/{{ highest_rated.slug }}">{{ highest_rated.title }} ({{ highest_rated.tomatometer }}%)</a>
+                </div>
+                {% if lowest_rated %}
+                <div class="stat">
+                    <span class="stat-label">Lowest Rated:</span>
+                    <a href="/m/{{ lowest_rated.slug }}">{{ lowest_rated.title }} ({{ lowest_rated.tomatometer }}%)</a>
+                </div>
+                {% endif %}
+            </div>
+            {% endif %}
+
+            {% if person.bio %}
+            <div class="celeb-bio">
+                <p>{{ person.bio }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="filmography-section">
+        <div class="filmography-header">
+            <h2>Filmography</h2>
+            <div class="sort-options">
+                <a href="?sort=newest" class="sort-btn {% if current_sort == 'newest' %}active{% endif %}">Newest</a>
+                <a href="?sort=oldest" class="sort-btn {% if current_sort == 'oldest' %}active{% endif %}">Oldest</a>
+                <a href="?sort=critics_highest" class="sort-btn {% if current_sort == 'critics_highest' %}active{% endif %}">Critics Highest</a>
+                <a href="?sort=critics_lowest" class="sort-btn {% if current_sort == 'critics_lowest' %}active{% endif %}">Critics Lowest</a>
+                <a href="?sort=audience_highest" class="sort-btn {% if current_sort == 'audience_highest' %}active{% endif %}">Audience Highest</a>
+                <a href="?sort=audience_lowest" class="sort-btn {% if current_sort == 'audience_lowest' %}active{% endif %}">Audience Lowest</a>
+            </div>
+        </div>
+        <div class="filmography-list">
+            {% for entry in filmography %}
+            <a href="/m/{{ entry.movie.slug }}" class="filmography-item">
+                <div class="film-year">{{ entry.movie.year }}</div>
+                <div class="film-scores">
+                    <span class="score tomatometer {{ entry.movie.tomatometer_status }}">{{ entry.movie.tomatometer_icon }} {{ entry.movie.tomatometer }}%</span>
+                    <span class="score audience {{ entry.movie.audience_status }}">{{ entry.movie.audience_icon }} {{ entry.movie.audience_score }}%</span>
+                </div>
+                <div class="film-info">
+                    <div class="film-title">{{ entry.movie.title }}</div>
+                    <div class="film-role">{{ entry.character_name }} <span class="role-type">({{ entry.role_type }})</span></div>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

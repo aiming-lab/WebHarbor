@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="profile-page">
+    <h1>Edit Profile</h1>
+
+    {% set active_tab = 'profile' %}
+    {% include 'profile_tabs.html' %}
+
+    <div class="edit-form-container">
+        <form method="POST" action="/account/edit" class="edit-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="name">Display Name</label>
+                <input type="text" id="name" name="name" value="{{ current_user.name }}" required minlength="2" maxlength="120">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input type="email" value="{{ current_user.email }}" disabled>
+                <small class="form-hint">Email cannot be changed.</small>
+            </div>
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+                <a href="/account" class="btn btn-outline">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

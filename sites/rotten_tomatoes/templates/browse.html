@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="browse-page">
+    <h1>{{ title }}</h1>
+
+    <div class="browse-filters">
+        <form method="GET" class="filter-form">
+            <div class="filter-group">
+                <label>Sort:</label>
+                <select name="sort" onchange="this.form.submit()">
+                    <option value="popular" {% if current_sort == 'popular' %}selected{% endif %}>Popular</option>
+                    <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Newest</option>
+                    <option value="tomatometer" {% if current_sort == 'tomatometer' %}selected{% endif %}>Tomatometer</option>
+                    <option value="audience" {% if current_sort == 'audience' %}selected{% endif %}>Audience Score</option>
+                    <option value="a_z" {% if current_sort == 'a_z' %}selected{% endif %}>A-Z</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Genre:</label>
+                <select name="genre" onchange="this.form.submit()">
+                    <option value="">All Genres</option>
+                    {% for genre in genres %}
+                    <option value="{{ genre.slug }}" {% if current_genre == genre.slug %}selected{% endif %}>{{ genre.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label>Rating:</label>
+                <select name="rating" onchange="this.form.submit()">
+                    <option value="">All Ratings</option>
+                    <option value="G" {% if current_rating == 'G' %}selected{% endif %}>G</option>
+                    <option value="PG" {% if current_rating == 'PG' %}selected{% endif %}>PG</option>
+                    <option value="PG-13" {% if current_rating == 'PG-13' %}selected{% endif %}>PG-13</option>
+                    <option value="R" {% if current_rating == 'R' %}selected{% endif %}>R</option>
+                </select>
+            </div>
+
+            {% if platforms %}
+            <div class="filter-group">
+                <label>Platform:</label>
+                <select name="platform" onchange="this.form.submit()">
+                    <option value="">All Platforms</option>
+                    {% for p in platforms %}
+                    <option value="{{ p }}" {% if current_platform == p %}selected{% endif %}>{{ p }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            {% endif %}
+
+            <div class="filter-group">
+                <label>
+                    <input type="checkbox" name="certified_fresh" value="true"
+                           {% if current_cf == 'true' %}checked{% endif %}
+                           onchange="this.form.submit()">
+                    🏆 Certified Fresh Only
+                </label>
+            </div>
+        </form>
+    </div>
+
+    <div class="browse-results">
+        <p class="result-count">{{ movies|length }} movies found</p>
+        {% if movies %}
+        <div class="movie-grid">
+            {% for movie in movies %}
+            <div class="movie-card-wrapper">
+                <a href="/m/{{ movie.slug }}" class="movie-card">
+                    <div class="card-poster">
+                        <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
+                    </div>
+                    <div class="card-info">
+                        <div class="card-title">{{ movie.title }}</div>
+                        <div class="card-year">{{ movie.year }}</div>
+                    </div>
+                </a>
+                {% if current_user.is_authenticated %}
+                    {% if movie.id in user_watchlist_ids %}
+                    <span class="watchlist-badge added">✓ WATCHLIST</span>
+                    {% else %}
+                    <form action="/user/watchlist/add/{{ movie.id }}" method="POST" class="watchlist-inline-form">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <button type="submit" class="watchlist-badge">+ WATCHLIST</button>
+                    </form>
+                    {% endif %}
+                {% else %}
+                <a href="/login" class="watchlist-badge">+ WATCHLIST</a>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="no-results">No movies match your filters. Try adjusting your criteria.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

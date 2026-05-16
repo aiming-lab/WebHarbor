@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Rotten Tomatoes{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-logo">🍅 <span>Rotten Tomatoes</span></a>
+            <div class="nav-links">
+                <a href="/browse/movies_in_theaters/">In Theaters</a>
+                <a href="/browse/movies_at_home/">Streaming</a>
+                <a href="/browse/movies/">All Movies</a>
+            </div>
+            <div class="nav-right">
+                <form action="/search" method="GET" class="search-form">
+                    <input type="text" name="search" placeholder="Search movies & people..." value="{{ request.args.get('q') or request.args.get('search', '') }}">
+                    <button type="submit">🔍</button>
+                </form>
+                {% if current_user.is_authenticated %}
+                    <a href="/account" class="nav-user">My Account</a>
+                    <a href="/user/watchlist" class="nav-user">My Watchlist</a>
+                    <a href="/logout" class="nav-user">Logout</a>
+                    <span class="nav-user-name">{{ current_user.name }}</span>
+                {% else %}
+                    <a href="/login" class="nav-user">Sign In</a>
+                    <a href="/register" class="nav-user">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages">
+        {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="footer-container">
+            <div class="footer-links">
+                <a href="/">Home</a>
+                <a href="/browse/movies_in_theaters/">In Theaters</a>
+                <a href="/browse/movies_at_home/">Streaming</a>
+                <a href="/browse/movies/">All Movies</a>
+            </div>
+            <p class="footer-copy">© 2026 Rotten Tomatoes Mirror — WebHarbor Project</p>
+        </div>
+    </footer>
+</body>
+</html>
