@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}NBA ID - Account{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <div><span class="kicker">NBA ID</span><h1>{{ current_user.display_name }}</h1><p>{{ current_user.email }}</p></div>
+  <a class="button" href="{{ url_for('account_edit') }}">Edit Profile</a>
+</section>
+<section class="content-block split-layout">
+  <div>
+    <div class="account-grid">
+      <section class="rail-card"><h2>Favorite Team</h2>{% if favorite_team %}<a class="team-cell large" href="{{ url_for('team_detail', slug=favorite_team.slug) }}"><img src="{{ favorite_team.logo }}" alt="">{{ favorite_team.full_name }}</a>{% else %}<p>No favorite team selected.</p>{% endif %}</section>
+      <section class="rail-card"><h2>Profile</h2><p>{{ current_user.address_line1 }}</p><p>{{ current_user.city }}, {{ current_user.state }} {{ current_user.zip_code }}</p><p>Payment ending {{ current_user.payment_last4 }}</p></section>
+    </div>
+    <section class="content-block inset">
+      <div class="section-title"><h2>Bookmarks</h2><a href="{{ url_for('news') }}">Find More</a></div>
+      <div class="article-list">
+        {% for fav, item in favorites %}
+          <div class="article-card"><div><span>{{ fav.item_type }}</span><h3>{{ item.title if item.title is defined else item.name if item.name is defined else item.full_name }}</h3><p>{{ fav.note }}</p></div></div>
+        {% else %}
+          <p class="empty-state">No bookmarks yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+  <aside class="portal-rail">
+    <section class="rail-card"><h2>Recent Activity</h2><a href="{{ url_for('orders') }}">Orders</a><a href="{{ url_for('cart') }}">NBA Store Bag</a><a href="{{ url_for('tickets') }}">Ticket Requests</a></section>
+    <section class="rail-card"><h2>Ticket Requests</h2>{% for req in current_user.ticket_requests %}<a class="headline" href="{{ url_for('game_detail', game_id=req.game.id) }}"><span>{{ req.status }}</span>{{ req.game.away_team.abbreviation }} at {{ req.game.home_team.abbreviation }} · {{ req.seats }} seats</a>{% else %}<p>No ticket requests saved.</p>{% endfor %}</section>
+  </aside>
+</section>
+{% endblock %}

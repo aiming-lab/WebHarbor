@@ -1,0 +1,14 @@
+{% if hero %}
+<article class="hero-story">
+  <a class="hero-media" href="{{ url_for('article_detail', slug=hero.slug) }}"><img src="{{ hero.image }}" alt=""></a>
+  <div class="hero-copy">
+    <span class="kicker">{{ hero.category }}</span>
+    <h1><a href="{{ url_for('article_detail', slug=hero.slug) }}">{{ hero.title }}</a></h1>
+    <p>{{ hero.dek }}</p>
+    <div class="hero-links">
+      <a href="{{ url_for('news', category=hero.category) }}">More {{ hero.category }}</a>
+      <a href="{{ url_for('schedule') }}">Upcoming Schedule</a>
+    </div>
+  </div>
+</article>
+{% endif %}

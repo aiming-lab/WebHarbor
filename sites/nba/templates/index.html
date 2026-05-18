@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}NBA - Home{% endblock %}
+{% block content %}
+{% include "_components/game_strip.html" %}
+
+<div class="home-shell">
+  <div class="home-layout">
+    <main class="home-main">
+      {% if hero %}
+      <section class="home-feature">
+        <article class="feature-hero">
+          <a class="feature-image" href="{{ url_for('article_detail', slug=hero.slug) }}">
+            <img src="{{ hero.image }}" alt="">
+          </a>
+          <div class="feature-copy">
+            <span>{{ hero.category }}</span>
+            <h1><a href="{{ url_for('article_detail', slug=hero.slug) }}">{{ hero.title }}</a></h1>
+            <p>{{ hero.dek }}</p>
+            <a class="read-button" href="{{ url_for('article_detail', slug=hero.slug) }}">Read</a>
+          </div>
+        </article>
+        <div class="feature-tabs" aria-label="Featured stories">
+          {% for item in ([hero] + stories[:4]) %}
+            <a href="{{ url_for('article_detail', slug=item.slug) }}">
+              <span>{{ item.category }}</span>
+              <b>{{ item.title }}</b>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="nba-home-section">
+        <div class="section-title"><h2>Stories</h2><a href="{{ url_for('news') }}">More News</a></div>
+        <div class="official-story-row">
+          {% for article in stories[:5] %}
+            <a class="official-story-card" href="{{ url_for('article_detail', slug=article.slug) }}">
+              <img src="{{ article.image }}" alt="">
+              <small>New</small>
+              <h3>{{ article.title }}</h3>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="nba-home-section">
+        <div class="section-title"><h2>Trending Now</h2><a href="{{ url_for('trending') }}">See More</a></div>
+        <div class="trend-strip">
+          {% for article in trending[:4] %}
+            <a class="trend-card" href="{{ url_for('article_detail', slug=article.slug) }}">
+              <img src="{{ article.image }}" alt="">
+              <h3>{{ article.title }}</h3>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="league-pass-panel">
+        <div>
+          <span>NBA League Pass</span>
+          <h2>Tap to watch the playoffs</h2>
+          <p>Stream live games and full-game replays in this local mirror experience.</p>
+        </div>
+        <a href="{{ url_for('league_pass') }}">Download Now</a>
+      </section>
+
+      <section class="nba-home-section">
+        <div class="section-title"><h2>2026 Postseason</h2><a href="{{ url_for('playoffs') }}">Playoffs</a></div>
+        <div class="postseason-grid">
+          {% for article in stories[1:5] %}
+            <a class="postseason-card" href="{{ url_for('article_detail', slug=article.slug) }}">
+              <img src="{{ article.image }}" alt="">
+              <h3>{{ article.title }}</h3>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="nba-home-section recaps-section">
+        <div class="section-title"><h2>Game Recaps</h2><a href="{{ url_for('games', status='Final') }}">See More</a></div>
+        <div class="recap-strip">
+          {% for game in recaps[:4] %}
+            <a class="recap-card" href="{{ url_for('game_detail', game_id=game.id) }}">
+              <img class="recap-image" src="{{ recap_images.get(game.id, game.home_team.logo) }}" alt="">
+              <span>{{ game.status }} · {{ game.broadcast }}</span>
+              <h3>Game Recap: {{ game.away_team.abbreviation }} {{ game.away_score }}, {{ game.home_team.abbreviation }} {{ game.home_score }}</h3>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="nba-home-section around-section">
+        <div class="section-title"><h2>Around the NBA</h2><a href="{{ url_for('around_the_nba') }}">See All</a></div>
+        <div class="around-list">
+          {% for article in around_items %}
+            <a class="around-row" href="{{ url_for('article_detail', slug=article.slug) }}">
+              <img src="{{ article.image }}" alt="">
+              <div>
+                <h3>{{ article.title }}</h3>
+                <p>{{ article.dek }}</p>
+                <span>{{ article.published_at.strftime('%b %-d, %Y') }}</span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </section>
+    </main>
+
+    <aside class="home-rail">
+      <section class="rail-card home-headlines">
+        <div class="section-title compact"><h2>Headlines</h2><a href="{{ url_for('news') }}">See more</a></div>
+        {% for article in headlines[:10] %}
+          <a class="headline" href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a>
+        {% endfor %}
+      </section>
+
+      <section class="nba-app-card">
+        <span>NBA App</span>
+        <h2>Every game. Every round. All playoffs.</h2>
+        <p>Get League Pass Premium to stream action live or on-demand.</p>
+        <a href="{{ url_for('league_pass') }}">Sign Up Now</a>
+      </section>
+
+      <section class="rail-card social-card">
+        <h2>Follow the NBA</h2>
+        <div class="social-grid" aria-label="Social links">
+          <a href="{{ url_for('news') }}" aria-label="Facebook"><img src="{{ url_for('static', filename='icons/social-facebook.svg') }}" alt=""></a>
+          <a href="{{ url_for('news') }}" aria-label="Instagram"><img src="{{ url_for('static', filename='icons/social-instagram.svg') }}" alt=""></a>
+          <a href="{{ url_for('news') }}" aria-label="Snapchat"><img src="{{ url_for('static', filename='icons/social-snapchat.svg') }}" alt=""></a>
+          <a href="{{ url_for('news') }}" aria-label="TikTok"><img src="{{ url_for('static', filename='icons/social-tiktok.svg') }}" alt=""></a>
+          <a href="{{ url_for('news') }}" aria-label="X"><img src="{{ url_for('static', filename='icons/social-x.svg') }}" alt=""></a>
+          <a href="{{ url_for('watch') }}" aria-label="YouTube"><img src="{{ url_for('static', filename='icons/social-youtube.svg') }}" alt=""></a>
+          <a href="{{ url_for('watch') }}" aria-label="Twitch"><img src="{{ url_for('static', filename='icons/social-twitch.svg') }}" alt=""></a>
+        </div>
+      </section>
+
+      <section class="rail-card impact-card">
+        <h2>Social Impact</h2>
+        <a href="{{ url_for('news', category='History') }}"><img src="{{ url_for('static', filename='icons/impact-hub.svg') }}" alt="">Social Impact Hub <span>↗</span></a>
+        <a href="{{ url_for('news', category='Around the NBA') }}"><img src="{{ url_for('static', filename='icons/impact-cares.svg') }}" alt="">NBA Cares <span>↗</span></a>
+        <a href="{{ url_for('news', category='Awards') }}"><img src="{{ url_for('static', filename='icons/impact-foundation.svg') }}" alt="">NBA Foundation <span>↗</span></a>
+        <a href="{{ url_for('news', category='History') }}"><img src="{{ url_for('static', filename='icons/impact-justice.svg') }}" alt="">National Basketball Social Justice Coalition <span>↗</span></a>
+        <a href="{{ url_for('news', category='Draft') }}"><img src="{{ url_for('static', filename='icons/impact-jr-nba.svg') }}" alt="">Jr. NBA <span>↗</span></a>
+      </section>
+
+      <section class="rail-card link-stack">
+        <h2>Quick Links</h2>
+        <a href="{{ url_for('shop') }}">NBA Store</a>
+        <a href="{{ url_for('stats') }}">NBA Stats</a>
+        <a href="{{ url_for('news', category='History') }}">NBA History</a>
+        <a href="{{ url_for('tickets') }}">NBA Tickets</a>
+        <a href="{{ url_for('teams') }}">Teams</a>
+        <a href="{{ url_for('affiliates') }}">NBA Affiliates</a>
+      </section>
+    </aside>
+  </div>
+</div>
+{% endblock %}

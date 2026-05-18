@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Checkout - NBA Store{% endblock %}
+{% block content %}
+<section class="form-shell wide">
+  <h1>Checkout</h1>
+  <form method="post" class="panel form-grid two">
+    <label>Shipping address<input name="ship_address" value="{{ current_user.address_line1 }}, {{ current_user.city }}, {{ current_user.state }} {{ current_user.zip_code }}" required></label>
+    <label>Payment last 4<input name="payment_last4" value="{{ current_user.payment_last4 }}" maxlength="4" required></label>
+    <div class="summary"><p>Subtotal {{ subtotal|money }}</p><p>Shipping {{ shipping|money }}</p><p>Tax {{ tax|money }}</p><strong>Total {{ total|money }}</strong></div>
+    <button class="button primary" type="submit">Place order</button>
+  </form>
+</section>
+{% endblock %}

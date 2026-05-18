@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Standings - NBA{% endblock %}
+{% block content %}
+<nav class="standings-subnav" aria-label="Standings navigation">
+  <strong>Standings</strong>
+  <a class="active" href="{{ url_for('standings') }}">2025-26 Regular Season Standings</a>
+  <a href="{{ url_for('standings', view='division') }}">Division</a>
+  <a href="{{ url_for('standings', view='conference') }}">Conference</a>
+  <a href="{{ url_for('playoffs') }}">Emirates NBA Cup</a>
+  <a href="{{ url_for('schedule') }}">Preseason</a>
+</nav>
+
+<section class="standings-page-official">
+  <section class="standings-bracket">
+    <div class="mini-round west">West<br>First Round</div>
+    <div class="mini-round west2">West<br>Conf. Semifinals</div>
+    <div class="mini-round finals">NBA<br>Finals</div>
+    <div class="mini-round east2">East<br>Conf. Semifinals</div>
+    <div class="mini-round east">East<br>First Round</div>
+    {% set pairs = [
+      ('b1','thunder','suns','OKC wins 4-0'), ('b2','lakers','rockets','LAL wins 4-2'), ('b3','nuggets','timberwolves','MIN wins 4-2'), ('b4','spurs','trail-blazers','SAS wins 4-1'),
+      ('b5','thunder','lakers','OKC wins 4-0'), ('b6','timberwolves','spurs','SAS wins 4-2'), ('b7','thunder','spurs','Series tied 0-0'),
+      ('b8','cavaliers','knicks','Series tied 0-0'), ('b9','pistons','cavaliers','CLE wins 4-3'), ('b10','knicks','seventysixers','NYK wins 4-0'),
+      ('b11','pistons','magic','DET wins 4-3'), ('b12','cavaliers','raptors','CLE wins 4-3'), ('b13','knicks','hawks','NYK wins 4-2'), ('b14','celtics','seventysixers','PHI wins 4-3')
+    ] %}
+    {% for cls, a, b, note in pairs %}
+      {% set team_a = teams_by_slug.get(a) %}
+      {% set team_b = teams_by_slug.get(b) %}
+      <a class="standings-bracket-card {{ cls }}" href="{{ url_for('playoff_series', series_slug=a ~ '-vs-' ~ b) if cls in ['b7','b8'] else url_for('playoffs') }}">
+        <div>{% if team_a %}<img src="{{ team_a.logo }}" alt=""><strong>{{ team_a.name }}</strong>{% else %}<span></span><strong>TBD</strong>{% endif %}</div>
+        <div>{% if team_b %}<img src="{{ team_b.logo }}" alt=""><strong>{{ team_b.name }}</strong>{% else %}<span></span><strong>TBD</strong>{% endif %}</div>
+        <em>{{ note }}</em>
+      </a>
+    {% endfor %}
+    <img class="standings-finals-logo" src="{{ url_for('static', filename='images/articles/nba-official-finals-logo.png') }}" alt="">
+    <a class="download-bracket standings-download" href="{{ url_for('playoffs') }}">Download Bracket ⇩</a>
+  </section>
+
+  <section class="standings-controls">
+    <h1>NBA 2025-26 Regular Season Standings</h1>
+    <form class="standings-selects" method="get">
+      <label>Season<select name="season"><option>2025-26</option></select></label>
+      <label>Group By<select name="view"><option value="conference" {% if view == 'conference' %}selected{% endif %}>Conference</option><option value="division" {% if view == 'division' %}selected{% endif %}>Division</option></select></label>
+      <label>Section<select name="section"><option value="overall" {% if section == 'overall' %}selected{% endif %}>Overall</option><option value="streaks" {% if section == 'streaks' %}selected{% endif %}>Streaks</option><option value="margins" {% if section == 'margins' %}selected{% endif %}>Margins & Stats</option></select></label>
+      <button type="submit">Apply</button>
+    </form>
+  </section>
+
+  <section class="standings-table-panel">
+    {% if view == 'division' %}
+      {% for division in division_order %}
+        <h2>{{ division }}</h2>
+        {% set teams = divisions[division] %}
+        {% include "_components/standings_table.html" %}
+      {% endfor %}
+    {% else %}
+      <h2>Eastern Conference</h2>
+      {% set teams = east %}
+      {% include "_components/standings_table.html" %}
+      <h2>Western Conference</h2>
+      {% set teams = west %}
+      {% include "_components/standings_table.html" %}
+    {% endif %}
+  </section>
+
+  <section class="standings-legend">
+    <div><span>•</span> Clinched Playoff Berth</div><div><span>•</span> Clinched Conference</div><div><span>•</span> Clinched Division</div><div><span>•</span> Eliminated From Playoff Contention</div><div><span>•</span> Clinched Play-In</div>
+  </section>
+
+  <section class="tiebreaker-panel">
+    <h2>Tiebreaker Basis For Two-Way Ties:</h2>
+    <ol>
+      <li>Head-to-head won-lost percentage.</li>
+      <li>Division leader wins tie from team not leading a division.</li>
+      <li>Division won-lost percentage for teams in the same division.</li>
+      <li>Conference won-lost percentage.</li>
+      <li>Winning percentage vs. Playoff eligible teams, own conference.</li>
+      <li>Point differential in all games.</li>
+    </ol>
+    <h2>Tiebreaker Basis For Multi-Way Ties:</h2>
+    <p>When more than two teams are tied, the same hierarchy is applied in order until one team gains an advantage, then the remaining teams restart the process. This local mirror keeps the rule text available for standings comparison tasks.</p>
+    <button class="button">Print Standings</button>
+  </section>
+</section>
+{% endblock %}

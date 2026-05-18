@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Search - NBA{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <div><span class="kicker">Search</span><h1>{{ q or 'Search NBA' }}</h1><p>Results grouped by teams, players, games, articles, products, and stats.</p></div>
+</section>
+<section class="content-block search-results">
+  <div class="result-section"><h2>Teams</h2><div class="team-grid small">{% for team in teams[:6] %}{% include "_components/team_card.html" %}{% else %}<p class="empty-state">No teams matched.</p>{% endfor %}</div></div>
+  <div class="result-section"><h2>Players</h2><table class="data-table roster-table"><tbody>{% for player in players[:8] %}{% include "_components/player_row.html" %}{% else %}<tr><td>No players matched.</td></tr>{% endfor %}</tbody></table></div>
+  <div class="result-section"><h2>Games</h2><div class="card-grid two">{% for game in games[:4] %}{% include "_components/game_card.html" %}{% else %}<p class="empty-state">No games matched.</p>{% endfor %}</div></div>
+  <div class="result-section"><h2>Articles</h2><div class="article-list">{% for article in articles[:6] %}{% include "_components/article_card.html" %}{% else %}<p class="empty-state">No articles matched.</p>{% endfor %}</div></div>
+  <div class="result-section"><h2>Stats</h2><div class="leader-grid">{% for player in stats[:4] %}<a class="stat-search-card" href="{{ url_for('player_detail', slug=player.slug) }}"><img src="{{ player.image }}" alt=""><strong>{{ player.name }}</strong><span>{{ player.team.abbreviation }}</span></a>{% else %}<p class="empty-state">Search stat terms such as points, rebounds, assists, blocks, steals, or turnovers.</p>{% endfor %}</div></div>
+  <div class="result-section"><h2>Store</h2><div class="story-grid compact">{% for product in products[:4] %}<a class="story-card" href="{{ url_for('product_detail', slug=product.slug) }}"><img src="{{ product.image }}" alt=""><span>{{ product.category }}</span><h3>{{ product.name }}</h3><p>{{ product.description }}</p></a>{% else %}<p class="empty-state">No store items matched.</p>{% endfor %}</div></div>
+</section>
+{% endblock %}

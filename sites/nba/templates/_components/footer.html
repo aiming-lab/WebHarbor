@@ -1,0 +1,33 @@
+<footer class="site-footer">
+  <div class="footer-grid">
+    <section>
+      <h2>NBA</h2>
+      <p>Local WebHarbor mirror for league news, scores, teams, players, stats, account, tickets, and store workflows.</p>
+    </section>
+    <section>
+      <h3>Follow the NBA</h3>
+      <a href="{{ url_for('news') }}">News</a>
+      <a href="{{ url_for('watch') }}">Watch</a>
+      <a href="{{ url_for('league_pass') }}">League Pass</a>
+      <a href="{{ url_for('stats') }}">Stats</a>
+      <a href="{{ url_for('standings') }}">Standings</a>
+    </section>
+    <section>
+      <h3>Social Impact</h3>
+      <a href="{{ url_for('news', category='Around the NBA') }}">Community</a>
+      <a href="{{ url_for('news', category='History') }}">History</a>
+      <a href="{{ url_for('news', category='Awards') }}">Awards</a>
+    </section>
+    <section>
+      <h3>Affiliates</h3>
+      <a href="{{ url_for('news', category='Draft') }}">Draft</a>
+      <a href="{{ url_for('shop') }}">NBA Store</a>
+      <a href="{{ url_for('tickets') }}">Tickets</a>
+      <a href="{{ url_for('teams') }}">Teams</a>
+    </section>
+  </div>
+  <div class="footer-bottom">
+    <span>NBA.com-style local mirror. No live streaming, payment processing, or external authentication.</span>
+    <div>{% for team in teams_nav %}<a href="{{ url_for('team_detail', slug=team.slug) }}">{{ team.abbreviation }}</a>{% endfor %}</div>
+  </div>
+</footer>

@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Shop - NBA{% endblock %}
+{% block content %}
+<section class="page-head"><h1>NBA Store</h1><div class="tabs">{% for cat in ['', 'Jerseys', 'Hoodies', 'T-Shirts', 'Hats', 'Outerwear', 'Shorts'] %}<a class="{% if category == cat %}active{% endif %}" href="{{ url_for('shop', category=cat, team=team) }}">{{ cat or 'All' }}</a>{% endfor %}</div></section>
+<section class="band"><div class="grid cards-4">{% for product in products %}<a class="card product" href="{{ url_for('product_detail', slug=product.slug) }}"><img src="{{ product.image }}" alt=""><span>{{ product.category }} · {{ product.color }}</span><h3>{{ product.name }}</h3><p>{{ product.description }}</p><strong>{{ product.price|money }}</strong></a>{% endfor %}</div></section>
+{% endblock %}

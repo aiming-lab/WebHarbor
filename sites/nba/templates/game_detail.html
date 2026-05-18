@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ game.away_team.abbreviation }} at {{ game.home_team.abbreviation }} - NBA{% endblock %}
+{% block content %}
+<section class="game-detail-hero">
+  <div class="game-team">
+    <img src="{{ game.away_team.logo }}" alt="">
+    <span>{{ game.away_team.full_name }}</span>
+    <strong>{% if game.status == 'Final' %}{{ game.away_score }}{% else %}{{ game.away_team.abbreviation }}{% endif %}</strong>
+  </div>
+  <div class="game-status">
+    <span>{{ game.status }}</span>
+    <h1>{% if game.status == 'Final' %}Final{% else %}{{ game.game_date.strftime('%A, %B %-d') }}{% endif %}</h1>
+    <p>{{ game.game_date.strftime('%-I:%M %p') }} · {{ game.arena }} · {{ game.broadcast }}</p>
+    <a class="button" href="{{ url_for('tickets') }}">Tickets</a>
+  </div>
+  <div class="game-team">
+    <img src="{{ game.home_team.logo }}" alt="">
+    <span>{{ game.home_team.full_name }}</span>
+    <strong>{% if game.status == 'Final' %}{{ game.home_score }}{% else %}{{ game.home_team.abbreviation }}{% endif %}</strong>
+  </div>
+</section>
+<section class="portal-shell narrow">
+  <article class="article-body">
+    <span class="kicker">{{ 'Recap' if game.status == 'Final' else 'Preview' }}</span>
+    <h2>{{ game.away_team.abbreviation }} at {{ game.home_team.abbreviation }}</h2>
+    <p>{{ game.recap }}</p>
+    <dl class="meta-grid">
+      <div><dt>Arena</dt><dd>{{ game.arena }}</dd></div>
+      <div><dt>Broadcast</dt><dd>{{ game.broadcast }}</dd></div>
+      <div><dt>Ticket Interest</dt><dd>From {{ game.ticket_price|money }}</dd></div>
+    </dl>
+  </article>
+  <aside class="portal-rail">
+    <section class="rail-card">
+      <h2>Related Stories</h2>
+      {% for article in related %}
+        <a class="headline" href="{{ url_for('article_detail', slug=article.slug) }}"><span>{{ article.category }}</span>{{ article.title }}</a>
+      {% endfor %}
+    </section>
+  </aside>
+</section>
+{% endblock %}

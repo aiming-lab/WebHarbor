@@ -1,0 +1,20 @@
+<article class="game-card">
+  <a class="game-matchup" href="{{ url_for('game_detail', game_id=game.id) }}">
+    <div><img src="{{ game.away_team.logo }}" alt=""><strong>{{ game.away_team.abbreviation }}</strong><span>{{ game.away_team.full_name }}</span></div>
+    <div class="game-center">
+      <span>{{ game.status }}</span>
+      {% if game.status == 'Final' %}
+        <b>{{ game.away_score }} - {{ game.home_score }}</b>
+      {% else %}
+        <b>{{ game.game_date.strftime('%-I:%M %p') }}</b>
+      {% endif %}
+      <em>{{ game.broadcast }}</em>
+    </div>
+    <div><img src="{{ game.home_team.logo }}" alt=""><strong>{{ game.home_team.abbreviation }}</strong><span>{{ game.home_team.full_name }}</span></div>
+  </a>
+  <p>{{ game.arena }} · {{ game.game_date.strftime('%b %-d, %Y') }}</p>
+  <div class="game-card-actions">
+    <a class="text-link" href="{{ url_for('game_detail', game_id=game.id) }}">{{ 'Recap' if game.status == 'Final' else 'Preview' }}</a>
+    <a class="text-link" href="{{ url_for('playoff_series', series_slug=game_series_slug(game)) }}">View Series</a>
+  </div>
+</article>

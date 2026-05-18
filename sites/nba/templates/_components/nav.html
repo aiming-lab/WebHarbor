@@ -1,0 +1,29 @@
+<header class="nba-global">
+  <div class="primary-nav">
+    <a class="brand" href="{{ url_for('index') }}">
+      <img src="{{ url_for('static', filename='images/league/nba-logo.svg') }}" alt="NBA">
+    </a>
+    <nav aria-label="Primary">
+      <a class="{% if active_endpoint == 'games' or active_endpoint == 'game_detail' %}active{% endif %}" href="{{ url_for('games') }}">Games</a>
+      <a class="{% if active_endpoint == 'schedule' %}active{% endif %}" href="{{ url_for('schedule') }}">Schedule</a>
+      <a class="{% if active_endpoint == 'watch' %}active{% endif %}" href="{{ url_for('watch') }}">Watch</a>
+      <a class="{% if active_endpoint in ['playoffs','playoff_series'] %}active{% endif %}" href="{{ url_for('playoffs') }}">Playoffs</a>
+      <a class="{% if active_endpoint in ['news','article_detail'] %}active{% endif %}" href="{{ url_for('news') }}">News</a>
+      <a class="{% if active_endpoint == 'draft' %}active{% endif %}" href="{{ url_for('draft') }}">Draft</a>
+      <a class="{% if active_endpoint in ['stats','player_stats','team_stats'] %}active{% endif %}" href="{{ url_for('stats') }}">Stats</a>
+      <a class="{% if active_endpoint == 'standings' %}active{% endif %}" href="{{ url_for('standings') }}">Standings</a>
+      <a class="{% if active_endpoint in ['teams','team_detail','team_roster','team_schedule','team_stats_detail'] %}active{% endif %}" href="{{ url_for('teams') }}">Teams</a>
+      <a class="{% if active_endpoint in ['players','player_detail'] %}active{% endif %}" href="{{ url_for('players') }}">Players</a>
+      <a class="{% if active_endpoint == 'nba_play' %}active{% endif %}" href="{{ url_for('nba_play') }}">NBA Play</a>
+      <a class="{% if active_endpoint == 'fantasy' %}active{% endif %}" href="{{ url_for('fantasy') }}">Fantasy</a>
+      <a class="{% if active_endpoint == 'bal_2026' %}active{% endif %}" href="{{ url_for('bal_2026') }}">BAL 2026</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="league-pass-cta {% if active_endpoint == 'league_pass' %}active{% endif %}" href="{{ url_for('league_pass') }}">League Pass</a>
+      <a class="{% if active_endpoint in ['shop','product_detail','cart','checkout','orders'] %}active{% endif %}" href="{{ url_for('shop') }}">Store</a>
+      <a href="{{ url_for('tickets') }}">Tickets</a>
+      <a class="app-grid {% if active_endpoint == 'affiliates' %}active{% endif %}" href="{{ url_for('affiliates') }}" aria-label="NBA apps">▦</a>
+      <a href="{{ url_for('login') }}">Sign In</a>
+    </div>
+  </div>
+</header>

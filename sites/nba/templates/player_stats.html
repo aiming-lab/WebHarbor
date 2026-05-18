@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Player Stats - NBA{% endblock %}
+{% block content %}
+<section class="page-hero compact"><div><span class="kicker">Stats</span><h1>Player Stats</h1></div><div class="tab-row">{% for key, label in stat_labels.items() %}<a class="{% if stat == key %}active{% endif %}" href="{{ url_for('player_stats', stat=key, team=team_slug) }}">{{ label }}</a>{% endfor %}</div></section>
+<section class="content-block">
+  <form class="filter-form" method="get">
+    <input type="hidden" name="stat" value="{{ stat }}">
+    <label>Team<select name="team"><option value="">All teams</option>{% for team in teams %}<option value="{{ team.slug }}" {% if team.slug == team_slug %}selected{% endif %}>{{ team.full_name }}</option>{% endfor %}</select></label>
+    <button type="submit">Apply</button>
+  </form>
+  <table class="data-table"><thead><tr><th>Rank</th><th>Player</th><th>Team</th><th>{{ stat_labels[stat] }}</th><th>PPG</th><th>RPG</th><th>APG</th><th>SPG</th><th>BPG</th></tr></thead><tbody>{% for player in players %}<tr><td>{{ loop.index }}</td><td><a class="player-cell" href="{{ url_for('player_detail', slug=player.slug) }}"><img src="{{ player.image }}" alt="">{{ player.name }}</a></td><td>{{ player.team.abbreviation }}</td><td>{{ "%.1f"|format(stat_value(player, stat)) }}</td><td>{{ "%.1f"|format(player.ppg) }}</td><td>{{ "%.1f"|format(player.rpg) }}</td><td>{{ "%.1f"|format(player.apg) }}</td><td>{{ "%.1f"|format(player.spg) }}</td><td>{{ "%.1f"|format(player.bpg) }}</td></tr>{% endfor %}</tbody></table>
+</section>
+{% endblock %}
