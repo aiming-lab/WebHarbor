@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}2026 Playoffs - NBA{% endblock %}
+{% block content %}
+<nav class="playoffs-subnav" aria-label="Playoffs navigation">
+  <strong>2026 Playoffs</strong>
+  <a class="active" href="{{ url_for('playoffs') }}">Bracket</a>
+  <a href="#latest-playoff-news">Latest</a>
+  <a href="{{ url_for('schedule', season_type='Playoffs') }}">Schedule</a>
+  <a href="{{ url_for('playoffs') }}#series">Series</a>
+  <a href="{{ url_for('nba_play') }}">NBA Pick'Em</a>
+  <a href="{{ url_for('fantasy') }}">Challenges</a>
+  <a href="{{ url_for('news', category='Playoffs') }}">More⌄</a>
+</nav>
+
+<section class="playoffs-banner">
+  <div><span>NBA</span><strong>Playoffs</strong><em>presented by Google</em></div>
+</section>
+
+<section class="playoffs-page">
+  <section id="series" class="bracket-stage" aria-label="2026 NBA Playoffs bracket">
+    <div class="round-heading west-first"><span>West</span><strong>First Round</strong></div>
+    <div class="round-heading west-semis"><span>West</span><strong>Conf. Semifinals</strong></div>
+    <div class="round-heading west-finals"><span>West</span><strong>Conf. Finals</strong></div>
+    <div class="round-heading finals"><span>NBA</span><strong>Finals</strong></div>
+    <div class="round-heading east-finals"><span>East</span><strong>Conf. Finals</strong></div>
+    <div class="round-heading east-semis"><span>East</span><strong>Conf. Semifinals</strong></div>
+    <div class="round-heading east-first"><span>East</span><strong>First Round</strong></div>
+
+    {% macro team_line(team, seed, muted=False) -%}
+      <div class="bracket-team {% if muted %}muted{% endif %}">
+        {% if team %}<img src="{{ team.logo }}" alt=""><b>{{ seed }}</b><strong>{{ team.name }}</strong>{% else %}<span class="tbd-dot"></span><strong>TBD</strong>{% endif %}
+      </div>
+    {%- endmacro %}
+
+    {% macro bracket_card(cls, top, top_seed, bottom, bottom_seed, note, top_muted=False, bottom_muted=False, link=None, broadcast=None) -%}
+      <a class="bracket-card {{ cls }}" href="{{ link or url_for('playoffs') }}">
+        {% if broadcast %}<div class="bracket-broadcast">{{ broadcast }}</div>{% endif %}
+        {{ team_line(top, top_seed, top_muted) }}
+        {{ team_line(bottom, bottom_seed, bottom_muted) }}
+        <em>{{ note }}</em>
+      </a>
+    {%- endmacro %}
+
+    {{ bracket_card('w1', teams.get('thunder'), 1, teams.get('suns'), 8, 'OKC wins 4-0', bottom_muted=True) }}
+    {{ bracket_card('w2', teams.get('lakers'), 4, teams.get('rockets'), 5, 'LAL wins 4-2', bottom_muted=True) }}
+    {{ bracket_card('w3', teams.get('nuggets'), 3, teams.get('timberwolves'), 6, 'MIN wins 4-2', top_muted=True) }}
+    {{ bracket_card('w4', teams.get('spurs'), 2, teams.get('trail-blazers'), 7, 'SAS wins 4-1', bottom_muted=True) }}
+
+    {{ bracket_card('ws1', teams.get('thunder'), 1, teams.get('lakers'), 4, 'OKC wins 4-0', bottom_muted=True) }}
+    {{ bracket_card('ws2', teams.get('timberwolves'), 6, teams.get('spurs'), 2, 'SAS wins 4-2', top_muted=True) }}
+
+    {{ bracket_card('wf1', teams.get('thunder'), 1, teams.get('spurs'), 2, 'Series tied 0-0', link=url_for('playoff_series', series_slug='spurs-vs-thunder'), broadcast='Tue 8:30 AM CT · Now TV/League Pass') }}
+
+    <div class="finals-logo"><img src="{{ url_for('static', filename='images/league/nba-logo.svg') }}" alt=""><strong>Finals</strong></div>
+    {{ bracket_card('final-card', none, '', none, '', '', broadcast='4 June, 8:30 AM CT · League Pass') }}
+
+    {{ bracket_card('ef1', teams.get('cavaliers'), 4, teams.get('knicks'), 3, 'Series tied 0-0', link=url_for('playoff_series', series_slug='cavaliers-vs-knicks'), broadcast='Wed 8:00 AM CT · Now TV/League Pass') }}
+
+    {{ bracket_card('es1', teams.get('pistons'), 1, teams.get('cavaliers'), 4, 'CLE wins 4-3', top_muted=True) }}
+    {{ bracket_card('es2', teams.get('knicks'), 3, teams.get('seventysixers'), 7, 'NYK wins 4-0', bottom_muted=True) }}
+
+    {{ bracket_card('e1', teams.get('pistons'), 1, teams.get('magic'), 8, 'DET wins 4-3', bottom_muted=True) }}
+    {{ bracket_card('e2', teams.get('cavaliers'), 4, teams.get('raptors'), 5, 'CLE wins 4-3', bottom_muted=True) }}
+    {{ bracket_card('e3', teams.get('knicks'), 3, teams.get('hawks'), 6, 'NYK wins 4-2', bottom_muted=True) }}
+    {{ bracket_card('e4', teams.get('celtics'), 2, teams.get('seventysixers'), 7, 'PHI wins 4-3', top_muted=True) }}
+
+    <a class="download-bracket" href="{{ url_for('playoffs') }}">Download Bracket ⇩</a>
+  </section>
+
+  <section id="latest-playoff-news" class="playoff-news-panel">
+    <div class="section-title"><h2>Latest Playoff News</h2></div>
+    <div class="playoff-news-grid">
+      {% for item in latest_news %}
+        <a class="playoff-news-row" href="{{ url_for('article_detail', slug=item.slug) }}">
+          <img src="{{ item.image }}" alt="">
+          <div><h3>{{ item.title }}</h3><p>{{ item.dek }}</p><span>{{ item.date }}</span></div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="chasing-history">
+    <div class="section-title"><h2>Chasing History</h2><a href="{{ url_for('watch') }}">See More</a></div>
+    <div class="history-row">
+      {% for title, duration, image in chasing_history %}
+        <a class="history-card" href="{{ url_for('watch') }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <span>▶ {{ duration }}</span>
+          <h3>{{ title }}</h3>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ team.full_name }} Schedule - NBA{% endblock %}
+{% block content %}
+<section class="page-hero compact team-mini" style="--team: {{ team.color }}"><img src="{{ team.logo }}" alt=""><div><span class="kicker">{{ team.full_name }}</span><h1>Schedule</h1></div></section>
+<section class="content-block">
+  {% for date_label, rows in grouped_games %}
+    <div class="date-group"><h2>{{ date_label }}</h2><div class="card-grid two">{% for game in rows %}{% include "_components/game_card.html" %}{% endfor %}</div></div>
+  {% endfor %}
+</section>
+{% endblock %}

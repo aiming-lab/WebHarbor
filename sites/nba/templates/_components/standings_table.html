@@ -1,0 +1,38 @@
+<table class="data-table standings-table">
+  <thead>
+    <tr>
+      <th>Team</th>
+      <th>W</th>
+      <th>L</th>
+      <th>WIN%</th>
+      <th>GB</th>
+      <th>CONF</th>
+      <th>DIV</th>
+      <th>Home</th>
+      <th>Road</th>
+      <th>Neutral</th>
+      <th>OT</th>
+      <th>Last 10</th>
+      <th>Streak</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for team in teams %}
+      <tr>
+        <td><a class="team-cell" href="{{ url_for('team_detail', slug=team.slug) }}"><span>{{ team.rank|default(loop.index) }}</span><img src="{{ team.logo }}" alt=""> {{ team.full_name }}</a></td>
+        <td>{{ team.wins }}</td>
+        <td>{{ team.losses }}</td>
+        <td>{{ "%.3f"|format(team.win_pct) }}</td>
+        <td>{{ team.games_back|default(0) }}</td>
+        <td>{{ (team.wins * 0.62)|round|int }}-{{ (team.losses * 0.48)|round|int }}</td>
+        <td>{{ (team.wins * 0.25)|round|int }}-{{ (team.losses * 0.20)|round|int }}</td>
+        <td>{{ team.home_record }}</td>
+        <td>{{ team.road_record }}</td>
+        <td>0-0</td>
+        <td>{{ loop.index % 5 }}-{{ (loop.index + 2) % 5 }}</td>
+        <td>{{ team.last_ten|default('5-5') }}</td>
+        <td>{{ team.streak }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>

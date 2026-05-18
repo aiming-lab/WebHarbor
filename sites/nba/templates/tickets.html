@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Tickets - NBA{% endblock %}
+{% block content %}
+<section class="page-head">
+  <div>
+    <h1>Tickets</h1>
+    <p>{% if selected_team %}Upcoming {{ selected_team.full_name }} games{% else %}Browse local ticket request cards for scheduled games.{% endif %}</p>
+  </div>
+  <div class="tabs"><a class="active" href="{{ url_for('tickets') }}">Games</a><a href="{{ url_for('schedule') }}">Schedule</a></div>
+</section>
+<section class="content-block">
+  <form class="filter-form ticket-filter" method="get">
+    <label>Team<select name="team"><option value="">All teams</option>{% for team in teams %}<option value="{{ team.slug }}" {% if team.slug == team_slug %}selected{% endif %}>{{ team.full_name }}</option>{% endfor %}</select></label>
+    <button type="submit">Apply</button>
+  </form>
+  {% if not current_user.is_authenticated %}
+    <div class="empty-state ticket-signin">You can browse ticket cards without signing in. Sign in only when saving a local ticket request. <a class="text-link" href="{{ url_for('login', next=request.full_path) }}">Sign In</a></div>
+  {% endif %}
+  <section class="band game-list">
+    {% for game in games %}
+      <form class="game-row ticket-row" method="post">
+        <input type="hidden" name="game_id" value="{{ game.id }}">
+        <div><img src="{{ game.away_team.logo }}" alt=""><strong>{{ game.away_team.full_name }}</strong></div>
+        <span>at</span>
+        <div><img src="{{ game.home_team.logo }}" alt=""><strong>{{ game.home_team.full_name }}</strong></div>
+        <span>{{ game.game_date.strftime('%b %-d, %-I:%M %p') }} · {{ game.arena }} · from {{ game.ticket_price|money }}</span>
+        <label>Seats<input name="seats" type="number" min="1" max="8" value="2"></label>
+        <label>Section<select name="section_preference"><option>Lower bowl</option><option>Club level</option><option>Upper bowl</option></select></label>
+        <button class="button primary">{{ 'Save request' if current_user.is_authenticated else 'Sign in to request' }}</button>
+      </form>
+    {% else %}
+      <p class="empty-state">No scheduled games match this ticket filter.</p>
+    {% endfor %}
+  </section>
+</section>
+{% endblock %}

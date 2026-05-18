@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Fantasy - NBA{% endblock %}
+{% block content %}
+<nav class="fantasy-subnav" aria-label="Fantasy navigation">
+  <strong>Fantasy</strong>
+  <a class="active" href="{{ url_for('fantasy') }}">Latest</a>
+  <a href="{{ url_for('fantasy') }}#news">Fantasy News</a>
+  <a href="{{ url_for('fantasy') }}#high-score">Play Yahoo Fantasy High Score</a>
+  <a href="{{ url_for('fantasy') }}#daily">Daily Fantasy</a>
+  <a href="{{ url_for('fantasy') }}#tools">FantasyPros Tools</a>
+  <a href="{{ url_for('fantasy') }}#challenge">Tournament Challenge</a>
+  <a href="{{ url_for('fantasy') }}#pickem">NBA Pick'Em</a>
+  <a href="{{ url_for('fantasy') }}#bet">NBABet</a>
+  <a href="{{ url_for('fantasy') }}#sorare">Play Sorare NBA</a>
+</nav>
+
+<div class="fantasy-banner">
+  <img src="{{ url_for('static', filename='images/articles/nba-official-fantasy-banner.png') }}" alt="Fantasy">
+</div>
+
+<section class="fantasy-page">
+  <section class="official-section fantasy-feature" id="pickem">
+    <h2>Featured</h2>
+    <div class="fantasy-feature-grid">
+      <a class="fantasy-main-card" href="{{ url_for('article_detail', slug=fantasy.feature_slug) }}">
+        <img src="{{ url_for('static', filename='images/articles/nba-official-fantasy-pickem.jpg') }}" alt="">
+        <h1>Play NBA Pick'Em Streak to the Finals!</h1>
+        <p>Put your fandom to the test in NBA Pick'Em Streak to the Finals during the 2026 NBA Playoffs to win a trip to the NBA Finals.</p>
+        <time>April 25, 2026</time>
+      </a>
+      <div class="fantasy-side-list">
+        {% for title, dek, image, slug in fantasy.top_links %}
+          <a href="{{ url_for('article_detail', slug=slug) }}">
+            <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+            <div><h3>{{ title }}</h3><p>{{ dek }}</p><time>April {{ 15 - loop.index }}, 2026</time></div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="official-section" id="watch">
+    <div class="section-title compact"><h2>Watch</h2><a href="{{ url_for('watch') }}">See More</a></div>
+    <div class="official-video-row">
+      {% for title, image, slug in fantasy.watch %}
+        <a class="video-card-official" href="{{ url_for('article_detail', slug=slug) }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <span>&#9654; 02:06</span>
+          <h3>{{ title }}</h3>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="official-section" id="high-score">
+    <h2>Yahoo High Score</h2>
+    <div class="fantasy-news-grid">
+      {% for title, dek, image, slug in fantasy.high_score %}
+        <a class="official-list-card" href="{{ url_for('article_detail', slug=slug) }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <div><h3>{{ title }}</h3><p>{{ dek }}</p><time>April {{ 18 - loop.index }}, 2026</time></div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="official-section fantasy-stats-block" id="daily">
+    <div class="fantasy-table-head">
+      <h2>2025-26 Player Stats</h2>
+      <div><button type="button">Glossary</button><span>{{ fantasy.stat_rows|length }} Rows</span><button type="button">&lt;</button><button type="button">&gt;</button></div>
+    </div>
+    <div class="fantasy-table-scroll">
+      <table class="fantasy-stat-table">
+        <thead>
+          <tr>
+            <th></th><th>Player</th><th>Team</th><th>Age</th><th>GP</th><th>W</th><th>L</th><th>Min</th><th>PTS</th><th>FGM</th><th>FGA</th><th>FG%</th><th>3PM</th><th>3P%</th><th>FTM</th><th>REB</th><th>AST</th><th>TOV</th><th>STL</th><th>BLK</th><th>PF</th><th>+/-</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in fantasy.stat_rows %}
+            <tr>
+              <td>{{ row.rank }}</td>
+              <td><a href="{{ url_for('player_detail', slug=row.player.slug) }}">{{ row.player.name }}</a></td>
+              <td>{{ row.player.team.abbreviation }}</td>
+              <td>{{ row.player.age }}</td>
+              <td>{{ row.gp }}</td>
+              <td>{{ row.gp - (loop.index % 18) }}</td>
+              <td>{{ loop.index % 18 }}</td>
+              <td>{{ "%.1f"|format(row.min) }}</td>
+              <td class="blue-stat">{{ "%.1f"|format(row.pts) }}</td>
+              <td>{{ "%.1f"|format(row.fgm) }}</td>
+              <td>{{ "%.1f"|format(row.fga) }}</td>
+              <td>{{ "%.1f"|format(row.fgp) }}</td>
+              <td class="blue-stat">{{ "%.1f"|format(row.three) }}</td>
+              <td>{{ "%.1f"|format(row.player.three_pct) }}</td>
+              <td>{{ "%.1f"|format(row.ftm) }}</td>
+              <td class="blue-stat">{{ "%.1f"|format(row.reb) }}</td>
+              <td class="blue-stat">{{ "%.1f"|format(row.ast) }}</td>
+              <td>{{ "%.1f"|format(row.tov) }}</td>
+              <td class="blue-stat">{{ "%.1f"|format(row.stl) }}</td>
+              <td class="blue-stat">{{ "%.1f"|format(row.blk) }}</td>
+              <td>{{ 2 + loop.index % 4 }}</td>
+              <td>{{ "%.1f"|format(row.plus) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="official-section" id="news">
+    <h2>Draft Prep</h2>
+    <div class="fantasy-news-grid">
+      {% for title, dek, image, slug in fantasy.draft_prep %}
+        <a class="official-list-card" href="{{ url_for('article_detail', slug=slug) }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <div><h3>{{ title }}</h3><p>{{ dek }}</p><time>September {{ 25 - loop.index }}, 2025</time></div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}

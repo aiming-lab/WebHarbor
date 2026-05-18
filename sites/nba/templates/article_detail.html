@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ detail.headline }} - NBA{% endblock %}
+{% block content %}
+<nav class="series-subnav" aria-label="Article series navigation">
+  <strong>{{ detail.series_label }}</strong>
+  <a href="{{ url_for('playoff_series', series_slug='cavaliers-vs-pistons') }}">Series Summary</a>
+  <a href="{{ url_for('stats') }}">Stats</a>
+  <a href="{{ url_for('watch') }}">Video</a>
+  <a href="{{ url_for('playoffs') }}">Bracket</a>
+  <a href="{{ url_for('news', category='Playoffs') }}">Playoff News</a>
+</nav>
+
+<section class="official-article-shell">
+  <article class="official-article">
+    <span class="article-overline">{{ detail.series_label }}</span>
+    <h1>{{ detail.headline }}</h1>
+    <p class="dek">{{ detail.dek }}</p>
+    <div class="official-byline">
+      <div><img src="{{ detail.author_image }}" alt=""><span><strong>{{ detail.author }}</strong><a href="{{ url_for('news') }}">Archive</a></span></div>
+      <time>{{ detail.date_label }}</time>
+    </div>
+    <img class="official-article-image" src="{{ detail.image }}" alt="">
+    <p class="caption">{{ detail.caption }}</p>
+    {% for section in detail.sections %}
+      {% if section.heading %}<h2>{{ section.heading }}</h2>{% endif %}
+      {% for paragraph in section.paragraphs %}
+        <p>{{ paragraph }}</p>
+      {% endfor %}
+      {% if not loop.last %}<hr>{% endif %}
+    {% endfor %}
+  </article>
+  <aside class="official-article-rail">
+    <section>
+      <h2>Related</h2>
+      {% for item in related %}
+        <a class="related-line" href="{{ url_for('article_detail', slug=item.slug) }}"><strong>{{ item.title }}</strong><span>{{ item.dek }}</span></a>
+      {% else %}
+        <a class="related-line" href="{{ url_for('playoffs') }}"><strong>Tap to Watch: Where to find every playoff game</strong><span>Get the latest matchups, schedule info and local tune-in cards.</span></a>
+      {% endfor %}
+    </section>
+  </aside>
+</section>
+
+<section class="official-latest">
+  <h2>Latest</h2>
+  <div class="latest-list">
+    {% for item in latest %}
+      <a class="playoff-news-row" href="{{ url_for('article_detail', slug=item.slug) }}">
+        <img src="{{ item.image }}" alt="">
+        <div><h3>{{ item.title }}</h3><p>{{ item.dek }}</p><span>{{ item.published_at.strftime('%-I hours ago') }}</span></div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

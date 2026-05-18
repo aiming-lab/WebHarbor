@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}News - NBA{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <div><span class="kicker">News</span><h1>NBA News</h1><p>Top stories, draft, playoffs, awards, transactions, history, and Around the NBA coverage.</p></div>
+</section>
+<section class="content-block">
+  <div class="tab-row wrap">
+    <a class="{% if not category %}active{% endif %}" href="{{ url_for('news') }}">All</a>
+    {% for cat in news_categories %}
+      <a class="{% if category == cat %}active{% endif %}" href="{{ url_for('news', category=cat) }}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+  {% if hero %}
+    {% include "_components/hero_story.html" %}
+  {% endif %}
+  <div class="story-grid">
+    {% for article in articles[1:] if hero %}
+      {% include "_components/story_card.html" %}
+    {% else %}
+      {% for article in articles %}
+        {% include "_components/story_card.html" %}
+      {% endfor %}
+    {% endfor %}
+  </div>
+</section>
+{% if not category %}
+  {% for cat in ['Draft', 'Playoffs', 'Awards', 'Transactions', 'History', 'Around the NBA'] %}
+    <section class="content-block">
+      <div class="section-title"><h2>{{ cat }}</h2><a href="{{ url_for('news', category=cat) }}">More</a></div>
+      <div class="article-list">
+        {% for article in groups.get(cat, [])[:3] %}
+          {% include "_components/article_card.html" %}
+        {% endfor %}
+      </div>
+    </section>
+  {% endfor %}
+{% endif %}
+{% endblock %}

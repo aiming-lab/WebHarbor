@@ -1,0 +1,19 @@
+<article class="leader-card">
+  <div class="leader-top">
+    <span>{{ leader_group.label }}</span>
+    <a href="{{ url_for('player_stats', stat=leader_group.key) }}">Full leaders</a>
+  </div>
+  <a class="leader-feature" href="{{ url_for('player_detail', slug=leader_group.leader.slug) }}">
+    <img src="{{ leader_group.leader.image }}" alt="">
+    <div>
+      <strong>{{ leader_group.leader.name }}</strong>
+      <em>{{ leader_group.leader.team.abbreviation }}</em>
+      <b>{{ "%.1f"|format(stat_value(leader_group.leader, leader_group.key)) }}</b>
+    </div>
+  </a>
+  <ol>
+    {% for player in leader_group.rows[1:] %}
+      <li><a href="{{ url_for('player_detail', slug=player.slug) }}">{{ player.name }}</a><span>{{ "%.1f"|format(stat_value(player, leader_group.key)) }}</span></li>
+    {% endfor %}
+  </ol>
+</article>

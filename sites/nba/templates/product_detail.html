@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} - NBA Store{% endblock %}
+{% block content %}
+<section class="product-detail">
+  <img src="{{ product.image }}" alt="">
+  <div>
+    <p class="eyebrow">{{ product.category }} · {{ product.color }}</p>
+    <h1>{{ product.name }}</h1>
+    <p>{{ product.description }}</p>
+    <strong class="price">{{ product.price|money }}</strong>
+    <form method="post" action="{{ url_for('cart_add', slug=product.slug) }}" class="buy-box">
+      <label>Size<select name="size">{% for size in product.sizes.split(',') %}<option>{{ size }}</option>{% endfor %}</select></label>
+      <label>Quantity<input name="quantity" type="number" min="1" max="9" value="1"></label>
+      <button class="button primary" type="submit">Add to bag</button>
+    </form>
+    <form method="post" action="{{ url_for('favorite', item_type='product', item_id=product.id) }}"><button class="button">Save product</button></form>
+    <ul>{% for feature in product.feature_list() %}<li>{{ feature }}</li>{% endfor %}</ul>
+  </div>
+</section>
+<section class="band"><h2>Related gear</h2><div class="grid cards-4">{% for item in related %}<a class="card product" href="{{ url_for('product_detail', slug=item.slug) }}"><img src="{{ item.image }}" alt=""><h3>{{ item.name }}</h3><strong>{{ item.price|money }}</strong></a>{% endfor %}</div></section>
+{% endblock %}
