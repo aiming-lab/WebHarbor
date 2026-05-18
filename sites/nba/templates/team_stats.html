@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Team Stats - NBA{% endblock %}
+{% block content %}
+<section class="page-hero compact"><div><span class="kicker">Stats</span><h1>Team Stats</h1></div><div class="tab-row"><a class="{% if sort == 'ppg' %}active{% endif %}" href="{{ url_for('team_stats', sort='ppg') }}">Points</a><a class="{% if sort == 'oppg' %}active{% endif %}" href="{{ url_for('team_stats', sort='oppg') }}">Allowed</a><a class="{% if sort == 'point_diff' %}active{% endif %}" href="{{ url_for('team_stats', sort='point_diff') }}">Point Diff</a><a class="{% if sort == 'wins' %}active{% endif %}" href="{{ url_for('team_stats', sort='wins') }}">Wins</a></div></section>
+<section class="content-block">
+  <table class="data-table"><thead><tr><th>Rank</th><th>Team</th><th>W</th><th>L</th><th>PPG</th><th>OPPG</th><th>Diff</th><th>Home</th><th>Road</th></tr></thead><tbody>{% for team in teams %}<tr><td>{{ loop.index }}</td><td><a class="team-cell" href="{{ url_for('team_detail', slug=team.slug) }}"><img src="{{ team.logo }}" alt="">{{ team.full_name }}</a></td><td>{{ team.wins }}</td><td>{{ team.losses }}</td><td>{{ "%.1f"|format(team.ppg) }}</td><td>{{ "%.1f"|format(team.oppg) }}</td><td>{{ team.point_diff|signed }}</td><td>{{ team.home_record }}</td><td>{{ team.road_record }}</td></tr>{% endfor %}</tbody></table>
+</section>
+{% endblock %}

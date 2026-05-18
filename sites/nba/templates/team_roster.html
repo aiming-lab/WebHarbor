@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}{{ team.full_name }} Roster - NBA{% endblock %}
+{% block content %}
+<section class="page-hero compact team-mini" style="--team: {{ team.color }}"><img src="{{ team.logo }}" alt=""><div><span class="kicker">{{ team.full_name }}</span><h1>Roster</h1></div></section>
+<section class="content-block">
+  <table class="data-table roster-table"><thead><tr><th>Player</th><th>Team</th><th>No.</th><th>Pos</th><th>Height</th><th>Weight</th><th>Last Attended</th><th>Country</th></tr></thead><tbody>{% for player in players %}{% include "_components/player_row.html" %}{% endfor %}</tbody></table>
+</section>
+{% endblock %}

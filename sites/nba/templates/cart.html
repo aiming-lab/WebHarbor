@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Bag - NBA Store{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Bag</h1><a class="button" href="{{ url_for('shop') }}">Continue shopping</a></section>
+<section class="band split">
+  <form class="panel cart-panel" method="post" action="{{ url_for('cart_update') }}">
+    {% for item in current_user.cart_items %}
+      <div class="cart-item"><img src="{{ item.product.image }}" alt=""><div><strong>{{ item.product.name }}</strong><p>Size {{ item.size }} · {{ item.product.price|money }}</p></div><label>Qty<input name="qty_{{ item.id }}" type="number" min="0" max="9" value="{{ item.quantity }}"></label></div>
+    {% else %}<p>Your bag is empty.</p>{% endfor %}
+    <button class="button">Update bag</button>
+  </form>
+  <div class="panel"><h2>Summary</h2><p>Subtotal {{ subtotal|money }}</p><p>Estimated tax and shipping are calculated at checkout.</p>{% if current_user.cart_items %}<a class="button primary" href="{{ url_for('checkout') }}">Checkout</a>{% endif %}</div>
+</section>
+{% endblock %}

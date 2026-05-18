@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Edit Account - NBA{% endblock %}
+{% block content %}
+<section class="form-shell wide">
+  <h1>Edit NBA ID</h1>
+  <form method="post" class="panel form-grid two">
+    <label>Name<input name="display_name" value="{{ current_user.display_name }}"></label>
+    <label>Phone<input name="phone" value="{{ current_user.phone }}"></label>
+    <label>Address<input name="address_line1" value="{{ current_user.address_line1 }}"></label>
+    <label>City<input name="city" value="{{ current_user.city }}"></label>
+    <label>State<input name="state" value="{{ current_user.state }}"></label>
+    <label>ZIP<input name="zip_code" value="{{ current_user.zip_code }}"></label>
+    <label>Favorite team<select name="favorite_team_slug">{% for team in teams %}<option value="{{ team.slug }}" {% if team.slug == current_user.favorite_team_slug %}selected{% endif %}>{{ team.full_name }}</option>{% endfor %}</select></label>
+    <label>Payment last 4<input name="payment_last4" maxlength="4" value="{{ current_user.payment_last4 }}"></label>
+    <button class="button primary" type="submit">Save changes</button>
+  </form>
+</section>
+{% endblock %}

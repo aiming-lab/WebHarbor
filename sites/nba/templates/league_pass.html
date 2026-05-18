@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}League Pass - NBA{% endblock %}
+{% block content %}
+<section class="league-pass-hero">
+  <div>
+    <span class="kicker">NBA League Pass</span>
+    <h1>Every game. Every round.</h1>
+    <p>Local mirror landing for live-game tune-in cards, replays, and playoff coverage. No real streaming or payment is implemented.</p>
+    <div class="hero-links"><a href="{{ url_for('games') }}">Games</a><a href="{{ url_for('watch') }}">Watch</a><a href="{{ url_for('schedule') }}">Schedule</a></div>
+  </div>
+</section>
+<section class="portal-shell">
+  <main class="portal-main">
+    <section class="nba-home-section">
+      <div class="section-title"><h2>Tonight on NBA TV and League Pass</h2><a href="{{ url_for('schedule') }}">Full Schedule</a></div>
+      <div class="league-pass-grid">
+        {% for game in games[:6] %}
+          <a class="league-pass-game" href="{{ url_for('game_detail', game_id=game.id) }}">
+            <span>{{ game.broadcast }}</span>
+            <strong>{{ game.away_team.abbreviation }} at {{ game.home_team.abbreviation }}</strong>
+            <em>{{ game_time_label(game) }} · {{ game.arena }}</em>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+    <section class="nba-home-section">
+      <div class="section-title"><h2>Featured Video</h2><a href="{{ url_for('watch') }}">Watch</a></div>
+      <div class="story-grid">
+        {% for article in videos %}
+          {% include "_components/story_card.html" %}
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+  <aside class="portal-rail">
+    <section class="nba-app-card">
+      <span>NBA App</span>
+      <h2>Tap in to watch the playoffs</h2>
+      <p>League Pass links stay local and never open a real payment flow.</p>
+      <a href="{{ url_for('watch') }}">Watch</a>
+    </section>
+    <section class="rail-card home-headlines">
+      <div class="section-title compact"><h2>Headlines</h2><a href="{{ url_for('news') }}">See more</a></div>
+      {% for article in headlines %}
+        <a class="headline" href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a>
+      {% endfor %}
+    </section>
+  </aside>
+</section>
+{% endblock %}

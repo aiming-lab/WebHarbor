@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Stats - NBA{% endblock %}
+{% block content %}
+<nav class="stats-subnav" aria-label="Stats navigation">
+  <strong>Stats</strong>
+  <a class="active" href="{{ url_for('stats') }}">Stats Home</a>
+  <a href="{{ url_for('player_stats') }}">Players</a>
+  <a href="{{ url_for('team_stats') }}">Teams</a>
+  <a href="{{ url_for('player_stats', stat='ppg') }}">Leaders</a>
+  <a href="{{ url_for('schedule') }}">Lineups Tool</a>
+  <a href="{{ url_for('draft') }}">Draft</a>
+  <a href="{{ url_for('search') }}">Quick Links</a>
+</nav>
+<section class="stats-hero-official">
+  <div><span>NBA Advanced Stats</span><strong>Stats Home</strong></div>
+</section>
+
+<section class="stats-page-official">
+  <main class="stats-main-official">
+    <section class="stats-panel">
+      <div class="section-title"><h2>Players</h2><a href="{{ url_for('player_stats') }}">See All Player Stats</a></div>
+      <div class="stats-toggle"><span class="active">Yesterday's Leaders</span><span>Season Leaders</span></div>
+      <div class="leader-matrix">
+        {% for label, rows in stats_home.daily.items() %}
+          <div class="leader-mini-table">
+            <h3>{{ label }}</h3>
+            <ol>
+              {% for player in rows[:5] %}
+                <li><a href="{{ url_for('player_detail', slug=player.slug) }}">{{ player.name }}</a><span>{{ player.team.abbreviation }}</span><b>{{ "%.1f"|format(stat_value(player, 'topg' if label == 'Turnovers' else ('rpg' if label == 'Rebounds' else 'apg' if label == 'Assists' else 'bpg' if label == 'Blocks' else 'spg' if label == 'Steals' else 'ppg'))) }}</b></li>
+              {% endfor %}
+            </ol>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="stats-panel beyond">
+      <div>
+        <span>Beyond the Numbers</span>
+        <img src="{{ url_for('static', filename='images/articles/nba-official-castle.jpg') }}" alt="">
+        <h2>How drills at AWS NBA Draft Combine work</h2>
+        <a href="{{ url_for('news', category='Draft') }}">See all Articles</a>
+      </div>
+      <ul>
+        <li><a href="{{ url_for('article_detail', slug=articles[0].slug if articles else '') }}">How drills at AWS NBA Draft Combine work</a></li>
+        <li><a href="{{ url_for('draft') }}">2026 AWS NBA Combine: Anthropometrics</a></li>
+        <li><a href="{{ url_for('draft') }}">AWS NBA Draft Combine Data Hub</a></li>
+        <li><a href="{{ url_for('draft') }}">Complete coverage</a></li>
+      </ul>
+    </section>
+
+    <section class="stats-panel assist-tracker">
+      <div class="assist-number"><span>State Farm Assist Tracker</span><strong>68,991</strong><em>Total Assists This Season</em></div>
+      <div class="assist-feature"><img src="{{ stats_home.assist_player.image }}" alt=""><p><strong>{{ stats_home.assist_player.name }}: 9 Assists</strong> paced the box score with timely passes and nine assists while adding pressure around the rim.</p><a href="{{ url_for('player_detail', slug=stats_home.assist_player.slug) }}">View Video Box Score</a></div>
+      <div class="assist-cares"><strong>#NBACares</strong><p>State Farm believes in the power of the assist. That's why assists help community programs in this local mirror.</p></div>
+    </section>
+
+    <section class="stats-panel">
+      <div class="section-title"><h2>Teams</h2><a href="{{ url_for('team_stats') }}">See All Team Stats</a></div>
+      <div class="stats-toggle"><span class="active">Yesterday's Leaders</span><span>Season Leaders</span></div>
+      <div class="leader-matrix team-matrix">
+        {% for label, rows in stats_home.team_daily.items() %}
+          <div class="leader-mini-table">
+            <h3>{{ label }}</h3>
+            <ol>
+              {% for team in rows if team %}
+                <li><a href="{{ url_for('team_detail', slug=team.slug) }}">{{ team.full_name }}</a><b>{{ team.wins if 'Percentage' not in label else "%.1f"|format(team.win_pct * 100) }}</b></li>
+              {% endfor %}
+            </ol>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="stats-panel shotchart">
+      <h2>Shotchart Search</h2>
+      <div class="shotchart-grid">
+        <img src="{{ stats_home.shotchart_image }}" alt="">
+        <div><input aria-label="Shotchart search" placeholder="Search for a Player or Team Shotchart"><a href="{{ url_for('player_stats') }}">Bam Adebayo recorded the 2nd-highest scoring game in NBA history</a><a href="{{ url_for('team_stats') }}">Cooper Flagg became the first rookie since 2009 to make 20 shots in a game</a></div>
+      </div>
+    </section>
+
+    <section class="stats-quote">
+      <p>In San Antonio's Game 5 win, Victor Wembanyama finished with 27 points, 17 rebounds and five assists, becoming the third youngest player with a 25/15/5 playoff game.</p>
+      <span>Video Box Score: Spurs 126, Timberwolves 97</span>
+    </section>
+
+    <section class="stats-panel weekly">
+      <div class="section-title"><h2>Weekly Stats Spotlight</h2><a href="{{ url_for('news', category='Analysis') }}">Stats Spotlight Archive</a></div>
+      <div class="shotchart-grid">
+        <img src="{{ stats_home.spotlight_image }}" alt="">
+        <div><h3>4 key stats takeaways from 2025-26 season</h3><p>These four stats help tell the story of the campaign and milestone performances.</p><a href="{{ url_for('article_detail', slug=articles[0].slug if articles else '') }}">Closer look at SGA's scoring milestone</a><a href="{{ url_for('article_detail', slug=articles[1].slug if articles|length > 1 else articles[0].slug) }}">Durant joins elite club with 31,000 points</a></div>
+      </div>
+    </section>
+
+    <section class="stats-panel player-news">
+      <div class="section-title"><h2>Player News</h2><a href="{{ url_for('players') }}">See all Player News</a></div>
+      <div class="player-news-grid">
+        {% for item in stats_home.player_news %}
+          <a href="{{ url_for('player_detail', slug=item.player.slug) }}"><img src="{{ item.player.image }}" alt=""><span>{{ item.player.name }} · {{ item.player.team.abbreviation }}</span><strong>{{ item.title }}</strong><em>{{ item.time }}</em></a>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  <aside class="stats-rail-official">
+    <section class="rail-card">
+      <span class="kicker">Beta</span>
+      <h2>Daily Dunk Score Leaders</h2>
+      <ol class="daily-dunk">
+        {% for player in players[:5] %}
+          <li><span>{{ player.name }}</span><b>{{ "%.1f"|format(player.ppg + player.rpg + player.apg) }}</b><em>▶</em></li>
+        {% endfor %}
+      </ol>
+    </section>
+    <section class="rail-card more-stats">
+      <h2>More Stats</h2>
+      {% for label, rows in stats_home.more_stats %}
+        <div><a href="{{ url_for('player_stats') }}">{{ label }}</a>{% for player in rows %}<span>{{ player.name }} <b>{{ "%.0f"|format(stat_value(player, 'ppg')) }}</b></span>{% endfor %}</div>
+      {% endfor %}
+    </section>
+  </aside>
+</section>
+{% endblock %}
