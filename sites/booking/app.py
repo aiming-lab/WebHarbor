@@ -4,6 +4,7 @@ import os
 import json
 import random
 import secrets
+import hashlib
 from datetime import datetime, timedelta, date
 from pathlib import Path
 
@@ -2135,7 +2136,9 @@ def seed_database():
 
     # Don't re-seed if already present
     if Property.query.first():
+        _ensure_amenity_combos()
         return
+    random.seed(20260518)
 
     # --- Categories ---
     for cat in DESTINATION_CATEGORIES:
@@ -2329,7 +2332,8 @@ def seed_database():
         else:
             # Deterministic pseudo-random brand assignment for variety
             brand_pool = ['Hilton', 'Marriott', 'Accor', 'IHG', 'Hyatt', 'Wyndham', 'Best Western', 'Independent', 'Independent', 'Independent']
-            brand = brand_pool[(abs(hash(name)) % len(brand_pool))]
+            brand_idx = int(hashlib.sha256(name.encode("utf-8")).hexdigest(), 16) % len(brand_pool)
+            brand = brand_pool[brand_idx]
 
         prop = Property(
             name=name,
@@ -2401,8 +2405,7 @@ def _ensure_amenity_combos():
         current = q.count()
         if current >= min_count:
             return
-        candidates = Property.query.filter_by(city_id=city.id).all()
-        random.shuffle(candidates)
+        candidates = Property.query.filter_by(city_id=city.id).order_by(Property.id.asc()).all()
         needed = min_count - current
         for prop in candidates:
             if needed <= 0:
@@ -2417,9 +2420,9 @@ def _ensure_amenity_combos():
     # Mexico City: discount_percent > 0
     city = City.query.filter_by(key='mexicocity').first()
     if city:
-        props = Property.query.filter_by(city_id=city.id).filter(Property.discount_percent == 0).limit(3).all()
-        for p in props:
-            p.discount_percent = random.choice([10, 15, 20])
+        props = Property.query.filter_by(city_id=city.id).filter(Property.discount_percent == 0).order_by(Property.id.asc()).limit(3).all()
+        for idx, p in enumerate(props):
+            p.discount_percent = [10, 15, 20][idx % 3]
             p.is_genius_deal = True
 
     # Varanasi: breakfast near Kashi Vishwanath
@@ -2519,6 +2522,23 @@ def _ensure_amenity_combos():
 
     # Barcelona: WiFi + breakfast
     _ensure_flags('barcelona', {'has_wifi': True, 'breakfast_included': True}, min_count=3)
+    praktik = Property.query.filter_by(name='Praktik Èssens').first()
+    if praktik:
+        praktik.has_wifi = True
+        praktik.breakfast_included = True
+        praktik.rating = 8.9
+        praktik.rating_label = rating_label_for(praktik.rating)
+        praktik.review_count = 83
+        praktik.price_per_night = 83.0
+        praktik.discount_percent = 0
+        praktik.stars = 3
+        praktik.property_type = 'Hotel'
+        praktik.distance_from_center = 1.9
+        praktik.brand = 'Independent'
+    hotel_brick = Property.query.filter_by(name='Hotel Brick Barcelona').first()
+    if hotel_brick:
+        hotel_brick.breakfast_included = False
+        hotel_brick.has_wifi = False
 
     # Lisbon: airport shuttle + 8.5+ + breakfast
     city = City.query.filter_by(key='lisbon').first()
