@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}{{ sim.title }} &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> /
+  <a href="{{ url_for('simulations') }}">Simulations</a> /
+  <span>{{ sim.title }}</span>
+</nav>
+
+<article class="sim-detail">
+  <div class="sim-detail-body">
+    <div class="sim-detail-main">
+
+      <div class="sim-detail-frame">
+        {% if sim.slug in available_thumbnails %}
+          <img src="{{ url_for('static', filename='images/sims/' ~ sim.slug ~ '.png') }}"
+               alt="{{ sim.title }} screenshot">
+        {% else %}
+          <div class="sim-detail-frame-placeholder">{{ sim.title }}</div>
+        {% endif %}
+        <a class="sim-detail-play-overlay" href="#" role="button" aria-label="Play simulation"></a>
+      </div>
+
+      <header class="sim-detail-head">
+        <h1>{{ sim.title }}</h1>
+        <ul class="badge-row">
+          {% if sim.is_html5 %}<li class="badge badge-html5">HTML5</li>{% endif %}
+          {% if sim.is_new %}<li class="badge badge-new">New</li>{% endif %}
+          {% if sim.is_featured %}<li class="badge badge-featured">Featured</li>{% endif %}
+          <li class="badge badge-version">v{{ sim.version }}</li>
+        </ul>
+        <div class="share-row" aria-label="Share">
+          <a href="#" aria-label="Facebook"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.2c-1.2 0-1.6.8-1.6 1.6V12H16l-.4 2.9h-2.2v7A10 10 0 0 0 22 12z"/></svg></a>
+          <a href="#" aria-label="Twitter"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M23 4.6a9.5 9.5 0 0 1-2.7.7 4.7 4.7 0 0 0 2.1-2.6 9.4 9.4 0 0 1-3 1.1 4.7 4.7 0 0 0-8 4.3A13.3 13.3 0 0 1 1.7 3.2a4.7 4.7 0 0 0 1.5 6.3 4.7 4.7 0 0 1-2.1-.6v.1a4.7 4.7 0 0 0 3.8 4.6 4.7 4.7 0 0 1-2.1.1 4.7 4.7 0 0 0 4.4 3.3A9.4 9.4 0 0 1 1 19a13.3 13.3 0 0 0 7.2 2.1c8.6 0 13.4-7.2 13.4-13.4v-.6A9.5 9.5 0 0 0 23 4.6z"/></svg></a>
+          <a href="#" aria-label="Email"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16v16H4z"/><path d="m4 6 8 7 8-7"/></svg></a>
+          <a href="#" aria-label="Embed"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m16 18 6-6-6-6M8 6l-6 6 6 6"/></svg></a>
+        </div>
+      </header>
+
+      <nav class="detail-tabs" aria-label="Sim sections">
+        <a class="detail-tab active" href="#about">About</a>
+        <a class="detail-tab" href="#teaching">Teaching Resources</a>
+        <a class="detail-tab" href="#activities">Activities</a>
+        <a class="detail-tab" href="#translations">Translations</a>
+        <a class="detail-tab" href="#credits">Credits</a>
+      </nav>
+
+      <section id="about" class="sim-detail-section">
+        <h2>About this simulation</h2>
+        <p>{{ sim.overview }}</p>
+        <p class="sim-detail-tagline">{{ sim.short_description }}</p>
+      </section>
+
+      <section class="sim-detail-section">
+        <h2>Topics</h2>
+        <ul class="topic-list">
+          {% for topic in sim.topics() %}<li>{{ topic|capitalize }}</li>{% endfor %}
+        </ul>
+      </section>
+
+      <section class="sim-detail-section">
+        <h2>Sample Learning Goals</h2>
+        <ul class="topic-list">
+          <li>Use the {{ sim.title.lower() }} simulation to model the underlying concepts.</li>
+          <li>Identify the variables and determine the relationships among them.</li>
+          <li>Predict how changes to one parameter affect the rest of the system.</li>
+        </ul>
+      </section>
+
+      {% if activities %}
+      <section id="teaching" class="sim-detail-section">
+        <h2>Teaching Resources &mdash; submitted activities ({{ activities|length }})</h2>
+        <ul class="activity-list">
+          {% for activity in activities %}
+            <li>
+              <a href="{{ url_for('activity_detail', activity_id=activity.id) }}">{{ activity.title }}</a>
+              <span class="activity-meta">by {{ activity.author }} &middot; {{ activity.grade_level|capitalize }} &middot; {{ activity.duration_min }} min</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      <section id="translations" class="sim-detail-section">
+        <h2>Translations ({{ languages|length }})</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.4rem;">
+          {% for l in languages %}
+            <a href="{{ url_for('translation_detail', code=l.code) }}" style="font-size: 0.85rem;">{{ l.name }}</a>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section id="credits" class="sim-detail-section">
+        <h2>System Requirements &amp; Credits</h2>
+        <p>HTML5 simulations can run on Chromebooks, iPads, iPhones, PCs, Mac, and Linux systems.
+           Inclusive features added to HTML5 sims only; some features have platform limitations.</p>
+        <p><strong>Version:</strong> {{ sim.version }} &middot; Released {{ sim.release_date }}</p>
+      </section>
+
+      {% if related %}
+      <section class="sim-detail-section">
+        <h2>Related Sims</h2>
+        <div class="sim-grid sim-grid-small">
+          {% for sim in related %}
+            {% include "_sim_card.html" %}
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="sim-detail-side">
+      <div class="supported-by">
+        <span class="supported-by-label">PhET is supported in part by</span>
+        <span class="supported-by-logo">Cengage</span>
+        <p class="supported-by-foot">and other <a href="{{ url_for('about') }}">supporters</a>, including educators like you.</p>
+      </div>
+
+      <div class="side-card">
+        <h3>Subjects</h3>
+        <ul>
+          {% for s in subjects %}
+            <li><a href="{{ url_for('simulations_by_subject', slug=s.slug) }}">{{ s.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="side-card">
+        <h3>Grade levels</h3>
+        <ul>
+          {% for g in grades %}
+            <li>{{ g.name }} <small>({{ g.age_range }})</small></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="side-card">
+        <h3>Available in</h3>
+        <ul class="lang-list">
+          {% for l in languages %}
+            <li><a href="{{ url_for('translation_detail', code=l.code) }}">{{ l.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="side-card">
+        <h3>Statistics</h3>
+        <ul>
+          <li>Plays: {{ sim.play_count }}</li>
+          <li>Downloads: {{ sim.download_count }}</li>
+          <li>Runtime: {{ sim.runtime_minutes }} min</li>
+          <li>Released: {{ sim.release_date }}</li>
+        </ul>
+      </div>
+      <div class="side-card">
+        {% if current_user.is_authenticated %}
+          <form class="save-form" data-sim-id="{{ sim.id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if is_saved %}
+              <button type="button" class="btn btn-ghost" data-action="unsave">Remove from saved</button>
+            {% else %}
+              <button type="button" class="btn btn-primary" data-action="save">Save to my account</button>
+            {% endif %}
+            <p class="save-status" aria-live="polite"></p>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login', next=url_for('simulation_detail', slug=sim.slug)) }}"
+             class="btn btn-primary btn-block">Sign in to save</a>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+
+  <section class="explore-more">
+    <h3>Explore More</h3>
+    <div class="explore-more-links">
+      <a href="{{ url_for('teachers') }}">Teaching Resources</a> &nbsp;|&nbsp;
+      <a href="{{ url_for('teachers') }}">Quick Tips</a>
+    </div>
+    <p style="margin: 0.5rem 0 0; color: var(--c-muted); font-size: 0.85rem;">
+      PhET is a non-profit committed to providing high quality STEM resources for every classroom.
+    </p>
+    <a href="#" class="donate-cta">Donate now</a>
+  </section>
+</article>
+{% endblock %}

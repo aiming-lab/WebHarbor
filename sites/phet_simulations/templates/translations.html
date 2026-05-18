@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Translations &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Translations</h1>
+<p class="page-subtitle">
+  PhET simulations are translated into {{ languages|length }} languages by educators and volunteers worldwide.
+  Select a language to see which simulations are available.
+</p>
+
+<ul class="language-grid">
+  {% for lang in languages %}
+    <li class="language-card{% if lang.is_rtl %} rtl{% endif %}">
+      <a href="{{ url_for('translation_detail', code=lang.code) }}">
+        <span class="language-name">{{ lang.name }}</span>
+        <span class="language-native">{{ lang.native_name }}</span>
+        <span class="language-count">{{ lang.sim_count }} simulations</span>
+      </a>
+    </li>
+  {% endfor %}
+</ul>
+{% endblock %}

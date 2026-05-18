@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{% if query %}Search: {{ query }}{% else %}Search{% endif %} &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Search</h1>
+
+<form class="search-form-wide" method="get" action="{{ url_for('search') }}" role="search">
+  <input type="search" name="q" value="{{ query }}" placeholder="Search simulation titles or topics" autofocus>
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+{% if query %}
+  <p class="page-subtitle">{{ total }} result{{ '' if total == 1 else 's' }} for &ldquo;{{ query }}&rdquo;</p>
+  {% if sims %}
+    <div class="sim-grid">
+      {% for sim in sims %}
+        {% include "_sim_card.html" %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="empty-state">No simulations matched your search. Try a shorter or more general term.</p>
+  {% endif %}
+{% else %}
+  <p class="page-subtitle">Enter a search term to find simulations by title or topic.</p>
+{% endif %}
+{% endblock %}

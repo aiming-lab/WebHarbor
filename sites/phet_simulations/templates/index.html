@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% set subjects_ordered = [
+  ('physics',       'Physics'),
+  ('math',          'Math & Statistics'),
+  ('chemistry',     'Chemistry'),
+  ('earth-science', 'Earth & Space'),
+  ('biology',       'Biology'),
+] %}
+{% set subj_icon = {
+  'physics':       'physics',
+  'math':          'math-and-statistics',
+  'chemistry':     'chemistry',
+  'earth-science': 'earth-and-space',
+  'biology':       'biology',
+} %}
+
+{% block hero %}
+<section class="hero-photo">
+  <div class="hero-photo-inner">
+    <div class="hero-photo-text">
+      <h1>Interactive Simulations<br>for Science and Math</h1>
+      <a class="btn" href="{{ url_for('simulations') }}">Explore our sims</a>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block stats %}
+<div class="stats-banner">
+  Over <strong>1.8 billion</strong> simulations delivered
+</div>
+{% endblock %}
+
+{% block main_class %}container home-main{% endblock %}
+
+{% block content %}
+
+<section class="subjects-pastel" aria-label="Browse by subject">
+  {% for slug, name in subjects_ordered %}
+    <a class="subject-pastel ps-{{ slug }}"
+       href="{{ url_for('simulations_by_subject', slug=slug) }}">
+      <img src="{{ url_for('static', filename='images/ui/subject-' ~ subj_icon[slug] ~ '.svg') }}" alt="">
+      <span class="subject-pastel-name">{{ name }}</span>
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}
+
+{% block full_bleed_top %}{% endblock %}
+
+{% block full_bleed_bottom %}
+<section class="teaching-callout">
+  <div class="teaching-callout-inner">
+    <div class="teaching-callout-text">
+      <h2>Teaching Resources,<br>Activities, and Community</h2>
+      <p>Teachers have access to simulations specific to grade and video content,
+         resources for teaching with simulations, and activities created by our
+         teacher community.</p>
+      <a class="btn" href="{{ url_for('teachers') }}">Register now</a>
+    </div>
+  </div>
+</section>
+
+<section class="interact-section container">
+  <div class="interact-heading">
+    <img src="{{ url_for('static', filename='images/ui/interact-discover-learn.png') }}"
+         alt="Interact. Discover. Learn.">
+  </div>
+  <div class="interact-stats">
+    <div class="interact-stat">
+      <span class="interact-stat-num">{{ total_simulations }}</span>
+      <span class="interact-stat-label">interactive simulations</span>
+      <div><img src="{{ url_for('static', filename='images/ui/icon-interactive.png') }}" alt=""></div>
+    </div>
+    <div class="interact-stat">
+      <span class="interact-stat-num">{{ total_languages }}</span>
+      <span class="interact-stat-label">language translations</span>
+      <div><img src="{{ url_for('static', filename='images/ui/icon-languages.png') }}" alt=""></div>
+    </div>
+    <div class="interact-stat">
+      <span class="interact-stat-num">{{ total_activities }}</span>
+      <span class="interact-stat-label">teacher-submitted lessons</span>
+      <div><img src="{{ url_for('static', filename='images/ui/icon-lessons.png') }}" alt=""></div>
+    </div>
+  </div>
+  <p class="about-blurb">
+    Founded in 2002 by Nobel Laureate Carl Wieman, the PhET Interactive Simulations
+    project at the University of Colorado Boulder creates free interactive math and
+    science simulations. PhET sims are based on extensive
+    <a href="{{ url_for('about') }}">research</a>
+    and engage students through an intuitive, game-like environment where students
+    learn through exploration and discovery.
+  </p>
+</section>
+
+<section class="hero-stem">
+  <div class="hero-stem-inner">
+    <div class="hero-stem-text">
+      <h2>Shouldn't All Students<br>Experience STEM?</h2>
+      <p>Learn how we are tackling challenges in STEM education, software development,
+         and assistive technology.</p>
+      <a class="btn" href="{{ url_for('accessibility') }}">Explore accessible sims</a>
+    </div>
+  </div>
+</section>
+
+<section class="home-supported">
+  <div class="home-supported-label">PhET is supported in part by</div>
+  <div class="home-supported-logo">Education Group</div>
+  <p class="home-supported-foot">
+    and <a href="{{ url_for('about') }}">other supporters</a>, including educators like you.
+  </p>
+  <a href="#" class="donate-cta">Donate now</a>
+</section>
+{% endblock %}

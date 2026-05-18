@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Create Account &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Create your PhET account</h1>
+  <p class="auth-sub">A free account lets you save simulations and download teacher resources.</p>
+
+  <form method="post" action="{{ url_for('register') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>
+      Full name
+      <input type="text" name="name" required autocomplete="name">
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" required autocomplete="email">
+    </label>
+    <label>
+      Password (8+ characters)
+      <input type="password" name="password" required minlength="8" autocomplete="new-password">
+    </label>
+    <label>
+      Institution (optional)
+      <input type="text" name="institution" autocomplete="organization">
+    </label>
+    <label>
+      Country (optional)
+      <input type="text" name="country" autocomplete="country-name">
+    </label>
+    <button type="submit" class="btn btn-primary btn-block">Create account</button>
+  </form>
+
+  <p class="auth-foot">
+    Already have an account? <a href="{{ url_for('login') }}">Sign in</a>.
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ language.name }} translations &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> /
+  <a href="{{ url_for('translations') }}">Translations</a> /
+  <span>{{ language.name }}</span>
+</nav>
+
+<h1 class="page-title">{{ language.name }} <small>({{ language.native_name }})</small></h1>
+<p class="page-subtitle">
+  {{ sims|length }} simulations available in {{ language.name }}.
+  Language code: <code>{{ language.code }}</code>{% if language.is_rtl %} &middot; right-to-left script{% endif %}.
+</p>
+
+{% if sims %}
+  <div class="sim-grid">
+    {% for sim in sims %}
+      {% include "_sim_card.html" %}
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="empty-state">No simulations are translated to this language yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ activity.title }} &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> /
+  <a href="{{ url_for('teachers') }}">For Teachers</a> /
+  <a href="{{ url_for('activities') }}">Activities</a> /
+  <span>{{ activity.title }}</span>
+</nav>
+
+<article class="activity-detail">
+  <h1>{{ activity.title }}</h1>
+  <p class="activity-meta">
+    By <strong>{{ activity.author }}</strong> &middot;
+    {{ activity.grade_level|capitalize }} &middot;
+    {{ activity.duration_min }} min &middot;
+    {{ activity.file_type }} &middot;
+    Published {{ activity.published_date }}
+  </p>
+
+  <section class="activity-section">
+    <h2>Overview</h2>
+    <p>{{ activity.description }}</p>
+  </section>
+
+  <section class="activity-section">
+    <h2>Used with this simulation</h2>
+    <p>
+      <a class="btn btn-primary" href="{{ url_for('simulation_detail', slug=activity.simulation.slug) }}">
+        Open {{ activity.simulation.title }} &raquo;
+      </a>
+    </p>
+  </section>
+
+  <section class="activity-section">
+    <h2>Download</h2>
+    <p>
+      <a class="btn btn-ghost" href="#" onclick="event.preventDefault(); alert('Mirror snapshot — download is disabled in benchmark mode.');">
+        Download {{ activity.file_type }} ({{ activity.download_count }} downloads)
+      </a>
+    </p>
+  </section>
+</article>
+{% endblock %}
