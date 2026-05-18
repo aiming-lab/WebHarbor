@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}All Simulations &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<h1 class="page-title">All Simulations</h1>
+<p class="page-subtitle">{{ total }} simulation{{ '' if total == 1 else 's' }} matching your filters.</p>
+
+<form class="filter-bar" method="get" action="{{ url_for('simulations') }}">
+  <label>
+    Subject
+    <select name="subject">
+      <option value="">All subjects</option>
+      {% for s in primary_subjects %}
+        <option value="{{ s.slug }}" {% if s.slug == subject %}selected{% endif %}>{{ s.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Grade level
+    <select name="grade">
+      <option value="">All grade levels</option>
+      {% for g in grade_levels %}
+        <option value="{{ g.slug }}" {% if g.slug == grade %}selected{% endif %}>{{ g.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Language
+    <select name="language">
+      <option value="">Any language</option>
+      {% for l in languages %}
+        <option value="{{ l.code }}" {% if l.code == language %}selected{% endif %}>{{ l.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>
+    Sort by
+    <select name="sort">
+      <option value="title" {% if sort == 'title' %}selected{% endif %}>Title (A-Z)</option>
+      <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+      <option value="popular" {% if sort == 'popular' %}selected{% endif %}>Most played</option>
+    </select>
+  </label>
+  <button type="submit" class="btn btn-primary">Apply filters</button>
+  <a href="{{ url_for('simulations') }}" class="btn btn-ghost">Reset</a>
+</form>
+
+{% if sims %}
+  <div class="sim-grid">
+    {% for sim in sims %}
+      {% include "_sim_card.html" %}
+    {% endfor %}
+  </div>
+
+  {% if total_pages > 1 %}
+    <nav class="pager" aria-label="Pagination">
+      {% if page > 1 %}
+        <a href="{{ url_for('simulations', subject=subject, grade=grade, language=language, sort=sort, page=page-1) }}">&laquo; Previous</a>
+      {% endif %}
+      <span class="pager-status">Page {{ page }} of {{ total_pages }}</span>
+      {% if page < total_pages %}
+        <a href="{{ url_for('simulations', subject=subject, grade=grade, language=language, sort=sort, page=page+1) }}">Next &raquo;</a>
+      {% endif %}
+    </nav>
+  {% endif %}
+{% else %}
+  <p class="empty-state">No simulations match the selected filters. Try clearing one of the filters above.</p>
+{% endif %}
+{% endblock %}

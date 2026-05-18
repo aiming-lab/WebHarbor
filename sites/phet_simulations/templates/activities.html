@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Activities &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> /
+  <a href="{{ url_for('teachers') }}">For Teachers</a> /
+  <span>Activities</span>
+</nav>
+
+<h1 class="page-title">Teacher-submitted activities</h1>
+<p class="page-subtitle">{{ activities|length }} activities published.</p>
+
+<form class="filter-bar" method="get" action="{{ url_for('activities') }}">
+  <label>
+    Grade level
+    <select name="grade">
+      <option value="">All grade levels</option>
+      {% for g in grade_levels %}
+        <option value="{{ g.slug }}" {% if g.slug == grade %}selected{% endif %}>{{ g.name }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="submit" class="btn btn-primary">Filter</button>
+  <a class="btn btn-ghost" href="{{ url_for('activities') }}">Reset</a>
+</form>
+
+{% if activities %}
+  <ul class="activity-grid">
+    {% for activity in activities %}
+      <li class="activity-card">
+        <h3><a href="{{ url_for('activity_detail', activity_id=activity.id) }}">{{ activity.title }}</a></h3>
+        <p class="activity-meta">
+          For <strong>{{ activity.simulation.title }}</strong> &middot;
+          {{ activity.grade_level|capitalize }} &middot;
+          {{ activity.duration_min }} min
+        </p>
+        <p>{{ activity.description }}</p>
+        <p class="activity-author">By {{ activity.author }} &middot; {{ activity.download_count }} downloads &middot; {{ activity.published_date }}</p>
+      </li>
+    {% endfor %}
+  </ul>
+{% else %}
+  <p class="empty-state">No activities for the selected filter.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="hero-text">
+    <h1>Free interactive math &amp; science simulations</h1>
+    <p>Research-based simulations from the University of Colorado Boulder.
+       Browse {{ total_simulations }} simulations across physics, chemistry,
+       math, biology, and earth science &mdash; available in {{ total_languages }} languages.</p>
+    <p class="hero-actions">
+      <a class="btn btn-primary" href="{{ url_for('simulations') }}">Browse all simulations</a>
+      <a class="btn btn-ghost" href="{{ url_for('teachers') }}">For teachers</a>
+    </p>
+  </div>
+</section>
+
+<section class="subjects-grid" aria-label="Browse by subject">
+  {% for subject in primary_subjects %}
+    <a class="subject-tile" style="--tile-color: {{ subject.color }}"
+       href="{{ url_for('simulations_by_subject', slug=subject.slug) }}">
+      <span class="subject-icon" aria-hidden="true">{{ subject.icon[:1]|upper }}</span>
+      <span class="subject-name">{{ subject.name }}</span>
+      <span class="subject-desc">{{ subject.description }}</span>
+    </a>
+  {% endfor %}
+</section>
+
+<section class="row">
+  <h2 class="row-title">Featured simulations</h2>
+  <div class="sim-grid">
+    {% for sim in featured %}
+      {% include "_sim_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="row">
+  <h2 class="row-title">New &amp; recently updated</h2>
+  <div class="sim-grid">
+    {% for sim in new_sims %}
+      {% include "_sim_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="row">
+  <h2 class="row-title">Most played this month</h2>
+  <div class="sim-grid">
+    {% for sim in most_played %}
+      {% include "_sim_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

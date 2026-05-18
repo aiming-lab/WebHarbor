@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+{% block title %}{{ sim.title }} &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> /
+  <a href="{{ url_for('simulations') }}">Simulations</a> /
+  <span>{{ sim.title }}</span>
+</nav>
+
+<article class="sim-detail">
+  <header class="sim-detail-head">
+    <h1>{{ sim.title }}</h1>
+    <p class="sim-detail-tagline">{{ sim.short_description }}</p>
+    <ul class="badge-row">
+      {% if sim.is_html5 %}<li class="badge badge-html5">HTML5</li>{% endif %}
+      {% if sim.is_new %}<li class="badge badge-new">New</li>{% endif %}
+      {% if sim.is_featured %}<li class="badge badge-featured">Featured</li>{% endif %}
+      <li class="badge badge-version">v{{ sim.version }}</li>
+    </ul>
+  </header>
+
+  <div class="sim-detail-body">
+    <div class="sim-detail-main">
+      <div class="sim-detail-frame">
+        <span class="sim-detail-frame-label">{{ sim.title }}</span>
+        <button class="btn btn-primary sim-detail-play" type="button">Play simulation</button>
+      </div>
+
+      <section class="sim-detail-section">
+        <h2>About this simulation</h2>
+        <p>{{ sim.overview }}</p>
+      </section>
+
+      <section class="sim-detail-section">
+        <h2>Learning goals</h2>
+        <ul class="topic-list">
+          {% for topic in sim.topics() %}
+            <li>{{ topic|capitalize }}</li>
+          {% endfor %}
+        </ul>
+      </section>
+
+      {% if activities %}
+      <section class="sim-detail-section">
+        <h2>Teacher-submitted activities ({{ activities|length }})</h2>
+        <ul class="activity-list">
+          {% for activity in activities %}
+            <li>
+              <a href="{{ url_for('activity_detail', activity_id=activity.id) }}">{{ activity.title }}</a>
+              <span class="activity-meta">by {{ activity.author }} &middot; {{ activity.grade_level|capitalize }} &middot; {{ activity.duration_min }} min</span>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+
+      {% if related %}
+      <section class="sim-detail-section">
+        <h2>Related simulations</h2>
+        <div class="sim-grid sim-grid-small">
+          {% for sim in related %}
+            {% include "_sim_card.html" %}
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="sim-detail-side">
+      <div class="side-card">
+        <h3>Subjects</h3>
+        <ul>
+          {% for s in subjects %}
+            <li><a href="{{ url_for('simulations_by_subject', slug=s.slug) }}">{{ s.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="side-card">
+        <h3>Grade levels</h3>
+        <ul>
+          {% for g in grades %}
+            <li>{{ g.name }} <small>({{ g.age_range }})</small></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="side-card">
+        <h3>Available in</h3>
+        <ul class="lang-list">
+          {% for l in languages %}
+            <li><a href="{{ url_for('translation_detail', code=l.code) }}">{{ l.name }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="side-card">
+        <h3>Statistics</h3>
+        <ul>
+          <li>Plays: {{ sim.play_count }}</li>
+          <li>Downloads: {{ sim.download_count }}</li>
+          <li>Runtime: {{ sim.runtime_minutes }} min</li>
+          <li>Released: {{ sim.release_date }}</li>
+        </ul>
+      </div>
+      <div class="side-card">
+        {% if current_user.is_authenticated %}
+          <form class="save-form" data-sim-id="{{ sim.id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            {% if is_saved %}
+              <button type="button" class="btn btn-ghost" data-action="unsave">Remove from saved</button>
+            {% else %}
+              <button type="button" class="btn btn-primary" data-action="save">Save to my account</button>
+            {% endif %}
+            <p class="save-status" aria-live="polite"></p>
+          </form>
+        {% else %}
+          <a href="{{ url_for('login', next=url_for('simulation_detail', slug=sim.slug)) }}"
+             class="btn btn-primary btn-block">Sign in to save</a>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</article>
+{% endblock %}

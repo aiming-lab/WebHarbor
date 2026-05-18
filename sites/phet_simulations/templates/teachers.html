@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}For Teachers &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<header class="teachers-hero">
+  <h1>Resources for teachers</h1>
+  <p>Lesson plans, activities, and tips for using PhET simulations in your classroom.
+     Activities are contributed by educators and aligned to common curriculum standards.</p>
+  <p>
+    <a class="btn btn-primary" href="{{ url_for('activities') }}">Browse all activities</a>
+    <a class="btn btn-ghost" href="{{ url_for('simulations') }}">Find a simulation</a>
+  </p>
+</header>
+
+<section class="row">
+  <h2 class="row-title">Most-downloaded activities</h2>
+  <ul class="activity-grid">
+    {% for activity in featured_activities %}
+      <li class="activity-card">
+        <h3><a href="{{ url_for('activity_detail', activity_id=activity.id) }}">{{ activity.title }}</a></h3>
+        <p class="activity-meta">
+          For <strong>{{ activity.simulation.title }}</strong> &middot;
+          {{ activity.grade_level|capitalize }} &middot;
+          {{ activity.duration_min }} min &middot;
+          {{ activity.file_type }}
+        </p>
+        <p>{{ activity.description }}</p>
+        <p class="activity-author">By {{ activity.author }} &middot; {{ activity.download_count }} downloads</p>
+      </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endblock %}

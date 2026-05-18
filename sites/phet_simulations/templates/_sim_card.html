@@ -1,0 +1,18 @@
+<article class="sim-card">
+  <a class="sim-thumb" href="{{ url_for('simulation_detail', slug=sim.slug) }}">
+    <span class="sim-thumb-label">{{ sim.title }}</span>
+  </a>
+  <div class="sim-meta">
+    <h3 class="sim-title">
+      <a href="{{ url_for('simulation_detail', slug=sim.slug) }}">{{ sim.title }}</a>
+    </h3>
+    <p class="sim-desc">{{ sim.short_description }}</p>
+    <ul class="sim-tags">
+      {% for subj_slug in sim.subjects() %}
+        <li class="sim-tag">{{ subj_slug.replace('-', ' ').title() }}</li>
+      {% endfor %}
+    </ul>
+    {% if sim.is_new %}<span class="badge badge-new">New</span>{% endif %}
+    {% if sim.is_featured %}<span class="badge badge-featured">Featured</span>{% endif %}
+  </div>
+</article>
