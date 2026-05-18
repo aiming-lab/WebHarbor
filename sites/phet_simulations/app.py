@@ -189,6 +189,13 @@ def _saved_sim_ids():
     return {s.sim_id for s in current_user.saved.all()}
 
 
+_THUMB_DIR = os.path.join(BASE_DIR, "static", "images", "sims")
+_AVAILABLE_THUMBNAILS = frozenset(
+    f[:-4] for f in os.listdir(_THUMB_DIR)
+    if f.endswith(".png") and os.path.getsize(os.path.join(_THUMB_DIR, f)) > 1000
+) if os.path.isdir(_THUMB_DIR) else frozenset()
+
+
 @app.context_processor
 def inject_globals():
     return {
@@ -198,6 +205,7 @@ def inject_globals():
         "primary_subjects": Subject.query.order_by(Subject.name).all(),
         "grade_levels": GradeLevel.query.order_by(GradeLevel.sort_order).all(),
         "saved_sim_ids": _saved_sim_ids(),
+        "available_thumbnails": _AVAILABLE_THUMBNAILS,
     }
 
 
@@ -231,6 +239,7 @@ def index():
     )
     total = Simulation.query.count()
     total_languages = Language.query.count()
+    total_activities = Activity.query.count()
     return render_template(
         "index.html",
         featured=featured,
@@ -238,6 +247,7 @@ def index():
         most_played=most_played,
         total_simulations=total,
         total_languages=total_languages,
+        total_activities=total_activities,
     )
 
 
@@ -247,8 +257,9 @@ def simulations():
     grade = request.args.get("grade", "").strip()
     language = request.args.get("language", "").strip()
     sort = request.args.get("sort", "title")
+    view = request.args.get("view", "filter").strip()
     page = max(int(request.args.get("page", 1)), 1)
-    per_page = 12
+    per_page = 24
 
     query = Simulation.query
     if subject:
@@ -269,6 +280,21 @@ def simulations():
     sims = query.offset((page - 1) * per_page).limit(per_page).all()
     total_pages = max((total + per_page - 1) // per_page, 1)
 
+    any_filter_active = bool(subject or grade or language or sort != "title")
+    view_tab = view if view in ("browse", "filter", "customize") else "filter"
+
+    sims_by_subject = {}
+    if view_tab == "browse":
+        ordered = ['physics', 'math', 'chemistry', 'earth-science', 'biology']
+        for slug in ordered:
+            sims_by_subject[slug] = (
+                Simulation.query
+                .filter(Simulation.subjects_json.like(f'%"{slug}"%'))
+                .order_by(Simulation.title)
+                .limit(7)
+                .all()
+            )
+
     return render_template(
         "simulations.html",
         sims=sims,
@@ -279,7 +305,10 @@ def simulations():
         grade=grade,
         language=language,
         sort=sort,
+        view_tab=view_tab,
         languages=Language.query.order_by(Language.name).all(),
+        any_filter_active=any_filter_active,
+        sims_by_subject=sims_by_subject,
     )
 
 

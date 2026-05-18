@@ -9,33 +9,94 @@
 </head>
 <body>
 <header class="topbar">
-  <div class="container topbar-inner">
-    <a class="brand" href="{{ url_for('index') }}">
-      <span class="brand-mark">PhET</span>
-      <span class="brand-text">Interactive Simulations</span>
+  <div class="topbar-inner">
+    <a class="brand" href="{{ url_for('index') }}" aria-label="PhET Interactive Simulations">
+      <img class="brand-phet" src="{{ url_for('static', filename='images/ui/phet-logo.svg') }}" alt="PhET">
+      <span class="brand-divider"></span>
+      <img class="brand-cu" src="{{ url_for('static', filename='images/ui/cu-logo.png') }}" alt="University of Colorado Boulder">
     </a>
+
     <nav class="primary-nav" aria-label="Primary">
-      <a href="{{ url_for('simulations') }}">Simulations</a>
-      <a href="{{ url_for('teachers') }}">For Teachers</a>
-      <a href="{{ url_for('translations') }}">Translations</a>
-      <a href="{{ url_for('about') }}">About</a>
-      <a href="{{ url_for('accessibility') }}">Accessibility</a>
+      <div class="nav-item {% if active_nav == 'simulations' %}active{% endif %}">
+        <a href="{{ url_for('simulations') }}">Simulations</a>
+        <div class="nav-dropdown">
+          <a href="{{ url_for('simulations') }}">All Sims</a>
+          <a href="{{ url_for('simulations_by_subject', slug='physics') }}">Physics</a>
+          <a href="{{ url_for('simulations_by_subject', slug='math') }}">Math &amp; Statistics</a>
+          <a href="{{ url_for('simulations_by_subject', slug='chemistry') }}">Chemistry</a>
+          <a href="{{ url_for('simulations_by_subject', slug='earth-science') }}">Earth &amp; Space</a>
+          <a href="{{ url_for('simulations_by_subject', slug='biology') }}">Biology</a>
+          <hr>
+          <a href="{{ url_for('translations') }}">Translated Sims</a>
+          <a href="{{ url_for('simulations', view='customize') }}">Customizable Sims</a>
+        </div>
+      </div>
+      <div class="nav-item">
+        <a href="#">Studio</a>
+        <div class="nav-dropdown">
+          <a href="#">PhET Studio</a>
+          <a href="#">Build a Custom Sim</a>
+          <a href="#">Developer Docs</a>
+        </div>
+      </div>
+      <div class="nav-item {% if active_nav == 'teachers' %}active{% endif %}">
+        <a href="{{ url_for('teachers') }}">Teaching</a>
+        <div class="nav-dropdown">
+          <a href="{{ url_for('teachers') }}">Teacher Resources</a>
+          <a href="{{ url_for('activities') }}">Activities</a>
+          <a href="{{ url_for('teachers') }}#tips">Quick Tips</a>
+          <a href="{{ url_for('teachers') }}#workshops">Workshops</a>
+        </div>
+      </div>
+      <div class="nav-item">
+        <a href="{{ url_for('about') }}#research">Research</a>
+        <div class="nav-dropdown">
+          <a href="{{ url_for('about') }}#research">PhET Research</a>
+          <a href="{{ url_for('about') }}#publications">Publications</a>
+          <a href="{{ url_for('about') }}#design">Design Process</a>
+        </div>
+      </div>
+      <div class="nav-item">
+        <a href="#">Initiatives</a>
+        <div class="nav-dropdown">
+          <a href="{{ url_for('accessibility') }}">Accessibility</a>
+          <a href="{{ url_for('translations') }}">Global PhET</a>
+          <a href="#">Data Fluency</a>
+          <a href="#">DEIB in STEM Ed</a>
+        </div>
+      </div>
     </nav>
+
     <form class="search-form" action="{{ url_for('search') }}" method="get" role="search">
-      <input type="search" name="q" placeholder="Search simulations" aria-label="Search">
-      <button type="submit">Search</button>
+      <input type="search" name="q" placeholder="Search the PhET Website" aria-label="Search">
+      <button type="submit" aria-label="Search">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+      </button>
     </form>
+
     <div class="user-menu">
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('account') }}" class="user-link">{{ current_user.name }}</a>
-        <a href="{{ url_for('logout') }}" class="user-link muted">Sign out</a>
+        <a href="{{ url_for('account') }}" class="user-link" title="My account">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
       {% else %}
-        <a href="{{ url_for('login') }}" class="user-link">Sign in</a>
-        <a href="{{ url_for('register') }}" class="user-link btn-mini">Sign up</a>
+        <a href="{{ url_for('login') }}" class="user-link" title="Sign in">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        </a>
       {% endif %}
     </div>
   </div>
 </header>
+
+<div class="educator-banner" id="educator-banner">
+  Educators: To receive PhET's monthly newsletter,
+  <a href="{{ url_for('register') }}">register for a free educator account</a>.
+  <button type="button" class="educator-close"
+          onclick="document.getElementById('educator-banner').style.display='none'"
+          aria-label="Dismiss">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+  </button>
+</div>
 
 {% with messages = get_flashed_messages(with_categories=true) %}
   {% if messages %}
@@ -47,53 +108,102 @@
   {% endif %}
 {% endwith %}
 
-<main class="container main">
+{% block hero %}{% endblock %}
+{% block stats %}{% endblock %}
+{% block full_bleed_top %}{% endblock %}
+
+<main class="{% block main_class %}container main{% endblock %}">
   {% block content %}{% endblock %}
 </main>
 
-<footer class="footer">
-  <div class="container footer-inner">
-    <div class="footer-col">
-      <h4>PhET</h4>
+{% block full_bleed_bottom %}{% endblock %}
+
+<div class="footer-top">
+  <div class="footer-social" aria-label="Social media">
+    <a href="#" aria-label="Facebook"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M22 12a10 10 0 1 0-11.6 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.2c-1.2 0-1.6.8-1.6 1.6V12H16l-.4 2.9h-2.2v7A10 10 0 0 0 22 12z"/></svg></a>
+    <a href="#" aria-label="Twitter"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23 4.6a9.5 9.5 0 0 1-2.7.7 4.7 4.7 0 0 0 2.1-2.6 9.4 9.4 0 0 1-3 1.1 4.7 4.7 0 0 0-8 4.3A13.3 13.3 0 0 1 1.7 3.2a4.7 4.7 0 0 0 1.5 6.3 4.7 4.7 0 0 1-2.1-.6v.1a4.7 4.7 0 0 0 3.8 4.6 4.7 4.7 0 0 1-2.1.1 4.7 4.7 0 0 0 4.4 3.3A9.4 9.4 0 0 1 1 19a13.3 13.3 0 0 0 7.2 2.1c8.6 0 13.4-7.2 13.4-13.4v-.6A9.5 9.5 0 0 0 23 4.6z"/></svg></a>
+    <a href="#" aria-label="LinkedIn"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M20 3H4a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1zM8.3 18.3H5.7V9.7h2.6v8.6zM7 8.5a1.5 1.5 0 1 1 0-3 1.5 1.5 0 0 1 0 3zm11.3 9.8h-2.6v-4.2c0-1 0-2.3-1.4-2.3s-1.6 1.1-1.6 2.2v4.3h-2.6V9.7h2.5v1.2h.1c.4-.7 1.2-1.4 2.5-1.4 2.7 0 3.2 1.8 3.2 4v4.8z"/></svg></a>
+    <a href="#" aria-label="Instagram"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.2c3.2 0 3.6 0 4.8.1 1.2 0 1.8.3 2.2.4.6.2 1 .5 1.4 1 .5.4.8.8 1 1.4.2.4.4 1 .4 2.2.1 1.2.1 1.6.1 4.8s0 3.6-.1 4.8c0 1.2-.3 1.8-.4 2.2-.2.6-.5 1-1 1.4-.4.5-.8.8-1.4 1-.4.2-1 .4-2.2.4-1.2.1-1.6.1-4.8.1s-3.6 0-4.8-.1c-1.2 0-1.8-.3-2.2-.4-.6-.2-1-.5-1.4-1-.5-.4-.8-.8-1-1.4-.2-.4-.4-1-.4-2.2-.1-1.2-.1-1.6-.1-4.8s0-3.6.1-4.8c0-1.2.3-1.8.4-2.2.2-.6.5-1 1-1.4.4-.5.8-.8 1.4-1 .4-.2 1-.4 2.2-.4 1.2-.1 1.6-.1 4.8-.1zM12 0C8.7 0 8.3 0 7.1.1 5.9.1 5 .3 4.3.6c-.8.3-1.4.7-2.1 1.4S1.1 3.5.8 4.3c-.3.7-.5 1.6-.6 2.8C.1 8.3 0 8.7 0 12s0 3.7.1 4.9c.1 1.2.3 2.1.6 2.8.3.8.7 1.4 1.4 2.1.7.7 1.3 1.1 2.1 1.4.7.3 1.6.5 2.8.6C8.3 24 8.7 24 12 24s3.7 0 4.9-.1c1.2-.1 2.1-.3 2.8-.6.8-.3 1.4-.7 2.1-1.4.7-.7 1.1-1.3 1.4-2.1.3-.7.5-1.6.6-2.8.1-1.2.1-1.6.1-4.9s0-3.7-.1-4.9c-.1-1.2-.3-2.1-.6-2.8-.3-.8-.7-1.4-1.4-2.1-.7-.7-1.3-1.1-2.1-1.4-.7-.3-1.6-.5-2.8-.6C15.7.1 15.3 0 12 0zm0 5.8a6.2 6.2 0 1 0 0 12.4 6.2 6.2 0 0 0 0-12.4zm0 10.2a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm7.8-10.4a1.4 1.4 0 1 1-2.9 0 1.4 1.4 0 0 1 2.9 0z"/></svg></a>
+    <a href="#" aria-label="YouTube"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2C0 8.1 0 12 0 12s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8zM9.6 15.6V8.4l6.2 3.6-6.2 3.6z"/></svg></a>
+  </div>
+
+  <div class="footer-cols">
+    <div>
       <ul>
         <li><a href="{{ url_for('about') }}">About PhET</a></li>
+        <li><a href="{{ url_for('about') }}#team">Our Team</a></li>
+        <li><a href="{{ url_for('about') }}#supporters">Our Supporters</a></li>
+        <li><a href="{{ url_for('about') }}#partnerships">Partnerships</a></li>
+      </ul>
+    </div>
+    <div>
+      <ul>
         <li><a href="{{ url_for('accessibility') }}">Accessibility</a></li>
-        <li><a href="{{ url_for('translations') }}">Translations</a></li>
+        <li><a href="{{ url_for('about') }}#offline">Offline Access</a></li>
+        <li><a href="{{ url_for('about') }}#help">Help Center</a></li>
+        <li><a href="{{ url_for('about') }}#privacy">Privacy Policy</a></li>
       </ul>
     </div>
-    <div class="footer-col">
-      <h4>Explore</h4>
+    <div>
       <ul>
-        <li><a href="{{ url_for('simulations') }}">All simulations</a></li>
-        {% for subject in primary_subjects %}
-          <li><a href="{{ url_for('simulations_by_subject', slug=subject.slug) }}">{{ subject.name }}</a></li>
-        {% endfor %}
+        <li><a href="{{ url_for('about') }}#source">Source Code</a></li>
+        <li><a href="{{ url_for('about') }}#licensing">Licensing</a></li>
+        <li><a href="{{ url_for('translations') }}">For Translators</a></li>
+        <li><a href="{{ url_for('about') }}#contact">Contact</a></li>
       </ul>
     </div>
-    <div class="footer-col">
-      <h4>For Teachers</h4>
-      <ul>
-        <li><a href="{{ url_for('teachers') }}">Teacher resources</a></li>
-        <li><a href="{{ url_for('activities') }}">Activities</a></li>
-      </ul>
-    </div>
-    <div class="footer-col">
-      <h4>Account</h4>
-      <ul>
-        {% if current_user.is_authenticated %}
+    <div>
+      {% if current_user.is_authenticated %}
+        <ul>
           <li><a href="{{ url_for('account') }}">My account</a></li>
           <li><a href="{{ url_for('logout') }}">Sign out</a></li>
-        {% else %}
-          <li><a href="{{ url_for('login') }}">Sign in</a></li>
-          <li><a href="{{ url_for('register') }}">Create account</a></li>
-        {% endif %}
-      </ul>
+        </ul>
+      {% else %}
+        <ul>
+          <li><a href="{{ url_for('login') }}">Sign In</a></li>
+          <li><a href="{{ url_for('register') }}">Create Account</a></li>
+        </ul>
+      {% endif %}
     </div>
   </div>
-  <div class="container footer-fineprint">
-    &copy; {{ current_year }} PhET Interactive Simulations &middot; University of Colorado Boulder (mirror snapshot for research)
+
+  <div class="footer-lang">
+    <select aria-label="Language">
+      <option>English</option>
+      <option>Español</option>
+      <option>中文 (简体)</option>
+      <option>Français</option>
+      <option>Deutsch</option>
+      <option>日本語</option>
+      <option>한국어</option>
+      <option>العربية</option>
+    </select>
   </div>
-</footer>
+
+  <div class="footer-apps">
+    <a href="#" aria-label="iOS App Store"><img src="{{ url_for('static', filename='images/ui/badge-ios.svg') }}" alt="Download on the App Store"></a>
+    <a href="#" aria-label="Google Play"><img src="{{ url_for('static', filename='images/ui/badge-android.png') }}" alt="Get it on Google Play"></a>
+  </div>
+  <a href="#" class="footer-apps-link">Get Apps for Schools</a>
+</div>
+
+<section class="sponsor-strip" aria-label="Principal sponsors">
+  <div class="sponsor-inner">
+    <img src="{{ url_for('static', filename='images/ui/sponsor-moore.png') }}" alt="Gordon and Betty Moore Foundation">
+    <img src="{{ url_for('static', filename='images/ui/sponsor-hewlett.svg') }}" alt="The William and Flora Hewlett Foundation">
+    <img src="{{ url_for('static', filename='images/ui/sponsor-nsf.png') }}" alt="National Science Foundation">
+    <img src="{{ url_for('static', filename='images/ui/sponsor-mastercard.svg') }}" alt="Mastercard Foundation">
+    <img src="{{ url_for('static', filename='images/ui/sponsor-yidan.png') }}" alt="Yidan Prize Foundation">
+    <div class="sponsor-phet-mark">
+      <img src="{{ url_for('static', filename='images/ui/phet-logo-black.png') }}" alt="PhET">
+      <span>&copy; {{ current_year }}<br>University of Colorado Boulder<br>Some rights reserved</span>
+    </div>
+  </div>
+</section>
+
+<div class="footer-fineprint">
+  Mirror snapshot for research &middot; PhET Interactive Simulations is a project of the University of Colorado Boulder
+</div>
 
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>

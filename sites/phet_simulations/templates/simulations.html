@@ -1,68 +1,206 @@
 {% extends "base.html" %}
-{% block title %}All Simulations &middot; {{ site_title }}{% endblock %}
+{% block title %}Simulations &middot; {{ site_title }}{% endblock %}
+
+{% block hero %}
+<section class="browse-hero">
+  <h1>Simulations</h1>
+</section>
+{% endblock %}
+
+{% block stats %}
+<div class="browse-subtabs">
+  <a class="browse-subtab {% if view_tab == 'browse' %}active{% endif %}"
+     href="{{ url_for('simulations', view='browse') }}">Browse</a>
+  <a class="browse-subtab {% if view_tab == 'filter' %}active{% endif %}"
+     href="{{ url_for('simulations') }}">Filter</a>
+  <a class="browse-subtab {% if view_tab == 'customize' %}active{% endif %}"
+     href="{{ url_for('simulations', view='customize') }}">Customize</a>
+</div>
+{% endblock %}
+
+{% block main_class %}{% endblock %}
+
 {% block content %}
-<h1 class="page-title">All Simulations</h1>
-<p class="page-subtitle">{{ total }} simulation{{ '' if total == 1 else 's' }} matching your filters.</p>
 
-<form class="filter-bar" method="get" action="{{ url_for('simulations') }}">
-  <label>
-    Subject
-    <select name="subject">
-      <option value="">All subjects</option>
-      {% for s in primary_subjects %}
-        <option value="{{ s.slug }}" {% if s.slug == subject %}selected{% endif %}>{{ s.name }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <label>
-    Grade level
-    <select name="grade">
-      <option value="">All grade levels</option>
-      {% for g in grade_levels %}
-        <option value="{{ g.slug }}" {% if g.slug == grade %}selected{% endif %}>{{ g.name }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <label>
-    Language
-    <select name="language">
-      <option value="">Any language</option>
-      {% for l in languages %}
-        <option value="{{ l.code }}" {% if l.code == language %}selected{% endif %}>{{ l.name }}</option>
-      {% endfor %}
-    </select>
-  </label>
-  <label>
-    Sort by
-    <select name="sort">
-      <option value="title" {% if sort == 'title' %}selected{% endif %}>Title (A-Z)</option>
-      <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
-      <option value="popular" {% if sort == 'popular' %}selected{% endif %}>Most played</option>
-    </select>
-  </label>
-  <button type="submit" class="btn btn-primary">Apply filters</button>
-  <a href="{{ url_for('simulations') }}" class="btn btn-ghost">Reset</a>
-</form>
+{% if view_tab == 'filter' %}
+  {# === Filter mode: left sidebar + filtered results === #}
+  <div class="browse-layout">
+    <aside class="filter-sidebar">
+      <form method="get" action="{{ url_for('simulations') }}">
+        <input type="hidden" name="view" value="filter">
 
-{% if sims %}
-  <div class="sim-grid">
-    {% for sim in sims %}
-      {% include "_sim_card.html" %}
-    {% endfor %}
+        <details class="filter-group" open>
+          <summary>Subject</summary>
+          {% set subject_tree = [
+            ('physics', 'Physics', ['Motion', 'Sound & Waves', 'Work, Energy & Power',
+                                    'Quantum Phenomena', 'Light & Radiation',
+                                    'Electricity, Magnets & Circuits']),
+            ('math', 'Math & Statistics', ['Numbers', 'Quantum Mathematics', 'Math Applications']),
+            ('chemistry', 'Chemistry', ['General Chemistry', 'Quantum Chemistry']),
+            ('earth-science', 'Earth & Space', []),
+            ('biology', 'Biology', []),
+          ] %}
+          <ul>
+            {% for slug, name, subtopics in subject_tree %}
+              <li>
+                <label>
+                  <input type="checkbox" name="subject" value="{{ slug }}"
+                    {% if slug == subject %}checked{% endif %}>
+                  {{ name }}
+                </label>
+                {% if subtopics %}
+                  <div class="sub-group">
+                    {% for topic in subtopics %}
+                      <label>
+                        <input type="checkbox" name="topic" value="{{ topic|lower|replace(' ', '-')|replace(',', '')|replace('&', 'and') }}">
+                        {{ topic }}
+                      </label>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        </details>
+
+        <details class="filter-group" open>
+          <summary>Grade Level</summary>
+          <ul>
+            {% for g in grade_levels %}
+              <li>
+                <label>
+                  <input type="checkbox" name="grade" value="{{ g.slug }}"
+                    {% if g.slug == grade %}checked{% endif %}>
+                  {{ g.name }}
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+        </details>
+
+        <details class="filter-group">
+          <summary>Compatibility</summary>
+          <ul>
+            <li><label><input type="checkbox" name="compat" value="html5" checked> HTML5</label></li>
+            <li><label><input type="checkbox" name="compat" value="ipad"> iPad</label></li>
+            <li><label><input type="checkbox" name="compat" value="chromebook"> Chromebook</label></li>
+          </ul>
+        </details>
+
+        <details class="filter-group">
+          <summary>Release Type</summary>
+          <ul>
+            <li><label><input type="checkbox" name="release" value="new"> New</label></li>
+            <li><label><input type="checkbox" name="release" value="updated"> Recently updated</label></li>
+          </ul>
+        </details>
+
+        <details class="filter-group">
+          <summary>Inclusive Features</summary>
+          <ul>
+            <li><label><input type="checkbox" name="inclusive" value="alternative-input"> Alternative Input</label></li>
+            <li><label><input type="checkbox" name="inclusive" value="pan-zoom"> Pan and Zoom</label></li>
+            <li><label><input type="checkbox" name="inclusive" value="interactive-highlights"> Interactive Highlights</label></li>
+          </ul>
+        </details>
+
+        <details class="filter-group">
+          <summary>Locale</summary>
+          <ul style="max-height: 180px; overflow-y: auto;">
+            {% for l in languages[:25] %}
+              <li>
+                <label>
+                  <input type="checkbox" name="language" value="{{ l.code }}"
+                    {% if l.code == language %}checked{% endif %}>
+                  {{ l.name }}
+                </label>
+              </li>
+            {% endfor %}
+          </ul>
+        </details>
+
+        <button type="submit" class="filter-clear" style="background: var(--phet-magenta); color: #fff; border: 0;">Apply</button>
+        <a href="{{ url_for('simulations', view='filter') }}" class="filter-clear">Clear filters</a>
+      </form>
+    </aside>
+
+    <div class="browse-results">
+      <div class="browse-results-head">
+        <span class="results-count">{{ total }} result{{ '' if total == 1 else 's' }}</span>
+        <div class="results-active-chips">
+          {% if subject %}
+            <span class="results-chip">
+              {{ subject|upper }}
+              <a href="{{ url_for('simulations', view='filter', grade=grade, language=language, sort=sort) }}" aria-label="Clear">&times;</a>
+            </span>
+          {% endif %}
+          {% if grade %}
+            <span class="results-chip">
+              {{ grade|upper }}
+              <a href="{{ url_for('simulations', view='filter', subject=subject, language=language, sort=sort) }}" aria-label="Clear">&times;</a>
+            </span>
+          {% endif %}
+          {% if language %}
+            <span class="results-chip">
+              {{ language|upper }}
+              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, sort=sort) }}" aria-label="Clear">&times;</a>
+            </span>
+          {% endif %}
+        </div>
+        <div class="results-sort">
+          <label>Sort by</label>
+          <select onchange="window.location.href=this.value">
+            {% set base = url_for('simulations', view='filter', subject=subject, grade=grade, language=language) %}
+            <option value="{{ base }}&sort=newest"   {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+            <option value="{{ base }}&sort=title"    {% if sort == 'title' %}selected{% endif %}>Title (A-Z)</option>
+            <option value="{{ base }}&sort=popular"  {% if sort == 'popular' %}selected{% endif %}>Most played</option>
+          </select>
+        </div>
+      </div>
+
+      {% if sims %}
+        <div class="sim-grid">
+          {% for sim in sims %}{% include "_sim_card.html" %}{% endfor %}
+        </div>
+        {% if total_pages > 1 %}
+          <nav class="pager" aria-label="Pagination">
+            {% if page > 1 %}
+              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, sort=sort, page=page-1) }}">&laquo; Previous</a>
+            {% endif %}
+            <span class="pager-status">Page {{ page }} of {{ total_pages }}</span>
+            {% if page < total_pages %}
+              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, sort=sort, page=page+1) }}">Next &raquo;</a>
+            {% endif %}
+          </nav>
+        {% endif %}
+      {% else %}
+        <p class="empty-state">No simulations match the selected filters.</p>
+      {% endif %}
+    </div>
   </div>
 
-  {% if total_pages > 1 %}
-    <nav class="pager" aria-label="Pagination">
-      {% if page > 1 %}
-        <a href="{{ url_for('simulations', subject=subject, grade=grade, language=language, sort=sort, page=page-1) }}">&laquo; Previous</a>
-      {% endif %}
-      <span class="pager-status">Page {{ page }} of {{ total_pages }}</span>
-      {% if page < total_pages %}
-        <a href="{{ url_for('simulations', subject=subject, grade=grade, language=language, sort=sort, page=page+1) }}">Next &raquo;</a>
-      {% endif %}
-    </nav>
-  {% endif %}
 {% else %}
-  <p class="empty-state">No simulations match the selected filters. Try clearing one of the filters above.</p>
+  {# === Browse mode: grouped by subject (real PhET default) === #}
+  <div class="container">
+    {% for slug, name in [('physics', 'Physics'), ('math', 'Math & Statistics'),
+                          ('chemistry', 'Chemistry'), ('earth-science', 'Earth & Space'),
+                          ('biology', 'Biology')] %}
+      {% set bucket = sims_by_subject.get(slug, []) %}
+      {% if bucket %}
+        <section class="subject-section">
+          <div class="subject-section-head">
+            <h2>{{ name }}</h2>
+            <a class="more" href="{{ url_for('simulations_by_subject', slug=slug) }}">View all &raquo;</a>
+          </div>
+          <div class="sim-grid">
+            {% for sim in bucket %}
+              {% include "_sim_card.html" %}
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    {% endfor %}
+  </div>
 {% endif %}
+
 {% endblock %}
