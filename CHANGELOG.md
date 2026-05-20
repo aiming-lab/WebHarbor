@@ -4,6 +4,10 @@
 - **Added**: Comprehensive high-quality professional biographies for 74 YC staff members.
 - **Added**: Local asset harvesting for all 94 YC staff profile photos to support fully offline environments.
 - **Fixed**: Isolated `/people` page to only display actual YC staff using new `is_staff` column, resolving issue where 700+ unrelated startup founders were incorrectly listed as YC team members.
+- **Added**: Created and verified a 5.91 GB reproducible Docker image `webharbor:dev` passing all 16 site responses (200 OK) and strict byte-identical reset invariants (matching MD5 sums perfectly).
+- **Added**: Packaged all 16 site assets (2.7 GB) and pushed them successfully to user fork repository `winterandchaiyun/WebHarbor`.
+- **Added**: Opened Hugging Face Pull Request #20 (`https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/20`) on `ChilleD/WebHarbor` and uploaded the files directly into the `refs/pr/20` branch.
+
 
 ## [Unreleased] - 2026-05-19
 - **Fixed**: Tagline accuracy on home page (Twice -> Four times).

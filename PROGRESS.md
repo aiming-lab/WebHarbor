@@ -20,7 +20,8 @@
 - Implemented a smooth infinite-scrolling logo strip with hover effects.
 - Successfully downloaded all 94 YC staff member photos locally to ensure fully offline compatability, and generated concise professional bios to replace all `None` entries.
 - Resolved founder-staff mixing bug: isolated `/people` page to render exactly 94 real staff members using `is_staff=True` attribute.
+- Built `webharbor:dev` Docker image successfully (5.91 GB), validated all 16 mirrored sites render `200 OK` on alt ports, and verified perfect byte-identical database reset checks.
+- Staged all 16 site asset tarballs under `scratch/staging` and pushed them to fork repository `winterandchaiyun/WebHarbor`.
+- Successfully initialized Pull Request #20 (`https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/20`) and committed all 16 tarball assets to its `refs/pr/20` branch on Hugging Face.
 
 ## Next Steps
-- Complete the pre-PR docker build and byte-identity reset checks.
-- Launch the WebHarbor docker environment on local ports to show the user.
