@@ -1,11 +1,8 @@
 # Skills & Learnings
 
-- **YC Modernization**: Live YC site has moved to a "Four times a year" investment model (from the classic Twice a year).
-- **Tech Stack Observation**: Live YC site is a React/Inertia SPA using Tailwind and custom Google Fonts (Source Serif 4, DM Sans).
-- **Scraping Caveats**: React-rendered pages often require deep prop inspection (`data-page` attribute) to find the "source of truth" for directory lists.
-- **Font Audit**: Premium fonts like `Outfit` might be suggested by LLMs for "modern" looks, but actual live site verification (CSS inspection) is necessary to ensure accuracy.
-- **Search Optimization**: Token-overlap search benefits significantly from weight-biasing (name > description) and including secondary fields like founders.
-- **WSL2/Host Connectivity**: Flask apps in WSL2 must bind to `0.0.0.0` to be reachable from the Windows host browser (Edge).
-- **Remote Debugging Protocol (CDP)**: When Playwright cannot launch a browser directly (due to WSL2/Windows path issues), connecting over CDP to a host instance is a robust workaround.
-- **Algolia Interception**: For sites that use Algolia or other client-side search APIs, intercepting the network response during a live session is often more efficient than scraping the DOM, especially for high-volume directory data.
-- **Inertia.js Hydration**: While `data-page` often contains the initial data, it is sometimes intentionally kept thin (e.g. just metadata) with the actual content fetched asynchronously via API calls.
+- **React/Inertia Data Extraction**: When scraping, if the page data is not directly in the DOM, check `div[data-page]` for a JSON blob containing the props used to render the React components.
+- **Data Mapping Schema**: Scraped founder data often uses field names (`full_name`, `founder_bio`) that differ from local database expectations (`name`, `bio`). Explicit mapping in the scraping script is required.
+- **Slug Generation**: When a unique identifier like a slug is missing from the scraped payload, generating it reliably using `slugify(full_name)` is crucial for matching records correctly.
+- **Database-Level Data Isolation (Staff vs. Founders)**: Sloppy implicit filtering (e.g. querying founders with `company_id == None`) can pull hundreds of unrelated startup founders whose companies are not linked, rather than actual staff. Introducing an explicit `is_staff` boolean column resolved this with clean isolation.
+- **Offline Resiliency & Asset Harvesting**: To build fully offline web mirrors for benchmarking, external assets like user avatars cannot be referenced via live CDNs. An asynchronous download pipeline running at build-time is required to harvest assets locally to `static/images/` and map them via a `local_img` field.
+"""

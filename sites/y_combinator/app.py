@@ -42,6 +42,7 @@ class Founder(db.Model):
     local_img = db.Column(db.String(200))
     slug = db.Column(db.String(100), unique=True)
     company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
+    is_staff = db.Column(db.Boolean, default=False)
 
 class FAQ(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -277,8 +278,8 @@ def apply():
 
 @app.route('/people')
 def people():
-    # YC Staff are those who don't have a company_id OR have a specific bio/title indicating YC role
-    staff = Founder.query.filter((Founder.company_id == None) | (Founder.title.ilike('%Partner%')) | (Founder.title.ilike('%CEO%')) | (Founder.title.ilike('%YC%'))).all()
+    # YC Staff are marked with is_staff=True in the database
+    staff = Founder.query.filter_by(is_staff=True).all()
     return render_template('people.html', founders=staff)
 
 @app.route('/investors')

@@ -106,7 +106,10 @@ def enrich():
             db.session.commit()
 
         # 3. Process People (YC Staff)
-        people_path = os.path.join(SCRAPED_DIR, 'people_data.json')
+        people_path = os.path.join(SCRAPED_DIR, 'people_enriched.json')
+        if not os.path.exists(people_path):
+            people_path = os.path.join(SCRAPED_DIR, 'people_data.json')
+            
         if os.path.exists(people_path):
             print("Processing YC staff...")
             with open(people_path, 'r') as f:
@@ -130,11 +133,16 @@ def enrich():
                                 title=p.get('title'),
                                 bio=bio,
                                 image_url=p.get('photo'),
-                                company_id=None
+                                local_img=p.get('local_img'),
+                                company_id=None,
+                                is_staff=True
                             )
                             db.session.add(staff)
                         else:
-                            if not existing.bio:
+                            existing.is_staff = True
+                            if p.get('local_img'):
+                                existing.local_img = p.get('local_img')
+                            if bio:
                                 existing.bio = bio
             db.session.commit()
 

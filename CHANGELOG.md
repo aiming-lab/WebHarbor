@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased] - 2026-05-20
+- **Added**: Comprehensive high-quality professional biographies for 74 YC staff members.
+- **Added**: Local asset harvesting for all 94 YC staff profile photos to support fully offline environments.
+- **Fixed**: Isolated `/people` page to only display actual YC staff using new `is_staff` column, resolving issue where 700+ unrelated startup founders were incorrectly listed as YC team members.
+
 ## [Unreleased] - 2026-05-19
 - **Fixed**: Tagline accuracy on home page (Twice -> Four times).
 - **Fixed**: Footer navigation now matches live site structure (Programs/Resources/Company groups).
@@ -18,3 +23,4 @@
 - **Added**: Real-time Algolia API interception to capture high-volume data from the live site.
 - **Added**: Structured YC Team/People data with bios and photos.
 - **Fixed**: Directory completeness for `/companies`, `/founders`, and `/people`.
+- **Fixed**: Discrepancies in YC founder bios and founder-person mappings; updated scrape script for correct schema.

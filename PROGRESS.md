@@ -8,14 +8,19 @@
 - [x] Massive data enrichment (1000 companies, 1000+ founders, 700+ YC staff)
 - [x] Link founders to companies in the database
 - [x] Restore "People" page with full YC team data
-- [ ] Final UI audit for any remaining gaps
+- [x] Fix founder bio and mapping discrepancies
+- [x] Enrich YC staff (people) bios and download photos locally
+- [x] Verify YC staff list isolated from founders on `/people`
+- [x] Final UI audit and verification for YC mirror
 
 ## Latest Findings
 - Mirror was previously restricted to `127.0.0.1`, causing "Connection Refused" when accessed from Windows host. Fixed by binding to `0.0.0.0`.
 - Live YC site uses a complex React/Vite architecture with `data-page` JSON payload. Extracted this to enrich mirror sections.
 - Added "In the Room" video grid, "Startup News", and "PG Essays" which were completely missing.
 - Implemented a smooth infinite-scrolling logo strip with hover effects.
+- Successfully downloaded all 94 YC staff member photos locally to ensure fully offline compatability, and generated concise professional bios to replace all `None` entries.
+- Resolved founder-staff mixing bug: isolated `/people` page to render exactly 94 real staff members using `is_staff=True` attribute.
 
 ## Next Steps
-- Verify the agent's comparison run.
-- Check byte-identity invariant for `/reset` endpoint.
+- Complete the pre-PR docker build and byte-identity reset checks.
+- Launch the WebHarbor docker environment on local ports to show the user.

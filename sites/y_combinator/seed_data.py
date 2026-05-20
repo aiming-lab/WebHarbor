@@ -138,9 +138,9 @@ def seed_deep_sections(db, Founder, Launch, LegalDocument):
     with open(DEEP_SECTIONS, 'r') as f:
         data = json.load(f)
 
-    for item in data.get('founders', []) + data.get('people', []):
+    for item in data.get('founders', []):
         f_slug = get_unique_slug(Founder, item['name'])
-        existing = Founder.query.filter_by(name=item['name']).first() # Use name for matching
+        existing = Founder.query.filter_by(name=item['name']).first()
         if not existing:
             db.session.add(Founder(
                 name=item['name'],
@@ -149,9 +149,27 @@ def seed_deep_sections(db, Founder, Launch, LegalDocument):
                 bio=item.get('bio', f"Founder of {item.get('company')}")
             ))
         else:
-            # Update bio if the new one is better
             new_bio = item.get('bio')
             if new_bio and (not existing.bio or "Founder of" in existing.bio):
+                existing.bio = new_bio
+            if item.get('title'):
+                existing.title = item.get('title')
+
+    for item in data.get('people', []):
+        f_slug = get_unique_slug(Founder, item['name'])
+        existing = Founder.query.filter_by(name=item['name']).first()
+        if not existing:
+            db.session.add(Founder(
+                name=item['name'],
+                title=item.get('title'),
+                slug=f_slug,
+                bio=item.get('bio', "Team Member at Y Combinator"),
+                is_staff=True
+            ))
+        else:
+            existing.is_staff = True
+            new_bio = item.get('bio')
+            if new_bio and (not existing.bio or "Founder of" in existing.bio or "Team Member" in existing.bio):
                 existing.bio = new_bio
             if item.get('title'):
                 existing.title = item.get('title')
