@@ -7,6 +7,7 @@
 - **Added**: Created and verified a 5.91 GB reproducible Docker image `webharbor:dev` passing all 16 site responses (200 OK) and strict byte-identical reset invariants (matching MD5 sums perfectly).
 - **Added**: Packaged all 16 site assets (2.7 GB) and pushed them successfully to user fork repository `winterandchaiyun/WebHarbor`.
 - **Added**: Opened Hugging Face Pull Request #20 (`https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/20`) on `ChilleD/WebHarbor` and uploaded the files directly into the `refs/pr/20` branch.
+- **Added**: Opened GitHub Pull Request #31 (`https://github.com/aiming-lab/WebHarbor/pull/31`) targeting the main repository to merge all database schema changes, scrapers, documentation updates, and YC Mirror enrichments.
 
 
 ## [Unreleased] - 2026-05-19

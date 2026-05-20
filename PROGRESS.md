@@ -24,4 +24,9 @@
 - Staged all 16 site asset tarballs under `scratch/staging` and pushed them to fork repository `winterandchaiyun/WebHarbor`.
 - Successfully initialized Pull Request #20 (`https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/20`) and committed all 16 tarball assets to its `refs/pr/20` branch on Hugging Face.
 
-## Next Steps
+- [x] Open GitHub Pull Request (Created PR #31 targeting `aiming-lab/WebHarbor:main`).
+
+## Next Steps for Merging & Maintenance
+1. **Maintainer Review & Merge on Hugging Face**: Keep track of [Hugging Face PR #20](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/20) on `ChilleD/WebHarbor`. Once approved and merged, fetch the latest merged commit SHA of the HF dataset repository.
+2. **Bump `.assets-revision`**: Update the `.assets-revision` file in this repository with the merged HF commit SHA, commit the change, and push it directly to the repository branch to ensure perfect synchronization.
+3. **Upstream PR Merge**: The maintainers of `aiming-lab/WebHarbor` will review and merge [GitHub Pull Request #31](https://github.com/aiming-lab/WebHarbor/pull/31).
