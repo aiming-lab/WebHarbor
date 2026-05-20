@@ -8,6 +8,7 @@
 - **Added**: Packaged all 16 site assets (2.7 GB) and pushed them successfully to user fork repository `winterandchaiyun/WebHarbor`.
 - **Added**: Opened Hugging Face Pull Request #20 (`https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/20`) on `ChilleD/WebHarbor` and uploaded the files directly into the `refs/pr/20` branch.
 - **Added**: Opened GitHub Pull Request #31 (`https://github.com/aiming-lab/WebHarbor/pull/31`) targeting the main repository to merge all database schema changes, scrapers, documentation updates, and YC Mirror enrichments.
+- **Added**: Enriched the developer onboarding guide (`AGENTS.md`) with 8 highly detailed architectural lessons learned and best practices (including 0.0.0.0 binding, Dockerignore size optimization, Playwright image-load custom check integrations, and port collision handling).
 
 
 ## [Unreleased] - 2026-05-19

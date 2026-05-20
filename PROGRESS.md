@@ -25,6 +25,7 @@
 - Successfully initialized Pull Request #20 (`https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/20`) and committed all 16 tarball assets to its `refs/pr/20` branch on Hugging Face.
 
 - [x] Open GitHub Pull Request (Created PR #31 targeting `aiming-lab/WebHarbor:main`).
+- [x] Document comprehensive multi-dimensional lessons learned and best practices to `AGENTS.md` developer guide.
 
 ## Next Steps for Merging & Maintenance
 1. **Maintainer Review & Merge on Hugging Face**: Keep track of [Hugging Face PR #20](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/20) on `ChilleD/WebHarbor`. Once approved and merged, fetch the latest merged commit SHA of the HF dataset repository.
