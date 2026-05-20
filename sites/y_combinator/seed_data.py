@@ -79,7 +79,7 @@ def seed_database(db, Company, Founder):
     print(f"Seeded {len(all_data)} companies.")
 
 def seed_benchmark_users(db, User, bcrypt):
-    if User.query.filter_by(email='alice.j@test.com').first():
+    if User.query.count() > 0:
         return
     
     users = [
@@ -138,16 +138,23 @@ def seed_deep_sections(db, Founder, Launch, LegalDocument):
     with open(DEEP_SECTIONS, 'r') as f:
         data = json.load(f)
 
-    for item in data.get('founders', []):
+    for item in data.get('founders', []) + data.get('people', []):
         f_slug = get_unique_slug(Founder, item['name'])
-        existing = Founder.query.filter_by(slug=f_slug).first()
+        existing = Founder.query.filter_by(name=item['name']).first() # Use name for matching
         if not existing:
             db.session.add(Founder(
                 name=item['name'],
                 title=item.get('title'),
                 slug=f_slug,
-                bio=f"Founder of {item.get('company')}"
+                bio=item.get('bio', f"Founder of {item.get('company')}")
             ))
+        else:
+            # Update bio if the new one is better
+            new_bio = item.get('bio')
+            if new_bio and (not existing.bio or "Founder of" in existing.bio):
+                existing.bio = new_bio
+            if item.get('title'):
+                existing.title = item.get('title')
 
     for item in data.get('launches', []):
         l_slug = get_unique_slug(Launch, item['title'])
@@ -186,7 +193,10 @@ def seed_ultra_sections(db, StaticPage):
         "press": "Press",
         "contact": "Contact",
         "legal": "Legal",
-        "software": "Software Careers"
+        "software": "Software Careers",
+        "rfs": "Requests for Startups",
+        "investors": "For Investors",
+        "people": "People at YC"
     }
 
     for slug, content in data.items():

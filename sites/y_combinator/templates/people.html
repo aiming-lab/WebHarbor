@@ -1,11 +1,31 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>People at YC</h1>
-<p>YC is run by a small team of partners and employees who are dedicated to helping startups succeed.</p>
-
-<div class="team-grid">
-    <!-- This would normally be seeded from another JSON or model -->
-    <p>Our team includes experienced entrepreneurs, engineers, and designers who have built and scaled successful companies.</p>
+<div class="people-page" style="max-width: 1000px; margin: 0 auto; padding: 40px 20px;">
+    <h1>People</h1>
+    <p style="font-size: 1.2em; color: #666; margin-bottom: 40px;">YC is run by a team dedicated to helping startups succeed.</p>
+    
+    <div class="people-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 30px;">
+        {% for person in founders %}
+            <div class="person-card" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div style="width: 80px; height: 80px; background: #eee; border-radius: 50%; margin-bottom: 15px; overflow: hidden;">
+                    {% if person.local_img %}
+                        <img src="{{ url_for('static', filename='images/' + person.local_img) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% elif person.image_url %}
+                        <img src="{{ person.image_url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                    {% endif %}
+                </div>
+                <h3 style="margin: 0 0 5px 0;"><a href="{{ url_for('founder_detail', slug=person.slug) }}">{{ person.name }}</a></h3>
+                <p style="font-size: 0.9em; color: #ff6600; margin-bottom: 10px;">{{ person.title }}</p>
+                <p style="font-size: 0.85em; line-height: 1.4;">
+                    {% if person.bio and person.bio != 'None' %}
+                        {{ person.bio }}
+                    {% else %}
+                        {{ person.title or 'Team Member' }} at Y Combinator.
+                    {% endif %}
+                </p>
+            </div>
+        {% endfor %}
+    </div>
 </div>
 {% endblock %}

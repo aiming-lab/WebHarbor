@@ -29,12 +29,13 @@ def main():
     except OSError:
         pass
 
+    base_dir = '/opt/WebSyn' if os.path.exists('/opt/WebSyn') else '/home/winterandchaiyun/misc/WebHarbor/sites'
     child = subprocess.Popen(
         ['python3', '-c',
          f"from app import app; "
          f"app.run(host='0.0.0.0', port={port}, "
          f"debug=False, use_reloader=False, threaded=True)"],
-        cwd=f'/opt/WebSyn/{site}',
+        cwd=f'{base_dir}/{site}',
     )
 
     def shutdown(signum, frame):

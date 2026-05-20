@@ -1,8 +1,11 @@
-# Skill Learnings - y_combinator Mirror
+# Skills & Learnings
 
-## Learnings
-- **Circular Imports in Flask/SQLAlchemy**: Encountered a circular import when `app.py` imported `seed_data.py` which imported from `app.py`. Solved by refactoring `seed_data.py` to accept `db` and models as arguments instead of importing them, and importing seed functions inside `app.app_context()` in `app.py`.
-- **Playwright Scraper Performance**: YC website uses heavy JS and `wait_for_selector` with `.directory-list a` was timing out. Switched to `a[href^='/companies/']` which was more reliable.
-- **Data Enrichment Strategy**: Seeding all 119 scraped companies as distractors while providing full details for a subset (20) creates a more realistic environment for agents.
-- **Search Scoring**: A simple token-overlap score with bonus for name matches significantly improves the reliability of "Find X" tasks compared to a simple `contains` query.
-- **Docker Reset Invariant**: Using `md5sum` on the sqlite database before and after a reset (via `control_server.py`) is an effective way to guarantee byte-identical environment resets.
+- **YC Modernization**: Live YC site has moved to a "Four times a year" investment model (from the classic Twice a year).
+- **Tech Stack Observation**: Live YC site is a React/Inertia SPA using Tailwind and custom Google Fonts (Source Serif 4, DM Sans).
+- **Scraping Caveats**: React-rendered pages often require deep prop inspection (`data-page` attribute) to find the "source of truth" for directory lists.
+- **Font Audit**: Premium fonts like `Outfit` might be suggested by LLMs for "modern" looks, but actual live site verification (CSS inspection) is necessary to ensure accuracy.
+- **Search Optimization**: Token-overlap search benefits significantly from weight-biasing (name > description) and including secondary fields like founders.
+- **WSL2/Host Connectivity**: Flask apps in WSL2 must bind to `0.0.0.0` to be reachable from the Windows host browser (Edge).
+- **Remote Debugging Protocol (CDP)**: When Playwright cannot launch a browser directly (due to WSL2/Windows path issues), connecting over CDP to a host instance is a robust workaround.
+- **Algolia Interception**: For sites that use Algolia or other client-side search APIs, intercepting the network response during a live session is often more efficient than scraping the DOM, especially for high-volume directory data.
+- **Inertia.js Hydration**: While `data-page` often contains the initial data, it is sometimes intentionally kept thin (e.g. just metadata) with the actual content fetched asynchronously via API calls.
