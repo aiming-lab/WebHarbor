@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Y Combinator{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=Source+Serif+4:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="{{ url_for('index') }}">
+                    <img src="{{ url_for('static', filename='icons/yc-logo.png') }}" alt="YC Logo">
+                </a>
+            </div>
+            <ul>
+                <li><a href="{{ url_for('about') }}">About</a></li>
+                <li><a href="{{ url_for('apply') }}">Apply</a></li>
+                <li><a href="{{ url_for('faq') }}">FAQ</a></li>
+                <li><a href="{{ url_for('companies') }}">Companies</a></li>
+                <li><a href="{{ url_for('founders') }}">Founders</a></li>
+                <li><a href="{{ url_for('launches') }}">Launches</a></li>
+                <li><a href="{{ url_for('library') }}">Library</a></li>
+                <li><a href="{{ url_for('people') }}">People</a></li>
+                <li><a href="{{ url_for('blog') }}">Blog</a></li>
+                <li><a href="{{ url_for('documents') }}">SAFE</a></li>
+                {% if current_user.is_authenticated %}
+                    <li><a href="{{ url_for('logout') }}">Logout</a></li>
+                {% else %}
+                    <li><a href="{{ url_for('login') }}">Login</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </header>
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <div class="footer-links" style="display: grid; grid-template-columns: repeat(3, 1fr); text-align: left; max-width: 1000px; margin: 40px auto 20px; border-top: 1px solid #eee; padding-top: 40px; gap: 40px;">
+            <div class="footer-group">
+                <h3 style="font-family: var(--font-sans); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; color: #888; margin-bottom: 15px;">Programs</h3>
+                <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.8;">
+                    <li><a href="{{ url_for('about') }}">YC Program</a></li>
+                    <li><a href="https://www.startupschool.org">Startup School</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='jobs') }}">Work at a Startup</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='cofounder') }}">Co-Founder Matching</a></li>
+                </ul>
+            </div>
+            <div class="footer-group">
+                <h3 style="font-family: var(--font-sans); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; color: #888; margin-bottom: 15px;">Resources</h3>
+                <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.8;">
+                    <li><a href="{{ url_for('companies') }}">Startup Directory</a></li>
+                    <li><a href="{{ url_for('library') }}">Startup Library</a></li>
+                    <li><a href="{{ url_for('investors') }}">Investors</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='demoday') }}">Demo Day</a></li>
+                    <li><a href="{{ url_for('documents') }}">SAFE</a></li>
+                    <li><a href="https://news.ycombinator.com">Hacker News</a></li>
+                    <li><a href="{{ url_for('launches') }}">Launch YC</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='yc-deals') }}">YC Deals</a></li>
+                </ul>
+            </div>
+            <div class="footer-group">
+                <h3 style="font-family: var(--font-sans); text-transform: uppercase; font-size: 0.8rem; letter-spacing: 0.05em; color: #888; margin-bottom: 15px;">Company</h3>
+                <ul style="list-style: none; padding: 0; margin: 0; line-height: 1.8;">
+                    <li><a href="{{ url_for('blog') }}">YC Blog</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='contact') }}">Contact</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='press') }}">Press</a></li>
+                    <li><a href="{{ url_for('people') }}">People</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='jobs') }}">Careers</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='legal') }}">Privacy Policy</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='legal') }}">Terms of Use</a></li>
+                </ul>
+            </div>
+        </div>
+        <p style="margin: 40px 0 20px; font-size: 0.9rem; color: #888; text-align: center;">&copy; 2026 Y Combinator</p>
+    </footer>
+</body>
+</html>

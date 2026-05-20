@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Founder Directory</h1>
+<div class="founder-grid">
+    {% for founder in founders %}
+        <div class="founder-card" style="margin-bottom: 20px; padding: 15px; background: white; border-radius: 8px; display: flex; gap: 15px;">
+            <div style="width: 60px; height: 60px; background: #eee; border-radius: 50%; overflow: hidden; flex-shrink: 0;">
+                {% if founder.local_img %}
+                    <img src="{{ url_for('static', filename='images/' + founder.local_img) }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% elif founder.image_url %}
+                    <img src="{{ founder.image_url }}" style="width: 100%; height: 100%; object-fit: cover;">
+                {% endif %}
+            </div>
+            <div>
+                <h3 style="margin: 0;"><a href="{{ url_for('founder_detail', slug=founder.slug) }}">{{ founder.name }}</a></h3>
+                <p class="title" style="color: #ff6600; font-size: 0.9em; margin-bottom: 5px;">{{ founder.title }}</p>
+                <p class="bio" style="font-size: 0.85em;">
+                    {% if founder.bio and founder.bio != 'None' %}
+                        {{ founder.bio[:200] + '...' if founder.bio|length > 200 else founder.bio }}
+                    {% else %}
+                        No bio available.
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

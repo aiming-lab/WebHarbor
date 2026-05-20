@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>YC Startup Directory</h1>
+
+<div style="display: flex; gap: 30px; margin-top: 20px;">
+    <!-- Sidebar Filters -->
+    <aside style="width: 250px; flex-shrink: 0;">
+        <form action="{{ url_for('companies') }}" method="GET" class="filter-form" style="background: white; padding: 20px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="margin-bottom: 20px;">
+                <input type="text" name="q" value="{{ q }}" placeholder="Search companies..." style="width: 100%; padding: 8px; box-sizing: border-box; margin-bottom: 10px;">
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Batch</label>
+                <select name="batch" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                    <option value="">All Batches</option>
+                    {% for b in all_batches %}
+                        <option value="{{ b }}" {% if b == current_batch %}selected{% endif %}>{{ b }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div style="margin-bottom: 20px;">
+                <label style="font-weight: bold; display: block; margin-bottom: 5px;">Industry</label>
+                <select name="industry" style="width: 100%; padding: 8px; box-sizing: border-box;">
+                    <option value="">All Industries</option>
+                    {% for ind in all_industries %}
+                        <option value="{{ ind }}" {% if ind == current_industry %}selected{% endif %}>{{ ind }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" style="width: 100%; padding: 10px; background: #ff6600; color: white; border: none; border-radius: 4px; cursor: pointer;">Apply Filters</button>
+        </form>
+    </aside>
+
+    <!-- Results -->
+    <div class="company-list" style="flex-grow: 1;">
+        {% for company in companies %}
+            <div class="company-card" style="margin-bottom: 15px;">
+                {% if company.local_logo %}
+                    <img src="{{ url_for('static', filename='images/' + company.local_logo) }}" alt="{{ company.name }} logo">
+                {% elif company.logo_url %}
+                    <img src="{{ company.logo_url }}" alt="{{ company.name }} logo" style="width: 48px; height: 48px; object-fit: contain;">
+                {% endif %}
+                <div class="company-info">
+                    <h3 style="margin-bottom: 5px;"><a href="{{ url_for('company_detail', slug=company.slug) }}">{{ company.name }}</a></h3>
+                    <div>
+                        <span class="pill">{{ company.batch }}</span>
+                        {% if company.industry %}
+                        <span class="pill" style="background: #eef;">{{ company.industry }}</span>
+                        {% endif %}
+                    </div>
+                    <p>{{ company.description or (company.full_description[:150] + '...') if company.full_description else '' }}</p>
+                </div>
+            </div>
+        {% else %}
+            <p>No companies found matching your criteria.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

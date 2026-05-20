@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block title %}{{ founder.name }} | Y Combinator Founder{% endblock %}
+
+{% block content %}
+<div class="founder-detail">
+    <div class="founder-header" style="display: flex; align-items: center; margin-bottom: 40px;">
+        <div style="width: 150px; height: 150px; border-radius: 50%; margin-right: 30px; overflow: hidden; background: #eee; flex-shrink: 0;">
+            {% if founder.local_img %}
+                <img src="{{ url_for('static', filename='images/' + founder.local_img) }}" alt="{{ founder.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% elif founder.image_url %}
+                <img src="{{ founder.image_url }}" alt="{{ founder.name }}" style="width: 100%; height: 100%; object-fit: cover;">
+            {% endif %}
+        </div>
+        <div>
+            <h1>{{ founder.name }}</h1>
+            <p class="title" style="font-size: 1.2em; color: #666;">{{ founder.title }}</p>
+            {% if founder.company %}
+                <p>Company: <a href="{{ url_for('company_detail', slug=founder.company.slug) }}">{{ founder.company.name }}</a></p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="founder-body" style="background: white; padding: 30px; border-radius: 8px;">
+        <h2>Bio</h2>
+        <p>
+            {% if founder.bio and founder.bio != 'None' %}
+                {{ founder.bio }}
+            {% else %}
+                {% if founder.company %}
+                    {{ founder.name }} is a founder of {{ founder.company.name }}.
+                {% else %}
+                    No detailed bio available for {{ founder.name }}.
+                {% endif %}
+            {% endif %}
+        </p>
+    </div>
+</div>
+{% endblock %}
