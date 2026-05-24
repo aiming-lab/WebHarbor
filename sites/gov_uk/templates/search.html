@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Search GOV.UK{% endblock %}
+
+{% block content %}
+<form action="{{ url_for('search') }}" method="get" role="search">
+  <div class="govuk-form-group">
+    <h1 class="govuk-label-wrapper">
+      <label class="govuk-label govuk-label--xl" for="search-q">Search GOV.UK</label>
+    </h1>
+    <input class="govuk-input" id="search-q" name="q" type="search" value="{{ q }}" autocomplete="off">
+  </div>
+  <button type="submit" class="govuk-button" data-module="govuk-button">Search</button>
+</form>
+
+{% if q %}
+<p class="govuk-body">{{ total }} result{% if total != 1 %}s{% endif %} for &ldquo;{{ q }}&rdquo;</p>
+
+{% if articles %}
+<h2 class="govuk-heading-l">Guidance and services ({{ articles|length }})</h2>
+<ul class="govuk-list">
+  {% for a in articles %}
+  <li class="govuk-!-margin-bottom-4">
+    <h3 class="govuk-heading-s govuk-!-margin-bottom-1"><a class="govuk-link" href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+    <p class="govuk-body-s">{{ a.summary }}</p>
+    <p class="govuk-body-s govuk-hint">
+      {% if a.department %}{{ a.department.name }} &middot; {% endif %}
+      Updated {{ a.last_updated.strftime('%-d %B %Y') }}
+    </p>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if announcements %}
+<h2 class="govuk-heading-l">Announcements ({{ announcements|length }})</h2>
+<ul class="govuk-list">
+  {% for a in announcements %}
+  <li class="govuk-!-margin-bottom-4">
+    <h3 class="govuk-heading-s govuk-!-margin-bottom-1"><a class="govuk-link" href="{{ url_for('announcements_index') }}#{{ a.slug }}">{{ a.title }}</a></h3>
+    <p class="govuk-body-s">{{ a.summary }}</p>
+    <p class="govuk-body-s govuk-hint">{{ a.department.name }} &middot; {{ a.published_at.strftime('%-d %B %Y') }}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if departments %}
+<h2 class="govuk-heading-l">Departments ({{ departments|length }})</h2>
+<ul class="govuk-list">
+  {% for d in departments %}
+  <li><a class="govuk-link" href="{{ url_for('organisation_detail', slug=d.slug) }}">{{ d.name }}</a></li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+{% if total == 0 %}
+<p class="govuk-body">No results found. Try a different search term.</p>
+{% endif %}
+
+{% else %}
+<p class="govuk-body">Enter a search term above to find guidance, services, announcements and departments.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Welcome to GOV.UK{% endblock %}
+
+{% block content %}
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds-from-desktop">
+    <h1 class="govuk-heading-xl">Welcome to GOV.UK</h1>
+    <p class="govuk-body-l">The best place to find government services and information.</p>
+
+    <form action="{{ url_for('search') }}" method="get" role="search" class="govuk-!-margin-bottom-6">
+      <div class="govuk-form-group">
+        <label class="govuk-label govuk-label--m" for="search-main">Search GOV.UK</label>
+        <input class="govuk-input" id="search-main" name="q" type="search" autocomplete="off">
+      </div>
+      <button type="submit" class="govuk-button" data-module="govuk-button">Search</button>
+    </form>
+  </div>
+</div>
+
+<hr class="govuk-section-break govuk-section-break--visible govuk-section-break--m">
+
+<h2 class="govuk-heading-m">Popular on GOV.UK</h2>
+<ul class="govuk-list govuk-list--spaced">
+  <li><a class="govuk-link" href="{{ url_for('article_detail', slug='check-your-state-pension-forecast') }}">Check your State Pension forecast</a></li>
+  <li><a class="govuk-link" href="{{ url_for('article_detail', slug='file-your-self-assessment-tax-return') }}">File your Self Assessment tax return</a></li>
+  <li><a class="govuk-link" href="{{ url_for('article_detail', slug='apply-for-or-renew-an-adult-passport') }}">Apply for or renew an adult passport</a></li>
+  <li><a class="govuk-link" href="{{ url_for('article_detail', slug='tax-your-vehicle') }}">Tax your vehicle</a></li>
+  <li><a class="govuk-link" href="{{ url_for('article_detail', slug='register-to-vote') }}">Register to vote</a></li>
+</ul>
+
+<hr class="govuk-section-break govuk-section-break--visible govuk-section-break--m">
+
+<h2 class="govuk-heading-l">Services and information</h2>
+<div class="govuk-grid-row">
+  {% for topic in topics %}
+  <div class="govuk-grid-column-one-third">
+    <h3 class="govuk-heading-s">
+      <a class="govuk-link" href="{{ url_for('topic_page', topic_slug=topic.slug) }}">{{ topic.name }}</a>
+    </h3>
+    <p class="govuk-body-s">{{ topic.description }}</p>
+  </div>
+  {% endfor %}
+</div>
+
+<hr class="govuk-section-break govuk-section-break--visible govuk-section-break--xl">
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-one-half">
+    <h2 class="govuk-heading-m">Departments and policy</h2>
+    <p class="govuk-body">How government works, departments, agencies and public bodies.</p>
+    <p class="govuk-body">
+      <a class="govuk-link" href="{{ url_for('organisations') }}">View all {{ departments_count }} departments</a>
+    </p>
+  </div>
+  <div class="govuk-grid-column-one-half">
+    <h2 class="govuk-heading-m">Latest announcements</h2>
+    <ul class="govuk-list">
+      {% for a in latest %}
+      <li>
+        <a class="govuk-link" href="{{ url_for('announcements_index') }}#{{ a.slug }}">{{ a.title }}</a>
+        <p class="govuk-body-s govuk-hint govuk-!-margin-bottom-2">{{ a.department.name }} &middot; {{ a.published_at.strftime('%d %B %Y') }}</p>
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="govuk-body"><a class="govuk-link" href="{{ url_for('announcements_index') }}">See all announcements</a></p>
+  </div>
+</div>
+{% endblock %}

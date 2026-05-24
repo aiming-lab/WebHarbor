@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} - GOV.UK{% endblock %}
+
+{% block content %}
+<nav class="govuk-breadcrumbs" aria-label="Breadcrumb">
+  <ol class="govuk-breadcrumbs__list">
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('index') }}">Home</a></li>
+    {% if article.subtopic and article.subtopic.topic %}
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('topic_page', topic_slug=article.subtopic.topic.slug) }}">{{ article.subtopic.topic.name }}</a></li>
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('subtopic_page', topic_slug=article.subtopic.topic.slug, subtopic_slug=article.subtopic.slug) }}">{{ article.subtopic.name }}</a></li>
+    {% endif %}
+  </ol>
+</nav>
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    {% if article.department %}
+    <span class="govuk-caption-l">{{ article.department.name }}</span>
+    {% endif %}
+    <h1 class="govuk-heading-xl">{{ article.title }}</h1>
+
+    {% if article.summary %}
+    <p class="govuk-body-l">{{ article.summary }}</p>
+    {% endif %}
+
+    {% for p in paragraphs %}
+    <p class="govuk-body">{{ p }}</p>
+    {% endfor %}
+
+    <hr class="govuk-section-break govuk-section-break--visible govuk-section-break--l">
+    <p class="govuk-body-s govuk-hint">
+      Published {{ article.first_published.strftime('%-d %B %Y') }}<br>
+      Last updated {{ article.last_updated.strftime('%-d %B %Y') }}
+    </p>
+  </div>
+
+  <div class="govuk-grid-column-one-third">
+    <aside class="govuk-related-navigation" role="complementary">
+      <h2 class="govuk-heading-m">Related content</h2>
+      {% if related %}
+      <nav role="navigation">
+        <ul class="govuk-list">
+          {% for r in related %}
+          <li><a class="govuk-link" href="{{ url_for('article_detail', slug=r.slug) }}">{{ r.title }}</a></li>
+          {% endfor %}
+        </ul>
+      </nav>
+      {% else %}
+      <p class="govuk-body-s">No related guidance.</p>
+      {% endif %}
+
+      {% if article.department %}
+      <h2 class="govuk-heading-m">From</h2>
+      <p class="govuk-body">
+        <a class="govuk-link" href="{{ url_for('organisation_detail', slug=article.department.slug) }}">{{ article.department.name }}</a>
+      </p>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}
