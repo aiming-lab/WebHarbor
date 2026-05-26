@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ l.title }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb"><a href="{{ url_for('geeklists_index') }}">GeekLists</a> › {{ l.title }}</div>
+    <h1>{{ l.title }}</h1>
+    <p class="muted">
+      by <a href="{{ url_for('user_profile', username=l.author.username) }}">{{ l.author.username }}</a>
+      · {{ l.num_items }} items · 👍 {{ l.num_thumbs }} · {{ l.created_at | time_ago }}
+      {% if current_user.is_authenticated %}
+        <form action="{{ url_for('thumb') }}" method="post" style="display:inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="kind" value="geeklist">
+          <input type="hidden" name="id" value="{{ l.id }}">
+          <input type="hidden" name="next" value="{{ url_for('geeklist_detail', lid=l.id) }}">
+          <button class="btn btn-quiet" type="submit">👍 Thumb list</button>
+        </form>
+      {% endif %}
+    </p>
+    <div class="description">{{ l.description_html | safe_html }}</div>
+
+    {% for it in items %}
+    <div class="review-block" id="item-{{ it.id }}">
+      <div class="review-head">
+        <div class="left">
+          <b>#{{ it.position }}</b>
+          {% if it.game %}
+            <a href="{{ it.game.detail_url }}">
+              {% if it.game.thumb_filename %}<img src="{{ url_for('static', filename='images/' + it.game.thumb_filename) }}" alt="" style="width:36px;height:36px;border-radius:2px;border:1px solid #ddd;">{% endif %}
+              <b>{{ it.game.name }}</b>
+              <span class="muted">({{ it.game.year_published or '—' }})</span>
+            </a>
+          {% else %}
+            <b>(custom item)</b>
+          {% endif %}
+        </div>
+        <div class="muted">👍 {{ it.num_thumbs }}</div>
+      </div>
+      <div>{{ it.body_html | safe_html }}</div>
+    </div>
+    {% endfor %}
+
+    {% if current_user.is_authenticated and l.author_id == current_user.id %}
+      <h3>Add an item</h3>
+      <form action="{{ url_for('geeklist_add_item', lid=l.id) }}" method="post" style="background:#fafbfc; padding:12px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-row">
+          <div class="field"><label>BGG game ID</label><input type="number" name="bgg_id" required></div>
+        </div>
+        <div class="field"><label>Why this game?</label><textarea name="body"></textarea></div>
+        <button type="submit">Add to list</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

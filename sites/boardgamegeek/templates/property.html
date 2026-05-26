@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ entity.name }} ({{ kind | capitalize }}) | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      {% if kind == 'category' %}<a href="{{ url_for('categories_index') }}">Categories</a>
+      {% elif kind == 'mechanic' %}<a href="{{ url_for('mechanics_index') }}">Mechanisms</a>
+      {% else %}<a href="{{ url_for('browse') }}">Browse</a>{% endif %} ›
+      {{ entity.name }}
+    </div>
+    <div class="entity-head">
+      <div><span class="label">{{ kind | capitalize }}</span></div>
+      <div>
+        <h1>{{ entity.name }}</h1>
+        <p class="muted">{{ games | length }} games tagged with this {{ kind }}.</p>
+      </div>
+    </div>
+
+    <p>Sort: <a href="?sort=rank">Rank</a> · <a href="?sort=average">Avg Rating</a>
+      · <a href="?sort=year">Year</a> · <a href="?sort=name">Name</a></p>
+
+    <table class="collection_table">
+      <thead><tr>
+        <th>#</th><th></th><th>Title</th>
+        <th class="collection_bggrating">Year</th>
+        <th class="collection_bggrating">Geek</th>
+        <th class="collection_bggrating">Avg</th>
+        <th class="collection_bggrating">Voters</th>
+      </tr></thead>
+      <tbody>
+        {% for g in games %}
+        <tr>
+          <td class="collection_rank">{{ g.overall_rank or '—' }}</td>
+          <td class="collection_thumbnail">
+            {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">{% endif %}
+          </td>
+          <td class="collection_objectname">
+            <a class="primary" href="{{ g.detail_url }}">{{ g.name }}</a>
+          </td>
+          <td class="collection_bggrating">{{ g.year_published or '—' }}</td>
+          <td class="collection_bggrating">{{ g.bayes_average | one_decimal }}</td>
+          <td class="collection_bggrating">{{ g.avg_rating | one_decimal }}</td>
+          <td class="collection_bggrating">{{ g.num_ratings | thousands }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

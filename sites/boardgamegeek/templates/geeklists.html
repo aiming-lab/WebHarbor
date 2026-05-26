@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}GeekLists | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>GeekLists</h1>
+    <p class="muted">
+      {{ total }} lists. Sort:
+      <a href="?sort=recent">Recent</a> ·
+      <a href="?sort=thumbs">Most thumbed</a> ·
+      <a href="?sort=items">Most items</a>
+      {% if current_user.is_authenticated %}
+        · <a href="{{ url_for('geeklist_new') }}">+ New GeekList</a>
+      {% endif %}
+    </p>
+    <table class="collection_table">
+      <thead><tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th class="collection_bggrating">Items</th>
+        <th class="collection_bggrating">👍</th>
+        <th class="collection_bggrating">Created</th>
+      </tr></thead>
+      <tbody>
+        {% for l in lists %}
+        <tr>
+          <td class="collection_objectname">
+            <a class="primary" href="{{ url_for('geeklist_detail', lid=l.id) }}">{{ l.title }}</a>
+          </td>
+          <td><a href="{{ url_for('user_profile', username=l.author.username) }}">{{ l.author.username }}</a></td>
+          <td class="collection_bggrating">{{ l.num_items }}</td>
+          <td class="collection_bggrating">{{ l.num_thumbs }}</td>
+          <td class="collection_bggrating">{{ l.created_at | time_ago }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="pagination">
+      {% if page > 1 %}<a href="?p={{ page-1 }}&sort={{ sort }}">‹ Prev</a>{% endif %}
+      <span class="current">Page {{ page }}</span>
+      {% if has_next %}<a href="?p={{ page+1 }}&sort={{ sort }}">Next ›</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

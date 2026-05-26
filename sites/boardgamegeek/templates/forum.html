@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ forum.title }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      <a href="{{ url_for('forums_index') }}">Forums</a> ›
+      {% if forum.game %}<a href="{{ forum.game.detail_url }}">{{ forum.game.name }}</a> ›{% endif %}
+      {{ forum.title }}
+    </div>
+    <h1>{{ forum.title }}</h1>
+    <p class="muted">{{ forum.description }}</p>
+
+    {% if current_user.is_authenticated and not forum.id == 0 %}
+      <p><a class="btn btn-orange" href="{{ url_for('thread_new', fid=forum.id) }}">+ New Thread</a></p>
+    {% endif %}
+
+    {% for t in threads %}
+    <div class="thread-row {% if t.is_pinned %}pinned{% endif %}">
+      <div class="subject">
+        {% if t.is_pinned %}<span class="pin-badge">PIN</span>{% endif %}
+        {% if t.is_hot %}🔥{% endif %}
+        <a href="{{ url_for('thread_detail', tid=t.id) }}">{{ t.subject }}</a>
+        <div class="muted">started by {{ t.author.username }} · {{ t.created_at | time_ago }}</div>
+      </div>
+      <div class="replies">{{ t.num_posts - 1 }} replies</div>
+      <div class="views">{{ t.num_views | thousands }} views</div>
+      <div class="last">last: {{ t.last_post_at | time_ago }}</div>
+    </div>
+    {% else %}
+      <p class="muted">No threads in this forum yet.</p>
+    {% endfor %}
+
+    <div class="pagination">
+      {% if page > 1 %}<a href="?p={{ page-1 }}">‹ Prev</a>{% endif %}
+      <span class="current">Page {{ page }}</span>
+      {% if has_next %}<a href="?p={{ page+1 }}">Next ›</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

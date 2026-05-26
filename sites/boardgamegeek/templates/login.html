@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sign In | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main" style="max-width: 480px; margin: 30px auto;">
+    <h1>Sign In</h1>
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div class="field">{{ form.username.label }}{{ form.username() }}</div>
+      <div class="field">{{ form.password.label }}{{ form.password() }}</div>
+      <button type="submit">Sign in</button>
+      <a class="btn btn-quiet" href="{{ url_for('register') }}">Create account</a>
+      <a class="btn btn-quiet" href="{{ url_for('forgot') }}">Forgot password</a>
+    </form>
+    <p class="muted" style="margin-top:18px;">
+      Benchmark accounts: <code>alice_j</code>, <code>bob_c</code>, <code>carol_d</code>, <code>david_k</code>
+      — password <code>TestPass123!</code>.
+    </p>
+  </div>
+</div>
+{% endblock %}

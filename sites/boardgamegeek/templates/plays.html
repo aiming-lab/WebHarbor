@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ u.username }}'s plays | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>{{ u.username }}'s plays</h1>
+    <table class="collection_table">
+      <thead><tr>
+        <th>Date</th><th>Game</th><th>Players</th>
+        <th>Length</th><th>Location</th><th>Comments</th>
+      </tr></thead>
+      <tbody>
+        {% for p, g in plays %}
+        <tr>
+          <td>{{ p.played_on.strftime('%Y-%m-%d') }}</td>
+          <td>{% if g %}<a href="{{ g.detail_url }}">{{ g.name }}</a>{% else %}(deleted){% endif %}</td>
+          <td>{{ p.num_players or '—' }}</td>
+          <td>{{ p.length_minutes }} min</td>
+          <td class="muted">{{ p.location }}</td>
+          <td>{{ p.comments }}</td>
+        </tr>
+        {% else %}
+          <tr><td colspan="6" class="muted">No plays logged yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

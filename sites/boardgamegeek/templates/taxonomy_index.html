@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>{{ title }}</h1>
+    {% if filter_q is defined %}
+    <form action="" method="get" style="margin-bottom: 12px;">
+      <input type="text" name="q" placeholder="filter by name…" value="{{ filter_q or '' }}"
+             style="width: 320px; display: inline-block;">
+      <button type="submit">Filter</button>
+      {% if filter_q %}<a class="btn btn-quiet" href="?">Clear</a>{% endif %}
+    </form>
+    {% endif %}
+    <p class="muted">{{ items | length }} {{ kind }}{{ 's' if items | length != 1 }}{% if filter_q %} matching "{{ filter_q }}"{% endif %}.</p>
+    <div style="columns: 4; column-gap: 30px;">
+      {% for it in items %}
+        <div style="break-inside: avoid; padding: 2px 0;">
+          <a href="{{ url_for(url_name, **({
+                ('cid' if kind=='category' else
+                 'mid' if kind=='mechanic' else
+                 'pid'): it.bgg_id,
+                'slug': it.slug}) ) }}">{{ it.name }}</a>
+          <span class="muted">({{ it.games | length }})</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

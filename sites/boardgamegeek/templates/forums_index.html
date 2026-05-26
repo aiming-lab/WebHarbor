@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Forums | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>BoardGameGeek Forums</h1>
+    {% for section_name, forums in sections.items() %}
+    <h2>{{ section_name | capitalize }}</h2>
+    <table class="collection_table">
+      <thead><tr>
+        <th>Forum</th>
+        <th class="collection_bggrating">Threads</th>
+        <th class="collection_bggrating">Posts</th>
+      </tr></thead>
+      <tbody>
+        {% for f in forums %}
+        <tr>
+          <td class="collection_objectname">
+            <a class="primary" href="{{ url_for('forum_detail', fid=f.id) }}">{{ f.title }}</a>
+            <div class="muted">{{ f.description }}</div>
+          </td>
+          <td class="collection_bggrating">{{ f.num_threads | thousands }}</td>
+          <td class="collection_bggrating">{{ f.num_posts | thousands }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
