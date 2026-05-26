@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ site_name }} | Gaming Unplugged Since 2000{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="main">
+    {# Hot games — large grid #}
+    <div class="module">
+      <div class="module-header">
+        <span>The Hotness</span>
+        <a href="{{ url_for('hotness') }}">All hot games →</a>
+      </div>
+      <div class="module-body">
+        <div class="game-grid">
+          {% for g in hot_games[:15] %}
+          <a class="game-card" href="{{ g.detail_url }}">
+            {% if g.thumb_filename %}
+              <img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">
+            {% else %}
+              <img src="{{ url_for('static', filename='icons/cover_placeholder.svg') }}" alt="{{ g.name }}">
+            {% endif %}
+            <span class="title">{{ g.name }}</span>
+            <span class="meta">({{ g.year_published or '—' }})</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    {# Top overall #}
+    <div class="module">
+      <div class="module-header">
+        <span>Top Ranked Board Games</span>
+        <a href="{{ url_for('browse') }}">Full browse →</a>
+      </div>
+      <div class="module-body">
+        <table class="collection_table">
+          <thead><tr>
+            <th>#</th><th></th><th>Title</th>
+            <th class="collection_bggrating">Geek Rating</th>
+            <th class="collection_bggrating">Avg</th>
+            <th class="collection_bggrating">Voters</th>
+          </tr></thead>
+          <tbody>
+            {% for g in top_overall %}
+            <tr>
+              <td class="collection_rank">{{ g.overall_rank }}</td>
+              <td class="collection_thumbnail">
+                {% if g.thumb_filename %}
+                  <img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">
+                {% endif %}
+              </td>
+              <td class="collection_objectname">
+                <a class="primary" href="{{ g.detail_url }}">{{ g.name }}</a>
+                <span class="smallerfont">({{ g.year_published or '—' }})</span>
+              </td>
+              <td class="collection_bggrating">{{ g.bayes_average | one_decimal }}</td>
+              <td class="collection_bggrating">{{ g.avg_rating | one_decimal }}</td>
+              <td class="collection_bggrating">{{ g.num_ratings | thousands }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    {# Active forum threads #}
+    <div class="module">
+      <div class="module-header">
+        <span>Active Forum Threads</span>
+        <a href="{{ url_for('forums_index') }}">All forums →</a>
+      </div>
+      <div class="module-body">
+        {% for t in active_threads %}
+        <div class="thread-row">
+          <div class="subject">
+            {% if t.is_pinned %}<span class="pin-badge">PIN</span>{% endif %}
+            <a href="{{ url_for('thread_detail', tid=t.id) }}">{{ t.subject }}</a>
+            <span class="muted"> · in
+              <a href="{{ url_for('forum_detail', fid=t.forum_id) }}">{{ t.forum.title }}</a>
+              {% if t.forum.game %} ·
+                <a href="{{ t.forum.game.detail_url }}">{{ t.forum.game.name }}</a>
+              {% endif %}
+            </span>
+          </div>
+          <div class="replies">{{ t.num_posts - 1 }} replies</div>
+          <div class="views">{{ t.num_views | thousands }} views</div>
+          <div class="last">
+            <span>{{ t.last_post_at | time_ago }}</span>
+            by <span class="user">{{ t.author.username }}</span>
+          </div>
+        </div>
+        {% else %}
+        <p class="muted">No active threads yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <aside class="sidebar">
+    <div class="module" style="margin-top:0">
+      <div class="module-header">Recent GeekLists</div>
+      <div class="module-body">
+        {% for l in recent_lists %}
+          <div style="border-bottom: 1px dotted #ddd; padding: 6px 0;">
+            <a href="{{ url_for('geeklist_detail', lid=l.id) }}"><b>{{ l.title }}</b></a>
+            <div class="muted">
+              by {{ l.author.username }} · {{ l.num_items }} items · 👍 {{ l.num_thumbs }}
+            </div>
+          </div>
+        {% else %}
+          <p class="muted">No lists yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="module">
+      <div class="module-header">Recent Reviews</div>
+      <div class="module-body">
+        {% for r in recent_reviews %}
+          <div style="border-bottom: 1px dotted #ddd; padding: 6px 0;">
+            <a href="{{ r.game.detail_url }}"><b>{{ r.game.name }}</b></a>
+            <span class="rating-chip" style="background: {{ r.value | rating_color }}">{{ r.value | one_decimal }}</span>
+            <div class="muted">
+              {{ r.user.username }} · {{ r.created_at | time_ago }}
+            </div>
+          </div>
+        {% else %}
+          <p class="muted">No reviews yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bgg.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/svg+xml">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<header class="site-header">
+  <div class="topbar">
+    <a class="logo" href="{{ url_for('index') }}">
+      <span class="accent">Board</span>GameGeek
+    </a>
+    <nav>
+      <a href="{{ url_for('index') }}">Home</a>
+      <a href="{{ url_for('browse') }}">Browse</a>
+      <a href="{{ url_for('hotness') }}">Hot</a>
+      <a href="{{ url_for('forums_index') }}">Forums</a>
+      <a href="{{ url_for('geeklists_index') }}">GeekLists</a>
+    </nav>
+    <form class="search-bar" action="{{ url_for('search') }}" method="get">
+      <input type="text" name="q" placeholder="Search" value="{{ request.args.get('q','') }}">
+      <select name="type">
+        <option value="boardgame" {% if request.args.get('type','boardgame')=='boardgame' %}selected{% endif %}>Games</option>
+        <option value="user" {% if request.args.get('type')=='user' %}selected{% endif %}>Users</option>
+        <option value="geeklist" {% if request.args.get('type')=='geeklist' %}selected{% endif %}>GeekLists</option>
+      </select>
+      <button type="submit">Go</button>
+    </form>
+    <div class="user-area">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('user_profile', username=current_user.username) }}">
+          {{ current_user.username }}{% if current_user.geekgold %} · {{ current_user.geekgold }}gg{% endif %}
+        </a>
+        <a href="{{ url_for('account') }}">Account</a>
+        <form action="{{ url_for('logout') }}" method="post" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-quiet" type="submit" style="padding:2px 8px;">Sign out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign In</a>
+        <a href="{{ url_for('register') }}">Join</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="subnav">
+    <div class="inner">
+      <a href="{{ url_for('browse') }}?sort=rank">Top Rated</a>
+      <a href="{{ url_for('browse') }}?sort=numvoters&dir=desc">Most Rated</a>
+      <a href="{{ url_for('hotness') }}">Hotness</a>
+      <a href="{{ url_for('mechanics_index') }}">Mechanisms</a>
+      <a href="{{ url_for('categories_index') }}">Categories</a>
+      <a href="{{ url_for('designers_index') }}">Designers</a>
+      <a href="{{ url_for('publishers_index') }}">Publishers</a>
+      <a href="{{ url_for('geeklists_index') }}?sort=thumbs">Top GeekLists</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('collection_detail', username=current_user.username) }}">My Collection</a>
+        <a href="{{ url_for('plays_detail', username=current_user.username) }}">My Plays</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div style="max-width:1280px; margin: 14px auto 0; padding: 0 16px;">
+        {% for cat, msg in messages %}
+          <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  © {{ current_year }} BoardGameGeek Mirror · WebHarbor benchmark environment ·
+  <a href="{{ url_for('about') }}">About</a> ·
+  <a href="{{ url_for('help_page') }}">Help</a>
+</footer>
+
+</body>
+</html>

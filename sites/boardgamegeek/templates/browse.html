@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Browse Board Games | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>Browse Board Games</h1>
+    <p class="muted">
+      Showing {{ ((page - 1) * per_page) + 1 }} – {{ ((page - 1) * per_page) + games | length }}
+      of {{ total | thousands }} games.
+      Sort by:
+      <a href="?sort=rank">Rank</a> ·
+      <a href="?sort=name">Name</a> ·
+      <a href="?sort=year&dir=desc">Year</a> ·
+      <a href="?sort=average&dir=desc">Average Rating</a> ·
+      <a href="?sort=numvoters&dir=desc">Voters</a> ·
+      <a href="?sort=weight&dir=desc">Weight</a>
+    </p>
+
+    <table class="collection_table">
+      <thead>
+        <tr>
+          <th>Rank</th>
+          <th></th>
+          <th>Title</th>
+          <th class="collection_bggrating">Geek Rating</th>
+          <th class="collection_bggrating">Avg Rating</th>
+          <th class="collection_bggrating">Num Voters</th>
+          <th class="collection_bggrating">Weight</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for g in games %}
+        <tr>
+          <td class="collection_rank">{{ g.overall_rank or '—' }}</td>
+          <td class="collection_thumbnail">
+            {% if g.thumb_filename %}
+              <img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">
+            {% endif %}
+          </td>
+          <td class="collection_objectname">
+            <a class="primary" href="{{ g.detail_url }}">{{ g.name }}</a>
+            <span class="smallerfont">({{ g.year_published or '—' }})</span>
+            {% if g.short_description %}
+              <div class="muted" style="margin-top: 2px;">{{ g.short_description[:120] }}{% if g.short_description | length > 120 %}…{% endif %}</div>
+            {% endif %}
+          </td>
+          <td class="collection_bggrating">{{ g.bayes_average | one_decimal }}</td>
+          <td class="collection_bggrating">{{ g.avg_rating | one_decimal }}</td>
+          <td class="collection_bggrating">{{ g.num_ratings | thousands }}</td>
+          <td class="collection_bggrating">{{ g.weight | two_decimal }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="pagination">
+      {% if has_prev %}
+        <a href="{{ url_for('browse', page=page-1, sort=sort, dir=direction) }}">‹ Prev</a>
+      {% endif %}
+      <span class="current">Page {{ page }}</span>
+      {% if has_next %}
+        <a href="{{ url_for('browse', page=page+1, sort=sort, dir=direction) }}">Next ›</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

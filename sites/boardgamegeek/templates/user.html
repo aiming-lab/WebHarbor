@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ u.username }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div style="display:grid; grid-template-columns: 220px 1fr; gap:20px;">
+      <div class="stats-box">
+        <h3 style="margin-top:0;">{{ u.username }}</h3>
+        {% if u.real_name %}<div>{{ u.real_name }}</div>{% endif %}
+        {% if u.display_location %}<div class="muted">{{ u.display_location }}</div>{% endif %}
+        <div class="muted">joined {{ u.joined_at | time_ago }}</div>
+        <div style="border-top:1px dashed #ddd; padding-top:8px; margin-top:8px;">
+          <div class="stat-row"><span class="stat-label">Owned</span><span class="stat-value">{{ own }}</span></div>
+          <div class="stat-row"><span class="stat-label">Wishlist</span><span class="stat-value">{{ wishlist }}</span></div>
+          <div class="stat-row"><span class="stat-label">Want to buy</span><span class="stat-value">{{ want }}</span></div>
+          <div class="stat-row"><span class="stat-label">Rated</span><span class="stat-value">{{ rated }}</span></div>
+          <div class="stat-row"><span class="stat-label">Reviews</span><span class="stat-value">{{ reviews }}</span></div>
+          <div class="stat-row"><span class="stat-label">Plays logged</span><span class="stat-value">{{ plays_count }}</span></div>
+          <div class="stat-row"><span class="stat-label">GeekGold</span><span class="stat-value">{{ u.geekgold }}</span></div>
+        </div>
+        <div style="margin-top:8px;">
+          <a class="btn btn-quiet" href="{{ url_for('collection_detail', username=u.username) }}">Collection</a>
+          <a class="btn btn-quiet" href="{{ url_for('plays_detail', username=u.username) }}">Plays</a>
+        </div>
+      </div>
+      <div>
+        <h2>{{ u.username }}'s profile</h2>
+        {% if u.about %}<div class="description">{{ u.about }}</div>{% else %}<p class="muted">No bio yet.</p>{% endif %}
+
+        <h3>Top-rated games</h3>
+        <table class="collection_table">
+          <tbody>
+          {% for r in top_rated %}
+            <tr>
+              <td style="text-align:center;width:60px;">
+                <span class="rating-chip" style="background: {{ r.value | rating_color }}">{{ r.value | one_decimal }}</span>
+              </td>
+              <td><a href="{{ r.game.detail_url }}">{{ r.game.name }}</a> <span class="muted">({{ r.game.year_published or '—' }})</span></td>
+              <td class="muted">{{ r.created_at | time_ago }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="3" class="muted">No ratings yet.</td></tr>
+          {% endfor %}
+          </tbody>
+        </table>
+
+        <h3>Recent plays</h3>
+        <table class="collection_table">
+          <thead><tr><th>Date</th><th>Game</th><th>Players</th><th>Location</th></tr></thead>
+          <tbody>
+            {% for p in recent_plays %}
+              <tr>
+                <td>{{ p.played_on.strftime('%Y-%m-%d') }}</td>
+                <td>{% if p.game %}<a href="{{ p.game.detail_url }}">{{ p.game.name }}</a>{% else %}—{% endif %}</td>
+                <td>{{ p.num_players }}</td>
+                <td class="muted">{{ p.location }}</td>
+              </tr>
+            {% else %}<tr><td colspan="4" class="muted">No plays logged.</td></tr>{% endfor %}
+          </tbody>
+        </table>
+
+        {% if geeklists %}
+        <h3>GeekLists by {{ u.username }}</h3>
+        <ul>
+          {% for l in geeklists %}<li><a href="{{ url_for('geeklist_detail', lid=l.id) }}">{{ l.title }}</a> · {{ l.num_items }} items</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

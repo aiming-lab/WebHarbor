@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% block title %}{{ g.name }} ({{ g.year_published or '—' }}) | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      <a href="{{ url_for('browse') }}">Browse</a> ›
+      {% if g.subtype == 'boardgameexpansion' %}Expansion{% else %}Board Game{% endif %} ›
+      {{ g.name }}
+    </div>
+
+    <div class="game-header">
+      <div class="cover">
+        {% if g.image_filename %}
+          <img src="{{ url_for('static', filename='images/' + g.image_filename) }}" alt="{{ g.name }}">
+        {% else %}
+          <img src="{{ url_for('static', filename='icons/cover_placeholder.svg') }}" alt="{{ g.name }}">
+        {% endif %}
+      </div>
+      <div class="summary">
+        <h1>{{ g.name }} <span class="year">({{ g.year_published or '—' }})</span></h1>
+        {% if g.short_description %}
+          <p class="muted" style="font-size:14px;">{{ g.short_description }}</p>
+        {% endif %}
+        <div class="meta">
+          <b>Designed by:</b>
+          {% for d in g.designers[:5] %}
+            <a href="{{ url_for('designer_detail', pid=d.bgg_id, slug=d.slug) }}">{{ d.name }}</a>{% if not loop.last %}, {% endif %}
+          {% else %}—{% endfor %}
+        </div>
+        <div class="meta">
+          <b>Art by:</b>
+          {% for a in g.artists[:4] %}
+            <a href="{{ url_for('artist_detail', pid=a.bgg_id, slug=a.slug) }}">{{ a.name }}</a>{% if not loop.last %}, {% endif %}
+          {% else %}—{% endfor %}
+        </div>
+        <div class="meta">
+          <b>Publishers:</b>
+          {% for p in g.publishers[:6] %}
+            <a href="{{ url_for('publisher_detail', pid=p.bgg_id, slug=p.slug) }}">{{ p.name }}</a>{% if not loop.last %}, {% endif %}
+          {% else %}—{% endfor %}
+        </div>
+        <div class="meta">
+          <b>Categories:</b>
+          {% for c in g.categories %}
+            <a href="{{ url_for('category_detail', cid=c.bgg_id, slug=c.slug) }}">{{ c.name }}</a>{% if not loop.last %}, {% endif %}
+          {% else %}—{% endfor %}
+        </div>
+        <div class="meta">
+          <b>Mechanisms:</b>
+          {% for m in g.mechanics %}
+            <a href="{{ url_for('mechanic_detail', mid=m.bgg_id, slug=m.slug) }}">{{ m.name }}</a>{% if not loop.last %}, {% endif %}
+          {% else %}—{% endfor %}
+        </div>
+      </div>
+      <div class="stats-box">
+        <div class="stat-row">
+          <span class="stat-label">Overall Rank</span>
+          <span class="stat-value">{% if g.overall_rank %}#{{ g.overall_rank }}{% else %}—{% endif %}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Geek Rating</span>
+          <span class="stat-value">
+            <span class="rating-chip" style="background: {{ g.bayes_average | rating_color }}">
+              {{ g.bayes_average | one_decimal }}
+            </span>
+          </span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Average Rating</span>
+          <span class="stat-value">{{ g.avg_rating | two_decimal }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Num Voters</span>
+          <span class="stat-value">{{ g.num_ratings | thousands }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Owners</span>
+          <span class="stat-value">{{ g.num_owners | thousands }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Wishlist</span>
+          <span class="stat-value">{{ g.num_wishing | thousands }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Players</span>
+          <span class="stat-value">{{ g.players_str }} {% if g.best_player_count %}<span class="muted">(best {{ g.best_player_count }})</span>{% endif %}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Play Time</span>
+          <span class="stat-value">{{ g.time_str }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Age</span>
+          <span class="stat-value">{{ g.minage }}+</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Weight</span>
+          <span class="stat-value">{{ g.weight | two_decimal }} / 5  <span class="muted">({{ g.weight_label }})</span></span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Language Dep.</span>
+          <span class="stat-value" style="font-size:11px;">{{ g.language_dependence or '—' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-bar">
+      <a href="{{ g.detail_url }}" class="active">Overview</a>
+      <a href="{{ url_for('game_ratings', oid=g.bgg_id, slug=g.slug) }}">Ratings & Reviews</a>
+      <a href="{{ url_for('game_credits', oid=g.bgg_id, slug=g.slug) }}">Credits</a>
+      <a href="{{ url_for('game_expansions', oid=g.bgg_id, slug=g.slug) }}">Expansions</a>
+      <a href="{{ url_for('game_forums', oid=g.bgg_id, slug=g.slug) }}">Forums</a>
+    </div>
+
+    <h2>Description</h2>
+    <div class="description">{{ g.description_html | safe_html }}</div>
+
+    {# Top Reviews moved off the overview tab — agents must navigate to
+       Ratings & Reviews to read individual reviews. This avoids the
+       hard-coded "top review visible on overview" shortcut.  The summary
+       counts (avg, voters, weight) remain in the stats box above. #}
+
+    {% if expansions %}
+    <h2>Expansions</h2>
+    <table class="collection_table">
+      <tbody>
+        {% for e in expansions[:8] %}
+          <tr>
+            <td class="collection_thumbnail">
+              {% if e.thumb_filename %}<img src="{{ url_for('static', filename='images/' + e.thumb_filename) }}" alt="">{% endif %}
+            </td>
+            <td class="collection_objectname">
+              <a class="primary" href="{{ e.detail_url }}">{{ e.name }}</a>
+              <span class="smallerfont">({{ e.year_published or '—' }})</span>
+            </td>
+            <td class="collection_bggrating">{{ e.avg_rating | one_decimal }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% if expansions | length > 8 %}<p><a href="{{ url_for('game_expansions', oid=g.bgg_id, slug=g.slug) }}">See all expansions →</a></p>{% endif %}
+    {% endif %}
+
+    {% if threads %}
+    <h2>Recent Forum Activity</h2>
+    {% for t in threads %}
+      <div class="thread-row">
+        <div class="subject">
+          {% if t.is_pinned %}<span class="pin-badge">PIN</span>{% endif %}
+          <a href="{{ url_for('thread_detail', tid=t.id) }}">{{ t.subject }}</a>
+          <span class="muted"> · {{ t.forum.title }}</span>
+        </div>
+        <div class="replies">{{ t.num_posts - 1 }} replies</div>
+        <div class="views">{{ t.num_views | thousands }}</div>
+        <div class="last">{{ t.last_post_at | time_ago }}</div>
+      </div>
+    {% endfor %}
+    {% endif %}
+
+    {# User actions #}
+    {% if current_user.is_authenticated %}
+    <h2>Your Stuff</h2>
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+      <form action="{{ url_for('rate', oid=g.bgg_id) }}" method="post">
+        {{ rating_form.hidden_tag() }}
+        <h3>Rate this game</h3>
+        <div class="field">
+          <label for="value">Your rating (1.0 – 10.0)</label>
+          <input type="number" name="value" id="value" step="0.5" min="1" max="10"
+                 value="{{ my_rating.value if my_rating else '7.5' }}">
+        </div>
+        <div class="field">
+          <label for="review">Review (optional)</label>
+          <textarea name="review" id="review">{{ my_rating.review_html | striptags if my_rating else '' }}</textarea>
+        </div>
+        <button type="submit">{% if my_rating %}Update rating{% else %}Submit rating{% endif %}</button>
+      </form>
+
+      <form action="{{ url_for('collection_save', oid=g.bgg_id) }}" method="post">
+        {{ collection_form.hidden_tag() }}
+        <h3>Your collection</h3>
+        <div class="field">
+          <label><input type="checkbox" name="own" {% if my_collection and my_collection.own %}checked{% endif %}> Own</label>
+          <label><input type="checkbox" name="prevowned" {% if my_collection and my_collection.prevowned %}checked{% endif %}> Previously owned</label>
+          <label><input type="checkbox" name="want_to_play" {% if my_collection and my_collection.want_to_play %}checked{% endif %}> Want to play</label>
+          <label><input type="checkbox" name="want_to_buy" {% if my_collection and my_collection.want_to_buy %}checked{% endif %}> Want to buy</label>
+          <label><input type="checkbox" name="wishlist" {% if my_collection and my_collection.wishlist %}checked{% endif %}> Wishlist</label>
+          <label><input type="checkbox" name="preordered" {% if my_collection and my_collection.preordered %}checked{% endif %}> Pre-ordered</label>
+          <label><input type="checkbox" name="for_trade" {% if my_collection and my_collection.for_trade %}checked{% endif %}> For trade</label>
+        </div>
+        <div class="field">
+          <label for="wishlist_priority">Wishlist priority</label>
+          <select name="wishlist_priority" id="wishlist_priority">
+            <option value="0">Not on wishlist</option>
+            <option value="1" {% if my_collection and my_collection.wishlist_priority==1 %}selected{% endif %}>1. Must have</option>
+            <option value="2" {% if my_collection and my_collection.wishlist_priority==2 %}selected{% endif %}>2. Love to have</option>
+            <option value="3" {% if my_collection and my_collection.wishlist_priority==3 %}selected{% endif %}>3. Like to have</option>
+            <option value="4" {% if my_collection and my_collection.wishlist_priority==4 %}selected{% endif %}>4. Thinking about it</option>
+            <option value="5" {% if my_collection and my_collection.wishlist_priority==5 %}selected{% endif %}>5. Don't buy this</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="comment">Comment</label>
+          <textarea name="comment" id="comment">{{ my_collection.comment if my_collection else '' }}</textarea>
+        </div>
+        <div class="field">
+          <label for="acquired_on">Acquired on</label>
+          <input type="text" name="acquired_on" id="acquired_on" placeholder="YYYY-MM-DD"
+                 value="{{ my_collection.acquired_on if my_collection else '' }}">
+        </div>
+        <button type="submit">Save</button>
+      </form>
+    </div>
+
+    <h3>Log a play</h3>
+    <form action="{{ url_for('play_log', oid=g.bgg_id) }}" method="post" style="background: #fafbfc; padding: 12px; border-radius: 3px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div class="field"><label>Date (YYYY-MM-DD)</label>
+          <input type="text" name="played_on" placeholder="{{ mirror_now.strftime('%Y-%m-%d') }}"
+                 value="{{ mirror_now.strftime('%Y-%m-%d') }}"></div>
+        <div class="field"><label>Quantity</label>
+          <input type="number" name="quantity" value="1"></div>
+        <div class="field"><label>Players</label>
+          <input type="number" name="num_players" value="{{ g.minplayers }}"></div>
+        <div class="field"><label>Length (min)</label>
+          <input type="number" name="length_minutes" value="{{ (g.minplaytime + g.maxplaytime) // 2 if g.maxplaytime else g.minplaytime }}"></div>
+        <div class="field"><label>Location</label>
+          <input type="text" name="location"></div>
+      </div>
+      <div class="field"><label>Comments</label><textarea name="comments" rows="2"></textarea></div>
+      <button type="submit">Save play</button>
+    </form>
+    {% else %}
+      <p class="muted" style="margin-top:30px;">
+        <a href="{{ url_for('login') }}?next={{ request.path }}">Sign in</a>
+        to rate this game, add it to your collection, or log a play.
+      </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
