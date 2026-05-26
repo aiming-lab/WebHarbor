@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+{% block content %}
+
+<section class="hero">
+  <h1>What to watch</h1>
+  <p class="lede">Top picks, trending titles, and stories from IMDb editors.</p>
+</section>
+
+<section class="row">
+  <div class="row-head">
+    <h2>Top picks for you</h2>
+    <a class="see-all" href="{{ url_for('chart_top') }}">See the Top 250 &rsaquo;</a>
+  </div>
+  <ul class="card-grid">
+    {% for t in top_picks %}
+    <li class="card">
+      <div class="rank">#{{ t.top_rank }}</div>
+      {% if t.poster_path %}
+      <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">
+        <img class="poster" src="{{ url_for('static', filename='images/' ~ t.poster_path) }}" alt="">
+      </a>
+      {% endif %}
+      <a class="card-title" href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+      <div class="card-meta">
+        <span class="star">&#9733;</span> {{ '%.1f'|format(t.rating_avg) }}
+        &middot; {{ t.year }}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+<section class="row">
+  <div class="row-head">
+    <h2>Trending this week</h2>
+    <a class="see-all" href="{{ url_for('chart_moviemeter') }}">Most Popular &rsaquo;</a>
+  </div>
+  <ul class="card-grid">
+    {% for t in trending %}
+    <li class="card">
+      {% if t.poster_path %}
+      <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">
+        <img class="poster" src="{{ url_for('static', filename='images/' ~ t.poster_path) }}" alt="">
+      </a>
+      {% endif %}
+      <a class="card-title" href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+      <div class="card-meta">
+        <span class="star">&#9733;</span> {{ '%.1f'|format(t.rating_avg) }}
+        &middot; {{ t.year }}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% if in_theaters %}
+<section class="row">
+  <div class="row-head">
+    <h2>Recently released</h2>
+  </div>
+  <ul class="card-grid">
+    {% for t in in_theaters %}
+    <li class="card">
+      <a class="card-title" href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+      <div class="card-meta">
+        <span class="star">&#9733;</span> {{ '%.1f'|format(t.rating_avg) }}
+        &middot; {{ t.year }}
+        &middot; {% for g in t.genres %}{{ g.name }}{{ ', ' if not loop.last }}{% endfor %}
+      </div>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<section class="news-strip">
+  <div class="row-head">
+    <h2>Latest IMDb news</h2>
+    <a class="see-all" href="{{ url_for('news_list') }}">All news &rsaquo;</a>
+  </div>
+  <ul class="news-list">
+    {% for n in latest_news %}
+    <li>
+      <strong>{{ n.headline }}</strong>
+      <span class="news-meta">&mdash; {{ n.source }} &middot; {{ n.published_at }}</span>
+      <p>{{ n.summary }}</p>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+
+{% endblock %}

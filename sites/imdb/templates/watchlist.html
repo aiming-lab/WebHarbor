@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Your Watchlist - IMDb{% endblock %}
+{% block content %}
+<h1>{{ current_user.name }}'s Watchlist</h1>
+<p class="muted">{{ titles|length }} title{{ 's' if titles|length != 1 }} saved.</p>
+<ul class="result-list">
+  {% for t in titles %}
+  <li>
+    <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+    <span class="muted">({{ t.year }}) &middot;
+      <span class="star">&#9733;</span>{{ '%.1f'|format(t.rating_avg) }} &middot;
+      {{ t.runtime_min }}m
+    </span>
+    <form class="inline" method="post" action="{{ url_for('title_watchlist_toggle', tt_id=t.tt_id) }}">
+      <button class="link">Remove</button>
+    </form>
+  </li>
+  {% else %}
+  <li>Your Watchlist is empty. Visit a title page and click <em>Add to Watchlist</em>.</li>
+  {% endfor %}
+</ul>
+{% endblock %}

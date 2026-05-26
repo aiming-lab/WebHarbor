@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}{% if q %}{{ q }} &mdash; {% endif %}IMDb search{% endblock %}
+{% block content %}
+<h1>Search results{% if q %} for &ldquo;{{ q }}&rdquo;{% endif %}</h1>
+<p class="muted">
+  <a href="?q={{ q }}&s=all" class="{{ 'active' if kind=='all' }}">All</a> |
+  <a href="?q={{ q }}&s=tt"  class="{{ 'active' if kind=='tt' }}">Titles ({{ titles|length }})</a> |
+  <a href="?q={{ q }}&s=nm"  class="{{ 'active' if kind=='nm' }}">Names ({{ people|length }})</a>
+</p>
+
+{% if titles %}
+<section>
+  <h2>Titles</h2>
+  <ul class="result-list">
+    {% for t in titles %}
+    <li>
+      <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+      <span class="muted">({{ t.year }})
+        &middot; {{ t.title_type }}
+        &middot; <span class="star">&#9733;</span>{{ '%.1f'|format(t.rating_avg) }}
+        &middot; {{ t.num_votes|compact_votes }} votes
+      </span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if people %}
+<section>
+  <h2>Names</h2>
+  <ul class="result-list">
+    {% for p in people %}
+    <li>
+      <a href="{{ url_for('name_detail', nm_id=p.nm_id) }}">{{ p.name }}</a>
+      <span class="muted">&middot; {{ p.primary_profession }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+{% if q and not titles and not people %}
+<p>No results matching &ldquo;{{ q }}&rdquo;.</p>
+{% endif %}
+{% endblock %}

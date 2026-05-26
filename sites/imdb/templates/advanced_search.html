@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+{% block title %}Advanced title search - IMDb{% endblock %}
+{% block content %}
+<h1>Advanced title search</h1>
+<form method="get" class="filters">
+  <label>Type
+    <select name="title_type">
+      <option value="">Any</option>
+      <option value="movie" {% if title_type=='movie' %}selected{% endif %}>Movie</option>
+      <option value="tvSeries" {% if title_type=='tvSeries' %}selected{% endif %}>TV Series</option>
+    </select>
+  </label>
+  <label>Year from
+    <input type="number" name="year_from" value="{{ year_from or '' }}" min="1900" max="2030">
+  </label>
+  <label>Year to
+    <input type="number" name="year_to" value="{{ year_to or '' }}" min="1900" max="2030">
+  </label>
+  <label>IMDb rating ≥
+    <input type="number" step="0.1" name="rating_min" value="{{ rating_min or '' }}" min="1" max="10">
+  </label>
+  <fieldset>
+    <legend>Genres (all selected must apply)</legend>
+    {% for g in all_genres %}
+      <label class="check">
+        <input type="checkbox" name="genre" value="{{ g.slug }}"
+               {% if g.slug in selected_genres %}checked{% endif %}>
+        {{ g.name }}
+      </label>
+    {% endfor %}
+  </fieldset>
+  <label>Sort by
+    <select name="sort">
+      <option value="popularity" {% if sort=='popularity' %}selected{% endif %}>Popularity</option>
+      <option value="rating"     {% if sort=='rating' %}selected{% endif %}>IMDb rating</option>
+      <option value="votes"      {% if sort=='votes' %}selected{% endif %}>Number of votes</option>
+      <option value="year"       {% if sort=='year' %}selected{% endif %}>Release year</option>
+      <option value="box_office" {% if sort=='box_office' %}selected{% endif %}>Box office (worldwide)</option>
+    </select>
+  </label>
+  <button class="btn" type="submit">Search</button>
+</form>
+
+<h2>{{ results|length }} result{{ 's' if results|length != 1 }}</h2>
+<ol class="result-list">
+  {% for t in results %}
+  <li>
+    <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+    <span class="muted">
+      ({{ t.year }}) &middot;
+      <span class="star">&#9733;</span>{{ '%.1f'|format(t.rating_avg) }} &middot;
+      {{ t.num_votes|compact_votes }} votes &middot;
+      {{ t.runtime_min }}m &middot;
+      {% for g in t.genres %}{{ g.name }}{{ ', ' if not loop.last }}{% endfor %}
+    </span>
+    <p class="muted">{{ t.plot_short }}</p>
+  </li>
+  {% else %}
+  <li>No matches. Loosen the filters.</li>
+  {% endfor %}
+</ol>
+{% endblock %}

@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+<header class="topbar">
+  <div class="container nav">
+    <a class="brand" href="{{ url_for('index') }}">IMDb</a>
+    <nav class="primary-nav">
+      <div class="menu">
+        Menu
+        <div class="dropdown">
+          <a href="{{ url_for('chart_top') }}">Top 250 Movies</a>
+          <a href="{{ url_for('chart_toptv') }}">Top 250 TV Shows</a>
+          <a href="{{ url_for('chart_moviemeter') }}">Most Popular</a>
+          <a href="{{ url_for('chart_boxoffice') }}">Top Box Office</a>
+          <a href="{{ url_for('news_list') }}">News</a>
+          <a href="{{ url_for('advanced_title_search') }}">Advanced Search</a>
+        </div>
+      </div>
+    </nav>
+    <form class="search" action="{{ url_for('search') }}" method="get">
+      <select name="s" aria-label="Search type">
+        <option value="all">All</option>
+        <option value="tt">Titles</option>
+        <option value="nm">Names</option>
+      </select>
+      <input type="search" name="q" value="{{ request.args.get('q','') }}"
+             placeholder="Search IMDb" aria-label="Search IMDb">
+      <button type="submit">Search</button>
+    </form>
+    <div class="user-area">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('my_watchlist') }}">Watchlist</a>
+        <a href="{{ url_for('account') }}">{{ current_user.name }}</a>
+        <a href="{{ url_for('logout') }}">Sign Out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign In</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main class="container">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% if msgs %}
+      <div class="flashes">
+        {% for cat, msg in msgs %}
+          <div class="flash flash-{{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="container">
+    <p>IMDb mirror &mdash; offline replica for web-agent benchmarks. Data is illustrative only.</p>
+    <p>&copy; 1990&ndash;{{ now_year }} IMDb mirror (WebHarbor)</p>
+  </div>
+</footer>
+</body>
+</html>

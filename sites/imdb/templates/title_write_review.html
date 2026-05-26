@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Write a review &mdash; {{ title.primary_title }}{% endblock %}
+{% block content %}
+<h1>Write a review for {{ title.primary_title }} ({{ title.year }})</h1>
+<form method="post" class="form">
+  <label>Headline
+    <input type="text" name="headline" required maxlength="160">
+  </label>
+  <label>Your rating (optional)
+    <select name="rating">
+      <option value="">No rating</option>
+      {% for n in range(1, 11) %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>Your review
+    <textarea name="body" rows="8" required></textarea>
+  </label>
+  <button class="btn" type="submit">Post review</button>
+</form>
+{% endblock %}

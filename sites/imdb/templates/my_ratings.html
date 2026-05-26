@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}Your ratings - IMDb{% endblock %}
+{% block content %}
+<h1>{{ current_user.name }}'s ratings</h1>
+<table class="chart-table">
+  <thead><tr><th>Title</th><th>Year</th><th>Your rating</th><th>IMDb rating</th></tr></thead>
+  <tbody>
+  {% for r, t in rows %}
+  <tr>
+    <td><a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a></td>
+    <td>{{ t.year }}</td>
+    <td><span class="star">&#9733;</span> {{ r.rating }}/10</td>
+    <td><span class="star">&#9733;</span> {{ '%.1f'|format(t.rating_avg) }}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4">No ratings yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

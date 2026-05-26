@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}{{ title.primary_title }} ({{ title.year }}) - IMDb{% endblock %}
+{% block content %}
+
+<article class="title-detail">
+  <header class="title-head">
+    <div class="title-head-left">
+      <h1>{{ title.primary_title }}</h1>
+      <div class="title-sub">
+        {% if title.title_type == 'tvSeries' %}TV Series &middot; {% endif %}
+        {{ title.year }}{% if title.end_year and title.end_year != title.year %}&ndash;{{ title.end_year }}{% endif %}
+        &middot; {{ title.mpaa_rating or 'Not Rated' }}
+        &middot; {{ title.runtime_min }}m
+      </div>
+      <div class="genre-pills">
+        {% for g in title.genres %}
+          <a class="pill" href="{{ url_for('genre_browse', slug=g.slug) }}">{{ g.name }}</a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="title-head-right">
+      <div class="rating-box">
+        <div class="rating-label">IMDb Rating</div>
+        <div class="rating-value">
+          <span class="star big">&#9733;</span>
+          <span class="big">{{ '%.1f'|format(title.rating_avg) }}</span><span class="small">/10</span>
+        </div>
+        <div class="rating-votes">{{ title.num_votes|compact_votes }}</div>
+      </div>
+      {% if title.top_rank %}
+      <div class="rank-badge">#{{ title.top_rank }} in Top 250</div>
+      {% endif %}
+      {% if title.popularity_rank %}
+      <div class="popularity-badge">Popularity #{{ title.popularity_rank }}</div>
+      {% endif %}
+    </div>
+  </header>
+
+  {% if title.poster_path %}
+  <img class="title-poster" src="{{ url_for('static', filename='images/' ~ title.poster_path) }}" alt="">
+  {% endif %}
+
+  {% if title.taglines() %}
+  <p class="tagline">&ldquo;{{ title.taglines()[0] }}&rdquo;</p>
+  {% endif %}
+
+  <section class="plot">
+    <h2>Plot</h2>
+    {% if title.plot_short and title.plot_short != title.plot %}<p class="plot-short">{{ title.plot_short }}</p>{% endif %}
+    <p class="plot-full">{{ title.plot }}</p>
+  </section>
+
+  <section class="cast">
+    <h2>Top cast</h2>
+    {% if cast %}
+    <ul class="cast-grid">
+      {% for c in cast %}
+      <li class="cast-card">
+        {% if c.person.photo_path %}
+        <img class="cast-photo" src="{{ url_for('static', filename='images/' ~ c.person.photo_path) }}" alt="">
+        {% endif %}
+        <a href="{{ url_for('name_detail', nm_id=c.person.nm_id) }}">{{ c.person.name }}</a>
+        {% if c.character %}<div class="character">as {{ c.character }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    <p><a href="{{ url_for('title_fullcredits', tt_id=title.tt_id) }}">See full cast &amp; crew &rsaquo;</a></p>
+    {% else %}
+    <p>No cast listed.</p>
+    {% endif %}
+
+    {% if title.directors %}
+    <p><strong>Director{{ 's' if title.directors|length > 1 else '' }}:</strong>
+      {% for c in title.directors %}
+        <a href="{{ url_for('name_detail', nm_id=c.person.nm_id) }}">{{ c.person.name }}</a>{{ ', ' if not loop.last }}
+      {% endfor %}
+    </p>
+    {% endif %}
+    {% if title.writers %}
+    <p><strong>Writer{{ 's' if title.writers|length > 1 else '' }}:</strong>
+      {% for c in title.writers %}
+        <a href="{{ url_for('name_detail', nm_id=c.person.nm_id) }}">{{ c.person.name }}</a>{{ ', ' if not loop.last }}
+      {% endfor %}
+    </p>
+    {% endif %}
+  </section>
+
+  <section class="boxoffice">
+    <h2>Box office &amp; details</h2>
+    <dl class="metadata">
+      <dt>Release date</dt><dd>{{ title.release_date or '—' }}</dd>
+      <dt>Country of origin</dt><dd>{{ title.country or '—' }}</dd>
+      <dt>Language</dt><dd>{{ title.language or '—' }}</dd>
+      <dt>Budget</dt><dd>{{ title.budget|money }}</dd>
+      <dt>Opening weekend US &amp; Canada</dt><dd>{{ title.box_office_opening|money }}</dd>
+      <dt>Gross US &amp; Canada</dt><dd>{{ title.box_office_us|money }}</dd>
+      <dt>Gross worldwide</dt><dd>{{ title.box_office_world|money }}</dd>
+      <dt>Metascore</dt><dd>{{ title.metascore or '—' }}</dd>
+    </dl>
+  </section>
+
+  <section class="user-actions">
+    {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('title_watchlist_toggle', tt_id=title.tt_id) }}">
+        <button type="submit" class="btn">
+          {% if title.id in in_watchlist %}&minus; Remove from Watchlist{% else %}+ Add to Watchlist{% endif %}
+        </button>
+      </form>
+      <form method="post" action="{{ url_for('title_rate', tt_id=title.tt_id) }}" class="rate-form">
+        <label>Your rating:
+          <select name="rating">
+            {% for n in range(1, 11) %}
+              <option value="{{ n }}" {% if user_rating == n %}selected{% endif %}>{{ n }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <button type="submit" class="btn">{% if user_rating %}Update rating{% else %}Rate{% endif %}</button>
+      </form>
+      <a class="btn" href="{{ url_for('title_write_review', tt_id=title.tt_id) }}">Write a review</a>
+    {% else %}
+      <p><a href="{{ url_for('login') }}">Sign in</a> to add to Watchlist, rate, or write a review.</p>
+    {% endif %}
+  </section>
+
+  <section class="reviews">
+    <h2>Featured reviews</h2>
+    {% for r in featured_reviews %}
+    <article class="review-card">
+      <header>
+        <strong>{{ r.headline }}</strong>
+        {% if r.rating %}<span class="review-rating"><span class="star">&#9733;</span>{{ r.rating }}/10</span>{% endif %}
+      </header>
+      <p>{{ r.body }}</p>
+      <footer class="review-foot">by {{ r.user.name }} &middot; {{ r.helpful_count }} found this helpful</footer>
+    </article>
+    {% else %}
+    <p>No reviews yet.</p>
+    {% endfor %}
+    <p><a href="{{ url_for('title_reviews', tt_id=title.tt_id) }}">All reviews ({{ title.reviews|length }}) &rsaquo;</a></p>
+  </section>
+
+  {% if similar %}
+  <section class="row">
+    <div class="row-head"><h2>More like this</h2></div>
+    <ul class="card-grid">
+      {% for s in similar %}
+      <li class="card">
+        <a class="card-title" href="{{ url_for('title_detail', tt_id=s.tt_id) }}">{{ s.primary_title }}</a>
+        <div class="card-meta"><span class="star">&#9733;</span> {{ '%.1f'|format(s.rating_avg) }} &middot; {{ s.year }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</article>
+{% endblock %}

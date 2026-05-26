@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}{{ chart_name }} - IMDb{% endblock %}
+{% block content %}
+<header class="chart-head">
+  <h1>{{ chart_name }}</h1>
+  <p class="muted">{{ description }}</p>
+</header>
+<table class="chart-table">
+  <thead>
+    <tr><th>Rank</th><th>Title</th><th>IMDb rating</th><th>Year</th>
+        {% if chart_slug == 'boxoffice' %}<th>Gross (US)</th>{% endif %}
+    </tr>
+  </thead>
+  <tbody>
+  {% for t in titles %}
+    <tr>
+      <td>
+        {% if chart_slug == 'top' or chart_slug == 'toptv' %}{{ t.top_rank }}{% elif chart_slug == 'moviemeter' %}{{ t.popularity_rank }}{% else %}{{ loop.index }}{% endif %}
+      </td>
+      <td>
+        <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+        {% if current_user.is_authenticated %}
+          <form class="inline" method="post" action="{{ url_for('title_watchlist_toggle', tt_id=t.tt_id) }}">
+            <button class="link">{% if t.id in in_watchlist %}&minus;{% else %}+{% endif %} Watchlist</button>
+          </form>
+        {% endif %}
+      </td>
+      <td><span class="star">&#9733;</span> {{ '%.1f'|format(t.rating_avg) }}</td>
+      <td>{{ t.year }}</td>
+      {% if chart_slug == 'boxoffice' %}<td>{{ t.box_office_us|money }}</td>{% endif %}
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+{% endblock %}
