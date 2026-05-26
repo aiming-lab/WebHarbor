@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Sell on Discogs{% endblock %}
+{% block content %}
+<h1>List an item for sale</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Release ID (Discogs ID)</label>
+  <input type="number" name="release_id" required>
+  <p class="tiny muted">Find a release page and use its numeric ID.</p>
+
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px;">
+    <div>
+      <label>Media condition</label>
+      <select name="media_condition">
+        {% for g in grades %}<option>{{ g }}</option>{% endfor %}
+      </select>
+    </div>
+    <div>
+      <label>Sleeve condition</label>
+      <select name="sleeve_condition">
+        {% for g in grades %}<option>{{ g }}</option>{% endfor %}
+      </select>
+    </div>
+  </div>
+
+  <label>Price (USD)</label>
+  <input type="number" name="price" min="0.01" step="0.01" required style="max-width: 200px;">
+
+  <label>Currency</label>
+  <select name="currency" style="max-width: 120px;">
+    <option>USD</option><option>EUR</option><option>GBP</option><option>JPY</option><option>CAD</option>
+  </select>
+
+  <label>Ships from</label>
+  <input type="text" name="shipping_from" value="United States" maxlength="80">
+
+  <label>Comments</label>
+  <textarea name="comments" maxlength="600" placeholder="Original inner sleeve included, plays beautifully, light surface marks…"></textarea>
+
+  <label><input type="checkbox" name="allow_offers"> Allow buyer offers</label>
+
+  <p><button class="btn-primary" type="submit">List for sale</button></p>
+</form>
+{% endblock %}

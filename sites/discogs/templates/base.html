@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Discogs — Music Database and Marketplace{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/no-cover.svg') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="top">
+    <a href="{{ url_for('index') }}" class="logo">discogs</a>
+    <form class="search" action="{{ url_for('search') }}" method="get" role="search">
+      <input type="text" name="q" value="{{ request.args.get('q','') }}"
+             placeholder="Search Releases, Artists, Labels…">
+      <select name="type">
+        <option value="release" {% if request.args.get('type','release')=='release' %}selected{% endif %}>All</option>
+        <option value="release" {% if request.args.get('type')=='release' %}selected{% endif %}>Release</option>
+        <option value="artist"  {% if request.args.get('type')=='artist'  %}selected{% endif %}>Artist</option>
+        <option value="label"   {% if request.args.get('type')=='label'   %}selected{% endif %}>Label</option>
+      </select>
+      <button type="submit">Search</button>
+    </form>
+    <nav class="user-area">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('user_collection', username=current_user.username) }}">Collection</a>
+        <a href="{{ url_for('user_wantlist', username=current_user.username) }}">Wantlist</a>
+        <a href="{{ url_for('sell') }}">Sell</a>
+        <span class="avatar" style="background: {{ current_user.avatar_color }}">
+          {{ current_user.username[0]|upper }}
+        </span>
+        <a href="{{ url_for('user_profile', username=current_user.username) }}">{{ current_user.username }}</a>
+        <a href="{{ url_for('settings') }}">Settings</a>
+        <a href="{{ url_for('logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Log in</a>
+        <a class="btn btn-sm" href="{{ url_for('register') }}">Register</a>
+      {% endif %}
+    </nav>
+  </div>
+  <nav class="subnav">
+    <a href="{{ url_for('explore') }}">Explore</a>
+    <a href="{{ url_for('search') }}?type=release">Releases</a>
+    <a href="{{ url_for('search') }}?type=artist">Artists</a>
+    <a href="{{ url_for('search') }}?type=label">Labels</a>
+    <a href="{{ url_for('marketplace') }}">Marketplace</a>
+    <a href="{{ url_for('lists_index') }}">Lists</a>
+    <a href="{{ url_for('forum_index') }}">Forum</a>
+  </nav>
+</header>
+
+<main class="page">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flashes">
+        {% for cat, msg in messages %}
+          <li class="{{ cat }}">{{ msg }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="inner">
+    <div>
+      <h4>Discogs</h4>
+      <ul>
+        <li><a href="{{ url_for('explore') }}">Explore Music</a></li>
+        <li><a href="{{ url_for('marketplace') }}">Marketplace</a></li>
+        <li><a href="{{ url_for('forum_index') }}">Community</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Sell on Discogs</h4>
+      <ul>
+        <li><a href="{{ url_for('sell') }}">List for sale</a></li>
+        <li><a href="#">Seller hub</a></li>
+        <li><a href="#">Fees</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Database</h4>
+      <ul>
+        <li><a href="{{ url_for('explore') }}">Genres</a></li>
+        <li><a href="{{ url_for('search') }}?type=label">Labels</a></li>
+        <li><a href="{{ url_for('lists_index') }}">User Lists</a></li>
+      </ul>
+    </div>
+    <div style="flex: 1; text-align: right;">
+      <p>© Discogs (WebHarbor offline mirror)<br>
+         Catalog data from Discogs &amp; MusicBrainz. Cover images via Wikipedia.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

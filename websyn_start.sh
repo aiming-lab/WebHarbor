@@ -1,11 +1,11 @@
 #!/bin/bash
-# WebSyn startup: launch all 12 mirror sites, then exec the original CMD.
+# WebSyn startup: launch all 16 mirror sites, then exec the original CMD.
 # This preserves the base image's browser env server (port 8100) as PID 1.
 set -e
 
 SITES=(allrecipes amazon apple arxiv bbc_news booking github
        google_flights google_map google_search huggingface wolfram_alpha
-       cambridge_dictionary coursera espn)
+       cambridge_dictionary coursera espn discogs)
 BASE_PORT=40000
 PID_DIR=/tmp/websyn_pids
 mkdir -p "$PID_DIR"

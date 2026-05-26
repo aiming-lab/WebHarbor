@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Explore | Discogs{% endblock %}
+{% block content %}
+<h1>Explore the Database</h1>
+
+<div class="card">
+  <h2>Genres</h2>
+  <div class="tag-cloud">
+    {% for g in genres %}<a href="{{ url_for('genre_detail', slug=g.slug) }}">{{ g.name }}</a>{% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Formats</h2>
+  <div class="tag-cloud">
+    {% for f in formats %}<a href="{{ url_for('format_detail', slug=f.slug) }}">{{ f.name }}</a>{% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Decades</h2>
+  <div class="tag-cloud">
+    {% for d in decades %}<a href="{{ url_for('search', year=d) }}">{{ d }}s</a>{% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <h2>Countries</h2>
+  <div class="tag-cloud">
+    {% for c in countries %}<a href="{{ url_for('search', country=c) }}">{{ c }}</a>{% endfor %}
+  </div>
+</div>
+{% endblock %}

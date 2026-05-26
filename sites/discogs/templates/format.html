@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ f.name }} | Discogs Format{% endblock %}
+{% block content %}
+<h1>{{ f.name }}</h1>
+<p class="muted">{{ pag.total }} releases on {{ f.name }}</p>
+<div class="card">
+  <div class="release-grid">{% for r in pag.items %}{{ m.release_card(r) }}{% endfor %}</div>
+  {{ m.pagination(pag, 'format_detail', params={'slug': f.slug}) }}
+</div>
+{% endblock %}

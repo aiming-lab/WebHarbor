@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ r.artist.name }} – {{ r.title }} | Discogs{% endblock %}
+
+{% block content %}
+<div class="rel-hero">
+  <div class="cover">
+    <img src="{{ r.cover_url }}" alt="{{ r.title }}">
+    {% if r.image_path %}<p class="tiny muted" style="margin-top: 6px;">Image courtesy Wikipedia</p>{% endif %}
+  </div>
+  <div class="meta">
+    <h1>{{ r.title }}</h1>
+    <div class="artist-line">
+      <a href="{{ url_for('artist_detail', aid=r.artist.id, slug=r.artist.slug) }}">{{ r.artist.name }}</a>
+    </div>
+
+    <div class="badges">
+      {% for g in r.genres %}<a href="{{ url_for('genre_detail', slug=g.slug) }}" class="badge badge-genre">{{ g.name }}</a>{% endfor %}
+      {% for s in r.styles %}<a href="{{ url_for('style_detail', slug=s.slug) }}" class="badge badge-style">{{ s.name }}</a>{% endfor %}
+      {% for f in r.formats %}<a href="{{ url_for('format_detail', slug=f.slug) }}" class="badge badge-format">{{ f.name }}</a>{% endfor %}
+    </div>
+
+    <dl class="kv">
+      {% if r.labels %}<dt>Label</dt><dd>
+        {% for l in r.labels %}<a href="{{ url_for('label_detail', lid=l.id, slug=l.slug) }}">{{ l.name }}</a>{% if not loop.last %} · {% endif %}{% endfor %}
+        {% if r.catno %} – {{ r.catno }}{% endif %}
+      </dd>{% endif %}
+      {% if r.formats %}<dt>Format</dt><dd>{% for f in r.formats %}{{ f.name }}{% if not loop.last %}, {% endif %}{% endfor %}</dd>{% endif %}
+      {% if r.country %}<dt>Country</dt><dd>{{ r.country }}</dd>{% endif %}
+      {% if r.released %}<dt>Released</dt><dd>{{ r.released }}</dd>
+      {% elif r.year %}<dt>Year</dt><dd>{{ r.year }}</dd>{% endif %}
+      {% if r.genres %}<dt>Genre</dt><dd>{{ r.genre_str }}</dd>{% endif %}
+      {% if r.styles %}<dt>Style</dt><dd>{{ r.style_str }}</dd>{% endif %}
+      {% if r.barcode %}<dt>Barcode</dt><dd>{{ r.barcode }}</dd>{% endif %}
+      <dt>Have</dt><dd>{{ r.have_count }}</dd>
+      <dt>Want</dt><dd>{{ r.want_count }}</dd>
+      <dt>Avg Rating</dt><dd>{{ '%.2f'|format(r.avg_rating) }} / 5 ({{ r.rating_count }} ratings)</dd>
+      <dt>Submissions</dt><dd>{{ r.data_quality }}</dd>
+    </dl>
+
+    <div class="actions">
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('collection_add') }}"
+              style="display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="release_id" value="{{ r.id }}">
+          <select name="folder" style="width: auto;">
+            {% for f in folders %}<option {% if f=='Uncategorized' %}selected{% endif %}>{{ f }}</option>{% endfor %}
+          </select>
+          <select name="media_condition" style="width: auto;">
+            {% for g in grades[:6] %}<option {% if g=='Near Mint (NM or M-)' %}selected{% endif %}>{{ g }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="btn-primary">
+            {{ 'In collection ✓' if user_state.in_collection else 'Add to Collection' }}
+          </button>
+        </form>
+        <form method="post" action="{{ url_for('wantlist_add') }}"
+              style="display: inline-flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="release_id" value="{{ r.id }}">
+          <select name="min_grade" style="width: auto;">
+            {% for g in grades[:6] %}<option {% if g=='Very Good Plus (VG+)' %}selected{% endif %}>{{ g }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="btn-secondary">
+            {{ 'In wantlist ✓' if user_state.in_wantlist else 'Add to Wantlist' }}
+          </button>
+        </form>
+        <form method="post" action="{{ url_for('rate') }}" style="display: inline;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="release_id" value="{{ r.id }}">
+          <label for="rate-sel" style="display: inline; margin: 0 4px 0 8px;">Rate:</label>
+          <select id="rate-sel" name="rating" onchange="this.form.submit()" style="width: auto;">
+            <option value="">—</option>
+            {% for v in [1,2,3,4,5] %}
+              <option value="{{ v }}" {% if user_state.my_rating == v %}selected{% endif %}>{{ v }} ★</option>
+            {% endfor %}
+          </select>
+        </form>
+      {% else %}
+        <a class="btn btn-primary" href="{{ url_for('login') }}">Sign in to collect</a>
+      {% endif %}
+    </div>
+
+    {% if r.lowest_price %}
+      <div class="rating-bar">
+        <div class="big">${{ '%.2f'|format(r.lowest_price) }}</div>
+        <div class="lbl">{{ r.num_for_sale }} for sale starting from</div>
+      </div>
+    {% endif %}
+  </div>
+</div>
+
+{% if r.tracks.count() %}
+<div class="card" style="margin-top: 24px;">
+  <h2>Tracklist</h2>
+  <table class="tracklist">
+    <thead><tr><th class="pos">#</th><th>Title</th><th class="dur">Length</th></tr></thead>
+    <tbody>
+    {% for t in r.tracks %}
+      <tr>
+        <td class="pos">{{ t.position }}</td>
+        <td>
+          {{ t.title }}
+          {% if t.artist_credit %}<div class="tiny muted">{{ t.artist_credit }}</div>{% endif %}
+        </td>
+        <td class="dur">{{ t.duration }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if other_versions %}
+<div class="card">
+  <h2>Other Versions ({{ other_versions|length }})</h2>
+  <div class="release-grid">{% for v in other_versions %}{{ m.release_card(v) }}{% endfor %}</div>
+</div>
+{% endif %}
+
+{% if listings %}
+<div class="card">
+  <div class="section-header">
+    <h2>Marketplace — {{ listings|length }} for sale</h2>
+    <a href="{{ url_for('marketplace') }}">All listings →</a>
+  </div>
+  {% for l in listings %}
+  <div class="listing-row">
+    <div>
+      <strong>{{ l.user.username }}</strong>
+      <div class="grade">Media: {{ l.media_condition }} / Sleeve: {{ l.sleeve_condition }}</div>
+      {% if l.comments %}<div class="tiny muted">{{ l.comments }}</div>{% endif %}
+    </div>
+    <div class="grade">{{ l.shipping_from }}</div>
+    <div class="price">${{ '%.2f'|format(l.price) }}</div>
+    <div class="grade">{{ l.currency }}</div>
+    <div><a class="btn btn-sm btn-primary" href="#">Buy</a></div>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Ratings</h2>
+  {% set max_count = (rating_hist.values()|max) if rating_hist else 1 %}
+  {% for v in [5,4,3,2,1] %}
+    <div class="rh">
+      <span>{{ v }} ★</span>
+      <span class="bar"><span class="bar-fill"
+        style="width: {{ (100 * (rating_hist[v] or 0) / max_count)|round(0)|int if max_count > 0 else 0 }}%"></span></span>
+      <span class="muted">{{ rating_hist[v] or 0 }}</span>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2>Reviews ({{ reviews|length }})</h2>
+  {% if current_user.is_authenticated %}
+    <details>
+      <summary style="cursor: pointer; padding: 8px 0; color: #105e9c;">Write a review</summary>
+      <form method="post" action="{{ url_for('review_post') }}" style="margin-top: 10px;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="release_id" value="{{ r.id }}">
+        <label>Rating</label>
+        <select name="rating" style="width: auto;">
+          {% for v in [5,4,3,2,1] %}<option value="{{ v }}">{{ v }} ★</option>{% endfor %}
+        </select>
+        <label>Review</label>
+        <textarea name="body" required minlength="20" placeholder="Share your thoughts on this release…"></textarea>
+        <button class="btn-primary" type="submit" style="margin-top: 10px;">Post review</button>
+      </form>
+    </details>
+  {% endif %}
+  {% for rv in reviews %}
+    <div class="review">
+      <div class="review-head">
+        {{ m.avatar(rv.user) }}
+        <strong>{{ rv.user.username }}</strong>
+        {% if rv.rating %}<span class="stars">{% for i in range(rv.rating) %}★{% endfor %}</span>{% endif %}
+        <span class="muted">{{ rv.created_at|relative }}</span>
+        {% if rv.helpful %}<span class="muted">· {{ rv.helpful }} helpful</span>{% endif %}
+      </div>
+      <div class="review-body">{{ rv.body }}</div>
+    </div>
+  {% else %}
+    <p class="muted">No reviews yet — be the first to write one.</p>
+  {% endfor %}
+</div>
+
+{% if related %}
+<div class="card">
+  <h2>More by {{ r.artist.name }}</h2>
+  <div class="release-grid">{% for v in related %}{{ m.release_card(v) }}{% endfor %}</div>
+</div>
+{% endif %}
+
+{% endblock %}

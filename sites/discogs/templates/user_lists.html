@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ u.username }} – Lists | Discogs{% endblock %}
+{% block content %}
+<h1>{{ u.username }}'s Lists</h1>
+{% if current_user.is_authenticated and current_user.id == u.id %}
+  <p><a href="{{ url_for('list_new') }}" class="btn btn-primary">+ Create new list</a></p>
+{% endif %}
+{% for l in lists %}
+  <div class="card">
+    <h3><a href="{{ url_for('list_detail', lid=l.id) }}">{{ l.title }}</a>
+      {% if not l.is_public %}<span class="tiny muted">(private)</span>{% endif %}</h3>
+    <p class="muted">{{ l.items.count() }} items · created {{ l.created_at|relative }}</p>
+    {% if l.description %}<p>{{ l.description }}</p>{% endif %}
+  </div>
+{% else %}
+  <p class="empty">No lists yet.</p>
+{% endfor %}
+{% endblock %}

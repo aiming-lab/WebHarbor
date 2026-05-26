@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}{{ u.username }} – Feedback | Discogs{% endblock %}
+{% block content %}
+<h1>{{ u.username }}'s Seller Feedback</h1>
+{% if u.is_seller %}
+  <p class="muted">⭐ {{ '%.1f'|format(u.seller_rating) }} / 5.0 over {{ u.seller_feedback_count }} transactions</p>
+{% else %}
+  <p class="empty">{{ u.username }} is not an active seller.</p>
+{% endif %}
+{% endblock %}

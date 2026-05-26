@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Marketplace | Discogs{% endblock %}
+{% block content %}
+<h1>Marketplace</h1>
+<p class="muted">{{ pag.total }} items for sale</p>
+
+<div style="margin-bottom: 12px; display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+  Sort:
+  <select onchange="window.location.href=this.value" style="width: auto;">
+    {% for v, label in [('price_asc','Price ↑'), ('price_desc','Price ↓'), ('newest','Newest listed')] %}
+      <option value="{{ url_for('marketplace', sort=v, media=media, genre=genre) }}" {% if sort == v %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  Media:
+  <select onchange="window.location.href=this.value" style="width: auto;">
+    <option value="{{ url_for('marketplace', sort=sort, genre=genre) }}" {% if not media %}selected{% endif %}>All conditions</option>
+    {% for g in grades %}
+      <option value="{{ url_for('marketplace', sort=sort, media=g, genre=genre) }}" {% if media == g %}selected{% endif %}>{{ g }}</option>
+    {% endfor %}
+  </select>
+  Genre:
+  <select onchange="window.location.href=this.value" style="width: auto;">
+    <option value="{{ url_for('marketplace', sort=sort, media=media) }}" {% if not genre %}selected{% endif %}>All genres</option>
+    {% for g in genres %}
+      <option value="{{ url_for('marketplace', sort=sort, media=media, genre=g.slug) }}" {% if genre == g.slug %}selected{% endif %}>{{ g.name }}</option>
+    {% endfor %}
+  </select>
+  {% if current_user.is_authenticated %}<a class="btn btn-primary" href="{{ url_for('sell') }}" style="margin-left: auto;">Sell on Discogs</a>{% endif %}
+</div>
+
+<div class="card">
+  {% for l in pag.items %}
+  <div class="listing-row">
+    <div>
+      <a href="{{ url_for('release_detail', rid=l.release.discogs_id or l.release.id) }}">
+        <strong>{{ l.release.artist.name }} – {{ l.release.title }}</strong>
+      </a>
+      <div class="grade">{{ l.release.year or '' }} {{ l.release.primary_format }} · sold by <a href="{{ url_for('user_profile', username=l.user.username) }}">{{ l.user.username }}</a></div>
+      <div class="grade">Media: {{ l.media_condition }} · Sleeve: {{ l.sleeve_condition }}</div>
+    </div>
+    <div class="grade">{{ l.shipping_from }}</div>
+    <div class="price">${{ '%.2f'|format(l.price) }} {{ l.currency }}</div>
+    <div class="grade">{{ l.posted_at|relative }}</div>
+    <div><a class="btn btn-sm btn-primary" href="#">Buy</a></div>
+  </div>
+  {% else %}
+    <p class="empty">No active listings.</p>
+  {% endfor %}
+</div>
+{{ m.pagination(pag, 'marketplace', params={'sort': sort, 'media': media, 'genre': genre}) }}
+{% endblock %}

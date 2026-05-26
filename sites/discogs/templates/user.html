@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ u.username }} | Discogs{% endblock %}
+
+{% block content %}
+<div class="profile-head">
+  {{ m.avatar(u, 'md') }}
+  <div style="flex: 1;">
+    <h1>{{ u.username }}</h1>
+    {% if u.real_name %}<p>{{ u.real_name }}</p>{% endif %}
+    {% if u.location %}<p class="muted">📍 {{ u.location }}</p>{% endif %}
+    <p class="muted">Joined {{ u.joined_at.strftime('%B %Y') }}
+      {% if u.is_seller %} · ⭐ Seller (rating {{ '%.1f'|format(u.seller_rating) }}, {{ u.seller_feedback_count }} feedbacks){% endif %}
+    </p>
+    {% if u.bio %}<p>{{ u.bio }}</p>{% endif %}
+  </div>
+</div>
+
+<div class="stat-grid">
+  <div class="stat"><div class="n">{{ coll_n }}</div><div class="l">in Collection</div></div>
+  <div class="stat"><div class="n">{{ want_n }}</div><div class="l">in Wantlist</div></div>
+  <div class="stat"><div class="n">{{ u.reviews.count() }}</div><div class="l">Reviews</div></div>
+  <div class="stat"><div class="n">{{ u.lists.count() }}</div><div class="l">Lists</div></div>
+</div>
+
+<div class="tabs">
+  <a href="{{ url_for('user_profile', username=u.username) }}" class="active">Overview</a>
+  <a href="{{ url_for('user_collection', username=u.username) }}">Collection</a>
+  <a href="{{ url_for('user_wantlist', username=u.username) }}">Wantlist</a>
+  <a href="{{ url_for('user_lists', username=u.username) }}">Lists</a>
+  <a href="{{ url_for('user_reviews', username=u.username) }}">Reviews</a>
+  <a href="{{ url_for('user_feedback', username=u.username) }}">Feedback</a>
+</div>
+
+<div class="row">
+  <div class="col-main">
+    <div class="card">
+      <h2>Recent Reviews</h2>
+      {% for rv in reviews %}
+        <div class="review">
+          <div class="review-head">
+            <a href="{{ url_for('release_detail', rid=rv.release.discogs_id or rv.release.id) }}">{{ rv.release.title }}</a>
+            <span class="muted">{{ rv.release.artist.name }}</span>
+            {% if rv.rating %}<span style="color: #ff8c00;">{% for i in range(rv.rating) %}★{% endfor %}</span>{% endif %}
+            <span class="muted">{{ rv.created_at|relative }}</span>
+          </div>
+          <div class="review-body">{{ rv.body[:300] }}{% if rv.body|length > 300 %}…{% endif %}</div>
+        </div>
+      {% else %}
+        <p class="muted">No reviews yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+  <div class="col-side">
+    <div class="card">
+      <h2>Public Lists</h2>
+      {% for l in lists %}
+        <p><a href="{{ url_for('list_detail', lid=l.id) }}"><strong>{{ l.title }}</strong></a>
+          <span class="muted">({{ l.items.count() }})</span></p>
+      {% else %}
+        <p class="muted">No public lists.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

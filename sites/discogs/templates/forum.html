@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ f.name }} | Discogs Forum{% endblock %}
+{% block content %}
+<h1>{{ f.name }}</h1>
+<p class="muted">{{ f.description }}</p>
+{% if current_user.is_authenticated %}
+  <p><a href="{{ url_for('thread_new', slug=f.slug) }}" class="btn btn-primary">+ Start a new thread</a></p>
+{% endif %}
+<div class="card">
+  <div class="thread-row" style="font-weight: 600; color: #777; background: #f5f5f5; padding: 8px 0;">
+    <div>Title</div><div class="replies">Replies</div><div>Author</div><div>Last activity</div>
+  </div>
+  {% for t in pag.items %}
+    <div class="thread-row">
+      <div>
+        {% if t.pinned %}<span title="Pinned">📌</span> {% endif %}
+        {% if t.locked %}<span title="Locked">🔒</span> {% endif %}
+        <a href="{{ url_for('thread_view', tid=t.id) }}">{{ t.title }}</a>
+      </div>
+      <div class="replies">{{ t.posts.count() - 1 }}</div>
+      <div><a href="{{ url_for('user_profile', username=t.user.username) }}">{{ t.user.username }}</a></div>
+      <div class="muted">{{ t.created_at|relative }}</div>
+    </div>
+  {% else %}
+    <p class="empty">No threads yet — start one!</p>
+  {% endfor %}
+</div>
+{{ m.pagination(pag, 'forum_view', params={'slug': f.slug}) }}
+{% endblock %}

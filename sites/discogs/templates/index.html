@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Discogs — Music Database{% endblock %}
+
+{% macro release_card(r) %}
+  <a class="release-card" href="{{ url_for('release_detail', rid=r.discogs_id or r.id) }}">
+    <span class="thumb"><img src="{{ r.cover_url }}" alt="{{ r.title }}" loading="lazy"></span>
+    <div class="title">{{ r.title }}</div>
+    <div class="artist">{{ r.artist.name }}</div>
+    <div class="meta">{{ r.year or '' }} · {{ r.primary_format or '' }}{% if r.country %} · {{ r.country }}{% endif %}</div>
+    {% if r.lowest_price %}<div class="price">from ${{ '%.2f'|format(r.lowest_price) }}</div>{% endif %}
+  </a>
+{% endmacro %}
+
+{% block content %}
+<div style="margin-bottom: 18px; padding: 26px; background: linear-gradient(135deg, #2c2c2c 0%, #1a1a1a 100%); color: #fff; border-radius: 4px;">
+  <h1 style="margin: 0 0 6px; color: #fff;">Welcome to Discogs</h1>
+  <p style="margin: 0 0 14px; opacity: 0.85;">
+    The largest music database and marketplace in the world. Catalog your collection,
+    find rare records, and connect with collectors worldwide.
+  </p>
+  <a href="{{ url_for('register') }}" class="btn btn-primary">Join free</a>
+  <a href="{{ url_for('explore') }}" class="btn" style="background: transparent; color: #fff; border-color: #fff;">Explore the database</a>
+</div>
+
+<div class="card">
+  <div class="section-header">
+    <h2>New Arrivals</h2>
+    <a href="{{ url_for('search') }}?sort=newest">View all →</a>
+  </div>
+  <div class="release-grid">
+    {% for r in new_arrivals %}{{ release_card(r) }}{% endfor %}
+  </div>
+</div>
+
+<div class="card">
+  <div class="section-header">
+    <h2>Most Collected</h2>
+    <a href="{{ url_for('search') }}?sort=have">View more →</a>
+  </div>
+  <div class="release-grid">
+    {% for r in most_collected %}{{ release_card(r) }}{% endfor %}
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-main">
+    <div class="card">
+      <div class="section-header">
+        <h2>Top Rated</h2>
+        <a href="{{ url_for('search') }}?sort=rating">View more →</a>
+      </div>
+      <div class="release-grid">
+        {% for r in top_rated %}{{ release_card(r) }}{% endfor %}
+      </div>
+    </div>
+    <div class="card">
+      <div class="section-header">
+        <h2>Most Wanted</h2>
+        <a href="{{ url_for('search') }}?sort=want">View more →</a>
+      </div>
+      <div class="release-grid">
+        {% for r in most_wanted %}{{ release_card(r) }}{% endfor %}
+      </div>
+    </div>
+  </div>
+  <div class="col-side">
+    <div class="card">
+      <h2>Lists</h2>
+      {% for l in recent_lists %}
+        <div style="padding: 8px 0; border-bottom: 1px solid #eee;">
+          <a href="{{ url_for('list_detail', lid=l.id) }}"><strong>{{ l.title }}</strong></a>
+          <div class="muted">by {{ l.user.username }} · {{ l.created_at|relative }}</div>
+        </div>
+      {% else %}
+        <p class="muted">No public lists yet.</p>
+      {% endfor %}
+      <p style="margin-top: 14px;"><a href="{{ url_for('lists_index') }}">Browse all lists →</a></p>
+    </div>
+
+    <div class="card">
+      <h2>Forum</h2>
+      {% for f in forums %}
+        <div style="padding: 6px 0;">
+          <a href="{{ url_for('forum_view', slug=f.slug) }}">{{ f.name }}</a>
+          <div class="muted tiny">{{ f.description }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

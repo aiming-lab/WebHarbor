@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Search{% if q %} — {{ q }}{% endif %} | Discogs{% endblock %}
+
+{% block content %}
+<h1>{% if q %}"{{ q }}"{% else %}Browse{% endif %}</h1>
+
+<div class="tabs">
+  <a href="{{ url_for('search', q=q, type='release') }}" class="{% if type_ == 'release' %}active{% endif %}">Releases</a>
+  <a href="{{ url_for('search', q=q, type='artist') }}" class="{% if type_ == 'artist' %}active{% endif %}">Artists</a>
+  <a href="{{ url_for('search', q=q, type='label') }}" class="{% if type_ == 'label' %}active{% endif %}">Labels</a>
+</div>
+
+<div class="row">
+  <aside class="col-side">
+    <div class="card facet">
+      <h3>Sort</h3>
+      <select onchange="window.location.href=this.value">
+        {% for v, label in [('relevance','Relevance'), ('have','Most Collected'), ('want','Most Wanted'),
+                             ('rating','Highest Rated'), ('year_desc','Year ↓'), ('year_asc','Year ↑'),
+                             ('title','Title A–Z')] %}
+          <option value="{{ url_for('search', q=q, type=type_, sort=v) }}" {% if sort == v %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+
+      <h3>Genre</h3>
+      <ul>
+        {% for g in facet_genres %}
+          <li class="{% if filters.genre == g.slug %}active{% endif %}">
+            <a href="{{ url_for('search', q=q, type=type_, sort=sort, genre=g.slug) }}">{{ g.name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <h3>Style</h3>
+      <ul>
+        {% for s in facet_styles %}
+          <li class="{% if filters.style == s.slug %}active{% endif %}">
+            <a href="{{ url_for('search', q=q, type=type_, sort=sort, style=s.slug) }}">{{ s.name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <h3>Format</h3>
+      <ul>
+        {% for f in facet_formats %}
+          <li class="{% if filters.format_ == f.slug %}active{% endif %}">
+            <a href="{{ url_for('search', q=q, type=type_, sort=sort, format=f.slug) }}">{{ f.name }}</a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </aside>
+
+  <section class="col-main">
+    {% if type_ == 'artist' %}
+      {% if artists %}
+        <div class="card">
+          {% for a in artists %}
+            <div style="padding: 10px 0; border-bottom: 1px solid #eee;">
+              <a href="{{ url_for('artist_detail', aid=a.id, slug=a.slug) }}"><strong>{{ a.name }}</strong></a>
+              {% if a.real_name %}<span class="muted">— {{ a.real_name }}</span>{% endif %}
+              <div class="muted">{{ a.releases.count() }} releases</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty">No artists found.</p>
+      {% endif %}
+    {% elif type_ == 'label' %}
+      {% if labels %}
+        <div class="card">
+          {% for l in labels %}
+            <div style="padding: 10px 0; border-bottom: 1px solid #eee;">
+              <a href="{{ url_for('label_detail', lid=l.id, slug=l.slug) }}"><strong>{{ l.name }}</strong></a>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="empty">No labels found.</p>
+      {% endif %}
+    {% else %}
+      <p class="muted">{{ results.total }} releases</p>
+      <div class="release-grid">
+        {% for r in results.items %}{{ m.release_card(r) }}{% endfor %}
+      </div>
+      {% if not results.items %}<p class="empty">No releases match your search.</p>{% endif %}
+      {{ m.pagination(results, 'search', params={'q': q, 'type': type_, 'sort': sort,
+                       'genre': filters.genre, 'style': filters.style,
+                       'format': filters.format_, 'year': filters.year, 'country': filters.country}) }}
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

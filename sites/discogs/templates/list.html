@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ lst.title }} | Discogs Lists{% endblock %}
+{% block content %}
+<h1>{{ lst.title }}</h1>
+<p class="muted">by <a href="{{ url_for('user_profile', username=lst.user.username) }}">{{ lst.user.username }}</a>
+   · {{ lst.items.count() }} items · {{ lst.created_at|relative }}
+   {% if not lst.is_public %} · private{% endif %}</p>
+{% if lst.description %}<p>{{ lst.description }}</p>{% endif %}
+
+{% if current_user.is_authenticated and current_user.id == lst.user_id %}
+<div class="card">
+  <h3>Add a release</h3>
+  <form method="post" action="{{ url_for('list_add_item', lid=lst.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Release ID</label>
+    <input type="number" name="release_id" required style="width: 180px;">
+    <label>Comment</label>
+    <input type="text" name="comment" maxlength="400">
+    <button class="btn-primary" type="submit" style="margin-top: 10px;">Add</button>
+  </form>
+</div>
+{% endif %}
+
+<div class="card">
+  <ol style="padding-left: 22px;">
+    {% for it in lst.items %}
+      <li style="margin-bottom: 16px;">
+        {% if it.release %}
+          <a href="{{ url_for('release_detail', rid=it.release.discogs_id or it.release.id) }}"><strong>{{ it.release.artist.name }} – {{ it.release.title }}</strong></a>
+          <div class="muted tiny">{{ it.release.year or '' }} {{ it.release.primary_format }}</div>
+        {% elif it.artist %}
+          <a href="{{ url_for('artist_detail', aid=it.artist.id, slug=it.artist.slug) }}">{{ it.artist.name }}</a>
+        {% endif %}
+        {% if it.comment %}<div>{{ it.comment }}</div>{% endif %}
+      </li>
+    {% else %}
+      <p class="empty">No items yet.</p>
+    {% endfor %}
+  </ol>
+</div>
+{% endblock %}

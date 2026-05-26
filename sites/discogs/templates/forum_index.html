@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Forum | Discogs{% endblock %}
+{% block content %}
+<h1>Discogs Forum</h1>
+<div class="card">
+{% for f in forums %}
+  <div style="padding: 12px 0; border-bottom: 1px solid #eee;">
+    <h3 style="margin: 0 0 4px;"><a href="{{ url_for('forum_view', slug=f.slug) }}">{{ f.name }}</a></h3>
+    <p class="muted" style="margin: 0;">{{ f.description }} · {{ f.threads.count() }} threads</p>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

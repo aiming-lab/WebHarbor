@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}New Thread – {{ f.name }} | Discogs Forum{% endblock %}
+{% block content %}
+<h1>Start a new thread in {{ f.name }}</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Title</label>
+  <input type="text" name="title" required maxlength="280">
+  <label>Body</label>
+  <textarea name="body" required minlength="10"></textarea>
+  <p><button class="btn-primary" type="submit">Post thread</button></p>
+</form>
+{% endblock %}

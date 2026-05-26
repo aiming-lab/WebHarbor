@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ u.username }} – Reviews | Discogs{% endblock %}
+{% block content %}
+<h1>{{ u.username }}'s Reviews</h1>
+<p class="muted">{{ reviews|length }} reviews</p>
+<div class="card">
+{% for rv in reviews %}
+  <div class="review">
+    <div class="review-head">
+      <a href="{{ url_for('release_detail', rid=rv.release.discogs_id or rv.release.id) }}">{{ rv.release.title }}</a>
+      <span class="muted">{{ rv.release.artist.name }}</span>
+      {% if rv.rating %}<span style="color: #ff8c00;">{% for i in range(rv.rating) %}★{% endfor %}</span>{% endif %}
+      <span class="muted">{{ rv.created_at|relative }}</span>
+    </div>
+    <div class="review-body">{{ rv.body }}</div>
+  </div>
+{% else %}
+  <p class="empty">No reviews yet.</p>
+{% endfor %}
+</div>
+{% endblock %}

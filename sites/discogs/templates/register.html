@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Register | Discogs{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <h1>Create your account</h1>
+  <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Username</label>
+    <input type="text" name="username" required minlength="3" maxlength="40" pattern="[A-Za-z0-9_\-]+">
+    <label>Email</label>
+    <input type="email" name="email" required>
+    <label>Password (≥6 characters)</label>
+    <input type="password" name="password" required minlength="6">
+    <label>Location (optional)</label>
+    <input type="text" name="location" maxlength="100" placeholder="e.g. Brooklyn, USA">
+    <p><button class="btn-primary" type="submit">Create account</button></p>
+    <p class="muted">Already have an account? <a href="{{ url_for('login') }}">Log in</a>.</p>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,42 @@
+{% macro release_card(r) %}
+  <a class="release-card" href="{{ url_for('release_detail', rid=r.discogs_id or r.id) }}">
+    <span class="thumb"><img src="{{ r.cover_url }}" alt="{{ r.title }}" loading="lazy"></span>
+    <div class="title">{{ r.title }}</div>
+    <div class="artist">{{ r.artist.name }}</div>
+    <div class="meta">{{ r.year or '' }} · {{ r.primary_format or '' }}{% if r.country %} · {{ r.country }}{% endif %}</div>
+    {% if r.lowest_price %}<div class="price">from ${{ '%.2f'|format(r.lowest_price) }}</div>{% endif %}
+  </a>
+{% endmacro %}
+
+{% macro avatar(u, size='sm') %}
+  <span class="avatar{% if size == 'md' %} avatar-md{% endif %}"
+        style="background: {{ u.avatar_color }}">{{ u.username[0]|upper }}</span>
+{% endmacro %}
+
+{% macro pagination(pag, endpoint, params=None) %}
+  {% set params = params or {} %}
+  {% if pag.pages > 1 %}
+  <nav class="pagination">
+    {% if pag.page > 1 %}
+      <a href="{{ url_for(endpoint, page=pag.page-1, **params) }}">‹ Prev</a>
+    {% endif %}
+    {% for p in range(1, pag.pages + 1) %}
+      {% if p == pag.page %}
+        <span class="current">{{ p }}</span>
+      {% elif p <= 3 or p > pag.pages - 3 or (p >= pag.page - 1 and p <= pag.page + 1) %}
+        <a href="{{ url_for(endpoint, page=p, **params) }}">{{ p }}</a>
+      {% elif p == 4 or p == pag.pages - 3 %}
+        <span>…</span>
+      {% endif %}
+    {% endfor %}
+    {% if pag.page < pag.pages %}
+      <a href="{{ url_for(endpoint, page=pag.page+1, **params) }}">Next ›</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+{% endmacro %}
+
+{% macro stars(rating, count=None) %}
+  <span style="color: #ff8c00; font-weight: 600;">{{ rating|stars }}</span>
+  {% if rating %}<span class="muted">{{ '%.2f'|format(rating) }}{% if count %} ({{ count }}){% endif %}</span>{% endif %}
+{% endmacro %}

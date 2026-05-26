@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_macros.html" as mac %}
+{% block title %}{{ m.title }} (master) | Discogs{% endblock %}
+{% block content %}
+<h1>{{ m.title }} <span class="muted">(master release)</span></h1>
+<p class="muted">by <a href="{{ url_for('artist_detail', aid=m.artist.id, slug=m.artist.slug) }}">{{ m.artist.name }}</a>
+  · first released {{ m.year or '' }}</p>
+<div class="card">
+  <h2>Versions ({{ versions|length }})</h2>
+  <table style="width: 100%; border-collapse: collapse;">
+    <thead><tr style="text-align: left; background: #f5f5f5;">
+      <th style="padding: 8px;">Cat#</th><th style="padding: 8px;">Format</th>
+      <th style="padding: 8px;">Country</th><th style="padding: 8px;">Year</th><th style="padding: 8px;">Have</th>
+    </tr></thead>
+    <tbody>
+    {% for v in versions %}
+      <tr style="border-top: 1px solid #eee;">
+        <td style="padding: 6px;"><a href="{{ url_for('release_detail', rid=v.discogs_id or v.id) }}">{{ v.catno or '—' }}</a></td>
+        <td style="padding: 6px;">{{ v.primary_format }}</td>
+        <td style="padding: 6px;">{{ v.country }}</td>
+        <td style="padding: 6px;">{{ v.year or '' }}</td>
+        <td style="padding: 6px;">{{ v.have_count }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

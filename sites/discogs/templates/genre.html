@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ g.name }} | Discogs Genre{% endblock %}
+
+{% block content %}
+<h1>{{ g.name }}</h1>
+<p class="muted">{{ pag.total }} releases in this genre</p>
+
+{% if styles %}
+<div class="card">
+  <h3>Styles</h3>
+  <div class="tag-cloud">
+    {% for s in styles %}<a href="{{ url_for('style_detail', slug=s.slug) }}">{{ s.name }}</a>{% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="section-header">
+    <h2>Releases</h2>
+    <select onchange="window.location.href=this.value" style="width: auto;">
+      {% for v, label in [('have','Most Collected'), ('rating','Highest Rated'), ('year_desc','Newest')] %}
+        <option value="{{ url_for('genre_detail', slug=g.slug, sort=v) }}" {% if sort == v %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="release-grid">{% for r in pag.items %}{{ m.release_card(r) }}{% endfor %}</div>
+  {{ m.pagination(pag, 'genre_detail', params={'slug': g.slug, 'sort': sort}) }}
+</div>
+{% endblock %}

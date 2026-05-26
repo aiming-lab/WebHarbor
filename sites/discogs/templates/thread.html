@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ t.title }} | Discogs Forum{% endblock %}
+{% block content %}
+<h1>{{ t.title }}</h1>
+<p class="muted">
+  in <a href="{{ url_for('forum_view', slug=t.forum.slug) }}">{{ t.forum.name }}</a>
+  · started by <a href="{{ url_for('user_profile', username=t.user.username) }}">{{ t.user.username }}</a>
+  · {{ t.created_at|relative }}
+</p>
+
+<div class="card">
+{% for p in posts %}
+  <div class="post" id="post-{{ p.id }}">
+    <div class="post-head">
+      {{ m.avatar(p.user) }}
+      <strong><a href="{{ url_for('user_profile', username=p.user.username) }}">{{ p.user.username }}</a></strong>
+      <span class="muted">posted {{ p.created_at|relative }}</span>
+    </div>
+    <div class="post-body">{{ p.body }}</div>
+  </div>
+{% endfor %}
+</div>
+
+{% if current_user.is_authenticated and not t.locked %}
+<div class="card">
+  <h3>Reply</h3>
+  <form method="post" action="{{ url_for('thread_reply', tid=t.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <textarea name="body" required minlength="2" placeholder="Type your reply…"></textarea>
+    <p><button class="btn-primary" type="submit">Post reply</button></p>
+  </form>
+</div>
+{% elif t.locked %}
+<p class="empty">🔒 This thread is locked.</p>
+{% else %}
+<p><a href="{{ url_for('login') }}">Log in</a> to reply.</p>
+{% endif %}
+{% endblock %}

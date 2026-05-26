@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Log in to Discogs{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <h1>Log in</h1>
+  <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Username or email</label>
+    <input type="text" name="username" required autofocus>
+    <label>Password</label>
+    <input type="password" name="password" required>
+    <label><input type="checkbox" name="remember"> Stay signed in</label>
+    <p><button class="btn-primary" type="submit">Log in</button></p>
+    <p class="muted">No account? <a href="{{ url_for('register') }}">Create one</a>.</p>
+  </form>
+</div>
+{% endblock %}

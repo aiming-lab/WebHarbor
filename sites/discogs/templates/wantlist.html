@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ u.username }}'s Wantlist | Discogs{% endblock %}
+
+{% block content %}
+<h1>{{ u.username }}'s Wantlist</h1>
+<p class="muted">{{ pag.total }} items wanted</p>
+
+<div class="card">
+  <table style="width: 100%; border-collapse: collapse;">
+    <thead>
+      <tr style="text-align: left; border-bottom: 1px solid #ddd;">
+        <th style="padding: 8px; width: 60px;"></th>
+        <th style="padding: 8px;">Release</th>
+        <th style="padding: 8px;">Min Grade</th>
+        <th style="padding: 8px;">Lowest Price</th>
+        <th style="padding: 8px;">Added</th>
+        {% if current_user.is_authenticated and current_user.id == u.id %}<th></th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for w in pag.items %}
+      <tr style="border-bottom: 1px solid #eee;">
+        <td style="padding: 6px;">
+          <a href="{{ url_for('release_detail', rid=w.release.discogs_id or w.release.id) }}">
+            <img src="{{ w.release.cover_url }}" style="width: 50px; height: 50px; object-fit: cover;">
+          </a>
+        </td>
+        <td style="padding: 6px;">
+          <a href="{{ url_for('release_detail', rid=w.release.discogs_id or w.release.id) }}"><strong>{{ w.release.title }}</strong></a>
+          <div class="muted tiny">{{ w.release.artist.name }} · {{ w.release.year or '' }}</div>
+        </td>
+        <td style="padding: 6px;" class="tiny">{{ w.min_grade }}</td>
+        <td style="padding: 6px;" class="tiny">{{ w.release.lowest_price|price }}</td>
+        <td style="padding: 6px;" class="tiny">{{ w.added_at|relative }}</td>
+        {% if current_user.is_authenticated and current_user.id == u.id %}
+        <td style="padding: 6px;">
+          <form method="post" action="{{ url_for('wantlist_remove') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="release_id" value="{{ w.release.id }}">
+            <button class="btn-sm">Remove</button>
+          </form>
+        </td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if not pag.items %}<p class="empty">Wantlist is empty.</p>{% endif %}
+  {{ m.pagination(pag, 'user_wantlist', params={'username': u.username}) }}
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Lists | Discogs{% endblock %}
+{% block content %}
+<h1>User Lists</h1>
+<p class="muted">{{ pag.total }} public lists</p>
+{% if current_user.is_authenticated %}
+  <p><a href="{{ url_for('list_new') }}" class="btn btn-primary">+ Create new list</a></p>
+{% endif %}
+<div class="card">
+{% for l in pag.items %}
+  <div style="padding: 14px 0; border-bottom: 1px solid #eee;">
+    <h3><a href="{{ url_for('list_detail', lid=l.id) }}">{{ l.title }}</a></h3>
+    <p class="muted">by <a href="{{ url_for('user_profile', username=l.user.username) }}">{{ l.user.username }}</a>
+       · {{ l.items.count() }} items · {{ l.created_at|relative }}</p>
+    {% if l.description %}<p>{{ l.description[:200] }}{% if l.description|length > 200 %}…{% endif %}</p>{% endif %}
+  </div>
+{% else %}
+  <p class="empty">No public lists yet.</p>
+{% endfor %}
+</div>
+{{ m.pagination(pag, 'lists_index') }}
+{% endblock %}
