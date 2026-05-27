@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% from "_cards.html" import album_card, merch_card %}
+{% block title %}Discover - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block discover-layout">
+    <aside class="filters-panel">
+        <h1>Discover</h1>
+        <p>Filter the local mirror by genre, scene, tag, and format the way a fan would narrow Bandcamp's discover flow.</p>
+        <form class="filters-form" method="get">
+            <label>Search
+                <input type="search" name="q" value="{{ query }}" placeholder="ambient, tote, Berlin...">
+            </label>
+            <label>Genre
+                <select name="genre">
+                    <option value="all">All genres</option>
+                    {% for genre in genres %}
+                        <option value="{{ genre.slug }}" {% if selected_genre == genre.slug %}selected{% endif %}>{{ genre.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Scene
+                <select name="scene">
+                    <option value="all">All scenes</option>
+                    {% for scene in scenes %}
+                        <option value="{{ scene.slug }}" {% if selected_scene == scene.slug %}selected{% endif %}>{{ scene.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Format
+                <select name="format">
+                    <option value="all">All formats</option>
+                    {% for fmt_slug, fmt_name in format_nav %}
+                        <option value="{{ fmt_slug }}" {% if selected_format == fmt_slug %}selected{% endif %}>{{ fmt_name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Tag
+                <select name="tag">
+                    <option value="all">All tags</option>
+                    {% for tag in tags %}
+                        <option value="{{ tag.slug }}" {% if selected_tag == tag.slug %}selected{% endif %}>{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Sort
+                <select name="sort">
+                    <option value="new" {% if sort == 'new' %}selected{% endif %}>Newest</option>
+                    <option value="popular" {% if sort == 'popular' %}selected{% endif %}>Most supported</option>
+                    <option value="price-low" {% if sort == 'price-low' %}selected{% endif %}>Price: low to high</option>
+                    <option value="price-high" {% if sort == 'price-high' %}selected{% endif %}>Price: high to low</option>
+                </select>
+            </label>
+            <div class="filter-buttons">
+                <button type="submit" class="button-primary">Apply filters</button>
+                <a class="button-secondary" href="{{ url_for('discover') }}">Reset</a>
+            </div>
+        </form>
+    </aside>
+
+    <div class="discover-main">
+        {% if featured_album %}
+            <article class="focus-release">
+                <img src="{{ url_for('static', filename=featured_album.cover_image) }}" alt="{{ featured_album.title }} cover">
+                <div>
+                    <p class="eyebrow">Focused release</p>
+                    <h2><a href="{{ url_for('album_page', slug=featured_album.slug) }}">{{ featured_album.title }}</a></h2>
+                    <p class="focus-byline">by {{ featured_album.artist.name }} / {{ featured_album.primary_genre.name }} / {{ featured_album.scene.name.split(',')[0] }}</p>
+                    <p>{{ featured_album.story }}</p>
+                    <div class="focus-meta">
+                        <span>{{ featured_album.track_count }} tracks / {{ featured_album.duration_seconds|duration }}</span>
+                        <span>released {{ featured_album.release_date|longdate }}</span>
+                        <span>from {{ featured_album.price_from()|money }}</span>
+                    </div>
+                    <div class="hero-actions">
+                        <a class="button-primary" href="{{ url_for('album_page', slug=featured_album.slug) }}">Go to album</a>
+                        <a class="button-secondary" href="{{ url_for('artist_page', slug=featured_album.artist.slug) }}">View artist</a>
+                    </div>
+                </div>
+            </article>
+        {% endif %}
+
+        <div class="section-head compact">
+            <div>
+                <h2>Albums</h2>
+                <p>{{ albums|length }} filtered releases in the current view</p>
+            </div>
+        </div>
+        <div class="card-grid release-grid">
+            {% for album in albums %}
+                {{ album_card(album) }}
+            {% endfor %}
+        </div>
+
+        <div class="section-head compact">
+            <div>
+                <h2>Merch</h2>
+                <p>{{ merch_items|length }} merch items linked to the same scenes and genres</p>
+            </div>
+        </div>
+        <div class="card-grid merch-grid">
+            {% for merch in merch_items %}
+                {{ merch_card(merch) }}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

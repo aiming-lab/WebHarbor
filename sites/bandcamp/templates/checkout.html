@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Checkout - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block cart-layout">
+    <form class="auth-card wide" method="post">
+        <h1>Mock checkout</h1>
+        <p>No payment is processed. Completing checkout creates a deterministic local order and adds albums to your collection.</p>
+        <div class="form-grid">
+            <label>Shipping name
+                <input type="text" name="shipping_name" value="{{ current_user.display_name }}" required>
+            </label>
+            <label>Address line
+                <input type="text" name="shipping_line1" value="{{ current_user.address_line1 }}" required>
+            </label>
+            <label>City
+                <input type="text" name="shipping_city" value="{{ current_user.city }}" required>
+            </label>
+            <label>Country
+                <input type="text" name="shipping_country" value="{{ current_user.country }}" required>
+            </label>
+            <label>Payment label
+                <input type="text" name="payment_label" placeholder="Visa ending in 4242" required>
+            </label>
+            <label class="span-2">Order note
+                <textarea name="note" rows="4" placeholder="Gift note, delivery instructions, or benchmark preference"></textarea>
+            </label>
+        </div>
+        <button class="button-primary" type="submit">Complete mock checkout</button>
+    </form>
+    <aside class="purchase-panel">
+        <h2>Order summary</h2>
+        {% for item in items %}
+            <div class="summary-mini">
+                <strong>{{ item.title() }}</strong>
+                <span>{{ item.variant_label() }} / qty {{ item.quantity }}</span>
+                <span>{{ item.line_total()|money }}</span>
+            </div>
+        {% endfor %}
+        <div class="summary-row"><span>Subtotal</span><strong>{{ summary.subtotal|money }}</strong></div>
+        <div class="summary-row"><span>Shipping</span><strong>{{ summary.shipping|money }}</strong></div>
+        <div class="summary-row"><span>Tax</span><strong>{{ summary.tax|money }}</strong></div>
+        <div class="summary-row total"><span>Total</span><strong>{{ summary.total|money }}</strong></div>
+    </aside>
+</section>
+{% endblock %}
