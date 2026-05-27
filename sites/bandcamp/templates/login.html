@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Log In - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container auth-shell">
+    <form class="auth-card" method="post">
+        <h1>Log in</h1>
+        <p>Use a seeded benchmark account or the account you just created.</p>
+        {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
+        <label>Email
+            <input type="email" name="email" required placeholder="alice.j@test.com">
+        </label>
+        <label>Password
+            <input type="password" name="password" required placeholder="TestPass123!">
+        </label>
+        <button class="button-primary" type="submit">Log in</button>
+        <p class="auth-note">Need an account? <a href="{{ url_for('register') }}">Create one</a>.</p>
+    </form>
+</section>
+{% endblock %}

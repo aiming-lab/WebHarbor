@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% from "_cards.html" import merch_card %}
+{% block title %}{{ merch.title }} - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block album-layout">
+    <div class="album-main">
+        <div class="album-art">
+            <img src="{{ url_for('static', filename=merch.image) }}" alt="{{ merch.title }} merch image">
+        </div>
+        <div class="album-copy">
+            <p class="eyebrow">{{ merch.item_type }} / {{ merch.artist.primary_genre.name }}</p>
+            <h1>{{ merch.title }}</h1>
+            <p class="release-byline">by <a href="{{ url_for('artist_page', slug=merch.artist.slug) }}">{{ merch.artist.name }}</a>{% if merch.album %} / linked to <a href="{{ url_for('album_page', slug=merch.album.slug) }}">{{ merch.album.title }}</a>{% endif %}</p>
+            <p>{{ merch.description }}</p>
+            <div class="album-stats">
+                <span>{{ merch.inventory }} seeded units</span>
+                <span>{{ merch.release_date|longdate }}</span>
+                <span>{{ merch.price|money }}</span>
+            </div>
+        </div>
+    </div>
+
+    <aside class="purchase-panel">
+        <h2>Merch options</h2>
+        <p class="price-big">{{ merch.price|money }}</p>
+        <form method="post" action="{{ url_for('cart_add') }}">
+            <input type="hidden" name="merch_id" value="{{ merch.id }}">
+            <label>Variant
+                <select name="variant_id">
+                    {% for variant in merch.variants %}
+                        <option value="{{ variant.id }}">{{ variant.label_text() }} / {{ variant.price|money }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Quantity
+                <input type="number" name="quantity" min="1" value="1">
+            </label>
+            <button class="button-primary" type="submit">Add to cart</button>
+        </form>
+        <form method="post" action="{{ url_for('wishlist_add') }}">
+            <input type="hidden" name="merch_id" value="{{ merch.id }}">
+            <button class="button-secondary" type="submit">{% if in_wishlist %}Saved in wishlist{% else %}Add to wishlist{% endif %}</button>
+        </form>
+        <div class="variant-stack">
+            {% for variant in merch.variants %}
+                <div class="variant-card">
+                    <strong>{{ variant.label_text() }}</strong>
+                    <span>{{ variant.price|money }}</span>
+                    <p>{{ variant.edition_note }}</p>
+                </div>
+            {% endfor %}
+        </div>
+    </aside>
+</section>
+
+<section class="container section-block">
+    <div class="section-head compact"><h2>More merch from {{ merch.artist.name }}</h2></div>
+    <div class="card-grid merch-grid">
+        {% for item in related %}
+            {{ merch_card(item) }}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

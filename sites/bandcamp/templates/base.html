@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Bandcamp Mirror{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="bc-shell">
+    <header class="site-header">
+        <div class="header-main container">
+            <a href="{{ url_for('index') }}" class="brand">
+                <span class="brand-mark"></span>
+                <span class="brand-text">bandcamp</span>
+                <span class="brand-sub">webharbor local</span>
+            </a>
+            <form class="header-search" action="{{ url_for('search') }}" method="get">
+                <input type="search" name="q" placeholder="Search artists, albums, tracks, or merch" value="{{ request.args.get('q', '') }}">
+                <button type="submit">Search</button>
+            </form>
+            <nav class="header-actions" aria-label="Account and utility">
+                <a href="{{ url_for('discover') }}">Discover</a>
+                <a href="{{ url_for('compare_releases') }}">Compare</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('collection') }}">Collection</a>
+                    <a href="{{ url_for('wishlist') }}">Wishlist <span class="count">{{ wishlist_count }}</span></a>
+                    <a href="{{ url_for('cart') }}">Cart <span class="count">{{ cart_count }}</span></a>
+                    <a href="{{ url_for('account') }}">{{ current_user.first_name }}</a>
+                {% else %}
+                    <a href="{{ url_for('register') }}">Sign up</a>
+                    <a href="{{ url_for('login') }}">Log in</a>
+                {% endif %}
+            </nav>
+        </div>
+        <div class="header-subnav">
+            <div class="container pill-row">
+                {% for genre in genre_nav %}
+                    <a class="pill{% if request.args.get('genre') == genre.slug %} active{% endif %}" href="{{ url_for('discover', genre=genre.slug) }}">{{ genre.name }}</a>
+                {% endfor %}
+                {% for fmt_slug, fmt_name in format_nav %}
+                    <a class="pill ghost{% if request.args.get('format') == fmt_slug %} active{% endif %}" href="{{ url_for('discover', format=fmt_slug) }}">{{ fmt_name }}</a>
+                {% endfor %}
+            </div>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+            <section class="flash-wrap container">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </section>
+        {% endif %}
+    {% endwith %}
+
+    <main class="page-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div>
+                <h3>About This Mirror</h3>
+                <p>This Bandcamp environment is fully local, seeded, and deterministic for WebHarbor benchmark tasks.</p>
+            </div>
+            <div>
+                <h3>Explore</h3>
+                <p><a href="{{ url_for('discover') }}">Discover releases</a></p>
+                <p><a href="{{ url_for('compare_releases') }}">Compare formats</a></p>
+                <p><a href="{{ url_for('search') }}?q=ambient">Search the catalog</a></p>
+            </div>
+            <div>
+                <h3>Fan Tools</h3>
+                <p><a href="{{ url_for('wishlist') }}">Wishlist</a></p>
+                <p><a href="{{ url_for('cart') }}">Cart and checkout</a></p>
+                <p><a href="{{ url_for('collection') }}">Collection library</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
