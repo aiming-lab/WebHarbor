@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}Guides{% endblock %}{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Guides</div><h1>{{ config.name }} Guides</h1></div></section>
+<div class="pills"><a class="{{ 'active' if not topic }}" href="{{ url_for('guides') }}">All</a>{% for t in topics %}<a class="{{ 'active' if t == topic }}" href="{{ url_for('guides', topic=t) }}">{{ t }}</a>{% endfor %}</div>
+<section class="guide-grid section">{% for guide in rows %}<a class="guide-card" href="{{ url_for('guide_detail', slug=guide.slug) }}"><span class="eyebrow">{{ guide.topic }}</span><strong>{{ guide.title }}</strong><p>{{ guide.summary }}</p></a>{% endfor %}</section>
+{% endblock %}

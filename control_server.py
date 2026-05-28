@@ -28,7 +28,7 @@ SITES = [
     'huggingface', 'wolfram_alpha', 'cambridge_dictionary',
     'coursera', 'espn', 'merriam_webster', 'ikea', 'phys_org', 'target',
     'ted', 'osu', 'rotten_tomatoes', 'compass', 'walmart_careers', 'fedex',
-    'webmd_doctor',
+    'webmd_doctor', 'petfinder',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'
