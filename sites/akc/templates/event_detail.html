@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ event.title }}{% endblock %}
+{% block content %}
+<section class="detail-page">
+  <div>
+    <div class="eyebrow">{{ event.event_type }} · {{ event.starts_on.strftime("%B %d, %Y") }}</div>
+    <h1>{{ event.title }}</h1>
+    <p>{{ event.description }}</p>
+    <dl class="metric-list">
+      <div><dt>Venue</dt><dd>{{ event.venue }}</dd></div>
+      <div><dt>Location</dt><dd>{{ event.city }}, {{ event.state }}</dd></div>
+      <div><dt>Entries</dt><dd>Open until seven days before the event</dd></div>
+    </dl>
+  </div>
+  <form class="side-form" method="post">
+    <h2>Register a Dog</h2>
+    <label>Dog name <input name="dog_name" placeholder="Registered or call name"></label>
+    <label>Class
+      <select name="class_name">
+        <option>Beginner Novice</option>
+        <option>Open Standard</option>
+        <option>Junior Handler</option>
+        <option>Canine Good Citizen</option>
+      </select>
+    </label>
+    <button type="submit">Save Registration</button>
+  </form>
+</section>
+{% endblock %}
