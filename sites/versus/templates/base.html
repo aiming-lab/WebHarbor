@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Versus{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <a class="brand" href="{{ url_for('index') }}"><span>VS</span>Versus</a>
+    <nav class="top-nav" role="navigation" aria-label="Main">
+      <a href="{{ url_for('category_index') }}">Categories</a>
+      <a href="{{ url_for('compare_picker') }}">Compare</a>
+      <a href="{{ url_for('rankings') }}">Rankings</a>
+      {% for category in categories[:3] %}
+        <a href="{{ url_for('category_detail', slug=category.slug) }}">{{ category.name }}</a>
+      {% endfor %}
+    </nav>
+    <form class="header-search" action="{{ url_for('search') }}">
+      <input name="q" placeholder="Search phones, GPUs, headphones" value="{{ request.args.get('q', '') }}">
+      <button type="submit">Search</button>
+    </form>
+    <div class="account-links">
+      {% if current_user %}
+        <a href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+        <a href="{{ url_for('logout') }}">Sign out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign in</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>{% block content %}{% endblock %}</main>
+
+  <footer class="site-footer">
+    <strong>Versus Mirror</strong>
+    <nav aria-label="Footer">
+      <a href="{{ url_for('category_index') }}">Categories</a>
+      <a href="{{ url_for('compare_picker') }}">Compare</a>
+      <a href="{{ url_for('rankings') }}">Rankings</a>
+      <a href="{{ url_for('account') }}">Saved</a>
+    </nav>
+  </footer>
+</body>
+</html>

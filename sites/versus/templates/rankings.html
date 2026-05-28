@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Rankings{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Ranked by Versus Score</div><h1>Rankings</h1></div></section>
+<div class="category-pills">
+  <a class="{{ 'active' if not category_slug }}" href="{{ url_for('rankings') }}">All</a>
+  {% for category in categories %}
+    <a class="{{ 'active' if category.slug == category_slug }}" href="{{ url_for('rankings', category=category.slug) }}">{{ category.name }}</a>
+  {% endfor %}
+</div>
+<section class="ranking-list">
+  {% for product in products %}
+    <a class="ranking-row" href="{{ url_for('product_detail', slug=product.slug) }}">
+      <span class="rank">{{ loop.index }}</span>
+      <strong>{{ product.name }}</strong>
+      <small>{{ product.category.name }} · ${{ product.price }}</small>
+      <span class="score">{{ product.score }}</span>
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}

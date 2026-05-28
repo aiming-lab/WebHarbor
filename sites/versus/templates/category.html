@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }}{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow">Category</div><h1>{{ category.name }}</h1><p>{{ category.tagline }}</p></div>
+</section>
+<form class="filter-bar" action="{{ url_for('category_detail', slug=category.slug) }}">
+  <select name="brand">
+    <option value="">All brands</option>
+    {% for item in brands %}<option value="{{ item }}" {% if item == brand %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  <input name="max_price" type="number" placeholder="Max price" value="{{ max_price or '' }}">
+  <input name="min_score" type="number" placeholder="Min score" value="{{ min_score or '' }}">
+  <button type="submit">Apply</button>
+</form>
+<section class="card-grid section">
+  {% for product in products %}
+    {% include "_product_card.html" %}
+  {% endfor %}
+</section>
+{% endblock %}

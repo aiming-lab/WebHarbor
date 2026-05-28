@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Search</div><h1>{{ query or "Search Versus" }}</h1></div></section>
+<form class="filter-bar" action="{{ url_for('search') }}">
+  <input name="q" placeholder="camera burst speed, long battery headphones" value="{{ query }}">
+  <button type="submit">Search</button>
+</form>
+{% if query %}
+<section class="section">
+  <h2>Products</h2>
+  <div class="card-grid">
+    {% for product in products %}
+      {% include "_product_card.html" %}
+    {% else %}
+      <p class="empty-state">No product matches.</p>
+    {% endfor %}
+  </div>
+</section>
+<section class="section">
+  <h2>Categories</h2>
+  <div class="category-grid inset">
+    {% for category in cats %}
+      <a class="category-card" href="{{ url_for('category_detail', slug=category.slug) }}"><strong>{{ category.name }}</strong><span>{{ category.tagline }}</span></a>
+    {% else %}
+      <p class="empty-state">No category matches.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
