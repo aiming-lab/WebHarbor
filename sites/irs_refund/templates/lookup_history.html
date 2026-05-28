@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Lookup History{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Lookup history</p>
+  <h1>{% if guest_mode %}Sign in to save lookup history{% else %}Saved synthetic refund lookups{% endif %}</h1>
+  <p>{% if guest_mode %}Guest sessions do not keep lookup history. Sign in with a benchmark or registered local account to save it.{% else %}Each row below is a deterministic local history entry tied to a synthetic profile or mismatch example.{% endif %}</p>
+</section>
+
+{% if guest_mode %}
+  <section class="card-grid card-grid--three">
+    {% for case in public_cases %}
+      <article class="case-card">
+        <span class="status-chip">{{ case.showcase_label }}</span>
+        <h2>{{ case.profile.full_name }}</h2>
+        <p>{{ case.tax_year }} / {{ case.filing_status.name }} / {{ case.refund_amount|money }}</p>
+        <a class="button button--secondary button--full" href="{{ url_for('refund_status_start', case=case.reference_code) }}">Use this public demo case</a>
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="history-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Label</th>
+          <th>Tax year</th>
+          <th>Filing status</th>
+          <th>Amount</th>
+          <th>Last four</th>
+          <th>ZIP</th>
+          <th>Stage</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in histories %}
+          <tr>
+            <td>{{ item.label }}</td>
+            <td>{{ item.tax_year }}</td>
+            <td>{{ item.filing_status_name }}</td>
+            <td>{{ item.refund_amount|money }}</td>
+            <td>{{ item.last_four_id }}</td>
+            <td>{{ item.zip_code }}</td>
+            <td>{{ item.result_stage }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endif %}
+{% endblock %}
