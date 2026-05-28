@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ order.order_number }} - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <h1>Receipt {{ order.order_number }}</h1>
+            <p>{{ order.status }} / placed {{ order.placed_at|longdate }}</p>
+        </div>
+    </div>
+    <div class="cart-layout">
+        <div class="cart-items">
+            {% for item in order.items %}
+                <article class="cart-item">
+                    <img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.title }}">
+                    <div class="cart-copy">
+                        <h2>{{ item.title }}</h2>
+                        <p>{{ item.artist_name }}</p>
+                        <p>{{ item.variant_label }}</p>
+                    </div>
+                    <strong>{{ item.line_total()|money }}</strong>
+                </article>
+            {% endfor %}
+        </div>
+        <aside class="purchase-panel">
+            <h2>Delivery</h2>
+            <p>{{ order.shipping_name }}</p>
+            <p>{{ order.shipping_line1 }}</p>
+            <p>{{ order.shipping_city }}, {{ order.shipping_country }}</p>
+            <p>Paid with {{ order.payment_label }}</p>
+            <div class="summary-row"><span>Subtotal</span><strong>{{ order.subtotal|money }}</strong></div>
+            <div class="summary-row"><span>Shipping</span><strong>{{ order.shipping|money }}</strong></div>
+            <div class="summary-row"><span>Tax</span><strong>{{ order.tax|money }}</strong></div>
+            <div class="summary-row total"><span>Total</span><strong>{{ order.total|money }}</strong></div>
+        </aside>
+    </div>
+</section>
+{% endblock %}

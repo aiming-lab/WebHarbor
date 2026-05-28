@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Account - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="account-hero">
+        <div>
+            <p class="eyebrow">Fan account</p>
+            <h1>{{ current_user.display_name }}</h1>
+            <p>{{ current_user.bio or 'No profile bio yet.' }}</p>
+            <p>{{ current_user.city }}, {{ current_user.country }} / prefers {{ current_user.favorite_format }}</p>
+        </div>
+        <div class="hero-actions">
+            <a class="button-primary" href="{{ url_for('account_edit') }}">Edit profile</a>
+            <a class="button-secondary" href="{{ url_for('logout') }}">Log out</a>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <a class="stat-card" href="{{ url_for('collection') }}"><strong>{{ collection_count }}</strong><span>collection items</span></a>
+        <a class="stat-card" href="{{ url_for('wishlist') }}"><strong>{{ wishlist_count }}</strong><span>wishlist saves</span></a>
+        <a class="stat-card" href="{{ url_for('cart') }}"><strong>{{ cart_count }}</strong><span>cart entries</span></a>
+        <a class="stat-card" href="{{ url_for('orders') }}"><strong>{{ orders|length }}</strong><span>recent orders shown</span></a>
+    </div>
+
+    <div class="section-head compact">
+        <h2>Recent order history</h2>
+    </div>
+    <div class="order-list">
+        {% for order in orders %}
+            <a class="order-row" href="{{ url_for('order_detail', order_number=order.order_number) }}">
+                <div>
+                    <strong>{{ order.order_number }}</strong>
+                    <span>{{ order.status }} / {{ order.placed_at|longdate }}</span>
+                </div>
+                <div>
+                    <strong>{{ order.total|money }}</strong>
+                    <span>{{ order.item_count() }} items</span>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

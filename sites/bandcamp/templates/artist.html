@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_cards.html" import album_card, merch_card %}
+{% block title %}{{ artist.name }} - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="artist-hero" style="background-image:url('{{ url_for('static', filename=artist.hero_image) }}')">
+    <div class="container artist-hero-inner">
+        <img class="artist-hero-avatar" src="{{ url_for('static', filename=artist.avatar_image) }}" alt="{{ artist.name }} avatar">
+        <div>
+            <p class="eyebrow">{{ artist.primary_genre.name }} / {{ artist.scene.name }}</p>
+            <h1>{{ artist.name }}</h1>
+            <p>{{ artist.headline }}</p>
+            <p>{{ artist.bio }}</p>
+            <div class="release-tags">
+                <span>{{ artist.label.name }}</span>
+                <span>{{ artist.follow_count }} followers</span>
+                <span>{{ collection_count }} collection adds</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Discography</p>
+            <h2>Albums and EPs</h2>
+        </div>
+    </div>
+    <div class="card-grid release-grid">
+        {% for album in albums %}
+            {{ album_card(album, show_scene=False) }}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Merch</p>
+            <h2>Artist-linked physical items</h2>
+        </div>
+    </div>
+    <div class="card-grid merch-grid">
+        {% for merch in merch_items %}
+            {{ merch_card(merch) }}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
