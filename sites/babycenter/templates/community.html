@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Community{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Birth clubs and groups</div><h1>Community</h1></div></section>
+<div class="pills">
+  <a class="{{ 'active' if not club }}" href="{{ url_for('community') }}">All clubs</a>
+  {% for item in clubs %}<a class="{{ 'active' if item == club }}" href="{{ url_for('community', club=item) }}">{{ item }}</a>{% endfor %}
+</div>
+<section class="list-panel section">
+  {% for post in posts %}
+    <a class="list-row" href="{{ url_for('community_detail', slug=post.slug) }}"><strong>{{ post.title }}</strong><small>{{ post.club }} · {{ post.author }} · {{ post.replies }} replies · active {{ post.last_active }}</small></a>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Pregnancy Week by Week{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Pregnancy tracker</div><h1>Pregnancy Week by Week</h1></div></section>
+<div class="pills">
+  <a class="{{ 'active' if not trimester }}" href="{{ url_for('week_index') }}">All weeks</a>
+  <a class="{{ 'active' if trimester == 'first' }}" href="{{ url_for('week_index', trimester='first') }}">First trimester</a>
+  <a class="{{ 'active' if trimester == 'second' }}" href="{{ url_for('week_index', trimester='second') }}">Second trimester</a>
+  <a class="{{ 'active' if trimester == 'third' }}" href="{{ url_for('week_index', trimester='third') }}">Third trimester</a>
+</div>
+<section class="timeline-grid">
+  {% for week in weeks %}
+    <a class="timeline-card" href="{{ url_for('week_detail', week=week.week) }}"><span>Week {{ week.week }}</span><strong>{{ week.baby_size }}</strong><small>{{ week.headline }}</small></a>
+  {% endfor %}
+</section>
+{% endblock %}

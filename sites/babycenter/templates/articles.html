@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Articles{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Expert advice</div><h1>Articles</h1></div></section>
+<form class="filter-bar" action="{{ url_for('articles') }}">
+  <select name="category"><option value="">All categories</option>{% for item in categories %}<option value="{{ item }}" {% if item == category %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+  <select name="trimester">
+    <option value="">All stages</option>
+    {% for item in ["First trimester","Second trimester","Third trimester","Postpartum"] %}<option value="{{ item }}" {% if item == trimester %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  <button type="submit">Apply</button>
+</form>
+<section class="card-grid section">
+  {% for article in articles %}
+    <article class="article-card"><span class="eyebrow">{{ article.category }}</span><h3><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h3><p>{{ article.summary }}</p><small>{{ article.trimester }} · {{ article.read_minutes }} min read</small></article>
+  {% endfor %}
+</section>
+{% endblock %}

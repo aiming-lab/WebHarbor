@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}BabyCenter{% endblock %}
+{% block content %}
+<section class="hero">
+  <div>
+    <div class="eyebrow">Pregnancy, baby development, and parent community</div>
+    <h1>BabyCenter</h1>
+    <p>Follow pregnancy week by week, track baby milestones month by month, save advice, and browse parent community threads.</p>
+    <div class="button-row">
+      <a class="button primary" href="{{ url_for('week_index') }}">Explore Pregnancy Weeks</a>
+      <a class="button" href="{{ url_for('due_date_calculator') }}">Calculate Due Date</a>
+    </div>
+  </div>
+  <div class="hero-card">
+    <span>Today in your tracker</span>
+    <strong>{{ week.week }} weeks</strong>
+    <small>{{ week.baby_size }} · {{ week.headline }}</small>
+  </div>
+</section>
+<section class="split-section">
+  <div class="feature-card">
+    <img src="{{ url_for('illustration', kind='pregnancy', slug='week-' ~ week.week) }}" alt="Pregnancy week">
+    <h2>{{ week.headline }}</h2>
+    <p>{{ week.baby_summary }}</p>
+    <a href="{{ url_for('week_detail', week=week.week) }}">Open week {{ week.week }}</a>
+  </div>
+  <div class="feature-card">
+    <img src="{{ url_for('illustration', kind='baby', slug='month-' ~ baby_month.month) }}" alt="Baby month">
+    <h2>{{ baby_month.headline }}</h2>
+    <p>{{ baby_month.milestones }}</p>
+    <a href="{{ url_for('month_detail', month=baby_month.month) }}">Open month {{ baby_month.month }}</a>
+  </div>
+</section>
+<section class="section">
+  <div class="section-head"><h2>Latest Articles</h2><a href="{{ url_for('articles') }}">View all</a></div>
+  <div class="card-grid">
+    {% for article in articles %}
+      <article class="article-card">
+        <span class="eyebrow">{{ article.category }}</span>
+        <h3><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h3>
+        <p>{{ article.summary }}</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+<section class="section">
+  <div class="section-head"><h2>Community</h2><a href="{{ url_for('community') }}">Browse birth clubs</a></div>
+  <div class="list-panel">
+    {% for post in posts %}
+      <a class="list-row" href="{{ url_for('community_detail', slug=post.slug) }}"><strong>{{ post.title }}</strong><small>{{ post.club }} · {{ post.replies }} replies</small></a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

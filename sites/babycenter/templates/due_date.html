@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Due Date Calculator{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Calculator</div><h1>Due Date Calculator</h1></div></section>
+<section class="form-panel">
+  <form method="post">
+    <label>First day of last period <input type="date" name="last_period" value="2026-02-20"></label>
+    <label>Cycle length <input type="number" name="cycle" value="28"></label>
+    <button type="submit">Calculate</button>
+  </form>
+  {% if result %}
+    <div class="result-card"><span>Estimated due date</span><strong>{{ result.due.strftime("%B %d, %Y") }}</strong><a href="{{ url_for('week_detail', week=result.week) }}">Open week {{ result.week }}</a></div>
+  {% endif %}
+</section>
+{% endblock %}
