@@ -33,6 +33,7 @@ SITES = [
     'nvidia', 'berkeley', 'bh_photo', 'accuweather', 'gov_uk',
     'imdb',
     'nba',
+    'akc',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Expert Advice{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow">Training, health, and lifestyle</div><h1>Expert Advice</h1></div>
+</section>
+<div class="category-pills">
+  <a class="{{ 'active' if not category }}" href="{{ url_for('articles') }}">All</a>
+  {% for item in categories %}
+    <a class="{{ 'active' if item == category }}" href="{{ url_for('articles', category=item) }}">{{ item }}</a>
+  {% endfor %}
+</div>
+<section class="article-grid">
+  {% for article in articles %}
+    <article class="article-card">
+      <span class="eyebrow">{{ article.category }}</span>
+      <h2><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h2>
+      <p>{{ article.summary }}</p>
+      <small>{{ article.author }} · {{ article.read_minutes }} min read</small>
+    </article>
+  {% endfor %}
+</section>
+{% endblock %}

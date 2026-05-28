@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Search</div><h1>{{ query or "Search AKC" }}</h1></div></section>
+<form class="filter-bar" action="{{ url_for('search') }}">
+  <input name="q" value="{{ query }}" placeholder="try apartment dog, agility, grooming">
+  <button type="submit">Search</button>
+</form>
+{% if query %}
+<section class="search-columns">
+  <div>
+    <h2>Breeds</h2>
+    {% for breed in breed_results %}
+      <a class="mini-result" href="{{ url_for('breed_detail', slug=breed.slug) }}"><strong>{{ breed.name }}</strong><small>{{ breed.group }} · {{ breed.temperament }}</small></a>
+    {% else %}<p class="empty-state">No breed results.</p>{% endfor %}
+  </div>
+  <div>
+    <h2>Advice</h2>
+    {% for article in article_results %}
+      <a class="mini-result" href="{{ url_for('article_detail', slug=article.slug) }}"><strong>{{ article.title }}</strong><small>{{ article.category }}</small></a>
+    {% else %}<p class="empty-state">No advice results.</p>{% endfor %}
+  </div>
+  <div>
+    <h2>Events</h2>
+    {% for event in event_results %}
+      <a class="mini-result" href="{{ url_for('event_detail', slug=event.slug) }}"><strong>{{ event.title }}</strong><small>{{ event.city }}, {{ event.state }}</small></a>
+    {% else %}<p class="empty-state">No event results.</p>{% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

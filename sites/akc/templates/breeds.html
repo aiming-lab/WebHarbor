@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Dog Breeds{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <div class="eyebrow">AKC Breed Library</div>
+    <h1>Dog Breeds</h1>
+    <p>Filter by group, size, temperament, and care needs.</p>
+  </div>
+</section>
+<form class="filter-bar" action="{{ url_for('breeds') }}">
+  <input name="q" placeholder="Search breed or temperament" value="{{ query }}">
+  <select name="group">
+    <option value="">All groups</option>
+    {% for item in groups %}<option value="{{ item }}" {% if item == group %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  <select name="size">
+    <option value="">All sizes</option>
+    {% for item in sizes %}<option value="{{ item }}" {% if item == size %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  <button type="submit">Apply</button>
+</form>
+<div class="result-count">{{ breeds|length }} breeds shown</div>
+<section class="card-grid">
+  {% for breed in breeds %}
+    {% include "_breed_card.html" %}
+  {% endfor %}
+</section>
+{% endblock %}
