@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Orders · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Order history</p>
+    <h1>Orders</h1>
+</section>
+<section class="shell order-stack">
+    {% for order in orders %}
+        <article class="order-card">
+            <div class="order-head">
+                <div>
+                    <strong>{{ order.order_number }}</strong>
+                    <p>{{ order.status }} · {{ order.fulfillment }}</p>
+                </div>
+                <div>
+                    <strong>{{ order.total|currency }}</strong>
+                    <p>{{ order.created_at.strftime('%b %d, %Y') }}</p>
+                </div>
+            </div>
+            <div class="mini-list">
+                {% for item in order.items %}
+                    <a class="mini-row" href="{{ url_for('product_detail', product_slug=item.product.slug) }}">
+                        <img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.product_name }}">
+                        <span>
+                            <strong>{{ item.product_name }}</strong>
+                            <small>{{ item.price|currency }} · {{ item.variant_label }}</small>
+                        </span>
+                    </a>
+                {% endfor %}
+            </div>
+            <p class="muted">{{ order.note }}</p>
+            <a href="{{ url_for('order_receipt', order_number=order.order_number) }}">Open order details</a>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

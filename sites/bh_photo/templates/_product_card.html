@@ -1,0 +1,38 @@
+<article class="product-card">
+    <a class="product-card-media" href="{{ url_for('product_detail', product_slug=product.slug) }}">
+        <img src="{{ url_for('static', filename=product.main_image) }}" alt="{{ product.name }}">
+        {% if product.condition != 'New' %}
+            <span class="badge badge-orange">{{ product.condition }}</span>
+        {% elif product.active_deal() %}
+            <span class="badge badge-green">{{ product.active_deal().label }}</span>
+        {% endif %}
+    </a>
+    <div class="product-card-body">
+        <p class="eyebrow">{{ product.brand.name }} · {{ product.category.name }}</p>
+        <h3><a href="{{ url_for('product_detail', product_slug=product.slug) }}">{{ product.name }}</a></h3>
+        <p class="card-copy">{{ product.short_description }}</p>
+        <div class="rating-line">
+            <span>{{ product.average_review_label }} ★</span>
+            <span>{{ product.review_count }} reviews</span>
+        </div>
+        <div class="price-line">
+            <strong>{{ product.display_price|currency }}</strong>
+            {% if product.list_price > product.display_price %}
+                <span class="strike">{{ product.list_price|currency }}</span>
+                <span class="save">{{ product.savings_percent }}% off</span>
+            {% endif %}
+        </div>
+        <p class="stock-line {{ 'good' if product.availability == 'In Stock' else 'warn' }}">{{ product.availability }}</p>
+        <p class="shipping-line">{{ product.shipping_message }}</p>
+        <div class="card-actions">
+            <form action="{{ url_for('add_compare', product_slug=product.slug) }}" method="post">
+                <button type="submit" class="quiet-btn">Compare</button>
+            </form>
+            {% if current_user.is_authenticated %}
+                <form action="{{ url_for('toggle_wishlist', product_slug=product.slug) }}" method="post">
+                    <button type="submit" class="quiet-btn">Wishlist</button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</article>

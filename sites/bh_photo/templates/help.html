@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Help Center · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Help center</p>
+    <h1>Shipping, returns, pickup, and workflow help</h1>
+    <p>These articles and policies are synthetic mirror content designed for benchmark tasks and local-only browsing.</p>
+</section>
+<section class="shell help-grid">
+    {% for card in help_cards %}
+        <article class="info-card">
+            <h2>{{ card.title }}</h2>
+            <p>{{ card.copy }}</p>
+        </article>
+    {% endfor %}
+</section>
+<section class="shell shelf-section compact">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Popular gear</p>
+            <h2>Products often referenced in help flows</h2>
+        </div>
+    </div>
+    <div class="product-grid">
+        {% for product in featured_products %}
+            {% include "_product_card.html" %}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

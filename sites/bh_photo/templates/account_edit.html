@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Edit Account · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell form-shell">
+    <form method="post" class="card-form two-col">
+        <h1>Edit account</h1>
+        <label>Display name
+            <input type="text" name="display_name" value="{{ current_user.display_name }}">
+        </label>
+        <label>Phone
+            <input type="text" name="phone" value="{{ current_user.phone }}">
+        </label>
+        <label>Company
+            <input type="text" name="company" value="{{ current_user.company }}">
+        </label>
+        <label>Role
+            <input type="text" name="role" value="{{ current_user.role }}">
+        </label>
+        <label>Preferred pickup store
+            <select name="preferred_store_id">
+                <option value="">No preference</option>
+                {% for store in stores %}
+                    <option value="{{ store.id }}" {% if current_user.preferred_store_id == store.id %}selected{% endif %}>{{ store.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label class="checkline">
+            <input type="checkbox" name="newsletter_opt_in" {% if current_user.newsletter_opt_in %}checked{% endif %}>
+            Email deal alerts
+        </label>
+        <label class="checkline">
+            <input type="checkbox" name="sms_opt_in" {% if current_user.sms_opt_in %}checked{% endif %}>
+            SMS pickup alerts
+        </label>
+        <button type="submit" class="cta full">Save changes</button>
+    </form>
+</section>
+{% endblock %}

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Addresses · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Saved addresses</p>
+    <h1>Addresses</h1>
+</section>
+<section class="shell address-grid">
+    {% for address in addresses %}
+        <article class="info-card">
+            <h2>{{ address.label }}</h2>
+            <p>{{ address.recipient }}</p>
+            <p>{{ address.line1 }}{% if address.line2 %}, {{ address.line2 }}{% endif %}</p>
+            <p>{{ address.city }}, {{ address.state }} {{ address.zip_code }}</p>
+            <p>{{ address.phone }}</p>
+            {% if address.is_default %}<span class="badge badge-green">Default</span>{% endif %}
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

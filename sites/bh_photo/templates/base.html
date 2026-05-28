@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}B&H Photo Demo Mirror{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="promo-strip">
+        <div class="shell promo-inner">
+            <span>Demo mirror only: all checkout, reservations, inventory, and orders use deterministic local benchmark data.</span>
+            <span class="promo-pill">No live payment</span>
+        </div>
+    </div>
+    <header class="site-header">
+        <div class="shell header-top">
+            <a class="brand-lockup" href="{{ url_for('index') }}">
+                <span class="brand-mark">B&amp;H</span>
+                <span class="brand-copy">
+                    <strong>Photo</strong>
+                    <small>Demo Mirror</small>
+                </span>
+            </a>
+            <form class="search-bar" action="{{ url_for('search') }}" method="get">
+                <input type="search" name="q" value="{{ request.args.get('q', '') if request.endpoint == 'search' else '' }}" placeholder="Search cameras, lenses, audio, lighting, storage...">
+                <button type="submit">Search</button>
+            </form>
+            <div class="header-actions">
+                <a href="{{ url_for('deals') }}">Deals</a>
+                <a href="{{ url_for('used') }}">Used</a>
+                <a href="{{ url_for('store_pickup') }}">Pickup</a>
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('account') }}">{{ current_user.display_name.split(' ')[0] }}</a>
+                    <a href="{{ url_for('logout') }}">Sign out</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Sign in</a>
+                {% endif %}
+                <a href="{{ url_for('compare') }}">Compare <span class="count-chip">{{ compare_count }}</span></a>
+                <a href="{{ url_for('cart') if current_user.is_authenticated else url_for('login') }}">Cart <span class="count-chip">{{ cart_count }}</span></a>
+            </div>
+        </div>
+        <nav class="primary-nav">
+            <div class="shell nav-row">
+                <a href="{{ url_for('categories') }}">All Categories</a>
+                {% for category in top_categories %}
+                    <a href="{{ url_for('category_view', slug=category.slug) }}">{{ category.name }}</a>
+                {% endfor %}
+                <a href="{{ url_for('bundles') }}">Bundles</a>
+                <a href="{{ url_for('help_page') }}">Help</a>
+                <a href="{{ url_for('contact') }}">Contact</a>
+            </div>
+        </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="shell flash-stack">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="page-wrap">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="shell footer-grid">
+            <div>
+                <h4>B&amp;H Demo Mirror</h4>
+                <p>{{ demo_notice }}</p>
+            </div>
+            <div>
+                <h4>Popular Areas</h4>
+                <ul>
+                    <li><a href="{{ url_for('category_view', slug='photography') }}">Photography</a></li>
+                    <li><a href="{{ url_for('category_view', slug='video') }}">Video</a></li>
+                    <li><a href="{{ url_for('category_view', slug='audio') }}">Audio</a></li>
+                    <li><a href="{{ url_for('category_view', slug='computers') }}">Computers</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Account</h4>
+                <ul>
+                    <li><a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}">My Account</a></li>
+                    <li><a href="{{ url_for('account_orders') if current_user.is_authenticated else url_for('login') }}">Order History</a></li>
+                    <li><a href="{{ url_for('account_wishlist') if current_user.is_authenticated else url_for('login') }}">Wishlist</a></li>
+                    <li><a href="{{ url_for('account_compare') if current_user.is_authenticated else url_for('compare') }}">Compare</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

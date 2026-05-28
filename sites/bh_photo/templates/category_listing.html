@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">{% if category %}{{ category.parent.name if category.parent else 'Department' }}{% elif brand %}Brand store{% else %}Catalog{% endif %}</p>
+    <h1>{{ page_heading }}</h1>
+    <p>{{ page_description }}</p>
+</section>
+
+<section class="shell listing-layout">
+    <aside class="filters">
+        <h3>Filter & sort</h3>
+        <form method="get">
+            {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+            <label>Brand
+                <select name="brand">
+                    <option value="">All brands</option>
+                    {% for slug, name in filters.brands %}
+                        <option value="{{ slug }}" {% if request.args.get('brand') == slug %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <div class="range-row">
+                <label>Min price
+                    <input type="number" step="1" name="min_price" value="{{ request.args.get('min_price', '') }}">
+                </label>
+                <label>Max price
+                    <input type="number" step="1" name="max_price" value="{{ request.args.get('max_price', '') }}">
+                </label>
+            </div>
+            <label>Rating
+                <select name="rating">
+                    <option value="">Any rating</option>
+                    <option value="4.0" {% if request.args.get('rating') == '4.0' %}selected{% endif %}>4.0 and up</option>
+                    <option value="4.5" {% if request.args.get('rating') == '4.5' %}selected{% endif %}>4.5 and up</option>
+                    <option value="4.8" {% if request.args.get('rating') == '4.8' %}selected{% endif %}>4.8 and up</option>
+                </select>
+            </label>
+            <label>Availability
+                <select name="availability">
+                    <option value="">Any</option>
+                    <option value="in-stock" {% if request.args.get('availability') == 'in-stock' %}selected{% endif %}>In stock</option>
+                    <option value="pickup" {% if request.args.get('availability') == 'pickup' %}selected{% endif %}>Pickup available</option>
+                    <option value="preorder" {% if request.args.get('availability') == 'preorder' %}selected{% endif %}>Pre-order</option>
+                </select>
+            </label>
+            <label>Condition
+                <select name="condition">
+                    <option value="">Any condition</option>
+                    <option value="New" {% if request.args.get('condition') == 'New' %}selected{% endif %}>New</option>
+                    <option value="Used" {% if request.args.get('condition') == 'Used' %}selected{% endif %}>Used</option>
+                    <option value="Open-Box" {% if request.args.get('condition') == 'Open-Box' %}selected{% endif %}>Open-box</option>
+                </select>
+            </label>
+            <label>Sensor size
+                <select name="sensor_size">
+                    <option value="">Any sensor</option>
+                    {% for option in filters.sensor_sizes %}
+                        <option value="{{ option }}" {% if request.args.get('sensor_size') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Lens mount
+                <select name="mount">
+                    <option value="">Any mount</option>
+                    {% for option in filters.mounts %}
+                        <option value="{{ option }}" {% if request.args.get('mount') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Focal length
+                <select name="focal_length">
+                    <option value="">Any range</option>
+                    {% for option in filters.focal_lengths %}
+                        <option value="{{ option }}" {% if request.args.get('focal_length') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Megapixels
+                <select name="megapixels">
+                    <option value="">Any</option>
+                    <option value="24" {% if request.args.get('megapixels') == '24' %}selected{% endif %}>24 MP+</option>
+                    <option value="33" {% if request.args.get('megapixels') == '33' %}selected{% endif %}>33 MP+</option>
+                    <option value="45" {% if request.args.get('megapixels') == '45' %}selected{% endif %}>45 MP+</option>
+                </select>
+            </label>
+            <label>Memory capacity
+                <select name="capacity">
+                    <option value="">Any</option>
+                    <option value="256gb" {% if request.args.get('capacity') == '256gb' %}selected{% endif %}>256 GB+</option>
+                    <option value="1tb" {% if request.args.get('capacity') == '1tb' %}selected{% endif %}>1 TB+</option>
+                </select>
+            </label>
+            <label>Connectivity
+                <select name="connectivity">
+                    <option value="">Any</option>
+                    {% for option in filters.connectivity %}
+                        <option value="{{ option }}" {% if request.args.get('connectivity') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Pickup
+                <select name="pickup">
+                    <option value="">Either</option>
+                    <option value="yes" {% if request.args.get('pickup') == 'yes' %}selected{% endif %}>Pickup available</option>
+                </select>
+            </label>
+            <label>Sort by
+                <select name="sort">
+                    <option value="relevance" {% if request.args.get('sort', 'relevance') == 'relevance' %}selected{% endif %}>Relevance</option>
+                    <option value="price_asc" {% if request.args.get('sort') == 'price_asc' %}selected{% endif %}>Price low to high</option>
+                    <option value="price_desc" {% if request.args.get('sort') == 'price_desc' %}selected{% endif %}>Price high to low</option>
+                    <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest</option>
+                    <option value="rating" {% if request.args.get('sort') == 'rating' %}selected{% endif %}>Top rated</option>
+                    <option value="bestsellers" {% if request.args.get('sort') == 'bestsellers' %}selected{% endif %}>Best sellers</option>
+                </select>
+            </label>
+            <button type="submit" class="cta block">Apply filters</button>
+        </form>
+    </aside>
+
+    <div class="listing-content">
+        <div class="listing-head">
+            <div>
+                <strong>{{ products|length }} results</strong>
+                {% if search_query %}
+                    <p>Search query: {{ search_query }}</p>
+                {% endif %}
+            </div>
+            <div class="chip-row">
+                {% if request.args.get('brand') %}<span class="filter-chip">Brand: {{ request.args.get('brand') }}</span>{% endif %}
+                {% if request.args.get('condition') %}<span class="filter-chip">{{ request.args.get('condition') }}</span>{% endif %}
+                {% if request.args.get('availability') %}<span class="filter-chip">{{ request.args.get('availability') }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="product-grid dense">
+            {% for product in products %}
+                {% include "_product_card.html" %}
+            {% else %}
+                <div class="empty-state">
+                    <h3>No matching demo products</h3>
+                    <p>Try widening the price range or clearing one of the filter constraints.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}

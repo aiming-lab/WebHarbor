@@ -204,7 +204,7 @@ Then run the site once locally to produce `instance/<site>.db`, copy it to
 ```bash
 ./scripts/build.sh webharbor:dev
 docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41014:40000-40014 webharbor:dev
+  -p 8201:8101 -p 41000-41015:40000-40015 webharbor:dev
 
 # your new site is on port 41000 + its index
 curl -so /dev/null -w "%{http_code}\n" http://localhost:41000NN/
@@ -228,7 +228,7 @@ After Phase 1, you should have:
 - `sites/<your_site>/static/` with real CSS/JS/icons (and images under HF assets)
 - `sites/<your_site>/instance_seed/<site>.db` with seeded data
 - Site registered in `websyn_start.sh`, `control_server.py`, `Dockerfile`
-- All 15 sites still return 200 on the alt-port container
+- All registered sites still return 200 on the alt-port container
 - Byte-identical reset passes
 
 ## Next step

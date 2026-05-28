@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}All Categories · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Department index</p>
+    <h1>All categories</h1>
+    <p>Browse top-level departments and their subcategories with the same local benchmark data used in search, compare, wishlist, and checkout flows.</p>
+</section>
+<section class="shell category-stacks">
+    {% for category in categories %}
+        <article class="category-stack">
+            <div class="stack-head">
+                <span class="category-icon">{{ category.icon_label }}</span>
+                <div>
+                    <h2><a href="{{ url_for('category_view', slug=category.slug) }}">{{ category.name }}</a></h2>
+                    <p>{{ category.description }}</p>
+                </div>
+            </div>
+            <div class="subcategory-links">
+                {% for child in category.children %}
+                    <a href="{{ url_for('category_view', slug=child.slug) }}">{{ child.name }}</a>
+                {% endfor %}
+            </div>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

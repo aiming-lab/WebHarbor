@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell breadcrumb-row">
+    <a href="{{ url_for('index') }}">Home</a>
+    <span>/</span>
+    <a href="{{ url_for('category_view', slug=product.top_category_slug) }}">{{ product.top_category_slug.replace('-', ' ').title() }}</a>
+    <span>/</span>
+    <a href="{{ url_for('category_view', slug=product.subcategory_slug) }}">{{ product.category.name }}</a>
+</section>
+
+<section class="shell product-layout">
+    <div class="product-gallery">
+        <img class="hero-image" src="{{ url_for('static', filename=product.main_image) }}" alt="{{ product.name }}">
+        <div class="thumb-row">
+            {% for image in product.images %}
+                <img src="{{ url_for('static', filename=image.path) }}" alt="{{ image.label }}">
+            {% endfor %}
+        </div>
+    </div>
+    <div class="product-main">
+        <p class="eyebrow"><a href="{{ url_for('brand_view', brand_slug=product.brand.slug) }}">{{ product.brand.name }}</a> · {{ product.category.name }}</p>
+        <h1>{{ product.name }}</h1>
+        <div class="rating-line roomy">
+            <span>{{ product.average_review_label }} ★</span>
+            <span>{{ product.review_count }} reviews</span>
+            <span>{{ product.qa_count }} Q&amp;A</span>
+        </div>
+        <p class="lead-copy">{{ product.short_description }}</p>
+        <div class="spec-chip-row">
+            {% for spec_name, spec_value in top_specs %}
+                <span><strong>{{ spec_name }}:</strong> {{ spec_value }}</span>
+            {% endfor %}
+        </div>
+        <div class="tab-row">
+            <a class="{{ 'active' if active_tab == 'overview' else '' }}" href="{{ url_for('product_detail', product_slug=product.slug) }}">Overview</a>
+            <a class="{{ 'active' if active_tab == 'specs' else '' }}" href="{{ url_for('product_specs', product_slug=product.slug) }}">Specs</a>
+            <a class="{{ 'active' if active_tab == 'reviews' else '' }}" href="{{ url_for('product_reviews', product_slug=product.slug) }}">Reviews</a>
+            <a class="{{ 'active' if active_tab == 'qa' else '' }}" href="{{ url_for('product_qa', product_slug=product.slug) }}">Q&amp;A</a>
+        </div>
+
+        {% if active_tab == 'overview' %}
+            <div class="detail-panel">
+                <p>{{ product.description }}</p>
+                <div class="detail-grid">
+                    {% for group in product.spec_groups[:2] %}
+                        <div class="mini-spec-card">
+                            <h3>{{ group.title }}</h3>
+                            <ul>
+                                {% for spec in group.specs[:4] %}
+                                    <li><strong>{{ spec.name }}:</strong> {{ spec.value }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% elif active_tab == 'specs' %}
+            <div class="detail-panel">
+                {% for group in product.spec_groups %}
+                    <div class="spec-group">
+                        <h3>{{ group.title }}</h3>
+                        <dl class="spec-table">
+                            {% for spec in group.specs %}
+                                <div>
+                                    <dt>{{ spec.name }}</dt>
+                                    <dd>{{ spec.value }}</dd>
+                                </div>
+                            {% endfor %}
+                        </dl>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif active_tab == 'reviews' %}
+            <div class="detail-panel">
+                {% for review in product.reviews %}
+                    <article class="review-card">
+                        <div class="rating-line">
+                            <span>{{ review.rating }} ★</span>
+                            <span>{{ review.author_name }}</span>
+                            <span>{{ review.created_at.strftime('%b %d, %Y') }}</span>
+                        </div>
+                        <h3>{{ review.headline }}</h3>
+                        <p>{{ review.body }}</p>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="detail-panel">
+                {% for question in product.questions %}
+                    <article class="qa-card">
+                        <h3>Q: {{ question.question }}</h3>
+                        <p class="muted">Asked by {{ question.asker_name }} on {{ question.created_at.strftime('%b %d, %Y') }}</p>
+                        {% for answer in question.answers %}
+                            <p><strong>A:</strong> {{ answer.answer }}</p>
+                        {% endfor %}
+                    </article>
+                {% endfor %}
+            </div>
+        {% endif %}
+    </div>
+    <aside class="purchase-column">
+        <div class="purchase-card">
+            <div class="price-line large">
+                <strong>{{ product.display_price|currency }}</strong>
+                {% if product.list_price > product.display_price %}
+                    <span class="strike">{{ product.list_price|currency }}</span>
+                {% endif %}
+            </div>
+            <p class="stock-line {{ 'good' if product.availability == 'In Stock' else 'warn' }}">{{ product.availability }}</p>
+            <p>{{ product.shipping_message }}</p>
+            <p>{{ product.pickup_message }}</p>
+            <ul class="purchase-meta">
+                <li>{{ product.return_window }}</li>
+                <li>{{ product.warranty }}</li>
+                <li>{{ product.pickup_store_count }} store pickup locations in this demo mirror</li>
+            </ul>
+            {% if current_user.is_authenticated %}
+                <form action="{{ url_for('add_to_cart', product_slug=product.slug) }}" method="post" class="stack-form">
+                    <label>Variant
+                        <select name="variant_label">
+                            {% for variant in product.variants %}
+                                <option value="{{ variant.label }}">{{ variant.label }}{% if variant.price_delta %} (+{{ variant.price_delta|currency }}){% endif %}</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <label>Quantity
+                        <input type="number" name="quantity" value="1" min="1">
+                    </label>
+                    <button type="submit" class="cta block">Add to cart</button>
+                </form>
+                <form action="{{ url_for('toggle_wishlist', product_slug=product.slug) }}" method="post">
+                    <button type="submit" class="ghost block">Save to wishlist</button>
+                </form>
+            {% else %}
+                <a class="cta block" href="{{ url_for('login') }}">Sign in to add to cart</a>
+            {% endif %}
+            <form action="{{ url_for('add_compare', product_slug=product.slug) }}" method="post">
+                <button type="submit" class="quiet-btn block">Add to compare</button>
+            </form>
+        </div>
+
+        <div class="purchase-card">
+            <h3>Reserve in store</h3>
+            <p>Secure a deterministic pickup slot locally. This never contacts any live reservation system.</p>
+            {% if current_user.is_authenticated %}
+                <form action="{{ url_for('reserve_store_pickup', product_slug=product.slug) }}" method="post" class="stack-form">
+                    <label>Pickup store
+                        <select name="store_id">
+                            {% for item in inventory %}
+                                <option value="{{ item.store_location.id }}">{{ item.store_location.name }} · {{ item.quantity }} available</option>
+                            {% endfor %}
+                        </select>
+                    </label>
+                    <button type="submit" class="ghost block">Reserve pickup</button>
+                </form>
+            {% else %}
+                <a class="ghost block" href="{{ url_for('login') }}">Sign in for pickup</a>
+            {% endif %}
+        </div>
+    </aside>
+</section>
+
+<section class="shell shelf-section compact">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Related picks</p>
+            <h2>Similar products in this category</h2>
+        </div>
+    </div>
+    <div class="product-grid">
+        {% for product in related %}
+            {% include "_product_card.html" %}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
