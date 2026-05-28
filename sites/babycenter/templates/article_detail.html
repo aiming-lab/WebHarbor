@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<article class="article-detail">
+  <div class="eyebrow">{{ article.category }} · {{ article.trimester }}</div>
+  <h1>{{ article.title }}</h1>
+  <p class="lede">{{ article.summary }}</p>
+  <p>{{ article.body }}</p>
+  <form method="post" action="{{ url_for('save_item', item_type='article', slug=article.slug) }}"><button type="submit">Save article</button></form>
+</article>
+{% endblock %}

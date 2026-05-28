@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}BabyCenter{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <a class="brand" href="{{ url_for('index') }}"><span>bc</span>BabyCenter</a>
+    <nav class="top-nav" role="navigation" aria-label="Main">
+      <a href="{{ url_for('week_index') }}">Pregnancy Week by Week</a>
+      <a href="{{ url_for('month_index') }}">Baby Month by Month</a>
+      <a href="{{ url_for('due_date_calculator') }}">Due Date Calculator</a>
+      <a href="{{ url_for('articles') }}">Articles</a>
+      <a href="{{ url_for('community') }}">Community</a>
+    </nav>
+    <form class="header-search" action="{{ url_for('search') }}">
+      <input name="q" placeholder="Search symptoms, sleep, feeding" value="{{ request.args.get('q', '') }}">
+      <button type="submit">Search</button>
+    </form>
+    <div class="account-links">
+      {% if current_user %}
+        <a href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+        <a href="{{ url_for('logout') }}">Sign out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign in</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>{% block content %}{% endblock %}</main>
+
+  <footer class="site-footer">
+    <strong>BabyCenter Mirror</strong>
+    <nav aria-label="Footer">
+      <a href="{{ url_for('week_index') }}">Pregnancy</a>
+      <a href="{{ url_for('month_index') }}">Baby</a>
+      <a href="{{ url_for('articles') }}">Health</a>
+      <a href="{{ url_for('community') }}">Birth Clubs</a>
+    </nav>
+  </footer>
+</body>
+</html>

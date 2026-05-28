@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ week.week }} Weeks Pregnant{% endblock %}
+{% block content %}
+<section class="detail-hero">
+  <img src="{{ url_for('illustration', kind='pregnancy', slug='week-' ~ week.week) }}" alt="Week {{ week.week }}">
+  <div>
+    <div class="eyebrow">Week {{ week.week }}</div>
+    <h1>{{ week.headline }}</h1>
+    <p>{{ week.baby_summary }}</p>
+    <form method="post" action="{{ url_for('save_item', item_type='week', slug=week.week) }}"><button type="submit">Save week</button></form>
+  </div>
+</section>
+<section class="content-columns">
+  <article><h2>Your baby</h2><p>{{ week.baby_summary }}</p></article>
+  <article><h2>Your body</h2><p>{{ week.body_summary }}</p></article>
+  <article><h2>Checklist</h2><p>{{ week.checklist }}</p></article>
+</section>
+<section class="section">
+  <h2>Related articles</h2>
+  <div class="card-grid">
+    {% for article in articles %}
+      <article class="article-card"><span class="eyebrow">{{ article.category }}</span><h3><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h3><p>{{ article.summary }}</p></article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

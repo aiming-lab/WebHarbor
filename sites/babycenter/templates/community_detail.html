@@ -1,0 +1,11 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+<article class="article-detail">
+  <div class="eyebrow">{{ post.club }} · {{ post.replies }} replies</div>
+  <h1>{{ post.title }}</h1>
+  <p class="lede">Posted by {{ post.author }} · last active {{ post.last_active }}</p>
+  <p>{{ post.body }}</p>
+  <form method="post" action="{{ url_for('save_item', item_type='post', slug=post.slug) }}"><button type="submit">Save thread</button></form>
+</article>
+{% endblock %}

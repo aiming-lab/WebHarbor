@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}My BabyCenter{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">My BabyCenter</div><h1>{{ user.display_name }}</h1><p>{{ user.parenting_stage }} · {{ user.email }}</p></div></section>
+<section class="account-layout">
+  <form class="side-form" method="post" action="{{ url_for('update_tracker') }}">
+    <h2>Tracker</h2>
+    <label>Stage <input name="parenting_stage" value="{{ user.parenting_stage }}"></label>
+    <label>Due date <input type="date" name="due_date" value="{{ user.due_date }}"></label>
+    <label>Baby birthdate <input type="date" name="baby_birthdate" value="{{ user.baby_birthdate or '' }}"></label>
+    <button type="submit">Update tracker</button>
+  </form>
+  <div>
+    <div class="tracker-card"><span>Pregnancy week</span><strong>Week {{ week.week }}</strong><a href="{{ url_for('week_detail', week=week.week) }}">{{ week.headline }}</a></div>
+    {% if month %}<div class="tracker-card"><span>Baby age</span><strong>Month {{ month.month }}</strong><a href="{{ url_for('month_detail', month=month.month) }}">{{ month.headline }}</a></div>{% endif %}
+    <h2>Saved items</h2>
+    <div class="list-panel">
+      {% for item in saved %}<div class="list-row"><strong>{{ item.item_type|title }}: {{ item.item_slug }}</strong><small>{{ item.note }}</small></div>{% else %}<p class="empty-state">No saved items yet.</p>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
