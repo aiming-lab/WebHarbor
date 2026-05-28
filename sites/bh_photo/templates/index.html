@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}B&H Photo Demo Mirror{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="shell hero-grid">
+        <div class="hero-copy">
+            <p class="kicker">Creator gear, local only</p>
+            <h1>Professional photo, video, audio, and computing workflows in a benchmark-ready B&amp;H mirror.</h1>
+            <p>Browse rich technical specs, compare models side by side, reserve pickup locally, and run a complete checkout flow without any external calls.</p>
+            <div class="hero-actions">
+                <a class="cta" href="{{ url_for('category_view', slug='photography') }}">Shop Photography</a>
+                <a class="ghost" href="{{ url_for('deals') }}">View Deals</a>
+            </div>
+        </div>
+        <div class="hero-panel">
+            <div class="hero-card">
+                <h3>Today’s local mirror highlights</h3>
+                <ul>
+                    <li>146 synthetic products with dense specs and compare-friendly rows</li>
+                    <li>20 bundles, 8 pickup locations, and deterministic checkout history</li>
+                    <li>Used and open-box gear mixed into search, deals, and brand pages</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="shell shelf-section">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Top categories</p>
+            <h2>Browse by department</h2>
+        </div>
+        <a href="{{ url_for('categories') }}">View all</a>
+    </div>
+    <div class="category-grid">
+        {% for category in categories %}
+            <a class="category-tile" href="{{ url_for('category_view', slug=category.slug) }}">
+                <span class="category-icon">{{ category.icon_label }}</span>
+                <strong>{{ category.name }}</strong>
+                <small>{{ category.description }}</small>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="shell shelf-section">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Featured gear</p>
+            <h2>Popular creator picks</h2>
+        </div>
+        <a href="{{ url_for('search', q='creator') }}">Search all gear</a>
+    </div>
+    <div class="product-grid">
+        {% for product in featured %}
+            {% include "_product_card.html" %}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="shell dual-shelf">
+    <div class="shelf-panel">
+        <div class="section-head">
+            <div>
+                <p class="kicker">Deals</p>
+                <h2>Price drops and specials</h2>
+            </div>
+            <a href="{{ url_for('deals') }}">All deals</a>
+        </div>
+        <div class="mini-list">
+            {% for product in deals %}
+                <a class="mini-row" href="{{ url_for('product_detail', product_slug=product.slug) }}">
+                    <img src="{{ url_for('static', filename=product.main_image) }}" alt="{{ product.name }}">
+                    <span>
+                        <strong>{{ product.name }}</strong>
+                        <small>{{ product.display_price|currency }} · {{ product.active_deal().label if product.active_deal() else 'Deal' }}</small>
+                    </span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="shelf-panel">
+        <div class="section-head">
+            <div>
+                <p class="kicker">Used & open-box</p>
+                <h2>Limited local stock</h2>
+            </div>
+            <a href="{{ url_for('used') }}">Browse used</a>
+        </div>
+        <div class="mini-list">
+            {% for product in used_highlights %}
+                <a class="mini-row" href="{{ url_for('product_detail', product_slug=product.slug) }}">
+                    <img src="{{ url_for('static', filename=product.main_image) }}" alt="{{ product.name }}">
+                    <span>
+                        <strong>{{ product.name }}</strong>
+                        <small>{{ product.condition }} · {{ product.display_price|currency }}</small>
+                    </span>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="shell shelf-section">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Bundle offers</p>
+            <h2>Ready-to-ship creator kits</h2>
+        </div>
+        <a href="{{ url_for('bundles') }}">See all bundles</a>
+    </div>
+    <div class="bundle-grid">
+        {% for bundle in bundles %}
+            <article class="bundle-card">
+                <img src="{{ url_for('static', filename=bundle.image_path) }}" alt="{{ bundle.title }}">
+                <div>
+                    <p class="eyebrow">{{ bundle.badge }} · {{ bundle.audience }}</p>
+                    <h3>{{ bundle.title }}</h3>
+                    <p>{{ bundle.description }}</p>
+                    <div class="price-line">
+                        <strong>{{ bundle.bundle_price|currency }}</strong>
+                        <span class="strike">{{ bundle.list_price|currency }}</span>
+                    </div>
+                    {% if current_user.is_authenticated %}
+                        <form action="{{ url_for('add_bundle_to_cart', bundle_slug=bundle.slug) }}" method="post">
+                            <button type="submit" class="cta small">Add bundle to cart</button>
+                        </form>
+                    {% endif %}
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="shell shelf-section compact">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Workflow spotlight</p>
+            <h2>Shopping flows covered in this mirror</h2>
+        </div>
+    </div>
+    <div class="spotlight-grid">
+        {% for product in spotlight %}
+            <article class="spotlight-card">
+                <img src="{{ url_for('static', filename=product.main_image) }}" alt="{{ product.name }}">
+                <h3>{{ product.name }}</h3>
+                <ul>
+                    {% for spec_name, spec_value in product.top_spec_map.items() %}
+                        {% if loop.index0 < 3 %}
+                        <li><strong>{{ spec_name }}:</strong> {{ spec_value }}</li>
+                        {% endif %}
+                    {% endfor %}
+                </ul>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

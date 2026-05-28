@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Wishlist · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Saved gear</p>
+    <h1>Wishlist</h1>
+</section>
+<section class="shell product-grid">
+    {% for item in items %}
+        {% set product = item.product %}
+        {% include "_product_card.html" %}
+    {% else %}
+        <div class="empty-state">
+            <h3>Your wishlist is empty</h3>
+            <p>Save items from category pages or product detail views.</p>
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Cart · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Shopping cart</p>
+    <h1>Cart</h1>
+</section>
+<section class="shell cart-layout">
+    <div class="cart-items">
+        {% for item in items %}
+            <article class="cart-row">
+                <img src="{{ url_for('static', filename=item.product.main_image) }}" alt="{{ item.product.name }}">
+                <div>
+                    <h2><a href="{{ url_for('product_detail', product_slug=item.product.slug) }}">{{ item.product.name }}</a></h2>
+                    <p>{{ item.variant_label or item.bundle_label or 'Standard configuration' }}</p>
+                    <p class="stock-line {{ 'good' if item.product.availability == 'In Stock' else 'warn' }}">{{ item.product.availability }}</p>
+                </div>
+                <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post" class="inline-form">
+                    <input type="number" name="quantity" min="1" value="{{ item.quantity }}">
+                    <button type="submit" class="quiet-btn">Update</button>
+                </form>
+                <strong>{{ item.line_total|currency }}</strong>
+                <form action="{{ url_for('remove_cart_item', item_id=item.id) }}" method="post">
+                    <button type="submit" class="quiet-btn">Remove</button>
+                </form>
+            </article>
+        {% else %}
+            <div class="empty-state">
+                <h3>Your cart is empty</h3>
+                <p>Add products or bundles to start a local demo checkout flow.</p>
+            </div>
+        {% endfor %}
+    </div>
+    <aside class="purchase-card">
+        <h2>Summary</h2>
+        <dl class="summary-list">
+            <div><dt>Subtotal</dt><dd>{{ totals.subtotal|currency }}</dd></div>
+            <div><dt>Shipping</dt><dd>{{ totals.shipping|currency }}</dd></div>
+            <div><dt>Tax</dt><dd>{{ totals.tax|currency }}</dd></div>
+            <div class="total"><dt>Total</dt><dd>{{ totals.total|currency }}</dd></div>
+        </dl>
+        {% if items %}
+            <a class="cta block" href="{{ url_for('checkout') }}">Proceed to checkout</a>
+        {% endif %}
+    </aside>
+</section>
+{% endblock %}

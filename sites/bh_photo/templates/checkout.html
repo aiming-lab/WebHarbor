@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Checkout · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Checkout mock</p>
+    <h1>Checkout</h1>
+    <p>No real payment or shipping is processed here. This is a local deterministic checkout flow for benchmark tasks.</p>
+</section>
+<section class="shell checkout-layout">
+    <form method="post" class="card-form">
+        <h2>Complete order</h2>
+        <label>Fulfillment
+            <select name="fulfillment">
+                <option>Ship to address</option>
+                <option>Store pickup</option>
+            </select>
+        </label>
+        <label>Billing / payment label
+            <input type="text" name="payment_label" value="Demo Visa ending in 4242">
+        </label>
+        <label>Shipping address
+            <select name="address_id">
+                {% for address in addresses %}
+                    <option value="{{ address.id }}">{{ address.label }} · {{ address.city }}, {{ address.state }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Order note
+            <textarea name="note" rows="4" placeholder="Optional local-only note for the order summary."></textarea>
+        </label>
+        <button type="submit" class="cta">Place demo order</button>
+    </form>
+    <aside class="purchase-card">
+        <h2>Order summary</h2>
+        <div class="mini-list stacked">
+            {% for item in items %}
+                <div class="mini-row text-only">
+                    <span>
+                        <strong>{{ item.product.name }}</strong>
+                        <small>{{ item.quantity }} × {{ item.unit_price|currency }}</small>
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+        <dl class="summary-list">
+            <div><dt>Subtotal</dt><dd>{{ totals.subtotal|currency }}</dd></div>
+            <div><dt>Shipping</dt><dd>{{ totals.shipping|currency }}</dd></div>
+            <div><dt>Tax</dt><dd>{{ totals.tax|currency }}</dd></div>
+            <div class="total"><dt>Total</dt><dd>{{ totals.total|currency }}</dd></div>
+        </dl>
+    </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Bundles · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Curated kits</p>
+    <h1>Bundles</h1>
+    <p>Pre-built creator kits with deterministic pricing, savings, and included item lists designed for cart and checkout benchmark tasks.</p>
+</section>
+<section class="shell bundle-grid tall">
+    {% for bundle in bundles %}
+        <article class="bundle-card">
+            <img src="{{ url_for('static', filename=bundle.image_path) }}" alt="{{ bundle.title }}">
+            <div>
+                <p class="eyebrow">{{ bundle.badge }} · {{ bundle.audience }}</p>
+                <h2>{{ bundle.title }}</h2>
+                <p>{{ bundle.description }}</p>
+                <ul class="bundle-items">
+                    {% for item in bundle.items %}
+                        <li><a href="{{ url_for('product_detail', product_slug=item.product.slug) }}">{{ item.product.name }}</a></li>
+                    {% endfor %}
+                </ul>
+                <div class="price-line">
+                    <strong>{{ bundle.bundle_price|currency }}</strong>
+                    <span class="strike">{{ bundle.list_price|currency }}</span>
+                    <span class="save">Save {{ bundle.savings|currency }}</span>
+                </div>
+                {% if current_user.is_authenticated %}
+                    <form action="{{ url_for('add_bundle_to_cart', bundle_slug=bundle.slug) }}" method="post">
+                        <button type="submit" class="cta small">Add bundle to cart</button>
+                    </form>
+                {% endif %}
+            </div>
+        </article>
+    {% endfor %}
+</section>
+{% endblock %}

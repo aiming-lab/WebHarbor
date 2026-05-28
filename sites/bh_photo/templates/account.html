@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Account · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">My account</p>
+    <h1>{{ current_user.display_name }}</h1>
+    <p>{{ current_user.role }} · {{ current_user.company }} · {{ current_user.email }}</p>
+</section>
+<section class="shell dashboard-grid">
+    <article class="info-card">
+        <h2>Saved activity</h2>
+        <ul>
+            <li>{{ current_user.wishlist_items|length }} wishlist items</li>
+            <li>{{ current_user.compare_items|length }} compare items</li>
+            <li>{{ current_user.cart_items|length }} cart lines</li>
+            <li>{{ current_user.orders|length }} orders</li>
+        </ul>
+    </article>
+    <article class="info-card">
+        <h2>Pickup preference</h2>
+        <p>{% if current_user.preferred_store_id %}Preferred store is saved for local demo reservations.{% else %}No preferred pickup store set yet.{% endif %}</p>
+        <a href="{{ url_for('account_edit') }}">Edit account preferences</a>
+    </article>
+    <article class="info-card">
+        <h2>Recent reservations</h2>
+        {% if reservations %}
+            <ul>
+                {% for reservation in reservations %}
+                    <li>{{ reservation.product.name }} · {{ reservation.store_location.name }}</li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No active reservations.</p>
+        {% endif %}
+    </article>
+</section>
+<section class="shell dashboard-links">
+    <a href="{{ url_for('account_orders') }}">Order history</a>
+    <a href="{{ url_for('account_wishlist') }}">Wishlist</a>
+    <a href="{{ url_for('account_compare') }}">Compare list</a>
+    <a href="{{ url_for('account_addresses') }}">Addresses</a>
+    <a href="{{ url_for('cart') }}">Cart</a>
+</section>
+{% endblock %}

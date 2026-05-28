@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Store Pickup · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Reserve-in-store mock</p>
+    <h1>Store pickup</h1>
+    <p>Review deterministic store inventory and reserve pickup locally. This flow never contacts live B&amp;H systems or any real stores.</p>
+</section>
+
+<section class="shell pickup-layout">
+    <div class="pickup-main">
+        {% if product %}
+            <div class="pickup-product">
+                <h2>{{ product.name }}</h2>
+                <p>{{ inventory|length }} locations currently show pickup inventory for this item.</p>
+                <div class="pickup-grid">
+                    {% for item in inventory %}
+                        <article class="pickup-card">
+                            <h3>{{ item.store_location.name }}</h3>
+                            <p>{{ item.store_location.city }}, {{ item.store_location.state }}</p>
+                            <p>{{ item.quantity }} available · {{ item.pickup_eta }}</p>
+                        </article>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+
+        <div class="section-head">
+            <div>
+                <p class="kicker">Pickup-eligible gear</p>
+                <h2>Popular local-only reservation items</h2>
+            </div>
+        </div>
+        <div class="product-grid">
+            {% for product in featured %}
+                {% include "_product_card.html" %}
+            {% endfor %}
+        </div>
+    </div>
+    <aside class="pickup-side">
+        <div class="purchase-card">
+            <h3>Locations</h3>
+            <div class="store-list">
+                {% for store in stores %}
+                    <article>
+                        <strong>{{ store.name }}</strong>
+                        <p>{{ store.address }}</p>
+                        <small>{{ store.pickup_hours }}</small>
+                    </article>
+                {% endfor %}
+            </div>
+        </div>
+        {% if reservations %}
+            <div class="purchase-card">
+                <h3>Your reservations</h3>
+                <div class="mini-list">
+                    {% for reservation in reservations %}
+                        <div class="mini-row text-only">
+                            <span>
+                                <strong>{{ reservation.product.name }}</strong>
+                                <small>{{ reservation.store_location.name }} · {{ reservation.pickup_window }}</small>
+                            </span>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
+    </aside>
+</section>
+{% endblock %}

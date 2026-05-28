@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Compare Products · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Side-by-side workflow</p>
+    <h1>Compare products</h1>
+    <p>Review pricing, stock, and detailed technical rows across up to four products at once.</p>
+</section>
+
+<section class="shell">
+    {% if products %}
+        <div class="compare-top">
+            {% for product in products %}
+                <article class="compare-product">
+                    <img src="{{ url_for('static', filename=product.main_image) }}" alt="{{ product.name }}">
+                    <h3>{{ product.name }}</h3>
+                    <p>{{ product.display_price|currency }} · {{ product.availability }}</p>
+                    <form action="{{ url_for('remove_compare', product_slug=product.slug) }}" method="post">
+                        <button type="submit" class="quiet-btn">Remove</button>
+                    </form>
+                </article>
+            {% endfor %}
+        </div>
+        <div class="compare-table-wrap">
+            {% for group_name, rows in compare_rows.items() %}
+                <section class="compare-group">
+                    <h2>{{ group_name }}</h2>
+                    <table class="compare-table">
+                        <tbody>
+                            {% for row in rows %}
+                                <tr class="{{ 'different' if row.different else '' }}">
+                                    <th>{{ row.name }}</th>
+                                    {% for product in products %}
+                                        <td>{{ row['cells'].get(product.id, '--') }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h3>No products in compare yet</h3>
+            <p>Add products from listings or product pages to build a side-by-side comparison.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

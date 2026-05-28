@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_number }} · B&H Demo Mirror{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Order confirmation</p>
+    <h1>{{ order.order_number }}</h1>
+    <p>{{ order.status }} · {{ order.fulfillment }} · {{ order.created_at.strftime('%b %d, %Y') }}</p>
+</section>
+<section class="shell receipt-layout">
+    <article class="purchase-card">
+        <h2>Order totals</h2>
+        <dl class="summary-list">
+            <div><dt>Subtotal</dt><dd>{{ order.subtotal|currency }}</dd></div>
+            <div><dt>Shipping</dt><dd>{{ order.shipping|currency }}</dd></div>
+            <div><dt>Tax</dt><dd>{{ order.tax|currency }}</dd></div>
+            <div class="total"><dt>Total</dt><dd>{{ order.total|currency }}</dd></div>
+        </dl>
+        <p>{{ order.note }}</p>
+    </article>
+    <article class="receipt-items">
+        {% for item in order.items %}
+            <div class="cart-row receipt-row">
+                <img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.product_name }}">
+                <div>
+                    <h2><a href="{{ url_for('product_detail', product_slug=item.product.slug) }}">{{ item.product_name }}</a></h2>
+                    <p>{{ item.variant_label }}</p>
+                </div>
+                <strong>{{ item.price|currency }}</strong>
+            </div>
+        {% endfor %}
+    </article>
+</section>
+{% endblock %}
