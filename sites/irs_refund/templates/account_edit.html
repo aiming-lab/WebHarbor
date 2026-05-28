@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Edit Account{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Account settings</p>
+  <h1>Edit benchmark profile defaults</h1>
+  <p>These settings are for local synthetic records only and can be reset at any time.</p>
+</section>
+
+<form class="form-card form-card--wide" method="post">
+  <div class="form-grid">
+    <label class="field">
+      <span>Display name</span>
+      <input name="display_name" type="text" value="{{ current_user.display_name }}" required>
+    </label>
+    <label class="field">
+      <span>Preferred contact method</span>
+      <select name="preferred_contact_method">
+        {% for method in ["Email", "SMS", "Mail"] %}
+          <option value="{{ method }}" {% if current_user.preferred_contact_method == method %}selected{% endif %}>{{ method }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span>City</span>
+      <input name="city" type="text" value="{{ current_user.city }}">
+    </label>
+    <label class="field">
+      <span>State</span>
+      <input name="state" type="text" value="{{ current_user.state }}">
+    </label>
+    <label class="field">
+      <span>Default tax year</span>
+      <select name="default_tax_year">
+        {% for year in [2025, 2024, 2023, 2022, 2021] %}
+          <option value="{{ year }}" {% if current_user.default_tax_year == year %}selected{% endif %}>{{ year }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="field">
+      <span>Demo taxpayer ID last four digits</span>
+      <input name="default_last_four" type="text" maxlength="4" value="{{ current_user.default_last_four or '' }}">
+    </label>
+    <label class="field">
+      <span>ZIP code</span>
+      <input name="default_zip_code" type="text" maxlength="5" value="{{ current_user.default_zip_code or '' }}">
+    </label>
+  </div>
+  <div class="form-actions">
+    <button class="button" type="submit">Save changes</button>
+    <a class="button button--secondary" href="{{ url_for('account') }}">Cancel</a>
+  </div>
+</form>
+{% endblock %}
