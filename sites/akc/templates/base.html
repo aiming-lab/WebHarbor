@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}American Kennel Club{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="brand-mark">AKC</span>
+      <span>American Kennel Club</span>
+    </a>
+    <nav class="top-nav" role="navigation" aria-label="Main">
+      <a href="{{ url_for('breeds') }}">Breeds</a>
+      <a href="{{ url_for('breed_selector') }}">Breed Selector</a>
+      <a href="{{ url_for('compare') }}">Compare</a>
+      <a href="{{ url_for('articles') }}">Expert Advice</a>
+      <a href="{{ url_for('events') }}">Events</a>
+    </nav>
+    <form class="header-search" action="{{ url_for('search') }}">
+      <input name="q" placeholder="Search breeds, training, events" value="{{ request.args.get('q', '') }}">
+      <button type="submit">Search</button>
+    </form>
+    <div class="account-links">
+      {% if current_user %}
+        <a href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+        <a href="{{ url_for('logout') }}">Sign out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign in</a>
+      {% endif %}
+    </div>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div>
+      <strong>AKC Mirror</strong>
+      <p>Breed, training, event, and owner profile workflows for WebHarbor tasks.</p>
+    </div>
+    <nav aria-label="Footer">
+      <a href="{{ url_for('breeds') }}">Find a Breed</a>
+      <a href="{{ url_for('articles') }}">Advice</a>
+      <a href="{{ url_for('events') }}">Event Calendar</a>
+      <a href="{{ url_for('register') }}">Create Profile</a>
+    </nav>
+  </footer>
+</body>
+</html>

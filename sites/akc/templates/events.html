@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}AKC Events{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow">Calendar</div><h1>AKC Events</h1><p>Filter local and virtual events by discipline and state.</p></div>
+</section>
+<form class="filter-bar" action="{{ url_for('events') }}">
+  <select name="type">
+    <option value="">All event types</option>
+    {% for item in types %}<option value="{{ item }}" {% if item == event_type %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  <select name="state">
+    <option value="">All states</option>
+    {% for item in states %}<option value="{{ item }}" {% if item == state %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  <button type="submit">Apply</button>
+</form>
+<section class="event-list">
+  {% for event in events %}
+    <a class="event-card" href="{{ url_for('event_detail', slug=event.slug) }}">
+      <span class="date-badge">{{ event.starts_on.strftime("%b") }}<strong>{{ event.starts_on.day }}</strong></span>
+      <span>
+        <strong>{{ event.title }}</strong>
+        <small>{{ event.event_type }} · {{ event.venue }} · {{ event.city }}, {{ event.state }}</small>
+      </span>
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}

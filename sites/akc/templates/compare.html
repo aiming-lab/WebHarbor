@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Compare Breeds{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Side by side</div><h1>Compare Breeds</h1></div></section>
+<form class="filter-bar" action="{{ url_for('compare') }}">
+  <select name="breed" multiple size="6">
+    {% for breed in breeds %}
+      <option value="{{ breed.slug }}" {% if breed.slug in selected %}selected{% endif %}>{{ breed.name }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Compare Selected</button>
+</form>
+{% if compared %}
+<div class="compare-table-wrap">
+  <table class="compare-table">
+    <thead><tr><th>Signal</th>{% for breed in compared %}<th>{{ breed.name }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      <tr><th>Group</th>{% for breed in compared %}<td>{{ breed.group }}</td>{% endfor %}</tr>
+      <tr><th>Size</th>{% for breed in compared %}<td>{{ breed.size }}</td>{% endfor %}</tr>
+      <tr><th>Temperament</th>{% for breed in compared %}<td>{{ breed.temperament }}</td>{% endfor %}</tr>
+      <tr><th>Energy</th>{% for breed in compared %}<td>{{ breed.energy }}/5</td>{% endfor %}</tr>
+      <tr><th>Grooming</th>{% for breed in compared %}<td>{{ breed.grooming }}/5</td>{% endfor %}</tr>
+      <tr><th>Trainability</th>{% for breed in compared %}<td>{{ breed.trainability }}/5</td>{% endfor %}</tr>
+      <tr><th>Apartment Fit</th>{% for breed in compared %}<td>{{ breed.apartment_score }}/5</td>{% endfor %}</tr>
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-state">Select two or more breeds to compare owner fit signals.</p>
+{% endif %}
+{% endblock %}
