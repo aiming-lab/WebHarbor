@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Trip Lookup · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="auth-card card">
+    <div class="eyebrow">Public trip lookup</div>
+    <h2>Look up a synthetic booking by confirmation code and email or last name.</h2>
+    <form class="detail-list" action="{{ url_for('trip_lookup') }}" method="post">
+      <div class="field-wide">
+        <label for="booking_code">Booking code</label>
+        <input id="booking_code" name="booking_code" placeholder="Example: ALXXXX">
+      </div>
+      <div class="field-wide">
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" placeholder="alice.j@test.com">
+      </div>
+      <div class="field-wide">
+        <label for="last_name">Passenger last name</label>
+        <input id="last_name" name="last_name" placeholder="Jordan">
+      </div>
+      <button class="button button-block" type="submit">Find trip</button>
+    </form>
+    <div class="section">
+      <div class="detail-item">
+        <strong>Privacy note</strong>
+        <div class="muted">This mirror never stores or verifies real reservations. All booking codes and passengers are synthetic benchmark data.</div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

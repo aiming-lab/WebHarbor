@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import summary_card %}
+{% block title %}Checkout · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Mock checkout</div>
+      <h2>Finish the booking with local-only contact and payment placeholders.</h2>
+      <p>Submitting this form creates a synthetic booking record, issues demo tickets, and adds reward activity to the current account.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/destinations/new-orleans.svg') }}" alt="Checkout">
+    </div>
+  </section>
+
+  <section class="section sidebar-layout">
+    <form class="form-panel" action="{{ url_for('booking_checkout') }}" method="post">
+      <div class="form-grid">
+        <div class="field-wide">
+          <label for="contact_phone">Contact phone</label>
+          <input id="contact_phone" name="contact_phone" value="{{ current_user.phone }}" placeholder="Synthetic contact phone">
+        </div>
+        <div class="field-wide">
+          <label for="payment_label">Payment placeholder</label>
+          <input id="payment_label" name="payment_label" value="Demo Visa ending in 4242">
+        </div>
+        <div class="field-wide" style="grid-column: 1 / -1;">
+          <label for="notes">Booking note</label>
+          <textarea id="notes" name="notes" rows="4" placeholder="Optional local-only note"></textarea>
+        </div>
+      </div>
+      <div class="detail-list" style="margin-top: 18px;">
+        <div class="detail-item"><strong>No real payment</strong><div class="muted">This form stores only deterministic mock payment text and a local approval code.</div></div>
+        <div class="detail-item"><strong>No external reservation system</strong><div class="muted">Tickets and seats are written only to the local SQLite database.</div></div>
+      </div>
+      <div class="hero-actions">
+        <button class="button" type="submit">Confirm demo booking</button>
+      </div>
+    </form>
+
+    <aside>
+      {{ summary_card(summary) }}
+    </aside>
+  </section>
+{% endblock %}

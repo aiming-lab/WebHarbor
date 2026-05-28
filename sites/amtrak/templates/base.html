@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Amtrak Demo Mirror{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  </head>
+  <body>
+    <div class="site-shell">
+      <div class="top-demo-banner">
+        <div class="container">
+          <div><strong>Local benchmark mirror:</strong> {{ demo_banner }}</div>
+          <div class="benchmark-pill">Benchmark users use password <strong>{{ benchmark_password }}</strong></div>
+        </div>
+      </div>
+
+      <header class="site-header">
+        <div class="container">
+          <div class="nav-top">
+            <a class="nav-brand" href="{{ url_for('index') }}">
+              <span class="nav-mark" aria-hidden="true"></span>
+              <span>
+                <h1>Amtrak</h1>
+                <p>Train booking, schedules, stations, and rewards in a deterministic local mirror</p>
+              </span>
+            </a>
+
+            <form class="utility-search" action="{{ url_for('search') }}" method="get">
+              <input type="search" name="q" placeholder="Search routes, stations, deals, baggage help, or alerts">
+              <button class="button" type="submit">Search</button>
+            </form>
+
+            <div class="nav-actions">
+              {% if current_user.is_authenticated %}
+                <a class="button-secondary" href="{{ url_for('account') }}">My Account</a>
+                <a class="button-ghost" href="{{ url_for('logout') }}">Sign out</a>
+              {% else %}
+                <a class="button-ghost" href="{{ url_for('login') }}">Sign in</a>
+                <a class="button-secondary" href="{{ url_for('register') }}">Create demo account</a>
+              {% endif %}
+            </div>
+          </div>
+
+          <div class="nav-bottom">
+            <nav class="nav-links" aria-label="Primary">
+              <a href="{{ url_for('index') }}">Home</a>
+              <a href="{{ url_for('routes_page') }}">Routes</a>
+              <a href="{{ url_for('stations_page') }}">Stations</a>
+              <a href="{{ url_for('destinations_page') }}">Destinations</a>
+              <a href="{{ url_for('deals_page') }}">Deals</a>
+              <a href="{{ url_for('service_alerts_page') }}">Service Alerts</a>
+              <a href="{{ url_for('help_page') }}">Help</a>
+            </nav>
+            <nav class="sub-links" aria-label="Tools">
+              <a href="{{ url_for('booking_search') }}">Book</a>
+              <a href="{{ url_for('schedules_page') }}">Schedules</a>
+              <a href="{{ url_for('status_page') }}">Status</a>
+              <a href="{{ url_for('trip_lookup') }}">Trip Lookup</a>
+              <a href="{{ url_for('account_rewards') if current_user.is_authenticated else url_for('login') }}">Rewards</a>
+            </nav>
+          </div>
+        </div>
+      </header>
+
+      {% if top_alerts %}
+        <div class="alert-strip">
+          <div class="container">
+            {% for alert in top_alerts %}
+              <a class="alert-pill {% if 'Major' in alert.severity %}major{% elif alert.severity == 'Service Alert' %}service{% endif %}" href="{{ url_for('service_alerts_page') }}">
+                <strong>{{ alert.severity }}</strong>
+                <span>{{ alert.title }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      <main class="main-content">
+        <div class="container">
+          {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+              <div class="flash-stack">
+                {% for category, message in messages %}
+                  <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+              </div>
+            {% endif %}
+          {% endwith %}
+          {% block content %}{% endblock %}
+        </div>
+      </main>
+
+      <footer class="site-footer">
+        <div class="container">
+          <div class="footer-top">
+            <div class="footer-brand">
+              <h3>Travel planning without live bookings</h3>
+              <p>
+                This WebHarbor environment mirrors the shape of Amtrak's route, station, and trip-management experience,
+                but every fare, passenger, station note, and booking is deterministic synthetic data stored locally.
+              </p>
+              <div class="inline-actions">
+                <a class="button-secondary" href="{{ url_for('booking_search') }}">Start a booking</a>
+                <a class="button-ghost" href="{{ url_for('trip_lookup') }}">Look up a trip</a>
+              </div>
+            </div>
+            <div class="footer-links">
+              <div>
+                <a href="{{ url_for('routes_page') }}">Route directory</a>
+                <a href="{{ url_for('stations_page') }}">Station directory</a>
+                <a href="{{ url_for('destinations_page') }}">Destination ideas</a>
+                <a href="{{ url_for('deals_page') }}">Deals and promos</a>
+              </div>
+              <div>
+                <a href="{{ url_for('schedules_page') }}">Schedules</a>
+                <a href="{{ url_for('status_page') }}">Status board</a>
+                <a href="{{ url_for('service_alerts_page') }}">Service alerts</a>
+                <a href="{{ url_for('help_page') }}">Help center</a>
+              </div>
+            </div>
+          </div>
+          <div class="footer-note">
+            Mirror reference date: {{ mirror_reference_date|date_label }}. Seeded service dates span {{ service_start_date|date_label }} through {{ service_end_date|date_label }}.
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <datalist id="station-directory">
+      {% for station in station_directory %}
+        <option value="{{ station.code }}">{{ station.label }}</option>
+      {% endfor %}
+    </datalist>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

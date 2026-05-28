@@ -1,0 +1,211 @@
+{% macro booking_search_form(defaults, action, compact=False) %}
+  <form class="form-panel" action="{{ action }}" method="get" data-trip-form>
+    {% if not compact %}
+      <div class="eyebrow">Book travel</div>
+      <h3 class="card-title">Search deterministic train inventory</h3>
+      <p class="section-intro">All availability, schedules, and fares come from a local seeded database. No live Amtrak calls are made.</p>
+    {% endif %}
+    <div class="form-grid">
+      <div class="field-wide">
+        <label>Trip type</label>
+        <div class="choice-row">
+          {% for value, label in [('one-way', 'One-way'), ('round-trip', 'Round trip'), ('multi-city', 'Multi-city')] %}
+            <label class="choice-chip">
+              <input type="radio" name="trip_type" value="{{ value }}" {% if defaults.trip_type == value %}checked{% endif %}>
+              <span>{{ label }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="field-wide">
+        <label for="origin">Origin station</label>
+        <input id="origin" list="station-directory" name="origin" value="{{ defaults.origin }}" placeholder="Try NYP, WAS, CHI, SEA, or LAX">
+      </div>
+
+      <div class="field-wide">
+        <label for="destination">Destination station</label>
+        <input id="destination" list="station-directory" name="destination" value="{{ defaults.destination }}" placeholder="Enter a station code or city name">
+      </div>
+
+      <div class="field">
+        <label for="departure_date">Departure date</label>
+        <input id="departure_date" type="date" name="departure_date" value="{{ defaults.departure_date }}">
+      </div>
+
+      <div class="field" data-return-field>
+        <label for="return_date">Return date</label>
+        <input id="return_date" type="date" name="return_date" value="{{ defaults.return_date }}">
+      </div>
+
+      <div class="field">
+        <label for="passengers">Passengers</label>
+        <select id="passengers" name="passengers">
+          {% for count in range(1, 5) %}
+            <option value="{{ count }}" {% if defaults.passengers == count %}selected{% endif %}>{{ count }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="fare_class">Fare class</label>
+        <select id="fare_class" name="fare_class">
+          {% for fare_value, label in [('saver', 'Saver'), ('value', 'Value'), ('flexible', 'Flexible'), ('business', 'Business')] %}
+            <option value="{{ fare_value }}" {% if defaults.fare_class == fare_value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="time_window">Departure window</label>
+        <select id="time_window" name="time_window">
+          <option value="" {% if not defaults.time_window %}selected{% endif %}>Any time</option>
+          <option value="morning" {% if defaults.time_window == 'morning' %}selected{% endif %}>Morning</option>
+          <option value="afternoon" {% if defaults.time_window == 'afternoon' %}selected{% endif %}>Afternoon</option>
+          <option value="evening" {% if defaults.time_window == 'evening' %}selected{% endif %}>Evening</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label for="sort">Sort</label>
+        <select id="sort" name="sort">
+          <option value="price" {% if defaults.sort == 'price' %}selected{% endif %}>Price low to high</option>
+          <option value="price_desc" {% if defaults.sort == 'price_desc' %}selected{% endif %}>Price high to low</option>
+          <option value="duration" {% if defaults.sort == 'duration' %}selected{% endif %}>Shortest duration</option>
+          <option value="departure" {% if defaults.sort == 'departure' %}selected{% endif %}>Earliest departure</option>
+        </select>
+      </div>
+
+      <div class="field-wide">
+        <label class="choice-chip">
+          <input type="checkbox" name="direct_only" value="1" {% if defaults.direct_only %}checked{% endif %}>
+          <span>Direct trips only</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="hero-actions">
+      <button class="button" type="submit">Search trips</button>
+      <a class="button-ghost" href="{{ url_for('booking_multi_city') }}">Open multi-city planner</a>
+    </div>
+  </form>
+{% endmacro %}
+
+{% macro option_card(option, selectable=False, choice_name='option_token', token='', selected=False) %}
+  <div class="option-card">
+    <div class="option-head">
+      <div>
+        <div class="eyebrow">{{ option.route_label }}</div>
+        <h3 class="card-title">{{ option.segment_details[0].origin_name }} to {{ option.segment_details[-1].destination_name }}</h3>
+        <p class="section-intro">{{ option.train_label }} · {{ option.duration_label }} · {{ option.transfer_count }} transfer{% if option.transfer_count != 1 %}s{% endif %}</p>
+        <div class="badge-row">
+          <span class="badge">{{ option.departure_label }} depart</span>
+          <span class="badge">{{ option.arrival_label }} arrive</span>
+          <span class="badge">{% if option.direct_only %}Direct{% else %}Via {{ option.via_code }}{% endif %}</span>
+          <span class="badge">{% if option.has_sleepers %}Sleeper inventory available{% else %}Coach / business only{% endif %}</span>
+        </div>
+      </div>
+      <div class="card">
+        {% if selectable %}
+          <label class="choice-chip">
+            <input type="radio" name="{{ choice_name }}" value="{{ token }}" {% if selected %}checked{% endif %}>
+            <span>Select this option</span>
+          </label>
+        {% endif %}
+        <div class="stat-grid" style="margin-top: 14px;">
+          <div class="stat-card">
+            <span class="kicker">Starting fare</span>
+            <strong>{{ (option.display_price if option.display_price is defined else option.starting_price)|currency }}</strong>
+          </div>
+          <div class="stat-card">
+            <span class="kicker">Saver seats</span>
+            <strong>{{ option.saver_availability }}</strong>
+          </div>
+          <div class="stat-card">
+            <span class="kicker">Business seats</span>
+            <strong>{{ option.business_availability }}</strong>
+          </div>
+          <div class="stat-card">
+            <span class="kicker">Status</span>
+            <strong>{{ option.trip_status }}</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="detail-list">
+        {% for segment in option.segment_details %}
+          <div class="detail-item">
+            <strong>{{ segment.route_name }}</strong>
+            <div class="muted">{{ segment.origin_name }} ({{ segment.origin_code }}) → {{ segment.destination_name }} ({{ segment.destination_code }})</div>
+            <div class="meta-row">
+              <span class="tag">{{ segment.departure_dt|dt_label }}</span>
+              <span class="tag">{{ segment.arrival_dt|dt_label }}</span>
+              <span class="tag">{{ segment.duration_label }}</span>
+              <span class="tag">{{ segment.service_level }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if option.alerts %}
+      <div class="section">
+        <div class="detail-list">
+          {% for alert in option.alerts %}
+            <div class="detail-item alert-card {% if 'Major' in alert.severity %}major{% elif alert.severity == 'Service Alert' %}service{% endif %}">
+              <strong>{{ alert.severity }} · {{ alert.title }}</strong>
+              <div class="muted">{{ alert.message }}</div>
+              <div class="subtle">{{ alert.next_step }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+{% macro summary_card(summary) %}
+  <div class="card summary-box">
+    <div class="eyebrow">Trip summary</div>
+    <h3 class="card-title">{{ summary.trip_type|replace('-', ' ')|title }}</h3>
+    <div class="vertical-list">
+      {% for option in summary.options %}
+        <div class="detail-item">
+          <strong>{{ option.route_label }}</strong>
+          <div class="muted">{{ option.segment_details[0].origin_name }} → {{ option.segment_details[-1].destination_name }}</div>
+          <div class="subtle">{{ option.departure_dt|dt_label }} · {{ option.duration_label }}</div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="stat-grid" style="margin-top: 14px;">
+      <div class="stat-card">
+        <span class="kicker">Passengers</span>
+        <strong>{{ summary.passenger_count }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="kicker">Fare subtotal</span>
+        <strong>{{ summary.traveler_subtotal|currency }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="kicker">Rooms</span>
+        <strong>{{ summary.room_total|currency }}</strong>
+      </div>
+      <div class="stat-card">
+        <span class="kicker">Rewards</span>
+        <strong>{{ summary.reward_points }}</strong>
+      </div>
+    </div>
+    <div class="timeline" style="margin-top: 16px;">
+      <div class="timeline-item">
+        <strong>Service fee</strong>
+        <div class="subtle">{{ summary.service_fee|currency }}</div>
+      </div>
+      <div class="timeline-item">
+        <strong>Total</strong>
+        <div class="confirmation-code">{{ summary.total|currency }}</div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}

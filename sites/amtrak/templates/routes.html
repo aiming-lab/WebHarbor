@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Routes · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Routes</div>
+      <h2>Browse corridor, express, and overnight routes.</h2>
+      <p>Search by route name, service level, or corridor type. Every route detail page includes stops, next departures, related deals, and active alerts.</p>
+      <form class="utility-search" action="{{ url_for('routes_page') }}" method="get" style="margin-top: 20px; max-width: 520px;">
+        <input type="search" name="q" value="{{ query }}" placeholder="Try Acela, Cascades, Zephyr, or sleeper">
+        <button class="button" type="submit">Filter routes</button>
+      </form>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=routes[0].map_image if routes else 'images/routes/acela-express-map.svg') }}" alt="Amtrak route art">
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="grid auto">
+      {% for route in routes %}
+        <article class="card media-card">
+          <div class="media-top">
+            <img src="{{ url_for('static', filename=route.hero_image) }}" alt="{{ route.name }}">
+          </div>
+          <div class="media-body">
+            <div class="badge-row">
+              <span class="badge">{{ route.route_type }}</span>
+              <span class="badge">{{ route.service_level }}</span>
+              <span class="badge">{{ route.total_duration_minutes|duration_label }}</span>
+            </div>
+            <h3 class="card-title" style="margin-top: 14px;">{{ route.name }}</h3>
+            <p class="muted">{{ route.description }}</p>
+            <div class="meta-row">
+              <span class="tag">{{ route.origin_station.city_name }}</span>
+              <span class="tag">{{ route.destination_station.city_name }}</span>
+              <span class="tag">{{ route.frequency_note }}</span>
+            </div>
+            <div class="hero-actions">
+              <a class="button-secondary" href="{{ url_for('route_detail', route_slug=route.slug) }}">Open route</a>
+              <a class="button-ghost" href="{{ url_for('booking_results', origin=route.origin_code, destination=route.destination_code, departure_date='2026-04-20') }}">Search fares</a>
+            </div>
+          </div>
+        </article>
+      {% else %}
+        <div class="empty-state">No routes matched that filter.</div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

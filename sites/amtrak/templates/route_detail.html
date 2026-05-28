@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ route.name }} · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">{{ route.route_type }} · {{ route.service_level }}</div>
+      <h2>{{ route.name }}</h2>
+      <p>{{ route.description }}</p>
+      <div class="badge-row">
+        <span class="badge">{{ route.origin_station.city_name }}</span>
+        <span class="badge">{{ route.destination_station.city_name }}</span>
+        <span class="badge">{{ route.total_duration_minutes|duration_label }}</span>
+        {% if route.overnight %}<span class="badge">Sleeper rooms available</span>{% endif %}
+      </div>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('booking_results', origin=route.origin_code, destination=route.destination_code, departure_date='2026-04-20') }}">Search this route</a>
+        <a class="button-secondary" href="{{ url_for('status_page', route=route.slug) }}">Check current status</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=route.hero_image) }}" alt="{{ route.name }}">
+    </div>
+  </section>
+
+  <section class="section sidebar-layout">
+    <div class="card">
+      <div class="eyebrow">Stops</div>
+      <h2>Route-stop sequence</h2>
+      <div class="visual-card" style="margin-bottom: 18px;">
+        <img src="{{ url_for('static', filename=route.map_image) }}" alt="{{ route.name }} map">
+      </div>
+      <div class="timeline">
+        {% for stop in route.stops %}
+          <a class="timeline-item" href="{{ url_for('station_detail', station_code=stop.station.code) }}">
+            <strong>{{ stop.stop_order + 1 }}. {{ stop.station.city_name }} ({{ stop.station.code }})</strong>
+            <div class="muted">{{ stop.station.name }}</div>
+            <div class="subtle">Arrive +{{ stop.arrival_offset_minutes|duration_label }} · Depart +{{ stop.departure_offset_minutes|duration_label }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="sticky-box">
+      <div class="card">
+        <div class="eyebrow">Onboard</div>
+        <h3 class="card-title">What this route highlights</h3>
+        <div class="detail-list">
+          {% for feature in route.onboard_features %}
+            <div class="detail-item">{{ feature }}</div>
+          {% endfor %}
+        </div>
+      </div>
+
+      {% if related_alerts %}
+        <div class="card section">
+          <div class="eyebrow">Alerts</div>
+          <h3 class="card-title">Current route advisories</h3>
+          <div class="detail-list">
+            {% for alert in related_alerts %}
+              <div class="detail-item alert-card {% if 'Major' in alert.severity %}major{% elif alert.severity == 'Service Alert' %}service{% endif %}">
+                <strong>{{ alert.title }}</strong>
+                <div class="muted">{{ alert.message }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="section grid two">
+    <div class="card">
+      <div class="eyebrow">Next departures</div>
+      <h2>Upcoming seeded trips</h2>
+      <div class="detail-list">
+        {% for trip in next_trips %}
+          <div class="detail-item">
+            <strong>{{ trip.train.name }} {{ trip.train.number }} · {{ trip.direction|title }}</strong>
+            <div class="muted">{{ trip.departure_dt|dt_label }} → {{ trip.arrival_dt|dt_label }}</div>
+            <div class="meta-row">
+              <span class="tag">{{ trip.start_station.city_name }}</span>
+              <span class="tag">{{ trip.end_station.city_name }}</span>
+              <span class="tag">{{ trip.base_fare|currency }} base fare</span>
+              <span class="tag">{{ trip.status_label }}</span>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-state">No future seeded trips were available for this route.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Related deals</div>
+      <h2>Current route promos</h2>
+      <div class="detail-list">
+        {% for deal in related_deals %}
+          <div class="detail-item">
+            <strong>{{ deal.title }}</strong>
+            <div class="muted">{{ deal.description }}</div>
+            <div class="meta-row">
+              <span class="tag">From {{ deal.price_from|currency }}</span>
+              <span class="tag">{{ deal.travel_window }}</span>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-state">No route-specific deals are seeded for this page.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

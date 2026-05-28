@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% from "_macros.html" import booking_search_form %}
+{% block title %}Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Demo booking environment</div>
+      <h2>Search routes, compare fares, and manage synthetic train trips in one local mirror.</h2>
+      <p>
+        This Amtrak-style environment mirrors station browsing, schedule lookup, one-way and round-trip booking,
+        sleeper-room selection, rewards dashboards, and trip lookup flows using seeded local data only.
+      </p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('booking_search') }}">Start booking</a>
+        <a class="button-secondary" href="{{ url_for('routes_page') }}">Browse routes</a>
+      </div>
+      <div class="section" style="margin-top: 24px;">
+        <div class="progress-row">
+          <div class="progress-step active">
+            <div class="kicker">Live-style tools</div>
+            <strong>Schedules, status, service alerts, and stations</strong>
+          </div>
+          <div class="progress-step active">
+            <div class="kicker">Account flows</div>
+            <strong>Rewards, trip history, change and cancel mock actions</strong>
+          </div>
+          <div class="progress-step active">
+            <div class="kicker">Safety note</div>
+            <strong>No real bookings, payment, or external Amtrak APIs</strong>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="visual-card">
+      {{ booking_search_form(booking_defaults, url_for('booking_results'), compact=True) }}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="grid auto">
+      {% for row in popular_departures %}
+        <div class="card">
+          <div class="eyebrow">{{ row.station.code }}</div>
+          <h3 class="card-title">{{ row.station.city_name }}</h3>
+          <div class="detail-list">
+            {% for departure in row.departures %}
+              <div class="detail-item">
+                <strong>{{ departure.departure_dt|time_label }} · {{ departure.route_name }}</strong>
+                <div class="muted">{{ departure.destination_name }} · Train {{ departure.train_number }}</div>
+                <div class="subtle">{{ departure.status_label }}{% if departure.delay_minutes %} · {{ departure.delay_minutes }} min{% endif %}</div>
+              </div>
+            {% else %}
+              <div class="empty-state">No seeded departures were found for this station/date.</div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Featured routes</div>
+    <h2>Flagship corridor and overnight services</h2>
+    <p class="section-intro">The homepage highlights a mix of corridor, express, and long-distance routes so benchmark tasks can span simple day trips and sleeper planning.</p>
+    <div class="grid auto">
+      {% for route in featured_routes %}
+        <article class="card media-card">
+          <div class="media-top">
+            <img src="{{ url_for('static', filename=route.hero_image) }}" alt="{{ route.name }}">
+          </div>
+          <div class="media-body">
+            <div class="badge-row">
+              <span class="badge">{{ route.route_type }}</span>
+              <span class="badge">{{ route.service_level }}</span>
+              <span class="badge">{{ route.total_duration_minutes|duration_label }}</span>
+            </div>
+            <h3 class="card-title" style="margin-top: 14px;">{{ route.name }}</h3>
+            <p class="muted">{{ route.tagline }}</p>
+            <div class="meta-row">
+              <span class="tag">{{ route.origin_station.city_name }}</span>
+              <span class="tag">{{ route.destination_station.city_name }}</span>
+              {% if route.overnight %}<span class="tag">Sleeper eligible</span>{% endif %}
+            </div>
+            <div class="hero-actions">
+              <a class="button-secondary" href="{{ url_for('route_detail', route_slug=route.slug) }}">Route details</a>
+              <a class="button-ghost" href="{{ url_for('booking_results', origin=route.origin_code, destination=route.destination_code, departure_date='2026-04-20') }}">Search later</a>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="grid two">
+      <div class="card">
+        <div class="eyebrow">Destinations</div>
+        <h2>Featured city pages</h2>
+        <div class="grid auto">
+          {% for city in destinations %}
+            <a class="media-card card" href="{{ url_for('destination_detail', city_slug=city.slug) }}">
+              <div class="media-top">
+                <img src="{{ url_for('static', filename=city.hero_image) }}" alt="{{ city.display_name }}">
+              </div>
+              <div class="media-body">
+                <h3 class="card-title">{{ city.display_name }}</h3>
+                <p class="muted">{{ city.highlight_fact }}</p>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="eyebrow">Deals</div>
+        <h2>Travel offers on seeded routes</h2>
+        <div class="detail-list">
+          {% for deal in featured_deals %}
+            <a class="detail-item" href="{{ url_for('deals_page') }}">
+              <strong>{{ deal.title }}</strong>
+              <div class="muted">{{ deal.description }}</div>
+              <div class="meta-row">
+                <span class="tag">From {{ deal.price_from|currency }}</span>
+                <span class="tag">{{ deal.travel_window }}</span>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Service conditions</div>
+    <h2>Operational notes currently visible in the mirror</h2>
+    <div class="grid auto">
+      {% for alert in service_alerts %}
+        <article class="card alert-card {% if 'Major' in alert.severity %}major{% elif alert.severity == 'Service Alert' %}service{% endif %}">
+          <div class="badge-row">
+            <span class="status-badge {% if 'Major' in alert.severity %}danger{% elif alert.severity == 'Service Alert' %}warning{% else %}success{% endif %}">{{ alert.severity }}</span>
+          </div>
+          <h3 class="card-title" style="margin-top: 12px;">{{ alert.title }}</h3>
+          <p class="muted">{{ alert.message }}</p>
+          <div class="subtle">{{ alert.next_step }}</div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

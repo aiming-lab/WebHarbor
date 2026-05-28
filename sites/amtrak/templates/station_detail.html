@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ station.city_name }} ({{ station.code }}) · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">{{ station.code }} · {{ station.region }}</div>
+      <h2>{{ station.name }}</h2>
+      <p>{{ station.map_blurb }}</p>
+      <div class="badge-row">
+        <span class="badge">{{ station.city_name }}, {{ station.state }}</span>
+        <span class="badge">{{ station.hours_text }}</span>
+        <span class="badge">{{ station.baggage_text }}</span>
+      </div>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('schedules_page', station_code=station.code, date='2026-04-18') }}">View departures</a>
+        <a class="button-secondary" href="{{ url_for('booking_results', origin=station.code, destination='WAS', departure_date='2026-04-20') }}">Start from this station</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=station.hero_image) }}" alt="{{ station.name }}">
+    </div>
+  </section>
+
+  <section class="section sidebar-layout">
+    <div class="card">
+      <div class="eyebrow">Departures</div>
+      <h2>Reference-date departure board</h2>
+      <div class="info-table-wrap">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>Depart</th>
+              <th>Route</th>
+              <th>Destination</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for departure in departures %}
+              <tr>
+                <td>{{ departure.departure_dt|time_label }}</td>
+                <td>{{ departure.route_name }} {{ departure.train_number }}</td>
+                <td>{{ departure.destination_name }} ({{ departure.destination_code }})</td>
+                <td>{{ departure.status_label }}{% if departure.delay_minutes %} · {{ departure.delay_minutes }} min{% endif %}</td>
+              </tr>
+            {% else %}
+              <tr><td colspan="4">No seeded departures for this station/date.</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="sticky-box">
+      <div class="card">
+        <div class="eyebrow">Amenities</div>
+        <h3 class="card-title">Station details</h3>
+        <div class="detail-list">
+          {% for amenity in station.amenities %}
+            <div class="detail-item">{{ amenity }}</div>
+          {% endfor %}
+          <div class="detail-item"><strong>Address</strong><div class="muted">{{ station.address }}</div></div>
+          <div class="detail-item"><strong>Platform note</strong><div class="muted">{{ station.platform_note }}</div></div>
+          <div class="detail-item"><strong>Parking note</strong><div class="muted">{{ station.parking_note }}</div></div>
+          <div class="detail-item"><strong>Accessibility</strong><div class="muted">{{ station.accessibility_text }}</div></div>
+        </div>
+      </div>
+
+      {% if station_alerts %}
+        <div class="card section">
+          <div class="eyebrow">Alerts</div>
+          <h3 class="card-title">Station advisories</h3>
+          <div class="detail-list">
+            {% for alert in station_alerts %}
+              <div class="detail-item alert-card {% if 'Major' in alert.severity %}major{% elif alert.severity == 'Service Alert' %}service{% endif %}">
+                <strong>{{ alert.title }}</strong>
+                <div class="muted">{{ alert.message }}</div>
+              </div>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="eyebrow">Routes from {{ station.code }}</div>
+    <h2>Services that call at this station</h2>
+    <div class="grid auto">
+      {% for route in station_routes %}
+        <a class="card" href="{{ url_for('route_detail', route_slug=route.slug) }}">
+          <strong>{{ route.name }}</strong>
+          <div class="muted">{{ route.tagline }}</div>
+          <div class="meta-row" style="margin-top: 10px;">
+            <span class="tag">{{ route.route_type }}</span>
+            <span class="tag">{{ route.service_level }}</span>
+          </div>
+        </a>
+      {% else %}
+        <div class="empty-state">No routes were linked to this station in the seeded timetable.</div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

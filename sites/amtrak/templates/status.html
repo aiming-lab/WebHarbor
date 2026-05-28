@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Status · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Status board</div>
+      <h2>Monitor the reference-date trip lineup and seeded delays.</h2>
+      <p>Filter by station or route to isolate affected trips. Delay labels are deterministic and align with the service-alert pages.</p>
+      <form class="form-panel" action="{{ url_for('status_page') }}" method="get" style="margin-top: 18px;">
+        <div class="form-grid">
+          <div class="field">
+            <label for="station_code">Station code</label>
+            <input id="station_code" list="station-directory" name="station_code" value="{{ station_code }}">
+          </div>
+          <div class="field-wide">
+            <label for="route">Route</label>
+            <select id="route" name="route">
+              <option value="">All routes</option>
+              {% for route in routes %}
+                <option value="{{ route.slug }}" {% if route_slug == route.slug %}selected{% endif %}>{{ route.name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="button" type="submit">Update board</button>
+          <a class="button-ghost" href="{{ url_for('status_page') }}">Clear filters</a>
+        </div>
+      </form>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/stations/CHI.svg') }}" alt="Status art">
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="grid auto">
+      {% for trip in trips %}
+        <article class="card">
+          <div class="badge-row">
+            <span class="badge">{{ trip.route.name }}</span>
+            <span class="badge">{{ trip.train.number }}</span>
+            <span class="status-badge {% if trip.delay_minutes >= 20 %}danger{% elif trip.delay_minutes > 0 %}warning{% else %}success{% endif %}">
+              {{ trip.status_label }}
+            </span>
+          </div>
+          <h3 class="card-title" style="margin-top: 14px;">{{ trip.start_station.city_name }} → {{ trip.end_station.city_name }}</h3>
+          <p class="muted">{{ trip.departure_dt|dt_label }} → {{ trip.arrival_dt|dt_label }}</p>
+          <div class="meta-row">
+            <span class="tag">{{ trip.duration_minutes|duration_label }}</span>
+            <span class="tag">Track {{ trip.boarding_track }}</span>
+            <span class="tag">{{ trip.overnight_label }}</span>
+          </div>
+          <div class="subtle" style="margin-top: 12px;">{{ trip.service_note }}</div>
+        </article>
+      {% else %}
+        <div class="empty-state">No trips matched the current filter.</div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
