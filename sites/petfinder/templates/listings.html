@@ -1,0 +1,5 @@
+{% extends "base.html" %}{% block title %}{{ config.entity }}s{% endblock %}{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Browse</div><h1>{{ config.entity }}s</h1><p>{{ config.tagline }}</p></div></section>
+<form class="filter-bar" action="{{ url_for('listings') }}"><select name="category"><option value="">All categories</option>{% for x in categories %}<option value="{{ x }}" {% if x == category %}selected{% endif %}>{{ x }}</option>{% endfor %}</select><select name="region"><option value="">All regions</option>{% for x in regions %}<option value="{{ x }}" {% if x == region %}selected{% endif %}>{{ x }}</option>{% endfor %}</select><input type="number" name="max_price" placeholder="Max price" value="{{ max_price or '' }}"><button type="submit">Apply</button></form>
+<section class="card-grid section">{% for item in rows %}{% include "_card.html" %}{% endfor %}</section>
+{% endblock %}
