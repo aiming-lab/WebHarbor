@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Saved Comparisons{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Account</div><h1>Saved Comparisons</h1></div></section>
+<section class="pair-grid section">
+  {% for item in saved %}
+    <a class="pair-card" href="{{ url_for('compare_detail', left=item.left.slug, right=item.right.slug) }}">
+      <span>{{ item.left.name }}</span><em>vs</em><span>{{ item.right.name }}</span><small>{{ item.note }}</small>
+    </a>
+  {% else %}
+    <p class="empty-state">No saved comparisons yet.</p>
+  {% endfor %}
+</section>
+{% endblock %}

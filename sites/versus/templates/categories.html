@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Browse by vertical</div><h1>Categories</h1></div></section>
+<section class="category-grid">
+  {% for category in categories %}
+    <a class="category-card" href="{{ url_for('category_detail', slug=category.slug) }}">
+      <strong>{{ category.name }}</strong>
+      <span>{{ category.tagline }}</span>
+      <small>{{ counts[category.id] }} products</small>
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}

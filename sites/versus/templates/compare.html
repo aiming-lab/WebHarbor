@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ left.name }} vs {{ right.name }}{% endblock %}
+{% block content %}
+<section class="versus-hero">
+  <div><img src="{{ url_for('product_art', slug=left.slug) }}" alt="{{ left.name }}"><h1>{{ left.name }}</h1></div>
+  <span>vs</span>
+  <div><img src="{{ url_for('product_art', slug=right.slug) }}" alt="{{ right.name }}"><h1>{{ right.name }}</h1></div>
+</section>
+<section class="winner-band">
+  <strong>{{ winner.name }}</strong> wins with a {{ winner.score }} Versus Score.
+  <form method="post" action="{{ url_for('save_comparison', left=left.slug, right=right.slug) }}">
+    <button type="submit">Save comparison</button>
+  </form>
+</section>
+<section class="compare-table-wrap">
+  <table class="compare-table">
+    <thead><tr><th>Signal</th><th>{{ left.name }}</th><th>{{ right.name }}</th></tr></thead>
+    <tbody>
+      <tr><th>Score</th><td>{{ left.score }}</td><td>{{ right.score }}</td></tr>
+      <tr><th>Price</th><td>${{ left.price }}</td><td>${{ right.price }}</td></tr>
+      <tr><th>{{ left.category.spec_1 }}</th><td>{{ left.spec_1_value|round(1) }}{{ left.category.unit_1 }}</td><td>{{ right.spec_1_value|round(1) }}{{ right.category.unit_1 }}</td></tr>
+      <tr><th>{{ left.category.spec_2 }}</th><td>{{ left.spec_2_value|round(1) }}{{ left.category.unit_2 }}</td><td>{{ right.spec_2_value|round(1) }}{{ right.category.unit_2 }}</td></tr>
+      <tr><th>{{ left.category.spec_3 }}</th><td>{{ left.spec_3_value|round(1) }}{{ left.category.unit_3 }}</td><td>{{ right.spec_3_value|round(1) }}{{ right.category.unit_3 }}</td></tr>
+      <tr><th>Pros</th><td>{{ left.pros }}</td><td>{{ right.pros }}</td></tr>
+      <tr><th>Cons</th><td>{{ left.cons }}</td><td>{{ right.cons }}</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}

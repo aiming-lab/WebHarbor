@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }}{% endblock %}
+{% block content %}
+<section class="detail-hero">
+  <img src="{{ url_for('product_art', slug=product.slug) }}" alt="{{ product.name }}">
+  <div>
+    <div class="eyebrow">{{ product.category.name }}</div>
+    <h1>{{ product.name }}</h1>
+    <p>{{ product.summary }}</p>
+    <div class="score-pill">{{ product.score }} Versus Score</div>
+    <a class="button primary" href="{{ url_for('compare_picker', left=product.slug) }}">Compare this product</a>
+  </div>
+</section>
+<section class="metric-grid">
+  <div><span>{{ product.category.spec_1 }}</span><strong>{{ product.spec_1_value|round(1) }}{{ product.category.unit_1 }}</strong></div>
+  <div><span>{{ product.category.spec_2 }}</span><strong>{{ product.spec_2_value|round(1) }}{{ product.category.unit_2 }}</strong></div>
+  <div><span>{{ product.category.spec_3 }}</span><strong>{{ product.spec_3_value|round(1) }}{{ product.category.unit_3 }}</strong></div>
+  <div><span>Price</span><strong>${{ product.price }}</strong></div>
+</section>
+<section class="pro-con">
+  <article><h2>Pros</h2><p>{{ product.pros }}</p></article>
+  <article><h2>Cons</h2><p>{{ product.cons }}</p></article>
+</section>
+<section class="section">
+  <div class="section-head"><h2>Compare with</h2></div>
+  <div class="pair-grid">
+    {% for item in related %}
+      <a class="pair-card" href="{{ url_for('compare_detail', left=product.slug, right=item.slug) }}"><span>{{ product.name }}</span><em>vs</em><span>{{ item.name }}</span></a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
