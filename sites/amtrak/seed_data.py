@@ -884,7 +884,7 @@ def seed_database(db, models, base_dir):
             "name": "Flexible",
             "description": "Highest-flexibility coach-style fare, also used as the base for sleeper selections.",
             "rules_change": "Change or cancel any time before departure in the demo mirror.",
-            "rules_refund": "Refundable back to the local demo payment placeholder.",
+            "rules_refund": "Refundable back to the local demo payment method on file.",
             "seat_type": "Flexible Seat",
             "points_multiplier": 1.35,
             "color": "gold",
