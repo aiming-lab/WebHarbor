@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Games &amp; Quizzes | Merriam-Webster{% endblock %}
+{% set quiz_art = {
+  'name-that-word': 'quiz-baby-chick.jpg',
+  'synonym-showdown': 'quiz-swan.jpg',
+  'opposites-attract': 'quiz-roulette.jpg'
+} %}
+{% block content %}
+<div class="container section">
+  <h1 class="section-title">Games &amp; Quizzes</h1>
+  <p class="muted">Test your vocabulary with quizzes built from real dictionary entries.</p>
+  {% for quiz in quizzes %}
+  <div class="quiz-card quiz-card-media">
+    <img class="quiz-thumb" alt="{{ quiz.title }}"
+         src="{{ url_for('static', filename='images/' ~ (quiz_art.get(quiz.slug) or 'quiz-mailbox.jpg')) }}">
+    <div>
+      <h3>{{ quiz.title }}
+        <span class="quiz-badge badge-{{ quiz.difficulty }}">{{ quiz.difficulty }}</span>
+      </h3>
+      <p>{{ quiz.description }}</p>
+      <p class="muted">{{ quiz.get_questions() | length }} questions</p>
+      <a class="btn" href="{{ url_for('quiz_detail', slug=quiz.slug) }}">Take the Quiz</a>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

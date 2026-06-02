@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}{% if q %}{{ q }} — Search{% else %}Search{% endif %} | Merriam-Webster{% endblock %}
+{% block content %}
+<div class="container section">
+  {% if not q %}
+    <h1 class="section-title">Search the dictionary</h1>
+    <p class="muted">Type a word in the search bar above to look up its definition.</p>
+  {% else %}
+    <h1 class="section-title">Results for "{{ q }}"</h1>
+
+    {% if results %}
+    <h2>Dictionary</h2>
+    <ul class="results-list">
+      {% for w in results %}
+      <li>
+        <a class="r-head" href="{{ url_for('word_detail', slug=w.slug) }}">{{ w.headword }}</a>
+        <span class="wc-pos">{{ w.pos }}</span>
+        {% if w.get_definitions() %}<div class="wc-def">{{ w.get_definitions()[0].text | truncate(120) }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if thes_results %}
+    <h2 style="margin-top:26px;">Thesaurus</h2>
+    <ul class="results-list">
+      {% for t in thes_results %}
+      <li>
+        <a class="r-head" href="{{ url_for('thesaurus_detail', slug=t.slug) }}">{{ t.headword }}</a>
+        {% if t.get_synonyms() %}<div class="wc-def">Synonyms: {{ t.get_synonyms()[:5] | join(', ') }}</div>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if not results and not thes_results %}
+    <p>No entries found for "<strong>{{ q }}</strong>". Check your spelling or try another word.</p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

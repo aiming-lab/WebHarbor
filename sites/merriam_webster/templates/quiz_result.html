@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}{{ quiz.title }} — Results | Merriam-Webster{% endblock %}
+{% block content %}
+<div class="container section">
+  <div class="score-banner">
+    Your Score
+    <span class="score-num">{{ score }} / {{ total }}</span>
+  </div>
+
+  <h1 class="section-title">{{ quiz.title }} — Review</h1>
+  {% for r in review %}
+  <div class="question">
+    <div class="q-text">{{ loop.index }}. {{ r.q }}</div>
+    {% for choice in r.choices %}
+      {% if loop.index0 == r.answer_index %}
+        <div class="choice result-correct">✓ {{ choice }} (correct answer)</div>
+      {% elif loop.index0 == r.picked %}
+        <div class="choice result-wrong">✗ {{ choice }} (your answer)</div>
+      {% else %}
+        <div class="choice">{{ choice }}</div>
+      {% endif %}
+    {% endfor %}
+    {% if r.explanation %}<p class="muted">{{ r.explanation }}</p>{% endif %}
+  </div>
+  {% endfor %}
+
+  <a class="btn" href="{{ url_for('quiz_detail', slug=quiz.slug) }}">Try Again</a>
+  <a class="btn btn-secondary" href="{{ url_for('games_quizzes') }}">More Quizzes</a>
+</div>
+{% endblock %}
