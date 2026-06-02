@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Help · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Help center</div>
+      <h2>Search refund, baggage, sleeper, and rewards guidance.</h2>
+      <p>The help center uses only seeded local articles. Search results are deterministic and suitable for support-style benchmark tasks.</p>
+      <form class="utility-search" action="{{ url_for('help_page') }}" method="get" style="margin-top: 20px; max-width: 520px;">
+        <input type="search" name="q" value="{{ query }}" placeholder="Try baggage, refund, rewards, sleeper, or multi-city">
+        <button class="button" type="submit">Search help</button>
+      </form>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/destinations/chicago.svg') }}" alt="Help art">
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="grid auto">
+      {% for article in articles %}
+        <a class="card" href="{{ url_for('help_detail', slug=article.slug) }}">
+          <div class="badge-row">
+            <span class="badge">{{ article.category }}</span>
+            {% if article.popular %}<span class="badge">Popular</span>{% endif %}
+          </div>
+          <h3 class="card-title" style="margin-top: 14px;">{{ article.title }}</h3>
+          <p class="muted">{{ article.summary }}</p>
+        </a>
+      {% else %}
+        <div class="empty-state">No help articles matched that search query.</div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

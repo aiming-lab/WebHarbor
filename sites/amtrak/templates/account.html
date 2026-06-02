@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}My Account · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Account dashboard</div>
+      <h2>Welcome back, {{ current_user.full_name }}.</h2>
+      <p>Review saved passenger preferences, upcoming travel, and rewards activity from this local synthetic account.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('account_trips') }}">View trips</a>
+        <a class="button-secondary" href="{{ url_for('account_rewards') }}">Rewards</a>
+        <a class="button-ghost" href="{{ url_for('account_edit') }}">Edit profile</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/destinations/los-angeles.svg') }}" alt="Account hero">
+    </div>
+  </section>
+
+  <section class="section grid two">
+    <div class="card">
+      <div class="eyebrow">Upcoming</div>
+      <h2>Next trips</h2>
+      <div class="detail-list">
+        {% for booking in upcoming %}
+          <a class="detail-item" href="{{ url_for('trip_detail', booking_code=booking.booking_code) }}">
+            <strong>{{ booking.booking_code }} · {{ booking.origin_code }} → {{ booking.destination_code }}</strong>
+            <div class="muted">{{ booking.departure_date|date_label }} · {{ booking.status }}</div>
+            <div class="subtle">{{ booking.total_amount|currency }} · {{ booking.reward_points_earned }} points</div>
+          </a>
+        {% else %}
+          <div class="empty-state">No upcoming bookings are seeded for this account.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Saved profile</div>
+      <h2>Passenger defaults</h2>
+      {% if saved_profile %}
+        <div class="detail-list">
+          <div class="detail-item"><strong>{{ saved_profile.full_name }}</strong><div class="muted">{{ saved_profile.passenger_type }} · {{ saved_profile.age_band }}</div></div>
+          <div class="detail-item"><strong>Seat preference</strong><div class="muted">{{ saved_profile.seat_preference }}</div></div>
+          <div class="detail-item"><strong>Rewards number</strong><div class="muted">{{ saved_profile.rewards_number }}</div></div>
+        </div>
+      {% else %}
+        <div class="empty-state">No saved passenger profile exists for this account.</div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

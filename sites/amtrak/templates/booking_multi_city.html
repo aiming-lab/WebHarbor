@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_macros.html" import option_card %}
+{% block title %}Multi-City Planner · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Multi-city</div>
+      <h2>Build up to three sequential legs in one local planner.</h2>
+      <p>Search first, then choose one itinerary for each leg to move the entire bundle into fare selection.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/routes/amtrak-cascades-map.svg') }}" alt="Multi-city">
+    </div>
+  </section>
+
+  <section class="section">
+    {% if not state.legs %}
+      <form class="form-panel" action="{{ url_for('booking_multi_city') }}" method="post">
+        <input type="hidden" name="phase" value="search">
+        <div class="detail-list">
+          {% for idx in range(3) %}
+            <div class="card">
+              <div class="eyebrow">Leg {{ idx + 1 }}</div>
+              <div class="form-grid">
+                <div class="field-wide">
+                  <label for="origin_{{ idx }}">Origin</label>
+                  <input id="origin_{{ idx }}" list="station-directory" name="origin_{{ idx }}" placeholder="Station code">
+                </div>
+                <div class="field-wide">
+                  <label for="destination_{{ idx }}">Destination</label>
+                  <input id="destination_{{ idx }}" list="station-directory" name="destination_{{ idx }}" placeholder="Station code">
+                </div>
+                <div class="field">
+                  <label for="date_{{ idx }}">Date</label>
+                  <input id="date_{{ idx }}" type="date" name="date_{{ idx }}" value="{{ ['2026-04-18', '2026-04-20', '2026-04-22'][idx] }}">
+                </div>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="field" style="max-width: 160px; margin-top: 18px;">
+          <label for="passengers">Passengers</label>
+          <select id="passengers" name="passengers">
+            {% for value in range(1, 5) %}
+              <option value="{{ value }}">{{ value }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="hero-actions">
+          <button class="button" type="submit">Search multi-city options</button>
+        </div>
+      </form>
+    {% else %}
+      <form class="detail-list" action="{{ url_for('booking_multi_city') }}" method="post">
+        <input type="hidden" name="phase" value="select">
+        {% for group in options_by_leg %}
+          {% set leg_index = loop.index0 %}
+          <div class="card">
+            <div class="eyebrow">Leg {{ loop.index }}</div>
+            <h3 class="card-title">{{ group.leg.origin }} → {{ group.leg.destination }} on {{ group.leg.date }}</h3>
+            <div class="detail-list">
+              {% for option in group.options %}
+                <label class="card">
+                  <div class="choice-chip">
+                    <input type="radio" name="choice_{{ leg_index }}" value="leg{{ leg_index }}_{{ loop.index0 }}">
+                    <span>{{ option.route_label }}</span>
+                  </div>
+                  <div class="muted" style="margin-top: 10px;">{{ option.departure_dt|dt_label }} → {{ option.arrival_dt|dt_label }}</div>
+                  <div class="meta-row" style="margin-top: 10px;">
+                    <span class="tag">{{ option.duration_label }}</span>
+                    <span class="tag">{{ option.starting_price|currency }}</span>
+                  </div>
+                </label>
+              {% else %}
+                <div class="empty-state">No seeded options were found for this leg.</div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+        <button class="button" type="submit">Save selected legs</button>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}

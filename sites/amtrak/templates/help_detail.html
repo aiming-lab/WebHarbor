@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">{{ article.category }}</div>
+      <h2>{{ article.title }}</h2>
+      <p>{{ article.summary }}</p>
+      <div class="hero-actions">
+        <a class="button-secondary" href="{{ url_for('help_page', q=article.category) }}">More {{ article.category|lower }} help</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/destinations/washington.svg') }}" alt="{{ article.category }}">
+    </div>
+  </section>
+
+  <section class="section grid two">
+    <article class="card">
+      <div class="eyebrow">Article</div>
+      <h2>{{ article.title }}</h2>
+      {% for paragraph in article.body.split('\n\n') %}
+        <p class="section-intro" style="margin-bottom: 0;">{{ paragraph }}</p>
+      {% endfor %}
+    </article>
+
+    <aside class="card">
+      <div class="eyebrow">Related</div>
+      <h2>More in {{ article.category }}</h2>
+      <div class="detail-list">
+        {% for item in related %}
+          <a class="detail-item" href="{{ url_for('help_detail', slug=item.slug) }}">
+            <strong>{{ item.title }}</strong>
+            <div class="muted">{{ item.summary }}</div>
+          </a>
+        {% else %}
+          <div class="empty-state">No related articles were seeded in this category.</div>
+        {% endfor %}
+      </div>
+    </aside>
+  </section>
+{% endblock %}

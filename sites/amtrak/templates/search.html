@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Search · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Search</div>
+      <h2>Results for “{{ query or 'your search' }}”</h2>
+      <p>Global search scans routes, stations, destinations, deals, alerts, and help articles from the local database.</p>
+      <div class="badge-row">
+        <span class="badge">{{ total }} total matches</span>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/destinations/seattle.svg') }}" alt="Search illustration">
+    </div>
+  </section>
+
+  {% for title, bucket, endpoint, key in [
+    ('Routes', route_results, 'route_detail', 'slug'),
+    ('Stations', station_results, 'station_detail', 'code'),
+    ('Destinations', destination_results, 'destination_detail', 'slug'),
+    ('Deals', deal_results, 'deals_page', 'slug'),
+    ('Service alerts', alert_results, 'service_alerts_page', 'slug'),
+    ('Help articles', help_results, 'help_detail', 'slug'),
+  ] %}
+    {% if bucket %}
+      <section class="section">
+        <div class="eyebrow">{{ title }}</div>
+        <div class="grid auto">
+          {% for item in bucket %}
+            {% if title == 'Routes' %}
+              <a class="card" href="{{ url_for(endpoint, route_slug=item.slug) }}">
+                <strong>{{ item.name }}</strong>
+                <div class="muted">{{ item.tagline }}</div>
+              </a>
+            {% elif title == 'Stations' %}
+              <a class="card" href="{{ url_for(endpoint, station_code=item.code) }}">
+                <strong>{{ item.city_name }} ({{ item.code }})</strong>
+                <div class="muted">{{ item.name }}</div>
+              </a>
+            {% elif title == 'Destinations' %}
+              <a class="card" href="{{ url_for(endpoint, city_slug=item.slug) }}">
+                <strong>{{ item.display_name }}</strong>
+                <div class="muted">{{ item.highlight_fact }}</div>
+              </a>
+            {% elif title == 'Deals' %}
+              <a class="card" href="{{ url_for('deals_page') }}">
+                <strong>{{ item.title }}</strong>
+                <div class="muted">{{ item.description }}</div>
+              </a>
+            {% elif title == 'Service alerts' %}
+              <a class="card" href="{{ url_for('service_alerts_page') }}">
+                <strong>{{ item.title }}</strong>
+                <div class="muted">{{ item.message }}</div>
+              </a>
+            {% else %}
+              <a class="card" href="{{ url_for(endpoint, slug=item.slug) }}">
+                <strong>{{ item.title }}</strong>
+                <div class="muted">{{ item.summary }}</div>
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+  {% endfor %}
+
+  {% if total == 0 %}
+    <div class="empty-state">No results matched “{{ query }}”. Try searching by a route name, station code, city, or help topic.</div>
+  {% endif %}
+{% endblock %}

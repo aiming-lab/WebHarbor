@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}{{ city.display_name }} · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">{{ city.region }}</div>
+      <h2>{{ city.display_name }}</h2>
+      <p>{{ city.blurb }}</p>
+      <div class="badge-row">
+        <span class="badge">{{ city.highlight_fact }}</span>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=city.hero_image) }}" alt="{{ city.display_name }}">
+    </div>
+  </section>
+
+  <section class="section grid two">
+    <div class="card">
+      <div class="eyebrow">Routes</div>
+      <h2>Connected services</h2>
+      <div class="detail-list">
+        {% for route in city_routes %}
+          <a class="detail-item" href="{{ url_for('route_detail', route_slug=route.slug) }}">
+            <strong>{{ route.name }}</strong>
+            <div class="muted">{{ route.tagline }}</div>
+          </a>
+        {% else %}
+          <div class="empty-state">No route links were found for this destination.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Deals</div>
+      <h2>Travel offers touching this destination</h2>
+      <div class="detail-list">
+        {% for deal in city_deals %}
+          <div class="detail-item">
+            <strong>{{ deal.title }}</strong>
+            <div class="muted">{{ deal.description }}</div>
+            <div class="meta-row">
+              <span class="tag">From {{ deal.price_from|currency }}</span>
+              <span class="tag">{{ deal.travel_window }}</span>
+            </div>
+          </div>
+        {% else %}
+          <div class="empty-state">No destination-specific deal copy was seeded here.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}
