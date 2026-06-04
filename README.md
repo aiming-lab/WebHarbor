@@ -99,6 +99,17 @@ Any other improvement — bug fixes, UI polish, data enrichment, task suggestion
 | 📊 Contribution Track Sheet | [Google Sheet](https://docs.google.com/spreadsheets/d/1vZsrQjy9nJKze58fx4kbQtFi85NjVXIWCFyu3ShD7gk/edit?gid=0#gid=0) |
 | 📝 Contribution Request Form | [Google Form](https://forms.gle/ngcD1rzAfUEphNmRA) |
 
+## Reset And Smoke Checks
+
+Use the repository reset/smoke checker to verify control-plane resets, homepage reachability, and local seed/runtime DB parity:
+
+```bash
+python scripts/check_reset_smoke.py --site amazon
+python scripts/check_reset_smoke.py --control-url http://localhost:8101
+python scripts/check_reset_smoke.py --json
+python scripts/check_reset_smoke.py --strict
+```
+
 ## Citation
 
 WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`. 
