@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Register - IKEA demo{% endblock %}
+{% block content %}
+<form class="form-panel wide" method="post">
+  <p class="eyebrow">Local account creation</p>
+  <h1>Create a demo account</h1>
+  <div class="form-grid">
+    <label>First name<input type="text" name="first_name"></label>
+    <label>Last name<input type="text" name="last_name"></label>
+    <label>Email<input type="email" name="email"></label>
+    <label>Password<input type="password" name="password" value="{{ demo_password }}"></label>
+    <label>Phone<input type="text" name="phone"></label>
+    <label>City<input type="text" name="city"></label>
+    <label>State<input type="text" name="state"></label>
+    <label>ZIP code<input type="text" name="zip_code"></label>
+    <label>Preferred store
+      <select name="preferred_store_slug">
+        {% for store in store_options %}
+          <option value="{{ store.slug }}">{{ store.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <button type="submit">Create local account</button>
+</form>
+{% endblock %}

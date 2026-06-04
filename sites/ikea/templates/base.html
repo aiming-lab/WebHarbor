@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}IKEA Demo Mirror{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="promo-strip">
+        <span>Local benchmark mirror using deterministic demo inventory only.</span>
+        <span>Demo login password: <strong>{{ demo_password }}</strong></span>
+      </div>
+      <div class="header-main">
+        <a class="logo-lockup" href="{{ url_for('index') }}">
+          <span class="logo-badge">IKEA</span>
+          <span class="logo-copy">
+            <strong>IKEA demo</strong>
+            <small>Local benchmark mirror</small>
+          </span>
+        </a>
+        <form class="search-shell" action="{{ url_for('search') }}" method="get">
+          <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Search sofas, storage, lighting, rooms...">
+          <button type="submit">Search</button>
+        </form>
+        <nav class="account-actions">
+          <a href="{{ url_for('stores') }}">Stores</a>
+          <a href="{{ url_for('support') }}">Customer service</a>
+          <a href="{{ url_for('compare') if current_user.is_authenticated else url_for('login') }}">Compare ({{ compare_count }})</a>
+          <a href="{{ url_for('cart') if current_user.is_authenticated else url_for('login') }}">Cart ({{ cart_count }})</a>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('account') }}">{{ current_user.first_name }}</a>
+          {% else %}
+            <a href="{{ url_for('login') }}">Sign in</a>
+          {% endif %}
+        </nav>
+      </div>
+      <nav class="category-nav">
+        <a href="{{ url_for('categories') }}">All categories</a>
+        <a href="{{ url_for('products') }}">Products</a>
+        <a href="{{ url_for('room_planner') }}">Room planner</a>
+        <a href="{{ url_for('deals') }}">Deals</a>
+        {% for category in nav_categories %}
+          <a href="{{ url_for('category_view', category_slug=category.slug) }}">{{ category.name }}</a>
+        {% endfor %}
+      </nav>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+            <div class="flash-card flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    <main class="page-shell">
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div>
+        <strong>IKEA local benchmark mirror</strong>
+        <p>No real payments, deliveries, pickup bookings, or external APIs are used.</p>
+      </div>
+      <div>
+        <a href="{{ url_for('order_lookup') }}">Order lookup</a>
+        <a href="{{ url_for('support') }}">Help center</a>
+        <a href="{{ url_for('stores') }}">Store finder</a>
+      </div>
+    </footer>
+  </body>
+</html>

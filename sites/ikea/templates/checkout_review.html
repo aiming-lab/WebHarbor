@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Review order - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Checkout step 4 of 4</p>
+  <h1>Review your local demo order</h1>
+</section>
+<section class="checkout-layout">
+  <div class="summary-card">
+    <h2>Items</h2>
+    {% for item in summary["items"] %}
+      <p>{{ item.quantity }} × {{ item.product.name }} <strong>{{ (item.product.price * item.quantity)|money }}</strong></p>
+    {% endfor %}
+  </div>
+  <div class="summary-card">
+    <h2>Fulfillment</h2>
+    {% if state.get('method') == 'pickup' %}
+      <p><strong>Store pickup</strong></p>
+      <p>{{ pickup_store.name if pickup_store else 'No store selected' }}</p>
+      <p>{{ pickup_slot.slot_date }} · {{ pickup_slot.time_window }}</p>
+    {% else %}
+      <p><strong>Delivery</strong></p>
+      <p>{{ delivery_option.name if delivery_option else 'No delivery option selected' }}</p>
+      <p>{{ delivery_option.window_label if delivery_option else '' }}</p>
+    {% endif %}
+    <p><strong>Payment</strong> · {{ state.get('payment_method', 'Demo Card') }} •••• {{ state.get('payment_last4', '4242') }}</p>
+  </div>
+  <form class="summary-card" method="post">
+    <h2>Total</h2>
+    <p><span>Subtotal</span><strong>{{ summary.subtotal|money }}</strong></p>
+    <p><span>Tax</span><strong>{{ summary.estimated_tax|money }}</strong></p>
+    <p><span>Shipping / pickup</span><strong>{{ delivery_option.fee|money if delivery_option else '$0.00' }}</strong></p>
+    <p class="grand-total"><span>Total</span><strong>{{ (summary.subtotal + summary.estimated_tax + (delivery_option.fee if delivery_option else 0))|money }}</strong></p>
+    <button type="submit">Place mock order</button>
+  </form>
+</section>
+{% endblock %}

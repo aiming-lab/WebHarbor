@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Cart - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Cart summary</p>
+  <h1>Your demo cart</h1>
+</section>
+
+<section class="checkout-layout">
+  <div class="cart-items">
+    {% for item in summary["items"] %}
+      <article class="cart-card">
+        <img src="{{ url_for('static', filename=item.product.image_path) }}" alt="{{ item.product.name }}">
+        <div>
+          <h2>{{ item.product.name }}</h2>
+          <p>{{ item.product.series }} · {{ item.product.color }}</p>
+          <p>{{ item.product.price|money }}</p>
+        </div>
+        <form action="{{ url_for('cart_update', item_id=item.id) }}" method="post" class="inline-form">
+          <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
+          <button type="submit">Update</button>
+        </form>
+        <form action="{{ url_for('cart_remove', item_id=item.id) }}" method="post">
+          <button type="submit" class="secondary">Remove</button>
+        </form>
+      </article>
+    {% else %}
+      <div class="empty-card">
+        <h3>Your cart is empty.</h3>
+        <p>Sign in and add a few products to continue the checkout flow.</p>
+      </div>
+    {% endfor %}
+  </div>
+  <aside class="summary-card">
+    <h2>Order estimate</h2>
+    <p><span>Items</span><strong>{{ summary.count }}</strong></p>
+    <p><span>Subtotal</span><strong>{{ summary.subtotal|money }}</strong></p>
+    <p><span>Estimated tax</span><strong>{{ summary.estimated_tax|money }}</strong></p>
+    <a class="button" href="{{ url_for('checkout_start') }}">Continue to checkout</a>
+  </aside>
+</section>
+{% endblock %}

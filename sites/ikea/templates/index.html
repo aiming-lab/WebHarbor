@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+{% block title %}IKEA demo mirror{% endblock %}
+{% block content %}
+<section class="hero-grid">
+  <div class="hero-copy">
+    <p class="eyebrow">Furniture + home retail benchmark</p>
+    <h1>Design a room, check local pickup, and complete a full mock checkout.</h1>
+    <p>This mirror uses deterministic demo inventory, synthetic orders, and local SVG assets only.</p>
+    <div class="hero-actions">
+      <a class="button" href="{{ url_for('products') }}">Shop products</a>
+      <a class="button secondary" href="{{ url_for('room_planner') }}">Open room planner</a>
+    </div>
+  </div>
+  <aside class="hero-panel">
+    <h2>Popular categories</h2>
+    <div class="mini-grid">
+      {% for category in categories[:6] %}
+        <a class="mini-card" href="{{ url_for('category_view', category_slug=category.slug) }}">
+          <img src="{{ url_for('static', filename='images/categories/' ~ category.slug ~ '.svg') }}" alt="{{ category.name }}">
+          <span>{{ category.name }}</span>
+        </a>
+      {% endfor %}
+    </div>
+  </aside>
+</section>
+
+<section class="section-block">
+  <div class="section-heading">
+    <h2>Weekend room refresh deals</h2>
+    <a href="{{ url_for('deals') }}">View all deals</a>
+  </div>
+  <div class="deal-strip">
+    {% for deal in deals %}
+      <article class="deal-card">
+        <span class="pill">{{ deal.badge }}</span>
+        <h3>{{ deal.title }}</h3>
+        <p>{{ deal.summary }}</p>
+        <strong>{{ deal.discount_text }}</strong>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section-block">
+  <div class="section-heading">
+    <h2>Featured products</h2>
+    <a href="{{ url_for('products') }}">Browse all products</a>
+  </div>
+  <div class="product-grid">
+    {% for product in featured_products %}
+      {% include "partials_product_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section-block split-layout">
+  <div>
+    <div class="section-heading">
+      <h2>Room planner bundles</h2>
+      <a href="{{ url_for('room_planner') }}">Plan by room</a>
+    </div>
+    <div class="bundle-list">
+      {% for bundle in bundles %}
+        <article class="bundle-card">
+          <p class="eyebrow">{{ room_labels[bundle.room_slug] }}</p>
+          <h3>{{ bundle.name }}</h3>
+          <p>{{ bundle.summary }}</p>
+          <strong>{{ bundle.total_price|money }}</strong>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="section-heading">
+      <h2>Support highlights</h2>
+      <a href="{{ url_for('support') }}">Open help center</a>
+    </div>
+    <div class="article-list">
+      {% for article in support_articles %}
+        <a class="article-card" href="{{ url_for('support_article', article_slug=article.slug) }}">
+          <p class="eyebrow">{{ article.category }}</p>
+          <h3>{{ article.title }}</h3>
+          <p>{{ article.summary }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section-block">
+  <div class="section-heading">
+    <h2>Store pickup and planning</h2>
+    <a href="{{ url_for('stores') }}">Find a store</a>
+  </div>
+  <div class="store-grid">
+    {% for store in stores %}
+      <a class="store-card" href="{{ url_for('store_detail', store_slug=store.slug) }}">
+        <img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">
+        <div>
+          <h3>{{ store.name }}</h3>
+          <p>{{ store.city }}, {{ store.state }}</p>
+          <p>{{ store.pickup_note }}</p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

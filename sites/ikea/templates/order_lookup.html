@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Order lookup - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Lookup synthetic order details</p>
+  <h1>Order lookup</h1>
+</section>
+<form class="form-panel" method="post">
+  <label>Order number
+    <input type="text" name="order_number" placeholder="IK-240061">
+  </label>
+  <label>Email (optional)
+    <input type="email" name="email" placeholder="alice.j@test.com">
+  </label>
+  <button type="submit">Find order</button>
+</form>
+{% if looked_up and order %}
+  <section class="summary-card">
+    <h2>{{ order.order_number }}</h2>
+    <p>{{ order.status }}</p>
+    <p>{{ order.fulfillment_method|capitalize }} · {{ order.total|money }}</p>
+    <a href="{{ url_for('order_detail', order_number=order.order_number) }}">Open order detail</a>
+  </section>
+{% endif %}
+{% endblock %}

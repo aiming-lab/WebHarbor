@@ -1,0 +1,33 @@
+<article class="product-card">
+  <a class="product-card__image" href="{{ url_for('product_detail', sku=product.sku) }}">
+    <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+    {% if product.is_deal %}<span class="pill pill-deal">Deal</span>{% endif %}
+  </a>
+  <div class="product-card__body">
+    <p class="eyebrow">{{ product.series }} · {{ room_labels[product.room_slug] }}</p>
+    <h3><a href="{{ url_for('product_detail', sku=product.sku) }}">{{ product.name }}</a></h3>
+    <p class="meta">{{ product.color }} · {{ product.material }}</p>
+    <p class="price-row">
+      <strong>{{ product.price|money }}</strong>
+      {% if product.list_price > product.price %}
+        <span class="strike">{{ product.list_price|money }}</span>
+      {% endif %}
+    </p>
+    <p class="rating-row">{{ product.rating|stars }} ★ · {{ product.review_count }} reviews</p>
+    <p class="availability">{{ product.availability_bucket }}</p>
+    <div class="card-actions">
+      {% if current_user.is_authenticated %}
+        <form action="{{ url_for('cart_add') }}" method="post">
+          <input type="hidden" name="sku" value="{{ product.sku }}">
+          <input type="hidden" name="quantity" value="1">
+          <button type="submit">Add to cart</button>
+        </form>
+        <form action="{{ url_for('wishlist_toggle', sku=product.sku) }}" method="post">
+          <button type="submit" class="secondary">Wishlist</button>
+        </form>
+      {% else %}
+        <a class="button" href="{{ url_for('login') }}">Sign in to save</a>
+      {% endif %}
+    </div>
+  </div>
+</article>

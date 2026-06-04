@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Stores - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <h1>Store finder</h1>
+  <p>Browse pickup locations, planning services, and store amenities.</p>
+</section>
+<div class="store-grid">
+  {% for store in stores %}
+    <a class="store-card" href="{{ url_for('store_detail', store_slug=store.slug) }}">
+      <img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">
+      <div>
+        <h2>{{ store.name }}</h2>
+        <p>{{ store.address }}</p>
+        <p>{{ store.hours }}</p>
+      </div>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}
