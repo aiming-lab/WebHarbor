@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Confirmation · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 4 %}
+    {% include "_checkout_steps.html" %}
+    <div class="empty-state empty-state--success">
+      <h1>Order confirmed</h1>
+      <p>Your synthetic order <strong>{{ order.order_number }}</strong> has been created.</p>
+      <p>{{ order.confirmation_note }}</p>
+      <div class="inline-actions inline-actions--center">
+        <a class="button" href="{{ url_for('order_detail', order_number=order.order_number) }}">View order</a>
+        <a class="button button--secondary" href="{{ url_for('account_orders') }}">Go to order history</a>
+      </div>
+    </div>
+  </section>
+{% endblock %}

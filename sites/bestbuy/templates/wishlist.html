@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Wishlist · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section account-layout">
+    {% include "_account_nav.html" %}
+    <div class="account-content">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Wishlist</p>
+          <h1>Saved products</h1>
+        </div>
+      </div>
+      {% if wishlist_items %}
+        <div class="panel">
+          {% for item in wishlist_items %}
+            <div class="wishlist-row">
+              <a class="mini-product" href="{{ url_for('product_page', sku=item.product.sku) }}">
+                <img src="{{ url_for('static', filename=item.product.image_path) }}" alt="{{ item.product.name }}">
+                <div>
+                  <strong>{{ item.product.name }}</strong>
+                  <p>{{ item.product.price|currency }}</p>
+                </div>
+              </a>
+              <div class="inline-actions">
+                <form action="{{ url_for('add_to_cart') }}" method="post">
+                  <input type="hidden" name="sku" value="{{ item.product.sku }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button class="button button--secondary" type="submit">Add to cart</button>
+                </form>
+                <form action="{{ url_for('toggle_wishlist', sku=item.product.sku) }}" method="post">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button class="button button--ghost" type="submit">Remove</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <h3>No wishlist items yet</h3>
+          <p>Use product pages to save a few items for later.</p>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}
