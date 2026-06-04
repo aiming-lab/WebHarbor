@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Schedule Pickup{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Pickup scheduling</div>
+      <h1>Book a local demo pickup window</h1>
+    </div>
+  </section>
+  <div class="split">
+    <section class="card">
+      <form method="post" class="stack">
+        <div class="field">
+          <label for="location_slug">Pickup location</label>
+          <select id="location_slug" name="location_slug" onchange="this.form.submit()">
+            {% for location in locations %}
+              <option value="{{ location.slug }}" {% if selected_slug == location.slug %}selected{% endif %}>{{ location.name }} · {{ location.city }}, {{ location.state }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="pickup_slot_id">Available window</label>
+          <select id="pickup_slot_id" name="pickup_slot_id">
+            {% for slot in slots %}
+              <option value="{{ slot.id }}">{{ slot.slot_date }} · {{ slot.time_window }} · {{ slot.remaining_capacity }} left</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field">
+          <label for="package_count">Package count</label>
+          <input id="package_count" name="package_count" value="1">
+        </div>
+        <input type="submit" value="Schedule demo pickup">
+      </form>
+    </section>
+    <aside class="card stack">
+      <div class="kicker">What happens next</div>
+      <p class="muted">The app stores a synthetic pickup request in your account history and never creates a live courier dispatch.</p>
+      {% if slots %}
+        <p><strong>{{ slots[0].cutoff_note }}</strong></p>
+      {% endif %}
+    </aside>
+  </div>
+{% endblock %}

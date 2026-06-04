@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Account Shipments{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Shipment history</div>
+      <h1>All seeded shipments for {{ current_user.first_name }}</h1>
+    </div>
+  </section>
+  <section class="table-wrap card">
+    <table>
+      <thead>
+        <tr>
+          <th>Shipment</th>
+          <th>Tracking</th>
+          <th>Route</th>
+          <th>Status</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for shipment in shipments %}
+          <tr>
+            <td>{{ shipment.shipment_code }}</td>
+            <td><a href="{{ url_for('tracking_detail', tracking_number=shipment.tracking_number) }}">{{ shipment.tracking_number }}</a></td>
+            <td>{{ shipment.origin_city }}, {{ shipment.origin_state }} → {{ shipment.destination_city }}, {{ shipment.destination_state }}</td>
+            <td>{{ shipment.status }}</td>
+            <td>{{ shipment.total_cost|money }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

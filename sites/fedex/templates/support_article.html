@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+  <section class="split">
+    <article class="card stack">
+      <div class="badge">{{ article.category }}</div>
+      <h1>{{ article.title }}</h1>
+      <p class="muted">{{ article.summary }}</p>
+      <p>{{ article.body }}</p>
+      <div class="chip-row">
+        {% for topic in article.related_topics %}
+          <span class="chip badge">{{ topic }}</span>
+        {% endfor %}
+      </div>
+    </article>
+    <aside class="card stack">
+      <div class="kicker">Related topics</div>
+      {% for item in related %}
+        <div>
+          <strong><a href="{{ url_for('support_article', article_slug=item.slug) }}">{{ item.title }}</a></strong>
+          <p class="muted">{{ item.summary }}</p>
+        </div>
+      {% endfor %}
+    </aside>
+  </section>
+{% endblock %}

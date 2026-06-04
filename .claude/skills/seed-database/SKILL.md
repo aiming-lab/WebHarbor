@@ -169,9 +169,9 @@ gh pr create
 ./scripts/check_assets.sh                       # every site has instance_seed/
 ./scripts/build.sh webharbor:dev                # docker build succeeds
 docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41014:40000-40014 webharbor:dev
+  -p 8201:8101 -p 41000-41015:40000-40015 webharbor:dev
 
-# all 15 sites return 200
+# all 16 sites return 200
 for p in $(seq 41000 41014); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
@@ -182,7 +182,7 @@ time curl -X POST http://localhost:8201/reset-all
 # byte-identity for every site
 for s in allrecipes amazon apple arxiv bbc_news booking github \
          google_flights google_map google_search huggingface \
-         wolfram_alpha cambridge_dictionary coursera espn; do
+         wolfram_alpha cambridge_dictionary coursera espn fedex; do
   docker exec wh-test md5sum \
     /opt/WebSyn/$s/instance/$s.db \
     /opt/WebSyn/$s/instance_seed/$s.db
