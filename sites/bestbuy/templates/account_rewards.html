@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Rewards · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section account-layout">
+    {% include "_account_nav.html" %}
+    <div class="account-content">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Rewards dashboard</p>
+          <h1>{{ reward_account.tier }}</h1>
+          <p>Member ID {{ reward_account.member_id }} · {{ reward_account.available_certificates }} certificate(s) available</p>
+        </div>
+        <div class="result-count">{{ reward_account.points_balance }} points</div>
+      </div>
+      <div class="panel">
+        {% for activity in activities %}
+          <article class="reward-row">
+            <div>
+              <strong>{{ activity.title }}</strong>
+              <p>{{ activity.note }}</p>
+            </div>
+            <div class="reward-points {% if activity.points_delta < 0 %}is-negative{% endif %}">
+              {{ "%+d"|format(activity.points_delta) }}
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

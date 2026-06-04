@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Shipping · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 1 %}
+    {% include "_checkout_steps.html" %}
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="eyebrow">Delivery</p>
+        <h1>Choose shipping for this synthetic order</h1>
+        <form method="post" class="auth-form">
+          <label>Name
+            <input type="text" name="shipping_name" value="{{ checkout.get('shipping_name', current_user.full_name) }}" required>
+          </label>
+          <div class="filter-form__row">
+            <label>City
+              <input type="text" name="shipping_city" value="{{ checkout.get('shipping_city', current_user.city) }}" required>
+            </label>
+            <label>State
+              <input type="text" name="shipping_state" value="{{ checkout.get('shipping_state', current_user.state) }}" required>
+            </label>
+          </div>
+          <label>ZIP
+            <input type="text" name="shipping_zip" value="{{ checkout.get('shipping_zip', '98101') }}" required>
+          </label>
+          <label>Delivery option
+            <select name="delivery_option_id" required>
+              {% for option in delivery_options %}
+                <option value="{{ option.id }}" {% if checkout.get('delivery_option_id')|string == option.id|string %}selected{% endif %}>
+                  {{ option.title }} — {{ option.fee|currency }} · {{ option.eta_label }}
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button" type="submit">Continue to payment</button>
+        </form>
+      </div>
+      <aside class="panel order-summary">
+        <h2>Cart</h2>
+        {% for item in cart_items %}
+          <div class="summary-row"><span>{{ item.product.name }}</span><strong>{{ item.product.price|currency }}</strong></div>
+        {% endfor %}
+      </aside>
+    </div>
+  </section>
+{% endblock %}

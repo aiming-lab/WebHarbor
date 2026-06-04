@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Store Pickup · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 1 %}
+    {% include "_checkout_steps.html" %}
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="eyebrow">Pickup</p>
+        <h1>Select a store and pickup slot</h1>
+        <form method="post" class="auth-form">
+          <label>Store
+            <select name="store_id" required>
+              {% for store in stores %}
+                <option value="{{ store.id }}" {% if checkout.get('store_id')|string == store.id|string %}selected{% endif %}>{{ store.name }} — {{ store.city }}, {{ store.state }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Pickup slot
+            <select name="slot_id" required>
+              {% for store in stores %}
+                {% for slot in slots_by_store[store.id] %}
+                  <option value="{{ slot.id }}" {% if checkout.get('slot_id')|string == slot.id|string %}selected{% endif %}>{{ store.city }} · {{ slot.day_label }} · {{ slot.time_window }}</option>
+                {% endfor %}
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button" type="submit">Continue to payment</button>
+        </form>
+      </div>
+      <aside class="panel order-summary">
+        <h2>Pickup notes</h2>
+        <ul class="bullet-list bullet-list--compact">
+          <li>All store inventory and pickup windows are deterministic demo data.</li>
+          <li>No real reservation is placed.</li>
+          <li>Use order lookup after checkout to see the synthetic confirmation.</li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+{% endblock %}
