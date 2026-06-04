@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Track Packages{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Tracking</div>
+      <h1>Track one or several synthetic packages</h1>
+    </div>
+  </section>
+  <div class="split">
+    <section class="card">
+      <form method="post" class="stack">
+        <div class="field">
+          <label for="tracking_numbers">Tracking numbers</label>
+          <textarea id="tracking_numbers" name="tracking_numbers" placeholder="FDX260000001&#10;FDX260000010&#10;FDX260000500"></textarea>
+        </div>
+        <p class="muted">Separate multiple numbers with commas or line breaks. This mirror never calls a real carrier system.</p>
+        <div class="stack-actions">
+          <input type="submit" value="Track packages">
+          <button class="button button-secondary" type="button" data-fill-tracking="#tracking_numbers" data-value="FDX260000001,FDX260000010,FDX260000500">Use multi-package sample</button>
+        </div>
+      </form>
+    </section>
+    <aside class="card stack">
+      <div class="kicker">Common status meanings</div>
+      <div class="timeline">
+        <div class="timeline-item"><strong>Delivered</strong><span class="muted">Final handoff completed in the seeded timeline.</span></div>
+        <div class="timeline-item"><strong>Out for delivery</strong><span class="muted">Courier is on the final route for today.</span></div>
+        <div class="timeline-item"><strong>Shipment exception</strong><span class="muted">Weather or address review paused the next scan.</span></div>
+      </div>
+      <a class="button button-accent" href="{{ url_for('support', q='tracking') }}">Open tracking help</a>
+    </aside>
+  </div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Create Account{% endblock %}
+{% block content %}
+  <section class="card">
+    <div class="kicker">Register</div>
+    <h1>Create a local FedEx demo account</h1>
+    <form method="post" class="stack">
+      <div class="form-grid two">
+        <div class="field"><label for="first_name">First name</label><input id="first_name" name="first_name" required></div>
+        <div class="field"><label for="last_name">Last name</label><input id="last_name" name="last_name" required></div>
+      </div>
+      <div class="form-grid two">
+        <div class="field"><label for="email">Email</label><input id="email" name="email" required></div>
+        <div class="field"><label for="password">Password</label><input id="password" type="password" name="password" value="{{ demo_password }}"></div>
+      </div>
+      <div class="form-grid three">
+        <div class="field"><label for="phone">Phone</label><input id="phone" name="phone"></div>
+        <div class="field"><label for="company">Company</label><input id="company" name="company"></div>
+        <div class="field"><label for="zip_code">ZIP code</label><input id="zip_code" name="zip_code"></div>
+      </div>
+      <div class="form-grid two">
+        <div class="field"><label for="city">City</label><input id="city" name="city"></div>
+        <div class="field">
+          <label for="state">State</label>
+          <select id="state" name="state">
+            {% for label in state_labels %}
+              <option value="{{ label }}">{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="preferred_location_slug">Preferred location slug</label>
+        <input id="preferred_location_slug" name="preferred_location_slug" placeholder="seattle-downtown-wa">
+      </div>
+      <input type="submit" value="Create local account">
+    </form>
+  </section>
+{% endblock %}

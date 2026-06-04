@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Claims{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Claims</div>
+      <h1>Shipment claim statuses</h1>
+    </div>
+  </section>
+  <section class="grid two">
+    {% for claim in claims %}
+      <article class="card stack">
+        <div class="badge-row">
+          <span class="badge">{{ claim.claim_number }}</span>
+          <span class="badge orange">{{ claim.status }}</span>
+        </div>
+        <h2>{{ claim.claim_type }}</h2>
+        <p class="muted">Tracking number {{ claim.tracking_number }}</p>
+        <p>{{ claim.note }}</p>
+        <strong>{{ claim.amount|money }}</strong>
+      </article>
+    {% else %}
+      <div class="empty-state">No claims found for this account.</div>
+    {% endfor %}
+  </section>
+{% endblock %}

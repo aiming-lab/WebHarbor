@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Support{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Support center</div>
+      <h1>Search synthetic help content</h1>
+    </div>
+  </section>
+  <section class="card">
+    <form method="get" class="form-grid two">
+      <div class="field">
+        <label for="q">Search support topics</label>
+        <input id="q" name="q" value="{{ query }}" placeholder="delay, invoice, pickup, freight">
+      </div>
+      <div class="field" style="align-self:end">
+        <input type="submit" value="Search support">
+      </div>
+    </form>
+  </section>
+  <section class="article-list" style="margin-top:1rem">
+    {% for article in articles %}
+      <article class="card">
+        <div class="badge">{{ article.category }}</div>
+        <h2><a href="{{ url_for('support_article', article_slug=article.slug) }}">{{ article.title }}</a></h2>
+        <p class="muted">{{ article.summary }}</p>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

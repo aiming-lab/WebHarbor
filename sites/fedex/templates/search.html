@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Global search</div>
+      <h1>Search tracking, locations, and support</h1>
+    </div>
+  </section>
+  <section class="card">
+    <form method="get" class="form-grid two">
+      <div class="field">
+        <label for="q">Search query</label>
+        <input id="q" name="q" value="{{ query }}" placeholder="delay, Seattle, FDX260000001">
+      </div>
+      <div class="field" style="align-self:end">
+        <input type="submit" value="Search">
+      </div>
+    </form>
+  </section>
+  {% if query %}
+    <section class="grid three" style="margin-top:1rem">
+      <article class="card">
+        <h2>Tracking matches</h2>
+        <div class="stack">
+          {% for record in tracking_matches %}
+            <div>
+              <strong><a href="{{ url_for('tracking_detail', tracking_number=record.tracking_number) }}">{{ record.tracking_number }}</a></strong>
+              <p class="muted">{{ record.status_summary }}</p>
+            </div>
+          {% else %}
+            <div class="empty-state">No tracking results matched.</div>
+          {% endfor %}
+        </div>
+      </article>
+      <article class="card">
+        <h2>Locations</h2>
+        <div class="stack">
+          {% for location in locations %}
+            <div>
+              <strong><a href="{{ url_for('location_detail', location_slug=location.slug) }}">{{ location.name }}</a></strong>
+              <p class="muted">{{ location.city }}, {{ location.state }}</p>
+            </div>
+          {% else %}
+            <div class="empty-state">No location results matched.</div>
+          {% endfor %}
+        </div>
+      </article>
+      <article class="card">
+        <h2>Support articles</h2>
+        <div class="stack">
+          {% for article in articles %}
+            <div>
+              <strong><a href="{{ url_for('support_article', article_slug=article.slug) }}">{{ article.title }}</a></strong>
+              <p class="muted">{{ article.summary }}</p>
+            </div>
+          {% else %}
+            <div class="empty-state">No support articles matched.</div>
+          {% endfor %}
+        </div>
+      </article>
+    </section>
+  {% endif %}
+{% endblock %}

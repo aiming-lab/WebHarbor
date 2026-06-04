@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+{% block content %}
+  <section class="grid two">
+    <article class="card">
+      <div class="kicker">Sign in</div>
+      <h1>Access seeded shipments, invoices, and claims</h1>
+      <form method="post" class="stack">
+        <div class="field">
+          <label for="email">Email</label>
+          <input id="email" name="email" value="alice.j@test.com">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" type="password" name="password" value="{{ demo_password }}">
+        </div>
+        <input type="submit" value="Sign in to demo account">
+      </form>
+    </article>
+    <article class="card">
+      <div class="kicker">Benchmark accounts</div>
+      <p class="muted">Every seeded user shares the same deterministic password: <strong>{{ demo_password }}</strong>.</p>
+      <ul>
+        <li>alice.j@test.com</li>
+        <li>bob.c@test.com</li>
+        <li>carol.d@test.com</li>
+        <li>david.k@test.com</li>
+      </ul>
+      <a class="button button-secondary" href="{{ url_for('register') }}">Create another local account</a>
+    </article>
+  </section>
+{% endblock %}
