@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Meal Planner{% endblock %}
+{% block content %}
+<div class="container" style="margin-top:30px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+        <h1 class="section-title" style="border:none;margin:0;padding:0">Meal Planner</h1>
+        <form method="POST" action="{{ url_for('clear_meal_plan') }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-secondary btn-sm">Clear Plan</button>
+        </form>
+    </div>
+
+    <div class="meal-plan-grid">
+        {% for day in days %}
+        <div class="meal-plan-day">
+            <div class="meal-plan-day-name">{{ day[:3] }}</div>
+            {% for meal in meals %}
+            <div class="meal-plan-slot">
+                <div class="meal-plan-slot-label">{{ meal }}</div>
+                {% if plan[day][meal] %}
+                <div class="meal-plan-slot-recipe">
+                    <a href="{{ url_for('recipe_detail', slug=plan[day][meal].recipe.slug) }}" style="font-size:0.75rem">
+                        {{ plan[day][meal].recipe.title[:25] }}
+                    </a>
+                    <!-- Form-based remove (agent-friendly) -->
+                    <form method="POST" action="{{ url_for('remove_from_meal_plan_form') }}" style="display:inline">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                        <input type="hidden" name="day" value="{{ day }}">
+                        <input type="hidden" name="meal_type" value="{{ meal }}">
+                        <button type="submit" class="remove-meal" title="Remove">&times;</button>
+                    </form>
+                </div>
+                {% else %}
+                <!-- Form-based add (agent-friendly) -->
+                <form method="POST" action="{{ url_for('add_to_meal_plan_form') }}" style="margin-top:4px">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="day" value="{{ day }}">
+                    <input type="hidden" name="meal_type" value="{{ meal }}">
+                    <select name="recipe_id" style="width:100%;font-size:0.7rem;padding:2px">
+                        <option value="">Add...</option>
+                        {% for r in all_recipes %}
+                        <option value="{{ r.id }}">{{ r.title[:20] }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary"
+                            style="font-size:0.65rem;padding:2px 6px;margin-top:2px;border-radius:4px">+</button>
+                </form>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

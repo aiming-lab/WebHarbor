@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Shopping Lists{% endblock %}
+{% block content %}
+<div class="container" style="margin-top:30px;max-width:800px">
+    <h1 class="section-title">Shopping Lists</h1>
+
+    <form method="POST" action="{{ url_for('create_shopping_list') }}" style="display:flex;gap:12px;margin-bottom:30px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="text" name="name" placeholder="New list name..." class="form-group"
+               style="flex:1;padding:8px 14px;border:1px solid #e0e0e0;border-radius:6px;margin:0">
+        <button type="submit" class="btn btn-primary btn-sm">Create List</button>
+    </form>
+
+    {% if lists %}
+    {% for sl in lists %}
+    <div style="background:#f7f7f7;border-radius:8px;padding:20px;margin-bottom:20px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+            <h3 style="font-size:1.1rem">{{ sl.name }}</h3>
+            <div style="display:flex;gap:8px">
+                <span style="font-size:0.8rem;color:#999">{{ sl.get_items()|length }} items</span>
+                <form method="POST" action="{{ url_for('delete_shopping_list', list_id=sl.id) }}" style="display:inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button class="btn btn-danger btn-sm" style="padding:2px 8px;font-size:0.75rem">Delete</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Add recipe ingredients (form-POST, agent-friendly) -->
+        <form method="POST" action="{{ url_for('add_recipe_to_shopping_list', list_id=sl.id) }}" style="display:flex;gap:8px;margin-bottom:12px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <select name="recipe_id" style="flex:1;padding:6px 10px;font-size:0.82rem;border:1px solid #ddd;border-radius:5px">
+                <option value="">Add recipe ingredients...</option>
+                {% for r in all_recipes %}
+                <option value="{{ r.id }}">{{ r.title }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+        </form>
+
+        <!-- Add custom item (form-POST, agent-friendly) -->
+        <form method="POST" action="{{ url_for('add_item_to_shopping_list', list_id=sl.id) }}" style="display:flex;gap:8px;margin-bottom:12px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="text" name="item" placeholder="Add a custom item..."
+                   style="flex:1;padding:6px 10px;font-size:0.82rem;border:1px solid #ddd;border-radius:5px">
+            <button type="submit" class="btn btn-secondary btn-sm">Add Item</button>
+        </form>
+
+        {% set items = sl.get_items() %}
+        {% if items %}
+        <ul class="shopping-list-items">
+            {% for item in items %}
+            <li>
+                <span>{{ item }}</span>
+                <!-- Form-based remove (agent-friendly) -->
+                <form method="POST" action="{{ url_for('remove_item_from_shopping_list', list_id=sl.id) }}" style="display:inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="index" value="{{ loop.index0 }}">
+                    <button type="submit" class="remove-item" title="Remove item">&times;</button>
+                </form>
+            </li>
+            {% endfor %}
+        </ul>
+        {% else %}
+        <p style="color:#999;font-size:0.85rem">No items yet. Add ingredients from the recipe dropdown or type a custom item above.</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="empty-state">
+        <div class="empty-state-icon">&#128722;</div>
+        <h3>No Shopping Lists</h3>
+        <p>Create a shopping list to organize your grocery trips.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

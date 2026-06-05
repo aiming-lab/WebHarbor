@@ -1,0 +1,70 @@
+﻿{% extends "base.html" %}
+{% block title %}My Account{% endblock %}
+{% block content %}
+<div class="account-page">
+    <h1>Hi, {{ current_user.display_name or current_user.username }}</h1>
+
+    <div class="account-stats">
+        <div class="stat-card">
+            <div class="stat-value">{{ saved_count }}</div>
+            <div class="stat-label">Saved Recipes</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ review_count }}</div>
+            <div class="stat-label">Reviews</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-value">{{ meal_plans|length }}</div>
+            <div class="stat-label">Meals Planned</div>
+        </div>
+    </div>
+
+    <div class="account-section">
+        <h2>Quick Links</h2>
+        <div class="account-links">
+            <a href="{{ url_for('recipe_box') }}" class="account-link">
+                <span class="account-link-icon">&#128278;</span>
+                <span class="account-link-text">Saved Recipes</span>
+            </a>
+            <a href="{{ url_for('meal_plan') }}" class="account-link">
+                <span class="account-link-icon">&#128197;</span>
+                <span class="account-link-text">Meal Planner</span>
+            </a>
+            <a href="{{ url_for('shopping_list') }}" class="account-link">
+                <span class="account-link-icon">&#128722;</span>
+                <span class="account-link-text">Shopping Lists</span>
+            </a>
+            <a href="{{ url_for('all_recipes') }}" class="account-link">
+                <span class="account-link-icon">&#128270;</span>
+                <span class="account-link-text">Browse Recipes</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="account-section">
+        <h2>Account Settings</h2>
+        <div class="account-links">
+            <a href="{{ url_for('account_edit') }}" class="account-link">
+                <span class="account-link-icon">&#9998;</span>
+                <span class="account-link-text">Edit Profile</span>
+            </a>
+            <a href="{{ url_for('change_password') }}" class="account-link">
+                <span class="account-link-icon">&#128274;</span>
+                <span class="account-link-text">Change Password</span>
+            </a>
+        </div>
+    </div>
+
+    <div class="account-section" style="margin-top:40px">
+        <h2 style="color:#c62828">Danger Zone</h2>
+        <p style="font-size:0.85rem;color:#666;margin-bottom:12px">
+            Permanently delete your account and all associated data.
+        </p>
+        <form method="POST" action="{{ url_for('delete_account') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-danger btn-sm">Delete Account</button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+

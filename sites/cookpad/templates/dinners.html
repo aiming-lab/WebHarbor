@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Dinner Recipes{% endblock %}
+{% block content %}
+<div class="dinners-page" style="max-width:1100px;margin:40px auto;padding:0 20px;">
+    <h1>Dinners</h1>
+    <p>Find inspiration for tonight's dinner with our most popular, highly-rated dinner recipes — from quick weeknight meals to special occasion feasts.</p>
+
+    <h2>Recommended Dinner Recipes</h2>
+    <div class="recommended-dinners" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:20px;">
+        {% for recipe in recommended %}
+        <div class="recipe-card dinner-recommendation">
+            <div class="recipe-card-image">
+                <a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">
+                    <img src="{{ recipe.image }}" alt="{{ recipe.title }}"
+                         onerror="this.parentElement.innerHTML='<div class=\'placeholder-img\'>{{ recipe.title }}</div>'">
+                </a>
+            </div>
+            <div class="recipe-card-body">
+                <div class="recipe-card-title">
+                    <a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">{{ recipe.title }}</a>
+                </div>
+                <div class="recipe-card-meta">
+                    <div class="recipe-card-rating">
+                        {% for i in range(5) %}
+                        <span class="star {% if i >= recipe.avg_rating|round(0,'floor')|int %}empty{% endif %}">&#9733;</span>
+                        {% endfor %}
+                    </div>
+                    <span>({{ recipe.review_count }} reviews)</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,25 @@
+﻿{% extends "base.html" %}
+{% block title %}The Most Popular Recipes of the 1960s{% endblock %}
+{% block content %}
+<div class="collection-page" style="max-width:960px;margin:40px auto;padding:0 20px;">
+    <h1>The Most Popular Recipes of the 1960s</h1>
+    <p>A look back at the iconic dishes that defined American home cooking during the 1960s. From elegant dinner party classics like Beef Wellington to comforting casseroles, these are the recipes our grandparents loved best.</p>
+
+    <ol class="collection-list" style="list-style:decimal;padding-left:28px;margin-top:30px;">
+        {% for r in recipes %}
+        <li class="collection-item" style="margin-bottom:20px;">
+            <h3><a href="{{ url_for('recipe_detail', slug=r.link_slug or r.slug) }}">{{ r.title }}</a></h3>
+            <div class="collection-meta" style="margin-top:4px;color:#555;font-size:0.95em;">
+                {% if r.prep %}<span class="meta-prep">Prep Time: {{ r.prep }}</span>{% endif %}
+                {% if r.prep and r.total %}<span style="margin:0 6px;">|</span>{% endif %}
+                {% if r.total %}<span class="meta-total">Total Time: {{ r.total }}</span>{% endif %}
+            </div>
+            <div class="collection-link" style="margin-top:6px;">
+                <a href="{{ url_for('recipe_detail', slug=r.link_slug or r.slug) }}">View recipe &rarr;</a>
+            </div>
+        </li>
+        {% endfor %}
+    </ol>
+</div>
+{% endblock %}
+
