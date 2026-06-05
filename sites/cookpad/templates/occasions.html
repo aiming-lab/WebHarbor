@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Holidays and Occasions{% endblock %}
+{% block content %}
+<div class="occasions-page" style="max-width:1100px;margin:40px auto;padding:0 20px;">
+    <h1>Holidays and Occasions</h1>
+    <p>Find the perfect recipe for every holiday, celebration, and special occasion. From Christmas cookies to Fourth of July barbecues, we have recipes for every season and celebration.</p>
+
+    <div class="occasions-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:30px;">
+        {% for occ in occasions %}
+        <div class="occasion-card" style="border:1px solid #eee;border-radius:8px;padding:20px;background:#fafafa;">
+            <h3 class="occasion-title">{{ occ.name }}</h3>
+            <p>{{ occ.desc }}</p>
+            <a href="{{ url_for('search', q=occ.name) }}" class="btn btn-sm">See {{ occ.name }} Recipes &rarr;</a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
