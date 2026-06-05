@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+{% block title %}Search | Target Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Global search</p>
+        <h1>Results for "{{ active_query }}"</h1>
+      </div>
+    </div>
+    {% if active_query %}
+      <div class="search-sections">
+        <section class="panel">
+          <h2>Products</h2>
+          {% if product_results %}
+            {% set products = product_results %}
+            {% include "_product_cards.html" %}
+          {% else %}
+            <p>No product matches found.</p>
+          {% endif %}
+        </section>
+        <section class="panel">
+          <h2>Stores</h2>
+          <div class="store-list">
+            {% for store in store_results %}
+              <a class="store-list__item" href="{{ url_for('store_page', store_slug=store.slug) }}">
+                <img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">
+                <div>
+                  <strong>{{ store.name }}</strong>
+                  <p>{{ store.city }}, {{ store.state }}</p>
+                </div>
+              </a>
+            {% else %}
+              <p>No store matches found.</p>
+            {% endfor %}
+          </div>
+        </section>
+        <section class="panel">
+          <h2>Support</h2>
+          <div class="support-list">
+            {% for article in article_results %}
+              <a href="{{ url_for('support_article_page', article_slug=article.slug) }}" class="support-list__item">
+                <strong>{{ article.title }}</strong>
+                <p>{{ article.summary }}</p>
+              </a>
+            {% else %}
+              <p>No support articles matched.</p>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>Search the local retail catalog</h3>
+        <p>Try "OLED laptop", "pickup", "protection plan", or "same-day delivery".</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
+
+

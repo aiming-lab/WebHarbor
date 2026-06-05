@@ -1,0 +1,30 @@
+﻿{% extends "base.html" %}
+{% block title %}Deals | Target Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Current offers</p>
+        <h1>Deals seeded for retail benchmark tasks</h1>
+      </div>
+    </div>
+    <div class="deal-grid">
+      {% for deal in deals %}
+        <article class="deal-card">
+          <p class="deal-card__badge">{{ deal.badge }}</p>
+          <h3>{{ deal.title }}</h3>
+          <p>{{ deal.subtitle }}</p>
+          <div class="deal-card__meta">
+            <span>{{ deal.discount_percent }}% off</span>
+            <span>{{ deal.ends_label }}</span>
+          </div>
+          {% if deal.product %}
+            <a class="button button--secondary" href="{{ url_for('product_page', sku=deal.product.sku) }}">Open product</a>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
+
+

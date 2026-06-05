@@ -1,0 +1,28 @@
+﻿{% extends "base.html" %}
+{% block title %}Orders | Target Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section account-layout">
+    {% include "_account_nav.html" %}
+    <div class="account-content">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Order history</p>
+          <h1>All seeded orders</h1>
+        </div>
+      </div>
+      <div class="panel">
+        {% for order in orders %}
+          <a class="order-row" href="{{ url_for('order_detail', order_number=order.order_number) }}">
+            <div>
+              <strong>{{ order.order_number }}</strong>
+              <p>{{ order.status }} | {{ order.fulfillment_method|title }} | {{ order.item_count() }} item(s)</p>
+            </div>
+            <span>{{ order.total|currency }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+

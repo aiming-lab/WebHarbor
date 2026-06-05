@@ -1,0 +1,42 @@
+﻿<div class="product-grid">
+  {% for product in products %}
+    <article class="product-card">
+      <a href="{{ url_for('product_page', sku=product.sku) }}" class="product-card__image-wrap">
+        <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}" class="product-card__image">
+        {% if product.deal_badge %}
+          <span class="product-card__badge">{{ product.deal_badge }}</span>
+        {% endif %}
+      </a>
+      <div class="product-card__body">
+        <p class="product-card__meta">{{ product.brand.name }} | {{ product.category.name }}</p>
+        <h3><a href="{{ url_for('product_page', sku=product.sku) }}">{{ product.name }}</a></h3>
+        <p class="product-card__desc">{{ product.short_description }}</p>
+        <div class="rating-row">
+          <span>{{ product.rating|stars }} 鈽?/span>
+          <span>{{ product.review_count }} ratings</span>
+        </div>
+        <div class="price-row">
+          <strong>{{ product.price|currency }}</strong>
+          {% if product.list_price > product.price %}
+            <span class="price-row__strike">{{ product.list_price|currency }}</span>
+            <span class="price-row__save">Save {{ product.discount_percent() }}%</span>
+          {% endif %}
+        </div>
+        <div class="tag-row">
+          {% if product.pickup_eligible %}<span>Pickup</span>{% endif %}
+          {% if product.delivery_eligible %}<span>Delivery</span>{% endif %}
+          <span>{{ product.availability_status }}</span>
+        </div>
+      </div>
+      <div class="product-card__actions">
+        <a class="button button--secondary" href="{{ url_for('product_page', sku=product.sku) }}">View details</a>
+        <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+          <input type="hidden" name="next" value="{{ request.full_path }}">
+          <button class="button button--ghost" type="submit">Compare</button>
+        </form>
+      </div>
+    </article>
+  {% endfor %}
+</div>
+
+
