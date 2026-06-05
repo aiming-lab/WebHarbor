@@ -1,0 +1,29 @@
+﻿{% extends "base.html" %}
+{% block title %}About Us{% endblock %}
+{% block content %}
+<div class="about-page" style="max-width:960px;margin:40px auto;padding:0 20px;">
+    <h1>About Cookpad</h1>
+    <p>Cookpad is the world's largest community-driven food brand, with millions of home cooks sharing recipes, reviews, photos and tips every day. Our mission is to help home cooks discover, create and share the joy of cooking.</p>
+
+    <h2>Our Story</h2>
+    <p>Founded in 1997, Cookpad started as a small recipe-sharing website and has since grown into a trusted kitchen resource for home cooks around the world. Every recipe on our site is tested, rated and reviewed by real people like you.</p>
+
+    <h2>The Cookpad Community Cooks</h2>
+    <p>The Cookpad Community Cooks are a passionate community of home cooks, food enthusiasts, and content creators who share their love of food with the Cookpad community. The Community Cooks program brings together talented contributors who help develop, test, and share recipes, cooking tips, and inspiration. They are the heart of the Cookpad brand 鈥?real people making real food in real kitchens.</p>
+
+    <p>The Community Cooks represent diverse culinary backgrounds and specialties, from classic American comfort food to international cuisines, from quick weeknight meals to elaborate holiday dishes. Together, they bring a wealth of experience, creativity and community spirit that makes Cookpad unique.</p>
+
+    <h3>Meet a few of our Community Cooks</h3>
+    <div class="allstars-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-top:20px;">
+        {% for a in allstars %}
+        <div class="allstar-card" style="border:1px solid #eee;border-radius:8px;padding:16px;background:#fafafa;">
+            <h4>{{ a.name }}</h4>
+            <p>{{ a.bio }}</p>
+        </div>
+        {% endfor %}
+    </div>
+
+    <p style="margin-top:32px;"><a href="{{ url_for('about_allstars') }}">Learn more about the Cookpad Community Cooks &rarr;</a></p>
+</div>
+{% endblock %}
+

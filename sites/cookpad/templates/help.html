@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Help{% endblock %}
+{% block content %}
+<div class="container" style="margin-top:32px">
+    <div class="search-page">
+        <h1>Cookpad help</h1>
+        <form action="{{ url_for('help_center') }}" method="GET">
+            <input type="text" name="q" class="search-input-large" placeholder="Search saved recipes, meal plans, shopping lists..." value="{{ query }}">
+        </form>
+        {% if query %}
+        <p class="search-count">{{ articles|length }} help result{{ 's' if articles|length != 1 }} for "{{ query }}"</p>
+        {% endif %}
+    </div>
+
+    <div class="recipe-grid recipe-grid-3" style="margin-top:20px">
+        {% for article in articles %}
+        <article class="recipe-card">
+            <div class="recipe-card-body">
+                <div class="recipe-card-title"><a href="{{ url_for('help_article', slug=article.slug) }}">{{ article.title }}</a></div>
+                <p style="margin-top:10px;color:#555;">{{ article.summary }}</p>
+                <div style="margin-top:12px;">
+                    {% for keyword in article.keywords[:4] %}
+                    <span style="display:inline-block;padding:4px 8px;margin:0 6px 6px 0;border-radius:999px;background:#fff1ec;color:#e55b2d;font-size:0.8rem;">{{ keyword }}</span>
+                    {% endfor %}
+                </div>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

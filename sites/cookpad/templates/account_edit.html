@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile{% endblock %}
+{% block content %}
+<div class="form-page">
+    <h1>Edit Profile</h1>
+    <form method="POST" action="{{ url_for('account_edit') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label for="display_name">Display Name</label>
+            <input type="text" id="display_name" name="display_name" value="{{ current_user.display_name }}">
+        </div>
+        <div class="form-group">
+            <label for="location">Location</label>
+            <input type="text" id="location" name="location" value="{{ current_user.location }}" placeholder="City, State">
+        </div>
+        <div class="form-group">
+            <label for="bio">Bio</label>
+            <textarea id="bio" name="bio" rows="4" placeholder="Tell us about yourself...">{{ current_user.bio }}</textarea>
+        </div>
+        <div style="display:flex;gap:12px">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <a href="{{ url_for('account') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

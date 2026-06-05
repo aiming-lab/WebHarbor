@@ -1,0 +1,29 @@
+﻿{% extends "base.html" %}
+{% block title %}Log In{% endblock %}
+{% block content %}
+<div class="form-page">
+    <h1>Log In</h1>
+    <p class="form-subtitle">Welcome back to Cookpad</p>
+    <form method="POST" action="{{ url_for('login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-group">
+            <label for="email">Email Address</label>
+            <input type="email" id="email" name="email" required placeholder="your@email.com">
+        </div>
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required placeholder="Password">
+        </div>
+        <div style="margin-bottom:16px">
+            <label style="font-size:0.85rem;display:flex;align-items:center;gap:6px;cursor:pointer">
+                <input type="checkbox" name="remember" value="1"> Remember me
+            </label>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Log In</button>
+    </form>
+    <p style="text-align:center;margin-top:20px;font-size:0.9rem;color:#666">
+        Don't have an account? <a href="{{ url_for('register') }}">Sign Up</a>
+    </p>
+</div>
+{% endblock %}
+

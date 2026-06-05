@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}All Recipes{% endblock %}
+{% block content %}
+<div class="container" style="margin-top:30px">
+    <h1 class="section-title">All Recipes</h1>
+
+    <!-- Sort options -->
+    <div class="category-pills" style="margin-bottom:20px">
+        <a href="{{ url_for('all_recipes', sort='popular') }}" class="category-pill {% if sort=='popular' %}active{% endif %}">Most Popular</a>
+        <a href="{{ url_for('all_recipes', sort='rating') }}" class="category-pill {% if sort=='rating' %}active{% endif %}">Highest Rated</a>
+        <a href="{{ url_for('all_recipes', sort='newest') }}" class="category-pill {% if sort=='newest' %}active{% endif %}">Newest</a>
+        <a href="{{ url_for('all_recipes', sort='name') }}" class="category-pill {% if sort=='name' %}active{% endif %}">A-Z</a>
+    </div>
+
+    <!-- Category pills -->
+    <div class="category-pills">
+        {% for cat in categories %}
+        <a href="{{ url_for('category_page', slug=cat.slug) }}" class="category-pill">{{ cat.name }}</a>
+        {% endfor %}
+    </div>
+
+    <div class="recipe-grid recipe-grid-3">
+        {% for recipe in recipes.items %}
+        <div class="recipe-card">
+            <div class="recipe-card-image">
+                <a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">
+                    <img src="{{ recipe.image }}" alt="{{ recipe.title }}"
+                         onerror="this.parentElement.innerHTML='<div class=\'placeholder-img\'>{{ recipe.title }}</div>'">
+                </a>
+                <button class="recipe-card-save {% if is_in_recipe_box(recipe.id) %}saved{% endif %}"
+                        data-recipe-id="{{ recipe.id }}" data-saved-icon="&#9829;" data-unsaved-icon="&#9825;">
+                    {% if is_in_recipe_box(recipe.id) %}&#9829;{% else %}&#9825;{% endif %}
+                </button>
+            </div>
+            <div class="recipe-card-body">
+                <div class="recipe-card-title"><a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">{{ recipe.title }}</a></div>
+                <div class="recipe-card-meta">
+                    <div class="recipe-card-rating">
+                        {% for i in range(5) %}
+                        <span class="star {% if i >= recipe.avg_rating|round(0,'floor')|int %}empty{% endif %}">&#9733;</span>
+                        {% endfor %}
+                    </div>
+                    <span>({{ recipe.review_count|int }})</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if recipes.pages > 1 %}
+    <div class="pagination">
+        {% if recipes.has_prev %}
+        <a href="{{ url_for('all_recipes', page=recipes.prev_num, sort=sort) }}">&laquo;</a>
+        {% endif %}
+        {% for p in recipes.iter_pages() %}
+            {% if p %}
+                <a href="{{ url_for('all_recipes', page=p, sort=sort) }}" class="{% if p == recipes.page %}active{% endif %}">{{ p }}</a>
+            {% else %}
+                <span class="disabled">&hellip;</span>
+            {% endif %}
+        {% endfor %}
+        {% if recipes.has_next %}
+        <a href="{{ url_for('all_recipes', page=recipes.next_num, sort=sort) }}">&raquo;</a>
+        {% endif %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

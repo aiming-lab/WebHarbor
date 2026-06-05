@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Categories{% endblock %}
+{% block content %}
+<div class="container" style="margin-top:32px">
+    <section class="hero-section" style="margin-bottom:24px">
+        <div class="hero-inner">
+            <div class="hero-content">
+                <h1>Browse community categories</h1>
+                <p>Explore weeknight dinners, bento ideas, cozy soups, desserts, and ingredient-led collections with deterministic local recipe data.</p>
+            </div>
+        </div>
+    </section>
+
+    <section>
+        <div class="section-header">
+            <h2>All categories</h2>
+            <a href="{{ url_for('all_recipes') }}" class="view-all">View all recipes &rarr;</a>
+        </div>
+        <div class="category-cards">
+            {% for cat in categories %}
+            <a href="{{ url_for('category_page', slug=cat.slug) }}" class="category-card">
+                <div class="category-card-icon">{{ cat.name[:1] }}</div>
+                <div class="category-card-name">{{ cat.name }}</div>
+                <div class="category-card-count">{{ cat.recipes|length }} recipes</div>
+            </a>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section style="margin-top:36px">
+        <div class="section-header">
+            <h2>Featured community picks</h2>
+        </div>
+        <div class="recipe-grid recipe-grid-3">
+            {% for recipe in featured %}
+            <div class="recipe-card">
+                <div class="recipe-card-image">
+                    <a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">
+                        <img src="{{ recipe.image }}" alt="{{ recipe.title }}" onerror="this.parentElement.innerHTML='<div class=\'placeholder-img\'>{{ recipe.title }}</div>'">
+                    </a>
+                </div>
+                <div class="recipe-card-body">
+                    <div class="recipe-card-title"><a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">{{ recipe.title }}</a></div>
+                    <div class="recipe-card-meta">
+                        <div class="recipe-card-rating">
+                            {% for i in range(5) %}
+                            <span class="star {% if i >= recipe.avg_rating|round(0,'floor')|int %}empty{% endif %}">&#9733;</span>
+                            {% endfor %}
+                        </div>
+                        <span>{{ recipe.total_time }}</span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}
