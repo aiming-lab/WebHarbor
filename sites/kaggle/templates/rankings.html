@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tier_name, medals %}
+{% block title %}Rankings | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <h1 class="page-title">Rankings</h1>
+  <p class="page-sub">The Progression System rewards Kagglers for their performance. See who's at the top.</p>
+
+  <div class="tabs">
+    {% for cat in categories %}
+    <a class="{{ 'active' if cat==category }}" href="{{ url_for('rankings', category=cat) }}">{{ cat|capitalize }}</a>
+    {% endfor %}
+  </div>
+
+  <table class="lb">
+    <thead><tr><th>#</th><th>User</th><th>Tier ({{ category }})</th><th>Medals</th><th>Points</th></tr></thead>
+    <tbody>
+    {% for u in users %}
+    <tr>
+      <td class="rank-medal">{{ loop.index }}</td>
+      <td>
+        <a href="{{ url_for('user_profile', username=u.username) }}" style="display:flex;align-items:center;gap:10px;color:inherit;">
+          <img src="{{ u.avatar_url }}" onerror="this.src='/static/images/avatars/default.png'" style="width:32px;height:32px;border-radius:50%;">
+          <div><b>{{ u.display_name }}</b> <span class="muted">@{{ u.username }}</span></div>
+        </a>
+      </td>
+      <td>{{ tier_name(u.category_tiers.get(category, u.tier)) }}</td>
+      <td>{{ medals(u.gold, u.silver, u.bronze) }}</td>
+      <td>{{ u.points|commafy }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_macros.html" import model_card %}
+{% block title %}Models | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <h1 class="page-title">Models</h1>
+  <p class="page-sub">Use and download pre-trained models for your projects.</p>
+
+  <div class="toolbar">
+    <form method="get">
+      <input type="text" name="q" placeholder="Search models" value="{{ q }}">
+      <select name="framework" onchange="this.form.submit()">
+        <option value="">All frameworks</option>
+        {% for f in frameworks %}<option value="{{ f }}" {{ 'selected' if framework==f }}>{{ f }}</option>{% endfor %}
+      </select>
+      <select name="sort" onchange="this.form.submit()">
+        <option value="downloads" {{ 'selected' if sort=='downloads' }}>Most downloads</option>
+        <option value="votes" {{ 'selected' if sort=='votes' }}>Most votes</option>
+        <option value="updated" {{ 'selected' if sort=='updated' }}>Recently updated</option>
+      </select>
+      <button class="btn btn-sm btn-ghost" type="submit">Apply</button>
+    </form>
+    <span class="count-pill">{{ models|length }} models</span>
+  </div>
+
+  {% if models %}
+  <div class="grid grid-3">{% for m in models %}{{ model_card(m) }}{% endfor %}</div>
+  {% else %}<div class="empty">No models match your search.</div>{% endif %}
+</div>
+{% endblock %}

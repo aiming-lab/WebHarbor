@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import dataset_card %}
+{% block title %}Datasets | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <h1 class="page-title">Datasets</h1>
+  <p class="page-sub">Explore, analyze, and share quality data.</p>
+
+  <div class="toolbar">
+    <form method="get">
+      <input type="text" name="q" placeholder="Search datasets" value="{{ q }}">
+      <select name="file_type" onchange="this.form.submit()">
+        <option value="">All file types</option>
+        {% for ft in ['CSV','JSON','JPEG','GeoTIFF','GeoJSON'] %}<option value="{{ ft }}" {{ 'selected' if file_type==ft }}>{{ ft }}</option>{% endfor %}
+      </select>
+      <select name="sort" onchange="this.form.submit()">
+        <option value="hottest" {{ 'selected' if sort=='hottest' }}>Hottest</option>
+        <option value="votes" {{ 'selected' if sort=='votes' }}>Most votes</option>
+        <option value="downloads" {{ 'selected' if sort=='downloads' }}>Most downloads</option>
+        <option value="usability" {{ 'selected' if sort=='usability' }}>Usability</option>
+        <option value="updated" {{ 'selected' if sort=='updated' }}>Recently updated</option>
+        <option value="size" {{ 'selected' if sort=='size' }}>Largest</option>
+      </select>
+      <button class="btn btn-sm btn-ghost" type="submit">Apply</button>
+    </form>
+    <span class="count-pill">{{ datasets|length }} datasets</span>
+  </div>
+
+  {% if tag %}<p>Filtered by tag <span class="chip chip-active">{{ tag }}</span> <a href="{{ url_for('datasets_list') }}">clear</a></p>{% endif %}
+
+  {% if datasets %}
+  <div class="grid grid-3">{% for d in datasets %}{{ dataset_card(d) }}{% endfor %}</div>
+  {% else %}<div class="empty">No datasets match your search.</div>{% endif %}
+
+  <div class="section">
+    <h4 class="muted">Popular tags</h4>
+    <div class="chips">{% for t in all_tags %}<a class="chip chip-link" href="{{ url_for('datasets_list', tag=t) }}">{{ t }}</a>{% endfor %}</div>
+  </div>
+</div>
+{% endblock %}

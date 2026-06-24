@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile | Kaggle{% endblock %}
+{% block content %}
+<div class="form-card wide">
+  <h1>Edit Profile</h1>
+  <form method="post">
+    {{ form.csrf_token }}
+    <div class="field"><label>Display name</label>{{ form.display_name() }}</div>
+    <div class="field"><label>Bio</label>{{ form.bio(rows=4) }}</div>
+    <div class="field"><label>Location</label>{{ form.location() }}</div>
+    <div class="field"><label>Occupation</label>{{ form.occupation() }}</div>
+    <div class="field"><label>Organization</label>{{ form.organization() }}</div>
+    <div class="field"><label>Website</label>{{ form.website() }}</div>
+    <button class="btn btn-primary btn-block" type="submit">Save Changes</button>
+  </form>
+  <p class="center" style="margin-top:14px;"><a href="{{ url_for('account') }}">← Back to account</a></p>
+</div>
+{% endblock %}
