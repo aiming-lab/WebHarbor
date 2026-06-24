@@ -9,6 +9,11 @@ import json
 from datetime import date, timedelta
 
 from _seed_content import WORDS, THESAURUS, WORD_OF_THE_DAY, QUIZZES
+from _common_words import COMMON_WORDS
+
+# Full dictionary catalog = curated advanced/literary words plus everyday
+# common words (broadens coverage so off-script lookups don't dead-end).
+ALL_WORDS = WORDS + COMMON_WORDS
 
 # Fixed reference date so WORD_OF_THE_DAY rows are deterministic across boots
 # and resets (using date.today() would make the seed DB differ day to day).
@@ -19,7 +24,7 @@ def seed_database(db, Word, ThesaurusEntry, WordOfTheDay, Quiz):
     if Word.query.count() > 0:
         return
 
-    for w in WORDS:
+    for w in ALL_WORDS:
         db.session.add(Word(
             headword=w['headword'],
             slug=w['slug'],
@@ -65,7 +70,7 @@ def seed_database(db, Word, ThesaurusEntry, WordOfTheDay, Quiz):
         ))
 
     db.session.commit()
-    print(f"Seeded {len(WORDS)} words, {len(THESAURUS)} thesaurus entries, "
+    print(f"Seeded {len(ALL_WORDS)} words, {len(THESAURUS)} thesaurus entries, "
           f"{len(WORD_OF_THE_DAY)} WOTD, {len(QUIZZES)} quizzes.")
 
 

@@ -12,14 +12,19 @@
   <div class="question">
     <div class="q-text">{{ loop.index }}. {{ r.q }}</div>
     {% for choice in r.choices %}
-      {% if loop.index0 == r.answer_index %}
+      {% set is_answer = loop.index0 == r.answer_index %}
+      {% set is_picked = r.picked is not none and loop.index0 == r.picked %}
+      {% if is_answer and is_picked %}
+        <div class="choice result-correct">✓ {{ choice }} (your answer, correct)</div>
+      {% elif is_answer %}
         <div class="choice result-correct">✓ {{ choice }} (correct answer)</div>
-      {% elif loop.index0 == r.picked %}
+      {% elif is_picked %}
         <div class="choice result-wrong">✗ {{ choice }} (your answer)</div>
       {% else %}
         <div class="choice">{{ choice }}</div>
       {% endif %}
     {% endfor %}
+    {% if r.picked is none %}<p class="muted result-skipped">Not answered</p>{% endif %}
     {% if r.explanation %}<p class="muted">{{ r.explanation }}</p>{% endif %}
   </div>
   {% endfor %}

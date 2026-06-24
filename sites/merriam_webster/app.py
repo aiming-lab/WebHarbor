@@ -27,13 +27,15 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'merriam-webster-mirror-secret-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = (
-    f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'merriam_webster.db')}"
-)
+# DB path is overridable so the seed-regeneration tooling can write
+# instance_seed/ instead of the runtime instance/. Default = runtime DB.
+DB_PATH = os.environ.get('MW_DB_PATH',
+                         os.path.join(BASE_DIR, 'instance', 'merriam_webster.db'))
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{DB_PATH}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 
-os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
+os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -280,17 +282,21 @@ def search_words(q):
     return [w for _, w in scored] + syn_words
 
 
+# The "Word of the Day" is pinned to a fixed benchmark date so it is
+# IDENTICAL across runs. Using date.today() rotated the featured word by run
+# date, which made WOTD tasks non-deterministic (no stable answer).
+BENCHMARK_TODAY = date(2025, 1, 10)
+
+
 def todays_wotd():
-    """Return today's WOTD, falling back to a deterministic rotation so the
-    homepage always has one even on dates with no explicit row."""
-    today = date.today()
-    w = WordOfTheDay.query.filter_by(feature_date=today).first()
+    """Return the benchmark Word of the Day (deterministic across runs)."""
+    w = WordOfTheDay.query.filter_by(feature_date=BENCHMARK_TODAY).first()
     if w:
         return w
     rows = WordOfTheDay.query.order_by(WordOfTheDay.id).all()
     if not rows:
         return None
-    return rows[today.toordinal() % len(rows)]
+    return rows[BENCHMARK_TODAY.toordinal() % len(rows)]
 
 
 # ---------------------------------------------------------------------------
@@ -414,18 +420,28 @@ def quiz_detail(slug):
 def quiz_submit(slug):
     quiz = Quiz.query.filter_by(slug=slug).first_or_404()
     questions = quiz.get_questions()
+    # Require EVERY question to be answered before scoring. Without this the
+    # result page is untrustworthy (an unanswered question rendered the same as
+    # a correct one) and "answer all questions" tasks could be gamed by leaving
+    # questions blank. (quiz.html radios are also `required`.)
+    missing = [str(i + 1) for i in range(len(questions))
+               if request.form.get(f'q{i}') is None]
+    if missing:
+        flash(f'Please answer every question before submitting. '
+              f'Not answered: {", ".join(missing)}.', 'error')
+        return redirect(url_for('quiz_detail', slug=quiz.slug))
     score = 0
     review = []
     for i, qq in enumerate(questions):
         picked = request.form.get(f'q{i}')
         correct = qq.get('answer_index')
-        ok = picked is not None and int(picked) == correct
+        ok = int(picked) == correct
         if ok:
             score += 1
         review.append({
             'q': qq.get('q'),
             'choices': qq.get('choices', []),
-            'picked': int(picked) if picked is not None else None,
+            'picked': int(picked),
             'answer_index': correct,
             'explanation': qq.get('explanation', ''),
             'correct': ok,
@@ -545,7 +561,9 @@ def server_error(e):
 
 @app.context_processor
 def inject_globals():
-    return {'current_year': datetime.now().year}
+    # Frozen to 2025 to match the WOTD feature_date year, so the site is
+    # internally date-consistent (footer year == WOTD year) and deterministic.
+    return {'current_year': 2025}
 
 
 # ---------------------------------------------------------------------------
