@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.id }} — NVIDIA{% endblock %}
+{% block content %}
+
+<section class="section">
+  <div class="container">
+    <div class="flash success" style="font-size:16px">
+      Thank you for your order! A confirmation has been emailed to you.
+    </div>
+
+    <div class="card" style="padding:24px;margin-top:20px">
+      <div class="toolbar" style="margin:0 0 12px">
+        <div><h2 style="margin:0">Order #{{ order.id }}</h2></div>
+        <div><span class="tag">{{ order.status }}</span> <span class="muted">{{ order.created.strftime('%b %d, %Y') }}</span></div>
+      </div>
+
+      <table class="specs">
+        {% for it in order.items %}
+        <tr>
+          <th style="width:auto">{{ it.name }} × {{ it.quantity }}</th>
+          <td style="text-align:right">${{ '{:,}'.format(it.price_usd or 0) }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+          <th style="font-size:18px;color:var(--ink)">Total</th>
+          <td style="text-align:right;font-size:18px;font-weight:800">${{ '{:,}'.format(order.total_usd) }}</td>
+        </tr>
+      </table>
+
+      <a class="btn btn-dark" href="{{ url_for('account') }}" style="margin-top:16px">Back to Account</a>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

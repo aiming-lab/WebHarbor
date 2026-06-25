@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ a.title }} — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="container">
+  <article class="article">
+    <div class="eyebrow green" style="font-weight:700;text-transform:uppercase;font-size:13px">{{ a.category }}</div>
+    <h1>{{ a.title }}</h1>
+    <div class="meta">{{ a.author }} · {{ a.published.strftime('%b %d, %Y') }} · {{ a.read_minutes }} min read</div>
+    {% if a.image %}
+    <img src="{{ url_for('static', filename='images/' + a.image) }}"
+         alt="{{ a.title }}" onerror="this.style.visibility='hidden'">
+    {% endif %}
+    {% for para in a.body.split('\n\n') %}
+      {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+    {% endfor %}
+  </article>
+</div>
+
+{% if more %}
+<section class="section alt">
+  <div class="container">
+    <h2>More News</h2>
+    <div class="news-grid">
+      {% for a in more %}
+      <a class="news-card" href="{{ url_for('news_detail', slug=a.slug) }}">
+        <div class="thumb">
+          {% if a.image %}
+          <img src="{{ url_for('static', filename='images/' + a.image) }}"
+               alt="{{ a.title }}" onerror="this.style.visibility='hidden'">
+          {% endif %}
+        </div>
+        <div class="body">
+          <div class="cat">{{ a.category }}</div>
+          <h3>{{ a.title }}</h3>
+          <p class="muted" style="font-size:13px">{{ a.published.strftime('%b %d, %Y') }} · {{ a.read_minutes }} min read</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

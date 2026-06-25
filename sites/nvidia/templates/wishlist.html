@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}My Wishlist — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container"><h1>My Wishlist</h1></div>
+</div>
+
+<section class="section">
+  <div class="container">
+    {% if items %}
+    <div class="grid">
+      {% for item in items %}
+      {% set p = item.product %}
+      <div class="card">
+        <a href="{{ url_for('product_detail', slug=p.slug) }}" class="thumb">
+          {% if p.image %}
+          <img src="{{ url_for('static', filename='images/' + p.image) }}"
+               alt="{{ p.name }}" onerror="this.style.visibility='hidden'">
+          {% endif %}
+        </a>
+        <div class="body">
+          {% if p.series %}<div class="series">{{ p.series }}</div>{% endif %}
+          <a class="name" href="{{ url_for('product_detail', slug=p.slug) }}">{{ p.name }}</a>
+          <div class="price">{{ p.price_display }}</div>
+          <form method="post" action="{{ url_for('wishlist_toggle', product_id=p.id) }}" style="margin-top:8px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-dark btn-block" type="submit">Remove</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Your wishlist is empty. <a class="green" href="{{ url_for('products') }}">Browse products</a>.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

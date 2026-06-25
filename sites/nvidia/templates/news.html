@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Newsroom — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container"><h1>NVIDIA Newsroom</h1><p>The latest news, announcements, and stories.</p></div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="pills">
+      <a class="pill {% if not cat %}active{% endif %}" href="{{ url_for('news') }}">All</a>
+      {% for c in cats %}
+      <a class="pill {% if cat == c %}active{% endif %}" href="{{ url_for('news', category=c) }}">{{ c }}</a>
+      {% endfor %}
+    </div>
+
+    {% if items %}
+    <div class="news-grid">
+      {% for a in items %}
+      <a class="news-card" href="{{ url_for('news_detail', slug=a.slug) }}">
+        <div class="thumb">
+          {% if a.image %}
+          <img src="{{ url_for('static', filename='images/' + a.image) }}"
+               alt="{{ a.title }}" onerror="this.style.visibility='hidden'">
+          {% endif %}
+        </div>
+        <div class="body">
+          <div class="cat">{{ a.category }}</div>
+          <h3>{{ a.title }}</h3>
+          <p class="muted">{{ a.excerpt }}</p>
+          <p class="muted" style="font-size:13px">{{ a.published.strftime('%b %d, %Y') }} · {{ a.read_minutes }} min read</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">No articles found.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

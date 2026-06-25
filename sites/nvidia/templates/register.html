@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Create Account — NVIDIA{% endblock %}
+{% block content %}
+
+<section class="section">
+  <div class="container">
+    <div class="form">
+      <h2 style="text-align:center">Create Your NVIDIA Account</h2>
+      <form method="post" action="{{ url_for('register') }}">
+        {{ form.hidden_tag() }}
+        <div class="field">
+          {{ form.name.label }}
+          {{ form.name(placeholder="Your full name") }}
+          {% for e in form.name.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.email.label }}
+          {{ form.email(type="email", placeholder="you@example.com") }}
+          {% for e in form.email.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.password.label }}
+          {{ form.password() }}
+          {% for e in form.password.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.confirm.label }}
+          {{ form.confirm() }}
+          {% for e in form.confirm.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field check">
+          {{ form.newsletter_opt_in() }}
+          {{ form.newsletter_opt_in.label }}
+        </div>
+        <button class="btn btn-block" type="submit">Create Account</button>
+      </form>
+      <p class="muted" style="text-align:center;margin-top:16px">
+        Already have an account? <a class="green" href="{{ url_for('login') }}">Sign in</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

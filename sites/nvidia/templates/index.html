@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}NVIDIA — Accelerated Computing{% endblock %}
+{% block content %}
+
+{% if flagship %}
+<section class="hero">
+  <div class="container">
+    <div class="hero-copy">
+      <div class="eyebrow">{{ flagship.series }}</div>
+      <h1>{{ flagship.name }}</h1>
+      <p>{{ flagship.tagline }}</p>
+      <div class="row" style="margin-top:24px">
+        <a class="btn" href="{{ url_for('product_detail', slug=flagship.slug) }}">Learn More</a>
+        <a class="btn btn-ghost" href="{{ url_for('products', category='geforce-gaming') }}">Shop GeForce</a>
+      </div>
+    </div>
+    <div class="hero-media">
+      {% if flagship.image %}
+      <img src="{{ url_for('static', filename='images/' + flagship.image) }}"
+           alt="{{ flagship.name }}" onerror="this.style.visibility='hidden'">
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container">
+    <h2>Explore Products</h2>
+    <p class="sub">From gaming GPUs to data-center accelerators.</p>
+    <div class="pills">
+      {% for name, slug in CATEGORIES %}
+      <a class="pill" href="{{ url_for('products', category=slug) }}">{{ name }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="container">
+    <h2>Featured Products</h2>
+    <p class="sub">Our most powerful hardware, hand-picked.</p>
+    <div class="grid">
+      {% for p in featured %}
+        {% include "_product_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if latest_news %}
+<section class="section">
+  <div class="container">
+    <h2>Latest News</h2>
+    <p class="sub">From the NVIDIA Newsroom.</p>
+    <div class="news-grid">
+      {% for a in latest_news %}
+      <a class="news-card" href="{{ url_for('news_detail', slug=a.slug) }}">
+        <div class="thumb">
+          {% if a.image %}
+          <img src="{{ url_for('static', filename='images/' + a.image) }}"
+               alt="{{ a.title }}" onerror="this.style.visibility='hidden'">
+          {% endif %}
+        </div>
+        <div class="body">
+          <div class="cat">{{ a.category }}</div>
+          <h3>{{ a.title }}</h3>
+          <p class="muted">{{ a.published.strftime('%b %d, %Y') }} · {{ a.read_minutes }} min read</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

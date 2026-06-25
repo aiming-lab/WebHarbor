@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Shopping Cart — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container"><h1>Shopping Cart</h1></div>
+</div>
+
+<section class="section">
+  <div class="container">
+    {% if items %}
+    <div class="scroll-x">
+      <table class="specs">
+        <thead>
+          <tr>
+            <th style="width:auto"></th><th style="width:auto">Product</th>
+            <th style="width:auto">Price</th><th style="width:auto">Quantity</th>
+            <th style="width:auto">Total</th><th style="width:auto"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in items %}
+          {% set p = item.product %}
+          <tr>
+            <td style="width:80px">
+              {% if p.image %}
+              <img src="{{ url_for('static', filename='images/' + p.image) }}"
+                   alt="{{ p.name }}" style="height:50px;object-fit:contain"
+                   onerror="this.style.visibility='hidden'">
+              {% endif %}
+            </td>
+            <td><a class="green" href="{{ url_for('product_detail', slug=p.slug) }}">{{ p.name }}</a></td>
+            <td>{{ p.price_display }}</td>
+            <td>
+              <form method="post" action="{{ url_for('cart_update', item_id=item.id) }}" class="row" style="gap:6px">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="number" name="quantity" min="1" value="{{ item.quantity }}" style="width:64px;padding:6px">
+                <button class="btn btn-dark" type="submit">Update</button>
+              </form>
+            </td>
+            <td>${{ '{:,}'.format((p.price_usd or 0) * item.quantity) }}</td>
+            <td>
+              <form method="post" action="{{ url_for('cart_remove', item_id=item.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn btn-dark" type="submit">Remove</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="toolbar" style="margin-top:24px">
+      <div style="font-size:20px;font-weight:800">Subtotal: ${{ '{:,}'.format(subtotal) }}</div>
+      <a class="btn" href="{{ url_for('checkout') }}">Proceed to Checkout</a>
+    </div>
+    {% else %}
+    <p class="muted">Your cart is empty. <a class="green" href="{{ url_for('products') }}">Browse products</a>.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

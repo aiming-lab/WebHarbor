@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}My Account — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container">
+    <h1>Welcome, {{ current_user.name }}</h1>
+    <p>{{ current_user.email }}{% if current_user.company %} · {{ current_user.company }}{% endif %}{% if current_user.country %} · {{ current_user.country }}{% endif %}</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="pills">
+      <a class="pill" href="{{ url_for('account_edit') }}">Edit Profile</a>
+      <a class="pill" href="{{ url_for('account_password') }}">Change Password</a>
+      <a class="pill" href="{{ url_for('wishlist') }}">Wishlist</a>
+    </div>
+
+    <h2 style="margin-top:24px">Order History</h2>
+    {% if orders %}
+      {% for o in orders %}
+      <div class="card" style="padding:18px;margin-bottom:16px">
+        <div class="toolbar" style="margin:0 0 8px">
+          <div><strong>Order #{{ o.id }}</strong> · <span class="muted">{{ o.created.strftime('%b %d, %Y') }}</span></div>
+          <div><span class="tag">{{ o.status }}</span> <strong>${{ '{:,}'.format(o.total_usd) }}</strong></div>
+        </div>
+        <table class="specs" style="margin:6px 0">
+          {% for it in o.items %}
+          <tr>
+            <th style="width:auto">{{ it.name }}</th>
+            <td>Qty {{ it.quantity }} · ${{ '{:,}'.format(it.price_usd or 0) }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+        <a class="green" href="{{ url_for('order_detail', order_id=o.id) }}">View order</a>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">You have no orders yet. <a class="green" href="{{ url_for('products') }}">Start shopping</a>.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

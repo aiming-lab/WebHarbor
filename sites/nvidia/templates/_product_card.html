@@ -1,0 +1,16 @@
+{# expects: p (Product) #}
+<a class="card" href="{{ url_for('product_detail', slug=p.slug) }}">
+  <div class="thumb">
+    {% if p.image %}
+    <img src="{{ url_for('static', filename='images/' + p.image) }}"
+         alt="{{ p.name }}" onerror="this.style.visibility='hidden'">
+    {% endif %}
+  </div>
+  <div class="body">
+    {% if p.series %}<div class="series">{{ p.series }}</div>{% endif %}
+    <div class="name">{{ p.name }}</div>
+    {% if p.tagline %}<div class="tagline">{{ p.tagline }}</div>{% endif %}
+    {% if p.avg_rating %}<div class="stars">&#9733; {{ p.avg_rating }} ({{ p.review_count }})</div>{% endif %}
+    <div class="price">{{ p.price_display }}</div>
+  </div>
+</a>

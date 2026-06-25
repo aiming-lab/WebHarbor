@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Search — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container">
+    <h1>Search</h1>
+    {% if q %}<p>Results for "{{ q }}"</p>{% endif %}
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    {% if not q %}
+      <p class="muted">Type a query in the search box above to find products and news.</p>
+    {% elif not products and not articles %}
+      <p class="muted">No results for "{{ q }}". Try different keywords.</p>
+    {% else %}
+      {% if products %}
+      <h2>Products</h2>
+      <div class="grid" style="margin-bottom:40px">
+        {% for p in products %}
+          {% include "_product_card.html" %}
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if articles %}
+      <h2>News</h2>
+      <div class="news-grid">
+        {% for a in articles %}
+        <a class="news-card" href="{{ url_for('news_detail', slug=a.slug) }}">
+          <div class="thumb">
+            {% if a.image %}
+            <img src="{{ url_for('static', filename='images/' + a.image) }}"
+                 alt="{{ a.title }}" onerror="this.style.visibility='hidden'">
+            {% endif %}
+          </div>
+          <div class="body">
+            <div class="cat">{{ a.category }}</div>
+            <h3>{{ a.title }}</h3>
+            <p class="muted" style="font-size:13px">{{ a.published.strftime('%b %d, %Y') }} · {{ a.read_minutes }} min read</p>
+          </div>
+        </a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

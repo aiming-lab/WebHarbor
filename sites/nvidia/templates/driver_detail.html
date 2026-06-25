@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ d.product_series }} Driver {{ d.version }} — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="container">
+  <div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> /
+    <a href="{{ url_for('drivers') }}">Drivers</a> /
+    {{ d.product_series }} {{ d.version }}
+  </div>
+
+  <div class="section" style="padding-top:8px">
+    <div class="series">{{ d.branch }} Driver</div>
+    <h1 style="font-size:32px;font-weight:800;margin:6px 0">{{ d.product_series }} — Version {{ d.version }}</h1>
+
+    <table class="specs">
+      <tr><th>Version</th><td>{{ d.version }}</td></tr>
+      <tr><th>Branch</th><td>{{ d.branch }}</td></tr>
+      <tr><th>Product Series</th><td>{{ d.product_series }}</td></tr>
+      <tr><th>Operating System</th><td>{{ d.os }}</td></tr>
+      <tr><th>Release Date</th><td>{{ d.released.strftime('%b %d, %Y') }}</td></tr>
+      <tr><th>File Size</th><td>{{ d.size_mb }} MB</td></tr>
+      <tr><th>Downloads</th><td>{{ '{:,}'.format(d.download_count) }}</td></tr>
+    </table>
+
+    {% if d.highlights %}
+    <h3>Release Highlights</h3>
+    <p>{{ d.highlights }}</p>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('driver_download', driver_id=d.id) }}" style="margin-top:20px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn" type="submit">Download</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

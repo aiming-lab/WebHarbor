@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Compare GPUs — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container"><h1>Compare GPUs</h1><p>Select products to compare side by side.</p></div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <form id="cmp-form" onsubmit="return doCompare(event)">
+      <div class="pills">
+        {% for ap in all_products %}
+        <label class="pill check">
+          <input type="checkbox" class="cmp-box" value="{{ ap.slug }}"
+                 {% if ap in items %}checked{% endif %}>
+          {{ ap.name }}
+        </label>
+        {% endfor %}
+      </div>
+      <button class="btn" type="submit">Compare Selected</button>
+    </form>
+
+    {% if items %}
+    <div class="scroll-x" style="margin-top:28px">
+      <table class="compare-tbl">
+        <thead>
+          <tr>
+            <th>Specification</th>
+            {% for p in items %}
+            <th>
+              <a href="{{ url_for('product_detail', slug=p.slug) }}" style="color:#fff">
+                {% if p.image %}
+                <img src="{{ url_for('static', filename='images/' + p.image) }}"
+                     alt="{{ p.name }}" style="height:60px;margin:0 auto 6px;object-fit:contain"
+                     onerror="this.style.visibility='hidden'">
+                {% endif %}
+                {{ p.name }}
+              </a>
+            </th>
+            {% endfor %}
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Price</td>{% for p in items %}<td>{{ p.price_display }}</td>{% endfor %}</tr>
+          <tr><td>Series</td>{% for p in items %}<td>{{ p.series or '—' }}</td>{% endfor %}</tr>
+          <tr><td>Architecture</td>{% for p in items %}<td>{{ p.architecture or '—' }}</td>{% endfor %}</tr>
+          <tr><td>CUDA Cores</td>{% for p in items %}<td>{{ '{:,}'.format(p.cuda_cores) if p.cuda_cores else '—' }}</td>{% endfor %}</tr>
+          <tr><td>Tensor Cores</td>{% for p in items %}<td>{{ '{:,}'.format(p.tensor_cores) if p.tensor_cores else '—' }}</td>{% endfor %}</tr>
+          <tr><td>RT Cores</td>{% for p in items %}<td>{{ '{:,}'.format(p.rt_cores) if p.rt_cores else '—' }}</td>{% endfor %}</tr>
+          <tr><td>Memory</td>{% for p in items %}<td>{% if p.memory_gb %}{{ p.memory_gb }} GB {{ p.memory_type }}{% else %}—{% endif %}</td>{% endfor %}</tr>
+          <tr><td>Memory Bandwidth</td>{% for p in items %}<td>{{ p.memory_bandwidth or '—' }}</td>{% endfor %}</tr>
+          <tr><td>Boost Clock</td>{% for p in items %}<td>{{ p.boost_clock_ghz ~ ' GHz' if p.boost_clock_ghz else '—' }}</td>{% endfor %}</tr>
+          <tr><td>TDP</td>{% for p in items %}<td>{{ p.tdp_watts ~ ' W' if p.tdp_watts else '—' }}</td>{% endfor %}</tr>
+          <tr><td>Interface</td>{% for p in items %}<td>{{ p.interface or '—' }}</td>{% endfor %}</tr>
+          <tr><td>Recommended PSU</td>{% for p in items %}<td>{{ p.recommended_psu_watts ~ ' W' if p.recommended_psu_watts else '—' }}</td>{% endfor %}</tr>
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="muted" style="margin-top:28px">Select two or more products above and click "Compare Selected" to see a side-by-side spec sheet.</p>
+    {% endif %}
+  </div>
+</section>
+
+<script>
+function doCompare(e){
+  e.preventDefault();
+  var ids = Array.prototype.slice.call(document.querySelectorAll('.cmp-box:checked'))
+                 .map(function(b){return b.value;});
+  window.location = "{{ url_for('compare') }}?ids=" + encodeURIComponent(ids.join(','));
+  return false;
+}
+</script>
+
+{% endblock %}

@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Download Drivers — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container"><h1>NVIDIA Drivers</h1><p>Find the latest Game Ready and Studio drivers for your GPU.</p></div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <form method="get" action="{{ url_for('drivers') }}" class="form wide">
+      <div class="row" style="align-items:flex-end;gap:16px">
+        <div class="field" style="flex:1">
+          <label for="series">Product Series</label>
+          <select id="series" name="series">
+            <option value="">Select series</option>
+            {% for s in series_list %}
+            <option value="{{ s }}" {% if series == s %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field" style="flex:1">
+          <label for="branch">Branch</label>
+          <select id="branch" name="branch">
+            <option value="">Any</option>
+            <option value="Game Ready" {% if branch == 'Game Ready' %}selected{% endif %}>Game Ready</option>
+            <option value="Studio" {% if branch == 'Studio' %}selected{% endif %}>Studio</option>
+          </select>
+        </div>
+        <div class="field" style="flex:1">
+          <label for="os">Operating System</label>
+          <select id="os" name="os">
+            <option value="">Any</option>
+            {% for o in os_list %}
+            <option value="{{ o }}" {% if os_filter == o %}selected{% endif %}>{{ o }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field"><button class="btn" type="submit">Search</button></div>
+      </div>
+    </form>
+
+    {% if searched %}
+      {% if results %}
+      <table class="specs" style="margin-top:24px">
+        <thead>
+          <tr>
+            <th style="width:auto">Product Series</th><th style="width:auto">Branch</th>
+            <th style="width:auto">Version</th><th style="width:auto">OS</th>
+            <th style="width:auto">Released</th><th style="width:auto">Size</th><th style="width:auto"></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in results %}
+          <tr>
+            <td>{{ d.product_series }}</td>
+            <td>{{ d.branch }}</td>
+            <td><strong>{{ d.version }}</strong></td>
+            <td>{{ d.os }}</td>
+            <td>{{ d.released.strftime('%b %d, %Y') }}</td>
+            <td>{{ d.size_mb }} MB</td>
+            <td><a class="green" href="{{ url_for('driver_detail', driver_id=d.id) }}">Details</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted" style="margin-top:24px">No drivers match your selection.</p>
+      {% endif %}
+    {% else %}
+    <p class="muted" style="margin-top:24px">Pick a product series above to find available drivers.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

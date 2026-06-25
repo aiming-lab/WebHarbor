@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Login — NVIDIA{% endblock %}
+{% block content %}
+
+<section class="section">
+  <div class="container">
+    <div class="form">
+      <h2 style="text-align:center">Sign In</h2>
+      <form method="post" action="{{ url_for('login') }}">
+        {{ form.hidden_tag() }}
+        <div class="field">
+          {{ form.email.label }}
+          {{ form.email(type="email", placeholder="you@example.com") }}
+          {% for e in form.email.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.password.label }}
+          {{ form.password(placeholder="Password") }}
+          {% for e in form.password.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <button class="btn btn-block" type="submit">Sign In</button>
+      </form>
+      <p class="muted" style="text-align:center;margin-top:16px">
+        New to NVIDIA? <a class="green" href="{{ url_for('register') }}">Create an account</a>
+      </p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

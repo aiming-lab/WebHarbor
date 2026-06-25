@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Checkout — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container"><h1>Checkout</h1></div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="detail" style="padding:0">
+      <div>
+        <h2>Shipping & Payment</h2>
+        <form method="post" action="{{ url_for('checkout') }}" class="form" style="margin:0;max-width:none">
+          {{ form.hidden_tag() }}
+          <div class="field">
+            {{ form.full_name.label }}
+            {{ form.full_name() }}
+            {% for e in form.full_name.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="field">
+            {{ form.address.label }}
+            {{ form.address() }}
+            {% for e in form.address.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <div class="row" style="gap:16px">
+            <div class="field" style="flex:1">
+              {{ form.city.label }}
+              {{ form.city() }}
+              {% for e in form.city.errors %}<div class="err">{{ e }}</div>{% endfor %}
+            </div>
+            <div class="field" style="flex:1">
+              {{ form.zip_code.label }}
+              {{ form.zip_code() }}
+              {% for e in form.zip_code.errors %}<div class="err">{{ e }}</div>{% endfor %}
+            </div>
+          </div>
+          <div class="field">
+            {{ form.card.label }}
+            {{ form.card(placeholder="Card number") }}
+            {% for e in form.card.errors %}<div class="err">{{ e }}</div>{% endfor %}
+          </div>
+          <button class="btn btn-block" type="submit">Place Order</button>
+        </form>
+      </div>
+
+      <div>
+        <h2>Order Summary</h2>
+        <table class="specs">
+          {% for item in items %}
+          <tr>
+            <th style="width:auto">{{ item.product.name }} × {{ item.quantity }}</th>
+            <td style="text-align:right">${{ '{:,}'.format((item.product.price_usd or 0) * item.quantity) }}</td>
+          </tr>
+          {% endfor %}
+          <tr><th>Subtotal</th><td style="text-align:right">${{ '{:,}'.format(subtotal) }}</td></tr>
+          <tr><th>Tax</th><td style="text-align:right">${{ '{:,}'.format(tax) }}</td></tr>
+          <tr><th style="font-size:18px;color:var(--ink)">Total</th><td style="text-align:right;font-size:18px;font-weight:800">${{ '{:,}'.format(total) }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ cat_name or "Products" }} — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container">
+    <h1>{{ cat_name or "Products" }}</h1>
+    {% if q %}<p>Results for "{{ q }}"</p>{% endif %}
+  </div>
+</div>
+
+<section class="section">
+  <div class="container">
+    <div class="pills">
+      <a class="pill {% if not cat %}active{% endif %}" href="{{ url_for('products') }}">All</a>
+      {% for name, slug in CATEGORIES %}
+      <a class="pill {% if cat == slug %}active{% endif %}"
+         href="{{ url_for('products', category=slug) }}">{{ name }}</a>
+      {% endfor %}
+    </div>
+
+    <div class="toolbar">
+      <div class="muted">{{ items|length }} product{{ '' if items|length == 1 else 's' }}</div>
+      <form method="get" action="{{ url_for('products') }}">
+        {% if cat %}<input type="hidden" name="category" value="{{ cat }}">{% endif %}
+        {% if series %}<input type="hidden" name="series" value="{{ series }}">{% endif %}
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        <label for="sort" class="muted" style="margin-right:6px">Sort</label>
+        <select id="sort" name="sort" onchange="this.form.submit()">
+          <option value="featured" {% if sort == 'featured' %}selected{% endif %}>Featured</option>
+          <option value="price-low" {% if sort == 'price-low' %}selected{% endif %}>Price: Low to High</option>
+          <option value="price-high" {% if sort == 'price-high' %}selected{% endif %}>Price: High to Low</option>
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+        </select>
+        <noscript><button class="btn" type="submit">Sort</button></noscript>
+      </form>
+    </div>
+
+    {% if items %}
+    <div class="grid">
+      {% for p in items %}
+        {% include "_product_card.html" %}
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted" style="padding:40px 0">No products found. Try a different category or search term.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

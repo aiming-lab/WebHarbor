@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="container">
+  <div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> /
+    <a href="{{ url_for('products', category=p.category_slug) }}">{{ p.category }}</a> /
+    {{ p.name }}
+  </div>
+
+  <div class="detail">
+    <div class="media">
+      {% if p.image %}
+      <img src="{{ url_for('static', filename='images/' + p.image) }}"
+           alt="{{ p.name }}" onerror="this.style.visibility='hidden'">
+      {% endif %}
+    </div>
+    <div>
+      {% if p.series %}<div class="series">{{ p.series }}</div>{% endif %}
+      <h1>{{ p.name }}</h1>
+      <p class="muted">{{ p.tagline }}</p>
+      <div class="price">{{ p.price_display }}</div>
+      <p>
+        {% if p.in_stock %}<span class="badge-stock">In Stock</span>
+        {% else %}<span class="badge-out">Out of Stock</span>{% endif %}
+        {% if p.avg_rating %}<span class="stars" style="margin-left:12px">&#9733; {{ p.avg_rating }} ({{ p.review_count }})</span>{% endif %}
+      </p>
+
+      <div class="row" style="margin-top:18px">
+        {% if p.price_usd is not none %}
+        <form method="post" action="{{ url_for('cart_add', product_id=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn" type="submit">Add to Cart</button>
+        </form>
+        {% else %}
+        <a class="btn btn-dark" href="{{ url_for('product_detail', slug=p.slug) }}">Contact Sales</a>
+        {% endif %}
+
+        <form method="post" action="{{ url_for('wishlist_toggle', product_id=p.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-dark" type="submit">{% if in_wishlist %}In Wishlist &#10003;{% else %}Save to Wishlist{% endif %}</button>
+        </form>
+
+        <a class="btn btn-dark" href="{{ url_for('compare', ids=p.slug) }}">Compare</a>
+      </div>
+
+      {% if p.description %}<p style="margin-top:20px">{{ p.description }}</p>{% endif %}
+    </div>
+  </div>
+
+  {# Tech specs — only non-empty fields #}
+  {% set has_specs = p.architecture or p.cuda_cores or p.tensor_cores or p.rt_cores
+       or p.memory_gb or p.memory_bandwidth or p.boost_clock_ghz or p.tdp_watts
+       or p.interface or p.recommended_psu_watts %}
+  {% if has_specs %}
+  <h2 class="section" style="padding-bottom:0">Tech Specs</h2>
+  <table class="specs">
+    {% if p.architecture %}<tr><th>Architecture</th><td>{{ p.architecture }}</td></tr>{% endif %}
+    {% if p.cuda_cores %}<tr><th>CUDA Cores</th><td>{{ '{:,}'.format(p.cuda_cores) }}</td></tr>{% endif %}
+    {% if p.tensor_cores %}<tr><th>Tensor Cores</th><td>{{ '{:,}'.format(p.tensor_cores) }}</td></tr>{% endif %}
+    {% if p.rt_cores %}<tr><th>RT Cores</th><td>{{ '{:,}'.format(p.rt_cores) }}</td></tr>{% endif %}
+    {% if p.memory_gb %}<tr><th>Memory</th><td>{{ p.memory_gb }} GB {{ p.memory_type }}</td></tr>{% endif %}
+    {% if p.memory_bandwidth %}<tr><th>Memory Bandwidth</th><td>{{ p.memory_bandwidth }}</td></tr>{% endif %}
+    {% if p.boost_clock_ghz %}<tr><th>Boost Clock</th><td>{{ p.boost_clock_ghz }} GHz</td></tr>{% endif %}
+    {% if p.tdp_watts %}<tr><th>TDP</th><td>{{ p.tdp_watts }} W</td></tr>{% endif %}
+    {% if p.interface %}<tr><th>Interface</th><td>{{ p.interface }}</td></tr>{% endif %}
+    {% if p.recommended_psu_watts %}<tr><th>Recommended PSU</th><td>{{ p.recommended_psu_watts }} W</td></tr>{% endif %}
+  </table>
+  {% endif %}
+
+  {# Reviews #}
+  <div class="section" style="padding-top:24px">
+    <h2>Reviews</h2>
+    {% if p.avg_rating %}
+    <p class="sub"><span class="stars">&#9733; {{ p.avg_rating }}</span> · {{ p.review_count }} review{{ '' if p.review_count == 1 else 's' }}</p>
+    {% else %}
+    <p class="sub">No reviews yet.</p>
+    {% endif %}
+
+    {% for r in reviews %}
+    <div class="card" style="padding:16px;margin-bottom:14px">
+      <div class="stars">{% for _ in range(r.rating) %}&#9733;{% endfor %}{% for _ in range(5 - r.rating) %}&#9734;{% endfor %}</div>
+      <strong>{{ r.title }}</strong>
+      <p>{{ r.body }}</p>
+      <p class="muted" style="font-size:13px">— {{ r.user.name }} · {{ r.created.strftime('%b %d, %Y') }}</p>
+    </div>
+    {% endfor %}
+
+    {% if current_user.is_authenticated %}
+    <div class="form" style="margin:24px 0 0;max-width:560px">
+      <h3>Write a Review</h3>
+      <form method="post" action="{{ url_for('add_review', slug=p.slug) }}">
+        {{ review_form.hidden_tag() }}
+        <div class="field">
+          {{ review_form.rating.label }}
+          {{ review_form.rating() }}
+          {% for e in review_form.rating.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          {{ review_form.title.label }}
+          {{ review_form.title(class_="") }}
+          {% for e in review_form.title.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          {{ review_form.body.label }}
+          {{ review_form.body(rows=4) }}
+          {% for e in review_form.body.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <button class="btn" type="submit">Submit Review</button>
+      </form>
+    </div>
+    {% else %}
+    <p><a class="green" href="{{ url_for('login') }}">Log in</a> to write a review.</p>
+    {% endif %}
+  </div>
+
+  {% if related %}
+  <div class="section" style="padding-top:24px">
+    <h2>Related Products</h2>
+    <div class="grid">
+      {% for p in related %}
+        {% include "_product_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
