@@ -102,7 +102,8 @@ All `seed_*()` functions gate on an already-populated DB (early-return if rows e
 
 ## HuggingFace assets
 
-Assets are packaged as `drugs_com.tar.gz` in the `ChilleD/WebHarbor` dataset (PR #13).
+Assets are packaged as `drugs_com.tar.gz` in the `ChilleD/WebHarbor` dataset. The
+packer below is macOS-safe (plain `tar` would embed `._*` AppleDouble files).
 
 To repack and upload:
 ```bash
