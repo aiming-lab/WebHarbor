@@ -1,13 +1,13 @@
 # drugs_com — WebHarbor mirror site
 
-Flask mirror of drugs.com at port **40015**. Covers pharmaceutical drug information: lookup, interaction checking, pill identification, conditions, news, and user accounts.
+Flask mirror of drugs.com at port **40016**. Covers pharmaceutical drug information: lookup, interaction checking, pill identification, conditions, news, and user accounts.
 
 ## Quick start
 
 ```bash
 # Build and run (from repo root)
 ./scripts/build.sh webharbor:dev
-docker run -d --rm --name wh-test -p 8209:8101 -p 49015:40015 webharbor:dev
+docker run -d --rm --name wh-test -p 8209:8101 -p 49016:40016 webharbor:dev
 
 # Verify
 curl -s http://localhost:8209/health | python3 -m json.tool   # control plane
