@@ -1,0 +1,16 @@
+{% macro article_card(a) %}
+<article class="card">
+  <a href="{{ url_for('article_detail', slug=a.slug) }}">
+    <img src="{{ url_for('static', filename='images/' ~ a.image) }}" alt="{{ a.title }}">
+  </a>
+  <div class="card-body">
+    <div class="cat">{{ a.subcategory }}</div>
+    <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+    <p>{{ a.summary }}</p>
+    <div class="card-meta">
+      <span>{{ a.read_minutes }} min read</span>
+      {% if a.evidence_based %}<span>· Evidence based</span>{% endif %}
+    </div>
+  </div>
+</article>
+{% endmacro %}
