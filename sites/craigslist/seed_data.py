@@ -608,7 +608,7 @@ TARGET_NEAR_MISSES = [
     {"category_slug": "lessons", "title": "SAT math tutor", "area": "east bay", "neighborhood": "berkeley", "price": 60, "condition": "new", "description": "SAT math prep with practice tests.", "details": {"format": "in person", "rate": "$60 per hour", "subjects": "SAT math"}},
     {"category_slug": "lessons", "title": "Middle school math tutoring", "area": "south bay", "neighborhood": "sunnyvale", "price": 50, "condition": "new", "description": "Patient math tutoring for middle school students.", "details": {"format": "online", "rate": "$50 per hour", "subjects": "pre-algebra"}},
 
-    {"category_slug": "labor_move", "title": "Moving help for apartments", "area": "east bay", "neighborhood": "oakland", "price": 80, "condition": "new", "description": "Two helpers for local apartment moving jobs.", "details": {"crew": "2 people", "rate": "$80 per hour", "truck": "not included"}},
+    {"category_slug": "labor_move", "title": "Two-person moving help, Oakland van crew", "area": "east bay", "neighborhood": "oakland", "price": 80, "condition": "new", "description": "Two helpers for local apartment moving jobs with a small van. Detail table lists crew and truck information.", "details": {"crew": "2 people", "rate": "$80 per hour", "truck": "cargo van included"}},
     {"category_slug": "labor_move", "title": "Small moving crew with blankets", "area": "san francisco", "neighborhood": "mission district", "price": 110, "condition": "new", "description": "Moving crew for furniture, boxes, and studio apartments.", "details": {"crew": "2 people", "rate": "$110 per hour", "truck": "cargo van"}},
     {"category_slug": "labor_move", "title": "Last minute moving labor", "area": "south bay", "neighborhood": "san jose", "price": 75, "condition": "new", "description": "Labor-only moving help for stairs and loading.", "details": {"crew": "1-2 people", "rate": "$75 per hour", "truck": "not included"}},
     {"category_slug": "labor_move", "title": "Weekend moving and hauling", "area": "peninsula", "neighborhood": "san mateo", "price": 125, "condition": "new", "description": "Weekend moving and hauling for small households.", "details": {"crew": "2 people", "rate": "$125 per hour", "truck": "box truck"}},
@@ -630,6 +630,10 @@ TARGET_NEAR_MISSES = [
     {"category_slug": "lessons", "title": "AP math tutoring online", "area": "north bay", "neighborhood": "remote", "price": 58, "condition": "new", "description": "Online tutoring for AP math courses and exam review.", "details": {"format": "Zoom", "rate": "$58 per hour", "subjects": "AP calculus pre-calculus"}},
     {"category_slug": "labor_move", "title": "Moving help with pickup truck", "area": "north bay", "neighborhood": "san rafael", "price": 90, "condition": "new", "description": "Small moving jobs with one pickup truck and blankets.", "details": {"crew": "2 people", "rate": "$90 per hour", "truck": "pickup"}},
     {"category_slug": "labor_move", "title": "Apartment moving and packing", "area": "east bay", "neighborhood": "berkeley", "price": 100, "condition": "new", "description": "Apartment moving, packing help, and loading support.", "details": {"crew": "2 people", "rate": "$100 per hour", "truck": "van available"}},
+    {"category_slug": "furniture", "title": "Oak writing desk with walnut finish", "area": "san francisco", "neighborhood": "nob hill", "price": 125, "condition": "good", "description": "Small writing desk with walnut finish and one center drawer. Detail table lists dimensions.", "details": {"width": "38 in", "depth": "20 in", "material": "oak veneer", "delivery": "pickup only"}},
+    {"category_slug": "furniture", "title": "Walnut side table for writing nook", "area": "san francisco", "neighborhood": "sunset", "price": 90, "condition": "fair", "description": "Compact table that can work as a writing surface. Detail table lists dimensions.", "details": {"width": "30 in", "depth": "18 in", "material": "walnut stain", "delivery": "curb pickup"}},
+    {"category_slug": "furniture", "title": "Standing desk frame, black", "area": "peninsula", "neighborhood": "redwood city", "price": 180, "condition": "good", "description": "Electric standing desk frame in black. Detail table lists height and load specs.", "details": {"height_range": "27-46 in", "load_rating": "180 lb", "color": "black"}},
+    {"category_slug": "furniture", "title": "Standing desk converter frame", "area": "peninsula", "neighborhood": "san mateo", "price": 95, "condition": "good", "description": "Desktop converter frame for sit-stand work. Detail table lists lift range.", "details": {"height_range": "5-17 in", "load_rating": "35 lb", "color": "gray"}},
     {"category_slug": "volunteers", "title": "Bike repair table volunteers", "area": "east bay", "neighborhood": "emeryville", "price": 0, "condition": "new", "description": "Volunteers needed at a bike repair information table.", "details": {"date": "Sunday", "time": "12:00 PM", "skills": "friendly with cyclists"}},
     {"category_slug": "volunteers", "title": "Community bike repair setup crew", "area": "east bay", "neighborhood": "berkeley", "price": 0, "condition": "new", "description": "Volunteers help set up stands and check in neighbors for a bike repair afternoon.", "details": {"date": "Saturday", "time": "11:00 AM", "skills": "event setup"}},
     {"category_slug": "volunteers", "title": "Bike day repair station helpers", "area": "east bay", "neighborhood": "oakland", "price": 0, "condition": "new", "description": "Repair station seeks helpers for basic intake, tools, and sign-in during bike day.", "details": {"date": "Saturday", "time": "3:30 PM", "skills": "organized with tools"}},
@@ -674,10 +678,16 @@ EXTRA_BLUEPRINTS = {
         ("Registered nurse floater", None, "new", "clinic float role across East Bay"),
     ],
     "services": [
-        ("Two-person moving help with van", 95, "new", "local moves, stairs ok"),
+        ("Handyman help by the hour", 95, "new", "small repairs, shelves, and door adjustments"),
         ("Guitar lessons for beginners", 45, "new", "weekly lessons in person or online"),
         ("House cleaning, green supplies", 120, "new", "apartments and small homes"),
         ("Logo design for small businesses", 250, "new", "brand kit and social avatars"),
+    ],
+    "labor_move": [
+        ("Two-person moving help, Alameda stairs crew", 95, "new", "local moves, stairs ok, cargo van available"),
+        ("Furniture moving crew, Mission district", 115, "new", "two helpers for apartments and offices"),
+        ("Labor-only moving helpers", 70, "new", "loading and unloading help, no vehicle"),
+        ("Small move crew with box truck", 135, "new", "weekend moves with blankets and dolly"),
     ],
     "community": [
         ("East Bay board game night", 0, "new", "weekly strategy games and snacks"),
