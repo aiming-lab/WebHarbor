@@ -136,8 +136,7 @@ def require_login():
 
 @app.context_processor
 def inject_globals():
-    topics = sorted({topic for talk in Talk.query.all() for topic in talk.topics})
-    return {"current_user": current_user(), "nav_topics": topics[:10]}
+    return {"current_user": current_user()}
 
 
 @app.template_filter("date_label")
@@ -158,8 +157,9 @@ def scored_talks(query, talks):
         return list(talks)
     ranked = []
     for talk in talks:
-        text = " ".join([talk.title, talk.speaker, talk.event, talk.description, talk.transcript, " ".join(talk.topics)]).lower()
-        score = sum(1 for token in tokens if token in text)
+        text = " ".join([talk.title, talk.speaker, talk.event, talk.description, talk.transcript, " ".join(talk.topics)])
+        text_tokens = set(tokenize(text))
+        score = sum(1 for token in tokens if token in text_tokens)
         if score:
             ranked.append((score, talk.views, talk))
     return [talk for _, _, talk in sorted(ranked, key=lambda item: (-item[0], -item[1]))]

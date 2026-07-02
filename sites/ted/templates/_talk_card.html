@@ -2,12 +2,9 @@
   <a href="{{ url_for('talk_detail', slug=talk.slug) }}">
     {% if talk.image %}<img src="{{ url_for('static', filename=talk.image) }}" alt="">{% endif %}
     <div class="card-body">
-      <p class="meta">{{ talk.event }}</p>
-      <h3>{{ talk.title }}</h3>
-      <p>{{ talk.speaker }}</p>
-      <div class="chips">
-        {% for topic in talk.topics[:3] %}<span>{{ topic }}</span>{% endfor %}
-      </div>
+      <p class="meta">{{ talk.talk_type }}</p>
+      <h3>Talk details</h3>
+      <p>{{ talk.published_at|date_label }}</p>
     </div>
   </a>
 </article>
