@@ -44,6 +44,42 @@
     </a>
   {% endfor %}
 </section>
+
+{% if featured %}
+<section class="subject-section" aria-label="Featured simulations">
+  <div class="subject-section-head">
+    <h2>Featured Simulations</h2>
+    <a class="more" href="{{ url_for('simulations') }}">View all &raquo;</a>
+  </div>
+  <div class="sim-grid">
+    {% for sim in featured %}{% include "_sim_card.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if new_sims %}
+<section class="subject-section" aria-label="New simulations">
+  <div class="subject-section-head">
+    <h2>New Sims</h2>
+    <a class="more" href="{{ url_for('simulations', release='new') }}">View all &raquo;</a>
+  </div>
+  <div class="sim-grid">
+    {% for sim in new_sims %}{% include "_sim_card.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if most_played %}
+<section class="subject-section" aria-label="Most played simulations">
+  <div class="subject-section-head">
+    <h2>Most Played</h2>
+    <a class="more" href="{{ url_for('simulations', sort='popular') }}">View all &raquo;</a>
+  </div>
+  <div class="sim-grid">
+    {% for sim in most_played %}{% include "_sim_card.html" %}{% endfor %}
+  </div>
+</section>
+{% endif %}
 {% endblock %}
 
 {% block full_bleed_top %}{% endblock %}

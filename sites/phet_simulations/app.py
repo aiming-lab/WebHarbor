@@ -256,6 +256,7 @@ def simulations():
     subject = request.args.get("subject", "").strip()
     grade = request.args.get("grade", "").strip()
     language = request.args.get("language", "").strip()
+    release = request.args.get("release", "").strip()
     sort = request.args.get("sort", "title")
     view = request.args.get("view", "filter").strip()
     page = max(int(request.args.get("page", 1)), 1)
@@ -268,6 +269,11 @@ def simulations():
         query = query.filter(Simulation.grades_json.like(f'%"{grade}"%'))
     if language:
         query = query.filter(Simulation.languages_json.like(f'%"{language}"%'))
+    if release == "new":
+        query = query.filter_by(is_new=True)
+    elif release == "updated":
+        # "Recently updated" in this snapshot = released in 2024 or later.
+        query = query.filter(Simulation.release_date >= date(2024, 1, 1))
 
     if sort == "newest":
         query = query.order_by(Simulation.release_date.desc())
@@ -280,7 +286,9 @@ def simulations():
     sims = query.offset((page - 1) * per_page).limit(per_page).all()
     total_pages = max((total + per_page - 1) // per_page, 1)
 
-    any_filter_active = bool(subject or grade or language or sort != "title")
+    any_filter_active = bool(
+        subject or grade or language or release or sort != "title"
+    )
     view_tab = view if view in ("browse", "filter", "customize") else "filter"
 
     sims_by_subject = {}
@@ -304,6 +312,7 @@ def simulations():
         subject=subject,
         grade=grade,
         language=language,
+        release=release,
         sort=sort,
         view_tab=view_tab,
         languages=Language.query.order_by(Language.name).all(),
@@ -327,9 +336,9 @@ def simulations_by_subject(slug):
 
 @app.route("/simulation/<slug>")
 def simulation_detail(slug):
+    # Read-only: GET must never mutate the DB, or task answers that
+    # reference play counts drift between visits.
     sim = Simulation.query.filter_by(slug=slug).first_or_404()
-    sim.play_count = (sim.play_count or 0) + 1
-    db.session.commit()
 
     subjects_full = [
         s for s in Subject.query.filter(Subject.slug.in_(sim.subjects())).all()
@@ -438,9 +447,8 @@ def activities():
 
 @app.route("/teachers/activity/<int:activity_id>")
 def activity_detail(activity_id):
+    # Read-only: download counts are fixed seed data (see ACTIVITIES_SEED).
     activity = Activity.query.get_or_404(activity_id)
-    activity.download_count = (activity.download_count or 0) + 1
-    db.session.commit()
     return render_template("activity_detail.html", activity=activity)
 
 
@@ -1059,61 +1067,64 @@ SIMULATIONS_SEED = [
 ]
 
 
+# Download counts are explicit and pairwise-distinct so "most downloaded"
+# has exactly one answer (Net Force Investigation, 8742).
 ACTIVITIES_SEED = [
+    # (sim_title, title, author, grade, duration_min, downloads, description)
     ("Forces and Motion: Basics", "Net Force Investigation",
-     "Dr. Trish Loeblein", "high", 50,
+     "Dr. Trish Loeblein", "high", 50, 8742,
      "Students predict, observe, and explain the motion of objects with "
      "balanced and unbalanced forces using friction and applied force."),
     ("Build an Atom", "Atomic Structure Lab",
-     "Emily Moore", "middle", 45,
+     "Emily Moore", "middle", 45, 7310,
      "Build atoms of the first 10 elements, identify subatomic particles, "
      "and explore how protons determine the element."),
     ("Balancing Chemical Equations", "Coefficient Practice",
-     "Yuen-Ying Carpenter", "high", 60,
+     "Yuen-Ying Carpenter", "high", 60, 6485,
      "Practice balancing combustion, synthesis, and decomposition reactions "
      "using the conservation of mass."),
     ("States of Matter", "Phase Change Inquiry",
-     "Sam McKagan", "middle", 40,
+     "Sam McKagan", "middle", 40, 5121,
      "Investigate the relationship between temperature, kinetic energy, "
      "and phase transitions for water, neon, oxygen, and argon."),
     ("Natural Selection", "Evolution of Bunnies",
-     "Wendy Adams", "high", 55,
+     "Wendy Adams", "high", 55, 6893,
      "Model how variation, environment, and selection pressure together "
      "drive allele frequency change across generations."),
     ("Gravity and Orbits", "Modeling the Solar System",
-     "Noah Finkelstein", "middle", 50,
+     "Noah Finkelstein", "middle", 50, 5764,
      "Manipulate masses and distances to explore how gravitational force "
      "shapes planetary orbits in our solar system."),
     ("pH Scale", "Acids and Bases in the Kitchen",
-     "Kelly Lancaster", "middle", 40,
+     "Kelly Lancaster", "middle", 40, 4937,
      "Predict, measure, and rank common household solutions by pH and "
      "categorize each as acid, base, or neutral."),
     ("Plate Tectonics", "Boundary Identification",
-     "Karina Hensberry", "high", 45,
+     "Karina Hensberry", "high", 45, 3608,
      "Use animations to classify convergent, divergent, and transform "
      "boundaries and connect each to real-world geologic features."),
     ("Greenhouse Effect", "Climate Modeling Lab",
-     "Trish Loeblein", "high", 60,
+     "Trish Loeblein", "high", 60, 5342,
      "Model how atmospheric composition affects equilibrium temperature "
      "with and without greenhouse gases."),
     ("Circuit Construction Kit: DC", "Series and Parallel",
-     "John De La Cruz", "high", 50,
+     "John De La Cruz", "high", 50, 6178,
      "Compare current and voltage in series vs parallel arrangements "
      "and verify Kirchhoff's laws empirically."),
     ("Fractions: Intro", "Equivalent Fractions Game",
-     "Amanda McGarry", "elementary", 30,
+     "Amanda McGarry", "elementary", 30, 4215,
      "Use bar models, number lines, and circle models to identify "
      "equivalent fractions and develop fluency."),
     ("Energy Skate Park", "Conservation of Energy",
-     "Karina Hensberry", "high", 55,
+     "Karina Hensberry", "high", 55, 7026,
      "Track potential, kinetic, thermal, and total energy as a skater "
      "moves through changing terrain."),
     ("Density", "Identify the Mystery Block",
-     "Emily Moore", "middle", 35,
+     "Emily Moore", "middle", 35, 3891,
      "Use mass and volume measurements to identify the material of "
      "unknown solid blocks and explain buoyancy in water."),
     ("Graphing Lines", "Slope-Intercept Form",
-     "Dr. Karina Hensberry", "middle", 40,
+     "Dr. Karina Hensberry", "middle", 40, 4560,
      "Investigate how m and b transform the line y = mx + b and apply "
      "this to real-world rate problems."),
 ]
@@ -1169,6 +1180,9 @@ def seed_simulations():
          featured, is_new, runtime, year, month, day, plays) = row
         slug = _slug(title)
         languages = ["en"] + list(extra_langs)
+        # Version derived deterministically from stable seed constants so
+        # sims carry distinct, reproducible version strings (task --28).
+        version = f"{1 + plays % 3}.{runtime % 10}.{day % 10}"
         sim = Simulation(
             slug=slug,
             title=title,
@@ -1178,6 +1192,7 @@ def seed_simulations():
             grades_json=json.dumps(grades),
             topics_json=json.dumps(topics),
             languages_json=json.dumps(languages),
+            version=version,
             is_html5=True,
             is_featured=featured,
             is_new=is_new,
@@ -1206,7 +1221,7 @@ def seed_simulations():
 def seed_activities():
     if Activity.query.count() > 0:
         return
-    for sim_title, title, author, grade, duration, desc in ACTIVITIES_SEED:
+    for sim_title, title, author, grade, duration, downloads, desc in ACTIVITIES_SEED:
         sim = Simulation.query.filter_by(slug=_slug(sim_title)).first()
         if not sim:
             continue
@@ -1218,7 +1233,7 @@ def seed_activities():
             duration_min=duration,
             description=desc,
             file_type="PDF",
-            download_count=max(duration * 137 % 9000, 350),
+            download_count=downloads,
             published_date=date(2024, ((duration % 12) + 1), 15),
         ))
     db.session.commit()

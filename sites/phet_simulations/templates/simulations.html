@@ -87,11 +87,13 @@
           </ul>
         </details>
 
-        <details class="filter-group">
+        <details class="filter-group" {% if release %}open{% endif %}>
           <summary>Release Type</summary>
           <ul>
-            <li><label><input type="checkbox" name="release" value="new"> New</label></li>
-            <li><label><input type="checkbox" name="release" value="updated"> Recently updated</label></li>
+            <li><label><input type="checkbox" name="release" value="new"
+              {% if release == 'new' %}checked{% endif %}> New</label></li>
+            <li><label><input type="checkbox" name="release" value="updated"
+              {% if release == 'updated' %}checked{% endif %}> Recently updated</label></li>
           </ul>
         </details>
 
@@ -131,26 +133,32 @@
           {% if subject %}
             <span class="results-chip">
               {{ subject|upper }}
-              <a href="{{ url_for('simulations', view='filter', grade=grade, language=language, sort=sort) }}" aria-label="Clear">&times;</a>
+              <a href="{{ url_for('simulations', view='filter', grade=grade, language=language, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
             </span>
           {% endif %}
           {% if grade %}
             <span class="results-chip">
               {{ grade|upper }}
-              <a href="{{ url_for('simulations', view='filter', subject=subject, language=language, sort=sort) }}" aria-label="Clear">&times;</a>
+              <a href="{{ url_for('simulations', view='filter', subject=subject, language=language, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
             </span>
           {% endif %}
           {% if language %}
             <span class="results-chip">
               {{ language|upper }}
-              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, sort=sort) }}" aria-label="Clear">&times;</a>
+              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
+            </span>
+          {% endif %}
+          {% if release %}
+            <span class="results-chip">
+              {{ 'NEW' if release == 'new' else 'RECENTLY UPDATED' }}
+              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, sort=sort) }}" aria-label="Clear">&times;</a>
             </span>
           {% endif %}
         </div>
         <div class="results-sort">
           <label>Sort by</label>
           <select onchange="window.location.href=this.value">
-            {% set base = url_for('simulations', view='filter', subject=subject, grade=grade, language=language) %}
+            {% set base = url_for('simulations', view='filter', subject=subject, grade=grade, language=language, release=release) %}
             <option value="{{ base }}&sort=newest"   {% if sort == 'newest' %}selected{% endif %}>Newest</option>
             <option value="{{ base }}&sort=title"    {% if sort == 'title' %}selected{% endif %}>Title (A-Z)</option>
             <option value="{{ base }}&sort=popular"  {% if sort == 'popular' %}selected{% endif %}>Most played</option>
@@ -165,11 +173,11 @@
         {% if total_pages > 1 %}
           <nav class="pager" aria-label="Pagination">
             {% if page > 1 %}
-              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, sort=sort, page=page-1) }}">&laquo; Previous</a>
+              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, release=release, sort=sort, page=page-1) }}">&laquo; Previous</a>
             {% endif %}
             <span class="pager-status">Page {{ page }} of {{ total_pages }}</span>
             {% if page < total_pages %}
-              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, sort=sort, page=page+1) }}">Next &raquo;</a>
+              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, release=release, sort=sort, page=page+1) }}">Next &raquo;</a>
             {% endif %}
           </nav>
         {% endif %}
