@@ -31,13 +31,17 @@
       <div class="container">
         <ul>
           {% for s in nav_sections %}
+            {% if s.slug == 'health-conditions' %}
+            <li><a href="{{ url_for('conditions_index') }}"
+                   class="{{ 'active' if request.path.startswith('/condition') }}">{{ s.name }}</a></li>
+            {% elif s.slug == 'drugs' %}
+            <li><a href="{{ url_for('drugs_index') }}"
+                   class="{{ 'active' if request.path.startswith('/drug') }}">{{ s.name }}</a></li>
+            {% else %}
             <li><a href="{{ url_for('section_page', slug=s.slug) }}"
                    class="{{ 'active' if request.path == url_for('section_page', slug=s.slug) }}">{{ s.name }}</a></li>
+            {% endif %}
           {% endfor %}
-          <li><a href="{{ url_for('conditions_index') }}"
-                 class="{{ 'active' if request.path.startswith('/condition') }}">A–Z Conditions</a></li>
-          <li><a href="{{ url_for('drugs_index') }}"
-                 class="{{ 'active' if request.path.startswith('/drug') }}">Drugs A–Z</a></li>
         </ul>
       </div>
     </nav>
@@ -59,7 +63,13 @@
           <h4>Health Topics</h4>
           <ul>
             {% for s in nav_sections %}
+              {% if s.slug == 'health-conditions' %}
+              <li><a href="{{ url_for('conditions_index') }}">{{ s.name }}</a></li>
+              {% elif s.slug == 'drugs' %}
+              <li><a href="{{ url_for('drugs_index') }}">{{ s.name }}</a></li>
+              {% else %}
               <li><a href="{{ url_for('section_page', slug=s.slug) }}">{{ s.name }}</a></li>
+              {% endif %}
             {% endfor %}
           </ul>
         </div>

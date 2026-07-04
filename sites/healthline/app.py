@@ -375,6 +375,7 @@ def inject_globals():
         saved_count = SavedArticle.query.filter_by(user_id=current_user.id).count()
     return dict(
         nav_sections=sections,
+        section_names={s.slug: s.name for s in sections},
         saved_count=saved_count,
         current_year=REF_DATE.year,
         ref_date_str=REF_DATE.strftime("%B %d, %Y"),
@@ -621,8 +622,8 @@ def register():
         full_name = (request.form.get("full_name") or "").strip()
         password = request.form.get("password") or ""
         confirm = request.form.get("confirm_password") or ""
-        if not (email and username and password):
-            flash("Email, username, and password are all required.", "error")
+        if not (email and username and password and full_name):
+            flash("Full name, email, username, and password are all required.", "error")
             return render_template("register.html")
         if password != confirm:
             flash("Passwords do not match.", "error")
