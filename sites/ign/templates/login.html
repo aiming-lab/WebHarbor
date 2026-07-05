@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Log in - IGN{% endblock %}
+{% block content %}
+<section class="auth-panel">
+  <h1>Log in</h1>
+  <p>Use a benchmark account such as alice.j@test.com with TestPass123!.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Email <input name="email" type="email" autocomplete="email" required></label>
+    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
+    <button type="submit">Log in</button>
+  </form>
+  <a href="{{ url_for('register') }}">Create an account</a>
+</section>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Alerts - IGN{% endblock %}
+{% block content %}
+<header class="page-header">
+  <span class="eyebrow">Account</span>
+  <h1>Alerts</h1>
+  <p>Follow channels or keywords in the frozen IGN mirror.</p>
+</header>
+
+<section class="alert-layout">
+  <form method="post" class="action-panel">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>New Alert</h2>
+    <label>Section
+      <select name="section_slug">
+        <option value="">Any section</option>
+        {% for s in sections() %}
+          <option value="{{ s.slug }}">{{ s.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Keyword <input name="keyword" placeholder="e.g. Neuromancer"></label>
+    <label>Frequency
+      <select name="frequency">
+        <option value="daily">Daily</option>
+        <option value="weekly">Weekly</option>
+        <option value="breaking">Breaking only</option>
+      </select>
+    </label>
+    <button type="submit">Create alert</button>
+  </form>
+
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Section</th><th>Keyword</th><th>Frequency</th><th>Status</th><th></th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td>{{ section_label(row.section_slug) if row.section_slug else 'Any' }}</td>
+            <td>{{ row.keyword or 'Any keyword' }}</td>
+            <td>{{ row.frequency }}</td>
+            <td>{{ 'Active' if row.active else 'Paused' }}</td>
+            <td>
+              <form method="post" action="{{ url_for('toggle_alert', alert_id=row.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit">{{ 'Pause' if row.active else 'Resume' }}</button>
+              </form>
+            </td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5">No alerts yet.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

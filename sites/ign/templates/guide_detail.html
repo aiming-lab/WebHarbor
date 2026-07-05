@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} - IGN{% endblock %}
+{% block content %}
+<article class="detail-layout">
+  <header class="article-header">
+    <div class="meta-line">
+      <span>Guide</span>
+      <span>{{ item.published_at.strftime('%b %d, %Y') }}</span>
+    </div>
+    <h1>{{ item.title }}</h1>
+    <p>{{ item.description }}</p>
+    <div class="byline">By {{ item.author }}</div>
+  </header>
+
+  <div class="detail-media guide-media">
+    <img src="{{ item.image_path }}" alt="{{ item.title }}">
+  </div>
+
+  <div class="detail-columns">
+    <div class="article-body">
+      {% for paragraph in item.body %}
+        <p>{{ paragraph }}</p>
+      {% endfor %}
+      <section class="guide-checklist">
+        <h2>Checklist</h2>
+        {% for checkpoint in item.checklist %}
+          <form method="post" action="{{ url_for('update_guide_progress', item_id=item.id) }}" class="check-row">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="checkpoint" value="{{ checkpoint }}">
+            <label>
+              <input type="checkbox" name="completed" value="1" {% if progress.get(checkpoint) %}checked{% endif %} {% if not current_user.is_authenticated %}disabled{% endif %}>
+              {{ checkpoint }}
+            </label>
+            {% if current_user.is_authenticated %}
+              <button type="submit">Save</button>
+            {% endif %}
+          </form>
+        {% endfor %}
+        {% if not current_user.is_authenticated %}
+          <a class="button-secondary" href="{{ url_for('login', next=request.path) }}">Log in to track progress</a>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="action-panel">
+      <h2>Guide Tools</h2>
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('save_item', item_id=item.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="folder" value="Guides">
+          <label>Note <textarea name="note" rows="3"></textarea></label>
+          <button type="submit">Save Guide</button>
+        </form>
+      {% else %}
+        <p>Sign in to save this guide and track checklist progress.</p>
+      {% endif %}
+      <div class="tag-row">
+        {% for platform in item.platforms %}<span>{{ platform }}</span>{% endfor %}
+      </div>
+    </aside>
+  </div>
+</article>
+
+<section class="section-block">
+  <div class="section-head"><h2>Related Guides</h2></div>
+  <div class="card-grid small">
+    {% for item in related %}
+      {% include "_item_card.html" with context %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
