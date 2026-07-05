@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}saved listings - craigslist{% endblock %}
+{% block title %}favorites - craigslist{% endblock %}
 {% block body_class %}account-page saved-page{% endblock %}
 {% block content %}
 <div class="narrow saved-shell">
@@ -9,7 +9,7 @@
     <a href="{{ url_for('messages') }}">messages</a>
     <a href="{{ url_for('post_listing') }}">new posting</a>
   </nav>
-  <h1>saved listings</h1>
+  <h1>favorites</h1>
   {% if rows %}
   <ul class="result-list">
     {% for row in rows %}
@@ -22,13 +22,13 @@
         <a class="result-title" href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">{{ listing.title }}</a>
         <div class="meta"><span>{{ listing.display_price }}</span><span>{{ listing.neighborhood }}</span><span>saved {{ row.created_at.strftime("%m/%d") }}</span></div>
         {% if row.note %}<p>{{ row.note }}</p>{% endif %}
-        <form method="post" action="{{ url_for('unsave_listing', listing_id=listing.id) }}"><button>remove from saved</button></form>
+        <form method="post" action="{{ url_for('unsave_listing', listing_id=listing.id) }}"><button>remove from favorites</button></form>
       </div>
     </li>
     {% endfor %}
   </ul>
   {% else %}
-  <p class="empty">nothing saved yet</p>
+  <p class="empty">no favorites yet</p>
   {% endif %}
 </div>
 {% endblock %}

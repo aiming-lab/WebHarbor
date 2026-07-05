@@ -254,6 +254,10 @@ def is_saved(listing_id):
     return SavedListing.query.filter_by(user_id=current_user.id, listing_id=listing_id).first() is not None
 
 
+def is_hidden(listing_id):
+    return listing_id in hidden_listing_ids()
+
+
 def listing_images(listing):
     details = listing.details()
     values = details.get("images", [])
@@ -353,10 +357,15 @@ def inject_globals():
             return 0
         return SavedListing.query.filter_by(user_id=current_user.id).count()
 
+    def hidden_count():
+        return len(hidden_listing_ids())
+
     return {
         "category_groups": category_groups,
         "is_saved": is_saved,
+        "is_hidden": is_hidden,
         "saved_count": saved_count,
+        "hidden_count": hidden_count,
         "listing_images": listing_images,
         "listing_map_point": listing_map_point,
         "listing_public_details": listing_public_details,
@@ -496,11 +505,14 @@ def saved():
 @login_required
 def save_search():
     name = request.form.get("name", "").strip() or "saved craigslist search"
+    category_slug = request.form.get("category_slug", "").strip()
+    if category_slug and not Category.query.filter_by(slug=category_slug).first():
+        category_slug = ""
     saved_search = SavedSearch(
         user_id=current_user.id,
         name=name,
         query_text=request.form.get("q", "").strip(),
-        category_slug=request.form.get("category_slug", "").strip(),
+        category_slug=category_slug,
         area=request.form.get("area", "").strip(),
         min_price=parse_int(request.form.get("min_price")),
         max_price=parse_int(request.form.get("max_price")),
@@ -552,6 +564,22 @@ def hide_listing(listing_id):
         session["hidden_listing_ids"] = sorted(ids)
     flash("listing hidden", "info")
     return redirect(request.form.get("next") or url_for("search"))
+
+
+@app.route("/listing/<int:listing_id>/unhide", methods=["POST"])
+def unhide_listing(listing_id):
+    listing = Listing.query.get_or_404(listing_id)
+    if current_user.is_authenticated:
+        hidden_row = HiddenListing.query.filter_by(user_id=current_user.id, listing_id=listing.id).first()
+        if hidden_row:
+            db.session.delete(hidden_row)
+            db.session.commit()
+    else:
+        ids = set(session.get("hidden_listing_ids", []))
+        ids.discard(listing.id)
+        session["hidden_listing_ids"] = sorted(ids)
+    flash("listing restored", "info")
+    return redirect(request.form.get("next") or url_for("search", include_hidden="1"))
 
 
 @app.route("/listing/<int:listing_id>/flag", methods=["POST"])
@@ -613,6 +641,9 @@ def post_listing():
         if not title or not description:
             flash("title and description are required", "error")
             return render_template("post.html", categories=categories)
+        is_housing = category.group_slug == "housing"
+        is_job = category.group_slug == "jobs"
+        is_for_sale = category.group_slug == "for_sale"
         details = {
             "posted_by": "owner",
             "availability": request.form.get("availability", "available now").strip(),
@@ -626,13 +657,13 @@ def post_listing():
             category_group=category.group_slug,
             area=request.form.get("area", current_user.area).strip(),
             neighborhood=request.form.get("neighborhood", "").strip(),
-            price=parse_int(request.form.get("price")),
-            bedrooms=parse_int(request.form.get("bedrooms")),
-            sqft=parse_int(request.form.get("sqft")),
-            condition=request.form.get("condition", "").strip(),
-            compensation=request.form.get("compensation", "").strip(),
-            company=request.form.get("company", "").strip(),
-            employment_type=request.form.get("employment_type", "").strip(),
+            price=None if is_job else parse_int(request.form.get("price")),
+            bedrooms=parse_int(request.form.get("bedrooms")) if is_housing else None,
+            sqft=parse_int(request.form.get("sqft")) if is_housing else None,
+            condition=request.form.get("condition", "").strip() if is_for_sale else "",
+            compensation=request.form.get("compensation", "").strip() if is_job else "",
+            company=request.form.get("company", "").strip() if is_job else "",
+            employment_type=request.form.get("employment_type", "").strip() if is_job else "",
             description=description,
             details_json=json.dumps(details, sort_keys=True),
             seller_name=current_user.name,

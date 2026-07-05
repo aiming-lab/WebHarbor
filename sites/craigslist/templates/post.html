@@ -5,21 +5,21 @@
 <div class="form-page wide">
   <p class="form-back"><a href="{{ url_for('account') }}">&lt; account</a></p>
   <h1>create a posting</h1>
-  <form method="post">
+  <form method="post" data-category-aware-post>
     <label>category</label>
-    <select name="category_slug" required>
+    <select name="category_slug" required data-post-category>
       {% for cat in categories %}
-      <option value="{{ cat.slug }}">{{ cat.group_name }} / {{ cat.name }}</option>
+      <option value="{{ cat.slug }}" data-group="{{ cat.group_slug }}">{{ cat.group_name }} / {{ cat.name }}</option>
       {% endfor %}
     </select>
     <label>posting title</label>
     <input name="title" required placeholder="short descriptive title">
     <div class="form-row">
-      <div>
+      <div class="field-for" data-groups="for_sale,housing,services,community,gigs">
         <label>price</label>
         <input name="price" inputmode="numeric">
       </div>
-      <div>
+      <div class="field-for" data-groups="for_sale">
         <label>condition</label>
         <select name="condition">
           <option value="">not applicable</option>
@@ -48,7 +48,7 @@
         <input name="neighborhood" placeholder="e.g. berkeley">
       </div>
     </div>
-    <div class="form-row">
+    <div class="form-row field-for" data-groups="housing">
       <div>
         <label>bedrooms</label>
         <input name="bedrooms" inputmode="numeric">
@@ -58,17 +58,20 @@
         <input name="sqft" inputmode="numeric">
       </div>
     </div>
-    <label>compensation or company</label>
-    <input name="compensation" placeholder="$28/hr, $155k-$180k, etc.">
-    <input name="company" placeholder="company name">
-    <label>employment type</label>
-    <select name="employment_type">
-      <option value="">not applicable</option>
-      <option>full-time</option>
-      <option>part-time</option>
-      <option>contract</option>
-      <option>temporary</option>
-    </select>
+    <div class="field-for" data-groups="jobs">
+      <label>compensation</label>
+      <input name="compensation" placeholder="$28/hr, $155k-$180k, etc.">
+      <label>company</label>
+      <input name="company" placeholder="company name">
+      <label>employment type</label>
+      <select name="employment_type">
+        <option value="">not applicable</option>
+        <option>full-time</option>
+        <option>part-time</option>
+        <option>contract</option>
+        <option>temporary</option>
+      </select>
+    </div>
     <label>posting body</label>
     <textarea name="description" rows="9" required></textarea>
     <button type="submit">publish</button>

@@ -8,6 +8,7 @@
 {% set is_housing = category and category.group_slug == 'housing' %}
 {% set is_for_sale = category and category.group_slug == 'for_sale' %}
 {% set is_bikes = category and category.slug == 'bikes' %}
+{% set showing_hidden = request.args.get('include_hidden') == '1' %}
 {% set purveyor_label = 'dealer' if is_for_sale else 'broker' %}
 {% if is_housing %}
   {% set quick_filters = ['price', 'beds', 'baths', 'type', 'furnished'] %}
@@ -19,10 +20,25 @@
   {% set quick_filters = ['price', 'type', 'posted today'] %}
 {% endif %}
 {% macro view_url(view_mode) -%}
-  {% if category -%}
+  {% if category and showing_hidden -%}
+    {{ url_for('category_search', category_slug=category.slug, q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=view_mode, include_hidden='1') }}
+  {%- elif category -%}
     {{ url_for('category_search', category_slug=category.slug, q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=view_mode) }}
+  {%- elif showing_hidden -%}
+    {{ url_for('search', q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=view_mode, include_hidden='1') }}
   {%- else -%}
     {{ url_for('search', q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=view_mode) }}
+  {%- endif %}
+{%- endmacro %}
+{% macro hidden_toggle_url(show_hidden) -%}
+  {% if category and show_hidden -%}
+    {{ url_for('category_search', category_slug=category.slug, q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=active_view, include_hidden='1') }}
+  {%- elif category -%}
+    {{ url_for('category_search', category_slug=category.slug, q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=active_view) }}
+  {%- elif show_hidden -%}
+    {{ url_for('search', q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=active_view, include_hidden='1') }}
+  {%- else -%}
+    {{ url_for('search', q=request.args.get('q', ''), area=request.args.get('area', ''), min_price=request.args.get('min_price', ''), max_price=request.args.get('max_price', ''), sort=request.args.get('sort', 'relevance'), has_image=request.args.get('has_image', ''), view=active_view) }}
   {%- endif %}
 {%- endmacro %}
 <div class="search-shell">
@@ -179,11 +195,30 @@
         <input type="hidden" name="area" value="{{ request.args.get('area', '') }}">
         <input type="hidden" name="min_price" value="{{ request.args.get('min_price', '') }}">
         <input type="hidden" name="max_price" value="{{ request.args.get('max_price', '') }}">
-        <input type="hidden" name="category_slug" value="{{ category.slug if category else '' }}">
+        <label>category</label>
+        <select name="category_slug">
+          <option value="" {% if not category %}selected{% endif %}>all craigslist</option>
+          {% for group in category_groups() %}
+          <optgroup label="{{ group.name }}">
+            {% for cat in group.categories %}
+            <option value="{{ cat.slug }}" {% if category and category.slug == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+            {% endfor %}
+          </optgroup>
+          {% endfor %}
+        </select>
         <label>save this search as</label>
         <input name="name" value="{{ query or (category.name if category else 'craigslist search') }}">
         <button type="submit">save search</button>
       </form>
+      {% endif %}
+      {% if hidden_count() %}
+      <div class="hidden-search-control">
+        {% if showing_hidden %}
+        showing {{ hidden_count() }} hidden · <a href="{{ hidden_toggle_url(false) }}">hide hidden</a>
+        {% else %}
+        <a href="{{ hidden_toggle_url(true) }}">{{ hidden_count() }} hidden - show</a>
+        {% endif %}
+      </div>
       {% endif %}
     </aside>
 
@@ -217,7 +252,7 @@
         <div class="result-list list-results">
           {% for listing in listings %}
           {% set photos = listing_images(listing) %}
-          <div class="cl-search-result cl-search-view-mode-list" id="listing-{{ listing.id }}">
+          <div class="cl-search-result cl-search-view-mode-list{% if is_hidden(listing.id) %} is-hidden-listing{% endif %}" id="listing-{{ listing.id }}">
             <div class="result-node">
               <form method="post" action="{{ url_for('save_listing', listing_id=listing.id) }}">
                 <input type="hidden" name="next" value="{{ request.full_path }}">
@@ -233,10 +268,17 @@
                 {% if photos %}<span class="sep">•</span><span class="pic">pic</span>{% endif %}
                 <span class="sep">•</span>
               </span>
+              {% if is_hidden(listing.id) %}
+              <form class="banish-text-form" method="post" action="{{ url_for('unhide_listing', listing_id=listing.id) }}">
+                <input type="hidden" name="next" value="{{ request.full_path }}">
+                <button class="cl-banish-button cl-banish-text-button" type="submit">unhide</button>
+              </form>
+              {% else %}
               <form class="banish-text-form" method="post" action="{{ url_for('hide_listing', listing_id=listing.id) }}">
                 <input type="hidden" name="next" value="{{ request.full_path }}">
                 <button class="cl-banish-button cl-banish-text-button" type="submit">hide</button>
               </form>
+              {% endif %}
             </div>
           </div>
           {% endfor %}
@@ -245,7 +287,7 @@
         <div class="result-list thumb-results">
           {% for listing in listings %}
           {% set photos = listing_images(listing) %}
-          <div class="cl-search-result cl-search-view-mode-thumb" id="listing-{{ listing.id }}">
+          <div class="cl-search-result cl-search-view-mode-thumb{% if is_hidden(listing.id) %} is-hidden-listing{% endif %}" id="listing-{{ listing.id }}">
             <div class="thumb-node">
               <a class="thumb-image" href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">
                 {% if photos %}
@@ -266,10 +308,17 @@
                 <div class="thumb-meta">
                   <span>{{ listing.age_label }}</span>
                   {% if listing.price is not none %}<span class="sep">•</span><span class="priceinfo">{{ listing.display_price }}</span>{% endif %}
+                  {% if is_hidden(listing.id) %}
+                  <form method="post" action="{{ url_for('unhide_listing', listing_id=listing.id) }}">
+                    <input type="hidden" name="next" value="{{ request.full_path }}">
+                    <button class="cl-banish-button cl-banish-text-button" type="submit">unhide</button>
+                  </form>
+                  {% else %}
                   <form method="post" action="{{ url_for('hide_listing', listing_id=listing.id) }}">
                     <input type="hidden" name="next" value="{{ request.full_path }}">
-                    <button class="cl-banish-button icon-only" type="submit" aria-label="hide listing"><span class="icon icom-" aria-hidden="true"></span></button>
+                    <button class="cl-banish-button cl-banish-text-button" type="submit">hide</button>
                   </form>
+                  {% endif %}
                 </div>
               </div>
             </div>
@@ -280,7 +329,7 @@
         <ul class="result-list result-grid">
           {% for listing in listings %}
           {% set photos = listing_images(listing) %}
-          <li class="result-row result-card" id="listing-{{ listing.id }}" data-gallery>
+          <li class="result-row result-card{% if is_hidden(listing.id) %} is-hidden-listing{% endif %}" id="listing-{{ listing.id }}" data-gallery>
             <div class="card-photo">
               <a class="card-image-link" href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">
               {% if listing.price is not none %}<span class="card-price">{{ listing.display_price }}</span>{% endif %}
@@ -309,7 +358,7 @@
               <div class="meta">
                 <span>{{ listing.age_label }}</span>
                 {% if listing.bedrooms %}<span>{{ listing.bedrooms }}br</span>{% endif %}
-                {% if listing.sqft and not is_housing %}<span>{{ listing.sqft }}ft<sup>2</sup></span>{% endif %}
+                {% if listing.sqft and listing.category_group != 'housing' %}<span>{{ listing.sqft }}ft<sup>2</sup></span>{% endif %}
                 <span>{{ listing.neighborhood }}</span>
               </div>
               <div class="card-actions">
@@ -317,10 +366,17 @@
                   <input type="hidden" name="next" value="{{ request.full_path }}">
                   <button class="card-star icon-only" title="save listing" aria-label="save listing"><span class="icon icom-" aria-hidden="true"></span></button>
                 </form>
+                {% if is_hidden(listing.id) %}
+                <form method="post" action="{{ url_for('unhide_listing', listing_id=listing.id) }}">
+                  <input type="hidden" name="next" value="{{ request.full_path }}">
+                  <button class="card-trash card-action-text" type="submit" title="unhide listing"><span class="icon icom-" aria-hidden="true"></span><span>unhide</span></button>
+                </form>
+                {% else %}
                 <form method="post" action="{{ url_for('hide_listing', listing_id=listing.id) }}">
                   <input type="hidden" name="next" value="{{ request.full_path }}">
-                  <button class="card-trash icon-only" aria-label="hide listing"><span class="icon icom-" aria-hidden="true"></span></button>
+                  <button class="card-trash card-action-text" type="submit" title="hide listing"><span class="icon icom-" aria-hidden="true"></span><span>hide</span></button>
                 </form>
+                {% endif %}
               </div>
             </div>
           </li>

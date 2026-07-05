@@ -50,8 +50,29 @@
     });
   }
 
+  function setupCategoryAwarePostForm(form) {
+    var select = form.querySelector("[data-post-category]");
+    var fields = Array.prototype.slice.call(form.querySelectorAll("[data-groups]"));
+    if (!select || !fields.length) {
+      return;
+    }
+
+    function updateFields() {
+      var option = select.options[select.selectedIndex];
+      var group = option ? option.getAttribute("data-group") : "";
+      fields.forEach(function (field) {
+        var groups = (field.getAttribute("data-groups") || "").split(",");
+        field.hidden = groups.indexOf(group) === -1;
+      });
+    }
+
+    select.addEventListener("change", updateFields);
+    updateFields();
+  }
+
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-gallery]").forEach(setupGallery);
     document.querySelectorAll(".top-selects").forEach(submitTopSelects);
+    document.querySelectorAll("[data-category-aware-post]").forEach(setupCategoryAwarePostForm);
   });
 }());

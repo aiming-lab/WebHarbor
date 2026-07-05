@@ -86,6 +86,8 @@ REGIONS = [
     "santa cruz",
 ]
 
+CONSISTENT_NO_IMAGE_CATEGORIES = {"furniture", "bikes", "electronics"}
+
 
 def slugify(value):
     value = value.lower()
@@ -179,10 +181,14 @@ def map_details(area, neighborhood, idx):
 
 def finalize_record(row, pools, idx):
     image = row.get("image", "")
+    if row["category_slug"] in CONSISTENT_NO_IMAGE_CATEGORIES:
+        image = ""
+        row["image"] = ""
     details = dict(row.get("details", {}))
-    gallery = image_gallery(pools, row["category_slug"], idx, image)
-    if gallery:
-        details["images"] = gallery
+    if row["category_slug"] not in CONSISTENT_NO_IMAGE_CATEGORIES:
+        gallery = image_gallery(pools, row["category_slug"], idx, image)
+        if gallery:
+            details["images"] = gallery
     details.update(map_details(row.get("area", REGIONS[idx % len(REGIONS)]), row.get("neighborhood", "san francisco"), idx))
     row["details"] = details
     return row
