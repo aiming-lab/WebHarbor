@@ -26,7 +26,7 @@ SITES = [
     'allrecipes', 'amazon', 'apple', 'arxiv', 'bbc_news', 'booking',
     'github', 'google_flights', 'google_map', 'google_search',
     'huggingface', 'wolfram_alpha', 'cambridge_dictionary',
-    'coursera', 'espn', 'recreation_gov',
+    'coursera', 'espn', 'merriam_webster', 'recreation_gov',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'

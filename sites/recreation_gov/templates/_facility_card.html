@@ -3,7 +3,6 @@
   <a class="card-media" href="{{ url_for('facility_detail', slug=facility.slug) }}">
     <img class="card-img" src="{{ facility.image_url }}" alt="Photo of {{ facility.name }}">
     {% if mode == 'search' %}
-      <span class="card-image-badge">{% if facility.available %}Available{% else %}Enter dates{% endif %}</span>
       <span class="card-favorite" aria-hidden="true">♡</span>
     {% endif %}
   </a>
@@ -21,7 +20,7 @@
     {% endif %}
     <h3><a href="{{ url_for('facility_detail', slug=facility.slug) }}">{{ facility.name }}</a></h3>
     {% if mode == 'search' %}
-      <p class="muted search-parent">{{ facility.agency }}{% if facility.parent_area %} · {{ facility.parent_area }}{% endif %}</p>
+      <p class="muted search-parent">{{ facility.agency }}</p>
       <p class="muted search-location">Near {{ facility.location }}, {{ facility.state }} · {{ "%.0f"|format(facility.distance_miles) }} miles point-to-point</p>
     {% else %}
       <p class="muted">{{ facility.parent_area }} near {{ facility.location }}, {{ facility.state }}</p>
