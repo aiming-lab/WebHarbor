@@ -20,18 +20,7 @@
     <div class="exact-match-info">
       <h2 class="exact-match-name">
         <a href="{{ url_for('drug_detail', slug=exact_drug.slug) }}">{{ exact_drug.generic_name|capitalize }}</a>
-        <span class="avail-badge {% if exact_drug.availability == 'Rx' %}avail-rx{% elif exact_drug.availability == 'OTC' %}avail-otc{% else %}avail-both{% endif %}">{{ exact_drug.availability }}</span>
       </h2>
-      {% if exact_drug.brand_names %}
-        <p class="exact-match-brands muted"><strong>Brand names:</strong> {{ exact_drug.brand_names|join(', ') }}</p>
-      {% endif %}
-      {% if exact_drug.drug_class %}
-        <p class="exact-match-class muted"><strong>Drug class:</strong>
-          <a href="{{ url_for('drug_class_page', slug=exact_drug.drug_class.slug) }}">{{ exact_drug.drug_class.name }}</a>
-        </p>
-      {% endif %}
-      {% set cd = (exact_drug.uses or exact_drug.description or '')|clean_desc %}
-      {% if cd %}<p class="exact-match-desc">{{ cd[:280] }}{% if cd|length > 280 %}...{% endif %}</p>{% endif %}
       <div class="exact-match-links">
         <a href="{{ url_for('drug_detail', slug=exact_drug.slug) }}" class="btn btn-primary btn-sm">Full prescribing information</a>
         <a href="{{ url_for('drug_side_effects', slug=exact_drug.slug) }}">Side effects</a>
@@ -40,13 +29,6 @@
         <a href="{{ url_for('drug_reviews_page', slug=exact_drug.slug) }}">Reviews</a>
       </div>
     </div>
-    {% if exact_drug.avg_rating and exact_drug.review_count %}
-    <div class="exact-match-rating">
-      <div class="exact-match-score">{{ '%.1f'|format(exact_drug.avg_rating) }}</div>
-      <div class="muted" style="font-size:0.8rem;">out of 10</div>
-      <div class="muted" style="font-size:0.78rem;">{{ exact_drug.review_count }} reviews</div>
-    </div>
-    {% endif %}
   </div>
 </section>
 {% endif %}
@@ -94,8 +76,6 @@
           {% for d in popular_for_query %}
             <li>
               <a href="{{ url_for('drug_detail', slug=d.slug) }}" class="popular-for-query-name">{{ d.generic_name|capitalize }}</a>
-              {% if d.brand_names %}<span class="muted popular-for-query-brand"> &middot; {{ d.brand_names[0] }}</span>{% endif %}
-              <span class="avail-badge avail-badge-sm {% if d.availability == 'Rx' %}avail-rx{% elif d.availability == 'OTC' %}avail-otc{% else %}avail-both{% endif %}">{{ d.availability }}</span>
             </li>
           {% endfor %}
         </ul>
@@ -171,30 +151,8 @@
               <h2 class="drug-card-name">
                 <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>
               </h2>
-              <span class="avail-badge {% if d.availability == 'Rx' %}avail-rx{% elif d.availability == 'OTC' %}avail-otc{% else %}avail-both{% endif %}">{{ d.availability }}</span>
             </header>
-            <div class="drug-card-badges">
-              {% if d.drug_class %}
-                <a class="badge-chip badge-chip-class" href="{{ url_for('drug_class_page', slug=d.drug_class.slug) }}">{{ d.drug_class.name }}</a>
-              {% endif %}
-              {% if d.csa_schedule and d.csa_schedule != 'N' %}
-                <span class="badge-chip badge-chip-csa">CSA {{ d.csa_schedule }}</span>
-              {% endif %}
-            </div>
-            {% if d.brand_names %}
-              <p class="drug-card-meta"><span class="drug-card-meta-label">Brand names:</span> {{ d.brand_names|join(', ') }}</p>
-            {% endif %}
-            <p class="drug-card-desc">{% set cd = (d.uses or d.description or '')|clean_desc %}{{ cd[:220] }}{% if cd|length > 220 %}...{% endif %}</p>
             <p class="drug-card-footer">
-              {% if d.review_count and d.avg_rating %}
-                {% set stars = ((d.avg_rating / 2)|round(0, 'floor'))|int %}
-                <span class="drug-card-stars" title="{{ d.avg_rating }}/10">
-                  {% for i in range(5) %}<span class="star {% if i < stars %}star-on{% endif %}">&#9733;</span>{% endfor %}
-                  <span class="muted">{{ '%.1f'|format(d.avg_rating) }}/10 ({{ d.review_count }} review{{ '' if d.review_count == 1 else 's' }})</span>
-                </span>
-              {% else %}
-                <span class="muted">No reviews yet</span>
-              {% endif %}
               <a href="{{ url_for('drug_detail', slug=d.slug) }}" class="card-link">View details &rsaquo;</a>
             </p>
           </article>
