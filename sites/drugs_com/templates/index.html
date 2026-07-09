@@ -299,6 +299,7 @@ function scrollCarousel(dir) {
   <h3 class="is-240">Stay up to date on drug news</h3>
   <p class="is-241">Subscribe to Drugs.com newsletters for the latest medication news, new drug approvals, alerts and updates.</p>
   <form class="is-242" action="{{ url_for('newsletter_subscribe') }}" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input class="is-243" type="email" name="email" placeholder="Enter your email address">
     <button type="submit" class="btn btn-primary is-244">Subscribe</button>
   </form>
@@ -556,6 +557,7 @@ function scrollCarousel(dir) {
         <h3 class="home-right-box-head">Subscribe to our newsletters</h3>
         <p class="muted" style="font-size:0.82rem;">FDA alerts, drug approvals, and health news.</p>
         <form action="{{ url_for('newsletter_subscribe') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="email" name="email" placeholder="Enter your email" class="newsletter-email-input" style="width:100%;margin-bottom:6px;">
           <button type="submit" class="btn btn-primary" style="width:100%;font-size:0.85rem;">Subscribe</button>
         </form>
@@ -606,6 +608,7 @@ function scrollCarousel(dir) {
       <p class="muted">Get FDA alerts, drug approvals, and health news delivered to your inbox.</p>
     </div>
     <form action="{{ url_for('newsletter_subscribe') }}" method="post" class="newsletter-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="email" name="email" placeholder="Enter your email address" class="newsletter-input" required>
       <button type="submit" class="btn btn-primary">Subscribe</button>
     </form>

@@ -65,6 +65,7 @@
         <p>Run all {{ items|length }} medication{% if items|length != 1 %}s{% endif %} in your list through our interaction checker. We screen every pairwise combination and flag major, moderate, and minor interactions, plus food and alcohol warnings.</p>
       </div>
       <form method="post" action="{{ url_for('interaction_checker') }}" class="med-list-check-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% for item in items %}
           <input type="hidden" name="drugs" value="{{ item.drug.generic_name }}">
         {% endfor %}
@@ -94,12 +95,14 @@
             <div class="med-card-actions">
               <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('notes-display-{{ item.id }}').style.display='none';document.getElementById('notes-edit-{{ item.id }}').style.display='block';">Edit notes</button>
               <form method="post" action="{{ url_for('my_med_list_toggle') }}" class="med-remove">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="slug" value="{{ item.drug.slug }}">
                 <button type="submit" class="btn btn-outline btn-sm btn-outline-danger">Remove</button>
               </form>
             </div>
           </div>
           <form method="post" action="{{ url_for('update_med_notes') }}" class="med-notes-edit" id="notes-edit-{{ item.id }}" style="display:none;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="slug" value="{{ item.drug.slug }}">
             <textarea name="notes" rows="3" maxlength="500" class="med-notes-textarea">{{ item.notes or '' }}</textarea>
             <div class="med-card-actions">

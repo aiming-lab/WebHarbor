@@ -311,6 +311,7 @@
           <h3>Does {{ drug.generic_name|capitalize }} interact with my other drugs?</h3>
           <p class="muted">Enter a drug name to check for interactions with {{ drug.generic_name }}.</p>
           <form action="{{ url_for('interaction_checker') }}" method="post" class="inline-checker-form" id="inline-checker-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="drugs" value="{{ drug.slug }}">
             <input type="hidden" name="drugs" id="inline-checker-drug2" value="">
             <div class="inline-checker-row">

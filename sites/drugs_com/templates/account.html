@@ -101,6 +101,7 @@
         <div class="review-actions">
           <a class="btn btn-outline btn-sm" href="{{ url_for('drug_review_new', slug=r.drug.slug) }}">Edit</a>
           <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" class="review-delete" onsubmit="return confirm('Delete this review?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <button type="submit" class="btn btn-outline btn-sm">Delete</button>
           </form>
         </div>
@@ -138,6 +139,7 @@
   <section class="account-box">
     <h2>Account settings</h2>
     <form method="post" action="{{ url_for('save_settings') }}" class="account-settings-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-row">
         <label for="acct-email">Email address</label>
         <input id="acct-email" type="email" name="email" value="{{ current_user.email }}">

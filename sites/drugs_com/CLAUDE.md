@@ -11,7 +11,7 @@ docker run -d --rm --name wh-test -p 8209:8101 -p 49016:40016 webharbor:dev
 
 # Verify
 curl -s http://localhost:8209/health | python3 -m json.tool   # control plane
-curl -so /dev/null -w "%{http_code}" http://localhost:49015/   # should print 200
+curl -so /dev/null -w "%{http_code}" http://localhost:49016/   # should print 200
 
 # Logs
 docker logs wh-test --tail 50
@@ -22,7 +22,7 @@ curl -X POST http://localhost:8209/reset/drugs_com
 docker exec wh-test md5sum \
   /opt/WebSyn/drugs_com/instance/drugs_com.db \
   /opt/WebSyn/drugs_com/instance_seed/drugs_com.db
-# Both hashes must match: bfc94f8ff61fbbd553ae496217588bad
+# Both hashes must match: 22d3eeb82d7f2804592f0a9a0832485c
 ```
 
 ## Architecture
@@ -69,8 +69,8 @@ Rendered as inline SVGs via the `_pill_svg.html` macro — no external image fil
 ## Seed database
 
 - **Location**: `instance_seed/drugs_com.db` (gitignored — sourced from HuggingFace)
-- **MD5**: `bfc94f8ff61fbbd553ae496217588bad`
-- **Contents**: 251 drugs · 748 reviews · 76 interactions · 103 pill images · 68 conditions · 80 news articles · 12 users
+- **MD5**: `22d3eeb82d7f2804592f0a9a0832485c`
+- **Contents**: 246 drugs · 780 reviews · 76 interactions · 103 pill images · 68 conditions · 80 news articles · 12 users
 
 All `seed_*()` functions gate on an already-populated DB (early-return if rows exist) so `seed_database()` is idempotent and the reset invariant holds.
 
@@ -84,7 +84,7 @@ All `seed_*()` functions gate on an already-populated DB (early-return if rows e
 | david_k | david.k@test.com | TestPass123! | Secondary |
 
 **Alice's seeded state** (task-critical — do not change):
-- Med list: ibuprofen, metformin, atorvastatin (NOT lisinopril — task 14 asks to add it)
+- Med list: ibuprofen, metformin, atorvastatin (task 14 asks to sign in and list what's saved — read-only, lisinopril is NOT in the list)
 - Reviews: ibuprofen 9/10, lisinopril 7/10, hydrochlorothiazide 10/10
 
 ## Benchmark tasks

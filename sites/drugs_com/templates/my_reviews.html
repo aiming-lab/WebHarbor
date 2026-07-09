@@ -36,6 +36,7 @@
       <a href="{{ url_for('drug_detail', slug=r.drug.slug) }}" class="btn btn-outline btn-sm">View drug page</a>
       <a href="{{ url_for('drug_review_new', slug=r.drug.slug) }}" class="btn btn-outline btn-sm">Edit review</a>
       <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" class="review-delete" style="display:inline;" onsubmit="return confirm('Delete this review?');">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn-outline btn-sm">Delete</button>
       </form>
     </div>

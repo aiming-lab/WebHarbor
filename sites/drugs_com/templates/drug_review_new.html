@@ -15,6 +15,7 @@
     <p class="muted">Share your experience with {{ drug.generic_name|capitalize }} to help others. All fields below describe your experience as a patient.</p>
 
     <form method="post" action="{{ url_for('submit_review', slug=drug.slug) }}" class="review-form review-form-full">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       {% set init_rating = user_review.rating if user_review else 7 %}
 
       <fieldset class="review-fieldset">

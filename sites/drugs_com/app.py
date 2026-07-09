@@ -23,6 +23,7 @@ from flask_login import (
     current_user,
 )
 from flask_bcrypt import Bcrypt
+from flask_wtf import CSRFProtect
 
 try:
     import requests
@@ -47,17 +48,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
-
-
-@app.before_request
-def auto_login():
-    """Always serve as alice — no real auth needed in this benchmark environment."""
-    if not current_user.is_authenticated:
-        alice = User.query.filter_by(email="alice.j@test.com").first()
-        if alice:
-            login_user(alice)
 
 
 def slugify(text):
@@ -325,6 +318,10 @@ DRUG_CLASSES = [
     ("Vitamins", "Vitamins treat or prevent vitamin deficiencies."),
     ("ADHD non-stimulants", "Non-stimulant ADHD medications work via norepinephrine modulation."),
     ("Partial opioid agonists", "Partial opioid agonists treat opioid use disorder and pain."),
+    ("Glycopeptide antibiotics", "Glycopeptide antibiotics treat serious gram-positive infections, including resistant strains, by inhibiting bacterial cell wall synthesis."),
+    ("Antigout agents", "Antigout agents relieve or prevent gout flares by reducing inflammation or lowering uric acid."),
+    ("Sulfonylureas", "Sulfonylureas lower blood sugar in type 2 diabetes by stimulating insulin release from the pancreas."),
+    ("Urinary anti-infectives", "Urinary anti-infectives treat urinary tract infections, often concentrating in the urine rather than the bloodstream."),
 ]
 
 
@@ -405,7 +402,7 @@ DRUGS_DATA = [
     ("zolpidem", "Sleep aids", "Rx", "C-IV", "zole-PI-dem", ["Ambien"], ["insomnia"]),
     ("naloxone", "Opioid antagonists", "Rx and/or OTC", "Not a controlled drug", "nal-OX-one", ["Narcan", "Evzio"], []),
     ("methylphenidate", "Stimulants", "Rx", "C-II", "meth-il-FEN-i-date", ["Ritalin", "Concerta"], ["adhd"]),
-    ("colchicine", "Xanthine oxidase inhibitors", "Rx", "Not a controlled drug", "KOL-chi-seen", ["Colcrys", "Mitigare"], ["gout"]),
+    ("colchicine", "Antigout agents", "Rx", "Not a controlled drug", "KOL-chi-seen", ["Colcrys", "Mitigare"], ["gout"]),
     ("allopurinol", "Xanthine oxidase inhibitors", "Rx", "Not a controlled drug", "al-oh-PURE-i-nol", ["Zyloprim"], ["gout"]),
     ("isotretinoin", "Retinoids", "Rx", "Not a controlled drug", "eye-soe-tret-IN-oh-in", ["Accutane", "Claravis"], ["acne"]),
     ("diphenhydramine", "Antihistamines", "OTC", "Not a controlled drug", "dye-fen-HYE-dra-meen", ["Benadryl"], ["allergies", "insomnia"]),
@@ -435,7 +432,7 @@ DRUGS_DATA = [
     ("canagliflozin", "SGLT2 inhibitors", "Rx", "Not a controlled drug", "kan-a-gli-FLOE-zin", ["Invokana"], ["diabetes"]),
     ("dapagliflozin", "SGLT2 inhibitors", "Rx", "Not a controlled drug", "dap-a-gli-FLOE-zin", ["Farxiga"], ["diabetes", "heart_disease"]),
     ("liraglutide", "GLP-1 receptor agonists", "Rx", "Not a controlled drug", "lir-a-GLOO-tide", ["Victoza", "Saxenda"], ["diabetes", "obesity"]),
-    ("glipizide", "Sulfonamides", "Rx", "Not a controlled drug", "GLIP-i-zide", ["Glucotrol"], ["diabetes"]),
+    ("glipizide", "Sulfonylureas", "Rx", "Not a controlled drug", "GLIP-i-zide", ["Glucotrol"], ["diabetes"]),
     ("pravastatin", "Statins", "Rx", "Not a controlled drug", "PRA-va-sta-tin", ["Pravachol"], ["high_cholesterol"]),
     ("simvastatin", "Statins", "Rx", "Not a controlled drug", "SIM-va-sta-tin", ["Zocor"], ["high_cholesterol"]),
     ("ezetimibe", "Cholesterol absorption inhibitors", "Rx", "Not a controlled drug", "ez-ET-i-mibe", ["Zetia"], ["high_cholesterol"]),
@@ -477,12 +474,12 @@ DRUGS_DATA = [
     ("moxifloxacin", "Fluoroquinolones", "Rx", "Not a controlled drug", "mox-i-FLOX-a-sin", ["Avelox"], ["bacterial_infections"]),
     ("trimethoprim-sulfamethoxazole", "Sulfonamides", "Rx", "Not a controlled drug", "trye-METH-oh-prim sul-fa-meth-OX-a-zole", ["Bactrim", "Septra"], ["bacterial_infections"]),
     ("metronidazole", "Nitroimidazoles", "Rx", "Not a controlled drug", "me-troe-NI-da-zole", ["Flagyl"], ["bacterial_infections"]),
-    ("nitrofurantoin", "Sulfonamides", "Rx", "Not a controlled drug", "nye-troe-fyoor-AN-toyn", ["Macrobid", "Macrodantin"], ["bacterial_infections"]),
+    ("nitrofurantoin", "Urinary anti-infectives", "Rx", "Not a controlled drug", "nye-troe-fyoor-AN-toyn", ["Macrobid", "Macrodantin"], ["bacterial_infections"]),
     ("penicillin", "Penicillins", "Rx", "Not a controlled drug", "pen-i-SIL-in", ["Penicillin VK"], ["bacterial_infections"]),
     ("ampicillin", "Penicillins", "Rx", "Not a controlled drug", "am-pi-SIL-in", ["Principen"], ["bacterial_infections"]),
     ("amoxicillin-clavulanate", "Penicillins", "Rx", "Not a controlled drug", "a-mox-i-SIL-in klav-yoo-LAN-ate", ["Augmentin"], ["bacterial_infections"]),
     ("ceftriaxone", "Cephalosporins", "Rx", "Not a controlled drug", "sef-trye-AX-one", ["Rocephin"], ["bacterial_infections"]),
-    ("vancomycin", "Cephalosporins", "Rx", "Not a controlled drug", "van-koe-MYE-sin", ["Vancocin"], ["bacterial_infections"]),
+    ("vancomycin", "Glycopeptide antibiotics", "Rx", "Not a controlled drug", "van-koe-MYE-sin", ["Vancocin"], ["bacterial_infections"]),
     ("fluconazole", "Antifungals", "Rx", "Not a controlled drug", "floo-KOE-na-zole", ["Diflucan"], ["fungal_infections"]),
     ("terbinafine", "Antifungals", "Rx and/or OTC", "Not a controlled drug", "ter-BIN-a-feen", ["Lamisil"], ["fungal_infections"]),
     ("ketoconazole", "Antifungals", "Rx and/or OTC", "Not a controlled drug", "kee-toe-KOE-na-zole", ["Nizoral"], ["fungal_infections"]),
@@ -579,19 +576,13 @@ DRUGS_DATA = [
     ("indapamide", "Diuretics", "Rx", "Not a controlled drug", "in-DAP-a-mide", ["Lozol"], ["hypertension", "heart_disease"]),
     # Sleep aids (2 -> 4)
     ("ramelteon", "Sleep aids", "Rx", "Not a controlled drug", "ra-MEL-tee-on", ["Rozerem"], ["insomnia"]),
-    ("suvorexant", "Sleep aids", "C-IV", "C-IV", "soo-voe-REX-ant", ["Belsomra"], ["insomnia"]),
+    ("suvorexant", "Sleep aids", "Rx", "C-IV", "soo-voe-REX-ant", ["Belsomra"], ["insomnia"]),
     # J drugs
-    ("januvia", "DPP-4 inhibitors", "Rx", "Not a controlled drug", "ja-NOO-vee-a", ["Sitagliptin"], ["diabetes"]),
-    ("jardiance", "SGLT2 inhibitors", "Rx", "Not a controlled drug", "JAR-dee-ance", ["Empagliflozin"], ["diabetes", "heart_disease"]),
     ("janumet", "Biguanides", "Rx", "Not a controlled drug", "JAN-yoo-met", ["Sitagliptin/Metformin"], ["diabetes"]),
     # U drugs
     ("ursodiol", "Gallstone solubilizing agents", "Rx", "Not a controlled drug", "ur-SOE-dee-ol", ["Actigall", "URSO 250"], ["gallstones"]),
     ("umeclidinium", "Bronchodilators, long-acting", "Rx", "Not a controlled drug", "ue-mek-li-DIN-ee-um", ["Incruse Ellipta"], ["COPD"]),
     ("ulipristal", "Progesterone agonists/antagonists", "Rx", "Not a controlled drug", "ue-LIP-ri-stal", ["Ella"], ["contraception"]),
-    # X drugs
-    ("xarelto", "Anticoagulants", "Rx", "Not a controlled drug", "za-REL-toe", ["Rivaroxaban"], ["blood_clots", "heart_disease"]),
-    ("xeljanz", "JAK inhibitors", "Rx", "Not a controlled drug", "ZEL-janz", ["Tofacitinib"], ["arthritis"]),
-    ("xanax", "Benzodiazepines", "Rx", "C-IV", "ZAN-ax", ["Alprazolam"], ["anxiety"]),
     # Y drugs
     ("yaz", "Contraceptives", "Rx", "Not a controlled drug", "YAZ", ["Drospirenone/Ethinyl estradiol"], ["contraception"]),
     ("yasmin", "Contraceptives", "Rx", "Not a controlled drug", "YAZ-min", ["Drospirenone/Ethinyl estradiol"], ["contraception"]),
@@ -4380,6 +4371,7 @@ def submit_review(slug):
 
 
 @app.route("/<slug>/review/<int:review_id>/helpful", methods=["POST"])
+@csrf.exempt
 def review_helpful_vote(slug, review_id):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
     review = DrugReview.query.filter_by(id=review_id, drug_id=drug.id).first_or_404()
@@ -4877,6 +4869,7 @@ def _lifestyle_interactions(resolved_drugs):
 
 
 @app.route("/api/interaction-check", methods=["POST"])
+@csrf.exempt
 def api_interaction_check():
     data = request.get_json(silent=True) or {}
     names = [str(n).strip().lower() for n in data.get("drugs", []) if str(n).strip()]
@@ -4940,7 +4933,7 @@ def pill_identifier():
     colors = sorted({i.color for i in DrugImage.query.all() if i.color})
     if not imprint and not shape and not color:
         return render_template("pill_identifier.html", shapes=shapes, colors=colors, results=None)
-    q = DrugImage.query
+    q = DrugImage.query.order_by(DrugImage.id)
     if shape:
         q = q.filter(db.func.lower(DrugImage.shape) == shape.lower())
     if color:
@@ -4962,7 +4955,7 @@ def pill_identifier_results():
     imprint = (request.args.get("imprint") or "").strip()
     shape = (request.args.get("shape") or "").strip()
     color = (request.args.get("color") or "").strip()
-    q = DrugImage.query
+    q = DrugImage.query.order_by(DrugImage.id)
     if shape:
         q = q.filter(db.func.lower(DrugImage.shape) == shape.lower())
     if color:
@@ -5921,9 +5914,17 @@ def symptom_checker():
 @app.route("/account/login", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("account"))
     if request.method == "POST":
-        flash("Welcome back!", "success")
-        return redirect(request.args.get("next") or url_for("account"))
+        email = (request.form.get("email") or "").strip().lower()
+        password = request.form.get("password") or ""
+        user = User.query.filter_by(email=email).first()
+        if user and user.check_password(password):
+            login_user(user, remember=request.form.get("remember_me"))
+            flash("Welcome back!", "success")
+            return redirect(request.args.get("next") or url_for("account"))
+        flash("Invalid email or password.", "error")
     return render_template("login.html")
 
 
@@ -5931,9 +5932,29 @@ def login():
 @app.route("/account/register", methods=["GET", "POST"])
 @app.route("/register", methods=["GET", "POST"])
 def register():
-    if request.method == "POST":
-        flash("Account created.", "success")
+    if current_user.is_authenticated:
         return redirect(url_for("account"))
+    if request.method == "POST":
+        username = (request.form.get("username") or "").strip()
+        email = (request.form.get("email") or "").strip().lower()
+        password = request.form.get("password") or ""
+        confirm = request.form.get("confirm_password") or ""
+        if not username or not email or not password:
+            flash("All fields are required.", "danger")
+        elif password != confirm:
+            flash("Passwords do not match.", "danger")
+        elif User.query.filter_by(email=email).first():
+            flash("Email already registered.", "danger")
+        elif User.query.filter_by(username=username).first():
+            flash("Username already taken.", "danger")
+        else:
+            user = User(username=username, email=email)
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
+            flash("Account created.", "success")
+            return redirect(url_for("account"))
     return render_template("register.html")
 
 
@@ -5969,6 +5990,7 @@ def my_med_list():
 
 
 @app.route("/my-med-list/toggle", methods=["POST"])
+@csrf.exempt
 @login_required
 def my_med_list_toggle():
     data = request.get_json(silent=True) or {}
