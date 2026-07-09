@@ -47,7 +47,7 @@
     <ul>
       {% set seen = [] %}
       {% for img in drug.images %}
-        {% set entry = (img.dosage_form or img.shape or '') + (' ' + img.strength if img.strength else '') %}
+        {% set entry = (img.shape or '') + (' ' + img.strength if img.strength else '') %}
         {% set entry = entry.strip() %}
         {% if entry and entry not in seen %}{% set _ = seen.append(entry) %}<li>{{ entry }}</li>{% endif %}
       {% endfor %}

@@ -322,6 +322,11 @@ DRUG_CLASSES = [
     ("Antigout agents", "Antigout agents relieve or prevent gout flares by reducing inflammation or lowering uric acid."),
     ("Sulfonylureas", "Sulfonylureas lower blood sugar in type 2 diabetes by stimulating insulin release from the pancreas."),
     ("Urinary anti-infectives", "Urinary anti-infectives treat urinary tract infections, often concentrating in the urine rather than the bloodstream."),
+    ("NMDA receptor antagonists", "NMDA receptor antagonists block glutamate signaling and are used to treat moderate to severe Alzheimer's disease."),
+    ("Antibiotics", "Antibiotics kill or inhibit the growth of bacteria and are used to treat bacterial infections."),
+    ("Amyloid beta-directed antibodies", "Amyloid beta-directed antibodies clear amyloid plaques from the brain and are used to slow early Alzheimer's disease."),
+    ("Cholesterol absorption inhibitors", "Cholesterol absorption inhibitors lower LDL cholesterol by blocking its absorption in the small intestine."),
+    ("Gallstone solubilizing agents", "Gallstone solubilizing agents dissolve cholesterol-based gallstones and are used for gallbladder and liver conditions."),
 ]
 
 
@@ -581,8 +586,8 @@ DRUGS_DATA = [
     ("janumet", "Biguanides", "Rx", "Not a controlled drug", "JAN-yoo-met", ["Sitagliptin/Metformin"], ["diabetes"]),
     # U drugs
     ("ursodiol", "Gallstone solubilizing agents", "Rx", "Not a controlled drug", "ur-SOE-dee-ol", ["Actigall", "URSO 250"], ["gallstones"]),
-    ("umeclidinium", "Bronchodilators, long-acting", "Rx", "Not a controlled drug", "ue-mek-li-DIN-ee-um", ["Incruse Ellipta"], ["COPD"]),
-    ("ulipristal", "Progesterone agonists/antagonists", "Rx", "Not a controlled drug", "ue-LIP-ri-stal", ["Ella"], ["contraception"]),
+    ("umeclidinium", "Anticholinergic bronchodilators", "Rx", "Not a controlled drug", "ue-mek-li-DIN-ee-um", ["Incruse Ellipta"], ["COPD"]),
+    ("ulipristal", "Progestogens", "Rx", "Not a controlled drug", "ue-LIP-ri-stal", ["Ella"], ["contraception"]),
     # Y drugs
     ("yaz", "Contraceptives", "Rx", "Not a controlled drug", "YAZ", ["Drospirenone/Ethinyl estradiol"], ["contraception"]),
     ("yasmin", "Contraceptives", "Rx", "Not a controlled drug", "YAZ-min", ["Drospirenone/Ethinyl estradiol"], ["contraception"]),
@@ -4371,7 +4376,6 @@ def submit_review(slug):
 
 
 @app.route("/<slug>/review/<int:review_id>/helpful", methods=["POST"])
-@csrf.exempt
 def review_helpful_vote(slug, review_id):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
     review = DrugReview.query.filter_by(id=review_id, drug_id=drug.id).first_or_404()
@@ -4873,6 +4877,8 @@ def _lifestyle_interactions(resolved_drugs):
 def api_interaction_check():
     data = request.get_json(silent=True) or {}
     names = [str(n).strip().lower() for n in data.get("drugs", []) if str(n).strip()]
+    has_alcohol = "alcohol" in names
+    names = [n for n in names if n != "alcohol"]
     # normalize: try matching by generic name or brand
     matched = []
     name_to_drug = {}
@@ -4911,9 +4917,18 @@ def api_interaction_check():
             })
         else:
             no_interaction.append([a.generic_name, b.generic_name])
+    if has_alcohol:
+        _, alcohol_hits = _lifestyle_interactions(matched)
+        for hit in alcohol_hits:
+            interactions.append({
+                "drug_a": hit["drug"].generic_name,
+                "drug_b": "alcohol",
+                "severity": hit["severity"],
+                "description": hit["description"],
+            })
     return jsonify({
         "interactions": interactions,
-        "drugs_checked": [d.generic_name for d in matched],
+        "drugs_checked": [d.generic_name for d in matched] + (["alcohol"] if has_alcohol else []),
         "unrecognized": [n for n in names if n not in name_to_drug],
         "no_interaction_pairs": no_interaction,
     })
@@ -5910,6 +5925,14 @@ def symptom_checker():
 
 
 # --- Auth ---
+def _safe_next_url(next_url):
+    # Only allow same-site relative redirects (single leading slash, no
+    # scheme/netloc) to avoid an open redirect via the `next` query param.
+    if next_url and re.match(r"^/(?!/)", next_url):
+        return next_url
+    return None
+
+
 @app.route("/account/login/", methods=["GET", "POST"])
 @app.route("/account/login", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
@@ -5923,7 +5946,7 @@ def login():
         if user and user.check_password(password):
             login_user(user, remember=request.form.get("remember_me"))
             flash("Welcome back!", "success")
-            return redirect(request.args.get("next") or url_for("account"))
+            return redirect(_safe_next_url(request.args.get("next")) or url_for("account"))
         flash("Invalid email or password.", "error")
     return render_template("login.html")
 
@@ -5990,7 +6013,6 @@ def my_med_list():
 
 
 @app.route("/my-med-list/toggle", methods=["POST"])
-@csrf.exempt
 @login_required
 def my_med_list_toggle():
     data = request.get_json(silent=True) or {}
@@ -6961,7 +6983,7 @@ def health():
 def not_found(e):
     try:
         popular_drugs = (
-            Drug.query.order_by(Drug.rating_count.desc().nullslast())
+            Drug.query.order_by(Drug.review_count.desc().nullslast())
             .limit(12)
             .all()
         )

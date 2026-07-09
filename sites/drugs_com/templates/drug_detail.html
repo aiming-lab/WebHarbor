@@ -556,7 +556,7 @@
       e.preventDefault();
       fetch('{{ url_for("my_med_list_toggle") }}', {
         method: 'POST',
-        headers: {'Content-Type':'application/json'},
+        headers: {'Content-Type':'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
         body: JSON.stringify({slug: el.dataset.slug})
       }).then(r=>{
         if(!r.ok){ if(r.status===401) window.location='{{ url_for("login") }}'; return; }
@@ -629,7 +629,7 @@ document.querySelectorAll('.review-helpful').forEach(function(box) {
   var rid = box.dataset.reviewId, slug = box.dataset.slug;
   var countEl = box.querySelector('.review-helpful-count');
   function send(vote) {
-    var fd = new FormData(); fd.append('vote', vote);
+    var fd = new FormData(); fd.append('vote', vote); fd.append('csrf_token', '{{ csrf_token() }}');
     fetch('/' + slug + '/review/' + rid + '/helpful', {method:'POST', body:fd})
       .then(function(r){return r.json();})
       .then(function(data){if(countEl && data.votes !== undefined) countEl.textContent = data.votes;})

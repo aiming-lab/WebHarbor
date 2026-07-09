@@ -208,7 +208,7 @@ document.querySelectorAll('.review-helpful').forEach(box => {
     const rid = box.dataset.reviewId;
     const countEl = box.querySelector('.review-helpful-count');
     function send(vote) {
-        const fd = new FormData(); fd.append('vote', vote);
+        const fd = new FormData(); fd.append('vote', vote); fd.append('csrf_token', '{{ csrf_token() }}');
         fetch('/' + slug + '/review/' + rid + '/helpful', {method: 'POST', body: fd})
             .then(r => r.json()).then(data => {
                 if (countEl) countEl.textContent = data.votes;
