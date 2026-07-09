@@ -1153,8 +1153,34 @@ BENCHMARK_USERS = [
 # ---------------------------------------------------------------------------
 # OpenFDA fetch
 # ---------------------------------------------------------------------------
+def _openfda_label_matches(query_generic, label):
+    """Verify a label's own openfda.generic_name actually corresponds to the
+    queried drug. FDA's search endpoint does fuzzy/tokenized matching and can
+    return an unrelated drug's label for a query with no exact match (e.g.
+    querying "polyethylene glycol" has been observed to return a Naproxen
+    label) -- accepting such a result blindly would seed the wrong drug's
+    entire uses/warnings/dosage/side_effects text.
+    """
+    fda_names = (label.get("openfda") or {}).get("generic_name") or []
+    if not fda_names:
+        return False
+    q = query_generic.lower().replace("-", " ").strip()
+    q_tokens = set(q.split())
+    for name in fda_names:
+        n = (name or "").lower().replace("-", " ").strip()
+        if not n:
+            continue
+        if q == n or q in n or n in q:
+            return True
+        n_tokens = set(n.split())
+        if q_tokens and (q_tokens <= n_tokens or n_tokens <= q_tokens):
+            return True
+    return False
+
+
 def fetch_openfda_label(generic):
-    """Fetch label info from OpenFDA. Returns dict or None on any failure."""
+    """Fetch label info from OpenFDA. Returns dict or None on any failure,
+    including a fetched label whose own generic name doesn't match the query."""
     if not HAS_REQUESTS:
         return None
     try:
@@ -1166,6 +1192,8 @@ def fetch_openfda_label(generic):
         data = r.json()
         results = data.get("results", [])
         if not results:
+            return None
+        if not _openfda_label_matches(generic, results[0]):
             return None
         return results[0]
     except Exception:
@@ -3860,7 +3888,13 @@ def index():
     trending = [Drug.query.filter_by(generic_name=n).first()
                 for n in _trending_names]
     trending = [d for d in trending if d]
-    news = NewsArticle.query.order_by(NewsArticle.published_at.desc()).limit(6).all()
+    # Exclude New Drug Approvals here -- that category gets its own dedicated
+    # sidebar box below (title-free, links out to the category page), so
+    # mixing it into this general feed would show its latest headline right
+    # next to a category badge, leaking which article is most recent there.
+    news = (NewsArticle.query
+            .filter(~NewsArticle.category.in_(['New Drug Approvals', 'New Drugs']))
+            .order_by(NewsArticle.published_at.desc()).limit(6).all())
     classes = DrugClass.query.order_by(DrugClass.name).limit(12).all()
     # Top 12 conditions by drug count (for homepage "Browse by" tabs)
     top_conditions = (Condition.query
@@ -4519,20 +4553,6 @@ def search():
         lower_to_orig = {n.lower(): n for n in candidates}
         related_searches = [lower_to_orig.get(s, s) for s in matches]
 
-    # Contextually popular drugs for the matched condition/class — surfaced
-    # as a "Popular searches" sidebar block so a query like "diabetes" shows
-    # Metformin, Insulin, etc. rather than fuzzy-near drug names.
-    popular_for_query = []
-    if matched_condition:
-        cond_drugs = [d for d in Drug.query.all()
-                      if matched_condition.slug in d.conditions_list]
-        cond_drugs.sort(key=lambda d: -(d.review_count or 0))
-        popular_for_query = cond_drugs[:8]
-    elif matched_class:
-        cls_drugs = Drug.query.filter(Drug.drug_class_id == matched_class.id).all()
-        cls_drugs.sort(key=lambda d: -(d.review_count or 0))
-        popular_for_query = cls_drugs[:8]
-
     # Exact drug match: generic name or slug equals query
     exact_drug = None
     if q:
@@ -4565,7 +4585,6 @@ def search():
                            page=page, total_pages=total_pages,
                            suggestions=suggestions,
                            related_searches=related_searches,
-                           popular_for_query=popular_for_query,
                            matched_condition=matched_condition,
                            matched_class=matched_class,
                            exact_drug=exact_drug)
@@ -5723,12 +5742,6 @@ def drug_classes_list():
     classes = DrugClass.query.order_by(DrugClass.name).all()
     class_data = []
     for dc in classes:
-        top_drugs = (
-            Drug.query.filter_by(drug_class_id=dc.id)
-            .order_by(Drug.review_count.desc())
-            .limit(3)
-            .all()
-        )
         count = Drug.query.filter_by(drug_class_id=dc.id).count()
         description = (
             CLASS_DESCRIPTIONS.get(dc.name)
@@ -5738,7 +5751,6 @@ def drug_classes_list():
         class_data.append({
             "obj": dc,
             "count": count,
-            "top_drugs": top_drugs,
             "description": description,
         })
     total = len(class_data)

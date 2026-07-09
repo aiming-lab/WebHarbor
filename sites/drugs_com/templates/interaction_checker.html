@@ -245,6 +245,11 @@
 
 <script>
 (function(){
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
   var form = document.getElementById('checker-form');
   var input = document.getElementById('drug-input');
   var addBtn = document.getElementById('add-drug');
@@ -308,7 +313,7 @@
           if(!drugs.length){ acHide(); return; }
           var html = '';
           drugs.forEach(function(r){
-            html += '<div class="checker-ac-item" data-val="' + r.name.replace(/"/g,'&quot;') + '">' + r.label + '</div>';
+            html += '<div class="checker-ac-item" data-val="' + r.name.replace(/"/g,'&quot;') + '">' + escapeHtml(r.label) + '</div>';
           });
           acDrop.innerHTML = html; acDrop.hidden = false;
           acDrop.querySelectorAll('.checker-ac-item').forEach(function(el){

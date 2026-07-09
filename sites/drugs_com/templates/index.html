@@ -531,14 +531,7 @@ function scrollCarousel(dir) {
       {% if new_approvals %}
       <div class="home-right-box">
         <h3 class="home-right-box-head">New Drug Approvals</h3>
-        <ul class="home-approvals-list">
-          {% for a in new_approvals[:5] %}
-          <li>
-            <a href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a>
-            <div class="muted approval-date-sm">{{ a.published_at.strftime('%b %d, %Y') }}</div>
-          </li>
-          {% endfor %}
-        </ul>
+        <p class="muted">Stay current on the latest FDA drug approvals.</p>
         <a class="home-right-more" href="{{ url_for('news_category', category='new-drug-approvals') }}">View all approvals &rsaquo;</a>
       </div>
       {% endif %}
@@ -577,29 +570,6 @@ function scrollCarousel(dir) {
     </div>
   </div>
 </div>
-
-{% if new_approvals %}
-<div class="container" style="display:none">
-  <div class="home-row new-approvals-row">
-    <div class="is-251">
-      <h2 class="is-071">New Drug Approvals</h2>
-      <a class="is-252" href="{{ url_for('news_category', category='new-drug-approvals') }}">View all &rsaquo;</a>
-    </div>
-    <div class="new-approvals-grid">
-      {% for a in new_approvals %}
-      <a class="approval-card" href="{{ url_for('news_article', article_id=a.id) }}">
-        <div class="approval-card-meta">
-          <span class="badge">{{ a.category }}</span>
-          <span class="muted">{{ a.published_at.strftime('%b %d, %Y') }}</span>
-        </div>
-        <h3 class="approval-card-title">{{ a.title }}</h3>
-        <p class="approval-card-excerpt muted">{{ a.body[:130] }}{% if a.body|length > 130 %}...{% endif %}</p>
-      </a>
-      {% endfor %}
-    </div>
-  </div>
-</div>
-{% endif %}
 
 <div class="newsletter-strip">
   <div class="container newsletter-inner">

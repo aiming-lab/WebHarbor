@@ -46,6 +46,11 @@
 </form>
 <script>
 (function(){
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
   function setupCompareAC(inputId, dropId){
     var inp = document.getElementById(inputId);
     var drop = document.getElementById(dropId);
@@ -64,7 +69,7 @@
             if(!drugs.length){ hide(); return; }
             var html='';
             drugs.forEach(function(r){
-              html+='<div class="compare-ac-item" data-val="'+r.name.replace(/"/g,'&quot;')+'">'+r.label+'</div>';
+              html+='<div class="compare-ac-item" data-val="'+r.name.replace(/"/g,'&quot;')+'">'+escapeHtml(r.label)+'</div>';
             });
             drop.innerHTML=html; drop.hidden=false;
             drop.querySelectorAll('.compare-ac-item').forEach(function(el){

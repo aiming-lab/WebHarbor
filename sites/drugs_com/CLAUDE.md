@@ -22,7 +22,7 @@ curl -X POST http://localhost:8209/reset/drugs_com
 docker exec wh-test md5sum \
   /opt/WebSyn/drugs_com/instance/drugs_com.db \
   /opt/WebSyn/drugs_com/instance_seed/drugs_com.db
-# Both hashes must match: 4af8a6688ec3b1d291b493abbfbdd7c8
+# Both hashes must match: 77e17b36c03fde357c3248895aff65d7
 ```
 
 ## Architecture
@@ -69,7 +69,7 @@ Rendered as inline SVGs via the `_pill_svg.html` macro — no external image fil
 ## Seed database
 
 - **Location**: `instance_seed/drugs_com.db` (gitignored — sourced from HuggingFace)
-- **MD5**: `4af8a6688ec3b1d291b493abbfbdd7c8`
+- **MD5**: `77e17b36c03fde357c3248895aff65d7`
 - **Contents**: 246 drugs · 780 reviews · 76 interactions · 103 pill images · 68 conditions · 80 news articles · 12 users
 
 All `seed_*()` functions gate on an already-populated DB (early-return if rows exist) so `seed_database()` is idempotent and the reset invariant holds.
