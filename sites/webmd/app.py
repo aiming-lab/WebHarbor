@@ -22,7 +22,8 @@ from flask_wtf.csrf import CSRFProtect
 from flask_bcrypt import Bcrypt
 from wtforms import StringField, PasswordField
 from wtforms.validators import DataRequired, Email, Length, EqualTo
-from sqlalchemy import or_
+from sqlalchemy import or_, func
+from sqlalchemy.orm import selectinload
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -146,10 +147,6 @@ class Drug(db.Model):
     interactions = db.Column(db.Text, default='')
     warnings = db.Column(db.Text, default='')
     image = db.Column(db.String(200), default='')
-
-    @property
-    def letter(self):
-        return self.name[0].upper()
 
 
 condition_symptoms = db.Table(
@@ -429,7 +426,8 @@ def drugs_index(letter=None):
     if category:
         q = q.filter(Drug.category == category)
     drugs = q.order_by(Drug.name).all()
-    active_letters = {d.name[0].upper() for d in Drug.query.all()}
+    active_letters = {r[0] for r in db.session.query(
+        func.upper(func.substr(Drug.name, 1, 1))).distinct().all()}
     categories = [r[0] for r in db.session.query(Drug.category)
                   .distinct().order_by(Drug.category).all()]
     return render_template('drugs_index.html', drugs=drugs,
@@ -504,7 +502,10 @@ def symptom_checker():
             return redirect(url_for('symptom_checker'))
         picked_ids = {s.id for s in picked}
         results = []
-        for cond in Condition.query.order_by(Condition.name).all():
+        conds = (Condition.query
+                 .options(selectinload(Condition.symptom_links))
+                 .order_by(Condition.name).all())
+        for cond in conds:
             cond_ids = {s.id for s in cond.symptom_links}
             overlap = picked_ids & cond_ids
             if overlap:

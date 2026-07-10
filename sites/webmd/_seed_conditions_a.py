@@ -240,6 +240,15 @@ CONDITIONS_A = [
         "symptom_slugs": ["itching", "rash"],
     },
     {
+        "name": "Enlarged Prostate (BPH)", "slug": "enlarged-prostate", "letter": "E",
+        "overview": "Benign prostatic hyperplasia (BPH) is non-cancerous growth of the prostate gland that squeezes the urethra and slows urine flow. It is nearly universal with age — about half of men in their 50s and up to 90 percent of men over 80 have some degree of it — and it is not prostate cancer, nor does it raise cancer risk.",
+        "symptoms": "A weak or interrupted urine stream, hesitancy getting started, dribbling at the end, a feeling the bladder never fully empties, urgency, and waking several times a night to urinate. Sudden inability to urinate at all is an emergency.",
+        "causes": "Prostate growth driven by age-related hormonal shifts, particularly dihydrotestosterone (DHT). Family history, obesity, diabetes, and heart disease are associated with faster symptom progression; the symptom burden depends less on gland size than on where the growth presses.",
+        "treatments": "Mild symptoms may need only watchful waiting and evening fluid timing. Alpha-blockers such as tamsulosin, alfuzosin, or silodosin relax the bladder outlet within days; 5-alpha reductase inhibitors (finasteride, dutasteride) shrink larger glands over months and can be combined with an alpha-blocker. Minimally invasive procedures and surgery (TURP) treat retention or failed drug therapy.",
+        "related_drug_slugs": ["tamsulosin", "alfuzosin", "silodosin", "finasteride", "dutasteride"],
+        "symptom_slugs": ["frequent-urination"],
+    },
+    {
         "name": "Fibromyalgia", "slug": "fibromyalgia", "letter": "F",
         "overview": "Fibromyalgia is a chronic disorder of widespread musculoskeletal pain accompanied by fatigue, sleep, memory, and mood problems, believed to arise from amplified pain processing in the central nervous system. It affects about 4 million U.S. adults, most of them women.",
         "symptoms": "Widespread aching on both sides of the body lasting three months or more, profound fatigue, unrefreshing sleep, 'fibro fog' (trouble focusing and remembering), headaches, and heightened sensitivity to pressure, noise, and temperature.",
@@ -263,7 +272,7 @@ CONDITIONS_A = [
         "symptoms": "Sudden, severe joint pain often starting at night — the joint becomes hot, swollen, red, and exquisitely tender (even a bedsheet hurts). Attacks peak within 12 to 24 hours and subside over days to two weeks. Chronic gout can form visible crystal lumps (tophi).",
         "causes": "High blood uric acid from the body making too much or the kidneys clearing too little. Risk factors: red meat and organ meats, shellfish, beer and spirits, sugary drinks (fructose), obesity, kidney disease, and diuretics such as hydrochlorothiazide.",
         "treatments": "For flares: NSAIDs such as naproxen or ibuprofen, colchicine, or prednisone, started as early as possible. For prevention: daily urate-lowering therapy (allopurinol first-line) targeting uric acid below 6 mg/dL, plus limiting alcohol, sugary drinks, and purine-rich foods.",
-        "related_drug_slugs": ["naproxen", "ibuprofen", "prednisone"],
+        "related_drug_slugs": ["naproxen", "ibuprofen", "prednisone", "colchicine", "allopurinol"],
         "symptom_slugs": ["joint-pain", "swelling", "fever"],
     },
     {
@@ -289,8 +298,8 @@ CONDITIONS_A = [
         "overview": "High cholesterol — particularly high LDL ('bad') cholesterol — silently drives plaque buildup in arteries, setting the stage for heart attack and stroke. Nearly 2 in 5 U.S. adults have elevated cholesterol, and it produces no symptoms; only a blood test reveals it.",
         "symptoms": "None. Very high inherited levels can cause visible cholesterol deposits (xanthomas) on tendons or yellowish patches around the eyes, but for most people the first 'symptom' is a cardiovascular event.",
         "causes": "Diets high in saturated and trans fats, excess weight, inactivity, smoking, and genetics — familial hypercholesterolemia affects about 1 in 250 people. Diabetes, hypothyroidism, kidney disease, and some medicines also raise levels.",
-        "treatments": "A heart-healthy diet (less saturated fat, more soluble fiber), exercise, and weight management first. Statins — atorvastatin, rosuvastatin, simvastatin — are the mainstay medicines, lowering LDL 30 to 55 percent; ezetimibe and PCSK9 inhibitors are added when statins aren't enough. Screening every 4 to 6 years for healthy adults, more often with risk factors.",
-        "related_drug_slugs": ["atorvastatin", "rosuvastatin", "simvastatin"],
+        "treatments": "A heart-healthy diet (less saturated fat, more soluble fiber), exercise, and weight management first. Statins — atorvastatin, rosuvastatin, simvastatin, or gentler options such as pravastatin and lovastatin — are the mainstay medicines, lowering LDL 30 to 55 percent; ezetimibe and PCSK9 inhibitors are added when statins aren't enough. Screening every 4 to 6 years for healthy adults, more often with risk factors.",
+        "related_drug_slugs": ["atorvastatin", "rosuvastatin", "simvastatin", "pravastatin", "lovastatin"],
         "symptom_slugs": [],
     },
     {

@@ -26,7 +26,7 @@
       <form class="save-form" method="post" action="{{ url_for('toggle_save', article_id=article.id) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="{{ 'saved' if is_saved }}">
-          {{ '&#10003; Saved &mdash; click to remove'|safe if is_saved else '&#9734; Save this article'|safe }}
+          {% if is_saved %}&#10003; Saved &mdash; click to remove{% else %}&#9734; Save this article{% endif %}
         </button>
       </form>
       {% else %}
