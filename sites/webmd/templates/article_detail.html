@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.title }} | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('section_view', slug=article.section.slug) }}">{{ article.section.name }}</a> &rsaquo;
+    {{ article.subcategory }}
+  </div>
+  <div class="detail">
+    <div class="detail-main">
+      <div class="detail-kicker">{{ article.subcategory }}</div>
+      <h1>{{ article.title }}</h1>
+      <div class="byline">
+        Written by <a href="{{ url_for('author_detail', slug=article.author.slug) }}">{{ article.author.name }}</a>
+        &middot; Medically reviewed by
+        <a href="{{ url_for('author_detail', slug=article.reviewer.slug) }}">{{ article.reviewer.name }}</a>,
+        {{ article.reviewer.credentials }}
+      </div>
+      <div class="byline">
+        Published {{ article.published_date.strftime('%B %d, %Y') }}
+        &middot; Reviewed {{ article.reviewed_date.strftime('%B %d, %Y') }}
+      </div>
+
+      {% if current_user.is_authenticated %}
+      <form class="save-form" method="post" action="{{ url_for('toggle_save', article_id=article.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="{{ 'saved' if is_saved }}">
+          {{ '&#10003; Saved &mdash; click to remove'|safe if is_saved else '&#9734; Save this article'|safe }}
+        </button>
+      </form>
+      {% else %}
+      <p class="row-meta"><a href="{{ url_for('login') }}">Log in</a> to save this article to your list.</p>
+      {% endif %}
+
+      <p class="detail-summary">{{ article.summary }}</p>
+      <div class="detail-hero">
+        <img src="{{ url_for('static', filename='images/' + article.image) }}" alt="{{ article.title }}">
+      </div>
+      <div class="article-body">{{ article.body_html|safe }}</div>
+    </div>
+
+    <aside class="sidebar">
+      <h2>More in {{ article.section.name }}</h2>
+      <ul>
+        {% for r in related %}
+        <li><a href="{{ url_for('article_detail', slug=r.slug) }}">{{ r.title }}</a></li>
+        {% endfor %}
+      </ul>
+      <h2>Tools</h2>
+      <ul>
+        <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+        <li><a href="{{ url_for('conditions_index') }}">Conditions A-Z</a></li>
+        <li><a href="{{ url_for('drugs_index') }}">Drugs &amp; Supplements A-Z</a></li>
+      </ul>
+    </aside>
+  </div>
+</div>
+{% endblock %}

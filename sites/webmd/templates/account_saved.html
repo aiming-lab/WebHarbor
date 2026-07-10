@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Saved Articles | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head"><h1>My WebMD</h1></div>
+  <div class="account-tabs">
+    <a href="{{ url_for('account') }}">Profile</a>
+    <a href="{{ url_for('account_saved') }}" class="active">Saved Articles</a>
+    <a href="{{ url_for('account_history') }}">Reading History</a>
+  </div>
+
+  <ul class="saved-list">
+    {% for s in saved %}
+    <li>
+      <div>
+        <div class="saved-title">
+          <a href="{{ url_for('article_detail', slug=s.article.slug) }}">{{ s.article.title }}</a>
+        </div>
+        <div class="saved-meta">{{ s.article.section.name }} &middot; {{ s.article.subcategory }}</div>
+      </div>
+      <form method="post" action="{{ url_for('toggle_save', article_id=s.article.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">Remove</button>
+      </form>
+    </li>
+    {% else %}
+    <p class="empty-note">You haven't saved any articles yet. Open an article and click
+      &ldquo;Save this article&rdquo; to keep it here.</p>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

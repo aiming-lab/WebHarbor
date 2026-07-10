@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ section.name }} | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs"><a href="{{ url_for('index') }}">Home</a> &rsaquo; {{ section.name }}</div>
+  <div class="page-head">
+    <h1>{{ section.name }}</h1>
+    <p>{{ section.blurb }}</p>
+  </div>
+
+  <div class="filter-bar">
+    <a href="{{ url_for('section_view', slug=section.slug) }}"
+       class="{{ 'active' if not active_subcat }}">All Topics</a>
+    {% for sc in subcats %}
+    <a href="{{ url_for('section_view', slug=section.slug, topic=sc) }}"
+       class="{{ 'active' if active_subcat == sc }}">{{ sc }}</a>
+    {% endfor %}
+  </div>
+
+  <div class="article-rows">
+    {% for a in articles %}
+    <div class="article-row">
+      <a href="{{ url_for('article_detail', slug=a.slug) }}">
+        <img src="{{ url_for('static', filename='images/' + a.image) }}" alt="{{ a.title }}">
+      </a>
+      <div class="row-body">
+        <div class="card-kicker">{{ a.subcategory }}</div>
+        <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+        <p>{{ a.summary }}</p>
+        <div class="row-meta">By {{ a.author.name }} &middot; {{ a.published_date.strftime('%B %d, %Y') }}</div>
+      </div>
+    </div>
+    {% else %}
+    <p class="empty-note">No articles found for this topic.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

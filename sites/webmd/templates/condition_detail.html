@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% block title %}{{ condition.name }}: Symptoms, Causes &amp; Treatment | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('conditions_index') }}">Conditions</a> &rsaquo; {{ condition.name }}
+  </div>
+  <div class="detail">
+    <div class="detail-main">
+      <div class="detail-kicker">Condition Guide</div>
+      <h1>{{ condition.name }}</h1>
+
+      <div class="detail-hero">
+        <img src="{{ url_for('static', filename='images/' + condition.image) }}" alt="{{ condition.name }}">
+      </div>
+
+      <div class="fact-section">
+        <h2>Overview</h2>
+        <p>{{ condition.overview }}</p>
+      </div>
+      <div class="fact-section">
+        <h2>Symptoms</h2>
+        <p>{{ condition.symptoms }}</p>
+      </div>
+      <div class="fact-section">
+        <h2>Causes &amp; Risk Factors</h2>
+        <p>{{ condition.causes }}</p>
+      </div>
+      <div class="fact-section">
+        <h2>Treatments</h2>
+        <p>{{ condition.treatments }}</p>
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      {% if condition.symptom_links %}
+      <h2>Key Symptoms</h2>
+      <ul>
+        {% for s in condition.symptom_links|sort(attribute='name') %}
+        <li>{{ s.name }}</li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if related_drugs %}
+      <h2>Related Drugs</h2>
+      <ul>
+        {% for d in related_drugs %}
+        <li><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.name }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if related_articles %}
+      <h2>Related Reading</h2>
+      <ul>
+        {% for a in related_articles %}
+        <li><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      <h2>Tools</h2>
+      <ul>
+        <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+      </ul>
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}WebMD - Better information. Better health.{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-top">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="WebMD home">
+        <span class="brand-web">Web</span><span class="brand-md">MD</span>
+      </a>
+      <form class="search-form" action="{{ url_for('search') }}" method="get">
+        <input type="text" name="q" placeholder="Search conditions, drugs, and more"
+               value="{{ q if q is defined else '' }}" aria-label="Search">
+        <button type="submit">Search</button>
+      </form>
+      <div class="header-account">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}">My WebMD</a>
+          <a href="{{ url_for('logout') }}" class="btn-outline">Log Out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Log In</a>
+          <a href="{{ url_for('register') }}" class="btn-solid">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+    <nav class="header-nav" aria-label="Primary">
+      <div class="container">
+        <ul>
+          <li><a href="{{ url_for('conditions_index') }}">Conditions</a></li>
+          <li><a href="{{ url_for('drugs_index') }}">Drugs &amp; Supplements</a></li>
+          <li><a href="{{ url_for('section_view', slug='well-being') }}">Well-Being</a></li>
+          <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+          <li><a href="{{ url_for('section_view', slug='diet-weight') }}">Diet &amp; Weight</a></li>
+          <li><a href="{{ url_for('section_view', slug='family-pregnancy') }}">Family &amp; Pregnancy</a></li>
+          <li><a href="{{ url_for('section_view', slug='news') }}">News</a></li>
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-cols">
+      <div>
+        <span class="footer-brand"><span class="brand-web">Web</span><span class="brand-md">MD</span></span>
+        <p class="footer-tag">Better information. Better health.</p>
+      </div>
+      <div>
+        <strong>Explore</strong>
+        <a href="{{ url_for('conditions_index') }}">Conditions A-Z</a>
+        <a href="{{ url_for('drugs_index') }}">Drugs &amp; Supplements A-Z</a>
+        <a href="{{ url_for('symptom_checker') }}">Symptom Checker</a>
+      </div>
+      <div>
+        <strong>Sections</strong>
+        <a href="{{ url_for('section_view', slug='conditions') }}">Health A-Z</a>
+        <a href="{{ url_for('section_view', slug='well-being') }}">Well-Being</a>
+        <a href="{{ url_for('section_view', slug='diet-weight') }}">Diet &amp; Weight Management</a>
+        <a href="{{ url_for('section_view', slug='family-pregnancy') }}">Family &amp; Pregnancy</a>
+        <a href="{{ url_for('section_view', slug='news') }}">Health News</a>
+      </div>
+      <div>
+        <strong>My WebMD</strong>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}">My Profile</a>
+          <a href="{{ url_for('account_saved') }}">Saved Articles</a>
+          <a href="{{ url_for('account_history') }}">Reading History</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Log In</a>
+          <a href="{{ url_for('register') }}">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="container footer-legal">
+      <p>&copy; {{ current_year }} WebMD (offline mirror for research use). This mirror does not provide medical advice, diagnosis, or treatment.</p>
+    </div>
+  </footer>
+</body>
+</html>

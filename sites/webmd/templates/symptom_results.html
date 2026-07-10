@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Symptom Checker Results | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('symptom_checker') }}">Symptom Checker</a> &rsaquo; Results
+  </div>
+  <div class="page-head">
+    <h1>Possible Matches</h1>
+    <p>Based on your selected symptoms:
+      {% for s in picked %}<strong>{{ s.name }}</strong>{% if not loop.last %}, {% endif %}{% endfor %}.
+      Ranked by how many of your symptoms each condition shares.</p>
+  </div>
+
+  {% for r in results %}
+  <div class="result-card">
+    <h3>
+      <a href="{{ url_for('condition_detail', slug=r.condition.slug) }}">{{ r.condition.name }}</a>
+      <span class="match-pill">{{ r.match_count }} of {{ picked|length }} symptoms match</span>
+    </h3>
+    <p class="matched-symptoms">Matching symptoms:
+      {% for s in r.matched %}{{ s.name }}{% if not loop.last %}, {% endif %}{% endfor %}
+    </p>
+  </div>
+  {% else %}
+  <p class="empty-note">No conditions in our guide match the selected symptoms.
+    Try selecting different symptoms, or browse <a href="{{ url_for('conditions_index') }}">Conditions A-Z</a>.</p>
+  {% endfor %}
+
+  <p><a class="btn-outline" href="{{ url_for('symptom_checker') }}">Start Over</a></p>
+  <p class="empty-note">This tool is informational only and does not replace a medical evaluation.</p>
+</div>
+{% endblock %}

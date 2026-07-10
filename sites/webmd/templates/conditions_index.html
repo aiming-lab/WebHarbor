@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Conditions A-Z | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Conditions</div>
+  <div class="page-head">
+    <h1>Health Conditions A-Z</h1>
+    <p>Learn about symptoms, causes, and treatments for common health conditions.</p>
+  </div>
+
+  <div class="azbar">
+    <a href="{{ url_for('conditions_index') }}" class="{{ 'active' if not current_letter }}">All</a>
+    {% for L in letters %}
+      {% if L in active_letters %}
+      <a href="{{ url_for('conditions_index', letter=L) }}"
+         class="{{ 'active' if current_letter == L }}">{{ L }}</a>
+      {% else %}
+      <span>{{ L }}</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <ul class="item-list">
+    {% for c in conditions %}
+    <li>
+      <span class="item-name"><a href="{{ url_for('condition_detail', slug=c.slug) }}">{{ c.name }}</a></span>
+    </li>
+    {% else %}
+    <p class="empty-note">No conditions found{% if current_letter %} under "{{ current_letter }}"{% endif %}.</p>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
