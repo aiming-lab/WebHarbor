@@ -623,23 +623,6 @@
 
 <script>
 (function(){
-  var shareBtn = document.getElementById('share-btn');
-  if (shareBtn) {
-    shareBtn.addEventListener('click', async function() {
-      var data = { title: document.title, url: location.href };
-      try {
-        if (navigator.share) {
-          await navigator.share(data);
-        } else if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(location.href);
-          var orig = shareBtn.textContent;
-          shareBtn.textContent = 'Link copied!';
-          setTimeout(function(){ shareBtn.textContent = orig || 'Share'; }, 2000);
-        }
-      } catch (e) { /* user cancelled or unavailable */ }
-    });
-  }
-
   var pronounceBtn = document.querySelector('.drug-pronounce-btn');
   if (pronounceBtn && 'speechSynthesis' in window) {
     pronounceBtn.addEventListener('click', function() {

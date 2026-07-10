@@ -115,6 +115,17 @@ catch unique races, and per-user preference writes are serialized. A user's
 suggestions, counts, rating distributions, and averages from public views
 while leaving their own account/edit views available.
 
+**`avg_rating` is a cached column, not a live SQL average — pin it, don't
+recompute it.** Both `_refresh_drug_review_stats()` and
+`recompute_drug_ratings()` compute the mean with Python's `round()`
+(banker's, half-to-even), then store it. For a drug whose true mean ends in
+exactly `.x5` (e.g. 29/4 = 7.25), that gives a different last digit than
+`ROUND(AVG(rating), 1)` run directly in SQLite (which rounds half away from
+zero) — the cached column and every page that reads it agree with each
+other, but not necessarily with a verifier that recomputes the average via
+raw SQL. When writing a deterministic verifier for a rating/review-count
+task, read `drug.avg_rating` directly rather than recomputing it.
+
 ### OpenFDA content fetch — the match-verification guard
 
 `fetch_openfda_label(generic)` calls the live `api.fda.gov` label-search
