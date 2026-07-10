@@ -16,7 +16,7 @@
         <span class="utility-sep">|</span>
         <a href="{{ url_for('newsletter') }}" class="utility-link">Newsletter</a>
         <span class="utility-sep">|</span>
-        <a href="{{ url_for('news_index') }}" class="utility-link">Community</a>
+        <a href="{{ url_for('news_index') }}" class="utility-link">Medical News</a>
       </div>
       <div class="utility-bar-right">
         <a href="{{ url_for('newsletter') }}" class="utility-link">Subscribe</a>
@@ -59,6 +59,10 @@
           <a href="{{ url_for('account') }}" class="header-user-btn" title="{{ current_user.username }}">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
           </a>
+          <form method="post" action="{{ url_for('logout') }}" class="header-logout-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="header-signin-btn header-logout-btn">Sign out</button>
+          </form>
         {% else %}
           <a href="{{ url_for('register') }}" class="header-register-btn">Register</a>
           <a href="{{ url_for('login') }}" class="header-signin-btn">Sign in</a>
@@ -199,7 +203,7 @@
       <h4>Company</h4>
       <ul>
         <li><a href="{{ url_for('about_page') }}">About</a></li>
-        <li><a href="{{ url_for('about_page') }}">Advertise</a></li>
+        <li><a href="{{ url_for('about_page') }}">About Drugs.com</a></li>
         <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
         <li><a href="{{ url_for('terms') }}">Terms of Use</a></li>
         <li><a href="{{ url_for('contact') }}">Contact</a></li>

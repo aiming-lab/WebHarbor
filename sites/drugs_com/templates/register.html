@@ -16,29 +16,21 @@
 
   <h1 class="is-294">Create Account or Sign In</h1>
 
-  {% with messages = get_flashed_messages(with_categories=true) %}
-    {% if messages %}
-      {% for category, message in messages %}
-        <p class="flash flash-{{ category }} is-295">{{ message }}</p>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
   <form method="post" action="{{ url_for('register') }}" id="register-form">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="is-296">
       <label class="is-016" for="username">Username</label>
-      <input class="is-018" id="username" type="text" name="username" required autocomplete="username">
+      <input class="is-018" id="username" type="text" name="username" required autocomplete="username" maxlength="80">
     </div>
 
     <div class="is-296">
       <label class="is-016" for="email">Email address</label>
-      <input class="is-018" id="email" type="email" name="email" required autocomplete="email">
+      <input class="is-018" id="email" type="email" name="email" required autocomplete="email" maxlength="120">
     </div>
 
     <div class="is-236">
       <label class="is-016" for="password">Password</label>
-      <input class="is-018" id="password" type="password" name="password" required autocomplete="new-password"
+      <input class="is-018" id="password" type="password" name="password" required autocomplete="new-password" minlength="8" maxlength="72"
              oninput="updatePasswordStrength(this.value)">
       <div class="is-378">
         <div class="is-379">
@@ -53,7 +45,7 @@
 
     <div class="is-381">
       <label class="is-016" for="confirm_password">Confirm password</label>
-      <input class="is-018" id="confirm_password" type="password" name="confirm_password" required autocomplete="new-password">
+      <input class="is-018" id="confirm_password" type="password" name="confirm_password" required autocomplete="new-password" minlength="8" maxlength="72">
     </div>
 
     <label class="is-382">

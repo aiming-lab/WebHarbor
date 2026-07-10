@@ -7,15 +7,19 @@ reviews, and a "My Med List" save feature.
 import os
 import json
 import re
+import secrets
 import string
 import hashlib
+import threading
+import time
 from datetime import datetime, timedelta
 from itertools import combinations
 import difflib
+from urllib.parse import urlsplit
 
 from flask import (
     Flask, render_template, request, redirect, url_for, flash, jsonify,
-    abort, session,
+    abort, session, g,
 )
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
@@ -24,6 +28,12 @@ from flask_login import (
 )
 from flask_bcrypt import Bcrypt
 from flask_wtf import CSRFProtect
+from email_validator import EmailNotValidError, validate_email
+from markupsafe import escape
+from sqlalchemy import event, text
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 
 try:
     import requests
@@ -38,13 +48,89 @@ except ImportError:
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 os.makedirs(os.path.join(BASE_DIR, "instance"), exist_ok=True)
 
+
+def _load_runtime_secret_key():
+    """Keep sessions stable across restart, but rotate them on a full reset."""
+    configured = os.environ.get("DRUGS_COM_SECRET_KEY")
+    if configured:
+        return configured
+
+    secret_path = os.path.join(BASE_DIR, "instance", ".secret_key")
+    try:
+        with open(secret_path, encoding="utf-8") as secret_file:
+            stored = secret_file.read().strip()
+        if len(stored) >= 32:
+            return stored
+    except FileNotFoundError:
+        pass
+
+    generated = secrets.token_hex(32)
+    try:
+        descriptor = os.open(
+            secret_path,
+            os.O_WRONLY | os.O_CREAT | os.O_EXCL,
+            0o600,
+        )
+    except FileExistsError:
+        # A simultaneous process won creation; use its completed value.
+        for _ in range(50):
+            with open(secret_path, encoding="utf-8") as secret_file:
+                stored = secret_file.read().strip()
+            if len(stored) >= 32:
+                return stored
+            time.sleep(0.01)
+        raise RuntimeError("runtime secret key file was not initialized")
+    with os.fdopen(descriptor, "w", encoding="utf-8") as secret_file:
+        secret_file.write(generated)
+    return generated
+
 app = Flask(__name__, instance_path=os.path.join(BASE_DIR, "instance"))
 app.url_map.strict_slashes = False
-app.config["SECRET_KEY"] = "drugs_com-dev-secret-please-change"
+app.config["SECRET_KEY"] = _load_runtime_secret_key()
 app.config["SQLALCHEMY_DATABASE_URI"] = (
     "sqlite:///" + os.path.join(BASE_DIR, "instance", "drugs_com.db")
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 1_000_000
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+_sqlite_write_lock = threading.RLock()
+_NON_SQLITE_MUTATING_ENDPOINTS = {
+    "login",
+    "register",
+    "interaction_checker",
+    "api_interaction_check",
+    "symptom_checker",
+    "contact",
+}
+
+
+@app.before_request
+def _serialize_sqlite_writes():
+    """SQLite has one writer; queue mutating HTTP requests in this process."""
+    if (
+        request.method in {"POST", "PUT", "PATCH", "DELETE"}
+        and request.endpoint not in _NON_SQLITE_MUTATING_ENDPOINTS
+    ):
+        # Consume the bounded request body before taking the database lock so
+        # a slow client upload cannot stall unrelated mutations site-wide.
+        request.get_data(cache=True)
+        _sqlite_write_lock.acquire()
+        g._sqlite_write_lock_held = True
+
+
+@app.teardown_request
+def _release_sqlite_write_lock(_error):
+    if getattr(g, "_sqlite_write_lock_held", False):
+        g._sqlite_write_lock_held = False
+        _sqlite_write_lock.release()
+
+
+@event.listens_for(Engine, "connect")
+def _enable_sqlite_foreign_keys(dbapi_connection, _connection_record):
+    cursor = dbapi_connection.cursor()
+    cursor.execute("PRAGMA foreign_keys=ON")
+    cursor.close()
+
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
@@ -59,6 +145,76 @@ def slugify(text):
     return text.strip("-")
 
 
+def _password_validation_error(password):
+    if len(password) < 8:
+        return "Password must be at least 8 characters."
+    if len(password.encode("utf-8")) > 72:
+        return "Password must be 72 bytes or fewer."
+    return None
+
+
+_MAX_INTERACTION_DRUGS = 20
+_MAX_INTERACTION_NAME_LENGTH = 120
+_MAX_QUERY_TEXT_LENGTH = 200
+_MAX_FILTER_TEXT_LENGTH = 120
+_MAX_QUERY_PARAMETER_COUNT = 100
+_MAX_QUERY_PARAMETER_LENGTH = 2_048
+_MAX_PAGE_NUMBER = 100_000
+
+
+@app.before_request
+def _bound_query_parameters():
+    """Reject oversized query strings before templates can reflect them."""
+    pairs = list(request.args.items(multi=True))
+    if len(pairs) > _MAX_QUERY_PARAMETER_COUNT:
+        abort(400)
+    if any(
+        len(key) > _MAX_FILTER_TEXT_LENGTH
+        or len(value) > _MAX_QUERY_PARAMETER_LENGTH
+        for key, value in pairs
+    ):
+        abort(400)
+
+
+def _bounded_query_arg(name, default="", max_length=_MAX_QUERY_TEXT_LENGTH):
+    """Read a query parameter without allowing reflected-response amplification."""
+    value = request.args.get(name, default)
+    value = default if value is None else value
+    if not isinstance(value, str) or len(value) > max_length:
+        abort(400)
+    return value
+
+
+def _bounded_page_arg():
+    """Return a positive page number whose SQL offset cannot overflow SQLite."""
+    raw_page = request.args.get("page", "1")
+    try:
+        page = int(raw_page)
+    except (TypeError, ValueError):
+        abort(400)
+    if not 1 <= page <= _MAX_PAGE_NUMBER:
+        abort(400)
+    return page
+
+
+def _normalize_interaction_names(raw_names):
+    """Validate and normalize a bounded list of interaction-check inputs."""
+    if not isinstance(raw_names, (list, tuple)):
+        return None
+    if len(raw_names) > _MAX_INTERACTION_DRUGS:
+        return None
+    names = []
+    for raw_name in raw_names:
+        if not isinstance(raw_name, str):
+            return None
+        name = raw_name.strip()
+        if len(name) > _MAX_INTERACTION_NAME_LENGTH:
+            return None
+        if name:
+            names.append(name)
+    return names
+
+
 # ---------------------------------------------------------------------------
 # Models
 # ---------------------------------------------------------------------------
@@ -67,6 +223,9 @@ class User(UserMixin, db.Model):
     username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
+    first_name = db.Column(db.String(80), default="")
+    last_name = db.Column(db.String(80), default="")
+    preferences_json = db.Column(db.Text, default="{}")
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     reviews = db.relationship("DrugReview", backref="user", lazy=True)
@@ -76,7 +235,29 @@ class User(UserMixin, db.Model):
         self.password_hash = bcrypt.generate_password_hash(raw).decode("utf-8")
 
     def check_password(self, raw):
-        return bcrypt.check_password_hash(self.password_hash, raw)
+        try:
+            return bcrypt.check_password_hash(self.password_hash, raw)
+        except ValueError:
+            # bcrypt 5 rejects inputs over 72 bytes instead of truncating.
+            return False
+
+    def get_id(self):
+        """Bind session and remember cookies to the current password hash."""
+        fingerprint = hashlib.sha256(
+            (self.password_hash or "").encode("utf-8")
+        ).hexdigest()[:16]
+        return f"{self.id}:{fingerprint}"
+
+    @property
+    def preferences(self):
+        try:
+            value = json.loads(self.preferences_json or "{}")
+            return value if isinstance(value, dict) else {}
+        except (TypeError, ValueError):
+            return {}
+
+    def set_preferences(self, preferences):
+        self.preferences_json = json.dumps(preferences, sort_keys=True)
 
 
 class DrugClass(db.Model):
@@ -164,6 +345,10 @@ class DrugInteraction(db.Model):
 
 
 class DrugReview(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint("drug_id", "user_id", name="uq_drug_review_user"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     drug_id = db.Column(db.Integer, db.ForeignKey("drug.id"), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
@@ -185,6 +370,10 @@ class Condition(db.Model):
 
 
 class DrugCondition(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint("drug_id", "condition_id", name="uq_drug_condition"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     drug_id = db.Column(db.Integer, db.ForeignKey("drug.id"), nullable=False)
     condition_id = db.Column(db.Integer, db.ForeignKey("condition.id"), nullable=False)
@@ -206,6 +395,10 @@ class NewsArticle(db.Model):
 
 
 class SavedDrug(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "drug_id", name="uq_saved_drug_user"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     drug_id = db.Column(db.Integer, db.ForeignKey("drug.id"), nullable=False)
@@ -214,9 +407,553 @@ class SavedDrug(db.Model):
     drug = db.relationship("Drug")
 
 
+def _public_reviews_query():
+    """Reviews whose owners have not opted out of public display."""
+    public_preference = db.func.json_extract(
+        User.preferences_json, "$.public_reviews"
+    )
+    return (
+        DrugReview.query.join(User, User.id == DrugReview.user_id)
+        .filter(db.or_(public_preference.is_(None), public_preference != 0))
+    )
+
+
+def _refresh_drug_review_stats(drug):
+    """Refresh the public aggregate cached on a drug row."""
+    ratings = [
+        row[0]
+        for row in (
+            _public_reviews_query()
+            .filter(DrugReview.drug_id == drug.id)
+            .with_entities(DrugReview.rating)
+            .all()
+        )
+    ]
+    drug.review_count = len(ratings)
+    drug.avg_rating = round(sum(ratings) / len(ratings), 1) if ratings else 0.0
+
+
+_LOCK_STRIPES = 64
+_saved_drug_locks = tuple(threading.Lock() for _ in range(_LOCK_STRIPES))
+_user_settings_locks = tuple(threading.Lock() for _ in range(_LOCK_STRIPES))
+_review_votes = {}
+_review_votes_lock = threading.Lock()
+_MAX_REVIEW_VOTES = 10_000
+_MAX_REVIEW_VOTE_RECORDS = 110_000
+_REVIEW_VOTES_PREFERENCE = "_review_votes"
+_REVIEW_VOTES_SESSION = "_review_votes"
+_REVIEW_VOTER_SESSION = "_review_voter_user_id"
+_REVIEW_BROWSER_SESSION = "_review_browser_id"
+_SERVER_BACKED_SESSION_VOTES = {"Y": "yes", "N": "no"}
+_MAX_REVIEW_VOTES_PER_SESSION = 1_000
+_MAX_REVIEW_SESSION_COOKIE_BYTES = 2_500
+
+
+def _saved_drug_lock(user_id, drug_id):
+    """Return the process-local lock for one user's saved-drug row."""
+    return _saved_drug_locks[hash((user_id, drug_id)) % _LOCK_STRIPES]
+
+
+def _user_settings_lock(user_id):
+    """Serialize read-modify-write updates of one user's preference JSON."""
+    return _user_settings_locks[hash(user_id) % _LOCK_STRIPES]
+
+
+def _valid_review_votes(value, limit=None):
+    """Return a bounded, well-formed review-id -> yes/no vote mapping."""
+    if not isinstance(value, dict):
+        return {}
+    votes = {}
+    for review_identity, vote in value.items():
+        key = str(review_identity)
+        parts = key.split("-", 1)
+        vote = _SERVER_BACKED_SESSION_VOTES.get(vote, vote)
+        if all(part.isdigit() for part in parts) and vote in {"yes", "no"}:
+            votes[key] = vote
+            if limit is not None and len(votes) >= limit:
+                break
+    return votes
+
+
+def _server_backed_session_vote_ids(value):
+    """Return signed-cookie votes known to have had a server-ledger row.
+
+    Legacy cookies contain ``yes``/``no``. Current entries use compact
+    ``Y``/``N`` values so a missing server row can be distinguished from a
+    legacy vote whose helpful count may still be present.
+    """
+    if not isinstance(value, dict):
+        return set()
+    valid_votes = _valid_review_votes(value)
+    return {
+        str(identity)
+        for identity, vote in value.items()
+        if str(identity) in valid_votes and vote in _SERVER_BACKED_SESSION_VOTES
+    }
+
+
+def _encode_session_review_votes(votes, server_backed):
+    encoded = {}
+    for identity, vote in votes.items():
+        if identity in server_backed:
+            encoded[identity] = "Y" if vote == "yes" else "N"
+        else:
+            encoded[identity] = vote
+    return encoded
+
+
+def _prune_review_votes(value, limit=_MAX_REVIEW_VOTES_PER_SESSION):
+    """Canonicalize live review votes and bound the returned ledger.
+
+    Older ledgers used the bare review id while current ledgers include the
+    creation timestamp so a deleted SQLite row cannot transfer its vote to a
+    later row that reuses the id.  Treat both spellings as one logical vote;
+    when both are present, the current spelling wins.
+    """
+    votes = _valid_review_votes(value, _MAX_REVIEW_VOTES)
+    if not votes:
+        return {}
+    review_ids = {_review_id_from_vote_identity(key) for key in votes}
+    reviews = []
+    review_ids = list(review_ids)
+    for offset in range(0, len(review_ids), 500):
+        reviews.extend(
+            DrugReview.query.filter(
+                DrugReview.id.in_(review_ids[offset:offset + 500])
+            ).all()
+        )
+    current = {review.id: _review_vote_identity(review) for review in reviews}
+    canonical_votes = {}
+    for key, vote in votes.items():
+        review_id = _review_id_from_vote_identity(key)
+        current_identity = current.get(review_id)
+        if current_identity is None or (
+            "-" in key and current_identity != key
+        ):
+            continue
+        if current_identity not in canonical_votes or key == current_identity:
+            canonical_votes[current_identity] = vote
+
+    result = {}
+    for key, vote in canonical_votes.items():
+        if limit is not None and len(result) >= limit:
+            break
+        result[key] = vote
+    return result
+
+
+def _review_vote_identity(review):
+    """Identify a specific review row even if SQLite later reuses its id."""
+    created = review.created_at or datetime.min
+    return f"{review.id}-{created.strftime('%Y%m%d%H%M%S%f')}"
+
+
+def _review_id_from_vote_identity(identity):
+    return int(str(identity).split("-", 1)[0])
+
+
+def _remember_review_vote(
+    votes,
+    review_identity,
+    vote,
+    limit=None,
+):
+    """Update a vote mapping without allowing unbounded cookie/JSON growth."""
+    key = str(review_identity)
+    if key not in votes and limit is not None and len(votes) >= limit:
+        return False
+    votes[key] = vote
+    return True
+
+
+def _review_votes_fit_session(votes, server_backed=()):
+    """Ensure an anonymous vote ledger still fits in a browser cookie."""
+    serializer = app.session_interface.get_signing_serializer(app)
+    if serializer is None:
+        return False
+    payload = dict(session)
+    payload[_REVIEW_VOTES_SESSION] = _encode_session_review_votes(
+        votes, set(server_backed)
+    )
+    return len(serializer.dumps(payload)) <= _MAX_REVIEW_SESSION_COOKIE_BYTES
+
+
+def _previous_review_voter_id():
+    """Return the account id that most recently logged out in this browser."""
+    raw_user_id = session.get(_REVIEW_VOTER_SESSION)
+    try:
+        return int(raw_user_id)
+    except (TypeError, ValueError):
+        return None
+
+
+def _review_session_key(create=False):
+    """Return a browser-scoped key for the process-local race ledger."""
+    csrf_token = session.get("csrf_token")
+    if isinstance(csrf_token, str) and csrf_token:
+        return "csrf:" + csrf_token
+    browser_id = session.get(_REVIEW_BROWSER_SESSION)
+    if not (
+        isinstance(browser_id, str)
+        and len(browser_id) == 32
+        and all(character in string.hexdigits for character in browser_id)
+    ):
+        if not create:
+            return None
+        browser_id = secrets.token_hex(16)
+        session[_REVIEW_BROWSER_SESSION] = browser_id
+    return "review:" + browser_id
+
+
+def _anonymous_review_vote_table_exists():
+    return db.session.execute(text(
+        "SELECT 1 FROM sqlite_master "
+        "WHERE type = 'table' AND name = 'anonymous_review_vote'"
+    )).scalar() is not None
+
+
+def _anonymous_review_vote_columns():
+    if not _anonymous_review_vote_table_exists():
+        return set()
+    return {
+        row[1]
+        for row in db.session.execute(text(
+            "PRAGMA table_info(anonymous_review_vote)"
+        )).all()
+    }
+
+
+def _anonymous_review_vote_has_claim_column():
+    return "claimed_user_id" in _anonymous_review_vote_columns()
+
+
+def _ensure_anonymous_review_vote_table():
+    db.session.execute(text(
+        "CREATE TABLE IF NOT EXISTS anonymous_review_vote ("
+        "voter_key TEXT NOT NULL, review_identity TEXT NOT NULL, "
+        "vote TEXT NOT NULL CHECK (vote IN ('yes', 'no')), "
+        "claimed_user_id INTEGER, "
+        "updated_at INTEGER NOT NULL DEFAULT 0, "
+        "PRIMARY KEY (voter_key, review_identity))"
+    ))
+    columns = _anonymous_review_vote_columns()
+    if "claimed_user_id" not in columns:
+        db.session.execute(text(
+            "ALTER TABLE anonymous_review_vote "
+            "ADD COLUMN claimed_user_id INTEGER"
+        ))
+    if "updated_at" not in columns:
+        db.session.execute(text(
+            "ALTER TABLE anonymous_review_vote "
+            "ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0"
+        ))
+    db.session.execute(text(
+        "UPDATE anonymous_review_vote SET updated_at = unixepoch() "
+        "WHERE updated_at = 0"
+    ))
+
+
+def _server_review_votes(review_session_key):
+    """Load this browser's restart-safe anonymous vote ledger."""
+    if not review_session_key or not _anonymous_review_vote_table_exists():
+        return {}
+    _ensure_anonymous_review_vote_table()
+    claim_filter = " AND claimed_user_id IS NULL"
+    rows = db.session.execute(
+        text(
+            "SELECT review_identity, vote FROM anonymous_review_vote "
+            "WHERE voter_key = :voter_key" + claim_filter
+            + " ORDER BY updated_at, rowid"
+        ),
+        {"voter_key": review_session_key},
+    ).all()
+    return _valid_review_votes(dict(rows), _MAX_REVIEW_VOTES_PER_SESSION)
+
+
+def _server_review_vote_record(review_session_key, review_identity):
+    if not review_session_key or not _anonymous_review_vote_table_exists():
+        return None
+    _ensure_anonymous_review_vote_table()
+    row = db.session.execute(
+        text(
+            "SELECT vote, claimed_user_id FROM anonymous_review_vote "
+            "WHERE voter_key = :voter_key AND review_identity = :identity"
+        ),
+        {"voter_key": review_session_key, "identity": review_identity},
+    ).first()
+    return tuple(row) if row is not None else None
+
+
+def _server_review_vote_was_claimed(review_session_key, review_identity):
+    record = _server_review_vote_record(
+        review_session_key, review_identity
+    )
+    return record is not None and record[1] is not None
+
+
+def _remember_server_review_vote(review_session_key, review_identity, vote):
+    """Persist an anonymous choice atomically with its helpful-count delta."""
+    _ensure_anonymous_review_vote_table()
+    existing = db.session.execute(
+        text(
+            "SELECT 1 FROM anonymous_review_vote "
+            "WHERE voter_key = :voter_key AND review_identity = :identity"
+        ),
+        {"voter_key": review_session_key, "identity": review_identity},
+    ).scalar()
+    total = db.session.execute(text(
+        "SELECT COUNT(*) FROM anonymous_review_vote"
+    )).scalar_one()
+    if existing is None and total >= _MAX_REVIEW_VOTE_RECORDS:
+        return False
+    db.session.execute(
+        text(
+            "INSERT INTO anonymous_review_vote "
+            "(voter_key, review_identity, vote, updated_at) "
+            "VALUES (:voter_key, :identity, :vote, "
+            "(SELECT COALESCE(MAX(updated_at), 0) + 1 "
+            "FROM anonymous_review_vote)) "
+            "ON CONFLICT(voter_key, review_identity) "
+            "DO UPDATE SET vote = excluded.vote, updated_at = "
+            "(SELECT COALESCE(MAX(updated_at), 0) + 1 "
+            "FROM anonymous_review_vote) "
+            "WHERE claimed_user_id IS NULL"
+        ),
+        {
+            "voter_key": review_session_key,
+            "identity": review_identity,
+            "vote": vote,
+        },
+    )
+    return True
+
+
+def _claim_server_review_votes(review_session_key, user_id):
+    if not review_session_key or not _anonymous_review_vote_table_exists():
+        return False
+    _ensure_anonymous_review_vote_table()
+    result = db.session.execute(
+        text(
+            "UPDATE anonymous_review_vote SET claimed_user_id = :user_id, "
+            "updated_at = (SELECT COALESCE(MAX(updated_at), 0) + 1 "
+            "FROM anonymous_review_vote) "
+            "WHERE voter_key = :voter_key AND claimed_user_id IS NULL"
+        ),
+        {"voter_key": review_session_key, "user_id": user_id},
+    )
+    return bool(result.rowcount)
+
+
+def _clear_session_review_votes(review_session_key):
+    """Clear the signed-cookie and process-local ledgers for this browser."""
+    session.pop(_REVIEW_VOTES_SESSION, None)
+    if review_session_key:
+        for key in [
+            key
+            for key in _review_votes
+            if key[:2] == ("session", review_session_key)
+        ]:
+            del _review_votes[key]
+
+
+def _undo_session_review_votes(session_votes):
+    """Undo anonymous yes-counts before discarding an unclaimable ledger."""
+    review_ids = {
+        _review_id_from_vote_identity(identity)
+        for identity, vote in session_votes.items()
+        if vote == "yes"
+    }
+    for review_id in review_ids:
+        DrugReview.query.filter(DrugReview.id == review_id).update(
+            {
+                DrugReview.helpful_count: db.func.max(
+                    0,
+                    db.func.coalesce(DrugReview.helpful_count, 0) - 1,
+                )
+            },
+            synchronize_session=False,
+        )
+
+
+def _claim_session_review_votes(user):
+    """Merge this browser's anonymous votes into a newly authenticated user.
+
+    Authenticated votes live in the existing preferences JSON so deduplication
+    survives a site restart without adding a table that would mutate the seed
+    database on boot. If the account had already voted, its earlier choice
+    wins and any duplicate anonymous "yes" increment is removed.
+    """
+    previous_voter_id = _previous_review_voter_id()
+    session.pop(_REVIEW_VOTER_SESSION, None)
+    raw_session_votes = session.get(_REVIEW_VOTES_SESSION)
+    session_votes = _valid_review_votes(raw_session_votes)
+    server_backed_votes = _server_backed_session_vote_ids(raw_session_votes)
+    review_session_key = _review_session_key(create=bool(session_votes))
+    with _review_votes_lock:
+        for review_identity, vote in _server_review_votes(
+            review_session_key
+        ).items():
+            _remember_review_vote(session_votes, review_identity, vote)
+            server_backed_votes.add(review_identity)
+        if review_session_key:
+            for key, vote in _review_votes.items():
+                if key[:2] == ("session", review_session_key):
+                    _remember_review_vote(
+                        session_votes,
+                        key[-1],
+                        vote,
+                    )
+                    server_backed_votes.add(key[-1])
+        session_votes = _prune_review_votes(session_votes)
+        for review_identity in list(session_votes):
+            if _server_review_vote_was_claimed(
+                review_session_key, review_identity
+            ):
+                session_votes.pop(review_identity, None)
+        if not session_votes:
+            _clear_session_review_votes(review_session_key)
+            return
+        for review_identity, vote in session_votes.items():
+            server_record = _server_review_vote_record(
+                review_session_key, review_identity
+            )
+            if (
+                server_record is None
+                and review_identity in server_backed_votes
+                and vote == "yes"
+            ):
+                review = db.session.get(
+                    DrugReview,
+                    _review_id_from_vote_identity(review_identity),
+                )
+                if (
+                    review is not None
+                    and _review_vote_identity(review) == review_identity
+                ):
+                    DrugReview.query.filter(
+                        DrugReview.id == review.id
+                    ).update(
+                        {
+                            DrugReview.helpful_count: db.func.coalesce(
+                                DrugReview.helpful_count, 0
+                            ) + 1
+                        },
+                        synchronize_session=False,
+                    )
+            if not _remember_server_review_vote(
+                review_session_key, review_identity, vote
+            ):
+                _undo_session_review_votes(session_votes)
+                # Existing rows must become tombstones before the browser
+                # ledger is cleared; otherwise a later stale-cookie replay
+                # could find a live "yes" row whose count was just undone.
+                _claim_server_review_votes(review_session_key, -1)
+                _clear_session_review_votes(review_session_key)
+                db.session.commit()
+                return
+        # Post-logout votes are genuinely anonymous. A return to the same
+        # account may reconcile them normally; a different account must not
+        # inherit them, so discard their ledger and undo any yes increments.
+        if previous_voter_id is not None and previous_voter_id != user.id:
+            _undo_session_review_votes(session_votes)
+            _claim_server_review_votes(review_session_key, -1)
+            _clear_session_review_votes(review_session_key)
+            db.session.commit()
+            return
+        with _user_settings_lock(user.id):
+            db.session.refresh(user)
+            preferences = user.preferences.copy()
+            user_votes = _prune_review_votes(
+                preferences.get(_REVIEW_VOTES_PREFERENCE),
+                _MAX_REVIEW_VOTES,
+            )
+            for review_identity, anonymous_vote in session_votes.items():
+                review = db.session.get(
+                    DrugReview,
+                    _review_id_from_vote_identity(review_identity),
+                )
+                if review is None or (
+                    "-" in review_identity
+                    and _review_vote_identity(review) != review_identity
+                ):
+                    continue
+                current_identity = _review_vote_identity(review)
+                if review.user_id == user.id:
+                    # A genuinely anonymous browser cannot be recognized as
+                    # the author until login. Remove that anonymous self-vote
+                    # instead of claiming it for the owner.
+                    user_votes.pop(str(review.id), None)
+                    user_votes.pop(current_identity, None)
+                    if anonymous_vote == "yes":
+                        DrugReview.query.filter(
+                            DrugReview.id == review.id
+                        ).update(
+                            {
+                                DrugReview.helpful_count: db.func.max(
+                                    0,
+                                    db.func.coalesce(
+                                        DrugReview.helpful_count, 0
+                                    ) - 1,
+                                )
+                            },
+                            synchronize_session=False,
+                        )
+                    continue
+                legacy_user_vote = user_votes.pop(str(review.id), None)
+                previous_user_vote = user_votes.get(
+                    current_identity,
+                    legacy_user_vote,
+                )
+                if previous_user_vote is None:
+                    remembered = _remember_review_vote(
+                        user_votes,
+                        current_identity,
+                        anonymous_vote,
+                        _MAX_REVIEW_VOTES_PER_SESSION,
+                    )
+                    if not remembered and anonymous_vote == "yes":
+                        DrugReview.query.filter(
+                            DrugReview.id == review.id
+                        ).update(
+                            {
+                                DrugReview.helpful_count: db.func.max(
+                                    0,
+                                    db.func.coalesce(
+                                        DrugReview.helpful_count, 0
+                                    ) - 1,
+                                )
+                            },
+                            synchronize_session=False,
+                        )
+                elif anonymous_vote == "yes":
+                    DrugReview.query.filter(DrugReview.id == review.id).update(
+                        {
+                            DrugReview.helpful_count: db.func.max(
+                                0,
+                                db.func.coalesce(
+                                    DrugReview.helpful_count, 0
+                                ) - 1,
+                            )
+                        },
+                        synchronize_session=False,
+                    )
+            preferences[_REVIEW_VOTES_PREFERENCE] = user_votes
+            user.set_preferences(preferences)
+            _claim_server_review_votes(review_session_key, user.id)
+            _clear_session_review_votes(review_session_key)
+            db.session.commit()
+
+
 @login_manager.user_loader
 def load_user(uid):
-    return User.query.get(int(uid))
+    raw_id, separator, fingerprint = str(uid).partition(":")
+    if not separator or not raw_id.isdigit() or not fingerprint:
+        return None
+    user = db.session.get(User, int(raw_id))
+    if user is None:
+        return None
+    expected = user.get_id().partition(":")[2]
+    return user if secrets.compare_digest(fingerprint, expected) else None
 
 
 # ---------------------------------------------------------------------------
@@ -586,7 +1323,7 @@ DRUGS_DATA = [
     ("janumet", "Biguanides", "Rx", "Not a controlled drug", "JAN-yoo-met", ["Sitagliptin/Metformin"], ["diabetes"]),
     # U drugs
     ("ursodiol", "Gallstone solubilizing agents", "Rx", "Not a controlled drug", "ur-SOE-dee-ol", ["Actigall", "URSO 250"], ["gallstones"]),
-    ("umeclidinium", "Anticholinergic bronchodilators", "Rx", "Not a controlled drug", "ue-mek-li-DIN-ee-um", ["Incruse Ellipta"], ["COPD"]),
+    ("umeclidinium", "Anticholinergic bronchodilators", "Rx", "Not a controlled drug", "ue-mek-li-DIN-ee-um", ["Incruse Ellipta"], ["copd"]),
     ("ulipristal", "Progestogens", "Rx", "Not a controlled drug", "ue-LIP-ri-stal", ["Ella"], ["contraception"]),
     # Y drugs
     ("yaz", "Contraceptives", "Rx", "Not a controlled drug", "YAZ", ["Drospirenone/Ethinyl estradiol"], ["contraception"]),
@@ -634,6 +1371,7 @@ CONDITIONS_DATA = [
     ("fungal_infections", "Fungal Infections", "Fungal infections are diseases caused by fungi, ranging from superficial skin infections to invasive disease."),
     ("viral_infections", "Viral Infections", "Viral infections are illnesses caused by viruses such as HIV, hepatitis, or herpes."),
     ("constipation", "Constipation", "Constipation is infrequent or difficult bowel movements."),
+    ("gallstones", "Gallstones", "Gallstones are hardened deposits that can form in the gallbladder and may cause pain or block bile flow."),
     ("diarrhea", "Diarrhea", "Diarrhea is the passage of loose or watery stools."),
     ("nausea", "Nausea and Vomiting", "Nausea and vomiting can result from many causes including infections, medications, and motion sickness."),
     ("opioid_dependence", "Opioid Use Disorder", "Opioid use disorder is a chronic medical condition characterized by problematic opioid use."),
@@ -1143,10 +1881,10 @@ _PREGNANCY_RISK: dict[str, str] = {
 
 
 BENCHMARK_USERS = [
-    {"email": "alice.j@test.com", "username": "alice_j", "password": "TestPass123!"},
-    {"email": "bob.c@test.com", "username": "bob_c", "password": "TestPass123!"},
-    {"email": "carol.d@test.com", "username": "carol_d", "password": "TestPass123!"},
-    {"email": "david.k@test.com", "username": "david_k", "password": "TestPass123!"},
+    {"email": "alice.j@test.com", "username": "alice_j", "first_name": "Alice", "last_name": "Johnson", "password": "TestPass123!"},
+    {"email": "bob.c@test.com", "username": "bob_c", "first_name": "Bob", "last_name": "Chen", "password": "TestPass123!"},
+    {"email": "carol.d@test.com", "username": "carol_d", "first_name": "Carol", "last_name": "Davis", "password": "TestPass123!"},
+    {"email": "david.k@test.com", "username": "david_k", "first_name": "David", "last_name": "Kim", "password": "TestPass123!"},
 ]
 
 
@@ -1161,9 +1899,27 @@ def _openfda_label_matches(query_generic, label):
     label) -- accepting such a result blindly would seed the wrong drug's
     entire uses/warnings/dosage/side_effects text.
     """
-    fda_names = (label.get("openfda") or {}).get("generic_name") or []
+    openfda = label.get("openfda") or {}
+    fda_names = openfda.get("generic_name") or []
     if not fda_names:
         return False
+
+    # A token match alone is not enough for a monotherapy query. For example,
+    # OpenFDA currently returns a sitagliptin/metformin combination label for
+    # both `sitagliptin` and `metformin`, and a lisinopril/HCTZ label for
+    # `hydrochlorothiazide`. Accepting those labels would silently describe a
+    # different product. Every hyphenated generic in DRUGS_DATA is an explicit
+    # combination product; non-hyphenated queries must resolve to one active
+    # substance and a non-combination generic name.
+    query_is_combination = "-" in query_generic
+    substances = [s for s in openfda.get("substance_name") or [] if s]
+    if not query_is_combination:
+        if len(substances) > 1:
+            return False
+        combination_markers = re.compile(r"\b(?:and|with)\b|[/;+]", re.IGNORECASE)
+        if any(combination_markers.search(name or "") for name in fda_names):
+            return False
+
     q = query_generic.lower().replace("-", " ").strip()
     q_tokens = set(q.split())
     for name in fda_names:
@@ -1184,9 +1940,11 @@ def fetch_openfda_label(generic):
     if not HAS_REQUESTS:
         return None
     try:
-        q = generic.replace(" ", "+")
-        url = f"https://api.fda.gov/drug/label.json?search=openfda.generic_name:{q}&limit=1"
-        r = requests.get(url, timeout=4)
+        r = requests.get(
+            "https://api.fda.gov/drug/label.json",
+            params={"search": f"openfda.generic_name:{generic}", "limit": 1},
+            timeout=4,
+        )
         if r.status_code != 200:
             return None
         data = r.json()
@@ -3503,7 +4261,10 @@ def seed_benchmark_users():
         "alice.j@test.com": ["ibuprofen", "metformin", "atorvastatin"],
     }
     for idx, u in enumerate(BENCHMARK_USERS):
-        user = User(username=u["username"], email=u["email"])
+        user = User(
+            username=u["username"], email=u["email"],
+            first_name=u.get("first_name", ""), last_name=u.get("last_name", ""),
+        )
         user.set_password(u["password"])
         db.session.add(user)
         db.session.flush()
@@ -3623,6 +4384,10 @@ def seed_extra_reviews():
                "methadone", "naltrexone", "buprenorphine",
                "vitamin B12", "vitamin C", "zinc", "magnesium", "calcium carbonate",
                "docusate", "polyethylene glycol", "bisacodyl", "senna"]
+    # The source list is organized by therapeutic area and intentionally
+    # repeats some high-traffic drugs. A user may only review a given drug once,
+    # so de-duplicate while preserving the first occurrence/order.
+    popular = list(dict.fromkeys(popular))
     drug_by_name = {d.generic_name: d for d in Drug.query.all()}
     count = 0
     for i, name in enumerate(popular):
@@ -3643,6 +4408,7 @@ def seed_extra_reviews():
                 helpful_count=(j + 1) * 4,
                 created_at=datetime.utcnow() - timedelta(days=(i * 4 + j)),
             ))
+            existing_pairs.add((d.id, u.id))
             count += 1
         if count >= 4000:
             break
@@ -3803,7 +4569,10 @@ def format_drug_text(text):
     """
     if not text:
         return ''
-    text = str(text).strip()
+    # The source is normally the frozen seed DB, but some content originates
+    # from a live external API at seed time. Escape it before inserting our own
+    # small, known-safe formatting tags; callers render this filter with |safe.
+    text = str(escape(str(text).strip()))
     # Strip section number prefixes from FDA labels (e.g. "11 DESCRIPTION ", "7 DRUG INTERACTIONS ")
     text = re.sub(r'^\s*\d+(?:\.\d+)?\s+[A-Z][A-Z ]{3,}\s+', '', text)
     text = re.sub(r'\.\s*\d+(?:\.\d+)?\s+[A-Z][A-Z ]{3,}\s+', '. ', text)
@@ -3927,7 +4696,7 @@ def index():
         NewsArticle.category.in_(['New Drug Approvals', 'New Drugs'])
     ).order_by(NewsArticle.published_at.desc()).limit(4).all()
     image_drugs = (Drug.query.join(DrugImage, DrugImage.drug_id == Drug.id)
-                   .order_by(db.func.random()).limit(6).all())
+                   .order_by(Drug.review_count.desc(), Drug.id).limit(6).all())
     image_samples = [(d, d.images[0]) for d in image_drugs if d.images]
     return render_template("index.html", featured=featured, trending=trending,
                            news=news, classes=classes,
@@ -3959,7 +4728,7 @@ def pregnancy_safety():
 @app.route("/drugs-a-to-z.html")
 @app.route("/drug_information.html")
 def drug_az():
-    letter = (request.args.get("letter") or "A").upper()
+    letter = _bounded_query_arg("letter", "A", 3).upper()
     if letter in ("0-9", "0"):
         letter = "0-9"
         drugs = Drug.query.filter(Drug.generic_name.op("GLOB")("[0-9]*")).order_by(Drug.generic_name).all()
@@ -4128,7 +4897,13 @@ def drug_detail(slug):
         recently_viewed = Drug.query.filter(Drug.slug.in_(other_slugs)).all()
         rv_order = {s: i for i, s in enumerate(other_slugs)}
         recently_viewed.sort(key=lambda d: rv_order.get(d.slug, 99))
-    reviews = DrugReview.query.filter_by(drug_id=drug.id).order_by(DrugReview.helpful_count.desc()).limit(20).all()
+    reviews = (
+        _public_reviews_query()
+        .filter(DrugReview.drug_id == drug.id)
+        .order_by(DrugReview.helpful_count.desc())
+        .limit(20)
+        .all()
+    )
     related = Drug.query.filter(Drug.generic_name.in_(drug.related_drugs)).all()
     cond_by_slug = {c.slug: c for c in Condition.query.all()}
     drug_conditions = [cond_by_slug[s] for s in drug.conditions_list if s in cond_by_slug]
@@ -4137,7 +4912,7 @@ def drug_detail(slug):
         saved = SavedDrug.query.filter_by(user_id=current_user.id, drug_id=drug.id).first() is not None
     # rating distribution: counts indexed 1..10
     rating_distribution = {i: 0 for i in range(1, 11)}
-    for r in DrugReview.query.filter_by(drug_id=drug.id).all():
+    for r in _public_reviews_query().filter(DrugReview.drug_id == drug.id).all():
         if 1 <= (r.rating or 0) <= 10:
             rating_distribution[r.rating] += 1
     user_review = None
@@ -4175,7 +4950,7 @@ def drug_detail(slug):
         related_drugs = Drug.query.filter(
             Drug.drug_class_id == drug.drug_class_id,
             Drug.id != drug.id
-        ).order_by(db.func.random()).limit(6).all()
+        ).order_by(Drug.generic_name, Drug.id).limit(6).all()
     drug_interactions = DrugInteraction.query.filter(
         (DrugInteraction.drug_a_id == drug.id) | (DrugInteraction.drug_b_id == drug.id)
     ).all()
@@ -4320,13 +5095,13 @@ def _build_avoid_items(drug):
 @app.route("/<slug>/reviews.html")
 def drug_reviews_page(slug):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
-    page = request.args.get('page', 1, type=int)
-    condition_filter = request.args.get('condition', '')
-    sort = request.args.get('sort', 'recent')
+    page = _bounded_page_arg()
+    condition_filter = _bounded_query_arg('condition', '', 100)
+    sort = _bounded_query_arg('sort', 'recent', 20)
 
-    query = DrugReview.query.filter_by(drug_id=drug.id)
+    query = _public_reviews_query().filter(DrugReview.drug_id == drug.id)
     if condition_filter:
-        query = query.filter_by(condition_treated=condition_filter)
+        query = query.filter(DrugReview.condition_treated == condition_filter)
     if sort == 'helpful':
         query = query.order_by(DrugReview.helpful_count.desc())
     elif sort == 'highest':
@@ -4337,9 +5112,21 @@ def drug_reviews_page(slug):
         query = query.order_by(DrugReview.created_at.desc())
 
     reviews = query.paginate(page=page, per_page=20, error_out=False)
-    conditions = db.session.query(DrugReview.condition_treated).filter_by(drug_id=drug.id).distinct().all()
+    conditions = (
+        _public_reviews_query()
+        .filter(DrugReview.drug_id == drug.id)
+        .with_entities(DrugReview.condition_treated)
+        .distinct()
+        .all()
+    )
     conditions = [c[0] for c in conditions if c[0]]
-    rating_dist = {i: DrugReview.query.filter_by(drug_id=drug.id, rating=i).count() for i in range(1, 11)}
+    rating_dist = {
+        i: _public_reviews_query().filter(
+            DrugReview.drug_id == drug.id,
+            DrugReview.rating == i,
+        ).count()
+        for i in range(1, 11)
+    }
     related_drugs = []
     if drug.drug_class_id:
         related_drugs = Drug.query.filter(
@@ -4360,7 +5147,13 @@ def drug_reviews_page(slug):
 def drug_review_new(slug):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
     user_review = DrugReview.query.filter_by(drug_id=drug.id, user_id=current_user.id).first()
-    conditions = db.session.query(DrugReview.condition_treated).filter_by(drug_id=drug.id).distinct().all()
+    conditions = (
+        _public_reviews_query()
+        .filter(DrugReview.drug_id == drug.id)
+        .with_entities(DrugReview.condition_treated)
+        .distinct()
+        .all()
+    )
     conditions = [c[0] for c in conditions if c[0]]
     return render_template("drug_review_new.html", drug=drug, user_review=user_review,
                            conditions=conditions)
@@ -4375,36 +5168,34 @@ def submit_review(slug):
     except (TypeError, ValueError):
         rating = 5
     rating = max(1, min(10, rating))
-    title = (request.form.get("title") or "")[:200]
-    body = (request.form.get("body") or "")[:1000]
-    condition = (request.form.get("condition_treated") or "")[:100]
-    # duration_taken is accepted from the form (Task: "How long did you take this medication?")
-    # but is not persisted: adding a column would alter the seed DB on first boot and break
-    # /reset/<site> byte-identity. Display-side template handles its absence ("if available").
-    _ = (request.form.get("duration_taken") or "")[:60]
-    # Sub-ratings (effectiveness, ease of use, satisfaction) are accepted from the form on the
-    # dedicated "Write a Review" page but, like duration_taken, are not persisted: adding
-    # columns would alter the seed DB on first boot and break /reset/<site> byte-identity.
-    _ = (request.form.get("effectiveness") or "")[:3]
-    _ = (request.form.get("ease_of_use") or "")[:3]
-    _ = (request.form.get("satisfaction") or "")[:3]
-    existing = DrugReview.query.filter_by(drug_id=drug.id, user_id=current_user.id).first()
-    if existing:
-        existing.rating = rating
-        existing.title = title
-        existing.body = body
-        existing.condition_treated = condition
-    else:
-        db.session.add(DrugReview(
-            drug_id=drug.id, user_id=current_user.id,
-            rating=rating, title=title, body=body, condition_treated=condition,
-        ))
+    title = (request.form.get("title") or "").strip()[:200]
+    body = (request.form.get("body") or "").strip()[:1000]
+    condition = (request.form.get("condition_treated") or "").strip()[:100]
+    if not title or not body or not condition:
+        flash("Condition, title, and review text are required.", "danger")
+        return redirect(url_for("drug_review_new", slug=slug))
+    insert_review = sqlite_insert(DrugReview).values(
+        drug_id=drug.id,
+        user_id=current_user.id,
+        rating=rating,
+        title=title,
+        body=body,
+        condition_treated=condition,
+        helpful_count=0,
+        created_at=datetime.utcnow(),
+    )
+    upsert_review = insert_review.on_conflict_do_update(
+        index_elements=["drug_id", "user_id"],
+        set_={
+            "rating": insert_review.excluded.rating,
+            "title": insert_review.excluded.title,
+            "body": insert_review.excluded.body,
+            "condition_treated": insert_review.excluded.condition_treated,
+        },
+    )
+    db.session.execute(upsert_review)
+    _refresh_drug_review_stats(drug)
     db.session.commit()
-    revs = DrugReview.query.filter_by(drug_id=drug.id).all()
-    if revs:
-        drug.avg_rating = round(sum(r.rating for r in revs) / len(revs), 1)
-        drug.review_count = len(revs)
-        db.session.commit()
     flash("Your review has been submitted.", "success")
     return redirect(url_for("drug_detail", slug=slug) + "#reviews")
 
@@ -4412,25 +5203,218 @@ def submit_review(slug):
 @app.route("/<slug>/review/<int:review_id>/helpful", methods=["POST"])
 def review_helpful_vote(slug, review_id):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
-    review = DrugReview.query.filter_by(id=review_id, drug_id=drug.id).first_or_404()
     vote = (request.values.get("vote") or "yes").lower()
-    delta = -1 if vote == "no" else 1
-    review.helpful_count = max(0, (review.helpful_count or 0) + delta)
-    db.session.commit()
-    return jsonify({"votes": review.helpful_count, "review_id": review.id})
+    if vote not in {"yes", "no"}:
+        return jsonify({"error": "invalid_vote"}), 400
+
+    # A helpful vote is a yes/no choice, not an unbounded counter button.
+    # Authenticated votes are persisted in the existing user-preferences JSON;
+    # anonymous votes live in the signed session, a process-local race cache,
+    # and a request-time SQLite ledger that survives /restart atomically with
+    # the helpful-count update (a full /reset still restores the seed DB).
+    with _review_votes_lock:
+        review = (
+            _public_reviews_query()
+            .filter(DrugReview.id == review_id, DrugReview.drug_id == drug.id)
+            .first_or_404()
+        )
+        ledger_user = (
+            current_user._get_current_object()
+            if current_user.is_authenticated
+            else None
+        )
+        if ledger_user is not None and review.user_id == ledger_user.id:
+            return jsonify({"error": "self_vote_not_allowed"}), 403
+        if (
+            ledger_user is None
+            and _previous_review_voter_id() == review.user_id
+        ):
+            return jsonify({"error": "self_vote_not_allowed"}), 403
+        review_identity = _review_vote_identity(review)
+        preferences = None
+        user_votes = None
+        session_votes = None
+        vote_key = None
+        settings_lock = None
+        try:
+            if ledger_user is not None:
+                settings_lock = _user_settings_lock(ledger_user.id)
+                settings_lock.acquire()
+                db.session.refresh(ledger_user)
+                preferences = ledger_user.preferences.copy()
+                user_votes = _prune_review_votes(
+                    preferences.get(_REVIEW_VOTES_PREFERENCE),
+                    _MAX_REVIEW_VOTES,
+                )
+                previous_vote = user_votes.pop(str(review_id), None)
+                previous_vote = user_votes.get(
+                    review_identity, previous_vote
+                )
+            else:
+                raw_session_votes = session.get(_REVIEW_VOTES_SESSION)
+                session_votes = _valid_review_votes(
+                    raw_session_votes
+                )
+                server_backed_votes = _server_backed_session_vote_ids(
+                    raw_session_votes
+                )
+                review_session_key = _review_session_key(create=True)
+                server_record = _server_review_vote_record(
+                    review_session_key, review_identity
+                )
+                if server_record is not None and server_record[1] is not None:
+                    return jsonify({"error": "vote_already_claimed"}), 409
+                if server_record is not None:
+                    server_backed_votes.add(review_identity)
+                if review_session_key:
+                    for key, stored_vote in _review_votes.items():
+                        if key[:2] == ("session", review_session_key):
+                            _remember_review_vote(
+                                session_votes,
+                                key[-1],
+                                stored_vote,
+                            )
+                            server_backed_votes.add(key[-1])
+                server_votes = _server_review_votes(
+                    review_session_key
+                )
+                for stored_identity, stored_vote in server_votes.items():
+                    _remember_review_vote(
+                        session_votes, stored_identity, stored_vote
+                    )
+                    server_backed_votes.add(stored_identity)
+                session_votes = _prune_review_votes(session_votes)
+                if review_session_key:
+                    for key in [
+                        key
+                        for key in _review_votes
+                        if key[:2] == ("session", review_session_key)
+                        and key[-1] not in session_votes
+                    ]:
+                        del _review_votes[key]
+                vote_key = (
+                    "session", review_session_key, review_identity
+                )
+                legacy_previous_vote = session_votes.pop(
+                    str(review_id), None
+                )
+                legacy_previous_vote = session_votes.get(
+                    review_identity, legacy_previous_vote
+                )
+                previous_vote = (
+                    server_record[0]
+                    if server_record is not None
+                    else None
+                    if review_identity in server_backed_votes
+                    else legacy_previous_vote
+                )
+                if (
+                    previous_vote is None
+                    and review_identity not in session_votes
+                    and len(session_votes) >= _MAX_REVIEW_VOTES_PER_SESSION
+                ):
+                    return jsonify({"error": "vote_limit_reached"}), 429
+                if previous_vote is None:
+                    candidate_votes = session_votes.copy()
+                    _remember_review_vote(
+                        candidate_votes,
+                        review_identity,
+                        vote,
+                        _MAX_REVIEW_VOTES_PER_SESSION,
+                    )
+                    if not _review_votes_fit_session(
+                        candidate_votes,
+                        server_backed_votes | {review_identity},
+                    ):
+                        return jsonify({"error": "vote_limit_reached"}), 429
+                    session_votes = candidate_votes
+            if (
+                ledger_user is not None
+                and previous_vote is None
+                and len(user_votes) >= _MAX_REVIEW_VOTES_PER_SESSION
+            ):
+                return jsonify({"error": "vote_limit_reached"}), 429
+            delta = int(vote == "yes") - int(previous_vote == "yes")
+
+            if delta:
+                updated = DrugReview.query.filter(
+                    DrugReview.id == review.id
+                ).update(
+                    {
+                        DrugReview.helpful_count: db.func.max(
+                            0,
+                            db.func.coalesce(
+                                DrugReview.helpful_count, 0
+                            ) + delta,
+                        )
+                    },
+                    synchronize_session=False,
+                )
+                if not updated:
+                    db.session.rollback()
+                    return jsonify({"error": "review_not_found"}), 404
+
+            if ledger_user is not None:
+                remembered = _remember_review_vote(
+                    user_votes,
+                    review_identity,
+                    vote,
+                    _MAX_REVIEW_VOTES_PER_SESSION,
+                )
+                if not remembered:
+                    db.session.rollback()
+                    return jsonify({"error": "vote_limit_reached"}), 429
+                preferences[_REVIEW_VOTES_PREFERENCE] = user_votes
+                ledger_user.set_preferences(preferences)
+                db.session.commit()
+            else:
+                _remember_review_vote(
+                    session_votes,
+                    review_identity,
+                    vote,
+                    _MAX_REVIEW_VOTES_PER_SESSION,
+                )
+                if not _remember_server_review_vote(
+                    review_session_key, review_identity, vote
+                ):
+                    db.session.rollback()
+                    return jsonify({"error": "vote_limit_reached"}), 429
+                db.session.commit()
+                server_backed_votes.add(review_identity)
+                session[_REVIEW_VOTES_SESSION] = _encode_session_review_votes(
+                    session_votes, server_backed_votes
+                )
+                _review_votes[vote_key] = vote
+                while len(_review_votes) > _MAX_REVIEW_VOTES:
+                    del _review_votes[next(iter(_review_votes))]
+
+            current_count = (
+                db.session.query(DrugReview.helpful_count)
+                .filter(DrugReview.id == review_id)
+                .scalar()
+            )
+            if current_count is None:
+                if vote_key is not None:
+                    _review_votes.pop(vote_key, None)
+                return jsonify({"error": "review_not_found"}), 404
+        finally:
+            if settings_lock is not None:
+                settings_lock.release()
+    return jsonify({"votes": current_count, "review_id": review_id})
 
 
 @app.route("/advanced-search")
 @app.route("/search")
 def search():
-    q = (request.args.get("q") or "").strip()
-    class_slug = request.args.get("class") or ""
-    cond_slug = request.args.get("condition") or ""
-    avail = request.args.get("availability") or ""
-    try:
-        page = max(1, int(request.args.get("page") or 1))
-    except (TypeError, ValueError):
-        page = 1
+    q = _bounded_query_arg("q").strip()
+    class_slug = _bounded_query_arg(
+        "class", max_length=_MAX_FILTER_TEXT_LENGTH
+    )
+    cond_slug = _bounded_query_arg(
+        "condition", max_length=_MAX_FILTER_TEXT_LENGTH
+    )
+    avail = _bounded_query_arg("availability", max_length=20)
+    page = _bounded_page_arg()
     per_page = 20
 
     drugs = Drug.query
@@ -4592,7 +5576,9 @@ def search():
 
 @app.route("/api/autocomplete")
 def autocomplete():
-    q = request.args.get("q", "").strip().lower()
+    q = _bounded_query_arg(
+        "q", max_length=_MAX_FILTER_TEXT_LENGTH
+    ).strip().lower()
     if len(q) < 2:
         return jsonify([])
     # Search generic names
@@ -4623,7 +5609,9 @@ def interaction_checker():
     unrecognized = []
     summary = None
     # Pre-populate from URL param (linked from drug detail pages, e.g. ?drug=ibuprofen)
-    prefill_slug = request.args.get("drug", "").strip()
+    prefill_slug = _bounded_query_arg(
+        "drug", max_length=_MAX_INTERACTION_NAME_LENGTH
+    ).strip()
     prefill = ""
     if prefill_slug:
         d = Drug.query.filter_by(slug=prefill_slug).first()
@@ -4631,17 +5619,27 @@ def interaction_checker():
             d = Drug.query.filter(db.func.lower(Drug.generic_name) == prefill_slug.lower()).first()
         prefill = d.generic_name if d else prefill_slug
     # Support GET with multiple drugs: ?drugs[]=warfarin&drugs[]=aspirin or ?drugs=warfarin,aspirin
-    get_drugs = request.args.getlist("drugs[]") or request.args.getlist("drugs")
+    get_drugs = (
+        request.args.getlist("drugs[]")
+        + request.args.getlist("drugs")
+    )
     if len(get_drugs) == 1 and "," in get_drugs[0]:
         get_drugs = [d.strip() for d in get_drugs[0].split(",")]
-    if request.method == "GET" and len(get_drugs) >= 2:
+    add_drug = _bounded_query_arg(
+        "add", max_length=_MAX_INTERACTION_NAME_LENGTH
+    ).strip()
+    if request.method == "GET" and prefill and add_drug:
+        request_override = [prefill, add_drug]
+    elif request.method == "GET" and len(get_drugs) >= 2:
         # Simulate a POST with these drugs
         request_override = get_drugs
     else:
         request_override = None
     if request.method == "POST" or request_override:
         raw = request_override if request_override else request.form.getlist("drugs")
-        drugs_input = [r.strip() for r in raw if r and r.strip()]
+        drugs_input = _normalize_interaction_names(raw)
+        if drugs_input is None:
+            abort(400)
         resolved = []
         seen_ids = set()
         for n in drugs_input:
@@ -4708,76 +5706,6 @@ def interaction_checker():
             unrecognized = [n for n in unrecognized if n.lower() != "alcohol"]
     else:
         food_interactions, alcohol_interactions = [], []
-        # Also support GET with ?drugs=name1&drugs=name2 to run the check directly.
-        # Also support comma-separated single param: ?drugs=ibuprofen,warfarin
-        get_drugs = request.args.getlist("drugs")
-        if len(get_drugs) == 1 and ',' in get_drugs[0]:
-            get_drugs = [d.strip() for d in get_drugs[0].split(',')]
-        if get_drugs and len([r for r in get_drugs if r and r.strip()]) >= 2:
-            drugs_input = [r.strip() for r in get_drugs if r and r.strip()]
-            resolved = []
-            seen_ids = set()
-            for n in drugs_input:
-                low = n.lower()
-                d = Drug.query.filter(db.func.lower(Drug.generic_name) == low).first()
-                if not d:
-                    for cand in drugs:
-                        if low in [b.lower() for b in cand.brand_names]:
-                            d = cand
-                            break
-                if d and d.id not in seen_ids:
-                    resolved.append(d)
-                    seen_ids.add(d.id)
-                elif not d:
-                    unrecognized.append(n)
-
-            interactions = []
-            pair_keys = set()
-            for a, b in combinations(resolved, 2):
-                rec = DrugInteraction.query.filter(
-                    ((DrugInteraction.drug_a_id == a.id) & (DrugInteraction.drug_b_id == b.id)) |
-                    ((DrugInteraction.drug_a_id == b.id) & (DrugInteraction.drug_b_id == a.id))
-                ).first()
-                key = tuple(sorted([a.id, b.id]))
-                if key in pair_keys:
-                    continue
-                pair_keys.add(key)
-                if rec:
-                    interactions.append({
-                        "drug_a": a,
-                        "drug_b": b,
-                        "severity": rec.severity,
-                        "description": rec.description,
-                    })
-            order = {"major": 0, "moderate": 1, "minor": 2}
-            interactions.sort(key=lambda it: order.get(it["severity"], 99))
-            summary = {
-                "total": len(interactions),
-                "major": sum(1 for it in interactions if it["severity"] == "major"),
-                "moderate": sum(1 for it in interactions if it["severity"] == "moderate"),
-                "minor": sum(1 for it in interactions if it["severity"] == "minor"),
-            }
-            food_interactions, alcohol_interactions = _lifestyle_interactions(resolved)
-            # If "alcohol" was explicitly entered, fold its interactions into main results
-            if any(n.lower() == "alcohol" for n in drugs_input or []):
-                for alc in alcohol_interactions:
-                    interactions.append({
-                        "drug_a": alc["drug"],
-                        "drug_b": None,
-                        "drug_b_name": "Alcohol",
-                        "severity": alc["severity"],
-                        "description": alc["description"],
-                    })
-                alcohol_interactions = []
-                order = {"major": 0, "moderate": 1, "minor": 2}
-                interactions.sort(key=lambda it: order.get(it["severity"], 99))
-                summary = {
-                    "total": len(interactions),
-                    "major": sum(1 for it in interactions if it["severity"] == "major"),
-                    "moderate": sum(1 for it in interactions if it["severity"] == "moderate"),
-                    "minor": sum(1 for it in interactions if it["severity"] == "minor"),
-                }
-                unrecognized = [n for n in unrecognized if n.lower() != "alcohol"]
     return render_template(
         "interaction_checker.html",
         drugs=drugs,
@@ -4894,25 +5822,43 @@ def _lifestyle_interactions(resolved_drugs):
 @app.route("/api/interaction-check", methods=["POST"])
 @csrf.exempt
 def api_interaction_check():
-    data = request.get_json(silent=True) or {}
-    names = [str(n).strip().lower() for n in data.get("drugs", []) if str(n).strip()]
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({"error": "invalid_request"}), 400
+    raw_names = _normalize_interaction_names(data.get("drugs", []))
+    if raw_names is None:
+        return jsonify({
+            "error": "invalid_drugs",
+            "max_drugs": _MAX_INTERACTION_DRUGS,
+            "max_name_length": _MAX_INTERACTION_NAME_LENGTH,
+        }), 400
+    names = []
+    seen_names = set()
+    for raw_name in raw_names:
+        name = raw_name.lower()
+        if name not in seen_names:
+            names.append(name)
+            seen_names.add(name)
     has_alcohol = "alcohol" in names
     names = [n for n in names if n != "alcohol"]
     # normalize: try matching by generic name or brand
     matched = []
+    matched_ids = set()
     name_to_drug = {}
+    all_drugs = Drug.query.all()
     for n in names:
         d = Drug.query.filter(db.func.lower(Drug.generic_name) == n).first()
         if not d:
             # try brand match
-            all_drugs = Drug.query.all()
             for cand in all_drugs:
                 brands = [b.lower() for b in cand.brand_names]
                 if n in brands:
                     d = cand
                     break
         if d:
-            matched.append(d)
+            if d.id not in matched_ids:
+                matched.append(d)
+                matched_ids.add(d.id)
             name_to_drug[n] = d
     interactions = []
     pair_keys = set()
@@ -4960,9 +5906,15 @@ def api_interaction_check():
 @app.route("/pill-identifier")
 def pill_identifier():
     # When GET params are present, process as a search (same logic as pill_identifier_results)
-    imprint = (request.args.get("imprint") or "").strip()
-    shape = (request.args.get("shape") or "").strip()
-    color = (request.args.get("color") or "").strip()
+    imprint = _bounded_query_arg(
+        "imprint", max_length=_MAX_FILTER_TEXT_LENGTH
+    ).strip()
+    shape = _bounded_query_arg(
+        "shape", max_length=_MAX_FILTER_TEXT_LENGTH
+    ).strip()
+    color = _bounded_query_arg(
+        "color", max_length=_MAX_FILTER_TEXT_LENGTH
+    ).strip()
     shapes = sorted({i.shape for i in DrugImage.query.all() if i.shape})
     colors = sorted({i.color for i in DrugImage.query.all() if i.color})
     if not imprint and not shape and not color:
@@ -4986,9 +5938,15 @@ def pill_identifier():
 
 @app.route("/pill-identifier-results")
 def pill_identifier_results():
-    imprint = (request.args.get("imprint") or "").strip()
-    shape = (request.args.get("shape") or "").strip()
-    color = (request.args.get("color") or "").strip()
+    imprint = _bounded_query_arg(
+        "imprint", max_length=_MAX_FILTER_TEXT_LENGTH
+    ).strip()
+    shape = _bounded_query_arg(
+        "shape", max_length=_MAX_FILTER_TEXT_LENGTH
+    ).strip()
+    color = _bounded_query_arg(
+        "color", max_length=_MAX_FILTER_TEXT_LENGTH
+    ).strip()
     q = DrugImage.query.order_by(DrugImage.id)
     if shape:
         q = q.filter(db.func.lower(DrugImage.shape) == shape.lower())
@@ -5026,7 +5984,7 @@ def condition_page(slug):
     links = DrugCondition.query.filter_by(condition_id=cond.id).all()
     drugs = [Drug.query.get(l.drug_id) for l in links]
     drugs = [d for d in drugs if d]
-    sort = (request.args.get("sort") or "rating").lower()
+    sort = _bounded_query_arg("sort", "rating", 20).lower()
     if sort == "name":
         drugs.sort(key=lambda d: d.generic_name)
     else:
@@ -5570,7 +6528,7 @@ def drug_class_page(slug):
     if cls is None:
         from flask import abort
         abort(404)
-    sort = (request.args.get("sort") or "name").lower()
+    sort = _bounded_query_arg("sort", "name", 20).lower()
     drugs_q = Drug.query.filter_by(drug_class_id=cls.id)
     if sort == "rating":
         drugs = drugs_q.order_by(Drug.avg_rating.desc(), Drug.generic_name).all()
@@ -5649,9 +6607,11 @@ def drug_class_page(slug):
 @app.route("/mednews")
 @app.route("/news/")
 def news_index():
-    cat = request.args.get("cat", "")
-    q = request.args.get("q", "")
-    page = request.args.get("page", 1, type=int)
+    cat = _bounded_query_arg(
+        "cat", max_length=_MAX_FILTER_TEXT_LENGTH
+    )
+    q = _bounded_query_arg("q")
+    page = _bounded_page_arg()
     per_page = 15
     cat_map = {
         "new-drug-approvals": "New Drug Approvals",
@@ -5776,7 +6736,7 @@ def conditions_list():
         if c.drug_count is None or c.drug_count == 0:
             c.drug_count = computed
     all_letters = list('ABCDEFGHIJKLMNOPQRSTUVWXYZ') + ['0-9']
-    active_letter = (request.args.get("letter") or "").upper().strip() or None
+    active_letter = _bounded_query_arg("letter", max_length=3).upper().strip() or None
     if active_letter == '0-9':
         conditions = [c for c in all_conditions if c.name and not c.name[0].isalpha()]
     elif active_letter:
@@ -5938,9 +6898,27 @@ def symptom_checker():
 
 # --- Auth ---
 def _safe_next_url(next_url):
-    # Only allow same-site relative redirects (single leading slash, no
-    # scheme/netloc) to avoid an open redirect via the `next` query param.
-    if next_url and re.match(r"^/(?!/)", next_url):
+    # Only allow same-site relative redirects. Backslashes need an explicit
+    # rejection: browsers normalize `/\evil.example` to `//evil.example`,
+    # bypassing a simple single-leading-slash regex.
+    if (
+        not next_url
+        or len(next_url) > 2_048
+        or next_url.startswith("//")
+        or "\\" in next_url
+        or any(ord(ch) < 32 for ch in next_url)
+    ):
+        return None
+    try:
+        parts = urlsplit(next_url)
+    except (ValueError, UnicodeError):
+        return None
+    if (
+        not parts.scheme
+        and not parts.netloc
+        and parts.path.startswith("/")
+        and not parts.path.startswith("//")
+    ):
         return next_url
     return None
 
@@ -5951,16 +6929,21 @@ def _safe_next_url(next_url):
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("account"))
+    next_url = _safe_next_url(
+        _bounded_query_arg("next", max_length=2_048)
+    )
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
         user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
+            with _sqlite_write_lock:
+                _claim_session_review_votes(user)
             login_user(user, remember=request.form.get("remember_me"))
             flash("Welcome back!", "success")
-            return redirect(_safe_next_url(request.args.get("next")) or url_for("account"))
+            return redirect(next_url or url_for("account"))
         flash("Invalid email or password.", "error")
-    return render_template("login.html")
+    return render_template("login.html", next_url=next_url)
 
 
 @app.route("/account/register/", methods=["GET", "POST"])
@@ -5974,10 +6957,23 @@ def register():
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
         confirm = request.form.get("confirm_password") or ""
+        try:
+            email = validate_email(email, check_deliverability=False).normalized
+        except EmailNotValidError:
+            email = ""
+        password_error = _password_validation_error(password) if password else None
         if not username or not email or not password:
-            flash("All fields are required.", "danger")
+            flash("Enter a username, valid email address, and password.", "danger")
+        elif len(username) > 80:
+            flash("Username must be 80 characters or fewer.", "danger")
+        elif len(email) > 120:
+            flash("Email address must be 120 characters or fewer.", "danger")
         elif password != confirm:
             flash("Passwords do not match.", "danger")
+        elif password_error:
+            flash(password_error, "danger")
+        elif not request.form.get("agree_terms"):
+            flash("You must agree to the Terms of Use and Privacy Policy.", "danger")
         elif User.query.filter_by(email=email).first():
             flash("Email already registered.", "danger")
         elif User.query.filter_by(username=username).first():
@@ -5985,16 +6981,30 @@ def register():
         else:
             user = User(username=username, email=email)
             user.set_password(password)
-            db.session.add(user)
-            db.session.commit()
+            with _sqlite_write_lock:
+                db.session.add(user)
+                try:
+                    db.session.commit()
+                except IntegrityError:
+                    db.session.rollback()
+                    flash("Email or username already registered.", "danger")
+                    return render_template("register.html")
+                _claim_session_review_votes(user)
             login_user(user)
             flash("Account created.", "success")
             return redirect(url_for("account"))
     return render_template("register.html")
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
+@login_required
 def logout():
+    prior_user_id = current_user.id
+    review_session_key = _review_session_key()
+    with _review_votes_lock:
+        _clear_session_review_votes(review_session_key)
+    session.pop("recently_viewed", None)
+    session[_REVIEW_VOTER_SESSION] = prior_user_id
     logout_user()
     return redirect(url_for("index"))
 
@@ -6027,24 +7037,56 @@ def my_med_list():
 @app.route("/my-med-list/toggle", methods=["POST"])
 @login_required
 def my_med_list_toggle():
-    data = request.get_json(silent=True) or {}
+    data = request.get_json(silent=True)
+    if request.is_json and not isinstance(data, dict):
+        return jsonify({"ok": False, "error": "invalid_request"}), 400
+    if data is None:
+        data = {}
     slug = data.get("slug") or request.form.get("slug")
+    if not isinstance(slug, str) or len(slug) > 120:
+        if request.is_json:
+            return jsonify({"ok": False, "error": "invalid_request"}), 400
+        return redirect(url_for("my_med_list"))
+    if request.is_json and "saved" in data and not isinstance(data["saved"], bool):
+        return jsonify({"ok": False, "error": "invalid_request"}), 400
+    slug = slug.strip()
     drug = Drug.query.filter_by(slug=slug).first()
     if not drug:
         if request.is_json:
             return jsonify({"ok": False, "error": "drug_not_found"}), 404
         return redirect(url_for("my_med_list"))
-    existing = SavedDrug.query.filter_by(user_id=current_user.id, drug_id=drug.id).first()
-    if existing:
-        db.session.delete(existing)
+    desired_value = data.get("saved") if "saved" in data else request.form.get("saved")
+    desired_saved = None
+    if desired_value is not None:
+        desired_saved = (
+            desired_value
+            if isinstance(desired_value, bool)
+            else str(desired_value).lower() in {"1", "true", "yes", "on"}
+        )
+
+    # Werkzeug serves this site with threads. Serialize the legacy toggle
+    # fallback for parity semantics; current UI requests send an idempotent
+    # desired state so retries and double submissions are also safe.
+    with _saved_drug_lock(current_user.id, drug.id):
+        existing = SavedDrug.query.filter_by(
+            user_id=current_user.id,
+            drug_id=drug.id,
+        ).first()
+        if desired_saved is None:
+            desired_saved = existing is None
+        if desired_saved and not existing:
+            add_saved_drug = sqlite_insert(SavedDrug).values(
+                user_id=current_user.id,
+                drug_id=drug.id,
+                notes="",
+                created_at=datetime.utcnow(),
+            ).on_conflict_do_nothing(index_elements=["user_id", "drug_id"])
+            db.session.execute(add_saved_drug)
+        elif not desired_saved and existing:
+            db.session.delete(existing)
         db.session.commit()
-        if request.is_json:
-            return jsonify({"ok": True, "saved": False})
-        return redirect(url_for("my_med_list"))
-    db.session.add(SavedDrug(user_id=current_user.id, drug_id=drug.id))
-    db.session.commit()
     if request.is_json:
-        return jsonify({"ok": True, "saved": True})
+        return jsonify({"ok": True, "saved": desired_saved})
     return redirect(url_for("my_med_list"))
 
 
@@ -6111,11 +7153,31 @@ def compare_drugs():
 
     # Support ?drug1=X&drug2=Y, ?drugs=X&drugs=Y, and ?drugs=X,Y formats
     drugs_list = request.args.getlist("drugs")
+    if len(drugs_list) > 3 or any(
+        not isinstance(name, str)
+        or len(name) > _MAX_FILTER_TEXT_LENGTH
+        for name in drugs_list
+    ):
+        abort(400)
     if len(drugs_list) == 1 and "," in drugs_list[0]:
         drugs_list = [d.strip() for d in drugs_list[0].split(",")]
-    drug1 = _lookup(request.args.get("drug1") or (drugs_list[0] if len(drugs_list) > 0 else ""))
-    drug2 = _lookup(request.args.get("drug2") or (drugs_list[1] if len(drugs_list) > 1 else ""))
-    drug3 = _lookup(request.args.get("drug3") or (drugs_list[2] if len(drugs_list) > 2 else ""))
+        if len(drugs_list) > 3:
+            abort(400)
+    raw_drugs = [
+        _bounded_query_arg("drug1", max_length=_MAX_FILTER_TEXT_LENGTH)
+        or (drugs_list[0] if len(drugs_list) > 0 else ""),
+        _bounded_query_arg("drug2", max_length=_MAX_FILTER_TEXT_LENGTH)
+        or (drugs_list[1] if len(drugs_list) > 1 else ""),
+        _bounded_query_arg("drug3", max_length=_MAX_FILTER_TEXT_LENGTH)
+        or (drugs_list[2] if len(drugs_list) > 2 else ""),
+    ]
+    if any(len(name) > _MAX_FILTER_TEXT_LENGTH for name in raw_drugs):
+        abort(400)
+    drug1, drug2, drug3 = (_lookup(name) for name in raw_drugs)
+    if any(name and drug is None for name, drug in zip(
+        raw_drugs, (drug1, drug2, drug3), strict=True
+    )):
+        abort(400)
     popular = Drug.query.order_by(Drug.review_count.desc()).limit(20).all()
     dosage_forms = {
         "drug1": _dosage_forms(drug1),
@@ -6142,9 +7204,31 @@ def my_reviews():
 @app.route("/account/reviews/<int:review_id>/delete", methods=["POST"])
 @login_required
 def delete_review(review_id):
-    review = DrugReview.query.filter_by(id=review_id, user_id=current_user.id).first_or_404()
-    db.session.delete(review)
-    db.session.commit()
+    with _review_votes_lock:
+        review = DrugReview.query.filter_by(
+            id=review_id,
+            user_id=current_user.id,
+        ).first_or_404()
+        review_identity = _review_vote_identity(review)
+        drug = review.drug
+        db.session.delete(review)
+        db.session.flush()
+        _refresh_drug_review_stats(drug)
+        if _anonymous_review_vote_table_exists():
+            db.session.execute(
+                text(
+                    "DELETE FROM anonymous_review_vote "
+                    "WHERE review_identity = :identity"
+                ),
+                {"identity": review_identity},
+            )
+        db.session.commit()
+        for key in [
+            key
+            for key in _review_votes
+            if key[-1] in {review_id, review_identity}
+        ]:
+            del _review_votes[key]
     return redirect(url_for("my_reviews"))
 
 
@@ -6154,9 +7238,16 @@ def update_med_notes():
     slug = request.form.get("slug")
     notes = request.form.get("notes", "")
     drug = Drug.query.filter_by(slug=slug).first_or_404()
-    item = SavedDrug.query.filter_by(user_id=current_user.id, drug_id=drug.id).first_or_404()
-    item.notes = notes[:500]
-    db.session.commit()
+    with _saved_drug_lock(current_user.id, drug.id):
+        item = SavedDrug.query.filter_by(
+            user_id=current_user.id,
+            drug_id=drug.id,
+        ).first()
+        if item is None:
+            flash("That medication is no longer in your Med List.", "danger")
+            return redirect(url_for("my_med_list"))
+        item.notes = notes[:500]
+        db.session.commit()
     return redirect(url_for("my_med_list"))
 
 
@@ -6169,8 +7260,86 @@ def account_settings():
 @app.route("/account/settings/save", methods=["POST"])
 @login_required
 def save_settings():
+    return_to = "account" if request.form.get("settings_form") == "dashboard" else "account_settings"
+    password_changed = False
+    email = (request.form.get("email") or current_user.email).strip().lower()
+    try:
+        email = validate_email(email, check_deliverability=False).normalized
+    except EmailNotValidError:
+        flash("Enter a valid email address.", "danger")
+        return redirect(url_for(return_to))
+    if len(email) > 120:
+        flash("Email address must be 120 characters or fewer.", "danger")
+        return redirect(url_for(return_to))
+    duplicate = User.query.filter(User.email == email, User.id != current_user.id).first()
+    if duplicate:
+        flash("Email already registered.", "danger")
+        return redirect(url_for(return_to))
+
+    with _user_settings_lock(current_user.id):
+        # Flask-Login loaded this request's User before it acquired the lock.
+        # Refresh so a concurrent subscriptions/settings request cannot make
+        # this read-modify-write start from stale preferences_json.
+        db.session.refresh(current_user)
+        current_user.email = email
+        if request.form.get("settings_form") == "settings":
+            current_user.first_name = (request.form.get("first_name") or "").strip()[:80]
+            current_user.last_name = (request.form.get("last_name") or "").strip()[:80]
+
+            new_password = request.form.get("new_password") or ""
+            if new_password:
+                if not current_user.check_password(request.form.get("current_password") or ""):
+                    flash("Current password is incorrect.", "danger")
+                    return redirect(url_for("account_settings"))
+                password_error = _password_validation_error(new_password)
+                if password_error:
+                    flash(password_error.replace("Password", "New password", 1), "danger")
+                    return redirect(url_for("account_settings"))
+                if new_password != (request.form.get("confirm_password") or ""):
+                    flash("New passwords do not match.", "danger")
+                    return redirect(url_for("account_settings"))
+                current_user.set_password(new_password)
+                password_changed = True
+
+        preferences = current_user.preferences.copy()
+        old_public_reviews = preferences.get("public_reviews", True)
+        if request.form.get("settings_form") == "dashboard":
+            preference_fields = {
+                "newsletter": "newsletter",
+                "fda_alerts": "fda_alerts",
+                "new_approvals": "new_approvals",
+                "interaction_warnings": "interaction_warnings",
+                "refill_reminders": "refill_reminders",
+            }
+        else:
+            preference_fields = {
+                "notify_news": "newsletter",
+                "notify_fda": "fda_alerts",
+                "notify_interactions": "interaction_warnings",
+                "notify_approvals": "new_approvals",
+                "public_reviews": "public_reviews",
+                "share_med_list": "share_med_list",
+                "personalized": "personalized",
+                "analytics": "analytics",
+            }
+        for form_name, preference_name in preference_fields.items():
+            preferences[preference_name] = form_name in request.form
+        current_user.set_preferences(preferences)
+        if old_public_reviews != preferences.get("public_reviews", True):
+            for review in current_user.reviews:
+                _refresh_drug_review_stats(review.drug)
+        try:
+            db.session.commit()
+        except IntegrityError:
+            db.session.rollback()
+            flash("Email already registered.", "danger")
+            return redirect(url_for(return_to))
+    if password_changed:
+        # Refresh this browser's session identifier while invalidating every
+        # previously issued session/remember identifier tied to the old hash.
+        login_user(current_user, fresh=True)
     flash("Settings saved.", "success")
-    return redirect(url_for("account_settings"))
+    return redirect(url_for(return_to))
 
 
 @app.route("/account/subscriptions")
@@ -6182,6 +7351,13 @@ def account_subscriptions():
 @app.route("/account/subscriptions/save", methods=["POST"])
 @login_required
 def save_subscriptions():
+    with _user_settings_lock(current_user.id):
+        db.session.refresh(current_user)
+        preferences = current_user.preferences.copy()
+        for name in ["fda_alerts", "new_approvals", "newsletter", "med_list_reminders", "interaction_warnings"]:
+            preferences[name] = name in request.form
+        current_user.set_preferences(preferences)
+        db.session.commit()
     flash("Email preferences saved.", "success")
     return redirect(url_for("account_subscriptions"))
 
@@ -6233,7 +7409,7 @@ def side_effects_page():
     A-Z letter navigation, a search box, a "most commonly searched" list,
     and (when ``?q=`` is supplied) drugs whose ``side_effects`` text matches.
     """
-    q = (request.args.get("q") or "").strip()
+    q = _bounded_query_arg("q").strip()
     drugs = []
     if q:
         drugs = Drug.query.filter(Drug.side_effects.ilike(f"%{q}%")).limit(30).all()
@@ -6267,15 +7443,41 @@ def side_effects_page():
 @app.route("/blackbox-warnings")
 @app.route("/black-box-warnings")
 def warnings_index():
-    category = (request.args.get("category") or "all").lower()
-    drugs_with_warnings = Drug.query.filter(Drug.warnings.isnot(None)).order_by(Drug.generic_name).limit(50).all()
-    fda_alerts = (
-        NewsArticle.query
-        .filter(NewsArticle.category.in_(["FDA Alerts", "Recalls", "Safety Alerts"]))
-        .order_by(NewsArticle.published_at.desc())
-        .limit(20)
-        .all()
+    category = _bounded_query_arg(
+        "category", "all", _MAX_FILTER_TEXT_LENGTH
+    ).lower()
+    if category not in {"all", "blackbox", "recalls", "safety"}:
+        abort(400)
+    warning_query = Drug.query.filter(Drug.warnings.isnot(None))
+    if category == "blackbox":
+        warning_query = warning_query.filter(
+            db.or_(
+                Drug.warnings.ilike("%boxed warning%"),
+                Drug.warnings.ilike("%black box%"),
+            )
+        )
+    drugs_with_warnings = warning_query.order_by(Drug.generic_name).limit(50).all()
+    alerts_query = NewsArticle.query.filter(
+        NewsArticle.category.in_(["FDA Alerts", "Recalls", "Safety", "Safety Alerts"])
     )
+    if category == "recalls":
+        alerts_query = alerts_query.filter(
+            db.or_(
+                NewsArticle.category == "Recalls",
+                NewsArticle.title.ilike("%recall%"),
+            )
+        )
+    elif category == "safety":
+        alerts_query = alerts_query.filter(
+            db.or_(
+                NewsArticle.category.in_(["Safety", "Safety Alerts"]),
+                db.and_(
+                    NewsArticle.category == "FDA Alerts",
+                    ~NewsArticle.title.ilike("%recall%"),
+                ),
+            )
+        )
+    fda_alerts = alerts_query.order_by(NewsArticle.published_at.desc()).limit(20).all()
     return render_template(
         "warnings_index.html",
         drugs=drugs_with_warnings,
@@ -6287,15 +7489,84 @@ def warnings_index():
 @app.route("/newsletter")
 def newsletter():
     recent_articles = (
-        NewsArticle.query.order_by(NewsArticle.published_at.desc()).limit(6).all()
+        NewsArticle.query.filter(
+            ~NewsArticle.category.in_(["New Drug Approvals", "New Drugs"])
+        ).order_by(NewsArticle.published_at.desc()).limit(6).all()
     )
-    return render_template("newsletter.html", recent_articles=recent_articles)
+    selected_lists = ["daily_mednews", "weekly_safety"]
+    subscription_email = ""
+    if current_user.is_authenticated:
+        preferences = current_user.preferences
+        selected_lists = preferences.get("newsletter_lists", selected_lists)
+        subscription_email = preferences.get(
+            "newsletter_email", current_user.email
+        )
+    else:
+        saved_subscription = session.get("newsletter_subscription", {})
+        if isinstance(saved_subscription, dict):
+            selected_lists = saved_subscription.get("lists", selected_lists)
+            subscription_email = saved_subscription.get("email", "")
+    return render_template(
+        "newsletter.html",
+        recent_articles=recent_articles,
+        selected_lists=set(selected_lists),
+        subscription_email=subscription_email,
+    )
 
 
 @app.route("/newsletter/subscribe", methods=["POST"])
 def newsletter_subscribe():
-    email = request.form.get("email", "")
-    flash(f"Thank you! {email} has been subscribed to our newsletter.", "success")
+    email = (request.form.get("email") or "").strip().lower()
+    try:
+        email = validate_email(email, check_deliverability=False).normalized
+    except EmailNotValidError:
+        flash("Enter a valid email address.", "danger")
+        return redirect(url_for("newsletter"))
+    if len(email) > 254:
+        flash("Email address must be 254 characters or fewer.", "danger")
+        return redirect(url_for("newsletter"))
+    requested_lists = request.form.getlist("lists") + request.form.getlist("subs")
+    list_aliases = {
+        "general_updates": {
+            "daily_mednews", "weekly_safety", "approvals_monthly", "clinical_trials",
+        },
+        "monthly": {"approvals_monthly"},
+        "mednews": {"daily_mednews"},
+        "fda": {"weekly_safety"},
+    }
+    canonical_lists = {
+        "daily_mednews", "weekly_safety", "approvals_monthly", "clinical_trials",
+    }
+    selected_set = set()
+    for item in requested_lists:
+        if item in canonical_lists:
+            selected_set.add(item)
+        else:
+            selected_set.update(list_aliases.get(item, set()))
+    selected_lists = sorted(selected_set)
+    if not selected_lists:
+        flash("Choose at least one newsletter.", "danger")
+        return redirect(url_for("newsletter"))
+    selected_lists = sorted(set(selected_lists))
+    if current_user.is_authenticated:
+        with _user_settings_lock(current_user.id):
+            db.session.refresh(current_user)
+            preferences = current_user.preferences.copy()
+            preferences["newsletter"] = True
+            preferences["newsletter_lists"] = selected_lists
+            preferences["newsletter_email"] = email
+            current_user.set_preferences(preferences)
+            db.session.commit()
+        flash("Newsletter preferences saved to your account.", "success")
+    else:
+        session["newsletter_subscription"] = {
+            "email": email,
+            "lists": selected_lists,
+        }
+        flash(
+            "Newsletter preferences saved for this demo browser session.",
+            "success",
+        )
     return redirect(url_for("newsletter"))
 
 
@@ -6315,7 +7586,28 @@ def privacy():
 def contact():
     submitted = False
     if request.method == "POST":
-        submitted = True
+        name = (request.form.get("name") or "").strip()[:80]
+        email = (request.form.get("email") or "").strip().lower()
+        subject = (request.form.get("subject") or "").strip()
+        message = (request.form.get("message") or "").strip()[:500]
+        allowed_subjects = {"general", "error", "feedback", "drug_info"}
+        if not name or subject not in allowed_subjects or not message:
+            flash("Complete all contact form fields.", "danger")
+        else:
+            try:
+                validate_email(email, check_deliverability=False)
+            except EmailNotValidError:
+                flash("Enter a valid email address.", "danger")
+            else:
+                receipt_source = "\0".join((name, email, subject, message))
+                session["contact_submission"] = {
+                    "subject": subject,
+                    "receipt": hashlib.sha256(
+                        receipt_source.encode("utf-8")
+                    ).hexdigest()[:16],
+                    "saved_at": datetime.utcnow().isoformat(timespec="seconds"),
+                }
+                submitted = True
     return render_template("contact.html", submitted=submitted)
 
 
@@ -7044,12 +8336,14 @@ _SUPPLEMENTAL_DRUG_CONDITIONS: list[tuple[str, str]] = [
     ("amoxicillin", "urinary_tract_infection"),
     ("amoxicillin", "pneumonia"),
     ("furosemide", "edema"),
-    ("furosemide", "atrial_fibrillation"),
+    ("digoxin", "atrial_fibrillation"),
     ("warfarin", "atrial_fibrillation"),
     ("warfarin", "deep_vein_thrombosis"),
     ("warfarin", "pulmonary_embolism"),
     ("semaglutide", "weight_management"),
-    ("semaglutide", "type1_diabetes"),
+    ("insulin aspart", "type1_diabetes"),
+    ("insulin glargine", "type1_diabetes"),
+    ("insulin lispro", "type1_diabetes"),
     ("metformin", "obesity"),
     ("alprazolam", "panic_disorder"),
     ("alprazolam", "social_anxiety"),
@@ -7059,9 +8353,8 @@ _SUPPLEMENTAL_DRUG_CONDITIONS: list[tuple[str, str]] = [
 def seed_supplemental():
     """Add conditions and drug-condition links introduced after initial seeding.
 
-    Runs unconditionally on every boot; each insertion is gated by a slug/pair
-    existence check so the function is fully idempotent with no commits if
-    nothing has changed.
+    Called only from the top-level, all-or-nothing seed pipeline. Per-row
+    existence checks also keep it safe to run manually during seed development.
     """
     changed = False
     existing_cond_slugs = {c.slug for c in Condition.query.all()}
@@ -7105,12 +8398,29 @@ def seed_supplemental():
     if changed:
         db.session.commit()
 
+    # Keep the denormalized counts used by the conditions index in sync with
+    # supplemental links. Previously every supplemental condition displayed
+    # "0 drugs" even when its detail page had treatments.
+    counts = dict(
+        db.session.query(DrugCondition.condition_id, db.func.count(DrugCondition.id))
+        .group_by(DrugCondition.condition_id)
+        .all()
+    )
+    counts_changed = False
+    for condition in Condition.query.all():
+        actual = counts.get(condition.id, 0)
+        if condition.drug_count != actual:
+            condition.drug_count = actual
+            counts_changed = True
+    if counts_changed:
+        db.session.commit()
+
 
 def seed_pregnancy_risks():
     """Backfill pregnancy_risk for all drugs that have a known value.
 
-    Runs unconditionally; each update is a no-op when the value is already correct,
-    so the function is fully idempotent. Only commits when at least one row changes.
+    Called from the top-level seed pipeline; each update is a no-op when the
+    value is already correct, and it commits only when a row changes.
     """
     changed = False
     for gname, risk in _PREGNANCY_RISK.items():

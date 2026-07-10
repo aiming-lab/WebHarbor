@@ -19,10 +19,10 @@
       <form class="is-100" id="contact-form" method="post" action="{{ url_for('contact') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label class="is-101">Name
-          <input class="is-102" type="text" name="name" required>
+          <input class="is-102" type="text" name="name" maxlength="80" required>
         </label>
         <label class="is-101">Email
-          <input class="is-102" type="email" name="email" required>
+          <input class="is-102" type="email" name="email" maxlength="254" required>
         </label>
         <label class="is-101">Subject
           <select class="is-102" name="subject" required>
@@ -34,22 +34,11 @@
           </select>
         </label>
         <label class="is-101">Message
-          <textarea class="is-103" name="message" rows="6" required></textarea>
+          <textarea class="is-103" name="message" rows="6" maxlength="500" required></textarea>
         </label>
         <button class="is-104" type="submit">Send Message</button>
-        <div class="is-105" id="contact-confirmation">Thank you for your message! Our team typically responds within 2-3 business days.</div>
+        <div class="is-105" id="contact-confirmation"{% if submitted %} style="display:block"{% endif %}>A receipt for your message was saved in this demo browser session. No external email was sent.</div>
       </form>
-      <script>
-        (function(){
-          var form = document.getElementById('contact-form');
-          if (!form) return;
-          form.addEventListener('submit', function(e){
-            e.preventDefault();
-            document.getElementById('contact-confirmation').style.display = 'block';
-            form.querySelector('button[type=submit]').disabled = true;
-          });
-        })();
-      </script>
     </section>
 
     <section>

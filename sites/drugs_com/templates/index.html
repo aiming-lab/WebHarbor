@@ -300,7 +300,8 @@ function scrollCarousel(dir) {
   <p class="is-241">Subscribe to Drugs.com newsletters for the latest medication news, new drug approvals, alerts and updates.</p>
   <form class="is-242" action="{{ url_for('newsletter_subscribe') }}" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input class="is-243" type="email" name="email" placeholder="Enter your email address">
+    <input type="hidden" name="lists" value="general_updates">
+    <input class="is-243" type="email" name="email" placeholder="Enter your email address" required maxlength="254">
     <button type="submit" class="btn btn-primary is-244">Subscribe</button>
   </form>
   <p class="is-245">Drugs.com will never sell or share your email address.</p>
@@ -432,7 +433,7 @@ function scrollCarousel(dir) {
   <!-- Featured drugs -->
   <div class="home-row">
     <h2>Featured drugs</h2>
-    <p class="muted featured-drugs-sub">Popular medications with pill images, brand names, and user ratings.</p>
+    <p class="muted featured-drugs-sub">Popular medications with pill images, brand names, and availability.</p>
     <div class="card-grid featured-drugs-grid">
       {% for d in featured %}
         <a class="drug-card featured-drug-card" href="{{ url_for('drug_detail', slug=d.slug) }}">
@@ -451,7 +452,6 @@ function scrollCarousel(dir) {
           <p class="muted featured-drug-brands">{{ d.brand_names|join(', ') if d.brand_names else 'Generic' }}</p>
           <p class="featured-drug-meta">
             <span class="avail-badge {% if d.availability == 'Rx' %}avail-rx{% elif d.availability == 'OTC' %}avail-otc{% else %}avail-both{% endif %}">{{ d.availability }}</span>
-            {% if d.avg_rating %}<span class="featured-drug-rating">&#9733; {{ '%.1f'|format(d.avg_rating) }}/10 <span class="muted">({{ d.review_count }})</span></span>{% endif %}
           </p>
         </a>
       {% endfor %}
@@ -551,7 +551,8 @@ function scrollCarousel(dir) {
         <p class="muted" style="font-size:0.82rem;">FDA alerts, drug approvals, and health news.</p>
         <form action="{{ url_for('newsletter_subscribe') }}" method="post">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <input type="email" name="email" placeholder="Enter your email" class="newsletter-email-input" style="width:100%;margin-bottom:6px;">
+          <input type="hidden" name="lists" value="general_updates">
+          <input type="email" name="email" placeholder="Enter your email" class="newsletter-email-input" style="width:100%;margin-bottom:6px;" required maxlength="254">
           <button type="submit" class="btn btn-primary" style="width:100%;font-size:0.85rem;">Subscribe</button>
         </form>
       </div>
@@ -579,7 +580,8 @@ function scrollCarousel(dir) {
     </div>
     <form action="{{ url_for('newsletter_subscribe') }}" method="post" class="newsletter-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      <input type="email" name="email" placeholder="Enter your email address" class="newsletter-input" required>
+      <input type="hidden" name="lists" value="general_updates">
+      <input type="email" name="email" placeholder="Enter your email address" class="newsletter-input" maxlength="254" required>
       <button type="submit" class="btn btn-primary">Subscribe</button>
     </form>
   </div>

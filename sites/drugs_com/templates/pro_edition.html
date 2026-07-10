@@ -340,13 +340,12 @@
       <h2>Professional Newsletter</h2>
       <p>Get weekly summaries of FDA approvals, label changes, safety alerts, and clinical news
          delivered to your inbox.</p>
-      <form class="is-374" id="newsletter-form" onsubmit="event.preventDefault();document.getElementById('newsletter-confirm').style.display='block';this.reset();">
-        <input class="is-213" type="email" placeholder="your@hospital.org">
+      <form class="is-374" method="post" action="{{ url_for('newsletter_subscribe') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="lists" value="mednews">
+        <input class="is-213" type="email" name="email" maxlength="254" required placeholder="your@hospital.org">
         <button class="btn" type="submit">Subscribe</button>
       </form>
-      <div class="is-375" id="newsletter-confirm" role="status">
-        Subscribed (demo). You will receive the weekly professional newsletter.
-      </div>
     </section>
   </div>
 

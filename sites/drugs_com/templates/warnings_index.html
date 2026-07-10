@@ -24,7 +24,7 @@
 
   {% if category in ('all', 'recalls', 'safety') and fda_alerts %}
   <section class="warning-section">
-    <h2 class="warning-section-title">Recent FDA Alerts &amp; Recalls</h2>
+    <h2 class="warning-section-title">{% if category == 'recalls' %}FDA Recall Notices{% elif category == 'safety' %}FDA Safety Alerts{% else %}Recent FDA Alerts &amp; Recalls{% endif %}</h2>
     <ul class="warning-alert-list">
       {% for a in fda_alerts %}
         <li class="warning-alert-item">

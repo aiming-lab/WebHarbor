@@ -78,6 +78,6 @@ done
 echo "[WebSyn] Starting control server on :8101 (PID 1)..."
 
 # Control server becomes PID 1 — receives SIGTERM on `docker stop`,
-# keeps the container alive as long as it's running. The 16 site
+# keeps the container alive as long as it's running. The 17 site
 # subprocesses are managed via /tmp/websyn_pids/<site>.pid.
 exec python3 /opt/control_server.py --port 8101

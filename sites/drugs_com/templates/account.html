@@ -96,7 +96,7 @@
           <span class="muted">{{ r.rating }}/10</span>
         </div>
         <strong>{{ r.title }}</strong>
-        <p class="muted">for {{ r.condition_treated }} &middot; {{ r.created_at.strftime('%B %d, %Y') }}</p>
+        <p class="muted">for {{ r.condition_treated|replace('_',' ')|replace('-',' ')|title }} &middot; {{ r.created_at.strftime('%B %d, %Y') }}</p>
         <p>{{ r.body }}</p>
         <div class="review-actions">
           <a class="btn btn-outline btn-sm" href="{{ url_for('drug_review_new', slug=r.drug.slug) }}">Edit</a>
@@ -140,20 +140,22 @@
     <h2>Account settings</h2>
     <form method="post" action="{{ url_for('save_settings') }}" class="account-settings-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="settings_form" value="dashboard">
+      {% set prefs = current_user.preferences %}
       <div class="form-row">
         <label for="acct-email">Email address</label>
-        <input id="acct-email" type="email" name="email" value="{{ current_user.email }}">
+        <input id="acct-email" type="email" name="email" value="{{ current_user.email }}" required maxlength="120">
       </div>
       <fieldset class="form-fieldset">
         <legend>Email preferences</legend>
-        <label class="form-check"><input type="checkbox" name="newsletter" checked> Weekly health newsletter</label>
-        <label class="form-check"><input type="checkbox" name="drug_alerts" checked> FDA drug alerts &amp; recalls</label>
-        <label class="form-check"><input type="checkbox" name="new_approvals"> New drug approvals</label>
+        <label class="form-check"><input type="checkbox" name="newsletter" {% if prefs.get('newsletter', true) %}checked{% endif %}> Weekly health newsletter</label>
+        <label class="form-check"><input type="checkbox" name="fda_alerts" {% if prefs.get('fda_alerts', true) %}checked{% endif %}> FDA drug alerts &amp; recalls</label>
+        <label class="form-check"><input type="checkbox" name="new_approvals" {% if prefs.get('new_approvals', false) %}checked{% endif %}> New drug approvals</label>
       </fieldset>
       <fieldset class="form-fieldset">
         <legend>Notification settings</legend>
-        <label class="form-check"><input type="checkbox" name="interaction_warnings" checked> Interaction warnings for drugs in my list</label>
-        <label class="form-check"><input type="checkbox" name="refill_reminders"> Refill reminders</label>
+        <label class="form-check"><input type="checkbox" name="interaction_warnings" {% if prefs.get('interaction_warnings', true) %}checked{% endif %}> Interaction warnings for drugs in my list</label>
+        <label class="form-check"><input type="checkbox" name="refill_reminders" {% if prefs.get('refill_reminders', false) %}checked{% endif %}> Refill reminders</label>
       </fieldset>
       <button type="submit" class="btn btn-primary btn-sm">Save preferences</button>
     </form>

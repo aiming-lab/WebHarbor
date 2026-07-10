@@ -12,9 +12,9 @@
     <a href="#" onclick="window.print();return false;" class="action-link">Print</a>
     <span class="action-sep">|</span>
     {% if current_user.is_authenticated %}
-      <a href="#" id="save-toggle" data-slug="{{ drug.slug }}" class="action-link">{{ 'Saved' if saved else 'Save' }}</a>
+      <a href="#" id="save-toggle" data-slug="{{ drug.slug }}" data-saved="{{ 'true' if saved else 'false' }}" class="action-link">{{ 'Saved' if saved else 'Save' }}</a>
     {% else %}
-      <a href="{{ url_for('login') }}" class="action-link">Save</a>
+      <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="action-link">Save</a>
     {% endif %}
   </div>
 </div>
@@ -116,12 +116,12 @@
     </div>
     <div class="drug-header-actions">
       {% if current_user.is_authenticated %}
-        <button id="med-list-toggle-top" data-slug="{{ drug.slug }}" class="btn-med-list btn-med-list--header">
+        <button id="med-list-toggle-top" data-slug="{{ drug.slug }}" data-saved="{{ 'true' if saved else 'false' }}" class="btn-med-list btn-med-list--header">
           <span class="btn-med-list-icon" aria-hidden="true">{% if saved %}&#10003;{% else %}&#43;{% endif %}</span>
-          <span class="btn-med-list-text">{{ '✓ In My Med List — Remove' if saved else '+ Add to My Med List' }}</span>
+          <span class="btn-med-list-text">{{ 'In My Med List — Remove' if saved else 'Add to My Med List' }}</span>
         </button>
       {% else %}
-        <a href="{{ url_for('login') }}" class="btn-med-list btn-med-list--header">
+        <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="btn-med-list btn-med-list--header">
           <span class="btn-med-list-icon" aria-hidden="true">&#43;</span>
           <span class="btn-med-list-text">Add to My Med List</span>
         </a>
@@ -468,12 +468,12 @@
           </li>
         </ul>
         {% if current_user.is_authenticated %}
-        <button id="med-list-toggle" data-slug="{{ drug.slug }}" class="btn-med-list btn-med-list--lg">
+        <button id="med-list-toggle" data-slug="{{ drug.slug }}" data-saved="{{ 'true' if saved else 'false' }}" class="btn-med-list btn-med-list--lg">
           <span class="btn-med-list-icon" aria-hidden="true">{% if saved %}&#10003;{% else %}&#43;{% endif %}</span>
           <span class="btn-med-list-text">{{ 'Remove from My Med List' if saved else 'Add to My Med List' }}</span>
         </button>
         {% else %}
-        <a href="{{ url_for('login') }}" class="btn-med-list btn-med-list--lg">
+        <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="btn-med-list btn-med-list--lg">
           <span class="btn-med-list-icon" aria-hidden="true">&#43;</span>
           <span class="btn-med-list-text">Sign in to save</span>
         </a>
@@ -551,24 +551,52 @@
   var btn = document.getElementById('med-list-toggle');
   var btnTop = document.getElementById('med-list-toggle-top');
   var saveLink = document.getElementById('save-toggle');
-  function toggle(el, savedText, unsavedText){
+  var controls = [
+    [btn, 'Remove from My Med List', 'Add to My Med List'],
+    [btnTop, 'In My Med List — Remove', 'Add to My Med List'],
+    [saveLink, 'Saved', 'Save']
+  ];
+  var requestInFlight = false;
+  function render(saved){
+    controls.forEach(function(control){
+      var el = control[0];
+      if(!el) return;
+      el.dataset.saved = saved ? 'true' : 'false';
+      var text = el.querySelector('.btn-med-list-text');
+      var icon = el.querySelector('.btn-med-list-icon');
+      if(text){
+        text.textContent = saved ? control[1] : control[2];
+        if(icon) icon.textContent = saved ? '✓' : '+';
+      } else {
+        el.textContent = saved ? control[1] : control[2];
+      }
+    });
+  }
+  function toggle(el){
     el.addEventListener('click', function(e){
       e.preventDefault();
+      if(requestInFlight) return;
+      requestInFlight = true;
+      var desired = el.dataset.saved !== 'true';
       fetch('{{ url_for("my_med_list_toggle") }}', {
         method: 'POST',
         headers: {'Content-Type':'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
-        body: JSON.stringify({slug: el.dataset.slug})
+        body: JSON.stringify({slug: el.dataset.slug, saved: desired})
       }).then(r=>{
-        if(!r.ok){ if(r.status===401) window.location='{{ url_for("login") }}'; return; }
+        if(r.redirected || r.status===400 || r.status===401){
+          window.location='{{ url_for("login", next=url_for("drug_detail", slug=drug.slug)) }}';
+          return;
+        }
+        if(!r.ok) return;
         return r.json();
       }).then(data=>{
-        if(data) el.textContent = data.saved ? savedText : unsavedText;
-      });
+        if(data) render(data.saved);
+      }).finally(()=>{ requestInFlight = false; });
     });
   }
-  if(btn) toggle(btn, 'Remove from My Med List', 'Add to My Med List');
-  if(btnTop) toggle(btnTop, '✓ In My Med List — Remove', '+ Add to My Med List');
-  if(saveLink) toggle(saveLink, 'Saved', 'Save');
+  if(btn) toggle(btn);
+  if(btnTop) toggle(btnTop);
+  if(saveLink) toggle(saveLink);
 })();
 </script>
 

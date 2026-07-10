@@ -17,36 +17,57 @@
   <a href="{{ url_for('account_subscriptions') }}" class="active">Subscriptions</a>
 </nav>
 
-{% with messages = get_flashed_messages(with_categories=true) %}
-  {% for category, message in messages %}
-    <div class="flash flash-{{ category }} is-027">{{ message }}</div>
-  {% endfor %}
-{% endwith %}
-
 <div class="account-grid">
   <form method="post" action="{{ url_for('save_subscriptions') }}" class="account-box is-028">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% set prefs = current_user.preferences %}
     <h2>Email notification preferences</h2>
     <p class="muted">Choose which Drugs.com emails to receive at <strong>{{ current_user.email }}</strong>.</p>
 
     <label class="is-029">
-      <input type="checkbox" name="fda_alerts" checked> FDA Drug Safety Alerts
+      <input type="checkbox" name="fda_alerts" {% if prefs.get('fda_alerts', true) %}checked{% endif %}> FDA Drug Safety Alerts
     </label>
     <label class="is-029">
-      <input type="checkbox" name="new_approvals" checked> New Drug Approvals
+      <input type="checkbox" name="new_approvals" {% if prefs.get('new_approvals', false) %}checked{% endif %}> New Drug Approvals
     </label>
     <label class="is-029">
-      <input type="checkbox" name="news_digest" checked> Medical News Digest (weekly)
+      <input type="checkbox" name="newsletter" {% if prefs.get('newsletter', true) %}checked{% endif %}> Medical News Digest (weekly)
     </label>
     <label class="is-029">
-      <input type="checkbox" name="med_list_reminders" checked> My Med List reminders
+      <input type="checkbox" name="med_list_reminders" {% if prefs.get('med_list_reminders', true) %}checked{% endif %}> My Med List reminders
     </label>
     <label class="is-029">
-      <input type="checkbox" name="interaction_warnings" checked> Drug interaction warnings
+      <input type="checkbox" name="interaction_warnings" {% if prefs.get('interaction_warnings', true) %}checked{% endif %}> Drug interaction warnings
     </label>
 
     <div class="is-030">
       <button type="submit" class="btn">Save preferences</button>
+    </div>
+  </form>
+
+  {% set newsletter_lists = prefs.get('newsletter_lists', ['daily_mednews', 'weekly_safety']) %}
+  <form method="post" action="{{ url_for('newsletter_subscribe') }}" class="account-box">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Newsletter delivery details</h2>
+    <p class="muted">View or update the exact address and newsletters saved to your account.</p>
+    <label>
+      Delivery email
+      <input type="email" name="email" maxlength="254" required value="{{ prefs.get('newsletter_email', current_user.email) }}">
+    </label>
+    <label class="is-029">
+      <input type="checkbox" name="lists" value="daily_mednews" {% if 'daily_mednews' in newsletter_lists %}checked{% endif %}> Daily MedNews
+    </label>
+    <label class="is-029">
+      <input type="checkbox" name="lists" value="weekly_safety" {% if 'weekly_safety' in newsletter_lists %}checked{% endif %}> Weekly Drug Safety Alerts
+    </label>
+    <label class="is-029">
+      <input type="checkbox" name="lists" value="approvals_monthly" {% if 'approvals_monthly' in newsletter_lists %}checked{% endif %}> New Drug Approvals Monthly
+    </label>
+    <label class="is-029">
+      <input type="checkbox" name="lists" value="clinical_trials" {% if 'clinical_trials' in newsletter_lists %}checked{% endif %}> Clinical Trial Results
+    </label>
+    <div class="is-030">
+      <button type="submit" class="btn">Update newsletter details</button>
     </div>
   </form>
 

@@ -66,12 +66,12 @@
     <h3>Reviews by condition</h3>
     <ul class="reviews-by-condition-list">
       <li>
-        <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}"
+        <a href="{{ url_for('drug_reviews_page', slug=drug.slug, sort=sort) }}"
            class="reviews-by-condition-chip {% if not condition_filter %}is-active{% endif %}">All conditions</a>
       </li>
       {% for cond in conditions %}
       <li>
-        <a href="{{ url_for('drug_reviews_page', slug=drug.slug, condition=cond) }}"
+        <a href="{{ url_for('drug_reviews_page', slug=drug.slug, condition=cond, sort=sort) }}"
            class="reviews-by-condition-chip {% if cond == condition_filter %}is-active{% endif %}">{{ cond|replace('_',' ')|replace('-',' ')|title }}</a>
       </li>
       {% endfor %}
@@ -130,10 +130,13 @@
           </header>
           <p class="review-body">{{ r.body }}</p>
           <div class="review-helpful muted" data-review-id="{{ r.id }}" data-slug="{{ drug.slug }}">
+            {% if current_user.is_authenticated and r.user_id == current_user.id %}
+            <span class="review-helpful-label">Your review</span>
+            {% else %}
             <span class="review-helpful-label">Was this review helpful?</span>
             <button type="button" class="btn btn-sm btn-outline review-helpful-yes">&#128077; Yes (<span class="review-helpful-count">{{ r.helpful_count or 0 }}</span>)</button>
             <button type="button" class="btn btn-sm btn-outline review-helpful-no">&#128078; No</button>
-            <a href="#" class="review-report-link" onclick="return false;">Report</a>
+            {% endif %}
           </div>
         </article>
       {% endfor %}

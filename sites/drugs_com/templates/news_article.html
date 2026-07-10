@@ -64,12 +64,8 @@
 
     <div class="article-share">
       <span class="article-share-label">Share</span>
-      <a href="#" onclick="return false" title="Share on Facebook" class="share-btn share-fb">f</a>
-      <a href="#" onclick="return false" title="Share on Twitter" class="share-btn share-tw">t</a>
-      <a href="#" onclick="return false" title="Share on LinkedIn" class="share-btn share-li">in</a>
-      <a href="#" onclick="return false" title="Share via email" class="share-btn">&#9993;</a>
-      <a href="#" onclick="window.print();return false" title="Print article" class="share-btn share-btn-text">Print</a>
-      <a href="#" onclick="return false" title="Share article" class="share-btn share-btn-text">Share</a>
+      <button type="button" onclick="window.print()" title="Print article" class="share-btn share-btn-text">Print</button>
+      <button type="button" id="article-copy-link" title="Copy article link" class="share-btn share-btn-text">Copy link</button>
     </div>
 
     {% if takeaway_source %}
@@ -142,15 +138,6 @@
       The information provided in this article is for educational purposes only and is not intended as a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
     </div>
 
-    <div class="article-helpful">
-      <h3>Was this article helpful?</h3>
-      <div class="helpful-buttons">
-        <button type="button" class="helpful-btn" onclick="this.parentElement.parentElement.querySelector('.helpful-note').textContent='Thanks for your feedback!';">Yes</button>
-        <button type="button" class="helpful-btn" onclick="this.parentElement.parentElement.querySelector('.helpful-note').textContent='Thanks &mdash; we will work to improve this article.';">No</button>
-      </div>
-      <p class="helpful-note">Your feedback helps us improve our content.</p>
-    </div>
-
     <div class="article-back-link">
       <a href="{{ url_for('news_index') }}">&larr; Back to Medical News</a>
     </div>
@@ -208,4 +195,18 @@
     </div>
   </aside>
 </div>
+<script>
+(function(){
+  var button = document.getElementById('article-copy-link');
+  if (!button) return;
+  button.addEventListener('click', function(){
+    var original = button.textContent;
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+    navigator.clipboard.writeText(window.location.href).then(function(){
+      button.textContent = 'Copied';
+      setTimeout(function(){ button.textContent = original; }, 1500);
+    });
+  });
+})();
+</script>
 {% endblock %}

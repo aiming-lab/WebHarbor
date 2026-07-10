@@ -30,47 +30,15 @@
       </fieldset>
 
       <fieldset class="review-fieldset">
-        <legend>Sub-ratings (1-5)</legend>
-        <div class="subratings-grid">
-          <label>Effectiveness
-            <select name="effectiveness" class="form-select">
-              <option value="">Select</option>
-              {% for v in range(1, 6) %}<option value="{{ v }}">{{ v }} - {{ ['Poor','Fair','Good','Very good','Excellent'][v-1] }}</option>{% endfor %}
-            </select>
-          </label>
-          <label>Ease of Use
-            <select name="ease_of_use" class="form-select">
-              <option value="">Select</option>
-              {% for v in range(1, 6) %}<option value="{{ v }}">{{ v }} - {{ ['Very hard','Hard','Moderate','Easy','Very easy'][v-1] }}</option>{% endfor %}
-            </select>
-          </label>
-          <label>Satisfaction
-            <select name="satisfaction" class="form-select">
-              <option value="">Select</option>
-              {% for v in range(1, 6) %}<option value="{{ v }}">{{ v }} - {{ ['Very unsatisfied','Unsatisfied','Neutral','Satisfied','Very satisfied'][v-1] }}</option>{% endfor %}
-            </select>
-          </label>
-        </div>
-      </fieldset>
-
-      <fieldset class="review-fieldset">
         <legend>About your treatment</legend>
         <label for="review-condition">Condition treated</label>
         <input type="text" id="review-condition" name="condition_treated"
                list="known-conditions"
                value="{{ user_review.condition_treated if user_review else '' }}"
-               placeholder="e.g. Pain, Headache, Anxiety" maxlength="100" />
+               placeholder="e.g. Pain, Headache, Anxiety" maxlength="100" required />
         <datalist id="known-conditions">
           {% for cond in conditions %}<option value="{{ cond|capitalize }}">{% endfor %}
         </datalist>
-
-        <label for="review-duration">How long did you take this medication?</label>
-        <select id="review-duration" name="duration_taken" class="form-select">
-          <option value="">Select duration</option>
-          {% for opt in ['Less than 1 month', '1-6 months', '6 months to 1 year', '1-2 years', 'More than 2 years'] %}
-            <option value="{{ opt }}">{{ opt }}</option>
-          {% endfor %}
-        </select>
       </fieldset>
 
       <fieldset class="review-fieldset">
@@ -78,11 +46,11 @@
         <label for="review-title">Title</label>
         <input type="text" id="review-title" name="title"
                value="{{ user_review.title if user_review else '' }}"
-               placeholder="Summarize your experience" maxlength="200" />
+               placeholder="Summarize your experience" maxlength="200" required />
 
         <label for="review-body">Review</label>
         <textarea id="review-body" name="body" rows="8" maxlength="1000"
-                  placeholder="Share details of your experience with this medicine">{{ user_review.body if user_review else '' }}</textarea>
+                  placeholder="Share details of your experience with this medicine" required>{{ user_review.body if user_review else '' }}</textarea>
         <div class="char-count muted"><span id="review-body-count">0</span>/1000 characters</div>
       </fieldset>
 

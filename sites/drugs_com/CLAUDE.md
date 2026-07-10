@@ -6,9 +6,9 @@ Flask mirror of drugs.com at port **40016**. Covers pharmaceutical drug informat
 
 - **Code PR**: `aiming-lab/WebHarbor` #9, branch `feat/drugs-com` in fork `boyugou/WebHarbor`. Open, mergeable, no conflicts with `main` at last check.
 - **Assets PR**: `ChilleD/WebHarbor` (HuggingFace dataset) discussion #39. Open. `.assets-revision` is pinned to `refs/pr/39` until it merges.
-- **Current seed DB md5**: `77e17b36c03fde357c3248895aff65d7` (this value moves every time seed data changes — treat the PR's own description as the source of truth for the current value, not this file, if they ever disagree).
+- **Current seed DB md5**: `d3d228f3fc0b3b880e149ac35550e3c5` (this value moves every time seed data changes — verify the file on disk if any documentation disagrees).
 - The code side has been through multiple rounds of review (functional + security + benchmark-task-quality + data-integrity), each round's findings verified against the codebase before acting and then fixed. See "Answer-leak guardrails" and "OpenFDA content fetch" below for the two most consequential fixes, and the PR's own comment history for the full list.
-- **What's left is not a code task**: merge the assets PR, re-pin `.assets-revision` to `main` (or the merge commit), then merge the code PR. See the repo-root `AGENTS.md`/`CONTRIBUTING.md` for who does this (dataset maintainer for the former, WebHarbor maintainers for the latter) — it is not something a contributor does unilaterally.
+- After the code and asset reviews are complete: merge the assets PR, re-pin `.assets-revision` to `main` (or the merge commit), then merge the code PR. See the repo-root `AGENTS.md`/`CONTRIBUTING.md` for who performs those maintainer-owned steps.
 
 ## Quick start
 
@@ -30,7 +30,7 @@ curl -X POST http://localhost:8209/reset/drugs_com
 docker exec wh-test md5sum \
   /opt/WebSyn/drugs_com/instance/drugs_com.db \
   /opt/WebSyn/drugs_com/instance_seed/drugs_com.db
-# Both hashes must match: 77e17b36c03fde357c3248895aff65d7
+# Both hashes must match: d3d228f3fc0b3b880e149ac35550e3c5
 ```
 
 ## Architecture
@@ -39,15 +39,15 @@ docker exec wh-test md5sum \
 
 | Model | Key fields |
 |-------|-----------|
-| `Drug` | `slug`, `generic_name`, `brand_names`, `drug_class_id`, `availability` (Rx/OTC), `csa_schedule`, `pregnancy_risk`, `rating`, `review_count` |
+| `Drug` | `slug`, `generic_name`, `brand_names`, `drug_class_id`, `availability` (Rx/OTC), `csa_schedule`, `pregnancy_risk`, `avg_rating`, `review_count` |
 | `DrugClass` | `name`, `slug`, `description` |
-| `DrugImage` | `drug_id`, `imprint`, `shape`, `color`, `dosage_form` |
+| `DrugImage` | `drug_id`, `imprint`, `shape`, `color`, `strength`, `manufacturer` |
 | `DrugInteraction` | `drug_a_id`, `drug_b_id`, `severity` (major/moderate/minor), `description` |
 | `DrugReview` | `drug_id`, `user_id`, `rating` (1–10), `title`, `body` |
 | `Condition` | `name`, `slug`, `description` |
 | `NewsArticle` | `title`, `category`, `body`, `published_at` |
 | `SavedDrug` | `user_id`, `drug_id` (My Med List) |
-| `User` | `email`, `username`, `password_hash` |
+| `User` | `email`, `username`, `password_hash`, profile names, persisted account/subscription preferences |
 
 ### Key routes
 
@@ -58,10 +58,10 @@ docker exec wh-test md5sum \
 | `/drug_information.html` | `drug_az.html` | A-Z index |
 | `/drug-interactions` | `interaction_checker.html` | Interaction checker (canonical) |
 | `/pill-identifier` | `pill_identifier.html` | Pill identifier (canonical) |
-| `/drug-classes/` | `drug_classes.html` | Drug class browser |
-| `/drug-classes/<slug>/` | `drug_class.html` | Single drug class |
-| `/conditions/` | `conditions.html` | Conditions A-Z |
-| `/condition/<slug>/` | `condition.html` | Single condition |
+| `/drug-classes.html` | `drug_classes.html` | Drug class browser |
+| `/drug-classes/<slug>` | `drug_class.html` | Single drug class |
+| `/conditions.html` | `conditions.html` | Conditions A-Z |
+| `/conditions/<slug>` | `condition.html` | Single condition |
 | `/news/` | `news.html` | News index with category filter |
 | `/search` | `search.html` | Drug/class/condition search |
 | `/my-med-list` | `my_med_list.html` | Saved drugs (auth required) |
@@ -82,7 +82,16 @@ JSON-body call, an appended `FormData` field for the other), so both paths are
 actually checked. Only `/api/interaction-check` is `@csrf.exempt` — it's a
 pure-JSON endpoint that is not referenced by any template (dead code; no
 current task depends on it), so this is a deliberate, verified-safe exemption
-rather than an oversight.
+rather than an oversight. It accepts at most 20 unique, bounded drug names so
+its pairwise comparison work cannot be amplified into an unbounded request.
+
+The Flask signing key comes from `DRUGS_COM_SECRET_KEY` when supplied and is
+otherwise generated randomly into the runtime `instance/.secret_key`. A normal
+restart keeps sessions and anonymous-vote identity stable; a full reset rotates
+the key with the runtime instance. Never use a public source-code fallback.
+Logout is POST-only and CSRF-protected. Bcrypt
+inputs are capped at 72 bytes so bcrypt 5 cannot turn an oversized password
+into a server error.
 
 ### Pill images
 
@@ -91,10 +100,20 @@ Rendered as inline SVGs via the `_pill_svg.html` macro — no external image fil
 ## Seed database
 
 - **Location**: `instance_seed/drugs_com.db` (gitignored — sourced from HuggingFace)
-- **MD5**: `77e17b36c03fde357c3248895aff65d7`
-- **Contents**: 246 drugs · 104 drug classes · 780 reviews · 76 interactions · 103 pill images · 68 conditions · 80 news articles · 12 users
+- **MD5**: `d3d228f3fc0b3b880e149ac35550e3c5`
+- **Contents**: 246 drugs · 104 drug classes · 716 reviews · 76 interactions · 103 pill images · 69 conditions · 80 news articles · 12 users
 
-All `seed_*()` functions gate on an already-populated DB (early-return if rows exist) so `seed_database()` is idempotent and the reset invariant holds.
+The top-level `seed_database()` gates the complete seed pipeline on an already-populated DB, so none of its helper phases run after a reset and the byte-identical invariant holds.
+SQLite foreign-key enforcement is enabled on every SQLAlchemy connection.
+Review writes use an upsert on `(drug_id, user_id)`. Med-list changes accept
+an idempotent desired state, retain a serialized legacy-toggle fallback, and
+use `ON CONFLICT DO NOTHING`, so simultaneous valid requests cannot become
+unique-constraint 500s or ambiguous toggles. Helpful votes are validated,
+deduplicated per user/session, and updated atomically; account email updates
+catch unique races, and per-user preference writes are serialized. A user's
+`public_reviews=false` preference excludes their review text, condition
+suggestions, counts, rating distributions, and averages from public views
+while leaving their own account/edit views available.
 
 ### OpenFDA content fetch — the match-verification guard
 
@@ -106,8 +125,9 @@ matching, not exact matching** — it has been observed returning a
 completely unrelated drug's label for a query with no exact hit (e.g.
 querying `polyethylene glycol` returns a label whose own
 `openfda.generic_name` is `["NAPROXEN"]`). `_openfda_label_matches()` checks
-the returned label's own generic name against the query (exact / substring /
-token-subset) before accepting it; a mismatch is treated as "not found" and
+the returned label's generic and active-substance names against the query,
+including rejecting multi-ingredient labels for monotherapy queries, before
+accepting it; a mismatch is treated as "not found" and
 falls through to `synthetic_content()`. **Do not remove this check** — without
 it, a reseed can silently give an arbitrary drug another drug's entire
 detail-page content, and because the fetch is a live network call, which
@@ -122,9 +142,9 @@ drugs are affected is not deterministic across reseeds.
 | carol_d | carol.d@test.com | TestPass123! | Secondary |
 | david_k | david.k@test.com | TestPass123! | Secondary |
 
-**Alice's seeded state** (task-critical — do not change):
-- Med list: ibuprofen, metformin, atorvastatin (task 14 asks to sign in and list what's saved — read-only, lisinopril is NOT in the list)
-- Reviews: ibuprofen 9/10, lisinopril 7/10, hydrochlorothiazide 10/10
+Benchmark-account state is task-critical. Do not change seeded saved drugs,
+reviews, or preferences without reviewer coordination; ground-truth values are
+intentionally omitted from source documentation.
 
 ## Benchmark tasks
 
@@ -157,6 +177,8 @@ list:
   the same way. (Plain search *results* legitimately showing matching drug
   names when you search a class/condition term by name is fine — that's
   the literal mechanism several tasks tell you to use, not a leak.)
+- Homepage featured-drug cards do **not** show rating/review aggregates; those
+  values belong on the detail/reviews pages required by task `--12`.
 - `.drug-card`/`.exact-match-card` blocks in `search.html` show only the
   drug name and a link — no `drug_class`, `brand_names`, `csa_schedule`,
   `avg_rating`/`review_count`, or description snippet. These are shown on
