@@ -13,6 +13,18 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+# On macOS, tar otherwise bakes AppleDouble (._*) sidecar files and
+# com.apple.* extended attributes into the archive, which then litter
+# sites/<site>/ on extract and emit LIBARCHIVE.xattr warnings. Suppress both.
+export COPYFILE_DISABLE=1
+TAR_FLAGS=()
+if tar --help 2>&1 | grep -q -- --no-mac-metadata; then
+    TAR_FLAGS+=(--no-mac-metadata)
+fi
+if tar --help 2>&1 | grep -q -- --no-xattrs; then
+    TAR_FLAGS+=(--no-xattrs)
+fi
+
 TARGET="${1:?usage: extract_assets.sh <staging-dir> [site|--push]}"
 ARG2="${2:-}"
 PUSH=""
@@ -42,7 +54,7 @@ for site_dir in sites/*/; do
     fi
 
     out="$TARGET/$site.tar.gz"
-    tar -czf "$out" -C sites "${members[@]}"
+    tar ${TAR_FLAGS[@]+"${TAR_FLAGS[@]}"} -czf "$out" -C sites "${members[@]}"
     sz=$(du -sh "$out" 2>/dev/null | cut -f1)
     printf "  %-22s -> %-30s %s\n" "$site" "$site.tar.gz" "$sz"
     count=$((count + 1))
