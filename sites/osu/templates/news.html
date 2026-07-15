@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}News — Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>Ohio State News</h1>
+    <p>The latest stories, discoveries, and achievements from The Ohio State University.</p>
+  </div>
+</div>
+
+<div class="sidebar-layout">
+  <!-- Sidebar filters -->
+  <aside class="sidebar">
+    <h3>Filter News</h3>
+    <form class="filter-form" method="get" action="{{ url_for('news') }}">
+      <label>Search</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="Keywords...">
+      <label>Category</label>
+      <select name="category">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if cat == current_category %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <label>
+        <input type="checkbox" name="featured" value="1" {% if featured == '1' %}checked{% endif %}> Featured Only
+      </label>
+      <button type="submit" class="btn btn-primary" style="margin-top:10px">Apply</button>
+      <a href="{{ url_for('news') }}" style="display:block;text-align:center;margin-top:8px;font-size:13px">Clear Filters</a>
+    </form>
+
+    <h3 style="margin-top:24px">Categories</h3>
+    {% for cat in categories %}
+    <a href="{{ url_for('news') }}?category={{ cat }}" style="display:block;padding:6px 4px;font-size:13px;color:{% if cat == current_category %}var(--scarlet){% else %}var(--gray){% endif %};border-bottom:1px solid var(--gray-mid)">
+      {% if cat == current_category %}&bull; {% endif %}{{ cat }}
+    </a>
+    {% endfor %}
+  </aside>
+
+  <!-- Articles list -->
+  <div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+      <p style="font-size:14px;color:var(--gray);font-family:sans-serif">
+        {% if q %}Search results for "<strong>{{ q }}</strong>" — {% endif %}
+        {{ total }} article{% if total != 1 %}s{% endif %}
+      </p>
+    </div>
+
+    {% if articles %}
+      {% for article in articles %}
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-body">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:8px">
+            <div style="flex:1">
+              <div class="card-meta" style="margin-bottom:8px">
+                <span class="badge badge-scarlet">{{ article.category }}</span>
+                {% if article.featured %}<span class="badge" style="background:#f39c12;color:#fff;margin-left:4px">Featured</span>{% endif %}
+              </div>
+              <h2 class="card-title"><a href="{{ url_for('news_article', slug=article.slug) }}">{{ article.title }}</a></h2>
+              <p class="card-text" style="margin-top:6px">{{ article.summary[:200] }}{% if article.summary|length > 200 %}...{% endif %}</p>
+              <div class="card-meta" style="margin-top:10px">
+                By {{ article.author }} &bull; {{ article.published_date.strftime('%B %d, %Y') }}
+                {% if article.tags %} &bull; {{ article.tags }}{% endif %}
+              </div>
+            </div>
+            <div style="white-space:nowrap">
+              <a href="{{ url_for('news_article', slug=article.slug) }}" class="btn btn-sm btn-outline">Read More</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      <!-- Pagination -->
+      {% if total_pages > 1 %}
+      <div class="pagination">
+        {% if page > 1 %}<a href="?page={{ page-1 }}&q={{ q }}&category={{ current_category }}&featured={{ featured }}">&laquo; Prev</a>{% endif %}
+        {% for p in range(1, total_pages+1) %}
+          {% if p == page %}<span class="current">{{ p }}</span>
+          {% elif p <= 3 or p >= total_pages-2 or (p >= page-2 and p <= page+2) %}
+            <a href="?page={{ p }}&q={{ q }}&category={{ current_category }}&featured={{ featured }}">{{ p }}</a>
+          {% elif p == 4 or p == total_pages-3 %}<span>…</span>{% endif %}
+        {% endfor %}
+        {% if page < total_pages %}<a href="?page={{ page+1 }}&q={{ q }}&category={{ current_category }}&featured={{ featured }}">Next &raquo;</a>{% endif %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <div class="icon">&#128240;</div>
+        <h3>No articles found</h3>
+        <p>Try adjusting your search or filters.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

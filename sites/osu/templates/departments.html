@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Departments — Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>Departments &amp; Schools</h1>
+    <p>Browse academic departments across all colleges at The Ohio State University.</p>
+  </div>
+</div>
+
+{% for college, depts in depts_by_college.items() %}
+{% if depts %}
+<div style="margin-bottom:40px">
+  <h2 style="font-size:22px;color:var(--scarlet);border-bottom:2px solid var(--scarlet);padding-bottom:8px;margin-bottom:16px">
+    {{ college.name }}
+    {% if college.dean %}<span style="font-size:14px;font-weight:normal;color:var(--gray);font-family:sans-serif;margin-left:12px">Dean: {{ college.dean }}</span>{% endif %}
+  </h2>
+  <div class="grid-3">
+    {% for dept in depts %}
+    <div class="card">
+      <div class="card-body">
+        <h3 class="card-title" style="font-size:15px"><a href="{{ url_for('department_detail', slug=dept.slug) }}">{{ dept.name }}</a></h3>
+        {% if dept.chair %}<div class="card-meta">Chair: {{ dept.chair }}</div>{% endif %}
+        {% if dept.location %}<div class="card-meta">&#128205; {{ dept.location }}</div>{% endif %}
+        <p class="card-text" style="margin-top:6px;font-size:13px">{{ dept.description[:100] }}{% if dept.description|length > 100 %}...{% endif %}</p>
+        <div style="margin-top:10px">
+          <a href="{{ url_for('department_detail', slug=dept.slug) }}" class="btn btn-sm btn-outline">View Department</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endfor %}
+{% endblock %}

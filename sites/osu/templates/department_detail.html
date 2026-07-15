@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ dept.name }} — Ohio State{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a><span>/</span>
+  <a href="{{ url_for('departments') }}">Departments</a><span>/</span>
+  <span>{{ dept.name }}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:30px">
+  <div>
+    <h1 style="font-size:32px;color:var(--scarlet);margin-bottom:10px">{{ dept.name }}</h1>
+    {% if dept.college %}<p style="font-size:16px;color:var(--gray);font-family:sans-serif;margin-bottom:6px">{{ dept.college.name }}</p>{% endif %}
+
+    <div style="border-top:3px solid var(--scarlet);margin-top:20px;padding-top:20px">
+      <div style="line-height:1.8;font-size:16px">
+        {% for paragraph in dept.description.split('\n\n') %}
+        <p style="margin-bottom:16px">{{ paragraph }}</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if programs %}
+    <div style="margin-top:30px">
+      <h2 class="section-title">Degree Programs</h2>
+      <div class="grid-2">
+        {% for prog in programs %}
+        <div class="card">
+          <div class="card-body">
+            <span class="badge badge-scarlet">{{ prog.degree_type }}</span>
+            {% if prog.is_online %}<span class="badge" style="background:#27ae60;color:#fff;margin-left:4px">Online</span>{% endif %}
+            <div class="card-title" style="margin-top:8px;font-size:15px"><a href="{{ url_for('program_detail', slug=prog.slug) }}">{{ prog.name }}</a></div>
+            <div class="card-meta">{{ prog.units }} credits &bull; {{ prog.duration_years }} years</div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if faculty_list %}
+    <div style="margin-top:30px">
+      <h2 class="section-title">Faculty</h2>
+      <div class="grid-2">
+        {% for member in faculty_list %}
+        <div class="card">
+          <div class="card-body">
+            <div class="card-title" style="font-size:15px"><a href="{{ url_for('faculty_profile', slug=member.slug) }}">{{ member.name }}</a></div>
+            <div class="card-meta">{{ member.title }}</div>
+            {% if member.email %}<div class="card-meta"><a href="mailto:{{ member.email }}">{{ member.email }}</a></div>{% endif %}
+            {% if member.research_interests %}<div class="tag" style="margin-top:6px;font-size:12px">{{ member.research_interests[:80] }}</div>{% endif %}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <aside class="sidebar" style="align-self:start">
+    <h3>Department Info</h3>
+    <table style="font-size:13px">
+      {% if dept.chair %}<tr><td style="color:var(--gray);padding:6px 0">Chair</td><td style="padding:6px 0">{{ dept.chair }}</td></tr>{% endif %}
+      {% if dept.phone %}<tr><td style="color:var(--gray);padding:6px 0">Phone</td><td style="padding:6px 0">{{ dept.phone }}</td></tr>{% endif %}
+      {% if dept.location %}<tr><td style="color:var(--gray);padding:6px 0">Location</td><td style="padding:6px 0">{{ dept.location }}</td></tr>{% endif %}
+      {% if dept.college %}<tr><td style="color:var(--gray);padding:6px 0">College</td><td style="padding:6px 0">{{ dept.college.name }}</td></tr>{% endif %}
+    </table>
+    <div style="margin-top:16px"><span class="badge badge-light">{{ faculty_list|length }} faculty</span> <span class="badge badge-light">{{ programs|length }} programs</span></div>
+    <div style="margin-top:20px">
+      <a href="{{ url_for('departments') }}" class="btn btn-outline btn-sm" style="width:100%;display:block;text-align:center">All Departments</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ program.name }} — Ohio State{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a><span>/</span>
+  <a href="{{ url_for('programs') }}">Programs</a><span>/</span>
+  <span>{{ program.name }}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:30px">
+  <div>
+    <div style="margin-bottom:12px">
+      <span class="badge badge-scarlet" style="font-size:14px;padding:5px 12px">{{ program.degree_type }}</span>
+      {% if program.is_online %}<span class="badge" style="background:#27ae60;color:#fff;margin-left:6px;font-size:14px;padding:5px 12px">Online Available</span>{% endif %}
+    </div>
+    <h1 style="font-size:34px;color:var(--scarlet);margin-bottom:10px;line-height:1.2">{{ program.name }}</h1>
+    {% if program.college %}<p style="font-size:16px;color:var(--gray);margin-bottom:6px;font-family:sans-serif">{{ program.college.name }}</p>{% endif %}
+    {% if program.department %}<p style="font-size:14px;color:var(--gray);font-family:sans-serif">Department of {{ program.department.name }}</p>{% endif %}
+
+    <div style="border-top:3px solid var(--scarlet);margin-top:20px;padding-top:20px">
+      <h2 class="section-title">Program Overview</h2>
+      <div style="line-height:1.8;font-size:16px">
+        {% for paragraph in program.description.split('\n\n') %}
+        <p style="margin-bottom:14px">{{ paragraph }}</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if program.requirements %}
+    <div style="margin-top:30px">
+      <h2 class="section-title">Requirements</h2>
+      <div style="line-height:1.7;font-size:15px;background:var(--gray-light);padding:20px;border-radius:6px">
+        {% for line in program.requirements.split('\n') %}
+        {% if line.strip() %}<p style="margin-bottom:8px">{{ line }}</p>{% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if related %}
+    <div style="margin-top:40px">
+      <h2 class="section-title">Related Programs</h2>
+      <div class="grid-2">
+        {% for rel in related %}
+        <div class="card">
+          <div class="card-body">
+            <span class="badge badge-scarlet">{{ rel.degree_type }}</span>
+            <div class="card-title" style="margin-top:8px"><a href="{{ url_for('program_detail', slug=rel.slug) }}">{{ rel.name }}</a></div>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+  </div>
+
+  <aside class="sidebar" style="align-self:start">
+    <h3>Program Details</h3>
+    <table style="font-size:13px">
+      <tr><td style="color:var(--gray);padding:6px 0">Degree</td><td style="padding:6px 0;font-weight:bold">{{ program.degree_type }}</td></tr>
+      <tr><td style="color:var(--gray);padding:6px 0">Credits</td><td style="padding:6px 0">{{ program.units }}</td></tr>
+      <tr><td style="color:var(--gray);padding:6px 0">Duration</td><td style="padding:6px 0">{{ program.duration_years }} year{% if program.duration_years != 1.0 %}s{% endif %}</td></tr>
+      {% if program.application_deadline %}<tr><td style="color:var(--gray);padding:6px 0">Deadline</td><td style="padding:6px 0">{{ program.application_deadline }}</td></tr>{% endif %}
+      <tr><td style="color:var(--gray);padding:6px 0">Online</td><td style="padding:6px 0">{% if program.is_online %}Yes{% else %}No{% endif %}</td></tr>
+      <tr><td style="color:var(--gray);padding:6px 0">GRE</td><td style="padding:6px 0">{% if program.gre_required %}Required{% else %}Not Required{% endif %}</td></tr>
+    </table>
+
+    <div style="margin-top:20px">
+      <a href="{{ url_for('admissions') }}" class="btn btn-primary" style="width:100%;display:block;text-align:center;margin-bottom:8px">Apply Now</a>
+      {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('bookmark_add') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="item_type" value="program">
+        <input type="hidden" name="item_id" value="{{ program.id }}">
+        <button type="submit" class="btn btn-outline btn-sm" style="width:100%">&#9733; Save Program</button>
+      </form>
+      {% endif %}
+    </div>
+
+    {% if program.college %}
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--gray-mid)">
+      <h3>College</h3>
+      <p style="font-size:13px;margin-top:8px">{{ program.college.name }}</p>
+      {% if program.college.dean %}<p style="font-size:12px;color:var(--gray)">Dean: {{ program.college.dean }}</p>{% endif %}
+      <a href="{{ url_for('programs') }}?college={{ program.college.slug }}" style="font-size:13px;display:block;margin-top:8px">More programs in this college &rarr;</a>
+    </div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

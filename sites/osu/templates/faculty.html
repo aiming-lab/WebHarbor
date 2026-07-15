@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Faculty — Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>Faculty Directory</h1>
+    <p>Meet the scholars, researchers, and educators who make Ohio State exceptional.</p>
+  </div>
+</div>
+
+<div class="sidebar-layout">
+  <aside class="sidebar">
+    <h3>Filter Faculty</h3>
+    <form class="filter-form" method="get" action="{{ url_for('faculty') }}">
+      <label>Search</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="Name, research interest...">
+      <label>Department</label>
+      <select name="dept">
+        <option value="">All Departments</option>
+        {% for d in all_depts %}
+        <option value="{{ d.slug }}" {% if d.slug == current_dept %}selected{% endif %}>{{ d.name }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary" style="margin-top:10px">Apply</button>
+      <a href="{{ url_for('faculty') }}" style="display:block;text-align:center;margin-top:8px;font-size:13px">Clear</a>
+    </form>
+  </aside>
+
+  <div>
+    <p style="font-size:14px;color:var(--gray);font-family:sans-serif;margin-bottom:20px">{{ total }} faculty member{% if total != 1 %}s{% endif %}</p>
+
+    {% if faculty_list %}
+    <div class="grid-2">
+      {% for member in faculty_list %}
+      <div class="card">
+        <div class="card-body">
+          <div style="display:flex;gap:12px">
+            <div style="width:50px;height:50px;background:var(--scarlet);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:bold;flex-shrink:0;font-family:sans-serif">
+              {{ member.name[0] }}
+            </div>
+            <div style="flex:1">
+              <div class="card-title" style="font-size:15px"><a href="{{ url_for('faculty_profile', slug=member.slug) }}">{{ member.name }}</a></div>
+              <div class="card-meta">{{ member.title }}</div>
+              {% if member.department %}<div class="card-meta">{{ member.department.name }}</div>{% endif %}
+              {% if member.email %}<div class="card-meta"><a href="mailto:{{ member.email }}" style="color:var(--scarlet)">{{ member.email }}</a></div>{% endif %}
+              {% if member.is_emeritus %}<span class="badge badge-light" style="margin-top:4px;font-size:11px">Emeritus</span>{% endif %}
+              {% if member.research_interests %}
+              <div style="margin-top:8px">
+                {% for interest in member.research_interests.split(',')[:2] %}
+                <span class="tag">{{ interest.strip() }}</span>
+                {% endfor %}
+              </div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if total_pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}<a href="?page={{ page-1 }}&q={{ q }}&dept={{ current_dept }}">&laquo;</a>{% endif %}
+      {% for p in range(1, total_pages+1) %}
+        {% if p == page %}<span class="current">{{ p }}</span>
+        {% elif p <= 2 or p >= total_pages-1 or (p >= page-2 and p <= page+2) %}
+          <a href="?page={{ p }}&q={{ q }}&dept={{ current_dept }}">{{ p }}</a>
+        {% elif p == 3 or p == total_pages-2 %}<span>…</span>{% endif %}
+      {% endfor %}
+      {% if page < total_pages %}<a href="?page={{ page+1 }}&q={{ q }}&dept={{ current_dept }}">&raquo;</a>{% endif %}
+    </div>
+    {% endif %}
+    {% else %}
+    <div class="empty-state">
+      <div class="icon">&#128100;</div>
+      <h3>No faculty found</h3>
+      <p>Try adjusting your search.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

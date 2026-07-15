@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Buckeye Athletics — Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>Buckeye Athletics</h1>
+    <p>{{ teams|length }} varsity sports. Big Ten Conference. Go Bucks!</p>
+  </div>
+</div>
+
+<div style="background:var(--gray-light);padding:20px;border-radius:8px;margin-bottom:30px">
+  <div class="grid-4">
+    <div style="text-align:center"><span style="font-size:28px;font-weight:bold;color:var(--scarlet);display:block">{{ teams|length }}</span><span style="font-size:12px;font-family:sans-serif;color:var(--gray)">Varsity Sports</span></div>
+    <div style="text-align:center"><span style="font-size:28px;font-weight:bold;color:var(--scarlet);display:block">{{ men_teams|length }}</span><span style="font-size:12px;font-family:sans-serif;color:var(--gray)">Men's Teams</span></div>
+    <div style="text-align:center"><span style="font-size:28px;font-weight:bold;color:var(--scarlet);display:block">{{ women_teams|length }}</span><span style="font-size:12px;font-family:sans-serif;color:var(--gray)">Women's Teams</span></div>
+    <div style="text-align:center"><span style="font-size:28px;font-weight:bold;color:var(--scarlet);display:block">Big Ten</span><span style="font-size:12px;font-family:sans-serif;color:var(--gray)">Conference</span></div>
+  </div>
+</div>
+
+{% if men_teams %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">Men's Sports</h2>
+  <div class="grid-3">
+    {% for team in men_teams %}
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:48px;height:48px;background:var(--scarlet);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:16px;font-family:sans-serif;flex-shrink:0">
+            {{ team.sport[:2].upper() }}
+          </div>
+          <div>
+            <div class="card-title" style="font-size:15px"><a href="{{ url_for('athletics_team', slug=team.slug) }}">{{ team.name }}</a></div>
+            <div class="card-meta">{{ team.sport }}</div>
+            {% if team.recent_record %}<div class="card-meta">Record: {{ team.recent_record }}</div>{% endif %}
+          </div>
+        </div>
+        {% if team.national_titles > 0 %}
+        <div style="margin-top:10px"><span class="badge badge-scarlet">&#127942; {{ team.national_titles }} National Title{% if team.national_titles > 1 %}s{% endif %}</span></div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if women_teams %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">Women's Sports</h2>
+  <div class="grid-3">
+    {% for team in women_teams %}
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div style="width:48px;height:48px;background:var(--gray);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:bold;font-size:16px;font-family:sans-serif;flex-shrink:0">
+            {{ team.sport[:2].upper() }}
+          </div>
+          <div>
+            <div class="card-title" style="font-size:15px"><a href="{{ url_for('athletics_team', slug=team.slug) }}">{{ team.name }}</a></div>
+            <div class="card-meta">{{ team.sport }}</div>
+            {% if team.recent_record %}<div class="card-meta">Record: {{ team.recent_record }}</div>{% endif %}
+          </div>
+        </div>
+        {% if team.national_titles > 0 %}
+        <div style="margin-top:10px"><span class="badge badge-scarlet">&#127942; {{ team.national_titles }} National Title{% if team.national_titles > 1 %}s{% endif %}</span></div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if coed_teams %}
+<section style="margin-bottom:40px">
+  <h2 class="section-title">Co-ed Sports</h2>
+  <div class="grid-3">
+    {% for team in coed_teams %}
+    <div class="card">
+      <div class="card-body">
+        <div class="card-title" style="font-size:15px"><a href="{{ url_for('athletics_team', slug=team.slug) }}">{{ team.name }}</a></div>
+        <div class="card-meta">{{ team.sport }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}
