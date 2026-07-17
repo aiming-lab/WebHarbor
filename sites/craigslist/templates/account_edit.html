@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}edit account - craigslist{% endblock %}
+{% block body_class %}account-page account-edit-page{% endblock %}
+{% block content %}
+<div class="form-page">
+  <p class="form-back"><a href="{{ url_for('account') }}">&lt; account</a></p>
+  <h1>edit account</h1>
+  <form method="post">
+    <label>name</label>
+    <input name="name" value="{{ current_user.name }}">
+    <label>area</label>
+    <select name="area">
+      {% for area in ["san francisco", "east bay", "south bay", "peninsula", "north bay", "santa cruz"] %}
+      <option value="{{ area }}" {% if current_user.area == area %}selected{% endif %}>{{ area }}</option>
+      {% endfor %}
+    </select>
+    <label>phone</label>
+    <input name="phone" value="{{ current_user.phone }}">
+    <button type="submit">save</button>
+  </form>
+</div>
+{% endblock %}

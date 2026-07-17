@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}create posting - craigslist{% endblock %}
+{% block body_class %}post-page account-page{% endblock %}
+{% block content %}
+<div class="form-page wide">
+  <p class="form-back"><a href="{{ url_for('account') }}">&lt; account</a></p>
+  <h1>create a posting</h1>
+  <form method="post">
+    <label>category</label>
+    <select name="category_slug" required>
+      {% for cat in categories %}
+      <option value="{{ cat.slug }}">{{ cat.group_name }} / {{ cat.name }}</option>
+      {% endfor %}
+    </select>
+    <label>posting title</label>
+    <input name="title" required placeholder="short descriptive title">
+    <div class="form-row">
+      <div>
+        <label>price</label>
+        <input name="price" inputmode="numeric">
+      </div>
+      <div>
+        <label>condition</label>
+        <select name="condition">
+          <option value="">not applicable</option>
+          <option>new</option>
+          <option>like new</option>
+          <option>excellent</option>
+          <option>good</option>
+          <option>fair</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>area</label>
+        <select name="area">
+          <option>san francisco</option>
+          <option>east bay</option>
+          <option>south bay</option>
+          <option>peninsula</option>
+          <option>north bay</option>
+          <option>santa cruz</option>
+        </select>
+      </div>
+      <div>
+        <label>neighborhood</label>
+        <input name="neighborhood" placeholder="e.g. berkeley">
+      </div>
+    </div>
+    <div class="form-row">
+      <div>
+        <label>bedrooms</label>
+        <input name="bedrooms" inputmode="numeric">
+      </div>
+      <div>
+        <label>square feet</label>
+        <input name="sqft" inputmode="numeric">
+      </div>
+    </div>
+    <label>compensation or company</label>
+    <input name="compensation" placeholder="$28/hr, $155k-$180k, etc.">
+    <input name="company" placeholder="company name">
+    <label>employment type</label>
+    <select name="employment_type">
+      <option value="">not applicable</option>
+      <option>full-time</option>
+      <option>part-time</option>
+      <option>contract</option>
+      <option>temporary</option>
+    </select>
+    <label>posting body</label>
+    <textarea name="description" rows="9" required></textarea>
+    <button type="submit">publish</button>
+  </form>
+</div>
+{% endblock %}
