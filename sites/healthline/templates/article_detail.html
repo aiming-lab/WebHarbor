@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import article_card %}
+{% block title %}{{ article.title }} — Healthline{% endblock %}
+{% block content %}
+
+<article class="article-wrap">
+  <div class="section-label">
+    <a href="{{ url_for('section_page', slug=article.section_slug) }}">{{ article.subcategory }}</a>
+  </div>
+  <h1>{{ article.title }}</h1>
+
+  {% if article.evidence_based %}
+  <span class="evidence-badge">✓ Evidence based</span>
+  {% endif %}
+
+  <div class="byline">
+    {% if article.author %}
+    <a href="{{ url_for('author_detail', key=article.author.key) }}">
+      <img src="{{ url_for('static', filename='images/' ~ article.author.headshot) }}" alt="{{ article.author.name }}">
+    </a>
+    <div class="who">
+      <span>Written by</span>
+      <strong><a href="{{ url_for('author_detail', key=article.author.key) }}">{{ article.author.display }}</a></strong>
+    </div>
+    {% endif %}
+    {% if article.reviewer %}
+    <div class="who" style="margin-left:18px">
+      <span>Medically reviewed by</span>
+      <strong><a href="{{ url_for('author_detail', key=article.reviewer.key) }}">{{ article.reviewer.display }}</a></strong>
+    </div>
+    {% endif %}
+    <div class="who" style="margin-left:auto">
+      <span>{{ article.updated_str }} · {{ article.read_minutes }} min read</span>
+    </div>
+  </div>
+
+  <img class="hero-photo" src="{{ url_for('static', filename='images/' ~ article.image) }}" alt="{{ article.title }}">
+
+  <div class="article-body">
+    <p style="font-weight:600; font-size:18px">{{ article.summary }}</p>
+    {% for p in article.paragraphs() %}
+    <p>{{ p }}</p>
+    {% endfor %}
+  </div>
+
+  {% if article.takeaway_list() %}
+  <div class="takeaways">
+    <h3>The bottom line</h3>
+    <ul>
+      {% for t in article.takeaway_list() %}<li>{{ t }}</li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('toggle_save', article_id=article.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn {{ 'btn-outline' if is_saved else 'btn-primary' }}">
+      {{ '✓ Saved — remove' if is_saved else 'Save this article' }}
+    </button>
+  </form>
+</article>
+
+{% if related %}
+<section class="strip">
+  <div class="strip-head"><h2>Read this next</h2></div>
+  <div class="grid">
+    {% for a in related %}{{ article_card(a) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
