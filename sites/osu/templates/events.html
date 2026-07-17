@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Events — Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>Events at Ohio State</h1>
+    <p>Lectures, performances, sports, and community events across all campuses.</p>
+  </div>
+</div>
+
+<div class="sidebar-layout">
+  <aside class="sidebar">
+    <h3>Filter Events</h3>
+    <form class="filter-form" method="get" action="{{ url_for('events') }}">
+      <label>Search</label>
+      <input type="text" name="q" value="{{ q }}" placeholder="Keywords...">
+      <label>Category</label>
+      <select name="category">
+        <option value="">All Categories</option>
+        {% for cat in categories %}
+        <option value="{{ cat }}" {% if cat == current_category %}selected{% endif %}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <label>Campus</label>
+      <select name="campus">
+        <option value="">All Campuses</option>
+        {% for c in campuses %}
+        <option value="{{ c }}" {% if c == current_campus %}selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+      <label>Time</label>
+      <select name="date">
+        <option value="upcoming" {% if date_filter == 'upcoming' %}selected{% endif %}>Upcoming</option>
+        <option value="today" {% if date_filter == 'today' %}selected{% endif %}>Today</option>
+        <option value="past" {% if date_filter == 'past' %}selected{% endif %}>Past</option>
+        <option value="all" {% if date_filter == 'all' %}selected{% endif %}>All</option>
+      </select>
+      <button type="submit" class="btn btn-primary" style="margin-top:10px">Apply</button>
+      <a href="{{ url_for('events') }}" style="display:block;text-align:center;margin-top:8px;font-size:13px">Clear</a>
+    </form>
+
+    <h3 style="margin-top:24px">Categories</h3>
+    {% for cat in categories %}
+    <a href="{{ url_for('events') }}?category={{ cat }}" style="display:block;padding:6px 4px;font-size:13px;color:{% if cat == current_category %}var(--scarlet){% else %}var(--gray){% endif %};border-bottom:1px solid var(--gray-mid)">{{ cat }}</a>
+    {% endfor %}
+  </aside>
+
+  <div>
+    <p style="font-size:14px;color:var(--gray);font-family:sans-serif;margin-bottom:20px">{{ total }} event{% if total != 1 %}s{% endif %}</p>
+
+    {% if events %}
+      {% for event in events %}
+      <div class="card" style="margin-bottom:14px">
+        <div class="card-body">
+          <div style="display:flex;gap:16px;align-items:flex-start">
+            <div style="background:var(--scarlet);color:#fff;padding:10px 14px;border-radius:6px;text-align:center;min-width:60px;flex-shrink:0;font-family:sans-serif">
+              <div style="font-size:11px;text-transform:uppercase">{{ event.start_datetime.strftime('%b') }}</div>
+              <div style="font-size:26px;font-weight:bold;line-height:1">{{ event.start_datetime.strftime('%d') }}</div>
+              <div style="font-size:10px">{{ event.start_datetime.strftime('%Y') }}</div>
+            </div>
+            <div style="flex:1">
+              <div style="margin-bottom:6px">
+                <span class="badge badge-scarlet">{{ event.category }}</span>
+                {% if event.registration_required %}<span class="badge badge-gray" style="margin-left:4px">Registration Required</span>{% endif %}
+                {% if event.cost and event.cost != 'Free' %}<span class="badge badge-light" style="margin-left:4px">{{ event.cost }}</span>{% endif %}
+              </div>
+              <h3 class="card-title"><a href="{{ url_for('event_detail', event_id=event.id) }}">{{ event.title }}</a></h3>
+              <div class="card-meta" style="margin-top:6px">
+                {{ event.start_datetime.strftime('%A, %B %d, %Y at %I:%M %p') }}
+                {% if event.end_datetime %} – {{ event.end_datetime.strftime('%I:%M %p') }}{% endif %}
+              </div>
+              {% if event.location %}<div class="card-meta">&#128205; {{ event.location }}, {{ event.campus }}</div>{% endif %}
+              {% if event.organizer %}<div class="card-meta">Organized by: {{ event.organizer }}</div>{% endif %}
+              <p class="card-text" style="margin-top:8px">{{ event.description[:150] }}{% if event.description|length > 150 %}...{% endif %}</p>
+            </div>
+            <div style="white-space:nowrap">
+              <a href="{{ url_for('event_detail', event_id=event.id) }}" class="btn btn-sm btn-outline">Details</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if total_pages > 1 %}
+      <div class="pagination">
+        {% if page > 1 %}<a href="?page={{ page-1 }}&q={{ q }}&category={{ current_category }}&campus={{ current_campus }}&date={{ date_filter }}">&laquo;</a>{% endif %}
+        {% for p in range(1, total_pages+1) %}
+          {% if p == page %}<span class="current">{{ p }}</span>
+          {% elif p <= 2 or p >= total_pages-1 or (p >= page-2 and p <= page+2) %}
+            <a href="?page={{ p }}&q={{ q }}&category={{ current_category }}&campus={{ current_campus }}&date={{ date_filter }}">{{ p }}</a>
+          {% elif p == 3 or p == total_pages-2 %}<span>…</span>{% endif %}
+        {% endfor %}
+        {% if page < total_pages %}<a href="?page={{ page+1 }}&q={{ q }}&category={{ current_category }}&campus={{ current_campus }}&date={{ date_filter }}">&raquo;</a>{% endif %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <div class="icon">&#128197;</div>
+        <h3>No events found</h3>
+        <p>Try adjusting your filters.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

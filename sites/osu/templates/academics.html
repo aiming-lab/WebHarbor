@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Academics — Ohio State{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div class="inner">
+    <h1>Academic Excellence</h1>
+    <p>{{ colleges|length }} colleges, {{ total_depts }} departments, {{ total_programs }} degree programs across all campuses.</p>
+  </div>
+</div>
+
+<div class="alert alert-info" style="margin-bottom:30px">
+  Ohio State is a top-20 public research university with world-class programs across arts, sciences, engineering, medicine, and more.
+</div>
+
+<h2 class="section-title">Colleges &amp; Schools</h2>
+<div class="grid-3" style="margin-bottom:40px">
+  {% for college in colleges %}
+  <div class="card">
+    <div class="card-body">
+      <h3 class="card-title"><a href="{{ url_for('departments') }}?college={{ college.slug }}">{{ college.name }}</a></h3>
+      <p class="card-text">{{ college.description[:140] }}{% if college.description|length > 140 %}...{% endif %}</p>
+      <div class="card-meta" style="margin-top:10px">
+        {% if college.dean %}<div>Dean: {{ college.dean }}</div>{% endif %}
+        <div>{{ college.undergrad_count | default(0) }} undergrad &bull; {{ college.grad_count | default(0) }} graduate</div>
+        <div>Founded {{ college.founded_year }}</div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+        <a href="{{ url_for('departments') }}" class="btn btn-sm btn-outline">Departments</a>
+        <a href="{{ url_for('programs') }}?college={{ college.slug }}" class="btn btn-sm btn-primary">Programs</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+
+<div style="background:var(--gray-light);padding:30px;border-radius:8px;margin-top:20px">
+  <h2 class="section-title">Academic Resources</h2>
+  <div class="grid-4">
+    <div style="text-align:center">
+      <div style="font-size:36px;color:var(--scarlet);font-weight:bold">{{ total_programs }}</div>
+      <div style="font-family:sans-serif;font-size:14px;color:var(--gray)">Degree Programs</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:36px;color:var(--scarlet);font-weight:bold">{{ total_depts }}</div>
+      <div style="font-family:sans-serif;font-size:14px;color:var(--gray)">Departments</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:36px;color:var(--scarlet);font-weight:bold">{{ colleges|length }}</div>
+      <div style="font-family:sans-serif;font-size:14px;color:var(--gray)">Colleges</div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:36px;color:var(--scarlet);font-weight:bold">6</div>
+      <div style="font-family:sans-serif;font-size:14px;color:var(--gray)">Campuses</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

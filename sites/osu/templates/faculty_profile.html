@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}{{ member.name }} — Ohio State Faculty{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a><span>/</span>
+  <a href="{{ url_for('faculty') }}">Faculty</a><span>/</span>
+  <span>{{ member.name }}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:30px">
+  <div>
+    <div style="display:flex;gap:24px;align-items:flex-start;margin-bottom:30px">
+      <div style="width:80px;height:80px;background:var(--scarlet);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:34px;font-weight:bold;font-family:sans-serif;flex-shrink:0">
+        {{ member.name[0] }}
+      </div>
+      <div>
+        <h1 style="font-size:32px;color:var(--scarlet);margin-bottom:6px">{{ member.name }}</h1>
+        <p style="font-size:16px;color:var(--gray);font-family:sans-serif">{{ member.title }}</p>
+        {% if member.department %}<p style="font-size:15px;color:var(--gray);font-family:sans-serif">{{ member.department.name }}{% if member.department.college %}, {{ member.department.college.name }}{% endif %}</p>{% endif %}
+        {% if member.is_emeritus %}<span class="badge badge-gray" style="margin-top:6px">Professor Emeritus</span>{% endif %}
+      </div>
+    </div>
+
+    <div style="background:var(--gray-light);padding:20px;border-radius:8px;margin-bottom:30px;font-family:sans-serif">
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px">
+        {% if member.email %}
+        <div><div style="font-size:11px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Email</div><a href="mailto:{{ member.email }}" style="font-size:14px">{{ member.email }}</a></div>
+        {% endif %}
+        {% if member.phone %}
+        <div><div style="font-size:11px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Phone</div><div style="font-size:14px">{{ member.phone }}</div></div>
+        {% endif %}
+        {% if member.office %}
+        <div><div style="font-size:11px;text-transform:uppercase;color:var(--gray);margin-bottom:4px">Office</div><div style="font-size:14px">{{ member.office }}</div></div>
+        {% endif %}
+      </div>
+    </div>
+
+    {% if member.research_interests %}
+    <div style="margin-bottom:24px">
+      <h2 class="section-title">Research Interests</h2>
+      <div>
+        {% for interest in member.research_interests.split(',') %}
+        <span class="tag" style="font-size:14px;padding:5px 12px">{{ interest.strip() }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if member.bio %}
+    <div style="margin-bottom:30px">
+      <h2 class="section-title">Biography</h2>
+      <div style="line-height:1.8;font-size:16px">
+        {% for paragraph in member.bio.split('\n\n') %}
+        <p style="margin-bottom:16px">{{ paragraph }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+    <form method="post" action="{{ url_for('bookmark_add') }}" style="margin-top:20px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="item_type" value="faculty">
+      <input type="hidden" name="item_id" value="{{ member.id }}">
+      <button type="submit" class="btn btn-outline btn-sm">&#9733; Save Profile</button>
+    </form>
+    {% endif %}
+  </div>
+
+  <aside class="sidebar" style="align-self:start">
+    {% if colleagues %}
+    <h3>Colleagues</h3>
+    {% for col in colleagues %}
+    <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--gray-mid)">
+      <a href="{{ url_for('faculty_profile', slug=col.slug) }}" style="font-size:14px;font-weight:bold">{{ col.name }}</a>
+      <div style="font-size:12px;color:var(--gray);margin-top:2px">{{ col.title }}</div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if member.department %}
+    <div style="margin-top:20px;padding-top:20px;border-top:1px solid var(--gray-mid)">
+      <h3>Department</h3>
+      <a href="{{ url_for('department_detail', slug=member.department.slug) }}" style="font-size:14px;display:block;margin-top:8px">{{ member.department.name }}</a>
+      <a href="{{ url_for('faculty') }}?dept={{ member.department.slug }}" style="font-size:13px;display:block;margin-top:8px;color:var(--gray)">All department faculty &rarr;</a>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:20px">
+      <a href="{{ url_for('faculty') }}" class="btn btn-outline btn-sm" style="width:100%;display:block;text-align:center">Faculty Directory</a>
+    </div>
+  </aside>
+</div>
+{% endblock %}

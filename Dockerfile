@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 16 Flask mirror sites + control plane on :8101.
+# 17 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -33,6 +33,17 @@ COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
 RUN chmod +x /opt/websyn_start.sh
 
-EXPOSE 8101 40000-40015
+# osu ships no frozen DB in git/HF (its data is generated deterministically from
+# seed_data.py). Build its instance_seed/osu.db at image-build time so the boot
+# reset (`cp -a instance_seed instance` in websyn_start.sh) and /reset/osu both
+# have a seed to restore from.
+RUN cd /opt/WebSyn/osu && python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/osu.db', 'instance_seed/osu.db'); \
+print('osu seed DB generated at build time.')" && rm -rf /opt/WebSyn/osu/instance
+
+EXPOSE 8101 40000-40016
 
 CMD ["/opt/websyn_start.sh"]
