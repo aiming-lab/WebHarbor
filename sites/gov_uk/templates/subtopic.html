@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ subtopic.name }} - {{ topic.name }} - GOV.UK{% endblock %}
+
+{% block content %}
+<nav class="govuk-breadcrumbs" aria-label="Breadcrumb">
+  <ol class="govuk-breadcrumbs__list">
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('index') }}">Home</a></li>
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('browse') }}">Browse</a></li>
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('topic_page', topic_slug=topic.slug) }}">{{ topic.name }}</a></li>
+    <li class="govuk-breadcrumbs__list-item" aria-current="page">{{ subtopic.name }}</li>
+  </ol>
+</nav>
+
+<h1 class="govuk-heading-xl">{{ subtopic.name }}</h1>
+<p class="govuk-body-l">{{ subtopic.description }}</p>
+
+{% if subtopic.articles %}
+<ul class="govuk-list">
+  {% for a in subtopic.articles %}
+  <li>
+    <h2 class="govuk-heading-s govuk-!-margin-bottom-1">
+      <a class="govuk-link" href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a>
+    </h2>
+    {% if a.summary %}<p class="govuk-body-s">{{ a.summary }}</p>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="govuk-body">No guidance in this section yet.</p>
+{% endif %}
+{% endblock %}

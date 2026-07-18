@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Browse - GOV.UK{% endblock %}
+
+{% block content %}
+<h1 class="govuk-heading-xl">Browse</h1>
+<p class="govuk-body-l">Find government services and information by topic.</p>
+
+<div class="govuk-grid-row">
+  {% for topic in topics %}
+  <div class="govuk-grid-column-one-third">
+    <h2 class="govuk-heading-s">
+      <a class="govuk-link" href="{{ url_for('topic_page', topic_slug=topic.slug) }}">{{ topic.name }}</a>
+    </h2>
+    <p class="govuk-body-s">{{ topic.description }}</p>
+    <p class="govuk-body-s govuk-hint">{{ topic.article_count }} page{% if topic.article_count != 1 %}s{% endif %}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}
