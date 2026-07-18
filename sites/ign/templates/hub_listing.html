@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - IGN{% endblock %}
+{% block content %}
+<section class="hub-layout {{ hub }}-hub {{ 'hide-review-scores' if hide_review_scores|default(false) else '' }}">
+  <main class="hub-main">
+    <header class="hub-title">
+      <span class="hub-icon">{{ '↗' if hub == 'news' else '▧' }}</span>
+      <h1>{{ title }}</h1>
+    </header>
+
+    {% if featured %}
+      <article class="hub-feature">
+        <a href="{{ detail_url(featured) }}">
+          <img src="{{ featured.image_path }}" alt="{{ featured.title }}">
+          {% if hub == 'reviews' and featured.score and show_review_scores|default(true) %}
+            <span class="review-hex"><b>{{ featured.score }}</b><small>IGN</small></span>
+          {% endif %}
+        </a>
+      </article>
+    {% endif %}
+
+    <section class="hub-listing">
+      <h2>{{ list_title }}</h2>
+      <nav class="category-tabs" aria-label="{{ title }} categories">
+        {% for key, label in categories %}
+          <a class="{{ 'active' if key == active_category else '' }}" href="{{ url_for(hub, category=key) if key != 'all' else url_for(hub) }}">{{ label.replace(' Reviews', '').replace(' News', '') }}</a>
+        {% endfor %}
+      </nav>
+
+      {% if hub == 'reviews' %}
+        <form class="review-controls" method="get" action="{{ request.path }}">
+          <input type="hidden" name="scores" value="{{ '1' if show_review_scores else '0' }}">
+          <input type="hidden" name="editors_choice" value="{{ '1' if editors_choice_only else '0' }}">
+          <label class="switch">
+            <input type="checkbox" {% if show_review_scores %}checked{% endif %} data-submit-on-change data-state-field="scores">
+            <span></span>Review Scores
+          </label>
+          <label class="switch">
+            <input type="checkbox" {% if editors_choice_only %}checked{% endif %} data-submit-on-change data-state-field="editors_choice">
+            <span></span>Editors' Choice
+          </label>
+          <label class="select-control" aria-label="Sort reviews">
+            <select name="sort" data-submit-on-change>
+              {% for key, label in sort_options %}
+                <option value="{{ key }}" {% if sort_key == key %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="select-control" aria-label="Filter by score">
+            <select name="score" data-submit-on-change>
+              {% for key, label in score_filters %}
+                <option value="{{ key }}" {% if score_filter == key %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label class="select-control" aria-label="Filter by genre">
+            <select name="genre" data-submit-on-change>
+              {% for key, label in genre_filters %}
+                <option value="{{ key }}" {% if genre_filter == key %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </label>
+        </form>
+      {% else %}
+        <div class="source-prompt">
+          <strong>Get IGN's Biggest Stories FIRST. Set Us as Your Source.</strong>
+          <button type="button">G Add Source</button>
+        </div>
+      {% endif %}
+
+      <div class="list-page hub-results">
+        {% for item in items %}
+          {% include "_item_card.html" with context %}
+        {% else %}
+          <div class="empty-state">No stories match this view.</div>
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+
+  <aside class="hub-side">
+    <h2>{{ 'Popular Reviews' if hub == 'reviews' else 'Popular Stories' }}</h2>
+    <ol class="popular-list">
+      {% for item in popular %}
+        <li>
+          <span class="rank">{{ '%02d'|format(loop.index) }}</span>
+          <a href="{{ detail_url(item) }}">
+            <small>{{ loop.index }}d</small>
+            <strong>{{ item.title }}</strong>
+            <em>▣ {{ item.comments_count }}</em>
+          </a>
+        </li>
+      {% endfor %}
+    </ol>
+  </aside>
+</section>
+{% endblock %}

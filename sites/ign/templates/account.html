@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Profile - IGN{% endblock %}
+{% block content %}
+<header class="profile-hero">
+  <div class="profile-avatar">✣</div>
+  <div class="profile-main">
+    <h1>{{ current_user.username }}</h1>
+    <a href="{{ url_for('account') }}">View Public Profile</a>
+    <div class="profile-actions">
+      <a class="share-button" href="{{ url_for('account_edit') }}">Edit Profile</a>
+      <button type="button" class="more-button">...</button>
+      <div class="profile-stats">
+        <span><b>{{ current_user.saved_items|length }}</b><small>Lists</small></span>
+        <span><b>{{ current_user.playlist_entries|length }}</b><small>Library</small></span>
+        <span><b>▣</b><small>Public</small></span>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="profile-tabs" aria-label="Profile sections">
+  <a class="active" href="{{ url_for('account') }}">Overview</a>
+  <a href="{{ url_for('playlist') }}">Playlists</a>
+  <a href="{{ url_for('reviews') }}">Reviews</a>
+</nav>
+
+<section class="profile-section">
+  <div class="section-head"><div><h2>Now Playing</h2><p>Here's what {{ current_user.username }} is playing.</p></div><a href="{{ url_for('playlist') }}">See all</a></div>
+  {% if playlist %}
+    <div class="profile-row">
+      {% for row in playlist[:4] %}
+        {% set item = row.item %}
+        {% include "_item_card.html" with context %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="profile-empty">No Results.</p>
+  {% endif %}
+</section>
+
+<section class="profile-grid">
+  <div>
+    <h2>Recently Wishlisted</h2>
+    <div class="profile-box">
+      {% if saved %}
+        {% for row in saved[:2] %}
+          <a href="{{ detail_url(row.item) }}">{{ row.item.title }}</a>
+        {% endfor %}
+      {% else %}
+        <span>No Games With Given Status</span>
+      {% endif %}
+    </div>
+  </div>
+  <div>
+    <h2>Recently Backlogged</h2>
+    <div class="profile-box"><span>No Games With Given Status</span></div>
+  </div>
+  <div>
+    <h2>Recently Beat</h2>
+    <div class="profile-box"><span>No Games With Given Status</span></div>
+  </div>
+</section>
+
+<section class="section-block">
+  <div class="section-head"><h2>Digest History</h2></div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Digest</th><th>Status</th><th>Delivery</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for digest in current_user.digests %}
+          <tr>
+            <td>{{ digest.title }} <span class="muted">{{ digest.digest_number }}</span></td>
+            <td>{{ digest.status }}</td>
+            <td>{{ digest.delivery }}</td>
+            <td>{{ digest.created_at.strftime('%b %d, %Y') }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

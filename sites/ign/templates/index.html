@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Video Game News, Reviews, and Walkthroughs - IGN{% endblock %}
+{% block content %}
+<section class="deck-grid" aria-label="Featured stories">
+  {% for item in top_stories[:4] %}
+    <article class="deck-card tone-{{ loop.index0 }}">
+      <a href="{{ detail_url(item) }}">
+        <img src="{{ item.image_path }}" alt="{{ item.title }}">
+        <div class="deck-title">
+          <h2>{{ item.title }}</h2>
+        </div>
+      </a>
+    </article>
+  {% endfor %}
+</section>
+
+<section class="home-section top-story-section">
+  <h2>Top Stories</h2>
+  <div class="story-row">
+    {% for item in top_stories[4:12] %}
+      {% include "_item_card.html" with context %}
+    {% endfor %}
+  </div>
+  <button class="carousel-arrow" type="button" aria-label="Next stories">›</button>
+</section>
+
+<section class="home-section">
+  <div class="section-head">
+    <h2>Latest</h2>
+    <a href="{{ url_for('news') }}">See all</a>
+  </div>
+  <div class="story-row">
+    {% for item in latest[:8] %}
+      {% include "_item_card.html" with context %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="home-section split">
+  <div>
+    <div class="section-head"><h2>Reviews</h2><a href="{{ url_for('reviews') }}">All reviews</a></div>
+    <div class="list-stack dark-list">
+      {% for item in reviews[:5] %}
+        {% set compact = true %}
+        {% include "_item_card.html" with context %}
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="section-head"><h2>Guides</h2><a href="{{ url_for('wikis') }}">Open guides</a></div>
+    <div class="list-stack dark-list">
+      {% for item in guides[:5] %}
+        {% set compact = true %}
+        {% include "_item_card.html" with context %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="home-section">
+  <div class="section-head">
+    <h2>Videos</h2>
+    <a href="{{ url_for('videos') }}">More videos</a>
+  </div>
+  <div class="story-row">
+    {% for item in videos %}
+      {% include "_item_card.html" with context %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

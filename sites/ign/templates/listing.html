@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - IGN{% endblock %}
+{% block content %}
+<header class="page-header">
+  <span class="eyebrow">{{ active_filter|default('IGN') }}</span>
+  <h1>{{ title }}</h1>
+  <p>{{ subtitle }}</p>
+</header>
+
+<div class="filter-row">
+  <a href="{{ url_for('news') }}">News</a>
+  <a href="{{ url_for('reviews') }}">Reviews</a>
+  <a href="{{ url_for('wikis') }}">Guides</a>
+  <a href="{{ url_for('videos') }}">Videos</a>
+  <a href="/games">Games</a>
+  <a href="/movies">Movies</a>
+  <a href="/tv">TV</a>
+  <a href="/deals">Deals</a>
+</div>
+
+<section class="list-page">
+  {% for item in items %}
+    {% include "_item_card.html" with context %}
+  {% else %}
+    <div class="empty-state">No stories match this view.</div>
+  {% endfor %}
+</section>
+{% endblock %}
