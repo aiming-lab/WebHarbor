@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}TED Talks{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Watch</p>
+  <h1>{% if topic %}Talks about {{ topic }}{% else %}TED Talks{% endif %}</h1>
+  <form class="filters" method="get">
+    <select name="event">
+      <option value="">All events</option>
+      {% for item in events %}
+        <option value="{{ item }}" {% if event == item %}selected{% endif %}>{{ item }}</option>
+      {% endfor %}
+    </select>
+    <input type="number" name="max_minutes" min="1" placeholder="Max minutes" value="{{ max_minutes or '' }}">
+    {% if topic %}<input type="hidden" name="topic" value="{{ topic }}">{% endif %}
+    <button type="submit">Apply</button>
+  </form>
+</section>
+<section class="band">
+  <div class="grid">
+    {% for talk in talks %}
+      {% include "_talk_card.html" %}
+    {% else %}
+      <p>No talks matched those filters.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

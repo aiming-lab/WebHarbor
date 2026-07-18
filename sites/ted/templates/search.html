@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Search TED{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Search</p>
+  <h1>{% if q %}Results for "{{ q }}"{% else %}Search TED{% endif %}</h1>
+</section>
+<section class="band">
+  <div class="grid">
+    {% for talk in talks %}
+      {% include "_talk_card.html" %}
+    {% else %}
+      <p>Try a query such as AI, climate, design, science, democracy, or health.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
