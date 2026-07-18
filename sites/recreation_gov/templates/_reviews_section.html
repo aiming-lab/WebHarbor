@@ -1,0 +1,75 @@
+<section class="detail-section-card" id="reviews">
+  <div class="detail-review-head">
+    <div>
+      <h2>Guest Reviews ({{ "{:,}".format(facility.review_count) }})</h2>
+      <div class="detail-review-rating">{{ "%.1f"|format(facility.rating) }} ★★★★★</div>
+    </div>
+    <div class="detail-review-sort">Sort by: Most Recent</div>
+  </div>
+
+  <div class="detail-reviews-grid">
+    <aside class="detail-review-summary">
+      {% for bucket in review_breakdown %}
+        <div class="review-bar-row">
+          <span>{{ bucket.stars }} stars</span>
+          <div class="review-bar"><div style="width: {{ "%.1f"|format(bucket.percent) }}%"></div></div>
+          <strong>{{ "{:,}".format(bucket.count) }}</strong>
+        </div>
+      {% endfor %}
+    </aside>
+
+    <div class="detail-review-list">
+      {% if current_user.is_authenticated %}
+        <form class="detail-review-form" method="post" action="{{ url_for('add_review', slug=facility.slug) }}">
+          <h3>Write a Review</h3>
+          <div class="detail-review-form-grid">
+            <div>
+              <label for="rating">Rating</label>
+              <select id="rating" name="rating">
+                <option value="5">5 stars</option>
+                <option value="4">4 stars</option>
+                <option value="3">3 stars</option>
+                <option value="2">2 stars</option>
+                <option value="1">1 star</option>
+              </select>
+            </div>
+            <div>
+              <label for="visit_date">Visit Date</label>
+              <input id="visit_date" name="visit_date" placeholder="May 2026">
+            </div>
+          </div>
+          <label for="body">Trip Notes</label>
+          <textarea id="body" name="body" rows="4" placeholder="What matched the listing? What should the next visitor know?"></textarea>
+          <button class="btn" type="submit">Submit Review</button>
+        </form>
+      {% else %}
+        <div class="detail-review-form review-login-prompt">
+          <h3>Write a Review</h3>
+          <p class="muted">Sign in to leave a review and keep your reservation history attached to one account.</p>
+          <a class="btn" href="{{ url_for('login', next=url_for('facility_detail', slug=facility.slug, _anchor='reviews')) }}">Log In to Review</a>
+        </div>
+      {% endif %}
+
+      {% for review in recent_reviews %}
+        {% set is_own_review = current_review_author and review.author == current_review_author %}
+        <article class="detail-review-card{% if is_own_review %} is-own-review{% endif %}{% if loop.index > 20 %} is-hidden-review{% endif %}" data-review-card>
+          <div class="detail-review-card-top">
+            <div>
+              <div class="stars">{{ "★" * review.rating }}{{ "☆" * (5 - review.rating) }}</div>
+              <strong>{{ review.author }}{% if is_own_review %} <span class="own-review-badge">Your review</span>{% endif %}</strong>
+              <div class="muted">Reservation Dates: {{ review.visit_date }}</div>
+            </div>
+            <span class="muted">Submitted {{ review.visit_date }}</span>
+          </div>
+          <p>{{ review.body }}</p>
+        </article>
+      {% endfor %}
+
+      {% if recent_reviews|length > 20 %}
+        <div class="review-load-more-row" data-review-load-row>
+          <button class="btn secondary" type="button" data-review-load-more>Show More Reviews</button>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</section>

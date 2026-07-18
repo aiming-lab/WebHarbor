@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ facility.name }} - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section sitepass-page">
+  <div class="wrap">
+    <div class="sitepass-alert-band">
+      <span aria-hidden="true">▲</span>
+      <p>{{ site_pass_context.alert }} <a href="{{ url_for('passes') }}">Learn More</a></p>
+      <button class="btn secondary sitepass-alert-cta" type="button">1 Show More</button>
+    </div>
+
+    <div class="sitepass-layout">
+      <div class="sitepass-main">
+        <h1>{{ site_pass_context.page_title }}</h1>
+        <p class="sitepass-name">{{ facility.name }}</p>
+        <div class="sitepass-meta">
+          <span>Part of <a href="{{ url_for('search', q=facility.parent_area or facility.agency) }}">{{ facility.parent_area or facility.agency }}</a></span>
+          {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('save_facility', slug=facility.slug) }}">
+              <button class="link-button" type="submit">♡ {% if facility.id in saved_ids %}Saved{% else %}Favorite{% endif %}</button>
+            </form>
+          {% else %}
+            <a href="{{ url_for('login', next=url_for('facility_detail', slug=facility.slug)) }}">♡ Favorite</a>
+          {% endif %}
+        </div>
+
+        {% if site_pass_context.notice %}
+          <div class="sitepass-info-banner">
+            <strong>i</strong>
+            <span>{{ site_pass_context.notice }} <a href="{{ url_for('passes') }}">Learn More</a></span>
+          </div>
+        {% endif %}
+
+        <section class="sitepass-primary-card">
+          <h2>An entrance pass is required at this location</h2>
+          <p class="sitepass-copy-lead">A digital Site Pass:</p>
+          <ul class="sitepass-checklist">
+            <li>Covers the entrance fee for {{ facility.name }}</li>
+            <li>Is available for download on a phone or tablet</li>
+          </ul>
+          <p class="sitepass-copy-strong"><strong>Site Passes are non-refundable.</strong> Before purchasing, <a href="#interagency">review these additional options</a> you might be eligible for.</p>
+          <div class="sitepass-cta-row">
+            <a class="btn ghost" href="{{ url_for('passes') }}">View All Site Passes</a>
+            <a class="btn" href="#interagency">Help Me Choose a Site Pass</a>
+          </div>
+        </section>
+
+        <section class="sitepass-interagency-card" id="interagency">
+          <div>
+            <h2>America the Beautiful Passes cover the entrance fee at this location.</h2>
+            <p>If you have a pass, bring it with you. Frequent visitors, seniors, military, and others may save money on entrance fees with an America the Beautiful Pass.</p>
+            <a href="{{ url_for('passes') }}">Learn more about the Digital America the Beautiful Pass</a>
+          </div>
+          <img src="{{ site_pass_context.interagency_image }}" alt="Multiple America the Beautiful interagency passes">
+        </section>
+
+        {% include "_reviews_section.html" %}
+      </div>
+
+      <aside class="sitepass-side">
+        <img class="sitepass-hero-image" src="{{ site_pass_context.hero_image }}" alt="{{ facility.name }}">
+        <section class="sitepass-about-card">
+          <h2>About {{ facility.name }}</h2>
+          <p>{{ site_pass_context.about }}</p>
+          <a href="{{ url_for('search', q=facility.parent_area or facility.agency) }}">Read More</a>
+        </section>
+      </aside>
+    </div>
+  </div>
+</section>
+{% endblock %}
