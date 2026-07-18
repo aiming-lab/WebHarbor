@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Attend</p>
+  <h1>Events</h1>
+</section>
+<section class="topic-grid">
+  {% for event in events %}
+    <article>
+      <strong>{{ event.name }}</strong>
+      <span>{{ event.city }} - {{ event.month }} - {{ event.track }}</span>
+      <p>{{ event.capacity }} seats</p>
+      <form method="post">
+        <input type="hidden" name="event_slug" value="{{ event.slug }}">
+        <button type="submit">Register interest</button>
+      </form>
+    </article>
+  {% endfor %}
+</section>
+{% endblock %}
