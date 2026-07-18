@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Edit profile — Healthline{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Edit profile</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <label for="full_name">Full name</label>
+      <input type="text" id="full_name" name="full_name" value="{{ current_user.full_name }}">
+    </div>
+    <div class="form-row">
+      <label for="location">Location</label>
+      <input type="text" id="location" name="location" value="{{ current_user.location }}">
+    </div>
+    <div class="form-row">
+      <label for="bio">Bio</label>
+      <textarea id="bio" name="bio" rows="3">{{ current_user.bio }}</textarea>
+    </div>
+    <div class="form-row">
+      <label><input type="checkbox" name="newsletter" {{ 'checked' if current_user.newsletter }}> Subscribe to the Healthline newsletter</label>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save changes</button>
+      <a class="btn btn-ghost" href="{{ url_for('account') }}">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

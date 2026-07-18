@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Healthline: Medical information and health advice you can trust{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-top">
+      <a class="logo" href="{{ url_for('index') }}">health<span class="dot">line</span></a>
+      <form class="search-form" action="{{ url_for('search') }}" method="get" role="search">
+        <input type="search" name="q" placeholder="Search conditions, drugs, nutrition…"
+               value="{{ request.args.get('q','') }}" aria-label="Search">
+        <button type="submit">Search</button>
+      </form>
+      <div class="header-actions">
+        {% if current_user.is_authenticated %}
+          <a class="btn-ghost" href="{{ url_for('saved_articles') }}">Saved ({{ saved_count }})</a>
+          <a href="{{ url_for('account') }}" title="{{ current_user.full_name }}">
+            <span class="avatar" style="background: {{ current_user.avatar_color }}">{{ current_user.initials }}</span>
+          </a>
+        {% else %}
+          <a class="btn btn-outline" href="{{ url_for('login') }}">Sign in</a>
+          <a class="btn btn-primary" href="{{ url_for('register') }}">Sign up</a>
+        {% endif %}
+      </div>
+    </div>
+    <nav class="main-nav">
+      <div class="container">
+        <ul>
+          {% for s in nav_sections %}
+            {% if s.slug == 'health-conditions' %}
+            <li><a href="{{ url_for('conditions_index') }}"
+                   class="{{ 'active' if request.path.startswith('/condition') }}">{{ s.name }}</a></li>
+            {% elif s.slug == 'drugs' %}
+            <li><a href="{{ url_for('drugs_index') }}"
+                   class="{{ 'active' if request.path.startswith('/drug') }}">{{ s.name }}</a></li>
+            {% else %}
+            <li><a href="{{ url_for('section_page', slug=s.slug) }}"
+                   class="{{ 'active' if request.path == url_for('section_page', slug=s.slug) }}">{{ s.name }}</a></li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-cols">
+        <div>
+          <h4>Health Topics</h4>
+          <ul>
+            {% for s in nav_sections %}
+              {% if s.slug == 'health-conditions' %}
+              <li><a href="{{ url_for('conditions_index') }}">{{ s.name }}</a></li>
+              {% elif s.slug == 'drugs' %}
+              <li><a href="{{ url_for('drugs_index') }}">{{ s.name }}</a></li>
+              {% else %}
+              <li><a href="{{ url_for('section_page', slug=s.slug) }}">{{ s.name }}</a></li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+        <div>
+          <h4>Reference</h4>
+          <ul>
+            <li><a href="{{ url_for('conditions_index') }}">Health Conditions A–Z</a></li>
+            <li><a href="{{ url_for('drugs_index') }}">Drugs A–Z</a></li>
+            <li><a href="{{ url_for('search') }}">Search</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Company</h4>
+          <ul>
+            <li><a href="{{ url_for('about') }}">About Healthline</a></li>
+            {% if current_user.is_authenticated %}
+              <li><a href="{{ url_for('account') }}">My account</a></li>
+              <li><a href="{{ url_for('logout') }}">Sign out</a></li>
+            {% else %}
+              <li><a href="{{ url_for('login') }}">Sign in</a></li>
+              <li><a href="{{ url_for('register') }}">Create account</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>Our content does not constitute medical advice. This is a research mirror of Healthline for offline web-agent benchmarking. &copy; {{ current_year }} Healthline Mirror. Content reviewed as of {{ ref_date_str }}.</p>
+      </div>
+    </div>
+  </footer>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

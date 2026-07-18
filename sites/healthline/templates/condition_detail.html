@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_macros.html" import article_card %}
+{% block title %}{{ condition.name }}: Symptoms, Causes & Treatment — Healthline{% endblock %}
+{% block content %}
+
+<div class="detail-head">
+  <img src="{{ url_for('static', filename='images/' ~ condition.image) }}" alt="{{ condition.name }}">
+  <div>
+    <div class="section-label">Health Conditions · {{ condition.category }}</div>
+    <h1>{{ condition.name }}</h1>
+    {% if condition.reviewer %}
+    <p class="muted">Medically reviewed by
+      <a href="{{ url_for('author_detail', key=condition.reviewer.key) }}">{{ condition.reviewer.display }}</a></p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="detail-block">
+  <h2>Overview</h2>
+  <p>{{ condition.overview }}</p>
+</div>
+
+<div class="detail-block">
+  <h2>Symptoms</h2>
+  <ul>{% for s in condition.symptom_list() %}<li>{{ s }}</li>{% endfor %}</ul>
+</div>
+
+<div class="detail-block">
+  <h2>Causes &amp; risk factors</h2>
+  <ul>{% for c in condition.cause_list() %}<li>{{ c }}</li>{% endfor %}</ul>
+</div>
+
+<div class="detail-block">
+  <h2>Treatment &amp; management</h2>
+  <ul>{% for t in condition.treatment_list() %}<li>{{ t }}</li>{% endfor %}</ul>
+</div>
+
+<div class="detail-block">
+  <div class="callout">
+    <h3>When to see a doctor</h3>
+    <p>{{ condition.when_to_see_doctor }}</p>
+  </div>
+</div>
+
+{% if related %}
+<section class="strip">
+  <div class="strip-head"><h2>Related articles</h2></div>
+  <div class="grid">{% for a in related %}{{ article_card(a) }}{% endfor %}</div>
+</section>
+{% endif %}
+
+{% endblock %}

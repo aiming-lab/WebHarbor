@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Reading history — Healthline{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Reading history</h1>
+  <p class="muted">{{ items|length }} article{{ '' if items|length == 1 else 's' }} viewed.</p>
+</div>
+
+{% for h in items %}
+<div class="list-row">
+  <img src="{{ url_for('static', filename='images/' ~ h.article.image) }}" alt="">
+  <div class="info" style="flex:1">
+    <h4><a href="{{ url_for('article_detail', slug=h.article.slug) }}">{{ h.article.title }}</a></h4>
+    <span>{{ section_names.get(h.article.section_slug, '') }} · {{ h.article.subcategory }} · viewed {{ h.viewed_at.strftime('%b %d, %Y') }}</span>
+  </div>
+</div>
+{% else %}
+<p>No reading history yet.</p>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}My account — Healthline{% endblock %}
+{% block content %}
+
+<div class="account-grid">
+  <aside class="profile-card">
+    <div class="big-avatar" style="background: {{ current_user.avatar_color }}">{{ current_user.initials }}</div>
+    <h2 style="margin:0 0 4px">{{ current_user.full_name or current_user.username }}</h2>
+    <p class="muted">{{ current_user.email }}</p>
+    {% if current_user.location %}<p class="muted">{{ current_user.location }}</p>{% endif %}
+    {% if current_user.bio %}<p>{{ current_user.bio }}</p>{% endif %}
+    <div style="margin-top:16px; display:flex; flex-direction:column; gap:8px">
+      <a class="btn btn-outline" href="{{ url_for('account_edit') }}">Edit profile</a>
+      <a class="btn btn-ghost" href="{{ url_for('change_password') }}">Change password</a>
+      <a class="btn btn-ghost" href="{{ url_for('logout') }}">Sign out</a>
+    </div>
+  </aside>
+
+  <div>
+    <div class="strip-head"><h2>Saved articles</h2><a href="{{ url_for('saved_articles') }}">View all &rarr;</a></div>
+    {% for s in saved %}
+    <div class="list-row">
+      <img src="{{ url_for('static', filename='images/' ~ s.article.image) }}" alt="">
+      <div class="info">
+        <h4><a href="{{ url_for('article_detail', slug=s.article.slug) }}">{{ s.article.title }}</a></h4>
+        <span>{{ s.article.subcategory }} · saved {{ s.saved_at.strftime('%b %d, %Y') }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p class="muted">You haven't saved any articles yet.</p>
+    {% endfor %}
+
+    <div class="strip-head" style="margin-top:34px"><h2>Recently read</h2><a href="{{ url_for('reading_history') }}">View all &rarr;</a></div>
+    {% for h in history %}
+    <div class="list-row">
+      <img src="{{ url_for('static', filename='images/' ~ h.article.image) }}" alt="">
+      <div class="info">
+        <h4><a href="{{ url_for('article_detail', slug=h.article.slug) }}">{{ h.article.title }}</a></h4>
+        <span>{{ h.article.subcategory }} · viewed {{ h.viewed_at.strftime('%b %d, %Y') }}</span>
+      </div>
+    </div>
+    {% else %}
+    <p class="muted">No reading history yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+{% endblock %}
