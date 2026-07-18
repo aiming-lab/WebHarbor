@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Drug Dosage Guide - Drugs.com{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <span>Dosage Guide</span>
+</nav>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+
+<h1>Dosage Guide</h1>
+<p class="muted">Find comprehensive dosage information for over {{ drugs|length }} medications. Dosage guidelines are based on FDA-approved prescribing information and clinical pharmacology data.</p>
+
+<div class="az-jump-row">
+  {% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+  <a href="#section-{{ letter }}" class="az-jump-link">{{ letter }}</a>
+  {% endfor %}
+</div>
+
+<p class="muted small-note">
+  Always follow your doctor's instructions and read the medication label. Dosages shown are general guidelines and may differ based on your condition, weight, renal function, and other factors.
+</p>
+
+{% set ns = namespace(current_letter='') %}
+{% for drug in drugs %}
+  {% set first = drug.generic_name[0]|upper %}
+  {% if first != ns.current_letter %}
+    {% if ns.current_letter %}
+    </ul>
+    {% endif %}
+    {% set ns.current_letter = first %}
+    <h2 id="section-{{ first }}" class="az-section-heading">{{ first }}</h2>
+    <ul class="dosage-guide-list">
+  {% endif %}
+  <li class="dosage-guide-item">
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}"><strong>{{ drug.generic_name|capitalize }}</strong></a>
+    {% if drug.brand_names %}<span class="muted"> — {{ drug.brand_names|join(', ') }}</span>{% endif %}
+    {% if drug.drug_class %}<span class="muted small"> · {{ drug.drug_class.name }}</span>{% endif %}
+  </li>
+{% endfor %}
+{% if ns.current_letter %}
+</ul>
+{% endif %}
+
+</div>
+
+<aside class="sidebar">
+  <div class="sidebar-box">
+    <div class="sidebar-box-title">Dosage Tools</div>
+    <ul class="sidebar-link-list">
+      <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a></li>
+      <li><a href="{{ url_for('interaction_checker') }}">Interaction Checker</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+      <li><a href="{{ url_for('conditions_list') }}">Conditions A-Z</a></li>
+    </ul>
+  </div>
+  <div class="sidebar-box">
+    <div class="sidebar-box-title">Important Note</div>
+    <p class="muted small">Dosage information is provided for reference purposes. Always consult your healthcare provider or pharmacist for personalized dosing recommendations.</p>
+  </div>
+</aside>
+</div>
+{% endblock %}

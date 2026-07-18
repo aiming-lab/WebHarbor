@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Drug Warnings, Recalls &amp; FDA Safety Alerts | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="warnings-index">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <span>Drug Warnings</span>
+  </nav>
+
+  <h1 class="page-title">Drug Warnings, Recalls &amp; FDA Safety Alerts</h1>
+  <p class="page-subtitle">Stay informed about prescription drug safety, FDA-issued black box warnings, recent recalls, and ongoing safety communications.</p>
+
+  <section class="warning-callout">
+    <h2>What is a black box warning?</h2>
+    <p>A boxed warning (also called a black box warning) is the strongest warning the U.S. Food and Drug Administration (FDA) requires for prescription drugs that carry a significant risk of serious or life-threatening adverse effects. The warning appears in a black-bordered box at the top of the package insert and is intended to alert prescribers and patients to these risks.</p>
+  </section>
+
+  <nav class="warning-filter-tabs" aria-label="Filter warnings by category">
+    <a class="warning-tab {% if category == 'all' %}is-active{% endif %}" href="{{ url_for('warnings_index') }}">All warnings</a>
+    <a class="warning-tab {% if category == 'blackbox' %}is-active{% endif %}" href="{{ url_for('warnings_index', category='blackbox') }}">Black Box Warnings</a>
+    <a class="warning-tab {% if category == 'recalls' %}is-active{% endif %}" href="{{ url_for('warnings_index', category='recalls') }}">FDA Recalls</a>
+    <a class="warning-tab {% if category == 'safety' %}is-active{% endif %}" href="{{ url_for('warnings_index', category='safety') }}">Safety Alerts</a>
+  </nav>
+
+  {% if category in ('all', 'recalls', 'safety') and fda_alerts %}
+  <section class="warning-section">
+    <h2 class="warning-section-title">{% if category == 'recalls' %}FDA Recall Notices{% elif category == 'safety' %}FDA Safety Alerts{% else %}Recent FDA Alerts &amp; Recalls{% endif %}</h2>
+    <ul class="warning-alert-list">
+      {% for a in fda_alerts %}
+        <li class="warning-alert-item">
+          <span class="warning-alert-badge cat-{{ a.category|lower|replace(' ', '-') }}">{{ a.category }}</span>
+          <a class="warning-alert-title" href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a>
+          <span class="warning-alert-date">{{ a.published_at.strftime('%b %d, %Y') }}</span>
+          {% if a.body %}<p class="warning-alert-snippet">{{ a.body[:220] }}{% if a.body|length > 220 %}&hellip;{% endif %}</p>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if category in ('all', 'blackbox') %}
+  <section class="warning-section">
+    <h2 class="warning-section-title">Drugs with significant warnings</h2>
+    <p class="muted">Tap any drug to read the full warnings section, including contraindications and adverse reactions.</p>
+    <table class="warning-table">
+      <thead>
+        <tr>
+          <th>Drug</th>
+          <th>Warning summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in drugs %}
+          <tr>
+            <td class="warning-table-drug"><a href="{{ url_for('drug_warnings', slug=d.slug) }}">{{ d.generic_name }}</a></td>
+            <td>{{ (d.warnings or '')[:280] }}{% if d.warnings and d.warnings|length > 280 %}&hellip;{% endif %}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="2" class="muted">No drug warnings found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+
+  <section class="warning-resources">
+    <h2 class="warning-section-title">Related safety resources</h2>
+    <ul>
+      <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a> &mdash; check for dangerous combinations before starting a new medication.</li>
+      <li><a href="{{ url_for('side_effects_page') }}">Side Effects A-Z</a> &mdash; learn about common and serious side effects.</li>
+      <li><a href="{{ url_for('news_category', category='fda-alerts') }}">All FDA Alerts</a> &mdash; full archive of FDA-issued safety communications.</li>
+      <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &mdash; browse the full medication directory.</li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

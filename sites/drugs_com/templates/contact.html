@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Contact Us | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="is-090">
+  <nav class="breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Contact Us</span></nav>
+  <h1 class="is-091">Contact Us</h1>
+
+  <div class="is-092">
+    <strong class="is-093">For medical emergencies:</strong>
+    <p class="is-094">If you are experiencing a medical emergency, call <a class="is-095" href="tel:911">911</a> immediately. For poisoning, call the U.S. Poison Help line 24/7 at <a class="is-096" href="tel:1-800-222-1222">1-800-222-1222</a>. Drugs.com cannot provide emergency medical assistance.</p>
+  </div>
+
+  <p class="is-097">We welcome questions, feedback, and corrections from our readers. Use the form below or the direct contacts on this page to reach the appropriate team.</p>
+
+  <div class="is-098">
+
+    <section>
+      <h2 class="is-099">Send us a message</h2>
+      <form class="is-100" id="contact-form" method="post" action="{{ url_for('contact') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="is-101">Name
+          <input class="is-102" type="text" name="name" maxlength="80" required>
+        </label>
+        <label class="is-101">Email
+          <input class="is-102" type="email" name="email" maxlength="254" required>
+        </label>
+        <label class="is-101">Subject
+          <select class="is-102" name="subject" required>
+            <option value="">-- Select a subject --</option>
+            <option value="general">General Question</option>
+            <option value="error">Report an Error</option>
+            <option value="feedback">Feedback</option>
+            <option value="drug_info">Drug Information Question</option>
+          </select>
+        </label>
+        <label class="is-101">Message
+          <textarea class="is-103" name="message" rows="6" maxlength="500" required></textarea>
+        </label>
+        <button class="is-104" type="submit">Send Message</button>
+        <div class="is-105" id="contact-confirmation"{% if submitted %} style="display:block"{% endif %}>A receipt for your message was saved in this demo browser session. No external email was sent.</div>
+      </form>
+    </section>
+
+    <section>
+      <h2 class="is-099">Direct contacts</h2>
+
+      <h3 class="is-106">Editorial Team</h3>
+      <p class="is-107">Corrections to drug monographs, news articles, or other editorial content.</p>
+      <p class="is-071"><a href="mailto:editor@drugs.com">editor@drugs.com</a></p>
+
+      <h3 class="is-106">Medical Review Team</h3>
+      <p class="is-107">Questions about medical accuracy, clinical content, or our review process. Our content is reviewed by licensed pharmacists and physicians.</p>
+      <p class="is-071"><a href="mailto:medical-review@drugs.com">medical-review@drugs.com</a></p>
+
+      <h3 class="is-106">General feedback</h3>
+      <p class="is-071"><a href="mailto:feedback@drugs.com">feedback@drugs.com</a></p>
+
+      <h3 class="is-106">Press &amp; media</h3>
+      <p class="is-071"><a href="mailto:press@drugs.com">press@drugs.com</a></p>
+
+      <h3 class="is-106">Business &amp; advertising</h3>
+      <p class="is-071"><a href="mailto:business@drugs.com">business@drugs.com</a></p>
+
+      <h3 class="is-106">Mailing address</h3>
+      <p class="is-071">Drugs.com<br>Attn: Reader Services<br>200 Drug Information Plaza<br>Auckland 1010, New Zealand</p>
+
+      <h3 class="is-106">Phone</h3>
+      <p class="is-071">+1 (855) 378-4844 (Mon-Fri, 9am-5pm ET)</p>
+    </section>
+
+  </div>
+
+  <section class="is-108">
+    <h2 class="is-109">Please note</h2>
+    <p class="is-071">Drugs.com staff cannot provide individualized medical advice. For questions about your medication, dose, side effects, or interactions, please contact your physician or pharmacist.</p>
+  </section>
+</div>
+{% endblock %}

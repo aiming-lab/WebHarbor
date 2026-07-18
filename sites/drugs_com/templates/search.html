@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}{% if q %}Search results for "{{ q }}"{% else %}Search drugs{% endif %} - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Search results</span>
+  {% if q %} &rsaquo; <span>"{{ q }}"</span>{% endif %}
+</nav>
+
+<h1>{% if q %}Search results for "{{ q }}"{% else %}Browse drugs{% endif %}</h1>
+
+<form method="get" action="{{ url_for('search') }}" class="search-bar-top">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search drugs, conditions, brand names..." class="search-input-lg">
+  <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+{% if exact_drug %}
+<section class="exact-match-card">
+  <div class="exact-match-eyebrow">Best match</div>
+  <div class="exact-match-body">
+    <div class="exact-match-info">
+      <h2 class="exact-match-name">
+        <a href="{{ url_for('drug_detail', slug=exact_drug.slug) }}">{{ exact_drug.generic_name|capitalize }}</a>
+      </h2>
+      <div class="exact-match-links">
+        <a href="{{ url_for('drug_detail', slug=exact_drug.slug) }}" class="btn btn-primary btn-sm">Full prescribing information</a>
+        <a href="{{ url_for('drug_side_effects', slug=exact_drug.slug) }}">Side effects</a>
+        <a href="{{ url_for('drug_dosage', slug=exact_drug.slug) }}">Dosage</a>
+        <a href="{{ url_for('drug_interactions_page', slug=exact_drug.slug) }}">Interactions</a>
+        <a href="{{ url_for('drug_reviews_page', slug=exact_drug.slug) }}">Reviews</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if matched_condition %}
+  <section class="match-condition-card">
+    <div class="match-condition-head">
+      <span class="match-condition-eyebrow">Condition match</span>
+      <h2 class="match-condition-name">
+        <a href="{{ url_for('condition_page', slug=matched_condition.slug) }}">{{ matched_condition.name }}</a>
+      </h2>
+    </div>
+    {% if matched_condition.description %}
+      <p class="match-condition-desc">{{ (matched_condition.description or '')[:240] }}{% if (matched_condition.description or '')|length > 240 %}...{% endif %}</p>
+    {% endif %}
+    <p class="match-condition-actions">
+      <a class="btn btn-primary btn-sm" href="{{ url_for('condition_page', slug=matched_condition.slug) }}">View all results for {{ matched_condition.name }} &rsaquo;</a>
+      {% if matched_condition.drug_count %}<span class="muted match-condition-count">{{ matched_condition.drug_count }} drug{{ '' if matched_condition.drug_count == 1 else 's' }} treat this condition</span>{% endif %}
+    </p>
+  </section>
+{% endif %}
+{% if matched_class %}
+  <section class="match-condition-card match-condition-card-class">
+    <div class="match-condition-head">
+      <span class="match-condition-eyebrow">Drug class match</span>
+      <h2 class="match-condition-name">
+        <a href="{{ url_for('drug_class_page', slug=matched_class.slug) }}">{{ matched_class.name }}</a>
+      </h2>
+    </div>
+    {% if matched_class.description %}
+      <p class="match-condition-desc">{{ (matched_class.description or '')[:240] }}{% if (matched_class.description or '')|length > 240 %}...{% endif %}</p>
+    {% endif %}
+    <p class="match-condition-actions">
+      <a class="btn btn-primary btn-sm" href="{{ url_for('drug_class_page', slug=matched_class.slug) }}">View drug class page &rsaquo;</a>
+    </p>
+  </section>
+{% endif %}
+
+<div class="search-layout">
+  <aside class="filter-sidebar">
+    <div class="filter-card">
+    <h3 class="filter-card-title">Filter results</h3>
+    <form method="get" action="{{ url_for('search') }}" class="filter-form">
+      <input type="hidden" name="q" value="{{ q }}">
+
+      <div class="filter-group">
+        <label for="filter-class">Drug class</label>
+        <select id="filter-class" name="class">
+          <option value="">All drug classes</option>
+          {% for c in classes %}
+            <option value="{{ c.slug }}" {% if c.slug == class_slug %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-avail">Availability</label>
+        <select id="filter-avail" name="availability">
+          <option value="">All</option>
+          <option value="Rx" {% if avail == 'Rx' %}selected{% endif %}>Rx (Prescription only)</option>
+          <option value="OTC" {% if avail == 'OTC' %}selected{% endif %}>OTC (Over the counter)</option>
+          <option value="Rx and/or OTC" {% if avail == 'Rx and/or OTC' %}selected{% endif %}>Rx and/or OTC</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="filter-condition">Category / Condition</label>
+        <select id="filter-condition" name="condition">
+          <option value="">All conditions</option>
+          {% for c in conditions %}
+            <option value="{{ c.slug }}" {% if c.slug == cond_slug %}selected{% endif %}>{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">Apply filters</button>
+      <a class="btn btn-outline btn-block" href="{{ url_for('search', q=q) }}">Reset filters</a>
+    </form>
+    </div>
+  </aside>
+
+  <section class="search-results-col">
+    <p class="search-results-count">
+      {% if q %}
+        {{ total_all if total_all is defined else total }} result{{ '' if (total_all if total_all is defined else total) == 1 else 's' }} for "{{ q }}"
+        {% if total_all is defined and total_all != total %}
+          <span class="muted">({{ total }} drug{{ '' if total == 1 else 's' }}{% if condition_results %}, {{ condition_results|length }} condition{{ '' if condition_results|length == 1 else 's' }}{% endif %}{% if news_results %}, {{ news_results|length }} news article{{ '' if news_results|length == 1 else 's' }}{% endif %})</span>
+        {% endif %}
+      {% else %}
+        Showing {{ total }} drug{{ '' if total == 1 else 's' }}
+      {% endif %}
+    </p>
+
+    {% if q and (results or condition_results or news_results) %}
+      <nav class="search-category-tabs" aria-label="Result categories">
+        {% if results %}<a href="#group-drugs">Drugs <span class="count">({{ total }})</span></a>{% endif %}
+        {% if condition_results %}<a href="#group-conditions">Conditions <span class="count">({{ condition_results|length }})</span></a>{% endif %}
+        {% if news_results %}<a href="#group-news">News <span class="count">({{ news_results|length }})</span></a>{% endif %}
+      </nav>
+    {% endif %}
+
+    {% if results %}
+      <h2 class="search-group-heading" id="group-drugs">Drugs <span class="muted">({{ total }})</span></h2>
+      <div class="drug-card-grid">
+        {% for d in results %}
+          <article class="drug-card">
+            <header class="drug-card-header">
+              <h2 class="drug-card-name">
+                <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>
+              </h2>
+            </header>
+            <p class="drug-card-footer">
+              <a href="{{ url_for('drug_detail', slug=d.slug) }}" class="card-link">View details &rsaquo;</a>
+            </p>
+          </article>
+        {% endfor %}
+      </div>
+
+      {% if total_pages > 1 %}
+        <nav class="pagination" aria-label="Pagination">
+          {% if page > 1 %}
+            <a class="btn btn-outline" href="{{ url_for('search', q=q, **{'class': class_slug, 'condition': cond_slug, 'availability': avail, 'page': page-1}) }}">&lsaquo; Previous</a>
+          {% endif %}
+          <span class="pagination-info">Page {{ page }} of {{ total_pages }}</span>
+          {% if page < total_pages %}
+            <a class="btn btn-outline" href="{{ url_for('search', q=q, **{'class': class_slug, 'condition': cond_slug, 'availability': avail, 'page': page+1}) }}">Next &rsaquo;</a>
+          {% endif %}
+        </nav>
+      {% endif %}
+    {% endif %}
+
+    {% if condition_results %}
+      <h2 class="search-group-heading" id="group-conditions">Conditions <span class="muted">({{ condition_results|length }})</span></h2>
+      <ul class="search-group-list">
+        {% for c in condition_results %}
+          <li>
+            <a href="{{ url_for('condition_page', slug=c.slug) }}"><strong>{{ c.name }}</strong></a>
+            {% if c.description %}<span class="muted"> &mdash; {{ (c.description or '')[:160] }}{% if (c.description or '')|length > 160 %}...{% endif %}</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if news_results %}
+      <h2 class="search-group-heading" id="group-news">News <span class="muted">({{ news_results|length }})</span></h2>
+      <ul class="search-group-list">
+        {% for a in news_results %}
+          <li>
+            <a href="{{ url_for('news_article', article_id=a.id) }}"><strong>{{ a.title }}</strong></a>
+            <span class="muted"> &mdash; {{ a.category }}{% if a.published_at %} &middot; {{ a.published_at.strftime('%b %d, %Y') }}{% endif %}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if q and related_searches %}
+      <section class="related-searches is-385">
+        <h2 class="search-group-heading">Related searches</h2>
+        <div class="popular-searches">
+          {% for name in related_searches %}
+            <a href="{{ url_for('search', q=name) }}">{{ name|capitalize }}</a>
+          {% endfor %}
+        </div>
+      </section>
+    {% endif %}
+
+    {% if not results and not condition_results and not news_results %}
+      <div class="no-results-box">
+        <h2>No results found{% if q %} for "{{ q }}"{% endif %}</h2>
+        {% if suggestions %}
+          <div class="did-you-mean">
+            <p class="did-you-mean-label"><strong>Did you mean?</strong></p>
+            <div class="did-you-mean-pills">
+              {% for s in suggestions %}
+                <a class="suggestion-pill" href="{{ url_for('search', q=s) }}">{{ s|capitalize }}</a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+        <p>Suggestions:</p>
+        <ul>
+          <li>Check your spelling.</li>
+          <li>Try searching by a brand name instead of the generic name (or vice versa).</li>
+          <li>Remove a filter (drug class, condition, or availability).</li>
+          <li>Browse the full <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> index.</li>
+          <li>Use the <a href="{{ url_for('pill_identifier') }}">Pill Identifier</a> if you only have a pill on hand.</li>
+        </ul>
+        {% if related_searches %}
+          <div class="search-popular-fallback">
+            <h3>Popular searches</h3>
+            <div class="popular-searches">
+              {% for name in related_searches %}
+                <a href="{{ url_for('search', q=name) }}">{{ name|capitalize }}</a>
+              {% endfor %}
+            </div>
+          </div>
+        {% endif %}
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} - {{ site_name }}{% endblock %}
+{% block content %}
+{# Deterministic fake medical reviewer + reference data keyed on article.id so the page is stable across requests. #}
+{% set reviewers = [
+  ('Leigh Ann Anderson', 'PharmD'),
+  ('Carmen Fookes', 'BPharm'),
+  ('Judith Stewart', 'BPharm'),
+  ('Melisa Puckey', 'BPharm'),
+  ('Kristianne Hannemann', 'PharmD'),
+  ('Philip Thornton', 'DipPharm'),
+  ('Sally Chao', 'MD'),
+  ('Michael Stewart', 'PharmD')
+] %}
+{% set reviewer = reviewers[article.id % reviewers|length] %}
+
+{% set ref_journals = [
+  'New England Journal of Medicine',
+  'Journal of the American Medical Association (JAMA)',
+  'The Lancet',
+  'Journal of Clinical Pharmacology',
+  'British Medical Journal (BMJ)',
+  'Annals of Internal Medicine'
+] %}
+{% set ref_year = article.published_at.year %}
+
+{% set body_paragraphs = article.body.split('\n\n') | map('trim') | reject('equalto', '') | list %}
+{% set takeaway_source = body_paragraphs[:4] if body_paragraphs|length >= 3 else body_paragraphs %}
+{% set related_in_cat = related|selectattr('category', 'equalto', article.category)|list %}
+{% set related_top = (related_in_cat[:3] if related_in_cat else related[:3]) %}
+
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a>
+  <span>&rsaquo;</span>
+  <a href="{{ url_for('news_index') }}">Medical News</a>
+  <span>&rsaquo;</span>
+  <a href="{{ url_for('news_category', category=article.category|lower|replace(' ', '-')) }}">{{ article.category }}</a>
+  <span>&rsaquo;</span>
+  <span>{{ article.title[:60] }}{% if article.title|length > 60 %}...{% endif %}</span>
+</nav>
+
+<div class="article-layout">
+  <article class="article-main">
+    {% set cat_slug = article.category|lower|replace(' ', '-') %}
+    <span class="article-category-badge {{ cat_slug }}">{{ article.category }}</span>
+    <h1 class="article-title">{{ article.title }}</h1>
+
+    <div class="news-meta">
+      {% if article.source %}{{ article.source }} &bull; {% endif %}Published {{ article.published_at.strftime('%B %d, %Y') }}
+    </div>
+
+    <div class="article-byline">
+      By <span class="byline-author">{{ reviewer[0] }}, {{ reviewer[1] }}</span>
+      {% if article.source %} &mdash; <span class="byline-source">{{ article.source }} Staff</span>{% endif %}
+    </div>
+
+    <div class="medical-review-notice">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      <span>
+        <strong>Medically reviewed by {{ reviewer[0] }}, {{ reviewer[1] }}</strong>
+        &mdash; Last updated on {{ article.published_at.strftime('%b %d, %Y') }}.
+      </span>
+    </div>
+
+    <div class="article-share">
+      <span class="article-share-label">Share</span>
+      <button type="button" onclick="window.print()" title="Print article" class="share-btn share-btn-text">Print</button>
+      <button type="button" id="article-copy-link" title="Copy article link" class="share-btn share-btn-text">Copy link</button>
+    </div>
+
+    {% if takeaway_source %}
+    <div class="key-takeaways">
+      <h2>Fast facts &mdash; Key takeaways</h2>
+      <ul>
+        {% for p in takeaway_source %}
+          {# Extract first real sentence - accumulate fragments until we get >= 40 chars or run out #}
+          {% set sentences = p.split('. ') %}
+          {% set ns = namespace(snippet='', done=false) %}
+          {% for frag in sentences %}
+            {% if not ns.done %}
+              {% if ns.snippet %}
+                {% set ns.snippet = ns.snippet + '. ' + frag %}
+              {% else %}
+                {% set ns.snippet = frag %}
+              {% endif %}
+              {% if ns.snippet | length >= 50 %}
+                {% set ns.done = true %}
+              {% endif %}
+            {% endif %}
+          {% endfor %}
+          {% set snippet = ns.snippet | trim %}
+          {% if snippet %}
+            <li>{{ snippet }}{% if not snippet.endswith('.') %}.{% endif %}</li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="article-content">
+      {% for paragraph in body_paragraphs %}
+        <p>{{ paragraph }}</p>
+      {% endfor %}
+    </div>
+
+    <div class="article-references">
+      <h2>References</h2>
+      <ol>
+        <li>
+          U.S. Food and Drug Administration. FDA Drug Safety Communication. Silver Spring, MD: U.S. Department of Health and Human Services; {{ ref_year }}. Accessed {{ article.published_at.strftime('%B %Y') }}.
+        </li>
+        <li>
+          {{ ref_journals[article.id % ref_journals|length] }}. {{ ref_year }};{{ 300 + (article.id * 7) % 80 }}({{ 1 + article.id % 12 }}):{{ 1100 + (article.id * 13) % 800 }}-{{ 1100 + (article.id * 13) % 800 + 8 }}.
+        </li>
+        <li>
+          National Institutes of Health. MedlinePlus drug information database. Bethesda, MD: U.S. National Library of Medicine; {{ ref_year }}.
+        </li>
+      </ol>
+    </div>
+
+    {% if related_top %}
+    <section class="article-related-inline">
+      <h2 class="related-inline-heading">Related articles</h2>
+      <ul class="related-articles">
+        {% for r in related_top %}
+          <li>
+            <span class="related-cat">{{ r.category }}</span>
+            <a href="{{ url_for('news_article', article_id=r.id) }}" class="related-title">{{ r.title }}</a>
+            <div class="related-date muted">{{ r.published_at.strftime('%b %d, %Y') }}</div>
+          </li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    <div class="medical-disclaimer">
+      <strong>Medical Disclaimer:</strong>
+      The information provided in this article is for educational purposes only and is not intended as a substitute for professional medical advice, diagnosis, or treatment. Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition.
+    </div>
+
+    <div class="article-back-link">
+      <a href="{{ url_for('news_index') }}">&larr; Back to Medical News</a>
+    </div>
+  </article>
+
+  <aside class="article-sidebar">
+    <div class="aside-box">
+      <h3>Related articles</h3>
+      {% if related %}
+        <ul class="related-articles">
+          {% for r in related %}
+            <li>
+              <span class="related-cat">{{ r.category }}</span>
+              <a href="{{ url_for('news_article', article_id=r.id) }}" class="related-title">{{ r.title }}</a>
+              <div class="related-date muted">{{ r.published_at.strftime('%b %d, %Y') }}</div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="muted">
+          Browse more articles in
+          <a href="{{ url_for('news_category', category=article.category|lower|replace(' ', '-')) }}">{{ article.category }}</a>.
+        </p>
+      {% endif %}
+      <p class="aside-view-all">
+        <a href="{{ url_for('news_index') }}">View all medical news &rsaquo;</a>
+      </p>
+    </div>
+
+    <div class="aside-box aside-fda">
+      <h3>FDA Safety Alerts</h3>
+      <ul>
+        <li><a href="{{ url_for('news_category', category='fda-alerts') }}">View latest FDA drug safety alerts &rsaquo;</a></li>
+        <li>Report a serious problem with a medication to <strong>MedWatch</strong>.</li>
+        <li>Sign up to receive FDA alerts the day they are posted.</li>
+      </ul>
+    </div>
+
+    <div class="aside-box aside-newsletter">
+      <h3>Subscribe to news</h3>
+      <p>Get the latest medication news, new drug approvals, alerts and updates delivered to your inbox.</p>
+      <a href="{{ url_for('newsletter') }}" class="aside-newsletter-btn">Subscribe now &rsaquo;</a>
+    </div>
+
+    <div class="aside-box">
+      <h3>Popular tools &amp; resources</h3>
+      <ul class="popular-tools">
+        <li><a href="{{ url_for('my_med_list') }}">My Med List</a></li>
+        <li><a href="{{ url_for('interaction_checker') }}">Drug interaction checker</a></li>
+        <li><a href="{{ url_for('pill_identifier') }}">Pill identifier</a></li>
+        <li><a href="{{ url_for('compare_drugs') }}">Compare drugs</a></li>
+        <li><a href="{{ url_for('news_index') }}">Medical Q &amp; A</a></li>
+        <li><a href="{{ url_for('news_index') }}">Latest drug news</a></li>
+      </ul>
+    </div>
+  </aside>
+</div>
+<script>
+(function(){
+  var button = document.getElementById('article-copy-link');
+  if (!button) return;
+  button.addEventListener('click', function(){
+    var original = button.textContent;
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+    navigator.clipboard.writeText(window.location.href).then(function(){
+      button.textContent = 'Copied';
+      setTimeout(function(){ button.textContent = original; }, 1500);
+    });
+  });
+})();
+</script>
+{% endblock %}

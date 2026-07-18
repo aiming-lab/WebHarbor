@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}My Med List - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <a href="{{ url_for('account') }}">My Account</a> &rsaquo;
+  <span>My Med List</span>
+</nav>
+
+<h1>My Med List</h1>
+<p class="subtitle">Your personal medication list</p>
+
+<div class="med-list-layout">
+  <div class="med-list-main">
+    {% if items %}
+    {% set ns_top = namespace(rx_top=0, otc_top=0) %}
+    {% for item in items %}
+      {% if 'Rx' in (item.drug.availability or '') %}{% set ns_top.rx_top = ns_top.rx_top + 1 %}{% endif %}
+      {% if 'OTC' in (item.drug.availability or '') %}{% set ns_top.otc_top = ns_top.otc_top + 1 %}{% endif %}
+    {% endfor %}
+    {% set rx_top = ns_top.rx_top %}
+    {% set otc_top = ns_top.otc_top %}
+    <div class="med-stats-bar">
+      <div class="med-stats-item">
+        <span class="med-stats-num">{{ items|length }}</span>
+        <span class="med-stats-label">Total medications</span>
+      </div>
+      <div class="med-stats-item">
+        <span class="med-stats-num">{{ rx_top }}</span>
+        <span class="med-stats-label">Prescription (Rx)</span>
+      </div>
+      <div class="med-stats-item">
+        <span class="med-stats-num">{{ otc_top }}</span>
+        <span class="med-stats-label">Over-the-counter</span>
+      </div>
+    </div>
+    {% endif %}
+
+    <form class="med-add-form" action="{{ url_for('search') }}" method="get" role="search">
+      <label for="med-add-q" class="med-add-label">Add a medication</label>
+      <div class="med-add-row">
+        <input id="med-add-q" type="search" name="q" placeholder="Search by generic or brand name (e.g. ibuprofen, Tylenol)" class="med-add-input" autocomplete="off">
+        <button type="submit" class="btn btn-primary">Search</button>
+      </div>
+      <p class="muted instructions">
+        Find a drug, then click <strong>Add to My Med List</strong> on its page.
+        You can also browse <a href="{{ url_for('drug_az') }}">Drugs A-Z</a>.
+      </p>
+    </form>
+
+    {% if items %}
+    {% set ns = namespace(rx_count=0, otc_count=0) %}
+    {% for item in items %}
+      {% if 'Rx' in (item.drug.availability or '') %}{% set ns.rx_count = ns.rx_count + 1 %}{% endif %}
+      {% if 'OTC' in (item.drug.availability or '') %}{% set ns.otc_count = ns.otc_count + 1 %}{% endif %}
+    {% endfor %}
+    {% set rx_count = ns.rx_count %}
+    {% set otc_count = ns.otc_count %}
+    {% set classes_seen = [] %}
+    {% for item in items %}{% if item.drug.drug_class and item.drug.drug_class.name not in classes_seen %}{% set _ = classes_seen.append(item.drug.drug_class.name) %}{% endif %}{% endfor %}
+
+    <div class="med-interaction-cta">
+      <div class="med-interaction-cta-text">
+        <h2>Your medications may interact with each other</h2>
+        <p>Run all {{ items|length }} medication{% if items|length != 1 %}s{% endif %} in your list through our interaction checker. We screen every pairwise combination and flag major, moderate, and minor interactions, plus food and alcohol warnings.</p>
+      </div>
+      <form method="post" action="{{ url_for('interaction_checker') }}" class="med-list-check-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        {% for item in items %}
+          <input type="hidden" name="drugs" value="{{ item.drug.generic_name }}">
+        {% endfor %}
+        <button type="submit" class="btn btn-med-list--lg">Check all {{ items|length }} medication{% if items|length != 1 %}s{% endif %} for interactions</button>
+      </form>
+    </div>
+
+    <div class="med-list-actions">
+      <span class="med-list-count muted">You have <strong>{{ items|length }}</strong> medication{% if items|length != 1 %}s{% endif %} in your list</span>
+    </div>
+    {% endif %}
+
+    <ul class="result-list med-list">
+      {% for item in items %}
+        <li class="result-card med-card">
+          <div class="med-card-head">
+            <h2 class="med-card-title"><a href="{{ url_for('drug_detail', slug=item.drug.slug) }}">{{ item.drug.generic_name|capitalize }}</a></h2>
+            <span class="avail-badge {% if item.drug.availability == 'Rx' %}avail-rx{% elif item.drug.availability == 'OTC' %}avail-otc{% else %}avail-both{% endif %}">{{ item.drug.availability }}</span>
+          </div>
+          <p class="med-card-meta muted">
+            {% if item.drug.brand_names %}<span>Brand: <strong>{{ item.drug.brand_names|join(', ') }}</strong></span>{% endif %}
+            {% if item.drug.drug_class %}<span>Class: <strong>{{ item.drug.drug_class.name }}</strong></span>{% endif %}
+            <span>Added <strong>{{ item.created_at.strftime('%b %d, %Y') }}</strong></span>
+          </p>
+          <div class="med-notes-display" id="notes-display-{{ item.id }}">
+            {% if item.notes %}<p class="med-notes"><em>Notes:</em> {{ item.notes }}</p>{% else %}<p class="med-notes muted"><em>No notes added yet.</em></p>{% endif %}
+            <div class="med-card-actions">
+              <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('notes-display-{{ item.id }}').style.display='none';document.getElementById('notes-edit-{{ item.id }}').style.display='block';">Edit notes</button>
+              <form method="post" action="{{ url_for('my_med_list_toggle') }}" class="med-remove">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="slug" value="{{ item.drug.slug }}">
+                <input type="hidden" name="saved" value="false">
+                <button type="submit" class="btn btn-outline btn-sm btn-outline-danger">Remove</button>
+              </form>
+            </div>
+          </div>
+          <form method="post" action="{{ url_for('update_med_notes') }}" class="med-notes-edit" id="notes-edit-{{ item.id }}" style="display:none;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="slug" value="{{ item.drug.slug }}">
+            <textarea name="notes" rows="3" maxlength="500" class="med-notes-textarea">{{ item.notes or '' }}</textarea>
+            <div class="med-card-actions">
+              <button type="submit" class="btn btn-primary btn-sm">Save</button>
+              <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('notes-display-{{ item.id }}').style.display='block';document.getElementById('notes-edit-{{ item.id }}').style.display='none';">Cancel</button>
+            </div>
+          </form>
+        </li>
+      {% else %}
+        <li class="result-card no-results med-empty">
+          <h2 class="med-empty-title">Your Med List is empty</h2>
+          <p>Keep track of every prescription and over-the-counter medication you take so you can check for interactions, set reminders, and share an accurate list with your healthcare team.</p>
+          <ul class="med-empty-steps">
+            <li>Search for a medication using the box above, or <a href="{{ url_for('drug_az') }}">browse Drugs A-Z</a>.</li>
+            <li>On the drug's page, click <strong>Add to My Med List</strong>.</li>
+            <li>Return here to review your list, add notes, and check for interactions.</li>
+          </ul>
+        </li>
+      {% endfor %}
+    </ul>
+
+    {% if items %}
+    <section class="med-list-summary">
+      <h2>Med list summary</h2>
+      <div class="med-summary-grid">
+        <div class="med-summary-stat">
+          <div class="med-summary-num">{{ items|length }}</div>
+          <div class="med-summary-label">Total medications</div>
+        </div>
+        <div class="med-summary-stat">
+          <div class="med-summary-num">{{ rx_count }}</div>
+          <div class="med-summary-label">Prescription (Rx)</div>
+        </div>
+        <div class="med-summary-stat">
+          <div class="med-summary-num">{{ otc_count }}</div>
+          <div class="med-summary-label">Over-the-counter</div>
+        </div>
+        <div class="med-summary-stat">
+          <div class="med-summary-num">{{ classes_seen|length }}</div>
+          <div class="med-summary-label">Drug classes covered</div>
+        </div>
+      </div>
+      {% if classes_seen %}
+      <p class="med-summary-classes muted"><strong>Classes:</strong> {{ classes_seen|join(', ') }}</p>
+      {% endif %}
+    </section>
+    {% endif %}
+
+    <p class="muted disclaimer">
+      Always consult your healthcare provider before making any changes to your medications.
+    </p>
+  </div>
+
+  <aside class="med-list-sidebar">
+    <section class="account-box">
+      <h2>My Med List Tools</h2>
+      <ul class="quick-links">
+        <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+        <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+        <li><a href="{{ url_for('drug_az') }}">Browse Drugs A-Z</a></li>
+        <li><a href="{{ url_for('account') }}">Back to My Account</a></li>
+      </ul>
+    </section>
+
+    <section class="account-box">
+      <h2>Reminders &amp; tips</h2>
+      <ul class="med-tips">
+        <li>Take medications at the same time each day to build a routine.</li>
+        <li>Use the <strong>Notes</strong> field on each medication to record dosage, frequency, or prescriber instructions.</li>
+        <li>Review your list with your pharmacist or doctor at every appointment.</li>
+        <li>Never stop a prescription medication without consulting your healthcare provider.</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+{% endblock %}

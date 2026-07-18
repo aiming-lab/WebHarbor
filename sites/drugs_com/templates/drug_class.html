@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block title %}{{ drug_class.name }} - Drugs.com{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <a href="{{ url_for('drug_classes_list') }}">Drug Classes</a> &rsaquo;
+  <span>{{ drug_class.name }}</span>
+</nav>
+
+<h1 class="drug-class-title">
+  {{ drug_class.name }}
+  <span class="count-badge">{{ drug_count }} drug{{ '' if drug_count == 1 else 's' }} in this class</span>
+</h1>
+
+{% set _lede = drug_class.description or class_description %}
+{% if _lede %}
+<div class="drug-class-lede">
+  <p>{{ _lede }}</p>
+</div>
+{% endif %}
+
+<div class="two-col">
+  <div class="main-col">
+    <section class="drug-class-section">
+      <h2>What are {{ drug_class.name }}?</h2>
+      <p>{{ class_overview or class_description or drug_class.description or 'No description available.' }}</p>
+    </section>
+
+    <section class="drug-class-section">
+      <h2>What are {{ drug_class.name }} used for?</h2>
+      {% if class_uses %}
+        <p>{{ class_uses }}</p>
+      {% endif %}
+      {% if common_conditions %}
+        <p>{{ drug_class.name }} in this catalog are most commonly used to treat:</p>
+        <ul class="common-conditions">
+          {% for entry in common_conditions %}
+            <li>
+              <a href="{{ url_for('condition_page', slug=entry.condition.slug) }}">{{ entry.condition.name }}</a>
+              <span class="muted is-072">
+                ({{ entry.count }} drug{{ '' if entry.count == 1 else 's' }} in this class)
+              </span>
+            </li>
+          {% endfor %}
+        </ul>
+      {% elif not class_uses %}
+        <p>{{ drug_class.name }} are used in the treatment of a variety of medical conditions. See the list of drugs below for specific indications and approved uses.</p>
+      {% endif %}
+    </section>
+
+    {% if class_side_effects %}
+    <section class="drug-class-section">
+      <h2>Common side effects of {{ drug_class.name }}</h2>
+      <p class="muted">
+        Side effects vary by individual drug and dose. The following effects are commonly associated with
+        the {{ drug_class.name }} class as a whole. This is not a complete list — see each drug's page for
+        full prescribing information.
+      </p>
+      <ul class="class-side-effects">
+        {% for s in class_side_effects %}
+          <li>{{ s }}</li>
+        {% endfor %}
+      </ul>
+    </section>
+    {% endif %}
+
+    {% if notable_drugs %}
+      <h2>Notable {{ drug_class.name }}</h2>
+      <p class="muted notable-drugs-lede">Top-rated drugs in this class based on user reviews.</p>
+      <ul class="notable-drugs">
+        {% for d in notable_drugs %}
+          <li class="notable-drugs-row">
+            <div class="notable-drugs-info">
+              <a href="{{ url_for('drug_detail', slug=d.slug) }}"><strong>{{ d.generic_name|capitalize }}</strong></a>
+              {% if d.brand_names %}
+                <span class="muted notable-drugs-brands">&mdash; {{ d.brand_names|join(', ') }}</span>
+              {% endif %}
+            </div>
+            <div class="notable-drugs-rating">
+              <span class="rating">{{ '%.1f'|format(d.avg_rating) if d.avg_rating else '-' }}</span>
+              <span class="muted">/ 10 &middot; {{ d.review_count or 0 }} review{{ '' if (d.review_count or 0) == 1 else 's' }}</span>
+            </div>
+          </li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+
+    {% if drugs %}
+      <p class="drug-class-compare-cta">
+        <a class="btn btn-primary" href="{{ url_for('compare_drugs') }}?drugs={{ drugs[:3]|map(attribute='generic_name')|join(',') }}">
+          Compare top 3 drugs in this class
+        </a>
+      </p>
+    {% endif %}
+
+    <h2>List of {{ drug_class.name }}</h2>
+
+    {% if drugs %}
+    <div class="sort-controls drug-class-sort">
+      <span class="muted">Sort by:</span>
+      <a href="{{ url_for('drug_class_page', slug=drug_class.slug, sort='name') }}"
+         class="sort-link {% if sort == 'name' %}sort-link--active{% endif %}">A-Z</a>
+      <a href="{{ url_for('drug_class_page', slug=drug_class.slug, sort='rating') }}"
+         class="sort-link {% if sort == 'rating' %}sort-link--active{% endif %}">Rating</a>
+      <a href="{{ url_for('drug_class_page', slug=drug_class.slug, sort='reviews') }}"
+         class="sort-link {% if sort == 'reviews' %}sort-link--active{% endif %}">Most reviewed</a>
+    </div>
+
+    <table class="drug-table">
+      <thead>
+        <tr>
+          <th>Drug Name</th>
+          <th>Brand names</th>
+          <th>Rx/OTC</th>
+          <th>Avg. Rating</th>
+          <th>Reviews</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in drugs %}
+        <tr>
+          <td>
+            <a href="{{ url_for('drug_detail', slug=d.slug) }}"><strong>{{ d.generic_name|capitalize }}</strong></a>
+            {% if d.description %}
+              <div class="muted drug-table-desc">{% set cd = d.description|clean_desc %}{{ cd[:140] }}{% if cd|length > 140 %}...{% endif %}</div>
+            {% endif %}
+          </td>
+          <td class="muted">{{ d.brand_names|join(', ') if d.brand_names else 'Generic' }}</td>
+          <td>
+            {% if d.availability == 'Rx' %}
+              <span class="avail-badge avail-rx">Rx</span>
+            {% elif d.availability == 'OTC' %}
+              <span class="avail-badge avail-otc">OTC</span>
+            {% else %}
+              <span class="avail-badge">{{ d.availability or 'Rx/OTC' }}</span>
+            {% endif %}
+          </td>
+          <td>
+            {% set _r = d.avg_rating or 0 %}
+            <span class="rating {% if _r >= 7.5 %}rating-high{% elif _r >= 5 %}rating-mid{% elif _r > 0 %}rating-low{% endif %}">{{ '%.1f'|format(d.avg_rating) if d.avg_rating else '-' }}</span>
+            {% if _r > 0 %}
+              {% set _stars = ((_r / 2)|round(0, 'common'))|int %}
+              <span class="rating-stars" aria-label="{{ _stars }} out of 5 stars">
+                {% for i in range(5) %}{% if i < _stars %}<span class="star star--filled">&#9733;</span>{% else %}<span class="star">&#9734;</span>{% endif %}{% endfor %}
+              </span>
+            {% endif %}
+          </td>
+          <td>
+            <a href="{{ url_for('drug_detail', slug=d.slug) }}#reviews">{{ d.review_count or 0 }} review{{ '' if (d.review_count or 0) == 1 else 's' }}</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <p class="muted footnote">
+      Ratings reflect user experience; 1 = poor, 10 = excellent.
+    </p>
+    {% else %}
+      <p class="muted">No drugs in this class.</p>
+    {% endif %}
+  </div>
+
+  <aside class="sidebar">
+    <h3>Related drug classes</h3>
+    <ul>
+      {% if related_classes %}
+        {% for rc in related_classes %}
+          <li><a href="{{ url_for('drug_class_page', slug=rc.slug) }}">{{ rc.name }}</a></li>
+        {% endfor %}
+      {% endif %}
+      <li><a href="{{ url_for('drug_classes_list') }}">All drug classes</a></li>
+    </ul>
+
+    <h3>Popular tools</h3>
+    <ul>
+      <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+      <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+      <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a></li>
+    </ul>
+  </aside>
+</div>
+{% endblock %}

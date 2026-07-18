@@ -1,0 +1,375 @@
+{% extends "base.html" %}
+{% block title %}Drugs.com Pro Edition | For Healthcare Professionals{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Pro Edition</span>
+</nav>
+
+<section class="pro-hero is-353">
+  <h1 class="is-354">Drugs.com for Healthcare Professionals</h1>
+  <p class="is-355">
+    Authoritative drug information, clinical decision support, and prescribing references curated for
+    physicians, pharmacists, nurses, and other healthcare professionals.
+  </p>
+  <div class="is-356">
+    <a href="{{ url_for('drug_az') }}" class="btn is-357">Browse Monographs</a>
+    <a href="{{ url_for('interaction_checker') }}" class="btn btn-outline is-358">Interaction Checker</a>
+  </div>
+</section>
+
+<section class="pro-search-widget account-box is-359">
+  <h2 class="is-064">Professional Drug Lookup</h2>
+  <p class="muted is-025">Search across drug monographs, interactions, and dosing references.</p>
+  <form action="{{ url_for('search') }}" method="get" class="pro-search-form is-340">
+    <input type="text" name="q" placeholder="Search drug monographs, interactions, dosing..." class="pro-search-input is-360">
+    <button class="btn is-361" type="submit">Search</button>
+  </form>
+</section>
+
+<section class="pro-section account-box is-362">
+  <h2 class="is-064">Clinical Drug Monographs</h2>
+  <p class="pro-subtitle muted">Comprehensive drug information for healthcare professionals.</p>
+  <div class="pro-drug-grid is-363">
+    {% for m in [
+      ('ibuprofen', 'Ibuprofen', 'NSAID / analgesic'),
+      ('metformin', 'Metformin', 'Biguanide antidiabetic'),
+      ('lisinopril', 'Lisinopril', 'ACE inhibitor'),
+      ('atorvastatin', 'Atorvastatin', 'HMG-CoA reductase inhibitor'),
+      ('sertraline', 'Sertraline', 'SSRI antidepressant'),
+      ('omeprazole', 'Omeprazole', 'Proton pump inhibitor'),
+    ] %}
+      <div class="pro-drug-card is-364">
+        <h4 class="is-107"><a class="is-365" href="{{ url_for('drug_detail', slug=m[0]) }}">{{ m[1] }}</a></h4>
+        <p class="muted is-366">{{ m[2] }}</p>
+        <a class="btn btn-sm btn-outline" href="{{ url_for('drug_detail', slug=m[0]) }}">View Monograph</a>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="pro-section account-box is-362">
+  <h2 class="is-064">Professional Resources</h2>
+  <p class="pro-subtitle muted">Clinical decision support tools and reference databases.</p>
+  <div class="pro-resource-grid is-367">
+    <a class="pro-resource-card is-368" href="{{ url_for('interaction_checker') }}">
+      <div class="pro-resource-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v6a5 5 0 0 0 10 0V4"/><path d="M5 4h4"/><path d="M15 4h4"/><circle cx="12" cy="17" r="4"/></svg>
+      </div>
+      <h4 class="is-369">Drug Interaction Checker Pro</h4>
+      <p class="muted is-370">Screen multi-drug regimens with severity classification.</p>
+    </a>
+    <a class="pro-resource-card is-368" href="{{ url_for('news_category', category='fda-alerts') }}">
+      <div class="pro-resource-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      <h4 class="is-369">FDA Drug Safety Communications</h4>
+      <p class="muted is-370">Current alerts, boxed warnings, and label changes.</p>
+    </a>
+    <a class="pro-resource-card is-368" href="{{ url_for('drug_az') }}">
+      <div class="pro-resource-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+      </div>
+      <h4 class="is-369">Prescribing Reference</h4>
+      <p class="muted is-370">A-Z monograph library with full prescribing information.</p>
+    </a>
+    <a class="pro-resource-card is-368" href="#clinical-calculators">
+      <div class="pro-resource-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="12" y1="10" x2="14" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="12" y1="14" x2="14" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="12" y1="18" x2="14" y2="18"/></svg>
+      </div>
+      <h4 class="is-369">Clinical Calculators</h4>
+      <p class="muted is-370">BMI, CrCl, IBW/ABW, and BSA bedside tools.</p>
+    </a>
+    <a class="pro-resource-card is-368" href="{{ url_for('pill_identifier') }}">
+      <div class="pro-resource-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7z"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>
+      </div>
+      <h4 class="is-369">Pill Identifier</h4>
+      <p class="muted is-370">Identify tablets and capsules by imprint, shape, and color.</p>
+    </a>
+    <a class="pro-resource-card is-368" href="{{ url_for('drug_classes_list') }}">
+      <div class="pro-resource-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3h7v7H3z"/><path d="M14 3h7v7h-7z"/><path d="M3 14h7v7H3z"/><path d="M14 14h7v7h-7z"/></svg>
+      </div>
+      <h4 class="is-369">Drug Class Reference</h4>
+      <p class="muted is-370">Mechanism of action, members, and class-level warnings.</p>
+    </a>
+    <a class="pro-resource-card is-368" href="{{ url_for('conditions_list') }}">
+      <div class="pro-resource-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+      </div>
+      <h4 class="is-369">Conditions &amp; Treatments</h4>
+      <p class="muted is-370">Browse therapeutic options by indication.</p>
+    </a>
+    <a class="pro-resource-card is-368" href="{{ url_for('news_index') }}">
+      <div class="pro-resource-icon" aria-hidden="true">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2"/><path d="M18 14h-8"/><path d="M15 18h-5"/><path d="M10 6h8v4h-8V6z"/></svg>
+      </div>
+      <h4 class="is-369">Medical News &amp; Approvals</h4>
+      <p class="muted is-370">New approvals, label changes, and clinical updates.</p>
+    </a>
+  </div>
+</section>
+
+<section class="pro-section account-box is-362">
+  <h2 class="is-064">What's Included in Pro Edition</h2>
+  <p class="pro-subtitle muted">Curated for clinical practice and prescriber workflows.</p>
+  <ul class="pro-features-grid">
+    <li class="pro-feature">
+      <span class="pro-feature-check" aria-hidden="true">&check;</span>
+      <div>
+        <strong>Professional Drug Monographs</strong>
+        <p class="muted">Pharmacology, pharmacokinetics, contraindications, adverse reactions, and full prescribing information.</p>
+      </div>
+    </li>
+    <li class="pro-feature">
+      <span class="pro-feature-check" aria-hidden="true">&check;</span>
+      <div>
+        <strong>FDA Package Inserts</strong>
+        <p class="muted">Approved labeling, boxed warnings, REMS programs, and indication updates.</p>
+      </div>
+    </li>
+    <li class="pro-feature">
+      <span class="pro-feature-check" aria-hidden="true">&check;</span>
+      <div>
+        <strong>Clinical Pharmacology</strong>
+        <p class="muted">Mechanism of action, metabolism, half-life, and protein binding for evidence-based decisions.</p>
+      </div>
+    </li>
+    <li class="pro-feature">
+      <span class="pro-feature-check" aria-hidden="true">&check;</span>
+      <div>
+        <strong>Dosing Calculators</strong>
+        <p class="muted">Weight-based dosing, renal adjustment, BMI, CrCl, IBW/ABW, and BSA at the bedside.</p>
+      </div>
+    </li>
+    <li class="pro-feature">
+      <span class="pro-feature-check" aria-hidden="true">&check;</span>
+      <div>
+        <strong>Drug-Drug Interaction Screening</strong>
+        <p class="muted">Severity classification with clinical management recommendations.</p>
+      </div>
+    </li>
+    <li class="pro-feature">
+      <span class="pro-feature-check" aria-hidden="true">&check;</span>
+      <div>
+        <strong>Pregnancy &amp; Lactation</strong>
+        <p class="muted">Risk categories and lactation considerations for prescribing decisions.</p>
+      </div>
+    </li>
+  </ul>
+</section>
+
+<div class="account-grid is-371">
+  <div>
+    <section class="account-box">
+      <h2>Monograph Library</h2>
+      <p>Comprehensive professional drug monographs with prescribing details, pharmacology,
+         contraindications, adverse events, and drug-drug interactions.</p>
+      <a class="btn btn-outline" href="{{ url_for('drug_az') }}">Browse the full A-Z monograph library</a>
+    </section>
+
+    <section class="account-box">
+      <h2>Drug Interaction Checker</h2>
+      <p>Screen for drug-drug interactions with severity classification (major, moderate, minor)
+         and clinical management recommendations.</p>
+      <a class="btn btn-outline" href="{{ url_for('interaction_checker') }}">Open Interaction Checker</a>
+    </section>
+
+    <section class="account-box" id="clinical-calculators">
+      <h2>Clinical Calculators</h2>
+      <p>Common bedside calculations for clinical decision-making.</p>
+      <div class="calc-grid">
+        <div class="calc-widget">
+          <h4>BMI Calculator</h4>
+          <p class="muted calc-desc">Body mass index from height &amp; weight.</p>
+          <div class="calc-inputs">
+            <label>Weight (lbs)
+              <input type="number" id="bmi-weight" placeholder="150" step="0.1">
+            </label>
+            <label>Height
+              <span class="calc-row">
+                <input type="number" id="bmi-ft" placeholder="ft (5)" step="1">
+                <input type="number" id="bmi-in" placeholder="in (8)" step="0.1">
+              </span>
+            </label>
+            <button type="button" class="btn btn-sm" onclick="calcBMI()">Calculate</button>
+          </div>
+          <div id="bmi-result" class="calc-result"></div>
+        </div>
+
+        <div class="calc-widget">
+          <h4>Creatinine Clearance</h4>
+          <p class="muted calc-desc">Cockcroft-Gault estimate of renal function.</p>
+          <div class="calc-inputs">
+            <label>Age (years)
+              <input type="number" id="crcl-age" placeholder="65">
+            </label>
+            <label>Weight (kg)
+              <input type="number" id="crcl-weight" placeholder="70" step="0.1">
+            </label>
+            <label>Serum creatinine (mg/dL)
+              <input type="number" id="crcl-scr" placeholder="1.0" step="0.01">
+            </label>
+            <label>Sex
+              <select id="crcl-sex">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </label>
+            <button type="button" class="btn btn-sm" onclick="calcCrCl()">Calculate</button>
+          </div>
+          <div id="crcl-result" class="calc-result"></div>
+        </div>
+
+        <div class="calc-widget">
+          <h4>Ideal Body Weight</h4>
+          <p class="muted calc-desc">Devine formula; adjusted body weight when actual &gt; IBW.</p>
+          <div class="calc-inputs">
+            <label>Height
+              <span class="calc-row">
+                <input type="number" id="ibw-ft" placeholder="ft (5)" step="1">
+                <input type="number" id="ibw-in" placeholder="in (8)" step="0.1">
+              </span>
+            </label>
+            <label>Actual weight (kg, optional)
+              <input type="number" id="ibw-weight-kg" placeholder="80" step="0.1">
+            </label>
+            <label>Sex
+              <select id="ibw-sex">
+                <option value="male">Male</option>
+                <option value="female">Female</option>
+              </select>
+            </label>
+            <button type="button" class="btn btn-sm" onclick="calcIBW()">Calculate</button>
+          </div>
+          <div id="ibw-result" class="calc-result"></div>
+        </div>
+
+        <div class="calc-widget">
+          <h4>Body Surface Area</h4>
+          <p class="muted calc-desc">Mosteller formula: &radic;(height &times; weight / 3600).</p>
+          <div class="calc-inputs">
+            <label>Height (cm)
+              <input type="number" id="bsa-height" placeholder="170" step="0.1">
+            </label>
+            <label>Weight (kg)
+              <input type="number" id="bsa-weight" placeholder="70" step="0.1">
+            </label>
+            <button type="button" class="btn btn-sm" onclick="calcBSA()">Calculate</button>
+          </div>
+          <div id="bsa-result" class="calc-result"></div>
+        </div>
+      </div>
+      <script>
+        function calcBMI() {
+          var w = parseFloat(document.getElementById('bmi-weight').value);
+          var ft = parseFloat(document.getElementById('bmi-ft').value) || 0;
+          var inches = parseFloat(document.getElementById('bmi-in').value) || 0;
+          var out = document.getElementById('bmi-result');
+          var totalIn = ft * 12 + inches;
+          if (!w || w <= 0 || totalIn <= 0) { out.textContent = 'Enter valid weight and height.'; return; }
+          var h = totalIn * 0.0254;
+          var wkg = w * 0.453592;
+          var bmi = wkg / (h * h);
+          var cat = bmi < 18.5 ? 'Underweight' : bmi < 25 ? 'Normal weight' : bmi < 30 ? 'Overweight' : 'Obese';
+          out.innerHTML = 'BMI: <strong>' + bmi.toFixed(1) + '</strong> kg/m² &mdash; ' + cat;
+        }
+        function calcCrCl() {
+          var age = parseFloat(document.getElementById('crcl-age').value);
+          var wt = parseFloat(document.getElementById('crcl-weight').value);
+          var scr = parseFloat(document.getElementById('crcl-scr').value);
+          var sex = document.getElementById('crcl-sex').value;
+          var out = document.getElementById('crcl-result');
+          if (!age || !wt || !scr || scr <= 0) { out.textContent = 'Enter valid age, weight, and SCr.'; return; }
+          var crcl = ((140 - age) * wt) / (72 * scr);
+          if (sex === 'female') crcl *= 0.85;
+          out.innerHTML = 'CrCl: <strong>' + crcl.toFixed(1) + '</strong> mL/min';
+        }
+        function calcIBW() {
+          var ft = parseFloat(document.getElementById('ibw-ft').value) || 0;
+          var inches = parseFloat(document.getElementById('ibw-in').value) || 0;
+          var actual = parseFloat(document.getElementById('ibw-weight-kg').value);
+          var sex = document.getElementById('ibw-sex').value;
+          var out = document.getElementById('ibw-result');
+          var totalIn = ft * 12 + inches;
+          if (totalIn <= 0) { out.textContent = 'Enter valid height.'; return; }
+          var over = Math.max(0, totalIn - 60);
+          var ibw = (sex === 'female' ? 45.5 : 50) + 2.3 * over;
+          var msg = 'IBW: <strong>' + ibw.toFixed(1) + '</strong> kg';
+          if (actual && actual > ibw) {
+            var abw = ibw + 0.4 * (actual - ibw);
+            msg += ' &middot; ABW: <strong>' + abw.toFixed(1) + '</strong> kg';
+          }
+          out.innerHTML = msg;
+        }
+        function calcBSA() {
+          var h = parseFloat(document.getElementById('bsa-height').value);
+          var w = parseFloat(document.getElementById('bsa-weight').value);
+          var out = document.getElementById('bsa-result');
+          if (!h || !w || h <= 0 || w <= 0) { out.textContent = 'Enter valid height and weight.'; return; }
+          var bsa = Math.sqrt((h * w) / 3600);
+          out.innerHTML = 'BSA: <strong>' + bsa.toFixed(2) + '</strong> m²';
+        }
+      </script>
+    </section>
+
+    <section class="account-box">
+      <h2>Pill Identifier</h2>
+      <p>Identify prescription and OTC tablets and capsules by imprint, shape, and color.</p>
+      <a class="btn btn-outline" href="{{ url_for('pill_identifier') }}">Open Pill Identifier</a>
+    </section>
+
+    <section class="account-box">
+      <h2>Browse by Drug Class</h2>
+      <p>Drug class monographs include mechanism of action, member drugs, and class-level warnings.</p>
+      <div class="is-372">
+        {% for c in classes %}
+          <a class="is-373" href="{{ url_for('drug_class_page', slug=c.slug) }}">{{ c.name }}</a>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="account-box">
+      <h2>Prescribing Information</h2>
+      <p>FDA-approved labeling, boxed warnings, REMS programs, and controlled substance schedule
+         references. Each drug page includes the full prescribing information section, dosage and
+         administration guidance, pregnancy and lactation considerations, and CSA schedule.</p>
+    </section>
+
+    <section class="account-box">
+      <h2>Professional Newsletter</h2>
+      <p>Get weekly summaries of FDA approvals, label changes, safety alerts, and clinical news
+         delivered to your inbox.</p>
+      <form class="is-374" method="post" action="{{ url_for('newsletter_subscribe') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="lists" value="mednews">
+        <input class="is-213" type="email" name="email" maxlength="254" required placeholder="your@hospital.org">
+        <button class="btn" type="submit">Subscribe</button>
+      </form>
+    </section>
+  </div>
+
+  <aside>
+    <section class="account-box">
+      <h3>Quick Tools</h3>
+      <ul class="quick-links">
+        <li><a href="{{ url_for('drug_az') }}">Drug Monographs A-Z</a></li>
+        <li><a href="{{ url_for('interaction_checker') }}">Interaction Checker</a></li>
+        <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+        <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+        <li><a href="{{ url_for('drug_classes_list') }}">Drug Classes</a></li>
+        <li><a href="{{ url_for('conditions_list') }}">Conditions</a></li>
+        <li><a href="{{ url_for('news_index') }}">FDA Alerts &amp; News</a></li>
+      </ul>
+    </section>
+    <section class="account-box">
+      <h3>For Prescribers</h3>
+      <p class="muted is-376">
+        Drug.com Pro Edition aggregates curated drug labeling and clinical references for use in
+        professional settings. Content is for informational purposes; verify against current FDA
+        labeling before clinical decisions.
+      </p>
+    </section>
+  </aside>
+</div>
+{% endblock %}

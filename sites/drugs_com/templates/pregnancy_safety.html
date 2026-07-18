@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Pregnancy Drug Safety Guide - Drugs.com{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <span>Pregnancy Safety</span>
+</nav>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+
+<h1>Pregnancy Drug Safety</h1>
+<p class="muted">Find information about medication safety during pregnancy. Listed drugs include their FDA pregnancy risk category and specific guidance for use during pregnancy and breastfeeding.</p>
+
+<div class="warning-box" style="background:#fff3cd;border:1px solid #ffc107;border-radius:6px;padding:14px 18px;margin:16px 0;">
+  <strong>Important:</strong> Always consult your healthcare provider before taking any medication during pregnancy or while breastfeeding. No medication should be considered completely safe during pregnancy.
+</div>
+
+<h2>FDA Pregnancy Categories</h2>
+<table class="drug-table" style="margin-bottom:24px;">
+  <thead><tr><th>Category</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><strong>A</strong></td><td>Adequate studies show no risk to the fetus in the first trimester, and no risk in later trimesters.</td></tr>
+    <tr><td><strong>B</strong></td><td>Animal studies show no risk, but no adequate human studies; or animal studies show adverse effects but human studies show no risk.</td></tr>
+    <tr><td><strong>C</strong></td><td>Animal studies show adverse effects and there are no adequate human studies, or no animal or human studies have been done.</td></tr>
+    <tr><td><strong>D</strong></td><td>Evidence of human fetal risk exists, but benefits may outweigh risks in certain situations.</td></tr>
+    <tr><td><strong>X</strong></td><td>Studies show fetal abnormalities. Risks outweigh benefits. Contraindicated in pregnancy.</td></tr>
+    <tr><td><strong>N</strong></td><td>Not classified by the FDA.</td></tr>
+  </tbody>
+</table>
+
+<h2>Drugs by Pregnancy Category</h2>
+{% set categories = ['A', 'B', 'C', 'D', 'X'] %}
+{% for cat in categories %}
+  {% set cat_drugs = drugs | selectattr('pregnancy_risk', 'equalto', cat) | list %}
+  {% if cat_drugs %}
+  <h3 style="margin-top:20px;">Category {{ cat }}</h3>
+  <ul class="dosage-guide-list">
+    {% for drug in cat_drugs %}
+    <li class="dosage-guide-item">
+      <a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}"><strong>{{ drug.generic_name|capitalize }}</strong></a>
+      {% if drug.brand_names %}<span class="muted"> — {{ drug.brand_names|join(', ') }}</span>{% endif %}
+    </li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+{% endfor %}
+
+{% set other_drugs = drugs | rejectattr('pregnancy_risk', 'in', ['A','B','C','D','X']) | list %}
+{% if other_drugs %}
+<h3 style="margin-top:20px;">Other / Not Classified</h3>
+<ul class="dosage-guide-list">
+  {% for drug in other_drugs %}
+  <li class="dosage-guide-item">
+    <a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}"><strong>{{ drug.generic_name|capitalize }}</strong></a>
+    {% if drug.pregnancy_risk %}<span class="muted"> ({{ drug.pregnancy_risk }})</span>{% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endif %}
+
+</div>
+
+<aside class="sidebar">
+  <div class="sidebar-box">
+    <div class="sidebar-box-title">Related Resources</div>
+    <ul class="sidebar-link-list">
+      <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a></li>
+      <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+      <li><a href="{{ url_for('conditions_list') }}">Conditions A-Z</a></li>
+    </ul>
+  </div>
+  <div class="sidebar-box">
+    <div class="sidebar-box-title">Note</div>
+    <p class="muted small">Since 2015, the FDA replaced A/B/C/D/X categories with more detailed narrative labeling for new drugs under the PLLR rule. Legacy categories remain widely used for older medications.</p>
+  </div>
+</aside>
+</div>
+{% endblock %}

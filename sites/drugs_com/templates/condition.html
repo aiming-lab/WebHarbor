@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}{{ condition.name }} - Medications & Treatment - Drugs.com{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <a href="{{ url_for('conditions_list') }}">Conditions</a> &rsaquo;
+  <span>{{ condition.name }}</span>
+</nav>
+
+<h1>{{ condition.name }}</h1>
+<p class="muted">Medically reviewed by Drugs.com. Last updated on May 13, 2026.</p>
+
+{% if condition.description %}
+  <p class="lead">{{ condition.description }}</p>
+{% else %}
+  <p class="lead">{{ condition.name }} is a medical condition managed with a combination of
+  medications and lifestyle measures. The medications listed below are commonly prescribed or
+  recommended to treat {{ condition.name }}. Always consult a healthcare professional before
+  starting or stopping any treatment.</p>
+{% endif %}
+
+{% if drugs_by_class %}
+<section class="standard-treatments is-063">
+  <h2 class="is-064">Standard treatments for {{ condition.name }}</h2>
+  <p class="muted is-064">Medications used for {{ condition.name }}, grouped by drug class.</p>
+  {% for cls_name, cls_drugs in drugs_by_class %}
+    <div class="is-065">
+      <h3 class="is-066">{{ cls_name }}
+        <span class="muted is-067">({{ cls_drugs|length }})</span>
+      </h3>
+      <ul class="is-068">
+        {% for d in cls_drugs %}
+          <li>
+            <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>
+            {% if d.brand_names %}<span class="muted">({{ d.brand_names|join(', ') }})</span>{% endif %}
+            {% if d.availability %}<span class="avail-badge avail-{{ d.availability|lower }} is-069">{{ d.availability }}</span>{% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endfor %}
+</section>
+{% endif %}
+
+<div class="two-col">
+  <div class="main-col">
+    <div class="is-070">
+      <h2 class="is-071">Drugs used for {{ condition.name }}</h2>
+      <div class="sort-controls">
+        <span class="muted is-072">Sort by:</span>
+        <a href="?sort=rating" class="{% if sort == 'rating' or not sort %}active{% endif %}">Rating</a>
+        &middot;
+        <a href="?sort=name" class="{% if sort == 'name' %}active{% endif %}">Name</a>
+      </div>
+    </div>
+
+    {% if drugs %}
+      <div class="is-073">
+        <a class="btn btn-primary" href="{{ url_for('compare_drugs') }}?drugs={{ drugs[:3]|map(attribute='generic_name')|join(',') }}">
+          Compare top 3 drugs
+        </a>
+        <label for="drug-class-filter" class="muted is-072">Filter by drug class:</label>
+        <select id="drug-class-filter" class="drug-class-filter is-074">
+          <option value="">All drug classes ({{ drugs|length }})</option>
+          {% if drugs_by_class %}
+            {% for cls_name, cls_drugs in drugs_by_class %}
+              <option value="{{ cls_name }}">{{ cls_name }} ({{ cls_drugs|length }})</option>
+            {% endfor %}
+          {% endif %}
+        </select>
+        <span id="drug-class-filter-count" class="muted is-072"></span>
+      </div>
+
+      <table class="drug-table" id="condition-drug-table">
+        <thead>
+          <tr>
+            <th>Drug name</th>
+            <th>Brand names</th>
+            <th>Drug class</th>
+            <th>Rx/OTC</th>
+            <th>Rating</th>
+            <th>Reviews</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for d in drugs %}
+          <tr data-drug-class="{{ d.drug_class.name if d.drug_class else '' }}">
+            <td>
+              <a href="{{ url_for('drug_detail', slug=d.slug) }}"><strong>{{ d.generic_name|capitalize }}</strong></a>
+            </td>
+            <td class="muted">{{ d.brand_names|join(', ') if d.brand_names else 'Generic' }}</td>
+            <td>
+              {% if d.drug_class %}
+                <a href="{{ url_for('drug_class_page', slug=d.drug_class.slug) }}">{{ d.drug_class.name }}</a>
+              {% else %}-{% endif %}
+            </td>
+            <td>
+              {% if d.availability == 'Rx' %}
+                <span class="avail-badge avail-rx">Rx</span>
+              {% elif d.availability == 'OTC' %}
+                <span class="avail-badge avail-otc">OTC</span>
+              {% else %}
+                <span class="avail-badge">{{ d.availability or 'Rx/OTC' }}</span>
+              {% endif %}
+            </td>
+            <td><span class="rating">{{ '%.1f'|format(d.avg_rating) if d.avg_rating else '-' }}</span></td>
+            <td>
+              <a href="{{ url_for('drug_detail', slug=d.slug) }}#reviews">{{ d.review_count or 0 }} review{{ '' if (d.review_count or 0) == 1 else 's' }}</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p class="muted footnote">
+        <strong>Rating:</strong> User ratings on a scale of 1 (poor) to 10 (excellent).
+        <strong>Rx</strong> = Prescription only.
+        <strong>OTC</strong> = Over-the-counter.
+      </p>
+    {% else %}
+      <p class="muted">No drugs listed for this condition.</p>
+    {% endif %}
+
+    <details class="learn-more is-075">
+      <summary class="is-076">Learn more about {{ condition.name }}</summary>
+      <div class="is-077">
+        {% if condition.description %}
+          <p>{{ condition.description }}</p>
+        {% endif %}
+        <p>
+          {{ condition.name }} can affect people of any age. Treatment goals typically include symptom relief,
+          slowing disease progression, and improving quality of life. Always consult a healthcare professional
+          before starting, stopping, or changing any medication used to treat {{ condition.name }}.
+        </p>
+        <ul>
+          <li><a href="{{ url_for('search') }}?q={{ condition.name }}">Search articles about {{ condition.name }}</a></li>
+          <li><a href="{{ url_for('news_index') }}">Latest medical news</a></li>
+          <li><a href="{{ url_for('interaction_checker') }}">Check drug interactions</a></li>
+        </ul>
+      </div>
+    </details>
+  </div>
+
+  <aside class="sidebar">
+    <h3>Related conditions</h3>
+    <ul>
+      {% if related_conditions %}
+        {% for rc in related_conditions %}
+          <li><a href="{{ url_for('condition_page', slug=rc.slug) }}">{{ rc.name }}</a></li>
+        {% endfor %}
+      {% endif %}
+      <li><a href="{{ url_for('conditions_list') }}">All conditions</a></li>
+    </ul>
+
+    <h3>Popular tools</h3>
+    <ul>
+      <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+      <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+      <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a></li>
+    </ul>
+
+    <h3>Subscribe to our newsletters</h3>
+    <p class="muted is-078">
+      Get the latest medication news, new drug approvals, alerts and updates.
+    </p>
+    <a class="btn btn-secondary" href="{{ url_for('newsletter') }}">Subscribe</a>
+  </aside>
+</div>
+
+<script>
+(function() {
+  var sel = document.getElementById('drug-class-filter');
+  var countEl = document.getElementById('drug-class-filter-count');
+  var table = document.getElementById('condition-drug-table');
+  if (!sel || !table) return;
+  sel.addEventListener('change', function() {
+    var val = sel.value;
+    var rows = table.querySelectorAll('tbody tr');
+    var shown = 0;
+    rows.forEach(function(r) {
+      if (!val || r.getAttribute('data-drug-class') === val) {
+        r.style.display = '';
+        shown++;
+      } else {
+        r.style.display = 'none';
+      }
+    });
+    countEl.textContent = val ? ('Showing ' + shown + ' drug' + (shown === 1 ? '' : 's')) : '';
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|title }} Interactions Checker - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_az') }}">Drugs A-Z</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|title }}</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Interactions</span>
+</nav>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+  <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+  <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+  <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}" class="active" aria-current="page">Interactions</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+</nav>
+
+<h1>{{ drug.generic_name|title }} Interactions</h1>
+<p class="lead">There are {{ summary.total if summary else 0 }} known drug interactions with {{ drug.generic_name|title }}. Use the <a href="{{ url_for('interaction_checker') }}">interaction checker</a> to check a specific combination of medications.</p>
+
+<div class="ix-inline-checker">
+  <p>Does {{ drug.generic_name|title }} interact with any of my other drugs?</p>
+  <form action="{{ url_for('interaction_checker') }}" method="get" class="ix-inline-form">
+    <input type="hidden" name="drug" value="{{ drug.slug }}">
+    <input type="text" name="add" class="ix-inline-input" placeholder="Add another medication...">
+    <button type="submit" class="btn btn-primary">Check</button>
+  </form>
+</div>
+
+<div class="interaction-summary is-123">
+  <strong>{{ summary.total }} interaction{{ '' if summary.total == 1 else 's' }} found</strong>
+  {% if summary.total %}
+    ({% if summary.major %}<span class="is-124">{{ summary.major }} major</span>{% else %}0 major{% endif %},
+    {% if summary.moderate %}<span class="is-125">{{ summary.moderate }} moderate</span>{% else %}0 moderate{% endif %},
+    {% if summary.minor %}<span class="is-126">{{ summary.minor }} minor</span>{% else %}0 minor{% endif %})
+  {% endif %}
+</div>
+
+{% macro sev_badge(sev) -%}
+  <span class="sev-badge sev-{{ sev }}">{{ sev }}</span>
+{%- endmacro %}
+
+{% if interactions %}
+<section class="ix-frequently-checked">
+  <h2>Most frequently checked interactions</h2>
+  <p>View interaction reports for {{ drug.generic_name|title }} and the medicines listed below.</p>
+  <ul class="ix-freq-list">
+    {% for it in interactions[:20] %}
+    <li>
+      <span class="sev-dot sev-dot--{{ it.severity }}"></span>
+      <a href="{{ url_for('interaction_checker') }}?drug={{ drug.slug }}&add={{ it.other_drug.slug }}">{{ drug.generic_name|title }} &amp; {{ it.other_drug.generic_name|title }}</a>
+      <span class="sev-label sev-label--{{ it.severity }}">{{ it.severity }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+</section>
+{% endif %}
+
+<h2 class="is-127">Drug-drug interactions</h2>
+{% if interactions %}
+  {% for sev in ['major', 'moderate', 'minor', 'unknown'] %}
+    {% set group = interactions_by_severity.get(sev) %}
+    {% if group %}
+      <h3 class="is-128">{{ sev }} ({{ group|length }})</h3>
+      <table class="interactions-table is-129">
+        <thead>
+          <tr class="is-130">
+            <th class="is-131">Severity</th>
+            <th class="is-131">Interacts with</th>
+            <th class="is-131">Description</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for it in group %}
+            <tr class="is-132">
+              <td class="is-133">{{ sev_badge(it.severity) }}</td>
+              <td class="is-133">
+                <a href="{{ url_for('drug_detail', slug=it.other_drug.slug) }}">{{ it.other_drug.generic_name }}</a>
+              </td>
+              <td class="is-133">{{ it.description }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  {% endfor %}
+{% else %}
+<p>No drug-drug interactions for {{ drug.generic_name|title }} are recorded in our database.
+This does not mean none exist &mdash; always confirm with a pharmacist or clinician.</p>
+{% endif %}
+
+<h2 class="is-134">Drug-food interactions</h2>
+{% if food_interactions %}
+<table class="interactions-table is-135">
+  <thead>
+    <tr class="is-130">
+      <th class="is-131">Severity</th>
+      <th class="is-131">Food / item</th>
+      <th class="is-131">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for it in food_interactions %}
+      <tr class="is-132">
+        <td class="is-133">{{ sev_badge(it.severity) }}</td>
+        <td class="is-133">{{ it.item }}</td>
+        <td class="is-133">{{ it.description }}</td>
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% else %}
+<p>No significant food interactions are recorded for {{ drug.generic_name|title }}.</p>
+{% endif %}
+
+<h2 class="is-134">Drug-alcohol interactions</h2>
+{% if alcohol_interactions %}
+  {% for it in alcohol_interactions %}
+    <div class="is-136">
+      <p class="is-137">{{ sev_badge(it.severity) }} <strong>Alcohol</strong></p>
+      <p class="is-071">{{ it.description }}</p>
+    </div>
+  {% endfor %}
+{% else %}
+<p>No specific alcohol interaction is recorded for {{ drug.generic_name|title }}. Discuss
+alcohol use with your clinician regardless.</p>
+{% endif %}
+
+<h3>{{ drug.generic_name|title }} disease interactions</h3>
+<p>There are {{ drug.drug_class.name if drug.drug_class else 'this drug class' }} disease interactions that affect {{ drug.generic_name|title }}, including:</p>
+<ul class="disease-interaction-list">
+  <li>Renal dysfunction</li>
+  <li>Hepatic dysfunction</li>
+  <li>Cardiovascular disease</li>
+  <li>Gastrointestinal disorders</li>
+  <li>Coagulation disorders</li>
+</ul>
+
+<section class="check-more is-138">
+  <h2 class="is-064">Check for more interactions</h2>
+  <p>Add other medications you take alongside {{ drug.generic_name|title }} to see how they
+  interact.</p>
+  <p><a class="btn btn-primary" href="{{ url_for('interaction_checker') }}?drug={{ drug.slug }}">Open the interaction checker with {{ drug.generic_name|title }} pre-filled</a></p>
+</section>
+
+{% if related_drugs %}
+<section class="ix-see-also">
+  <h2>See also:</h2>
+  <div class="related-drugs-carousel">
+    {% for r in related_drugs[:6] %}
+    <a href="{{ url_for('drug_detail', slug=r.slug) }}" class="related-drug-card">
+      <div class="related-drug-card-head">
+        <strong class="related-drug-name">{{ r.generic_name|capitalize }}</strong>
+        {% if r.avg_rating %}
+        <span class="related-drug-rating-badge">&#9733; {{ "%.1f"|format(r.avg_rating) }}</span>
+        {% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section id="further-information">
+  <h2>Further information</h2>
+  <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+  <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com. Version: {{ drug.last_updated.strftime('%m.%y') }}.</p>
+</section>
+
+<p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&larr; Back to full {{ drug.generic_name|title }} information</a></p>
+
+</div>
+
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

@@ -1,0 +1,183 @@
+{# Photorealistic pill SVG macro.
+
+  Renders a pill with 3D shading: radial body gradient for volume,
+  specular highlight in the upper-left, drop shadow, and optional
+  embossed imprint text. Supports Capsule (two-tone), Oval, Round,
+  Rectangle, Triangle, Diamond, Pentagon, Bullet, Figure 8.
+
+  Args:
+    uid:        unique id suffix (loop.index or similar) used to namespace
+                gradient / filter / clipPath ids across multiple SVGs on
+                the page.
+    shape:      pill shape string (case-insensitive). Unknown -> Round.
+    color:      pill color string (case-insensitive). Unknown -> light gray.
+    imprint:    text to render on the pill (optional, may be None / '').
+    pair_color: secondary hex for capsule's right half. If omitted, falls
+                back to a sensible complement of `color`.
+#}
+
+{% macro render_pill(uid, shape, color, imprint, pair_color=None) -%}
+  {% set color_map = {
+    'white': '#fafbfc', 'yellow': '#ffe066', 'orange': '#ffa94d', 'pink': '#faa2c1',
+    'red': '#ff6b6b', 'brown': '#a47148', 'gray': '#adb5bd', 'green': '#69db7c',
+    'blue': '#74c0fc', 'purple': '#b197fc', 'black': '#3a3f44', 'turquoise': '#66d9e8'
+  } %}
+  {% set dark_map = {
+    'white': '#cdd2d8', 'yellow': '#c9a227', 'orange': '#c46a14', 'pink': '#c2628c',
+    'red': '#a83232', 'brown': '#5e3f23', 'gray': '#6c757d', 'green': '#2f9e44',
+    'blue': '#1971c2', 'purple': '#7048e8', 'black': '#1a1d20', 'turquoise': '#0c8599'
+  } %}
+  {% set capsule_pair_default = {
+    'white': '#d0d4da', 'yellow': '#ffa94d', 'orange': '#ffe066', 'pink': '#ffffff',
+    'red': '#ffe066', 'brown': '#f0d9b5', 'gray': '#495057', 'green': '#ffffff',
+    'blue': '#ffffff', 'purple': '#faa2c1', 'black': '#adb5bd', 'turquoise': '#ffffff'
+  } %}
+  {% set clc = (color or '')|lower %}
+  {% set slc = (shape or '')|lower %}
+  {% set base = color_map.get(clc, '#cfd4da') %}
+  {% set dark = dark_map.get(clc, '#9097a0') %}
+  {% set second = pair_color or capsule_pair_default.get(clc, '#d0d4da') %}
+  {% set is_light = clc in ['white','yellow','pink','orange','turquoise','gray',''] %}
+  {% set text_fill = '#2a2a2a' if is_light else '#ffffff' %}
+  {% set text_shadow = '#ffffff' if is_light else '#000000' %}
+
+  {# Choose viewBox sized for the shape so wide pills get a wide canvas. #}
+  {% if slc in ['capsule','oval','rectangle','bullet','figure 8'] %}
+    {% set vbw = 280 %}{% set vbh = 160 %}
+  {% else %}
+    {% set vbw = 200 %}{% set vbh = 200 %}
+  {% endif %}
+
+  <svg viewBox="0 0 {{ vbw }} {{ vbh }}" xmlns="http://www.w3.org/2000/svg"
+       class="pill-svg pill-svg--{{ slc or 'round' }}" aria-hidden="true"
+       preserveAspectRatio="xMidYMid meet">
+    <defs>
+      <radialGradient id="body-{{ uid }}" cx="38%" cy="32%" r="75%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+        <stop offset="18%" stop-color="{{ base }}" stop-opacity="1"/>
+        <stop offset="75%" stop-color="{{ base }}" stop-opacity="1"/>
+        <stop offset="100%" stop-color="{{ dark }}" stop-opacity="1"/>
+      </radialGradient>
+      <radialGradient id="body2-{{ uid }}" cx="38%" cy="32%" r="75%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+        <stop offset="18%" stop-color="{{ second }}" stop-opacity="1"/>
+        <stop offset="100%" stop-color="#000000" stop-opacity="0.22"/>
+      </radialGradient>
+      <radialGradient id="spec-{{ uid }}" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+        <stop offset="60%" stop-color="#ffffff" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+      </radialGradient>
+      <filter id="shadow-{{ uid }}" x="-20%" y="-20%" width="140%" height="160%">
+        <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+        <feOffset dx="0" dy="4" result="off"/>
+        <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+        <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="emboss-{{ uid }}" x="-10%" y="-10%" width="120%" height="120%">
+        <feGaussianBlur stdDeviation="0.4"/>
+      </filter>
+    </defs>
+
+    <g filter="url(#shadow-{{ uid }})">
+    {% set cx = vbw // 2 %}{% set cy = vbh // 2 %}
+
+    {% if slc == 'capsule' %}
+      {% set x = 30 %}{% set y = cy - 35 %}{% set w = vbw - 60 %}{% set h = 70 %}
+      {% set r = h // 2 %}
+      <defs>
+        <clipPath id="clip-{{ uid }}">
+          <rect x="{{ x }}" y="{{ y }}" width="{{ w }}" height="{{ h }}" rx="{{ r }}" ry="{{ r }}"/>
+        </clipPath>
+      </defs>
+      <g clip-path="url(#clip-{{ uid }})">
+        <rect x="{{ x }}" y="{{ y }}" width="{{ w // 2 }}" height="{{ h }}" fill="url(#body-{{ uid }})"/>
+        <rect x="{{ x + w // 2 }}" y="{{ y }}" width="{{ w - w // 2 }}" height="{{ h }}" fill="url(#body2-{{ uid }})"/>
+      </g>
+      <line x1="{{ cx }}" y1="{{ y }}" x2="{{ cx }}" y2="{{ y + h }}"
+            stroke="#2a2a2a" stroke-width="1.2" stroke-opacity="0.45"/>
+      <rect x="{{ x }}" y="{{ y }}" width="{{ w }}" height="{{ h }}" rx="{{ r }}" ry="{{ r }}"
+            fill="none" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"/>
+      <ellipse cx="{{ x + w * 0.30 }}" cy="{{ y + h * 0.30 }}"
+               rx="{{ w * 0.22 }}" ry="{{ h * 0.18 }}" fill="url(#spec-{{ uid }})"/>
+
+    {% elif slc == 'oval' %}
+      <ellipse cx="{{ cx }}" cy="{{ cy }}" rx="{{ vbw * 0.42 }}" ry="{{ vbh * 0.32 }}"
+               fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"/>
+      <ellipse cx="{{ cx - vbw * 0.12 }}" cy="{{ cy - vbh * 0.13 }}"
+               rx="{{ vbw * 0.18 }}" ry="{{ vbh * 0.13 }}" fill="url(#spec-{{ uid }})"/>
+
+    {% elif slc == 'rectangle' %}
+      <rect x="{{ cx - vbw * 0.4 }}" y="{{ cy - vbh * 0.28 }}"
+            width="{{ vbw * 0.8 }}" height="{{ vbh * 0.56 }}" rx="12" ry="12"
+            fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"/>
+      <ellipse cx="{{ cx - vbw * 0.13 }}" cy="{{ cy - vbh * 0.12 }}"
+               rx="{{ vbw * 0.18 }}" ry="{{ vbh * 0.10 }}" fill="url(#spec-{{ uid }})"/>
+
+    {% elif slc == 'bullet' %}
+      <path d="M {{ cx - 70 }} {{ cy - 30 }}
+               Q {{ cx }} {{ cy - 75 }} {{ cx + 70 }} {{ cy - 30 }}
+               L {{ cx + 70 }} {{ cy + 50 }}
+               L {{ cx - 70 }} {{ cy + 50 }} Z"
+            fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"
+            stroke-linejoin="round"/>
+      <ellipse cx="{{ cx - 22 }}" cy="{{ cy - 22 }}" rx="26" ry="14" fill="url(#spec-{{ uid }})"/>
+
+    {% elif slc == 'figure 8' %}
+      <circle cx="{{ cx - 55 }}" cy="{{ cy }}" r="48"
+              fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"/>
+      <circle cx="{{ cx + 55 }}" cy="{{ cy }}" r="48"
+              fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"/>
+      <ellipse cx="{{ cx - 70 }}" cy="{{ cy - 18 }}" rx="20" ry="12" fill="url(#spec-{{ uid }})"/>
+      <ellipse cx="{{ cx + 40 }}" cy="{{ cy - 18 }}" rx="20" ry="12" fill="url(#spec-{{ uid }})"/>
+
+    {% elif slc == 'triangle' %}
+      <polygon points="{{ cx }},20 {{ vbw - 20 }},{{ vbh - 20 }} 20,{{ vbh - 20 }}"
+               fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"
+               stroke-linejoin="round"/>
+      <ellipse cx="{{ cx - 18 }}" cy="{{ cy + 6 }}" rx="28" ry="14" fill="url(#spec-{{ uid }})"/>
+
+    {% elif slc == 'diamond' %}
+      <polygon points="{{ cx }},14 {{ vbw - 14 }},{{ cy }} {{ cx }},{{ vbh - 14 }} 14,{{ cy }}"
+               fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"
+               stroke-linejoin="round"/>
+      <ellipse cx="{{ cx - 22 }}" cy="{{ cy - 20 }}" rx="26" ry="13" fill="url(#spec-{{ uid }})"/>
+
+    {% elif slc == 'pentagon' %}
+      <polygon points="{{ cx }},16 {{ vbw - 14 }},{{ cy - 20 }} {{ vbw - 30 }},{{ vbh - 14 }} 30,{{ vbh - 14 }} 14,{{ cy - 20 }}"
+               fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"
+               stroke-linejoin="round"/>
+      <ellipse cx="{{ cx - 22 }}" cy="{{ cy - 22 }}" rx="28" ry="14" fill="url(#spec-{{ uid }})"/>
+
+    {% else %}
+      {# Round (default) #}
+      {% set r = (vbw if vbw < vbh else vbh) * 0.4 %}
+      <circle cx="{{ cx }}" cy="{{ cy }}" r="{{ r }}"
+              fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"/>
+      <line x1="{{ cx - r * 0.92 }}" y1="{{ cy }}" x2="{{ cx + r * 0.92 }}" y2="{{ cy }}"
+            stroke="#2a2a2a" stroke-width="1.1" stroke-opacity="0.32"/>
+      <ellipse cx="{{ cx - r * 0.32 }}" cy="{{ cy - r * 0.42 }}"
+               rx="{{ r * 0.45 }}" ry="{{ r * 0.28 }}" fill="url(#spec-{{ uid }})"/>
+    {% endif %}
+    </g>
+
+    {% if imprint %}
+      {% set ilen = imprint|length %}
+      {% if slc in ['capsule','oval','rectangle','bullet','figure 8'] %}
+        {% set fsize = 32 if ilen <= 4 else (26 if ilen <= 7 else 20) %}
+      {% else %}
+        {% set fsize = 30 if ilen <= 4 else (24 if ilen <= 7 else 18) %}
+      {% endif %}
+      {# Embossed look: lighter offset behind, dark text on top. #}
+      <text x="{{ vbw // 2 }}" y="{{ vbh // 2 + fsize // 3 + 1 }}"
+            font-family="'Helvetica Neue', Arial, sans-serif" font-size="{{ fsize }}"
+            font-weight="700" text-anchor="middle"
+            fill="{{ text_shadow }}" fill-opacity="0.45">{{ imprint }}</text>
+      <text x="{{ vbw // 2 }}" y="{{ vbh // 2 + fsize // 3 }}"
+            font-family="'Helvetica Neue', Arial, sans-serif" font-size="{{ fsize }}"
+            font-weight="700" text-anchor="middle"
+            fill="{{ text_fill }}" fill-opacity="0.88"
+            letter-spacing="0.5">{{ imprint }}</text>
+    {% endif %}
+  </svg>
+{%- endmacro %}

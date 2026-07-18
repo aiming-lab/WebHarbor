@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Sign in to Drugs.com | {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <span>Sign In</span>
+</nav>
+
+<div class="auth-box is-288">
+  <div class="is-289">
+    <a class="is-290" href="{{ url_for('index') }}">
+      <span class="is-291">Drugs<span class="is-292">.com</span></span>
+    </a>
+    <p class="muted is-293">Know more. Live healthier.</p>
+  </div>
+
+  <h1 class="is-294">Sign In</h1>
+
+  <form method="post" action="{{ url_for('login', next=next_url) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="is-296">
+      <label class="is-016" for="email">Email address</label>
+      <input class="is-018" id="email" type="email" name="email" required autocomplete="email" maxlength="120">
+    </div>
+
+    <div class="is-297">
+      <label class="is-298" for="password">
+        <span>Password</span>
+        <a href="{{ url_for('help_page') }}#account-access" class="forgot-link is-299">Forgot your password?</a>
+      </label>
+      <input class="is-018" id="password" type="password" name="password" required autocomplete="current-password" maxlength="72">
+    </div>
+
+    <label class="is-300">
+      <input type="checkbox" name="remember_me" value="1"> Remember me on this device
+    </label>
+
+    <button type="submit" class="btn btn-primary is-301">Sign in</button>
+  </form>
+
+  <p class="auth-switch is-311">
+    Don't have an account? <a class="is-312" href="{{ url_for('register') }}">Sign up</a>
+  </p>
+
+  <p class="auth-note is-313">
+    <em>Demo account: alice.j@test.com / TestPass123!</em>
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Drugs.com Newsletter | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="is-333">
+  <nav class="breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Newsletter</span></nav>
+  <h1 class="is-334">Get the latest drug information delivered to your inbox</h1>
+  <p class="is-097">Join over 2 million subscribers who get free, expert-reviewed drug news and health updates from Drugs.com. Choose the newsletters that match your interests.</p>
+
+  <section class="is-335">
+    <form action="{{ url_for('newsletter_subscribe') }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <h2 class="is-336">Choose your newsletters</h2>
+      <div class="is-337">
+        <label class="is-338">
+          <input class="is-339" type="checkbox" name="lists" value="daily_mednews" {% if 'daily_mednews' in selected_lists %}checked{% endif %}>
+          <span><strong>Daily MedNews</strong><br><small>Daily roundup of the latest drug and health news.</small></span>
+        </label>
+        <label class="is-338">
+          <input class="is-339" type="checkbox" name="lists" value="weekly_safety" {% if 'weekly_safety' in selected_lists %}checked{% endif %}>
+          <span><strong>Weekly Drug Safety Alerts</strong><br><small>Recalls, FDA warnings, and safety communications.</small></span>
+        </label>
+        <label class="is-338">
+          <input class="is-339" type="checkbox" name="lists" value="approvals_monthly" {% if 'approvals_monthly' in selected_lists %}checked{% endif %}>
+          <span><strong>New Drug Approvals Monthly</strong><br><small>Summaries of newly approved FDA medications.</small></span>
+        </label>
+        <label class="is-338">
+          <input class="is-339" type="checkbox" name="lists" value="clinical_trials" {% if 'clinical_trials' in selected_lists %}checked{% endif %}>
+          <span><strong>Clinical Trial Results</strong><br><small>Notable results from clinical trials and research.</small></span>
+        </label>
+      </div>
+
+      <div class="is-340">
+        <input class="is-341" type="email" name="email" maxlength="254" required value="{{ subscription_email }}" placeholder="your.email@example.com">
+        <button class="is-214" type="submit">Save subscription</button>
+      </div>
+      <p class="is-342">We respect your privacy. Unsubscribe at any time.</p>
+    </form>
+  </section>
+
+  <h2 class="is-343">Recent newsletter topics</h2>
+  <p class="is-344">A sample of articles featured in recent Drugs.com newsletters.</p>
+  {% if recent_articles %}
+    <ul class="is-345">
+      {% for a in recent_articles %}
+        <li class="is-346">
+          <a class="is-347" href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a>
+          <div class="is-348">{{ a.category }}{% if a.published_at %} &middot; {{ a.published_at.strftime('%b %d, %Y') }}{% endif %}</div>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No recent articles available.</p>
+  {% endif %}
+
+  <h2 class="is-349">Manage your subscriptions</h2>
+  {% if current_user.is_authenticated %}
+    <p>You are currently signed in as <strong>{{ current_user.email }}</strong>. Manage your newsletter preferences in <a href="{{ url_for('account_subscriptions') }}">Email Subscriptions</a>.</p>
+  {% else %}
+    <p><a href="{{ url_for('login') }}">Sign in</a> to manage existing newsletter preferences.</p>
+  {% endif %}
+</div>
+{% endblock %}

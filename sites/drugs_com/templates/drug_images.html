@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% from "_pill_svg.html" import render_pill %}
+{% block title %}{{ drug.generic_name|capitalize }} Pill Images | {{ site_name }}{% endblock %}
+{% block content %}
+
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+  <span>Images</span>
+</nav>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+  <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+  <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+  <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+</nav>
+
+<header class="drug-images-header">
+  <h1>{{ drug.generic_name|capitalize }} Images</h1>
+  <p class="drug-images-subtitle">
+    {% if drug.drug_class %}
+      <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
+    {% endif %}
+    {% if drug.brand_names %}
+      {% if drug.drug_class %} &middot; {% endif %}
+      Brand names: {{ drug.brand_names|join(', ') }}
+    {% endif %}
+  </p>
+</header>
+
+<div class="disclaimer-box">
+  <p><strong>Note:</strong> These images are for identification purposes only. Colors may vary between manufacturers and lots, and image rendering may differ slightly from the actual product.</p>
+</div>
+
+{% if images %}
+  <p class="muted is-120">Showing {{ images|length }} pill image{{ '' if images|length == 1 else 's' }} for {{ drug.generic_name|capitalize }}.</p>
+  <div class="pill-result-grid drug-images-grid">
+    {% for img in images %}
+      {% set color_lc = (img.color or '')|lower %}
+      <article class="pill-result-card">
+        {% if loop.first and drug.slug|pill_image_exists %}
+        <div class="pill-icon-wrap pill-icon-wrap--photo" data-color="{{ color_lc }}">
+          <img src="{{ url_for('static', filename='images/pills/' + drug.slug + '.jpg') }}"
+               alt="{{ drug.generic_name|capitalize }}{% if img.shape %} {{ img.shape }}{% endif %}{% if img.color %} {{ img.color }}{% endif %} pill"
+               class="pill-photo" loading="lazy">
+        </div>
+        {% else %}
+        <div class="pill-icon-wrap" data-color="{{ color_lc }}">
+          {{ render_pill('di-' ~ loop.index, img.shape, img.color, img.imprint) }}
+        </div>
+        {% endif %}
+        <div class="pill-card-body">
+          <h3 class="pill-card-name">
+            {% if img.imprint %}Imprint <strong>{{ img.imprint }}</strong>{% else %}{{ drug.generic_name|capitalize }}{% endif %}
+          </h3>
+          <p class="pill-card-attrs">
+            {% if img.shape %}{{ img.shape }}{% endif %}
+            {% if img.shape and img.color %} &middot; {% endif %}
+            {% if img.color %}{{ img.color }}{% endif %}
+            {% if (img.shape or img.color) and img.strength %} &middot; {% endif %}
+            {% if img.strength %}{{ img.strength }}{% endif %}
+          </p>
+          {% if img.manufacturer %}<p class="pill-card-meta">Mfr: {{ img.manufacturer }}</p>{% endif %}
+          {% if img.imprint %}
+            <a href="{{ url_for('pill_identifier_results', imprint=img.imprint) }}" class="pill-card-link">Identify this pill &rarr;</a>
+          {% endif %}
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="muted is-121">No pill images are available for {{ drug.generic_name|capitalize }}.</p>
+{% endif %}
+
+<section id="further-information">
+  <h2>Further information</h2>
+  <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+  <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com.</p>
+</section>
+
+<p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>
+
+</div>
+
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

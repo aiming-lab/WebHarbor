@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+{% block title %}{% if active_cat %}{{ active_cat }} - Pharmaceutical News and Articles - {{ site_name }}{% else %}Pharmaceutical News and Articles - {{ site_name }}{% endif %}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Drugs.com</a>
+  <span>&rsaquo;</span>
+  {% if active_cat %}
+    <a href="{{ url_for('news_index') }}">Medical News</a>
+    <span>&rsaquo;</span>
+    <span>{{ active_cat }}</span>
+  {% else %}
+    <span>Medical News</span>
+  {% endif %}
+</nav>
+
+{% set cat_meta = {
+  "New Drug Approvals": {"color": "#2e7d32", "bg": "linear-gradient(135deg,#e8f5e9 0%,#c8e6c9 100%)", "icon": "approvals", "glyph": "&#128138;", "slug": "approvals", "blurb": "Newly approved medications, expanded indications, and biosimilars cleared by the U.S. Food and Drug Administration."},
+  "Medical": {"color": "#1565c0", "bg": "linear-gradient(135deg,#e3f2fd 0%,#bbdefb 100%)", "icon": "medical", "glyph": "&#10084;", "slug": "medical", "blurb": "Consumer-focused medical research, study findings, and clinical guidance from the medical literature."},
+  "FDA Alerts": {"color": "#c0392b", "bg": "linear-gradient(135deg,#fff5f5 0%,#ffd6d6 100%)", "icon": "alert", "glyph": "&#9888;", "slug": "alert", "blurb": "Drug safety communications, recalls, boxed warning updates, and other FDA regulatory actions."},
+  "Clinical Trials": {"color": "#6a1b9a", "bg": "linear-gradient(135deg,#f3e5f5 0%,#e1bee7 100%)", "icon": "trial", "glyph": "&#129514;", "slug": "trial", "blurb": "Late-stage clinical trial results and ongoing studies of investigational therapies."},
+  "Health": {"color": "#ef6c00", "bg": "linear-gradient(135deg,#fff3e0 0%,#ffe0b2 100%)", "icon": "health", "glyph": "&#43;", "slug": "health", "blurb": "Practical guidance on medication use, adherence, interactions, and patient safety."}
+} %}
+{% if active_cat and cat_meta.get(active_cat) %}
+  {% set meta = cat_meta[active_cat] %}
+  {% set _slug = meta.slug if meta.slug is defined else 'default' %}
+  <div class="news-cat-banner news-cat-banner--{{ _slug }}">
+    <div class="is-316">
+      <span class="badge news-cat-badge news-cat-badge--{{ _slug }}">{{ active_cat }}</span>
+      <h1 class="news-cat-title news-cat-title--{{ _slug }}">{{ active_cat }}</h1>
+    </div>
+    <p class="is-317">{{ meta.blurb }}</p>
+  </div>
+{% else %}
+  <h1 class="is-318">Pharmaceutical News and Articles</h1>
+  <p class="lead muted is-097">
+    Stay informed with the latest medical news, FDA drug alerts, new drug approvals, and clinical trial results.
+  </p>
+{% endif %}
+
+{% set cat_display = {
+  "New Drug Approvals": "New Drugs",
+  "Medical": "Consumer",
+  "FDA Alerts": "FDA Alerts",
+  "Clinical Trials": "Clinical Trials",
+  "Health": "Health"
+} %}
+<div class="news-tabs">
+  <a href="{{ url_for('news_index') }}" class="{% if not active_cat %}active{% endif %}">All News</a>
+  {% for cat in categories %}
+    {% set slug = cat|lower|replace(' ', '-') %}
+    <a href="{{ url_for('news_category', category=slug) }}"
+       class="{% if active_cat == cat %}active{% endif %}">{{ cat_display.get(cat, cat) }}</a>
+  {% endfor %}
+</div>
+
+<div class="news-search-wrap">
+  <form action="{{ url_for('news_index') }}" method="get" class="news-search-form">
+    <input type="hidden" name="cat" value="{{ active_cat or '' }}">
+    <input type="search" name="q" placeholder="Search news" value="{{ request.args.get('q', '') }}" class="news-search-input">
+    <button type="submit" class="news-search-btn">
+      <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" stroke-width="1.8"/><line x1="12.9" y1="12.9" x2="17" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+  </form>
+</div>
+
+<div class="news-layout is-319">
+  <div class="news-main">
+    {% for a in articles %}
+      {% set am = cat_meta.get(a.category, {"color": "#1a3a6e", "bg": "linear-gradient(135deg,#e0e6ef 0%,#c5cee0 100%)", "glyph": "&#9679;", "slug": "default"}) %}
+      <div class="news-card news-card-grid">
+        <div class="news-thumb news-thumb-cat news-thumb-cat--{{ am.slug }}" aria-hidden="true">
+          <span class="news-thumb-icon">{{ am.glyph|safe }}</span>
+        </div>
+        <div class="news-card-body">
+          {% set _aslug = am.slug if am.slug is defined else 'default' %}
+          <span class="badge news-cat-badge news-cat-badge--{{ _aslug }}">{{ a.category }}</span>
+          <h2>
+            <a href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a>
+          </h2>
+          <div class="news-meta">
+            {% if a.source %}{{ a.source }} &middot; {% endif %}{{ a.published_at.strftime('%B %d, %Y') }}
+          </div>
+          <p class="is-320">
+            {{ a.body[:200] }}{% if a.body|length > 200 %}...{% endif %}
+          </p>
+          <a class="is-321" href="{{ url_for('news_article', article_id=a.id) }}">Read more &rsaquo;</a>
+        </div>
+      </div>
+    {% else %}
+      <p class="muted">No articles found.</p>
+    {% endfor %}
+
+    {% if total_pages is defined and total_pages > 1 %}
+    <div class="pagination">
+      {% if page > 1 %}
+        <a class="pagination-link" href="{{ url_for('news_index') }}?cat={{ active_cat or '' }}&q={{ search_query or '' }}&page={{ page - 1 }}">&laquo; Prev</a>
+      {% else %}
+        <span class="pagination-link pagination-link--disabled">&laquo; Prev</span>
+      {% endif %}
+      {% for p in range(1, total_pages + 1) %}
+        {% if p == page %}
+          <span class="pagination-link pagination-link--active">{{ p }}</span>
+        {% elif p == 1 or p == total_pages or (p >= page - 2 and p <= page + 2) %}
+          <a class="pagination-link" href="{{ url_for('news_index') }}?cat={{ active_cat or '' }}&q={{ search_query or '' }}&page={{ p }}">{{ p }}</a>
+        {% elif p == page - 3 or p == page + 3 %}
+          <span class="pagination-ellipsis">&hellip;</span>
+        {% endif %}
+      {% endfor %}
+      {% if page < total_pages %}
+        <a class="pagination-link" href="{{ url_for('news_index') }}?cat={{ active_cat or '' }}&q={{ search_query or '' }}&page={{ page + 1 }}">Next &raquo;</a>
+      {% else %}
+        <span class="pagination-link pagination-link--disabled">Next &raquo;</span>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+
+  <aside class="news-sidebar">
+    {% if fda_alerts %}
+    <div class="is-325">
+      <h3 class="is-326">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 2L1 21h22L12 2zm0 6l7.5 13h-15L12 8zm-1 4v4h2v-4h-2zm0 5v2h2v-2h-2z" fill="#c0392b"/>
+        </svg>
+        FDA Safety Alerts
+      </h3>
+      <ul class="is-327">
+        {% for a in fda_alerts %}
+          <li class="is-328">
+            <a class="is-329" href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a>
+            <div class="is-330">{{ a.published_at.strftime('%b %d, %Y') }}</div>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    <div class="is-331">
+      <h3 class="is-332">
+        Popular tools & resources
+      </h3>
+      <ul class="popular-tools">
+        <li><a href="{{ url_for('my_med_list') }}">My Med List</a></li>
+        <li><a href="{{ url_for('interaction_checker') }}">Drug interaction checker</a></li>
+        <li><a href="{{ url_for('pill_identifier') }}">Pill identifier</a></li>
+        <li><a href="{{ url_for('compare_drugs') }}">Compare drugs</a></li>
+        <li><a href="{{ url_for('news_index') }}">Medical Q &amp; A</a></li>
+        <li><a href="{{ url_for('news_index') }}">Latest drug news</a></li>
+      </ul>
+    </div>
+  </aside>
+</div>
+{% endblock %}

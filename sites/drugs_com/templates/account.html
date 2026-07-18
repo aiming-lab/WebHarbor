@@ -1,0 +1,177 @@
+{% extends "base.html" %}
+{% block title %}My Drugs.com - {{ current_user.username }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>My Account</span>
+</nav>
+
+<h1>My Drugs.com <span class="muted">&mdash; {{ current_user.username }}</span></h1>
+
+<div class="account-profile-header">
+  <div class="account-avatar" aria-hidden="true">
+    {% set parts = (current_user.username or 'U').replace('_', ' ').replace('.', ' ').split() %}
+    {% if parts|length >= 2 %}{{ (parts[0][0] ~ parts[1][0])|upper }}{% else %}{{ (current_user.username[:2])|upper }}{% endif %}
+  </div>
+  <div class="account-profile-info">
+    <p class="account-profile-name">{{ current_user.username }}</p>
+    <p class="account-profile-email"><a href="mailto:{{ current_user.email }}">{{ current_user.email }}</a></p>
+    <p class="account-profile-since muted">Member since
+      {% if current_user.created_at %}{{ current_user.created_at.strftime('%B %Y') }}{% else %}2024{% endif %}
+    </p>
+  </div>
+</div>
+
+<p class="account-welcome">Welcome back, {{ current_user.username }}! Manage your medications, reviews, and preferences below.</p>
+
+<nav class="account-tabs">
+  <a href="{{ url_for('account') }}" class="active">My Account</a>
+  <a href="{{ url_for('my_med_list') }}">My Med List</a>
+  <a href="{{ url_for('my_reviews') }}">My Reviews</a>
+  <a href="{{ url_for('account_settings') }}">Settings</a>
+  <a href="{{ url_for('account_subscriptions') }}">Subscriptions</a>
+</nav>
+
+<div class="account-stats">
+  <div class="account-stat">
+    <span class="stat-value">{{ saved_count }}</span>
+    <span class="stat-label">Saved Medication{{ '' if saved_count == 1 else 's' }}</span>
+  </div>
+  <div class="account-stat">
+    <span class="stat-value">{{ reviews|length }}</span>
+    <span class="stat-label">Review{{ '' if reviews|length == 1 else 's' }} Posted</span>
+  </div>
+  <div class="account-stat">
+    <span class="stat-value">{{ recently_viewed_count }}</span>
+    <span class="stat-label">Drug{{ '' if recently_viewed_count == 1 else 's' }} Viewed</span>
+  </div>
+</div>
+
+<div class="account-actions">
+  <a class="btn btn-primary account-action-btn" href="{{ url_for('drug_az') }}">
+    <span class="account-action-icon">+</span> Add medications
+  </a>
+  <a class="btn btn-primary account-action-btn" href="{{ url_for('drug_az') }}#popular">
+    <span class="account-action-icon">&#9733;</span> Write a review
+  </a>
+  <a class="btn btn-outline account-action-btn" href="{{ url_for('account_settings') }}">
+    <span class="account-action-icon">&#9881;</span> Update profile
+  </a>
+</div>
+
+<div class="account-grid">
+  <section class="account-box">
+    <h2>My Stats</h2>
+    <dl class="user-info">
+      <dt>Drugs in Med List</dt><dd>{{ saved_count }}</dd>
+      <dt>Reviews written</dt><dd>{{ reviews|length }}</dd>
+      <dt>Date joined</dt><dd>{% if current_user.created_at %}{{ current_user.created_at.strftime('%B %d, %Y') }}{% else %}Member since 2024{% endif %}</dd>
+    </dl>
+  </section>
+
+  <section class="account-box">
+    <h2>User information</h2>
+    <dl class="user-info">
+      <dt>Username</dt><dd>{{ current_user.username }}</dd>
+      <dt>Email</dt><dd>{{ current_user.email }}</dd>
+      <dt>Member since</dt><dd>{{ current_user.created_at.strftime('%B %d, %Y') }}</dd>
+    </dl>
+  </section>
+
+  <section class="account-box">
+    <h2>My Med List</h2>
+    <p>You have <strong>{{ saved_count }}</strong> drug{{ '' if saved_count == 1 else 's' }} saved to your med list.</p>
+    <a class="btn btn-outline" href="{{ url_for('my_med_list') }}">View My Med List</a>
+  </section>
+
+  <section class="account-box">
+    <h2>My Reviews ({{ reviews|length }})</h2>
+    {% for r in reviews %}
+      {% set stars = ((r.rating or 0) / 2)|round(0, 'floor')|int %}
+      <article class="review">
+        <h3 class="review-drug-name">
+          <a href="{{ url_for('drug_detail', slug=r.drug.slug) }}">{{ r.drug.generic_name|capitalize }}</a>
+        </h3>
+        <div class="review-rating" title="{{ r.rating }}/10">
+          <span class="stars">{% for _ in range(stars) %}&#9733;{% endfor %}{% for _ in range(5 - stars) %}&#9734;{% endfor %}</span>
+          <span class="muted">{{ r.rating }}/10</span>
+        </div>
+        <strong>{{ r.title }}</strong>
+        <p class="muted">for {{ r.condition_treated|replace('_',' ')|replace('-',' ')|title }} &middot; {{ r.created_at.strftime('%B %d, %Y') }}</p>
+        <p>{{ r.body }}</p>
+        <div class="review-actions">
+          <a class="btn btn-outline btn-sm" href="{{ url_for('drug_review_new', slug=r.drug.slug) }}">Edit</a>
+          <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" class="review-delete" onsubmit="return confirm('Delete this review?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="btn btn-outline btn-sm">Delete</button>
+          </form>
+        </div>
+      </article>
+    {% else %}
+      <p class="muted">You have not posted any reviews yet. Visit any drug page to write a review.</p>
+    {% endfor %}
+  </section>
+
+  <section class="account-box">
+    <h2>Saved Searches</h2>
+    <ul class="saved-searches">
+      <li><a href="{{ url_for('search') }}?q=ibuprofen+side+effects">ibuprofen side effects</a></li>
+      <li><a href="{{ url_for('search') }}?q=metformin+dosage">metformin dosage</a></li>
+      <li><a href="{{ url_for('search') }}?q=warfarin+interactions">warfarin interactions</a></li>
+    </ul>
+  </section>
+
+  <section class="account-box">
+    <h2>Recently Viewed</h2>
+    {% if recently_viewed %}
+      <ul class="recently-viewed-list">
+        {% for d in recently_viewed[:5] %}
+          <li>
+            <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>
+            <span class="badge badge-{{ 'rx' if d.availability and 'rx' in (d.availability|lower) else 'otc' }}">{{ d.availability or 'Rx' }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="muted">You have not viewed any drug pages yet. Browse <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> to get started.</p>
+    {% endif %}
+  </section>
+
+  <section class="account-box">
+    <h2>Account settings</h2>
+    <form method="post" action="{{ url_for('save_settings') }}" class="account-settings-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="settings_form" value="dashboard">
+      {% set prefs = current_user.preferences %}
+      <div class="form-row">
+        <label for="acct-email">Email address</label>
+        <input id="acct-email" type="email" name="email" value="{{ current_user.email }}" required maxlength="120">
+      </div>
+      <fieldset class="form-fieldset">
+        <legend>Email preferences</legend>
+        <label class="form-check"><input type="checkbox" name="newsletter" {% if prefs.get('newsletter', true) %}checked{% endif %}> Weekly health newsletter</label>
+        <label class="form-check"><input type="checkbox" name="fda_alerts" {% if prefs.get('fda_alerts', true) %}checked{% endif %}> FDA drug alerts &amp; recalls</label>
+        <label class="form-check"><input type="checkbox" name="new_approvals" {% if prefs.get('new_approvals', false) %}checked{% endif %}> New drug approvals</label>
+      </fieldset>
+      <fieldset class="form-fieldset">
+        <legend>Notification settings</legend>
+        <label class="form-check"><input type="checkbox" name="interaction_warnings" {% if prefs.get('interaction_warnings', true) %}checked{% endif %}> Interaction warnings for drugs in my list</label>
+        <label class="form-check"><input type="checkbox" name="refill_reminders" {% if prefs.get('refill_reminders', false) %}checked{% endif %}> Refill reminders</label>
+      </fieldset>
+      <button type="submit" class="btn btn-primary btn-sm">Save preferences</button>
+    </form>
+  </section>
+
+  <section class="account-box">
+    <h2>Quick links</h2>
+    <ul class="quick-links">
+      <li><a href="{{ url_for('drug_az') }}">Add medications (Drugs A-Z)</a></li>
+      <li><a href="{{ url_for('interaction_checker') }}">Check drug interactions</a></li>
+      <li><a href="{{ url_for('my_med_list') }}">View my saved medications</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+      <li><a href="{{ url_for('news_index') }}">Medical news</a></li>
+      <li><a href="{{ url_for('account_subscriptions') }}">Email subscriptions &amp; preferences</a></li>
+      <li><a href="{{ url_for('account_settings') }}">Account settings</a></li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

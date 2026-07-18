@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} FAQ - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumb-row">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+    <span>FAQ</span>
+  </nav>
+</div>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-detail">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="active" aria-current="page">FAQ</a>
+  </nav>
+  <header class="drug-header">
+    <h1>{{ drug.generic_name|capitalize }} — Frequently Asked Questions</h1>
+    <p class="reviewer-line">
+      <span>Medically reviewed by {{ drug.reviewer_name }}, {{ drug.reviewer_credential }}. Last updated on {{ drug.last_updated.strftime('%b %d, %Y') }}.</span>
+    </p>
+  </header>
+
+  {% if faq_items %}
+  <section class="faq-section" id="faq">
+    <div class="faq-list faq-accordion">
+      {% for item in faq_items %}
+      <details class="faq-item" {% if loop.first %}open{% endif %}>
+        <summary class="faq-question">{{ item.q }}</summary>
+        <div class="faq-answer"><p>{{ item.a }}</p></div>
+      </details>
+      {% endfor %}
+    </div>
+  </section>
+  {% else %}
+  <section class="faq-section" id="faq">
+    <p class="muted">Frequently asked questions for {{ drug.generic_name }} are not yet available.</p>
+  </section>
+  {% endif %}
+
+  <section class="more-resources-section">
+    <h2>More about {{ drug.generic_name|capitalize }}</h2>
+    <ul class="more-resources-list">
+      <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a></li>
+      <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage information</a></li>
+      <li><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Drug interactions</a></li>
+      <li><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}">During pregnancy or breastfeeding</a></li>
+      <li><a href="{{ url_for('drug_images', slug=drug.slug) }}">Drug images</a></li>
+      <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}">Pricing &amp; coupons</a></li>
+      <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}">Professional information</a></li>
+    </ul>
+  </section>
+
+  <section id="further-information">
+    <h2>Further information</h2>
+    <p>Remember, keep this and all other medicines out of the reach of children, never share your medicines with others, and use {{ drug.generic_name|capitalize }} only for the indication prescribed.</p>
+    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+    <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com. Version: {{ drug.last_updated.strftime('%m.%y') }}.</p>
+  </section>
+
+  <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>
+</article>
+</div>
+
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

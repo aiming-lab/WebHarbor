@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Drug Classes - Browse All - Drugs.com{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <span>Drug Classes</span>
+</nav>
+
+<h1>Drug Classes</h1>
+<p class="lead">Browse the comprehensive list of drug classes. Each class groups medications that share a similar
+mechanism of action, chemical structure, or therapeutic use.</p>
+
+<p class="muted is-110"><strong>{{ total }}</strong> drug class{{ '' if total == 1 else 'es' }}</p>
+
+{% if popular_classes %}
+<section class="popular-classes" aria-labelledby="popular-classes-heading">
+  <h2 id="popular-classes-heading">Popular drug classes</h2>
+  <p class="muted popular-classes-sub">Top {{ popular_classes|length }} drug classes by number of medications.</p>
+  <ol class="popular-classes-list">
+    {% for item in popular_classes %}
+      {% set c = item.obj %}
+      <li>
+        <a href="{{ url_for('drug_class_page', slug=c.slug) }}">{{ c.name }}</a>
+        <span class="muted">({{ item.count }} drug{{ '' if item.count == 1 else 's' }})</span>
+        {% if item.description %}
+          <div class="muted popular-classes-desc">{{ item.description.split('.')[0] }}.</div>
+        {% endif %}
+      </li>
+    {% endfor %}
+  </ol>
+</section>
+{% endif %}
+
+{% set groups = {} %}
+{% for item in class_data %}
+  {% set letter = (item.obj.name[0]|upper) %}
+  {% if not groups.update({letter: groups.get(letter, []) + [item]}) %}{% endif %}
+{% endfor %}
+
+<div class="letter-jump is-111">
+  {% for letter in groups.keys()|sort %}
+    <a class="letter-btn" href="#letter-{{ letter }}">{{ letter }}</a>
+  {% endfor %}
+</div>
+
+{% for letter in groups.keys()|sort %}
+  <section id="letter-{{ letter }}" class="row-section is-012">
+    <h2 class="is-112">{{ letter }}</h2>
+    <div class="class-grid is-113">
+      {% for item in groups[letter] %}
+        {% set c = item.obj %}
+        <div class="class-card is-114">
+          <div class="is-115">
+            <a class="is-116" href="{{ url_for('drug_class_page', slug=c.slug) }}">{{ c.name }}</a>
+            <span class="tag-class">{{ item.count }} drug{{ '' if item.count == 1 else 's' }}</span>
+          </div>
+          {% if item.description %}
+            <div class="muted is-117">
+              {{ item.description.split('.')[0] }}.
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+{% endfor %}
+
+{% if not class_data %}
+  <p class="muted">No drug classes available.</p>
+{% endif %}
+{% endblock %}

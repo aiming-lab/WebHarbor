@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} User Reviews & Ratings - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_az') }}">Drugs A-Z</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Reviews</span>
+</nav>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+  <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+  <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+  <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+</nav>
+
+<div class="reviews-page-header">
+  <h1>{{ drug.generic_name|capitalize }} User Reviews &amp; Ratings</h1>
+  <a href="{{ url_for('drug_review_new', slug=drug.slug) }}" class="btn btn-primary btn-write-review-top">&#9998; Write a Review</a>
+</div>
+
+<section class="reviews-summary">
+    <div class="reviews-summary-score">
+      <div class="reviews-summary-number">{{ "%.1f"|format(drug.avg_rating or 0) }}<span class="reviews-summary-denominator"> / 10</span></div>
+      {% set full_stars_p = ((drug.avg_rating or 0) / 2) | int %}
+      {% set half_p = (((drug.avg_rating or 0) / 2) - full_stars_p) >= 0.5 %}
+      <div class="reviews-summary-stars" aria-label="{{ '%.1f'|format(drug.avg_rating or 0) }} out of 10">
+        {% for i in range(full_stars_p) %}<span class="star star-full">&#9733;</span>{% endfor %}
+        {% if half_p %}<span class="star star-half">&#9733;</span>{% endif %}
+        {% for i in range(5 - full_stars_p - (1 if half_p else 0)) %}<span class="star star-empty">&#9734;</span>{% endfor %}
+      </div>
+      <div class="muted">{{ drug.review_count }} reviews</div>
+    </div>
+    <div class="reviews-distribution">
+      {% set total = drug.review_count or 1 %}
+      {% for score in range(10, 0, -1) %}
+        {% set count = rating_dist[score] %}
+        {% set pct = (count * 100 / total)|round(0, 'floor')|int %}
+        <div class="rating-row">
+          <span class="rating-row-label">{{ score }}</span>
+          <span class="rating-row-bar"><span class="rating-row-fill" style="width: {{ pct }}%"></span></span>
+          <span class="rating-row-count">{{ count }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if conditions %}
+  <section class="reviews-by-condition">
+    <h3>Reviews by condition</h3>
+    <ul class="reviews-by-condition-list">
+      <li>
+        <a href="{{ url_for('drug_reviews_page', slug=drug.slug, sort=sort) }}"
+           class="reviews-by-condition-chip {% if not condition_filter %}is-active{% endif %}">All conditions</a>
+      </li>
+      {% for cond in conditions %}
+      <li>
+        <a href="{{ url_for('drug_reviews_page', slug=drug.slug, condition=cond, sort=sort) }}"
+           class="reviews-by-condition-chip {% if cond == condition_filter %}is-active{% endif %}">{{ cond|replace('_',' ')|replace('-',' ')|title }}</a>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  <form method="get" class="reviews-filter">
+    <label>Filter by condition:
+      <select name="condition" class="form-select">
+        <option value="">All conditions</option>
+        {% for cond in conditions %}
+          <option value="{{ cond }}" {% if cond == condition_filter %}selected{% endif %}>{{ cond|replace('_',' ')|replace('-',' ')|title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Sort by:
+      <select name="sort" class="form-select">
+        <option value="recent" {% if sort=='recent' %}selected{% endif %}>Most recent</option>
+        <option value="helpful" {% if sort=='helpful' %}selected{% endif %}>Most helpful</option>
+        <option value="highest" {% if sort=='highest' %}selected{% endif %}>Highest rated</option>
+        <option value="lowest" {% if sort=='lowest' %}selected{% endif %}>Lowest rated</option>
+      </select>
+    </label>
+    <button type="submit" class="btn btn-primary">Apply</button>
+    <a href="{{ url_for('drug_review_new', slug=drug.slug) }}" class="btn btn-secondary">Write a review</a>
+  </form>
+
+  <div class="reviews-list">
+    {% if reviews.items %}
+      {% for r in reviews.items %}
+        {% set rscore = r.rating or 0 %}
+        {% set rclass = 'rb-high' if rscore >= 8 else ('rb-mid' if rscore >= 5 else 'rb-low') %}
+        {% set rstar5 = (rscore / 2)|round(0, 'floor')|int %}
+        <article class="review review-card"
+                 data-condition="{{ r.condition_treated or '' }}"
+                 data-rating="{{ rscore }}"
+                 data-helpful="{{ r.helpful_count or 0 }}">
+          <header class="review-header">
+            <span class="review-rating-badge {{ rclass }}">{{ rscore }}<span class="rb-denom">/10</span></span>
+            <div class="review-header-meta">
+              <strong class="review-title">{{ r.title }}</strong>
+              <div class="review-byline muted">
+                <span class="review-stars" aria-hidden="true">
+                  {% for s in range(1, 6) %}<span class="star {% if s <= rstar5 %}star-on{% else %}star-off{% endif %}">&#9733;</span>{% endfor %}
+                </span>
+                <span class="review-author">{{ r.user.username if r.user else 'anon' }}</span>
+                <span class="review-dot">&middot;</span>
+                <span class="review-date">{{ r.created_at.strftime('%b %d, %Y') }}</span>
+                {% if r.condition_treated %}
+                  <span class="review-dot">&middot;</span>
+                  <span class="review-condition">For {{ r.condition_treated|replace('_',' ')|replace('-',' ')|title }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </header>
+          <p class="review-body">{{ r.body }}</p>
+          <div class="review-helpful muted" data-review-id="{{ r.id }}" data-slug="{{ drug.slug }}">
+            {% if current_user.is_authenticated and r.user_id == current_user.id %}
+            <span class="review-helpful-label">Your review</span>
+            {% else %}
+            <span class="review-helpful-label">Was this review helpful?</span>
+            <button type="button" class="btn btn-sm btn-outline review-helpful-yes">&#128077; Yes (<span class="review-helpful-count">{{ r.helpful_count or 0 }}</span>)</button>
+            <button type="button" class="btn btn-sm btn-outline review-helpful-no">&#128078; No</button>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No reviews match these filters.</p>
+    {% endif %}
+  </div>
+
+  {% if reviews.pages and reviews.pages > 1 %}
+  <nav class="pagination">
+    {% if reviews.has_prev %}
+      <a href="{{ url_for('drug_reviews_page', slug=drug.slug, page=reviews.prev_num, condition=condition_filter, sort=sort) }}">&laquo; Previous</a>
+    {% endif %}
+    <span class="muted">Page {{ reviews.page }} of {{ reviews.pages }}</span>
+    {% if reviews.has_next %}
+      <a href="{{ url_for('drug_reviews_page', slug=drug.slug, page=reviews.next_num, condition=condition_filter, sort=sort) }}">Next &raquo;</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% if faq_items %}
+  <section class="reviews-faq">
+    <h3>Frequently asked questions</h3>
+    <div class="faq-list faq-accordion">
+    {% for item in faq_items[:4] %}
+      <details class="faq-item" {% if loop.first %}open{% endif %}>
+        <summary class="faq-question">{{ item.q }}</summary>
+        <div class="faq-answer"><p>{{ item.a }}</p></div>
+      </details>
+    {% endfor %}
+    </div>
+    <h3>More FAQ</h3>
+    <ul class="more-faq-list">
+      <li><a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">View more {{ drug.generic_name|capitalize }} FAQ&hellip;</a></li>
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if related_drugs %}
+  <section class="reviews-see-also">
+    <h2>See also:</h2>
+    <div class="related-drugs-carousel">
+      {% for r in related_drugs[:6] %}
+      <a href="{{ url_for('drug_detail', slug=r.slug) }}" class="related-drug-card">
+        <div class="related-drug-card-head">
+          <strong class="related-drug-name">{{ r.generic_name|capitalize }}</strong>
+          {% if r.avg_rating %}
+          <span class="related-drug-rating-badge">&#9733; {{ "%.1f"|format(r.avg_rating) }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <p class="reviews-disclaimer muted">Reviews may be edited to correct grammar/spelling or remove inappropriate content. Reviews appearing to come from parties with a vested interest are not published. This information is not intended to endorse any medication and should not replace the expertise and judgment of healthcare professionals.</p>
+
+   <section id="further-information">
+    <h2>Further information</h2>
+    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+    <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com.</p>
+  </section>
+</div>
+</div>
+
+{{ drug_status_sidebar(drug) }}
+</div>
+<script>
+document.querySelectorAll('.review-helpful').forEach(box => {
+    const slug = box.dataset.slug;
+    const rid = box.dataset.reviewId;
+    const countEl = box.querySelector('.review-helpful-count');
+    function send(vote) {
+        const fd = new FormData(); fd.append('vote', vote); fd.append('csrf_token', '{{ csrf_token() }}');
+        fetch('/' + slug + '/review/' + rid + '/helpful', {method: 'POST', body: fd})
+            .then(r => r.json()).then(data => {
+                if (countEl) countEl.textContent = data.votes;
+            });
+    }
+    const yes = box.querySelector('.review-helpful-yes');
+    const no = box.querySelector('.review-helpful-no');
+    if (yes) yes.addEventListener('click', () => send('yes'));
+    if (no) no.addEventListener('click', () => send('no'));
+});
+</script>
+{% endblock %}
