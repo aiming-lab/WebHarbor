@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.title }} - craigslist{% endblock %}
+{% block body_class %}detail-page{% endblock %}
+{% block content %}
+<div class="detail-shell posting-page">
+  <nav class="breadcrumb posting-breadcrumb">
+    <a href="{{ url_for('index') }}">SF bay area</a> &gt;
+    <a href="{{ url_for('category_search', category_slug=listing.category.slug) }}">{{ listing.category.name }}</a> &gt;
+    <span>{{ listing.neighborhood }}</span>
+  </nav>
+
+  <article class="posting">
+    <header class="posting-head">
+      <div class="posting-title">
+        <div class="posting-title-line">
+          {% if listing.display_price %}<span class="posting-price">{{ listing.display_price }}</span>{% endif %}
+          <h1>{{ listing.title }}</h1>
+          <span class="posting-hood">({{ listing.neighborhood }})</span>
+        </div>
+        <div class="posting-meta">
+          <span>posted {{ listing.posted_at.strftime("%Y-%m-%d %H:%M") }}</span>
+          <span>updated {{ listing.updated_at.strftime("%Y-%m-%d") }}</span>
+          <span>post id: {{ listing.id }}</span>
+        </div>
+      </div>
+      <div class="posting-actions">
+        <a class="buttonish reply-button" href="{{ url_for('reply', listing_id=listing.id) }}">reply</a>
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('save_listing', listing_id=listing.id) }}">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <button>{% if is_saved(listing.id) %}saved{% else %}save{% endif %}</button>
+        </form>
+        {% endif %}
+        <form method="post" action="{{ url_for('flag_listing', listing_id=listing.id) }}"><button>flag</button></form>
+      </div>
+    </header>
+
+    <div class="posting-body">
+      {% set photos = listing_images(listing) %}
+      <section class="posting-image" data-gallery>
+        {% if photos %}
+        <div class="posting-photo-stage">
+          {% for photo in photos %}
+          <img class="gallery-frame{% if loop.first %} active{% endif %}" src="{{ url_for('static', filename=photo) }}" alt="">
+          {% endfor %}
+          {% if photos|length > 1 %}
+          <button class="gallery-arrow prev" type="button" data-gallery-prev aria-label="previous photo">&#8249;</button>
+          <button class="gallery-arrow next" type="button" data-gallery-next aria-label="next photo">&#8250;</button>
+          {% endif %}
+        </div>
+        {% if photos|length > 1 %}
+        <div class="photo-strip" data-gallery-dots>
+          {% for photo in photos %}
+          <button class="{% if loop.first %}active{% endif %}" type="button" data-gallery-index="{{ loop.index0 }}" aria-label="show photo {{ loop.index }}"></button>
+          {% endfor %}
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="image-placeholder">no image</div>
+        {% endif %}
+      </section>
+      <aside class="posting-info">
+        <dl class="facts">
+          <dt>category</dt><dd>{{ listing.category.name }}</dd>
+          <dt>area</dt><dd>{{ listing.area }}</dd>
+          <dt>location</dt><dd>{{ listing.neighborhood }}</dd>
+          {% if listing.condition %}<dt>condition</dt><dd>{{ listing.condition }}</dd>{% endif %}
+          {% if listing.bedrooms is not none %}<dt>bedrooms</dt><dd>{{ listing.bedrooms }}</dd>{% endif %}
+          {% if listing.sqft %}<dt>square feet</dt><dd>{{ listing.sqft }}</dd>{% endif %}
+          {% if listing.company %}<dt>company</dt><dd>{{ listing.company }}</dd>{% endif %}
+          {% if listing.employment_type %}<dt>employment type</dt><dd>{{ listing.employment_type }}</dd>{% endif %}
+          {% for key, value in listing_public_details(listing) %}
+          <dt>{{ key.replace("_", " ") }}</dt><dd>{{ value }}</dd>
+          {% endfor %}
+        </dl>
+        {% set point = listing_map_point(listing) %}
+        <div class="detail-map">
+          <span class="map-water">bay</span>
+          <span class="map-label sf">SF</span>
+          <span class="map-label oakland">oakland</span>
+          <span class="map-label san-jose">san jose</span>
+          <span class="map-road road-1"></span>
+          <span class="map-road road-2"></span>
+          <span class="map-pin single" style="left: {{ point.x }}%; top: {{ point.y }}%;"><span></span></span>
+          <div class="map-caption">
+            <strong>{{ listing.neighborhood }}</strong>
+            <span>{{ listing.area }}</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="description">
+      <h2>posting body</h2>
+      <p>{{ listing.description }}</p>
+      {% if listing.compensation %}<p><strong>compensation:</strong> {{ listing.compensation }}</p>{% endif %}
+      <p class="muted">do NOT contact this poster with unsolicited services or offers.</p>
+    </section>
+  </article>
+
+  <section class="nearby-results">
+    <h2>more from {{ listing.category.name }}</h2>
+    <ul class="compact-list">
+      {% for item in nearby %}
+      <li><a href="{{ url_for('listing_detail', slug=item.slug, listing_id=item.id) }}">{{ item.title }}</a> <span class="muted">{{ item.display_price }} {{ item.neighborhood }}</span></li>
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+{% endblock %}

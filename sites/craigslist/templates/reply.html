@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}reply - {{ listing.title }}{% endblock %}
+{% block body_class %}reply-page{% endblock %}
+{% block content %}
+<div class="form-page wide reply-shell">
+  <p class="form-back"><a href="{{ url_for('listing_detail', slug=listing.slug, listing_id=listing.id) }}">&lt; back to posting</a></p>
+  <h1>reply to: {{ listing.title }}</h1>
+  <div class="reply-summary">
+    <span>{{ listing.neighborhood }}</span>
+    {% if listing.display_price %}<strong>{{ listing.display_price }}</strong>{% endif %}
+    <span>{{ listing.category.name }}</span>
+  </div>
+  <div class="reply-relay">
+    craigslist mail relay keeps your email address private unless you choose to include it in your message.
+  </div>
+  <form method="post">
+    <label>your name</label>
+    <input name="name" value="{{ current_user.name if current_user.is_authenticated else '' }}">
+    <label>your email</label>
+    <input name="email" type="email" value="{{ current_user.email if current_user.is_authenticated else '' }}">
+    <label>message</label>
+    <textarea name="body" rows="8" required>Hi, is this still available?</textarea>
+    <button type="submit">send reply</button>
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}messages - craigslist{% endblock %}
+{% block body_class %}account-page messages-page{% endblock %}
+{% block content %}
+<div class="narrow messages-shell">
+  <nav class="account-tabs">
+    <a href="{{ url_for('account') }}">account home</a>
+    <a href="{{ url_for('saved') }}">favorites</a>
+    <a class="active" href="{{ url_for('messages') }}">messages</a>
+    <a href="{{ url_for('post_listing') }}">new posting</a>
+  </nav>
+  <h1>messages</h1>
+  {% if rows %}
+  <ul class="message-list">
+    {% for m in rows %}
+    <li class="{{ m.direction }}">
+      <div class="message-head">
+        <a href="{{ url_for('listing_detail', slug=m.listing.slug, listing_id=m.listing.id) }}">{{ m.listing.title }}</a>
+        <span>{{ m.direction }} {{ m.created_at.strftime("%Y-%m-%d %H:%M") }}</span>
+      </div>
+      <p>{{ m.body }}</p>
+      <small>{{ m.sender_name }} &lt;{{ m.sender_email }}&gt;</small>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}
+  <p class="empty">no messages</p>
+  {% endif %}
+</div>
+{% endblock %}
