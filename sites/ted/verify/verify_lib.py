@@ -94,7 +94,8 @@ def extract_years(text):
     return re.findall(r"\b(1[5-9]\d{2}|20\d{2})\b", text or "")
 
 def extract_ints(text):
-    return [int(n) for n in re.findall(r"\d+", text or "")]
+    # \b word boundaries so e.g. "15" is not matched inside "15k" or "2015".
+    return [int(n) for n in re.findall(r"\b\d+\b", text or "")]
 
 # ---------------------------------------------------------------- DB state
 def fetch_db(container, kind):

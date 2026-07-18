@@ -22,7 +22,10 @@ def main():
     a = parse_args()
     j = Judge('TED--11', a.no_llm)
     t = load_run(a.run_dir)
-    j.check("nav_talks_listing", navigated_to(t, "/talks"), f"navigated={navigated_to(t, '/talks')}")
+    # Require the filtered listing specifically: "/talks?" (a query string) is
+    # only produced by the GET filter form, whereas "/talks" alone would also
+    # match every "/talks/<slug>" detail page and make this check vacuous.
+    j.check("nav_talks_listing", navigated_to(t, "/talks?"), f"navigated={navigated_to(t, '/talks?')}")
     j.check("nav_maya_higa", navigated_to(t, SLUG), f"navigated={navigated_to(t, SLUG)}")
     j.emit()
 
