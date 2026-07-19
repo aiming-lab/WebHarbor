@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Symptom Checker | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Symptom Checker</div>
+  <div class="page-head">
+    <h1>Symptom Checker</h1>
+    <p>Select all the symptoms you are experiencing, then see which conditions may match.
+       This tool is informational only and is not a diagnosis.</p>
+  </div>
+
+  <form method="post" action="{{ url_for('symptom_checker') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="symptom-grid">
+      {% for s in symptoms %}
+      <label>
+        <input type="checkbox" name="symptoms" value="{{ s.slug }}">
+        {{ s.name }}
+      </label>
+      {% endfor %}
+    </div>
+    <button type="submit" class="primary-btn">Check My Symptoms</button>
+  </form>
+  <p class="empty-note">If you are experiencing a medical emergency, call 911.</p>
+</div>
+{% endblock %}

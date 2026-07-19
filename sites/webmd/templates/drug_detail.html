@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}{{ drug.name }}: Uses, Dosage &amp; Side Effects | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('drugs_index') }}">Drugs &amp; Supplements</a> &rsaquo; {{ drug.name }}
+  </div>
+  <div class="detail">
+    <div class="detail-main">
+      <div class="detail-kicker">{{ drug.category }}</div>
+      <h1>{{ drug.name }}</h1>
+
+      <table class="fact-table">
+        <tr><th>Generic name</th><td>{{ drug.generic_name }}</td></tr>
+        <tr><th>Common brands</th><td>{{ drug.brand_names }}</td></tr>
+        <tr><th>Drug class</th><td>{{ drug.drug_class }}</td></tr>
+      </table>
+
+      <div class="detail-hero">
+        <img src="{{ url_for('static', filename='images/' + drug.image) }}" alt="{{ drug.name }}">
+      </div>
+
+      <div class="fact-section">
+        <h2>Uses</h2>
+        <p>{{ drug.uses }}</p>
+      </div>
+      <div class="fact-section">
+        <h2>Dosage</h2>
+        <p>{{ drug.dosage }}</p>
+      </div>
+      <div class="fact-section">
+        <h2>Common Side Effects</h2>
+        <p>{{ drug.side_effects_common }}</p>
+      </div>
+      <div class="fact-section">
+        <h2>Serious Side Effects</h2>
+        <p>{{ drug.side_effects_serious }}</p>
+      </div>
+      <div class="fact-section">
+        <h2>Interactions</h2>
+        <p>{{ drug.interactions }}</p>
+      </div>
+      <div class="warn-box">
+        <strong>Warnings:</strong> {{ drug.warnings }}
+      </div>
+    </div>
+
+    <aside class="sidebar">
+      {% if conditions %}
+      <h2>Used For</h2>
+      <ul>
+        {% for c in conditions %}
+        <li><a href="{{ url_for('condition_detail', slug=c.slug) }}">{{ c.name }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+      {% if same_category %}
+      <h2>More in {{ drug.category }}</h2>
+      <ul>
+        {% for d in same_category %}
+        <li><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.name }}</a></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

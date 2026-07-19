@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Log In | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="auth-box">
+    <h1>Log In to WebMD</h1>
+    <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}">
+      {{ form.hidden_tag() }}
+      <div class="form-field">
+        {{ form.email.label }}
+        {{ form.email(placeholder='you@example.com') }}
+        {% for e in form.email.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
+        {{ form.password.label }}
+        {{ form.password(placeholder='Your password') }}
+        {% for e in form.password.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <button type="submit" class="primary-btn" style="width:100%;">Log In</button>
+    </form>
+    <p class="auth-alt">Don't have an account? <a href="{{ url_for('register') }}">Sign up</a></p>
+  </div>
+</div>
+{% endblock %}
