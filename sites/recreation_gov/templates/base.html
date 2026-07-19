@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Recreation.gov{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  {% block extra_head %}{% endblock %}
+  <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+</head>
+<body>
+  <div class="usa-banner">
+    <div class="wrap banner-inner">
+      <span class="flag-dot" aria-hidden="true"></span>
+      <span>An official website of the United States government</span>
+      <a href="{{ url_for('help_center') }}">Here’s how you know ›</a>
+    </div>
+  </div>
+  <header class="topbar">
+    <div class="wrap nav">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-word">RECRE<span>A</span>TION<small>.gov</small></span>
+        <span class="freedom-badge">Freedom 250</span>
+      </a>
+      <form class="header-search" action="{{ url_for('search') }}" method="get">
+        <span aria-hidden="true">⌕</span>
+        <input name="q" placeholder="What are you looking for?">
+      </form>
+      <nav class="nav-links" aria-label="Main navigation">
+        <a href="{{ url_for('search') }}">Explore All</a>
+        <a href="{{ url_for('camping') }}">Camping & Lodging</a>
+        <a href="{{ url_for('tickets') }}">Tickets & Tours</a>
+        <a href="{{ url_for('permits') }}">Permits</a>
+        <a href="{{ url_for('day_use') }}">Day Use / Venues</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="{{ url_for('help_center') }}">Help</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('saved') }}">Saved</a>
+          <a href="{{ url_for('cart') }}">Cart{% if cart_count %} ({{ cart_count }}){% endif %}</a>
+          <a href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+        {% else %}
+          <a href="{{ url_for('register') }}">Create Account</a>
+          <a href="{{ url_for('login') }}">Log In</a>
+        {% endif %}
+      </div>
+      <button class="menu-button" type="button" aria-label="Navigation Menu"><span></span><span></span><span></span></button>
+    </div>
+  </header>
+
+  <main id="page-content">
+    <div class="wrap">
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+        <div class="flash {{ category }}">
+          {{ message }}
+          <button class="btn secondary" type="button" data-dismiss style="float:right; min-height:28px;">Dismiss</button>
+        </div>
+      {% endfor %}
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="footer">
+    <div class="footer-color-strip" aria-hidden="true"></div>
+    <div class="wrap footer-grid">
+      <div>
+        <strong>Bring Home a Story!</strong>
+        <p>Recreation.gov is the government's centralized travel planning platform and reservation system for federal agencies, offering the tools, tips, and information needed to discover destinations and activities.</p>
+      </div>
+      <div>
+        <strong>About</strong><br>
+        <a href="{{ url_for('about') }}">About Recreation.gov</a><br>
+        <a href="{{ url_for('help_center') }}#passes-permits">Rules & Reservation Policies</a><br>
+        <a href="{{ url_for('help_center') }}#accessibility">Accessibility</a>
+      </div>
+      <div>
+        <strong>Plan a Trip</strong><br>
+        <a href="{{ url_for('search') }}">Find Trip Inspiration</a><br>
+        <a href="{{ url_for('passes') }}">Buy a Pass</a><br>
+        <a href="{{ url_for('lottery') }}">Enter a Lottery</a>
+      </div>
+      <div>
+        <strong>Help & Support</strong><br>
+        <a href="{{ url_for('help_center') }}">Help Center</a><br>
+        <a href="{{ url_for('help_center') }}#contact">Contact</a><br>
+        <a href="{{ url_for('america250_article') }}">America250 inspiration</a>
+      </div>
+      {% if not current_user.is_authenticated %}
+      <div>
+        <strong>Account</strong><br>
+        <a href="{{ url_for('register') }}">Create Account</a><br>
+        <a href="{{ url_for('login') }}">Log In</a>
+      </div>
+      {% endif %}
+    </div>
+  </footer>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

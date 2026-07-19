@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Reservations - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="wrap">
+    <h1>Your reservations</h1>
+    {% for reservation in reservations %}
+      <div class="reservation-row">
+        <div><strong>{{ reservation.facility.name }}</strong><br><span class="muted">{{ reservation.confirmation_code }} · {{ (reservation.start_date, reservation.end_date)|trip_window }} · {{ reservation.status }}</span></div>
+        <div><strong>${{ "%.0f"|format(reservation.total_cost) }}</strong>{% if reservation.status == 'Upcoming' %}<form method="post" action="{{ url_for('cancel_reservation', reservation_id=reservation.id) }}"><button class="btn danger" type="submit">Cancel</button></form>{% endif %}</div>
+      </div>
+    {% else %}
+      <p>No reservations yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

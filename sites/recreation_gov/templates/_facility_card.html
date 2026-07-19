@@ -1,0 +1,53 @@
+{% set mode = card_mode|default('default') %}
+<article class="card{% if mode == 'rail' %} rail-card{% elif mode == 'search' %} search-card{% endif %}">
+  <a class="card-media" href="{{ url_for('facility_detail', slug=facility.slug) }}">
+    <img class="card-img" src="{{ facility.image_url }}" alt="Photo of {{ facility.name }}">
+    {% if mode == 'search' %}
+      <span class="card-favorite" aria-hidden="true">♡</span>
+    {% endif %}
+  </a>
+  <div class="card-body">
+    {% if mode == 'rail' %}
+      <div class="card-date">{{ facility.trip_window }}</div>
+    {% elif mode == 'search' %}
+      <div class="search-card-topline">
+        <div class="eyebrow">{{ facility.label }}</div>
+        <div class="search-date">▣ {{ facility.trip_window.title() }}</div>
+      </div>
+    {% endif %}
+    {% if mode != 'search' %}
+      <div class="eyebrow">{{ facility.label }}{% if mode != 'rail' %} · {{ facility.agency }}{% endif %}</div>
+    {% endif %}
+    <h3><a href="{{ url_for('facility_detail', slug=facility.slug) }}">{{ facility.name }}</a></h3>
+    {% if mode == 'search' %}
+      <p class="muted search-parent">{{ facility.agency }}</p>
+      <p class="muted search-location">Near {{ facility.location }}, {{ facility.state }} · {{ "%.0f"|format(facility.distance_miles) }} miles point-to-point</p>
+    {% else %}
+      <p class="muted">{{ facility.parent_area }} near {{ facility.location }}, {{ facility.state }}</p>
+    {% endif %}
+    {% if mode == 'rail' %}
+      <div class="stars" aria-label="{{ facility.rating }} rating">★★★★☆ <span>({{ "{:,}".format(facility.review_count) }})</span></div>
+    {% elif mode == 'search' %}
+      <div class="search-card-footer">
+        <div class="search-card-rating">
+          <span class="stars" aria-label="{{ facility.rating }} rating">★★★★☆</span>
+          <span>{{ "{:,}".format(facility.review_count) }}</span>
+          <span class="coverage-signal" aria-hidden="true">▁▂▃▅</span>
+        </div>
+        <span class="price">{{ facility.price_display }}</span>
+      </div>
+    {% else %}
+      <div class="facts{% if mode == 'search' %} facts-search{% endif %}">
+        <span class="pill">{{ "%.0f"|format(facility.distance_miles) }} miles</span>
+        <span class="pill">{{ "%.1f"|format(facility.rating) }} rating</span>
+        <span class="pill">{{ facility.review_count }} reviews</span>
+        {% if facility.accessible %}<span class="pill">Accessible</span>{% endif %}
+        {% if facility.available %}<span class="pill">Available</span>{% endif %}
+      </div>
+      <p>{{ facility.short_description }}</p>
+    {% endif %}
+    {% if mode != 'search' %}
+      <p class="price">{{ facility.price_display }}</p>
+    {% endif %}
+  </div>
+</article>

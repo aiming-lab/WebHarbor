@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Account - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="wrap two-col">
+    <div>
+      <h1>Your account</h1>
+      <form method="post" class="booking-box">
+        <label>Display name</label><input name="display_name" value="{{ current_user.display_name }}">
+        <label>Phone</label><input name="phone" value="{{ current_user.phone }}">
+        <label>Home city</label><input name="home_city" value="{{ current_user.home_city }}">
+        <button class="btn" type="submit" style="margin-top:12px;">Save profile</button>
+      </form>
+    </div>
+    <div>
+      <h2>Saved checkout details</h2>
+      {% for address in addresses %}
+        <div class="site-row" style="grid-template-columns:1fr;"><strong>{{ address.label }}</strong>{{ address.street }}, {{ address.city }}, {{ address.state }} {{ address.zip_code }}</div>
+      {% endfor %}
+      {% for payment in payments %}
+        <div class="site-row" style="grid-template-columns:1fr;"><strong>{{ payment.card_type }} ending {{ payment.last4 }}</strong>Expires {{ payment.expiry }}</div>
+      {% endfor %}
+      <p><a href="{{ url_for('reservations') }}">View reservations</a> · <a href="{{ url_for('logout') }}">Log out</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

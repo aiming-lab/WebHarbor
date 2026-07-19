@@ -1,0 +1,296 @@
+{% extends "base.html" %}
+{% block title %}{{ facility.name }} - Recreation.gov{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+{% endblock %}
+{% block extra_scripts %}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer crossorigin=""></script>
+{% endblock %}
+{% block content %}
+<section class="detail-panorama">
+  <img src="{{ gallery_images[0].src }}" alt="{{ gallery_images[0].alt }}">
+  <button class="view-photos-btn" type="button">▣ View Photos</button>
+</section>
+
+{% if detail_alert %}
+<section class="detail-alert-band">
+  <div class="wrap">
+    <span aria-hidden="true">▲</span>
+    <p>{{ detail_alert }}</p>
+    <button class="btn secondary detail-alert-toggle" type="button">Show More</button>
+  </div>
+</section>
+{% endif %}
+
+<section class="section detail-page-shell">
+  <div class="wrap">
+    <nav class="detail-breadcrumbs" aria-label="Breadcrumb">
+      <a href="{{ url_for('index') }}">Home</a>
+      <span>/</span>
+      <a href="{{ url_for('search', q=facility.parent_area or facility.agency) }}">{{ facility.parent_area or facility.agency }}</a>
+      <span>/</span>
+      <span>{{ facility.name }}</span>
+    </nav>
+
+    <div class="detail-top-grid">
+      <div>
+        <h1 class="detail-page-title">{{ facility.name }}</h1>
+        <div class="detail-meta-row">
+          <span>Part of <a href="{{ url_for('search', q=facility.parent_area or facility.agency) }}">{{ facility.parent_area or facility.agency }}</a></span>
+          <span>★ {{ "%.1f"|format(facility.rating) }} · <a href="#reviews">{{ "{:,}".format(facility.review_count) }} Reviews</a></span>
+          <span>▁▂▃▅ Major Mobile Issues</span>
+          {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('save_facility', slug=facility.slug) }}">
+              <button class="link-button" type="submit">♡ {% if facility.id in saved_ids %}Saved{% else %}Favorite{% endif %}</button>
+            </form>
+          {% else %}
+            <a href="{{ url_for('login', next=url_for('facility_detail', slug=facility.slug)) }}">♡ Favorite</a>
+          {% endif %}
+        </div>
+        <nav class="detail-tabs detail-tabs-inline" aria-label="Facility detail tabs">
+          <a class="is-active" href="#overview">Overview</a>
+          <a href="#need-to-know">Need to Know</a>
+          <a href="#fees">Fees &amp; Cancellations</a>
+          <a href="#getting-there">Getting Here</a>
+          <a href="#reviews">Reviews</a>
+        </nav>
+      </div>
+
+      <aside class="booking-box detail-booking-box">
+        <div class="detail-booking-head">
+          <h2>{{ booking_config.title }}</h2>
+          <p class="muted">{{ booking_config.intro }}</p>
+        </div>
+        <form class="detail-booking-form" method="post" action="{{ url_for('add_to_cart', facility_id=facility.id) }}">
+          <label>{{ booking_config.option_label }}</label>
+          <select {% if not facility.campsites %}name="selection"{% else %}name="campsite_id"{% endif %}>
+            {% for option in booking_config.options %}
+              {% if facility.campsites %}
+                {% set site = facility.campsites[loop.index0] %}
+                <option value="{{ site.id }}">{{ option }}</option>
+              {% else %}
+                <option value="{{ option }}"
+                        {% if booking_config.option_span_days.get(option) is not none %}data-span-days="{{ booking_config.option_span_days.get(option) }}"{% endif %}
+                        {% if booking_config.option_end_dates.get(option) %}data-end-date="{{ booking_config.option_end_dates.get(option) }}"{% endif %}>
+                  {{ option }}
+                </option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          <div class="detail-booking-grid">
+            <div>
+              <label>{{ booking_config.quantity_label }}</label>
+              <input type="number" name="guests" min="1" max="{{ facility.capacity or 12 }}" value="2">
+            </div>
+            <div>
+              <label>{{ booking_config.primary_date_label }}</label>
+              {% if booking_config.date_selection_mode == 'range' %}
+                <input type="date" name="start_date" value="{{ facility.checkin_date }}" data-calendar-start-field>
+              {% else %}
+                <input class="booking-display-field" type="text" value="{{ booking_config.entry_date_label }}" readonly data-calendar-start-display>
+                <input type="hidden" name="start_date" value="{{ facility.checkin_date }}" data-calendar-start-field>
+              {% endif %}
+            </div>
+          </div>
+          {% if booking_config.date_selection_mode == 'range' %}
+            <label>{{ booking_config.secondary_date_label }}</label>
+            <input type="date" name="end_date" value="{{ booking_config.end_date_value }}" data-calendar-end-field>
+          {% elif booking_config.date_selection_mode == 'window' %}
+            <label>{{ booking_config.secondary_date_label }}</label>
+            <input class="booking-display-field" type="text" value="{{ booking_config.window_label }}" readonly data-calendar-window-display>
+            <input type="hidden" name="end_date" value="{{ booking_config.end_date_value }}" data-calendar-end-field>
+          {% else %}
+            <input type="hidden" name="end_date" value="{{ booking_config.end_date_value }}" data-calendar-end-field>
+          {% endif %}
+          <div class="availability-mini-calendar" data-booking-calendar data-calendar-span="{{ booking_config.calendar_span_days }}">
+            <div class="calendar-head">
+              <button class="calendar-nav-button" type="button" disabled aria-label="Previous month">‹</button>
+              <strong>May 2026</strong>
+              <button class="calendar-nav-button" type="button" disabled aria-label="Next month">›</button>
+            </div>
+            <div class="calendar-weekdays">
+              <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+            </div>
+            <div class="calendar-days">
+              {% for day in range(1, 32) %}
+                {% set date_value = "2026-05-%02d"|format(day) %}
+                {% set date_label = "May %d, 2026"|format(day) %}
+                <button class="{% if day in [15,16,17,22,23,24,29,30,31] %}is-available{% endif %}{% if date_value == facility.checkin_date %} is-selected{% endif %}"
+                        type="button"
+                        {% if day not in [15,16,17,22,23,24,29,30,31] %}disabled{% endif %}
+                        data-calendar-date="{{ date_value }}"
+                        data-calendar-label="{{ date_label }}">
+                  <span>{{ day }}</span>
+                  {% if day in [15,16,17,22,23,24,29,30,31] %}<small>A</small>{% endif %}
+                </button>
+              {% endfor %}
+            </div>
+            <div class="calendar-selected-status" data-calendar-status>{{ booking_config.selected_status_label }} selected</div>
+          </div>
+          {% if facility.reservable %}
+            {% if current_user.is_authenticated %}
+              <button class="btn detail-book-btn" type="submit">{{ booking_config.primary_cta }}</button>
+            {% else %}
+              <a class="btn detail-book-btn" href="{{ url_for('login', next=url_for('facility_detail', slug=facility.slug)) }}">Log In to Book</a>
+            {% endif %}
+          {% else %}
+            <button class="btn detail-book-btn" type="button" disabled>Informational Listing</button>
+          {% endif %}
+          <a class="btn ghost detail-secondary-btn" href="#overview">Detailed Availability</a>
+        </form>
+      </aside>
+    </div>
+
+    <div class="detail-content-grid">
+      <div class="detail-main-column">
+        <section class="detail-section-card" id="overview">
+          <p class="detail-lead">{{ facility.long_description }}</p>
+          <div class="detail-copy">
+            <p>{{ facility.name }} is located near {{ facility.location }}, {{ state_name }} and mirrors the key planning information travelers expect on Recreation.gov: current availability, fees, permit or campsite context, and nearby alternatives.</p>
+            <p>Use the trip window, activities, and rules together before booking. For this inventory, the highest-signal planning details are the access window, on-site constraints, and how the reservation type changes what you need to bring or print before arrival.</p>
+          </div>
+        </section>
+
+        <section class="detail-section-card" id="season-info">
+          <h2>{% if facility.inventory_type == 'permits' %}Permit &amp; Season Information{% else %}Availability &amp; Trip Details{% endif %}</h2>
+          <div class="detail-bullet-copy">
+            {% if facility.inventory_type == 'permits' %}
+              <p><strong>Overnight / entry permits:</strong></p>
+              <ul class="list-clean">
+                <li>Permits are required to access this inventory and are tied to the selected trip window.</li>
+                <li>High-demand periods can use quotas, zone selection, or limited daily release windows.</li>
+                <li>Carry your reservation details and review area-specific rules before departure.</li>
+              </ul>
+            {% else %}
+              <p><strong>Current trip window:</strong> {{ facility.trip_window.title() }}</p>
+              <ul class="list-clean">
+                <li>Agency: {{ facility.agency }}</li>
+                <li>Price: {{ facility.price_display }}</li>
+                <li>Capacity: up to {{ facility.capacity }} people</li>
+                <li>{% if facility.available %}Availability is currently open for this featured window.{% else %}This listing is visible, but not currently open for the featured window.{% endif %}</li>
+              </ul>
+            {% endif %}
+          </div>
+        </section>
+
+        <section class="detail-section-card" id="important-dates">
+          <h2>Important Dates</h2>
+          <table class="detail-info-table">
+            <thead>
+              <tr>
+                <th>Dates</th>
+                <th>Information</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in important_dates %}
+                <tr>
+                  <td>{{ item.date }}</td>
+                  <td>{{ item.info }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </section>
+
+        <section class="detail-section-card" id="need-to-know">
+          <h2>Need to Know</h2>
+          <div class="detail-pill-row">
+            {% for activity in facility.activities %}
+              <span class="pill">{{ activity }}</span>
+            {% endfor %}
+            {% for amenity in facility.amenities %}
+              <span class="pill">{{ amenity }}</span>
+            {% endfor %}
+          </div>
+          <ul class="list-clean">
+            {% for rule in facility.rules %}
+              <li>{{ rule }}</li>
+            {% endfor %}
+            {% if facility.accessible %}
+              <li>Accessible accommodations are noted in this listing and should still be verified before arrival.</li>
+            {% endif %}
+          </ul>
+        </section>
+
+        <section class="detail-section-card" id="fees">
+          <h2>Fees &amp; Cancellations</h2>
+          <p><strong>{{ facility.price_display }}</strong></p>
+          <ul class="list-clean">
+            <li>Reservation and change fees can vary by inventory type and how close you are to the entry date.</li>
+            <li>Late changes may reduce refund eligibility, especially for permits and high-demand camping inventory.</li>
+            <li>Review the linked policy guidance before checkout if the trip depends on a precise arrival window.</li>
+          </ul>
+        </section>
+
+        <section class="detail-section-card" id="getting-there">
+          <h2>Getting Here</h2>
+          <div class="detail-copy">
+            <p>{{ facility.name }} is part of {{ facility.parent_area or facility.agency }} near {{ facility.location }}, {{ state_name }}.</p>
+            <p>Before driving, compare nearby inventory and confirm whether your reservation requires printed paperwork, mobile confirmation, or timed entry.</p>
+          </div>
+        </section>
+
+        <section class="detail-section-card" id="media-gallery">
+          <h2>Media Gallery</h2>
+          <div class="detail-media-grid">
+            {% for image in gallery_images %}
+              <img src="{{ image.src }}" alt="{{ image.alt }}">
+            {% endfor %}
+          </div>
+        </section>
+
+        {% include "_reviews_section.html" %}
+      </div>
+
+      <aside class="detail-side-column">
+        <section class="detail-side-card">
+          <h3>Additional Information</h3>
+          <div class="detail-side-links">
+            {% for resource in detail_resources %}
+              <a href="{{ resource.href }}">{{ resource.label }} ↗</a>
+            {% endfor %}
+          </div>
+        </section>
+
+        <section class="detail-side-card">
+          <h3>Nearby Options</h3>
+          <div class="detail-nearby-list">
+            {% for entry in detail_map_entries %}
+              <a href="{{ entry.point.href }}">
+                <strong>{{ entry.point.name }}</strong>
+                <span>{{ entry.point.distance }} · {{ entry.point.price_display }}</span>
+              </a>
+            {% endfor %}
+          </div>
+        </section>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section alt detail-live-map-section">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>Map</h2>
+        <p class="muted">Zoom and compare the destination with nearby alternatives.</p>
+      </div>
+      <a class="btn secondary" href="{{ url_for('search', q=facility.location, inventory_type=facility.inventory_type) }}">Search Nearby</a>
+    </div>
+    <div class="detail-live-map"
+         data-leaflet-map
+         data-map-lat="{{ detail_map_markers[0].lat }}"
+         data-map-lng="{{ detail_map_markers[0].lng }}"
+         data-map-markers='{{ detail_map_markers|tojson }}'>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <h2>Related options</h2>
+    <div class="cards">{% for facility in related %}{% include "_facility_card.html" %}{% endfor %}</div>
+  </div>
+</section>
+{% endblock %}

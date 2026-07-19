@@ -1,0 +1,333 @@
+{% extends "base.html" %}
+{% block title %}Recreation.gov - Camping, Cabins, Permits, Passes & More{% endblock %}
+{% block extra_head %}
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+{% endblock %}
+{% block extra_scripts %}
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer crossorigin=""></script>
+{% endblock %}
+{% block content %}
+<section class="hero real-home-hero">
+  <button class="photo-credit" type="button" aria-label="View details about the background image">▣</button>
+  <div class="wrap hero-card-wrap">
+    <div class="home-search-card">
+      <div class="home-tabs" role="tablist" aria-label="Explore Recreation.gov" data-home-tabs>
+        <button class="home-tab is-active" type="button" data-home-tab="all">Explore All</button>
+        <button class="home-tab" type="button" data-home-tab="camping">Camping &amp; Lodging</button>
+        <button class="home-tab" type="button" data-home-tab="tickets">Tickets &amp; Tours</button>
+        <button class="home-tab" type="button" data-home-tab="permits">Permits</button>
+        <button class="home-tab" type="button" data-home-tab="day_use">Day Use / Venues</button>
+        <button class="home-tab beta-tab" type="button" data-home-tab="ai">AI Search <b>Beta</b></button>
+        <label class="accessible-check"><input type="checkbox" name="accessible" value="1"> Accessible camping</label>
+      </div>
+      {% for panel in home_tab_panels %}
+        <section class="home-tab-panel{% if loop.first %} is-active{% endif %}" data-home-panel="{{ panel.key }}">
+          {% if panel.type == 'explore_all' %}
+            <form class="home-search-form" action="{{ url_for('search') }}" method="get">
+              <div class="home-search-input">
+                <span aria-hidden="true">⌕</span>
+                <input name="q" placeholder="Search for campsites, tours, and other recreation activities..." autocomplete="off">
+              </div>
+              <button class="btn search-submit" type="submit">Search</button>
+            </form>
+            <div class="category-photo-grid" aria-label="Popular recreation categories">
+              {% for tile in category_tiles %}
+                <a class="category-photo-tile tile-{{ tile.key }}" href="{{ tile.href }}">
+                  <img src="{{ tile.image }}" alt="">
+                  <span>{{ tile.label }}</span>
+                </a>
+              {% endfor %}
+            </div>
+          {% elif panel.type == 'inventory' %}
+            <form class="tabbed-search-form" action="{{ url_for('search') }}" method="get">
+              <input type="hidden" name="inventory_type" value="{{ panel.inventory_type }}">
+              <div class="home-search-input">
+                <span aria-hidden="true">⌕</span>
+                <input name="q" placeholder="{{ panel.placeholder }}" autocomplete="off">
+              </div>
+              {% if panel.secondary %}
+                <button class="tabbed-input faux-input" type="button">{{ panel.secondary }}</button>
+              {% endif %}
+              {% if panel.tertiary %}
+                <button class="tabbed-input faux-input" type="button">{{ panel.tertiary }}</button>
+              {% endif %}
+              <button class="btn search-submit" type="submit">Search</button>
+            </form>
+            <div class="home-tab-results">
+              <div class="home-tab-head">
+                <div>
+                  <h3>{{ panel.title }}</h3>
+                  <p class="muted">{{ panel.description }} <a href="{{ url_for('search', inventory_type=panel.inventory_type, available='1') }}">Explore More →</a></p>
+                </div>
+              </div>
+              <div class="rail-shell tabbed-result-rail" data-rail>
+                <button class="rail-nav prev" type="button" data-rail-dir="prev" aria-label="Scroll {{ panel.title|lower }} left">&#8249;</button>
+                <div class="rail-track" data-rail-track>
+                {% for facility in panel.entries %}
+                  {% set card_mode = 'rail' %}
+                  {% include "_facility_card.html" %}
+                  {% set card_mode = 'default' %}
+                {% endfor %}
+                {% for _ in range(8 - panel.entries|length) %}
+                  <article class="rail-card hero-result-card is-placeholder" aria-hidden="true" data-rail-card>
+                    <div class="placeholder-media"></div>
+                    <div class="placeholder-line"></div>
+                    <div class="placeholder-line short"></div>
+                  </article>
+                {% endfor %}
+                </div>
+                <button class="rail-nav next" type="button" data-rail-dir="next" aria-label="Scroll {{ panel.title|lower }} right">&#8250;</button>
+              </div>
+            </div>
+          {% else %}
+            <form class="tabbed-search-form ai-search-form" action="{{ url_for('search') }}" method="get">
+              <div class="ai-prompt-input">
+                <textarea name="q" rows="2" placeholder="{{ panel.placeholder }}"></textarea>
+              </div>
+              <button class="btn search-submit" type="submit">Search</button>
+            </form>
+            <div class="ai-examples">
+              <h3>Example Searches:</h3>
+              <div class="rail-shell ai-example-rail" data-rail>
+                <button class="rail-nav prev" type="button" data-rail-dir="prev" aria-label="Scroll AI examples left">&#8249;</button>
+                <div class="rail-track" data-rail-track>
+                  {% for example in panel.examples %}
+                    <button class="ai-example-chip ai-example-slide" type="button" data-rail-card data-example-prompt="{{ example }}">{{ example }}</button>
+                  {% endfor %}
+                </div>
+                <button class="rail-nav next" type="button" data-rail-dir="next" aria-label="Scroll AI examples right">&#8250;</button>
+              </div>
+            </div>
+          {% endif %}
+        </section>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>Available Nearby</h2>
+        <p class="muted">Campgrounds with upcoming availability.</p>
+      </div>
+      <a class="btn secondary" href="{{ url_for('search', inventory_type='camping', available='1', sort='distance') }}">Explore More</a>
+    </div>
+    <div class="rail-shell real-nearby-rail" data-rail>
+      <button class="rail-nav prev" type="button" data-rail-dir="prev" aria-label="Scroll available nearby left">&#8249;</button>
+      <div class="rail-track" data-rail-track>
+      {% for facility in nearby %}
+        {% set card_mode = 'rail' %}
+        {% include "_facility_card.html" %}
+        {% set card_mode = 'default' %}
+      {% endfor %}
+      </div>
+      <button class="rail-nav next" type="button" data-rail-dir="next" aria-label="Scroll available nearby right">&#8250;</button>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap promo-grid">
+    {% for feature in promo_features %}
+      <article class="promo-card real-promo-card" style="background-image: linear-gradient(rgba(17, 42, 64, .52), rgba(17, 42, 64, .36)), url('{{ feature.image }}');">
+        <p class="eyebrow">{{ feature.eyebrow }}</p>
+        <h2>{{ feature.title }}</h2>
+        <p>{{ feature.body }}</p>
+        <a class="btn ghost light" href="{{ feature.href }}">Learn More</a>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <div>
+        <h2>Explore Destinations & Activities</h2>
+        <p class="muted">{{ anchor_city }} <span class="inline-action">Open location picker</span></p>
+      </div>
+    </div>
+    <div class="experience-browser" data-map-root>
+      <div class="experience-sidebar">
+        <div class="segmented" role="tablist" aria-label="Explore categories">
+          {% for panel in experience_panels %}
+            <button class="segmented-btn{% if loop.first %} is-active{% endif %}" type="button" data-tab="{{ panel.key }}">{{ panel.label }}</button>
+          {% endfor %}
+        </div>
+        {% for panel in experience_panels %}
+          <section class="experience-panel{% if loop.first %} is-active{% endif %}" data-panel="{{ panel.key }}">
+            <div class="result-meta compact">
+              <strong>{{ panel.count }} experiences near {{ anchor_city }}</strong>
+              <span class="muted">{{ panel.description }}</span>
+            </div>
+            <div class="experience-list">
+              {% for entry in panel.entries %}
+                {% set mapped_facility = entry.facility %}
+                {% set point = entry.point %}
+                <a class="experience-row{% if loop.first and panel.key == experience_panels[0].key %} is-active{% endif %}"
+                   href="{{ point.href }}"
+                   data-map-target="{{ point.id }}"
+                   data-panel-key="{{ panel.key }}"
+                   data-map-name="{{ point.name }}"
+                   data-map-location="{{ point.location }}"
+                   data-map-price="{{ point.price_display }}"
+                   data-map-distance="{{ point.distance }}"
+                   data-map-rating="{{ point.rating }}"
+                   data-map-reviews="{{ point.reviews }}"
+                   data-map-label="{{ point.label }}"
+                   data-map-link="{{ point.href }}">
+                  <div class="experience-index">{{ loop.index }}</div>
+                  <div>
+                    <strong>{{ mapped_facility.name }}</strong>
+                    <div class="muted">{{ mapped_facility.parent_area or mapped_facility.agency }} · Near {{ mapped_facility.location }}, {{ mapped_facility.state }}</div>
+                    <div class="facts facts-compact">
+                      <span class="pill">{{ "%.0f"|format(mapped_facility.distance_miles) }} miles away</span>
+                      <span class="pill">{{ mapped_facility.review_count }} reviews</span>
+                      {% if mapped_facility.accessible %}<span class="pill">Accessible</span>{% endif %}
+                    </div>
+                  </div>
+                </a>
+              {% endfor %}
+            </div>
+          </section>
+        {% endfor %}
+      </div>
+      <aside class="map-panel-card">
+        <div class="map-panel-head">
+          <div>
+            <p class="eyebrow">Map Preview</p>
+            <h3>Near {{ anchor_city }}</h3>
+          </div>
+          <span class="muted">Compare nearby inventory before opening details.</span>
+        </div>
+        <div class="home-live-map"
+             aria-label="Map of nearby destinations"
+             data-leaflet-map
+             data-map-lat="{{ home_map_center.lat }}"
+             data-map-lng="{{ home_map_center.lng }}"
+             data-map-markers='{{ home_map_markers|tojson }}'>
+        </div>
+        <div class="map-callout" data-map-callout>
+          <p class="eyebrow" data-callout-label>Camping &amp; Lodging</p>
+          <strong data-callout-name>Loading destination</strong>
+          <p class="muted" data-callout-location>Santa Clara, CA</p>
+          <div class="facts facts-compact">
+            <span class="pill" data-callout-distance>0 miles away</span>
+            <span class="pill" data-callout-rating>0.0 rating</span>
+            <span class="pill" data-callout-reviews>0 reviews</span>
+          </div>
+          <div class="map-callout-actions">
+            <span class="price" data-callout-price>Free</span>
+            <a class="btn secondary" href="#" data-callout-link>Open details</a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section america250-section">
+  <div class="wrap">
+    <article class="america250-card">
+      <div>
+        <h2>Celebrate 250 Years of American Discovery</h2>
+        <p>Explore historic parks, cultural sites, scenic landscapes, and more as you join the nationwide celebration of America's 250th anniversary.</p>
+        <a class="btn ghost light" href="{{ url_for('america250_article') }}">Learn More</a>
+      </div>
+      <img src="{{ url_for('static', filename='images/real-america-250-background.webp') }}" alt="">
+    </article>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Inspiration &amp; Information</h2>
+      <a href="{{ url_for('articles_index') }}">View All Articles →</a>
+    </div>
+    <div class="inspiration-layout">
+      <a class="inspiration-feature" href="{{ article_cards[0].href }}">
+        <img src="{{ article_cards[0].image_url }}" alt="">
+        <span>{{ article_cards[0].kicker }}</span>
+        <strong>{{ article_cards[0].title }}</strong>
+      </a>
+      <div class="inspiration-stack">
+        <a href="{{ article_cards[1].href }}">
+          <img src="{{ article_cards[1].image_url }}" alt="">
+          <strong>{{ article_cards[1].title }}</strong>
+        </a>
+        <a href="{{ article_cards[2].href }}">
+          <img src="{{ article_cards[2].image_url }}" alt="">
+          <strong>{{ article_cards[2].title }}</strong>
+        </a>
+      </div>
+      <aside class="quick-links">
+        <h3>Quick Links</h3>
+        <a href="{{ url_for('search', inventory_type='camping') }}">▣ Camping &amp; Hiking Gear</a>
+        <a href="{{ url_for('passes') }}">▣ Buy a Pass</a>
+        <a href="{{ url_for('help_center') }}">▣ Help Center</a>
+        <a href="{{ url_for('america250_article') }}">▣ America250 Inspiration</a>
+        <a href="{{ url_for('search') }}">▣ Share the Experience photo contest</a>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Explore By State</h2>
+      <a href="{{ url_for('search') }}">See all destinations →</a>
+    </div>
+    <div class="state-link-grid">
+      {% for state in state_links %}
+        <a href="{{ state.href }}">{{ state.name }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section popular-locations-section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Explore Most Popular Locations</h2>
+      <a href="{{ url_for('search', sort='rating') }}">Browse destinations →</a>
+    </div>
+    <div class="popular-location-links">
+      {% for location_name in popular_location_names %}
+        <a href="{{ url_for('search', q=location_name) }}">{{ location_name }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section alt">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Highly rated places</h2>
+      <a href="{{ url_for('search', sort='rating') }}">Sort by rating</a>
+    </div>
+    <div class="cards">
+      {% for facility in featured %}
+        {% include "_facility_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>Popular permits and passes</h2>
+      <a href="{{ url_for('permits') }}">View permits</a>
+    </div>
+    <div class="cards">
+      {% for facility in passes %}
+        {% include "_facility_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
