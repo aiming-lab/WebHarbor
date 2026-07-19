@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ dept.name }} - GOV.UK{% endblock %}
+
+{% block content %}
+<nav class="govuk-breadcrumbs" aria-label="Breadcrumb">
+  <ol class="govuk-breadcrumbs__list">
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('index') }}">Home</a></li>
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('organisations') }}">Departments</a></li>
+    <li class="govuk-breadcrumbs__list-item" aria-current="page">{{ dept.name }}</li>
+  </ol>
+</nav>
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <span class="govuk-caption-l">{{ dept.kind }}</span>
+    <h1 class="govuk-heading-xl">{{ dept.name }}</h1>
+    <p class="govuk-body-l">{{ dept.description }}</p>
+
+    <h2 class="govuk-heading-l">Latest from {{ dept.abbreviation or dept.name }}</h2>
+    {% if announcements %}
+    <ul class="govuk-list">
+      {% for a in announcements %}
+      <li class="govuk-!-margin-bottom-4">
+        <h3 class="govuk-heading-s govuk-!-margin-bottom-1">
+          <a class="govuk-link" href="{{ url_for('announcements_index') }}#{{ a.slug }}">{{ a.title }}</a>
+        </h3>
+        <p class="govuk-body-s">{{ a.summary }}</p>
+        <p class="govuk-body-s govuk-hint">
+          <strong class="govuk-tag govuk-tag--grey">{{ a.kind.replace('_', ' ').title() }}</strong>
+          {{ a.published_at.strftime('%-d %B %Y') }}
+        </p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="govuk-body">No recent announcements.</p>
+    {% endif %}
+
+    <h2 class="govuk-heading-l">Our services and information</h2>
+    {% if articles %}
+    <ul class="govuk-list govuk-list--bullet">
+      {% for a in articles %}
+      <li><a class="govuk-link" href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="govuk-body">No published guidance yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="govuk-grid-column-one-third">
+    <aside class="govuk-related-navigation" role="complementary">
+      <h2 class="govuk-heading-m">About this organisation</h2>
+      <dl class="govuk-summary-list govuk-summary-list--no-actions">
+        {% if dept.minister %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Lead minister</dt>
+          <dd class="govuk-summary-list__value">{{ dept.minister }}</dd>
+        </div>{% endif %}
+        {% if dept.permanent_secretary %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Permanent secretary</dt>
+          <dd class="govuk-summary-list__value">{{ dept.permanent_secretary }}</dd>
+        </div>{% endif %}
+        {% if dept.employees %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Employees</dt>
+          <dd class="govuk-summary-list__value">{{ "{:,}".format(dept.employees) }}</dd>
+        </div>{% endif %}
+        {% if dept.established %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Established</dt>
+          <dd class="govuk-summary-list__value">{{ dept.established }}</dd>
+        </div>{% endif %}
+      </dl>
+    </aside>
+  </div>
+</div>
+{% endblock %}
