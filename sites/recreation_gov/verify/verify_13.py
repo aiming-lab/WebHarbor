@@ -30,7 +30,9 @@ def main():
     j.check("nav_reservations", navigated_to(t, "/reservations"),
             f"navigated={navigated_to(t, '/reservations')}")
     j.check("db_kirby_cancelled", kirby == ["Cancelled"], f"kirby status={kirby}")
-    j.check("db_yellowstone_untouched", yellow == ["Upcoming"], f"yellowstone status={yellow}")
+    j.check("db_yellowstone_untouched",
+            "Upcoming" in yellow and "Cancelled" not in yellow,
+            f"yellowstone status={yellow}")
     j.check("answer_code", contains_any(fa, ["RG-2026-AJ01"]), f"answer={fa!r}")
     j.emit()
 

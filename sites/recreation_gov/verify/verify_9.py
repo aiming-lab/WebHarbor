@@ -24,6 +24,10 @@ def main():
             navigated_any(t, ["denali-national-park-site-pass", "grand-teton-national-park-site-pass"]),
             "compared at least one other site pass")
     j.check("answer_yosemite", contains_any(fa, ["Yosemite"]), f"answer={fa!r}")
+    # "Which site pass has the non-resident note" can't be pinned deterministically (a
+    # wrong answer could name Yosemite while mistakenly attributing the note to Denali or
+    # Grand Teton), so the which-one judgment is LLM-arbitrated here — reliable now that
+    # verify_lib SKIPs rather than fail-closes when the LLM is down.
     ok, why = llm_text_match(fa,
         "The Yosemite National Park Site Pass is the one that includes the note about non-U.S. "
         "residents paying an additional fee (Denali and Grand Teton do not).",

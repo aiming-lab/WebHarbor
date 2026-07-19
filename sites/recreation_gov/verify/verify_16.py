@@ -23,7 +23,8 @@ def main():
     t = load_run(a.run_dir)
     after = resolve_db(a.after_db, a.container, "instance")
     rows = reviews_for(after, SLUG, author="David Kim")  # (author, rating, body, visit_date)
-    match = [r for r in (rows or []) if r[1] == 4 and NOTE in norm(r[2])]
+    match = [r for r in (rows or [])
+             if r[1] == 4 and NOTE in norm(r[2]) and "may 2026" in norm(r[3])]
     j.check("nav_fort_point", navigated_to(t, SLUG), f"navigated={navigated_to(t, SLUG)}")
     j.check("db_review_submitted", bool(match),
             f"David Kim reviews on Fort Point={rows}")

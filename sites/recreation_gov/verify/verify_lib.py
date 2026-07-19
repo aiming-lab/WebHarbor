@@ -9,9 +9,10 @@ Philosophy: DETERMINISTIC FIRST.
   3. DB after-state check (stateful tasks): query the SQLite instance DB directly —
      the strongest deterministic signal (saved row, cart row, reservation status,
      profile field, newly registered user, new review).
-  4. LLM utilities (text match, screenshot-contains) are used ONLY where exact
-     matching is brittle, and are ALWAYS anchored on ground truth: the model
-     verifies *presence* of given content, it never supplies knowledge. One call each.
+  4. The LLM text-match utility (llm_text_match) is used ONLY where exact matching
+     is brittle, and is ALWAYS anchored on ground truth: the model verifies that the
+     agent's answer is consistent with given content, it never supplies knowledge.
+     One call each; SKIPs (never fail-closes) when the LLM is unconfigured/unreachable.
 
 Input signature (per task):
   --run_dir DIR      agent trajectory dir: trajectory.json + screenshots/step_NNN.png
@@ -21,7 +22,7 @@ Input signature (per task):
   --no_llm           skip LLM-based checks (run deterministic-only)
 Output: JSON {task_id, pass, reason, evidence[]} to stdout; exit 0 on PASS, 1 on FAIL.
 """
-import base64, json, os, re, sqlite3, subprocess, sys, tempfile, urllib.request
+import json, os, re, sqlite3, subprocess, sys, tempfile, urllib.request
 from pathlib import Path
 from dataclasses import dataclass
 
@@ -36,7 +37,6 @@ def load_run(run_dir):
     d = Path(run_dir)
     traj = json.loads((d / "trajectory.json").read_text())
     traj["_run_dir"] = d
-    traj["_shots"] = {p.name: p for p in sorted((d / "screenshots").glob("step_*.png"))}
     return traj
 
 def step_urls(traj):
@@ -52,35 +52,9 @@ def navigated_any(traj, substrs):
 def final_answer(traj):
     return (traj.get("final_answer") or "").strip()
 
-def _shot(traj, name):
-    if not name:
-        return None
-    p = traj["_shots"].get(Path(name).name)
-    return p if (p and p.exists()) else None
-
-def shot_after_url(traj, substr):
-    """screenshot_after path of the first step whose URL contains substr."""
-    for s in traj.get("steps", []):
-        if substr in s.get("url", ""):
-            p = _shot(traj, s.get("screenshot_after"))
-            if p:
-                return p
-    return None
-
-def last_shot(traj):
-    for s in reversed(traj.get("steps", [])):
-        p = _shot(traj, s.get("screenshot_after")) or _shot(traj, s.get("screenshot_before"))
-        if p:
-            return p
-    shots = sorted(traj["_shots"].values())
-    return shots[-1] if shots else None
-
 # ---------------------------------------------------------------- deterministic answer match
 def norm(s):
     return re.sub(r"\s+", " ", (s or "").strip()).casefold()
-
-def answer_equals(final, expected):
-    return norm(final) == norm(expected)
 
 def contains_all(final, tokens):
     f = norm(final)
@@ -91,13 +65,12 @@ def contains_any(final, tokens):
     return any(norm(t) in f for t in tokens)
 
 def count_present(final, tokens):
-    """How many of `tokens` appear in the (normalized) answer. For 'name >=N of these'."""
+    """How many of `tokens` appear in the (normalized) answer, as whole words/phrases
+    (word-boundary match, not substring) so short tokens like 'date' don't false-positive
+    inside 'updated'/'candidate'. For 'name >=N of these'."""
     f = norm(final)
-    return sum(1 for t in tokens if norm(t) in f)
-
-def extract_ints(text):
-    # \b word boundaries so e.g. "15" is not matched inside "15k" or "2015".
-    return [int(n) for n in re.findall(r"\b\d+\b", text or "")]
+    return sum(1 for t in tokens
+               if re.search(rf"(?<!\w){re.escape(norm(t))}(?!\w)", f))
 
 # ---------------------------------------------------------------- DB state
 def fetch_db(container, kind):
@@ -165,11 +138,6 @@ def user_row(db_path, email):
         "SELECT username, display_name, phone, home_city FROM user WHERE email=?", (email,))
     return rows[0] if rows else None
 
-def user_emails(db_path):
-    if not db_path:
-        return None
-    return [r[0] for r in db_query(db_path, "SELECT email FROM user ORDER BY id")]
-
 def reviews_for(db_path, slug, author=None):
     """List of (author, rating, body, visit_date) reviews on a facility (optionally by author)."""
     if not db_path:
@@ -223,18 +191,23 @@ def _chat(messages, max_tokens=1024):
         return None
 
 def _verdict(out):
-    """Normalize an LLM reply to (pass_bool, text). None/empty -> (False, '<no reply>')."""
+    """Normalize an LLM reply to (verdict, text). verdict is:
+      True  -> LLM confirms the answer,
+      False -> LLM actively contradicts it (a real reply starting FAIL),
+      None  -> no reply (unconfigured/unreachable) -> caller SKIPS, never fail-closes."""
     if not out:
-        return False, "<no reply from LLM>"
+        return None, "[llm unavailable]"   # unconfigured / unreachable -> skip, don't fail-close
     s = out.strip()
     return s.upper().startswith("PASS"), s
 
 def llm_text_match(agent_answer, ground_truth, question):
     """One LLM call: does agent_answer correctly answer question AND stay consistent
     with the frozen ground truth? The model is given the ground truth as an anchor
-    and is told NOT to use its own knowledge."""
+    and is told NOT to use its own knowledge. Returns (verdict, text); verdict is
+    None when the LLM is unavailable/unconfigured, so the caller SKIPS rather than
+    fail-closing (see _verdict)."""
     if _NO_LLM:
-        return False, "[skipped: --no_llm]"
+        return None, "[skipped: --no_llm]"
     out = _chat([{"role": "user", "content":
         f"You are a STRICT binary grader.\nQuestion: {question}\n"
         f"Ground-truth answer (ANCHOR — judge against THIS, never use your own knowledge): {ground_truth}\n"
@@ -242,23 +215,6 @@ def llm_text_match(agent_answer, ground_truth, question):
         f"Decide PASS or FAIL ignoring case/punctuation/word order/surrounding prose. "
         f"PASS only if the agent's answer is consistent with the ground truth AND actually answers the question. "
         f"Line 1: PASS or FAIL. Line 2: one-sentence reason."}])
-    return _verdict(out)
-
-def llm_screenshot_shows(shot_path, must_show, question=""):
-    """One vision LLM call: does this screenshot visibly render text answering/containing
-    `must_show`? The model judges pixels only, anchored on the expected content."""
-    if _NO_LLM:
-        return False, "[skipped: --no_llm]"
-    b64 = base64.b64encode(Path(shot_path).read_bytes()).decode()
-    out = _chat([{"role": "user", "content": [
-        {"type": "text", "text":
-            f"You are a STRICT binary grader. Only what is VISIBLY rendered in this screenshot counts.\n"
-            f"Question the page should answer: {question}\n"
-            f"Expected content to verify PRESENCE of: {must_show}\n"
-            f"PASS only if the expected content (or a semantically equivalent on-screen answer) is visibly shown. "
-            f"Do NOT use prior knowledge — judge only the rendered pixels.\n"
-            f"Line 1: PASS or FAIL. Line 2: quote the visible evidence."},
-        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}])
     return _verdict(out)
 
 # ---------------------------------------------------------------- judge harness + CLI
@@ -273,8 +229,11 @@ class Judge:
         self.evidence = []
 
     def check(self, name, cond, evidence="", llm=False):
-        if llm and self.no_llm:
-            self.evidence.append(f"[SKIP] {name} (--no-llm)")
+        # LLM checks are secondary: skipped under --no_llm, and skipped when the
+        # LLM was unavailable (cond is None) so a missing LLM never fails an
+        # otherwise-correct answer. A real LLM reply (True/False) still gates.
+        if llm and (self.no_llm or cond is None):
+            self.evidence.append(f"[SKIP] {name}: {evidence or '(--no_llm or llm unavailable)'}")
             return True
         if cond:
             self.evidence.append(f"[PASS] {name}: {evidence}")

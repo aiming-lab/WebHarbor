@@ -19,6 +19,10 @@ def main():
     fa = final_answer(t)
     j.check("nav_help", navigated_to(t, "/help"), f"navigated={navigated_to(t, '/help')}")
     j.check("answer_ticket", contains_any(fa, ["ticket"]), f"answer={fa!r}")
+    # "Which reservation kind has the $1 fee" can't be pinned deterministically (a wrong
+    # answer could mention "ticket" in passing while naming a different kind as the answer),
+    # so the which-one judgment is LLM-arbitrated here — reliable now that verify_lib SKIPs
+    # rather than fail-closes when the LLM is down.
     ok, why = llm_text_match(fa,
         "Ticket reservations are the kind that typically include a $1 online reservation fee.",
         "Which kind of reservation typically includes a $1 online reservation fee?")

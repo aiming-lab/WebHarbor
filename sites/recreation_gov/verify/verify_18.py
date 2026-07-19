@@ -11,7 +11,7 @@ nav Aravaipa Canyon detail | answer names one activity | answer says both permit
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (load_run, navigated_to, final_answer, norm, contains_any, contains_all,
+from verify_lib import (load_run, navigated_to, final_answer, contains_any, contains_all,
                         Judge, parse_args)
 
 ACTIVITIES = ["Canyons", "Hiking", "Wildlife Viewing"]
@@ -21,7 +21,7 @@ def main():
     j = Judge('RecreationGov--18', a.no_llm)
     t = load_run(a.run_dir)
     fa = final_answer(t)
-    both_ok = "both" in norm(fa) or contains_all(fa, ["Day Use Permit", "Overnight Permit"])
+    both_ok = contains_all(fa, ["Day Use Permit", "Overnight Permit"])
     j.check("nav_aravaipa", navigated_to(t, "aravaipa-canyon-wilderness-permits"),
             f"navigated={navigated_to(t, 'aravaipa-canyon-wilderness-permits')}")
     j.check("answer_activity", contains_any(fa, ACTIVITIES), f"answer={fa!r}")

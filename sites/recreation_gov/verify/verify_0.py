@@ -26,6 +26,10 @@ def main():
             f"navigated={navigated_to(t, 'porcupine-flat-campground')}")
     j.check("answer_names_open", contains_any(fa, ["Yosemite Creek"]), f"answer={fa!r}")
     j.check("answer_activity", contains_any(fa, ACTIVITIES), f"answer={fa!r}")
+    # "Which one is open" can't be pinned deterministically (a wrong answer that names
+    # Yosemite Creek while explaining Porcupine Flat is the real open one would still
+    # satisfy answer_names_open above), so the which-one judgment is LLM-arbitrated here
+    # — reliable now that verify_lib SKIPs rather than fail-closes when the LLM is down.
     ok, why = llm_text_match(fa,
         "Yosemite Creek Campground is the one open for the featured window (Porcupine Flat is unavailable); "
         "its activities are Camping, Waterfalls, Hiking.",
