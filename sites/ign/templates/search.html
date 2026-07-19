@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Search - IGN{% endblock %}
+{% block content %}
+<header class="page-header">
+  <span class="eyebrow">Search</span>
+  <h1>{% if q %}Results for "{{ q }}"{% else %}Search IGN News{% endif %}</h1>
+  <p>{% if q %}News results for "{{ q }}"{% else %}Search current IGN News by category.{% endif %}</p>
+</header>
+
+<form class="advanced-search" method="get" action="{{ url_for('search') }}">
+  <input name="q" value="{{ q }}" placeholder="Search IGN News">
+  <select name="category">
+    {% for key, label in categories %}
+      <option value="{{ key }}" {% if category == key %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Search</button>
+</form>
+
+<nav class="category-tabs search-tabs" aria-label="Search categories">
+  {% for key, label in categories %}
+    <a class="{{ 'active' if category == key else '' }}" href="{{ url_for('search', q=q, category=key) }}">{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<section class="list-page">
+  {% for item in results %}
+    {% include "_item_card.html" with context %}
+  {% else %}
+    <div class="empty-state">No matching IGN coverage yet.</div>
+  {% endfor %}
+</section>
+{% endblock %}

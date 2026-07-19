@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - IGN{% endblock %}
+{% block content %}
+<section class="utility-page utility-{{ mode }}">
+  <header class="utility-hero">
+    <a class="utility-hero-media" href="{{ hero.href }}">
+      {% if hero.image %}
+        <img src="{{ hero.image }}" alt="{{ hero.title }}">
+      {% endif %}
+      <span>{{ hero.label }}</span>
+    </a>
+    <div class="utility-hero-copy">
+      <span class="eyebrow">{{ eyebrow }}</span>
+      <h1>{{ title }}</h1>
+      <p>{{ subtitle }}</p>
+      <a class="utility-cta" href="{{ hero.href }}">{{ hero.title }}</a>
+    </div>
+  </header>
+
+  {% if mode in ["legal", "follow"] %}
+    <section class="utility-doc" id="{{ 'terms' if mode == 'legal' and 'Terms' in title else 'policy' }}">
+      <aside>
+        <strong>{{ eyebrow }}</strong>
+        {% for panel in panels %}
+          <a href="#panel-{{ loop.index }}">{{ panel.title }}</a>
+        {% endfor %}
+      </aside>
+      <div class="utility-doc-body">
+        {% for panel in panels %}
+          <article id="panel-{{ loop.index }}">
+            <h2>{{ panel.title }}</h2>
+            <p>{{ panel.body }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% else %}
+    <section class="utility-panel-row" aria-label="{{ title }} highlights">
+      {% for panel in panels %}
+        <article>
+          <h2>{{ panel.title }}</h2>
+          <p>{{ panel.body }}</p>
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+
+  {% if cards %}
+    <section class="utility-card-section">
+      <div class="section-head">
+        <h2>{{ "Featured" if mode != "store" else "Store Picks" }}</h2>
+      </div>
+      <div class="utility-card-grid">
+        {% for card in cards %}
+          <article class="utility-card">
+            <a href="{{ card.href }}">
+              {% if card.image %}
+                <img src="{{ card.image }}" alt="{{ card.title }}">
+              {% endif %}
+              <div>
+                <span>{{ card.eyebrow }}</span>
+                <h3>{{ card.title }}</h3>
+                <p>{{ card.body }}</p>
+                {% if card.price %}
+                  <strong>{{ card.price }}</strong>
+                {% elif card.points %}
+                  <strong>{{ card.points }} pts</strong>
+                {% else %}
+                  <em>{{ card.meta }}</em>
+                {% endif %}
+              </div>
+            </a>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</section>
+{% endblock %}

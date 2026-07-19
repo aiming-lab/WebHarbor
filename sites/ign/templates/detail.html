@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} - IGN{% endblock %}
+{% block content %}
+<article class="detail-layout">
+  <header class="article-header">
+    <div class="meta-line">
+      <span>{{ item.pretty_type }}</span>
+      <span>{{ section_label(item.section_slug) }}</span>
+      <span>{{ item.published_at.strftime('%b %d, %Y') }}</span>
+    </div>
+    <h1>{{ item.title }}</h1>
+    <p>{{ item.description }}</p>
+    <div class="byline">By {{ item.author }} - {{ item.comments_count }} comments</div>
+  </header>
+
+  <div class="detail-media">
+    <img src="{{ item.image_path }}" alt="{{ item.title }}">
+    {% if item.score %}
+      <div class="score-panel">
+        <span>{{ item.score }}</span>
+        <strong>{{ item.score_label }}</strong>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="detail-columns">
+    <div class="article-body">
+      {% for paragraph in item.body %}
+        <p>{{ paragraph }}</p>
+      {% endfor %}
+      {% if item.platforms %}
+        <section class="spec-box">
+          <h2>Platforms</h2>
+          <div class="tag-row">
+            {% for platform in item.platforms %}<span>{{ platform }}</span>{% endfor %}
+          </div>
+        </section>
+      {% endif %}
+      {% if item.tags %}
+        <section class="spec-box">
+          <h2>Tags</h2>
+          <div class="tag-row">
+            {% for tag in item.tags %}<span>{{ tag }}</span>{% endfor %}
+          </div>
+        </section>
+      {% endif %}
+
+      <section id="comments" class="comments">
+        <h2>Reader Discussion</h2>
+        {% for comment in item.comments %}
+          <div class="comment">
+            <strong>{{ comment.user.display_name }}</strong>
+            <p>{{ comment.body }}</p>
+          </div>
+        {% else %}
+          <p>No local comments yet.</p>
+        {% endfor %}
+        {% if current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('add_comment', item_id=item.id) }}" class="comment-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <textarea name="body" rows="3" placeholder="Join the discussion"></textarea>
+            <button type="submit">Post comment</button>
+          </form>
+        {% else %}
+          <a class="button-secondary" href="{{ url_for('login', next=request.path) }}">Log in to comment</a>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="action-panel">
+      <h2>Account Tools</h2>
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('save_item', item_id=item.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label>Folder <input name="folder" value="Read Later"></label>
+          <label>Note <textarea name="note" rows="2"></textarea></label>
+          <button type="submit">{{ 'Update Saved' if is_saved(item) else 'Save Story' }}</button>
+        </form>
+        <form method="post" action="{{ url_for('add_playlist', item_id=item.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label>Status
+            <select name="status">
+              <option value="queued">Queued</option>
+              <option value="watching">Watching</option>
+              <option value="watched">Watched</option>
+            </select>
+          </label>
+          <label>Playlist note <textarea name="note" rows="2"></textarea></label>
+          <button type="submit">{{ 'Update Playlist' if in_playlist(item) else 'Add to Playlist' }}</button>
+        </form>
+      {% else %}
+        <p>Sign in to save stories, queue videos, or join the discussion.</p>
+        <a class="button-primary" href="{{ url_for('login', next=request.path) }}">Log in</a>
+      {% endif %}
+    </aside>
+  </div>
+</article>
+
+<section class="section-block">
+  <div class="section-head"><h2>Related Coverage</h2></div>
+  <div class="card-grid small">
+    {% for item in related %}
+      {% include "_item_card.html" with context %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
