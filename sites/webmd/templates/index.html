@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}WebMD - Better information. Better health.{% endblock %}
+{% block content %}
+
+{% if hero %}
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <div class="hero-kicker">{{ hero.subcategory }}</div>
+      <h1><a href="{{ url_for('article_detail', slug=hero.slug) }}">{{ hero.title }}</a></h1>
+      <p>{{ hero.summary }}</p>
+      <p class="row-meta">By {{ hero.author.name }} &middot; {{ hero.published_date.strftime('%B %d, %Y') }}</p>
+    </div>
+    <div class="hero-img">
+      <a href="{{ url_for('article_detail', slug=hero.slug) }}">
+        <img src="{{ url_for('static', filename='images/' + hero.image) }}" alt="{{ hero.title }}">
+      </a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="home-block">
+  <div class="container">
+    <h2>Today's Top Picks</h2>
+    <div class="card-grid">
+      {% for a in trending %}
+      <div class="card">
+        <a href="{{ url_for('article_detail', slug=a.slug) }}">
+          <img src="{{ url_for('static', filename='images/' + a.image) }}" alt="{{ a.title }}">
+        </a>
+        <div class="card-body">
+          <div class="card-kicker">{{ a.section.name }}</div>
+          <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+          <p>{{ a.summary|truncate(110) }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="home-block section-strip">
+  <div class="container" style="padding-top:26px; padding-bottom:26px;">
+    <h2>Browse by Section</h2>
+    <div class="strip-grid">
+      {% for section, articles in section_cards %}
+      <div class="strip-item">
+        <h3><a href="{{ url_for('section_view', slug=section.slug) }}">{{ section.name }}</a></h3>
+        <p>{{ section.blurb }}</p>
+        <ul>
+          {% for a in articles %}
+          <li><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title|truncate(64) }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="home-block">
+  <div class="container">
+    <h2>Find What You Need</h2>
+    <div class="strip-grid">
+      <div class="strip-item">
+        <h3><a href="{{ url_for('conditions_index') }}">Conditions A-Z</a></h3>
+        <p>Overviews, symptoms, causes, and treatments for common health conditions.</p>
+      </div>
+      <div class="strip-item">
+        <h3><a href="{{ url_for('drugs_index') }}">Drugs &amp; Supplements A-Z</a></h3>
+        <p>Uses, dosage, side effects, interactions, and warnings for common medicines.</p>
+      </div>
+      <div class="strip-item">
+        <h3><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></h3>
+        <p>Select your symptoms and see which conditions may match.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

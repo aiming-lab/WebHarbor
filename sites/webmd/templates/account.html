@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}My WebMD | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head"><h1>My WebMD</h1></div>
+  <div class="account-tabs">
+    <a href="{{ url_for('account') }}" class="active">Profile</a>
+    <a href="{{ url_for('account_saved') }}">Saved Articles</a>
+    <a href="{{ url_for('account_history') }}">Reading History</a>
+  </div>
+
+  <div class="profile-card">
+    <dl>
+      <dt>Full Name</dt>
+      <dd>{{ current_user.name }}</dd>
+      <dt>Email</dt>
+      <dd>{{ current_user.email }}</dd>
+    </dl>
+  </div>
+
+  <div class="profile-card">
+    <h2 style="margin-top:0;font-size:19px;">Change Password</h2>
+    <form method="post" action="{{ url_for('account') }}">
+      {{ form.hidden_tag() }}
+      <div class="form-field">
+        {{ form.current_password.label }}
+        {{ form.current_password() }}
+        {% for e in form.current_password.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
+        {{ form.new_password.label }}
+        {{ form.new_password() }}
+        {% for e in form.new_password.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
+        {{ form.confirm.label }}
+        {{ form.confirm() }}
+        {% for e in form.confirm.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <button type="submit" class="primary-btn">Update Password</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
