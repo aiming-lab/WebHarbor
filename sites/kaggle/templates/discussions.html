@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Discussions | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <div class="section-head">
+    <div><h1 class="page-title">Discussions</h1><p class="page-sub">Ask questions, share ideas, and connect with the community.</p></div>
+    {% if current_user.is_authenticated %}<a class="btn btn-primary" href="{{ url_for('discussion_new') }}">New Topic</a>{% endif %}
+  </div>
+
+  <div class="toolbar">
+    <form method="get">
+      <input type="text" name="q" placeholder="Search discussions" value="{{ q }}">
+      <select name="forum" onchange="this.form.submit()">
+        <option value="">All forums</option>
+        {% for f in nav_forums %}<option value="{{ f }}" {{ 'selected' if forum==f }}>{{ f }}</option>{% endfor %}
+      </select>
+      <select name="sort" onchange="this.form.submit()">
+        <option value="hot" {{ 'selected' if sort=='hot' }}>Hot</option>
+        <option value="recent" {{ 'selected' if sort=='recent' }}>Recent</option>
+        <option value="comments" {{ 'selected' if sort=='comments' }}>Most comments</option>
+      </select>
+      <button class="btn btn-sm btn-ghost" type="submit">Apply</button>
+    </form>
+    <span class="count-pill">{{ discussions|length }} topics</span>
+  </div>
+
+  {% if discussions %}
+  <div class="row-list">
+    {% for d in discussions %}
+    <div class="row">
+      <div class="row-main">
+        <div class="row-title">{% if d.pinned %}📌 {% endif %}<a href="{{ url_for('discussion_detail', slug=d.slug) }}">{{ d.title }}</a></div>
+        <div class="row-sub">{{ d.author_username }} · <span class="chip">{{ d.forum }}</span> · {{ d.created_at|reltime }}</div>
+      </div>
+      <div class="row-right">👍 {{ d.votes|commafy }}<br>💬 {{ d.comment_count }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<div class="empty">No discussions match your search.</div>{% endif %}
+</div>
+{% endblock %}

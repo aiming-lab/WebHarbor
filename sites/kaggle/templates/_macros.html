@@ -1,0 +1,89 @@
+{# Reusable card / badge macros #}
+{% set TIER_COLORS = {"Novice": "#5ac995", "Contributor": "#00aaff", "Expert": "#95319b", "Master": "#f96517", "Grandmaster": "#dca917"} %}
+
+{% macro thumb(kind, key, title, cls='card-thumb') %}
+  <img class="{{ cls }}" src="/static/images/{{ kind }}/{{ key }}.png" alt="{{ title }}"
+       onerror="this.onerror=null; this.outerHTML='<div class=\'{{ cls }} thumb-fallback\'>{{ (title[0] if title else '?')|e }}</div>'">
+{% endmacro %}
+
+{% macro tier_badge(user) %}
+  {% if user %}
+  <span class="tier" style="color: {{ TIER_COLORS.get(user.tier, '#888') }}">
+    <span class="tier-dot" style="background: {{ TIER_COLORS.get(user.tier, '#888') }}"></span>{{ user.tier }}
+  </span>
+  {% endif %}
+{% endmacro %}
+
+{% macro tier_name(name) %}
+  <span class="tier" style="color: {{ TIER_COLORS.get(name, '#888') }}">
+    <span class="tier-dot" style="background: {{ TIER_COLORS.get(name, '#888') }}"></span>{{ name }}
+  </span>
+{% endmacro %}
+
+{% macro medals(g, s, b) %}
+  <span class="medal-counts">
+    <span class="medal">🥇 {{ g }}</span>
+    <span class="medal">🥈 {{ s }}</span>
+    <span class="medal">🥉 {{ b }}</span>
+  </span>
+{% endmacro %}
+
+{% macro competition_card(c) %}
+<div class="card">
+  <a href="{{ url_for('competition_detail', slug=c.slug) }}">
+    {{ thumb('competitions', c.thumbnail, c.title) }}
+    <div class="card-body">
+      <div class="chips" style="margin-bottom:8px;"><span class="chip">{{ c.category }}</span></div>
+      <div class="card-title">{{ c.title }}</div>
+      <div class="card-sub">{{ c.subtitle }}</div>
+      <div class="card-meta">
+        <span><b>{{ c.reward }}</b></span>
+        <span>{{ c.num_teams|commafy }} teams</span>
+        {% if c.is_active %}<span>{{ c.days_left }} days left</span>{% else %}<span>Closed</span>{% endif %}
+      </div>
+    </div>
+  </a>
+</div>
+{% endmacro %}
+
+{% macro dataset_card(d) %}
+<div class="card">
+  <a href="{{ url_for('dataset_detail', slug=d.slug) }}">
+    {{ thumb('datasets', d.thumbnail, d.title) }}
+    <div class="card-body">
+      <div class="card-title">{{ d.title }}</div>
+      <div class="card-sub">{{ d.owner_username }} · {{ d.size }}</div>
+      <div class="card-meta">
+        <span>👍 {{ d.upvotes|commafy }}</span>
+        <span>Usability <b>{{ '%.1f'|format(d.usability) }}</b></span>
+      </div>
+    </div>
+  </a>
+</div>
+{% endmacro %}
+
+{% macro notebook_card(n) %}
+<div class="card">
+  <a href="{{ url_for('notebook_detail', slug=n.slug) }}">
+    {{ thumb('notebooks', n.thumbnail, n.title) }}
+    <div class="card-body">
+      <div class="card-title">{{ n.medal_emoji }} {{ n.title }}</div>
+      <div class="card-sub">{{ n.author_username }} · {{ n.language }}</div>
+      <div class="card-meta"><span>👍 {{ n.votes|commafy }}</span><span>💬 {{ n.comments }}</span></div>
+    </div>
+  </a>
+</div>
+{% endmacro %}
+
+{% macro model_card(m) %}
+<div class="card">
+  <a href="{{ url_for('model_detail', slug=m.slug) }}">
+    {{ thumb('models', m.thumbnail, m.title) }}
+    <div class="card-body">
+      <div class="card-title">{{ m.title }}</div>
+      <div class="card-sub">{{ m.owner_username }} · {{ m.framework }}</div>
+      <div class="card-meta"><span>⬇ {{ m.downloads|commafy }}</span><span>👍 {{ m.upvotes|commafy }}</span></div>
+    </div>
+  </a>
+</div>
+{% endmacro %}

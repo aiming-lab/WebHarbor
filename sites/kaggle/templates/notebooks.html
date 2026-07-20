@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import notebook_card %}
+{% block title %}Code | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <h1 class="page-title">Code</h1>
+  <p class="page-sub">Explore and run machine learning code with Kaggle Notebooks.</p>
+
+  <div class="toolbar">
+    <form method="get">
+      <input type="text" name="q" placeholder="Search notebooks" value="{{ q }}">
+      <select name="language" onchange="this.form.submit()">
+        <option value="">All languages</option>
+        <option value="Python" {{ 'selected' if language=='Python' }}>Python</option>
+        <option value="R" {{ 'selected' if language=='R' }}>R</option>
+      </select>
+      <select name="medal" onchange="this.form.submit()">
+        <option value="">All</option>
+        <option value="gold" {{ 'selected' if medal=='gold' }}>🥇 Gold</option>
+        <option value="silver" {{ 'selected' if medal=='silver' }}>🥈 Silver</option>
+        <option value="bronze" {{ 'selected' if medal=='bronze' }}>🥉 Bronze</option>
+      </select>
+      <select name="sort" onchange="this.form.submit()">
+        <option value="votes" {{ 'selected' if sort=='votes' }}>Most votes</option>
+        <option value="comments" {{ 'selected' if sort=='comments' }}>Most comments</option>
+        <option value="recent" {{ 'selected' if sort=='recent' }}>Recently run</option>
+      </select>
+      <button class="btn btn-sm btn-ghost" type="submit">Apply</button>
+    </form>
+    <span class="count-pill">{{ notebooks|length }} notebooks</span>
+  </div>
+
+  {% if notebooks %}
+  <div class="grid grid-4">{% for n in notebooks %}{{ notebook_card(n) }}{% endfor %}</div>
+  {% else %}<div class="empty">No notebooks match your search.</div>{% endif %}
+</div>
+{% endblock %}
