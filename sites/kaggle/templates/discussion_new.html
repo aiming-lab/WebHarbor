@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}New Topic | Kaggle{% endblock %}
+{% block content %}
+<div class="form-card wide">
+  <h1>Start a new discussion</h1>
+  <form method="post">
+    {{ form.csrf_token }}
+    <div class="field"><label>Title</label>{{ form.title(placeholder="What's your topic?") }}
+      {% for e in form.title.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>
+    <div class="field"><label>Forum</label>{{ form.forum() }}</div>
+    <div class="field"><label>Body</label>{{ form.body(rows=8, placeholder="Share details, questions, or ideas...") }}
+      {% for e in form.body.errors %}<div class="err">{{ e }}</div>{% endfor %}</div>
+    <button class="btn btn-primary btn-block" type="submit">Post Topic</button>
+  </form>
+</div>
+{% endblock %}

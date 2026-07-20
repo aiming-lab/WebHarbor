@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_macros.html" import competition_card %}
+{% block title %}Competitions | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <h1 class="page-title">Competitions</h1>
+  <p class="page-sub">Grow your data science skills by competing in our ML competitions. Find help in the docs.</p>
+
+  <div class="toolbar">
+    <form method="get">
+      <input type="text" name="q" placeholder="Search competitions" value="{{ q }}">
+      <select name="category" onchange="this.form.submit()">
+        <option value="">All categories</option>
+        {% for cat in comp_categories %}<option value="{{ cat }}" {{ 'selected' if cat==category }}>{{ cat }}</option>{% endfor %}
+      </select>
+      <select name="status" onchange="this.form.submit()">
+        <option value="">All</option>
+        <option value="active" {{ 'selected' if status=='active' }}>Active</option>
+        <option value="completed" {{ 'selected' if status=='completed' }}>Completed</option>
+      </select>
+      <select name="sort" onchange="this.form.submit()">
+        <option value="teams" {{ 'selected' if sort=='teams' }}>Most teams</option>
+        <option value="prize" {{ 'selected' if sort=='prize' }}>Prize</option>
+        <option value="deadline" {{ 'selected' if sort=='deadline' }}>Deadline</option>
+        <option value="newest" {{ 'selected' if sort=='newest' }}>Newest</option>
+      </select>
+      <button class="btn btn-sm btn-ghost" type="submit">Apply</button>
+    </form>
+    <span class="count-pill">{{ comps|length }} competitions</span>
+  </div>
+
+  {% if comps %}
+  <div class="grid grid-3">
+    {% for c in comps %}{{ competition_card(c) }}{% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">No competitions match your filters.</div>
+  {% endif %}
+</div>
+{% endblock %}
