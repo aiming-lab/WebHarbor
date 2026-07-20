@@ -1,0 +1,223 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} Side Effects - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumb-row">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+    <span>Side effects</span>
+  </nav>
+</div>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-detail">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}" class="active" aria-current="page">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+  <header class="drug-header">
+    <h1>{{ drug.generic_name|capitalize }} Side Effects</h1>
+    <p class="reviewer-line">
+      <span>Medically reviewed by {{ drug.reviewer_name }}, {{ drug.reviewer_credential }}. Last updated on {{ drug.last_updated.strftime('%b %d, %Y') }}.</span>
+    </p>
+    {% if drug.drug_class %}
+    <p><strong>Drug class:</strong>
+      <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
+    </p>
+    {% endif %}
+  </header>
+
+  {% if drug.images %}
+  <p class="se-applies-to">Applies to {{ drug.generic_name }}: oral tablet, oral capsule.</p>
+  {% endif %}
+
+  <section class="se-precautions">
+    <h2>Precautions</h2>
+    <p>It is very important that your doctor check your progress at regular visits. This will allow your doctor to see if the medicine is working properly and to decide if you should continue to take it.</p>
+    {{ (rt_side_effects or drug.side_effects) | format_drug_text | safe }}
+  </section>
+
+  <section class="se-block se-block--serious">
+    <h2>Serious side effects of {{ drug.generic_name|capitalize }}</h2>
+    <p>Along with its needed effects, {{ drug.generic_name }} may cause some unwanted effects. Although not all of these side effects may occur, if they do occur they may need medical attention.</p>
+    <p><strong>Check with your doctor immediately</strong> if any of the following side effects occur while taking {{ drug.generic_name }}:</p>
+    <details class="se-severity-group" open>
+      <summary><strong>More common</strong></summary>
+      <ul class="se-serious-list">
+        {% if se_parsed and se_parsed.common %}
+          {% for item in se_parsed.common %}<li>{{ item|capitalize }}</li>{% endfor %}
+        {% else %}
+        <li>Abdominal pain or stomach cramps</li>
+        <li>Bloating</li>
+        <li>Cloudy urine</li>
+        <li>Decrease in urine output or frequency</li>
+        <li>Difficulty breathing</li>
+        <li>Nausea or vomiting</li>
+        <li>Rapid weight gain</li>
+        {% endif %}
+      </ul>
+    </details>
+    <details class="se-severity-group">
+      <summary><strong>Less common</strong></summary>
+      <ul class="se-serious-list">
+        <li>Bleeding gums</li>
+        <li>Blistering, peeling, or loosening of the skin</li>
+        <li>Blood in urine or stools</li>
+        <li>Blurred vision</li>
+        <li>Burning feeling in chest or stomach</li>
+        <li>Chest pain</li>
+        <li>Confusion</li>
+        <li>Swelling of face, fingers, feet, or lower legs</li>
+      </ul>
+    </details>
+    <details class="se-severity-group">
+      <summary><strong>Rare</strong></summary>
+      <ul class="se-serious-list">
+        {% if se_parsed and se_parsed.serious %}
+          {% for item in se_parsed.serious %}<li>{{ item|capitalize }}</li>{% endfor %}
+        {% else %}
+        <li>Severe gastrointestinal bleeding or perforation</li>
+        <li>Heart attack or stroke</li>
+        <li>Acute kidney injury or kidney failure</li>
+        <li>Severe allergic reaction (anaphylaxis)</li>
+        <li>Stevens-Johnson syndrome / toxic epidermal necrolysis</li>
+        <li>Hepatic failure or severe liver injury</li>
+        <li>Aseptic meningitis</li>
+        {% endif %}
+      </ul>
+    </details>
+    <h3>Symptoms of overdose</h3>
+    <ul class="se-serious-list">
+      <li>Bluish lips or skin</li>
+      <li>Blurred vision</li>
+      <li>Change in consciousness</li>
+      <li>Chest pain or discomfort</li>
+      <li>Convulsions</li>
+      <li>Decreased awareness or responsiveness</li>
+      <li>Irregular heartbeat</li>
+      <li>Loss of consciousness</li>
+    </ul>
+  </section>
+
+  <section class="se-block se-block--other">
+    <h2>Other side effects of {{ drug.generic_name|capitalize }}</h2>
+    <p>Some side effects of {{ drug.generic_name }} may occur that usually do not need medical attention. These side effects may go away during treatment as your body adjusts to the medicine. Also, your health care professional may be able to tell you about ways to prevent or reduce some of these side effects.</p>
+    <p>Check with your health care professional if any of the following side effects continue or are bothersome or if you have any questions about them:</p>
+    <details class="se-severity-group" open>
+      <summary><strong>More common</strong></summary>
+      <ul>
+        <li>Headache</li>
+        <li>Nervousness</li>
+        <li>Skin rash</li>
+        <li>Dizziness</li>
+        <li>Indigestion</li>
+      </ul>
+    </details>
+    <details class="se-severity-group">
+      <summary><strong>Less common</strong></summary>
+      <ul>
+        <li>Drowsiness</li>
+        <li>Dry mouth</li>
+        <li>Excess air in stomach or intestines</li>
+        <li>Heartburn</li>
+        <li>Itching skin</li>
+        <li>Loss of appetite</li>
+      </ul>
+    </details>
+  </section>
+
+  <section class="se-block se-block--pro" id="for-professionals">
+    <h2>For healthcare professionals</h2>
+    <p>Applies to {{ drug.generic_name }}: compounding powder, intravenous solution, oral capsule, oral suspension, oral tablet, oral tablet chewable.</p>
+    <h3>Gastrointestinal adverse events</h3>
+    <p>The most frequently reported adverse effects were gastrointestinal in nature and included nausea, vomiting, flatulence, and diarrhea. Peptic ulceration, perforation, or gastrointestinal bleeding has occurred rarely and may be severe.</p>
+    <h3>Cardiovascular</h3>
+    <p>NSAIDs may cause an increased risk of serious cardiovascular thrombotic events, myocardial infarction, and stroke, which can be fatal. This risk may increase with duration of use.</p>
+    <h3>Renal</h3>
+    <p>Renal papillary necrosis and other renal injury have been reported with long-term use. Acute interstitial nephritis with hematuria, proteinuria, and occasionally nephrotic syndrome has been reported.</p>
+    <h3>Hepatic</h3>
+    <p>Borderline elevations of one or more liver enzymes may occur in up to 15% of patients. Severe hepatic reactions including jaundice and cases of fatal fulminant hepatitis have been reported.</p>
+    <h3>Nervous system</h3>
+    <p>Aseptic meningitis with fever and coma has been observed on rare occasions in patients on ibuprofen therapy. Cognitive dysfunction has been reported in elderly patients.</p>
+  </section>
+
+  <section class="se-block se-block--medwatch" id="report-side-effect">
+    <h2>Report side effects to the FDA</h2>
+    <p>You are encouraged to report negative side effects of prescription drugs to the FDA.
+    Reporting helps identify safety issues that may not have been seen in clinical trials.</p>
+    <div class="medwatch-card">
+      <p><strong>FDA MedWatch &mdash; Adverse Event Reporting Program</strong></p>
+      <ul class="medwatch-channels">
+        <li><strong>Online:</strong> <a href="https://www.fda.gov/medwatch" rel="nofollow noopener" target="_blank">www.fda.gov/medwatch</a></li>
+        <li><strong>Phone:</strong> 1-800-FDA-1088 (1-800-332-1088)</li>
+        <li><strong>Fax:</strong> 1-800-FDA-0178 (1-800-332-0178)</li>
+        <li><strong>Mail:</strong> MedWatch, FDA, 5600 Fishers Lane, Rockville, MD 20857</li>
+      </ul>
+      <p class="medwatch-note">Use FDA Form 3500 for consumer / patient reports and Form 3500A for mandatory reports from manufacturers and importers. Reports may be submitted anonymously.</p>
+    </div>
+    <p>You may also report adverse events to the manufacturer of your specific brand of {{ drug.generic_name|capitalize }}, who is required to forward the report to the FDA.</p>
+  </section>
+
+  {% if related_drugs %}
+  <section class="se-see-also">
+    <h2>See also:</h2>
+    <div class="related-drugs-carousel">
+      {% for r in related_drugs[:6] %}
+      <a href="{{ url_for('drug_detail', slug=r.slug) }}" class="related-drug-card">
+        <div class="related-drug-card-head">
+          <strong class="related-drug-name">{{ r.generic_name|capitalize }}</strong>
+          {% if r.avg_rating %}
+          <span class="related-drug-rating-badge">&#9733; {{ "%.1f"|format(r.avg_rating) }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if faq_items %}
+  <section class="se-faq">
+    <h2>Frequently asked questions</h2>
+    <div class="faq-list faq-accordion">
+    {% for item in faq_items[:4] %}
+      <details class="faq-item" {% if loop.first %}open{% endif %}>
+        <summary class="faq-question">{{ item.q }}</summary>
+        <div class="faq-answer"><p>{{ item.a }}</p></div>
+      </details>
+    {% endfor %}
+    </div>
+    <h3>More FAQ</h3>
+    <ul class="more-faq-list">
+      <li><a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">View more {{ drug.generic_name|capitalize }} FAQ&hellip;</a></li>
+    </ul>
+  </section>
+  {% endif %}
+
+  <section id="further-information">
+    <h2>Further information</h2>
+    <p>Remember, keep this and all other medicines out of the reach of children, never share your medicines with others, and use {{ drug.generic_name }} only for the indication prescribed.</p>
+    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+    <p><a href="{{ url_for('drug_detail', slug=drug.slug) }}">Medical Disclaimer</a></p>
+  </section>
+
+  <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>
+</article>
+</div>
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} Dosage Guide + Max Dose, Adjustments - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumb-row">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+    <span>Dosage Guide</span>
+  </nav>
+</div>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-detail">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}" class="active" aria-current="page">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+  <header class="drug-header">
+    <h1>{{ drug.generic_name|capitalize }} Dosage</h1>
+    <p class="reviewer-line">
+      <span>Medically reviewed by {{ drug.reviewer_name }}, {{ drug.reviewer_credential }}. Last updated on {{ drug.last_updated.strftime('%b %d, %Y') }}.</span>
+    </p>
+    {% if drug.drug_class %}
+    <p><strong>Drug class:</strong>
+      <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
+    </p>
+    {% endif %}
+  </header>
+
+  <section>
+    <h2>Applies to the following dosage forms and strengths</h2>
+    {% if drug.images %}
+    <ul>
+      {% set seen = [] %}
+      {% for img in drug.images %}
+        {% set entry = (img.shape or '') + (' ' + img.strength if img.strength else '') %}
+        {% set entry = entry.strip() %}
+        {% if entry and entry not in seen %}{% set _ = seen.append(entry) %}<li>{{ entry }}</li>{% endif %}
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p>See prescribing information for available dosage forms.</p>
+    {% endif %}
+  </section>
+
+  <section>
+    <div class="dosage-quick-nav">
+      <h3>Usual Adult Dose for:</h3>
+      <ul>
+        {% if dosage_rows %}
+          {% for row in dosage_rows %}<li><a href="#adult-dose-{{ loop.index }}">{{ row.indication }}</a></li>{% endfor %}
+        {% else %}
+          <li>Primary indication</li>
+          <li>Maintenance therapy</li>
+        {% endif %}
+      </ul>
+      <h3>Usual Pediatric Dose for:</h3>
+      <ul>
+        {% if dosage_rows %}
+          {% for row in dosage_rows %}<li><a href="#ped-dose-{{ loop.index }}">{{ row.indication }} (pediatric)</a></li>{% endfor %}
+        {% else %}
+          <li>Primary indication (weight-based)</li>
+        {% endif %}
+      </ul>
+    </div>
+  </section>
+
+  <section>
+    <h2>Usual Adult Dose for {{ drug.generic_name|capitalize }}</h2>
+    {{ (rt_dosage or drug.dosage) | format_drug_text | safe }}
+    {% if dosage_rows %}
+      {% for row in dosage_rows %}
+      <h2 id="adult-dose-{{ loop.index }}">Usual Adult Dose for {{ row.indication }}</h2>
+      <p>{{ row.adult }}</p>
+      {% endfor %}
+    {% endif %}
+  </section>
+
+  <section class="max-dose-warning">
+    <h2>Maximum daily dose</h2>
+    <p><strong>Do not exceed the maximum daily dose</strong> stated on the product label
+    or by your prescriber. Exceeding the recommended maximum daily dose of {{ drug.generic_name|capitalize }}
+    can cause serious adverse effects, including hepatic, renal, gastrointestinal, or cardiovascular harm.
+    If you are unsure of the limit for your situation, contact your healthcare provider before taking
+    additional doses.</p>
+  </section>
+
+  <section>
+    <h2>Dosage adjustments</h2>
+    <h3>Renal impairment</h3>
+    <p>Use with caution in patients with renal impairment. A dose reduction may be necessary; monitor renal function during therapy.</p>
+    <h3>Hepatic impairment</h3>
+    <p>Use with caution in patients with hepatic impairment. Periodic monitoring of liver enzymes is recommended for chronic use.</p>
+    <h3>Geriatric use</h3>
+    <p>Older adults may be more sensitive to the effects of this medication. Start at the lowest effective dose.</p>
+  </section>
+
+  <section>
+    <h2>How to take {{ drug.generic_name|capitalize }}</h2>
+    <ul>
+      <li>Take exactly as prescribed by your healthcare provider. Follow all directions on the product label.</li>
+      <li>For oral tablets and capsules, swallow whole with a full glass of water unless otherwise instructed. Do not crush, chew, or split extended-release forms.</li>
+      <li>Take with food if gastrointestinal upset occurs, unless the product specifies an empty stomach.</li>
+      <li>Try to take each dose at the same time each day to maintain steady drug levels.</li>
+      <li>Do not stop {{ drug.generic_name|capitalize }} abruptly without first speaking to your prescriber, even if you feel better.</li>
+      <li>Keep all scheduled follow-up appointments so your provider can monitor your response.</li>
+    </ul>
+  </section>
+
+  <section>
+    <h2>What happens if I miss a dose?</h2>
+    <p>Take the missed dose as soon as you remember. Skip the missed dose if it is almost time for your next scheduled dose. Do not take extra medicine to make up the missed dose.</p>
+  </section>
+
+  <section>
+    <h2>What happens if I overdose?</h2>
+    <p>Seek emergency medical attention or call the Poison Help line at 1-800-222-1222. Overdose symptoms may include nausea, vomiting, stomach pain, drowsiness, black or bloody stools, coughing up blood, shallow breathing, fainting, or coma.</p>
+  </section>
+
+  <section>
+    <h2>Storage</h2>
+    <ul>
+      <li>Store {{ drug.generic_name|capitalize }} at room temperature, typically between 68&deg;F and 77&deg;F (20&deg;C to 25&deg;C), unless the product label specifies otherwise.</li>
+      <li>Keep the container tightly closed and protect from moisture, heat, and direct light.</li>
+      <li>Do not store in the bathroom or other humid locations.</li>
+      <li>Keep all medication out of the reach of children and pets.</li>
+      <li>Dispose of expired or unused medication through a drug take-back program; do not flush down the toilet unless instructed.</li>
+    </ul>
+  </section>
+
+  {% if faq_items %}
+  <section class="dosage-faq">
+    <h2>Frequently asked questions</h2>
+    <ul class="dosage-faq-list">
+    {% for item in faq_items[:8] %}
+      <li><a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">{{ item.q }}</a></li>
+    {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if related_drugs %}
+  <section class="dosage-see-also">
+    <h2>See also:</h2>
+    <div class="related-drugs-carousel">
+      {% for r in related_drugs[:6] %}
+      <a href="{{ url_for('drug_detail', slug=r.slug) }}" class="related-drug-card">
+        <div class="related-drug-card-head">
+          <strong class="related-drug-name">{{ r.generic_name|capitalize }}</strong>
+          {% if r.avg_rating %}
+          <span class="related-drug-rating-badge">&#9733; {{ "%.1f"|format(r.avg_rating) }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section id="further-information">
+    <h2>Further information</h2>
+    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+    <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com. Version: {{ drug.last_updated.strftime('%m.%y') }}.</p>
+  </section>
+
+  <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>
+</article>
+</div>
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

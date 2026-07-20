@@ -1,0 +1,198 @@
+{% extends "base.html" %}
+{% block title %}Drugs & Medications A to Z - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Drugs &amp; Medications A to Z</span>
+</nav>
+
+<div class="row-section split">
+  <div class="az-main">
+    <h1>Drugs &amp; Medications A to Z</h1>
+    <p class="lead">Detailed and accurate information is provided on over 24,000 prescription and over-the-counter medicines for both consumers and healthcare professionals.</p>
+
+    <section class="row-section az-search-section">
+      <h2>Search</h2>
+      <form action="{{ url_for('search') }}" method="get" class="az-search search-bar-top">
+        <input type="search" name="q" placeholder="Search drugs, conditions, or brand names" aria-label="Search" class="search-input-lg">
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+    </section>
+
+    <section class="row-section">
+      <h2>Browse A-Z</h2>
+      <div class="letter-grid wide">
+        {% for L in all_letters %}
+          <a class="letter-btn {% if active_letter and L == active_letter %}active{% endif %}"
+             href="{{ url_for('drug_az') }}?letter={{ L }}">{{ L }}</a>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if active_letter %}
+      <section class="row-section az-list">
+        <h2>{% if active_letter == '0-9' %}Drugs starting with a number (0-9){% else %}Drugs starting with &ldquo;{{ active_letter }}&rdquo;{% endif %}</h2>
+        {% if drugs %}
+          <ul class="az-name-list">
+            {% for d in drugs %}
+              <li>
+                <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>
+                {% if d.brand_names %}<span class="muted"> ({{ d.brand_names|join(', ') }})</span>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">No drugs in our database starting with this letter.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if popular_drugs %}
+      <section class="row-section popular-drugs">
+        <h2>Popular drug searches</h2>
+        <ul class="popular-searches popular-columns">
+          {% for d in popular_drugs %}
+            <li><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a></li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    <section class="row-section">
+      <h2>Browse drugs by category</h2>
+      <ul class="category-list category-grid">
+        <li><a href="{{ url_for('side_effects_page') }}">Side Effects</a></li>
+        <li><a href="{{ url_for('search') }}?q=dosage">Dosage</a></li>
+        <li><a href="{{ url_for('search') }}?q=pregnancy">Pregnancy Warnings</a></li>
+        <li><a href="{{ url_for('drug_classes_list') }}">Drug Classes</a></li>
+        <li><a href="{{ url_for('interaction_checker') }}">Drug Interactions</a></li>
+        <li><a href="{{ url_for('search') }}?q=availability">Availability</a></li>
+        <li><a href="{{ url_for('search') }}?q=brand+generic">Brand/Generic</a></li>
+        <li><a href="{{ url_for('search') }}?q=manufacturer">Drug Manufacturer</a></li>
+        <li><a href="{{ url_for('search') }}?q=natural">Natural Products</a></li>
+        <li><a href="{{ url_for('search') }}?q=international">International Drug Names</a></li>
+        <li><a href="{{ url_for('search') }}?q=generic">Generic Drug Names</a></li>
+        <li><a href="{{ url_for('search') }}?q=OTC&amp;availability=OTC">OTC Drugs</a></li>
+        <li><a href="{{ url_for('news_index') }}?cat=new-drug-approvals">New Drugs</a></li>
+        <li><a href="{{ url_for('news_index') }}?cat=fda-alerts">FDA Alerts</a></li>
+      </ul>
+    </section>
+
+    <section class="row-section drug-sources">
+      <h2>Consumer drug sources</h2>
+      <div class="drug-sources-grid">
+        <div class="source-card">
+          <h3>Cerner Multum Consumer Drug Information</h3>
+          <p>Multum provides current, accurate drug information such as drug descriptions, side effects, dosing, and warnings, as well as its use in the treatment and prevention of diseases.</p>
+          <p class="source-card-note">The leaflets are available in three languages and are tailored for use by adults.</p>
+        </div>
+        <div class="source-card">
+          <h3>Micromedex Consumer Drug Information (Advanced)</h3>
+          <p>Micromedex Advanced Consumer drug information pertaining to a wide variety of drugs (ie, Rx, OTC, vitamins) written using everyday language.</p>
+        </div>
+        <div class="source-card">
+          <h3>Natural Product Information (Consumer)</h3>
+          <p>The Natural database consumer information pertains to natural/herbal products containing possible drug-drug interactions, possible drug interactions with other health conditions, and drug effects.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="row-section drug-sources">
+      <h2>Professional drug sources</h2>
+      <div class="drug-sources-grid drug-sources-grid-2col">
+        <div class="source-card">
+          <h3>AHFS DI Monographs</h3>
+          <p>The American Society of Health-System Pharmacists (ASHP) provides comprehensive professional monographs including pharmacokinetics, mechanism of action, thorough descriptions of indications, contraindications, adverse effects and precautions, drug interactions, and patient information pertaining to the proper use of drugs. FDA approved labeling to ensure that monographs include evidence-based findings in the review of drug information.</p>
+        </div>
+        <div class="source-card">
+          <h3>Professional Patient Advice</h3>
+          <p>Drugs.com provides 5 Patient Advices for the professional. These are evidence-based clinical tools for clinicians with detailed pharmacokinetic data, clinical guidelines, and prescribing information.</p>
+        </div>
+        <div class="source-card">
+          <h3>Natural Product Information (Professional)</h3>
+          <p>The Natural database professional information pertaining to natural/herbal products contains possible drug-drug interactions, possible drug interactions with other health conditions, and drug effects with appropriate citations.</p>
+        </div>
+        <div class="source-card">
+          <h3>Natural Product Information (Advanced)</h3>
+          <p>The Natural database professional information (advanced) pertaining to natural/herbal products contains possible drug interactions, efficacy, and safety information along with appropriate citations.</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="az-sidebar">
+    <div class="sidebar-box">
+      <h3>Browse by Drug Type</h3>
+      <ul>
+        <li><a href="{{ url_for('search') }}?q=Rx&amp;availability=Rx">Prescription (Rx)</a></li>
+        <li><a href="{{ url_for('search') }}?q=OTC&amp;availability=OTC">Over the Counter (OTC)</a></li>
+      </ul>
+    </div>
+
+    {% if popular_classes %}
+    <div class="sidebar-box">
+      <h3>Popular Drug Classes</h3>
+      <ul>
+        {% for c in popular_classes %}
+          <li><a href="{{ url_for('drug_class_page', slug=c.slug) }}">{{ c.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if popular_conditions %}
+    <div class="sidebar-box">
+      <h3>Popular Conditions</h3>
+      <ul>
+        {% for c in popular_conditions %}
+          <li><a href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="sidebar-box newsletter-subscribe-box">
+      <h3>Subscribe to our newsletters</h3>
+      <form action="{{ url_for('newsletter_subscribe') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="newsletter-check"><input type="checkbox" name="subs" value="monthly" checked> Monthly newsletter</label>
+        <label class="newsletter-check"><input type="checkbox" name="subs" value="mednews" checked> Daily MedNews</label>
+        <label class="newsletter-check"><input type="checkbox" name="subs" value="fda"> FDA safety alerts</label>
+        <input type="email" name="email" placeholder="Enter your email address" class="newsletter-email-input" required maxlength="254">
+        <button type="submit" class="btn btn-primary newsletter-subscribe-button">Subscribe</button>
+      </form>
+    </div>
+
+    <div class="sidebar-box">
+      <h3>Trending drugs</h3>
+      <ul>
+        <li><a href="{{ url_for('drug_detail', slug='semaglutide') }}">Semaglutide</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='ozempic') }}">Ozempic</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='mounjaro') }}">Mounjaro</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='wegovy') }}">Wegovy</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='metformin') }}">Metformin</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='lisinopril') }}">Lisinopril</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-box">
+      <h3>Recently Approved</h3>
+      <ul>
+        <li><a href="{{ url_for('drug_detail', slug='semaglutide') }}">Semaglutide (Ozempic)</a><br><span class="muted recently-approved-blurb">Type 2 diabetes, weight loss</span></li>
+        <li><a href="{{ url_for('drug_detail', slug='tirzepatide') }}">Tirzepatide (Mounjaro)</a><br><span class="muted recently-approved-blurb">Type 2 diabetes, obesity</span></li>
+        <li><a href="{{ url_for('drug_detail', slug='lecanemab') }}">Lecanemab (Leqembi)</a><br><span class="muted recently-approved-blurb">Alzheimer's disease</span></li>
+        <li><a href="{{ url_for('news_index') }}" class="more-approvals-link">More New Drug Approvals &rsaquo;</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-box">
+      <h3>Recent news</h3>
+      <ul>
+        <li><a href="{{ url_for('news_index') }}">FDA approves new treatment options</a></li>
+        <li><a href="{{ url_for('news_index') }}">Drug safety alerts &amp; recalls</a></li>
+        <li><a href="{{ url_for('news_index') }}">Clinical trial results</a></li>
+        <li><a href="{{ url_for('news_index') }}">New drug approvals</a></li>
+      </ul>
+    </div>
+  </aside>
+</div>
+{% endblock %}

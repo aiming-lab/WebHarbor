@@ -1,0 +1,590 @@
+{% extends "base.html" %}
+{% block title %}Drugs.com | Know More. Be Sure.{% endblock %}
+{% from "_pill_svg.html" import render_pill %}
+{% block content %}
+
+<!-- Hero -->
+<div class="hero-section">
+  <h1>Know more. Be sure.</h1>
+  <p class="hero-sub">Drug and health information, from pharmacists you can trust.</p>
+  <form action="{{ url_for('search') }}" method="get" class="hero-search-form" autocomplete="off">
+    <div class="hero-search-wrap">
+      <input class="hero-search-input" type="search" name="q" id="hero-search-input"
+             placeholder="Enter a drug name, condition, or imprint"
+             autocomplete="off" aria-label="Search drugs, conditions, or imprints">
+      <button class="hero-search-btn" type="submit" aria-label="Search">
+        <svg class="is-227" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" stroke-width="1.8"/><line x1="12.9" y1="12.9" x2="17" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span class="is-228">Search</span>
+      </button>
+      <div class="hero-autocomplete search-autocomplete" id="hero-autocomplete" hidden></div>
+    </div>
+  </form>
+  <script>
+  (function(){
+    var input = document.getElementById('hero-search-input');
+    var box = document.getElementById('hero-autocomplete');
+    if (!input || !box) return;
+    var timer = null, items = [], active = -1;
+    function hide(){ box.hidden = true; box.innerHTML = ''; items = []; active = -1; }
+    function escapeHtml(s){
+      return String(s).replace(/[&<>"']/g, function(c){
+        return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+      });
+    }
+    function groupLabel(t){ return t === 'condition' ? 'Conditions' : 'Drugs'; }
+    function iconFor(t){ return t === 'condition' ? '\u{1F3E5}' : '\u{1F48A}'; }
+    function setActive(i){
+      var nodes = box.querySelectorAll('.autocomplete-item');
+      nodes.forEach(function(n){ n.classList.remove('active'); });
+      active = i;
+      if (i >= 0 && i < nodes.length) nodes[i].classList.add('active');
+    }
+    function render(data){
+      items = data || [];
+      if (!items.length){ hide(); return; }
+      var groups = {}, order = [];
+      items.forEach(function(r){
+        var g = r.type === 'condition' ? 'condition' : 'drug';
+        if (!groups[g]){ groups[g] = []; order.push(g); }
+        groups[g].push(r);
+      });
+      var html = '', idx = 0, reordered = [];
+      order.forEach(function(g){
+        html += '<div class="autocomplete-group-header">' + groupLabel(g) + '</div>';
+        groups[g].forEach(function(r){
+          html += '<div class="autocomplete-item" data-idx="' + idx + '" data-url="' + r.url + '">'
+                + '<span class="autocomplete-icon">' + iconFor(r.type) + '</span>'
+                + '<span class="autocomplete-label">' + escapeHtml(r.label) + '</span>'
+                + '</div>';
+          reordered.push(r); idx++;
+        });
+      });
+      items = reordered;
+      box.innerHTML = html;
+      box.hidden = false;
+      active = -1;
+      Array.prototype.forEach.call(box.querySelectorAll('.autocomplete-item'), function(el){
+        el.addEventListener('mousedown', function(e){ e.preventDefault(); window.location.href = el.getAttribute('data-url'); });
+        el.addEventListener('mouseenter', function(){ setActive(parseInt(el.getAttribute('data-idx'), 10)); });
+      });
+    }
+    function fetchSuggestions(){
+      var q = input.value.trim();
+      if (q.length < 2){ hide(); return; }
+      fetch('/api/autocomplete?q=' + encodeURIComponent(q))
+        .then(function(r){ return r.json(); }).then(render).catch(hide);
+    }
+    input.addEventListener('input', function(){ if (timer) clearTimeout(timer); timer = setTimeout(fetchSuggestions, 180); });
+    input.addEventListener('keydown', function(e){
+      if (box.hidden || !items.length) return;
+      if (e.key === 'ArrowDown'){ e.preventDefault(); setActive((active + 1) % items.length); }
+      else if (e.key === 'ArrowUp'){ e.preventDefault(); setActive((active - 1 + items.length) % items.length); }
+      else if (e.key === 'Enter' && active >= 0){ e.preventDefault(); window.location.href = items[active].url; }
+      else if (e.key === 'Escape'){ hide(); }
+    });
+    document.addEventListener('click', function(e){ if (!box.contains(e.target) && e.target !== input) hide(); });
+  })();
+  </script>
+  <p class="hero-popular">
+    <strong>Popular searches:</strong>
+    <a href="{{ url_for('search') }}?q=ibuprofen">ibuprofen</a> &middot;
+    <a href="{{ url_for('search') }}?q=acetaminophen">acetaminophen</a> &middot;
+    <a href="{{ url_for('search') }}?q=metformin">metformin</a> &middot;
+    <a href="{{ url_for('search') }}?q=lisinopril">lisinopril</a>
+  </p>
+  <p class="hero-trending">
+    <strong>Trending:</strong>
+    {% for d in trending[:6] %}
+      <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>{% if not loop.last %},{% endif %}
+    {% endfor %}
+  </p>
+</div>
+
+<div class="az-quicknav is-229">
+  <span class="is-230">Browse A-Z:</span>
+  {% for L in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}
+    <a class="is-231" href="{{ url_for('drug_az') }}?letter={{ L }}">{{ L }}</a>
+  {% endfor %}
+  <a class="is-231" href="{{ url_for('drug_az') }}?letter=0-9">0-9</a>
+</div>
+
+<div class="container">
+  <section class="quick-browse-section">
+    <h2 class="quick-browse-title">Popular searches</h2>
+    <p class="quick-browse-sub">Jump straight to the most-searched medications on Drugs.com.</p>
+    <div class="quick-browse-chips">
+      {% for name in ['ibuprofen','acetaminophen','metformin','lisinopril','atorvastatin','amlodipine','omeprazole','gabapentin','sertraline','levothyroxine','amoxicillin','prednisone'] %}
+        <a class="quick-chip" href="{{ url_for('search') }}?q={{ name }}">{{ name|capitalize }}</a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+
+<!-- Feature icons -->
+<div class="feature-carousel-wrap">
+  <button class="carousel-btn carousel-prev" onclick="scrollCarousel(-1)" aria-label="Previous">&#8249;</button>
+  <div class="feature-icons" id="featureCarousel">
+    <a class="feature-icon-item" href="{{ url_for('my_med_list') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="4" x2="9" y2="20"/><circle cx="6" cy="13.5" r="0.8" fill="currentColor"/><line x1="9" y1="13.5" x2="18" y2="13.5"/><circle cx="6" cy="17" r="0.8" fill="currentColor"/><line x1="9" y1="17" x2="18" y2="17"/></svg>
+      </div>
+      My Med List
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('pill_identifier') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><circle cx="11" cy="11" r="3.5"/><line x1="16.2" y1="16.2" x2="21" y2="21"/></svg>
+      </div>
+      Pill Identifier
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('interaction_checker') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><circle cx="12" cy="15.5" r="0.8" fill="currentColor"/></svg>
+      </div>
+      Drug Interaction Checker
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('drug_az') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="17" y2="13"/><line x1="7" y1="17" x2="13" y2="17"/></svg>
+      </div>
+      Drugs &amp; Medications
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('symptom_checker') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 12h6M9 16h6M9 8h3"/><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M16 3v5h5"/></svg>
+      </div>
+      Symptom Checker
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('side_effects_page') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 3"/></svg>
+      </div>
+      Side Effects
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('conditions_list') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+      </div>
+      Conditions
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('compare_drugs') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 3H5a2 2 0 00-2 2v14a2 2 0 002 2h4M15 3h4a2 2 0 012 2v14a2 2 0 01-2 2h-4M12 3v18M9 8l-3 4 3 4M15 8l3 4-3 4"/></svg>
+      </div>
+      Compare Drugs
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('news_category', category='fda-alerts') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      </div>
+      FDA Alerts
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('drug_prices', slug='ibuprofen') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+      </div>
+      Price Guide
+    </a>
+    <a class="feature-icon-item" href="{{ url_for('pro_edition') }}">
+      <div class="feature-icon-circle">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 10-16 0"/><path d="M12 11v6M9 16h6"/></svg>
+      </div>
+      Health Professionals
+    </a>
+  </div>
+  <button class="carousel-btn carousel-next" onclick="scrollCarousel(1)" aria-label="Next">&#8250;</button>
+</div>
+<script>
+function scrollCarousel(dir) {
+    const c = document.getElementById('featureCarousel');
+    c.scrollBy({ left: dir * 200, behavior: 'smooth' });
+}
+</script>
+
+<!-- Browse by Health Category -->
+<div class="container">
+  <section class="health-category-section">
+    <h2>Browse by Health Category</h2>
+    <p class="health-category-sub">Find medications and treatment information organized by the conditions they treat.</p>
+    <div class="health-category-grid">
+      <a class="health-category-card hc-pain" href="{{ url_for('search') }}?q=pain">
+        <span class="hc-icon">&#9889;</span>
+        <span class="hc-name">Pain Relief</span>
+        <span class="hc-desc">NSAIDs, analgesics, and prescription pain management</span>
+      </a>
+      <a class="health-category-card hc-antibiotics" href="{{ url_for('search') }}?q=antibiotic">
+        <span class="hc-icon">&#9763;</span>
+        <span class="hc-name">Antibiotics</span>
+        <span class="hc-desc">Treatments for bacterial infections</span>
+      </a>
+      <a class="health-category-card hc-heart" href="{{ url_for('search') }}?q=blood+pressure">
+        <span class="hc-icon">&#9829;</span>
+        <span class="hc-name">Heart &amp; Blood Pressure</span>
+        <span class="hc-desc">Hypertension, cholesterol, and cardiac care</span>
+      </a>
+      <a class="health-category-card hc-mental" href="{{ url_for('search') }}?q=depression">
+        <span class="hc-icon">&#9788;</span>
+        <span class="hc-name">Mental Health</span>
+        <span class="hc-desc">Depression, anxiety, and mood disorders</span>
+      </a>
+      <a class="health-category-card hc-diabetes" href="{{ url_for('search') }}?q=diabetes">
+        <span class="hc-icon">&#127852;</span>
+        <span class="hc-name">Diabetes</span>
+        <span class="hc-desc">Blood-sugar control and insulin therapies</span>
+      </a>
+      <a class="health-category-card hc-womens" href="{{ url_for('search') }}?q=women">
+        <span class="hc-icon">&#9792;</span>
+        <span class="hc-name">Women's Health</span>
+        <span class="hc-desc">Contraception, hormone therapy, and more</span>
+      </a>
+      <a class="health-category-card hc-sleep" href="{{ url_for('search') }}?q=insomnia">
+        <span class="hc-icon">&#9790;</span>
+        <span class="hc-name">Sleep</span>
+        <span class="hc-desc">Insomnia treatments and sleep aids</span>
+      </a>
+      <a class="health-category-card hc-vitamins" href="{{ url_for('search') }}?q=vitamin">
+        <span class="hc-icon">&#9728;</span>
+        <span class="hc-name">Vitamins &amp; Supplements</span>
+        <span class="hc-desc">Nutritional supplements and OTC vitamins</span>
+      </a>
+    </div>
+  </section>
+</div>
+
+<!-- Drug Images -->
+{% if image_samples %}
+<div class="container">
+  <div class="home-row">
+    <div class="is-232">
+      <h2 class="is-071">Drug Images</h2>
+      <a class="is-233" href="{{ url_for('pill_identifier') }}">View all images &rsaquo;</a>
+    </div>
+    <div class="is-234">
+      {% for d, img in image_samples %}
+      <a class="is-235" href="{{ url_for('drug_images', slug=d.slug) }}">
+        <div class="is-236-wrap">
+          {{ render_pill('home-img-' ~ loop.index, img.shape or 'oval', img.color or 'white', img.imprint or '') }}
+        </div>
+        <div class="is-237">{{ d.generic_name|capitalize }}</div>
+        {% if img.shape or img.color %}
+        <div class="muted is-238">
+          {{ img.color or '' }}{% if img.color and img.shape %}, {% endif %}{{ img.shape or '' }}
+        </div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Health Topics -->
+{% if health_topics %}
+<div class="container">
+  <div class="home-row">
+    <h2>Browse by Health Topic</h2>
+    <div class="topics-grid">
+      {% for topic in health_topics %}
+      <a href="{{ url_for('condition_page', slug=topic.slug) }}" class="topic-card">
+        <span class="topic-name">{{ topic.name }}</span>
+        <span class="topic-drugs muted">{{ topic.drug_count }} drugs</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="container">
+<div class="newsletter-subscribe is-239">
+  <h3 class="is-240">Stay up to date on drug news</h3>
+  <p class="is-241">Subscribe to Drugs.com newsletters for the latest medication news, new drug approvals, alerts and updates.</p>
+  <form class="is-242" action="{{ url_for('newsletter_subscribe') }}" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="lists" value="general_updates">
+    <input class="is-243" type="email" name="email" placeholder="Enter your email address" required maxlength="254">
+    <button type="submit" class="btn btn-primary is-244">Subscribe</button>
+  </form>
+  <p class="is-245">Drugs.com will never sell or share your email address.</p>
+</div>
+</div>
+
+<!-- Browse section: A-Z + Browse by Site Section -->
+<div class="container">
+  {% if fda_news %}
+  <div class="home-row fda-alerts-strip">
+    <h2><span class="fda-badge">FDA</span> Recent Alerts</h2>
+    <ul>
+      {% for a in fda_news %}
+      <li><a href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a> <span class="muted">{{ a.published_at.strftime('%b %d') }}</span></li>
+      {% endfor %}
+    </ul>
+    <a href="{{ url_for('news_index') }}">View all FDA Alerts &rarr;</a>
+  </div>
+  {% endif %}
+
+  <div class="home-browse-grid is-246">
+    <!-- Left: Browse Drugs -->
+    <div>
+      <div class="browse-panel-title">Browse by</div>
+      <div class="browse-panel-tabs" id="homeBrowseTabs">
+        <button type="button" class="browse-tab active" data-target="browse-panel-drugs">Drugs A-Z</button>
+        <button type="button" class="browse-tab" data-target="browse-panel-conditions">Conditions</button>
+        <button type="button" class="browse-tab" data-target="browse-panel-classes">Drug Classes</button>
+        <button type="button" class="browse-tab" data-target="browse-panel-symptoms">Symptoms</button>
+      </div>
+
+      <div class="browse-panel-content" id="browse-panel-drugs">
+        <div class="letter-grid is-247">
+          {% for L in ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','0-9'] %}
+            <a class="letter-btn letter-btn-sm" href="{{ url_for('drug_az') }}?letter={{ L }}">{{ L }}</a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="browse-panel-content" id="browse-panel-conditions" style="display:none">
+        <div class="topics-grid">
+          {% for c in top_conditions %}
+            <a href="{{ url_for('condition_page', slug=c.slug) }}" class="topic-card">
+              <span class="topic-name">{{ c.name }}</span>
+              {% if c.drug_count %}<span class="topic-drugs muted">{{ c.drug_count }} drugs</span>{% endif %}
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="browse-panel-content" id="browse-panel-classes" style="display:none">
+        <div class="topics-grid">
+          {% for c in top_drug_classes %}
+            <a href="{{ url_for('drug_class_page', slug=c.slug) }}" class="topic-card">
+              <span class="topic-name">{{ c.name }}</span>
+              <span class="topic-drugs muted">{{ c.drug_count_val }} drugs</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="browse-panel-content" id="browse-panel-symptoms" style="display:none">
+        <div class="topics-grid">
+          {% for s in top_symptoms %}
+            <a href="{{ url_for('symptom_checker') }}?symptom={{ s }}" class="topic-card">
+              <span class="topic-name">{{ s }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+
+      <div class="browse-footer">
+        Browse A-Z:
+        <a href="{{ url_for('drug_az') }}">drugs</a>,
+        <a href="{{ url_for('conditions_list') }}">conditions</a>,
+        <a href="{{ url_for('drug_classes_list') }}">drug classes</a>,
+        <a href="{{ url_for('side_effects_page') }}">symptoms</a>
+      </div>
+    </div>
+    <script>
+    (function () {
+      var tabs = document.querySelectorAll('#homeBrowseTabs .browse-tab');
+      tabs.forEach(function (tab) {
+        tab.addEventListener('click', function () {
+          var target = tab.getAttribute('data-target');
+          tabs.forEach(function (t) { t.classList.remove('active'); });
+          tab.classList.add('active');
+          document.querySelectorAll('.browse-panel-content').forEach(function (p) {
+            p.style.display = (p.id === target) ? '' : 'none';
+          });
+        });
+      });
+    })();
+    </script>
+
+    <!-- Right: Drug Information rail -->
+    <div>
+      <div class="browse-panel-title">Drug Information</div>
+      <div class="site-section-panel">
+        <ul>
+          <li><a href="{{ url_for('drug_az') }}">A to Z Drug List</a></li>
+          <li><a href="{{ url_for('drug_classes_list') }}">Drugs by Class</a></li>
+          <li><a href="{{ url_for('search') }}?q=dosage">Dosage</a></li>
+          <li><a href="{{ url_for('side_effects_page') }}">Side Effects</a></li>
+          <li><a href="{{ url_for('search') }}?q=pregnancy">Pregnancy Warnings</a></li>
+          <li><a href="{{ url_for('search') }}?q=OTC&availability=OTC">OTC Drugs</a></li>
+          <li><a href="{{ url_for('search') }}?q=generic">Generic Drugs</a></li>
+          <li><a href="{{ url_for('conditions_list') }}">Conditions A-Z</a></li>
+        </ul>
+        <div class="browse-panel-title" style="margin-top:12px">Tools</div>
+        <ul>
+          <li><a href="{{ url_for('interaction_checker') }}">Interaction Checker</a></li>
+          <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+          <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+          <li><a href="{{ url_for('my_med_list') }}">Medication Record</a></li>
+          <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+        </ul>
+        <div class="browse-panel-title" style="margin-top:12px">News &amp; Alerts</div>
+        <ul>
+          <li><a href="{{ url_for('news_index') }}">Medical News</a></li>
+          <li><a href="{{ url_for('news_category', category='clinical-trials') }}">Clinical Trials</a></li>
+          <li><a href="{{ url_for('news_category', category='fda-alerts') }}">FDA Drug Alerts</a></li>
+          <li><a href="{{ url_for('news_category', category='new-drug-approvals') }}">New FDA Approvals</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- Featured drugs -->
+  <div class="home-row">
+    <h2>Featured drugs</h2>
+    <p class="muted featured-drugs-sub">Popular medications with pill images, brand names, and availability.</p>
+    <div class="card-grid featured-drugs-grid">
+      {% for d in featured %}
+        <a class="drug-card featured-drug-card" href="{{ url_for('drug_detail', slug=d.slug) }}">
+          <div class="featured-drug-pill">
+            {% if d.slug|pill_image_exists %}
+              <img src="{{ url_for('static', filename='images/pills/' + d.slug + '.jpg') }}"
+                   alt="{{ d.generic_name|capitalize }} pill" class="featured-drug-pill-img" loading="lazy">
+            {% elif d.images and d.images|length > 0 %}
+              {% set img0 = d.images[0] %}
+              {{ render_pill('feat-home-' + d.slug, img0.shape or 'oval', img0.color or 'white', img0.imprint or d.slug[:4].upper()) }}
+            {% else %}
+              {{ render_pill('feat-home-' + d.slug, 'oval', 'white', d.slug[:4].upper()) }}
+            {% endif %}
+          </div>
+          <h3 class="featured-drug-name">{{ d.generic_name|capitalize }}</h3>
+          <p class="muted featured-drug-brands">{{ d.brand_names|join(', ') if d.brand_names else 'Generic' }}</p>
+          <p class="featured-drug-meta">
+            <span class="avail-badge {% if d.availability == 'Rx' %}avail-rx{% elif d.availability == 'OTC' %}avail-otc{% else %}avail-both{% endif %}">{{ d.availability }}</span>
+          </p>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- 3-col layout: left nav | news | right approvals (matches real drugs.com) -->
+  <div class="home-3col">
+    <!-- Left sidebar navigation -->
+    <aside class="home-left-nav">
+      <div class="home-left-nav-section">
+        <h3 class="home-left-nav-head">Find a Drug</h3>
+        <ul>
+          <li><a href="{{ url_for('drug_az') }}">Drugs A to Z</a></li>
+          <li><a href="{{ url_for('drug_classes_list') }}">Drug Classes</a></li>
+          <li><a href="{{ url_for('search') }}?q=generic">Generic Drugs</a></li>
+          <li><a href="{{ url_for('search') }}?q=OTC&availability=OTC">OTC Drugs</a></li>
+        </ul>
+      </div>
+      <div class="home-left-nav-section">
+        <h3 class="home-left-nav-head">Drug Information</h3>
+        <ul>
+          <li><a href="{{ url_for('side_effects_page') }}">Side Effects A-Z</a></li>
+          <li><a href="{{ url_for('search') }}?q=dosage">Dosage Guidelines</a></li>
+          <li><a href="{{ url_for('interaction_checker') }}">Drug Interactions</a></li>
+          <li><a href="{{ url_for('search') }}?q=pregnancy">Pregnancy Warnings</a></li>
+          <li><a href="{{ url_for('warnings_index') }}">Black Box Warnings</a></li>
+        </ul>
+      </div>
+      <div class="home-left-nav-section">
+        <h3 class="home-left-nav-head">Tools</h3>
+        <ul>
+          <li><a href="{{ url_for('pill_identifier') }}">Identify a Pill</a></li>
+          <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+          <li><a href="{{ url_for('my_med_list') }}">Medication Record</a></li>
+          <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+        </ul>
+      </div>
+      <div class="home-left-nav-section">
+        <h3 class="home-left-nav-head">Browse by Condition</h3>
+        <ul>
+          {% for c in top_conditions[:8] %}
+            <li><a href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a></li>
+          {% endfor %}
+          <li><a href="{{ url_for('conditions_list') }}">More conditions &rsaquo;</a></li>
+        </ul>
+      </div>
+      <div class="home-left-nav-section">
+        <h3 class="home-left-nav-head">Professionals</h3>
+        <ul>
+          <li><a href="{{ url_for('pro_edition') }}">Pro Edition</a></li>
+          <li><a href="{{ url_for('drug_az') }}">Prescribing Information</a></li>
+        </ul>
+      </div>
+    </aside>
+
+    <!-- Center: news feed -->
+    <div class="home-news-feed">
+      <h2 class="is-249">Latest Medical News</h2>
+      <ul class="news-list news-list--dense">
+        {% for a in news %}
+          <li>
+            <div class="news-meta">
+              <span class="badge news-badge-sm">{{ a.category }}</span>
+              <span class="muted">{{ a.published_at.strftime('%B %d, %Y') }}</span>
+            </div>
+            <h3><a href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a></h3>
+            <p class="muted">{{ a.body[:160] }}{% if a.body|length > 160 %}...{% endif %}</p>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="is-250"><a href="{{ url_for('news_index') }}">Read more medical news &rsaquo;</a></p>
+    </div>
+
+    <!-- Right sidebar: drug approvals + newsletter -->
+    <aside class="home-right-sidebar">
+      {% if new_approvals %}
+      <div class="home-right-box">
+        <h3 class="home-right-box-head">New Drug Approvals</h3>
+        <p class="muted">Stay current on the latest FDA drug approvals.</p>
+        <a class="home-right-more" href="{{ url_for('news_category', category='new-drug-approvals') }}">View all approvals &rsaquo;</a>
+      </div>
+      {% endif %}
+
+      <div class="home-right-box">
+        <h3 class="home-right-box-head">Browse Drug Classes</h3>
+        <ul class="home-class-list">
+          {% for c in classes[:12] %}
+            <li><a href="{{ url_for('drug_class_page', slug=c.slug) }}">{{ c.name }}</a></li>
+          {% endfor %}
+          <li><a href="{{ url_for('drug_classes_list') }}">All classes &rsaquo;</a></li>
+        </ul>
+      </div>
+
+      <div class="home-right-box home-newsletter-box">
+        <h3 class="home-right-box-head">Subscribe to our newsletters</h3>
+        <p class="muted" style="font-size:0.82rem;">FDA alerts, drug approvals, and health news.</p>
+        <form action="{{ url_for('newsletter_subscribe') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="lists" value="general_updates">
+          <input type="email" name="email" placeholder="Enter your email" class="newsletter-email-input" style="width:100%;margin-bottom:6px;" required maxlength="254">
+          <button type="submit" class="btn btn-primary" style="width:100%;font-size:0.85rem;">Subscribe</button>
+        </form>
+      </div>
+    </aside>
+  </div>
+
+  <!-- Popular drug searches / Top drugs -->
+  <div class="home-row">
+    <h2>Popular Drug Searches</h2>
+    <p class="muted">Most-searched medications on Drugs.com.</p>
+    <div class="popular-searches popular-searches--wide">
+      {% set top_drugs = ['acetaminophen','adderall','alprazolam','amoxicillin','atorvastatin','azithromycin','bupropion','buspirone','citalopram','clonazepam','cyclobenzaprine','doxycycline','duloxetine','escitalopram','fluoxetine','gabapentin','hydrochlorothiazide','hydroxyzine','ibuprofen','levothyroxine','lisinopril','loratadine','lorazepam','losartan','metformin','metoprolol','metronidazole','naproxen','omeprazole','oxycodone','pantoprazole','prednisone','sertraline','sildenafil','simvastatin','trazodone','trimethoprim','warfarin','zolpidem','amitriptyline','amlodipine','atenolol','carvedilol','cetirizine','clindamycin','clopidogrel','diazepam','diclofenac','diltiazem','doxazosin','enalapril','famotidine','finasteride','fluticasone','furosemide','glipizide','hydrocodone','insulin glargine','levofloxacin','meloxicam','memantine','methylphenidate','metoclopramide','mirtazapine','montelukast','morphine','naltrexone','nifedipine','nitrofurantoin','paroxetine','quetiapine','ramipril','ranitidine','rosuvastatin','semaglutide','spironolactone','tamsulosin','tirzepatide','topiramate','tramadol','valacyclovir','venlafaxine','verapamil'] %}
+      {% for name in top_drugs %}
+        <a href="{{ url_for('drug_detail', slug=name|lower|replace(' ','-')) }}">{{ name|capitalize }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="newsletter-strip">
+  <div class="container newsletter-inner">
+    <div>
+      <h3>Stay up to date on drug news</h3>
+      <p class="muted">Get FDA alerts, drug approvals, and health news delivered to your inbox.</p>
+    </div>
+    <form action="{{ url_for('newsletter_subscribe') }}" method="post" class="newsletter-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="lists" value="general_updates">
+      <input type="email" name="email" placeholder="Enter your email address" class="newsletter-input" maxlength="254" required>
+      <button type="submit" class="btn btn-primary">Subscribe</button>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

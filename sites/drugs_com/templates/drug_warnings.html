@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} Warnings - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumb-row">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+    <span>Warnings</span>
+  </nav>
+</div>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-detail">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings" class="active" aria-current="page">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+  <header class="drug-header">
+    <h1>{{ drug.generic_name|capitalize }} Warnings</h1>
+    <p class="reviewer-line">
+      <span>Medically reviewed by {{ drug.reviewer_name }}, {{ drug.reviewer_credential }}. Last updated on {{ drug.last_updated.strftime('%b %d, %Y') }}.</span>
+    </p>
+    {% if drug.drug_class %}
+    <p><strong>Drug class:</strong>
+      <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
+    </p>
+    {% endif %}
+  </header>
+
+  {% if boxed_warning %}
+  <section class="is-201">
+    <h2 class="is-202">Boxed Warning (Black Box Warning)</h2>
+    <p class="is-071">{{ boxed_warning }}</p>
+    <p class="muted is-203">A boxed warning is the strongest warning the FDA requires, alerting prescribers and patients to risks of serious or life-threatening adverse effects.</p>
+  </section>
+  {% endif %}
+
+  <aside class="warning-callout-urgent">
+    <h2 class="warning-callout-urgent-title">Seek immediate medical help</h2>
+    <p>Call your doctor or emergency services right away if you experience any of the following while taking {{ drug.generic_name }}:</p>
+    <ul>
+      <li>Signs of a severe allergic reaction: hives, swelling of the face, lips, tongue, or throat, difficulty breathing.</li>
+      <li>Chest pain, irregular heartbeat, fainting, or sudden severe headache.</li>
+      <li>Unusual bleeding or bruising, black or bloody stools, vomiting blood.</li>
+      <li>Severe skin reaction: blistering, peeling, or a red/purple rash that spreads.</li>
+      <li>Confusion, slurred speech, seizures, or loss of consciousness.</li>
+    </ul>
+    <p class="muted warning-callout-urgent-note">In the U.S., dial 911 or go to the nearest emergency room. Outside the U.S., contact your local emergency number.</p>
+  </aside>
+
+  {% if warning_cards %}
+    {% for name, items in warning_cards %}
+    {% set is_before = name == 'Before taking this medicine' %}
+    <section class="{% if is_before %}warning-before-taking{% else %}is-204{% endif %}">
+      <h2 class="is-205">{{ name }}</h2>
+      {% if items|length == 1 %}
+        <p class="is-071">{{ items[0] }}</p>
+      {% else %}
+        <ul class="is-206">
+          {% for item in items %}<li class="is-207">{{ item }}</li>{% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+    {% endfor %}
+  {% elif not boxed_warning %}
+    <section>
+      <h2>Warnings</h2>
+      <p>No specific warnings have been recorded for {{ drug.generic_name }}. Always consult your healthcare provider before starting or stopping any medication.</p>
+    </section>
+  {% endif %}
+
+  <section class="is-122">
+    <h2>General precautions</h2>
+    <ul>
+      <li>Tell your doctor about all medical conditions, including kidney, liver, or heart problems.</li>
+      <li>Disclose all medications you take, including prescription drugs, over-the-counter products, vitamins, and herbal supplements.</li>
+      <li>Inform your doctor if you are pregnant, planning to become pregnant, or breastfeeding.</li>
+      <li>Do not stop taking {{ drug.generic_name }} abruptly unless directed by your prescriber.</li>
+      <li>Store the medication as directed and keep out of reach of children.</li>
+    </ul>
+  </section>
+
+  <section class="is-075">
+    <h2 class="is-208">Related information for {{ drug.generic_name|capitalize }}</h2>
+    <ul class="is-206">
+      <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} side effects</a></li>
+      <li><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} drug interactions</a></li>
+      <li><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} pregnancy &amp; lactation</a></li>
+      <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} dosage</a></li>
+    </ul>
+  </section>
+
+  <p class="is-030"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to {{ drug.generic_name|capitalize }} overview</a></p>
+</article>
+</div>
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

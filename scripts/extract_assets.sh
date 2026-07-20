@@ -42,7 +42,15 @@ for site_dir in sites/*/; do
     fi
 
     out="$TARGET/$site.tar.gz"
-    tar -czf "$out" -C sites "${members[@]}"
+    # Drop any macOS junk already on disk, then pack with COPYFILE_DISABLE=1 so
+    # Apple's bsdtar does not synthesize ._* AppleDouble sidecars from extended
+    # attributes (e.g. com.apple.provenance on Sonoma+). GNU tar ignores the env
+    # var, so this stays correct on Linux. Keeps every <site>.tar.gz free of
+    # ._* / .DS_Store cruft regardless of which machine packs it.
+    for m in "${members[@]}"; do
+        find "sites/$m" \( -name '._*' -o -name '.DS_Store' \) -delete 2>/dev/null || true
+    done
+    COPYFILE_DISABLE=1 tar -czf "$out" -C sites "${members[@]}"
     sz=$(du -sh "$out" 2>/dev/null | cut -f1)
     printf "  %-22s -> %-30s %s\n" "$site" "$site.tar.gz" "$sz"
     count=$((count + 1))

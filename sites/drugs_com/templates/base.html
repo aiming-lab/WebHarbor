@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}{{ site_name }} | {{ site_tagline }}{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <!-- Utility bar -->
+  <div class="utility-bar">
+    <div class="container utility-bar-inner">
+      <div class="utility-bar-left">
+        <a href="{{ url_for('apps_page') }}" class="utility-link">Apps</a>
+        <span class="utility-sep">|</span>
+        <a href="{{ url_for('newsletter') }}" class="utility-link">Newsletter</a>
+        <span class="utility-sep">|</span>
+        <a href="{{ url_for('news_index') }}" class="utility-link">Medical News</a>
+      </div>
+      <div class="utility-bar-right">
+        <a href="{{ url_for('newsletter') }}" class="utility-link">Subscribe</a>
+        <span class="utility-sep">|</span>
+        <a href="{{ url_for('help_page') }}" class="utility-link">Help</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top bar: logo + search + account -->
+  <div class="header-top">
+    <div class="container header-top-inner">
+      <a href="{{ url_for('index') }}" class="brand">
+        <svg class="brand-icon" width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <ellipse cx="22" cy="22" rx="20" ry="20" fill="none"/>
+          <!-- pill shape rotated -->
+          <ellipse cx="22" cy="22" rx="18" ry="9" fill="none" stroke="#e05c8b" stroke-width="2.5" transform="rotate(-45 22 22)"/>
+          <line x1="8.5" y1="8.5" x2="35.5" y2="35.5" stroke="#e05c8b" stroke-width="2.5"/>
+          <ellipse cx="22" cy="22" rx="18" ry="9" fill="none" stroke="#3b82c4" stroke-width="2.5" transform="rotate(45 22 22)"/>
+          <line x1="35.5" y1="8.5" x2="8.5" y2="35.5" stroke="#3b82c4" stroke-width="2.5"/>
+        </svg>
+        <div class="brand-text">
+          <span class="brand-logo">Drugs<span class="dot">.</span>com</span>
+          <span class="brand-tagline">Know more. Be sure.</span>
+        </div>
+      </a>
+      <div class="header-search-wrap">
+        <form action="{{ url_for('search') }}" method="get" class="header-search-form" autocomplete="off">
+          <div class="header-search-inner">
+            <input type="search" name="q" placeholder="Enter a drug name, condition, pill imprint, etc." value="{{ request.args.get('q','') }}" class="header-search-input" id="header-search-input" autocomplete="off">
+            <button type="submit" class="header-search-btn" aria-label="Search">
+              <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" stroke-width="1.8"/><line x1="12.9" y1="12.9" x2="17" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            </button>
+            <div class="search-autocomplete" id="search-autocomplete" hidden></div>
+          </div>
+        </form>
+      </div>
+      <div class="header-actions">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}" class="header-user-btn" title="{{ current_user.username }}">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.8"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          </a>
+          <form method="post" action="{{ url_for('logout') }}" class="header-logout-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="header-signin-btn header-logout-btn">Sign out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('register') }}" class="header-register-btn">Register</a>
+          <a href="{{ url_for('login') }}" class="header-signin-btn">Sign in</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- A-Z browse strip -->
+  <div class="az-strip">
+    <div class="container az-strip-inner">
+      <span class="az-strip-label">Browse medications:</span>
+      {% for L in ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','0-9'] %}
+        <a href="{{ url_for('drug_az') }}?letter={{ L }}" class="az-strip-link">{{ L }}</a>
+      {% endfor %}
+      <a href="{{ url_for('search') }}" class="az-strip-adv">Advanced Search</a>
+    </div>
+  </div>
+
+  <!-- Main nav -->
+  <nav class="main-nav">
+    <div class="container nav-inner">
+      <a href="{{ url_for('drug_az') }}" class="nav-link">Drugs A-Z</a>
+      <a href="{{ url_for('pill_identifier') }}" class="nav-link">Pill Identifier</a>
+      <a href="{{ url_for('interaction_checker') }}" class="nav-link">Drug Interaction Checker</a>
+      <a href="{{ url_for('compare_drugs') }}" class="nav-link">Compare Drugs</a>
+      <a href="{{ url_for('news_index') }}" class="nav-link">News</a>
+      <a href="{{ url_for('pro_edition') }}" class="nav-link">Pro Edition</a>
+      <div class="nav-more-wrap">
+        <a href="{{ url_for('conditions_list') }}" class="nav-link nav-more-btn">More...</a>
+        <div class="nav-dropdown nav-dropdown-wide is-031">
+          <div class="is-032">
+            <div>
+              <div class="is-033">Browse</div>
+              <a href="{{ url_for('conditions_list') }}">Conditions A-Z</a>
+              <a href="{{ url_for('drug_classes_list') }}">Drug Classes</a>
+              <a href="{{ url_for('drug_az') }}">Drugs A-Z</a>
+              <a href="{{ url_for('news_category', category='fda-alerts') }}">FDA Alerts</a>
+            </div>
+            <div>
+              <div class="is-033">Checkers &amp; Tools</div>
+              <a href="{{ url_for('symptom_checker') }}">Symptom Checker</a>
+              <a href="{{ url_for('side_effects_page') }}">Side Effects Checker</a>
+              <a href="{{ url_for('warnings_index') }}">Drug Warnings</a>
+              <a href="{{ url_for('dosage_guide') }}">Dosage Guide</a>
+              <a href="{{ url_for('pregnancy_safety') }}">Pregnancy Safety</a>
+              <a href="{{ url_for('emergency_info') }}">Emergency Info</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </nav>
+</header>
+
+<main class="site-main">
+  <div class="container">
+    {% with msgs = get_flashed_messages(with_categories=true) %}
+      {% if msgs %}
+        <ul class="flash-list">
+          {% for cat, msg in msgs %}
+            <li class="flash flash-{{ cat }}">{{ msg }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% if not_found %}
+    <div class="not-found-page is-034">
+      <nav class="breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Page Not Found</span></nav>
+
+      <div class="is-035">
+        <div class="is-036" aria-hidden="true">404</div>
+        <div>
+          <h1 class="is-037">Page Not Found</h1>
+          <p class="is-038">The page you were looking for could <strong>not be found</strong> or is no longer available. Try a search, or pick one of the popular destinations below.</p>
+        </div>
+      </div>
+
+      <form class="is-039" action="{{ url_for('search') }}" method="get">
+        <div class="is-040">
+          <input class="is-041" type="search" name="q" placeholder="Search drugs, conditions, pill imprints..." autofocus>
+          <button class="is-042" type="submit">Search</button>
+        </div>
+      </form>
+
+      <div class="is-043">
+        <section class="is-044">
+          <h2 class="is-045">Find a Drug</h2>
+          <ul class="is-046">
+            <li><a href="{{ url_for('drug_az') }}">Drugs A-Z Index</a></li>
+            <li><a href="{{ url_for('drug_classes_list') }}">Browse by Drug Class</a></li>
+            <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+            <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+          </ul>
+        </section>
+        <section class="is-047">
+          <h2 class="is-048">Check Safety</h2>
+          <ul class="is-046">
+            <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+            <li><a href="{{ url_for('side_effects_page') }}">Side Effects A-Z</a></li>
+            <li><a href="{{ url_for('warnings_index') }}">Black Box Warnings</a></li>
+            <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+          </ul>
+        </section>
+        <section class="is-049">
+          <h2 class="is-050">Conditions &amp; News</h2>
+          <ul class="is-046">
+            <li><a href="{{ url_for('conditions_list') }}">Conditions A-Z</a></li>
+            <li><a href="{{ url_for('news_index') }}">Latest Medical News</a></li>
+            <li><a href="{{ url_for('news_category', category='fda-alerts') }}">FDA Drug Alerts</a></li>
+            <li><a href="{{ url_for('news_category', category='new-drug-approvals') }}">New Drug Approvals</a></li>
+          </ul>
+        </section>
+      </div>
+
+      {% if popular_drugs %}
+      <section class="is-051">
+        <h2 class="is-052">Popular drugs</h2>
+        <div class="is-053">
+          {% for d in popular_drugs %}
+            <a class="is-054" href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <p class="is-055">
+        Still can't find what you need? Visit the <a href="{{ url_for('sitemap') }}">sitemap</a> or <a href="{{ url_for('contact') }}">contact us</a>.
+      </p>
+    </div>
+    {% endif %}{% endblock %}
+  </div>
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-top">
+    <div class="footer-col">
+      <h4>Company</h4>
+      <ul>
+        <li><a href="{{ url_for('about_page') }}">About</a></li>
+        <li><a href="{{ url_for('about_page') }}">About Drugs.com</a></li>
+        <li><a href="{{ url_for('privacy') }}">Privacy Policy</a></li>
+        <li><a href="{{ url_for('terms') }}">Terms of Use</a></li>
+        <li><a href="{{ url_for('contact') }}">Contact</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Drugs</h4>
+      <ul>
+        <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a></li>
+        <li><a href="{{ url_for('drug_classes_list') }}">Drug Classes</a></li>
+        <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+        <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+        <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Conditions &amp; Care</h4>
+      <ul>
+        <li><a href="{{ url_for('conditions_list') }}">Conditions A-Z</a></li>
+        <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+        <li><a href="{{ url_for('side_effects_page') }}">Drug Side Effects</a></li>
+        <li><a href="{{ url_for('dosage_guide') }}">Dosage Guide</a></li>
+        <li><a href="{{ url_for('pill_identifier') }}">Drug Identifier</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>News</h4>
+      <ul>
+        <li><a href="{{ url_for('news_index') }}">MedNews</a></li>
+        <li><a href="{{ url_for('news_category', category='fda-alerts') }}">FDA Drug Alerts</a></li>
+        <li><a href="{{ url_for('news_category', category='new-drug-approvals') }}">New Drug Approvals</a></li>
+        <li><a href="{{ url_for('news_category', category='clinical-trials') }}">Clinical Trials</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="container footer-bottom">
+    <p class="footer-disclaimer">Drugs.com provides accurate and independent information on more than 24,000 prescription drugs, over-the-counter medicines and natural products. This material is provided for educational purposes only and is not intended for medical advice, diagnosis or treatment. Data sources include Micromedex (updated {{ current_year }}), Cerner Multum™ (updated {{ current_year }}), ASHP (updated {{ current_year }}) and others.</p>
+    <p class="footer-copy">Copyright &copy; 2000-{{ current_year }} Drugs.com. All rights reserved. <a href="{{ url_for('sitemap') }}">Sitemap</a></p>
+  </div>
+</footer>
+<script>
+(function(){
+  var input = document.getElementById('header-search-input');
+  var box = document.getElementById('search-autocomplete');
+  if (!input || !box) return;
+  var timer = null;
+  var items = [];
+  var active = -1;
+
+  function iconFor(type){
+    if (type === 'condition') return '\u{1F3E5}';
+    return '\u{1F48A}';
+  }
+
+  function hide(){
+    box.hidden = true;
+    box.innerHTML = '';
+    items = [];
+    active = -1;
+  }
+
+  function groupLabel(type){
+    if (type === 'condition') return 'Conditions';
+    return 'Drugs';
+  }
+
+  function render(data){
+    items = data || [];
+    if (!items.length){ hide(); return; }
+    // Group items by type bucket (drug/brand -> Drugs, condition -> Conditions)
+    var groups = {};
+    var order = [];
+    items.forEach(function(r){
+      var g = (r.type === 'condition') ? 'condition' : 'drug';
+      if (!groups[g]){ groups[g] = []; order.push(g); }
+      groups[g].push(r);
+    });
+    var html = '';
+    var idx = 0;
+    var reordered = [];
+    order.forEach(function(g){
+      html += '<div class="autocomplete-group-header">'+groupLabel(g)+'</div>';
+      groups[g].forEach(function(r){
+        html += '<div class="autocomplete-item" data-idx="'+idx+'" data-url="'+r.url+'">'
+             + '<span class="autocomplete-icon">'+iconFor(r.type)+'</span>'
+             + '<span class="autocomplete-label">'+escapeHtml(r.label)+'</span>'
+             + '</div>';
+        reordered.push(r);
+        idx++;
+      });
+    });
+    items = reordered;
+    box.innerHTML = html;
+    box.hidden = false;
+    active = -1;
+    Array.prototype.forEach.call(box.querySelectorAll('.autocomplete-item'), function(el){
+      el.addEventListener('mousedown', function(e){
+        e.preventDefault();
+        window.location.href = el.getAttribute('data-url');
+      });
+      el.addEventListener('mouseenter', function(){
+        setActive(parseInt(el.getAttribute('data-idx'), 10));
+      });
+    });
+  }
+
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function setActive(i){
+    var nodes = box.querySelectorAll('.autocomplete-item');
+    nodes.forEach(function(n){ n.classList.remove('active'); });
+    active = i;
+    if (i >= 0 && i < nodes.length){
+      nodes[i].classList.add('active');
+    }
+  }
+
+  function fetchSuggestions(){
+    var q = input.value.trim();
+    if (q.length < 2){ hide(); return; }
+    fetch('/api/autocomplete?q=' + encodeURIComponent(q))
+      .then(function(r){ return r.json(); })
+      .then(render)
+      .catch(function(){ hide(); });
+  }
+
+  input.addEventListener('input', function(){
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(fetchSuggestions, 200);
+  });
+
+  input.addEventListener('keydown', function(e){
+    if (box.hidden || !items.length) return;
+    if (e.key === 'ArrowDown'){
+      e.preventDefault();
+      setActive((active + 1) % items.length);
+    } else if (e.key === 'ArrowUp'){
+      e.preventDefault();
+      setActive((active - 1 + items.length) % items.length);
+    } else if (e.key === 'Enter'){
+      if (active >= 0 && active < items.length){
+        e.preventDefault();
+        window.location.href = items[active].url;
+      }
+    } else if (e.key === 'Escape'){
+      hide();
+    }
+  });
+
+  document.addEventListener('click', function(e){
+    if (!box.contains(e.target) && e.target !== input){
+      hide();
+    }
+  });
+})();
+</script>
+</body>
+</html>

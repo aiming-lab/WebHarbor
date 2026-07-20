@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} Monograph for Professionals - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+  <span>Professional</span>
+</nav>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-pro-monograph">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+  <header class="pro-monograph-header">
+    <span class="pro-monograph-eyebrow">Professional Monograph</span>
+    <h1>{{ drug.generic_name|capitalize }}</h1>
+    {% if drug.brand_names %}
+    <p class="pro-monograph-brands">
+      <strong>Brand names:</strong>
+      {% for bn in drug.brand_names %}<span class="brand-chip">{{ bn }}</span>{% if not loop.last %} {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+    {% if drug.drug_class %}
+    <p class="pro-monograph-class">
+      <strong>Pharmacologic class:</strong>
+      <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
+    </p>
+    {% endif %}
+    <p class="muted pro-monograph-audience">
+      This monograph is intended for healthcare professionals. Patients should refer to the
+      <a href="{{ url_for('drug_detail', slug=drug.slug) }}">consumer information page</a>.
+    </p>
+  </header>
+
+  <section>
+    <h2>Indications and Usage</h2>
+    {{ (drug.uses or 'See full prescribing information.') | format_drug_text | safe }}
+  </section>
+
+  <section>
+    <h2>Dosage and Administration</h2>
+    {{ (drug.dosage or 'See full prescribing information.') | format_drug_text | safe }}
+    <p><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Detailed dosage information &rsaquo;</a></p>
+  </section>
+
+  <section>
+    <h2>Contraindications and Warnings</h2>
+    {{ (drug.warnings or 'See full prescribing information.') | format_drug_text | safe }}
+  </section>
+
+  <section>
+    <h2>Adverse Reactions</h2>
+    {{ (drug.side_effects or 'See full prescribing information.') | format_drug_text | safe }}
+    <p><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Detailed adverse reactions &rsaquo;</a></p>
+  </section>
+
+  <section>
+    <h2>Drug Interactions</h2>
+    {{ (drug.interactions_text or 'See full prescribing information.') | format_drug_text | safe }}
+    <p><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Detailed interactions &rsaquo;</a></p>
+  </section>
+
+  <section>
+    <h2>Mechanism of Action</h2>
+    <p>{{ drug.generic_name|capitalize }} inhibits the isoenzymes cyclooxygenase-1 (COX-1) and cyclooxygenase-2 (COX-2), leading to decreased synthesis of prostaglandins. This results in anti-inflammatory, analgesic, and antipyretic effects. COX-2 inhibition is primarily responsible for the therapeutic efficacy, while COX-1 inhibition contributes to adverse effects on the gastrointestinal tract and platelet aggregation.</p>
+  </section>
+
+  <section>
+    <h2>Pharmacokinetics</h2>
+    <h3>Absorption</h3>
+    <p>Well absorbed orally; peak plasma concentrations occur approximately 1–2 hours after administration of immediate-release formulations. Food may delay but does not reduce absorption.</p>
+    <h3>Distribution</h3>
+    <p>Highly protein-bound (&gt;99%), primarily to albumin. Volume of distribution is approximately 0.1 L/kg. Crosses the blood-brain barrier to a limited extent; crosses the placenta.</p>
+    <h3>Metabolism</h3>
+    <p>Extensively metabolized in the liver, primarily by CYP2C9 and to a lesser extent by CYP2C8. Major metabolites are hydroxylated and carboxylated derivatives, which are pharmacologically inactive.</p>
+    <h3>Elimination</h3>
+    <p>Primarily eliminated renally as metabolites. Plasma elimination half-life is approximately 2 hours. Renal clearance may be reduced in patients with renal impairment.</p>
+  </section>
+
+  <section>
+    <h2>Use in Specific Populations</h2>
+    <p><strong>Pregnancy:</strong>
+      {% if drug.pregnancy_risk %}{{ drug.pregnancy_risk }}.{% else %}Not classified.{% endif %}
+      Use of NSAIDs at 20 weeks gestation or later may cause fetal renal dysfunction leading to oligohydramnios. Avoid at 20 weeks gestation or later.
+      <a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}">Pregnancy and lactation details &rsaquo;</a>
+    </p>
+    <p><strong>Lactation:</strong> Small amounts are excreted into breast milk. The drug is generally considered compatible with breastfeeding, but clinical judgment should be applied.</p>
+    <p><strong>Pediatric use:</strong> Safety and effectiveness have been established in patients 6 months and older. Weight-based dosing is required; use the lowest effective dose for the shortest duration.</p>
+    <p><strong>Geriatric use:</strong> Elderly patients may be at increased risk for serious adverse effects including GI bleeding and renal dysfunction. Use the lowest effective dose; monitor renal function and for GI symptoms.</p>
+    <p><strong>Renal impairment:</strong> Use with caution; dose reduction may be required. Avoid in severe renal impairment unless benefits outweigh risks.</p>
+    <p><strong>Hepatic impairment:</strong> Use with caution. Hepatic metabolism may be impaired; monitor liver enzymes with chronic use.</p>
+    <p><strong>Controlled substance:</strong>
+      {% if drug.csa_schedule and drug.csa_schedule|lower not in ['n/a', 'none', 'not scheduled', ''] %}
+        {{ drug.csa_schedule }}
+      {% else %}
+        Not a controlled substance.
+      {% endif %}
+    </p>
+  </section>
+
+  <section>
+    <h2>Clinical Pharmacology</h2>
+    <p>The pharmacological effects of {{ drug.generic_name }} are attributed to inhibition of prostaglandin synthesis through competitive, reversible inhibition of cyclooxygenase. Prostaglandins are mediators of pain, inflammation, and fever, and their reduction explains the clinical efficacy of NSAIDs.</p>
+    <p>In vitro studies show inhibition of both COX-1 and COX-2 isoenzymes. The ratio of COX-1 to COX-2 inhibitory activity influences the side-effect profile: greater COX-1 inhibition is associated with increased GI adverse effects.</p>
+  </section>
+
+  <section>
+    <h2>Overdosage</h2>
+    <p>Symptoms of overdose may include nausea, vomiting, abdominal pain, drowsiness, dizziness, headache, tinnitus, and CNS depression. Serious toxicity may include metabolic acidosis, renal failure, hepatic dysfunction, and cardiovascular collapse.</p>
+    <p><strong>Management:</strong> Symptomatic and supportive. Activated charcoal may be considered if ingestion is recent and the patient presents within 1–2 hours. Gastric lavage is rarely indicated. Hemodialysis is not effective due to high protein binding. Contact Poison Control (1-800-222-1222) for guidance.</p>
+  </section>
+
+  <p class="muted medical-disclaimer">
+    <strong>Disclaimer:</strong> This professional summary is reference material only and is not a
+    substitute for the full FDA-approved prescribing information.
+  </p>
+
+  <section id="further-information">
+    <h2>Further information</h2>
+    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+    <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com. Version: {{ drug.last_updated.strftime('%m.%y') }}.</p>
+  </section>
+
+  <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>
+</article>
+</div>
+
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

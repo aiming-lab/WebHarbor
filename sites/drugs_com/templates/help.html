@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Help & Support | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="is-090">
+  <nav class="breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Help &amp; Support</span></nav>
+
+  <section class="is-209">
+    <h1 class="is-210">How can we help?</h1>
+    <p class="is-211">Browse FAQs, search drug information, or contact our team.</p>
+    <form class="is-212" action="{{ url_for('search') }}" method="get">
+      <input class="is-213" type="search" name="q" placeholder="Search drugs and conditions..." aria-label="Search drugs and conditions">
+      <button class="is-214" type="submit">Search drug information</button>
+    </form>
+  </section>
+
+  <section class="is-215">
+    <h2 class="is-216">Frequently Asked Questions</h2>
+
+    <details class="is-217" id="account-access" open>
+      <summary class="is-218">I forgot my password. How do I regain access?</summary>
+      <p class="is-219">This offline benchmark mirror does not send password-reset email. For the demo account, use <strong>alice.j@test.com</strong> with <strong>TestPass123!</strong>. To restore all benchmark accounts and data, reset the <code>drugs_com</code> site through the WebHarbor control plane; otherwise, register a new local account.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">How do I search for a drug?</summary>
+      <p class="is-219">Type the brand or generic drug name into the search box at the top of any page. As you type, suggestions appear with matching drugs and conditions. You can also browse alphabetically via the <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> page, or use the A-Z strip in the header.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">What is the drug interaction checker?</summary>
+      <p class="is-219">The <a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a> lets you enter two or more medications and reports known interactions classified by severity (major, moderate, minor). It is an educational tool and does not replace pharmacist or physician review.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">How do I use the pill identifier?</summary>
+      <p class="is-219">Open the <a href="{{ url_for('pill_identifier') }}">Pill Identifier</a> and enter any combination of imprint code, shape, and color from the pill. The tool returns matching tablet or capsule images along with the drug name and dosage form.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">Can I trust Drugs.com information?</summary>
+      <p class="is-219">Our drug monographs are written by licensed pharmacists and reviewed by physicians. Each page lists the medical reviewer and review date. Information should always be confirmed with your healthcare provider, especially for dosing and individual contraindications.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">How do I report a side effect?</summary>
+      <p class="is-219">Suspected adverse drug reactions should be reported to the FDA MedWatch program at 1-800-FDA-1088 or via fda.gov/medwatch. You may also send corrections or comments about our content via our <a href="{{ url_for('contact') }}">Contact page</a>.</p>
+    </details>
+  </section>
+
+  <div class="is-220">
+    <section class="is-221">
+      <h2 class="is-222">Contact Information</h2>
+      <p class="is-223"><strong>Reader services:</strong> <a href="mailto:feedback@drugs.com">feedback@drugs.com</a></p>
+      <p class="is-223"><strong>Editorial corrections:</strong> <a href="mailto:editor@drugs.com">editor@drugs.com</a></p>
+      <p class="is-223"><strong>Medical review:</strong> <a href="mailto:medical-review@drugs.com">medical-review@drugs.com</a></p>
+      <p class="is-223"><strong>Phone:</strong> +1 (855) 378-4844 (Mon-Fri, 9am-5pm ET)</p>
+      <p class="is-224"><a href="{{ url_for('contact') }}">Open the full contact form &rsaquo;</a></p>
+    </section>
+
+    <section class="is-221">
+      <h2 class="is-222">Popular Tools</h2>
+      <ul class="is-046">
+        <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+        <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+        <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+        <li><a href="{{ url_for('side_effects_page') }}">Side Effects Checker</a></li>
+        <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+        <li><a href="{{ url_for('drug_az') }}">Drugs A-Z Index</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="is-225">
+    <strong class="is-226">Medical emergency?</strong>
+    <p class="is-094">Drugs.com cannot provide emergency assistance. Call <a class="is-095" href="tel:911">911</a> for emergencies, or the U.S. Poison Help line at <a class="is-096" href="tel:1-800-222-1222">1-800-222-1222</a>.</p>
+  </section>
+</div>
+{% endblock %}

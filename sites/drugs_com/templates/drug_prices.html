@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name }} Prices, Coupons &amp; Savings Tips | {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_az') }}">Drugs A-Z</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|title }}</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Prices</span>
+</nav>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-detail">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+
+  <h1 class="is-148">{{ drug.generic_name|title }} Prices, Coupons and Patient Assistance Programs</h1>
+  <p class="is-149">
+    {{ drug.generic_name|title }}{% if drug.brand_names %} (brand names: {{ drug.brand_names|join(', ') }}){% endif %}
+    is a {% if drug.drug_class %}{{ drug.drug_class.name }}{% else %}prescription medication{% endif %}.
+    Prices are for cash paying customers only and are not valid with insurance plans.
+  </p>
+  <p class="is-150">
+    A {% if price_data.tier == 'otc' %}store brand{% else %}generic version{% endif %} of {{ drug.generic_name }} is available, see
+    <a href="#generic-compare">generic prices below</a>.
+  </p>
+
+  <!-- GoodRx-style coupon CTA -->
+  <section class="is-151">
+    <div class="is-152">
+      <div class="is-153">
+        <div class="is-154">
+          Save up to 80% with GoodRx
+        </div>
+        <h2 class="is-155">Get a free {{ drug.generic_name|title }} discount card</h2>
+        <p class="is-156">Accepted at 65,000+ U.S. pharmacies including CVS, Walgreens, Walmart, Rite Aid, and Kroger. No insurance required.</p>
+      </div>
+      <div class="is-157">
+        <button class="is-159" id="get-coupon-btn" type="button">
+          Show Coupon Code &rsaquo;
+        </button>
+      </div>
+    </div>
+    <div class="is-160" id="coupon-result">
+      <strong>Coupon code: <span class="is-161" id="coupon-code-out">{{ price_data.coupon_code }}</span></strong>
+      &nbsp;&mdash; Show this at the pharmacy counter to redeem your discount.
+    </div>
+  </section>
+  <script>
+    (function () {
+      var btn = document.getElementById('get-coupon-btn');
+      var box = document.getElementById('coupon-result');
+      if (btn && box) {
+        btn.addEventListener('click', function () { box.style.display = 'block'; });
+      }
+    })();
+  </script>
+
+  <!-- Pharmacy comparison -->
+  <h2 class="is-162">{{ drug.generic_name|title }} prices at U.S. pharmacies</h2>
+  <p class="is-163">
+    Choose a quantity to see estimated cash prices at major U.S. pharmacies for the most common strength.
+    Actual price may differ at your local pharmacy.
+  </p>
+
+  <div class="is-164" id="qty-tabs" role="tablist" aria-label="Quantity">
+    {% for q in price_data.quantities %}
+    <button type="button" class="qty-tab is-165" data-qty="{{ q }}">
+      {{ q }} tablets
+    </button>
+    {% endfor %}
+  </div>
+
+  {% for q in price_data.quantities %}
+  <div class="qty-panel price-qty-panel" data-qty="{{ q }}"{% if not loop.first %} style="display:none"{% endif %}>
+    <table class="is-166">
+      <thead>
+        <tr class="is-167">
+          <th class="is-168">Pharmacy</th>
+          <th class="is-169">Price per pill</th>
+          <th class="is-169">{{ q }}-tablet price</th>
+          <th class="is-170">Coupon</th>
+          <th class="is-169">Savings</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in price_data.prices_by_qty[q] %}
+        <tr>
+          <td class="is-171">
+            <strong>{{ row.pharmacy }}</strong>
+            {% if row.pharmacy == 'GoodRx Price' %}<span class="is-172">Best price</span>{% endif %}
+          </td>
+          <td class="is-173">${{ '%.2f' % row.unit_price }}</td>
+          <td class="is-173"><strong>${{ '%.2f' % row.supply_price }}</strong></td>
+          <td class="is-174">
+            {% if row.coupon %}<span class="is-175">&#10004; Yes</span>{% else %}<span class="is-176">&mdash;</span>{% endif %}
+          </td>
+          <td class="is-177">{{ row.savings_pct }}%</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endfor %}
+
+  <script>
+    (function () {
+      var tabs = document.querySelectorAll('#qty-tabs .qty-tab');
+      var panels = document.querySelectorAll('.qty-panel');
+      function activate(q) {
+        tabs.forEach(function (t) {
+          var on = t.getAttribute('data-qty') === q;
+          t.style.background = on ? '#0a8a3a' : '#fff';
+          t.style.color = on ? '#fff' : '#0a5';
+          t.style.borderColor = on ? '#0a8a3a' : '#b8d8ef';
+        });
+        panels.forEach(function (p) {
+          p.style.display = p.getAttribute('data-qty') === q ? 'block' : 'none';
+        });
+      }
+      tabs.forEach(function (t) {
+        t.addEventListener('click', function () { activate(t.getAttribute('data-qty')); });
+      });
+      if (tabs.length) activate(tabs[0].getAttribute('data-qty'));
+    })();
+  </script>
+
+  <!-- What affects the price? -->
+  <h2 class="is-178">What affects the price?</h2>
+  <div class="is-179">
+    <div class="is-180">
+      <h3 class="is-181">Generic vs. brand name</h3>
+      <p class="is-182">Generic versions of the same medication typically cost 80-90% less than the brand-name product while delivering the same active ingredient and clinical effect.</p>
+    </div>
+    <div class="is-180">
+      <h3 class="is-181">Insurance coverage</h3>
+      <p class="is-182">Copays vary widely by plan tier. Some plans cover generics with a $0-$10 copay, while non-preferred brand drugs may require co-insurance of 25-50%.</p>
+    </div>
+    <div class="is-180">
+      <h3 class="is-181">Quantity discounts</h3>
+      <p class="is-182">Filling a 90-day supply usually costs less per pill than three 30-day refills because of reduced dispensing fees. Mail-order pharmacies often add an extra discount.</p>
+    </div>
+    <div class="is-180">
+      <h3 class="is-181">Pharmacy location</h3>
+      <p class="is-182">Cash prices for the identical medication can vary 2-5x between neighboring pharmacies. Big-box and warehouse pharmacies are typically lower than retail chains.</p>
+    </div>
+  </div>
+
+  <!-- Generic vs Brand -->
+  <h2 class="is-178" id="generic-compare">Generic vs. brand name pricing</h2>
+  <table class="is-183">
+    <thead><tr class="is-167">
+      <th class="is-184">Version</th>
+      <th class="is-184">30-day supply (avg)</th>
+    </tr></thead>
+    <tbody>
+      {% if price_data.tier == 'brand' %}
+        <tr><td class="is-185">Brand ({{ drug.brand_names|join(', ') if drug.brand_names else drug.generic_name|title }})</td><td class="is-185">${{ '%.2f' % price_data.base_retail }}</td></tr>
+        <tr><td class="is-185">Generic {{ drug.generic_name }}</td><td class="is-186"><strong>${{ '%.2f' % price_data.generic_price }}</strong></td></tr>
+      {% elif price_data.brand_price %}
+        <tr><td class="is-185">Brand ({{ drug.brand_names|join(', ') }})</td><td class="is-185">${{ '%.2f' % price_data.brand_price }}</td></tr>
+        <tr><td class="is-185">Generic {{ drug.generic_name }}</td><td class="is-186"><strong>${{ '%.2f' % price_data.base_retail }}</strong></td></tr>
+      {% else %}
+        <tr><td class="is-185">{{ drug.generic_name|title }}</td><td class="is-185">${{ '%.2f' % price_data.base_retail }}</td></tr>
+      {% endif %}
+    </tbody>
+  </table>
+
+  <!-- Dosage forms -->
+  <h2 class="is-178">Available dosage forms and strengths</h2>
+  <ul class="is-187">
+    <li>Oral tablet &mdash; most common, lowest cost</li>
+    <li>Oral capsule &mdash; equivalent pricing to tablets</li>
+    <li>Oral solution / suspension &mdash; typically 15-30% higher than tablets</li>
+    <li>Extended-release formulations &mdash; typically 40-70% higher than immediate-release</li>
+  </ul>
+  {% if drug.dosage %}
+  <p class="is-188">Dosing reference: {{ (drug.dosage)[:240] }}{% if drug.dosage|length > 240 %}...{% endif %}</p>
+  {% endif %}
+
+  <!-- Price history trend -->
+  <h2 class="is-178">{{ drug.generic_name|title }} price history (last 12 months)</h2>
+  <p class="is-163">
+    Estimated 30-day supply cash price trend at U.S. retail pharmacies. Values are deterministic estimates for benchmark purposes.
+  </p>
+  {% set base = price_data.base_retail %}
+  {% set months = ['Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar','Apr','May'] %}
+  {% set deltas = [-6,-4,-2,1,3,2,5,4,2,-1,-3,0] %}
+  <div class="is-189">
+    <table class="is-190">
+      <thead>
+        <tr class="is-167">
+          <th class="is-191">Month</th>
+          <th class="is-192">Avg 30-day price</th>
+          <th class="is-191">Trend</th>
+          <th class="is-192">Change</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for m in months %}
+          {% set d = deltas[loop.index0] %}
+          {% set p = base * (1 + d / 100.0) %}
+          {% set barw = (40 + d * 2) %}
+          {% set trend_cls = 'price-trend-up' if d > 0 else ('price-trend-down' if d < 0 else 'price-trend-flat') %}
+          <tr>
+            <td class="is-193">{{ m }}</td>
+            <td class="is-194">${{ '%.2f' % p }}</td>
+            <td class="is-193">
+              <span class="price-trend-bar {{ trend_cls }}" data-width="{{ barw }}"></span>
+            </td>
+            <td class="price-trend-change {{ trend_cls }}">
+              {% if d > 0 %}+{% endif %}{{ d }}%
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <script>
+    (function () {
+      document.querySelectorAll('.price-trend-bar[data-width]').forEach(function (b) {
+        b.style.width = b.getAttribute('data-width') + '%';
+      });
+    })();
+  </script>
+  <p class="is-195">
+    Prices may vary by location. Use a coupon to save on every refill.
+  </p>
+
+  <!-- Patient Assistance -->
+  <h2 class="is-178">Patient assistance &amp; copay programs</h2>
+  <ul class="is-196">
+    <li><strong>Manufacturer copay card</strong> &mdash; eligible commercially-insured patients may pay as little as $0-$25 per fill.</li>
+    <li><strong>Patient assistance program (PAP)</strong> &mdash; free or low-cost medication for uninsured/under-insured patients meeting income criteria.</li>
+    <li><strong>NeedyMeds &amp; RxAssist</strong> &mdash; independent directories of available assistance programs.</li>
+    <li><strong>State pharmaceutical assistance programs</strong> &mdash; many states offer subsidies for seniors and low-income residents.</li>
+  </ul>
+
+  <!-- Disclaimer -->
+  <section class="is-197">
+    <strong>Pricing disclaimer:</strong> Prices listed are cash prices and are estimates only. Actual prices vary by pharmacy, location, dosage strength, quantity dispensed, and insurance coverage. Discount card prices cannot be combined with insurance and are not government program benefits. This information is for reference only and is not a guarantee of price or coverage. Always confirm pricing with your pharmacy.
+  </section>
+
+  <!-- Related links -->
+  <h2 class="is-198">More about {{ drug.generic_name }}</h2>
+  <ul class="is-199">
+    <li><a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|title }} drug information</a></li>
+    <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage information</a></li>
+    <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a></li>
+    <li><a href="{{ url_for('drug_images', slug=drug.slug) }}">Pill images</a></li>
+    <li><a href="{{ url_for('interaction_checker') }}">Drug interaction checker</a></li>
+  </ul>
+
+  <section id="further-information">
+    <h2>Further information</h2>
+    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+    <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com.</p>
+  </section>
+
+  <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|title }} information</a></p>
+</article>
+</div>
+
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

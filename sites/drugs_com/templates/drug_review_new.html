@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Write a Review for {{ drug.generic_name|capitalize }} - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+    <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}">Reviews</a> &rsaquo;
+    <span>Write a review</span>
+  </nav>
+
+  <div class="review-new-wrap">
+    <h1>{{ 'Edit your review of' if user_review else 'Write a review of' }} {{ drug.generic_name|capitalize }}</h1>
+    <p class="muted">Share your experience with {{ drug.generic_name|capitalize }} to help others. All fields below describe your experience as a patient.</p>
+
+    <form method="post" action="{{ url_for('submit_review', slug=drug.slug) }}" class="review-form review-form-full">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% set init_rating = user_review.rating if user_review else 7 %}
+
+      <fieldset class="review-fieldset">
+        <legend>Overall rating</legend>
+        <label>Your rating: <span id="rating-display">{{ init_rating }}</span> / 10</label>
+        <div class="star-selector" id="star-selector">
+          {% for i in range(1, 11) %}
+            <span class="star-btn" data-value="{{ i }}" title="{{ i }}/10" role="button" tabindex="0">&#9733;</span>
+          {% endfor %}
+        </div>
+        <input type="hidden" name="rating" id="rating-input" value="{{ init_rating }}">
+      </fieldset>
+
+      <fieldset class="review-fieldset">
+        <legend>About your treatment</legend>
+        <label for="review-condition">Condition treated</label>
+        <input type="text" id="review-condition" name="condition_treated"
+               list="known-conditions"
+               value="{{ user_review.condition_treated if user_review else '' }}"
+               placeholder="e.g. Pain, Headache, Anxiety" maxlength="100" required />
+        <datalist id="known-conditions">
+          {% for cond in conditions %}<option value="{{ cond|capitalize }}">{% endfor %}
+        </datalist>
+      </fieldset>
+
+      <fieldset class="review-fieldset">
+        <legend>Your review</legend>
+        <label for="review-title">Title</label>
+        <input type="text" id="review-title" name="title"
+               value="{{ user_review.title if user_review else '' }}"
+               placeholder="Summarize your experience" maxlength="200" required />
+
+        <label for="review-body">Review</label>
+        <textarea id="review-body" name="body" rows="8" maxlength="1000"
+                  placeholder="Share details of your experience with this medicine" required>{{ user_review.body if user_review else '' }}</textarea>
+        <div class="char-count muted"><span id="review-body-count">0</span>/1000 characters</div>
+      </fieldset>
+
+      <div class="review-form-actions">
+        <button type="submit" class="btn btn-primary">{{ 'Update review' if user_review else 'Submit review' }}</button>
+        <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}" class="btn btn-secondary">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+<script>
+(function() {
+  const selector = document.getElementById('star-selector');
+  const input = document.getElementById('rating-input');
+  const display = document.getElementById('rating-display');
+  if (selector && input) {
+    const stars = selector.querySelectorAll('.star-btn');
+    function paint(val) {
+      stars.forEach(s => {
+        const v = parseInt(s.dataset.value, 10);
+        s.classList.toggle('star-on', v <= val);
+        s.classList.toggle('star-off', v > val);
+      });
+    }
+    function setVal(v) {
+      input.value = v;
+      if (display) display.textContent = v;
+      paint(v);
+    }
+    stars.forEach(s => {
+      s.addEventListener('mouseenter', () => paint(parseInt(s.dataset.value, 10)));
+      s.addEventListener('click', () => setVal(parseInt(s.dataset.value, 10)));
+      s.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setVal(parseInt(s.dataset.value, 10)); }
+      });
+    });
+    selector.addEventListener('mouseleave', () => paint(parseInt(input.value, 10) || 0));
+    setVal(parseInt(input.value, 10) || 0);
+  }
+  const body = document.getElementById('review-body');
+  const count = document.getElementById('review-body-count');
+  if (body && count) {
+    const update = () => { count.textContent = body.value.length; };
+    body.addEventListener('input', update);
+    update();
+  }
+})();
+</script>
+{% endblock %}

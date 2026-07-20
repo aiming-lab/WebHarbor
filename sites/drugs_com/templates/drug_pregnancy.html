@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|title }} Pregnancy and Breastfeeding Warnings - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_az') }}">Drugs A-Z</a>
+  <span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|title }}</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Pregnancy &amp; Lactation</span>
+</nav>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+  <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+  <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+  <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+</nav>
+
+<h1>{{ drug.generic_name|title }} Pregnancy and Breastfeeding Warnings</h1>
+
+<div class="pregnancy-summary pregnancy-summary--{{ preg.cat_class }}">
+  <p class="is-139"><strong>FDA Pregnancy Category for {{ drug.generic_name|title }}:</strong></p>
+  <span class="preg-badge preg-badge--{{ preg.cat_class }} preg-badge--lg">{{ preg.label }}</span>
+  {% if preg.severity_rank >= 3 %}
+  <p class="pregnancy-summary-callout"><strong>Use with caution or contraindication during pregnancy.</strong> See risk summary below.</p>
+  {% endif %}
+</div>
+
+<section class="pregnancy-section pregnancy-risk-summary">
+  <h2>{{ drug.generic_name|title }} Pregnancy Warnings</h2>
+  <p>{{ preg.risk_summary }}</p>
+</section>
+
+<section class="pregnancy-section pregnancy-clinical">
+  <h2>Clinical Considerations</h2>
+  <ul class="clinical-considerations">
+    {% for c in preg.considerations %}<li>{{ c }}</li>{% endfor %}
+  </ul>
+</section>
+
+<section class="pregnancy-section pregnancy-fetal-data">
+  <h2>Data on fetal risk</h2>
+  <ul class="fetal-data-list">
+    {% for f in preg.fetal_data %}<li>{{ f }}</li>{% endfor %}
+  </ul>
+  <p class="pregnancy-data-source">
+    Sources: FDA-approved prescribing information, published pregnancy registries, and peer-reviewed teratology literature.
+    Data presented here are summary statements; consult the full prescribing label and a maternal-fetal medicine specialist for individualized counseling.
+  </p>
+</section>
+
+<section class="pregnancy-explainer">
+  <h2>FDA Pregnancy Categories</h2>
+  <p>The U.S. Food and Drug Administration historically classified medications into five pregnancy
+  risk categories based on the available evidence of fetal harm in humans and animals. In 2015 the
+  FDA replaced this letter system with the Pregnancy and Lactation Labeling Rule (PLLR) for new
+  drug labels, but the legacy A/B/C/D/X categories remain in widespread clinical use.</p>
+  <ul>
+    <li><strong>Category A</strong> &mdash; Adequate, well-controlled studies in pregnant women have not shown an increased risk of fetal abnormalities.</li>
+    <li><strong>Category B</strong> &mdash; Animal studies have revealed no evidence of harm to the fetus; however, there are no adequate studies in pregnant women.</li>
+    <li><strong>Category C</strong> &mdash; Animal studies have shown an adverse effect, or no animal studies have been conducted, and there are no adequate studies in pregnant women.</li>
+    <li><strong>Category D</strong> &mdash; Studies in pregnant women have demonstrated a risk to the fetus. The benefits of therapy may outweigh the potential risk in serious or life-threatening situations.</li>
+    <li><strong>Category X</strong> &mdash; Studies in animals or pregnant women have demonstrated positive evidence of fetal abnormalities. The risks involved clearly outweigh the potential benefits.</li>
+  </ul>
+</section>
+
+<section class="trimester-section">
+  <h2>Trimester-specific considerations</h2>
+  <div class="trimester-grid is-140">
+    <div class="trimester-card is-141">
+      <h3 class="is-142">First trimester (weeks 1-12)</h3>
+      <p class="is-071">Organ development is most active during the first trimester, making the fetus most vulnerable to teratogenic exposure. Many medications are best avoided or used at the lowest effective dose during this period unless clearly indicated.</p>
+    </div>
+    <div class="trimester-card is-141">
+      <h3 class="is-142">Second trimester (weeks 13-27)</h3>
+      <p class="is-071">Major organogenesis is largely complete, but ongoing fetal growth and development continue. Some medications that are contraindicated in the third trimester may be acceptable here under medical supervision.</p>
+    </div>
+    <div class="trimester-card is-141">
+      <h3 class="is-142">Third trimester (weeks 28-40)</h3>
+      <p class="is-071">Certain drug classes (for example NSAIDs and ACE inhibitors) can affect fetal circulation, renal function, or delivery, and are often avoided in late pregnancy. Always confirm trimester-specific safety with your clinician.</p>
+    </div>
+  </div>
+</section>
+
+<section class="bottom-line is-143">
+  <h2 class="is-064">Bottom line</h2>
+  <p class="is-071">{{ drug.generic_name|title }} carries an FDA pregnancy classification of
+  <strong>{{ preg.label }}</strong>. Do not start, stop, or change the dose of this medication during
+  pregnancy or while breastfeeding without first speaking to your healthcare provider. The safest
+  choice depends on your individual condition, gestational age, and available alternatives.</p>
+</section>
+
+<section class="lactation-section">
+  <h2>{{ drug.generic_name|title }} Breastfeeding Warnings</h2>
+  <p>{{ preg.breastfeeding }}</p>
+  <p>Whether {{ drug.generic_name|title }} passes into human milk in clinically significant
+  amounts depends on the specific drug's pharmacokinetic profile. Many medications are excreted
+  in breast milk to some degree. Consult your healthcare provider or a lactation specialist
+  before using this medication while breastfeeding so the potential exposure to the infant can
+  be weighed against the benefit to the mother.</p>
+</section>
+
+<section class="general-section">
+  <h2>General recommendations</h2>
+  <ul>
+    <li>Tell your healthcare provider if you are pregnant, planning a pregnancy, or breastfeeding before starting {{ drug.generic_name|title }}.</li>
+    <li>Do not stop a prescribed medication on your own &mdash; abrupt discontinuation may pose risks of its own.</li>
+    <li>Discuss effective contraception if the drug is contraindicated in pregnancy.</li>
+    <li>Report any unexpected symptoms during pregnancy or while nursing to your clinician.</li>
+  </ul>
+</section>
+
+<p class="disclaimer is-144">
+  <strong>Always consult your healthcare provider</strong> before starting, stopping, or
+  changing any medication during pregnancy or while breastfeeding. The information on this
+  page is for general reference and does not replace individualized medical advice.
+  <a class="is-145" href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Talk to a healthcare provider about {{ drug.generic_name|title }} &rsaquo;</a>
+</p>
+
+<section id="further-information">
+  <h2>Further information</h2>
+  <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+  <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com.</p>
+</section>
+
+<p class="is-146"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&larr; Back to {{ drug.generic_name|title }} drug information</a></p>
+
+</div>
+
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

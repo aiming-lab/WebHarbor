@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Account Settings - Drugs.com{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <a href="{{ url_for('account') }}">My Account</a> &rsaquo;
+  <span>Settings</span>
+</nav>
+
+<h1>Account Settings</h1>
+
+<nav class="account-tabs">
+  <a href="{{ url_for('account') }}">My Account</a>
+  <a href="{{ url_for('my_med_list') }}">My Med List</a>
+  <a href="{{ url_for('my_reviews') }}">My Reviews</a>
+  <a href="{{ url_for('account_settings') }}" class="active">Settings</a>
+  <a href="{{ url_for('account_subscriptions') }}">Subscriptions</a>
+</nav>
+
+<form method="post" action="{{ url_for('save_settings') }}" class="account-box is-011">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <input type="hidden" name="settings_form" value="settings">
+  {% set prefs = current_user.preferences %}
+
+  <section class="is-012">
+    <h2 class="is-013">Profile</h2>
+    <p class="muted is-014">Update your personal information visible on your account.</p>
+
+    <div class="is-015">
+      <div>
+        <label class="is-016">Username</label>
+        <input class="is-017" type="text" name="username" value="{{ current_user.username }}" readonly>
+        <small class="muted">Username cannot be changed.</small>
+      </div>
+      <div>
+        <label class="is-016">Email address</label>
+        <input class="is-018" type="email" name="email" value="{{ current_user.email }}" required maxlength="120">
+      </div>
+      <div>
+        <label class="is-016">First name</label>
+        <input class="is-018" type="text" name="first_name" value="{{ current_user.first_name or '' }}" placeholder="Your first name" maxlength="80">
+      </div>
+      <div>
+        <label class="is-016">Last name</label>
+        <input class="is-018" type="text" name="last_name" value="{{ current_user.last_name or '' }}" placeholder="Your last name" maxlength="80">
+      </div>
+    </div>
+  </section>
+
+  <section class="is-012">
+    <h2 class="is-013">Notification Preferences</h2>
+    <p class="muted is-014">Choose what email updates you'd like to receive.</p>
+    <label class="is-019"><input type="checkbox" name="notify_news" {% if prefs.get('newsletter', true) %}checked{% endif %}> Medical news and health articles</label>
+    <label class="is-019"><input type="checkbox" name="notify_fda" {% if prefs.get('fda_alerts', true) %}checked{% endif %}> FDA alerts and drug safety notices</label>
+    <label class="is-019"><input type="checkbox" name="notify_interactions" {% if prefs.get('interaction_warnings', true) %}checked{% endif %}> Drug interaction alerts for my Med List</label>
+    <label class="is-019"><input type="checkbox" name="notify_approvals" {% if prefs.get('new_approvals', false) %}checked{% endif %}> New drug approvals</label>
+  </section>
+
+  <section class="is-012">
+    <h2 class="is-013">Privacy Settings</h2>
+    <p class="muted is-014">Control how your information is displayed and shared.</p>
+    <label class="is-019"><input type="checkbox" name="public_reviews" {% if prefs.get('public_reviews', true) %}checked{% endif %}> Show my drug reviews publicly</label>
+    <label class="is-019"><input type="checkbox" name="share_med_list" {% if prefs.get('share_med_list', false) %}checked{% endif %}> Share my Med List with healthcare provider portal</label>
+    <label class="is-019"><input type="checkbox" name="personalized" {% if prefs.get('personalized', true) %}checked{% endif %}> Allow personalized recommendations based on my Med List</label>
+    <label class="is-019"><input type="checkbox" name="analytics" {% if prefs.get('analytics', true) %}checked{% endif %}> Share anonymous usage analytics</label>
+  </section>
+
+  <section class="is-012">
+    <h2 class="is-013">Change Password</h2>
+    <p class="muted is-014">Leave blank to keep your current password.</p>
+    <div class="is-020">
+      <label class="is-016">Current password</label>
+      <input class="is-021" type="password" name="current_password" autocomplete="current-password" maxlength="72">
+    </div>
+    <div class="is-020">
+      <label class="is-016">New password</label>
+      <input class="is-021" type="password" name="new_password" autocomplete="new-password" maxlength="72">
+    </div>
+    <div class="is-020">
+      <label class="is-016">Confirm new password</label>
+      <input class="is-021" type="password" name="confirm_password" autocomplete="new-password" maxlength="72">
+    </div>
+  </section>
+
+  <div class="is-022">
+    <button type="submit" class="btn btn-primary">Save changes</button>
+    <a href="{{ url_for('account') }}" class="btn btn-outline">Cancel</a>
+  </div>
+</form>
+
+<section class="account-box is-023">
+  <h2 class="is-024">Account deletion</h2>
+  <p class="is-025">
+    Account deletion is disabled in this deterministic demo environment. Site
+    state can be restored through the WebHarbor control plane.
+  </p>
+  <button type="button" class="btn is-026" disabled aria-disabled="true">
+    Delete my account (disabled)
+  </button>
+</section>
+{% endblock %}

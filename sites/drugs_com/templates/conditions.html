@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+{% block title %}Conditions & Treatments A to Z - Drugs.com{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <span>Conditions & Treatments A to Z</span>
+</nav>
+
+<h1>Conditions & Treatments A to Z</h1>
+<p class="muted">Browse conditions and their treatments.</p>
+
+<div class="conditions-search-box">
+  <input type="text" id="conditions-filter-input" placeholder="Filter conditions by name..."
+         oninput="filterConditions(this.value)" aria-label="Filter conditions">
+  <span class="muted conditions-filter-hint" id="conditions-filter-hint"></span>
+</div>
+
+<script>
+  function filterConditions(q) {
+    var query = (q || '').trim().toLowerCase();
+    var items = document.querySelectorAll('.condition-grid li');
+    var visible = 0;
+    items.forEach(function(li) {
+      var name = (li.getAttribute('data-name') || li.textContent || '').toLowerCase();
+      var match = !query || name.indexOf(query) !== -1;
+      li.style.display = match ? '' : 'none';
+      if (match) visible++;
+    });
+    document.querySelectorAll('.letter-section').forEach(function(sec) {
+      var anyVisible = sec.querySelectorAll('.condition-grid li:not([style*="display: none"])').length > 0;
+      sec.style.display = anyVisible ? '' : 'none';
+    });
+    var hint = document.getElementById('conditions-filter-hint');
+    if (hint) hint.textContent = query ? (visible + ' match' + (visible === 1 ? '' : 'es')) : '';
+  }
+</script>
+
+<div class="two-col">
+  <div class="main-col">
+    {% if featured_conditions and not active_letter %}
+    <section class="featured-conditions is-079">
+      <h2 class="is-080">Featured Conditions</h2>
+      <p class="muted is-081">The most common conditions, ranked by number of treatment options available.</p>
+      <ol class="is-082">
+        {% for c in featured_conditions %}
+          <li class="is-083">
+            <a href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a>
+            <span class="muted is-072">— {{ c.drug_count or 0 }} drug{{ '' if (c.drug_count or 0) == 1 else 's' }}</span>
+          </li>
+        {% endfor %}
+      </ol>
+    </section>
+    {% endif %}
+
+    {% if top_conditions and not active_letter %}
+    <section class="top-conditions is-084">
+      <h2 class="is-085">Top conditions</h2>
+      <div class="is-053">
+        {% for c in top_conditions %}
+          <a class="is-086" href="{{ url_for('condition_page', slug=c.slug) }}">
+            {{ c.name }} <span class="muted is-087">({{ c.drug_count or 0 }})</span>
+          </a>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+
+    <div class="letter-grid letter-index">
+      <a class="letter-btn {% if not active_letter %}active{% endif %}"
+         href="{{ url_for('conditions_list') }}">All</a>
+      {% for letter in all_letters %}
+        {% set has = (grouped_conditions and grouped_conditions.get(letter)) %}
+        {% if not active_letter and has %}
+          <a class="letter-btn" href="#letter-{{ letter }}">{{ letter }} <span class="letter-count">({{ grouped_conditions[letter]|length }})</span></a>
+        {% else %}
+          <a class="letter-btn {% if active_letter == letter %}active{% endif %} {% if not has and not active_letter %}letter-empty{% endif %}"
+             href="{{ url_for('conditions_list') }}?letter={{ letter }}">{{ letter }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+
+    {% if active_letter %}
+      <h2>Conditions starting with "{{ active_letter }}"</h2>
+    {% else %}
+      <h2>All conditions</h2>
+    {% endif %}
+
+    {% if conditions %}
+      {% if active_letter %}
+        <ul class="condition-grid">
+          {% for c in conditions %}
+            <li data-name="{{ c.name }}">
+              <a href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a>
+              <span class="muted">({{ c.drug_count }} drug{{ '' if c.drug_count == 1 else 's' }})</span>
+              {% if c.description %}
+                <p class="condition-desc muted">{{ c.description[:160] }}{% if c.description|length > 160 %}&hellip;{% endif %}</p>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        {% for letter in grouped_keys %}
+          <section class="letter-section is-088" id="letter-{{ letter }}">
+            <h3 class="is-089">{{ letter }}</h3>
+            <ul class="condition-grid">
+              {% for c in grouped_conditions[letter] %}
+                <li class="condition-card" data-name="{{ c.name }}">
+                  <div class="condition-card-head">
+                    <a class="condition-card-name" href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a>
+                    <span class="condition-drug-badge">{{ c.drug_count }} drug{{ '' if c.drug_count == 1 else 's' }}</span>
+                  </div>
+                  {% if c.description %}
+                    <p class="condition-desc">{{ c.description[:160] }}{% if c.description|length > 160 %}&hellip;{% endif %}</p>
+                  {% endif %}
+                  <a class="condition-card-link" href="{{ url_for('condition_page', slug=c.slug) }}">See drugs &rsaquo;</a>
+                </li>
+              {% endfor %}
+            </ul>
+          </section>
+        {% endfor %}
+      {% endif %}
+    {% else %}
+      <p class="muted">No conditions found{% if active_letter %} for "{{ active_letter }}"{% endif %}.</p>
+    {% endif %}
+  </div>
+
+  <aside class="sidebar">
+    <h3>Browse by category</h3>
+    <ul>
+      <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a></li>
+      <li><a href="{{ url_for('drug_classes_list') }}">Drug Classes</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+      <li><a href="{{ url_for('interaction_checker') }}">Interaction Checker</a></li>
+    </ul>
+
+    <h3>Popular tools</h3>
+    <ul>
+      <li><a href="{{ url_for('search') }}">Compare Drugs</a></li>
+      <li><a href="{{ url_for('news_index') }}">Medical News</a></li>
+    </ul>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+{% from "_pill_svg.html" import render_pill %}
+{% block title %}Pill Identifier - Quickly Find and ID your Drugs (with pictures) - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <span>Pill Identifier</span>
+  {% if results is not none %} &rsaquo; <span>Results</span>{% endif %}
+</nav>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+
+<h1>Pill Identifier - Quickly Find and ID your Drugs (with pictures)</h1>
+
+<div class="disclaimer-box" id="pill-disclaimer">
+  <p>
+    <strong>Important:</strong> This pill identification tool is provided as a reference only.
+    Always consult with your pharmacist, physician, or other qualified health care professional
+    if in doubt.
+  </p>
+  <button type="button" class="btn btn-primary"
+          onclick="document.getElementById('pill-disclaimer').style.display='none';">Agree and continue</button>
+</div>
+
+<h2>Need help to identify that pill?</h2>
+<p class="pill-form-instructions">
+  Enter <strong>any combination</strong> of the imprint code, shape, and color stamped on your
+  pill. Even one field is enough to start narrowing down matches — but the more details you
+  provide, the more accurate the result. The imprint is the letters or numbers printed,
+  debossed, or engraved on the pill (e.g., <code>M367</code>, <code>I-2</code>).
+</p>
+
+<form method="get" action="{{ url_for('pill_identifier') }}" class="pill-form">
+  <div class="pill-form-row">
+    <label for="pill-imprint" class="pill-field-label">Imprint code
+      <span class="pill-field-hint">Letters and/or numbers printed on the pill</span>
+      <input id="pill-imprint" type="text" name="imprint" value="{{ imprint or '' }}"
+             placeholder="Enter imprint code (e.g., M367)">
+    </label>
+  </div>
+
+  <div class="pill-form-row">
+    <div class="pill-field-label">Shape
+      <span class="pill-field-hint">Tap the closest match (optional)</span>
+      <div class="pill-shape-picker" role="radiogroup" aria-label="Pill shape">
+        {% set shape_options = [
+          ('Round',      'M14,4 a10,10 0 1,0 0.01,0'),
+          ('Oval',       'M2,12 a10,5 0 1,0 24,0 a10,5 0 1,0 -24,0'),
+          ('Capsule',    'M5,12 h18 a6,6 0 0,1 0,0 a6,6 0 0,1 -18,0 z'),
+          ('Oblong',     'M2,12 a8,4 0 1,0 24,0 a8,4 0 1,0 -24,0'),
+          ('Rectangle',  'M3,8 h22 v8 h-22 z'),
+          ('3-sided',    'M14,4 l11,17 h-22 z'),
+          ('4-sided',    'M14,3 l11,9 l-11,9 l-11,-9 z'),
+          ('5-sided',    'M14,3 l11,7 l-4,12 h-14 l-4,-12 z'),
+          ('6-sided',    'M14,3 l10,6 l0,6 l-10,6 l-10,-6 l0,-6 z'),
+          ('8-sided',    'M8,4 h8 l6,6 v6 l-6,6 h-8 l-6,-6 v-6 z'),
+        ] %}
+        {% for label, _path in shape_options %}
+          {% set is_sel = (label|lower == (shape or '')|lower) %}
+          <label class="pill-shape-chip{% if is_sel %} pill-shape-chip--selected{% endif %}">
+            <input type="radio" name="shape" value="{{ label }}" class="pill-shape-chip-input"
+                   {% if is_sel %}checked{% endif %}>
+            <svg class="pill-shape-icon" viewBox="0 0 28 24" aria-hidden="true">
+              <path d="{{ _path }}" fill="#e8eef7" stroke="#5a6b85" stroke-width="1.4"
+                    stroke-linejoin="round"/>
+            </svg>
+            <span class="pill-shape-chip-label">{{ label }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="pill-form-row">
+    <div class="pill-field-label">Color
+      <span class="pill-field-hint">Tap the closest match (optional)</span>
+      <div class="pill-color-picker" role="radiogroup" aria-label="Pill color">
+        {% for c in ['White','Yellow','Orange','Pink','Red','Brown','Gray','Green','Blue','Purple','Black','Turquoise'] %}
+          {% set is_sel = (c|lower == (color or '')|lower) %}
+          <label class="pill-color-chip{% if is_sel %} pill-color-chip--selected{% endif %}">
+            <input type="radio" name="color" value="{{ c }}" class="pill-color-chip-input"
+                   {% if is_sel %}checked{% endif %}>
+            <span class="pill-color-swatch pill-color-swatch--{{ c|lower }}" aria-hidden="true"></span>
+            <span class="pill-color-chip-label">{{ c }}</span>
+          </label>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="pill-form-row pill-form-actions">
+    <button type="submit" class="btn btn-primary btn-large">Identify Pill</button>
+    {% if results is not none %}
+      <a href="{{ url_for('pill_identifier') }}" class="btn btn-secondary pill-form-reset">Clear / start over</a>
+    {% endif %}
+  </div>
+</form>
+
+{% if results is not none %}
+  <div class="pill-results-header">
+    <h2 class="pill-results-heading">{{ results|length }} result{{ '' if results|length == 1 else 's' }} found{% if imprint %} for imprint: <span class="pill-results-imprint">{{ imprint }}</span>{% elif shape and color %} for {{ color|lower }} {{ shape|lower }} pills{% elif shape %} for {{ shape|lower }} pills{% elif color %} for {{ color|lower }} pills{% endif %}</h2>
+    <div class="pill-criteria-summary">
+      <span class="pill-criteria-label">Searched for:</span>
+      {% if imprint %}<span class="pill-criteria-chip pill-criteria-chip--imprint">Imprint: <strong>{{ imprint }}</strong></span>{% endif %}
+      {% if shape %}<span class="pill-criteria-chip">Shape: <strong>{{ shape }}</strong></span>{% endif %}
+      {% if color %}<span class="pill-criteria-chip">Color: <strong>{{ color }}</strong></span>{% endif %}
+      {% if not imprint and not shape and not color %}<span class="pill-criteria-chip">Any pill</span>{% endif %}
+    </div>
+  </div>
+  {% if results %}
+    <div class="pill-result-grid">
+      {% for r in results %}
+        {% set color_lc = (r.color or '')|lower %}
+        <article class="pill-result-card">
+          {% if r.drug.slug|pill_image_exists %}
+            <div class="pill-icon-wrap pill-icon-wrap--photo" data-color="{{ color_lc }}">
+              <img src="{{ url_for('static', filename='images/pills/' + r.drug.slug + '.jpg') }}"
+                   alt="{{ r.drug.generic_name }}{% if r.shape %} {{ r.shape }}{% endif %}{% if r.color %} {{ r.color }}{% endif %} pill"
+                   class="pill-photo" loading="lazy">
+            </div>
+          {% else %}
+            <div class="pill-icon-wrap" data-color="{{ color_lc }}">
+              {{ render_pill('pi-' ~ loop.index, r.shape, r.color, r.imprint) }}
+            </div>
+          {% endif %}
+          <div class="pill-card-body">
+            {% if r.imprint %}
+              <div class="pill-imprint-display" title="Imprint code">{{ r.imprint }}</div>
+            {% endif %}
+            <h3 class="pill-card-name">
+              <a href="{{ url_for('drug_detail', slug=r.drug.slug) }}">{{ r.drug.generic_name|capitalize }}{% if r.strength %} {{ r.strength }}{% endif %}</a>
+            </h3>
+            <div class="pill-chip-row">
+              {% if r.shape %}<span class="pill-chip pill-chip--shape">{{ r.shape }}</span>{% endif %}
+              {% if r.color %}<span class="pill-chip pill-chip--color pill-chip--color-{{ color_lc }}">{{ r.color }}</span>{% endif %}
+              {% if r.strength %}<span class="pill-chip pill-chip--strength">{{ r.strength }}</span>{% endif %}
+            </div>
+            {% if r.drug.availability %}
+              {% set avail_lc = r.drug.availability|lower %}
+              {% set badge_cls = 'rx' if 'rx' in avail_lc and 'otc' not in avail_lc else ('otc' if avail_lc == 'otc' else 'mixed') %}
+              <span class="pill-availability-badge pill-availability-badge--{{ badge_cls }}">{{ r.drug.availability }}</span>
+            {% endif %}
+            {% if r.manufacturer %}<p class="pill-card-meta">Mfr: {{ r.manufacturer }}</p>{% endif %}
+            {% if r.drug.drug_class %}
+              <p class="pill-card-meta">Class:
+                <a href="{{ url_for('drug_class_page', slug=r.drug.drug_class.slug) }}">{{ r.drug.drug_class.name }}</a>
+              </p>
+            {% endif %}
+            <div class="pill-card-actions">
+              <a href="{{ url_for('drug_detail', slug=r.drug.slug) }}"
+                 class="btn btn-primary btn-small pill-card-identify-btn">Identify this pill</a>
+              <a href="{{ url_for('drug_detail', slug=r.drug.slug) }}" class="pill-card-link">Full drug info &rarr;</a>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="pill-no-results">
+      <div class="pill-no-results-icon" aria-hidden="true">?</div>
+      <h3 class="pill-no-results-title">No pills found matching your search</h3>
+      <p class="pill-no-results-lede">We couldn't find any pills matching the criteria above. Try one of the following:</p>
+      <ul class="pill-no-results-suggestions">
+        <li>Remove one criterion (try imprint alone, or shape + color without imprint)</li>
+        <li>Double-check the imprint code — letter O versus number 0, letter I versus number 1</li>
+        <li>Imprint codes may be split across two lines on the pill — try both halves separately</li>
+        <li>If the pill has no imprint, leave the imprint field blank and search by shape and color</li>
+      </ul>
+      <div class="pill-no-results-cta">
+        <a href="{{ url_for('pill_identifier') }}" class="btn btn-primary">Start a new search</a>
+      </div>
+      <p class="pill-poison-control"><strong>Poison Control:</strong> <a href="tel:1-800-222-1222">1-800-222-1222</a></p>
+    </div>
+  {% endif %}
+{% else %}
+  <section class="how-it-works pill-how-to-use">
+    <h2>How to use the Pill Identifier</h2>
+    <ol class="how-it-works-steps">
+      <li>Enter the imprint code on your pill</li>
+      <li>Select the shape (optional)</li>
+      <li>Select the color (optional)</li>
+      <li>Click Search</li>
+    </ol>
+    <p class="pill-note"><strong>Note:</strong> The imprint is the number, letters, or markings on the pill.</p>
+    <p class="pill-example"><strong>Example:</strong> 'M367' for a white oval pill.</p>
+    <p class="pill-safety-warning"><strong>Safety warning:</strong> If you cannot identify a pill, contact Poison Control: <a href="tel:1-800-222-1222">1-800-222-1222</a>.</p>
+  </section>
+{% endif %}
+
+<section class="tips-section">
+  <h2>Additional tips</h2>
+  <ul>
+    <li>Always read the label on your prescription bottle.</li>
+    <li>If you find a pill and are not sure what it is, do NOT take it.</li>
+    <li>When in doubt, consult your pharmacist.</li>
+  </ul>
+</section>
+
+<section id="further-information">
+  <h2>Further information</h2>
+  <p>Always consult your healthcare provider or pharmacist to ensure the information displayed on this page applies to your personal circumstances.</p>
+  <p>Copyright 1996-2025 Drugs.com.</p>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  <div class="sidebar-box popular-tools">
+    <h3>Popular tools &amp; resources</h3>
+    <ul class="sidebar-links">
+      <li><a href="{{ url_for('my_med_list') }}">My Med List</a></li>
+      <li><a href="{{ url_for('interaction_checker') }}">Drug interaction checker</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill identifier</a></li>
+      <li><a href="{{ url_for('compare_drugs') }}">Compare drugs</a></li>
+      <li><a href="{{ url_for('news_index') }}">Medical Q &amp; A</a></li>
+      <li><a href="{{ url_for('news_index') }}">Latest drug news</a></li>
+    </ul>
+  </div>
+</aside>
+</div>
+{% endblock %}

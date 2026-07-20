@@ -1,0 +1,361 @@
+{% extends "base.html" %}
+{% block title %}Drug Interaction Checker - Find Unsafe Combinations - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Drug Interaction Checker</span>
+</nav>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+
+<h1>Drug Interaction Checker</h1>
+<p class="lead">Use our drug interaction checker to find potentially harmful drug, food, and alcohol interactions.</p>
+
+<form method="post" action="{{ url_for('interaction_checker') }}" class="checker-box" id="checker-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="checker-input checker-ac-wrap">
+    <label for="drug-input" class="visually-hidden">Enter a drug name</label>
+    <input type="text" id="drug-input" placeholder="Enter a drug name" autocomplete="off">
+    <div class="checker-ac-drop" id="checker-ac-drop" hidden></div>
+    <button type="button" id="add-drug" class="add-btn">Add</button>
+  </div>
+
+  <p id="empty-hint" class="checker-hint"{% if drugs_input or prefill %} style="display:none;"{% endif %}>
+    Type a drug name in the box above to get started.
+  </p>
+
+  <ul id="drug-list" class="checker-drug-list">
+    {% set initial = drugs_input if drugs_input else ([prefill] if prefill else []) %}
+    {% for name in initial %}
+      <li class="checker-drug-tag">
+        <span class="drug-name">{{ name }}</span>
+        <input type="hidden" name="drugs" value="{{ name }}">
+        <button type="button" class="remove-drug" aria-label="Remove {{ name }}">&times;</button>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <button type="submit" id="check-btn" class="btn btn-primary"{% if not drugs_input or drugs_input|length < 2 %} style="display:none;"{% endif %}>
+    Check Interactions
+  </button>
+</form>
+
+
+<p class="checker-disclaimer">
+  Not all drugs interact, and not every interaction means you must stop taking one of your
+  medications. Always consult your healthcare provider about how drug interactions should be
+  managed before making any changes to your current prescription.
+</p>
+
+{% if drugs_input %}
+<section class="checker-results">
+  <div class="allergy-reminder is-270">
+    <strong>&#9888; Check your drug allergies:</strong> Always inform your healthcare provider
+    of any drug allergies before starting a new medication. If you experience signs of
+    an allergic reaction (hives, difficulty breathing, swelling), seek emergency care immediately.
+  </div>
+  <h2>Interaction Results</h2>
+  <p class="muted">Drugs checked: {{ drugs_input | join(', ') }}</p>
+  {% if unrecognized %}
+    <p class="muted"><em>Not recognized:</em> {{ unrecognized | join(', ') }}</p>
+  {% endif %}
+
+  {% if summary %}
+    <div class="interaction-summary results-summary-header">
+      <div class="results-summary-count">{{ summary.total }} interaction{{ '' if summary.total == 1 else 's' }} found</div>
+      <div class="results-summary-breakdown">
+        <span class="sev-badge sev-major">&#9888; {{ summary.major }} major</span>
+        <span class="sev-badge sev-moderate">&#9889; {{ summary.moderate }} moderate</span>
+        <span class="sev-badge sev-minor">&#8505; {{ summary.minor }} minor</span>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="severity-legend is-274">
+    <strong>Severity legend</strong>
+    <ul class="is-275">
+      <li><span class="sev-badge sev-major is-276">&#9888; Major</span> Avoid combination; risk of serious clinical harm typically outweighs benefit.</li>
+      <li class="is-277"><span class="sev-badge sev-moderate is-278">&#9889; Moderate</span> Use with caution; combination may require monitoring or dose adjustment.</li>
+      <li class="is-277"><span class="sev-badge sev-minor is-279">&#8505; Minor</span> Limited clinical effect; generally manageable with timing or awareness.</li>
+    </ul>
+  </div>
+
+  {% if interactions %}
+    {% set sev_groups = [
+      ('major', 'Major Interactions', '&#9888;'),
+      ('moderate', 'Moderate Interactions', '&#9889;'),
+      ('minor', 'Minor Interactions', '&#8505;'),
+    ] %}
+    {% for sev, label, icon in sev_groups %}
+      {% set group_items = interactions | selectattr('severity', 'equalto', sev) | list %}
+      {% if group_items %}
+        <div class="severity-group sev-group-{{ sev }}">
+          <h3 class="severity-group-head severity-group-head--{{ sev }}">
+            {{ icon|safe }} {{ label }} ({{ group_items|length }})
+          </h3>
+          <ul class="interaction-list">
+            {% for it in group_items %}
+              <li class="interaction interaction-row sev-{{ it.severity }} interaction-row--{{ it.severity }}">
+                <div class="interaction-row-head">
+                  <span class="sev-badge sev-{{ it.severity }}">{{ icon|safe }} {{ it.severity | capitalize }}</span>
+                  <strong class="interaction-row-drugs">
+                    <a href="{{ url_for('drug_detail', slug=it.drug_a.slug) }}">{{ it.drug_a.generic_name }}</a>
+                    +
+                    {% if it.drug_b %}
+                      <a href="{{ url_for('drug_detail', slug=it.drug_b.slug) }}">{{ it.drug_b.generic_name }}</a>
+                    {% else %}
+                      {{ it.drug_b_name or 'Alcohol' }}
+                    {% endif %}
+                  </strong>
+                </div>
+                <p class="is-282">{{ it.description }}</p>
+                <p class="is-283">
+                  <a href="{{ url_for('drug_detail', slug=it.drug_a.slug) }}#interactions">Learn more &rsaquo;</a>
+                </p>
+                <details class="is-284">
+                  <summary class="is-285">More information</summary>
+                  <div class="is-286">
+                    <p>This interaction is classified as <strong>{{ it.severity }}</strong>.
+                      {% if it.severity == 'major' %}Avoid this combination unless directed and closely monitored by your healthcare provider.
+                      {% elif it.severity == 'moderate' %}Use only with appropriate clinical monitoring or dose adjustment.
+                      {% else %}This interaction is typically clinically minor but worth noting.
+                      {% endif %}
+                    </p>
+                    <p>For pharmacology details, see the drug page for
+                      <a href="{{ url_for('drug_detail', slug=it.drug_a.slug) }}">{{ it.drug_a.generic_name }}</a>{% if it.drug_b %} and
+                      <a href="{{ url_for('drug_detail', slug=it.drug_b.slug) }}">{{ it.drug_b.generic_name }}</a>{% endif %}.
+                    </p>
+                  </div>
+                </details>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p>No known drug-drug interactions found among these drugs in our database.</p>
+  {% endif %}
+
+  {% if food_interactions %}
+    <h3 class="is-127">Drug-Food Interactions</h3>
+    <p class="muted">Common dietary considerations for the drugs you entered.</p>
+    <ul class="interaction-list">
+      {% for it in food_interactions %}
+        {% set icon = '&#9888;' if it.severity == 'major' else ('&#9889;' if it.severity == 'moderate' else '&#8505;') %}
+        <li class="interaction interaction-row sev-{{ it.severity }} interaction-row--{{ it.severity }}">
+          <div class="interaction-row-head">
+            <span class="sev-badge sev-{{ it.severity }}">{{ icon|safe }} {{ it.severity | capitalize }}</span>
+            <strong class="interaction-row-drugs">
+              <a href="{{ url_for('drug_detail', slug=it.drug.slug) }}">{{ it.drug.generic_name }}</a>
+              + {{ it.item }}
+            </strong>
+          </div>
+          <p class="interaction-row-desc">{{ it.description }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if alcohol_interactions %}
+    <h3 class="is-127">Drug-Alcohol Interactions</h3>
+    <p class="muted">Risks of combining alcohol with the drugs you entered.</p>
+    <ul class="interaction-list">
+      {% for it in alcohol_interactions %}
+        {% set icon = '&#9888;' if it.severity == 'major' else ('&#9889;' if it.severity == 'moderate' else '&#8505;') %}
+        <li class="interaction interaction-row sev-{{ it.severity }} interaction-row--{{ it.severity }}">
+          <div class="interaction-row-head">
+            <span class="sev-badge sev-{{ it.severity }}">{{ icon|safe }} {{ it.severity | capitalize }}</span>
+            <strong class="interaction-row-drugs">
+              <a href="{{ url_for('drug_detail', slug=it.drug.slug) }}">{{ it.drug.generic_name }}</a>
+              + Alcohol
+            </strong>
+          </div>
+          <p class="interaction-row-desc">{{ it.description }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="faq-section">
+  <h2>Drug Interaction FAQs</h2>
+  <details class="faq-detail"><summary>What is a drug interaction?</summary>
+    <p>A drug interaction occurs when a medication's effect is altered by another drug, food, beverage, or supplement. Interactions can make a medication less effective, cause unexpected side effects, or produce a new effect neither drug causes alone.</p>
+  </details>
+  <details class="faq-detail"><summary>How do I use the drug interaction checker?</summary>
+    <p>Type the name of a drug in the search box and click Add. Repeat for each medication, supplement, or substance you want to check. Once at least two drugs have been added, click Check Interactions to view the results.</p>
+  </details>
+  <details class="faq-detail"><summary>What are the types of drug interactions?</summary>
+    <p>Drug interactions fall into three main types: drug-drug (one medication affects another), drug-food (foods alter drug absorption or metabolism), and drug-disease (a drug worsens an existing medical condition). This checker covers drug-drug and drug-food/alcohol interactions.</p>
+  </details>
+  <details class="faq-detail"><summary>What do the interaction severity ratings mean?</summary>
+    <p><strong>Major:</strong> The combination may be life-threatening or cause permanent damage. Avoid unless under close medical supervision. <strong>Moderate:</strong> The combination may worsen a medical condition or alter the effectiveness of treatment. Use cautiously with monitoring. <strong>Minor:</strong> The combination may result in increased frequency or severity of side effects, but generally will not require a major change in therapy.</p>
+  </details>
+  <details class="faq-detail"><summary>Can I eat or drink grapefruit with my medicine?</summary>
+    <p>Grapefruit and grapefruit juice can block an enzyme in your intestine that breaks down certain medications, causing higher-than-expected drug levels in your blood. Affected drugs include some statins (atorvastatin, simvastatin), some calcium channel blockers, some immunosuppressants, and others. Always check your medication guide or ask your pharmacist.</p>
+  </details>
+  <details class="faq-detail"><summary>Can I drink alcohol while taking medications?</summary>
+    <p>Alcohol can interact with many medications, including pain relievers (acetaminophen, NSAIDs), sleep aids, antidepressants, anxiety medications, antibiotics (metronidazole), diabetes medications, and blood thinners. Always check the label or ask your pharmacist before drinking alcohol with any prescription or OTC medication.</p>
+  </details>
+  <details class="faq-detail"><summary>Can supplements interact with drugs?</summary>
+    <p>Yes. Herbal supplements such as St. John's wort (reduces effectiveness of many drugs), ginkgo (increases bleeding risk), and garlic, as well as vitamins and minerals, can meaningfully alter the action of prescription drugs. Always tell your healthcare provider about all supplements you take.</p>
+  </details>
+  <details class="faq-detail"><summary>Are drug interactions always dangerous?</summary>
+    <p>No. Many interactions are minor and clinically insignificant. Some are even beneficial and are used intentionally in combination therapy. Your healthcare provider can help interpret what each interaction means for your specific situation.</p>
+  </details>
+  <details class="faq-detail"><summary>What should I do if my drugs interact?</summary>
+    <p>Do not stop taking any prescribed medication on your own. Contact your doctor or pharmacist promptly to discuss whether a dosage adjustment, timing change, or alternative therapy is appropriate.</p>
+  </details>
+  <details class="faq-detail"><summary>Does this checker include all possible interactions?</summary>
+    <p>No drug interaction database is complete. New interactions are discovered regularly. Always consult your pharmacist or doctor, especially if you add a new medication to your regimen. This tool is for informational purposes only and does not replace professional medical advice.</p>
+  </details>
+</section>
+
+<p class="reviewer-line">
+  Authored by <strong>Leigh Ann Anderson, PharmD</strong>. Last updated: Nov 5, 2025.
+  Reviewed and maintained by the Drugs.com clinical editorial team.
+</p>
+
+<section id="further-information">
+  <h2>Further information</h2>
+  <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
+  <p>Copyright 1996-2025 Drugs.com.</p>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  <div class="sidebar-box popular-tools">
+    <h3>Popular tools &amp; resources</h3>
+    <ul class="sidebar-links">
+      <li><a href="{{ url_for('my_med_list') }}">My Med List</a></li>
+      <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+      <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+      <li><a href="{{ url_for('news_index') }}">Medical Q &amp; A</a></li>
+      <li><a href="{{ url_for('news_index') }}">Latest Drug News</a></li>
+    </ul>
+  </div>
+</aside>
+</div>
+
+<script>
+(function(){
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  var form = document.getElementById('checker-form');
+  var input = document.getElementById('drug-input');
+  var addBtn = document.getElementById('add-drug');
+  var listEl = document.getElementById('drug-list');
+  var emptyHint = document.getElementById('empty-hint');
+  var checkBtn = document.getElementById('check-btn');
+
+  function updateState(){
+    var count = listEl.querySelectorAll('li').length;
+    emptyHint.style.display = count ? 'none' : '';
+    checkBtn.style.display = count >= 2 ? '' : 'none';
+  }
+
+  function addDrug(name){
+    if(!name) return;
+    var lower = name.toLowerCase();
+    var existing = listEl.querySelectorAll('input[name="drugs"]');
+    for(var i=0; i<existing.length; i++){
+      if(existing[i].value.toLowerCase() === lower) return;
+    }
+    var li = document.createElement('li');
+    li.className = 'checker-drug-tag';
+
+    var span = document.createElement('span');
+    span.className = 'drug-name';
+    span.textContent = name;
+
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'drugs';
+    hidden.value = name;
+
+    var rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'remove-drug';
+    rm.setAttribute('aria-label', 'Remove ' + name);
+    rm.innerHTML = '&times;';
+    rm.addEventListener('click', function(){ li.remove(); updateState(); });
+
+    li.appendChild(span);
+    li.appendChild(hidden);
+    li.appendChild(rm);
+    listEl.appendChild(li);
+    updateState();
+  }
+
+  // Autocomplete
+  var acDrop = document.getElementById('checker-ac-drop');
+  var acTimer = null;
+  function acHide(){ acDrop.hidden = true; acDrop.innerHTML = ''; }
+  input.addEventListener('input', function(){
+    clearTimeout(acTimer);
+    var q = input.value.trim();
+    if(q.length < 2){ acHide(); return; }
+    acTimer = setTimeout(function(){
+      fetch('/api/autocomplete?q=' + encodeURIComponent(q))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(!input.value.trim()){ acHide(); return; }
+          var drugs = (data||[]).filter(function(r){ return r.type !== 'condition'; }).slice(0,8);
+          if(!drugs.length){ acHide(); return; }
+          var html = '';
+          drugs.forEach(function(r){
+            html += '<div class="checker-ac-item" data-val="' + r.name.replace(/"/g,'&quot;') + '">' + escapeHtml(r.label) + '</div>';
+          });
+          acDrop.innerHTML = html; acDrop.hidden = false;
+          acDrop.querySelectorAll('.checker-ac-item').forEach(function(el){
+            el.addEventListener('mousedown', function(e){
+              e.preventDefault();
+              input.value = el.getAttribute('data-val');
+              acHide();
+              addBtn.click();
+            });
+          });
+        }).catch(acHide);
+    }, 180);
+  });
+  input.addEventListener('blur', function(){ setTimeout(acHide, 200); });
+
+  addBtn.addEventListener('click', function(){
+    var v = input.value.trim();
+    if(v){ addDrug(v); input.value = ''; acHide(); input.focus(); }
+  });
+
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ e.preventDefault(); addBtn.click(); }
+  });
+
+  // Wire up "Common interactions" quick-fill buttons.
+  Array.prototype.forEach.call(document.querySelectorAll('.common-pair-btn'), function(btn){
+    btn.addEventListener('click', function(){
+      var a = btn.getAttribute('data-drug-a');
+      var b = btn.getAttribute('data-drug-b');
+      // Clear existing list so the pair shows cleanly.
+      Array.prototype.forEach.call(listEl.querySelectorAll('li'), function(li){ li.remove(); });
+      if(a) addDrug(a);
+      if(b) addDrug(b);
+    });
+  });
+
+  // Wire up pre-rendered remove buttons (server-rendered tags).
+  Array.prototype.forEach.call(listEl.querySelectorAll('.remove-drug'), function(btn){
+    btn.addEventListener('click', function(){ btn.closest('li').remove(); updateState(); });
+  });
+
+  updateState();
+})();
+</script>
+{% endblock %}
