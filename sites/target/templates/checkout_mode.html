@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Checkout | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 0 %}
+    {% include "_checkout_steps.html" %}
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="eyebrow">Checkout</p>
+        <h1>Choose fulfillment for this order</h1>
+        {% if requires_login %}
+          <p>Sign in to continue with checkout.</p>
+          <div class="inline-actions">
+            <a class="button" href="{{ url_for('login', next=url_for('checkout')) }}">Sign in</a>
+            <a class="button button--secondary" href="{{ url_for('register') }}">Create account</a>
+          </div>
+        {% else %}
+          <div class="plan-grid">
+            <a class="plan-card" href="{{ url_for('checkout_shipping') }}">
+              <h3>Ship it</h3>
+              <p>Fast delivery to your address</p>
+            </a>
+            <a class="plan-card" href="{{ url_for('checkout_pickup') }}">
+              <h3>Store pickup</h3>
+              <p>Pick up from a nearby store</p>
+            </a>
+          </div>
+        {% endif %}
+      </div>
+      <aside class="panel order-summary">
+        <h2>{% if requires_login %}Why sign in?{% else %}Items in cart{% endif %}</h2>
+        {% if requires_login %}
+          <ul class="bullet-list bullet-list--compact">
+            <li>Save your cart and order history</li>
+            <li>Track orders and manage returns</li>
+            <li>Earn Target Circle rewards</li>
+          </ul>
+        {% else %}
+          {% for item in cart_items %}
+            <div class="summary-row"><span>{{ item.product.name }}</span><strong>{{ item.product.price|currency }}</strong></div>
+          {% endfor %}
+        {% endif %}
+      </aside>
+    </div>
+  </section>
+{% endblock %}
+
+

@@ -1,0 +1,33 @@
+{# Listing pager. Every link carries the current filters forward so paging
+   never silently drops a brand / price / availability filter. #}
+{% if pagination and pagination.pages > 1 %}
+  {% set base = request.args.to_dict() %}
+  <nav class="pager" aria-label="Product pages">
+    {% if pagination.has_prev %}
+      {% set _ = base.update({'page': pagination.prev_num}) %}
+      <a class="pager__step" href="{{ url_for(request.endpoint, **dict(request.view_args, **base)) }}">Previous</a>
+    {% else %}
+      <span class="pager__step pager__step--off">Previous</span>
+    {% endif %}
+
+    {% for p in pagination.iter_pages(left_edge=1, left_current=2, right_current=3, right_edge=1) %}
+      {% if p %}
+        {% set _ = base.update({'page': p}) %}
+        {% if p == pagination.page %}
+          <span class="pager__page pager__page--current" aria-current="page">{{ p }}</span>
+        {% else %}
+          <a class="pager__page" href="{{ url_for(request.endpoint, **dict(request.view_args, **base)) }}">{{ p }}</a>
+        {% endif %}
+      {% else %}
+        <span class="pager__gap">…</span>
+      {% endif %}
+    {% endfor %}
+
+    {% if pagination.has_next %}
+      {% set _ = base.update({'page': pagination.next_num}) %}
+      <a class="pager__step" href="{{ url_for(request.endpoint, **dict(request.view_args, **base)) }}">Next</a>
+    {% else %}
+      <span class="pager__step pager__step--off">Next</span>
+    {% endif %}
+  </nav>
+{% endif %}

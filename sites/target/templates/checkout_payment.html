@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Payment | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 2 %}
+    {% include "_checkout_steps.html" %}
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="eyebrow">Payment</p>
+        <h1>Enter payment details</h1>
+        <form method="post" class="auth-form">
+          <label>Payment method
+            <select name="payment_brand">
+              <option value="Demo Visa" {% if checkout.get('payment_brand') == 'Demo Visa' %}selected{% endif %}>Visa</option>
+              <option value="Demo Mastercard" {% if checkout.get('payment_brand') == 'Demo Mastercard' %}selected{% endif %}>Mastercard</option>
+              <option value="Demo Store Card" {% if checkout.get('payment_brand') == 'Demo Store Card' %}selected{% endif %}>Target RedCard</option>
+            </select>
+          </label>
+          <label>Last four digits
+            <input type="text" name="payment_last4" maxlength="4" value="{{ checkout.get('payment_last4', '1111') }}" required>
+          </label>
+          <button class="button" type="submit">Continue to review</button>
+        </form>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+

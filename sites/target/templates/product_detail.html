@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section product-layout">
+    <div class="product-layout__media">
+      <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+    </div>
+    <div class="product-layout__content">
+      <p class="eyebrow">{{ product.brand.name }} | {{ product.category.name }}</p>
+      <h1>{{ product.name }}</h1>
+      <div class="rating-row">
+        <span>{{ product.rating|stars }} ★</span>
+        <span>{{ product.review_count }} ratings</span>
+      </div>
+      <div class="price-row price-row--large">
+        <strong>{{ product.price|currency }}</strong>
+        {% if product.list_price > product.price %}
+          <span class="price-row__strike">{{ product.list_price|currency }}</span>
+          <span class="price-row__save">Save {{ product.discount_percent() }}%</span>
+        {% endif %}
+      </div>
+      <p class="product-summary">{{ product.short_description }}</p>
+      <ul class="bullet-list">
+        {% for bullet in product.highlights() %}
+          <li>{{ bullet }}</li>
+        {% endfor %}
+      </ul>
+      <div class="tag-row">
+        <span>{{ product.availability_status }}</span>
+        {% if product.pickup_eligible %}<span>Store pickup</span>{% endif %}
+        {% if product.delivery_eligible %}<span>Delivery</span>{% endif %}
+      </div>
+      <div class="inline-actions">
+        <form action="{{ url_for('add_to_cart') }}" method="post" class="inline-form">
+          <input type="hidden" name="sku" value="{{ product.sku }}">
+          <input type="hidden" name="next" value="{{ request.full_path }}">
+          <label>Qty
+            <select name="quantity">
+              {% for qty in range(1, 5) %}
+                <option value="{{ qty }}">{{ qty }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button" type="submit">Add to cart</button>
+        </form>
+        <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+          <input type="hidden" name="next" value="{{ request.full_path }}">
+          <button class="button button--secondary" type="submit">{% if product.sku in compare_skus %}Remove from compare{% else %}Add to compare{% endif %}</button>
+        </form>
+        {% if current_user.is_authenticated %}
+          <form action="{{ url_for('toggle_wishlist', sku=product.sku) }}" method="post">
+            <input type="hidden" name="next" value="{{ request.full_path }}">
+            <button class="button button--ghost" type="submit">{% if product.id in wishlist_product_ids %}Remove wishlist{% else %}Save to wishlist{% endif %}</button>
+          </form>
+        {% endif %}
+      </div>
+    </div>
+    <aside class="product-layout__buybox">
+      <h3>Pickup and delivery</h3>
+      <p class="buybox-price">{{ product.price|currency }}</p>
+      <ul class="bullet-list bullet-list--compact">
+        <li>Free pickup or delivery available</li>
+        <li>Fast checkout with Target Circle</li>
+        <li>Protection plans available at checkout</li>
+      </ul>
+      <div class="buybox-panel">
+        {% for row in inventory_rows[:3] %}
+          <div class="inventory-row">
+            <strong>{{ row.store.name }}</strong>
+            <span>{{ row.quantity }} in local stock | {{ row.pickup_window }}</span>
+          </div>
+        {% endfor %}
+      </div>
+    </aside>
+  </section>
+
+  <section class="shell page-section dual-grid">
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Tech specs</p>
+          <h2>What to compare</h2>
+        </div>
+      </div>
+      {% for section in product.specs() %}
+        <div class="spec-section">
+          <h3>{{ section['title'] }}</h3>
+          <dl class="spec-grid">
+            {% for item in section['items'] %}
+              <dt>{{ item['label'] }}</dt>
+              <dd>{{ item['value'] }}</dd>
+            {% endfor %}
+          </dl>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Protection plans</p>
+          <h2>Compare coverage</h2>
+        </div>
+      </div>
+      <div class="plan-grid">
+        {% for plan in product.protection_plans %}
+          <article class="plan-card">
+            <h3>{{ plan.name }}</h3>
+            <strong>{{ plan.price|currency }}</strong>
+            <p>{{ plan.coverage_summary }}</p>
+            <ul class="bullet-list bullet-list--compact">
+              <li>{{ plan.years }} years of coverage</li>
+              <li>{% if plan.accidental %}Includes accidental handling claims{% else %}Mechanical and power issue coverage{% endif %}</li>
+              <li>Priority support: {% if plan.priority_support %}Included{% else %}Not included{% endif %}</li>
+            </ul>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="shell page-section dual-grid">
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Reviews</p>
+          <h2>Guest ratings &amp; reviews</h2>
+        </div>
+      </div>
+
+      {# Per-attribute ratings and the recommendation rate live only here, never
+         on a search card — see the scraped secondary_ratings / percent_recommended. #}
+      {% if product.secondary_ratings() or product.percent_recommended %}
+        <div class="rating-breakdown">
+          {% if product.percent_recommended %}
+            <p class="rating-breakdown__recommend">
+              <strong>{{ product.percent_recommended }}%</strong> would recommend
+            </p>
+          {% endif %}
+          {% for label, score in product.secondary_ratings().items() %}
+            <div class="rating-breakdown__row">
+              <span class="rating-breakdown__label">{{ label }}</span>
+              <span class="rating-breakdown__bar">
+                <span style="width: {{ (score / 5 * 100)|round(0, 'floor')|int }}%"></span>
+              </span>
+              <span class="rating-breakdown__score">{{ score }} out of 5</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if current_user.is_authenticated %}
+        <details class="review-form">
+          <summary>Write a review</summary>
+          <form method="post" action="{{ url_for('submit_review', sku=product.sku) }}" class="filter-form">
+            <label>Rating
+              <select name="rating" required>
+                <option value="">Choose a rating</option>
+                {% for n in [5, 4, 3, 2, 1] %}
+                  <option value="{{ n }}">{{ n }} star{{ '' if n == 1 else 's' }}</option>
+                {% endfor %}
+              </select>
+            </label>
+            <label>Headline
+              <input type="text" name="title" placeholder="Sum up your experience" required>
+            </label>
+            <label>Your review
+              <textarea name="body" rows="4" placeholder="What did you like or dislike?" required></textarea>
+            </label>
+            <button class="button" type="submit">Submit review</button>
+          </form>
+        </details>
+      {% else %}
+        <p class="muted">
+          <a href="{{ url_for('login', next=url_for('product_page', sku=product.sku)) }}">Sign in</a>
+          to write a review.
+        </p>
+      {% endif %}
+
+      {% if not product.reviews %}
+        <p class="muted">No written guest reviews yet for this item.</p>
+      {% endif %}
+
+      {% for review in product.reviews[:6] %}
+        <article class="review-card">
+          <div class="rating-row">
+            <strong>{{ review.title }}</strong>
+            <span>{{ review.rating }} ★</span>
+          </div>
+          <p>{{ review.body }}</p>
+          <span>{{ review.author_name }} | {% if review.verified %}Verified purchase{% else %}Target guest{% endif %}</span>
+        </article>
+      {% endfor %}
+    </div>
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">You may also like</p>
+          <h2>Related category picks</h2>
+        </div>
+      </div>
+      {% set products = related_products %}
+      {% include "_product_cards.html" %}
+    </div>
+  </section>
+{% endblock %}
+
+

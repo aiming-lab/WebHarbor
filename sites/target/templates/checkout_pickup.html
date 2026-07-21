@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Store Pickup | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 1 %}
+    {% include "_checkout_steps.html" %}
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="eyebrow">Pickup</p>
+        <h1>Select a store and pickup slot</h1>
+        <form method="post" class="auth-form">
+          <label>Store
+            <select name="store_id" required>
+              {% for store in stores %}
+                <option value="{{ store.id }}" {% if checkout.get('store_id')|string == store.id|string %}selected{% endif %}>{{ store.name }}  - {{ store.city }}, {{ store.state }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Pickup slot
+            {# Pickup windows are standard across stores, so list the five
+               distinct times once rather than repeating them per store —
+               a flat per-store list ran to 75 near-identical options. The
+               server resolves the chosen window against the chosen store. #}
+            <select name="slot_window" required>
+              {% for window in pickup_windows %}
+                <option value="{{ window }}" {% if checkout.get('slot_window') == window %}selected{% endif %}>{{ window }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <button class="button" type="submit">Continue to payment</button>
+        </form>
+      </div>
+      <aside class="panel order-summary">
+        <h2>Same Day Pickup</h2>
+        <ul class="bullet-list bullet-list--compact">
+          <li>Pick up orders the same day at Target near you</li>
+          <li>Browse available time slots by store</li>
+          <li>Free pickup on all orders</li>
+        </ul>
+      </aside>
+    </div>
+  </section>
+{% endblock %}
+
+

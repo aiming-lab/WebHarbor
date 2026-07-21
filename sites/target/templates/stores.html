@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Stores | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Store lookup</p>
+        <h1>Find stores, pickup desks, and amenities</h1>
+      </div>
+      <form class="inline-search" method="get">
+        <input type="search" name="q" value="{{ active_query }}" placeholder="Search a city or store">
+        <button class="button button--secondary" type="submit">Search stores</button>
+      </form>
+    </div>
+    <div class="store-grid">
+      {% for store in stores %}
+        <a href="{{ url_for('store_page', store_slug=store.slug) }}" class="store-card">
+          {% if store.image_path %}<img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">{% endif %}
+          <div>
+            <span>{{ store.city }}, {{ store.state }}</span>
+            <strong>{{ store.name }}</strong>
+            <p>{{ store.address }}</p>
+            <ul class="tag-row tag-row--left">
+              {% for amenity in store.amenities()[:3] %}
+                <li>{{ amenity }}</li>
+              {% endfor %}
+            </ul>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
+
+

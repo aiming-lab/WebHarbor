@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Cart | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Cart</p>
+        <h1>Your cart</h1>
+      </div>
+    </div>
+    {% if requires_login %}
+      <div class="empty-state">
+        <h3>Sign in to view your cart</h3>
+        <p>Save your cart and orders by signing in to your Target account.</p>
+        <a class="button" href="{{ url_for('login', next=url_for('cart_page')) }}">Sign in</a>
+      </div>
+    {% elif cart_items %}
+      <div class="checkout-layout">
+        <div class="panel">
+          {% for item in cart_items %}
+            <div class="cart-row">
+              <a class="mini-product" href="{{ url_for('product_page', sku=item.product.sku) }}">
+                <img src="{{ url_for('static', filename=item.product.image_path) }}" alt="{{ item.product.name }}">
+                <div>
+                  <strong>{{ item.product.name }}</strong>
+                  <p>{{ item.product.price|currency }}</p>
+                  <span>{{ item.fulfillment_method|title }}{% if item.store %} | {{ item.store.name }}{% endif %}</span>
+                  {% if item.protection_plan %}
+                    <span>{{ item.protection_plan.name }}</span>
+                  {% endif %}
+                </div>
+              </a>
+              <div class="cart-row__actions">
+                <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post">
+                  <label>Qty
+                    <select name="quantity">
+                      {% for qty in range(0, 6) %}
+                        <option value="{{ qty }}" {% if qty == item.quantity %}selected{% endif %}>{{ qty if qty > 0 else 'Remove' }}</option>
+                      {% endfor %}
+                    </select>
+                  </label>
+                  <button class="button button--ghost" type="submit">Update</button>
+                </form>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <aside class="panel order-summary">
+          <h2>Cart summary</h2>
+          <div class="summary-row"><span>Items</span><strong>{{ totals.count }}</strong></div>
+          <div class="summary-row"><span>Subtotal</span><strong>{{ totals.subtotal|currency }}</strong></div>
+          <a class="button" href="{{ url_for('checkout') }}">Go to checkout</a>
+        </aside>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>Your cart is empty</h3>
+        <p>Add items from the catalog to continue.</p>
+        <a class="button" href="{{ url_for('products_page') }}">Browse products</a>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
+
+
