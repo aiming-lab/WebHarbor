@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import news_item %}
+{% block title %}Business & financial news - Google Finance{% endblock %}
+
+{% block content %}
+<h1 class="section-title">News</h1>
+<nav class="fin-tabs">
+  <a href="{{ url_for('news_index') }}" class="{{ 'on' if scope == 'all' }}">All</a>
+  <a href="{{ url_for('news_index', scope='market') }}" class="{{ 'on' if scope == 'market' }}">Markets</a>
+  <a href="{{ url_for('news_index', scope='company') }}" class="{{ 'on' if scope == 'company' }}">Companies</a>
+</nav>
+<div class="news-grid">{% for a in articles %}{{ news_item(a) }}{% endfor %}</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import sym_cell %}
+{% block title %}{{ p.name }} - Google Finance{% endblock %}
+{% block content %}
+<nav class="crumbs"><a href="{{ url_for('portfolios_index') }}">&larr; Portfolios</a><span>|</span><span>{{ p.name }}</span></nav>
+<h1 class="section-title">{{ p.name }}</h1>
+
+<div class="stats-grid">
+  <div>
+    <div class="stat-row"><dt>Market value</dt><dd>{{ '${:,.2f}'.format(p.market_value()) }}</dd></div>
+    <div class="stat-row"><dt>Cash</dt><dd>{{ '${:,.2f}'.format(p.cash) }}</dd></div>
+  </div>
+  <div>
+    <div class="stat-row"><dt>Cost basis</dt><dd>{{ '${:,.2f}'.format(p.cost_basis_total()) }}</dd></div>
+    <div class="stat-row"><dt>Total gain</dt>
+      <dd class="{{ 'up' if p.gain() >= 0 else 'down' }}">{{ fmt_money_signed(p.gain()) }}</dd></div>
+  </div>
+  <div>
+    <div class="stat-row"><dt>Total gain %</dt>
+      <dd class="{{ 'up' if p.gain_pct() >= 0 else 'down' }}">{{ fmt_pct(p.gain_pct()) }}</dd></div>
+    <div class="stat-row"><dt>Day change</dt>
+      <dd class="{{ 'up' if p.day_change() >= 0 else 'down' }}">{{ fmt_money_signed(p.day_change()) }}</dd></div>
+  </div>
+</div>
+
+<div class="panel" style="margin-top:20px">
+  <h2>Add a position</h2>
+  <form method="post" action="{{ url_for('lot_new', pid=p.id) }}" class="form-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <label for="l-slug">Ticker</label>
+      <input id="l-slug" name="slug" required placeholder="e.g. AMD">
+    </div>
+    <div class="form-row">
+      <label for="l-shares">Shares</label>
+      <input id="l-shares" name="shares" type="number" step="0.0001" min="0.0001" required>
+    </div>
+    <div class="form-row">
+      <label for="l-cost">Cost per share (USD)</label>
+      <input id="l-cost" name="cost_basis" type="number" step="0.01" min="0"
+             placeholder="blank = today's price">
+    </div>
+    <button class="btn-blue" type="submit">Add position</button>
+  </form>
+</div>
+
+{% if p.lots %}
+<div class="table-wrap">
+  <table class="q-table pf-table">
+      <thead>
+        <tr><th>Symbol</th><th>Shares</th><th>Cost per share</th><th>Purchased</th>
+          <th>Price</th><th>Market value</th><th>Gain</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for lot in p.lots %}
+          {% set i = lot.instrument %}
+          <tr>
+            <td><a href="{{ url_for('quote', symbol=i.slug) }}">{{ sym_cell(i) }}</a></td>
+            <td>{{ '{:g}'.format(lot.shares) }}</td>
+            <td>{{ '${:,.2f}'.format(lot.cost_basis) }}</td>
+            <td>{{ lot.purchased_on }}</td>
+            <td>{{ pv(i, i.quote.price) }}</td>
+            <td>{{ '${:,.2f}'.format(lot.market_value()) }}</td>
+            <td class="gain-cell {{ 'up' if lot.gain() >= 0 else 'down' }}">{{ fmt_money_signed(lot.gain()) }}
+              <span class="pill {{ 'up' if lot.gain_pct() >= 0 else 'down' }}">{{ fmt_pct(lot.gain_pct()) }}</span></td>
+            <td>
+              <form method="post" action="{{ url_for('lot_delete', pid=p.id, lot_id=lot.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-text" type="submit">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+</div>
+{% else %}
+  <p class="empty-state">No positions yet. Add one above.</p>
+{% endif %}
+
+<form method="post" action="{{ url_for('portfolio_delete', pid=p.id) }}" style="margin-top:20px">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn-outline" type="submit">Delete this portfolio</button>
+</form>
+{% endblock %}

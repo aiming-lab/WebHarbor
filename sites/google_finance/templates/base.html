@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en" data-theme="{{ theme }}" data-colors="{{ colors }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Google Finance{% endblock %}</title>
+  {# The real Google Finance icon set, mirrored from gstatic.com/finance/favicon/ #}
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.png') }}" sizes="32x32">
+  <link rel="icon" href="{{ url_for('static', filename='icons/finance_192.png') }}" sizes="192x192">
+  <link rel="apple-touch-icon-precomposed" href="{{ url_for('static', filename='icons/finance_120.png') }}" sizes="120x120">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header class="gf-header">
+  <a class="gf-brand" href="{{ url_for('index') }}" aria-label="Google Finance home">
+    <span class="gf-wordmark">
+      <span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span>
+    </span>
+    <span class="gf-brand-sub">Finance</span>
+  </a>
+
+  <form class="gf-search" action="{{ url_for('search') }}" method="get" role="search" autocomplete="off">
+    <svg class="gf-search-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"/></svg>
+    <input id="gf-q" name="q" type="search" value="{{ request.args.get('q', '') }}"
+           placeholder="Search for stocks, ETFs, and more"
+           aria-label="Search for stocks, ETFs, and more"
+           role="combobox" aria-expanded="false" aria-controls="gf-suggest">
+    <button type="submit" class="gf-search-go" aria-label="Search">Search</button>
+    <ul id="gf-suggest" class="gf-suggest" hidden></ul>
+  </form>
+
+  <nav class="gf-header-actions">
+    <details class="settings-menu">
+      <summary class="gf-icon-link" title="Settings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m19.14 12.94.06-.94-.06-.94 2.03-1.58a.5.5 0 0 0 .12-.61l-1.92-3.32a.5.5 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.49.49 0 0 0-.49-.41h-3.84a.49.49 0 0 0-.49.41l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.59.22L2.71 8.87a.5.5 0 0 0 .12.61l2.03 1.58-.06.94.6.94-2.03 1.58a.5.5 0 0 0-.12.61l1.92 3.32c.12.22.39.3.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.4.24.24.41.49.41h3.84c.25 0 .46-.17.49-.41l.36-2.54c.59-.24 1.12-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.5.5 0 0 0-.12-.61zM12 15.5A3.5 3.5 0 1 1 12 8.5a3.5 3.5 0 0 1 0 7"/></svg>
+        <span class="sr-only">Settings</span>
+      </summary>
+      <div class="settings-pop">
+        <div class="settings-group">
+          <span class="settings-label">Theme</span>
+          {% for key, label in themes.items() %}
+            <a href="{{ url_for('set_theme', value=key, next=here) }}"
+               class="{{ 'on' if theme == key }}">
+              <span class="tick">{{ '✓' if theme == key }}</span>{{ label }}</a>
+          {% endfor %}
+        </div>
+        <div class="settings-group">
+          <span class="settings-label">Up/down colours</span>
+          {% for key, label in color_modes.items() %}
+            <a href="{{ url_for('set_colors', value=key, next=here) }}"
+               class="{{ 'on' if colors == key }}">
+              <span class="tick">{{ '✓' if colors == key }}</span>{{ label }}</a>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
+    <a class="gf-icon-link" href="{{ url_for('currency_converter') }}" title="Currency converter">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20m0 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16m.5-13h-1v1.06c-1.3.2-2.2 1.02-2.2 2.12 0 1.32 1.06 1.96 2.6 2.34 1.38.33 1.66.7 1.66 1.2 0 .37-.3.96-1.4.96-1.02 0-1.53-.45-1.6-1.05H9.1c.08 1.15 1 1.9 2.4 2.1V17h1v-1.28c1.36-.22 2.3-1.03 2.3-2.2 0-1.53-1.3-2.05-2.62-2.4-1.32-.34-1.64-.7-1.64-1.14 0-.5.47-.86 1.36-.86.94 0 1.3.45 1.33.98h1.44c-.04-1.06-.72-1.86-2.17-2.06z"/></svg>
+      <span class="sr-only">Currency converter</span>
+    </a>
+    <a class="gf-icon-link" href="{{ url_for('news_index') }}" title="News">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 3H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2m0 16H4V5h16zM6 7h8v2H6zm0 4h8v2H6zm0 4h5v2H6zm10-8h2v10h-2z"/></svg>
+      <span class="sr-only">News</span>
+    </a>
+    {% if current_user.is_authenticated %}
+      <a class="gf-account" href="{{ url_for('account') }}">{{ current_user.name.split(' ')[0] }}</a>
+      <a class="gf-signin" href="{{ url_for('logout') }}">Sign out</a>
+    {% else %}
+      <a class="gf-signin" href="{{ url_for('login') }}">Sign in</a>
+    {% endif %}
+  </nav>
+</header>
+
+<div class="gf-shell">
+
+  <aside class="gf-rail gf-rail-left">
+    <div class="rail-block">
+      <div class="rail-head">
+        <a class="rail-title" href="{{ url_for('lists_index') }}">Lists
+          <span class="rail-caret" aria-hidden="true">&#9662;</span></a>
+        <span class="rail-actions">
+          <a class="rail-icon"
+             href="{{ url_for('list_new_form') if current_user.is_authenticated else url_for('login', next='/lists/new') }}"
+             title="New list" aria-label="New list">
+            <svg viewBox="0 0 24 24"><path d="M3 16h10v2H3zm0-5h13v2H3zm0-5h13v2H3zm15 5h2v3h3v2h-3v3h-2v-3h-3v-2h3z"/></svg>
+          </a>
+          <a class="rail-icon" href="{{ url_for('lists_index') }}"
+             title="Expand lists" aria-label="Expand lists">
+            <svg viewBox="0 0 24 24"><path d="M4 20v-6h2v2.6l3.9-3.9 1.4 1.4L7.4 18H10v2zm10.1-9.5-1.4-1.4L16.6 5H14V3h6v6h-2V6.4z"/></svg>
+          </a>
+        </span>
+      </div>
+      {% if nav_watchlists %}
+        <ul class="rail-list">
+          {% for wl in nav_watchlists %}
+            <li><a href="{{ url_for('list_detail', list_id=wl.id) }}">{{ wl.name }}
+              <span class="rail-count">{{ wl.items|length }}</span></a></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="rail-empty"><a href="{{ url_for('login') }}">Sign in</a> to follow stocks in a list.</p>
+      {% endif %}
+    </div>
+
+    <div class="rail-block">
+      <div class="rail-head">
+        <a class="rail-title" href="{{ url_for('portfolios_index') }}">Portfolios</a>
+        <span class="rail-actions">
+          <a class="rail-icon" href="{{ url_for('portfolios_index') }}"
+             title="New portfolio" aria-label="New portfolio">
+            <svg viewBox="0 0 24 24"><path d="M11 11V5h2v6h6v2h-6v6h-2v-6H5v-2z"/></svg>
+          </a>
+        </span>
+      </div>
+      {% if nav_portfolios %}
+        <ul class="rail-list">
+          {% for p in nav_portfolios %}
+            <li><a href="{{ url_for('portfolio_detail', pid=p.id) }}">{{ p.name }}</a></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="rail-empty">Track what you own and how it is doing.</p>
+      {% endif %}
+      <a class="rail-cta" href="{{ url_for('portfolios_index') }}">
+        <span class="rail-cta-plus">+</span> Create portfolio</a>
+    </div>
+
+    <div class="rail-block">
+      <div class="rail-head"><span class="rail-title">Equity sectors</span></div>
+      <ul class="sector-list">
+        {% for s in sector_indexes %}
+          {% set sq = s.quote %}
+          <li>
+            <a href="{{ url_for('quote', symbol=s.slug) }}">
+              <span class="sector-name">
+                <span class="sector-ticker">{{ s.ticker }}</span>
+                <span class="sector-label">{{ s.industry }}</span>
+              </span>
+              {{ spark_svg(s, 62, 22) }}
+              <span class="sector-vals">
+                <span class="sector-price">{{ '{:,.2f}'.format(sq.price) }}</span>
+                <span class="chg {{ 'up' if sq.change_pct >= 0 else 'down' }}">{{ fmt_pct(sq.change_pct) }}</span>
+              </span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </aside>
+
+  <main class="gf-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <aside class="gf-rail gf-rail-right">
+    {% block rail %}
+      {% include '_rail_default.html' %}
+    {% endblock %}
+  </aside>
+</div>
+
+<footer class="gf-footer">
+  <div class="gf-footer-inner">
+    <span>Market data is delayed. Figures shown are a frozen snapshot as of {{ market_close_label }}.</span>
+    <nav>
+      <a href="{{ url_for('markets', slug='indexes') }}">Indexes</a>
+      <a href="{{ url_for('markets', slug='most-active') }}">Most active</a>
+      <a href="{{ url_for('news_index') }}">News</a>
+      <a href="{{ url_for('currency_converter') }}">Currency converter</a>
+      <a href="{{ url_for('compare') }}">Compare</a>
+      <span class="gf-copy">&copy; {{ current_year }}</span>
+    </nav>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/finance.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
