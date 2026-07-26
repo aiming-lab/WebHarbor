@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% block title %}Currency converter - Google Finance{% endblock %}
+{% block content %}
+<h1 class="section-title">Currency converter</h1>
+
+<div class="panel">
+  <form method="get" class="form-inline">
+    <div class="form-row">
+      <label for="c-amt">Amount</label>
+      <input id="c-amt" name="amount" type="number" step="0.01" min="0" value="{{ '{:g}'.format(amount) }}">
+    </div>
+    <div class="form-row">
+      <label for="c-from">From</label>
+      <select id="c-from" name="from">
+        {% for c in codes %}<option value="{{ c }}" {{ 'selected' if c == src }}>{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="c-to">To</label>
+      <select id="c-to" name="to">
+        {% for c in codes %}<option value="{{ c }}" {{ 'selected' if c == dst }}>{{ c }}</option>{% endfor %}
+      </select>
+    </div>
+    <button class="btn-blue" type="submit">Convert</button>
+  </form>
+
+  {% if err %}
+    <p class="form-error" style="margin-top:14px">{{ err }}</p>
+  {% elif result is not none %}
+    <p class="q-price-row" style="margin-top:18px">
+      <span class="q-price">{{ '{:,.4f}'.format(result) }} {{ dst }}</span>
+    </p>
+    <p class="q-stamp">{{ '{:g}'.format(amount) }} {{ src }} =
+      {{ '{:,.4f}'.format(result) }} {{ dst }} &nbsp;&middot;&nbsp;
+      1 {{ src }} = {{ '{:,.6f}'.format(rate) }} {{ dst }}</p>
+  {% endif %}
+</div>
+
+<h2 class="section-title">Quoted pairs</h2>
+<div class="table-wrap">
+  <table class="q-table">
+    <thead><tr><th>Pair</th><th>Rate</th><th>Change</th><th>% Change</th><th>Day high</th><th>Day low</th></tr></thead>
+    <tbody>
+      {% for p in pairs %}
+        <tr>
+          <td><a href="{{ url_for('quote', symbol=p.slug) }}">{{ p.ticker }} — {{ p.name }}</a></td>
+          <td>{{ '{:,.4f}'.format(p.quote.price) }}</td>
+          <td class="{{ 'up' if p.quote.change >= 0 else 'down' }}">{{ '{:+,.4f}'.format(p.quote.change) }}</td>
+          <td><span class="pill {{ 'up' if p.quote.change_pct >= 0 else 'down' }}">{{ fmt_pct(p.quote.change_pct) }}</span></td>
+          <td>{{ '{:,.4f}'.format(p.quote.day_high) }}</td>
+          <td>{{ '{:,.4f}'.format(p.quote.day_low) }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

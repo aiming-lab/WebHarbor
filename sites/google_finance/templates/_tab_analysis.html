@@ -1,0 +1,47 @@
+{% if consensus %}
+  <div class="consensus">
+    <div>
+      <div class="consensus-label">{{ consensus.label }}</div>
+      <div class="consensus-sub">Based on {{ consensus.total }} analyst ratings</div>
+    </div>
+    <div class="rating-bars">
+      {% for label in ['Strong buy', 'Buy', 'Hold', 'Sell', 'Strong sell'] %}
+        {% set n = consensus.counts[label] %}
+        <div class="rating-bar">
+          <span>{{ label }}</span>
+          <span class="track"><i class="fill"
+            style="width: {{ (n / consensus.total * 100) | round(1) }}%"></i></span>
+          <span>{{ n }}</span>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div><div class="stat-row"><dt>Lowest price target</dt>
+      <dd>{{ '${:,.2f}'.format(consensus.target_low) }}</dd></div></div>
+    <div><div class="stat-row"><dt>Average price target</dt>
+      <dd>{{ '${:,.2f}'.format(consensus.target_mean) }}</dd></div></div>
+    <div><div class="stat-row"><dt>Highest price target</dt>
+      <dd>{{ '${:,.2f}'.format(consensus.target_high) }}</dd></div></div>
+  </div>
+
+  <h3 class="subsection-title">Analyst coverage</h3>
+<div class="table-wrap">
+  <table class="q-table">
+      <thead><tr><th>Firm</th><th>Rating</th><th>Price target</th><th>Date</th></tr></thead>
+      <tbody>
+        {% for r in ratings %}
+          <tr>
+            <td>{{ r.firm }}</td>
+            <td>{{ r.rating }}</td>
+            <td>{{ '${:,.2f}'.format(r.price_target) }}</td>
+            <td>{{ r.rated_on }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+</div>
+{% else %}
+  <p class="empty-state">No analyst coverage is published for {{ inst.name }}.</p>
+{% endif %}

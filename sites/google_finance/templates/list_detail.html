@@ -1,0 +1,53 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import sym_cell %}
+{% block title %}{{ wl.name }} - Google Finance{% endblock %}
+{% block content %}
+<nav class="crumbs"><a href="{{ url_for('lists_index') }}">&larr; Lists</a><span>|</span><span>{{ wl.name }}</span></nav>
+<h1 class="section-title">{{ wl.name }}</h1>
+
+<div class="panel">
+  <h2>Add a symbol</h2>
+  <form method="post" action="{{ url_for('list_add', list_id=wl.id) }}" class="form-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <label for="add-slug">Ticker or symbol</label>
+      <input id="add-slug" name="slug" required placeholder="e.g. NVDA">
+    </div>
+    <button class="btn-blue" type="submit">Add to list</button>
+  </form>
+</div>
+
+{% if wl.items %}
+<div class="table-wrap">
+  <table class="q-table">
+      <thead><tr><th>Symbol</th><th></th><th>Price</th><th>Change</th><th>% Change</th><th>Mkt cap</th><th></th></tr></thead>
+      <tbody>
+        {% for item in wl.items %}
+          {% set i = item.instrument %}
+          <tr>
+            <td><a href="{{ url_for('quote', symbol=i.slug) }}">{{ sym_cell(i) }}</a></td>
+            <td>{{ spark_svg(i, 78, 26) }}</td>
+            <td>{{ pv(i, i.quote.price) }}</td>
+            <td class="{{ 'up' if i.quote.change >= 0 else 'down' }}">{{ '{:+,.2f}'.format(i.quote.change) }}</td>
+            <td><span class="pill {{ 'up' if i.quote.change_pct >= 0 else 'down' }}">{{ fmt_pct(i.quote.change_pct) }}</span></td>
+            <td>{{ fmt_big(i.quote.mkt_cap) }}</td>
+            <td>
+              <form method="post" action="{{ url_for('list_remove', list_id=wl.id, item_id=item.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="btn-text" type="submit">Remove</button>
+              </form>
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+</div>
+{% else %}
+  <p class="empty-state">This list is empty. Add a symbol above.</p>
+{% endif %}
+
+<form method="post" action="{{ url_for('list_delete', list_id=wl.id) }}" style="margin-top:20px">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn-outline" type="submit">Delete this list</button>
+</form>
+{% endblock %}

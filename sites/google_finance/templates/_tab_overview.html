@@ -1,0 +1,35 @@
+{# Key statistics. Column split follows the live layout: price/volume,
+   dividend/valuation, per-share and company size. #}
+<div class="stats-grid">
+  <div>
+    <div class="stat-row"><dt>Open</dt><dd>{{ pv(inst, q.day_open) }}</dd></div>
+    <div class="stat-row"><dt>High</dt><dd>{{ pv(inst, q.day_high) }}</dd></div>
+    <div class="stat-row"><dt>Low</dt><dd>{{ pv(inst, q.day_low) }}</dd></div>
+    <div class="stat-row"><dt>Previous close</dt><dd>{{ pv(inst, q.prev_close) }}</dd></div>
+    {% if q.mkt_cap %}<div class="stat-row"><dt>Mkt cap</dt><dd>{{ fmt_big(q.mkt_cap) }}</dd></div>{% endif %}
+    {% if q.avg_volume %}<div class="stat-row"><dt>Avg. vol</dt><dd>{{ fmt_big(q.avg_volume) }}</dd></div>{% endif %}
+    {% if q.volume %}<div class="stat-row"><dt>Volume</dt><dd>{{ fmt_big(q.volume) }}</dd></div>{% endif %}
+  </div>
+
+  <div>
+    {% if q.dividend_yield %}
+      <div class="stat-row"><dt>Dividend yield</dt><dd>{{ '{:.2f}%'.format(q.dividend_yield) }}</dd></div>
+      <div class="stat-row"><dt>Quarterly dividend</dt><dd>{{ '${:,.2f}'.format(q.quarterly_dividend) }}</dd></div>
+      <div class="stat-row"><dt>Ex-dividend date</dt><dd>{{ q.ex_dividend_date }}</dd></div>
+    {% elif inst.kind == 'stock' %}
+      <div class="stat-row"><dt>Dividend yield</dt><dd>—</dd></div>
+    {% endif %}
+    {% if q.pe_ratio %}<div class="stat-row"><dt>P/E ratio</dt><dd>{{ '{:,.2f}'.format(q.pe_ratio) }}</dd></div>{% endif %}
+    <div class="stat-row"><dt>52-wk high</dt><dd>{{ pv(inst, q.wk52_high) }}</dd></div>
+    <div class="stat-row"><dt>52-wk low</dt><dd>{{ pv(inst, q.wk52_low) }}</dd></div>
+  </div>
+
+  <div>
+    {% if q.eps %}<div class="stat-row"><dt>EPS</dt><dd>{{ '${:,.2f}'.format(q.eps) }}</dd></div>{% endif %}
+    {% if q.beta %}<div class="stat-row"><dt>Beta</dt><dd>{{ '{:.2f}'.format(q.beta) }}</dd></div>{% endif %}
+    {% if q.shares_outstanding %}<div class="stat-row"><dt>Shares outstanding</dt><dd>{{ fmt_big(q.shares_outstanding) }}</dd></div>{% endif %}
+    {% if inst.employees %}<div class="stat-row"><dt>No. of employees</dt><dd>{{ inst.employees }}</dd></div>{% endif %}
+    {% if inst.sector and inst.kind == 'stock' %}<div class="stat-row"><dt>Sector</dt><dd>{{ inst.sector }}</dd></div>{% endif %}
+    {% if inst.is_climate_leader %}<div class="stat-row"><dt>Climate leader</dt><dd>Yes</dd></div>{% endif %}
+  </div>
+</div>

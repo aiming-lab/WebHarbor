@@ -1,0 +1,75 @@
+{% from '_macros.html' import sym_cell %}
+
+{% if holdings %}
+  {# an ETF: what the fund owns #}
+  <p class="fin-note">Top holdings by weight. The remainder of the fund is held
+    across positions outside the top {{ holdings|length }}.</p>
+  <div class="table-wrap">
+    <table class="q-table">
+      <thead>
+        <tr><th>Symbol</th><th>Weight</th><th>Price</th><th>% Change</th><th>Sector</th></tr>
+      </thead>
+      <tbody>
+        {% for h in holdings %}
+          {% set hi = h.holding %}
+          <tr>
+            <td><a href="{{ url_for('quote', symbol=hi.slug) }}">{{ sym_cell(hi) }}</a></td>
+            <td>{{ '{:.2f}%'.format(h.weight_pct) }}</td>
+            <td>{{ pv(hi, hi.quote.price) }}</td>
+            <td><span class="pill {{ 'up' if hi.quote.change_pct >= 0 else 'down' }}">{{ fmt_pct(hi.quote.change_pct) }}</span></td>
+            <td>{{ hi.sector }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+{% if holders %}
+  {# a stock: who owns it #}
+  <p class="fin-note">Largest institutional holders of {{ inst.name }}, by
+    percentage of shares outstanding. Change is quarter on quarter.</p>
+  <div class="table-wrap">
+    <table class="q-table">
+      <thead>
+        <tr><th>Holder</th><th>% of shares</th><th>Shares</th>
+          <th>Value</th><th>Change</th></tr>
+      </thead>
+      <tbody>
+        {% for h in holders %}
+          <tr>
+            <td>{{ h.firm }}</td>
+            <td>{{ '{:.2f}%'.format(h.pct_held) }}</td>
+            <td>{{ fmt_big(h.shares) }}</td>
+            <td>{{ fmt_big(h.value) }}</td>
+            <td><span class="pill {{ 'up' if h.change_pct >= 0 else 'down' }}">{{ fmt_pct(h.change_pct) }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+{% if held_by %}
+  <h3 class="subsection-title">Funds holding {{ inst.ticker }}</h3>
+  <div class="table-wrap">
+    <table class="q-table">
+      <thead><tr><th>Fund</th><th>Weight in fund</th><th>Price</th><th>% Change</th></tr></thead>
+      <tbody>
+        {% for h in held_by %}
+          {% set f = h.etf %}
+          <tr>
+            <td><a href="{{ url_for('quote', symbol=f.slug) }}">{{ sym_cell(f) }}</a></td>
+            <td>{{ '{:.2f}%'.format(h.weight_pct) }}</td>
+            <td>{{ pv(f, f.quote.price) }}</td>
+            <td><span class="pill {{ 'up' if f.quote.change_pct >= 0 else 'down' }}">{{ fmt_pct(f.quote.change_pct) }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% endif %}
+
+{% if not holdings and not holders and not held_by %}
+  <p class="empty-state">No holdings data is published for {{ inst.name }}.</p>
+{% endif %}

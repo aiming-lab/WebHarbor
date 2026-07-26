@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Your lists - Google Finance{% endblock %}
+{% block content %}
+<h1 class="section-title">Your lists</h1>
+
+<div class="panel">
+  <h2>Create a list</h2>
+  <form method="post" action="{{ url_for('list_new') }}" class="form-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <label for="new-list">List name</label>
+      <input id="new-list" name="name" required placeholder="e.g. Semis to watch">
+    </div>
+    <button class="btn-blue" type="submit">Create list</button>
+  </form>
+</div>
+
+{% if lists %}
+  {% for wl in lists %}
+    <div class="panel">
+      <h2><a href="{{ url_for('list_detail', list_id=wl.id) }}">{{ wl.name }}</a></h2>
+      {% if wl.items %}
+<div class="table-wrap">
+  <table class="q-table">
+            <thead><tr><th>Symbol</th><th>Price</th><th>Change</th><th>% Change</th><th>Mkt cap</th></tr></thead>
+            <tbody>
+              {% for item in wl.items %}
+                {% set i = item.instrument %}
+                <tr>
+                  <td><a href="{{ url_for('quote', symbol=i.slug) }}">{{ i.ticker }} — {{ i.name }}</a></td>
+                  <td>{{ pv(i, i.quote.price) }}</td>
+                  <td class="{{ 'up' if i.quote.change >= 0 else 'down' }}">{{ '{:+,.2f}'.format(i.quote.change) }}</td>
+                  <td><span class="pill {{ 'up' if i.quote.change_pct >= 0 else 'down' }}">{{ fmt_pct(i.quote.change_pct) }}</span></td>
+                  <td>{{ fmt_big(i.quote.mkt_cap) }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+  </table>
+</div>
+      {% else %}<p class="empty-state">This list is empty.</p>{% endif %}
+    </div>
+  {% endfor %}
+{% else %}
+  <p class="empty-state">You don't have any lists yet.</p>
+{% endif %}
+{% endblock %}

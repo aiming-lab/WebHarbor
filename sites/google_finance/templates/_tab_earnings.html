@@ -1,0 +1,34 @@
+{% if earnings %}
+  <p class="fin-note">Reported results against the consensus estimate that
+    stood before each release.</p>
+<div class="table-wrap">
+  <table class="q-table">
+      <thead>
+        <tr>
+          <th>Quarter</th>
+          <th>Reported</th>
+          <th>EPS estimate</th>
+          <th>EPS actual</th>
+          <th>Surprise</th>
+          <th>Revenue estimate</th>
+          <th>Revenue actual</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in earnings %}
+          <tr>
+            <td>{{ e.quarter }}</td>
+            <td>{{ e.report_date }}</td>
+            <td>{{ '${:,.2f}'.format(e.eps_estimate) }}</td>
+            <td>{{ '${:,.2f}'.format(e.eps_actual) }}</td>
+            <td><span class="pill {{ 'up' if e.surprise_pct >= 0 else 'down' }}">{{ fmt_pct(e.surprise_pct) }}</span></td>
+            <td>{{ fmt_big(e.revenue_estimate) }}</td>
+            <td>{{ fmt_big(e.revenue_actual) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+</div>
+{% else %}
+  <p class="empty-state">No earnings history is published for {{ inst.name }}.</p>
+{% endif %}
