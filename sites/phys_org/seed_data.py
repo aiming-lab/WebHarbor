@@ -37,8 +37,6 @@ CATEGORIES = [
      'Cosmology, planetary science, missions and space exploration.', 60),
     ('nanotechnology', 'Nanotechnology',
      'Nanomaterials, nanoelectronics, bio- and nano-technology.', 70),
-    ('other', 'Other Sciences',
-     'Mathematics, social sciences, archaeology and education.', 80),
 ]
 
 
@@ -84,6 +82,61 @@ JOURNALS_BY_CATEGORY = {
         'PNAS', 'Science Advances', 'PLOS ONE', 'Proceedings of the Royal Society B',
     ],
 }
+
+
+# Technology covers unrelated disciplines, so its RSS subsection is a better
+# signal than the broad category when synthesizing a source journal.
+JOURNALS_BY_SUBSECTION = {
+    ('technology', 'Automotive'): [
+        'IEEE Transactions on Intelligent Transportation Systems',
+        'Transportation Research Part C: Emerging Technologies',
+        'International Journal of Automotive Technology',
+    ],
+    ('technology', 'Consumer & Gadgets'): [
+        'IEEE Consumer Electronics Magazine',
+        'IEEE Transactions on Consumer Electronics',
+        'Personal and Ubiquitous Computing',
+    ],
+    ('technology', 'Electronics & Semiconductors'): [
+        'Nature Electronics', 'IEEE Electron Device Letters',
+        'Advanced Electronic Materials',
+    ],
+    ('technology', 'Energy & Green Tech'): [
+        'Joule', 'Energy & Environmental Science', 'Nature Energy',
+    ],
+    ('technology', 'Engineering'): [
+        'AIAA Journal', 'Aerospace Science and Technology',
+        'Advanced Engineering Materials', 'Nature Communications',
+    ],
+    ('technology', 'Internet'): [
+        'IEEE Internet Computing', 'Computer Networks',
+        'ACM Transactions on Internet Technology',
+    ],
+    ('technology', 'Machine learning & AI'): [
+        'Nature Machine Intelligence', 'Journal of Machine Learning Research',
+        'IEEE Transactions on Pattern Analysis and Machine Intelligence',
+    ],
+    ('technology', 'Robotics'): [
+        'Science Robotics', 'IEEE Transactions on Robotics',
+        'The International Journal of Robotics Research',
+    ],
+    ('technology', 'Security'): [
+        'IEEE Transactions on Information Forensics and Security',
+        'ACM Transactions on Privacy and Security', 'Computers & Security',
+    ],
+    ('technology', 'Software'): [
+        'ACM Transactions on Software Engineering and Methodology',
+        'IEEE Transactions on Software Engineering', 'Empirical Software Engineering',
+    ],
+}
+
+
+def journal_pool(category_slug, subsection):
+    """Return the narrowest deterministic journal pool for an article."""
+    return JOURNALS_BY_SUBSECTION.get(
+        (category_slug, subsection),
+        JOURNALS_BY_CATEGORY.get(category_slug, JOURNALS_BY_CATEGORY['other']),
+    )
 
 
 INSTITUTIONS_BY_CATEGORY = {
@@ -236,7 +289,9 @@ def seed_database(db, User, Category, Article, Comment, bcrypt):
 
         cat_slug = it.get('category_slug') or 'other'
         if cat_slug not in cat_id_map:
-            cat_slug = 'other'
+            # Ignore unsupported feeds instead of creating an empty catch-all
+            # category that cannot be exercised by a benchmark task.
+            continue
         cat_id = cat_id_map[cat_slug]
 
         published = _parse_pub(it.get('pub_date') or '')
@@ -261,7 +316,7 @@ def seed_database(db, User, Category, Article, Comment, bcrypt):
 
         # Journal / institution synthesized per article (deterministic by slug)
         r3 = random.Random(slug + ':source')
-        journal = r3.choice(JOURNALS_BY_CATEGORY.get(cat_slug, JOURNALS_BY_CATEGORY['other']))
+        journal = r3.choice(journal_pool(cat_slug, subsection))
         institution = r3.choice(INSTITUTIONS_BY_CATEGORY.get(cat_slug, INSTITUTIONS_BY_CATEGORY['other']))
         # DOI: synthesize a stable but fake-looking DOI per article id.
         doi = f"https://doi.org/10.{1000 + next_id}/phys.{published.year}.{next_id:05d}"

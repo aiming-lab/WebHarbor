@@ -1,11 +1,10 @@
 """Phys.org mirror — Flask application."""
 import os
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
 from urllib.parse import urlparse
 
-from flask import (Flask, render_template, request, redirect, url_for,
-                   flash, abort, jsonify)
+from flask import Flask, render_template, request, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, UserMixin, login_user, logout_user,
                          login_required, current_user)
@@ -14,7 +13,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_bcrypt import Bcrypt
 from wtforms import StringField, PasswordField, TextAreaField, HiddenField
 from wtforms.validators import DataRequired, Length, Optional, Email
-from sqlalchemy import or_, desc, func
+from sqlalchemy import or_, desc
 from markupsafe import Markup
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))

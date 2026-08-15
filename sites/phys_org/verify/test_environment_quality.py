@@ -1,0 +1,75 @@
+"""Regression checks for the Phys.org asset and seed review findings."""
+
+from __future__ import annotations
+
+import importlib.util
+import sqlite3
+import subprocess
+import tarfile
+import tempfile
+import unittest
+from pathlib import Path, PurePosixPath
+
+
+SITE_DIR = Path(__file__).resolve().parents[1]
+REPO_ROOT = SITE_DIR.parents[1]
+SEED_DB = SITE_DIR / "instance_seed" / "phys_org.db"
+
+
+def _load_seed_data():
+    spec = importlib.util.spec_from_file_location("phys_org_seed_data", SITE_DIR / "seed_data.py")
+    module = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    spec.loader.exec_module(module)
+    return module
+
+
+class EnvironmentQualityTests(unittest.TestCase):
+    def test_no_empty_categories_are_seeded(self) -> None:
+        seed_data = _load_seed_data()
+        self.assertNotIn("other", [row[0] for row in seed_data.CATEGORIES])
+        connection = sqlite3.connect(SEED_DB)
+        try:
+            rows = connection.execute(
+                "SELECT c.slug,count(a.id) FROM categories c "
+                "LEFT JOIN articles a ON a.category_id=c.id GROUP BY c.id"
+            ).fetchall()
+        finally:
+            connection.close()
+        self.assertTrue(rows)
+        self.assertEqual([], [row for row in rows if row[1] == 0])
+
+    def test_engineering_articles_use_subsection_specific_journals(self) -> None:
+        seed_data = _load_seed_data()
+        pool = seed_data.journal_pool("technology", "Engineering")
+        self.assertNotIn("ACM Computing Surveys", pool)
+        connection = sqlite3.connect(SEED_DB)
+        try:
+            rows = connection.execute(
+                "SELECT title,source_journal FROM articles WHERE subsection='Engineering'"
+            ).fetchall()
+        finally:
+            connection.close()
+        self.assertTrue(rows)
+        self.assertEqual([], [row for row in rows if row[1] not in pool])
+
+    def test_asset_packer_excludes_appledouble_entries(self) -> None:
+        with tempfile.TemporaryDirectory(prefix="phys-org-assets-") as temp_dir:
+            subprocess.run(
+                [str(REPO_ROOT / "scripts" / "extract_assets.sh"), temp_dir, "phys_org"],
+                cwd=REPO_ROOT,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            archive = Path(temp_dir) / "phys_org.tar.gz"
+            with tarfile.open(archive, "r:gz") as tar:
+                appledouble = [
+                    name for name in tar.getnames()
+                    if PurePosixPath(name).name.startswith("._")
+                ]
+            self.assertEqual([], appledouble)
+
+
+if __name__ == "__main__":
+    unittest.main()
