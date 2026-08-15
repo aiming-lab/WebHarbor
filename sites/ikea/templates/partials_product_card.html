@@ -6,7 +6,9 @@
   <div class="product-card__body">
     <p class="eyebrow">{{ product.series }} · {{ room_labels[product.room_slug] }}</p>
     <h3><a href="{{ url_for('product_detail', sku=product.sku) }}">{{ product.name }}</a></h3>
-    <p class="meta">{{ product.color }} · {{ product.material }}</p>
+    {% if product.color or product.material %}
+      <p class="meta">{{ [product.color, product.material]|select|join(' · ') }}</p>
+    {% endif %}
     <p class="price-row">
       <strong>{{ product.price|money }}</strong>
       {% if product.list_price > product.price %}

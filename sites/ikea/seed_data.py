@@ -1,6 +1,7 @@
-"""Deterministic seed data and local SVG asset generation for the IKEA demo."""
+"""Deterministic seed data for the IKEA demo."""
 from __future__ import annotations
 
+import json
 import os
 import random
 import shutil
@@ -40,6 +41,7 @@ from app import ROOM_LABELS  # noqa: E402
 RNG = random.Random(20260604)
 STATIC_IMAGES = BASE_DIR / "static" / "images"
 INSTANCE_SEED_DIR = BASE_DIR / "instance_seed"
+CATALOG_PATH = BASE_DIR / "catalog_source.json"
 
 CATEGORY_DATA = [
     ("living-room-seating", "Living room seating", "living-room", "Modular sofas, nesting tables, and relaxed seating built for everyday lounging."),
@@ -203,111 +205,54 @@ def build_stores() -> list[Store]:
     return stores
 
 
-def product_record(index: int, category_slug: str, room_slug: str, base_name: str) -> dict:
-    series = SERIES[index % len(SERIES)]
-    color = COLORS[index % len(COLORS)]
-    material = MATERIALS[index % len(MATERIALS)]
-    width = 24 + (index % 8) * 6
-    depth = 14 + (index % 5) * 4
-    height = 18 + (index % 9) * 5
-    price = round(59 + (index % 13) * 28 + (index % 4) * 9, 2)
-    list_price = round(price + 15 + (index % 5) * 7, 2)
-    return {
-        "sku": f"IK-{11001 + index:05d}",
-        "name": f"{series} {base_name}",
-        "series": series,
-        "category_slug": category_slug,
-        "room_slug": room_slug,
-        "price": price,
-        "list_price": list_price,
-        "material": material,
-        "color": color,
-        "dimensions": f"{width}\" W x {depth}\" D x {height}\" H",
-        "assembly": ["Quick setup", "Weekend setup", "Two-person setup"][index % 3],
-        "tags": [base_name.split()[0].lower(), room_slug, color.lower(), material.split()[0].lower()],
-        "specs": {
-            "Width": f"{width} in",
-            "Depth": f"{depth} in",
-            "Height": f"{height} in",
-            "Material": material,
-            "Color": color,
-        },
-        "featured": index % 9 == 0,
-        "deal": index % 7 == 0,
-    }
-
-
 def build_products() -> list[Product]:
-    categories = {slug: room_slug for slug, _name, room_slug, _desc in CATEGORY_DATA}
-    base_names = {
-        "living-room-seating": ["3-seat sofa", "storage ottoman", "accent chair", "coffee table", "side table", "media bench", "console table", "daybed", "loveseat", "sleeper sofa", "chaise lounge", "nesting table", "sofa table"],
-        "bedroom-storage": ["nightstand", "wardrobe", "dresser", "bedside bench", "platform bed", "storage chest", "underbed box", "headboard shelf", "mirror door wardrobe", "linen chest", "bed frame", "dresser topper", "bed tray"],
-        "kitchen-dining": ["bar stool", "serving cart", "dining chair", "drop-leaf table", "sideboard", "baker rack", "kitchen island", "counter stool", "bench seat", "tray table", "dinnerware shelf", "extendable table", "dish cart"],
-        "home-office": ["writing desk", "task chair", "bookcase", "drawer unit", "monitor riser", "desk shelf", "printer cabinet", "filing cart", "laptop stand", "desk lamp", "wall organizer", "storage bench", "corner desk"],
-        "lighting": ["table lamp", "pendant lamp", "wall light", "floor uplight", "reading lamp", "lantern", "spotlight bar", "ceiling fixture", "picture light", "desk lamp", "led strip", "bedside lamp", "task lamp"],
-        "bathroom": ["ladder shelf", "mirror shelf", "towel stand", "laundry hamper", "vanity stool", "shower caddy", "bath mat set", "wall cabinet", "sink trolley", "toilet shelf", "soap tray set", "bath bench", "mirror"],
-        "kids-room": ["book ledge", "play table", "canopy bed", "storage cart", "step stool", "art cart", "reading nook chair", "wardrobe", "toy bin", "night light", "desk", "peg rail", "play rug"],
-        "outdoor-living": ["dining set", "stackable chair", "balcony table", "planter bench", "sun lounger", "outdoor rug", "storage table", "serving trolley", "shade umbrella", "planter shelf", "patio lamp", "adirondack chair", "bistro table"],
-        "entryway": ["coat rack", "umbrella stand", "key shelf", "mail organizer", "narrow bench", "drawer console", "mirror shelf", "boot tray", "shoe rack", "hook rail", "woven basket", "console table", "tray shelf"],
-        "textiles-rugs": ["runner rug", "throw blanket", "cushion cover set", "window panel", "bed throw", "sheer curtain", "door mat", "seat pad", "blanket ladder", "wool rug", "pillow insert", "sofa throw", "table textile set"],
-        "storage-organization": ["pegboard set", "drawer insert", "storage box", "closet organizer", "wall rail", "basket set", "wire shelf", "cube shelf", "underbed bag", "label bin", "shoe box", "rolling cart", "corner shelf"],
-        "decor-mirrors": ["wall mirror", "leaning mirror", "vase set", "frame trio", "scented candle", "side planter", "floating shelf", "wall clock", "table mirror", "accent tray", "ceramic bowl", "wall hook set", "picture ledge"],
-    }
-
-    seeded = list(SPECIAL_PRODUCTS)
-    filler_index = 0
-    for category_slug, names in base_names.items():
-        existing = sum(1 for product in seeded if product["category_slug"] == category_slug)
-        needed = 13 - existing
-        room_slug = categories[category_slug]
-        for i in range(needed):
-            seeded.append(product_record(filler_index + i, category_slug, room_slug, names[i]))
-        filler_index += needed
+    catalog = json.loads(CATALOG_PATH.read_text(encoding="utf-8"))
+    seeded = catalog["products"]
+    if len(seeded) != 156:
+        raise ValueError(f"IKEA catalog must contain 156 products, got {len(seeded)}")
 
     products: list[Product] = []
     for index, raw in enumerate(seeded):
-        bg, accent = category_palette(index)
-        slug = slugify(raw["name"])
-        image_rel = f"images/products/{raw['sku']}.svg"
-        svg_card(
-            STATIC_IMAGES / "products" / f"{raw['sku']}.svg",
-            raw["name"],
-            f"{raw['series']} · {raw['color']}",
-            bg,
-            accent,
-        )
+        sku = raw["local_sku"]
+        material = raw["materials"][0] if raw["materials"] else ""
+        features = raw["good_to_know"][:3] or raw["care_instructions"][:3]
+        specs = {"IKEA product ID": raw["source_product_id"]}
+        if material:
+            specs["Material"] = material
+        if raw["dimensions"]:
+            specs["Size"] = raw["dimensions"]
+        if raw["care_instructions"]:
+            specs["Care"] = raw["care_instructions"][0]
+        is_deal = index % 7 == 0
+        price = raw["price"]
         products.append(
             Product(
-                sku=raw["sku"],
+                sku=sku,
                 name=raw["name"],
                 series=raw["series"],
-                slug=slug,
+                slug=f"{slugify(raw['name'])}-{sku.lower()}",
                 category_slug=raw["category_slug"],
                 room_slug=raw["room_slug"],
-                description=f"{raw['name']} brings {raw['room_slug'].replace('-', ' ')} storage and calm function into this local demo mirror.",
-                material=raw["material"],
+                description=raw["description"],
+                material=material,
                 color=raw["color"],
                 dimensions=raw["dimensions"],
-                assembly_level=raw["assembly"],
-                price=raw["price"],
-                list_price=raw["list_price"],
+                assembly_level="",
+                price=price,
+                list_price=round(price * 1.12, 2) if is_deal else price,
                 rating=round(4.1 + ((index % 9) * 0.1), 1),
                 review_count=2 + (index % 4),
                 availability_bucket=["Ready for pickup", "Low stock", "Delivery in 2-5 days"][index % 3],
                 delivery_note=["Parcel delivery", "Truck delivery", "Room-of-choice delivery"][index % 3],
                 pickup_badge=["Pickup today", "Pickup tomorrow", "Schedule pickup"][index % 3],
-                image_path=image_rel,
-                gallery_json=dumps_json([image_rel]),
-                features_json=dumps_json([
-                    f"{raw['color']} finish",
-                    raw["assembly"],
-                    f"Built for the {raw['room_slug'].replace('-', ' ')}",
-                ]),
-                specs_json=dumps_json(raw["specs"]),
-                tags_json=dumps_json(raw["tags"]),
-                is_featured=raw["featured"],
+                image_path=raw["image_path"],
+                gallery_json=dumps_json([raw["image_path"]]),
+                features_json=dumps_json(features),
+                specs_json=dumps_json(specs),
+                tags_json=dumps_json(raw["source_category_tree"]),
+                is_featured=index % 9 == 0,
                 is_new=index % 8 == 0,
-                is_deal=raw["deal"],
+                is_deal=is_deal,
                 is_bestseller=index % 10 == 0,
                 compare_group=raw["category_slug"],
             )
@@ -679,4 +624,4 @@ def build_seed_database() -> None:
 
 if __name__ == "__main__":
     build_seed_database()
-    print("Seed database and local SVG assets generated for IKEA.")
+    print("Seed database generated from the deterministic IKEA source catalog.")

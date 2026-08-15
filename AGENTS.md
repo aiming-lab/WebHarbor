@@ -4,7 +4,7 @@ A coding agent (Claude Code, Cursor, Aider, Codex, ...) is reading this. Read on
 
 ## What it is
 
-15 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
+17 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
 
 Two repos:
 - **code** (this one) — Flask apps, control plane, scripts.
@@ -48,17 +48,17 @@ Inside the image, sites live at `/opt/WebSyn/<site>/`. The path predates the ren
 # fresh clone
 ./scripts/fetch_assets.sh                     # pulls assets from HF
 ./scripts/build.sh                            # docker build -t webharbor:dev .
-docker run -d -p 8101:8101 -p 40000-40015:40000-40015 webharbor:dev
+docker run -d -p 8101:8101 -p 40000-40016:40000-40016 webharbor:dev
 ```
 
 Or use the published image directly:
 
 ```bash
-docker run -d -p 8101:8101 -p 40000-40015:40000-40015 \
+docker run -d -p 8101:8101 -p 40000-40016:40000-40016 \
   battalion7244/webharbor:latest
 ```
 
-Sites are on `40000`-`40014` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
+Sites are on `40000`-`40016` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
 
 | Method | Path                | Purpose                                   |
 |--------|---------------------|-------------------------------------------|
@@ -92,11 +92,13 @@ A minimal browser-use ReAct loop (`agent.py`) plus an LLM-as-judge grader (`eval
 cd agent_demo
 uv sync
 uv run playwright install chromium               # one-time
-export OPENAI_API_KEY=...                        # API key + base URL via env, never hardcoded
-export OPENAI_BASE_URL=https://api.openai.com/v1
+# unified LLM config — agent, judge, and verifier all read these three env vars:
+export OPENAI_API_KEY=...                        # bearer token
+export OPENAI_BASE_URL=https://api.openai.com/v1  # OpenAI-compatible base URL
+export JUDGE_MODEL=gpt-5.1                       # model id for agent + judge + verifier LLM utils
 ```
 
-Run a task from a site's `tasks.jsonl` (the format is `{web_name, id, ques, web, upstream_url}` per line). The agent reads `--task` / `--url` either inline or from `--tasks_file [--task_id ID]`:
+Run a task from a site's `tasks.jsonl` (per-line keys: `web_name, id, ques, web, upstream_url`; the reviewer later adds optional `verifier_path` and `judge_rubric` — see CONTRIBUTING.md "Reviewer role"). The agent reads `--task` / `--url` either inline or from `--tasks_file [--task_id ID]`:
 
 ```bash
 # pick a specific task
@@ -108,13 +110,18 @@ uv run python agent.py --task "Find Kevin Durant's bio" \
                        --url http://localhost:40009/ --out_dir runs/inline
 ```
 
-Each run writes `trajectory.json` + `screenshots/step_NNN.png`. Then grade:
+Each run writes `trajectory.json` (carrying the task's `judge_rubric` if the reviewer added one) + `screenshots/step_NNN.png`. Then grade TWO ways — the deterministic verifier (reviewer-provided) is the PRIMARY grader, the LLM judge is secondary:
 
 ```bash
+# 1) deterministic verifier — the PRIMARY grader (binary pass/fail), reviewer-provided
+#    run via eval_judge's verifier mode (it locates the verifier from trajectory.verifier_path)
+uv run python eval_judge.py --run_dir runs/gs0 --verifier True
+
+# 2) LLM-as-judge — secondary; appends a rubric block only if judge_rubric present
 uv run python eval_judge.py --run_dir runs/gs0
 ```
 
-`eval.json` lands next to the trajectory with `success` / `confidence` / `rationale` / `evidence`. See `agent_demo/README.md` for full CLI flags.
+The verifier prints JSON `{task_id, pass, reason, evidence[]}` and exits 0/1; the LLM judge writes `eval.json` with `success` / `confidence` / `rationale` / `evidence` (+ `rubric_checkpoints` if a rubric was provided). See `agent_demo/README.md`, `sites/merriam_webster/verify/README.md`, and CONTRIBUTING.md "Reviewer role" for the full grading contract. Grading is driven through `agent_demo/eval_judge.py`, which has two modes: the default LLM-as-judge, and `--verifier True` to run a task's deterministic verifier (the script at its `verifier_path`).
 
 ## Pre-PR checks
 
@@ -129,13 +136,13 @@ python3 -m py_compile sites/<site>/app.py
 
 # 3. run on alt ports (don't collide with anything you already have running)
 docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41015:40000-40015 webharbor:dev
+  -p 8201:8101 -p 41000-41016:40000-40016 webharbor:dev
 
 # 4. control plane healthy, all sites alive
 curl -s http://localhost:8201/health | python3 -m json.tool | head
 
 # 5. every site renders 200
-for p in $(seq 41000 41014); do
+for p in $(seq 41000 41016); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
@@ -151,6 +158,21 @@ docker stop wh-test
 ```
 
 If you changed an HTTP handler, also `curl` the affected route before and after your change and diff the responses (CSRF tokens differ each request, ignore those).
+
+### If you added or changed tasks: define them with the basic keys only
+
+Contributors write `sites/<site>/tasks.jsonl` with ONLY the task definition per row — `web_name, id, ques, web, upstream_url` (for login tasks, put the demo credentials in `ques`). Do **not** add `verifier_path`, `judge_rubric`, or any `answer` key: the **reviewer** writes the deterministic verifier + rubric and records them back as `verifier_path` + `judge_rubric` (see CONTRIBUTING.md "Reviewer role"). Ground truth never lives in this agent-facing file.
+
+When you self-check a task is feasible before opening the PR, drive it with the agent and eyeball the trajectory:
+
+```bash
+export OPENAI_API_KEY=... OPENAI_BASE_URL=http://api.openai.com/v1 JUDGE_MODEL=GPT-5
+uv run python agent_demo/agent.py --tasks_file sites/<site>/tasks.jsonl \
+        --task_id "<site>--N" --url http://localhost:40000+i/ --out_dir runs/N
+# confirm the trajectory actually solves the task by navigating the site
+```
+
+If a task can be answered without opening the site, is human-in-the-loop, or has no stable answer, fix it before review — the reviewer will reject it.
 
 ## Code style
 
