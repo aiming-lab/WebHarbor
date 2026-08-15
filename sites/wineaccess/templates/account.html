@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Account - Wine Access{% endblock %}
+{% block content %}
+<section class="account-grid">
+  <div>
+    <p class="eyebrow">Manage Your Account</p>
+    <h1>{{ current_user.display_name }}</h1>
+    <p>{{ current_user.email }}</p>
+    <div class="quick-links">
+      <a href="{{ url_for('orders') }}">Order History</a>
+      <a href="{{ url_for('saved') }}">Saved Cellar</a>
+      <a href="{{ url_for('cart') }}">Cart</a>
+    </div>
+    <h2>Club Memberships</h2>
+    {% for membership in current_user.memberships %}
+      <article class="mini-card">
+        <strong>{{ membership.club.name }}</strong>
+        <span>{{ membership.status }} · next ships {{ membership.next_ship_date }}</span>
+      </article>
+    {% else %}
+      <p>You do not have an active club membership.</p>
+    {% endfor %}
+  </div>
+  <form method="post" class="form-card">
+    <h2>Profile and delivery</h2>
+    <label>Name <input name="display_name" value="{{ current_user.display_name }}" required></label>
+    <label>Phone <input name="phone" value="{{ current_user.phone }}"></label>
+    <label>Address <input name="address_line1" value="{{ current_user.address_line1 }}"></label>
+    <label>Apt or suite <input name="address_line2" value="{{ current_user.address_line2 }}"></label>
+    <div class="form-row">
+      <label>City <input name="city" value="{{ current_user.city }}"></label>
+      <label>State <input name="state" value="{{ current_user.state }}"></label>
+      <label>ZIP <input name="zip_code" value="{{ current_user.zip_code }}"></label>
+    </div>
+    <label>Favorite variety <input name="favorite_variety" value="{{ current_user.favorite_variety }}"></label>
+    <button type="submit">Save Changes</button>
+  </form>
+</section>
+{% endblock %}

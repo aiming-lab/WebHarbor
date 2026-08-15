@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Unrivaled Experts - Wine Access{% endblock %}
+{% block content %}
+<section class="experts-hero">
+  <div>
+    <p class="eyebrow">Unrivaled Experts</p>
+    <h1>Meet the Palates Behind Wine Access</h1>
+    <p>Our team tastes broadly, buys selectively, and brings sommelier-level context to bottles that overdeliver on origin, story, and value.</p>
+  </div>
+</section>
+
+<section class="expert-band">
+  <p class="eyebrow">A rigorous tasting bench</p>
+  <h2>Only a small fraction of wines make it through</h2>
+  <p>Wine Access experts compare bottles blind, revisit promising finds, and choose wines that can support real recommendations across food, gifting, collecting, and everyday drinking.</p>
+</section>
+
+<section class="grid-section">
+  <div class="section-title">
+    <p class="eyebrow">Wine Team</p>
+    <h2>People, perspective, and provenance</h2>
+  </div>
+  <div class="expert-grid">
+    {% for expert in experts %}
+      <article class="expert-card">
+        <img src="{{ url_for('static', filename='images/' ~ expert.image) }}" alt="{{ expert.name }}">
+        <div>
+          <p class="eyebrow">{{ expert.role }}</p>
+          <h3>{{ expert.name }}</h3>
+          <p>{{ expert.quote }}</p>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid-section">
+  <div class="section-title">
+    <p class="eyebrow">Expert Picks</p>
+    <h2>Recently selected by the tasting panel</h2>
+  </div>
+  <div class="wine-grid">
+    {% for wine in wines %}
+      {% include "_wine_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

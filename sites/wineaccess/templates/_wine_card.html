@@ -1,0 +1,21 @@
+<article class="wine-card">
+  <a class="bottle-link" href="{{ url_for('wine_detail', slug=wine.slug) }}">
+    <img src="{{ url_for('static', filename='images/' ~ wine.image) }}" alt="{{ wine.name }}">
+  </a>
+  <div class="card-body">
+    {% if wine.limited_offer %}<span class="eyebrow">Limited Time Offer</span>{% endif %}
+    <p class="teaser">{{ wine.teaser }}</p>
+    <h3><a href="{{ url_for('wine_detail', slug=wine.slug) }}">{{ wine.name }}</a></h3>
+    <p class="meta">{{ wine.variety }} · {{ wine.region }}</p>
+    <p class="score">{{ wine.score }} pts · {{ wine.reviewer }}</p>
+    <div class="price-line">
+      {% if wine.list_price > wine.price %}<span class="was">Price was ${{ '%.0f'|format(wine.list_price) }}</span>{% endif %}
+      <strong>{{ wine.display_price }}</strong>
+    </div>
+    <form action="{{ url_for('add_cart', wine_id=wine.id) }}" method="post" class="card-actions">
+      <input type="hidden" name="next" value="{{ request.full_path }}">
+      <input type="number" name="quantity" min="1" max="24" value="1" aria-label="Quantity for {{ wine.name }}">
+      <button type="submit">Add to Cart</button>
+    </form>
+  </div>
+</article>

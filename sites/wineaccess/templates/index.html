@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Limited Time Offers - Wine Access{% endblock %}
+{% block content %}
+<section class="offer-page">
+  <aside class="offer-filters" aria-label="Product filters">
+    {% for label in ["Type", "Variety", "Region", "Availability", "Reviewed By", "Wine Access Expert", "Food Pairing", "Price", "Points"] %}
+      <button class="filter-row" type="button">
+        <span>{{ label }}</span>
+        <span aria-hidden="true">v</span>
+      </button>
+    {% endfor %}
+  </aside>
+
+  <section class="offer-results" aria-label="Limited Time Offers">
+    <div class="offer-toolbar">
+      <div class="filter-chip">
+        <span>Limited Time Offer (Preorders)</span>
+        <a href="{{ url_for('store') }}" aria-label="Clear Limited Time Offer filter">x</a>
+      </div>
+      <a class="clear-filters" href="{{ url_for('store') }}">Clear Filters (1)</a>
+      <label class="sort-label">
+        <span>Sort by:</span>
+        <select name="sort" aria-label="Sort offers">
+          <option selected>Newest</option>
+          <option>Price low to high</option>
+          <option>Highest score</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="offer-grid">
+      {% for wine in wines %}
+        {% include "_offer_card.html" %}
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}

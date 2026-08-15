@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Wine Club Gifting - Wine Access{% endblock %}
+{% block content %}
+<section class="gift-hero">
+  <div>
+    <p class="eyebrow">Wine Access Gifting</p>
+    <h1>A Wine Club Gift for Every Palate</h1>
+    <p>Give expertly curated bottles, tasting notes, and early access to hard-to-find wines. Choose a club, set the delivery details, and let the recipient enjoy the discovery.</p>
+    <a class="button primary" href="#gift-clubs">Start Gifting</a>
+  </div>
+  <img src="{{ url_for('static', filename='images/club_wine_display.webp') }}" alt="Gift-ready Wine Access club bottles">
+</section>
+
+<section class="gift-steps">
+  <article>
+    <span>1</span>
+    <h2>Select a club</h2>
+    <p>Pick reds, discovery bottles, sparkling wines, or the podcast club.</p>
+  </article>
+  <article>
+    <span>2</span>
+    <h2>Add the recipient</h2>
+    <p>Include a gift note and ship to a supported state.</p>
+  </article>
+  <article>
+    <span>3</span>
+    <h2>They unwrap access</h2>
+    <p>Each shipment includes curated wines and tasting cards.</p>
+  </article>
+</section>
+
+<section id="gift-clubs" class="grid-section">
+  <div class="section-title">
+    <p class="eyebrow">Gift Memberships</p>
+    <h2>Choose their next favorite shipment</h2>
+  </div>
+  <div class="gift-grid">
+    {% for club in clubs %}
+      <article class="gift-card">
+        <img src="{{ url_for('static', filename='images/' ~ club.image) }}" alt="{{ club.name }}">
+        <div>
+          <p class="eyebrow">{{ club.tagline }}</p>
+          <h3>{{ club.name }}</h3>
+          <p>{{ club.description }}</p>
+          <p>{{ club.bottles }} bottles / {{ club.frequency }} / ${{ '%.0f'|format(club.price_per_shipment) }}</p>
+          <a class="button primary" href="{{ url_for('club_detail', slug=club.slug) }}">Gift This Club</a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
