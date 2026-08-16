@@ -39,7 +39,10 @@
         </form>
         <div class="stacked-actions">
           <form action="{{ url_for('wishlist_toggle', sku=product.sku) }}" method="post">
-            <button type="submit" class="secondary">Save to wishlist</button>
+            {% set is_wishlisted = product.id in wishlist_product_ids %}
+            <button type="submit" class="secondary" aria-pressed="{{ 'true' if is_wishlisted else 'false' }}">
+              {{ 'Remove from wishlist' if is_wishlisted else 'Save to wishlist' }}
+            </button>
           </form>
           <form action="{{ url_for('compare_toggle', sku=product.sku) }}" method="post">
             <button type="submit" class="secondary">Add to compare</button>

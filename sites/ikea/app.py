@@ -592,12 +592,23 @@ def inject_globals() -> dict[str, Any]:
     stores = Store.query.order_by(Store.name.asc()).all()
     compare_count = len(compare_products()) if current_user.is_authenticated else 0
     summary = cart_summary() if current_user.is_authenticated else {"count": 0, "subtotal": 0.0}
+    wishlist_product_ids = set()
+    if current_user.is_authenticated:
+        wishlist_product_ids = {
+            product_id
+            for (product_id,) in (
+                WishlistItem.query.with_entities(WishlistItem.product_id)
+                .filter_by(user_id=current_user.id)
+                .all()
+            )
+        }
     return {
         "nav_categories": categories[:8],
         "room_labels": ROOM_LABELS,
         "store_options": stores,
         "cart_count": summary["count"],
         "compare_count": compare_count,
+        "wishlist_product_ids": wishlist_product_ids,
         "demo_password": DEMO_PASSWORD,
     }
 
@@ -733,7 +744,10 @@ def compare_toggle(sku: str):
         flash(f"Removed {product.name} from compare.", "info")
     else:
         if CompareItem.query.filter_by(user_id=current_user.id).count() >= 4:
-            flash("You can compare up to four products at once.", "warning")
+            flash(
+                "Compare is full (4/4). Remove a product from Compare before adding another.",
+                "warning",
+            )
         else:
             db.session.add(
                 CompareItem(

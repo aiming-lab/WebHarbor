@@ -16,6 +16,9 @@
               <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
               <strong>{{ product.name }}</strong>
               <p>{{ product.price|money }}</p>
+              <form action="{{ url_for('compare_toggle', sku=product.sku) }}" method="post">
+                <button type="submit" class="secondary">Remove from compare</button>
+              </form>
             </th>
           {% endfor %}
         </tr>
