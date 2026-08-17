@@ -142,6 +142,11 @@ def save_screenshot_b64(b64, path):
     Path(path).write_bytes(base64.b64decode(b64))
 
 
+def append_jsonl(path, record):
+    with Path(path).open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(record, ensure_ascii=False) + "\n")
+
+
 async def run(args):
     api_key = args.api_key or os.environ.get("OPENAI_API_KEY", "")
     api_base = args.api_base or os.environ.get("OPENAI_BASE_URL", "")
@@ -160,6 +165,18 @@ async def run(args):
     out.mkdir(parents=True, exist_ok=True)
     shots = out / "screenshots"
     shots.mkdir(exist_ok=True)
+    trajectory_jsonl = out / "trajectory.jsonl"
+    trajectory_jsonl.write_text("", encoding="utf-8")
+    append_jsonl(
+        trajectory_jsonl,
+        {
+            "event": "run_start",
+            "task": args.task,
+            "task_id": args.task_id,
+            "start_url": args.url,
+            "model": args.model,
+        },
+    )
 
     client = OpenAI(base_url=api_base, api_key=api_key)
 
@@ -217,6 +234,18 @@ async def run(args):
                 trajectory["terminated"] = True
                 trajectory["termination_reason"] = f"parse_error: {e}"
                 trajectory["raw_reply"] = raw
+                append_jsonl(
+                    trajectory_jsonl,
+                    {
+                        "event": "parse_error",
+                        "step": step_idx,
+                        "url": state.url,
+                        "title": state.title,
+                        "screenshot_before": f"screenshots/step_{step_idx:03d}.png",
+                        "llm_raw_output": raw,
+                        "error": str(e),
+                    },
+                )
                 break
 
             name = action.get("action", "")
@@ -230,6 +259,8 @@ async def run(args):
                 "thought": thought,
                 "action": name,
                 "params": params,
+                "llm_raw_output": raw,
+                "parsed_action": action,
                 "screenshot_before": f"step_{step_idx:03d}.png",
                 "screenshot_after": f"step_{step_idx + 1:03d}.png",
             }
@@ -243,6 +274,9 @@ async def run(args):
                 trajectory["success_self_report"] = bool(params.get("success", False))
                 final_state = await browser.get_browser_state_summary(include_screenshot=True)
                 save_screenshot_b64(final_state.screenshot, shots / f"step_{step_idx + 1:03d}.png")
+                step_log["url_after"] = final_state.url
+                step_log["title_after"] = final_state.title
+                append_jsonl(trajectory_jsonl, {"event": "step", **step_log})
                 break
 
             try:
@@ -259,11 +293,26 @@ async def run(args):
 
             state = await browser.get_browser_state_summary(include_screenshot=True)
             save_screenshot_b64(state.screenshot, shots / f"step_{step_idx + 1:03d}.png")
+            step_log["url_after"] = state.url
+            step_log["title_after"] = state.title
+            append_jsonl(trajectory_jsonl, {"event": "step", **step_log})
         else:
             trajectory["termination_reason"] = "max_steps"
 
         traj_path = out / "trajectory.json"
         traj_path.write_text(json.dumps(trajectory, indent=2))
+        append_jsonl(
+            trajectory_jsonl,
+            {
+                "event": "run_end",
+                "task_id": args.task_id,
+                "terminated": trajectory["terminated"],
+                "termination_reason": trajectory["termination_reason"],
+                "success_self_report": trajectory.get("success_self_report"),
+                "final_answer": trajectory.get("final_answer"),
+                "steps": len(trajectory["steps"]),
+            },
+        )
         print(f"\nWrote {traj_path}")
         print(f"  steps: {len(trajectory['steps'])}")
         print(f"  screenshots: {len(list(shots.glob('step_*.png')))}")

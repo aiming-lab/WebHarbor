@@ -14,6 +14,8 @@ import simpleArgParser as sap
 class JudgeArgs:
     run_dir: str = ""
     out: str = ""
+    initial_db: str = ""
+    after_db: str = ""
     last_k_screenshots: int = 4
     model: str = ""
     api_key: str = ""
@@ -48,14 +50,14 @@ Common failure modes you must catch:
   - The agent stopped early (max_steps) without finishing.
   - The agent navigated somewhere unrelated.
   - EMPTY / NO ANSWER: if the task asks for a fact and the agent's final
-    self-reported answer is EMPTY (or clearly absent), mark success=false. The
+    self-reported answer is EMPTY (or clearly absent), mark pass=false. The
     task is to PRODUCE an answer; navigating to the right page without
     reporting the answer is NOT a completion. (You may still extract the
     visible page content into answer_extracted for diagnostics, but it does not
     rescue an empty self-report.)
   - PRIOR-KNOWLEDGE SHORTCUT: if the agent's answer is correct but the
     trajectory shows NO navigation to the site's relevant page (no step URL
-    reaching the mirror for that content), mark success=false. The task is to
+    reaching the mirror for that content), mark pass=false. The task is to
     NAVIGATE the site and read the answer off the page, not recall it.
   - For QUIZ tasks success requires the agent navigated to the quiz, answered
     every question, submitted, and reported the score shown on the result page.
@@ -66,12 +68,12 @@ Tie-break rules:
   - If the task is navigational ("find the page that ..."), the final screenshot
     must show that page.
   - If the agent performed irreversible actions the task did not ask for,
-    mark success=false and explain.
+    mark pass=false and explain.
 
 Respond with ONLY this JSON object (no code fence, no prose):
 
   {
-    "success": <true|false>,
+    "pass": <true|false>,
     "confidence": <0.0-1.0>,
     "rationale": "<full one-paragraph reasoning citing specific steps/screenshots>",
     "evidence": ["<quote or short paraphrase of supporting signal 1>", "..."],
@@ -86,8 +88,8 @@ JUDGE_SYSTEM_RUBRIC = """
 ADDITIONAL INSTRUCTIONS — THIS TASK HAS A JUDGE RUBRIC.
 A JUDGE RUBRIC listing concrete FACT CHECKPOINTS is included in the evidence
 below. You MUST grade against it: verify EVERY checkpoint and treat each MUST
-as a hard requirement for success — if any MUST checkpoint is unmet, mark
-success=false. In your rationale, explicitly check each rubric checkpoint.
+as a hard requirement for passing — if any MUST checkpoint is unmet, mark
+pass=false. In your rationale, explicitly check each rubric checkpoint.
 
 Include an extra field in your JSON response:
   "rubric_checkpoints": {"<checkpoint text 1>": true/false, "...": "..."}
@@ -180,7 +182,12 @@ def parse_judge_json(raw):
     raise ValueError(f"unterminated JSON in judge reply: {raw[:200]!r}")
 
 
-def run_verifier(run_dir: Path, traj: dict) -> dict:
+def run_verifier(
+    run_dir: Path,
+    traj: dict,
+    initial_db: str = "",
+    after_db: str = "",
+) -> dict:
     """Run the task's deterministic verifier (mode --verifier True).
 
     Looks up verifier_path from the trajectory (written by agent.py). Runs the
@@ -217,6 +224,12 @@ def run_verifier(run_dir: Path, traj: dict) -> dict:
     # Run under agent_demo/ so `uv` finds the pyproject + simpleArgParser dep.
     agent_demo_dir = Path(__file__).resolve().parent
     cmd = ["uv", "run", "python", str(vp), "--run_dir", str(run_dir)]
+    initial_path = Path(initial_db) if initial_db else run_dir / "initial.db"
+    after_path = Path(after_db) if after_db else run_dir / "after.db"
+    if initial_path.is_file():
+        cmd.extend(["--initial_db", str(initial_path.resolve())])
+    if after_path.is_file():
+        cmd.extend(["--after_db", str(after_path.resolve())])
     r = subprocess.run(cmd, capture_output=True, text=True, cwd=str(agent_demo_dir),
                        env=os.environ.copy())
     try:
@@ -234,10 +247,36 @@ def run_verifier(run_dir: Path, traj: dict) -> dict:
     else:
         verdict.setdefault("meta", {})
         verdict["meta"].update({"mode": "verifier", "verifier_path": str(vp),
-                                "run_dir": str(run_dir), "returncode": r.returncode})
-        # normalize: verifier emits {pass: bool} -> also expose {success: bool}
-        if "success" not in verdict and "pass" in verdict:
-            verdict["success"] = bool(verdict["pass"])
+                                "run_dir": str(run_dir), "returncode": r.returncode,
+                                "initial_db": str(initial_path.resolve()) if initial_path.is_file() else None,
+                                "after_db": str(after_path.resolve()) if after_path.is_file() else None})
+        task_pass = verdict.get("pass")
+        if not isinstance(task_pass, bool):
+            return {
+                "success": False,
+                "rationale": "verifier returned JSON without a boolean pass field",
+                "evidence": verdict.get("evidence", []),
+                "answer_extracted": "",
+                "meta": {"mode": "verifier", "verifier_path": str(vp),
+                         "run_dir": str(run_dir), "returncode": r.returncode},
+            }
+        expected_returncode = 0 if task_pass else 1
+        if verdict.get("infra_error") is True:
+            verdict["success"] = False
+            verdict["meta"]["expected_returncode"] = expected_returncode
+            return verdict
+        if r.returncode != expected_returncode:
+            verdict["success"] = False
+            verdict["rationale"] = (
+                "verifier exit-code contract mismatch: "
+                f"pass={task_pass!r}, returncode={r.returncode}, "
+                f"expected={expected_returncode}"
+            )
+            verdict["meta"]["expected_returncode"] = expected_returncode
+            return verdict
+        # Orthogonal contract: success means the grading framework ran normally;
+        # pass is the task-completion verdict.
+        verdict["success"] = True
     return verdict
 
 
@@ -251,12 +290,17 @@ def main():
 
     if args.verifier:
         print(f"[verifier mode] task_id={traj.get('task_id','?')} verifier={traj.get('verifier_path','<none>')}")
-        verdict = run_verifier(run_dir, traj)
+        verdict = run_verifier(
+            run_dir,
+            traj,
+            initial_db=args.initial_db,
+            after_db=args.after_db,
+        )
         out_path = Path(args.out) if args.out else run_dir / "eval.json"
         out_path.write_text(json.dumps(verdict, indent=2))
         print(f"wrote {out_path}")
         print(f"  pass: {verdict.get('pass')}  success: {verdict.get('success')}  reason: {verdict.get('reason','')}")
-        sys.exit(0 if verdict.get("success") else 1)
+        sys.exit(0 if verdict.get("success") else 2)
 
     api_key = args.api_key or os.environ.get("OPENAI_API_KEY", "")
     api_base = args.api_base or os.environ.get("OPENAI_BASE_URL", "")
@@ -293,6 +337,23 @@ def main():
             "raw_reply": raw,
         }
 
+    else:
+        # Older judge endpoints may still answer with task-level `success`.
+        # Normalize that field to `pass`, then reserve `success` for framework
+        # execution health.
+        task_pass = verdict.get("pass", verdict.get("success"))
+        if not isinstance(task_pass, bool):
+            verdict = {
+                "success": False,
+                "rationale": "judge returned JSON without a boolean pass field",
+                "evidence": verdict.get("evidence", []),
+                "answer_extracted": verdict.get("answer_extracted", ""),
+                "raw_reply": raw,
+            }
+        else:
+            verdict["pass"] = task_pass
+            verdict["success"] = True
+
     verdict["meta"] = {
         "run_dir": str(run_dir),
         "task": traj.get("task", ""),
@@ -304,7 +365,7 @@ def main():
     out_path = Path(args.out) if args.out else run_dir / "eval.json"
     out_path.write_text(json.dumps(verdict, indent=2))
     print(f"wrote {out_path}")
-    print(f"  success: {verdict.get('success')}  confidence: {verdict.get('confidence')}")
+    print(f"  success: {verdict.get('success')}  pass: {verdict.get('pass')}  confidence: {verdict.get('confidence')}")
     print(f"  rationale: {verdict.get('rationale', '')}")
 
 

@@ -609,7 +609,6 @@ def inject_globals() -> dict[str, Any]:
         "cart_count": summary["count"],
         "compare_count": compare_count,
         "wishlist_product_ids": wishlist_product_ids,
-        "demo_password": DEMO_PASSWORD,
     }
 
 
