@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ wine.name }} - Wine Access{% endblock %}
+{% block content %}
+<section class="detail">
+  <div class="detail-image">
+    <img src="{{ url_for('static', filename='images/' ~ wine.image) }}" alt="{{ wine.name }}">
+  </div>
+  <div class="detail-copy">
+    {% if wine.limited_offer %}<p class="eyebrow">Limited Time Offer</p>{% endif %}
+    <h1>{{ wine.name }}</h1>
+    <p class="teaser large">{{ wine.teaser }}</p>
+    <p class="score">{{ wine.score }} points · {{ wine.reviewer }}</p>
+    <p>{{ wine.tasting_notes }}</p>
+    <div class="detail-price">
+      {% if wine.list_price > wine.price %}<span class="was">Price was ${{ '%.0f'|format(wine.list_price) }}</span>{% endif %}
+      <strong>{{ wine.display_price }}</strong>
+      <span>1-11 bottles</span>
+      <span>${{ '%.2f'|format(wine.case_price / 12) }} per bottle by the case</span>
+    </div>
+    <form action="{{ url_for('add_cart', wine_id=wine.id) }}" method="post" class="buy-box">
+      <input type="number" name="quantity" min="1" max="24" value="1" aria-label="Quantity">
+      <button type="submit">Add to Cart</button>
+    </form>
+    {% if current_user.is_authenticated %}
+      <form action="{{ url_for('remove_saved' if in_saved else 'add_saved', wine_id=wine.id) }}" method="post">
+        <button class="link-button" type="submit">{{ "Remove from Saved" if in_saved else "Save to Cellar" }}</button>
+      </form>
+    {% endif %}
+  </div>
+</section>
+
+<section class="two-col">
+  <div>
+    <h2>Wine Access Tasting Notes</h2>
+    <p>{{ wine.story }}</p>
+    <h3>Pairings</h3>
+    <ul class="chips">
+      {% for pairing in wine.pairings %}<li>{{ pairing }}</li>{% endfor %}
+    </ul>
+  </div>
+  <div>
+    <h2>Details</h2>
+    <dl class="specs">
+      {% for key, value in wine.specs.items() %}
+        <dt>{{ key }}</dt><dd>{{ value }}</dd>
+      {% endfor %}
+      <dt>Availability</dt><dd>{{ wine.availability }}</dd>
+      <dt>Inventory</dt><dd>{{ wine.inventory }} bottles</dd>
+    </dl>
+  </div>
+</section>
+
+<section class="grid-section">
+  <h2>Member Reviews</h2>
+  <div class="review-grid">
+    {% for review in wine.reviews %}
+      <article>
+        <strong>{{ review.title }}</strong>
+        <span>{{ review.rating }} stars by {{ review.author }}</span>
+        <p>{{ review.body }}</p>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="grid-section">
+  <h2>Related Selections</h2>
+  <div class="wine-grid">
+    {% for wine in related %}
+      {% include "_wine_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

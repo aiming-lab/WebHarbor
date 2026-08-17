@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Wine Access Unfiltered - Wine Access{% endblock %}
+{% block content %}
+<section class="podcast-hero">
+  <div class="mic-mark" aria-hidden="true">
+    <span></span>
+  </div>
+  <p>Wine Access</p>
+  <h1>Unfiltered</h1>
+  <h2>Official Podcast and Wine Club</h2>
+</section>
+
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Wine Access</a>
+  <span>/</span>
+  <a href="{{ url_for('club') }}">Wine Clubs</a>
+  <span>/</span>
+  <strong>Unfiltered Wine Podcast &amp; Wine Club</strong>
+</nav>
+
+<section class="editorial-split">
+  <div>
+    <p class="eyebrow">Wine Access Unfiltered</p>
+    <h2>Where Fine-tuned Palates Meet Fresh Perspectives</h2>
+    <p>Hosted by Amanda McCrossin, Unfiltered pairs candid conversations with bottles selected for curious drinkers. Each shipment brings wines connected to the stories, guests, and expert perspective behind the episode.</p>
+    <a class="button primary" href="{{ url_for('club') }}">Join the Podcast Club</a>
+  </div>
+  <img src="{{ url_for('static', filename='images/club_unfiltered.webp') }}" alt="Wine Access Unfiltered podcast hosts">
+</section>
+
+<section class="grid-section podcast-section">
+  <div class="section-title">
+    <p class="eyebrow">Recent Episodes</p>
+    <h2>Drink along with the conversation</h2>
+  </div>
+  <div class="episode-grid">
+    {% for episode in episodes %}
+      <article>
+        <p class="eyebrow">{{ episode.number }} / {{ episode.date }}</p>
+        <h3>{{ episode.title }}</h3>
+        <p>{{ episode.wine }}</p>
+        <a href="{{ url_for('club') }}">Explore the club</a>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

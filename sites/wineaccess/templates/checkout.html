@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Checkout - Wine Access{% endblock %}
+{% block content %}
+<section class="cart-layout">
+  <form method="post" class="form-card">
+    <h1>Checkout</h1>
+    <h2>Shipping</h2>
+    <label>Address <input name="address_line1" value="{{ current_user.address_line1 }}" required></label>
+    <div class="form-row">
+      <label>City <input name="city" value="{{ current_user.city }}" required></label>
+      <label>State <input name="state" value="{{ current_user.state }}" required></label>
+      <label>ZIP <input name="zip_code" value="{{ current_user.zip_code }}" required></label>
+    </div>
+    <h2>Payment</h2>
+    <label>Card ending <input name="card_last4" value="{{ current_user.payment_methods[0].last4 if current_user.payment_methods else '' }}" maxlength="4" required></label>
+    <button type="submit">Place Order</button>
+  </form>
+  <aside class="summary">
+    <h2>Review</h2>
+    {% for item in current_user.cart_items %}
+      <p><span>{{ item.quantity }} x {{ item.wine.name }}</span><strong>${{ '%.2f'|format(item.quantity * item.wine.price) }}</strong></p>
+    {% endfor %}
+    <p class="total"><span>Total</span><strong>${{ '%.2f'|format(totals.total) }}</strong></p>
+  </aside>
+</section>
+{% endblock %}

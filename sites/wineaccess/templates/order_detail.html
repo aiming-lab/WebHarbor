@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ order.order_number }} - Wine Access{% endblock %}
+{% block content %}
+<section class="grid-section narrow">
+  <p class="eyebrow">{{ order.status }}</p>
+  <h1>{{ order.order_number }}</h1>
+  <p>Placed {{ order.placed_at.strftime('%B %d, %Y') }}</p>
+  <p>Ship to {{ order.ship_to }}</p>
+  <p>Tracking: {{ order.tracking_number }}</p>
+  <div class="stack">
+    {% for item in order.items %}
+      <article class="order-card">
+        <div>
+          <h3>{{ item.wine_name }}</h3>
+          <p>{{ item.quantity }} bottle(s) at ${{ '%.2f'|format(item.unit_price) }}</p>
+        </div>
+        <strong>${{ '%.2f'|format(item.quantity * item.unit_price) }}</strong>
+      </article>
+    {% endfor %}
+  </div>
+  <aside class="summary inline">
+    <p><span>Subtotal</span><strong>${{ '%.2f'|format(order.subtotal) }}</strong></p>
+    <p><span>Shipping</span><strong>${{ '%.2f'|format(order.shipping) }}</strong></p>
+    <p><span>Tax</span><strong>${{ '%.2f'|format(order.tax) }}</strong></p>
+    <p class="total"><span>Total</span><strong>${{ '%.2f'|format(order.total) }}</strong></p>
+  </aside>
+</section>
+{% endblock %}
