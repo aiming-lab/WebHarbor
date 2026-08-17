@@ -19,7 +19,7 @@
             <div class="recipe-card-image">
                 <a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">
                     <img src="{{ recipe.image }}" alt="{{ recipe.title }}"
-                         onerror="this.parentElement.innerHTML='<div class=\'placeholder-img\'>{{ recipe.title }}</div>'">
+                         onerror="this.onerror=null;this.parentElement.textContent=this.alt;this.parentElement.classList.add('placeholder-img')">
                 </a>
                 <button class="recipe-card-save {% if is_in_recipe_box(recipe.id) %}saved{% endif %}"
                         data-recipe-id="{{ recipe.id }}" data-saved-icon="&#9829;" data-unsaved-icon="&#9825;">
