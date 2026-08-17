@@ -6,16 +6,24 @@
     <p class="eyebrow">Unrivaled Experts</p>
     <h1>We're here to give you unprecedented access.</h1>
     <p>Our experts draw on decades in the world's great restaurants, cellars, and wine regions to connect members with bottles worth knowing.</p>
+    <nav class="expert-links" aria-label="Wine experts">
+      {% for expert in experts %}
+        <a href="#expert-{{ loop.index }}">{{ expert.name }}</a>
+      {% endfor %}
+    </nav>
   </div>
-  <nav class="expert-links" aria-label="Wine experts">
-    {% for expert in experts %}
-      <a href="#expert-{{ loop.index }}">{{ expert.name }}</a>
-    {% endfor %}
-  </nav>
+  <article class="featured-expert" id="expert-1">
+    <img src="{{ url_for('static', filename='images/' ~ experts[0].image) }}" alt="Portrait of {{ experts[0].name }}">
+    <div>
+      <p class="eyebrow">{{ experts[0].role }}</p>
+      <h2>{{ experts[0].name }}</h2>
+      <p>{{ experts[0].quote }}</p>
+    </div>
+  </article>
 </section>
 
-{% for expert in experts %}
-<section class="expert-profile" id="expert-{{ loop.index }}">
+{% for expert in experts[1:] %}
+<section class="expert-profile" id="expert-{{ loop.index + 1 }}">
   <img src="{{ url_for('static', filename='images/' ~ expert.image) }}" alt="Portrait of {{ expert.name }}">
   <div>
     <p class="eyebrow">{{ expert.role }}</p>
