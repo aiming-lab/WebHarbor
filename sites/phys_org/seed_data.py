@@ -139,6 +139,31 @@ def journal_pool(category_slug, subsection):
     )
 
 
+def source_metadata(category_slug, subsection, slug):
+    """Return deterministic journal and institution values for an article.
+
+    Institution selection intentionally advances a separate RNG through the
+    legacy category-level journal pool first. Earlier assets drew both values
+    from one RNG; preserving that first draw keeps existing institutions stable
+    while allowing subsection-specific journal corrections.
+    """
+    source_seed = slug + ':source'
+    journal_rng = random.Random(source_seed)
+    journal = journal_rng.choice(journal_pool(category_slug, subsection))
+
+    legacy_journals = JOURNALS_BY_CATEGORY.get(
+        category_slug, JOURNALS_BY_CATEGORY['other']
+    )
+    institution_rng = random.Random(source_seed)
+    institution_rng.choice(legacy_journals)
+    institution = institution_rng.choice(
+        INSTITUTIONS_BY_CATEGORY.get(
+            category_slug, INSTITUTIONS_BY_CATEGORY['other']
+        )
+    )
+    return journal, institution
+
+
 INSTITUTIONS_BY_CATEGORY = {
     'physics': [
         'Massachusetts Institute of Technology', 'Stanford University',
@@ -315,9 +340,7 @@ def seed_database(db, User, Category, Article, Comment, bcrypt):
             author_name = f"{r2.choice(firsts)} {r2.choice(lasts)}"
 
         # Journal / institution synthesized per article (deterministic by slug)
-        r3 = random.Random(slug + ':source')
-        journal = r3.choice(journal_pool(cat_slug, subsection))
-        institution = r3.choice(INSTITUTIONS_BY_CATEGORY.get(cat_slug, INSTITUTIONS_BY_CATEGORY['other']))
+        journal, institution = source_metadata(cat_slug, subsection, slug)
         # DOI: synthesize a stable but fake-looking DOI per article id.
         doi = f"https://doi.org/10.{1000 + next_id}/phys.{published.year}.{next_id:05d}"
 

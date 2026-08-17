@@ -25,6 +25,47 @@ def _load_seed_data():
 
 
 class EnvironmentQualityTests(unittest.TestCase):
+    def test_subsection_journal_fix_preserves_legacy_institutions(self) -> None:
+        seed_data = _load_seed_data()
+        cases = [
+            (
+                "operational-test-demonstrates-100-electric-furnace-for-ceramic-frit-me",
+                "Engineering",
+                "Microsoft Research",
+            ),
+            (
+                "no-more-burning-and-exploding-batteries-study-addresses-low-temperatur",
+                "Engineering",
+                "Microsoft Research",
+            ),
+            (
+                "end-of-life-batteries-yield-next-generation-cathode-under-mild-conditi",
+                "Engineering",
+                "Tsinghua University",
+            ),
+            (
+                "light-tunable-polarization-sensor-could-sharpen-self-driving-cars-and-",
+                "Engineering",
+                "KAIST",
+            ),
+            (
+                "60-of-us-teens-have-tried-ai-chatbots-11-4-use-them-almost-daily",
+                "Machine learning & AI",
+                "University of California, Berkeley",
+            ),
+        ]
+
+        for slug, subsection, expected_institution in cases:
+            with self.subTest(slug=slug):
+                journal, institution = seed_data.source_metadata(
+                    "technology", subsection, slug
+                )
+                self.assertIn(
+                    journal,
+                    seed_data.journal_pool("technology", subsection),
+                )
+                self.assertEqual(expected_institution, institution)
+
     def test_no_empty_categories_are_seeded(self) -> None:
         seed_data = _load_seed_data()
         self.assertNotIn("other", [row[0] for row in seed_data.CATEGORIES])
