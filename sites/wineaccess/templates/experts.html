@@ -2,37 +2,28 @@
 {% block title %}Unrivaled Experts - Wine Access{% endblock %}
 {% block content %}
 <section class="experts-hero">
-  <div>
+  <div class="experts-intro">
     <p class="eyebrow">Unrivaled Experts</p>
-    <h1>Meet the Palates Behind Wine Access</h1>
-    <p>Our team tastes broadly, buys selectively, and brings sommelier-level context to bottles that overdeliver on origin, story, and value.</p>
+    <h1>We're here to give you unprecedented access.</h1>
+    <p>Our experts draw on decades in the world's great restaurants, cellars, and wine regions to connect members with bottles worth knowing.</p>
   </div>
-</section>
-
-<section class="expert-band">
-  <p class="eyebrow">A rigorous tasting bench</p>
-  <h2>Only a small fraction of wines make it through</h2>
-  <p>Wine Access experts compare bottles blind, revisit promising finds, and choose wines that can support real recommendations across food, gifting, collecting, and everyday drinking.</p>
-</section>
-
-<section class="grid-section">
-  <div class="section-title">
-    <p class="eyebrow">Wine Team</p>
-    <h2>People, perspective, and provenance</h2>
-  </div>
-  <div class="expert-grid">
+  <nav class="expert-links" aria-label="Wine experts">
     {% for expert in experts %}
-      <article class="expert-card">
-        <img src="{{ url_for('static', filename='images/' ~ expert.image) }}" alt="{{ expert.name }}">
-        <div>
-          <p class="eyebrow">{{ expert.role }}</p>
-          <h3>{{ expert.name }}</h3>
-          <p>{{ expert.quote }}</p>
-        </div>
-      </article>
+      <a href="#expert-{{ loop.index }}">{{ expert.name }}</a>
     {% endfor %}
+  </nav>
+</section>
+
+{% for expert in experts %}
+<section class="expert-profile" id="expert-{{ loop.index }}">
+  <img src="{{ url_for('static', filename='images/' ~ expert.image) }}" alt="Portrait of {{ expert.name }}">
+  <div>
+    <p class="eyebrow">{{ expert.role }}</p>
+    <h2>{{ expert.name }}</h2>
+    <p>{{ expert.quote }}</p>
   </div>
 </section>
+{% endfor %}
 
 <section class="grid-section">
   <div class="section-title">

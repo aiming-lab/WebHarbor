@@ -1,38 +1,49 @@
 {% extends "base.html" %}
-{% block title %}Limited Time Offers - Wine Access{% endblock %}
+{% block title %}Wine Access - Exceptional Wines, Curated by Experts{% endblock %}
 {% block content %}
-<section class="offer-page">
-  <aside class="offer-filters" aria-label="Product filters">
-    {% for label in ["Type", "Variety", "Region", "Availability", "Reviewed By", "Wine Access Expert", "Food Pairing", "Price", "Points"] %}
-      <button class="filter-row" type="button">
-        <span>{{ label }}</span>
-        <span aria-hidden="true">v</span>
-      </button>
+<section class="home-hero">
+  <div class="home-hero-copy">
+    <p class="eyebrow">Share exceptional wine</p>
+    <h1>Give $50.<br>Get $50.</h1>
+    <p>Invite a friend to Wine Access. They receive $50 toward their first discovery, and you receive $50 in wine credit.</p>
+    <a class="button light" href="{{ url_for('register') }}">Refer a Friend</a>
+  </div>
+</section>
+
+<section class="grid-section home-favorites">
+  <div class="section-title centered">
+    <p class="eyebrow">Curated for our members</p>
+    <h2>This Week's Member Favorites</h2>
+    <p>Bottles our community is opening, sharing, and returning to right now.</p>
+  </div>
+  <div class="wine-grid">
+    {% for wine in wines %}
+      {% include "_wine_card.html" %}
     {% endfor %}
-  </aside>
+  </div>
+  <p class="centered"><a class="button" href="{{ url_for('store') }}">Shop All Wines</a></p>
+</section>
 
-  <section class="offer-results" aria-label="Limited Time Offers">
-    <div class="offer-toolbar">
-      <div class="filter-chip">
-        <span>Limited Time Offer (Preorders)</span>
-        <a href="{{ url_for('store') }}" aria-label="Clear Limited Time Offer filter">x</a>
-      </div>
-      <a class="clear-filters" href="{{ url_for('store') }}">Clear Filters (1)</a>
-      <label class="sort-label">
-        <span>Sort by:</span>
-        <select name="sort" aria-label="Sort offers">
-          <option selected>Newest</option>
-          <option>Price low to high</option>
-          <option>Highest score</option>
-        </select>
-      </label>
-    </div>
+<section class="home-press">
+  <p class="eyebrow">A better way to buy wine</p>
+  <blockquote>“Wine Access brings the world's most compelling bottles directly to your door.”</blockquote>
+  <div class="press-names" aria-label="Featured publications">
+    <span>Forbes</span><span>Business Insider</span><span>Food &amp; Wine</span>
+  </div>
+</section>
 
-    <div class="offer-grid">
-      {% for wine in wines %}
-        {% include "_offer_card.html" %}
-      {% endfor %}
-    </div>
-  </section>
+<section class="grid-section">
+  <div class="section-title centered">
+    <p class="eyebrow">Explore Wine Access</p>
+    <h2>Shop Collections</h2>
+  </div>
+  <div class="home-collections">
+    {% for wine in collections %}
+      <a href="{{ url_for('wine_detail', slug=wine.slug) }}">
+        <img src="{{ url_for('static', filename='images/' ~ wine.image) }}" alt="{{ wine.name }}">
+        <span>{{ wine.region }}</span>
+      </a>
+    {% endfor %}
+  </div>
 </section>
 {% endblock %}

@@ -317,15 +317,12 @@ def filtered_wines():
 
 @app.route("/")
 def index():
-    wines = (
-        Wine.query.filter_by(limited_offer=True)
-        .order_by(Wine.vintage.desc(), Wine.name.asc())
-        .limit(12)
-        .all()
-    )
+    wines = Wine.query.order_by(Wine.score.desc(), Wine.name.asc()).limit(4).all()
+    collections = Wine.query.order_by(Wine.id).limit(3).all()
     return render_template(
         "index.html",
         wines=wines,
+        collections=collections,
     )
 
 
@@ -671,25 +668,25 @@ def experts():
             "name": "Laura Koffer",
             "role": "Advanced Sommelier",
             "quote": "I seek out iconic wines from classic regions, but I also look for a story and a connection beyond the sensory experience.",
-            "image": "club_wine_display.webp",
+            "image": "expert_laura.webp",
         },
         {
             "name": "Eduardo Dingler",
             "role": "Wine Judge, Sake Ambassador and Sommelier",
             "quote": "My favorite wines unfold in the glass over time, creating the kind of lasting memories great bottles are made for.",
-            "image": "wine_03_2024-paltrinieri-radice-lambrusco-di-sorbara.webp",
+            "image": "expert_eduardo.webp",
         },
         {
             "name": "Amanda McCrossin",
             "role": "Host of Wine Access Unfiltered",
             "quote": "Setting is my most important criterion for wine selection, but I am never opposed to opening something special on a Tuesday.",
-            "image": "club_unfiltered.webp",
+            "image": "expert_amanda.webp",
         },
         {
             "name": "Vincent Morrow MS",
             "role": "Master Sommelier",
             "quote": "My favorite wines demonstrate authenticity: where they are grown, who produces them, and the moment in which they are enjoyed.",
-            "image": "wine_09_2021-le-pich-cabernet-sauvignon-napa-valley.webp",
+            "image": "expert_vincent.webp",
         },
     ]
     wines = Wine.query.filter_by(expert_pick=True).order_by(Wine.score.desc()).limit(4).all()
