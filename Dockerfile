@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 16 Flask mirror sites + control plane on :8101.
+# 17 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -16,6 +16,7 @@ RUN pip3 install --no-cache-dir \
     Flask-Bcrypt==1.0.1 \
     Werkzeug==3.1.3 \
     Jinja2==3.1.4 \
+    MarkupSafe==3.0.3 \
     SQLAlchemy==2.0.36 \
     WTForms==3.2.1 \
     email-validator==2.2.0 \
@@ -33,6 +34,6 @@ COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
 RUN chmod +x /opt/websyn_start.sh
 
-EXPOSE 8101 40000-40015
+EXPOSE 8101 40000-40016
 
 CMD ["/opt/websyn_start.sh"]

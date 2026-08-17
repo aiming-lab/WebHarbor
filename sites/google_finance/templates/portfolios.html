@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% block title %}Your portfolios - Google Finance{% endblock %}
+{% block content %}
+<h1 class="section-title">Your portfolios</h1>
+
+<div class="panel">
+  <h2>Create a portfolio</h2>
+  <form method="post" action="{{ url_for('portfolio_new') }}" class="form-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <label for="p-name">Portfolio name</label>
+      <input id="p-name" name="name" required placeholder="e.g. Long-term holds">
+    </div>
+    <div class="form-row">
+      <label for="p-cash">Starting cash (USD)</label>
+      <input id="p-cash" name="cash" type="number" step="0.01" min="0" value="0">
+    </div>
+    <button class="btn-blue" type="submit">Create portfolio</button>
+  </form>
+</div>
+
+{% if portfolios %}
+<div class="table-wrap">
+  <table class="q-table">
+      <thead>
+        <tr><th>Portfolio</th><th>Positions</th><th>Cash</th><th>Market value</th>
+          <th>Total gain</th><th>Total gain %</th><th>Day change</th></tr>
+      </thead>
+      <tbody>
+        {% for p in portfolios %}
+          <tr>
+            <td><a href="{{ url_for('portfolio_detail', pid=p.id) }}">{{ p.name }}</a></td>
+            <td>{{ p.lots|length }}</td>
+            <td>{{ '${:,.2f}'.format(p.cash) }}</td>
+            <td>{{ '${:,.2f}'.format(p.market_value()) }}</td>
+            <td class="{{ 'up' if p.gain() >= 0 else 'down' }}">{{ fmt_money_signed(p.gain()) }}</td>
+            <td><span class="pill {{ 'up' if p.gain_pct() >= 0 else 'down' }}">{{ fmt_pct(p.gain_pct()) }}</span></td>
+            <td class="{{ 'up' if p.day_change() >= 0 else 'down' }}">{{ fmt_money_signed(p.day_change()) }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+</div>
+{% else %}
+  <p class="empty-state">You don't have any portfolios yet.</p>
+{% endif %}
+{% endblock %}

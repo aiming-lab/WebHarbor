@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import quote_table %}
+{% block title %}{{ title }} - Google Finance{% endblock %}
+
+{% block content %}
+<nav class="fin-tabs" aria-label="Market lists">
+  {% for key, label in market_pages %}
+    <a href="{{ url_for('markets', slug=key) }}" class="{{ 'on' if key == slug }}">{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<h1 class="section-title">{{ title }}</h1>
+{% if rows %}
+  {% set cols = 'fx' if slug == 'currencies' else 'crypto' if slug == 'cryptocurrencies' else 'default' %}
+  {{ quote_table(rows, spark_svg, fmt_big, fmt_pct, cols) }}
+{% else %}
+  <p class="empty-state">Nothing is listed here right now.</p>
+{% endif %}
+{% endblock %}

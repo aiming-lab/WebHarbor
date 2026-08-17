@@ -1,0 +1,49 @@
+{% extends 'base_auth.html' %}
+{% block title %}Choose an account{% endblock %}
+
+{% block content %}
+<div class="acct-card">
+  <div class="acct-head">
+    <span class="gf-wordmark">
+      <span class="g-b">G</span><span class="g-r">o</span><span class="g-y">o</span><span class="g-b">g</span><span class="g-g">l</span><span class="g-r">e</span>
+    </span>
+    <h1>Choose an account</h1>
+    <p>to continue to Google Finance</p>
+  </div>
+
+  <ul class="acct-list">
+    {% for u in users %}
+      {% set av = avatar_for(u) %}
+      <li>
+        <form method="post" action="{{ url_for('account_choose') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="email" value="{{ u.email }}">
+          <input type="hidden" name="next" value="{{ next_url }}">
+          <button type="submit" class="acct-row">
+            <span class="acct-avatar" style="background: {{ av.colour }}"
+                  aria-hidden="true">{{ av.initial }}</span>
+            <span class="acct-who">
+              <span class="acct-name">{{ u.name }}</span>
+              <span class="acct-email">{{ u.email }}</span>
+            </span>
+          </button>
+        </form>
+      </li>
+    {% endfor %}
+    <li>
+      <a class="acct-row" href="{{ url_for('login', next=next_url) }}">
+        <span class="acct-avatar acct-other" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4m0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4"/></svg>
+        </span>
+        <span class="acct-who"><span class="acct-name">Use another account</span></span>
+      </a>
+    </li>
+  </ul>
+
+  <p class="acct-note">
+    Before using this app, you can review Google Finance's
+    <a href="{{ url_for('index') }}">privacy policy</a> and
+    <a href="{{ url_for('index') }}">terms of service</a>.
+  </p>
+</div>
+{% endblock %}
