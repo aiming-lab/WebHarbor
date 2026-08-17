@@ -43,7 +43,12 @@ def make_db(path: Path, wishlist_email: str | None = None) -> None:
 
 
 class VerifyTask0Tests(unittest.TestCase):
-    def run_verifier(self, before_owner: str | None, after_owner: str | None):
+    def run_verifier(
+        self,
+        before_owner: str | None,
+        after_owner: str | None,
+        use_run_snapshots: bool = False,
+    ):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             run_dir = root / "run"
@@ -52,21 +57,21 @@ class VerifyTask0Tests(unittest.TestCase):
                 json.dumps({"task_id": "IKEA--0", "steps": [], "final_answer": ""}),
                 encoding="utf-8",
             )
-            before_db = root / "before.db"
-            after_db = root / "after.db"
+            before_db = (
+                run_dir / "initial.db" if use_run_snapshots else root / "before.db"
+            )
+            after_db = (
+                run_dir / "after.db" if use_run_snapshots else root / "after.db"
+            )
             make_db(before_db, before_owner)
             make_db(after_db, after_owner)
+            command = [sys.executable, str(VERIFIER), "--run_dir", str(run_dir)]
+            if not use_run_snapshots:
+                command.extend(
+                    ["--initial_db", str(before_db), "--after_db", str(after_db)]
+                )
             result = subprocess.run(
-                [
-                    sys.executable,
-                    str(VERIFIER),
-                    "--run_dir",
-                    str(run_dir),
-                    "--initial_db",
-                    str(before_db),
-                    "--after_db",
-                    str(after_db),
-                ],
+                command,
                 capture_output=True,
                 text=True,
             )
@@ -80,6 +85,13 @@ class VerifyTask0Tests(unittest.TestCase):
 
     def test_correct_bob_wishlist_change_passes(self) -> None:
         returncode, verdict = self.run_verifier(None, "bob.c@test.com")
+        self.assertEqual(returncode, 0)
+        self.assertTrue(verdict["pass"])
+
+    def test_standard_run_directory_snapshots_are_used_automatically(self) -> None:
+        returncode, verdict = self.run_verifier(
+            None, "bob.c@test.com", use_run_snapshots=True
+        )
         self.assertEqual(returncode, 0)
         self.assertTrue(verdict["pass"])
 

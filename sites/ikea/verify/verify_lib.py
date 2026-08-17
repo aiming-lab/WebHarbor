@@ -41,10 +41,18 @@ def parse_args() -> VerifyArgs:
     parser.add_argument("--container", default=DEFAULT_CONTAINER)
     parser.add_argument("--no_llm", action="store_true")
     args = parser.parse_args()
+    run_dir = Path(args.run_dir)
+    initial_snapshot = run_dir / "initial.db"
+    after_snapshot = run_dir / "after.db"
     return VerifyArgs(
         run_dir=args.run_dir,
-        initial_db=args.initial_db,
-        after_db=args.after_db,
+        initial_db=(
+            args.initial_db
+            or (str(initial_snapshot) if initial_snapshot.is_file() else None)
+        ),
+        after_db=(
+            args.after_db or (str(after_snapshot) if after_snapshot.is_file() else None)
+        ),
         container=args.container,
         no_llm=args.no_llm,
     )

@@ -21,12 +21,16 @@ echo "[WebSyn] Starting 17 sites on ports ${BASE_PORT}-$((BASE_PORT + 16))..."
 for i in "${!SITES[@]}"; do
     site="${SITES[$i]}"
     port=$((BASE_PORT + i))
+    # Spawn via /opt/site_runner.py supervisor so SIGTERM works.
+    # See site_runner.py for the rationale (Werkzeug ignores SIGTERM).
     exec python3 /opt/site_runner.py "$site" "$port" \
         > "/tmp/websyn_${site}.log" 2>&1 &
     echo "$!" > "$PID_DIR/${site}.pid"
     echo "  $site -> port $port (PID $!)"
 done
 
+
+# Wait for all sites to bind — retry up to 30 seconds
 echo "[WebSyn] Waiting for sites to become ready..."
 max_wait=30
 interval=2
@@ -42,8 +46,7 @@ import urllib.request
 try:
     r = urllib.request.urlopen('http://127.0.0.1:$port/', timeout=2)
     exit(0 if r.status < 500 else 1)
-except Exception:
-    exit(1)
+except Exception: exit(1)
 " 2>/dev/null; then
             ready=$((ready + 1))
         fi
@@ -54,6 +57,7 @@ except Exception:
     fi
 done
 
+# Final status report
 echo "[WebSyn] Site status:"
 for i in "${!SITES[@]}"; do
     site="${SITES[$i]}"
@@ -63,8 +67,7 @@ import urllib.request
 try:
     r = urllib.request.urlopen('http://127.0.0.1:$port/', timeout=2)
     exit(0 if r.status < 500 else 1)
-except Exception:
-    exit(1)
+except Exception: exit(1)
 " 2>/dev/null; then
         echo "  [OK] $site :$port"
     else
@@ -73,6 +76,7 @@ except Exception:
 done
 
 echo "[WebSyn] Starting control server on :8101 (PID 1)..."
+
 # Control server becomes PID 1 — receives SIGTERM on `docker stop`,
 # keeps the container alive as long as it's running. The 17 site
 # subprocesses are managed via /tmp/websyn_pids/<site>.pid.
