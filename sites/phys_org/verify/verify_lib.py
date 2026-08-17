@@ -90,10 +90,33 @@ def claims_earlier(text: str, expected_title: str) -> bool:
     normalized = norm(text)
     if norm(expected_title) not in normalized:
         return False
-    if re.search(r"\b(?:later|newer|after)\b|\bnot\s+(?:the\s+)?(?:earlier|older|first)\b",
-                 normalized):
+    if _reverses_earlier_claim(normalized):
         return False
     return re.search(r"\b(?:earlier|older|first|before)\b", normalized) is not None
+
+
+def answers_earlier_comparison(text: str, expected_title: str, other_title: str) -> bool:
+    """Accept an explicit earlier claim or an unambiguous direct-title answer.
+
+    A prompt that asks which of two named items is earlier can be answered with
+    the winning title alone. If both titles are repeated, relational wording is
+    still required so the answer cannot pass while remaining ambiguous.
+    """
+    if claims_earlier(text, expected_title):
+        return True
+    normalized = norm(text)
+    return (
+        norm(expected_title) in normalized
+        and norm(other_title) not in normalized
+        and not _reverses_earlier_claim(normalized)
+    )
+
+
+def _reverses_earlier_claim(normalized: str) -> bool:
+    return re.search(
+        r"\b(?:later|newer|after)\b|\bnot\s+(?:the\s+)?(?:earlier|older|first)\b",
+        normalized,
+    ) is not None
 
 
 def fetch_db(container: str, kind: str) -> str:

@@ -34,6 +34,9 @@ class Case:
 
 
 MAGNETIC = "magnetic-checkerboard-separates-microparticles-by-size-and-sends-them-"
+MAGNETIC_TITLE = (
+    "Magnetic checkerboard separates microparticles by size and sends them along different paths"
+)
 QUANTUM_CIRCUIT = "quantum-circuit-test-finally-exposes-what-has-been-warping-performance"
 TINY_ENERGY = "method-for-measuring-energy-amounts-less-than-a-trillionth-of-a-billio"
 TOP_TRENDING = "operational-test-demonstrates-100-electric-furnace-for-ceramic-frit-me"
@@ -44,6 +47,9 @@ GRAPHENE_RECENT = "machine-learning-proves-that-graphene-is-hydrophobic"
 GRAPHENE_EARLIER = "hourglass-nanographenes-unlock-strong-robust-multi-spin-entanglement"
 STAR_ARTICLE = "how-a-single-star-can-reshape-an-entire-galaxy"
 QUANTUM_GEOMETRY = "quantum-geometry-applied-to-light-based-systems-expands-toolkit-for-to"
+QUANTUM_GEOMETRY_TITLE = (
+    "Quantum geometry applied to light-based systems expands toolkit for topological photonics"
+)
 JWST = "jwst-spots-two-early-black-holes-growing-far-faster-than-their-galaxie"
 CO2_ARTICLE = "anion-swap-unlocks-sevenfold-co-capture-in-polyionic-liquids"
 
@@ -213,6 +219,20 @@ class VerifierContractTests(unittest.TestCase):
                 result = self._run(task_id, case.urls, case.answer,
                                    mutate_state=case.stateful)
                 self.assert_verdict(result, True)
+
+    def test_task_11_accepts_direct_winner_title(self) -> None:
+        result = self._run(11, CASES[11].urls, QUANTUM_GEOMETRY_TITLE)
+        self.assert_verdict(result, True)
+
+    def test_task_11_direct_title_answer_must_be_unambiguous(self) -> None:
+        answers = [
+            MAGNETIC_TITLE,
+            f"{QUANTUM_GEOMETRY_TITLE}; {MAGNETIC_TITLE}",
+        ]
+        for answer in answers:
+            with self.subTest(answer=answer):
+                result = self._run(11, CASES[11].urls, answer)
+                self.assert_verdict(result, False)
 
     def test_all_verifiers_reject_knowledge_shortcut(self) -> None:
         for task_id, case in CASES.items():
