@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Cart - Wine Access{% endblock %}
+{% block content %}
+<section class="cart-layout">
+  <div>
+    <h1>Your Cart</h1>
+    <form method="post">
+      {% for item in current_user.cart_items %}
+        <article class="line-item">
+          <img src="{{ url_for('static', filename='images/' ~ item.wine.image) }}" alt="{{ item.wine.name }}">
+          <div>
+            <h3><a href="{{ url_for('wine_detail', slug=item.wine.slug) }}">{{ item.wine.name }}</a></h3>
+            <p>{{ item.wine.variety }} · {{ item.wine.region }}</p>
+            <strong>{{ item.wine.display_price }}</strong>
+          </div>
+          <label>Qty <input type="number" min="0" max="24" name="qty_{{ item.id }}" value="{{ item.quantity }}"></label>
+          <button form="remove-{{ item.id }}" type="submit" class="link-button">Remove</button>
+        </article>
+      {% else %}
+        <p>Your cart is empty. <a href="{{ url_for('store') }}">Shop wine</a>.</p>
+      {% endfor %}
+      {% if current_user.cart_items %}
+        <button type="submit">Update Cart</button>
+      {% endif %}
+    </form>
+    {% for item in current_user.cart_items %}
+      <form id="remove-{{ item.id }}" action="{{ url_for('remove_cart_item', item_id=item.id) }}" method="post"></form>
+    {% endfor %}
+  </div>
+  <aside class="summary">
+    <h2>Order Summary</h2>
+    <p><span>Subtotal</span><strong>${{ '%.2f'|format(totals.subtotal) }}</strong></p>
+    <p><span>Shipping</span><strong>${{ '%.2f'|format(totals.shipping) }}</strong></p>
+    <p><span>Estimated tax</span><strong>${{ '%.2f'|format(totals.tax) }}</strong></p>
+    <p class="total"><span>Total</span><strong>${{ '%.2f'|format(totals.total) }}</strong></p>
+    <a class="button primary full" href="{{ url_for('checkout') }}">Checkout</a>
+  </aside>
+</section>
+{% endblock %}
