@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% from "_cards.html" import album_card, merch_card, artist_card %}
+{% block title %}Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="hero-shell">
+    <div class="container hero-grid">
+        <div class="hero-copy">
+            <p class="eyebrow">Music discovery + commerce + fan collection</p>
+            <h1>Discover albums, buy merch, and build a fan library without leaving the local mirror.</h1>
+            <p>The layout borrows Bandcamp's clean blue header, narrow content columns, and merch-aware discovery flow while staying fully local and deterministic.</p>
+            <div class="hero-actions">
+                <a class="button-primary" href="{{ url_for('discover') }}">Browse discover</a>
+                <a class="button-secondary" href="{{ url_for('compare_releases') }}">Compare releases</a>
+            </div>
+            <div class="support-box">
+                <strong>{{ support_total|money }}</strong>
+                <span>supported through seeded fan orders in this local mirror</span>
+            </div>
+        </div>
+        <div class="hero-stack">
+            {% for album in featured_albums[:3] %}
+                <a class="hero-release" href="{{ url_for('album_page', slug=album.slug) }}">
+                    <img src="{{ url_for('static', filename=album.cover_image) }}" alt="{{ album.title }} cover">
+                    <div>
+                        <strong>{{ album.title }}</strong>
+                        <span>{{ album.artist.name }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Featured releases</p>
+            <h2>Albums with full format, merch, comment, and collection flows</h2>
+        </div>
+        <a href="{{ url_for('discover') }}">Open discover</a>
+    </div>
+    <div class="card-grid release-grid">
+        {% for album in featured_albums %}
+            {{ album_card(album) }}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container section-block editorial-grid">
+    <div class="editorial-panel">
+        <p class="eyebrow">Bandcamp-style editorial</p>
+        <h2>Recent fan support</h2>
+        <div class="support-feed">
+            {% for item in support_items %}
+                <a class="support-item" href="{% if item.album %}{{ url_for('album_page', slug=item.album.slug) }}{% else %}{{ url_for('merch_page', slug=item.merch_item.slug) }}{% endif %}">
+                    <img src="{{ url_for('static', filename=item.image_path) }}" alt="{{ item.title }}">
+                    <div>
+                        <strong>{{ item.title }}</strong>
+                        <span>{{ item.artist_name }}</span>
+                        <span>{{ item.unit_price|money }} / {{ item.variant_label }}</span>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    <div class="editorial-panel pale">
+        <p class="eyebrow">Editorial picks</p>
+        <h2>Spotlighted discovery paths</h2>
+        <div class="artist-stack">
+            {% for album in editorial %}
+                {{ artist_card(album.artist) }}
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">New releases</p>
+            <h2>Fresh drops across scenes and labels</h2>
+        </div>
+        <a href="{{ url_for('discover', sort='new') }}">Newest first</a>
+    </div>
+    <div class="card-grid release-grid">
+        {% for album in new_releases[:8] %}
+            {{ album_card(album, show_scene=False) }}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Merch table</p>
+            <h2>Shirts, posters, totes, slipmats, cassettes, and collector add-ons</h2>
+        </div>
+        <a href="{{ url_for('discover', view='merch', format='shirt') }}">Explore merch</a>
+    </div>
+    <div class="card-grid merch-grid">
+        {% for merch in featured_merch %}
+            {{ merch_card(merch) }}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Scenes</p>
+            <h2>Browse releases by city and local movement</h2>
+        </div>
+    </div>
+    <div class="scene-grid">
+        {% for scene in scenes %}
+            <a class="scene-card" href="{{ url_for('scene_page', slug=scene.slug) }}">
+                <strong>{{ scene.name.split(',')[0] }}</strong>
+                <span>{{ scene.country }}</span>
+                <p>{{ scene.description }}</p>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

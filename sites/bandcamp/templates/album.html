@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% from "_cards.html" import album_card, merch_card %}
+{% block title %}{{ album.title }} - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block album-layout">
+    <div class="album-main">
+        <div class="album-art">
+            <img src="{{ url_for('static', filename=album.cover_image) }}" alt="{{ album.title }} cover">
+        </div>
+        <div class="album-copy">
+            <p class="eyebrow">{{ album.primary_genre.name }} / {{ album.scene.name }}</p>
+            <h1>{{ album.title }}</h1>
+            <p class="release-byline">by <a href="{{ url_for('artist_page', slug=album.artist.slug) }}">{{ album.artist.name }}</a> / on <a href="{{ url_for('label_page', slug=album.label.slug) }}">{{ album.label.name }}</a></p>
+            <p>{{ album.description }}</p>
+            <p>{{ album.story }}</p>
+            <div class="release-tags">
+                {% for tag in album.tags %}
+                    <a href="{{ url_for('discover', tag=tag.slug) }}">{{ tag.name }}</a>
+                {% endfor %}
+            </div>
+            <div class="album-stats">
+                <span>{{ album.track_count }} tracks</span>
+                <span>{{ album.duration_seconds|duration }}</span>
+                <span>released {{ album.release_date|longdate }}</span>
+                <span>{{ album.catalog_no }}</span>
+            </div>
+
+            <div class="tracklist">
+                {% for track in album.tracks %}
+                    <div class="track-row">
+                        <div>
+                            <strong><a href="{{ url_for('track_page', slug=track.slug) }}">{{ track.track_number }}. {{ track.title }}</a></strong>
+                            <button class="preview-toggle" type="button" data-preview-target="preview-{{ track.id }}">Preview mock</button>
+                            <div id="preview-{{ track.id }}" class="preview-panel">
+                                <div class="wave">
+                                    <span></span><span></span><span></span><span></span><span></span>
+                                </div>
+                                <p>{{ track.preview_hook }}</p>
+                            </div>
+                        </div>
+                        <span>{{ track.duration_seconds|duration }}</span>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <aside class="purchase-panel">
+        <h2>Buy this release</h2>
+        <p class="price-big">from {{ album.price_from()|money }}</p>
+        <form method="post" action="{{ url_for('cart_add') }}">
+            <input type="hidden" name="album_id" value="{{ album.id }}">
+            <label>Format
+                <select name="variant_id">
+                    {% for variant in album.variants %}
+                        <option value="{{ variant.id }}">{{ variant.label_text() }} / {{ variant.price|money }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Quantity
+                <input type="number" name="quantity" min="1" value="1">
+            </label>
+            <button class="button-primary" type="submit">Add to cart</button>
+        </form>
+        <form method="post" action="{{ url_for('wishlist_add') }}">
+            <input type="hidden" name="album_id" value="{{ album.id }}">
+            <button class="button-secondary" type="submit">{% if in_wishlist %}Saved in wishlist{% else %}Add to wishlist{% endif %}</button>
+        </form>
+        <a class="button-secondary full" href="{{ url_for('compare_releases', left=album.slug) }}">Compare formats</a>
+        <div class="variant-stack">
+            {% for variant in album.variants %}
+                <div class="variant-card">
+                    <strong>{{ variant.label_text() }}</strong>
+                    <span>{{ variant.price|money }}</span>
+                    <p>{{ variant.edition_note }}</p>
+                    <small>{{ variant.shipping_note }}</small>
+                </div>
+            {% endfor %}
+        </div>
+    </aside>
+</section>
+
+<section class="container section-block comment-layout">
+    <div class="editorial-panel">
+        <div class="section-head compact"><h2>Fan comments</h2></div>
+        {% if album.comments %}
+            {% for comment in album.comments %}
+                <article class="comment-card">
+                    <strong>{{ comment.headline or 'Fan note' }}</strong>
+                    <span>{{ comment.user.display_name }} / {{ comment.rating }}/5</span>
+                    <p>{{ comment.body }}</p>
+                </article>
+            {% endfor %}
+        {% else %}
+            <div class="empty-panel"><p>No comments yet. Seeded benchmark users can add one.</p></div>
+        {% endif %}
+    </div>
+    <form class="editorial-panel pale" method="post" action="{{ url_for('album_comment', slug=album.slug) }}">
+        <div class="section-head compact"><h2>Add a comment</h2></div>
+        <label>Headline
+            <input type="text" name="headline" placeholder="Late-night favorite">
+        </label>
+        <label>Rating
+            <select name="rating">
+                <option value="5">5</option>
+                <option value="4">4</option>
+                <option value="3">3</option>
+            </select>
+        </label>
+        <label>Comment
+            <textarea name="body" rows="5" placeholder="Write a fan note about the release."></textarea>
+        </label>
+        {% if current_user.is_authenticated %}
+            <button class="button-primary" type="submit">Post comment</button>
+        {% else %}
+            <a class="button-primary" href="{{ url_for('login', next=request.path) }}">Log in to comment</a>
+        {% endif %}
+    </form>
+</section>
+
+<section class="container section-block">
+    <div class="section-head compact"><h2>Related merch</h2></div>
+    <div class="card-grid merch-grid">
+        {% for merch in related_merch %}
+            {{ merch_card(merch) }}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head compact"><h2>More in this lane</h2></div>
+    <div class="card-grid release-grid">
+        {% for release in recommended %}
+            {{ album_card(release) }}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

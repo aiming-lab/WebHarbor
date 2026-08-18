@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Orders - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <h1>Order history</h1>
+            <p>Mock receipts and seeded past purchases.</p>
+        </div>
+    </div>
+    <div class="order-list">
+        {% for order in orders %}
+            <a class="order-row" href="{{ url_for('order_detail', order_number=order.order_number) }}">
+                <div>
+                    <strong>{{ order.order_number }}</strong>
+                    <span>{{ order.status }} / {{ order.placed_at|longdate }}</span>
+                </div>
+                <div>
+                    <strong>{{ order.total|money }}</strong>
+                    <span>{{ order.item_count() }} items</span>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}
