@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+{% block title %}{{ recipe.title }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+<div class="recipe-detail-header">
+    <div class="breadcrumb">
+        <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+        {% if recipe.category %}<a href="{{ url_for('category_page', slug=recipe.category.slug) }}">{{ recipe.category.name }}</a> &rsaquo;{% endif %}
+        {{ recipe.title }}
+    </div>
+    <h1>{{ recipe.title }}</h1>
+    <div class="recipe-author">By <a href="{{ url_for('author_page', slug=recipe.author_name|lower|replace(' ', '-') ) }}">{{ recipe.author_name }}</a></div>
+    <div class="recipe-rating-bar">
+        <div class="rating-stars">
+            {% for i in range(5) %}
+            <span class="star {% if i >= recipe.avg_rating|round(0,'floor')|int %}empty{% endif %}">&#9733;</span>
+            {% endfor %}
+        </div>
+        <span class="rating-value">{{ recipe.avg_rating }}</span>
+        <span class="rating-count">({{ recipe.review_count }} ratings)</span>
+    </div>
+    <div class="recipe-actions">
+        {% if current_user.is_authenticated %}
+        <!-- JS toggle (for visual feedback) -->
+        <button class="recipe-action-btn save-btn {% if is_in_recipe_box(recipe.id) %}saved{% endif %}"
+                data-recipe-id="{{ recipe.id }}"
+                data-saved-icon="&#9829; Saved" data-unsaved-icon="&#9825; Save">
+            {% if is_in_recipe_box(recipe.id) %}&#9829; Saved{% else %}&#9825; Save{% endif %}
+        </button>
+        <!-- Form-POST fallback (agent-friendly, always visible) -->
+        {% if not is_in_recipe_box(recipe.id) %}
+        <form method="POST" action="{{ url_for('save_to_recipe_box', recipe_id=recipe.id) }}" style="display:inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="{{ request.url }}">
+            <button type="submit" class="recipe-action-btn" style="margin-left:4px">+ Save to Box</button>
+        </form>
+        {% endif %}
+        {% else %}
+        <a href="{{ url_for('login') }}" class="recipe-action-btn">&#9825; Save</a>
+        {% endif %}
+        <button class="recipe-action-btn" onclick="window.print()">&#128424; Print</button>
+    </div>
+</div>
+
+<!-- Hero Image -->
+<div class="recipe-hero-image">
+    <img src="{{ recipe.image }}" alt="{{ recipe.title }}"
+         onerror="this.onerror=null;this.parentElement.textContent=this.alt;this.parentElement.classList.add('placeholder-img');this.parentElement.style.height='400px'">
+</div>
+
+<!-- Description -->
+{% if recipe.description %}
+<div class="recipe-description">
+    <p>{{ recipe.description }}</p>
+</div>
+{% endif %}
+
+<!-- Info Bar -->
+<div class="recipe-info-bar">
+    <div class="recipe-info-grid">
+        {% if recipe.prep_time %}
+        <div class="recipe-info-item">
+            <div class="recipe-info-label">Prep Time</div>
+            <div class="recipe-info-value">{{ recipe.prep_time }}</div>
+        </div>
+        {% endif %}
+        {% if recipe.cook_time %}
+        <div class="recipe-info-item">
+            <div class="recipe-info-label">Cook Time</div>
+            <div class="recipe-info-value">{{ recipe.cook_time }}</div>
+        </div>
+        {% endif %}
+        {% if recipe.additional_time %}
+        <div class="recipe-info-item">
+            <div class="recipe-info-label">Additional Time</div>
+            <div class="recipe-info-value">{{ recipe.additional_time }}</div>
+        </div>
+        {% endif %}
+        {% if recipe.total_time %}
+        <div class="recipe-info-item">
+            <div class="recipe-info-label">Total Time</div>
+            <div class="recipe-info-value">{{ recipe.total_time }}</div>
+        </div>
+        {% endif %}
+        {% if recipe.servings %}
+        <div class="recipe-info-item">
+            <div class="recipe-info-label">Servings</div>
+            <div class="recipe-info-value">{{ recipe.servings }}</div>
+        </div>
+        {% endif %}
+        {% if recipe.calories %}
+        <div class="recipe-info-item">
+            <div class="recipe-info-label">Calories</div>
+            <div class="recipe-info-value">{{ recipe.calories }}</div>
+        </div>
+        {% endif %}
+        {% if recipe.primary_seasoning %}
+        <div class="recipe-info-item" style="background:#fff8e1;border:1px solid #f0c36d">
+            <div class="recipe-info-label">Primary Seasoning</div>
+            <div class="recipe-info-value" style="font-size:0.95rem">{{ recipe.primary_seasoning }}</div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Ingredients -->
+{% set ingredients = recipe.get_ingredients() %}
+{% if ingredients %}
+<div class="recipe-section">
+    <h2>Ingredients</h2>
+    <ul class="ingredients-list">
+        {% for ing in ingredients %}
+        <li>{{ ing }}</li>
+        {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<!-- Instructions -->
+{% set instructions = recipe.get_instructions() %}
+{% if instructions %}
+<div class="recipe-section">
+    <h2>Directions</h2>
+    <ol class="instructions-list">
+        {% for step in instructions %}
+        <li>
+            <span class="step-number">{{ loop.index }}</span>
+            <span class="step-text">{{ step }}</span>
+        </li>
+        {% endfor %}
+    </ol>
+</div>
+{% endif %}
+
+<!-- Gallery -->
+{% if gallery %}
+{% for section in gallery %}
+<div class="pd-gallery-section">
+    <h3>{{ section.title }}</h3>
+    <p>{{ section.desc }}</p>
+    <div class="pd-gallery-images">
+        {% for img in section.images %}
+        <div class="pd-gallery-img">
+            <img src="{{ img }}" alt="{{ section.title }}"
+                 onerror="this.parentElement.style.display='none'">
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+{% endif %}
+
+<!-- Storage instructions -->
+{% if recipe.storage_instructions %}
+<div class="recipe-section recipe-storage">
+    <h2>Storage</h2>
+    <p>{{ recipe.storage_instructions }}</p>
+</div>
+{% endif %}
+
+<!-- Primary seasoning / herb -->
+{% if recipe.primary_seasoning %}
+<div class="recipe-section recipe-primary-seasoning">
+    <h3>Primary Seasoning</h3>
+    <p>The primary seasoning in this recipe is <strong>{{ recipe.primary_seasoning }}</strong>.</p>
+</div>
+{% endif %}
+
+<!-- Nutrition -->
+{% set nutrition = recipe.get_nutrition() %}
+{% if nutrition %}
+<div class="recipe-section">
+    <h2>Nutrition Facts <span style="font-weight:400;font-size:0.8rem;color:#999">(per serving)</span></h2>
+    <div class="nutrition-grid">
+        {% for key, val in nutrition.items() %}
+        <div class="nutrition-item">
+            <div class="nutrition-value">{{ val }}</div>
+            <div class="nutrition-label">{{ key }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Reviews -->
+<div class="reviews-section">
+    <h2>Reviews ({{ recipe.review_count }})</h2>
+    {% if reviews|length < recipe.review_count %}
+    <p class="reviews-showing-note" style="color:#666;font-size:0.9rem;margin-bottom:12px">Showing {{ reviews|length }} of {{ recipe.review_count }} reviews</p>
+    {% endif %}
+
+    {% if recipe.latest_review_text %}
+    <div class="latest-review-highlight" style="background:#fff8e7;padding:16px;border-left:4px solid #f5b623;margin-bottom:16px;">
+        <strong>Latest Review:</strong>
+        <p>{{ recipe.latest_review_text }}</p>
+    </div>
+    {% endif %}
+
+    {% if current_user.is_authenticated %}
+    <form class="review-form" method="POST" action="{{ url_for('submit_review', slug=recipe.slug) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <h3>Rate This Recipe</h3>
+        <div class="star-rating-input">
+            {% for i in range(5, 0, -1) %}
+            <input type="radio" name="rating" id="star{{ i }}" value="{{ i }}">
+            <label for="star{{ i }}">&#9733;</label>
+            {% endfor %}
+        </div>
+        <div class="form-group">
+            <input type="text" name="title" placeholder="Review title (optional)">
+        </div>
+        <div class="form-group">
+            <textarea name="body" placeholder="Share your experience with this recipe..." rows="3"></textarea>
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">Submit Review</button>
+    </form>
+    {% else %}
+    <p style="margin-bottom:20px;color:#666"><a href="{{ url_for('login') }}">Log in</a> to leave a review.</p>
+    {% endif %}
+
+    {% for review in reviews %}
+    <div class="review-item">
+        <div class="review-header">
+            <span class="review-author">{{ review.author.display_name or review.author.username }}</span>
+            <span class="review-date">{{ review.created_at.strftime('%b %d, %Y') }}</span>
+        </div>
+        <div class="review-stars">
+            {% for i in range(5) %}
+            <span class="star {% if i >= review.rating %}empty{% endif %}">&#9733;</span>
+            {% endfor %}
+        </div>
+        {% if review.title %}<div class="review-title">{{ review.title }}</div>{% endif %}
+        {% if review.body %}<div class="review-body">{{ review.body }}</div>{% endif %}
+        {% if current_user.is_authenticated and current_user.id == review.user_id %}
+        <div class="review-actions">
+            <form method="POST" action="{{ url_for('delete_review', review_id=review.id) }}" style="display:inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button class="review-delete">Delete</button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    {% if not reviews and not current_user.is_authenticated %}
+    <div class="empty-state">
+        <p>No reviews yet. Be the first to review this recipe!</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Related Recipes -->
+{% if related %}
+<div class="recipe-section related-section">
+    <h2>You Might Also Like</h2>
+    <div class="recipe-grid recipe-grid-3">
+        {% for recipe in related %}
+        <div class="recipe-card">
+            <div class="recipe-card-image">
+                <a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">
+                    <img src="{{ recipe.image }}" alt="{{ recipe.title }}"
+                         onerror="this.onerror=null;this.parentElement.textContent=this.alt;this.parentElement.classList.add('placeholder-img')">
+                </a>
+            </div>
+            <div class="recipe-card-body">
+                <div class="recipe-card-title"><a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">{{ recipe.title }}</a></div>
+                <div class="recipe-card-meta">
+                    <div class="recipe-card-rating">
+                        {% for i in range(5) %}
+                        <span class="star {% if i >= recipe.avg_rating|round(0,'floor')|int %}empty{% endif %}">&#9733;</span>
+                        {% endfor %}
+                    </div>
+                    <span>({{ recipe.review_count | int }})</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+{% endblock %}

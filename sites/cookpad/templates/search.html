@@ -1,0 +1,61 @@
+﻿{% extends "base.html" %}
+{% block title %}Search{% if query %}: {{ query }}{% endif %}{% endblock %}
+{% block content %}
+<div class="search-page">
+    <h1>Search Cookpad recipes</h1>
+    <form action="{{ url_for('search') }}" method="GET">
+        <input type="text" name="q" class="search-input-large" placeholder="Search recipes, ingredients, cuisines, or meal ideas..."
+               value="{{ query }}" autofocus>
+    </form>
+    {% if query %}
+    <p class="search-count">{{ count }} result{{ 's' if count != 1 }} for "{{ query }}"</p>
+    {% endif %}
+
+    {% if static_matches %}
+    <div class="static-matches" style="margin:12px 0 18px 0;padding:12px 16px;background:#f7f5ef;border-left:3px solid #c4a667;">
+        <h3 style="margin:0 0 6px 0;font-size:1rem;">Pages matching "{{ query }}"</h3>
+        <ul style="list-style:none;padding-left:0;margin:0;">
+            {% for pg in static_matches %}
+            <li style="margin:6px 0;">
+                <a href="{{ pg.url }}" style="font-weight:600;">{{ pg.title }}</a>
+                <span style="color:#555;"> &mdash; {{ pg.description }}</span>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="recipe-grid" style="margin-top:20px">
+        {% for recipe in results %}
+        <div class="recipe-card">
+            <div class="recipe-card-image">
+                <a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">
+                    <img src="{{ recipe.image }}" alt="{{ recipe.title }}"
+                         onerror="this.onerror=null;this.parentElement.textContent=this.alt;this.parentElement.classList.add('placeholder-img')">
+                </a>
+            </div>
+            <div class="recipe-card-body">
+                <div class="recipe-card-title"><a href="{{ url_for('recipe_detail', slug=recipe.slug) }}">{{ recipe.title }}</a></div>
+                <div class="recipe-card-meta">
+                    <div class="recipe-card-rating">
+                        {% for i in range(5) %}
+                        <span class="star {% if i >= recipe.avg_rating|round(0,'floor')|int %}empty{% endif %}">&#9733;</span>
+                        {% endfor %}
+                    </div>
+                    <span>({{ recipe.review_count|int }})</span>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif query and not static_matches %}
+    <div class="empty-state">
+        <div class="empty-state-icon">&#128270;</div>
+        <h3>No recipes found</h3>
+        <p>Try different keywords or browse our categories.</p>
+        <a href="{{ url_for('all_recipes') }}" class="btn btn-primary">Browse All Recipes</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
