@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Notice Codes{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Notice codes</p>
+  <h1>Browse synthetic notice explanations used by the refund tracker mirror.</h1>
+  <p>These notice codes are deterministic demo records for local benchmark tasks.</p>
+</section>
+
+<form class="filter-bar" method="get">
+  <label>
+    <span>Filter by related stage</span>
+    <select name="stage">
+      <option value="">All stages</option>
+      {% for stage in stages %}
+        <option value="{{ stage }}" {% if selected_stage == stage %}selected{% endif %}>{{ stage }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button class="button button--secondary" type="submit">Apply filter</button>
+</form>
+
+<section class="stacked-cards">
+  {% for notice in notices %}
+    <article class="info-card">
+      <span class="info-card__meta">{{ notice.related_stage }}</span>
+      <h2><a href="{{ url_for('notice_detail', code=notice.code) }}">{{ notice.code }} - {{ notice.title }}</a></h2>
+      <p>{{ notice.summary }}</p>
+    </article>
+  {% endfor %}
+</section>
+{% endblock %}

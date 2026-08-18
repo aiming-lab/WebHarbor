@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<div class="auth-layout">
+  <section class="auth-card">
+    <p class="eyebrow">Register</p>
+    <h1>Create a local demo account.</h1>
+    <p>Registration is local to this synthetic benchmark mirror and does not connect to any live government service.</p>
+    <form method="post">
+      <div class="form-grid">
+        <label class="field">
+          <span>Username</span>
+          <input name="username" type="text" required>
+        </label>
+        <label class="field">
+          <span>Display name</span>
+          <input name="display_name" type="text" required>
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input name="email" type="email" required>
+        </label>
+        <label class="field">
+          <span>Preferred contact method</span>
+          <select name="preferred_contact_method">
+            <option>Email</option>
+            <option>SMS</option>
+            <option>Mail</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>City</span>
+          <input name="city" type="text" placeholder="Demo City">
+        </label>
+        <label class="field">
+          <span>State</span>
+          <input name="state" type="text" placeholder="DC">
+        </label>
+        <label class="field">
+          <span>Default tax year</span>
+          <select name="default_tax_year">
+            {% for year in [2025, 2024, 2023, 2022, 2021] %}
+              <option value="{{ year }}">{{ year }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field">
+          <span>Demo taxpayer ID last four digits</span>
+          <input name="default_last_four" type="text" maxlength="4" placeholder="Optional">
+        </label>
+        <label class="field">
+          <span>ZIP code</span>
+          <input name="default_zip_code" type="text" maxlength="5" placeholder="Optional">
+        </label>
+        <label class="field">
+          <span>Password</span>
+          <input name="password" type="password" required>
+        </label>
+        <label class="field field--full">
+          <span>Confirm password</span>
+          <input name="confirm_password" type="password" required>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">Create account</button>
+      </div>
+    </form>
+  </section>
+  <aside class="auth-side">
+    <article class="faq-card">
+      <h2>Safe reminder</h2>
+      <p>Do not use a full SSN, ITIN, or live refund amount. This form is only for synthetic local benchmark data.</p>
+    </article>
+  </aside>
+</div>
+{% endblock %}

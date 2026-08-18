@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ notice.code }} - {{ notice.title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('notices') }}">Notices</a>
+  <span>/</span>
+  <span>{{ notice.code }}</span>
+</nav>
+
+<section class="article-shell">
+  <article class="article-body">
+    <p class="eyebrow">{{ notice.related_stage }}</p>
+    <h1>{{ notice.code }} - {{ notice.title }}</h1>
+    <p class="lede">{{ notice.summary }}</p>
+    <div class="prose">
+      <p>{{ notice.details }}</p>
+    </div>
+  </article>
+  <aside class="article-side">
+    <article class="faq-card">
+      <h2>Related stage</h2>
+      <p>{{ notice.related_stage }}</p>
+    </article>
+    {% for article in related_articles %}
+      <article class="info-card">
+        <span class="info-card__meta">Related help article</span>
+        <h3><a href="{{ url_for('help_detail', slug=article.slug) }}">{{ article.title }}</a></h3>
+        <p>{{ article.summary }}</p>
+      </article>
+    {% endfor %}
+  </aside>
+</section>
+{% endblock %}
