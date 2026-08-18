@@ -3,7 +3,14 @@ from verify_lib import (Judge, contains_all, db_query, final_answer, load_run,
                         parse_args, resolve_db, visited_category, visited_path)
 
 NOTE = "Compare with our process"
-QUERY = """
+INITIAL_QUERY = """
+SELECT a.id
+FROM saved_articles s
+JOIN users u ON u.id=s.user_id
+JOIN articles a ON a.id=s.article_id
+WHERE u.username='david_k'
+"""
+AFTER_QUERY = """
 SELECT a.id, a.title, a.slug
 FROM saved_articles s
 JOIN users u ON u.id=s.user_id
@@ -16,8 +23,8 @@ def main():
     args = parse_args()
     trajectory = load_run(args.run_dir)
     answer = final_answer(trajectory)
-    initial = db_query(resolve_db(args.initial_db, args.container, "instance_seed"), QUERY, (NOTE,))
-    after = db_query(resolve_db(args.after_db, args.container, "instance"), QUERY, (NOTE,))
+    initial = db_query(resolve_db(args.initial_db, args.container, "instance_seed"), INITIAL_QUERY)
+    after = db_query(resolve_db(args.after_db, args.container, "instance"), AFTER_QUERY, (NOTE,))
     initial_ids = set() if initial is None else {row[0] for row in initial}
     new_rows = [] if after is None else [row for row in after if row[0] not in initial_ids]
     judge = Judge("Phys.org--7")
