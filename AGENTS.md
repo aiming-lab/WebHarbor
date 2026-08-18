@@ -142,7 +142,7 @@ docker run -d --rm --name wh-test \
 curl -s http://localhost:8201/health | python3 -m json.tool | head
 
 # 5. every site renders 200
-for p in $(seq 41000 41014); do
+for p in $(seq 41000 41016); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 

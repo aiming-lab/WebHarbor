@@ -74,7 +74,7 @@ CASES = {
     9: Case(("/search?q=graphene+systems", f"/article/{GRAPHENE_RECENT}", f"/article/{GRAPHENE_EARLIER}"),
             "Hourglass nanographenes unlock strong, robust multi-spin entanglement was earlier — Nano Letters"),
     10: Case(("/category/astronomy?sort=popular", f"/article/{STAR_ARTICLE}"),
-             "How a single star can reshape an entire galaxy"),
+             "European Southern Observatory"),
     11: Case((f"/article/{MAGNETIC}", f"/article/{QUANTUM_GEOMETRY}"),
              "Quantum geometry applied to light-based systems expands toolkit for topological photonics was published earlier"),
     12: Case((f"/article/{JWST}",),
@@ -282,6 +282,22 @@ class VerifierContractTests(unittest.TestCase):
         self.assertNotIn("BenchmarkPass2026", rows[13]["ques"])
         self.assertIn("graphene systems", rows[9]["ques"])
         self.assertIn("CO2 systems", rows[16]["ques"])
+
+    def test_task_10_requires_a_detail_page_fact_not_the_card_title(self) -> None:
+        rows = [json.loads(line) for line in TASKS_FILE.read_text().splitlines() if line.strip()]
+        task = rows[10]
+        self.assertIn("open the most-viewed article", task["ques"])
+        self.assertIn("Provided by", task["ques"])
+        self.assertNotIn("report the title", task["ques"])
+
+        urls = ("/category/astronomy?sort=popular", f"/article/{STAR_ARTICLE}")
+        grounded = self._run(10, urls, "European Southern Observatory")
+        self.assert_verdict(grounded, True)
+
+        card_only_answer = self._run(
+            10, urls, "How a single star can reshape an entire galaxy"
+        )
+        self.assert_verdict(card_only_answer, False)
 
     def test_all_verifiers_reject_no_op(self) -> None:
         for task_id in range(18):

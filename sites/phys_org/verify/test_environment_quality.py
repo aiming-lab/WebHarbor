@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import importlib.util
+import re
 import sqlite3
 import subprocess
 import tarfile
@@ -25,6 +26,19 @@ def _load_seed_data():
 
 
 class EnvironmentQualityTests(unittest.TestCase):
+    def test_agent_pre_pr_sweep_covers_every_registered_site(self) -> None:
+        agent_guide = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
+        startup = (REPO_ROOT / "websyn_start.sh").read_text(encoding="utf-8")
+        site_match = re.search(r"SITES=\((.*?)\)", startup, re.DOTALL)
+        sweep_match = re.search(
+            r"for p in \$\(seq (\d+) (\d+)\); do", agent_guide
+        )
+        self.assertIsNotNone(site_match)
+        self.assertIsNotNone(sweep_match)
+        sites = site_match.group(1).split()
+        sweep_start, sweep_end = map(int, sweep_match.groups())
+        self.assertEqual((41000, 41000 + len(sites) - 1), (sweep_start, sweep_end))
+
     def test_subsection_journal_fix_preserves_legacy_institutions(self) -> None:
         seed_data = _load_seed_data()
         cases = [
