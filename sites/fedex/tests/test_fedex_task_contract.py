@@ -65,6 +65,7 @@ class FedExTaskContractTests(unittest.TestCase):
         self.assertIn("search for tracking", questions["FedEx--2"].lower())
         self.assertIn("related-topic chips", questions["FedEx--2"])
         self.assertIn("price difference", questions["FedEx--4"])
+        self.assertIn("delivered to Dallas, TX", questions["FedEx--5"])
         self.assertIn("every shipment", questions["FedEx--8"])
         self.assertIn("article body", questions["FedEx--11"])
         self.assertIn("final timeline", questions["FedEx--16"])
