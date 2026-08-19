@@ -62,6 +62,7 @@ class FedExTaskContractTests(unittest.TestCase):
         questions = {task["id"]: task["ques"] for task in self.tasks}
         self.assertIn("latest exception timeline entry", questions["FedEx--0"])
         self.assertIn("signature", questions["FedEx--1"].lower())
+        self.assertIn("search for tracking", questions["FedEx--2"].lower())
         self.assertIn("related-topic chips", questions["FedEx--2"])
         self.assertIn("price difference", questions["FedEx--4"])
         self.assertIn("every shipment", questions["FedEx--8"])

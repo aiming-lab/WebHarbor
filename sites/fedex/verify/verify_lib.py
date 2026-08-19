@@ -167,7 +167,7 @@ def pickup_state_matches(args: VerifyArgs) -> tuple[bool, str]:
 TASK_SPECS: dict[int, TaskSpec] = {
     0: TaskSpec(("/track/results", "/tracking/FDX260000004"), (("los angeles",), ("weather",))),
     1: TaskSpec(("/track/results", "/tracking/FDX260000001"), (("fdx260000001",), ("delivered",), ("required", "yes"))),
-    2: TaskSpec(("/support", "/support/shipment-exception-status"), (("demo workflow",), ("tracking help",))),
+    2: TaskSpec(("/support?q=tracking", "/support/shipment-exception-status"), (("demo workflow",), ("tracking help",))),
     3: TaskSpec(("/rate-estimate",), (("fedex ground home delivery",), ("$37.40", "37.4"))),
     4: TaskSpec(("/rate-estimate",), (("fedex priority overnight",), ("fedex ground home delivery",), ("$43.80", "43.8"))),
     5: TaskSpec(("/login", "/account/shipments", "/invoices"), (("inv-260001",),)),
