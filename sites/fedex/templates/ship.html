@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Create Shipment{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Mock shipment</div>
+      <h1>Start a local shipping flow</h1>
+    </div>
+  </section>
+  <div class="split">
+    <section class="card">
+      <form method="post" class="stack">
+        <div class="form-grid two">
+          <div class="field">
+            <label for="recipient_name">Recipient name</label>
+            <input id="recipient_name" name="recipient_name" value="{{ state.get('recipient_name', '') }}" required>
+          </div>
+          <div class="field">
+            <label for="package_type">Package type</label>
+            <select id="package_type" name="package_type">
+              {% for option in ["Box", "Envelope", "Tube", "Pak", "Freight pallet"] %}
+                <option value="{{ option }}" {% if state.get('package_type', 'Box') == option %}selected{% endif %}>{{ option }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-grid two">
+          <div class="field">
+            <label for="origin_city">Origin city</label>
+            <input id="origin_city" name="origin_city" value="{{ state.get('origin_city', current_user.city) }}">
+          </div>
+          <div class="field">
+            <label for="origin_state">Origin state</label>
+            <select id="origin_state" name="origin_state">
+              {% for label in state_labels %}
+                <option value="{{ label }}" {% if state.get('origin_state', current_user.state) == label %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-grid two">
+          <div class="field">
+            <label for="destination_city">Destination city</label>
+            <input id="destination_city" name="destination_city" value="{{ state.get('destination_city', '') }}" required>
+          </div>
+          <div class="field">
+            <label for="destination_state">Destination state</label>
+            <select id="destination_state" name="destination_state">
+              {% for label in state_labels %}
+                <option value="{{ label }}" {% if state.get('destination_state', 'TX') == label %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-grid three">
+          <div class="field">
+            <label for="weight_lb">Weight</label>
+            <input id="weight_lb" name="weight_lb" value="{{ state.get('weight_lb', '8') }}">
+          </div>
+          <div class="field">
+            <label for="declared_value">Declared value</label>
+            <input id="declared_value" name="declared_value" value="{{ state.get('declared_value', '150') }}">
+          </div>
+          <div class="field">
+            <label for="pickup_mode">Handoff mode</label>
+            <select id="pickup_mode" name="pickup_mode">
+              {% for option in [("dropoff", "Drop off at staffed location"), ("pickup", "Schedule courier pickup"), ("dropbox", "Use after-hours drop box")] %}
+                <option value="{{ option[0] }}" {% if state.get('pickup_mode', 'dropoff') == option[0] %}selected{% endif %}>{{ option[1] }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <input type="submit" value="Continue to service selection">
+      </form>
+    </section>
+    <aside class="card stack">
+      <div class="kicker">Safety note</div>
+      <p class="muted">This flow creates a local demo shipment record only. It does not contact a real carrier, reserve capacity, or produce a live label.</p>
+      <a class="button button-secondary" href="{{ url_for('rate_estimate') }}">Preview rates first</a>
+    </aside>
+  </div>
+{% endblock %}

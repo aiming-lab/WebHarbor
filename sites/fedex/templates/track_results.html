@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Tracking Results{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Tracking results</div>
+      <h1>{{ records|length }} of {{ numbers|length }} packages found</h1>
+    </div>
+    <a href="{{ url_for('track') }}">Track again</a>
+  </section>
+  {% if numbers and not records %}
+    <div class="empty-state">No seeded demo tracking numbers matched your request.</div>
+  {% endif %}
+  {% if records %}
+    <section class="record-list">
+      {% for record in records %}
+        <article class="card">
+          <div class="split">
+            <div>
+              <div class="badge-row">
+                <span class="badge">{{ record.tracking_number }}</span>
+                <span class="badge orange">{{ record.service_slug|replace('-', ' ')|title }}</span>
+              </div>
+              <h2><a href="{{ url_for('tracking_detail', tracking_number=record.tracking_number) }}">{{ record.status_stage }}</a></h2>
+              <p class="muted">{{ record.origin_city }}, {{ record.origin_state }} → {{ record.destination_city }}, {{ record.destination_state }}</p>
+              <p>{{ record.status_summary }}</p>
+            </div>
+            <div class="surface">
+              <strong>Estimated delivery</strong>
+              <p>{{ record.estimated_delivery }}</p>
+              <strong>Recipient</strong>
+              <p>{{ record.recipient_name }}</p>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+{% endblock %}

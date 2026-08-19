@@ -1,0 +1,165 @@
+{% extends "base.html" %}
+{% block title %}FedEx Demo Home{% endblock %}
+{% block content %}
+  <section class="hero">
+    <div class="hero-copy">
+      <div class="kicker">Tracking, shipping, pickup, and support</div>
+      <h1>Practice end-to-end parcel workflows without touching a live carrier.</h1>
+      <p>
+        This mirror recreates the feel of a FedEx-style logistics dashboard using synthetic tracking numbers,
+        fixed route milestones, seeded account history, and deterministic pickup schedules. It never creates
+        a real shipment or charges a payment method.
+      </p>
+      <div class="hero-actions">
+        <a class="button button-primary" href="{{ url_for('track') }}">Track a package</a>
+        <a class="button button-secondary" href="{{ url_for('ship') }}">Create mock shipment</a>
+        <a class="button button-accent" href="{{ url_for('pickup') }}">Schedule pickup</a>
+      </div>
+    </div>
+    <div class="hero-side">
+      <img src="{{ url_for('static', filename='images/hero-tracking.svg') }}" alt="FedEx demo tracker art">
+      <div class="hero-stat">
+        <strong>{{ featured_tracking|length }}</strong>
+        <span>Featured seeded tracking records ready for smoke tests</span>
+      </div>
+      <div class="hero-stat">
+        <strong>{{ services|length }}</strong>
+        <span>Deterministic service levels with rate estimates and delivery commitments</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="grid two">
+    <article class="card">
+      <div class="section-title">
+        <div>
+          <div class="kicker">Quick track</div>
+          <h2>Track one or several demo packages</h2>
+        </div>
+      </div>
+      <form method="post" action="{{ url_for('track') }}" class="stack">
+        <div class="field">
+          <label for="tracking_numbers">Tracking numbers</label>
+          <textarea id="tracking_numbers" name="tracking_numbers" placeholder="FDX260000001&#10;FDX260000002"></textarea>
+        </div>
+        <div class="stack-actions">
+          <input type="submit" value="Track now">
+          <button class="button button-secondary" type="button" data-fill-tracking="#tracking_numbers" data-value="FDX260000001,FDX260000002">Use sample numbers</button>
+        </div>
+      </form>
+    </article>
+    <article class="card">
+      <div class="kicker">Seeded account sign-in</div>
+      <h2>Benchmark users</h2>
+      <p class="muted">Use these deterministic demo accounts for shipment, invoice, claim, and pickup flows.</p>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Email</th><th>Preferred location</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>alice.j@test.com</td><td>Seattle Downtown Ship Center</td></tr>
+            <tr><td>bob.c@test.com</td><td>Atlanta Midtown Ship Center</td></tr>
+            <tr><td>carol.d@test.com</td><td>Miami Brickell Print &amp; Ship</td></tr>
+            <tr><td>david.k@test.com</td><td>Chicago Loop Ship Center</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="muted">Password for all seeded users: <strong>{{ demo_password }}</strong></p>
+    </article>
+  </section>
+
+  <section class="section-title">
+    <div>
+      <div class="kicker">Service menu</div>
+      <h2>Compare delivery commitments</h2>
+    </div>
+    <a href="{{ url_for('rate_estimate') }}">Open rate estimate</a>
+  </section>
+  <section class="grid three">
+    {% for service in services %}
+      <article class="card stack">
+        <img src="{{ service.icon_path }}" alt="{{ service.name }}">
+        <div class="badge-row">
+          <span class="badge">{{ service.speed_label }}</span>
+          {% if service.weekend_delivery %}<span class="badge orange">Weekend eligible</span>{% endif %}
+        </div>
+        <h3>{{ service.name }}</h3>
+        <p class="muted">{{ service.summary }}</p>
+        <p><strong>{{ service.money_back_label }}</strong></p>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="section-title">
+    <div>
+      <div class="kicker">Active seeded records</div>
+      <h2>Recent package statuses</h2>
+    </div>
+    <a href="{{ url_for('track') }}">Track more</a>
+  </section>
+  <section class="record-list">
+    {% for record in featured_tracking %}
+      <article class="card">
+        <div class="split">
+          <div>
+            <div class="badge-row">
+              <span class="badge">{{ record.tracking_number }}</span>
+              <span class="badge orange">{{ record.service_slug|replace('-', ' ')|title }}</span>
+            </div>
+            <h3><a href="{{ url_for('tracking_detail', tracking_number=record.tracking_number) }}">{{ record.status_stage }}</a></h3>
+            <p class="muted">{{ record.origin_city }}, {{ record.origin_state }} → {{ record.destination_city }}, {{ record.destination_state }}</p>
+            <p>{{ record.status_summary }}</p>
+          </div>
+          <div class="surface">
+            <strong>ETA</strong>
+            <p>{{ record.estimated_delivery }}</p>
+            <strong>Latest scan</strong>
+            <p>{{ record.latest_scan }}</p>
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="section-title">
+    <div>
+      <div class="kicker">Nearby staffed counters</div>
+      <h2>Pickup and hold-at-location options</h2>
+    </div>
+    <a href="{{ url_for('locations') }}">Browse all locations</a>
+  </section>
+  <section class="grid two">
+    {% for location in locations %}
+      <article class="card media">
+        <img src="{{ location.image_path }}" alt="{{ location.name }}">
+        <div>
+          <div class="badge-row">
+            <span class="badge">{{ location.location_type }}</span>
+            <span class="badge orange">{{ location.city }}, {{ location.state }}</span>
+          </div>
+          <h3><a href="{{ url_for('location_detail', location_slug=location.slug) }}">{{ location.name }}</a></h3>
+          <p class="muted">{{ location.address }}</p>
+          <p>{{ location.pickup_note }}</p>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+
+  <section class="section-title">
+    <div>
+      <div class="kicker">Support articles</div>
+      <h2>Benchmark-friendly help content</h2>
+    </div>
+    <a href="{{ url_for('support') }}">See all support topics</a>
+  </section>
+  <section class="grid three">
+    {% for article in articles %}
+      <article class="card">
+        <div class="badge">{{ article.category }}</div>
+        <h3><a href="{{ url_for('support_article', article_slug=article.slug) }}">{{ article.title }}</a></h3>
+        <p class="muted">{{ article.summary }}</p>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

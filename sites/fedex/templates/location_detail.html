@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ location.name }}{% endblock %}
+{% block content %}
+  <section class="card media">
+    <img src="{{ location.image_path }}" alt="{{ location.name }}">
+    <div class="stack">
+      <div class="badge-row">
+        <span class="badge">{{ location.location_type }}</span>
+        <span class="badge orange">{{ location.city }}, {{ location.state }}</span>
+        <span class="badge">{{ location.hours }}</span>
+      </div>
+      <h1>{{ location.name }}</h1>
+      <p class="muted">{{ location.address }} · {{ location.phone }}</p>
+      <p>{{ location.pickup_note }}</p>
+      <div class="chip-row">
+        {% for amenity in location.amenities %}
+          <span class="chip badge">{{ amenity }}</span>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+  <section class="grid two" style="margin-top:1rem">
+    <article class="card">
+      <h2>Services</h2>
+      <div class="chip-row">
+        {% for service in location.services %}
+          <span class="chip badge">{{ service }}</span>
+        {% endfor %}
+      </div>
+    </article>
+    <article class="card">
+      <h2>Pickup windows</h2>
+      <div class="timeline">
+        {% for slot in slots %}
+          <div class="timeline-item">
+            <strong>{{ slot.slot_date }} · {{ slot.time_window }}</strong>
+            <span>{{ slot.remaining_capacity }} capacity left</span>
+            <p class="muted">{{ slot.cutoff_note }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </article>
+  </section>
+{% endblock %}

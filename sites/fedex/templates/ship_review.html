@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Review Shipment{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Step 3</div>
+      <h1>Review and create your local shipment</h1>
+    </div>
+  </section>
+  <div class="split">
+    <section class="card">
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><th>Recipient</th><td>{{ state.get('recipient_name') }}</td></tr>
+            <tr><th>Route</th><td>{{ state.get('origin_city') }}, {{ state.get('origin_state') }} → {{ state.get('destination_city') }}, {{ state.get('destination_state') }}</td></tr>
+            <tr><th>Package</th><td>{{ state.get('package_type') }} · {{ state.get('weight_lb') }} lb</td></tr>
+            <tr><th>Declared value</th><td>{{ state.get('declared_value')|float|money }}</td></tr>
+            <tr><th>Handoff mode</th><td>{{ state.get('pickup_mode', 'dropoff')|replace('-', ' ')|title }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <aside class="card stack">
+      <img src="{{ service.icon_path }}" alt="{{ service.name }}">
+      <div class="badge-row">
+        <span class="badge">{{ service.speed_label }}</span>
+        <span class="badge orange">{{ service.name }}</span>
+      </div>
+      <h2>{{ selected_quote.price|money if selected_quote else "$0.00" }}</h2>
+      <p class="muted">{{ service.summary }}</p>
+      <form method="post">
+        <input type="submit" value="Create mock shipment">
+      </form>
+    </aside>
+  </div>
+{% endblock %}
