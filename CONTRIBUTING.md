@@ -7,6 +7,15 @@ Thanks for being here. WebHarbor lives across two repositories on purpose:
 
 A non-trivial change usually touches both. The workflow below makes that straightforward.
 
+## Two roles
+
+WebHarbor splits work across two roles on purpose:
+
+- **Contributor** — builds the site: the Flask app, seed DB, assets, and the task list (`tasks.jsonl`). A contributor's `tasks.jsonl` rows carry only the task definition: `web_name, id, ques, web, upstream_url`. The contributor does **not** write verifiers, rubrics, or any answer key.
+- **Reviewer** — validates the contribution: checks site quality (mechanical + functional), checks that each task is **feasible** (actually solvable by navigating the site, and not trivially answerable from an LLM's prior knowledge), and then writes the **grading contract** — a deterministic verifier per task plus a `judge_rubric`, recorded back into `tasks.jsonl` as `verifier_path` + `judge_rubric`.
+
+Workflows A and B below are the **contributor's** job. The **Reviewer role** section later in this file is the reviewer's job. The split keeps ground truth out of the agent-facing file (a contributor's `tasks.jsonl` never contains answers) and puts grading rigor where it belongs — with the person checking the work.
+
 ## TL;DR
 
 ```bash
@@ -15,7 +24,7 @@ git clone https://github.com/<you>/webharbor && cd webharbor
 ./scripts/fetch_assets.sh                       # pull current assets
 ./scripts/new_site.py mywebsite                 # OR edit an existing site
 ./scripts/build.sh && docker run -d --rm \
-  -p 8101:8101 -p 40000-40015:40000-40015 webharbor:dev
+  -p 8101:8101 -p 40000-40016:40000-40016 webharbor:dev
 # iterate locally...
 
 ./scripts/extract_assets.sh ../webharbor-static-pr/   # split assets out
@@ -99,7 +108,25 @@ docker exec wh-test md5sum \
 # both md5s MUST match — see "Idempotent seeding" below
 ```
 
-### 6. Open the two PRs
+### 6. Write the tasks (`tasks.jsonl`)
+
+Add one JSON line per task to `sites/<site>/tasks.jsonl`. The contributor writes ONLY these keys:
+
+```json
+{"web_name": "My Site", "id": "My Site--0", "ques": "...", "web": "http://localhost:4000N/", "upstream_url": "https://realsite.com/"}
+```
+
+- `id` is `"<SiteName>--<N>"` (0-indexed, matches the `web_name`).
+- `ques` is the natural-language task the agent must perform by navigating the mirror.
+- `web` is the mirror base URL (the in-container port `40000 + index`).
+- `upstream_url` is the real site being mirrored.
+- **For login tasks, put the demo account credentials directly in `ques`** (e.g. `"Log in with the demo account (email: alice.j@test.com, password: TestPass123!), then ..."`) so an autonomous agent can log in.
+
+Do NOT add `verifier_path`, `judge_rubric`, or any `answer` key — those are the **reviewer's** to add (see "Reviewer role"). Ground truth never lives in this file because the agent reads it.
+
+Design tasks to be **feasible and meaningful**: each must be solvable by navigating the site, and ideally should require reading a page-specific fact an LLM can't recall from memory (exact dates/IDs, on-page wording, a specific row) rather than general knowledge. The reviewer will reject tasks that are trivially answerable from prior knowledge or ill-posed for autonomous evaluation.
+
+### 7. Open the two PRs
 
 The HF dataset stores one `<site>.tar.gz` per site (avoids the small-file
 stall on `hf download` for 4000+ images). `extract_assets.sh` packs your
@@ -146,6 +173,70 @@ hf upload amazon.tar.gz <your-fork>/WebHarbor amazon.tar.gz --repo-type dataset
 ```
 
 Open the HF PR; once merged, bump `.assets-revision` in this repo and open the GitHub PR. CI on the GitHub PR will fail-closed if the pinned revision isn't reachable.
+
+## Reviewer role — validate the site and grade the tasks
+
+The reviewer picks up a contributor's PR (site + `tasks.jsonl` with the basic keys) and does two things: **(A) validate site quality and task feasibility**, then **(B) add the grading contract** (verifier + `verifier_path` + `judge_rubric`). Only after both pass should the PR merge.
+
+### A. Validate site quality and task feasibility
+
+Build the image from the branch and run it on alt ports (see AGENTS.md "Pre-PR checks" for the exact commands). Then:
+
+1. **Mechanical** — every site returns 200; `/health` all alive; `POST /reset/<site>` wipes runtime writes and restores the DB **byte-identical** to the seed (`md5(instance) == md5(instance_seed)`); `reset-all` completes in ~1s.
+2. **Functional** — drive the site's routes (auth, search, list/detail, any stateful action) and confirm each renders correct, non-empty content. The contributor's tasks must be genuinely completable on these pages.
+3. **Task feasibility** — for each task in `tasks.jsonl`, confirm it is **solvable by navigating the site** and is **not trivially answerable from an LLM's prior knowledge**. Drive a few tasks end-to-end (manually or with `agent_demo/agent.py`). Reject — and send back to the contributor — tasks that:
+   - can be answered without ever opening the site (e.g. a common dictionary definition),
+   - are ill-posed for autonomous evaluation (e.g. "ask me which one" presupposing a human in the loop),
+   - have no stable, verifiable answer (e.g. a "today" value that rotates by run date),
+   - or are mechanically trivial / non-deterministic in a way that defeats grading (e.g. a quiz score the agent can't be graded on).
+
+The `merriam_webster` review is the reference example of this step: several original tasks were rejected as knowledge-shortcuts / human-in-the-loop / date-dependent and re-anchored onto page-specific facts.
+
+### B. Add the grading contract (verifier + rubric)
+
+For each task the reviewer accepts, the reviewer writes the grading artifacts and records them in `tasks.jsonl`:
+
+1. **A deterministic verifier** — one Python script per task, placed under the **site's own** `sites/<site>/verify/` directory (so each site is self-contained; verifiers never live under `agent_demo/`). It emits a binary PASS/FAIL from the run signature `(initial_state, after_state, trajectory, agent final output)`. Deterministic-first (navigation / regex / token / SQLite after-state); LLM only as an anchored utility. The ground truth is **HARDCODED inside the verifier** — never in `tasks.jsonl` (the agent reads that file; an answer key there leaks answers). See `sites/merriam_webster/verify/verify_lib.py` for the shared utilities (`load_run`, `navigated_to`, `llm_text_match`, `llm_screenshot_shows`, SQLite helpers, the `Judge` harness) and `sites/merriam_webster/verify/verify_*.py` for one-per-task examples.
+2. **`verifier_path`** in the task row — the relative path (from repo root) to that verifier, e.g. `sites/merriam_webster/verify/verify_0.py`.
+3. **`judge_rubric`** in the task row — a short English block of "FACT CHECKPOINTS" the LLM judge verifies (which pages the agent MUST have opened, which facts/answers MUST appear, that an empty answer is a FAIL). The rubric states the *rules*, not the answers, so it's safe for the agent to see.
+
+After the reviewer's pass, `tasks.jsonl` has these keys: `web_name, id, ques, web, upstream_url, verifier_path, judge_rubric`. There is **no `answer` key**. Sites whose tasks predate this contract may omit `verifier_path` and `judge_rubric` (both optional); `agent.py` and `eval_judge.py` handle their absence gracefully.
+
+### C. Verify the grading itself
+
+The reviewer confirms the grading contract is sound before merge:
+
+- A **no-op run** (agent opens the homepage, does nothing, empty answer, clean DB) makes **every** verifier return FAIL (exit 1) — no false positives.
+- A **PASS case** (drive a task to completion correctly) makes its verifier pass; a **shortcut case** (correct answer but no on-site navigation) and a **wrong-answer case** both FAIL — proving the verifier can't be fooled.
+- For stateful tasks, a **state-mismatch case** (agent self-reports success but the DB is unchanged) FAILs on the DB check.
+- The **LLM judge** appends a rubric-specific system-prompt block (and emits `rubric_checkpoints`) ONLY for tasks with a non-empty `judge_rubric`; tasks without one get the plain base prompt.
+
+Why two graders: an LLM-as-judge alone is gullible — a plausible-but-wrong answer, or a correct answer recalled from memory with no page visit, can pass. The deterministic verifier catches both (wrong-answer via ground-truth match; knowledge-shortcut via the navigation check). The rubric makes the LLM judge stricter and more consistent. The verifier is the **primary** grader; the rubric-driven LLM judge is secondary/lenient. Both are invoked through the single `agent_demo/eval_judge.py` entry point (`--verifier True` for the verifier, default for the LLM judge). See `sites/merriam_webster/verify/README.md` and the `merriam_webster` site for a worked example (20 tasks, 20 verifiers + `verify_lib.py`).
+
+### Unified LLM config (agent, judge, verifiers)
+
+All three tools read the same env vars (CLI flags override):
+
+| env var | meaning |
+|---------|---------|
+| `OPENAI_API_KEY` | bearer token for the OpenAI-compatible endpoint |
+| `OPENAI_BASE_URL` | base URL of that endpoint |
+| `JUDGE_MODEL` | model id used by BOTH the agent, the LLM judge, and the verifier LLM utilities |
+
+Run an agent task and grade it (reviewer validation loop):
+
+```bash
+export OPENAI_API_KEY=...  OPENAI_BASE_URL=http://api.openai.com/v1  JUDGE_MODEL=GPT-5
+# agent (writes trajectory.json + screenshots/, carries judge_rubric in)
+uv run python agent_demo/agent.py --tasks_file sites/<site>/tasks.jsonl \
+       --task_id "<site>--N" --url http://localhost:40000+i/ --out_dir runs/x
+# deterministic verifier (primary grader) — run via eval_judge's verifier mode
+uv run python agent_demo/eval_judge.py --run_dir runs/x --verifier True
+# LLM judge (secondary, rubric-driven) — default mode
+uv run python agent_demo/eval_judge.py --run_dir runs/x
+```
+
+Note: the tools use `simpleArgParser`, so **boolean flags take a value** (`--no_llm True`, `--headless False`), not a bare flag.
 
 ## Code conventions
 
