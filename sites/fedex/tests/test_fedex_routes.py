@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import re
+import subprocess
 import sys
+import tarfile
 import tempfile
 import unittest
 import xml.etree.ElementTree as ET
@@ -121,6 +123,27 @@ class FedExRouteTests(unittest.TestCase):
                 invalid_paths.append(svg_path.name)
 
         self.assertEqual(invalid_paths, [])
+
+    def test_packaged_asset_archive_has_no_appledouble_members(self) -> None:
+        repository_root = SITE_ROOT.parents[1]
+        with tempfile.TemporaryDirectory() as archive_dir:
+            subprocess.run(
+                [
+                    str(repository_root / "scripts" / "extract_assets.sh"),
+                    archive_dir,
+                    "fedex",
+                ],
+                cwd=repository_root,
+                check=True,
+                capture_output=True,
+                text=True,
+            )
+            with tarfile.open(Path(archive_dir) / "fedex.tar.gz", "r:gz") as archive:
+                appledouble_members = [
+                    name for name in archive.getnames() if Path(name).name.startswith("._")
+                ]
+
+        self.assertEqual(appledouble_members, [])
 
     def test_user_can_create_then_remove_a_local_demo_shipment(self) -> None:
         self.client.post(
