@@ -10,7 +10,7 @@ SITE_ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_ROOT = SITE_ROOT.parents[1]
 sys.path.insert(0, str(SITE_ROOT / "verify"))
 
-from verify_lib import TASK_SPECS, answer_contains  # noqa: E402
+from verify_lib import TASK_SPECS, answer_contains, semantic_answer_matches  # noqa: E402
 
 
 class FedExTaskContractTests(unittest.TestCase):
@@ -101,7 +101,7 @@ class FedExTaskContractTests(unittest.TestCase):
             1: "FDX260000001 is delivered; yes, signature is required.",
             2: "The chips are demo workflow and tracking help.",
             3: "FedEx Ground Home Delivery — $37.40.",
-            4: "FedEx Priority Overnight vs FedEx Ground Home Delivery: $43.80 difference.",
+            4: "The fastest is FedEx Priority Overnight; the cheapest is FedEx Ground Home Delivery; the difference is $43.80.",
             5: "INV-260001",
             6: "CLM-2623; FDX260000023",
             7: "PU-2621, 9:00 AM - 11:00 AM",
@@ -122,12 +122,27 @@ class FedExTaskContractTests(unittest.TestCase):
                     any(answer_contains(answer, alternative) for alternative in alternatives),
                     f"FedEx--{index}: {alternatives!r} not matched by {answer!r}",
                 )
+            self.assertTrue(semantic_answer_matches(index, answer), f"FedEx--{index}: semantic rejection")
 
     def test_short_tokens_and_prices_require_boundaries(self) -> None:
         self.assertFalse(answer_contains("The package is located nearby.", "ca"))
         self.assertFalse(answer_contains("The displayed price is $137.40.", "37.4"))
         self.assertTrue(answer_contains("The final state is CA.", "ca"))
         self.assertTrue(answer_contains("The displayed price is 37.4 dollars.", "37.4"))
+
+    def test_reversed_negated_and_extra_claims_are_rejected(self) -> None:
+        adversarial_answers = {
+            1: "FDX260000001 is not delivered and signature is not required.",
+            3: "FedEx Ground Home Delivery is not cheapest at $37.40.",
+            4: "FedEx Ground Home Delivery is fastest and FedEx Priority Overnight is cheapest; difference $43.80.",
+            5: "The answer is not INV-260001.",
+            8: "SH-260050 Charlotte; SH-260055 Los Angeles; SH-260060 Seattle; SH-260046 Washington.",
+            12: "The generated numbers are FDX260000061 and FDX260000999.",
+            16: "It is not delivered and is still moving; final handoff Los Angeles, CA.",
+            17: "FedEx Freight Economy is not most expensive at $191.40.",
+        }
+        for index, answer in adversarial_answers.items():
+            self.assertFalse(semantic_answer_matches(index, answer), f"FedEx--{index}: {answer}")
 
 
 if __name__ == "__main__":

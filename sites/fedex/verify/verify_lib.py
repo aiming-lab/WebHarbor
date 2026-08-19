@@ -186,6 +186,109 @@ TASK_SPECS: dict[int, TaskSpec] = {
 }
 
 
+def _codes(answer: str, prefix: str) -> set[str]:
+    return {match.upper() for match in re.findall(rf"\b{re.escape(prefix)}-?\d+\b", answer, re.IGNORECASE)}
+
+
+def _claims_relationship(answer: str, subject: str, predicate: str) -> bool:
+    text = normalized(answer)
+    subject_pattern = re.escape(normalized(subject))
+    predicate_pattern = re.escape(normalized(predicate))
+    subject_first = rf"{subject_pattern}\s+(?:is|was)\s+(?:the\s+)?{predicate_pattern}\b"
+    predicate_first = rf"\b{predicate_pattern}\s+(?:option\s+)?(?:is|:)\s*{subject_pattern}\b"
+    return bool(re.search(subject_first, text) or re.search(predicate_first, text))
+
+
+def _negates(answer: str, phrase: str) -> bool:
+    text = normalized(answer)
+    phrase_pattern = re.escape(normalized(phrase))
+    return bool(
+        re.search(rf"\b(?:not|never|no)\b.{{0,24}}{phrase_pattern}", text)
+        or re.search(rf"\b(?:isn't|isnt|wasn't|wasnt)\b.{{0,12}}{phrase_pattern}", text)
+    )
+
+
+def semantic_answer_matches(index: int, answer: str) -> bool:
+    """Reject contradictions, reversed relations, and extra identifiers.
+
+    Token groups establish the frozen facts. This layer enforces the relationship
+    between those facts so a sentence containing the right words but asserting the
+    opposite cannot pass.
+    """
+    if not answer:
+        return False
+    if index == 0:
+        return answer_contains(answer, "los angeles") and answer_contains(answer, "weather") and not _negates(answer, "weather")
+    if index == 1:
+        return (
+            _codes(answer, "FDX") == {"FDX260000001"}
+            and _claims_relationship(answer, "FDX260000001", "delivered")
+            and answer_contains(answer, "required")
+            and not _negates(answer, "delivered")
+            and not _negates(answer, "required")
+        )
+    if index == 2:
+        return answer_contains(answer, "demo workflow") and answer_contains(answer, "tracking help")
+    if index == 3:
+        return (
+            answer_contains(answer, "FedEx Ground Home Delivery")
+            and any(answer_contains(answer, price) for price in ("$37.40", "37.4"))
+            and not _negates(answer, "cheapest")
+        )
+    if index == 4:
+        return (
+            _claims_relationship(answer, "FedEx Priority Overnight", "fastest")
+            and _claims_relationship(answer, "FedEx Ground Home Delivery", "cheapest")
+            and any(answer_contains(answer, price) for price in ("$43.80", "43.8"))
+            and not _negates(answer, "fastest")
+            and not _negates(answer, "cheapest")
+        )
+    if index == 5:
+        return _codes(answer, "INV") == {"INV-260001"} and not _negates(answer, "inv-260001")
+    if index == 6:
+        return _codes(answer, "CLM") == {"CLM-2623"} and _codes(answer, "FDX") == {"FDX260000023"}
+    if index == 7:
+        return _codes(answer, "PU") == {"PU-2621"} and answer_contains(answer, "9:00 am") and answer_contains(answer, "11:00 am")
+    if index == 8:
+        expected_codes = {"SH-260050", "SH-260055", "SH-260060"}
+        pairings = (("sh-260050", "charlotte"), ("sh-260055", "los angeles"), ("sh-260060", "seattle"))
+        text = normalized(answer)
+        return _codes(answer, "SH") == expected_codes and all(
+            re.search(rf"{re.escape(code)}.{{0,40}}{re.escape(city)}", text) for code, city in pairings
+        )
+    if index == 9:
+        return answer_contains(answer, "freight cutoff") and answer_contains(answer, "4:45 pm")
+    if index == 10:
+        return answer_contains(answer, "international docs") and answer_contains(answer, "5:45 pm")
+    if index == 11:
+        return all(answer_contains(answer, area) for area in ("tracking", "billing", "pickup"))
+    if index == 12:
+        return _codes(answer, "FDX") == {"FDX260000061"} and not _negates(answer, "fdx260000061")
+    if index == 13:
+        return _codes(answer, "PU") == {"PU-2609"} and not _negates(answer, "pu-2609")
+    if index == 14:
+        return answer_contains(answer, "7:00 am") and answer_contains(answer, "9:00 pm")
+    if index == 15:
+        return _codes(answer, "CLM") == {"CLM-2653"} and _codes(answer, "FDX") == {"FDX260000053"}
+    if index == 16:
+        text = normalized(answer)
+        delivered_claim = answer_contains(answer, "delivered")
+        return (
+            delivered_claim
+            and answer_contains(answer, "los angeles")
+            and (answer_contains(answer, "ca") or answer_contains(answer, "california"))
+            and not _negates(answer, "delivered")
+            and "still moving" not in text
+        )
+    if index == 17:
+        return (
+            answer_contains(answer, "FedEx Freight Economy")
+            and any(answer_contains(answer, price) for price in ("$191.40", "191.4"))
+            and not _negates(answer, "most expensive")
+        )
+    return False
+
+
 def run_task(index: int) -> None:
     args = parse_args()
     task_id = f"FedEx--{index}"
@@ -200,6 +303,7 @@ def run_task(index: int) -> None:
     for group_number, alternatives in enumerate(spec.answer_groups, start=1):
         matched = any(answer_contains(answer, alternative) for alternative in alternatives)
         judge.check(f"answer_fact_{group_number}", matched, f"accepted_alternatives={alternatives!r}; final={answer!r}")
+    judge.check("answer_semantics", semantic_answer_matches(index, answer), f"final={answer!r}")
     if spec.state_check:
         matched, evidence = spec.state_check(args)
         judge.check("after_state_matches", matched, evidence)
