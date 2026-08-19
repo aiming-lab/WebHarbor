@@ -12,7 +12,7 @@
       <form method="post" class="stack">
         <div class="field">
           <label for="location_slug">Pickup location</label>
-          <select id="location_slug" name="location_slug" onchange="this.form.submit()">
+          <select id="location_slug" name="location_slug" onchange="window.location.href='{{ url_for('pickup') }}?location_slug=' + encodeURIComponent(this.value)">
             {% for location in locations %}
               <option value="{{ location.slug }}" {% if selected_slug == location.slug %}selected{% endif %}>{{ location.name }} · {{ location.city }}, {{ location.state }}</option>
             {% endfor %}

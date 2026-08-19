@@ -18,7 +18,7 @@ TEST_DB_PATH = Path(TEST_TEMP_DIR.name) / "fedex-test.db"
 os.environ["WEBSYN_SKIP_BOOTSTRAP"] = "1"
 os.environ["FEDEX_DATABASE_URI"] = f"sqlite:///{TEST_DB_PATH}"
 
-from app import app, db  # noqa: E402
+from app import PickupRequest, app, db  # noqa: E402
 from seed_data import seed_benchmark_users, seed_database  # noqa: E402
 
 
@@ -110,6 +110,27 @@ class FedExRouteTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(b"Enter a package count of at least 1", response.data)
+
+    def test_pickup_location_change_uses_get_navigation_without_creating_a_request(self) -> None:
+        self.client.post(
+            "/login",
+            data={"email": "alice.j@test.com", "password": "TestPass123!"},
+        )
+        before_count = db.session.execute(db.select(db.func.count()).select_from(PickupRequest)).scalar_one()
+
+        response = self.client.get("/pickup")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"window.location.href", response.data)
+        self.assertNotIn(b"this.form.submit()", response.data)
+        after_count = db.session.execute(db.select(db.func.count()).select_from(PickupRequest)).scalar_one()
+        self.assertEqual(after_count, before_count)
+
+    def test_location_detail_exposes_posted_hours(self) -> None:
+        response = self.client.get("/locations/seattle-downtown-wa")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"7:00 AM - 9:00 PM", response.data)
 
     def test_generated_svg_assets_are_valid_xml(self) -> None:
         svg_paths = sorted((SITE_ROOT / "static" / "images").glob("*.svg"))
