@@ -6,6 +6,7 @@ import hashlib
 import os
 import shutil
 from pathlib import Path
+from xml.sax.saxutils import escape, quoteattr
 
 os.environ.setdefault("WEBSYN_SKIP_BOOTSTRAP", "1")
 
@@ -213,11 +214,11 @@ def write_svg(path: Path, title: str, accent: str, secondary: str, background: s
         for i in range(len(lines))
     )
     labels = "".join(
-        f'<text x="42" y="{94 + i * 18}" font-size="10" fill="#1f2937" font-family="Arial">{line}</text>'
+        f'<text x="42" y="{94 + i * 18}" font-size="10" fill="#1f2937" font-family="Arial">{escape(line)}</text>'
         for i, line in enumerate(lines)
     )
     path.write_text(
-        f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img" aria-label="{title}">
+        f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 200" role="img" aria-label={quoteattr(title)}>
   <defs>
     <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
       <stop offset="0%" stop-color="{background}" />
@@ -231,7 +232,7 @@ def write_svg(path: Path, title: str, accent: str, secondary: str, background: s
   <rect x="66" y="112" width="180" height="52" rx="14" fill="#ffffff" stroke="{secondary}" stroke-width="2" />
   {bars}
   {labels}
-  <text x="40" y="53" font-size="22" font-weight="700" fill="#ffffff" font-family="Arial">{title}</text>
+  <text x="40" y="53" font-size="22" font-weight="700" fill="#ffffff" font-family="Arial">{escape(title)}</text>
 </svg>
 """,
         encoding="utf-8",

@@ -35,7 +35,7 @@ INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__, instance_path=str(INSTANCE_DIR))
 app.config["SECRET_KEY"] = "webharbor-fedex-demo-key"
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("FEDEX_DATABASE_URI", f"sqlite:///{DB_PATH}")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -435,13 +435,19 @@ def rate_estimate():
         "package_type": request.values.get("package_type", "Box"),
     }
     if request.method == "POST":
-        weight = float(form_state["weight_lb"])
-        quotes = build_rate_quotes(
-            form_state["origin_state"],
-            form_state["destination_state"],
-            weight,
-            form_state["package_type"],
-        )
+        try:
+            weight = float(form_state["weight_lb"])
+            if weight <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            flash("Enter a weight greater than 0.", "danger")
+        else:
+            quotes = build_rate_quotes(
+                form_state["origin_state"],
+                form_state["destination_state"],
+                weight,
+                form_state["package_type"],
+            )
     return render_template("rate_estimate.html", quotes=quotes, form_state=form_state)
 
 
@@ -460,6 +466,21 @@ def ship():
         state["declared_value"] = request.form.get("declared_value", "150").strip()
         state["pickup_mode"] = request.form.get("pickup_mode", "dropoff")
         session.modified = True
+        valid_numbers = True
+        try:
+            if float(state["weight_lb"]) <= 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            flash("Enter a weight greater than 0.", "danger")
+            valid_numbers = False
+        try:
+            if float(state["declared_value"]) < 0:
+                raise ValueError
+        except (TypeError, ValueError):
+            flash("Enter a declared value of at least 0.", "danger")
+            valid_numbers = False
+        if not valid_numbers:
+            return render_template("ship.html", state=state)
         return redirect(url_for("ship_service"))
     return render_template("ship.html", state=state)
 
@@ -617,6 +638,14 @@ def pickup():
     if location:
         slots = PickupSlot.query.filter_by(location_id=location.id).order_by(PickupSlot.slot_date.asc()).all()
     if request.method == "POST":
+        try:
+            package_count = int(request.form.get("package_count", "1"))
+            if package_count < 1:
+                raise ValueError
+        except (TypeError, ValueError):
+            flash("Enter a package count of at least 1.", "danger")
+            return render_template("pickup.html", locations=locations, selected_slug=selected_slug, slots=slots)
+
         request_id = (db.session.query(db.func.count(PickupRequest.id)).scalar() or 0) + 1
         slot = PickupSlot.query.filter_by(id=int(request.form.get("pickup_slot_id", "0"))).first_or_404()
         pickup_request = PickupRequest(
@@ -625,7 +654,7 @@ def pickup():
             location_id=slot.location_id,
             slot_date=slot.slot_date,
             time_window=slot.time_window,
-            package_count=max(int(request.form.get("package_count", "1")), 1),
+            package_count=package_count,
             status="Scheduled",
             created_on="2026-06-04",
         )
@@ -828,6 +857,25 @@ def account_edit():
 def account_shipments():
     shipments = Shipment.query.filter_by(user_id=current_user.id).order_by(Shipment.created_on.desc()).all()
     return render_template("account_shipments.html", shipments=shipments)
+
+
+@app.post("/account/shipments/<shipment_code>/remove")
+@login_required
+def account_shipment_remove(shipment_code: str):
+    shipment = Shipment.query.filter_by(
+        shipment_code=shipment_code,
+        user_id=current_user.id,
+        reference_label="Local demo shipment",
+    ).first_or_404()
+    tracking = TrackingRecord.query.filter_by(shipment_id=shipment.id).first()
+    Invoice.query.filter_by(shipment_id=shipment.id).delete(synchronize_session=False)
+    if tracking:
+        TrackingEvent.query.filter_by(tracking_record_id=tracking.id).delete(synchronize_session=False)
+        db.session.delete(tracking)
+    db.session.delete(shipment)
+    db.session.commit()
+    flash(f"Removed local demo shipment {shipment_code}.", "success")
+    return redirect(url_for("account_shipments"))
 
 
 @app.route("/account/invoices")

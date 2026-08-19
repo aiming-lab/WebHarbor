@@ -16,6 +16,7 @@
           <th>Route</th>
           <th>Status</th>
           <th>Total</th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -26,6 +27,15 @@
             <td>{{ shipment.origin_city }}, {{ shipment.origin_state }} → {{ shipment.destination_city }}, {{ shipment.destination_state }}</td>
             <td>{{ shipment.status }}</td>
             <td>{{ shipment.total_cost|money }}</td>
+            <td>
+              {% if shipment.reference_label == "Local demo shipment" %}
+                <form method="post" action="{{ url_for('account_shipment_remove', shipment_code=shipment.shipment_code) }}">
+                  <button class="button-secondary" type="submit">Remove</button>
+                </form>
+              {% else %}
+                <span class="muted">Seeded record</span>
+              {% endif %}
+            </td>
           </tr>
         {% endfor %}
       </tbody>
