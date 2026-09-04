@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_trajectory_identity,
     contains_all,
     fail_closed,
     final_answer,
@@ -35,6 +36,7 @@ def main() -> None:
     has_restaurant = contains_all(answer, ["Swedish Restaurant"])
     has_collect = bool(re.search(r"\bclick\s*(?:&|and)\s*collect\b", normalized))
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
     judge.check(
         "visited_brooklyn_store_page",
         navigated_to_path(trajectory, "/stores/brooklyn-ny"),

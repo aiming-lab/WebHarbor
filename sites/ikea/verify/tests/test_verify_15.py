@@ -49,6 +49,7 @@ class VerifyTask15Tests(unittest.TestCase):
         before_owner: str | None = None,
         after_owner: str | None = None,
         navigated: bool = True,
+        valid_trajectory: bool = True,
     ):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -58,7 +59,11 @@ class VerifyTask15Tests(unittest.TestCase):
                 json.dumps(
                     {
                         "task_id": "IKEA--15",
-                        "steps": ([{"url": "http://localhost:40016/compare"}] if navigated else []),
+                        "steps": ([
+                            {"url": "http://localhost:40016/login", "action": "input", "params": {"text": "alice.j@test.com"}},
+                            {"url": "http://localhost:40016/product/IK-10010"},
+                            *([{"url": "http://localhost:40016/compare"}] if navigated else []),
+                        ] if valid_trajectory else []),
                         "final_answer": answer,
                     }
                 ),
@@ -97,12 +102,35 @@ class VerifyTask15Tests(unittest.TestCase):
         self.assertEqual(returncode, 0)
         self.assertTrue(verdict["pass"])
 
+    def test_state_change_without_browser_flow_fails(self) -> None:
+        returncode, verdict = self.run_verifier(
+            "IKEA product ID: 00311498.",
+            after_owner="alice.j@test.com",
+            valid_trajectory=False,
+        )
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "visited_login_page")
+
+    def test_actual_series_row_passes(self) -> None:
+        returncode, verdict = self.run_verifier(
+            "Series: IKEA.", after_owner="alice.j@test.com"
+        )
+        self.assertEqual(returncode, 0)
+        self.assertTrue(verdict["pass"])
+
+    def test_invented_series_value_fails(self) -> None:
+        returncode, verdict = self.run_verifier(
+            "Series: IKEA PS 2014.", after_owner="alice.j@test.com"
+        )
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "answer_has_complete_spec_row")
+
     def test_state_without_answer_fails(self) -> None:
         returncode, verdict = self.run_verifier(
             "", after_owner="alice.j@test.com"
         )
         self.assertEqual(returncode, 1)
-        self.assertEqual(verdict["reason"], "answer_has_complete_spec_row")
+        self.assertEqual(verdict["reason"], "final_answer_nonempty")
 
     def test_correct_state_and_answer_without_compare_navigation_fails(self) -> None:
         returncode, verdict = self.run_verifier(

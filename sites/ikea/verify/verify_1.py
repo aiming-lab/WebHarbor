@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_trajectory_identity,
     contains_money,
     explicitly_denies_label,
     fail_closed,
@@ -31,6 +32,7 @@ def main() -> None:
 
     answer = final_answer(trajectory)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
     judge.check(
         "visited_lack_product_page",
         navigated_to_path(trajectory, "/product/IK-10002"),

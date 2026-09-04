@@ -3,19 +3,23 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
-    contains_all,
+    check_signed_in_as,
+    check_trajectory_identity,
     fail_closed,
     final_answer,
     load_run,
     navigated_to_path,
+    normalize_text,
     parse_args,
     relation_count,
+    relation_skus,
     resolve_db,
 )
 
@@ -24,7 +28,7 @@ TASK_ID = "IKEA--15"
 EMAIL = "alice.j@test.com"
 SKU = "IK-10010"
 SPEC_ROWS = (
-    ("Series", "IKEA PS 2014"),
+    ("Series", "IKEA"),
     ("Rating", "4.1"),
     ("Availability", "Ready for pickup"),
     ("IKEA product ID", "00311498"),
@@ -34,11 +38,19 @@ SPEC_ROWS = (
 )
 
 
+def contains_spec_pair(answer: str, name: str, value: str) -> bool:
+    normalized_answer = normalize_text(answer)
+    normalized_name = re.escape(normalize_text(name))
+    normalized_value = re.escape(normalize_text(value))
+    pattern = rf"(?<!\w){normalized_name}(?!\w)\s*(?:is|=|:|[-–—])\s*{normalized_value}(?=$|[.,;])"
+    return bool(re.search(pattern, normalized_answer))
+
+
 def matching_spec_rows(answer: str) -> list[str]:
     return [
         f"{name}: {value}"
         for name, value in SPEC_ROWS
-        if contains_all(answer, [name, value])
+        if contains_spec_pair(answer, name, value)
     ]
 
 
@@ -62,11 +74,20 @@ def main() -> None:
     try:
         before_count = relation_count(initial_db, "compare_items", EMAIL, SKU)
         after_count = relation_count(after_db, "compare_items", EMAIL, SKU)
+        initial_compare = relation_skus(initial_db, "compare_items", EMAIL)
+        after_compare = relation_skus(after_db, "compare_items", EMAIL)
     except Exception as exc:
         fail_closed(TASK_ID, "database_query_failed", str(exc))
     matched_rows = matching_spec_rows(answer)
 
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
+    check_signed_in_as(judge, trajectory, EMAIL)
+    judge.check(
+        "visited_target_product_page",
+        navigated_to_path(trajectory, f"/product/{SKU}"),
+        f"required_path=/product/{SKU}",
+    )
     judge.check(
         "visited_compare_page",
         navigated_to_path(trajectory, "/compare"),
@@ -79,8 +100,13 @@ def main() -> None:
     )
     judge.check(
         "target_added_to_alice_compare",
-        after_count is not None and after_count > 0,
+        after_count == 1,
         f"email={EMAIL}, sku={SKU}, after_count={after_count!r}",
+    )
+    judge.check(
+        "alice_compare_changed_only_by_target",
+        initial_compare is not None and after_compare == initial_compare | {SKU},
+        f"initial_compare={sorted(initial_compare or set())!r}, after_compare={sorted(after_compare or set())!r}",
     )
     judge.check(
         "answer_has_complete_spec_row",

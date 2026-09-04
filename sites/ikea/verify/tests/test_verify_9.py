@@ -13,14 +13,19 @@ VERIFIER = VERIFY_DIR / "verify_9.py"
 
 
 class VerifyTask9Tests(unittest.TestCase):
-    def run_verifier(self, answer: str, navigated: bool = True):
+    def run_verifier(
+        self, answer: str, navigated: bool = True, email: str = "alice.j@test.com"
+    ):
         with tempfile.TemporaryDirectory() as directory:
             run_dir = Path(directory)
             (run_dir / "trajectory.json").write_text(
                 json.dumps(
                     {
                         "task_id": "IKEA--9",
-                        "steps": ([{"url": "http://localhost:40016/account/rewards"}] if navigated else []),
+                        "steps": [
+                            {"url": "http://localhost:40016/login", "action": "input", "params": {"text": email}},
+                            *([{"url": "http://localhost:40016/account/rewards"}] if navigated else []),
+                        ],
                         "final_answer": answer,
                     }
                 ),
@@ -51,6 +56,14 @@ class VerifyTask9Tests(unittest.TestCase):
         )
         self.assertEqual(returncode, 1)
         self.assertEqual(verdict["reason"], "visited_alice_rewards_page")
+
+    def test_correct_answer_with_wrong_account_fails(self) -> None:
+        returncode, verdict = self.run_verifier(
+            "The newest reward activity is Bedroom storage order.",
+            email="bob.c@test.com",
+        )
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "entered_expected_account_email")
 
     def test_older_label_fails(self) -> None:
         returncode, verdict = self.run_verifier(

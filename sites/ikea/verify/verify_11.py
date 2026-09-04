@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_trajectory_identity,
     contains_dimensions_inches,
     fail_closed,
     final_answer,
@@ -30,6 +31,7 @@ def main() -> None:
 
     answer = final_answer(trajectory)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
     judge.check(
         "visited_rosenmandel_product_page",
         navigated_to_path(trajectory, "/product/IK-10020"),

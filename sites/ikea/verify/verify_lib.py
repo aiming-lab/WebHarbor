@@ -7,6 +7,7 @@ and emits ``{task_id, pass, reason, evidence[]}`` with exit code 0/1.
 from __future__ import annotations
 
 import argparse
+import ipaddress
 import json
 import os
 import re
@@ -102,16 +103,95 @@ def normalized_url_path(url: str) -> str:
     return path.rstrip("/") or "/"
 
 
+def is_ikea_site_url(url: str) -> bool:
+    """Accept HTTP(S) URLs on a loopback host while allowing configured ports."""
+    parsed = urlparse(str(url or ""))
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        return False
+    hostname = parsed.hostname.casefold()
+    if hostname == "localhost":
+        return True
+    try:
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
+
+
 def navigated_to_path(trajectory: dict[str, Any], expected_path: str) -> bool:
-    """Require an exact on-site path while allowing any host and query string."""
+    """Require an exact IKEA path on a loopback origin, allowing any configured port."""
     expected = normalized_url_path(expected_path)
-    return any(normalized_url_path(url) == expected for url in trajectory_urls(trajectory))
+    return any(
+        is_ikea_site_url(url) and normalized_url_path(url) == expected
+        for url in trajectory_urls(trajectory)
+    )
+
+
+def final_url_is_path(trajectory: dict[str, Any], expected_path: str) -> bool:
+    observed_url = final_url(trajectory)
+    return is_ikea_site_url(observed_url) and normalized_url_path(observed_url) == normalized_url_path(expected_path)
+
+
+def trajectory_task_matches(trajectory: dict[str, Any], task_id: str) -> bool:
+    return str(trajectory.get("task_id") or "").strip() == task_id
+
+
+def trajectory_input_texts(trajectory: dict[str, Any]) -> list[str]:
+    values: list[str] = []
+    for step in trajectory.get("steps") or []:
+        if not isinstance(step, dict) or normalize_text(step.get("action")) != "input":
+            continue
+        params = step.get("params")
+        if isinstance(params, dict) and params.get("text") is not None:
+            values.append(str(params["text"]))
+    return values
+
+
+def trajectory_input_contains(trajectory: dict[str, Any], expected_text: str) -> bool:
+    expected = normalize_text(expected_text)
+    return any(normalize_text(value) == expected for value in trajectory_input_texts(trajectory))
+
+
+def trajectory_last_email(trajectory: dict[str, Any]) -> str:
+    emails = [
+        normalize_text(value)
+        for value in trajectory_input_texts(trajectory)
+        if re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value.strip())
+    ]
+    return emails[-1] if emails else ""
 
 
 def normalize_text(value: Any) -> str:
     text = unicodedata.normalize("NFKC", str(value or ""))
     text = text.replace("’", "'").replace("“", '"').replace("”", '"')
     return re.sub(r"\s+", " ", text).strip().casefold()
+
+
+def check_trajectory_identity(
+    judge: Any, trajectory: dict[str, Any], task_id: str
+) -> None:
+    judge.check(
+        "trajectory_task_matches",
+        trajectory_task_matches(trajectory, task_id),
+        f"expected_task_id={task_id!r}, observed_task_id={trajectory.get('task_id')!r}",
+    )
+    judge.check(
+        "final_answer_nonempty",
+        bool(final_answer(trajectory)),
+        f"final_answer={final_answer(trajectory)!r}",
+    )
+
+
+def check_signed_in_as(judge: Any, trajectory: dict[str, Any], email: str) -> None:
+    judge.check(
+        "visited_login_page",
+        navigated_to_path(trajectory, "/login"),
+        "required_path=/login",
+    )
+    judge.check(
+        "entered_expected_account_email",
+        trajectory_last_email(trajectory) == normalize_text(email),
+        f"expected_email={email!r}, last_entered_email={trajectory_last_email(trajectory)!r}",
+    )
 
 
 def contains_all(text: Any, expected: Iterable[Any]) -> bool:

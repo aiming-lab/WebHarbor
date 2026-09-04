@@ -47,14 +47,29 @@ def make_db(path: Path, users: dict[str, set[str]]) -> None:
 
 class VerifyTask2Tests(unittest.TestCase):
     def run_verifier(
-        self, before_users: dict[str, set[str]], after_users: dict[str, set[str]]
+        self,
+        before_users: dict[str, set[str]],
+        after_users: dict[str, set[str]],
+        valid_trajectory: bool = True,
     ):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             run_dir = root / "run"
             run_dir.mkdir()
             (run_dir / "trajectory.json").write_text(
-                json.dumps({"task_id": "IKEA--2", "steps": [], "final_answer": ""}),
+                json.dumps(
+                    {
+                        "task_id": "IKEA--2",
+                        "steps": ([
+                            {"url": "http://localhost:40016/register"},
+                            {"url": "http://localhost:40016/search?q=NORDVIKEN"},
+                            {"url": "http://localhost:40016/product/IK-10005"},
+                            {"url": "http://localhost:40016/product/IK-10006"},
+                            {"url": "http://localhost:40016/compare"},
+                        ] if valid_trajectory else []),
+                        "final_answer": ("Registered and compared both products." if valid_trajectory else ""),
+                    }
+                ),
                 encoding="utf-8",
             )
             before_db = root / "before.db"
@@ -92,6 +107,13 @@ class VerifyTask2Tests(unittest.TestCase):
         returncode, verdict = self.run_verifier(before, after)
         self.assertEqual(returncode, 0)
         self.assertTrue(verdict["pass"])
+
+    def test_state_change_without_browser_flow_fails(self) -> None:
+        before = {"alice.j@test.com": set()}
+        after = {**before, "new.user@example.com": {"IK-10005", "IK-10006"}}
+        returncode, verdict = self.run_verifier(before, after, valid_trajectory=False)
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "final_answer_nonempty")
 
     def test_new_user_with_incomplete_compare_fails(self) -> None:
         before = {"alice.j@test.com": set()}

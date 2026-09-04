@@ -13,14 +13,19 @@ VERIFIER = VERIFY_DIR / "verify_14.py"
 
 
 class VerifyTask14Tests(unittest.TestCase):
-    def run_verifier(self, answer: str, navigated: bool = True):
+    def run_verifier(
+        self, answer: str, navigated: bool = True, email: str = "carol.d@test.com"
+    ):
         with tempfile.TemporaryDirectory() as directory:
             run_dir = Path(directory)
             (run_dir / "trajectory.json").write_text(
                 json.dumps(
                     {
                         "task_id": "IKEA--14",
-                        "steps": ([{"url": "http://localhost:40016/account/orders"}] if navigated else []),
+                        "steps": [
+                            {"url": "http://localhost:40016/login", "action": "input", "params": {"text": email}},
+                            *([{"url": "http://localhost:40016/account/orders"}] if navigated else []),
+                        ],
                         "final_answer": answer,
                     }
                 ),
@@ -51,6 +56,14 @@ class VerifyTask14Tests(unittest.TestCase):
         )
         self.assertEqual(returncode, 1)
         self.assertEqual(verdict["reason"], "visited_carol_orders_page")
+
+    def test_correct_answer_with_wrong_account_fails(self) -> None:
+        returncode, verdict = self.run_verifier(
+            "The most recent order number is IK-240055.",
+            email="alice.j@test.com",
+        )
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "entered_expected_account_email")
 
     def test_wrong_neighboring_order_fails(self) -> None:
         returncode, verdict = self.run_verifier("IK-240051")

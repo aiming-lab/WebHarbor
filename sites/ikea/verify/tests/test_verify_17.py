@@ -54,14 +54,27 @@ def make_db(path: Path, cart: dict[str, int], orders: set[str]) -> None:
 
 
 class VerifyTask17Tests(unittest.TestCase):
-    def run_verifier(self, answer: str, after_cart=None, after_orders=None):
+    def run_verifier(
+        self, answer: str, after_cart=None, after_orders=None, valid_trajectory: bool = True
+    ):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             run_dir = root / "run"
             run_dir.mkdir()
             (run_dir / "trajectory.json").write_text(
                 json.dumps(
-                    {"task_id": "IKEA--17", "steps": [], "final_answer": answer}
+                    {
+                        "task_id": "IKEA--17",
+                        "steps": ([
+                            {"url": "http://localhost:40016/login", "action": "input", "params": {"text": "alice.j@test.com"}},
+                            {"url": "http://localhost:40016/cart"},
+                            {"url": "http://localhost:40016/checkout"},
+                            {"url": "http://localhost:40016/checkout/payment"},
+                            {"url": "http://localhost:40016/checkout/review"},
+                            {"url": "http://localhost:40016/checkout/confirmation"},
+                        ] if valid_trajectory else []),
+                        "final_answer": answer,
+                    }
                 ),
                 encoding="utf-8",
             )
@@ -103,6 +116,17 @@ class VerifyTask17Tests(unittest.TestCase):
         )
         self.assertEqual(returncode, 0)
         self.assertTrue(verdict["pass"])
+
+    def test_state_change_without_browser_flow_fails(self) -> None:
+        new_order = "IK-260061"
+        returncode, verdict = self.run_verifier(
+            new_order,
+            after_cart={},
+            after_orders=INITIAL_ORDERS | {new_order},
+            valid_trajectory=False,
+        )
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "visited_login_page")
 
     def test_wrong_reported_order_number_fails(self) -> None:
         returncode, verdict = self.run_verifier(

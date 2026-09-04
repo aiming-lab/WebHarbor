@@ -3,23 +3,26 @@
 from __future__ import annotations
 
 import os
-import re
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_signed_in_as,
+    check_trajectory_identity,
+    extract_order_numbers,
     fail_closed,
     final_answer,
     load_run,
     navigated_to_path,
-    normalize_text,
     parse_args,
 )
 
 
 TASK_ID = "IKEA--14"
+EMAIL = "carol.d@test.com"
+EXPECTED_ORDER = "IK-240055"
 
 
 def main() -> None:
@@ -30,11 +33,10 @@ def main() -> None:
         fail_closed(TASK_ID, "trajectory_unavailable", str(exc))
 
     answer = final_answer(trajectory)
-    normalized = normalize_text(answer)
-    has_order_number = bool(
-        re.search(r"(?<![a-z0-9])ik\s*[-–—]\s*240055(?!\d)", normalized)
-    )
+    reported_orders = extract_order_numbers(answer)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
+    check_signed_in_as(judge, trajectory, EMAIL)
     judge.check(
         "visited_carol_orders_page",
         navigated_to_path(trajectory, "/account/orders"),
@@ -42,8 +44,8 @@ def main() -> None:
     )
     judge.check(
         "answer_has_most_recent_order_number",
-        has_order_number,
-        f"expected=IK-240055, final_answer={answer!r}",
+        reported_orders == {EXPECTED_ORDER},
+        f"expected={EXPECTED_ORDER}, reported_orders={sorted(reported_orders)!r}, final_answer={answer!r}",
     )
     judge.emit()
 

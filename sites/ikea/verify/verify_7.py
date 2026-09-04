@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_trajectory_identity,
     contains_hyphenated_phrase,
     fail_closed,
     final_answer,
@@ -30,6 +31,7 @@ def main() -> None:
 
     answer = final_answer(trajectory)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
     judge.check(
         "visited_large_item_delivery_article",
         navigated_to_path(trajectory, "/support/large-item-delivery"),

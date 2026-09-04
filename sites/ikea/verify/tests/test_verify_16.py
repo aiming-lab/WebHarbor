@@ -54,7 +54,9 @@ def make_db(path: Path, cart: dict[str, int], orders: set[str]) -> None:
 
 
 class VerifyTask16Tests(unittest.TestCase):
-    def run_verifier(self, url: str, after_cart=None, after_orders=None):
+    def run_verifier(
+        self, url: str, after_cart=None, after_orders=None, valid_trajectory: bool = True
+    ):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             run_dir = root / "run"
@@ -63,8 +65,15 @@ class VerifyTask16Tests(unittest.TestCase):
                 json.dumps(
                     {
                         "task_id": "IKEA--16",
-                        "steps": [{"url": url, "action": "done"}],
-                        "final_answer": "",
+                        "steps": ([
+                            {"url": "http://localhost:40016/login", "action": "input", "params": {"text": "alice.j@test.com"}},
+                            {"url": "http://localhost:40016/cart"},
+                            {"url": "http://localhost:40016/checkout"},
+                            {"url": "http://localhost:40016/checkout/pickup"},
+                            {"url": "http://localhost:40016/checkout/payment"},
+                            {"url": url, "action": "done"},
+                        ] if valid_trajectory else []),
+                        "final_answer": ("Reached checkout review without placing the order." if valid_trajectory else ""),
                     }
                 ),
                 encoding="utf-8",
@@ -111,6 +120,18 @@ class VerifyTask16Tests(unittest.TestCase):
         )
         self.assertEqual(returncode, 0)
         self.assertTrue(verdict["pass"])
+
+    def test_unchanged_state_without_browser_flow_fails(self) -> None:
+        returncode, verdict = self.run_verifier(
+            "http://localhost:40016/checkout/review", valid_trajectory=False
+        )
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "final_answer_nonempty")
+
+    def test_external_review_url_fails(self) -> None:
+        returncode, verdict = self.run_verifier("https://example.com/checkout/review")
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "final_url_is_checkout_review")
 
     def test_placed_order_fails(self) -> None:
         returncode, verdict = self.run_verifier(

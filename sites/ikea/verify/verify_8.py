@@ -9,16 +9,19 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_trajectory_identity,
     contains_all,
     fail_closed,
     final_answer,
     load_run,
     navigated_to_path,
     parse_args,
+    trajectory_last_email,
 )
 
 
 TASK_ID = "IKEA--8"
+EMAIL = "alice.j@test.com"
 
 
 def main() -> None:
@@ -30,6 +33,12 @@ def main() -> None:
 
     answer = final_answer(trajectory)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
+    judge.check(
+        "entered_order_email",
+        trajectory_last_email(trajectory) == EMAIL,
+        f"expected_email={EMAIL!r}, last_entered_email={trajectory_last_email(trajectory)!r}",
+    )
     judge.check(
         "visited_order_lookup_page",
         navigated_to_path(trajectory, "/order-lookup"),

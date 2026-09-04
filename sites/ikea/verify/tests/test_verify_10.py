@@ -62,13 +62,24 @@ def make_db(
 
 
 class VerifyTask10Tests(unittest.TestCase):
-    def run_verifier(self, before: dict, after: dict):
+    def run_verifier(self, before: dict, after: dict, valid_trajectory: bool = True):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             run_dir = root / "run"
             run_dir.mkdir()
             (run_dir / "trajectory.json").write_text(
-                json.dumps({"task_id": "IKEA--10", "steps": [], "final_answer": "done"}),
+                json.dumps(
+                    {
+                        "task_id": "IKEA--10",
+                        "steps": ([
+                            {"url": "http://localhost:40016/login", "action": "input", "params": {"text": "bob.c@test.com"}},
+                            {"url": "http://localhost:40016/account/wishlist"},
+                            {"url": "http://localhost:40016/product/IK-SAVED"},
+                            {"url": "http://localhost:40016/cart"},
+                        ] if valid_trajectory else []),
+                        "final_answer": ("Added one saved item to the cart and kept it saved." if valid_trajectory else ""),
+                    }
+                ),
                 encoding="utf-8",
             )
             before_db = root / "before.db"
@@ -103,6 +114,13 @@ class VerifyTask10Tests(unittest.TestCase):
         returncode, verdict = self.run_verifier(before, after)
         self.assertEqual(returncode, 0)
         self.assertTrue(verdict["pass"])
+
+    def test_state_change_without_browser_flow_fails(self) -> None:
+        before = {"bob_wishlist": {"IK-SAVED"}, "bob_cart": {}}
+        after = {"bob_wishlist": {"IK-SAVED"}, "bob_cart": {"IK-SAVED": 1}}
+        returncode, verdict = self.run_verifier(before, after, valid_trajectory=False)
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "final_answer_nonempty")
 
     def test_removed_from_wishlist_after_add_fails(self) -> None:
         before = {"bob_wishlist": {"IK-SAVED"}, "bob_cart": {}}

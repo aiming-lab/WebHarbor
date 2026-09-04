@@ -9,6 +9,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_trajectory_identity,
     contains_any,
     fail_closed,
     final_answer,
@@ -31,6 +32,7 @@ def main() -> None:
 
     answer = final_answer(trajectory)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
     judge.check(
         "visited_atlanta_store_page",
         navigated_to_path(trajectory, "/stores/atlanta-ga"),

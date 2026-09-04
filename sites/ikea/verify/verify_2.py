@@ -9,8 +9,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_trajectory_identity,
     fail_closed,
     load_run,
+    navigated_to_path,
     new_user_emails,
     parse_args,
     relation_skus,
@@ -25,7 +27,7 @@ TARGET_SKUS = {"IK-10005", "IK-10006"}
 def main() -> None:
     args = parse_args()
     try:
-        load_run(args.run_dir)
+        trajectory = load_run(args.run_dir)
     except (OSError, ValueError) as exc:
         fail_closed(TASK_ID, "trajectory_unavailable", str(exc))
 
@@ -50,9 +52,18 @@ def main() -> None:
     completing_users = [
         email
         for email, skus in compared_by_user.items()
-        if TARGET_SKUS.issubset(skus)
+        if skus == TARGET_SKUS
     ]
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
+    for name, path in (
+        ("visited_registration_page", "/register"),
+        ("visited_search_page", "/search"),
+        ("visited_nordviken_product_page", "/product/IK-10005"),
+        ("visited_stefan_product_page", "/product/IK-10006"),
+        ("visited_compare_page", "/compare"),
+    ):
+        judge.check(name, navigated_to_path(trajectory, path), f"required_path={path}")
     judge.check(
         "new_user_registered",
         bool(new_emails),

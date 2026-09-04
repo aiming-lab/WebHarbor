@@ -10,10 +10,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (  # noqa: E402
     Judge,
     cart_snapshot,
+    check_signed_in_as,
+    check_trajectory_identity,
     extract_order_numbers,
     fail_closed,
     final_answer,
     load_run,
+    navigated_to_path,
     order_numbers,
     parse_args,
     resolve_db,
@@ -58,6 +61,16 @@ def main() -> None:
     )
     reported_orders = extract_order_numbers(answer)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
+    check_signed_in_as(judge, trajectory, EMAIL)
+    for name, path in (
+        ("visited_cart", "/cart"),
+        ("visited_checkout_start", "/checkout"),
+        ("visited_payment_step", "/checkout/payment"),
+        ("visited_review_step", "/checkout/review"),
+        ("visited_confirmation", "/checkout/confirmation"),
+    ):
+        judge.check(name, navigated_to_path(trajectory, path), f"required_path={path}")
     judge.check(
         "alice_had_checkout_cart",
         bool(initial_cart),

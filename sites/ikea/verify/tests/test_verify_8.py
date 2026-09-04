@@ -13,14 +13,22 @@ VERIFIER = VERIFY_DIR / "verify_8.py"
 
 
 class VerifyTask8Tests(unittest.TestCase):
-    def run_verifier(self, answer: str, navigated: bool = True):
+    def run_verifier(
+        self, answer: str, navigated: bool = True, email: str = "alice.j@test.com"
+    ):
         with tempfile.TemporaryDirectory() as directory:
             run_dir = Path(directory)
             (run_dir / "trajectory.json").write_text(
                 json.dumps(
                     {
                         "task_id": "IKEA--8",
-                        "steps": ([{"url": "http://localhost:40016/order-lookup"}] if navigated else []),
+                        "steps": [
+                            {
+                                "url": ("http://localhost:40016/order-lookup" if navigated else "http://localhost:40016/"),
+                                "action": "input",
+                                "params": {"text": email},
+                            }
+                        ],
                         "final_answer": answer,
                     }
                 ),
@@ -49,6 +57,13 @@ class VerifyTask8Tests(unittest.TestCase):
         )
         self.assertEqual(returncode, 1)
         self.assertEqual(verdict["reason"], "visited_order_lookup_page")
+
+    def test_correct_answer_with_wrong_lookup_email_fails(self) -> None:
+        returncode, verdict = self.run_verifier(
+            "The status is Preparing order.", email="bob.c@test.com"
+        )
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "entered_order_email")
 
     def test_wrong_status_fails(self) -> None:
         returncode, verdict = self.run_verifier("The status is Ready for pickup.")

@@ -9,6 +9,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
     Judge,
+    check_signed_in_as,
+    check_trajectory_identity,
     contains_all,
     fail_closed,
     final_answer,
@@ -19,6 +21,7 @@ from verify_lib import (  # noqa: E402
 
 
 TASK_ID = "IKEA--9"
+EMAIL = "alice.j@test.com"
 
 
 def main() -> None:
@@ -30,6 +33,8 @@ def main() -> None:
 
     answer = final_answer(trajectory)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
+    check_signed_in_as(judge, trajectory, EMAIL)
     judge.check(
         "visited_alice_rewards_page",
         navigated_to_path(trajectory, "/account/rewards"),

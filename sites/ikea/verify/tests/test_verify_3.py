@@ -49,13 +49,24 @@ class VerifyTask3Tests(unittest.TestCase):
         before_alice: int = 0,
         after_alice: int = 0,
         after_bob: int = 0,
+        valid_trajectory: bool = True,
     ):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             run_dir = root / "run"
             run_dir.mkdir()
             (run_dir / "trajectory.json").write_text(
-                json.dumps({"task_id": "IKEA--3", "steps": [], "final_answer": ""}),
+                json.dumps(
+                    {
+                        "task_id": "IKEA--3",
+                        "steps": ([
+                            {"url": "http://localhost:40016/login", "action": "input", "params": {"text": "alice.j@test.com"}},
+                            {"url": "http://localhost:40016/products?room=office"},
+                            {"url": "http://localhost:40016/product/IK-10007"},
+                        ] if valid_trajectory else []),
+                        "final_answer": ("Added one MITTZON desk to Alice's cart." if valid_trajectory else ""),
+                    }
+                ),
                 encoding="utf-8",
             )
             before_db = root / "before.db"
@@ -87,6 +98,13 @@ class VerifyTask3Tests(unittest.TestCase):
         returncode, verdict = self.run_verifier(after_alice=1)
         self.assertEqual(returncode, 0)
         self.assertTrue(verdict["pass"])
+
+    def test_state_change_without_browser_flow_fails(self) -> None:
+        returncode, verdict = self.run_verifier(
+            after_alice=1, valid_trajectory=False
+        )
+        self.assertEqual(returncode, 1)
+        self.assertEqual(verdict["reason"], "final_answer_nonempty")
 
     def test_two_added_fails(self) -> None:
         returncode, verdict = self.run_verifier(after_alice=2)

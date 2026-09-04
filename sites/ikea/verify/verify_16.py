@@ -10,10 +10,13 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (  # noqa: E402
     Judge,
     cart_snapshot,
+    check_signed_in_as,
+    check_trajectory_identity,
     fail_closed,
     final_url,
+    final_url_is_path,
     load_run,
-    normalized_url_path,
+    navigated_to_path,
     order_numbers,
     parse_args,
     resolve_db,
@@ -50,12 +53,20 @@ def main() -> None:
         fail_closed(TASK_ID, "database_query_failed", str(exc))
 
     observed_url = final_url(trajectory)
-    observed_path = normalized_url_path(observed_url)
     judge = Judge(TASK_ID)
+    check_trajectory_identity(judge, trajectory, TASK_ID)
+    check_signed_in_as(judge, trajectory, EMAIL)
+    for name, path in (
+        ("visited_cart", "/cart"),
+        ("visited_checkout_start", "/checkout"),
+        ("visited_pickup_step", "/checkout/pickup"),
+        ("visited_payment_step", "/checkout/payment"),
+    ):
+        judge.check(name, navigated_to_path(trajectory, path), f"required_path={path}")
     judge.check(
         "final_url_is_checkout_review",
-        observed_path == REVIEW_PATH,
-        f"final_url={observed_url!r}, normalized_path={observed_path!r}",
+        final_url_is_path(trajectory, REVIEW_PATH),
+        f"final_url={observed_url!r}, expected_path={REVIEW_PATH!r}",
     )
     judge.check(
         "alice_orders_unchanged",
