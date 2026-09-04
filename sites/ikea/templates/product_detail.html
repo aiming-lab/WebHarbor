@@ -45,7 +45,10 @@
             </button>
           </form>
           <form action="{{ url_for('compare_toggle', sku=product.sku) }}" method="post">
-            <button type="submit" class="secondary">Add to compare</button>
+            {% set is_compared = product.id in compare_product_ids %}
+            <button type="submit" class="secondary" aria-pressed="{{ 'true' if is_compared else 'false' }}">
+              {{ 'Remove from compare' if is_compared else 'Add to compare' }}
+            </button>
           </form>
         </div>
       {% else %}

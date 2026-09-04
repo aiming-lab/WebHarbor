@@ -5,13 +5,15 @@ import json
 import os
 import random
 import shutil
+from html import escape
 from pathlib import Path
 
 os.environ.setdefault("WEBSYN_SKIP_BOOTSTRAP", "1")
 
-from app import (  # noqa: E402
+from app import (
     BASE_DIR,
     DB_PATH,
+    ROOM_LABELS,
     CartItem,
     Category,
     CompareItem,
@@ -23,6 +25,7 @@ from app import (  # noqa: E402
     PickupSlot,
     Product,
     ProtectionPlan,
+    Review,
     RewardActivity,
     RoomBundle,
     Store,
@@ -35,8 +38,6 @@ from app import (  # noqa: E402
     db,
     dumps_json,
 )
-from app import Review  # noqa: E402
-from app import ROOM_LABELS  # noqa: E402
 
 RNG = random.Random(20260604)
 STATIC_IMAGES = BASE_DIR / "static" / "images"
@@ -92,6 +93,130 @@ MATERIALS = [
     "Wool mix", "Bamboo", "Tempered glass", "Particleboard", "Birch veneer",
 ]
 
+DEMO_PASSWORD_HASHES = {
+    "alice.j@test.com": "scrypt:32768:8:1$xcmAKpVh63o52xg5$4e2247333415e6456fcc2a9fb8a1992e60c6e480265a8329ab4e70ebd12a7f3f6a2bc8a2b9e4ebc6b5e2f643907ae386bc45f92944dd2781e65e710ce417be31",
+    "bob.c@test.com": "scrypt:32768:8:1$TcYuBxSULboyQlXd$a272950532742665702c9213240397d98813f3dc168eef9b111056b87b1a5b7d780e5db68d6c195213d361a6139bb6106da9f55203110bb391e005bc4e65b9e2",
+    "carol.d@test.com": "scrypt:32768:8:1$wjZQydR4MNwZtlle$615e55b19282a00da9edd521aaaf3e8e958a3499d6f8c015233932645ff850818d10a4d678780dcd94960296139415c2e361e079894bcfd448e2c767389355a7",
+    "david.k@test.com": "scrypt:32768:8:1$900NA9uGsdnrM2sF$de666f57af7a35750107e5240efef515f699c54a5ffa127cfa6d63beb125b6c5ad5bc7a1b021ea38c4bef8560b88e7cfa0ea50905427cec8bf38ef58f20c3323",
+}
+
+REVIEW_AUTHORS = [
+    "Alex R.", "Brianna M.", "Chris T.", "Dana L.", "Eli S.", "Fatima K.",
+    "Grace P.", "Henry W.", "Isabel C.", "Jordan N.", "Kai B.", "Leah D.",
+]
+
+REVIEW_HEADLINES = [
+    "Looks just like the photos", "A practical fit for our space", "Solid after daily use", "Thoughtful details", "Easy to plan around", "Good value for the size", "Clean design and finish", "Works well with the room", "Measurements were accurate", "Simple to care for", "Comfortable and sturdy", "Would buy from this series again",
+]
+
+REVIEW_BODIES = [
+    "The photos and measurements were accurate, so it was easy to plan the space before delivery.",
+    "The finish looks consistent in daylight and the construction feels stable during everyday use.",
+    "Packaging protected the corners and surfaces well. Everything arrived clean and ready to set up.",
+    "After several weeks, it has been easy to care for and still looks new.",
+    "The proportions work well with the other pieces in our room without making the space feel crowded.",
+    "The materials feel appropriate for the price, and the small functional details are genuinely useful.",
+]
+
+SUPPORT_BODY_PARAGRAPHS = {
+    "click-and-collect-pickup-windows": [
+        "Choose a store during checkout to see its current collection windows. The available times shown for one location may differ from another because each store manages its own capacity.",
+        "Wait until the readiness message arrives before traveling to the store. Bring the order number and photo identification, then follow the signs for Click & collect at the selected location.",
+    ],
+    "large-item-delivery": [
+        "Sofas, beds, wardrobes, and other bulky furniture can use Room-of-choice delivery. The delivery team carries packaged items inside and places them in the room selected during checkout, including an upstairs room when the route is safe and accessible.",
+        "Measure doors, hallways, elevators, and stair turns before the appointment. Clear the route, secure pets, and make sure an adult is available throughout the delivery window. Assembly and packaging removal are separate services unless they are listed on the order.",
+    ],
+    "order-lookup-status": [
+        "Enter the order number and the email address used at checkout. Both values must match before status or order details are shown.",
+        "Preparing order means the items are being gathered. Ready for pickup means collection instructions have been sent. Out for delivery means the order has left the local facility, while Delivered closes the shipment workflow.",
+    ],
+    "returns-and-exchanges": [
+        "Start with the order detail page so the item, purchase date, and payment method are available. Store returns should include the product, receipt or order number, and all parts that came in the package.",
+        "Opened, assembled, or damaged products may require an inspection before a refund method is selected. This local store experience records no real return or refund transaction.",
+    ],
+    "assembly-planning-service": [
+        "Assembly planning helps identify which items need installation, how much clear floor space is required, and whether wall anchoring or utility access is part of the work.",
+        "A planning appointment does not automatically add assembly to an order. Review the service scope and price separately before checkout, and keep the product area clear for the scheduled visit.",
+    ],
+    "kitchen-planning-appointments": [
+        "Before a kitchen planning appointment, measure wall lengths, ceiling height, doors, windows, and the location of plumbing, electrical outlets, and ventilation. Photos of the existing room are also useful.",
+        "The planner can review cabinet layouts, worktop options, storage needs, and appliance clearances. Final installation measurements should be confirmed before products are ordered.",
+    ],
+    "family-points-and-rewards": [
+        "Eligible purchases and selected activities add points after they appear in account history. The rewards page lists each activity label, date, type, and point change in newest-first order.",
+        "Canceled or returned purchases can result in an adjustment. Points in this local experience are illustrative and cannot be redeemed outside the mirror.",
+    ],
+    "mattress-delivery-room-choice": [
+        "Room-of-choice service can carry a packaged mattress or bed frame to the bedroom selected at checkout. The route must have enough clearance for doors, landings, stairs, and elevator turns.",
+        "Protect floors, remove fragile objects from the path, and tell the delivery team about access restrictions in advance. Mattress setup, old-mattress removal, and frame assembly are included only when specifically listed.",
+    ],
+    "store-amenities-and-restaurant-hours": [
+        "Open a store detail page to see amenities available at that location, such as the Swedish Restaurant, Click & collect, planning areas, or family facilities.",
+        "Store and restaurant hours can differ, especially around holidays. Confirm the listed location and opening time before starting a visit.",
+    ],
+    "pickup-readiness-notifications": [
+        "A readiness notification is sent after store staff have gathered the order and assigned it to the collection area. An order confirmation by itself does not mean the items are ready to collect.",
+        "Use the order number and the email address from checkout when checking status. After the ready message arrives, go to the selected store during the stated window and follow its Click & collect instructions.",
+    ],
+    "protection-plans-desks-chairs": [
+        "Review the coverage term, covered incidents, exclusions, and service process before adding a plan. A shorter plan focuses on essential hardware and finish issues, while extended coverage can include additional accidental-damage benefits.",
+        "Keep the order record and photographs of the item. Normal wear, intentional damage, commercial use, and problems present before coverage begins are not included.",
+    ],
+    "protection-plans-sofas-beds": [
+        "Furniture protection for sofas and beds can cover specified frame, hardware, upholstery, or stain incidents during the selected term. The exact benefits shown on the product page determine what is included.",
+        "Manufacturer warranty coverage and a protection plan are separate. Review exclusions for normal wear, pet damage, moving damage, and unauthorized repairs before choosing a term.",
+    ],
+    "room-planner-bundles": [
+        "Each room planner bundle lists the three products included and the combined item price. Review the product names and prices before adding the bundle because the action adds every listed item to the cart.",
+        "After adding a bundle, open the cart to adjust quantities or remove individual products. Availability and delivery options are evaluated per item during checkout.",
+    ],
+    "pickup-vs-parcel-delivery": [
+        "Store pickup is useful when a nearby location has stock and a suitable collection window. Parcel delivery sends eligible compact items to the address entered during checkout.",
+        "Large or heavy products may require truck delivery instead. Compare the fee, timing, item eligibility, and travel required before selecting a fulfillment method.",
+    ],
+    "truck-delivery-heavy-storage": [
+        "Shelving, wardrobes, and other heavy storage pieces may be assigned to truck delivery because their packages are too large for parcel service. Checkout shows the available window and fee.",
+        "Check package dimensions, clear the delivery route, and plan for safe wall anchoring after assembly. Threshold delivery does not include carrying products to a specific room unless that service is selected.",
+    ],
+    "updating-account-preferences": [
+        "The profile page lets a signed-in member update their name, phone number, city, state, ZIP code, preferred store, and newsletter choice.",
+        "Saving a preferred store changes which location is suggested during shopping and pickup. It does not modify an existing order or move inventory between stores.",
+    ],
+    "wishlist-and-compare-lists": [
+        "Use the wishlist for products you want to keep for later. A saved item remains on the wishlist when it is added to the cart unless you remove it separately.",
+        "Compare holds up to four products and presents their price, availability, rating, and available specification rows side by side. Remove one product before adding another when the list is full.",
+    ],
+    "bedroom-storage-measurement-tips": [
+        "Measure the wall width, ceiling height, baseboards, outlets, door swing, and the space needed to open drawers or wardrobe doors. Record the narrowest point on the delivery route as well.",
+        "Compare those measurements with the product dimensions and anchoring instructions. Leave practical clearance for cleaning, ventilation, and daily use.",
+    ],
+    "outdoor-furniture-seasonal-care": [
+        "Clean frames with a mild soapy solution and let every surface dry before covering or storing the furniture. Remove cushions during prolonged rain and follow their individual care labels.",
+        "Tighten hardware at the start and end of the season. Store pieces in a dry, ventilated space when possible, and avoid trapping moisture under a cover.",
+    ],
+    "textile-care-and-blackout-curtains": [
+        "Check the sewn-in care label before washing curtains or cushion covers. Remove hooks and other hardware, use the listed temperature, and avoid bleach or tumble drying when the instructions prohibit them.",
+        "Measure from the rail to the desired hem before hanging curtains. Heading tape can be used with rods, hooks, or tracks depending on the product instructions.",
+    ],
+    "bathroom-storage-small-spaces": [
+        "Use wall height and shallow storage to keep the floor area open. Measure around doors, plumbing, radiators, and electrical zones before selecting a cabinet or cart.",
+        "Choose moisture-resistant materials and leave room for ventilation. Wall-mounted products must use fasteners suitable for the wall construction.",
+    ],
+    "kids-room-safety-anchors": [
+        "Tall or climbable storage must be secured to the wall with appropriate fasteners. Place heavier items lower, keep cords out of reach, and do not position climbable furniture next to a window.",
+        "Wall materials require different screws and plugs. If the supplied restraint is not suitable, obtain compatible hardware before using the product.",
+    ],
+    "entryway-organization-narrow-hallways": [
+        "Measure walking clearance with cabinet doors and drawers open. Shallow shoe storage, wall hooks, and a compact bench can organize daily items without blocking the route.",
+        "Anchor tall cabinets and keep frequently used items within easy reach. Leave exits, electrical panels, and heating equipment unobstructed.",
+    ],
+    "lighting-bundles-open-plan-rooms": [
+        "Use ambient light for the whole room, task light over work areas, and focused accent light for shelves or artwork. Separate controls make the open space easier to adapt through the day.",
+        "Check bulb base, maximum wattage, dimmer compatibility, cord routing, and installation requirements for every fixture before combining products.",
+    ],
+}
+
 SPECIAL_PRODUCTS = [
     {"sku": "IK-10001", "name": "HEMLUND modular sofa", "series": "HEMLUND", "category_slug": "living-room-seating", "room_slug": "living-room", "price": 799.0, "list_price": 899.0, "material": "Cotton blend", "color": "Forest green", "dimensions": "118\" W x 37\" D x 32\" H", "assembly": "Two-person setup", "tags": ["modular", "chaise", "washable cover"], "specs": {"Seats": "4", "Cover": "Removable", "Frame": "Kiln-dried pine", "Depth": "37 in", "Width": "118 in"}, "featured": True, "deal": True},
     {"sku": "IK-10002", "name": "BJORNA lift-top coffee table", "series": "BJORNA", "category_slug": "living-room-seating", "room_slug": "living-room", "price": 229.0, "list_price": 279.0, "material": "Ash veneer", "color": "Oak", "dimensions": "47\" W x 24\" D x 18\" H", "assembly": "Quick setup", "tags": ["storage", "oak", "living room"], "specs": {"Lift top": "Yes", "Storage shelf": "Dual compartment", "Width": "47 in", "Depth": "24 in", "Finish": "Matte oak"}, "featured": True, "deal": False},
@@ -141,8 +266,8 @@ def svg_card(path: Path, title: str, subtitle: str, bg: str, accent: str) -> Non
 <rect x="542" y="170" width="250" height="20" rx="10" fill="{accent}" opacity="0.34"/>
 <rect x="542" y="212" width="198" height="18" rx="9" fill="{accent}" opacity="0.18"/>
 <rect x="542" y="252" width="154" height="18" rx="9" fill="{accent}" opacity="0.18"/>
-<text x="88" y="520" fill="#111827" font-family="Arial, sans-serif" font-size="44" font-weight="700">{title}</text>
-<text x="88" y="574" fill="#4b5563" font-family="Arial, sans-serif" font-size="28">{subtitle}</text>
+<text x="88" y="520" fill="#111827" font-family="Arial, sans-serif" font-size="44" font-weight="700">{escape(title)}</text>
+<text x="88" y="574" fill="#4b5563" font-family="Arial, sans-serif" font-size="28">{escape(subtitle)}</text>
 <text x="88" y="628" fill="#4b5563" font-family="Arial, sans-serif" font-size="24">Local benchmark mirror asset</text>
 </svg>"""
     path.write_text(svg, encoding="utf-8")
@@ -263,7 +388,7 @@ def build_products() -> list[Product]:
 def build_support_articles() -> list[SupportArticle]:
     article_specs = [
         ("Click and collect pickup windows", "click-and-collect-pickup-windows", "Pickup", "How to choose a pickup slot and what to bring to the store."),
-        ("Large item delivery for sofas and beds", "large-item-delivery", "Delivery", "What room-of-choice delivery includes for oversized furniture."),
+        ("Large item delivery for sofas and beds", "large-item-delivery", "Delivery", "What to expect when ordering delivery for sofas, beds, and other bulky furniture."),
         ("Order lookup and status notes", "order-lookup-status", "Orders", "Where to find your order number and how local demo statuses move."),
         ("Returns and exchanges in the local demo", "returns-and-exchanges", "Returns", "How returns are explained in this mirror without real transactions."),
         ("Assembly planning and service add-ons", "assembly-planning-service", "Services", "What assembly planning covers and what it does not in the demo."),
@@ -271,7 +396,7 @@ def build_support_articles() -> list[SupportArticle]:
         ("IKEA Family points and order rewards", "family-points-and-rewards", "Rewards", "How points accrue from synthetic orders in the local benchmark."),
         ("Mattress delivery and room-of-choice setup", "mattress-delivery-room-choice", "Delivery", "A walkthrough for bedroom deliveries and stairs notes."),
         ("Store amenities and Swedish Restaurant hours", "store-amenities-and-restaurant-hours", "Stores", "How to check store amenities, dining, and planning desks."),
-        ("Pickup order readiness notifications", "pickup-readiness-notifications", "Pickup", "What the demo means when an order says pickup ready."),
+        ("When your collection order is ready", "pickup-readiness-notifications", "Pickup", "How collection messages and store instructions work after an order is prepared."),
         ("Protection plans for desks and chairs", "protection-plans-desks-chairs", "Protection plans", "Compare accident coverage and finish protection on work-from-home pieces."),
         ("Protection plans for sofas and beds", "protection-plans-sofas-beds", "Protection plans", "Understand coverage windows for upholstery and sleep furniture."),
         ("How to use the room planner bundles", "room-planner-bundles", "Planning", "Use curated room bundles before adding multiple products to cart."),
@@ -295,12 +420,8 @@ def build_support_articles() -> list[SupportArticle]:
                 slug=slug,
                 category=category,
                 summary=summary,
-                body=(
-                    f"{summary}\n\n"
-                    "This is a local benchmark mirror using deterministic demo data. "
-                    "No real orders, payments, delivery bookings, or external APIs are involved."
-                ),
-                related_topics_json=dumps_json(["delivery", "pickup", "planning", "support"]),
+                body="\n\n".join(SUPPORT_BODY_PARAGRAPHS[slug]),
+                related_topics_json=dumps_json([category.lower(), "shopping help", "customer service"]),
             )
         )
     return articles
@@ -317,7 +438,7 @@ def build_deals(products: list[Product]) -> list[Deal]:
                 category_slug=product.category_slug,
                 badge=["Weekend offer", "Family pick", "Room refresh"][idx % 3],
                 summary=f"Save on {product.name} while keeping the room plan under budget.",
-                discount_text=f"Save {int(round(product.list_price - product.price))} dollars",
+                discount_text=f"Save {round(product.list_price - product.price)} dollars",
                 product_sku=product.sku,
             )
         )
@@ -391,38 +512,41 @@ def seed_database(force: bool = False) -> None:
     for product_index, product in enumerate(products):
         review_total = 2 + (product_index % 4)
         for review_index in range(review_total):
+            review_variant = product_index * 3 + review_index
             db.session.add(
                 Review(
                     product_id=product.id,
-                    author_name=f"Demo shopper {product_index + review_index + 1}",
-                    headline=[
-                        "Looks polished in person",
-                        "Easy to style in a small room",
-                        "Great value for the size",
-                        "Helpful storage details",
-                    ][review_index % 4],
-                    body=(
-                        f"{product.name} works well in this synthetic benchmark home. "
-                        f"I picked the {product.color.lower()} option and liked the {product.material.lower()} finish."
-                    ),
+                    author_name=REVIEW_AUTHORS[review_variant % len(REVIEW_AUTHORS)],
+                    headline=REVIEW_HEADLINES[review_variant % len(REVIEW_HEADLINES)],
+                    body=REVIEW_BODIES[review_variant % len(REVIEW_BODIES)],
                     rating=4 + (review_index % 2),
                     helpful_count=4 + review_index * 3,
-                    created_on=f"2026-05-{10 + review_index:02d}",
+                    created_on=f"2026-08-{10 + review_index:02d}",
                 )
             )
-        for plan_years, plan_price in ((3, round(product.price * 0.08, 2)), (5, round(product.price * 0.13, 2))):
+        plan_options = (
+            (
+                3,
+                round(product.price * 0.08, 2),
+                "Essential coverage for eligible finish defects and functional hardware after the product warranty.",
+                ["Eligible finish repair", "Functional hardware replacement", "Parts and labor for approved claims"],
+            ),
+            (
+                5,
+                round(product.price * 0.13, 2),
+                "Extended coverage that adds selected accidental stains and damage for two additional years.",
+                ["All 3-year plan benefits", "Accidental stain and tear coverage", "One approved replacement if repair is not practical"],
+            ),
+        )
+        for plan_years, plan_price, plan_description, plan_benefits in plan_options:
             db.session.add(
                 ProtectionPlan(
                     product_id=product.id,
                     name=f"{plan_years}-year home protection",
                     years=plan_years,
                     price=plan_price,
-                    description="Covers finish issues, hardware replacements, and accidental stains in this demo.",
-                    benefits_json=dumps_json([
-                        "Finish coverage",
-                        "Replacement hardware",
-                        "Priority support script",
-                    ]),
+                    description=plan_description,
+                    benefits_json=dumps_json(plan_benefits),
                 )
             )
         for store_index, store in enumerate(stores):
@@ -467,6 +591,7 @@ def seed_benchmark_users(force: bool = False) -> None:
     for email, first_name, last_name, city, state, zip_code, preferred_store, points in profiles:
         user = User(
             email=email,
+            password_hash=DEMO_PASSWORD_HASHES[email],
             first_name=first_name,
             last_name=last_name,
             phone="555-0100",
@@ -476,7 +601,6 @@ def seed_benchmark_users(force: bool = False) -> None:
             preferred_store_slug=preferred_store,
             rewards_points=points,
         )
-        user.set_password("TestPass123!")
         users.append(user)
     db.session.add_all(users)
     db.session.flush()

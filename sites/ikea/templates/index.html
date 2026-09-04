@@ -3,20 +3,31 @@
 {% block content %}
 <section class="hero-grid">
   <div class="hero-copy">
-    <p class="eyebrow">Furniture + home retail benchmark</p>
-    <h1>Design a room, check local pickup, and complete a full mock checkout.</h1>
-    <p>This mirror uses a deterministic snapshot of IKEA product data and local hero images, with synthetic benchmark orders.</p>
-    <div class="hero-actions">
-      <a class="button" href="{{ url_for('products') }}">Shop products</a>
-      <a class="button secondary" href="{{ url_for('room_planner') }}">Open room planner</a>
+    <div class="hero-copy__content">
+      <p class="eyebrow">Make room for what matters</p>
+      <h1>Fresh ideas for a home that feels like you.</h1>
+      <p>Explore practical furniture, everyday storage and small updates for every room.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('products') }}">Shop products</a>
+        <a class="button secondary" href="{{ url_for('room_planner') }}">Open room planner</a>
+      </div>
     </div>
+    {% if hero_product %}
+      <a class="hero-product" href="{{ url_for('product_detail', sku=hero_product.sku) }}">
+        <img src="{{ url_for('static', filename=hero_product.image_path) }}" alt="{{ hero_product.name }}">
+        <span>{{ hero_product.name }}</span>
+      </a>
+    {% endif %}
   </div>
   <aside class="hero-panel">
     <h2>Popular categories</h2>
     <div class="mini-grid">
       {% for category in categories[:6] %}
         <a class="mini-card" href="{{ url_for('category_view', category_slug=category.slug) }}">
-          <img src="{{ url_for('static', filename='images/categories/' ~ category.slug ~ '.svg') }}" alt="{{ category.name }}">
+          {% set image_product = category_images.get(category.slug) %}
+          {% if image_product %}
+            <img src="{{ url_for('static', filename=image_product.image_path) }}" alt="{{ category.name }} inspiration">
+          {% endif %}
           <span>{{ category.name }}</span>
         </a>
       {% endfor %}
@@ -78,7 +89,6 @@
     <div class="article-list">
       {% for article in support_articles %}
         <a class="article-card" href="{{ url_for('support_article', article_slug=article.slug) }}">
-          <p class="eyebrow">{{ article.category }}</p>
           <h3>{{ article.title }}</h3>
           <p>{{ article.summary }}</p>
         </a>
@@ -95,7 +105,10 @@
   <div class="store-grid">
     {% for store in stores %}
       <a class="store-card" href="{{ url_for('store_detail', store_slug=store.slug) }}">
-        <img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">
+        <div class="store-card__marker" aria-hidden="true">
+          <span>Click &amp; collect</span>
+          <strong>{{ store.state }}</strong>
+        </div>
         <div>
           <h3>{{ store.name }}</h3>
           <p>{{ store.city }}, {{ store.state }}</p>

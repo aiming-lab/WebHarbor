@@ -7,10 +7,10 @@
 </section>
 <form class="form-panel" method="post">
   <label>Order number
-    <input type="text" name="order_number" placeholder="IK-240061">
+    <input type="text" name="order_number" value="{{ request.form.get('order_number', '') }}" placeholder="IK-240061" autocomplete="off" required>
   </label>
-  <label>Email (optional)
-    <input type="email" name="email">
+  <label>Email used for the order
+    <input type="email" name="email" value="{{ request.form.get('email', '') }}" autocomplete="email" required>
   </label>
   <button type="submit">Find order</button>
 </form>

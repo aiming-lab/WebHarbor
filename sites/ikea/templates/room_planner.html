@@ -20,7 +20,15 @@
       <p class="eyebrow">{{ room_labels[bundle.room_slug] }}</p>
       <h2>{{ bundle.name }}</h2>
       <p>{{ bundle.summary }}</p>
-      <strong>{{ bundle.total_price|money }}</strong>
+      <ul class="bundle-items" aria-label="Products in {{ bundle.name }}">
+        {% for product in bundle_products[bundle.id] %}
+          <li>
+            <img src="{{ url_for('static', filename=product.image_path) }}" alt="">
+            <span><strong>{{ product.card_name }}</strong><small>{{ product.price|money }}</small></span>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="bundle-total"><span>Bundle total</span><strong>{{ bundle.total_price|money }}</strong></p>
       {% if current_user.is_authenticated %}
         <form action="{{ url_for('add_bundle', bundle_slug=bundle.slug) }}" method="post">
           <button type="submit">Add bundle to cart</button>

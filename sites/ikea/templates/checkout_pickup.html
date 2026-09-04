@@ -7,16 +7,16 @@
 </section>
 <form class="form-panel wide" method="post">
   <label>Store
-    <select name="store_slug">
+    <select name="store_slug" id="pickup-store" data-slots-url="{{ url_for('pickup_slots_api') }}" required>
       {% for store in stores %}
-        <option value="{{ store.slug }}" {% if state.get('store_slug') == store.slug %}selected{% endif %}>{{ store.name }} — {{ store.city }}, {{ store.state }}</option>
+        <option value="{{ store.slug }}" {% if selected_slug == store.slug %}selected{% endif %}>{{ store.name }} — {{ store.city }}, {{ store.state }}</option>
       {% endfor %}
     </select>
   </label>
   <label>Pickup slot
-    <select name="pickup_slot_id">
+    <select name="pickup_slot_id" id="pickup-slot" required>
       {% for slot in slots %}
-        <option value="{{ slot.id }}" {% if state.get('pickup_slot_id') == slot.id|string %}selected{% endif %}>{{ slot.slot_date }} · {{ slot.time_window }} ({{ slot.remaining_capacity }} left)</option>
+        <option value="{{ slot.id }}" {% if state.get('pickup_slot_id') == slot.id|string %}selected{% endif %}>{{ slot|pickup_slot_label }}</option>
       {% endfor %}
     </select>
   </label>

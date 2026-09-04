@@ -5,16 +5,32 @@
   <h1>Store finder</h1>
   <p>Browse pickup locations, planning services, and store amenities.</p>
 </section>
+<form class="search-inline store-search" method="get">
+  <label>
+    <span class="visually-hidden">Search by city, state, or store name</span>
+    <input type="search" name="q" value="{{ search_text }}" placeholder="Search by city, state, or store name">
+  </label>
+  <button type="submit">Search stores</button>
+</form>
+<p class="result-count">{{ stores|length }} locations found</p>
 <div class="store-grid">
   {% for store in stores %}
     <a class="store-card" href="{{ url_for('store_detail', store_slug=store.slug) }}">
-      <img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">
+      <div class="store-card__marker" aria-hidden="true">
+        <span>Click &amp; collect</span>
+        <strong>{{ store.state }}</strong>
+      </div>
       <div>
         <h2>{{ store.name }}</h2>
         <p>{{ store.address }}</p>
         <p>{{ store.hours }}</p>
       </div>
     </a>
+  {% else %}
+    <div class="empty-card">
+      <h2>No stores matched your search.</h2>
+      <p>Try a city, state abbreviation, or another store name.</p>
+    </div>
   {% endfor %}
 </div>
 {% endblock %}

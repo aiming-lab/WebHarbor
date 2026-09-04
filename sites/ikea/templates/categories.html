@@ -11,7 +11,10 @@
 <div class="category-grid">
   {% for category in categories %}
     <a class="category-card" href="{{ url_for('category_view', category_slug=category.slug) }}">
-      <img src="{{ url_for('static', filename='images/categories/' ~ category.slug ~ '.svg') }}" alt="{{ category.name }}">
+      {% set image_product = category_images.get(category.slug) %}
+      {% if image_product %}
+        <img src="{{ url_for('static', filename=image_product.image_path) }}" alt="{{ category.name }} inspiration">
+      {% endif %}
       <div>
         <p class="eyebrow">{{ room_labels[category.room_slug] }}</p>
         <h2>{{ category.name }}</h2>

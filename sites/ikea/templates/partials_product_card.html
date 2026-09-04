@@ -1,11 +1,11 @@
 <article class="product-card">
   <a class="product-card__image" href="{{ url_for('product_detail', sku=product.sku) }}">
-    <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+    <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.card_name }}">
     {% if product.is_deal %}<span class="pill pill-deal">Deal</span>{% endif %}
   </a>
   <div class="product-card__body">
     <p class="eyebrow">{{ product.series }} · {{ room_labels[product.room_slug] }}</p>
-    <h3><a href="{{ url_for('product_detail', sku=product.sku) }}">{{ product.name }}</a></h3>
+    <h3><a href="{{ url_for('product_detail', sku=product.sku) }}">{{ product.card_name }}</a></h3>
     {% if product.color or product.material %}
       <p class="meta">{{ [product.color, product.material]|select|join(' · ') }}</p>
     {% endif %}
@@ -24,14 +24,9 @@
           <input type="hidden" name="quantity" value="1">
           <button type="submit">Add to cart</button>
         </form>
-        <form action="{{ url_for('wishlist_toggle', sku=product.sku) }}" method="post">
-          {% set is_wishlisted = product.id in wishlist_product_ids %}
-          <button type="submit" class="secondary" aria-pressed="{{ 'true' if is_wishlisted else 'false' }}">
-            {{ 'Remove from wishlist' if is_wishlisted else 'Save to wishlist' }}
-          </button>
-        </form>
+        <a class="button secondary" href="{{ url_for('product_detail', sku=product.sku) }}">View details</a>
       {% else %}
-        <a class="button" href="{{ url_for('login') }}">Sign in to save</a>
+        <a class="button" href="{{ url_for('product_detail', sku=product.sku) }}">View product</a>
       {% endif %}
     </div>
   </div>

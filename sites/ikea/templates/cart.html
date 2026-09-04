@@ -10,19 +10,23 @@
   <div class="cart-items">
     {% for item in summary["items"] %}
       <article class="cart-card">
-        <img src="{{ url_for('static', filename=item.product.image_path) }}" alt="{{ item.product.name }}">
-        <div>
+        <a class="cart-card__image" href="{{ url_for('product_detail', sku=item.product.sku) }}">
+          <img src="{{ url_for('static', filename=item.product.image_path) }}" alt="{{ item.product.card_name }}">
+        </a>
+        <div class="cart-card__details">
           <h2>{{ item.product.name }}</h2>
           <p>{{ item.product.series }} · {{ item.product.color }}</p>
           <p>{{ item.product.price|money }}</p>
         </div>
-        <form action="{{ url_for('cart_update', item_id=item.id) }}" method="post" class="inline-form">
-          <input type="number" name="quantity" value="{{ item.quantity }}" min="1">
-          <button type="submit">Update</button>
-        </form>
-        <form action="{{ url_for('cart_remove', item_id=item.id) }}" method="post">
-          <button type="submit" class="secondary">Remove</button>
-        </form>
+        <div class="cart-card__actions">
+          <form action="{{ url_for('cart_update', item_id=item.id) }}" method="post" class="inline-form">
+            <label><span>Quantity</span><input type="number" name="quantity" value="{{ item.quantity }}" min="1"></label>
+            <button type="submit">Update</button>
+          </form>
+          <form action="{{ url_for('cart_remove', item_id=item.id) }}" method="post">
+            <button type="submit" class="secondary">Remove</button>
+          </form>
+        </div>
       </article>
     {% else %}
       <div class="empty-card">

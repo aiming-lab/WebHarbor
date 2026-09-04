@@ -3,9 +3,12 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+import re
+import unicodedata
+from datetime import date, datetime, timedelta
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 from flask import (
     Flask,
@@ -48,6 +51,30 @@ login_manager.login_message = "Sign in to continue in this local IKEA demo."
 login_manager.login_message_category = "info"
 
 DEMO_PASSWORD = "TestPass123!"
+EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+SEARCH_RESULT_FLOOR = 8
+SEARCH_INTENT_GROUPS = (
+    {"sofa", "sectional", "chaise", "loveseat", "armchair", "seat"},
+    {"chair", "stool", "seat"},
+    {"table", "coffee table", "side table"},
+    {"desk", "workstation"},
+    {"lamp", "light", "lighting"},
+    {"curtain", "curtains", "drape", "drapes"},
+    {"mirror"},
+    {"rug", "mat"},
+    {"bed", "bedframe"},
+    {"storage", "shelf", "cabinet", "dresser"},
+)
+TASK_PRODUCT_SKUS = {
+    "IK-10001",
+    "IK-10002",
+    "IK-10005",
+    "IK-10006",
+    "IK-10007",
+    "IK-10010",
+    "IK-10020",
+    "IK-10023",
+}
 ROOM_LABELS = {
     "living-room": "Living room",
     "bedroom": "Bedroom",
@@ -217,6 +244,16 @@ class Product(db.Model):
     @property
     def savings(self) -> float:
         return max(self.list_price - self.price, 0.0)
+
+    @property
+    def card_name(self) -> str:
+        """Return a concise listing name without detail-only measurements."""
+        if not self.dimensions:
+            return self.name
+        for suffix in (f", {self.dimensions}", f" {self.dimensions}"):
+            if self.name.endswith(suffix):
+                return self.name[: -len(suffix)]
+        return self.name
 
 
 class StoreInventory(db.Model):
@@ -492,13 +529,13 @@ def inventory_for_store(product: Product, store_slug: str | None = None) -> Stor
     )
 
 
-def query_products_from_request(category_slug: str | None = None):
+def query_products_from_request(category_slug: str | None = None, apply_search: bool = True):
     query = Product.query
     if category_slug:
         query = query.filter_by(category_slug=category_slug)
 
     search = request.args.get("q", "").strip()
-    if search:
+    if search and apply_search:
         for token in search.split():
             token_like = f"%{token}%"
             query = query.filter(
@@ -568,6 +605,137 @@ def query_products_from_request(category_slug: str | None = None):
     return query.distinct()
 
 
+def normalize_search_text(value: str) -> str:
+    """Fold accents and punctuation so common typed variants still match."""
+    folded = unicodedata.normalize("NFKD", value.casefold())
+    without_accents = "".join(char for char in folded if not unicodedata.combining(char))
+    return " ".join(re.findall(r"[a-z0-9]+", without_accents))
+
+
+def ranked_search_results(search_text: str) -> tuple[list[Product], bool]:
+    """Return relevant matches plus deterministic near-miss products for sparse searches."""
+    candidates = query_products_from_request(apply_search=False).all()
+    normalized_query = normalize_search_text(search_text)
+    tokens = normalized_query.split()
+    if not tokens:
+        return candidates, False
+
+    ranked: list[tuple[int, int, Product]] = []
+    partial: list[tuple[int, int, Product]] = []
+    candidate_order = {product.id: index for index, product in enumerate(candidates)}
+    for product in candidates:
+        title = normalize_search_text(product.name)
+        searchable = normalize_search_text(
+            f"{product.name} {product.series} {product.description} "
+            f"{product.tags_json} {product.room_slug} {product.category_slug}"
+        )
+        token_hits = sum(token in searchable for token in tokens)
+        if not token_hits:
+            continue
+        score = token_hits * 20
+        score += sum(12 for token in tokens if token in title)
+        if normalized_query in title:
+            score += 40
+        if all(token in searchable for token in tokens):
+            score += 30
+        item = (score, -candidate_order[product.id], product)
+        if token_hits == len(tokens):
+            ranked.append(item)
+        else:
+            partial.append(item)
+
+    ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    if not ranked and partial:
+        best_score = max(item[0] for item in partial)
+        ranked = [item for item in partial if item[0] == best_score]
+        ranked.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    results = [item[2] for item in ranked]
+    direct_ids = {product.id for product in results}
+    expanded = False
+
+    if len(results) < SEARCH_RESULT_FLOOR and results:
+        leading_categories = {product.category_slug for product in results[:3]}
+        leading_title = normalize_search_text(results[0].name)
+        intent_terms = next(
+            (terms for terms in SEARCH_INTENT_GROUPS if any(term in leading_title for term in terms)),
+            set(),
+        )
+        related = [
+            product
+            for product in candidates
+            if product.id not in direct_ids and product.category_slug in leading_categories
+        ]
+        related.sort(
+            key=lambda product: (
+                sum(
+                    term in normalize_search_text(f"{product.name} {product.description}")
+                    for term in intent_terms
+                ),
+                -candidate_order[product.id],
+            ),
+            reverse=True,
+        )
+        selected_related = related[: SEARCH_RESULT_FLOOR - len(results)]
+        if selected_related:
+            lead_count = min(2, len(selected_related))
+            results = selected_related[:lead_count] + results + selected_related[lead_count:]
+            expanded = True
+
+    return results, expanded
+
+
+def category_image_products(categories: list[Category]) -> dict[str, Product]:
+    images: dict[str, Product] = {}
+    for category in categories:
+        product = (
+            Product.query.filter(
+                Product.category_slug == category.slug,
+                ~Product.sku.in_(TASK_PRODUCT_SKUS),
+            )
+            .order_by(Product.is_featured.desc(), Product.rating.desc())
+            .first()
+        )
+        if product:
+            images[category.slug] = product
+    return images
+
+
+def products_for_bundle(bundle: RoomBundle) -> list[Product]:
+    products_by_sku = {
+        product.sku: product
+        for product in Product.query.filter(Product.sku.in_(bundle.item_skus)).all()
+    }
+    return [products_by_sku[sku] for sku in bundle.item_skus if sku in products_by_sku]
+
+
+def pickup_slot_date(slot: PickupSlot) -> date | None:
+    """Keep seeded weekday availability current without changing the reset seed."""
+    try:
+        slot_day = date.fromisoformat(slot.slot_date)
+    except ValueError:
+        return None
+    today = datetime.now(ZoneInfo("America/New_York")).date()
+    while slot_day < today:
+        slot_day += timedelta(days=7)
+    return slot_day
+
+
+def pickup_slot_label(slot: PickupSlot, include_capacity: bool = True) -> str:
+    slot_day = pickup_slot_date(slot)
+    date_label = slot.slot_date
+    if slot_day:
+        date_label = f"{slot_day.strftime('%a, %b')} {slot_day.day}"
+    label = f"{date_label} · {slot.time_window}"
+    if include_capacity:
+        label += f" ({slot.remaining_capacity} left)"
+    return label
+
+
+@app.template_filter("pickup_slot_label")
+def pickup_slot_label_filter(slot: PickupSlot) -> str:
+    return pickup_slot_label(slot)
+
+
 def checkout_state() -> dict[str, Any]:
     state = session.setdefault("checkout_state", {})
     return state
@@ -593,11 +761,20 @@ def inject_globals() -> dict[str, Any]:
     compare_count = len(compare_products()) if current_user.is_authenticated else 0
     summary = cart_summary() if current_user.is_authenticated else {"count": 0, "subtotal": 0.0}
     wishlist_product_ids = set()
+    compare_product_ids = set()
     if current_user.is_authenticated:
         wishlist_product_ids = {
             product_id
             for (product_id,) in (
                 WishlistItem.query.with_entities(WishlistItem.product_id)
+                .filter_by(user_id=current_user.id)
+                .all()
+            )
+        }
+        compare_product_ids = {
+            product_id
+            for (product_id,) in (
+                CompareItem.query.with_entities(CompareItem.product_id)
                 .filter_by(user_id=current_user.id)
                 .all()
             )
@@ -609,26 +786,50 @@ def inject_globals() -> dict[str, Any]:
         "cart_count": summary["count"],
         "compare_count": compare_count,
         "wishlist_product_ids": wishlist_product_ids,
+        "compare_product_ids": compare_product_ids,
     }
 
 
 @app.route("/")
 @app.route("/home")
 def index():
-    featured_products = Product.query.filter_by(is_featured=True).order_by(Product.rating.desc()).limit(8).all()
-    deals = Deal.query.order_by(Deal.title.asc()).limit(6).all()
+    hero_product = (
+        Product.query.filter(
+            Product.category_slug == "living-room-seating",
+            ~Product.sku.in_(TASK_PRODUCT_SKUS),
+        )
+        .order_by(Product.is_featured.desc(), Product.rating.desc())
+        .first()
+    )
+    featured_products = (
+        Product.query.filter(
+            Product.is_featured.is_(True),
+            ~Product.sku.in_(TASK_PRODUCT_SKUS),
+        )
+        .order_by(Product.rating.desc())
+        .limit(8)
+        .all()
+    )
+    deals = (
+        Deal.query.filter(~Deal.product_sku.in_(TASK_PRODUCT_SKUS))
+        .order_by(Deal.title.asc())
+        .limit(6)
+        .all()
+    )
     categories = Category.query.order_by(Category.name.asc()).all()
     bundles = RoomBundle.query.order_by(RoomBundle.room_slug.asc()).limit(6).all()
     support_articles = SupportArticle.query.order_by(SupportArticle.category.asc(), SupportArticle.title.asc()).limit(6).all()
     stores = Store.query.order_by(Store.name.asc()).limit(4).all()
     return render_template(
         "index.html",
+        hero_product=hero_product,
         featured_products=featured_products,
         deals=deals,
         categories=categories,
         bundles=bundles,
         support_articles=support_articles,
         stores=stores,
+        category_images=category_image_products(categories),
     )
 
 
@@ -636,7 +837,12 @@ def index():
 def categories():
     categories_list = Category.query.order_by(Category.room_slug.asc(), Category.name.asc()).all()
     bundles = RoomBundle.query.order_by(RoomBundle.total_price.asc()).all()
-    return render_template("categories.html", categories=categories_list, bundles=bundles)
+    return render_template(
+        "categories.html",
+        categories=categories_list,
+        bundles=bundles,
+        category_images=category_image_products(categories_list),
+    )
 
 
 @app.route("/category/<category_slug>")
@@ -668,14 +874,16 @@ def products():
 
 @app.route("/search")
 def search():
-    results = query_products_from_request().all()
+    search_text = request.args.get("q", "").strip()
+    results, related_results_added = ranked_search_results(search_text)
     return render_template(
         "products.html",
-        title=f"Search results for “{request.args.get('q', '').strip()}”",
-        description="Local search results from deterministic demo data.",
+        title=f"Search results for “{search_text}”",
+        description="Products matching your search, ordered by relevance.",
         products=results,
         category=None,
         series_options=sorted({product.series for product in Product.query.all()}),
+        related_results_added=related_results_added,
     )
 
 
@@ -767,7 +975,13 @@ def room_planner():
     if room:
         bundles_query = bundles_query.filter_by(room_slug=room)
     bundles = bundles_query.order_by(RoomBundle.total_price.asc()).all()
-    return render_template("room_planner.html", bundles=bundles, selected_room=room)
+    bundle_products = {bundle.id: products_for_bundle(bundle) for bundle in bundles}
+    return render_template(
+        "room_planner.html",
+        bundles=bundles,
+        bundle_products=bundle_products,
+        selected_room=room,
+    )
 
 
 @app.post("/room-planner/add/<bundle_slug>")
@@ -799,7 +1013,7 @@ def stores():
             or_(Store.name.ilike(token_like), Store.city.ilike(token_like), Store.state.ilike(token_like))
         )
     stores_list = query.order_by(Store.state.asc(), Store.city.asc()).all()
-    return render_template("stores.html", stores=stores_list)
+    return render_template("stores.html", stores=stores_list, search_text=search_text)
 
 
 @app.route("/stores/<store_slug>")
@@ -876,6 +1090,13 @@ def register():
         return redirect(url_for("account"))
     if request.method == "POST":
         email = request.form.get("email", "").strip().lower()
+        password = request.form.get("password", "")
+        if not EMAIL_PATTERN.fullmatch(email):
+            flash("Enter a valid email address.", "danger")
+            return render_template("register.html"), 400
+        if not password:
+            flash("Enter a password for the new account.", "danger")
+            return render_template("register.html"), 400
         if User.query.filter_by(email=email).first():
             flash("That email is already present in this local demo.", "warning")
             return redirect(url_for("login"))
@@ -890,7 +1111,7 @@ def register():
             preferred_store_slug=request.form.get("preferred_store_slug", "").strip(),
             rewards_points=250,
         )
-        user.set_password(request.form.get("password", DEMO_PASSWORD))
+        user.set_password(password)
         db.session.add(user)
         db.session.commit()
         login_user(user)
@@ -1047,6 +1268,13 @@ def checkout_start():
     if request.method == "POST":
         method = request.form.get("method", "delivery")
         state["method"] = method
+        if method == "pickup":
+            state.pop("delivery_option", None)
+            state.pop("delivery_name", None)
+            state.pop("delivery_zip", None)
+        else:
+            state.pop("store_slug", None)
+            state.pop("pickup_slot_id", None)
         session.modified = True
         if method == "pickup":
             return redirect(url_for("checkout_pickup"))
@@ -1063,6 +1291,8 @@ def checkout_shipping():
     delivery_options = DeliveryOption.query.order_by(DeliveryOption.fee.asc()).all()
     if request.method == "POST":
         state["method"] = "delivery"
+        state.pop("store_slug", None)
+        state.pop("pickup_slot_id", None)
         state["delivery_option"] = request.form.get("delivery_option", "parcel")
         state["delivery_name"] = request.form.get("delivery_name", current_user.full_name).strip()
         state["delivery_zip"] = request.form.get("delivery_zip", current_user.zip_code).strip()
@@ -1084,13 +1314,32 @@ def checkout_pickup():
         return redirect(url_for("cart"))
     stores = Store.query.order_by(Store.state.asc(), Store.city.asc()).all()
     if request.method == "POST":
+        store_slug = request.form.get("store_slug", "").strip()
+        slot_value = request.form.get("pickup_slot_id", "").strip()
+        store = Store.query.filter_by(slug=store_slug).first()
+        try:
+            slot_id = int(slot_value)
+        except ValueError:
+            slot_id = 0
+        slot = PickupSlot.query.filter_by(id=slot_id, store_id=store.id).first() if store else None
+        if not store or not slot:
+            flash("Choose an available pickup slot for the selected store.", "danger")
+            return redirect(url_for("checkout_pickup", store_slug=store_slug))
         state["method"] = "pickup"
-        state["store_slug"] = request.form.get("store_slug", "")
-        state["pickup_slot_id"] = request.form.get("pickup_slot_id", "")
+        state.pop("delivery_option", None)
+        state.pop("delivery_name", None)
+        state.pop("delivery_zip", None)
+        state["store_slug"] = store.slug
+        state["pickup_slot_id"] = str(slot.id)
         session["checkout_store"] = state["store_slug"]
         session.modified = True
         return redirect(url_for("checkout_payment"))
-    selected_slug = state.get("store_slug") or (selected_store().slug if selected_store() else "")
+    preferred_store = selected_store()
+    selected_slug = (
+        request.args.get("store_slug", "").strip()
+        or state.get("store_slug")
+        or (preferred_store.slug if preferred_store else "")
+    )
     slots = []
     if selected_slug:
         store = Store.query.filter_by(slug=selected_slug).first()
@@ -1102,6 +1351,25 @@ def checkout_pickup():
         state=state,
         stores=stores,
         slots=slots,
+        selected_slug=selected_slug,
+    )
+
+
+@app.get("/api/pickup-slots")
+@login_required
+def pickup_slots_api():
+    store = Store.query.filter_by(slug=request.args.get("store_slug", "").strip()).first_or_404()
+    slots = PickupSlot.query.filter_by(store_id=store.id).order_by(PickupSlot.slot_date.asc()).all()
+    return jsonify(
+        {
+            "slots": [
+                {
+                    "id": slot.id,
+                    "label": pickup_slot_label(slot),
+                }
+                for slot in slots
+            ]
+        }
     )
 
 
@@ -1129,12 +1397,22 @@ def checkout_review():
     delivery_option = None
     pickup_store = None
     pickup_slot = None
-    if state.get("delivery_option"):
+    method = state.get("method", "delivery")
+    if method == "delivery" and state.get("delivery_option"):
         delivery_option = DeliveryOption.query.filter_by(slug=state["delivery_option"]).first()
-    if state.get("store_slug"):
+    if method == "pickup" and state.get("store_slug"):
         pickup_store = Store.query.filter_by(slug=state["store_slug"]).first()
-    if state.get("pickup_slot_id"):
-        pickup_slot = PickupSlot.query.filter_by(id=int(state["pickup_slot_id"])).first()
+    if method == "pickup" and state.get("pickup_slot_id"):
+        try:
+            pickup_slot_id = int(state["pickup_slot_id"])
+        except (TypeError, ValueError):
+            pickup_slot_id = 0
+        pickup_slot = PickupSlot.query.filter_by(id=pickup_slot_id).first()
+    if method == "pickup" and (
+        not pickup_store or not pickup_slot or pickup_slot.store_id != pickup_store.id
+    ):
+        flash("Your pickup selection changed. Choose a current store and time slot.", "warning")
+        return redirect(url_for("checkout_pickup"))
 
     if request.method == "POST":
         next_index = (db.session.query(db.func.count(Order.id)).scalar() or 0) + 1
@@ -1153,7 +1431,7 @@ def checkout_review():
             total=total,
             placed_on="2026-06-04",
             delivery_window=delivery_option.window_label if delivery_option else "",
-            pickup_window=f"{pickup_slot.slot_date} · {pickup_slot.time_window}" if pickup_slot else "",
+            pickup_window=pickup_slot_label(pickup_slot, include_capacity=False) if pickup_slot else "",
             contact_name=state.get("delivery_name") or current_user.full_name,
             payment_summary=f"{state.get('payment_method', 'Demo Card')} •••• {state.get('payment_last4', '4242')}",
         )
@@ -1221,20 +1499,29 @@ def order_lookup():
     looked_up = False
     if request.method == "POST":
         looked_up = True
+        session.pop("lookup_order_number", None)
         order_number = request.form.get("order_number", "").strip().upper()
         email = request.form.get("email", "").strip().lower()
-        query = Order.query.filter_by(order_number=order_number)
-        if email:
-            query = query.join(User).filter(User.email == email)
-        order = query.first()
-        if not order:
-            flash("No synthetic order matched that lookup.", "warning")
+        if order_number and EMAIL_PATTERN.fullmatch(email):
+            order = (
+                Order.query.join(User)
+                .filter(Order.order_number == order_number, User.email == email)
+                .first()
+            )
+        if order:
+            session["lookup_order_number"] = order.order_number
+        else:
+            flash("No order matched that order number and email address.", "warning")
     return render_template("order_lookup.html", order=order, looked_up=looked_up)
 
 
 @app.route("/order/<order_number>")
 def order_detail(order_number: str):
     order = Order.query.filter_by(order_number=order_number.upper()).first_or_404()
+    account_access = current_user.is_authenticated and order.user_id == current_user.id
+    lookup_access = session.get("lookup_order_number") == order.order_number
+    if not account_access and not lookup_access:
+        abort(404)
     return render_template("order_detail.html", order=order)
 
 
@@ -1264,5 +1551,5 @@ if os.environ.get("WEBSYN_SKIP_BOOTSTRAP") != "1":
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    port = int(os.environ.get("PORT", "5000"))
     app.run(host="0.0.0.0", port=port, debug=False)
