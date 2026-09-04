@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Checkout - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Checkout step 1 of 4</p>
+  <h1>Choose fulfillment</h1>
+</section>
+<section class="checkout-layout">
+  <form class="summary-card" method="post">
+    <label class="choice-card">
+      <input type="radio" name="method" value="delivery" {% if state.get('method', 'delivery') == 'delivery' %}checked{% endif %}>
+      <div>
+        <strong>Delivery</strong>
+        <p>Choose parcel, truck, or room-of-choice delivery in the next step.</p>
+      </div>
+    </label>
+    <label class="choice-card">
+      <input type="radio" name="method" value="pickup" {% if state.get('method') == 'pickup' %}checked{% endif %}>
+      <div>
+        <strong>Store pickup</strong>
+        <p>Select a store and pickup window from seeded demo availability.</p>
+      </div>
+    </label>
+    <button type="submit">Continue</button>
+  </form>
+  <aside class="summary-card">
+    <h2>Cart snapshot</h2>
+    <p><span>Items</span><strong>{{ summary.count }}</strong></p>
+    <p><span>Subtotal</span><strong>{{ summary.subtotal|money }}</strong></p>
+    <p><span>Estimated tax</span><strong>{{ summary.estimated_tax|money }}</strong></p>
+  </aside>
+</section>
+{% endblock %}

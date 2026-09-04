@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 16 Flask mirror sites + control plane on :8101.
+# 17 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -28,11 +28,14 @@ WORKDIR /opt/WebSyn
 # run scripts/fetch_assets.sh to pull them from Hugging Face first.
 COPY sites/ /opt/WebSyn/
 
+# IKEA's seed is reproducibly materialized from the tracked source catalog so code-only content fixes do not require an asset-repository write. Product images still come from the pinned asset bundle.
+RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
 RUN chmod +x /opt/websyn_start.sh
 
-EXPOSE 8101 40000-40015
+EXPOSE 8101 40000-40016
 
 CMD ["/opt/websyn_start.sh"]
