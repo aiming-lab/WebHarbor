@@ -1,9 +1,4 @@
-"""Contract tests for the Phys.org reviewer grading artifacts.
-
-The suite exercises every verifier against a correct run, a no-op run, a
-knowledge-shortcut run, and a wrong-answer run. Stateful tasks also receive a
-correct self-report paired with an unchanged database and must reject it.
-"""
+"""Positive and adversarial tests for every Phys.org verifier."""
 
 from __future__ import annotations
 
@@ -14,546 +9,379 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import quote_plus
 
+import bcrypt
 
-SITE_DIR = Path(__file__).resolve().parents[1]
-REPO_ROOT = SITE_DIR.parents[1]
-VERIFY_DIR = SITE_DIR / "verify"
-SEED_DB = SITE_DIR / "instance_seed" / "phys_org.db"
-TASKS_FILE = SITE_DIR / "tasks.jsonl"
-BASE_URL = "http://localhost:40016"
+VERIFY_DIR = Path(__file__).resolve().parent
+SEED_DB = VERIFY_DIR.parent / "instance_seed" / "phys_org.db"
+BASE_URL = "http://localhost:40017"
+PASSWORD = "TestPass123!"
 
-
-@dataclass(frozen=True)
-class Case:
-    urls: tuple[str, ...]
-    answer: str
-    stateful: bool = False
-    login_email: str | None = None
-
-
-MAGNETIC = "magnetic-checkerboard-separates-microparticles-by-size-and-sends-them-"
-MAGNETIC_TITLE = (
-    "Magnetic checkerboard separates microparticles by size and sends them along different paths"
-)
-QUANTUM_CIRCUIT = "quantum-circuit-test-finally-exposes-what-has-been-warping-performance"
-TINY_ENERGY = "method-for-measuring-energy-amounts-less-than-a-trillionth-of-a-billio"
-TOP_TRENDING = "operational-test-demonstrates-100-electric-furnace-for-ceramic-frit-me"
-PITCH_ARTICLE = "cracking-the-code-of-hypersonic-flight-a-decade-of-experiments-maps-tu"
-BIOLOGY_ARTICLE = "swapping-molecular-building-blocks-one-by-one-reveals-how-receptors-te"
-NANO_ARTICLE = "rna-built-droplets-create-customizable-organelles-inside-living-cells"
-GRAPHENE_RECENT = "machine-learning-proves-that-graphene-is-hydrophobic"
-GRAPHENE_EARLIER = "hourglass-nanographenes-unlock-strong-robust-multi-spin-entanglement"
-STAR_ARTICLE = "how-a-single-star-can-reshape-an-entire-galaxy"
-QUANTUM_GEOMETRY = "quantum-geometry-applied-to-light-based-systems-expands-toolkit-for-to"
-QUANTUM_GEOMETRY_TITLE = (
-    "Quantum geometry applied to light-based systems expands toolkit for topological photonics"
-)
-JWST = "jwst-spots-two-early-black-holes-growing-far-faster-than-their-galaxie"
-CO2_ARTICLE = "anion-swap-unlocks-sevenfold-co-capture-in-polyionic-liquids"
-VALID_BCRYPT_HASH = "$2b$12$zV7HfiJmZTqLsgP30kyvJemamXfJyBv66FPuQOrwYXXsyQvrafvie"
-
-
-CASES = {
-    0: Case(("/category/physics", f"/article/{MAGNETIC}"), "Reviews of Modern Physics"),
-    1: Case((f"/article/{QUANTUM_CIRCUIT}",), "Technion"),
-    2: Case(("/search?q=quantum", f"/article/{TINY_ENERGY}"), "Nature Photonics"),
-    3: Case(("/trending", f"/article/{TOP_TRENDING}"), "Elena Yamamoto"),
-    4: Case(("/login", "/saved"), "4 Astronomy & Space saved articles",
-            login_email="alice.j@test.com"),
-    5: Case(("/login", "/saved", f"/article/{PITCH_ARTICLE}"), "Advanced Engineering Materials",
-            login_email="bob.c@test.com"),
-    6: Case(("/login", "/category/biology", f"/article/{BIOLOGY_ARTICLE}"),
-            "Swapping molecular building blocks one by one reveals how receptors tell adrenaline from dopamine",
-            stateful=True),
-    7: Case(("/login", "/category/nanotechnology", f"/article/{NANO_ARTICLE}", "/saved"),
-            "RNA-built droplets create customizable organelles inside living cells", stateful=True),
-    8: Case(("/user/carol_d",), "3 comments"),
-    9: Case(("/search?q=graphene+systems", f"/article/{GRAPHENE_RECENT}", f"/article/{GRAPHENE_EARLIER}"),
-            "Hourglass nanographenes unlock strong, robust multi-spin entanglement was earlier — Nano Letters"),
-    10: Case(("/category/astronomy?sort=popular", f"/article/{STAR_ARTICLE}"),
-             "European Southern Observatory"),
-    11: Case((f"/article/{MAGNETIC}", f"/article/{QUANTUM_GEOMETRY}"),
-             "Quantum geometry applied to light-based systems expands toolkit for topological photonics was published earlier"),
-    12: Case((f"/article/{JWST}",),
-             "Totally agree on the priors point — the new constraint is much tighter though."),
-    13: Case(("/register", "/account"), "qa_explorer", stateful=True),
-    14: Case(("/login", f"/article/{STAR_ARTICLE}", "/saved"),
-             "5 remain; More Star Wars-like worlds emerge as 27 planet candidates with two suns discovered is first",
-             stateful=True),
-    15: Case(("/", f"/article/{MAGNETIC}", "/category/physics",
-              "/category/physics?sort=popular"),
-             "Magnetic checkerboard separates microparticles by size and sends them along different paths; Physics; rank 1"),
-    16: Case(("/search?q=CO2+systems&category=chemistry", f"/article/{CO2_ARTICLE}"),
-             "Journal of the American Chemical Society"),
-    17: Case(("/login", "/account"), "exoplanet atmosphere",
-             login_email="alice.j@test.com"),
+SLUGS = {
+    "magnetic": "magnetic-checkerboard-separates-microparticles-by-size-and-sends-them-",
+    "quantum_circuit": "quantum-circuit-test-finally-exposes-what-has-been-warping-performance",
+    "tiny_energy": "method-for-measuring-energy-amounts-less-than-a-trillionth-of-a-billio",
+    "hypersonic": "cracking-the-code-of-hypersonic-flight-a-decade-of-experiments-maps-tu",
+    "exosomes": "engineered-exosomes-reverse-sleep-deprivation-brain-damage-in-mice",
+    "hydrophobic": "machine-learning-proves-that-graphene-is-hydrophobic",
+    "hourglass": "hourglass-nanographenes-unlock-strong-robust-multi-spin-entanglement",
+    "star": "how-a-single-star-can-reshape-an-entire-galaxy",
+    "geometry": "quantum-geometry-applied-to-light-based-systems-expands-toolkit-for-to",
+    "jwst": "jwst-spots-two-early-black-holes-growing-far-faster-than-their-galaxie",
+    "vibrations": "good-vibrations-for-quantum-communications-engineers-couple-single-pho",
+    "polyionic": "anion-swap-unlocks-sevenfold-co-capture-in-polyionic-liquids",
 }
+TITLES = {
+    "magnetic": "Magnetic checkerboard separates microparticles by size and sends them along different paths",
+    "exosomes": "Engineered exosomes reverse sleep deprivation brain damage in mice",
+    "hydrophobic": "Machine learning proves that graphene is hydrophobic",
+    "hourglass": "Hourglass nanographenes unlock strong, robust multi-spin entanglement",
+    "vibrations": "Good vibrations for quantum communications: Engineers couple single phonon to single atomic spin",
+    "top_saved": "More Star Wars-like worlds emerge as 27 planet candidates with two suns discovered",
+}
+REPLY = "Totally agree on the priors point — the new constraint is much tighter though."
+COMMENT = "Reviewed for our weekly journal club"
+NOTE = "Compare with our process"
 
 
-def _trajectory(run_dir: Path, task_id: int, urls: tuple[str, ...], answer: str,
-                login_email: str | None = None,
-                login_email_overwrite: str | None = None,
-                login_search_text: str | None = None,
-                actions: tuple[str, ...] | None = None,
-                base_url: str = BASE_URL) -> None:
-    screenshots = run_dir / "screenshots"
-    screenshots.mkdir(parents=True)
-    steps = []
-    for index, suffix in enumerate(urls):
-        url = base_url + suffix
-        steps.append({
-            "step": index,
-            "url": url,
-            "title": "Phys.org Mirror",
-            "action": (actions[index] if actions is not None else
-                       ("done" if index == len(urls) - 1 else "click")),
-            "params": {},
-            "screenshot_before": f"step_{index:03d}.png",
-            "screenshot_after": f"step_{index + 1:03d}.png",
-        })
-    if login_email:
-        steps.insert(1, {
-            "step": 1,
-            "url": base_url + "/login",
-            "title": "Phys.org Mirror",
-            "action": "input",
-            "params": {"index": 1, "text": login_email},
-            "screenshot_before": "login_email_before.png",
-            "screenshot_after": "login_email_after.png",
-        })
-        steps.insert(2, {
-            "step": 2,
-            "url": base_url + "/login",
-            "title": "Phys.org Mirror",
-            "action": "input",
-            "params": {"index": 2, "text": "TestPass123!"},
-            "screenshot_before": "login_password_before.png",
-            "screenshot_after": "login_password_after.png",
-        })
-        if login_search_text is not None:
-            steps.insert(1, {
-                "step": 1,
-                "url": base_url + "/login",
-                "title": "Phys.org Mirror",
-                "action": "input",
-                "params": {"index": 0, "text": login_search_text},
-                "screenshot_before": "header_search_before.png",
-                "screenshot_after": "header_search_after.png",
-            })
-        if login_email_overwrite is not None:
-            steps.insert(2, {
-                "step": 2,
-                "url": base_url + "/login",
-                "title": "Phys.org Mirror",
-                "action": "input",
-                "params": {"index": 1, "text": login_email_overwrite},
-                "screenshot_before": "login_email_overwrite_before.png",
-                "screenshot_after": "login_email_overwrite_after.png",
-            })
-        for index, step in enumerate(steps):
-            step["step"] = index
-    payload = {
-        "task": f"contract fixture for Phys.org--{task_id}",
-        "task_id": f"Phys.org--{task_id}",
-        "start_url": BASE_URL + "/",
-        "steps": steps,
-        "terminated": True,
-        "termination_reason": "agent_done",
-        "final_answer": answer,
-        "success_self_report": True,
-        "verifier_path": f"sites/phys_org/verify/verify_{task_id}.py",
-    }
-    (run_dir / "trajectory.json").write_text(json.dumps(payload), encoding="utf-8")
+def url(path: str) -> str:
+    return BASE_URL + path
 
 
-def _mutate_after_db(task_id: int, db_path: Path,
-                     registration_password_hash: str = VALID_BCRYPT_HASH,
-                     task_7_resave: bool = False) -> None:
-    con = sqlite3.connect(db_path)
-    try:
-        if task_id == 6:
-            con.execute(
-                "INSERT INTO comments(text,user_id,article_id,parent_id,score,created_at) "
-                "SELECT ?,u.id,a.id,NULL,0,'2026-08-15 12:00:00' "
-                "FROM users u, articles a WHERE u.username='carol_d' AND a.slug=?",
-                ("Reviewed for our weekly journal club", BIOLOGY_ARTICLE),
-            )
-        elif task_id == 7:
-            if task_7_resave:
-                con.execute(
-                    "UPDATE saved_articles SET note=?,created_at='2026-08-15 12:00:00' "
-                    "WHERE user_id=(SELECT id FROM users WHERE username='david_k') "
-                    "AND article_id=(SELECT id FROM articles WHERE slug=?)",
-                    ("Compare with our process", NANO_ARTICLE),
-                )
-            else:
-                con.execute(
-                    "INSERT INTO saved_articles(user_id,article_id,note,created_at) "
-                    "SELECT u.id,a.id,?,'2026-08-15 12:00:00' "
-                    "FROM users u, articles a WHERE u.username='david_k' AND a.slug=?",
-                    ("Compare with our process", NANO_ARTICLE),
-                )
-        elif task_id == 13:
-            con.execute(
-                "INSERT INTO users(username,email,password_hash,full_name,bio,location,interests,created_at) "
-                "VALUES('qa_explorer','qa_explorer@example.com',?,'QA Explorer','',"
-                "'Berlin, Germany','','2026-08-15 12:00:00')",
-                (registration_password_hash,),
-            )
-        elif task_id == 14:
-            con.execute(
-                "DELETE FROM saved_articles WHERE user_id=(SELECT id FROM users WHERE username='alice_j') "
-                "AND article_id=(SELECT id FROM articles WHERE slug=?)",
-                (STAR_ARTICLE,),
-            )
-        elif task_id == 17:
-            con.execute(
-                "INSERT INTO search_history(user_id,query,created_at) "
-                "SELECT id,'verifier tampering probe','2026-08-15 12:00:00' "
-                "FROM users WHERE username='alice_j'"
-            )
-        con.commit()
-    finally:
-        con.close()
+def navigate(path: str) -> dict:
+    return {"url": url(path), "action": "navigate", "params": {}}
 
 
-class VerifierContractTests(unittest.TestCase):
-    maxDiff = None
+def fill(path: str, selector: str, text: str) -> dict:
+    return {"url": url(path), "action": "fill", "params": {"css": selector, "text": text}}
 
-    def setUp(self) -> None:
-        self.temp_dir = Path(tempfile.mkdtemp(prefix="phys-org-verifier-test-"))
-        self.initial_db = self.temp_dir / "initial.db"
-        shutil.copy2(SEED_DB, self.initial_db)
 
-    def tearDown(self) -> None:
-        shutil.rmtree(self.temp_dir)
+def click(path: str, destination: str) -> dict:
+    return {"url": url(path), "action": "click", "params": {}, "url_after": url(destination)}
 
-    def _run(self, task_id: int, urls: tuple[str, ...], answer: str,
-             *, mutate_state: bool = False,
-             login_email: str | None = None,
-             login_email_overwrite: str | None = None,
-             login_search_text: str | None = None,
-             registration_password_hash: str = VALID_BCRYPT_HASH,
-             task_7_resave: bool = False,
-             actions: tuple[str, ...] | None = None,
-             base_url: str = BASE_URL) -> subprocess.CompletedProcess[str]:
-        run_dir = self.temp_dir / f"run-{task_id}-{len(list(self.temp_dir.glob('run-*')))}"
-        run_dir.mkdir()
-        _trajectory(run_dir, task_id, urls, answer, login_email,
-                    login_email_overwrite, login_search_text, actions, base_url)
-        after_db = run_dir / "after.db"
-        shutil.copy2(self.initial_db, after_db)
-        if mutate_state:
-            _mutate_after_db(task_id, after_db, registration_password_hash, task_7_resave)
-        verifier = VERIFY_DIR / f"verify_{task_id}.py"
-        return subprocess.run(
-            [sys.executable, str(verifier), "--run_dir", str(run_dir),
-             "--initial_db", str(self.initial_db), "--after_db", str(after_db),
-             "--no_llm", "True"],
-            cwd=REPO_ROOT,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
 
-    def assert_verdict(self, result: subprocess.CompletedProcess[str], expected: bool) -> None:
-        self.assertEqual(result.returncode, 0 if expected else 1,
-                         msg=f"stdout={result.stdout}\nstderr={result.stderr}")
-        verdict = json.loads(result.stdout)
-        self.assertEqual(verdict["pass"], expected, verdict)
-        self.assertTrue(verdict["evidence"], verdict)
+def login_steps(email: str) -> list[dict]:
+    return [
+        navigate("/login"),
+        fill("/login", "input[name=email]", email),
+        fill("/login", "input[name=password]", PASSWORD),
+        click("/login", "/"),
+        navigate("/"),
+    ]
 
-    def test_task_metadata_declares_all_grading_artifacts(self) -> None:
-        rows = [json.loads(line) for line in TASKS_FILE.read_text().splitlines() if line.strip()]
-        self.assertEqual(len(rows), 18)
-        self.assertEqual([row["id"] for row in rows], [f"Phys.org--{i}" for i in range(18)])
-        for index, row in enumerate(rows):
-            with self.subTest(task=index):
-                self.assertEqual(row.get("verifier_path"),
-                                 f"sites/phys_org/verify/verify_{index}.py")
-                self.assertIn("FACT CHECKPOINTS", row.get("judge_rubric", ""))
-                self.assertNotIn("answer", row)
-        self.assertNotIn("count shown next to the search term", rows[9]["ques"])
-        self.assertIn("Popular", rows[15]["ques"])
-        self.assertIn("password of your choice", rows[13]["ques"])
-        self.assertNotIn("BenchmarkPass2026", rows[13]["ques"])
-        self.assertIn("graphene systems", rows[9]["ques"])
-        self.assertIn("CO2 systems", rows[16]["ques"])
 
-    def test_task_10_requires_a_detail_page_fact_not_the_card_title(self) -> None:
-        rows = [json.loads(line) for line in TASKS_FILE.read_text().splitlines() if line.strip()]
-        task = rows[10]
-        self.assertIn("open the most-viewed article", task["ques"])
-        self.assertIn("Provided by", task["ques"])
-        self.assertNotIn("report the title", task["ques"])
-
-        urls = ("/category/astronomy?sort=popular", f"/article/{STAR_ARTICLE}")
-        grounded = self._run(10, urls, "European Southern Observatory")
-        self.assert_verdict(grounded, True)
-
-        card_only_answer = self._run(
-            10, urls, "How a single star can reshape an entire galaxy"
-        )
-        self.assert_verdict(card_only_answer, False)
-
-    def test_all_verifiers_reject_no_op(self) -> None:
-        for task_id in range(18):
-            with self.subTest(task=task_id):
-                result = self._run(task_id, ("/",), "")
-                self.assert_verdict(result, False)
-
-    def test_all_verifiers_accept_correct_run(self) -> None:
-        for task_id, case in CASES.items():
-            with self.subTest(task=task_id):
-                result = self._run(task_id, case.urls, case.answer,
-                                   mutate_state=case.stateful,
-                                   login_email=case.login_email)
-                self.assert_verdict(result, True)
-
-    def test_login_tasks_reject_wrong_account(self) -> None:
-        for task_id in (4, 5, 17):
-            case = CASES[task_id]
-            with self.subTest(task=task_id):
-                result = self._run(task_id, case.urls, case.answer,
-                                   login_email="wrong.user@example.com")
-                self.assert_verdict(result, False)
-
-    def test_login_tasks_reject_overwritten_expected_email(self) -> None:
-        for task_id in (4, 5, 17):
-            case = CASES[task_id]
-            with self.subTest(task=task_id):
-                result = self._run(
-                    task_id, case.urls, case.answer,
-                    login_email=case.login_email,
-                    login_email_overwrite="wrong.user@example.com",
-                )
-                self.assert_verdict(result, False)
-
-    def test_login_tasks_reject_expected_email_typed_into_search(self) -> None:
-        for task_id in (4, 5, 17):
-            case = CASES[task_id]
-            with self.subTest(task=task_id):
-                result = self._run(
-                    task_id, case.urls, case.answer,
-                    login_email="wrong.user@example.com",
-                    login_search_text=case.login_email,
-                )
-                self.assert_verdict(result, False)
-
-    def test_registration_rejects_missing_password_hash(self) -> None:
-        case = CASES[13]
-        result = self._run(13, case.urls, case.answer, mutate_state=True,
-                           registration_password_hash="")
-        self.assert_verdict(result, False)
-
-    def test_save_task_rejects_resaving_an_initially_saved_article(self) -> None:
-        con = sqlite3.connect(self.initial_db)
+class VerifierTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        connection = sqlite3.connect(SEED_DB)
         try:
-            con.execute(
-                "INSERT INTO saved_articles(user_id,article_id,note,created_at) "
-                "SELECT u.id,a.id,'Existing note','2026-08-14 12:00:00' "
-                "FROM users u, articles a WHERE u.username='david_k' AND a.slug=?",
-                (NANO_ARTICLE,),
-            )
-            con.commit()
+            row = connection.execute(
+                "SELECT a.slug,a.title FROM articles a JOIN categories c ON c.id=a.category_id WHERE c.slug='biology' ORDER BY a.published_at DESC LIMIT 1"
+            ).fetchone()
         finally:
-            con.close()
-        case = CASES[7]
-        result = self._run(7, case.urls, case.answer, mutate_state=True,
-                           task_7_resave=True)
-        self.assert_verdict(result, False)
+            connection.close()
+        cls.biology_slug, cls.biology_title = row
 
-    def test_task_11_accepts_direct_winner_title(self) -> None:
-        result = self._run(11, CASES[11].urls, QUANTUM_GEOMETRY_TITLE)
-        self.assert_verdict(result, True)
+    def run_verifier(self, task: int, steps: list[dict], answer: str,
+                     mutate=None, task_id: str | None = None) -> tuple[int, dict]:
+        with tempfile.TemporaryDirectory(prefix=f"phys-verifier-{task}-") as temp_dir:
+            temp = Path(temp_dir)
+            initial = temp / "initial.db"
+            after = temp / "after.db"
+            shutil.copy2(SEED_DB, initial)
+            shutil.copy2(SEED_DB, after)
+            if mutate is not None:
+                connection = sqlite3.connect(after)
+                try:
+                    mutate(connection)
+                    connection.commit()
+                finally:
+                    connection.close()
+            run_dir = temp / "run"
+            run_dir.mkdir()
+            trajectory = {
+                "task_id": task_id if task_id is not None else f"Phys.org--{task}",
+                "start_url": url("/"),
+                "steps": steps,
+                "final_answer": answer,
+            }
+            (run_dir / "trajectory.json").write_text(json.dumps(trajectory), encoding="utf-8")
+            result = subprocess.run(
+                [sys.executable, str(VERIFY_DIR / f"verify_{task}.py"),
+                 "--run_dir", str(run_dir), "--initial_db", str(initial),
+                 "--after_db", str(after), "--no_llm", "true"],
+                capture_output=True,
+                text=True,
+                timeout=30,
+                check=False,
+            )
+            try:
+                verdict = json.loads(result.stdout)
+            except json.JSONDecodeError as error:
+                self.fail(f"Verifier {task} produced invalid JSON. stdout={result.stdout!r} stderr={result.stderr!r}: {error}")
+            return result.returncode, verdict
 
-    def test_task_11_direct_title_answer_must_be_unambiguous(self) -> None:
-        answers = [
-            MAGNETIC_TITLE,
-            f"{QUANTUM_GEOMETRY_TITLE}; {MAGNETIC_TITLE}",
-        ]
-        for answer in answers:
-            with self.subTest(answer=answer):
-                result = self._run(11, CASES[11].urls, answer)
-                self.assert_verdict(result, False)
-
-    def test_all_verifiers_reject_knowledge_shortcut(self) -> None:
-        for task_id, case in CASES.items():
-            with self.subTest(task=task_id):
-                result = self._run(task_id, ("/",), case.answer,
-                                   mutate_state=case.stateful)
-                self.assert_verdict(result, False)
-
-    def test_all_verifiers_reject_wrong_answer(self) -> None:
-        for task_id, case in CASES.items():
-            with self.subTest(task=task_id):
-                result = self._run(task_id, case.urls, "incorrect answer",
-                                   mutate_state=case.stateful,
-                                   login_email=case.login_email)
-                self.assert_verdict(result, False)
-
-    def test_all_verifiers_reject_negated_correct_answer(self) -> None:
-        for task_id, case in CASES.items():
-            with self.subTest(task=task_id):
-                result = self._run(task_id, case.urls, f"Not {case.answer}",
-                                   mutate_state=case.stateful,
-                                   login_email=case.login_email)
-                self.assert_verdict(result, False)
-
-    def test_negation_scope_stops_at_sentence_boundary(self) -> None:
-        case = CASES[0]
-        answer = "Not visible. Reviews of Modern Physics"
-        result = self._run(0, case.urls, answer)
-        self.assert_verdict(result, True)
-
-    def test_answer_corrections_use_the_final_claim(self) -> None:
-        case = CASES[0]
-        accepted = [
-            "Not Reviews of Modern Physics? Correction: Reviews of Modern Physics.",
-            "No, Reviews of Modern Physics is the source journal.",
-            "I did not stop at search and found Reviews of Modern Physics.",
-        ]
-        rejected = [
-            "It is not in any reasonable sense actually Reviews of Modern Physics.",
-            "Reviews of Modern Physics, but not Reviews of Modern Physics.",
-            "Reviews of Modern Physics is not the source journal.",
-            "Reviews of Modern Physics is definitely not the source journal.",
-            "Reviews of Modern Physics? No, that is wrong.",
-            "Reviews of Modern Physics — definitely not the source.",
-            "Reviews of Modern Physics, however, is not the source.",
-            "Reviews of Modern Physics; no, that is wrong.",
-        ]
-        for answer in accepted:
-            with self.subTest(answer=answer):
-                self.assert_verdict(self._run(0, case.urls, answer), True)
-        for answer in rejected:
-            with self.subTest(answer=answer):
-                self.assert_verdict(self._run(0, case.urls, answer), False)
-
-    def test_task_15_rejects_direct_navigation_between_checkpoints(self) -> None:
-        case = CASES[15]
-        result = self._run(
-            15, case.urls, case.answer,
-            actions=("navigate", "navigate", "navigate", "done"),
+    def mutate_comment(self, connection: sqlite3.Connection) -> None:
+        user_id = connection.execute("SELECT id FROM users WHERE username='carol_d'").fetchone()[0]
+        article_id = connection.execute("SELECT id FROM articles WHERE slug=?", (self.biology_slug,)).fetchone()[0]
+        connection.execute(
+            "INSERT INTO comments(text,user_id,article_id,parent_id,score,created_at) VALUES(?,?,?,?,?,?)",
+            (COMMENT, user_id, article_id, None, 0, "2026-05-14 12:00:00"),
         )
-        self.assert_verdict(result, False)
 
-    def test_all_verifiers_reject_wrong_host_navigation(self) -> None:
-        for task_id, case in CASES.items():
-            with self.subTest(task=task_id):
-                result = self._run(task_id, case.urls, case.answer,
-                                   mutate_state=case.stateful,
-                                   login_email=case.login_email,
-                                   base_url="https://example.com")
-                self.assert_verdict(result, False)
+    @staticmethod
+    def mutate_save(connection: sqlite3.Connection) -> None:
+        user_id = connection.execute("SELECT id FROM users WHERE username='david_k'").fetchone()[0]
+        article_id = connection.execute("SELECT id FROM articles WHERE slug=?", (SLUGS["exosomes"],)).fetchone()[0]
+        connection.execute(
+            "INSERT INTO saved_articles(user_id,article_id,note,created_at) VALUES(?,?,?,?)",
+            (user_id, article_id, NOTE, "2026-05-14 12:00:00"),
+        )
 
-    def test_all_verifiers_reject_navigation_outside_start_origin(self) -> None:
-        for task_id, case in CASES.items():
-            with self.subTest(task=task_id):
-                result = self._run(task_id, case.urls, case.answer,
-                                   mutate_state=case.stateful,
-                                   login_email=case.login_email,
-                                   base_url="http://localhost:40015")
-                self.assert_verdict(result, False)
+    @staticmethod
+    def mutate_register(connection: sqlite3.Connection) -> None:
+        password_hash = bcrypt.hashpw(b"VerifierPass123!", bcrypt.gensalt()).decode()
+        connection.execute(
+            "INSERT INTO users(username,email,password_hash,full_name,bio,location,interests,created_at) VALUES(?,?,?,?,?,?,?,?)",
+            ("qa_explorer", "qa_explorer@example.com", password_hash, "QA Explorer", "", "Berlin, Germany", "", "2026-05-14 12:00:00"),
+        )
 
-    def test_stateful_verifiers_reject_unchanged_db(self) -> None:
-        for task_id, case in CASES.items():
-            if not case.stateful:
-                continue
-            with self.subTest(task=task_id):
-                result = self._run(task_id, case.urls, case.answer, mutate_state=False)
-                self.assert_verdict(result, False)
+    @staticmethod
+    def mutate_remove(connection: sqlite3.Connection) -> None:
+        connection.execute(
+            "DELETE FROM saved_articles WHERE user_id=(SELECT id FROM users WHERE username='alice_j') AND article_id=(SELECT id FROM articles WHERE slug=?)",
+            (SLUGS["star"],),
+        )
 
-    def test_comparison_verifiers_reject_reversed_claim(self) -> None:
-        reversed_answers = {
-            9: "Hourglass nanographenes unlock strong, robust multi-spin entanglement was "
-               "published later; its journal is Nano Letters.",
-            11: "Quantum geometry applied to light-based systems expands toolkit for "
-                "topological photonics was published later.",
+    def positive_case(self, task: int):
+        def article(key):
+            return f"/article/{SLUGS[key]}"
+
+        def transition(source, destination):
+            return [click(source, destination), navigate(destination)]
+
+        graphene_search = f"/search?q={quote_plus('graphene spin')}"
+        capture_search = f"/search?q={quote_plus('capture materials')}&category=chemistry"
+        cases = {
+            0: ([navigate("/category/physics")] + transition("/category/physics", article("magnetic")), "Physical Review Letters", None),
+            1: ([navigate("/category/physics")] + transition("/category/physics", article("quantum_circuit")), "Massachusetts Institute of Technology", None),
+            2: ([navigate("/search?q=quantum")] + transition("/search?q=quantum", article("tiny_energy")), "Nature Electronics", None),
+            3: ([navigate("/trending")] + transition("/trending", article("magnetic")), "University of Tübingen", None),
+            4: (login_steps("alice.j@test.com") + transition("/", "/saved"), "There are 4 Astronomy & Space saved articles.", None),
+            5: (login_steps("bob.c@test.com") + transition("/", "/saved") + transition("/saved", article("hypersonic")), "The publication venue is the AIAA SCITECH 2026 Forum.", None),
+            6: (login_steps("carol.d@test.com") + [navigate("/category/biology")] + transition("/category/biology", f"/article/{self.biology_slug}") + [
+                fill(f"/article/{self.biology_slug}", "textarea[name=text]", COMMENT),
+                click(f"/article/{self.biology_slug}", f"/article/{self.biology_slug}"),
+                navigate(f"/article/{self.biology_slug}"),
+            ], self.biology_title, self.mutate_comment),
+            7: (login_steps("david.k@test.com") + [navigate("/category/nanotechnology")] + transition("/category/nanotechnology", article("exosomes")) + [
+                fill(article("exosomes"), "input[name=note]", NOTE),
+                click(article("exosomes"), article("exosomes")),
+                navigate(article("exosomes")),
+                navigate("/saved"),
+            ], "The article subsection is Bio & Medicine.", self.mutate_save),
+            8: ([navigate("/users")] + transition("/users", "/user/carol_d"), "Carol has 3 public comments.", None),
+            9: ([navigate(graphene_search)] + transition(graphene_search, article("hydrophobic")) + [navigate(graphene_search)] + transition(graphene_search, article("hourglass")), f"{TITLES['hourglass']} was published earlier; its journal is Nature Synthesis.", None),
+            10: ([navigate("/category/astronomy?sort=popular")] + transition("/category/astronomy?sort=popular", article("star")), "The article is rank #3; Provided by Leiden University.", None),
+            11: ([navigate(article("magnetic")), navigate(article("geometry"))], "Quantum geometry applied to light-based systems expands toolkit for topological photonics was published earlier than " + TITLES["magnetic"] + ".", None),
+            12: ([navigate("/category/astronomy?sort=popular")] + transition("/category/astronomy?sort=popular", article("jwst")), REPLY, None),
+            13: ([
+                navigate("/register"),
+                fill("/register", "input[name=username]", "qa_explorer"),
+                fill("/register", "input[name=email]", "qa_explorer@example.com"),
+                fill("/register", "input[name=full_name]", "QA Explorer"),
+                fill("/register", "input[name=password]", "VerifierPass123!"),
+                click("/register", "/"),
+                navigate("/"),
+                navigate("/account"),
+                fill("/account", "input[name=location]", "Berlin, Germany"),
+                click("/account", "/account"),
+                navigate("/account"),
+            ], "The username in the header is qa_explorer.", self.mutate_register),
+            14: (login_steps("alice.j@test.com") + transition("/", "/saved") + transition("/saved", article("star")) + [
+                click(article("star"), article("star")),
+                navigate(article("star")),
+                navigate("/saved"),
+            ], f"5 saved articles remain; the most recent item at the top is {TITLES['top_saved']}.", self.mutate_remove),
+            15: ([
+                click("/", article("vibrations")),
+                navigate(article("vibrations")),
+                click(article("vibrations"), "/category/physics"),
+                navigate("/category/physics"),
+                click("/category/physics", "/category/physics?sort=popular"),
+                navigate("/category/physics?sort=popular"),
+            ], f"{TITLES['vibrations']} is in Physics and is rank #2 in Popular.", None),
+            16: ([navigate(capture_search)] + transition(capture_search, article("polyionic")), "Reaction Chemistry & Engineering", None),
+            17: (login_steps("alice.j@test.com") + transition("/", "/account"), "The second query is dark matter halo.", None),
         }
-        for task_id, answer in reversed_answers.items():
-            with self.subTest(task=task_id):
-                result = self._run(task_id, CASES[task_id].urls, answer)
-                self.assert_verdict(result, False)
+        return cases[task]
 
-    def test_comparison_relation_is_bound_to_the_expected_title(self) -> None:
-        task_11_answers = {
-            False: (
-                f"{QUANTUM_GEOMETRY_TITLE} was later; "
-                f"{MAGNETIC_TITLE} was earlier."
-            ),
-            True: (
-                f"{QUANTUM_GEOMETRY_TITLE} was earlier; "
-                f"{MAGNETIC_TITLE} was later."
-            ),
-        }
-        for expected, answer in task_11_answers.items():
-            with self.subTest(task=11, expected=expected):
-                self.assert_verdict(
-                    self._run(11, CASES[11].urls, answer), expected
-                )
-        task_9_wrong = (
-            "Hourglass nanographenes unlock strong, robust multi-spin entanglement "
-            "was later and Machine learning proves that graphene is hydrophobic "
-            "was earlier; Nano Letters."
-        )
-        self.assert_verdict(self._run(9, CASES[9].urls, task_9_wrong), False)
+    def test_all_positive_cases_pass(self) -> None:
+        for task in range(18):
+            with self.subTest(task=task):
+                steps, answer, mutate = self.positive_case(task)
+                returncode, verdict = self.run_verifier(task, steps, answer, mutate)
+                self.assertEqual(0, returncode, verdict)
+                self.assertTrue(verdict["pass"], verdict)
 
-    def test_comparison_understands_pair_direction_and_pronouns(self) -> None:
-        task_11_answers = {
-            False: (
-                f"{MAGNETIC_TITLE} was published earlier than "
-                f"{QUANTUM_GEOMETRY_TITLE}."
-            ),
-            True: (
-                f"{MAGNETIC_TITLE} was published later than "
-                f"{QUANTUM_GEOMETRY_TITLE}."
-            ),
-        }
-        for expected, answer in task_11_answers.items():
-            with self.subTest(kind="than", expected=expected):
-                self.assert_verdict(
-                    self._run(11, CASES[11].urls, answer), expected
-                )
-        accepted = [
-            f"{QUANTUM_GEOMETRY_TITLE}, not {MAGNETIC_TITLE}, was published earlier.",
-            f"Between {QUANTUM_GEOMETRY_TITLE} and {MAGNETIC_TITLE}, "
-            "the former was published earlier.",
+    def test_wrong_task_id_fails_every_verifier(self) -> None:
+        for task in range(18):
+            with self.subTest(task=task):
+                steps, answer, mutate = self.positive_case(task)
+                returncode, verdict = self.run_verifier(task, steps, answer, mutate, task_id="Phys.org--999")
+                self.assertNotEqual(0, returncode)
+                self.assertFalse(verdict["pass"])
+                self.assertEqual("task_id_matches", verdict["reason"])
+
+    def test_empty_answer_fails_every_verifier(self) -> None:
+        for task in range(18):
+            with self.subTest(task=task):
+                steps, _, mutate = self.positive_case(task)
+                returncode, verdict = self.run_verifier(task, steps, "", mutate)
+                self.assertNotEqual(0, returncode)
+                self.assertFalse(verdict["pass"])
+                self.assertEqual("final_answer_nonempty", verdict["reason"])
+
+    def test_answer_only_trajectory_fails_every_verifier(self) -> None:
+        for task in range(18):
+            with self.subTest(task=task):
+                _, answer, mutate = self.positive_case(task)
+                returncode, verdict = self.run_verifier(task, [], answer, mutate)
+                self.assertNotEqual(0, returncode)
+                self.assertFalse(verdict["pass"])
+
+    def test_external_origin_spoof_fails(self) -> None:
+        spoofed = [
+            {"url": "https://evil.example/category/physics", "action": "navigate", "params": {}},
+            {"url": f"https://evil.example/article/{SLUGS['magnetic']}", "action": "navigate", "params": {}},
         ]
-        for answer in accepted:
-            with self.subTest(kind="reference", answer=answer):
-                self.assert_verdict(self._run(11, CASES[11].urls, answer), True)
+        returncode, verdict = self.run_verifier(0, spoofed, "Physical Review Letters")
+        self.assertNotEqual(0, returncode)
+        self.assertFalse(verdict["pass"])
 
-    def test_number_answer_rejects_direct_post_value_denial(self) -> None:
-        answer = "4 is definitely not the count."
-        self.assert_verdict(self._run(4, CASES[4].urls, answer,
-                                      login_email=CASES[4].login_email), False)
+    def test_reversed_order_fails(self) -> None:
+        steps = [navigate(f"/article/{SLUGS['tiny_energy']}"), navigate("/search?q=quantum")]
+        returncode, verdict = self.run_verifier(2, steps, "Nature Electronics")
+        self.assertNotEqual(0, returncode)
+        self.assertEqual("ordered_search_to_article", verdict["reason"])
 
-    def test_comparison_correction_uses_final_relation(self) -> None:
-        answer = (
-            "It was not later. Correction: "
-            f"{QUANTUM_GEOMETRY_TITLE} was published earlier."
+    def test_ordered_url_visits_without_a_result_click_fail(self) -> None:
+        steps = [navigate("/category/physics"), navigate(f"/article/{SLUGS['magnetic']}")]
+        returncode, verdict = self.run_verifier(0, steps, "Physical Review Letters")
+        self.assertNotEqual(0, returncode)
+        self.assertEqual("clicked_target_from_physics", verdict["reason"])
+
+    def test_unsubmitted_login_fails(self) -> None:
+        steps = [navigate("/login"), fill("/login", "input[name=email]", "alice.j@test.com"), fill("/login", "input[name=password]", PASSWORD), navigate("/saved")]
+        returncode, verdict = self.run_verifier(4, steps, "There are 4 Astronomy & Space saved articles.")
+        self.assertNotEqual(0, returncode)
+        self.assertEqual("login_as_alice", verdict["reason"])
+
+    def test_overwritten_login_email_fails(self) -> None:
+        steps = login_steps("alice.j@test.com")
+        steps.insert(3, fill("/login", "input[name=email]", "bob.c@test.com"))
+        steps.append(navigate("/saved"))
+        returncode, verdict = self.run_verifier(4, steps, "There are 4 Astronomy & Space saved articles.")
+        self.assertNotEqual(0, returncode)
+        self.assertEqual("login_as_alice", verdict["reason"])
+
+    def test_numbers_must_be_bound_to_requested_labels(self) -> None:
+        steps4, _, _ = self.positive_case(4)
+        returncode4, _ = self.run_verifier(4, steps4, "Physics has 4 saved articles; Astronomy & Space has 3.")
+        self.assertNotEqual(0, returncode4)
+        steps8, _, _ = self.positive_case(8)
+        returncode8, _ = self.run_verifier(8, steps8, "Carol has 3 saved articles and 2 comments.")
+        self.assertNotEqual(0, returncode8)
+
+    def test_written_counts_and_ordinal_ranks_pass(self) -> None:
+        steps4, _, _ = self.positive_case(4)
+        returncode4, verdict4 = self.run_verifier(4, steps4, "There are four Astronomy & Space saved articles.")
+        self.assertEqual(0, returncode4, verdict4)
+        steps8, _, _ = self.positive_case(8)
+        returncode8, verdict8 = self.run_verifier(8, steps8, "Carol has three public comments.")
+        self.assertEqual(0, returncode8, verdict8)
+        steps10, _, _ = self.positive_case(10)
+        returncode10, verdict10 = self.run_verifier(10, steps10, "The article ranks third and is provided by Leiden University.")
+        self.assertEqual(0, returncode10, verdict10)
+        steps15, _, _ = self.positive_case(15)
+        answer15 = f"{TITLES['vibrations']} is in Physics and ranks second in Popular."
+        returncode15, verdict15 = self.run_verifier(15, steps15, answer15)
+        self.assertEqual(0, returncode15, verdict15)
+
+    def test_comparison_journal_must_be_bound_to_winner(self) -> None:
+        steps, _, _ = self.positive_case(9)
+        bad = f"{TITLES['hourglass']} was earlier; its journal is Advanced Materials. Nature Synthesis belongs to the other article."
+        returncode, verdict = self.run_verifier(9, steps, bad)
+        self.assertNotEqual(0, returncode)
+        self.assertFalse(verdict["pass"])
+
+    def test_full_reply_accepts_dash_equivalence_and_rejects_partial(self) -> None:
+        steps, _, _ = self.positive_case(12)
+        returncode, verdict = self.run_verifier(12, steps, f'bob_c replied, "{REPLY.replace(" — ", " - ")}"')
+        self.assertEqual(0, returncode, verdict)
+        returncode, verdict = self.run_verifier(12, steps, "the new constraint is much tighter though")
+        self.assertNotEqual(0, returncode)
+        self.assertFalse(verdict["pass"])
+
+    def test_state_verifiers_reject_unrelated_extra_changes(self) -> None:
+        cases = (6, 7, 13, 14, 17)
+        for task in cases:
+            with self.subTest(task=task):
+                steps, answer, base_mutate = self.positive_case(task)
+                def mutate(connection, base_mutate=base_mutate, task=task):
+                    if base_mutate:
+                        base_mutate(connection)
+                    connection.execute("UPDATE users SET bio='unrelated change' WHERE username='bob_c'")
+                    if task == 6:
+                        connection.execute("UPDATE comments SET score=score+1 WHERE id=(SELECT min(id) FROM comments)")
+                    elif task in {7, 14}:
+                        connection.execute("UPDATE saved_articles SET note='unrelated change' WHERE id=(SELECT min(id) FROM saved_articles)")
+                    elif task == 13:
+                        connection.execute("UPDATE users SET bio='unrelated change' WHERE username='alice_j'")
+                    elif task == 17:
+                        connection.execute("UPDATE search_history SET query='unrelated change' WHERE id=(SELECT min(id) FROM search_history)")
+                returncode, verdict = self.run_verifier(task, steps, answer, mutate)
+                self.assertNotEqual(0, returncode)
+                self.assertFalse(verdict["pass"])
+
+    def test_task_13_accepts_an_arbitrary_new_identity(self) -> None:
+        steps, _, _ = self.positive_case(13)
+        replacements = {
+            "qa_explorer": "science_rover",
+            "qa_explorer@example.com": "science_rover@example.com",
+            "QA Explorer": "Science Rover",
+        }
+        for step in steps:
+            text = (step.get("params") or {}).get("text")
+            if text in replacements:
+                step["params"]["text"] = replacements[text]
+
+        def mutate(connection):
+            password_hash = bcrypt.hashpw(b"VerifierPass123!", bcrypt.gensalt()).decode()
+            connection.execute(
+                "INSERT INTO users(username,email,password_hash,full_name,bio,location,interests,created_at) VALUES(?,?,?,?,?,?,?,?)",
+                ("science_rover", "science_rover@example.com", password_hash, "Science Rover", "", "Berlin, Germany", "", "2026-05-14 12:00:00"),
+            )
+
+        returncode, verdict = self.run_verifier(
+            13, steps, "The username in the header is science_rover.", mutate
         )
-        result = self._run(11, CASES[11].urls, answer)
-        self.assert_verdict(result, True)
+        self.assertEqual(0, returncode, verdict)
 
-    def test_multihop_task_rejects_out_of_order_navigation(self) -> None:
-        case = CASES[15]
-        out_of_order = (
-            "/category/physics?sort=popular",
-            f"/article/{MAGNETIC}",
-            "/",
-        )
-        result = self._run(15, out_of_order, case.answer)
-        self.assert_verdict(result, False)
-
-    def test_recent_search_verifier_rejects_history_mutation(self) -> None:
-        case = CASES[17]
-        result = self._run(17, case.urls, case.answer, mutate_state=True)
-        self.assert_verdict(result, False)
+    def test_task_7_rejects_a_different_new_nanotechnology_save(self) -> None:
+        steps, answer, _ = self.positive_case(7)
+        def mutate(connection):
+            user_id = connection.execute("SELECT id FROM users WHERE username='david_k'").fetchone()[0]
+            article_id = connection.execute(
+                "SELECT a.id FROM articles a JOIN categories c ON c.id=a.category_id WHERE c.slug='nanotechnology' AND a.slug<>? AND NOT EXISTS (SELECT 1 FROM saved_articles s WHERE s.article_id=a.id AND s.user_id=?) LIMIT 1",
+                (SLUGS["exosomes"], user_id),
+            ).fetchone()[0]
+            connection.execute("INSERT INTO saved_articles(user_id,article_id,note,created_at) VALUES(?,?,?,?)", (user_id, article_id, NOTE, "2026-05-14 12:00:00"))
+        returncode, verdict = self.run_verifier(7, steps, answer, mutate)
+        self.assertNotEqual(0, returncode)
+        self.assertFalse(verdict["pass"])
 
 
 if __name__ == "__main__":

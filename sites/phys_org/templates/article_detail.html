@@ -34,6 +34,7 @@
       {% endfor %}
     </div>
 
+    {% if article.source_journal or article.source_institution or article.doi_url %}
     <section class="source-block">
       <dl>
         {% if article.source_journal %}
@@ -47,6 +48,7 @@
         {% endif %}
       </dl>
     </section>
+    {% endif %}
 
     <div class="action-bar">
       {% if current_user.is_authenticated %}
@@ -56,7 +58,7 @@
           {% if is_saved %}
             <button class="btn secondary" type="submit">★ Saved — click to remove</button>
           {% else %}
-            <input type="text" name="note" placeholder="Add a note (optional)" style="padding:7px 8px;border:1px solid #ccc;border-radius:3px;width:240px;">
+            <input type="text" name="note" maxlength="500" placeholder="Add a note (optional)" class="save-note-input">
             <button class="btn" type="submit">Save article</button>
           {% endif %}
         </form>
