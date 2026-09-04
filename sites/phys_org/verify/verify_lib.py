@@ -10,12 +10,10 @@ import os
 import re
 import sqlite3
 import subprocess
-import sys
 import tempfile
 import unicodedata
 from pathlib import Path
 from urllib.parse import parse_qs, urlparse
-
 
 SITE = "phys_org"
 
@@ -116,22 +114,31 @@ def visited_in_order(trajectory: dict,
     return True
 
 
+def _transition_pairs(trajectory: dict):
+    """Yield same-origin action transitions from adjacent steps or url_after."""
+    steps = trajectory.get("steps", [])
+    for index, current in enumerate(steps):
+        current_url = str(current.get("url", ""))
+        if not _is_mirror_url(current_url, trajectory):
+            continue
+        candidates = []
+        if current.get("url_after"):
+            candidates.append(str(current["url_after"]))
+        elif index + 1 < len(steps):
+            candidates.append(str(steps[index + 1].get("url", "")))
+        for next_url in candidates:
+            if _is_mirror_url(next_url, trajectory):
+                yield norm(current.get("action")), current_url, next_url
+
+
 def clicked_path_transition(trajectory: dict, from_path: str, to_path: str,
                             to_query: dict[str, str] | None = None) -> bool:
-    """Require an adjacent same-origin transition caused by a click action."""
-    steps = trajectory.get("steps", [])
+    """Require a same-origin transition caused by a click action."""
     expected_query = to_query or {}
-    for current, following in zip(steps, steps[1:]):
-        current_url = str(current.get("url", ""))
-        following_url = str(following.get("url", ""))
-        if not (_is_mirror_url(current_url, trajectory)
-                and _is_mirror_url(following_url, trajectory)):
+    for action, current_url, next_url in _transition_pairs(trajectory):
+        if action != "click" or urlparse(current_url).path != from_path:
             continue
-        if urlparse(current_url).path != from_path:
-            continue
-        if norm(current.get("action")) != "click":
-            continue
-        parsed_following = urlparse(following_url)
+        parsed_following = urlparse(next_url)
         if parsed_following.path != to_path:
             continue
         params = parse_qs(parsed_following.query)
@@ -143,6 +150,48 @@ def clicked_path_transition(trajectory: dict, from_path: str, to_path: str,
 
 def final_answer(trajectory: dict) -> str:
     return str(trajectory.get("final_answer") or "").strip()
+
+
+def task_id_matches(trajectory: dict, task_number: int) -> bool:
+    return str(trajectory.get("task_id") or "").strip() == f"Phys.org--{task_number}"
+
+
+def input_values_at_path(trajectory: dict, path: str | None = None) -> list[str]:
+    values = []
+    for step in trajectory.get("steps", []):
+        if norm(step.get("action")) not in {"fill", "type", "input"}:
+            continue
+        step_url = str(step.get("url", ""))
+        if not _is_mirror_url(step_url, trajectory):
+            continue
+        if path is not None and urlparse(step_url).path != path:
+            continue
+        params = step.get("params") or {}
+        values.append(str(params.get("text", params.get("value", ""))))
+    return values
+
+
+def entered_text(trajectory: dict, expected: str, path: str | None = None) -> bool:
+    """Require an exact value in a recorded input/fill/type action."""
+    expected_normalized = norm(expected)
+    return any(
+        norm(value) == expected_normalized
+        for value in input_values_at_path(trajectory, path)
+    )
+
+
+def submitted_from_path(trajectory: dict, from_path: str,
+                        to_path: str | None = None) -> bool:
+    """Require a click submission followed by a same-origin response page."""
+    for action, current_url, next_url in _transition_pairs(trajectory):
+        if action != "click" or urlparse(current_url).path != from_path:
+            continue
+        next_path = urlparse(next_url).path
+        if to_path is None and next_path != from_path:
+            return True
+        if to_path is not None and next_path == to_path:
+            return True
+    return False
 
 
 def filled_field(trajectory: dict, field: str, expected: str,
@@ -266,6 +315,55 @@ def has_number(text: str, value: int) -> bool:
     )
 
 
+def has_labeled_number(text: str, value: int,
+                       labels: tuple[str, ...]) -> bool:
+    normalized = norm(text)
+    cardinal_words = {1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six"}
+    alternatives = [str(value)]
+    if value in cardinal_words:
+        alternatives.append(cardinal_words[value])
+    number_pattern = rf"(?<![a-z0-9])(?:{'|'.join(alternatives)})(?![a-z0-9])"
+    for match in re.finditer(number_pattern, normalized):
+        if _negated_at(normalized, match.start()) or _denied_after(normalized, match.end()):
+            continue
+        left_boundaries = list(re.finditer(r"[.!?;\n]", normalized[:match.start()]))
+        left = left_boundaries[-1].end() if left_boundaries else 0
+        right_boundary = re.search(r"[.!?;\n]", normalized[match.end():])
+        right = match.end() + right_boundary.start() if right_boundary else len(normalized)
+        clause = normalized[left:right]
+        relative_start = match.start() - left
+        relative_end = match.end() - left
+        for label in labels:
+            for label_match in re.finditer(re.escape(norm(label)), clause):
+                distance = min(abs(label_match.end() - relative_start),
+                               abs(label_match.start() - relative_end))
+                if distance <= 16:
+                    return True
+    return False
+
+
+def has_rank(text: str, value: int) -> bool:
+    normalized = norm(text)
+    ordinal_words = {1: "first", 2: "second", 3: "third", 4: "fourth", 5: "fifth", 6: "sixth"}
+    ordinal = ordinal_words.get(value, str(value))
+    patterns = [
+        rf"\b(?:rank|ranked|ranks|position|positioned)\s*(?:is\s*)?(?:number\s*)?(?:#?\s*{value}|{ordinal})\b",
+        rf"\b{value}(?:st|nd|rd|th)\s+(?:place|position|rank|result)\b",
+        rf"\b{ordinal}\s+(?:place|position|rank|result)\b",
+    ]
+    return any(re.search(pattern, normalized) for pattern in patterns)
+
+
+def equivalent_phrase(text: str, expected: str) -> bool:
+    """Compare full text while normalizing whitespace and dash punctuation."""
+    def canonical(value: str) -> str:
+        normalized = unicodedata.normalize("NFKC", value)
+        normalized = re.sub(r"[-‐‑‒–—―]", "-", normalized)
+        normalized = re.sub(r"\s+", " ", normalized).strip().casefold()
+        return normalized.strip(" .!?'\"")
+    return _contains_affirmatively(canonical(text), canonical(expected))
+
+
 def claims_earlier(text: str, expected_title: str,
                    other_title: str | None = None) -> bool:
     """Require an affirmative earlier/older claim and reject reversed wording."""
@@ -360,7 +458,7 @@ def _relation_for_title(text: str, expected_title: str,
 def _earlier_relation_claims(normalized: str) -> list[bool]:
     """Return ordered relation claims; True means the answer asserts earlier."""
     claims: list[tuple[int, bool]] = []
-    for match in re.finditer(r"\b(?:earlier|older|first|before)\b", normalized):
+    for match in re.finditer(r"\b(?:earlier|older|first|before|predates?)\b", normalized):
         claims.append((match.start(), not _negated_at(normalized, match.start())))
     for match in re.finditer(r"\b(?:later|newer|after)\b", normalized):
         claims.append((match.start(), _negated_at(normalized, match.start())))
@@ -371,7 +469,8 @@ def fetch_db(container: str, kind: str) -> str:
     source = f"{container}:/opt/WebSyn/{SITE}/{kind}/{SITE}.db"
     descriptor, path = tempfile.mkstemp(suffix=".db")
     os.close(descriptor)
-    result = subprocess.run(["docker", "cp", source, path], capture_output=True, text=True)
+    result = subprocess.run(["docker", "cp", source, path], capture_output=True,
+                            text=True, check=False)
     if result.returncode != 0:
         Path(path).unlink(missing_ok=True)
         raise RuntimeError(f"docker cp {source} failed: {result.stderr.strip()}")
@@ -438,9 +537,18 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def stateless_main(task_number: int, navigation_checks: list[tuple[str, bool, str]],
+def check_common(judge: Judge, trajectory: dict, task_number: int) -> None:
+    judge.check("task_id_matches", task_id_matches(trajectory, task_number),
+                f"observed={trajectory.get('task_id')!r}")
+    judge.check("final_answer_nonempty", bool(final_answer(trajectory)),
+                repr(final_answer(trajectory)))
+
+
+def stateless_main(task_number: int, trajectory: dict,
+                   navigation_checks: list[tuple[str, bool, str]],
                    answer_checks: list[tuple[str, bool, str]]) -> None:
     judge = Judge(f"Phys.org--{task_number}")
+    check_common(judge, trajectory, task_number)
     for name, condition, evidence in navigation_checks + answer_checks:
         judge.check(name, condition, evidence)
     judge.emit()
@@ -450,4 +558,4 @@ def run_stateless(task_number: int, check_builder) -> None:
     args = parse_args()
     trajectory = load_run(args.run_dir)
     navigation, answers = check_builder(trajectory, final_answer(trajectory))
-    stateless_main(task_number, navigation, answers)
+    stateless_main(task_number, trajectory, navigation, answers)

@@ -52,7 +52,12 @@
       <ul>
         <li><a href="{{ url_for('saved') }}">My saved articles</a></li>
         <li><a href="{{ url_for('user_profile', username=current_user.username) }}">My public profile</a></li>
-        <li><a href="{{ url_for('logout') }}">Sign out</a></li>
+        <li>
+          <form class="logout-form" method="post" action="{{ url_for('logout') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="sidebar-link-button">Sign out</button>
+          </form>
+        </li>
       </ul>
     </div>
   </aside>

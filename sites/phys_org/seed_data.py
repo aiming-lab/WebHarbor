@@ -1,8 +1,6 @@
 """Phys.org mirror — idempotent seed data.
 
-Loads ``scraped_data/phys_data.json`` (real RSS-derived articles) and synthesizes
-the side data agents need: source journals/institutions, additional body text,
-benchmark users with saved articles + comments + search history.
+Loads ``scraped_data/phys_data.json`` (RSS-derived articles), preserves only source-derived article text and verified metadata, and seeds deterministic benchmark users with saved articles, comments, and search history.
 
 The byte-identical reset invariant requires that each ``seed_*`` function is a
 no-op when the DB is already populated. Per-row gates aren't enough — even an
@@ -39,185 +37,22 @@ CATEGORIES = [
      'Nanomaterials, nanoelectronics, bio- and nano-technology.', 70),
 ]
 
+# Metadata verified against the corresponding public Phys.org/Tech Xplore pages; unverified fields remain blank rather than presenting generated values as facts.
+SOURCE_METADATA_FILE = os.path.join(BASE_DIR, 'source_metadata.json')
+with open(SOURCE_METADATA_FILE, encoding='utf-8') as source_metadata_file:
+    SOURCE_METADATA_OVERRIDES = json.load(source_metadata_file)['articles']
 
-# Pools used to synthesize plausible journal / institution data per category.
-# Real phys.org articles cite these journals heavily; using them keeps the
-# detail page realistic. Each tuple is (journal, parent publisher).
-JOURNALS_BY_CATEGORY = {
-    'physics': [
-        'Physical Review Letters', 'Nature Physics', 'Physical Review B',
-        'Reviews of Modern Physics', 'New Journal of Physics',
-        'Physical Review Applied', 'Optics Express', 'Nature Photonics',
-    ],
-    'earth': [
-        'Nature Geoscience', 'Geophysical Research Letters',
-        'Journal of Climate', 'Earth and Planetary Science Letters',
-        'Nature Climate Change', 'Geology', 'Journal of Geophysical Research: Atmospheres',
-    ],
-    'technology': [
-        'Nature Electronics', 'IEEE Transactions on Robotics',
-        'ACM Computing Surveys', 'Joule', 'Energy & Environmental Science',
-        'Nature Machine Intelligence', 'Science Robotics',
-    ],
-    'biology': [
-        'Cell', 'Nature', 'Current Biology', 'Proceedings of the National Academy of Sciences',
-        'eLife', 'Nature Ecology & Evolution', 'PLOS Biology', 'Molecular Ecology',
-    ],
-    'chemistry': [
-        'Journal of the American Chemical Society', 'Nature Chemistry',
-        'Angewandte Chemie International Edition', 'ACS Central Science',
-        'Chemical Science', 'Inorganic Chemistry',
-    ],
-    'astronomy': [
-        'The Astrophysical Journal', 'Monthly Notices of the Royal Astronomical Society',
-        'Astronomy & Astrophysics', 'Nature Astronomy', 'Icarus',
-        'Astrophysical Journal Letters',
-    ],
-    'nanotechnology': [
-        'Nature Nanotechnology', 'ACS Nano', 'Nano Letters',
-        'Advanced Materials', 'Small', 'npj 2D Materials and Applications',
-    ],
-    'other': [
-        'Journal of Archaeological Science', 'Nature Human Behaviour',
-        'PNAS', 'Science Advances', 'PLOS ONE', 'Proceedings of the Royal Society B',
-    ],
+VIEW_OVERRIDES = {
+    # Keep the named Task 10 target on the first Popular page without making it the first result.
+    'how-a-single-star-can-reshape-an-entire-galaxy': 7000,
 }
-
-
-# Technology covers unrelated disciplines, so its RSS subsection is a better
-# signal than the broad category when synthesizing a source journal.
-JOURNALS_BY_SUBSECTION = {
-    ('technology', 'Automotive'): [
-        'IEEE Transactions on Intelligent Transportation Systems',
-        'Transportation Research Part C: Emerging Technologies',
-        'International Journal of Automotive Technology',
-    ],
-    ('technology', 'Consumer & Gadgets'): [
-        'IEEE Consumer Electronics Magazine',
-        'IEEE Transactions on Consumer Electronics',
-        'Personal and Ubiquitous Computing',
-    ],
-    ('technology', 'Electronics & Semiconductors'): [
-        'Nature Electronics', 'IEEE Electron Device Letters',
-        'Advanced Electronic Materials',
-    ],
-    ('technology', 'Energy & Green Tech'): [
-        'Joule', 'Energy & Environmental Science', 'Nature Energy',
-    ],
-    ('technology', 'Engineering'): [
-        'AIAA Journal', 'Aerospace Science and Technology',
-        'Advanced Engineering Materials', 'Nature Communications',
-    ],
-    ('technology', 'Internet'): [
-        'IEEE Internet Computing', 'Computer Networks',
-        'ACM Transactions on Internet Technology',
-    ],
-    ('technology', 'Machine learning & AI'): [
-        'Nature Machine Intelligence', 'Journal of Machine Learning Research',
-        'IEEE Transactions on Pattern Analysis and Machine Intelligence',
-    ],
-    ('technology', 'Robotics'): [
-        'Science Robotics', 'IEEE Transactions on Robotics',
-        'The International Journal of Robotics Research',
-    ],
-    ('technology', 'Security'): [
-        'IEEE Transactions on Information Forensics and Security',
-        'ACM Transactions on Privacy and Security', 'Computers & Security',
-    ],
-    ('technology', 'Software'): [
-        'ACM Transactions on Software Engineering and Methodology',
-        'IEEE Transactions on Software Engineering', 'Empirical Software Engineering',
-    ],
-}
-
-
-def journal_pool(category_slug, subsection):
-    """Return the narrowest deterministic journal pool for an article."""
-    return JOURNALS_BY_SUBSECTION.get(
-        (category_slug, subsection),
-        JOURNALS_BY_CATEGORY.get(category_slug, JOURNALS_BY_CATEGORY['other']),
-    )
 
 
 def source_metadata(category_slug, subsection, slug):
-    """Return deterministic journal and institution values for an article.
-
-    Institution selection intentionally advances a separate RNG through the
-    legacy category-level journal pool first. Earlier assets drew both values
-    from one RNG; preserving that first draw keeps existing institutions stable
-    while allowing subsection-specific journal corrections.
-    """
-    source_seed = slug + ':source'
-    journal_rng = random.Random(source_seed)
-    journal = journal_rng.choice(journal_pool(category_slug, subsection))
-
-    legacy_journals = JOURNALS_BY_CATEGORY.get(
-        category_slug, JOURNALS_BY_CATEGORY['other']
-    )
-    institution_rng = random.Random(source_seed)
-    institution_rng.choice(legacy_journals)
-    institution = institution_rng.choice(
-        INSTITUTIONS_BY_CATEGORY.get(
-            category_slug, INSTITUTIONS_BY_CATEGORY['other']
-        )
-    )
-    return journal, institution
-
-
-INSTITUTIONS_BY_CATEGORY = {
-    'physics': [
-        'Massachusetts Institute of Technology', 'Stanford University',
-        'CERN', 'University of Cambridge', 'ETH Zurich', 'Caltech',
-        'Max Planck Institute for Quantum Optics', 'Technion',
-        'Princeton University', 'Argonne National Laboratory',
-    ],
-    'earth': [
-        'NOAA', 'University of Washington', 'Scripps Institution of Oceanography',
-        'University of Oxford', 'Potsdam Institute for Climate Impact Research',
-        'Woods Hole Oceanographic Institution', 'NASA Goddard Space Flight Center',
-        'Columbia University',
-    ],
-    'technology': [
-        'Carnegie Mellon University', 'Google DeepMind', 'IBM Research',
-        'University of California, Berkeley', 'University of Toronto',
-        'EPFL', 'Microsoft Research', 'KAIST', 'Tsinghua University',
-    ],
-    'biology': [
-        'Harvard Medical School', 'University of Oxford',
-        'Howard Hughes Medical Institute', 'EMBL-EBI',
-        'Salk Institute', 'University of Tokyo', 'Wellcome Sanger Institute',
-        'University of Pennsylvania',
-    ],
-    'chemistry': [
-        'Northwestern University', 'University of Chicago',
-        'University of California, Los Angeles', 'Scripps Research',
-        'University of Bristol', 'Tokyo Institute of Technology',
-        'Imperial College London',
-    ],
-    'astronomy': [
-        'NASA Jet Propulsion Laboratory', 'European Southern Observatory',
-        'Space Telescope Science Institute', 'Harvard-Smithsonian Center for Astrophysics',
-        'Max Planck Institute for Astronomy', 'Caltech', 'University of Arizona',
-    ],
-    'nanotechnology': [
-        'KAIST', 'Rice University', 'IBM Research – Zurich',
-        'National University of Singapore', 'University of Manchester',
-        'Tsinghua University', 'Lawrence Berkeley National Laboratory',
-    ],
-    'other': [
-        'University of Oxford', 'Max Planck Institute for the Science of Human History',
-        'University of Chicago', 'London School of Economics',
-        'University of Cape Town', 'Hebrew University of Jerusalem',
-    ],
-}
-
-
-# Synthetic body filler. Only used when the RSS description is too short.
-GENERIC_PARAGRAPHS = [
-    "The findings, the team writes, open new questions about how robust the underlying assumptions of the field really are, and suggest that further independent replications will be needed before the wider community converges on a single explanation.",
-    "Beyond the immediate result, the work hints at practical applications. The authors caution, however, that translating these laboratory observations into deployable systems is likely to take several more years of engineering effort and additional safety review.",
-    "Independent researchers not involved in the study described the data as 'compelling' and 'a useful starting point,' while noting that some of the boldest claims will need to be tested in larger and more diverse samples before being accepted as established science.",
-]
+    """Return source-verified journal and institution values when available."""
+    del category_slug, subsection
+    metadata = SOURCE_METADATA_OVERRIDES.get(slug, {})
+    return metadata.get('journal', ''), metadata.get('institution', '')
 
 
 def _slugify(text: str, maxlen: int = 70) -> str:
@@ -253,16 +88,18 @@ def _strip_html(text: str) -> str:
 
 
 def _build_body(rss_desc: str, title: str, *, rng: random.Random) -> str:
-    """Return paragraph-separated body text. Use the RSS description as the
-    lede and append synthetic-but-plausible follow-on paragraphs so each
-    article has at least 3 paragraphs."""
-    lede = _strip_html(rss_desc) or title
-    paragraphs = [lede]
-    pool = GENERIC_PARAGRAPHS[:]
-    rng.shuffle(pool)
-    paragraphs.append(pool[0])
-    paragraphs.append(pool[1])
-    return "\n\n".join(paragraphs)
+    """Return only source-derived article text; never invent attributed claims."""
+    del rng
+    return _strip_html(rss_desc) or title
+
+
+def _truncate_summary(text: str, limit: int = 240) -> str:
+    """Truncate at a word boundary and make truncation explicit."""
+    cleaned = _strip_html(text)
+    if len(cleaned) <= limit:
+        return cleaned
+    shortened = cleaned[: limit - 1].rsplit(' ', 1)[0].rstrip(' ,;:-')
+    return f"{shortened}…"
 
 
 def seed_database(db, User, Category, Article, Comment, bcrypt):
@@ -324,28 +161,23 @@ def seed_database(db, User, Category, Article, Comment, bcrypt):
         rss_cats = it.get('rss_categories') or []
         subsection = (rss_cats[0] if rss_cats else '').strip()
 
-        # Author: real RSS dc:creator if present, else synthesized.
+        # Preserve the RSS creator when present; otherwise use the verified publisher fallback recorded in source_metadata.json.
         author_real = (it.get('author') or '').strip()
+        metadata = SOURCE_METADATA_OVERRIDES.get(slug, {})
         if author_real:
             author_name = author_real
+        elif metadata.get('author'):
+            author_name = metadata['author']
         else:
-            # Reproducible synthesized author per article slug.
-            r2 = random.Random(slug + ':author')
-            firsts = ['Sarah', 'Michael', 'Ananya', 'Jorge', 'Mei', 'David',
-                      'Priya', 'Liam', 'Fatima', 'Hiroshi', 'Olivia', 'Karim',
-                      'Nina', 'Oluwa', 'Bjorn', 'Elena']
-            lasts = ['Patel', 'Garcia', 'Nguyen', 'Kowalski', 'Rossi', 'Tanaka',
-                     'Andersen', 'Okafor', 'Singh', 'Yamamoto', 'Hernandez',
-                     'Mueller', 'Ahmed', 'Park']
-            author_name = f"{r2.choice(firsts)} {r2.choice(lasts)}"
+            author_name = 'Tech Xplore' if cat_slug == 'technology' else 'Phys.org'
 
-        # Journal / institution synthesized per article (deterministic by slug)
         journal, institution = source_metadata(cat_slug, subsection, slug)
-        # DOI: synthesize a stable but fake-looking DOI per article id.
-        doi = f"https://doi.org/10.{1000 + next_id}/phys.{published.year}.{next_id:05d}"
+        doi = metadata.get('doi', '')
 
         body = _build_body(it.get('description') or '', title, rng=rng)
-        subtitle = _strip_html(it.get('description') or '')[:240]
+        if metadata.get('body_append'):
+            body = f"{body}\n\n{metadata['body_append']}"
+        subtitle = _truncate_summary(it.get('description') or '')
 
         image_filename = it.get('local_image') or ''
 
@@ -354,7 +186,7 @@ def seed_database(db, User, Category, Article, Comment, bcrypt):
         # to give a clear winner: ~1500-9000 with one popular article in
         # each category capped near the top.
         rv = random.Random(slug + ':views')
-        views = rv.randint(150, 9000)
+        views = VIEW_OVERRIDES.get(slug, rv.randint(150, 9000))
 
         is_featured = (it.get('link') or it.get('title')) in featured_keys
 

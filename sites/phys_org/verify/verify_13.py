@@ -1,39 +1,94 @@
 #!/usr/bin/env python3
 import re
 
-from verify_lib import (Judge, contains_all, db_query, final_answer, load_run,
-                        parse_args, resolve_db, visited_path)
+import bcrypt
+from verify_lib import (
+    Judge,
+    check_common,
+    contains_all,
+    db_query,
+    entered_text,
+    final_answer,
+    input_values_at_path,
+    load_run,
+    parse_args,
+    resolve_db,
+    submitted_from_path,
+    visited_in_order,
+)
 
-QUERY = """
-SELECT username,email,full_name,location,password_hash
-FROM users
-WHERE username='qa_explorer' OR email='qa_explorer@example.com'
-"""
-EXPECTED = ("qa_explorer", "qa_explorer@example.com", "QA Explorer", "Berlin, Germany")
 BCRYPT_HASH = re.compile(r"\$2[aby]\$\d{2}\$[./A-Za-z0-9]{53}")
+ALL_QUERY = """
+SELECT id,username,email,full_name,location,bio,interests,password_hash,created_at
+FROM users
+ORDER BY id
+"""
+
 
 def main():
     args = parse_args()
     trajectory = load_run(args.run_dir)
     answer = final_answer(trajectory)
-    initial = db_query(resolve_db(args.initial_db, args.container, "instance_seed"), QUERY)
-    after = db_query(resolve_db(args.after_db, args.container, "instance"), QUERY)
-    after_profiles = [] if after is None else [row[:4] for row in after]
-    valid_password_hash = (
-        after is not None
-        and len(after) == 1
-        and BCRYPT_HASH.fullmatch(str(after[0][4] or "")) is not None
+    initial_db = resolve_db(args.initial_db, args.container, "instance_seed")
+    after_db = resolve_db(args.after_db, args.container, "instance")
+    initial_all = db_query(initial_db, ALL_QUERY)
+    after_all = db_query(after_db, ALL_QUERY)
+    initial_ids = set() if initial_all is None else {row[0] for row in initial_all}
+    new_rows = [] if after_all is None else [
+        row for row in after_all if row[0] not in initial_ids
+    ]
+    exact_change = (
+        initial_all is not None
+        and len(new_rows) == 1
+        and after_all == initial_all + new_rows
     )
+    new_row = new_rows[0] if len(new_rows) == 1 else None
+    valid_profile = bool(
+        new_row
+        and str(new_row[1]).strip()
+        and "@" in str(new_row[2])
+        and str(new_row[3]).strip()
+        and new_row[4] == "Berlin, Germany"
+    )
+    valid_password_hash = bool(
+        new_row and BCRYPT_HASH.fullmatch(str(new_row[7] or ""))
+    )
+    entered_profile = bool(new_row) and all(
+        entered_text(trajectory, str(value), "/register")
+        for value in new_row[1:4]
+    )
+    excluded_values = set() if new_row is None else {str(value) for value in new_row[1:4]}
+    password_candidates = [
+        value for value in input_values_at_path(trajectory, "/register")
+        if value not in excluded_values and len(value) >= 6
+    ]
+    password_matches = valid_password_hash and any(
+        bcrypt.checkpw(value.encode(), str(new_row[7]).encode())
+        for value in password_candidates
+    )
+
     judge = Judge("Phys.org--13")
-    judge.check("nav_register", visited_path(trajectory, "/register"), "visited registration")
-    judge.check("nav_account", visited_path(trajectory, "/account"), "visited Account Settings")
-    judge.check("db_user_absent_initially", initial == [], f"initial_rows={initial}")
-    judge.check("db_registered_profile_exact", after_profiles == [EXPECTED],
-                f"after_profiles={after_profiles}")
-    judge.check("db_password_hash_present", valid_password_hash,
-                "registered account has a valid bcrypt password hash")
-    judge.check("answer_username", contains_all(answer, ["qa_explorer"]), repr(answer))
+    check_common(judge, trajectory, 13)
+    judge.check("ordered_registration_flow", visited_in_order(trajectory, [
+        ("/register", {}), ("/account", {})
+    ]), "visited registration before Account Settings")
+    judge.check("registration_fields_entered", entered_profile,
+                "entered the new username, email, and full name")
+    judge.check("registration_submitted", submitted_from_path(trajectory, "/register"),
+                "submitted registration form")
+    judge.check("location_entered", entered_text(trajectory, "Berlin, Germany", "/account"),
+                "entered requested location")
+    judge.check("profile_submitted", submitted_from_path(trajectory, "/account", "/account"),
+                "submitted Account Settings")
+    judge.check("db_one_new_user_exact", exact_change and valid_profile,
+                f"new_users={[(row[1], row[2], row[3], row[4]) for row in new_rows]}")
+    judge.check("db_password_matches_input", bool(password_matches),
+                "new account hash matches the entered non-empty password")
+    judge.check("answer_new_username",
+                bool(new_row) and contains_all(answer, [str(new_row[1])]),
+                repr(answer))
     judge.emit()
+
 
 if __name__ == "__main__":
     main()

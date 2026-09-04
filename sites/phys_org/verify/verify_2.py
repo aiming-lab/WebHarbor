@@ -1,13 +1,22 @@
 #!/usr/bin/env python3
-from verify_lib import contains_all, run_stateless, visited_path, visited_search
+from verify_lib import (
+    clicked_path_transition,
+    contains_all,
+    run_stateless,
+    visited_in_order,
+)
 
 SLUG = "method-for-measuring-energy-amounts-less-than-a-trillionth-of-a-billio"
 
 def checks(t, answer):
     return ([
-        ("nav_quantum_search", visited_search(t, "quantum"), "searched for quantum"),
-        ("nav_target_article", visited_path(t, f"/article/{SLUG}"), "visited target article"),
-    ], [("answer_source_journal", contains_all(answer, ["Nature Photonics"]), repr(answer))])
+        ("ordered_search_to_article", visited_in_order(t, [
+            ("/search", {"q": "quantum"}), (f"/article/{SLUG}", {})
+        ]), "searched for quantum before opening the target"),
+        ("clicked_target_from_search", clicked_path_transition(
+            t, "/search", f"/article/{SLUG}"
+        ), "clicked the target from search results"),
+    ], [("answer_source_journal", contains_all(answer, ["Nature Electronics"]), repr(answer))])
 
 if __name__ == "__main__":
     run_stateless(2, checks)

@@ -21,6 +21,8 @@
 html, body {
   margin: 0;
   padding: 0;
+  max-width: 100%;
+  overflow-x: hidden;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue",
                Arial, "Noto Sans", sans-serif;
   font-size: 15px;
@@ -33,6 +35,7 @@ a { color: var(--c-link); text-decoration: none; }
 a:hover { color: var(--c-link-hover); text-decoration: underline; }
 
 img { max-width: 100%; height: auto; display: block; }
+code { overflow-wrap: anywhere; word-break: break-word; }
 
 /* ---- Header ---- */
 
@@ -89,10 +92,30 @@ img { max-width: 100%; height: auto; display: block; }
 }
 .header-account {
   display: flex;
+  align-items: center;
   gap: 12px;
   font-size: 13px;
   white-space: nowrap;
 }
+.logout-form { margin: 0; }
+.link-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+.link-button:hover { color: #cfe1ff; }
+.sidebar-link-button {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--c-link);
+  cursor: pointer;
+  font: inherit;
+}
+.sidebar-link-button:hover { color: var(--c-link-hover); text-decoration: underline; }
 
 .nav-bar {
   background: var(--c-navy-dark);
@@ -158,7 +181,7 @@ img { max-width: 100%; height: auto; display: block; }
   gap: 28px;
 }
 @media (max-width: 900px) {
-  .layout { grid-template-columns: 1fr; }
+  .layout { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 600px) {
   .container { padding: 16px; }
@@ -170,6 +193,7 @@ img { max-width: 100%; height: auto; display: block; }
     width: 100px;
     height: 75px;
   }
+  .article-card .summary { display: none; }
   .article-detail h1 { font-size: 25px; }
   .source-block dt {
     display: block;
@@ -217,7 +241,7 @@ img { max-width: 100%; height: auto; display: block; }
   font-size: 17px;
   line-height: 1.3;
 }
-.article-card h3 a { color: var(--c-text); }
+.article-card h3 a { color: var(--c-text); overflow-wrap: anywhere; }
 .article-card h3 a:hover { color: var(--c-link); }
 .article-card .meta {
   font-size: 12px;
@@ -243,7 +267,11 @@ img { max-width: 100%; height: auto; display: block; }
   gap: 16px;
   margin: 12px 0 24px;
 }
-@media (max-width: 800px) { .featured-grid { grid-template-columns: 1fr; } }
+.feat-main { grid-row: span 2; }
+@media (max-width: 800px) {
+  .featured-grid { grid-template-columns: minmax(0, 1fr); }
+  .feat-main { grid-row: auto; }
+}
 .feat-main, .feat-side {
   background: #fff;
   border: 1px solid var(--c-border);
@@ -289,6 +317,7 @@ img { max-width: 100%; height: auto; display: block; }
 /* ---- Article detail ---- */
 
 .article-detail {
+  min-width: 0;
   background: #fff;
 }
 .article-detail .crumbs {
@@ -347,6 +376,7 @@ img { max-width: 100%; height: auto; display: block; }
 
 .action-bar {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin: 16px 0;
   padding: 10px 0;
@@ -368,6 +398,12 @@ img { max-width: 100%; height: auto; display: block; }
 .btn.secondary { background: #fff; color: var(--c-navy); border-color: var(--c-navy); }
 .btn.secondary:hover { background: var(--c-navy); color: #fff; }
 .btn.danger { background: var(--c-warn); }
+.save-note-input {
+  width: min(240px, 100%);
+  padding: 7px 8px;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+}
 
 /* ---- Comments ---- */
 
@@ -452,6 +488,7 @@ img { max-width: 100%; height: auto; display: block; }
 .pagination {
   margin: 22px 0;
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   align-items: center;
 }
@@ -510,4 +547,8 @@ img { max-width: 100%; height: auto; display: block; }
   margin-bottom: 20px;
 }
 .profile-head h1 { margin: 0 0 4px; color: var(--c-navy); }
-.profile-stats { display: flex; gap: 18px; font-size: 14px; color: var(--c-muted); }
+.profile-stats { display: flex; flex-wrap: wrap; gap: 18px; font-size: 14px; color: var(--c-muted); }
+.member-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.member-card { display: flex; flex-direction: column; align-items: flex-start; padding: 18px; border: 1px solid var(--c-border); border-radius: 4px; background: var(--c-card); }
+.member-card h3, .member-card p { margin: 0 0 10px; }
+.member-card .btn { margin-top: auto; }

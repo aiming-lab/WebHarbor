@@ -4,17 +4,23 @@ import re
 from datetime import datetime
 from urllib.parse import urlparse
 
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, flash, redirect, render_template, request, url_for
+from flask_bcrypt import Bcrypt
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
 from flask_sqlalchemy import SQLAlchemy
-from flask_login import (LoginManager, UserMixin, login_user, logout_user,
-                         login_required, current_user)
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect
-from flask_bcrypt import Bcrypt
-from wtforms import StringField, PasswordField, TextAreaField, HiddenField
-from wtforms.validators import DataRequired, Length, Optional, Email
-from sqlalchemy import or_, desc
 from markupsafe import Markup
+from sqlalchemy import desc, or_
+from wtforms import HiddenField, PasswordField, StringField, TextAreaField
+from wtforms.validators import DataRequired, Email, Length, Optional
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -253,9 +259,9 @@ def _safe_next(target: str | None, fallback: str) -> str:
     if not target:
         return fallback
     parsed = urlparse(target)
-    if parsed.scheme or parsed.netloc:
+    if parsed.scheme or parsed.netloc or '\\' in target:
         return fallback
-    if not target.startswith('/'):
+    if not target.startswith('/') or target.startswith('//'):
         return fallback
     return target
 
@@ -281,12 +287,12 @@ def inject_globals():
 def index():
     featured = Article.query.filter_by(featured=True) \
         .order_by(desc(Article.published_at)).limit(5).all()
-    latest = Article.query.order_by(desc(Article.published_at)).limit(20).all()
+    latest = Article.query.order_by(desc(Article.published_at)).limit(8).all()
     cats = Category.query.order_by(Category.sort_order).all()
     by_cat = []
     for c in cats:
         items = Article.query.filter_by(category_id=c.id) \
-            .order_by(desc(Article.published_at)).limit(4).all()
+            .order_by(desc(Article.published_at)).limit(1).all()
         if items:
             by_cat.append((c, items))
     sidebar_trending = Article.query.order_by(desc(Article.views)).limit(6).all()
@@ -376,6 +382,10 @@ def save_article(article_id):
     existing = SavedArticle.query.filter_by(
         user_id=current_user.id, article_id=art.id).first()
     form = SaveForm()
+    if not form.validate_on_submit():
+        flash('The save note must be 500 characters or fewer.', 'error')
+        return redirect(_safe_next(request.form.get('next'),
+                                   url_for('article_detail', slug=art.slug)))
     if existing:
         db.session.delete(existing)
         db.session.commit()
@@ -404,7 +414,19 @@ def trending():
     page = request.args.get('page', 1, type=int)
     pagination = Article.query.order_by(desc(Article.views), desc(Article.published_at)) \
         .paginate(page=page, per_page=15, error_out=False)
-    return render_template('trending.html', pagination=pagination)
+    return render_template('trending.html', pagination=pagination,
+                           heading='Trending articles', description='Sorted by total views.',
+                           pager_endpoint='trending')
+
+
+@app.route('/latest')
+def latest():
+    page = request.args.get('page', 1, type=int)
+    pagination = Article.query.order_by(desc(Article.published_at)) \
+        .paginate(page=page, per_page=15, error_out=False)
+    return render_template('trending.html', pagination=pagination,
+                           heading='Latest articles', description='Sorted by publication date.',
+                           pager_endpoint='latest')
 
 
 @app.route('/search')
@@ -460,6 +482,12 @@ def search():
     return render_template('search.html', query=q, results=page_items, page=page,
                            total=total, has_next=end < total, has_prev=page > 1,
                            selected_category=cat_filter)
+
+
+@app.route('/users')
+def users():
+    members = User.query.order_by(User.username.asc()).all()
+    return render_template('users.html', users=members)
 
 
 @app.route('/user/<username>')
@@ -529,7 +557,7 @@ def register():
     return render_template('register.html', form=form)
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()
@@ -543,7 +571,7 @@ def _health():
 
 # ----- Seed bootstrap -----
 
-from seed_data import seed_database, seed_benchmark_users   # noqa: E402
+from seed_data import seed_benchmark_users, seed_database  # noqa: E402
 
 with app.app_context():
     db.create_all()
