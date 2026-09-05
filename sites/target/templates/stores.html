@@ -14,17 +14,12 @@
     </div>
     <div class="store-grid">
       {% for store in stores %}
-        <a href="{{ url_for('store_page', store_slug=store.slug) }}" class="store-card">
+        <a href="{{ url_for('store_page', store_slug=store.slug) }}" class="store-card {% if not store.image_path %}store-card--text{% endif %}">
           {% if store.image_path %}<img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">{% endif %}
           <div>
             <span>{{ store.city }}, {{ store.state }}</span>
             <strong>{{ store.name }}</strong>
-            <p>{{ store.address }}</p>
-            <ul class="tag-row tag-row--left">
-              {% for amenity in store.amenities()[:3] %}
-                <li>{{ amenity }}</li>
-              {% endfor %}
-            </ul>
+            <p>View store details, hours, pickup services, and local inventory.</p>
           </div>
         </a>
       {% endfor %}

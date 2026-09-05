@@ -1,51 +1,30 @@
 #!/usr/bin/env python3
-"""Deterministic verifier for Target--16.
+from verify_lib import (
+    Judge, check_common, claims_relation, clicked_transition, contains_any, database_unchanged,
+    final_answer, load_run, number_bound_to, parse_args, resolve_db,
+    visited_in_order,
+)
 
-Compare percent-recommended of Ninja DualBrew GP161 vs Cuisinart 14 Cup Programmable.
-
-Ground truth (frozen here, never read from tasks.jsonl):
-  Ninja DualBrew GP161 TGT94682442 = 66%; Cuisinart 14 Cup TGT94139349 = 59%.\n  Ninja is higher.
-"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (load_run, final_answer, last_shot, visited_product, navigated_to,
-                        has_number, contains_any, contains_all, resolve_db,
-                        db_unchanged_for, llm_text_match, llm_screenshot_shows,
-                        Judge, parse_args)
+TASK_ID = "Target--16"
+NINJA = "TGT94682442"
+CUISINART = "TGT94139349"
+NINJA_PATH = f"/product/{NINJA}"
+CUISINART_PATH = f"/product/{CUISINART}"
 
 
-def main():
-    a = parse_args()
-    j = Judge("Target--16", a.no_llm)
-    t = load_run(a.run_dir)
-    fa = final_answer(t)
-
-    NINJA, CUISINART = "TGT94682442", "TGT94139349"
-    j.check("opened_ninja_page", visited_product(t, NINJA), f"visited={visited_product(t, NINJA)}")
-    j.check("opened_cuisinart_page", visited_product(t, CUISINART),
-            f"visited={visited_product(t, CUISINART)}")
-    j.check("answer_has_both_percents", has_number(fa, 66) and has_number(fa, 59),
-            f"final={fa!r}")
-    j.check("answer_names_ninja_as_higher", contains_any(fa, ["ninja"]), f"final={fa!r}")
-
-    initial = resolve_db(a.initial_db, a.container, "instance_seed")
-    after = resolve_db(a.after_db, a.container, "instance")
-    unchanged = db_unchanged_for(initial, after, "alice.j@test.com")
-    j.check("read_only_task_left_db_alone", unchanged is True,
-            f"db_unchanged={unchanged}")
-
-    ok, ev = llm_text_match(fa, "Ninja DualBrew GP161 is higher at 66%, versus 59% for the Cuisinart 14 Cup", "Which coffee maker do more guests recommend, and what are both percentages?")
-    j.check("answer_matches_ground_truth", ok, ev, llm=True)
-
-    s = last_shot(t)
-    if s:
-        ok, ev = llm_screenshot_shows(s, "recommendation percentages 66% and 59%", "Which coffee maker do more guests recommend, and what are both percentages?")
-        j.check("screenshot_shows_answer", ok, ev, llm=True)
-    else:
-        j.check("screenshot_shows_answer", False, "no screenshots in run")
-
-    j.emit()
+def main() -> None:
+    args = parse_args(); trajectory = load_run(args.run_dir); answer = final_answer(trajectory); judge = Judge(TASK_ID)
+    check_common(judge, trajectory, TASK_ID)
+    ninja_flow = visited_in_order(trajectory, [("/search", {}), (NINJA_PATH, {})]) and clicked_transition(trajectory, "/search", NINJA_PATH)
+    cuisinart_flow = visited_in_order(trajectory, [("/search", {}), (CUISINART_PATH, {})]) and clicked_transition(trajectory, "/search", CUISINART_PATH)
+    judge.check("opened_both_from_search", ninja_flow and cuisinart_flow, f"ninja={ninja_flow} cuisinart={cuisinart_flow}")
+    judge.check("ninja_percent_bound", number_bound_to(answer, 66, ("ninja", "dualbrew")), repr(answer))
+    judge.check("cuisinart_percent_bound", number_bound_to(answer, 59, ("cuisinart",)), repr(answer))
+    judge.check("ninja_identified_higher", claims_relation(answer, ("ninja", "dualbrew"), ("cuisinart",), ("higher", "more", "greater")), repr(answer))
+    judge.check("answer_uses_percentage_unit", contains_any(answer, ("%", "percent", "percentage")), repr(answer))
+    initial = resolve_db(args.initial_db, args.container, "instance_seed"); after = resolve_db(args.after_db, args.container, "instance")
+    judge.check("read_only_database_unchanged", database_unchanged(initial, after), "complete database comparison")
+    judge.emit()
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

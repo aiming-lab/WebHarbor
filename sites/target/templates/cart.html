@@ -32,6 +32,7 @@
               </a>
               <div class="cart-row__actions">
                 <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <label>Qty
                     <select name="quantity">
                       {% for qty in range(0, 6) %}

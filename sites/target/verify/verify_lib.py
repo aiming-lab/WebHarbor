@@ -1,423 +1,422 @@
 #!/usr/bin/env python3
-"""verify_lib.py — shared deterministic + LLM utilities for Target task verification.
+"""Shared deterministic utilities for Target task verifiers."""
 
-Philosophy: DETERMINISTIC FIRST.
-  1. Trajectory navigation check (anti knowledge-shortcut): the agent MUST have
-     opened the relevant on-site page. A correct answer with no matching
-     navigation is a memory-recall shortcut = FAIL. This matters more on a
-     retail mirror than elsewhere: a model may "know" that Red Baron pizza
-     exists, but it cannot know THIS mirror's prices or nutrition rows.
-  2. Answer check: exact / numeric / token-containment against frozen ground
-     truth hardcoded in each verify_N.py — never read from tasks.jsonl.
-  3. DB after-state check (stateful tasks): query the SQLite instance DB
-     directly. Cart contents, wishlist rows and placed orders are the
-     strongest deterministic signal that a flow actually completed.
-  4. LLM utilities are used ONLY where exact matching is brittle, and are
-     ALWAYS anchored on ground truth: the model verifies *presence* of given
-     content, it never supplies knowledge. One call each.
+from __future__ import annotations
 
-Input signature (per task):
-  --run_dir DIR      agent trajectory dir: trajectory.json + screenshots/step_NNN.png
-  --initial_db PATH  initial-state SQLite DB (default: fetched instance_seed from container)
-  --after_db PATH    after-state  SQLite DB (default: fetched live instance DB from container)
-  --container NAME   docker container to fetch DBs from (default: $WH_CONTAINER or wh-review)
-  --no_llm           skip LLM-based checks (run deterministic-only)
-Output: JSON {task_id, pass, reason, evidence[]} to stdout; exit 0 on PASS, 1 on FAIL.
-"""
-import base64, json, os, re, sqlite3, subprocess, sys, tempfile, urllib.request
-from pathlib import Path
+import argparse
+import ipaddress
+import json
+import os
+import re
+import sqlite3
+import subprocess
+import tempfile
+import unicodedata
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any, Iterable, Sequence
+from urllib.parse import parse_qs, urlparse
 
 SITE = "target"
-
-BENCHMARK_PASSWORD = "TestPass123!"
-
-
-# ---------------------------------------------------------------- trajectory
-def load_run(run_dir):
-    d = Path(run_dir)
-    traj = json.loads((d / "trajectory.json").read_text())
-    traj["_run_dir"] = d
-    traj["_shots"] = {p.name: p for p in sorted((d / "screenshots").glob("step_*.png"))}
-    return traj
+DEFAULT_CONTAINER = os.environ.get("WH_CONTAINER", "wh-review")
 
 
-def step_urls(traj):
-    return [s.get("url", "") for s in traj.get("steps", [])]
+@dataclass(frozen=True)
+class VerifyArgs:
+    run_dir: str
+    initial_db: str | None
+    after_db: str | None
+    container: str
+    no_llm: bool
 
 
-def navigated_to(traj, substr, times=1):
-    """Deterministic: at least `times` trajectory steps have a URL containing substr."""
-    return sum(1 for u in step_urls(traj) if substr in u) >= times
+def _bool_value(value: str) -> bool:
+    return str(value).casefold() in {"1", "true", "yes", "on"}
 
 
-def navigated_any(traj, substrs):
-    return any(navigated_to(traj, s) for s in substrs)
+def parse_args() -> VerifyArgs:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--run_dir", required=True)
+    parser.add_argument("--initial_db")
+    parser.add_argument("--after_db")
+    parser.add_argument("--container", default=DEFAULT_CONTAINER)
+    parser.add_argument("--no_llm", nargs="?", const=True, default=False, type=_bool_value)
+    args = parser.parse_args()
+    run_dir = Path(args.run_dir)
+    initial_snapshot = run_dir / "initial.db"
+    after_snapshot = run_dir / "after.db"
+    return VerifyArgs(
+        run_dir=args.run_dir,
+        initial_db=args.initial_db or (str(initial_snapshot) if initial_snapshot.is_file() else None),
+        after_db=args.after_db or (str(after_snapshot) if after_snapshot.is_file() else None),
+        container=args.container,
+        no_llm=bool(args.no_llm),
+    )
 
 
-def visited_product(traj, sku):
-    """The agent opened this specific product's detail page."""
-    return navigated_to(traj, f"/product/{sku}")
+def load_run(run_dir: str | os.PathLike[str]) -> dict[str, Any]:
+    path = Path(run_dir) / "trajectory.json"
+    trajectory = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(trajectory, dict):
+        raise ValueError("trajectory.json must contain a JSON object")
+    return trajectory
 
 
-def searched_for(traj, *terms):
-    """A /search (or filtered listing) URL carried every one of these terms.
-
-    Query strings are URL-encoded, so compare on a normalised form where
-    '+', '%20' and literal spaces are all equivalent.
-    """
-    def norm_url(u):
-        return u.replace("+", " ").replace("%20", " ").lower()
-    urls = [norm_url(u) for u in step_urls(traj) if "q=" in u]
-    return any(all(t.lower() in u for t in terms) for u in urls)
+def normalize_text(value: Any) -> str:
+    text = unicodedata.normalize("NFKC", str(value or ""))
+    text = text.replace("’", "'").replace("“", '"').replace("”", '"')
+    return re.sub(r"\s+", " ", text).strip().casefold()
 
 
-def final_answer(traj):
-    return (traj.get("final_answer") or "").strip()
+def final_answer(trajectory: dict[str, Any]) -> str:
+    return str(trajectory.get("final_answer") or "").strip()
 
 
-def _shot(traj, name):
-    if not name:
-        return None
-    p = traj["_shots"].get(Path(name).name)
-    return p if (p and p.exists()) else None
+def trajectory_urls(trajectory: dict[str, Any]) -> list[str]:
+    urls = []
+    if trajectory.get("start_url"):
+        urls.append(str(trajectory["start_url"]))
+    for step in trajectory.get("steps") or []:
+        if not isinstance(step, dict):
+            continue
+        for key in ("url_before", "url", "url_after"):
+            value = str(step.get(key) or "")
+            if value and (not urls or value != urls[-1]):
+                urls.append(value)
+    if trajectory.get("final_url") and str(trajectory["final_url"]) != (urls[-1] if urls else ""):
+        urls.append(str(trajectory["final_url"]))
+    return urls
 
 
-def shot_after_url(traj, substr):
-    """screenshot_after path of the first step whose URL contains substr."""
-    for s in traj.get("steps", []):
-        if substr in s.get("url", ""):
-            p = _shot(traj, s.get("screenshot_after"))
-            if p:
-                return p
-    return None
-
-
-def last_shot(traj):
-    for s in reversed(traj.get("steps", [])):
-        p = _shot(traj, s.get("screenshot_after")) or _shot(traj, s.get("screenshot_before"))
-        if p:
-            return p
-    shots = sorted(traj["_shots"].values())
-    return shots[-1] if shots else None
-
-
-# ---------------------------------------------------------------- deterministic answer match
-def norm(s):
-    return re.sub(r"\s+", " ", (s or "").strip()).casefold()
-
-
-def answer_equals(final, expected):
-    return norm(final) == norm(expected)
-
-
-def contains_all(final, tokens):
-    f = norm(final)
-    return all(norm(t) in f for t in tokens)
-
-
-def contains_any(final, tokens):
-    f = norm(final)
-    return any(norm(t) in f for t in tokens)
-
-
-def numbers_in(text):
-    """Every number in the text, as floats. '$12.99' -> [12.99]; '1,240' -> [1240.0]."""
-    out = []
-    for m in re.finditer(r"\d[\d,]*(?:\.\d+)?", text or ""):
-        try:
-            out.append(float(m.group(0).replace(",", "")))
-        except ValueError:
-            pass
-    return out
-
-
-def has_number(text, value, tol=0.001):
-    """The answer states this number. Tolerant of $, commas and trailing units."""
-    return any(abs(n - value) <= tol for n in numbers_in(text))
-
-
-def has_money(text, amount):
-    """Currency match that tolerates '12.99' / '$12.99' / '12.99 USD'.
-
-    Tolerance is deliberately below one cent: $249.98 is a different answer
-    from $249.99, and only float representation noise should be absorbed.
-    """
-    return has_number(text, round(float(amount), 2), tol=0.005)
-
-
-# ---------------------------------------------------------------- DB state
-def fetch_db(container, kind):
-    """kind: 'instance' (after-state) or 'instance_seed' (initial-state)."""
-    src = f"{container}:/opt/WebSyn/{SITE}/{kind}/{SITE}.db"
-    fd, path = tempfile.mkstemp(suffix=".db")
-    os.close(fd)
-    r = subprocess.run(["docker", "cp", src, path], capture_output=True, text=True)
-    if r.returncode != 0:
-        try:
-            os.unlink(path)
-        except OSError:
-            pass
-        raise RuntimeError(f"docker cp {src} failed: {r.stderr.strip()}")
-    return path
-
-
-def resolve_db(arg, container, kind):
-    if arg:
-        return arg
+def _is_loopback(hostname: str) -> bool:
+    if hostname.casefold() == "localhost":
+        return True
     try:
-        return fetch_db(container, kind)
-    except Exception:
-        return None  # caller treats None as "unavailable" and FAILs that check
+        return ipaddress.ip_address(hostname).is_loopback
+    except ValueError:
+        return False
 
 
-def db_query(db_path, sql, params=()):
-    con = sqlite3.connect(db_path)
-    try:
-        return con.execute(sql, params).fetchall()
-    finally:
-        con.close()
+def is_target_url(url: str, trajectory: dict[str, Any]) -> bool:
+    parsed = urlparse(str(url or ""))
+    start = urlparse(str(trajectory.get("start_url") or ""))
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname or not start.hostname:
+        return False
+    return (
+        _is_loopback(parsed.hostname)
+        and _is_loopback(start.hostname)
+        and parsed.scheme == start.scheme
+        and parsed.port == start.port
+    )
 
 
-# --- product-side reads (ground truth is hardcoded per task; these are for
-# --- cross-checking that the mirror still holds what the verifier expects)
-def product_row(db_path, sku):
-    if not db_path:
-        return None
-    rows = db_query(db_path,
-        "SELECT sku, name, price, list_price, rating, review_count, percent_recommended "
-        "FROM products WHERE sku=?", (sku,))
-    if not rows:
-        return None
-    keys = ("sku", "name", "price", "list_price", "rating", "review_count",
-            "percent_recommended")
-    return dict(zip(keys, rows[0]))
+def normalized_path(url: str) -> str:
+    path = urlparse(str(url or "")).path or "/"
+    return path.rstrip("/") or "/"
 
 
-# --- user-side after-state reads
-def cart_for(db_path, email):
-    """[(sku, name, quantity)] currently in this user's cart, ordered by sku."""
-    if not db_path:
-        return None
-    rows = db_query(db_path,
-        "SELECT p.sku, p.name, c.quantity FROM cart_items c "
-        "JOIN users u ON u.id = c.user_id JOIN products p ON p.id = c.product_id "
-        "WHERE u.email = ? ORDER BY p.sku", (email,))
-    return [tuple(r) for r in rows]
+def visited_path(trajectory: dict[str, Any], path: str) -> bool:
+    expected = normalized_path(path)
+    return any(
+        is_target_url(url, trajectory) and normalized_path(url) == expected
+        for url in trajectory_urls(trajectory)
+    )
 
 
-def cart_skus(db_path, email):
-    rows = cart_for(db_path, email)
-    return None if rows is None else [r[0] for r in rows]
+def query_matches(url: str, expected: dict[str, str]) -> bool:
+    params = parse_qs(urlparse(url).query)
+    return all(
+        normalize_text((params.get(key) or [""])[0]) == normalize_text(value)
+        for key, value in expected.items()
+    )
 
 
-def wishlist_skus(db_path, email):
-    if not db_path:
-        return None
-    rows = db_query(db_path,
-        "SELECT p.sku FROM wishlist_items w "
-        "JOIN users u ON u.id = w.user_id JOIN products p ON p.id = w.product_id "
-        "WHERE u.email = ? ORDER BY p.sku", (email,))
-    return [r[0] for r in rows]
+def visited_query(trajectory: dict[str, Any], path: str, expected: dict[str, str]) -> bool:
+    return any(
+        is_target_url(url, trajectory)
+        and normalized_path(url) == normalized_path(path)
+        and query_matches(url, expected)
+        for url in trajectory_urls(trajectory)
+    )
 
 
-def orders_for(db_path, email):
-    """[(order_number, status, total, fulfillment_method)] oldest first."""
-    if not db_path:
-        return None
-    rows = db_query(db_path,
-        "SELECT o.order_number, o.status, o.total, o.fulfillment_method FROM orders o "
-        "JOIN users u ON u.id = o.user_id WHERE u.email = ? ORDER BY o.id", (email,))
-    return [tuple(r) for r in rows]
-
-
-def new_orders(initial_db, after_db, email):
-    """Orders that exist in the after-state but not the initial state.
-
-    This is how a 'place an order' task is proven: the flow must have created
-    a row, not merely reached a confirmation-looking page.
-    """
-    before = orders_for(initial_db, email)
-    after = orders_for(after_db, email)
-    if before is None or after is None:
-        return None
-    seen = {o[0] for o in before}
-    return [o for o in after if o[0] not in seen]
-
-
-def order_items(db_path, order_number):
-    """[(sku, item_name, quantity)] on a given order."""
-    if not db_path:
-        return None
-    rows = db_query(db_path,
-        "SELECT p.sku, oi.item_name, oi.quantity FROM order_items oi "
-        "JOIN orders o ON o.id = oi.order_id LEFT JOIN products p ON p.id = oi.product_id "
-        "WHERE o.order_number = ? ORDER BY oi.id", (order_number,))
-    return [tuple(r) for r in rows]
-
-
-def user_exists(db_path, name=None, email=None):
-    if not db_path:
-        return None
-    rows = db_query(db_path, "SELECT full_name, email FROM users")
-    return any((name is None or r[0] == name) and (email is None or r[1] == email)
-               for r in rows)
-
-
-def db_unchanged_for(initial_db, after_db, email):
-    """True when this user's cart, wishlist and orders are all untouched.
-
-    Used by read-only tasks: an answer-only task should not have mutated state,
-    and a no-op run should not accidentally satisfy a stateful task.
-    """
-    parts = (cart_for, wishlist_skus, orders_for)
-    for fn in parts:
-        a, b = fn(initial_db, email), fn(after_db, email)
-        if a is None or b is None or a != b:
+def visited_in_order(trajectory: dict[str, Any], requirements: list[tuple[str, dict[str, str]]]) -> bool:
+    urls = trajectory_urls(trajectory)
+    cursor = 0
+    for path, query in requirements:
+        found = False
+        for index in range(cursor, len(urls)):
+            url = urls[index]
+            if is_target_url(url, trajectory) and normalized_path(url) == normalized_path(path) and query_matches(url, query):
+                cursor = index + 1
+                found = True
+                break
+        if not found:
             return False
     return True
 
 
-# ---------------------------------------------------------------- shared LLM utilities (anchored)
-# Unified LLM config, same env vars as agent.py / eval_judge.py:
-#   OPENAI_API_KEY, OPENAI_BASE_URL, JUDGE_MODEL
-import simpleArgParser as sap
-
-# When --no_llm is set (via Judge), the llm_* helpers short-circuit so verifiers
-# that call them directly (before j.check(llm=True)) still make ZERO LLM calls.
-_NO_LLM = False
-
-
-def _llm_config():
-    key = os.environ.get("OPENAI_API_KEY", "")
-    base = os.environ.get("OPENAI_BASE_URL", "")
-    model = os.environ.get("JUDGE_MODEL", "")
-    return key, base, model
-
-
-def _chat(messages, max_tokens=1024):
-    """One LLM call against the configured OpenAI-compatible endpoint."""
-    if _NO_LLM:
-        return None
-    key, base, model = _llm_config()
-    if not (key and base and model):
-        return None  # no LLM configured -> callers treat as non-PASS
-    payload = {"model": model, "messages": messages,
-               "max_tokens": max_tokens, "temperature": 1.0}
-    req = urllib.request.Request(base,
-                                 data=json.dumps(payload).encode(),
-                                 headers={"Content-Type": "application/json",
-                                          "Authorization": f"Bearer {key}"})
-    try:
-        data = json.loads(urllib.request.urlopen(req, timeout=180).read())
-    except Exception:
-        return None  # caller treats None as a non-PASS; never raises
-    try:
-        return data["choices"][0]["message"]["content"]
-    except Exception:
-        return None
+def transition_pairs(trajectory: dict[str, Any]):
+    steps = trajectory.get("steps") or []
+    for index, step in enumerate(steps):
+        if not isinstance(step, dict):
+            continue
+        current = str(step.get("url") or step.get("url_before") or "")
+        if not is_target_url(current, trajectory):
+            continue
+        candidates = []
+        if step.get("url_after"):
+            candidates.append(str(step["url_after"]))
+        elif index + 1 < len(steps) and isinstance(steps[index + 1], dict):
+            candidates.append(str(steps[index + 1].get("url") or steps[index + 1].get("url_after") or ""))
+        for following in candidates:
+            if is_target_url(following, trajectory):
+                yield normalize_text(step.get("action")), current, following
 
 
-def _verdict(out):
-    if not out:
-        return False, "<no reply from LLM>"
-    s = out.strip()
-    return s.upper().startswith("PASS"), s
-
-
-def llm_text_match(agent_answer, ground_truth, question):
-    """One LLM call: does agent_answer answer question AND stay consistent with
-    the frozen ground truth? The model gets the ground truth as an anchor and is
-    told NOT to use its own knowledge."""
-    if _NO_LLM:
-        return False, "[skipped: --no_llm]"
-    out = _chat([{"role": "user", "content":
-        f"You are a STRICT binary grader.\nQuestion: {question}\n"
-        f"Ground-truth answer (ANCHOR — judge against THIS, never use your own knowledge): {ground_truth}\n"
-        f"Agent's answer: {agent_answer}\n"
-        f"Decide PASS or FAIL ignoring case/punctuation/word order/surrounding prose. "
-        f"PASS only if the agent's answer is consistent with the ground truth AND actually answers the question. "
-        f"Line 1: PASS or FAIL. Line 2: one-sentence reason."}])
-    return _verdict(out)
-
-
-def llm_screenshot_shows(shot_path, must_show, question=""):
-    """One vision LLM call: does this screenshot visibly render the expected content?"""
-    if _NO_LLM:
-        return False, "[skipped: --no_llm]"
-    b64 = base64.b64encode(Path(shot_path).read_bytes()).decode()
-    out = _chat([{"role": "user", "content": [
-        {"type": "text", "text":
-            f"You are a STRICT binary grader. Only what is VISIBLY rendered in this screenshot counts.\n"
-            f"Question the page should answer: {question}\n"
-            f"Expected content to verify PRESENCE of: {must_show}\n"
-            f"PASS only if the expected content (or a semantically equivalent on-screen answer) is visibly shown. "
-            f"Do NOT use prior knowledge — judge only the rendered pixels.\n"
-            f"Line 1: PASS or FAIL. Line 2: quote the visible evidence."},
-        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}])
-    return _verdict(out)
-
-
-def llm_asked_for_clarification(agent_answer, options, what):
-    """Disambiguation tasks: the agent should ask WHICH one, not silently pick.
-
-    Anchored on the actual ambiguous options so the grader can tell a genuine
-    clarifying question from a confident wrong guess.
-    """
-    if _NO_LLM:
-        return False, "[skipped: --no_llm]"
-    out = _chat([{"role": "user", "content":
-        f"You are a STRICT binary grader.\n"
-        f"The user asked the agent to: {what}\n"
-        f"This is AMBIGUOUS because these options all match: {options}\n"
-        f"Agent's final response: {agent_answer}\n"
-        f"PASS only if the agent recognised the ambiguity and asked the user which one they meant "
-        f"(or explicitly listed the options and requested a choice). "
-        f"FAIL if the agent silently picked one, or acted without asking.\n"
-        f"Line 1: PASS or FAIL. Line 2: one-sentence reason."}])
-    return _verdict(out)
-
-
-# ---------------------------------------------------------------- judge harness + CLI
-class Judge:
-    def __init__(self, task_id, no_llm=False):
-        global _NO_LLM
-        _NO_LLM = bool(no_llm)   # gate the llm_* helpers at the source
-        self.task_id = task_id
-        self.no_llm = no_llm
-        self.ok = True
-        self.reason = ""
-        self.evidence = []
-
-    def check(self, name, cond, evidence="", llm=False):
-        if llm and self.no_llm:
-            self.evidence.append(f"[SKIP] {name} (--no-llm)")
+def clicked_transition(trajectory: dict[str, Any], from_path: str, to_path: str, to_query: dict[str, str] | None = None) -> bool:
+    expected_query = to_query or {}
+    for action, current, following in transition_pairs(trajectory):
+        if action != "click" or normalized_path(current) != normalized_path(from_path):
+            continue
+        if normalized_path(following) == normalized_path(to_path) and query_matches(following, expected_query):
             return True
-        if cond:
-            self.evidence.append(f"[PASS] {name}: {evidence}")
-        else:
-            self.ok = False
+    return False
+
+
+def submitted_from_path(trajectory: dict[str, Any], path: str, destination: str | None = None) -> bool:
+    for action, current, following in transition_pairs(trajectory):
+        if action != "click" or normalized_path(current) != normalized_path(path):
+            continue
+        if destination is None or normalized_path(following) == normalized_path(destination):
+            return True
+    return False
+
+
+def input_values(trajectory: dict[str, Any], path: str | None = None) -> list[str]:
+    values = []
+    for step in trajectory.get("steps") or []:
+        if not isinstance(step, dict) or normalize_text(step.get("action")) not in {"input", "fill", "type", "select"}:
+            continue
+        url = str(step.get("url") or step.get("url_before") or "")
+        if not is_target_url(url, trajectory):
+            continue
+        if path is not None and normalized_path(url) != normalized_path(path):
+            continue
+        params = step.get("params") or {}
+        value = params.get("text", params.get("value", params.get("option", params.get("label")))) if isinstance(params, dict) else None
+        if value is not None:
+            values.append(str(value))
+    return values
+
+
+def entered_text(trajectory: dict[str, Any], expected: str, path: str | None = None) -> bool:
+    expected_normalized = normalize_text(expected)
+    return any(normalize_text(value) == expected_normalized for value in input_values(trajectory, path))
+
+
+def last_entered_email(trajectory: dict[str, Any], path: str = "/login") -> str:
+    emails = [normalize_text(value) for value in input_values(trajectory, path) if re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", value.strip())]
+    return emails[-1] if emails else ""
+
+
+def login_submitted_as(trajectory: dict[str, Any], email: str) -> bool:
+    return (
+        visited_path(trajectory, "/login")
+        and last_entered_email(trajectory) == normalize_text(email)
+        and entered_text(trajectory, "TestPass123!", "/login")
+        and submitted_from_path(trajectory, "/login")
+    )
+
+
+NEGATION_WORDS = {"not", "no", "never", "without", "isn't", "isnt", "wasn't", "wasnt", "doesn't", "doesnt", "didn't", "didnt"}
+
+
+def _negated_at(text: str, start: int) -> bool:
+    clause = re.split(r"[.!?;:\n]+|\b(?:and|but|however|instead)\b", text[:start])[-1]
+    words = re.findall(r"[a-z0-9]+(?:['’][a-z]+)?", clause)
+    return any(word in NEGATION_WORDS for word in words)
+
+
+def _denied_after(text: str, end: int) -> bool:
+    suffix = re.sub(r"^\s*[-—–,:;!?]*\s*", "", text[end:])
+    return re.match(r"(?:(?:is|was|does|did|are|were)\s+)?(?:not|never|no)\b|(?:isn't|isnt|wasn't|wasnt|doesn't|doesnt|didn't|didnt|aren't|arent|weren't|werent)\b", suffix) is not None
+
+
+def affirmative_contains(text: Any, expected: Any) -> bool:
+    normalized = normalize_text(text)
+    needle = normalize_text(expected)
+    matches = list(re.finditer(re.escape(needle), normalized))
+    if not needle or not matches:
+        return False
+    match = matches[-1]
+    return not _negated_at(normalized, match.start()) and not _denied_after(normalized, match.end())
+
+
+def contains_all(text: Any, expected: Iterable[Any]) -> bool:
+    return all(affirmative_contains(text, value) for value in expected)
+
+
+def contains_any(text: Any, expected: Iterable[Any]) -> bool:
+    return any(affirmative_contains(text, value) for value in expected)
+
+
+def number_matches(text: Any, value: float, tolerance: float = 0.005) -> list[re.Match[str]]:
+    normalized = normalize_text(text)
+    matches = []
+    for match in re.finditer(r"(?<![a-z0-9])\d[\d,]*(?:\.\d+)?(?![a-z0-9])", normalized):
+        try:
+            observed = float(match.group(0).replace(",", ""))
+        except ValueError:
+            continue
+        if abs(observed - float(value)) <= tolerance and not _negated_at(normalized, match.start()) and not _denied_after(normalized, match.end()):
+            matches.append(match)
+    return matches
+
+
+def has_number(text: Any, value: float, tolerance: float = 0.005) -> bool:
+    return bool(number_matches(text, value, tolerance))
+
+
+def has_money(text: Any, amount: float) -> bool:
+    return has_number(text, round(float(amount), 2), 0.005)
+
+
+def number_bound_to(text: Any, value: float, labels: Sequence[str], distance: int = 120) -> bool:
+    normalized = normalize_text(text)
+    for match in number_matches(normalized, value):
+        left = max(0, match.start() - distance)
+        right = min(len(normalized), match.end() + distance)
+        window = normalized[left:right]
+        if any(normalize_text(label) in window for label in labels):
+            return True
+    return False
+
+
+def claims_relation(text: Any, winner_labels: Sequence[str], loser_labels: Sequence[str], relation_words: Sequence[str]) -> bool:
+    normalized = normalize_text(text)
+    if not any(affirmative_contains(normalized, label) for label in winner_labels):
+        return False
+    winner_positions = [normalized.rfind(normalize_text(label)) for label in winner_labels if normalize_text(label) in normalized]
+    loser_positions = [normalized.rfind(normalize_text(label)) for label in loser_labels if normalize_text(label) in normalized]
+    relation_positions = [normalized.rfind(normalize_text(word)) for word in relation_words if normalize_text(word) in normalized]
+    if not winner_positions or not relation_positions:
+        return False
+    winner = max(winner_positions)
+    relation = min(relation_positions, key=lambda position: abs(position - winner))
+    if abs(relation - winner) > 160 or _negated_at(normalized, relation):
+        return False
+    if loser_positions:
+        loser = min(loser_positions, key=lambda position: abs(position - relation))
+        if loser < relation < winner and any(word in normalized[loser:winner] for word in ("less", "lower", "lowest", "higher")):
+            return False
+    return True
+
+
+def fetch_db(container: str, kind: str) -> str:
+    if kind not in {"instance", "instance_seed"}:
+        raise ValueError(f"unsupported DB kind: {kind}")
+    handle, destination = tempfile.mkstemp(prefix=f"target_{kind}_", suffix=".db")
+    os.close(handle)
+    source = f"{container}:/opt/WebSyn/{SITE}/{kind}/{SITE}.db"
+    result = subprocess.run(["docker", "cp", source, destination], capture_output=True, text=True, check=False)
+    if result.returncode:
+        Path(destination).unlink(missing_ok=True)
+        raise RuntimeError(result.stderr.strip() or f"could not copy {source}")
+    return destination
+
+
+def resolve_db(explicit: str | None, container: str, kind: str) -> str | None:
+    if explicit:
+        return explicit if Path(explicit).is_file() else None
+    try:
+        return fetch_db(container, kind)
+    except (OSError, RuntimeError):
+        return None
+
+
+def db_query(path: str, sql: str, params: Sequence[Any] = ()) -> list[sqlite3.Row]:
+    connection = sqlite3.connect(path)
+    connection.row_factory = sqlite3.Row
+    try:
+        return connection.execute(sql, params).fetchall()
+    finally:
+        connection.close()
+
+
+def table_snapshot(path: str, table: str) -> list[tuple[Any, ...]]:
+    rows = db_query(path, f'SELECT * FROM "{table}" ORDER BY rowid')
+    return [tuple(row) for row in rows]
+
+
+def database_tables(path: str) -> list[str]:
+    rows = db_query(path, "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name")
+    return [str(row["name"]) for row in rows]
+
+
+def changed_tables(initial_db: str, after_db: str) -> set[str]:
+    initial_tables = database_tables(initial_db)
+    after_tables = database_tables(after_db)
+    if initial_tables != after_tables:
+        return {"<schema>"}
+    return {table for table in initial_tables if table_snapshot(initial_db, table) != table_snapshot(after_db, table)}
+
+
+def database_unchanged(initial_db: str | None, after_db: str | None) -> bool:
+    return bool(initial_db and after_db and not changed_tables(initial_db, after_db))
+
+
+def row_dicts(path: str, sql: str, params: Sequence[Any] = ()) -> list[dict[str, Any]]:
+    return [dict(row) for row in db_query(path, sql, params)]
+
+
+def user_id(path: str, email: str) -> int | None:
+    rows = db_query(path, "SELECT id FROM users WHERE lower(email)=lower(?)", (email,))
+    return int(rows[0]["id"]) if rows else None
+
+
+def cart_snapshot(path: str, email: str) -> list[dict[str, Any]]:
+    return row_dicts(path, "SELECT c.id,p.sku,c.quantity,c.fulfillment_method,c.store_id,c.delivery_option_id,c.protection_plan_id,c.created_at FROM cart_items c JOIN users u ON u.id=c.user_id JOIN products p ON p.id=c.product_id WHERE lower(u.email)=lower(?) ORDER BY c.id", (email,))
+
+
+def wishlist_snapshot(path: str, email: str) -> list[dict[str, Any]]:
+    return row_dicts(path, "SELECT w.id,p.sku,w.created_at FROM wishlist_items w JOIN users u ON u.id=w.user_id JOIN products p ON p.id=w.product_id WHERE lower(u.email)=lower(?) ORDER BY w.id", (email,))
+
+
+def orders_snapshot(path: str, email: str) -> list[dict[str, Any]]:
+    return row_dicts(path, "SELECT o.* FROM orders o JOIN users u ON u.id=o.user_id WHERE lower(u.email)=lower(?) ORDER BY o.id", (email,))
+
+
+def order_items(path: str, order_number: str) -> list[dict[str, Any]]:
+    return row_dicts(path, "SELECT oi.*,p.sku FROM order_items oi JOIN orders o ON o.id=oi.order_id LEFT JOIN products p ON p.id=oi.product_id WHERE o.order_number=? ORDER BY oi.id", (order_number,))
+
+
+def check_common(judge: "Judge", trajectory: dict[str, Any], task_id: str) -> None:
+    judge.check("task_id_matches", str(trajectory.get("task_id") or "") == task_id, f"observed={trajectory.get('task_id')!r}")
+    judge.check("final_answer_nonempty", bool(final_answer(trajectory)), repr(final_answer(trajectory)))
+    judge.check("start_url_is_target", is_target_url(str(trajectory.get("start_url") or ""), trajectory), f"start_url={trajectory.get('start_url')!r}")
+
+
+class Judge:
+    def __init__(self, task_id: str):
+        self.task_id = task_id
+        self.passed = True
+        self.reason = ""
+        self.evidence: list[str] = []
+
+    def check(self, name: str, condition: bool, evidence: str = "") -> bool:
+        self.evidence.append(f"[{'PASS' if condition else 'FAIL'}] {name}: {evidence}")
+        if not condition:
+            self.passed = False
             if not self.reason:
-                self.reason = name   # record the FIRST failing check
-            self.evidence.append(f"[FAIL] {name}: {evidence}")
-        return bool(cond)
+                self.reason = name
+        return bool(condition)
 
-    def emit(self):
-        print(json.dumps({"task_id": self.task_id, "pass": self.ok,
-                          "reason": self.reason, "evidence": self.evidence}, indent=2))
-        sys.exit(0 if self.ok else 1)
+    def emit(self) -> None:
+        print(json.dumps({"task_id": self.task_id, "pass": self.passed, "reason": self.reason, "evidence": self.evidence}, ensure_ascii=False, indent=2))
+        raise SystemExit(0 if self.passed else 1)
 
 
-def parse_args():
-    @dataclass
-    class VerifyArgs:
-        run_dir: str = ""
-        initial_db: str = ""
-        after_db: str = ""
-        container: str = os.environ.get("WH_CONTAINER", "wh-review")
-        no_llm: bool = False
-
-        def post_process(self):
-            if not self.run_dir:
-                raise SystemExit("--run_dir is required")
-    return sap.parse_args(VerifyArgs)
+def fail_closed(task_id: str, reason: str, detail: str) -> None:
+    print(json.dumps({"task_id": task_id, "pass": False, "reason": reason, "infra_error": True, "evidence": [f"[FAIL] {reason}: {detail}"]}, ensure_ascii=False, indent=2))
+    raise SystemExit(1)

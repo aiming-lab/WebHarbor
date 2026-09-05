@@ -1,83 +1,34 @@
 #!/usr/bin/env python3
-"""Deterministic verifier for Target--12 (stateful: add to wish list).
+from verify_lib import (
+    Judge, changed_tables, check_common, clicked_transition, contains_all,
+    final_answer, load_run, login_submitted_as, parse_args, resolve_db,
+    submitted_from_path, visited_in_order, wishlist_snapshot,
+)
 
-Sign in as alice.j@test.com, add the Colgate Total Active Prevention Whitening
-Toothpaste to the wish list, then report the item shown at the BOTTOM of it.
-
-Ground truth (frozen here, never read from tasks.jsonl):
-  SKU TGT1012287965 (the toothpaste being added).
-  The wish list renders newest-first, so the bottom row is the OLDEST entry:
-  TGT84640745, "Organic Mini Sandwich Cheddar Cheese Crackers - 8oz/8ct".
-  The newly added toothpaste lands at the TOP, not the bottom.
-
-The task asks for the bottom item rather than a count: the account page already
-prints "Wishlist items N", so a count question would have been answerable
-without opening the list. Naming the bottom row requires reading it.
-
-The wish-list route is a TOGGLE, so a double submit would silently undo the
-add. Asserting the final membership plus an exact +1 delta catches that.
-"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (load_run, final_answer, last_shot, visited_product,
-                        navigated_to, contains_any, resolve_db, wishlist_skus,
-                        llm_screenshot_shows, Judge, parse_args)
-
+TASK_ID = "Target--12"
 EMAIL = "alice.j@test.com"
 SKU = "TGT1012287965"
-BOTTOM_SKU = "TGT84640745"
+PRODUCT_PATH = f"/product/{SKU}"
+BOTTOM_TOKENS = ("Organic Mini Sandwich", "Cheddar Cheese Crackers")
 
 
-def main():
-    a = parse_args()
-    j = Judge("Target--12", a.no_llm)
-    t = load_run(a.run_dir)
-    fa = final_answer(t)
-
-    j.check("opened_product_page", visited_product(t, SKU),
-            f"visited /product/{SKU}={visited_product(t, SKU)}")
-    j.check("opened_wishlist", navigated_to(t, "/account/wishlist"),
-            f"visited={navigated_to(t, '/account/wishlist')}")
-
-    initial = resolve_db(a.initial_db, a.container, "instance_seed")
-    after = resolve_db(a.after_db, a.container, "instance")
-    before = wishlist_skus(initial, EMAIL)
-    now = wishlist_skus(after, EMAIL)
-
-    j.check("db_readable", before is not None and now is not None,
-            f"before={before} after={now}")
-
-    if before is not None and now is not None:
-        j.check("product_on_wishlist", SKU in now, f"wishlist after={now}")
-        j.check("wishlist_grew_by_one", len(now) == len(before) + 1,
-                f"before={len(before)} after={len(now)} "
-                f"(a toggled-twice run lands back at {len(before)})")
-        j.check("nothing_else_removed", not set(before) - set(now),
-                f"removed={set(before)-set(now)}")
-        j.check("answer_names_bottom_item",
-                contains_any(fa, ["organic mini sandwich", "cheddar cheese crackers"]),
-                f"expected the oldest entry ({BOTTOM_SKU}) final={fa!r}")
-        # Naming the item it just added means the list was never read.
-        j.check("did_not_name_the_added_item",
-                not contains_any(fa, ["colgate"]) or
-                contains_any(fa, ["organic mini sandwich", "cheddar cheese crackers"]),
-                f"final={fa!r}")
-    else:
-        for name in ("product_on_wishlist", "wishlist_grew_by_one",
-                     "nothing_else_removed", "answer_names_bottom_item",
-                     "did_not_name_the_added_item"):
-            j.check(name, False, "DB unavailable")
-
-    s = last_shot(t)
-    if s:
-        ok, ev = llm_screenshot_shows(s, "the toothpaste on the wish list",
-                                      "the wish list after adding the item")
-        j.check("screenshot_shows_wishlist", ok, ev, llm=True)
-    else:
-        j.check("screenshot_shows_wishlist", False, "no screenshots in run")
-
-    j.emit()
+def main() -> None:
+    args = parse_args(); trajectory = load_run(args.run_dir); answer = final_answer(trajectory); judge = Judge(TASK_ID)
+    check_common(judge, trajectory, TASK_ID)
+    judge.check("login_as_alice", login_submitted_as(trajectory, EMAIL), EMAIL)
+    judge.check("ordered_save_and_wishlist", visited_in_order(trajectory, [("/login", {}), (PRODUCT_PATH, {}), ("/account/wishlist", {})]), "login, product, wishlist")
+    judge.check("product_opened_from_search", clicked_transition(trajectory, "/search", PRODUCT_PATH), "product clicked from search")
+    judge.check("wishlist_form_submitted", submitted_from_path(trajectory, PRODUCT_PATH), "detail-page form submitted")
+    initial = resolve_db(args.initial_db, args.container, "instance_seed"); after = resolve_db(args.after_db, args.container, "instance")
+    readable = bool(initial and after); judge.check("databases_readable", readable, f"initial={initial} after={after}")
+    if readable:
+        before = wishlist_snapshot(initial, EMAIL); now = wishlist_snapshot(after, EMAIL)
+        before_by_id = {row["id"]: row for row in before}; added = [row for row in now if row["id"] not in before_by_id]
+        judge.check("exactly_target_added", len(added) == 1 and added[0]["sku"] == SKU and len(now) == len(before) + 1, repr(added))
+        judge.check("existing_wishlist_intact", all(row in now for row in before), repr(now))
+        judge.check("only_wishlist_changed", changed_tables(initial, after) == {"wishlist_items"}, repr(changed_tables(initial, after)))
+        judge.check("answer_bottom_item", contains_all(answer, BOTTOM_TOKENS), repr(answer))
+    judge.emit()
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

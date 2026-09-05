@@ -21,6 +21,7 @@
             <h3><a href="{{ url_for('product_page', sku=product.sku) }}">{{ product.name }}</a></h3>
             <p>{{ product.price|currency }}</p>
             <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="next" value="{{ request.full_path }}">
               <button class="button button--ghost" type="submit">Remove</button>
             </form>
@@ -28,7 +29,8 @@
         {% endfor %}
       </div>
       {% if spec_rows %}
-        <div class="table-wrap">
+        <p class="table-scroll-hint">Scroll horizontally to compare every product column.</p>
+        <div class="table-wrap" tabindex="0" aria-label="Scrollable product comparison">
           <table class="compare-table">
             <thead>
               <tr>

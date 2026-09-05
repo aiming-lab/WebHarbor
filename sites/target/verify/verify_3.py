@@ -1,54 +1,31 @@
 #!/usr/bin/env python3
-"""Deterministic verifier for Target--3.
+from verify_lib import (
+    Judge, check_common, claims_relation, clicked_transition, contains_any, database_unchanged,
+    final_answer, load_run, number_bound_to, parse_args, resolve_db,
+    visited_in_order,
+)
 
-Compare sodium of Red Baron Pepperoni Classic Crust vs Four Cheese Classic Crust.
-
-Ground truth (frozen here, never read from tasks.jsonl):
-  Pepperoni Classic TGT13376389 = 790mg; Four Cheese Classic TGT13334000 = 710mg.\n  Four Cheese has LESS sodium.
-"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (load_run, final_answer, last_shot, visited_product, navigated_to,
-                        has_number, contains_any, contains_all, resolve_db,
-                        db_unchanged_for, llm_text_match, llm_screenshot_shows,
-                        Judge, parse_args)
+TASK_ID = "Target--3"
+PEPPERONI = "TGT13376389"
+FOUR_CHEESE = "TGT13334000"
+PEPPERONI_PATH = f"/product/{PEPPERONI}"
+FOUR_CHEESE_PATH = f"/product/{FOUR_CHEESE}"
 
 
-def main():
-    a = parse_args()
-    j = Judge("Target--3", a.no_llm)
-    t = load_run(a.run_dir)
-    fa = final_answer(t)
-
-    PEPPERONI, FOURCHEESE = "TGT13376389", "TGT13334000"
-    j.check("opened_pepperoni_page", visited_product(t, PEPPERONI),
-            f"visited={visited_product(t, PEPPERONI)}")
-    j.check("opened_fourcheese_page", visited_product(t, FOURCHEESE),
-            f"visited={visited_product(t, FOURCHEESE)}")
-    j.check("answer_has_both_values", has_number(fa, 790) and has_number(fa, 710),
-            f"final={fa!r}")
-    # The comparison itself must be right, not just the two numbers quoted.
-    j.check("answer_names_four_cheese_as_lower", contains_any(fa, ["four cheese", "4 cheese"]),
-            f"final={fa!r}")
-
-    initial = resolve_db(a.initial_db, a.container, "instance_seed")
-    after = resolve_db(a.after_db, a.container, "instance")
-    unchanged = db_unchanged_for(initial, after, "alice.j@test.com")
-    j.check("read_only_task_left_db_alone", unchanged is True,
-            f"db_unchanged={unchanged}")
-
-    ok, ev = llm_text_match(fa, "Four Cheese Classic Crust has less sodium: 710mg vs 790mg for Pepperoni Classic Crust", "Which of the two Red Baron Classic Crust pizzas has less sodium, and what are the values?")
-    j.check("answer_matches_ground_truth", ok, ev, llm=True)
-
-    s = last_shot(t)
-    if s:
-        ok, ev = llm_screenshot_shows(s, "sodium values 790mg and 710mg", "Which of the two Red Baron Classic Crust pizzas has less sodium, and what are the values?")
-        j.check("screenshot_shows_answer", ok, ev, llm=True)
-    else:
-        j.check("screenshot_shows_answer", False, "no screenshots in run")
-
-    j.emit()
+def main() -> None:
+    args = parse_args(); trajectory = load_run(args.run_dir); answer = final_answer(trajectory); judge = Judge(TASK_ID)
+    check_common(judge, trajectory, TASK_ID)
+    search_to_pepperoni = visited_in_order(trajectory, [("/search", {"q": "Red Baron"}), (PEPPERONI_PATH, {})])
+    search_to_cheese = visited_in_order(trajectory, [("/search", {"q": "Red Baron"}), (FOUR_CHEESE_PATH, {})])
+    judge.check("search_precedes_both_products", search_to_pepperoni and search_to_cheese, "Red Baron search before both details")
+    judge.check("clicked_both_product_results", clicked_transition(trajectory, "/search", PEPPERONI_PATH) and clicked_transition(trajectory, "/search", FOUR_CHEESE_PATH), "both products clicked from results")
+    judge.check("pepperoni_value_bound", number_bound_to(answer, 790, ("pepperoni",)), repr(answer))
+    judge.check("four_cheese_value_bound", number_bound_to(answer, 710, ("four cheese",)), repr(answer))
+    judge.check("four_cheese_identified_lower", claims_relation(answer, ("four cheese",), ("pepperoni",), ("less sodium", "lower", "less")), repr(answer))
+    judge.check("answer_uses_sodium_unit", contains_any(answer, ("mg", "milligram", "milligrams")), repr(answer))
+    initial = resolve_db(args.initial_db, args.container, "instance_seed"); after = resolve_db(args.after_db, args.container, "instance")
+    judge.check("read_only_database_unchanged", database_unchanged(initial, after), "complete database comparison")
+    judge.emit()
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

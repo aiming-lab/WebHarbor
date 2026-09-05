@@ -14,17 +14,12 @@
       </div>
       <div class="price-row price-row--large">
         <strong>{{ product.price|currency }}</strong>
-        {% if product.list_price > product.price %}
+        {% if product.discount_percent() > 0 %}
           <span class="price-row__strike">{{ product.list_price|currency }}</span>
           <span class="price-row__save">Save {{ product.discount_percent() }}%</span>
         {% endif %}
       </div>
       <p class="product-summary">{{ product.short_description }}</p>
-      <ul class="bullet-list">
-        {% for bullet in product.highlights() %}
-          <li>{{ bullet }}</li>
-        {% endfor %}
-      </ul>
       <div class="tag-row">
         <span>{{ product.availability_status }}</span>
         {% if product.pickup_eligible %}<span>Store pickup</span>{% endif %}
@@ -32,8 +27,25 @@
       </div>
       <div class="inline-actions">
         <form action="{{ url_for('add_to_cart') }}" method="post" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="sku" value="{{ product.sku }}">
           <input type="hidden" name="next" value="{{ request.full_path }}">
+          {% if product.delivery_eligible or product.pickup_eligible %}
+            <label>Fulfillment
+              <select name="fulfillment_method">
+                {% if product.delivery_eligible %}<option value="delivery">Delivery</option>{% endif %}
+                {% if product.pickup_eligible %}<option value="pickup">Store pickup</option>{% endif %}
+              </select>
+            </label>
+          {% endif %}
+          {% if product.protection_plans %}
+            <label>Protection plan
+              <select name="protection_plan_id">
+                <option value="">No plan</option>
+                {% for plan in product.protection_plans %}<option value="{{ plan.id }}">{{ plan.name }} — {{ plan.price|currency }}</option>{% endfor %}
+              </select>
+            </label>
+          {% endif %}
           <label>Qty
             <select name="quantity">
               {% for qty in range(1, 5) %}
@@ -41,14 +53,16 @@
               {% endfor %}
             </select>
           </label>
-          <button class="button" type="submit">Add to cart</button>
+          <button class="button" type="submit" {% if not product.delivery_eligible and not product.pickup_eligible %}disabled{% endif %}>Add to cart</button>
         </form>
         <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="next" value="{{ request.full_path }}">
           <button class="button button--secondary" type="submit">{% if product.sku in compare_skus %}Remove from compare{% else %}Add to compare{% endif %}</button>
         </form>
         {% if current_user.is_authenticated %}
           <form action="{{ url_for('toggle_wishlist', sku=product.sku) }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="next" value="{{ request.full_path }}">
             <button class="button button--ghost" type="submit">{% if product.id in wishlist_product_ids %}Remove wishlist{% else %}Save to wishlist{% endif %}</button>
           </form>
@@ -59,22 +73,26 @@
       <h3>Pickup and delivery</h3>
       <p class="buybox-price">{{ product.price|currency }}</p>
       <ul class="bullet-list bullet-list--compact">
-        <li>Free pickup or delivery available</li>
+        {% if product.pickup_eligible %}<li>Store pickup available</li>{% endif %}
+        {% if product.delivery_eligible %}<li>Delivery available</li>{% endif %}
+        {% if not product.pickup_eligible and not product.delivery_eligible %}<li>Currently unavailable for pickup and delivery</li>{% endif %}
         <li>Fast checkout with Target Circle</li>
-        <li>Protection plans available at checkout</li>
+        {% if product.protection_plans %}<li>Protection plans can be selected before adding to cart</li>{% endif %}
       </ul>
-      <div class="buybox-panel">
-        {% for row in inventory_rows[:3] %}
-          <div class="inventory-row">
-            <strong>{{ row.store.name }}</strong>
-            <span>{{ row.quantity }} in local stock | {{ row.pickup_window }}</span>
-          </div>
-        {% endfor %}
-      </div>
+      {% if product.pickup_eligible %}
+        <div class="buybox-panel">
+          {% for row in inventory_rows[:3] %}
+            <div class="inventory-row">
+              <strong>{{ row.store.name }}</strong>
+              <span>{{ row.quantity }} available | {{ row.pickup_window }}</span>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
     </aside>
   </section>
 
-  <section class="shell page-section dual-grid">
+  <section class="shell page-section {% if product.protection_plans %}dual-grid{% endif %}">
     <div class="panel">
       <div class="section-heading">
         <div>
@@ -82,6 +100,16 @@
           <h2>What to compare</h2>
         </div>
       </div>
+      {% if product.highlights() %}
+        <div class="spec-section">
+          <h3>Product highlights</h3>
+          <ul class="bullet-list">
+            {% for bullet in product.highlights() %}
+              {% if bullet|trim != product.short_description|trim %}<li>{{ bullet }}</li>{% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
       {% for section in product.specs() %}
         <div class="spec-section">
           <h3>{{ section['title'] }}</h3>
@@ -94,6 +122,7 @@
         </div>
       {% endfor %}
     </div>
+    {% if product.protection_plans %}
     <div class="panel">
       <div class="section-heading">
         <div>
@@ -116,6 +145,7 @@
         {% endfor %}
       </div>
     </div>
+    {% endif %}
   </section>
 
   <section class="shell page-section dual-grid">
@@ -152,6 +182,7 @@
         <details class="review-form">
           <summary>Write a review</summary>
           <form method="post" action="{{ url_for('submit_review', sku=product.sku) }}" class="filter-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <label>Rating
               <select name="rating" required>
                 <option value="">Choose a rating</option>

@@ -3,7 +3,7 @@
     <article class="product-card">
       <a href="{{ url_for('product_page', sku=product.sku) }}" class="product-card__image-wrap">
         <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}" class="product-card__image">
-        {% if product.deal_badge %}
+        {% if product.deal_badge and product.discount_percent() > 0 %}
           <span class="product-card__badge">{{ product.deal_badge }}</span>
         {% endif %}
       </a>
@@ -19,7 +19,7 @@
         </div>
         <div class="price-row">
           <strong>{{ product.price|currency }}</strong>
-          {% if product.list_price > product.price %}
+          {% if product.discount_percent() > 0 %}
             <span class="price-row__strike">{{ product.list_price|currency }}</span>
             <span class="price-row__save">Save {{ product.discount_percent() }}%</span>
           {% endif %}
@@ -33,6 +33,7 @@
       <div class="product-card__actions">
         <a class="button button--secondary" href="{{ url_for('product_page', sku=product.sku) }}">View details</a>
         <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="next" value="{{ request.full_path }}">
           <button class="button button--ghost" type="submit">Compare</button>
         </form>

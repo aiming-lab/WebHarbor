@@ -29,7 +29,10 @@
           <a href="{{ url_for('support_page') }}">Support</a>
           {% if current_user.is_authenticated %}
             <a href="{{ url_for('account') }}">Account</a>
-            <a href="{{ url_for('logout') }}">Sign out</a>
+            <form class="header-action-form" method="post" action="{{ url_for('logout') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit">Sign out</button>
+            </form>
           {% else %}
             <a href="{{ url_for('login') }}">Sign in</a>
           {% endif %}
@@ -101,18 +104,18 @@
         <div>
           <h4>Company</h4>
           <ul>
-            <li><a href="#">About us</a></li>
-            <li><a href="#">Careers</a></li>
-            <li><a href="#">Investor relations</a></li>
+            <li><a href="{{ url_for('info_page', page_slug='about') }}">About us</a></li>
+            <li><a href="{{ url_for('info_page', page_slug='careers') }}">Careers</a></li>
+            <li><a href="{{ url_for('info_page', page_slug='investors') }}">Investor relations</a></li>
           </ul>
         </div>
         <div>
           <h4>Services</h4>
           <ul>
-            <li><a href="#">Order Pickup</a></li>
-            <li><a href="#">Drive Up</a></li>
-            <li><a href="#">Same Day Delivery</a></li>
-            <li><a href="#">Target Circle</a></li>
+            <li><a href="{{ url_for('support_article_page', article_slug='order-pickup-and-drive-up') }}">Order Pickup</a></li>
+            <li><a href="{{ url_for('support_article_page', article_slug='order-pickup-and-drive-up') }}">Drive Up</a></li>
+            <li><a href="{{ url_for('support_article_page', article_slug='same-day-delivery') }}">Same Day Delivery</a></li>
+            <li><a href="{{ url_for('support_article_page', article_slug='target-circle-rewards') }}">Target Circle</a></li>
           </ul>
         </div>
         <div>

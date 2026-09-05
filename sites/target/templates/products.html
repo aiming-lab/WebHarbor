@@ -8,10 +8,12 @@
         <h1>{{ page_title }}</h1>
         <p>{{ page_description }}</p>
       </div>
-      <div class="result-count">{{ products|length }} items</div>
+      <div class="result-count">{{ pagination.total if pagination else products|length }} items</div>
     </div>
     <div class="catalog-layout">
       <aside class="filter-card">
+        <details class="filter-disclosure" open>
+          <summary>Filters and sorting</summary>
         <form method="get" class="filter-form">
           {% if category %}
             <input type="hidden" name="category" value="{{ category.slug }}">
@@ -63,15 +65,12 @@
             Deals only
           </label>
           <label class="checkbox-row">
-            <input type="checkbox" name="pickup" value="1" {% if request.args.get('pickup') == '1' %}checked{% endif %}>
-            Pickup eligible only
-          </label>
-          <label class="checkbox-row">
             <input type="checkbox" name="delivery" value="1" {% if request.args.get('delivery') == '1' %}checked{% endif %}>
             Delivery eligible only
           </label>
           <button class="button" type="submit">Apply filters</button>
         </form>
+        </details>
       </aside>
       <div>
         {% if products %}

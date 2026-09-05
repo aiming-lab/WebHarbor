@@ -23,6 +23,7 @@
           </div>
         {% endfor %}
         <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <button class="button" type="submit">Place order</button>
         </form>
       </div>
@@ -31,9 +32,15 @@
         <div class="summary-row"><span>Fulfillment</span><strong>{{ summary.mode|title }}</strong></div>
         {% if summary.delivery_option %}
           <div class="summary-row"><span>Delivery</span><strong>{{ summary.delivery_option.title }}</strong></div>
+          <div class="delivery-address">
+            <span>Shipping to</span>
+            <strong>{{ checkout.get('shipping_name') }}</strong>
+            <span>{{ checkout.get('shipping_street') }}, {{ checkout.get('shipping_city') }}, {{ checkout.get('shipping_state') }} {{ checkout.get('shipping_zip') }}</span>
+          </div>
         {% endif %}
         {% if summary.store %}
           <div class="summary-row"><span>Pickup store</span><strong>{{ summary.store.name }}</strong></div>
+          <div class="summary-row"><span>Pickup time</span><strong>{{ checkout.get('slot_window') }}</strong></div>
         {% endif %}
         <div class="summary-row"><span>Subtotal</span><strong>{{ summary.subtotal|currency }}</strong></div>
         <div class="summary-row"><span>Shipping</span><strong>{{ summary.shipping_fee|currency }}</strong></div>

@@ -1,50 +1,26 @@
 #!/usr/bin/env python3
-"""Deterministic verifier for Target--4.
+from verify_lib import (
+    Judge, affirmative_contains, check_common, clicked_transition, contains_any,
+    database_unchanged, final_answer, load_run, number_bound_to, parse_args,
+    resolve_db, visited_in_order,
+)
 
-Report Mr. Coffee 5 Cup Switch percent-recommended and its highest-scoring attribute.
-
-Ground truth (frozen here, never read from tasks.jsonl):
-  SKU TGT91986267, 74% would recommend.\n  Secondary ratings: quality 4.1, design 4.2, ease of use 4.5, easy to clean 4.6, value 4.3\n  -> highest is 'easy to clean' (4.6).
-"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (load_run, final_answer, last_shot, visited_product, navigated_to,
-                        has_number, contains_any, contains_all, resolve_db,
-                        db_unchanged_for, llm_text_match, llm_screenshot_shows,
-                        Judge, parse_args)
+TASK_ID = "Target--4"
+SKU = "TGT91986267"
+PRODUCT_PATH = f"/product/{SKU}"
 
 
-def main():
-    a = parse_args()
-    j = Judge("Target--4", a.no_llm)
-    t = load_run(a.run_dir)
-    fa = final_answer(t)
-
-    SKU = "TGT91986267"
-    j.check("opened_product_page", visited_product(t, SKU),
-            f"visited={visited_product(t, SKU)}")
-    j.check("answer_has_percent", has_number(fa, 74), f"final={fa!r}")
-    j.check("answer_names_easy_to_clean", contains_any(fa, ["easy to clean", "easy-to-clean"]),
-            f"final={fa!r}")
-
-    initial = resolve_db(a.initial_db, a.container, "instance_seed")
-    after = resolve_db(a.after_db, a.container, "instance")
-    unchanged = db_unchanged_for(initial, after, "alice.j@test.com")
-    j.check("read_only_task_left_db_alone", unchanged is True,
-            f"db_unchanged={unchanged}")
-
-    ok, ev = llm_text_match(fa, "74% would recommend; the highest rated attribute is 'easy to clean' at 4.6 out of 5", "What percent of guests recommend the Mr. Coffee 5 Cup Switch, and which attribute scored highest?")
-    j.check("answer_matches_ground_truth", ok, ev, llm=True)
-
-    s = last_shot(t)
-    if s:
-        ok, ev = llm_screenshot_shows(s, "74% would recommend and an easy to clean rating", "What percent of guests recommend the Mr. Coffee 5 Cup Switch, and which attribute scored highest?")
-        j.check("screenshot_shows_answer", ok, ev, llm=True)
-    else:
-        j.check("screenshot_shows_answer", False, "no screenshots in run")
-
-    j.emit()
+def main() -> None:
+    args = parse_args(); trajectory = load_run(args.run_dir); answer = final_answer(trajectory); judge = Judge(TASK_ID)
+    check_common(judge, trajectory, TASK_ID)
+    judge.check("ordered_search_to_product", visited_in_order(trajectory, [("/search", {}), (PRODUCT_PATH, {})]), "search precedes product")
+    judge.check("clicked_product_result", clicked_transition(trajectory, "/search", PRODUCT_PATH), "product opened from results")
+    judge.check("recommendation_percent_bound", number_bound_to(answer, 74, ("recommend", "guests")), repr(answer))
+    judge.check("highest_attribute", affirmative_contains(answer, "easy to clean"), repr(answer))
+    judge.check("answer_uses_percentage_unit", contains_any(answer, ("%", "percent", "percentage")), repr(answer))
+    initial = resolve_db(args.initial_db, args.container, "instance_seed"); after = resolve_db(args.after_db, args.container, "instance")
+    judge.check("read_only_database_unchanged", database_unchanged(initial, after), "complete database comparison")
+    judge.emit()
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

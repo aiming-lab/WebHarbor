@@ -13,75 +13,33 @@
       </div>
       <div class="stats-grid">
         <article class="stat-card">
-          <span>Reward points</span>
-          <strong>{{ reward_account.points_balance if reward_account else reward_points }}</strong>
+          <span>Orders</span>
+          <strong>{{ order_count }}</strong>
+          <a href="{{ url_for('account_orders') }}">Open order history</a>
         </article>
         <article class="stat-card">
           <span>Wishlist items</span>
           <strong>{{ current_user.wishlist_items|length }}</strong>
+          <a href="{{ url_for('account_wishlist') }}">Open wishlist</a>
         </article>
         <article class="stat-card">
           <span>Open support tickets</span>
-          <strong>{{ recent_tickets|length }}</strong>
+          <strong>{{ open_ticket_count }}</strong>
+          <a href="{{ url_for('account_support') }}">Open support history</a>
         </article>
       </div>
-
-      <div class="dual-grid">
-        <div class="panel">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Recent orders</p>
-              <h2>Latest activity</h2>
-            </div>
-            <a href="{{ url_for('account_orders') }}">View all</a>
-          </div>
-          {% for order in recent_orders %}
-            <a class="order-row" href="{{ url_for('order_detail', order_number=order.order_number) }}">
-              <div>
-                <strong>{{ order.order_number }}</strong>
-                <p>{{ order.status }} | {{ order.placed_at.strftime('%b %d, %Y') }}</p>
-              </div>
-              <span>{{ order.total|currency }}</span>
-            </a>
-          {% endfor %}
-        </div>
-        <div class="panel">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Wishlist preview</p>
-              <h2>Saved products</h2>
-            </div>
-            <a href="{{ url_for('account_wishlist') }}">View wishlist</a>
-          </div>
-          {% for item in wishlist_preview %}
-            <a class="mini-product" href="{{ url_for('product_page', sku=item.product.sku) }}">
-              <img src="{{ url_for('static', filename=item.product.image_path) }}" alt="{{ item.product.name }}">
-              <div>
-                <strong>{{ item.product.name }}</strong>
-                <p>{{ item.product.price|currency }}</p>
-              </div>
-            </a>
-          {% endfor %}
-        </div>
-      </div>
-
-      <div class="panel">
-        <div class="section-heading">
-          <div>
-            <p class="eyebrow">Support history</p>
-            <h2>Recent tickets</h2>
-          </div>
-        </div>
-        {% for ticket in recent_tickets %}
-          <article class="ticket-card">
-            <strong>{{ ticket.subject }}</strong>
-            <p>{{ ticket.summary }}</p>
-            <span>{{ ticket.channel }} | {{ ticket.status }}</span>
-          </article>
-        {% endfor %}
+      <div class="account-link-grid">
+        <a class="panel account-link-card" href="{{ url_for('account_rewards') }}">
+          <p class="eyebrow">Target Circle</p>
+          <h2>Rewards dashboard</h2>
+          <p>View your points balance, member ID, certificates, and activity.</p>
+        </a>
+        <a class="panel account-link-card" href="{{ url_for('account_edit') }}">
+          <p class="eyebrow">Profile</p>
+          <h2>Account settings</h2>
+          <p>Update your contact details and preferred store.</p>
+        </a>
       </div>
     </div>
   </section>
 {% endblock %}
-
-

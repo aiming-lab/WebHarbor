@@ -1,54 +1,31 @@
 #!/usr/bin/env python3
-"""Deterministic verifier for Target--5.
+from verify_lib import (
+    Judge, affirmative_contains, check_common, clicked_transition, contains_all,
+    database_unchanged, final_answer, has_number, load_run,
+    parse_args, resolve_db, visited_in_order, visited_query,
+)
 
-Report the price gap between the Sony WH-1000XM6 3-year and 2-year protection plans, and which covers accidental handling.
-
-Ground truth (frozen here, never read from tasks.jsonl):
-  SKU TGT94760871. 2-year $36.72 (no accidental), 3-year $59.67 (accidental).\n  Difference = $22.95; the 3-year plan covers accidental handling.
-"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (load_run, final_answer, last_shot, visited_product, navigated_to,
-                        has_number, contains_any, contains_all, resolve_db,
-                        db_unchanged_for, llm_text_match, llm_screenshot_shows,
-                        Judge, parse_args)
+TASK_ID = "Target--5"
+SKU = "TGT94760871"
+PRODUCT_PATH = f"/product/{SKU}"
 
 
-def main():
-    a = parse_args()
-    j = Judge("Target--5", a.no_llm)
-    t = load_run(a.run_dir)
-    fa = final_answer(t)
-
-    SKU = "TGT94760871"
-    j.check("opened_product_page", visited_product(t, SKU),
-            f"visited={visited_product(t, SKU)}")
-    # Accept either the delta or both plan prices stated.
-    delta_ok = has_number(fa, 22.95)
-    both_ok = has_number(fa, 36.72) and has_number(fa, 59.67)
-    j.check("answer_has_price_gap", delta_ok or both_ok,
-            f"delta={delta_ok} both_prices={both_ok} final={fa!r}")
-    j.check("answer_names_three_year_plan", contains_any(fa, ["3-year", "3 year", "three-year", "three year"]),
-            f"final={fa!r}")
-
-    initial = resolve_db(a.initial_db, a.container, "instance_seed")
-    after = resolve_db(a.after_db, a.container, "instance")
-    unchanged = db_unchanged_for(initial, after, "alice.j@test.com")
-    j.check("read_only_task_left_db_alone", unchanged is True,
-            f"db_unchanged={unchanged}")
-
-    ok, ev = llm_text_match(fa, "The 3-year plan costs $22.95 more ($59.67 vs $36.72) and it is the plan that covers accidental handling", "How much more is the 3-year protection plan than the 2-year, and which covers accidental handling?")
-    j.check("answer_matches_ground_truth", ok, ev, llm=True)
-
-    s = last_shot(t)
-    if s:
-        ok, ev = llm_screenshot_shows(s, "two protection plan prices", "How much more is the 3-year protection plan than the 2-year, and which covers accidental handling?")
-        j.check("screenshot_shows_answer", ok, ev, llm=True)
-    else:
-        j.check("screenshot_shows_answer", False, "no screenshots in run")
-
-    j.emit()
+def main() -> None:
+    args = parse_args(); trajectory = load_run(args.run_dir); answer = final_answer(trajectory); judge = Judge(TASK_ID)
+    check_common(judge, trajectory, TASK_ID)
+    filtered = visited_query(trajectory, "/category/electronics", {"brand": "sony"})
+    judge.check("electronics_sony_filter", filtered, "Electronics listing with Sony brand")
+    judge.check("filtered_listing_precedes_product", visited_in_order(trajectory, [("/category/electronics", {"brand": "sony"}), (PRODUCT_PATH, {})]), "filtered listing before detail")
+    judge.check("clicked_product_from_electronics", clicked_transition(trajectory, "/category/electronics", PRODUCT_PATH), "product opened from listing")
+    difference = has_number(answer, 22.95)
+    both_prices = has_number(answer, 36.72) and has_number(answer, 59.67)
+    judge.check("answer_price_comparison", difference or both_prices, repr(answer))
+    plan_named = contains_all(answer, ("3-year",)) or contains_all(answer, ("longer plan",))
+    coverage = plan_named and affirmative_contains(answer, "accidental")
+    judge.check("three_year_accidental_coverage", coverage, repr(answer))
+    initial = resolve_db(args.initial_db, args.container, "instance_seed"); after = resolve_db(args.after_db, args.container, "instance")
+    judge.check("read_only_database_unchanged", database_unchanged(initial, after), "complete database comparison")
+    judge.emit()
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

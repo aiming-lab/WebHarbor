@@ -43,9 +43,15 @@
         <div class="summary-row"><span>Payment</span><strong>{{ order.payment_brand }} ending {{ order.payment_last4 }}</strong></div>
         {% if order.store %}
           <div class="summary-row"><span>Pickup store</span><strong>{{ order.store.name }}</strong></div>
+          <div class="summary-row"><span>Pickup time</span><strong>{{ order.pickup_slot_label }}</strong></div>
         {% endif %}
         {% if order.delivery_option %}
           <div class="summary-row"><span>Delivery</span><strong>{{ order.delivery_option.title }}</strong></div>
+          <div class="delivery-address">
+            <span>Shipping to</span>
+            <strong>{{ order.shipping_name }}</strong>
+            <span>{{ order.shipping_street }}, {{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_zip }}</span>
+          </div>
         {% endif %}
       </aside>
     </div>

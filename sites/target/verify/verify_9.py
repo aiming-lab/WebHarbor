@@ -1,47 +1,24 @@
 #!/usr/bin/env python3
-"""Deterministic verifier for Target--9.
+from verify_lib import (
+    Judge, check_common, clicked_transition, database_unchanged, final_answer,
+    load_run, login_submitted_as, number_bound_to, parse_args, resolve_db,
+    visited_in_order,
+)
 
-Sign in as david.k and report the Target Circle points balance.
-
-Ground truth (frozen here, never read from tasks.jsonl):
-  david.k@test.com reward points balance = 2185.
-"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (load_run, final_answer, last_shot, visited_product, navigated_to,
-                        has_number, contains_any, contains_all, resolve_db,
-                        db_unchanged_for, llm_text_match, llm_screenshot_shows,
-                        Judge, parse_args)
+TASK_ID = "Target--9"
+EMAIL = "david.k@test.com"
 
 
-def main():
-    a = parse_args()
-    j = Judge("Target--9", a.no_llm)
-    t = load_run(a.run_dir)
-    fa = final_answer(t)
-
-    j.check("opened_rewards_page", navigated_to(t, "/account/rewards"),
-            f"visited={navigated_to(t, '/account/rewards')}")
-    j.check("answer_has_points", has_number(fa, 2185), f"final={fa!r}")
-
-    initial = resolve_db(a.initial_db, a.container, "instance_seed")
-    after = resolve_db(a.after_db, a.container, "instance")
-    unchanged = db_unchanged_for(initial, after, "david.k@test.com")
-    j.check("read_only_task_left_db_alone", unchanged is True,
-            f"db_unchanged={unchanged}")
-
-    ok, ev = llm_text_match(fa, "2185 points", "How many Target Circle reward points are in the account?")
-    j.check("answer_matches_ground_truth", ok, ev, llm=True)
-
-    s = last_shot(t)
-    if s:
-        ok, ev = llm_screenshot_shows(s, "a points balance of 2185", "How many Target Circle reward points are in the account?")
-        j.check("screenshot_shows_answer", ok, ev, llm=True)
-    else:
-        j.check("screenshot_shows_answer", False, "no screenshots in run")
-
-    j.emit()
+def main() -> None:
+    args = parse_args(); trajectory = load_run(args.run_dir); answer = final_answer(trajectory); judge = Judge(TASK_ID)
+    check_common(judge, trajectory, TASK_ID)
+    judge.check("login_as_david", login_submitted_as(trajectory, EMAIL), EMAIL)
+    judge.check("ordered_login_to_rewards", visited_in_order(trajectory, [("/login", {}), ("/account", {}), ("/account/rewards", {})]), "login, account, rewards")
+    judge.check("clicked_rewards_dashboard", clicked_transition(trajectory, "/account", "/account/rewards"), "Rewards opened from account")
+    judge.check("answer_points_balance", number_bound_to(answer, 2185, ("point", "points", "balance")), repr(answer))
+    initial = resolve_db(args.initial_db, args.container, "instance_seed"); after = resolve_db(args.after_db, args.container, "instance")
+    judge.check("read_only_database_unchanged", database_unchanged(initial, after), "complete database comparison")
+    judge.emit()
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

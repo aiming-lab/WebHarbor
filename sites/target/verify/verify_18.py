@@ -1,84 +1,35 @@
 #!/usr/bin/env python3
-"""Deterministic verifier for Target--18 (stateful: open a support request).
+from verify_lib import (
+    Judge, affirmative_contains, changed_tables, check_common,
+    clicked_transition, entered_text, final_answer, input_values, load_run,
+    login_submitted_as, parse_args, resolve_db, row_dicts,
+    submitted_from_path, visited_in_order,
+)
 
-Sign in as bob.c@test.com, submit a support request with the subject
-"Order arrived damaged" and Email as the contact method, then report its
-status.
-
-Ground truth (frozen here, never read from tasks.jsonl):
-  A new support_tickets row for bob.c@test.com with
-    subject = "Order arrived damaged", channel = "Email", status = "Open".
-  bob.c starts with one seeded ticket, so the count must grow by exactly one.
-
-The subject and channel are dictated by the task, which is what makes this
-checkable: an agent that submits the form with its own wording has not done
-what was asked, even though a ticket exists.
-"""
-import os, sys
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (load_run, final_answer, last_shot, navigated_to,
-                        contains_any, resolve_db, db_query,
-                        llm_screenshot_shows, Judge, parse_args)
-
+TASK_ID = "Target--18"
 EMAIL = "bob.c@test.com"
 SUBJECT = "Order arrived damaged"
-CHANNEL = "Email"
 
 
-def tickets_for(db_path, email):
-    """[(subject, channel, status)] for this account, oldest first."""
-    if not db_path:
-        return None
-    rows = db_query(db_path,
-        "SELECT t.subject, t.channel, t.status FROM support_tickets t "
-        "JOIN users u ON u.id = t.user_id WHERE u.email = ? ORDER BY t.id", (email,))
-    return [tuple(r) for r in rows]
+def main() -> None:
+    args = parse_args(); trajectory = load_run(args.run_dir); answer = final_answer(trajectory); judge = Judge(TASK_ID)
+    check_common(judge, trajectory, TASK_ID)
+    judge.check("login_as_bob", login_submitted_as(trajectory, EMAIL), EMAIL)
+    judge.check("ordered_support_flow", visited_in_order(trajectory, [("/login", {}), ("/support", {}), ("/support/contact", {}), ("/account/support", {})]), "login, support, contact, history")
+    judge.check("clicked_contact_action", clicked_transition(trajectory, "/support", "/support/contact"), "contact form opened from Support")
+    values = input_values(trajectory, "/support/contact")
+    description_present = any(len(value.strip()) >= 10 and value not in {SUBJECT, "Email"} for value in values)
+    judge.check("required_form_values_entered", entered_text(trajectory, SUBJECT, "/support/contact") and entered_text(trajectory, "Email", "/support/contact") and description_present, repr(values))
+    judge.check("support_form_submitted", submitted_from_path(trajectory, "/support/contact", "/account/support"), "contact form submission")
+    initial = resolve_db(args.initial_db, args.container, "instance_seed"); after = resolve_db(args.after_db, args.container, "instance")
+    readable = bool(initial and after); judge.check("databases_readable", readable, f"initial={initial} after={after}")
+    if readable:
+        before = row_dicts(initial, "SELECT t.* FROM support_tickets t JOIN users u ON u.id=t.user_id WHERE lower(u.email)=lower(?) ORDER BY t.id", (EMAIL,)); now = row_dicts(after, "SELECT t.* FROM support_tickets t JOIN users u ON u.id=t.user_id WHERE lower(u.email)=lower(?) ORDER BY t.id", (EMAIL,)); before_ids = {row["id"] for row in before}; created = [row for row in now if row["id"] not in before_ids]
+        exact = len(created) == 1 and created[0]["subject"] == SUBJECT and created[0]["channel"] == "Email" and created[0]["status"] == "Open" and len(created[0]["summary"].strip()) >= 10
+        judge.check("one_exact_new_ticket", exact and len(now) == len(before) + 1 and all(row in now for row in before), repr(created))
+        judge.check("only_support_tickets_changed", changed_tables(initial, after) == {"support_tickets"}, repr(changed_tables(initial, after)))
+        judge.check("answer_open_status", affirmative_contains(answer, "Open"), repr(answer))
+    judge.emit()
 
 
-def main():
-    a = parse_args()
-    j = Judge("Target--18", a.no_llm)
-    t = load_run(a.run_dir)
-    fa = final_answer(t)
-
-    j.check("opened_contact_form", navigated_to(t, "/support/contact"),
-            f"visited={navigated_to(t, '/support/contact')}")
-
-    initial = resolve_db(a.initial_db, a.container, "instance_seed")
-    after = resolve_db(a.after_db, a.container, "instance")
-    before = tickets_for(initial, EMAIL)
-    now = tickets_for(after, EMAIL)
-
-    j.check("db_readable", before is not None and now is not None,
-            f"before={before} after={now}")
-
-    if before is not None and now is not None:
-        j.check("one_new_ticket", len(now) == len(before) + 1,
-                f"before={len(before)} after={len(now)}")
-        created = [row for row in now if row not in before]
-        match = next((r for r in created if r[0].strip() == SUBJECT), None)
-        j.check("subject_matches_task", match is not None,
-                f"new tickets={created} (expected subject {SUBJECT!r})")
-        j.check("channel_is_email", bool(match) and match[1] == CHANNEL,
-                f"channel={match[1] if match else None} (expected {CHANNEL})")
-        j.check("answer_reports_status",
-                bool(match) and contains_any(fa, [match[2]]),
-                f"status={match[2] if match else None} final={fa!r}")
-    else:
-        for name in ("one_new_ticket", "subject_matches_task",
-                     "channel_is_email", "answer_reports_status"):
-            j.check(name, False, "DB unavailable")
-
-    s = last_shot(t)
-    if s:
-        ok, ev = llm_screenshot_shows(s, "a support request listed on the account",
-                                      "the account's support requests page")
-        j.check("screenshot_shows_request", ok, ev, llm=True)
-    else:
-        j.check("screenshot_shows_request", False, "no screenshots in run")
-
-    j.emit()
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

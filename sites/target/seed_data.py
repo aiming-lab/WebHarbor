@@ -14,6 +14,7 @@ Determinism (the byte-identical /reset invariant):
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import shutil
 from datetime import datetime, timedelta
@@ -189,6 +190,26 @@ def _ts(days: int = 0, minutes: int = 0) -> datetime:
     return SEED_TIMESTAMP - timedelta(days=days, minutes=minutes)
 
 
+def _fulfillment_eligible(sku: str, method: str, unavailable_modulus: int) -> bool:
+    if (sku, method) in {("TGT94640332", "delivery"), ("TGT85566854", "pickup")}:
+        return True
+    digest = hashlib.sha256(f"{sku}:{method}".encode()).digest()
+    return int.from_bytes(digest[:4], "big") % unavailable_modulus != 0
+
+
+def _normalize_specs(sku: str, specs: list[dict]) -> list[dict]:
+    if sku not in {"TGT13374157", "TGT13374348"}:
+        return specs
+    normalized = json.loads(json.dumps(specs))
+    for section in normalized:
+        if section.get("title") == "Nutrition Facts":
+            section["title"] = "Nutrition Facts — entire 2-pizza package"
+            for item in section.get("items", []):
+                if item.get("label") == "Sodium":
+                    item["label"] = "Sodium — package total"
+    return normalized
+
+
 def _copy_product_images(products: list[dict]) -> int:
     PRODUCT_IMAGE_DIR.mkdir(parents=True, exist_ok=True)
     copied = 0
@@ -247,7 +268,7 @@ def seed_catalog() -> None:
         list_price = float(item.get("list_price") or price)
         rating = float(item["rating"]) if item.get("rating") else round(4.0 + (index % 9) / 10, 1)
         highlights = item.get("highlights") or []
-        specs = item.get("specs") or []
+        specs = _normalize_specs(item["sku"], item.get("specs") or [])
         description = item.get("description") or ""
         if not description and highlights:
             description = highlights[0]
@@ -269,8 +290,8 @@ def seed_catalog() -> None:
                 secondary_ratings_json=dump_json(item.get("secondary_ratings") or {}),
                 percent_recommended=item.get("percent_recommended"),
                 availability_status="In stock" if index % 17 else "Limited stock",
-                pickup_eligible=index % 5 != 0,
-                delivery_eligible=index % 11 != 0,
+                pickup_eligible=_fulfillment_eligible(item["sku"], "pickup", 5),
+                delivery_eligible=_fulfillment_eligible(item["sku"], "delivery", 11),
                 featured=index % 37 == 0,
                 deal_badge="Sale" if list_price > price else "",
                 image_path=f"images/products/{item['sku']}.webp",
@@ -536,18 +557,27 @@ def seed_account_state() -> None:
     products = Product.query.order_by(Product.id).all()
     stores = Store.query.order_by(Store.id).all()
     for u_index, user in enumerate(users):
-        for slot in range(2):
-            product = products[(u_index * 97 + slot * 41) % len(products)]
-            db.session.add(
-                CartItem(
-                    user_id=user.id,
-                    product_id=product.id,
-                    quantity=1 + slot,
-                    fulfillment_method="delivery" if slot % 2 == 0 else "pickup",
-                    store_id=stores[(u_index + slot) % len(stores)].id,
-                    created_at=_ts(days=2, minutes=slot * 30),
+        if user.email != "bob.c@test.com":
+            for slot in range(2):
+                product_index = (u_index * 97 + slot * 41) % len(products)
+                product = products[product_index]
+                while not (product.pickup_eligible or product.delivery_eligible):
+                    product_index = (product_index + 1) % len(products)
+                    product = products[product_index]
+                wants_pickup = slot % 2 == 1 and product.pickup_eligible
+                method = "pickup" if wants_pickup else "delivery"
+                if method == "delivery" and not product.delivery_eligible:
+                    method = "pickup"
+                db.session.add(
+                    CartItem(
+                        user_id=user.id,
+                        product_id=product.id,
+                        quantity=1 + slot,
+                        fulfillment_method=method,
+                        store_id=stores[(u_index + slot) % len(stores)].id if method == "pickup" else None,
+                        created_at=_ts(days=2, minutes=slot * 30),
+                    )
                 )
-            )
         for slot in range(4):
             product = products[(u_index * 53 + slot * 29) % len(products)]
             db.session.add(

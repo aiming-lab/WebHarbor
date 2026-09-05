@@ -12,6 +12,14 @@
         <button class="button button--secondary" type="submit">Search help</button>
       </form>
     </div>
+    <div class="support-actions">
+      {% if current_user.is_authenticated %}
+        <a class="button" href="{{ url_for('support_new_ticket') }}">Contact us</a>
+        <a class="button button--secondary" href="{{ url_for('account_support') }}">View support requests</a>
+      {% else %}
+        <a class="button" href="{{ url_for('login', next=url_for('support_new_ticket')) }}">Sign in to contact us</a>
+      {% endif %}
+    </div>
     <div class="topic-row">
       <a href="{{ url_for('support_page') }}" class="{% if not active_topic %}is-active{% endif %}">All topics</a>
       {% for topic in topics %}
