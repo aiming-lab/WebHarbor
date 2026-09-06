@@ -47,7 +47,17 @@ for tarball in "$CACHE_DIR"/*.tar.gz; do
     site=$(basename "$tarball" .tar.gz)
     if [[ -n "$ONLY_SITE" && "$site" != "$ONLY_SITE" ]]; then continue; fi
     echo "[fetch] extracting $site"
-    tar -xzf "$tarball" -C sites/
+    if tar --version 2>/dev/null | grep -q 'GNU tar'; then
+        tar --warning=no-unknown-keyword -xzf "$tarball" -C sites/
+    else
+        tar -xzf "$tarball" -C sites/
+    fi
+    migrator="sites/$site/migrate_seed.py"
+    database="sites/$site/instance_seed/$site.db"
+    if [[ -f "$migrator" && -f "$database" ]]; then
+        echo "[fetch] applying tracked $site seed migration"
+        PYTHONHASHSEED=0 python3 "$migrator" "$database"
+    fi
     extracted=$((extracted + 1))
 done
 

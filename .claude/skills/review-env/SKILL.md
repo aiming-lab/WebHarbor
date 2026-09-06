@@ -5,6 +5,13 @@ description: "Review pipeline for WebHarbor mirror PRs. Systematically verify vi
 
 # Review Environment — Quality Verification Pipeline
 
+## Roles
+
+WebHarbor splits work across two roles:
+
+- **Contributor** ships the site (Flask app, seed DB, assets) and `tasks.jsonl` with ONLY the task-definition keys per row — `web_name, id, ques, web, upstream_url` (login tasks carry demo creds in `ques`). The contributor does **not** write verifiers, rubrics, or any answer key.
+- **Reviewer** (this skill) validates the contribution, then writes the **grading contract**: for each accepted task, a deterministic verifier (under the site's own `sites/<site>/verify/`), recorded as `verifier_path` in the task row, plus an English `judge_rubric` of fact-checkpoints, also recorded in the task row. Ground truth lives ONLY inside the verifiers — never in `tasks.jsonl` (the agent reads that file; an answer key there leaks answers).
+
 ## When to use
 
 - Reviewing a GitHub PR that adds or modifies a website mirror
@@ -26,18 +33,18 @@ gh pr checkout <pr-number>
 ./scripts/fetch_assets.sh             # pull the pinned HF revision
 ./scripts/build.sh webharbor:dev
 docker run -d --rm --name wh-review \
-  -p 8201:8101 -p 41000-41014:40000-40014 webharbor:dev
+  -p 8201:8101 -p 41000-41016:40000-40016 webharbor:dev
 ```
 
-Confirm the new/changed site is on the expected port (40000 + index).
+Confirm the new/changed site is on the expected port (40000 + index). Note: the image now runs 17 sites (40000-40016).
 
 ### Step 2: The mechanical checks (5 minutes)
 
 Run the same Pre-PR checks the contributor was supposed to run.
 
 ```bash
-# 1. all 15 sites return 200
-for p in $(seq 41000 41014); do
+# 1. all 17 sites return 200
+for p in $(seq 41000 41016); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
@@ -112,7 +119,7 @@ Actually drive the site through Playwright — `page.fill` / `page.click` / `pag
 
 ### Step 5: Task quality audit (the most important part, 20-30 min)
 
-For EACH task in `sites/<site>/tasks.jsonl`:
+For EACH task in `sites/<site>/tasks.jsonl` (contributor rows carry only `web_name, id, ques, web, upstream_url`):
 
 #### Solvability
 - Can you actually complete the task using only the mirror's UI?
@@ -126,6 +133,14 @@ Perform the task's natural search query. Check:
 - Count-based answers don't have count labels visible
 
 If you solve the task from the search-results page alone, it's a **leak**.
+
+#### Knowledge-shortcut detection (reject these)
+A web-agent benchmark must require NAVIGATING the site, not recalling facts. Reject — and send back to the contributor — tasks that:
+- can be answered without ever opening the site (e.g. a common dictionary definition a frontier LLM already knows),
+- are ill-posed for autonomous evaluation (e.g. "ask me which one" presupposing a human in the loop),
+- have no stable, verifiable answer (e.g. a "today" value that rotates by run date),
+- are mechanically trivial / non-deterministic in a way that defeats grading.
+Prefer tasks anchored on page-specific facts an LLM can't recall (exact dates/IDs, on-page wording, a specific row). The `merriam_webster` review is the reference example: several original tasks were rejected as knowledge-shortcuts / human-in-the-loop / date-dependent and re-anchored onto page-specific facts.
 
 #### Distractor check
 On the search results for each task's query:
@@ -142,7 +157,40 @@ If every result satisfies the task, the catalog is **too narrow**.
 - ≥1 task would challenge a frontier model (GPT-4o / Claude)
 - No task solvable by clicking the first result
 
-### Step 6: Common agent pitfalls
+### Step 6: Write the grading contract (reviewer's job, after tasks pass Step 5)
+
+For each accepted task the reviewer writes the grading artifacts and records them in `tasks.jsonl`:
+
+1. **A deterministic verifier** — one Python script per task, placed under the **site's own** `sites/<site>/verify/` directory (never under `agent_demo/`; each site is self-contained). It emits a binary PASS/FAIL from the run signature `(initial_state, after_state, trajectory, agent final output)`. Deterministic-first (navigation / regex / token / SQLite after-state); LLM only as an anchored utility. Ground truth is **HARDCODED inside the verifier**. See `sites/merriam_webster/verify/verify_lib.py` for the shared utilities and `sites/merriam_webster/verify/verify_*.py` for one-per-task examples.
+2. **`verifier_path`** in the task row — relative path (from repo root) to that verifier, e.g. `sites/<site>/verify/verify_0.py`.
+3. **`judge_rubric`** in the task row — short English "FACT CHECKPOINTS" the LLM judge verifies (which pages MUST be opened, which facts MUST appear, that an empty answer is a FAIL). The rubric states the *rules*, not the answers, so it's safe for the agent to see.
+
+After the reviewer's pass, `tasks.jsonl` has keys `web_name, id, ques, web, upstream_url, verifier_path, judge_rubric`. There is **no `answer` key**.
+
+### Step 7: Verify the grading itself
+
+Unified LLM config (agent, judge, verifiers all read these env vars; CLI flags override):
+`OPENAI_API_KEY`, `OPENAI_BASE_URL`, `JUDGE_MODEL`.
+
+```bash
+export OPENAI_API_KEY=... OPENAI_BASE_URL=http://api.openai.com/v1 JUDGE_MODEL=GPT-5
+# drive a task with the agent (writes trajectory.json incl. verifier_path + judge_rubric)
+uv run python agent_demo/agent.py --tasks_file sites/<site>/tasks.jsonl \
+        --task_id "<site>--N" --url http://localhost:40000+i/ --out_dir runs/N
+# grade via the single eval_judge entry point — two modes:
+uv run python agent_demo/eval_judge.py --run_dir runs/N --verifier True   # PRIMARY (deterministic verifier)
+uv run python agent_demo/eval_judge.py --run_dir runs/N                # secondary (LLM judge, rubric-driven)
+```
+
+Note: tools use `simpleArgParser`, so **boolean flags take a value** (`--verifier True`, `--no_llm True`).
+
+Confirm the grading contract is sound before merge:
+- A **no-op run** (agent opens the homepage, does nothing, empty answer, clean DB) makes **every** verifier return FAIL (exit 1) — no false positives.
+- A **PASS case** (drive a task to completion correctly) makes its verifier pass; a **shortcut case** (correct answer but no on-site navigation) and a **wrong-answer case** both FAIL.
+- For stateful tasks, a **state-mismatch case** (agent self-reports success but the DB is unchanged) FAILs on the DB check.
+- The **LLM judge** appends a rubric-specific system-prompt block (and emits `rubric_checkpoints`) ONLY for tasks with a non-empty `judge_rubric`; tasks without one get the plain base prompt.
+
+### Step 8: Common agent pitfalls
 
 Based on 15+ mirror reviews:
 
@@ -159,7 +207,7 @@ Based on 15+ mirror reviews:
 | 9 | Count labels next to lists agent should count | Look for "N items", "N results", "N courses" |
 | 10 | Cross-imports between sites | Grep for `from sites.<other>` (sites must be isolated) |
 
-### Step 7: Asset PR check
+### Step 9: Asset PR check
 
 Verify the paired HuggingFace PR is real:
 
@@ -173,7 +221,9 @@ cat .assets-revision
 
 If `.assets-revision` doesn't match a real HF merge SHA, request changes.
 
-### Step 8: Submit review
+### Step 10: Submit review
+
+Leave a structured comment on the PR. Report mechanical / visual / functional / task-quality results AND the grading contract you authored (verifier + rubric per task).
 
 Leave a structured comment on the PR:
 
@@ -181,7 +231,7 @@ Leave a structured comment on the PR:
 ## Review: <site_name>
 
 ### Mechanical checks: PASS / FAIL
-- [x] All 15 sites return 200
+- [x] All 17 sites return 200
 - [x] Control plane healthy
 - [x] Byte-identical reset (md5 match)
 - [x] Parallel reset <10s
