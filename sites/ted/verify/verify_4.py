@@ -21,6 +21,8 @@ def main():
     a = parse_args()
     j = Judge('TED--4', a.no_llm)
     t = load_run(a.run_dir)
+    fa = final_answer(t)
+    j.check("final_answer_nonempty", bool(fa.strip()), f"final={fa!r}")
     after = resolve_db(a.after_db, a.container, "instance")
     topic = newsletter_topic_for(after, EMAIL)
     j.check("nav_login", navigated_to(t, "/login"), f"navigated={navigated_to(t, '/login')}")

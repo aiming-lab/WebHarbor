@@ -24,6 +24,8 @@ def main():
     a = parse_args()
     j = Judge('TED--1', a.no_llm)
     t = load_run(a.run_dir)
+    fa = final_answer(t)
+    j.check("final_answer_nonempty", bool(fa.strip()), f"final={fa!r}")
     after = resolve_db(a.after_db, a.container, "instance")
     init = resolve_db(a.initial_db, a.container, "instance_seed")
     note = note_for_saved(after, EMAIL, TITLE_SUB)
