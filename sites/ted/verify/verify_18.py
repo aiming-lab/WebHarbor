@@ -9,6 +9,6 @@ def main():
  a=parse_args(); j=Judge('TED--18',a.no_llm); t=load_run(a.run_dir); fa=final_answer(t); urls=' '.join(s.get('url') or s.get('url_after') or s.get('url_before') or '' for s in t.get('steps',[]))
  j.check('nav_filtered_ted2026_ai_under20', '/talks?' in urls and 'event=TED2026' in urls and 'topic=ai' in urls and 'max_minutes=20' in urls, f'urls={urls!r}')
  j.check('nav_peter',navigated_to(t,PETER),f'navigated={navigated_to(t,PETER)}'); j.check('nav_anil',navigated_to(t,ANIL),f'navigated={navigated_to(t,ANIL)}')
- j.check('answer_peter_higher_difference',contains_all(fa,['Peter','359862']),f'final={fa!r}')
+ j.check('answer_peter_higher_difference',contains_all(fa,['Peter']) and ('359862' in fa.replace(',','') ),f'final={fa!r}')
  j.check('final_answer_nonempty',bool(fa),f'final={fa!r}'); j.emit()
 if __name__=='__main__': main()
