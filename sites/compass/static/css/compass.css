@@ -360,3 +360,65 @@ html{scroll-padding-top:116px}body{font-family:var(--sans);color:#171717;font-si
 @media(max-width:640px){.browse-page{padding-top:24px}.browse-page>h1{font-size:24px}.browse-filters{gap:10px}.browse-filters .filter-group{flex:1 1 calc(50% - 10px);min-width:0}.browse-filters .location-filter{flex-basis:100%}.browse-filters .sort-filter{flex-basis:100%}.advanced-filter-fields{padding:20px;gap:16px}.search-filters-dialog footer{padding:16px;gap:12px}.search-filters-dialog footer .btn{padding-left:14px;padding-right:14px}}
 
 .property-toolbar-actions{display:flex;gap:12px}.property-toolbar-actions form{margin:0}.property-toolbar-actions .btn{min-width:96px}.share-property{width:min(480px,calc(100vw - 32px));padding:24px;border:0;border-radius:8px}.share-property::backdrop{background:#0008}.share-property header{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}.share-property h2{font:500 22px var(--sans);margin:0}.share-property label{display:block;margin-bottom:8px}.share-property input{display:block;width:100%;padding:12px;margin-bottom:20px;border:1px solid #aaa;border-radius:4px;font:14px var(--sans)}.share-property [role=status]{font-size:14px;margin-bottom:0}@media(max-width:640px){.property-toolbar-actions{display:none}.property-description{font-size:16px}.detail-grid{max-width:none}}
+
+/* Listing detail measurements from the desktop and mobile source pages. */
+.detail-grid.container {
+  width: calc(100% - 48px);
+  max-width: 1124px;
+  padding: 8px 0 0;
+}
+@media (max-width: 640px) {
+  body:has(.listing-page) { padding-bottom: 84px; }
+  .listing-page .listing-navigation {
+    height: 0;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+  }
+  .listing-navigation > a,
+  .listing-navigation > nav { display: none; }
+  .property-toolbar-actions {
+    display: flex;
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    gap: 8px;
+  }
+  .property-toolbar-actions .btn {
+    min-width: 0;
+    background: #fff;
+    border-color: #bbb;
+    padding: 8px 12px;
+  }
+  .listing-page .detail-gallery {
+    height: 86vw;
+    max-height: 360px;
+    margin: 0;
+  }
+  .detail-grid.container {
+    display: block;
+    width: calc(100% - 48px);
+    padding-top: 24px;
+  }
+  .listing-page .agent-sidebar {
+    position: static;
+    max-width: none;
+    padding: 0;
+  }
+  .listing-page .action-stack {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    margin: 0;
+    padding: 12px 16px;
+    background: #fff;
+    border-top: 1px solid #ddd;
+  }
+  .listing-page .action-stack > a { flex: 1; }
+  .listing-page .action-stack > :nth-child(n+3) { display: none; }
+}

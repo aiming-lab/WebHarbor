@@ -39,6 +39,13 @@ def login(client, next_url="/account"):
     return client.post("/login", query_string={"next":next_url}, data={"email":"alice@example.com", "password":"test-pass-123"})
 
 
+def test_listing_title_does_not_contain_share_dialog_markup(client):
+    import re
+    html = client.get("/listing/san-francisco").get_data(as_text=True)
+    assert re.search(r"<title>(.*?)</title>", html, re.S).group(1).strip() == "1 Sample Street | Compass"
+    assert html.count('id="share-property"') == 1
+
+
 @pytest.mark.parametrize("target", ["https://foreign.example/", "//foreign.example/", "/\\foreign.example/", "https://localhost.evil.example/"])
 def test_login_never_redirects_outside_mirror(client, target):
     assert login(client, target).location == "/account"
