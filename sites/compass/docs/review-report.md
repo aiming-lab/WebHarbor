@@ -9,15 +9,15 @@ Reviewer takeover of [original PR #25](https://github.com/aiming-lab/WebHarbor/p
 - [Companion HF PR #53](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/53), immutable candidate `47232eba972567d138bbac478a6f4af9775a1d90`.
 - Compass archive: 181,025,147 bytes; SHA-256 `df94bf02d1d9ffc5dd13a5f9d6ac8a262ab30a6f6d0b3b5fb7348da3b3f6d40a`. The other 19 archives equal the current upstream asset pin. Only Compass content is new relative to current main.
 
-The 16 complete UI runs used code `366b15c0f38ead00b8c541e21504f02c73f64160` and Compass on `40018`, before Target merged. All Compass Python/CSS/JS/templates/data/verifier files are byte-identical in the integration candidate. Each task is identical except its `web` port. The Compass archive and rebuilt Docker seed also match. These are reused runs, with additional current-port integration checks; they are not 16 newly executed runs on `40019`. Early pilot manifests identify assets by archive hash instead of a published revision; remote equality was subsequently verified.
+The current 16 complete UI runs were newly executed on **40019** after a host reboot removed the earlier temporary raw bundles. Their checkout was `b84eaf60bf02a30a45da643b62c92b343e70f426`, using the retained `3cdc0b6` image. The final parser-only verifier fix runs offline against the frozen snapshots; app/UI/data files remain byte-identical. The standalone dependency list now includes `email-validator==2.2.0`, already installed by the Dockerfile. Historical summaries are retained as history, not substituted for missing originals.
 
 ## Environment and functional checks
 
-The current build passes 20/20 startup and homepage checks; reset-all takes 2.957 seconds and restores 23/23 files byte-for-byte. The supplementary task-5 run at 40019 also passes with persisted phone change and exact reset. Full Docker build, all-site startup/HTTP sweep, and per-file reset results are in [environment-validation.json](environment-validation.json). The current integration check supersedes the earlier 19-site sweep. The Compass runtime seed is `4fbb93f60edd007e3d2af660aec58fa4863672d96c6484e097c0eafb1d767979`; all 16 task resets restore it byte-for-byte.
+The current build passes 20/20 startup and homepage checks; reset-all takes 1.672 seconds and restores 23/23 files byte-for-byte. All 16 fresh task runs use 40019, with terminal state captured before reset. Full Docker build, all-site startup/HTTP sweep, and per-file reset results are in [environment-validation.json](environment-validation.json). The post-reboot 20-site sweep supersedes the earlier startup/reset checks; the existing image build is reused. The Compass runtime seed is `4fbb93f60edd007e3d2af660aec58fa4863672d96c6484e097c0eafb1d767979`; all 16 task resets restore it byte-for-byte.
 
 The archive seed (`caa262ea5752016618c56e9bf01842257523cf8dae3ea25c57f719d61d7ce40f`) uses SQLite 3.53.1 encoding. Docker SQLite 3.40.1 rebuilds logically identical schema/rows with different bytes. Repeated rebuilds within Docker match exactly; reset compares the live DB with that runtime's seed, not a different platform's byte encoding.
 
-**149 regression tests passed** (42 application/source cases and 107 verifier cases). They cover invalid registration, atomic preferences, malformed tour/inquiry input, CSRF, local redirects, object ownership, collection membership, saved-search round trips, rental formatting, exact price-per-area ordering, transaction identity and reproducible seeding. Real UI runs separately cover registration, login, profile edits, saved homes, tours, collections, saved searches and inquiries. Additional browser checks cover invalid credentials/required fields and saving/removing a home with reload persistence.
+**166 regression tests passed** in a fresh local environment (42 application/source cases and 124 verifier cases). They cover invalid registration, atomic preferences, malformed tour/inquiry input, CSRF, local redirects, object ownership, collection membership, saved-search round trips, rental formatting, exact price-per-area ordering, transaction identity and reproducible seeding. Real UI runs separately cover registration, login, profile edits, saved homes, tours, collections, saved searches and inquiries. Additional browser checks cover invalid credentials/required fields and saving/removing a home with reload persistence.
 
 No forms contact external agents: writes remain in the local SQLite benchmark state. Synthetic fixture tests are separate from the recorded UI executions.
 
@@ -25,7 +25,7 @@ No forms contact external agents: writes remain in the local SQLite benchmark st
 
 [18 original/before/after screenshots](visual-review.md) cover home desktop/mobile, detail desktop/mobile, two-photo detail and the Miami list. They are unaltered browser captures with URLs, times, dimensions and hashes. Main repairs include official local fonts/hero, measured header and search proportions, cards, full/short galleries, share/photo dialogs, mobile property actions and narrow account tables.
 
-Additional browser QA covers task templates at **390 and 320px**, plus representative **768px** home/list pages. Stable captures showed no document-level horizontal overflow. Long account tables intentionally scroll within a labeled region. Pointer activation of one wrapped collection link did not navigate through the browser adapter; keyboard activation succeeded. That adapter limitation is recorded rather than counted as an unqualified pointer PASS. First frames immediately after resizing were sometimes stale; settled captures supersede them. Five additional non-task detail pages were sampled for populated content and loaded photos.
+[16 fresh supplementary layout checks](responsive-qa.json) cover home/list/filter/photo/share states at **390px**, detail/login/tour/account/profile/search/collection templates at **320px**, and home/list at **768px**. Actual screenshots are retained with hashes; no document-level overflow or broken visible images was observed. Long account tables scroll within their labeled region. Earlier broader QA remains historical because its temporary raw captures were lost. Keyboard activation of a wrapped collection link is used by the guided runner; this does not certify every pointer interaction.
 
 Remaining differences are explicit: the list view omits the live map; the agent profile is a reduced source-backed contact/listings view; personalized recommendations, seller/mortgage/property-history/school services and live communications are outside scope. Official mobile Aspen photos failed to load during capture, so that source image supports layout only. These omissions are not presented as answer-leak safeguards. No human-approved visual regression baseline exists yet.
 
@@ -39,30 +39,32 @@ There are **16 candidate tasks**, IDs 0–7 and 10–17. IDs 8/9 were retired be
 
 The pool column is the unfiltered area's recorded catalog / qualifying set, independently checked against the seed. It is not the fully filtered UI count; after applying all filters, every displayed result should match. Natural pools range from 30–79 (Luxury 47), include multiple types and near misses. Named-object and account-write tasks use meaningful state changes/comparison instead of inventing distractors. Target position in a user-sorted result is not itself leakage: required detail facts and writes remain necessary. Task 13 provides the strongest comparison/disambiguation check; difficulty has not been calibrated with an independent model cohort.
 
-| Task | Steps incl. done | Natural pool / qualifying | Contract / quality check | Recorded execution | Verifier |
+| Task | Grouped UI steps incl. done | Natural pool / qualifying | Contract / quality check | Recorded execution | Verifier |
 |---|---:|---|---|---|---|
-| 0 | 9 | 41 / 3 | Miami: compare exact price/area; year and MLS require details. | PASS | PASS |
-| 1 | 9 | 40 / 4 | San Francisco: minimum-price comparison; year and MLS require details. | PASS | PASS |
-| 2 | 9 | N/A: named object or account state | Two named homes: bind price/area/year to each, then compare ratios. | PASS | PASS |
-| 3 | 9 | 79 / 7 | New York: Co-op/bedroom/price comparison; year and agent require details. | PASS | PASS |
-| 4 | 14 | N/A: named object or account state | New account, save named home, confirm Saved Homes; read property type. | PASS | PASS |
-| 5 | 9 | N/A: named object or account state | Change only Alice’s phone; confirm account and unchanged location. | PASS | PASS |
-| 6 | 15 | N/A: named object or account state | One fixed-date Carol tour; confirm stored status and source year. | PASS | PASS |
-| 7 | 23 | N/A: named object or account state | Exact two-home David collection; open its generated share page. | PASS | PASS |
-| 10 | 15 | 30 / 4 | Alice search: preserve and reopen all four criteria. | PASS | PASS |
-| 11 | 8 | 41 / 9 | Aspen: maximum-price Single Family; source year and MLS required. | PASS | PASS |
-| 12 | 6 | N/A: named object or account state | Detail facts, then follow the actual linked agent profile for email. | PASS | PASS |
-| 13 | 12 | 41 / 7 | Second-lowest exact ratio after year/status filters; distinguish similar homes. | PASS | PASS |
-| 14 | 27 | 31 / 2 | Austin: type/beds/garage/price comparison, exact collection membership, MLS. | PASS | PASS |
-| 15 | 12 | N/A: named object or account state | Compare Bob’s stored tour dates; preserve tours and add exact local inquiry. | PASS | PASS |
-| 16 | 11 | N/A: named object or account state | Three named homes, compare recorded ratios regardless of status. | PASS | PASS |
-| 17 | 11 | 47 / 4 | Luxury threshold + Condo/status + maximum price; read agent and year. | PASS | PASS |
+| 0 | 5 | 41 / 3 | Miami: compare exact price/area; year and MLS require details. | PASS | PASS |
+| 1 | 5 | 40 / 4 | San Francisco: minimum-price comparison; year and MLS require details. | PASS | PASS |
+| 2 | 7 | N/A: named object or account state | Two named homes: bind price/area/year to each, then compare ratios. | PASS | PASS |
+| 3 | 6 | 79 / 7 | New York: Co-op/bedroom/price comparison; year and agent require details. | PASS | PASS |
+| 4 | 9 | N/A: named object or account state | New account, save named home, confirm Saved Homes; read property type. | PASS | PASS |
+| 5 | 6 | N/A: named object or account state | Change only Alice’s phone; confirm account and unchanged location. | PASS | PASS |
+| 6 | 9 | N/A: named object or account state | One fixed-date Carol tour; confirm stored status and source year. | PASS | PASS |
+| 7 | 16 | N/A: named object or account state | Exact two-home David collection; open its generated share page. | PASS | PASS |
+| 10 | 8 | 30 / 4 | Alice search: preserve and reopen all four criteria. | PASS | PASS |
+| 11 | 5 | 41 / 9 | Aspen: maximum-price Single Family; source year and MLS required. | PASS | PASS |
+| 12 | 5 | N/A: named object or account state | Detail facts, then follow the actual linked agent profile for email. | PASS | PASS |
+| 13 | 7 | 41 / 7 | Second-lowest exact ratio after year/status filters; distinguish similar homes. | PASS | PASS |
+| 14 | 19 | 31 / 2 | Austin: type/beds/garage/price comparison, exact collection membership, MLS. | PASS | PASS |
+| 15 | 8 | N/A: named object or account state | Compare Bob’s stored tour dates; preserve tours and add exact local inquiry. | PASS | PASS |
+| 16 | 10 | N/A: named object or account state | Three named homes, compare recorded ratios regardless of status. | PASS | PASS |
+| 17 | 9 | 47 / 4 | Luxury threshold + Condo/status + maximum price; read agent and year. | PASS | PASS |
 
 These executions are **guided/source-aware**: GPT-6 via Codex had inspected code, seed and expected facts. They establish actual UI feasibility and state effects, not independent discovery performance. Every run begins from the homepage after official reset, records real visible UI actions and before/after screenshots, captures terminal DB state before reset, and preserves the reset baseline. No direct DB/API mutation substitutes for task actions.
 
-[validation.json](validation.json) contains per-task run hashes, step counts, before/after/reset hashes and deterministic results. **16/16 verifiers pass** against each run's own frozen snapshots. They do not read the later live DB. Raw browser JPEGs were retained; native PNG exports preserve the exact decoded pixels without resizing/cropping. The two initial pilots additionally required a documented `id` → `task_id` metadata normalization; originals were retained. Full-page capture was unavailable from this browser adapter, so viewport screenshots and complete DOM observations are retained.
+[validation.json](validation.json) contains per-task original/export hashes, action mappings, screenshot hashes, before/after/reset hashes and deterministic results. **16/16 verifiers pass** against their own frozen snapshots. The 134 grouped UI steps include one preserved failed link lookup followed by a successful corrected lookup. A group may fill a form and submit it; it is not a claim of 134 primitive actions. Native exports map semantic operation labels to the actual click/press action without changing observations, final answers or DBs. Raw JPEGs and pixel-identical PNG exports are retained. Full-page capture was unavailable; viewport screenshots and complete DOM observations are retained.
 
-**111/111 constructed adversarial cases matched their expected outcomes**. Coverage includes no-op/answer-only shortcuts, wrong-task replay, foreign origins, missing explicit navigation, wrong values/object associations, unchanged state on write tasks and unrelated DB changes; valid wording, address/currency variants and alternative collection/search paths are tested too. `validation.json` lists each fixture and outcome. Screenshot format checks do not interpret pixels and assume a trusted recorder. Independent review must judge the actual executions.
+Initial scoring found genuine parser false negatives: a price-per-square-foot number and an appointment date were mistaken for construction years, and confirming the Tours page was mistaken for a confirmed appointment status. The fix adds 17 positive/negative cases, including contradictory or missing years, dates/areas used as decoys, negated status and false appointment confirmations. Two additional failures were native action-name packaging issues; the original and normalized hashes are both recorded.
+
+The **124-case current verifier suite** covers wrong answers/object associations, foreign-origin and missing-navigation replay, no-op write tasks, unrelated state mutations and legitimate alternative paths/wording. The earlier **111/111 ad-hoc adversarial matrix** survives only as a historical structured result; its raw constructed fixtures were lost and it was not rerun after the parser fix. It is not counted as new task execution. Screenshot format checks assume a trusted recorder; independent review must judge the actual executions.
 
 ## Reproduce
 
