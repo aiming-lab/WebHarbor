@@ -561,6 +561,11 @@ def index():
                            luxury=luxury)
 
 
+@app.route("/sell/")
+def sell():
+    return render_template("sell.html", page_title="Sell Your Home | Compass")
+
+
 @app.route("/homes-for-sale")
 def homes_for_sale_index():
     cities = City.query.order_by(City.name).all()
