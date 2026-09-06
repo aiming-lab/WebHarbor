@@ -42,7 +42,9 @@ for site_dir in sites/*/; do
     fi
 
     out="$TARGET/$site.tar.gz"
-    tar -czf "$out" -C sites "${members[@]}"
+    # macOS may synthesize AppleDouble ``._*`` metadata while archiving files.
+    # Exclude it explicitly so uploaded assets are portable and reproducible.
+    COPYFILE_DISABLE=1 tar --exclude='._*' -czf "$out" -C sites "${members[@]}"
     sz=$(du -sh "$out" 2>/dev/null | cut -f1)
     printf "  %-22s -> %-30s %s\n" "$site" "$site.tar.gz" "$sz"
     count=$((count + 1))

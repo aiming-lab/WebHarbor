@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Contact us | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Help</p>
+        <h1>Contact us</h1>
+        <p>Tell us what went wrong and we'll open a request on your account.</p>
+      </div>
+      <a href="{{ url_for('account_support') }}">Your requests</a>
+    </div>
+    <div class="panel">
+      <form method="post" class="filter-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Subject
+          <input type="text" name="subject" placeholder="Order arrived damaged" required>
+        </label>
+        <label>How should we reach you?
+          <select name="channel">
+            <option value="Chat">Chat</option>
+            <option value="Email">Email</option>
+            <option value="Phone">Phone</option>
+          </select>
+        </label>
+        <label>Details
+          <textarea name="summary" rows="6"
+                    placeholder="Describe what happened, including the order number if you have it." required></textarea>
+        </label>
+        <button class="button" type="submit">Submit request</button>
+      </form>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Edit profile | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section account-layout">
+    {% include "_account_nav.html" %}
+    <div>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Account</p>
+          <h1>Edit your profile</h1>
+          <p>Update the name, contact details and preferred store on this account.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <form method="post" class="filter-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label>Full name
+            <input type="text" name="full_name" value="{{ current_user.full_name }}" required>
+          </label>
+          <label>Email
+            <input type="email" name="email" value="{{ current_user.email }}" required>
+          </label>
+          <label>Phone
+            <input type="text" name="phone" value="{{ current_user.phone }}">
+          </label>
+          <div class="filter-form__row">
+            <label>City
+              <input type="text" name="city" value="{{ current_user.city }}">
+            </label>
+            <label>State
+              <input type="text" name="state" value="{{ current_user.state }}">
+            </label>
+          </div>
+          <label>Preferred store
+            <select name="preferred_store_slug">
+              <option value="">No preferred store</option>
+              {% for store in stores %}
+                <option value="{{ store.slug }}"
+                  {% if current_user.preferred_store_slug == store.slug %}selected{% endif %}>
+                  {{ store.name }} — {{ store.city }}, {{ store.state }}
+                </option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="inline-actions">
+            <button class="button" type="submit">Save changes</button>
+            <a class="button button--secondary" href="{{ url_for('account') }}">Cancel</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </section>
+{% endblock %}
