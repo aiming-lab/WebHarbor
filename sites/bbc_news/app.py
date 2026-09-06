@@ -48,6 +48,12 @@ login_manager.login_message = "Please sign in to continue."
 csrf = CSRFProtect(app)
 
 
+def bbc_article_share_url(article):
+    if article.source_url:
+        return article.source_url
+    return f"https://www.bbc.com/news/articles/{article.slug}"
+
+
 # =======================================================================
 # MODELS
 # =======================================================================
@@ -1068,6 +1074,7 @@ def article_detail(slug):
     return render_template(
         "article_detail.html",
         article=art,
+        article_share_url=bbc_article_share_url(art),
         article_gallery=article_gallery,
         related=related,
         more_articles=more_articles,

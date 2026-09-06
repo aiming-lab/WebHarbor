@@ -81,12 +81,13 @@
         </div>
 
         <div class="share-url" id="share-modal" style="margin:8px 16px 12px; padding:12px 14px; background:#f1f3f4; border:1px solid #dadce0; border-radius:8px; font-size:13px; color:#202124;">
+            {% set share_url = google_maps_place_url(place) %}
             <div style="margin-bottom:6px;"><strong style="font-size:13px;">Share this place</strong></div>
             <div style="color:#5f6368; margin-bottom:6px;">Anyone with this link can view {{ place.name }}:</div>
             <input id="share-url-input" class="share-url-input" type="text" readonly
-                   value="http://localhost:40008{{ url_for('place_detail', slug=place.slug) }}"
+                   value="{{ share_url }}"
                    style="width:100%; padding:8px 10px; border:1px solid #dadce0; border-radius:6px; font-family:monospace; font-size:13px; background:#ffffff;">
-            <div class="share-url-text" style="margin-top:6px; font-family:monospace; font-size:12px; color:#1a73e8; word-break:break-all;">http://localhost:40008{{ url_for('place_detail', slug=place.slug) }}</div>
+            <div class="share-url-text" style="margin-top:6px; font-family:monospace; font-size:12px; color:#1a73e8; word-break:break-all;">{{ share_url }}</div>
         </div>
 
         <div class="pd-block">
@@ -112,7 +113,8 @@
             </div>
             <div class="pd-row">
                 <div class="row-icon"><span class="material-icons-outlined">language</span></div>
-                <div class="row-content"><a href="{{ place.website }}" target="_blank" rel="noopener">{{ place.website|replace('https://', '') }}</a></div>
+                {% set website_url = display_place_website(place) %}
+                <div class="row-content"><a href="{{ website_url }}" target="_blank" rel="noopener">{{ website_url|replace('https://', '') }}</a></div>
             </div>
             {% if place.parking_info %}
             <div class="pd-row">
