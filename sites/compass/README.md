@@ -8,7 +8,7 @@ An offline Compass mirror contributed in [WebHarbor #25](https://github.com/aimi
 - `source_data.json` contains 312 public Compass detail snapshots checked on September 6, 2026. Of these, 295 have local galleries and appear in the environment. Each record includes its original listing ID, source URL, retrieval time, and HTML SHA-256.
 - Detail facts are accepted only when the public page's listing ID matches the original transaction. A URL that now resolves to a different sale or rental is not used to enrich the old record. Unmatched records retain only the contributor's basic snapshot; unknown property details and agent information stay absent.
 - Property type, year, MLS number, amenities, agent contact information, and availability are never generated. A missing amenity is unknown, rather than false. Historical rentals retain monthly price formatting. Missing prices are displayed as “Price upon request.”
-- `gallery_sources.json` records the additional original-source gallery images. `visual_sources.json` records the official hero image and font assets. Local files are distributed through the pinned Hugging Face asset archive, not downloaded by the running site.
+- `gallery_sources.json` records the additional original-source gallery images. `visual_sources.json` records the official home/Sell hero images and font assets. Local files are distributed through the pinned Hugging Face asset archive, not downloaded by the running site.
 - Only benchmark accounts, their preferences, saved homes, collections, searches, and tour requests are synthetic. Forms save state locally; they do not contact real agents.
 
 The contributor's generation of property years, MLS numbers, amenities, and agent sales statistics has been removed. Published listing details take precedence over assessor records when those sources disagree; they are not silently combined.
@@ -42,7 +42,9 @@ Tests cover invalid input without partial writes, object ownership, CSRF, local 
 
 The homepage hero, official typography, navigation, listing cards, responsive layout, photo wall, gallery, and filter controls follow the public site. Personalized recommendations are replaced with a stable catalog selection. Search cards do not add property years, MLS numbers, or agent identities; detail questions still require obtaining the relevant information.
 
-The mirror provides a list view. Live maps, street view, mortgage preapproval, property-history feeds, seller services, and external messaging are not implemented. These are functional scope limits, not measures to prevent answer leakage. Unknown facts are identified rather than filled with plausible values. The displayed catalog is a snapshot and can include sold or rented homes.
+Sell is available from the desktop/mobile navigation and homepage strip at `/sell/`. Its source-referenced introduction and marketing overview link to the existing local agent directory. The original seller lead form, marketing carousels and complete seller-service workflow are not implemented; see the [Sell follow-up and screenshot comparisons](docs/sell-review.md).
+
+The mirror provides a list view. Live maps, street view, mortgage preapproval, property-history feeds, and external messaging are not implemented. These are functional scope limits, not measures to prevent answer leakage. Unknown facts are identified rather than filled with plausible values. The displayed catalog is a snapshot and can include sold or rented homes.
 
 In this fixed snapshot, the **For sale** filter includes Pending / Contract Signed listings in the sale category; their published status remains in property details. It is not an active-only filter. A named search area includes records whose address city or catalog market matches that area, so New York can include Brooklyn and Manhattan addresses.
 
