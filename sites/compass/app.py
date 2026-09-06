@@ -552,13 +552,63 @@ def index():
     # relevant section).
     featured = (Listing.query.filter_by(is_compass_exclusive=True)
                 .order_by(Listing.id).limit(6).all())
-    new_listings = (Listing.query.filter_by(is_new=True)
-                    .order_by(Listing.id.desc()).limit(6).all())
-    luxury = (Listing.query.filter_by(is_luxury=True, status="for-sale")
-              .order_by(Listing.id).limit(6).all())
-    return render_template("index.html",
-                           featured=featured, new_listings=new_listings,
-                           luxury=luxury)
+    return render_template("index.html", featured=featured)
+
+
+@app.route("/private-exclusives/")
+def private_exclusives():
+    listings = Listing.query.filter(
+        func.json_extract(Listing.property_facts_json, "$.Status").in_(
+            ["Active (Private)", "Contingent (Private)", "Pending (Private)"])
+    ).order_by(Listing.id).all()
+    return render_template("listing_collection.html", title="Compass Private Exclusives",
+                           intro="Homes with a private marketing status in our fixed listing snapshot.",
+                           listings=listings)
+
+
+@app.route("/coming-soon/")
+@app.route("/coming-soon/listings/")
+def coming_soon():
+    listings = Listing.query.filter(
+        func.json_extract(Listing.property_facts_json, "$.Status") == "Coming Soon"
+    ).order_by(Listing.id).all()
+    return render_template("listing_collection.html", title="Compass Coming Soon",
+                           intro="Homes recorded as Coming Soon in our fixed listing snapshot.",
+                           listings=listings)
+
+
+@app.route("/sitemap/<state>/")
+def market(state):
+    state = state.upper()
+    if not re.fullmatch(r"[A-Z]{2}", state):
+        abort(404)
+    listings = Listing.query.filter_by(state=state, status="for-sale").order_by(Listing.id).all()
+    return render_template("listing_collection.html", title=f"{state} Real Estate",
+                           intro="Browse homes for sale from our fixed listing snapshot.",
+                           listings=listings)
+
+
+@app.route("/neighborhood-guides/")
+@app.route("/neighborhood-guides/<region>/")
+def neighborhoods(region=None):
+    regions = {
+        "nyc": ("New York City", "New York"), "hamptons": ("The Hamptons", None),
+        "miami": ("South Florida", "Miami"), "boston": ("Greater Boston", "Boston"),
+        "la": ("Southern California", "Los Angeles"), "dc": ("DC, Maryland, & Virginia", "Washington"),
+    }
+    if region is not None and region not in regions:
+        abort(404)
+    selected = regions.get(region)
+    listings = []
+    if selected and selected[1]:
+        listings = Listing.query.filter_by(market_city=selected[1], status="for-sale").order_by(Listing.id).all()
+    return render_template("neighborhoods.html", regions=regions, region=region,
+                           selected=selected, listings=listings)
+
+
+@app.route("/concierge/")
+def concierge():
+    return render_template("concierge.html")
 
 
 @app.route("/sell/")

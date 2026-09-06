@@ -223,3 +223,40 @@ def test_seed_bytes_do_not_depend_on_index_creation_order(tmp_path):
         canonical_copy(source,output)
         hashes.append(hashlib.sha256(output.read_bytes()).hexdigest())
     assert hashes[0]==hashes[1]
+
+
+def test_marketing_status_routes_use_source_status_not_new_flag(client):
+    with m.app.app_context():
+        first = m.db.session.get(m.Listing, 1)
+        first.is_new = True
+        first.is_compass_exclusive = True
+        first.property_facts_json = json.dumps({"Status": "Active"})
+        second = m.db.session.get(m.Listing, 2)
+        second.is_new = False
+        second.property_facts_json = json.dumps({"Status": "Coming Soon"})
+        m.db.session.commit()
+    coming = client.get('/coming-soon/listings/').get_data(as_text=True)
+    assert '/listing/new-york' in coming
+    assert '/listing/san-francisco' not in coming
+    assert '/listing/san-francisco' not in client.get('/private-exclusives/').get_data(as_text=True)
+    with m.app.app_context():
+        m.db.session.get(m.Listing, 1).property_facts_json = json.dumps({"Status": "Active (Private)"})
+        m.db.session.commit()
+    private = client.get('/private-exclusives/').get_data(as_text=True)
+    assert '/listing/san-francisco' in private
+    assert '/listing/new-york' not in private
+
+
+def test_marketing_routes_do_not_modify_catalog_or_user_state(client):
+    with m.app.app_context():
+        before = [(row.id, row.property_facts_json) for row in m.Listing.query.order_by(m.Listing.id)]
+        users = m.User.query.count()
+    for route in ['/concierge/', '/neighborhood-guides/', '/neighborhood-guides/hamptons/',
+                  '/neighborhood-guides/nyc/', '/sitemap/ca/', '/coming-soon/', '/private-exclusives/']:
+        assert client.get(route).status_code == 200
+    assert client.get('/neighborhood-guides/invalid/').status_code == 404
+    assert client.get('/sitemap/not-a-state/').status_code == 404
+    with m.app.app_context():
+        assert before == [(row.id, row.property_facts_json) for row in m.Listing.query.order_by(m.Listing.id)]
+        assert m.User.query.count() == users
+        assert m.SavedHome.query.count() == m.Tour.query.count() == m.Inquiry.query.count() == 0

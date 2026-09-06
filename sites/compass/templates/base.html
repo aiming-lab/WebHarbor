@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Compass — Find Real Estate, Homes for Sale, Apartments & Houses{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/compass.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
+  {% if request.endpoint == 'index' %}<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">{% endif %}
   <script defer src="{{ url_for('static', filename='js/compass.js') }}"></script>
 </head>
 <body class="{% if request.endpoint == 'index' %}home-page{% endif %}">
@@ -23,10 +25,11 @@
       <a href="{{ url_for('homes_for_sale_index') }}">Buy</a>
       <a href="{{ url_for('homes_for_rent_index') }}">Rent</a>
       <a href="{{ url_for('sell') }}"{% if request.endpoint == 'sell' %} aria-current="page"{% endif %}>Sell</a>
-      <details class="nav-menu"><summary>Compass Exclusives <span aria-hidden="true">⌄</span></summary><div class="nav-menu-panel"><a href="{{ url_for('search', compass_exclusive=1) }}">Compass Listings</a><a href="{{ url_for('new_listings') }}">New Listings</a><a href="{{ url_for('open_houses') }}">Open Houses</a><a href="{{ url_for('luxury') }}">Luxury</a></div></details>
-      <a href="{{ url_for('agents_index') }}">Agents</a>
+      <details class="nav-menu"><summary>Compass Exclusives <span aria-hidden="true">⌄</span></summary><div class="nav-menu-panel"><a href="{{ url_for('private_exclusives') }}">Private Exclusives</a><a href="{{ url_for('coming_soon') }}">Coming Soon</a><a href="{{ url_for('search', compass_exclusive=1) }}">Compass Listings</a></div></details>
+      <details class="nav-menu"><summary>New Development <span aria-hidden="true">⌄</span></summary><div class="nav-menu-panel"><a href="https://www.compass.com/development/" target="_blank" rel="noopener">Current Developments<span class="external-mark" aria-label="external website">↗</span></a><a href="https://www.compassdevelopmentmg.com/" target="_blank" rel="noopener">Compass Development Marketing Group<span class="external-mark" aria-label="external website">↗</span></a></div></details>
+      <details class="nav-menu"><summary>Agents <span aria-hidden="true">⌄</span></summary><div class="nav-menu-panel"><a href="{{ url_for('agents_index') }}">Find an Agent</a><a href="{{ url_for('agents_index') }}">Help me find an Agent</a><a href="https://www.compass.com/agents-compass/" target="_blank" rel="noopener">Join as an Agent<span class="external-mark" aria-label="external website">↗</span></a></div></details>
     </nav>
-    <div class="cx-nav-right">
+    <div class="cx-nav-right{% if current_user.is_authenticated %} authenticated{% endif %}">
       {% if current_user.is_authenticated %}
       <a href="{{ url_for('saved_list') }}">Saved</a><a href="{{ url_for('account') }}">{{ current_user.name.split()[0] }}</a>
       <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-button" type="submit">Sign out</button></form>
@@ -35,22 +38,15 @@
   </div>
 </header>
 <dialog id="mobile-navigation" class="mobile-navigation" aria-label="Navigation">
-  <div class="drawer-heading"><a class="cx-logo" href="{{ url_for('index') }}"><img src="{{ url_for('static',filename='icons/compass_logo.svg') }}" alt="Compass"></a><button class="icon-button" data-close-dialog type="button" aria-label="Close navigation">×</button></div>
+  <div class="drawer-heading"><button class="icon-button" data-close-dialog type="button" aria-label="Close navigation">×</button><a class="cx-logo" href="{{ url_for('index') }}"><img src="{{ url_for('static',filename='icons/compass_logo.svg') }}" alt="Compass"></a></div>
   <nav aria-label="Mobile navigation">
-    <a href="{{ url_for('homes_for_sale_index') }}">Buy</a><a href="{{ url_for('homes_for_rent_index') }}">Rent</a><a href="{{ url_for('sell') }}">Sell</a>
-    <a href="{{ url_for('search',compass_exclusive=1) }}">Compass Listings</a><a href="{{ url_for('new_listings') }}">New Listings</a><a href="{{ url_for('open_houses') }}">Open Houses</a><a href="{{ url_for('luxury') }}">Luxury</a><a href="{{ url_for('agents_index') }}">Find an Agent</a>
-    {% if current_user.is_authenticated %}<a href="{{ url_for('account') }}">My account</a><a href="{{ url_for('saved_list') }}">Saved homes</a>{% else %}<a href="{{ url_for('login') }}">Sign In</a><a href="{{ url_for('register') }}">Register</a>{% endif %}
+    <div class="navigation-group primary-navigation"><a href="{{ url_for('homes_for_sale_index') }}">Buy</a><a href="{{ url_for('homes_for_rent_index') }}">Rent</a><a href="{{ url_for('sell') }}">Sell</a></div>
+    {% from "_navigation.html" import groups with context %}{{ groups() }}
+    <div class="navigation-account">{% if current_user.is_authenticated %}<a href="{{ url_for('account') }}">My account</a><a href="{{ url_for('saved_list') }}">Saved homes</a><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-button" type="submit">Sign out</button></form>{% else %}<a class="btn" href="{{ url_for('login') }}">Register/Sign In</a><a class="sr-only" href="{{ url_for('register') }}">Register</a>{% endif %}</div>
   </nav>
 </dialog>
 {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-stack container" role="status">{% for cat,msg in messages %}<div class="flash {{ cat }}">{{ msg }}</div>{% endfor %}</div>{% endif %}{% endwith %}
 <main id="main-content">{% block content %}{% endblock %}</main>
-<footer class="cx-footer">
-  <div class="col-grid">
-    <div><h4>Company</h4><ul><li><a href="{{ url_for('about') }}">About</a></li><li><a href="{{ url_for('help_page') }}">Help</a></li><li><a href="{{ url_for('agents_index') }}">Find an Agent</a></li></ul></div>
-    <div><h4>Explore</h4><ul><li><a href="{{ url_for('homes_for_sale_index') }}">Homes for Sale</a></li><li><a href="{{ url_for('homes_for_rent_index') }}">Apartments for Rent</a></li><li><a href="{{ url_for('new_listings') }}">New Listings</a></li><li><a href="{{ url_for('open_houses') }}">Open Houses</a></li><li><a href="{{ url_for('luxury') }}">Luxury</a></li></ul></div>
-    <div><h4>Your home search</h4><ul><li><a href="{{ url_for('saved_list') }}">Saved Homes</a></li><li><a href="{{ url_for('saved_searches') }}">Saved Searches</a></li><li><a href="{{ url_for('collections_index') }}">Collections</a></li><li><a href="{{ url_for('tours_list') }}">Tours</a></li></ul></div>
-  </div>
-  <div class="legal">© {{ now.year }} Compass mirror — WebHarbor benchmark site. Not affiliated with Compass, Inc. Account actions stay in this local environment. Listing information is a fixed snapshot.</div>
-</footer>
+{% include "_footer.html" %}
 </body>
 </html>

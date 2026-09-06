@@ -32,3 +32,41 @@ document.querySelector('[data-copy-property-link]')?.addEventListener('click',as
   try {await navigator.clipboard.writeText(input.value);status.textContent='Link copied.';}
   catch {input.focus();input.select();status.textContent='Select and copy the link above.';}
 });
+
+// Source navigation dropdowns: keep one open, and close on Escape or outside click.
+const navigationMenus = [...document.querySelectorAll('.nav-menu')];
+for (const menu of navigationMenus) {
+  menu.addEventListener('toggle', () => {
+    if (menu.open) for (const other of navigationMenus) if (other !== menu) other.open = false;
+  });
+}
+document.addEventListener('click', event => {
+  for (const menu of navigationMenus) if (!menu.contains(event.target)) menu.open = false;
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') for (const menu of navigationMenus) {
+    if (menu.open && menu.contains(document.activeElement)) menu.querySelector('summary').focus();
+    menu.open = false;
+  }
+});
+for (const button of document.querySelectorAll('.market-toggle,.footer-toggle')) {
+  button.addEventListener('click', () => {
+    const expanded = button.getAttribute('aria-expanded') !== 'true';
+    button.setAttribute('aria-expanded', String(expanded));
+    button.querySelector('span').textContent = expanded ? '−' : '＋';
+  });
+}
+for (const frame of document.querySelectorAll('[data-home-gallery]')) {
+  const photos = JSON.parse(frame.dataset.homeGallery);
+  if (photos.length < 2) continue;
+  const image = frame.querySelector('img');
+  const counter = frame.querySelector('.home-photo-count');
+  let index = 0;
+  function showPhoto(next) {
+    index = (next + photos.length) % photos.length;
+    image.src = photos[index];
+    counter.textContent = `${index + 1}/${photos.length}`;
+  }
+  frame.querySelector('[data-home-previous]').addEventListener('click', () => showPhoto(index - 1));
+  frame.querySelector('[data-home-next]').addEventListener('click', () => showPhoto(index + 1));
+}
