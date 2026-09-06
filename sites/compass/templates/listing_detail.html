@@ -4,8 +4,9 @@
 {% set gallery = listing.get_gallery() %}
 <div id="overview" class="listing-page">
   <div class="listing-navigation"><a href="{{ url_for('city_for_rent' if listing.is_rental or listing.status == 'for-rent' else 'city_for_sale',city_state=(listing.market_city or listing.city)|lower|replace(' ','-') ~ '-' ~ listing.state|lower) }}">‹ Search</a><nav aria-label="Property sections"><a href="#overview">Overview</a><a href="#description">Description</a><a href="#property-info">Property Info</a><a href="#similar-homes">Similar Homes</a></nav><div class="property-toolbar-actions">{% if current_user.is_authenticated %}<form method="post" action="{{ url_for('unsave_home' if is_saved else 'save_home',listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn outline tiny" type="submit">{{ '★ Saved' if is_saved else '☆ Save' }}</button></form>{% else %}<a class="btn outline tiny" href="{{ url_for('login',next=request.path) }}">☆ Save</a>{% endif %}<button class="btn outline tiny" type="button" data-open-dialog="share-property">Share</button></div></div>
-  <div class="detail-gallery">
+  <div class="detail-gallery" data-photo-count="{{ gallery|length }}">
     {% for photo in gallery %}<button class="gallery-tile" type="button" data-gallery-src="{{ photo }}" aria-label="View photo {{ loop.index }}"><img src="{{ photo }}" alt="{{ listing.address }} — photo {{ loop.index }}"></button>{% endfor %}
+    {% if listing.get_property_facts().get('Status') == 'Coming Soon' %}<span class="detail-status">Compass Coming Soon</span>{% endif %}
     {% if gallery %}<button class="btn photo-count" type="button" data-view-photos>{{ gallery|length }} Photos</button>{% endif %}
   </div>
   <div class="detail-grid container">
