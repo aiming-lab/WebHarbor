@@ -22,7 +22,34 @@
       {% if listing.is_open_house %}<section class="property-section"><h2>Open house</h2><p>{{ listing.open_house_date }} · {{ listing.open_house_time }}</p></section>{% endif %}
       <p class="snapshot-note">{% if listing.source_retrieved_at %}Listing snapshot checked {{ listing.source_retrieved_at[:10] }}.{% else %}Archived listing. Only facts supplied by the original source are shown.{% endif %} Availability and pricing may have changed.</p>
     </div>
-    <aside class="agent-sidebar" aria-label="Property actions"><div class="action-stack"><a class="btn" href="{{ url_for('tour_request',listing_id=listing.id) }}">Request a tour</a><a class="btn outline" href="{{ url_for('inquiry_send',listing_id=listing.id) }}">Contact an agent</a>{% if current_user.is_authenticated %}<form method="post" action="{{ url_for('unsave_home' if is_saved else 'save_home',listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn outline" type="submit">{{ '★ Saved — remove' if is_saved else '☆ Save home' }}</button></form>{% else %}<a class="btn outline" href="{{ url_for('login',next=url_for('listing_detail',slug=listing.slug)) }}">☆ Save home</a>{% endif %}{% if current_user.is_authenticated %}{% if collections %}<form class="collection-picker" method="post" action="{{ url_for('listing_add_to_collection',listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="collection-choice">Add to a collection</label><select id="collection-choice" name="collection_id" required>{% for collection in collections %}<option value="{{ collection.id }}">{{ collection.name }}</option>{% endfor %}</select><button class="btn outline" type="submit">Add to collection</button></form>{% else %}<a class="btn outline" href="{{ url_for('collection_new') }}">Create a collection</a>{% endif %}{% endif %}</div></aside>
+    <aside class="agent-sidebar" aria-label="Property actions">
+      <div class="action-stack">
+        <a class="btn" href="{{ url_for('tour_request',listing_id=listing.id) }}">Request a tour</a>
+        <a class="btn outline" href="{{ url_for('inquiry_send',listing_id=listing.id) }}">Contact an agent</a>
+        {% if current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('unsave_home' if is_saved else 'save_home',listing_id=listing.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn outline" type="submit">{{ '★ Saved — remove' if is_saved else '☆ Save home' }}</button>
+          </form>
+        {% else %}
+          <a class="btn outline" href="{{ url_for('login',next=url_for('listing_detail',slug=listing.slug)) }}">☆ Save home</a>
+        {% endif %}
+      </div>
+      {% if current_user.is_authenticated %}
+        {% if collections %}
+          <form class="collection-picker" method="post" action="{{ url_for('listing_add_to_collection',listing_id=listing.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label for="collection-choice">Add to a collection</label>
+            <select id="collection-choice" name="collection_id" required>
+              {% for collection in collections %}<option value="{{ collection.id }}">{{ collection.name }}</option>{% endfor %}
+            </select>
+            <button class="btn outline" type="submit">Add to collection</button>
+          </form>
+        {% else %}
+          <a class="btn outline" href="{{ url_for('collection_new') }}">Create a collection</a>
+        {% endif %}
+      {% endif %}
+    </aside>
   </div>
   <section id="similar-homes" class="container property-section"><h2>Similar Homes</h2>{% if similar %}<div class="grid-cards">{% for L in similar %}{% include "_card.html" %}{% endfor %}</div>{% else %}<p class="muted">No similar listings are available.</p>{% endif %}</section>
 </div>

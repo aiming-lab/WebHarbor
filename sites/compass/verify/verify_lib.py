@@ -44,7 +44,7 @@ def address_text(text):
     text = words(text)
     for full, short in {"southwest": "sw", "southeast": "se", "northeast": "ne",
                         "northwest": "nw", "avenue": "ave", "street": "st",
-                        "saint": "st", "drive": "dr", "place": "pl",
+                        "saint": "st", "drive": "dr", "place": "pl", "boulevard": "blvd",
                         "west": "w", "east": "e", "north": "n", "south": "s"}.items():
         text = re.sub(r"\b" + full + r"\b", short, text)
     return re.sub(r"\b(unit|apt|apartment|suite)\s+", "", text)
@@ -166,7 +166,7 @@ def user_id(snapshot_data, email):
 def criteria_ok(criteria):
     locations = [norm(criteria.get(key, "")) for key in ("q", "city") if criteria.get(key)]
     return (bool(locations) and all(value in {"boston", "boston ma", "boston, ma"} for value in locations)
-            and criteria.get("status") == "for-sale" and criteria.get("property_type") == "Townhouse"
+            and criteria.get("status") == "for-sale" and criteria.get("property_type") == "Condo"
             and str(criteria.get("beds")) == "3"
             and not any(value for key, value in criteria.items() if key not in {"q", "city", "status", "property_type", "beds", "sort"}))
 
@@ -280,7 +280,7 @@ def state_checks(judge, trajectory, before, after):
         judge.check("optional_target_saves_only", all(row["user_id"] == uid and row["listing_id"] in members for row in saves))
     elif task == 10:
         new = only_new(before, after, "saved_searches")
-        valid = (len(new) == 1 and new[0]["user_id"] == uid and new[0]["name"] == "Boston townhouses 3BR"
+        valid = (len(new) == 1 and new[0]["user_id"] == uid and new[0]["name"] == "Boston condos 3BR"
                  and criteria_ok(json.loads(new[0]["criteria_json"])))
         judge.check("one_exact_saved_search", valid)
         judge.check("reopened_saved_search", transitioned(trajectory, "/saved-searches", "/search", criteria_ok))
@@ -307,7 +307,7 @@ def answer_checks(judge, trajectory):
         return
     if task == 10:
         judge.check("answer_saved_criteria", phrase(text, "Boston") and phrase(text, "for sale")
-                    and (phrase(text, "Townhouse") or phrase(text, "Townhouses"))
+                    and (phrase(text, "Condo") or phrase(text, "Condos"))
                     and scalar(text, 3, "beds"))
         return
     listing = LISTINGS[TARGETS[task]]

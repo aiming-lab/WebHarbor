@@ -46,6 +46,44 @@ def test_listing_title_does_not_contain_share_dialog_markup(client):
     assert html.count('id="share-property"') == 1
 
 
+@pytest.mark.parametrize("route", ["/login", "/register", "/account/edit", "/account/preferences",
+                                   "/account/change-password", "/tour/1", "/inquiry/1",
+                                   "/collections/new", "/saved-searches"])
+def test_form_labels_identify_their_controls(client, route):
+    from html.parser import HTMLParser
+
+    class Labels(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.ids = set()
+            self.labels = []
+            self.active = None
+
+        def handle_starttag(self, tag, attributes):
+            attrs = dict(attributes)
+            if attrs.get("id"):
+                assert attrs["id"] not in self.ids, "duplicate control id"
+                self.ids.add(attrs["id"])
+            if tag == "label":
+                self.active = {"for": attrs.get("for"), "wrapped": False}
+            if tag in {"input", "select", "textarea"} and self.active is not None:
+                self.active["wrapped"] = True
+
+        def handle_endtag(self, tag):
+            if tag == "label" and self.active is not None:
+                self.labels.append(self.active)
+                self.active = None
+
+    if route not in {"/login", "/register"}:
+        login(client)
+    parser = Labels()
+    response = client.get(route)
+    assert response.status_code == 200
+    parser.feed(response.get_data(as_text=True))
+    assert parser.labels
+    assert all(label["wrapped"] or label["for"] in parser.ids for label in parser.labels)
+
+
 @pytest.mark.parametrize("target", ["https://foreign.example/", "//foreign.example/", "/\\foreign.example/", "https://localhost.evil.example/"])
 def test_login_never_redirects_outside_mirror(client, target):
     assert login(client, target).location == "/account"

@@ -12,14 +12,14 @@ import verify_lib as v
 
 ANSWERS = {
     0: "88 SW 7th St #PH4303, Miami; built 2016; MLS A12055974.",
-    1: "1542 15th St, San Francisco — $1.295 million, year 1906, MLS 426107614.",
+    1: "420 Mission Bay Blvd North, Unit 120, San Francisco — $899,000, year 2012, MLS 426105057.",
     2: "1425 Brickell Ave #42F: $11.75M; 3,913 sq ft; built 2003.\n480 NE 31st St #PH5402: $4.5M; 2,112 sq ft; built 2019.\n480 NE 31st St #PH5402 has the lower price per square foot.",
     3: "195 Willoughby Ave #1517/1518, Brooklyn — 1958; Charlie Lewis.",
     4: "Saved successfully. Recorded price: $565,000. Type: Co-op.",
     5: "Phone: (415) 555-0199. San Francisco, California.",
     6: "The tour is requested. Year built: 2019.",
     7: "Share token: fixture-token.",
-    10: "Boston; for-sale; Townhouse; minimum 3 bedrooms.",
+    10: "Boston; for-sale; Condo; minimum 3 bedrooms.",
     11: "864 Moore Dr, Aspen — seven bedrooms; 10,615 square feet; year 2005; MLS 188891.",
     12: "Rounded price per square foot: $1,090. Year: 1957. Jenna Citron Pinchuk, jenna.citron@compass.com.",
     13: "Rockwell Island, Miami — 4 bedrooms; 4,588 sqft; built 2026; Renier Casanova.",
@@ -34,7 +34,7 @@ def trajectory(task):
     paths = ["/"] + [v.detail_path(key) for key in v.LISTINGS]
     paths += [v.detail_path(89), "/agents/" + v.LISTINGS[89]["agent_slug"], "/account", "/saved", "/tours", "/inquiry/38",
               "/collections/99", "/collections/share/fixture-token", "/saved-searches",
-              "/search?q=Boston&status=for-sale&property_type=Townhouse&beds=3"]
+              "/search?q=Boston&status=for-sale&property_type=Condo&beds=3"]
     return {"task_id": f"Compass--{task}", "start_url": "http://localhost:40018/",
             "final_answer": ANSWERS[task], "steps": [{"url": "http://localhost:40018" + path, "action": "click"} for path in paths]}
 
@@ -123,7 +123,7 @@ def completed_state(task, before):
     elif task in {7, 14}:
         after["collections"][99] = {"id": 99, "user_id": 4, "name": "Austin top picks" if task == 7 else "Austin garage picks", "listing_ids_json": json.dumps([252, 253] if task == 7 else [233]), "share_token": "fixture-token"}
     elif task == 10:
-        after["saved_searches"][99] = {"id": 99, "user_id": 1, "name": "Boston townhouses 3BR", "criteria_json": json.dumps({"city": "Boston", "status": "for-sale", "property_type": "Townhouse", "beds": "3", "sort": "price_asc"})}
+        after["saved_searches"][99] = {"id": 99, "user_id": 1, "name": "Boston condos 3BR", "criteria_json": json.dumps({"city": "Boston", "status": "for-sale", "property_type": "Condo", "beds": "3", "sort": "price_asc"})}
     elif task == 15:
         after["inquiries"][99] = {"id": 99, "user_id": 2, "listing_id": 38, "agent_id": v.LISTINGS[38]["agent_id"], "subject": "Following up on my tour", "message": "Please confirm the date and time for this tour."}
     return after
