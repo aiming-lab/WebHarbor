@@ -44,18 +44,18 @@
         [<a href="{{ url_for('paper_detail', arxiv_id=p.arxiv_id) }}">abs</a>]
     </dt>
     <dd class="paper-entry">
-        <div class="entry-title"><a href="{{ url_for('paper_detail', arxiv_id=p.arxiv_id) }}">{{ p.title }}</a></div>
+        <div class="entry-title"><a href="{{ url_for('paper_detail', arxiv_id=p.arxiv_id) }}">{{ p.display_title }}</a></div>
         <div class="entry-authors"><b>Authors:</b>
             {% for a in p.get_authors()[:5] %}
                 <a href="{{ url_for('author_papers', name=a) }}">{{ a }}</a>{% if not loop.last %}, {% endif %}
             {% endfor %}
             {% if p.get_authors()|length > 5 %}, <i>et al.</i>{% endif %}
         </div>
-        {% if p.comments %}
-        <div class="entry-comments"><b>Comments:</b> {{ p.comments }}</div>
+        {% if p.display_comments %}
+        <div class="entry-comments"><b>Comments:</b> {{ p.display_comments }}</div>
         {% endif %}
         <div class="entry-subjects"><b>Subjects:</b> {{ p.primary_subject }}</div>
-        {% if p.abstract %}
+        {% if p.display_abstract %}
         <div class="entry-abs">{{ p.short_abstract }}</div>
         {% endif %}
     </dd>

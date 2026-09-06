@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ paper.title }} — PDF — arXiv{% endblock %}
+{% block title %}{{ paper.display_title }} — PDF — arXiv{% endblock %}
 {% block content %}
 
 <div style="margin:-12px -18px;">
@@ -10,7 +10,7 @@
 
     <div class="pdf-preview">
         <div class="pdf-page">
-            <h1>{{ paper.title }}</h1>
+            <h1>{{ paper.display_title }}</h1>
             <div class="pdf-authors">
                 {% for a in paper.get_authors() %}
                     {{ a }}{% if not loop.last %}, {% endif %}
@@ -23,8 +23,8 @@
 
             <div class="pdf-abstract-label">ABSTRACT</div>
             <div class="pdf-abstract">
-                {% if paper.abstract %}
-                    {{ paper.abstract }}
+                {% if paper.display_abstract %}
+                    {{ paper.display_abstract }}
                 {% else %}
                     <i>Abstract not currently available.</i>
                 {% endif %}
@@ -48,9 +48,9 @@
                 For citation purposes, please reference the arXiv identifier and version.
             </p>
 
-            {% if paper.comments %}
+            {% if paper.display_comments %}
             <h2 style="font-size:14px;">Notes</h2>
-            <p><i>{{ paper.comments }}</i></p>
+            <p><i>{{ paper.display_comments }}</i></p>
             {% endif %}
 
             <div style="margin-top:40px;padding-top:16px;border-top:1px solid #ccc;font-size:11px;">
