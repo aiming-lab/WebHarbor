@@ -66,13 +66,44 @@ def number_values(text):
     return output
 
 
+def construction_years(text):
+    """Exclude numbers explicitly used as dates, money, areas or ratios."""
+    text = norm(text)
+    month = r"(?:jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|jun(?:e)?|jul(?:y)?|aug(?:ust)?|sep(?:tember)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)"
+    patterns = [
+        r"\b\d{4}-\d{1,2}-\d{1,2}\b",
+        r"\b\d{1,2}/\d{1,2}/\d{4}\b",
+        rf"\b{month}\s+\d{{1,2}},?\s+\d{{4}}\b",
+        rf"\b\d{{1,2}}\s+{month}\s+\d{{4}}\b",
+        r"(?:\$|\busd\s*)\d+(?:\.\d+)?",
+        r"\b\d+(?:\.\d+)?\s*(?:sq\.?\s*ft\.?|square feet|sf)\b",
+        r"\b\d+\.\d+\b",
+    ]
+    for pattern in patterns:
+        text = re.sub(pattern, " ", text)
+    return {int(year) for year in re.findall(r"\b(?:18|19|20)\d{2}\b", text)}
+
+
+def requested_tour_status(text):
+    """Confirming a page is not an assertion that the appointment is confirmed."""
+    text = norm(text)
+    if not phrase(text, "requested") or re.search(r"\bnot\s+requested\b", text):
+        return False
+    text = re.sub(
+        r"\bconfirmed\s+(?:it|(?:its|the|my)\s+(?:details|request|tour))"
+        r"\s+(?:on|in)\s+(?:(?:the|my)\s+)?tours?(?:\s+page)?\b", " ", text)
+    text = re.sub(r"\bnot\s+(?:confirmed|cancelled|canceled)\b", " ", text)
+    return not re.search(r"\b(?:confirmed|cancelled|canceled|pending)\b", text)
+
+
 def scalar(text, value, field):
+    if field == "year":
+        return construction_years(text) == {value}
     if value not in number_values(text):
         if field != "beds" or not phrase(text, {4: "four", 7: "seven"}.get(value, str(value))):
             return False
     normalized = norm(text)
     patterns = {
-        "year": [r"\b(?:18|19|20)\d{2}\b"],
         "beds": [r"(\d+)\s*(?:bedrooms?|beds?|br)\b", r"(?:bedrooms?|beds?)\s*[:=]\s*(\d+)"],
         "sqft": [r"(\d+(?:\.\d+)?)\s*(?:sq\.?\s*ft\.?|square feet|sf)\b",
                  r"(?:sq\.?\s*ft\.?|square feet|floor area)\s*[:=]\s*(\d+)"],
@@ -340,7 +371,7 @@ def answer_checks(judge, trajectory):
                     and re.search(r"\b(lower|lowest|cheaper|less expensive)\b", norm(row))
                     and not re.search(r"\bnot\b", norm(row)) for row in rows))
     if task == 6:
-        judge.check("answer_tour_status", phrase(text, "requested") and not phrase(text, "confirmed"))
+        judge.check("answer_tour_status", requested_tour_status(text))
     if task == 12:
         judge.check("answer_rounded_price_per_sqft", scalar(text, 1090, "ratio"))
         judge.check("followed_agent_profile", transitioned(trajectory, detail_path(89), "/agents/" + listing["agent_slug"]))

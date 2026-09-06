@@ -190,3 +190,42 @@ def test_explicit_follow_agent_and_reopen_are_required_but_direct_browsing_is_no
     t["steps"] = [{"url": "http://127.0.0.1:40018" + v.detail_path(99), "action": "navigate"}]
     j = v.Checks(0); v.answer_checks(j, t)
     assert j.result()["pass"]
+
+
+@pytest.mark.parametrize('answer', [
+    'Year built: 2016. Price per square foot: $1,861.93/sqft.',
+    'Year built: 2016; 2016 sqft.',
+    'Built 2016. Tour on 2026-07-12 at 11:00 AM.',
+    'Built 2016. Tour on July 12, 2026.',
+])
+def test_year_is_not_confused_with_ratios_areas_or_tour_dates(answer):
+    assert v.scalar(answer, 2016, 'year')
+
+
+@pytest.mark.parametrize('answer', [
+    'Year built: 2017. Tour on 2016-07-12.',
+    'Year built: 2016 or 2017.',
+    'Year built: 2016. Built in 2017.',
+    '$2016 per sqft; construction year unknown.',
+    '2016 sqft; construction year unknown.',
+    'Tour on July 12, 2016; construction year unknown.',
+])
+def test_year_still_rejects_missing_or_contradictory_construction_year(answer):
+    assert not v.scalar(answer, 2016, 'year')
+
+
+@pytest.mark.parametrize('status_text,expected', [
+    ('Requested the in-person tour for 2026-07-12 and confirmed it on Tours. Tour status: requested.', True),
+    ('The tour is requested. I confirmed its details on Tours.', True),
+    ('Status: requested, not confirmed.', True),
+    ('I requested a tour. Tour status: confirmed.', False),
+    ('The requested tour is confirmed.', False),
+    ('Tour status: requested or confirmed.', False),
+    ('The tour is not requested.', False),
+])
+def test_tour_status_is_distinct_from_ui_confirmation(status_text, expected):
+    t = trajectory(6)
+    t['final_answer'] = status_text + ' Year built: 2019.'
+    j = v.Checks(6)
+    v.answer_checks(j, t)
+    assert j.result()['pass'] is expected, j.result()
