@@ -1,6 +1,6 @@
 # Compass contribution review
 
-Reviewer takeover of [original PR #25](https://github.com/aiming-lab/WebHarbor/pull/25), contributed by **sarendis56 (Peichun Hua)**. The original commits remain in this branch. This Draft contains source/UI fixes and reviewer-authored grading contracts. Human experience and independent execution review are **pending**; it is not Ready for merge.
+Reviewer takeover of [original PR #25](https://github.com/aiming-lab/WebHarbor/pull/25), contributed by **sarendis56 (Peichun Hua)**. The original commits remain in this branch. This Draft contains source/UI fixes and reviewer-authored grading contracts. Independent execution review is complete and reconciled; **human experience remains pending**, so it is not Ready for merge.
 
 ## Candidate and integration
 
@@ -66,6 +66,25 @@ Initial scoring found genuine parser false negatives: a price-per-square-foot nu
 
 The **124-case current verifier suite** covers wrong answers/object associations, foreign-origin and missing-navigation replay, no-op write tasks, unrelated state mutations and legitimate alternative paths/wording. The earlier **111/111 ad-hoc adversarial matrix** survives only as a historical structured result; its raw constructed fixtures were lost and it was not rerun after the parser fix. It is not counted as new task execution. Screenshot format checks assume a trusted recorder; independent review must judge the actual executions.
 
+## Independent execution review and reconciliation
+
+The [independent Claude Code comment](https://github.com/aiming-lab/WebHarbor/pull/84#issuecomment-5559623084) reports **16/16 PASS, 0 FAIL**, agreeing with all 16 deterministic results. The reviewer reports using Claude Fable 5.1 (`claude-fable-5-1`) and freezing its first-pass verdict before reading the PR, verifier code/results or prior conclusions.
+
+- Reviewed candidate: `b66016dd16dfc7eb776f58d5490fc31caecac68c`; actual runtime image code and execution checkout are distinguished above.
+- Input manifest SHA-256: `3125bf726ae7e8faa3020c070d5f08037b619f0474ab3c2c552a272e25be41fd`; all **618** listed inputs were rehashed during reconciliation, with no mismatch.
+- Frozen verdict SHA-256: `342633f8e1a3f0a31cf5983912c196573a4c7336591d66d3c315938f1035f662`. The original verdict remains unchanged.
+- The reviewer checked all task trajectories, decisive DOM observations and before/after state, but visually sampled only **4 of 268 screenshots**. Its comment's total of 258 is a counting error. This review does not certify human experience, source fidelity, visual quality, recorder integrity or verifier implementation; those require the separate evidence above.
+
+Reconciliation covered the following specific points:
+
+| Point | Evidence and resolution |
+|---|---|
+| Pending eligibility in tasks 3, 11 and 17 | The existing seed keeps Pending / Contract Signed in the `for-sale` category, preserves the published status in property facts, and marks `is_pending`. The local For sale filter tests that category without excluding pending listings. The tasks refer to this fixed local snapshot and do not request active-only listings. Recomputed selections match the recorded outcomes. This is a clarification of the existing filter, not a change to task acceptance. |
+| Search area versus address city | The reviewer's claim that using `city` gives identical results is incorrect for New York: a literal `city='New York'` query has no qualifying Co-ops, while the actual UI search area includes seven via `city OR market_city`, including Brooklyn and Manhattan. Rechecking the real UI query preserves task 3's selection and PASS. The task asks for the New York search area, not an exact address-city string. |
+| Inquiry message in task 15 | The task requires submitting a local inquiry, not displaying its message afterward. Independent row comparison confirms exactly one inquiry with the requested subject/message, user, listing and agent; all other tables, including existing tours, are unchanged. The inquiries page displays the subject only, as disclosed in the blind review. |
+
+No application, seed, asset, task, rubric or verifier change results from this reconciliation. The documentation update reuses the frozen executions and verdict; no new UI execution or expanded visual review is claimed. Human experience and visual acceptance remain pending.
+
 ## Reproduce
 
 ```bash
@@ -81,4 +100,4 @@ python sites/compass/verify/verify_0.py --run_dir RUN \
   --initial_db BEFORE.db --after_db AFTER.db --no_llm
 ```
 
-The HF candidate is immutable and publicly reachable but its PR is still open. Maintainers should merge/resolve the asset PR, update the pin if the merge produces a different commit, run the final build/asset/reset checks, then merge this code PR after human and independent-review feedback is resolved. Maintainers perform the merges. This Draft does not claim final acceptance.
+The HF candidate is immutable and publicly reachable but its PR is still open. Maintainers should merge/resolve the asset PR, update the pin if the merge produces a different commit, run the final build/asset/reset checks, then merge this code PR after human acceptance and final delivery checks. Independent execution feedback is resolved. Maintainers perform the merges. This Draft does not claim final acceptance.
