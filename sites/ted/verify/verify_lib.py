@@ -40,7 +40,7 @@ def load_run(run_dir):
     return traj
 
 def step_urls(traj):
-    return [s.get("url", "") for s in traj.get("steps", [])]
+    return [s.get("url") or s.get("url_after") or s.get("url_before") or "" for s in traj.get("steps", [])]
 
 def navigated_to(traj, substr, times=1):
     """Deterministic: at least `times` trajectory steps have a URL containing substr."""
