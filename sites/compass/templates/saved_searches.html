@@ -10,7 +10,7 @@
         <tbody>
           {% for s in searches %}{% set c = s.get_criteria() %}
             <tr>
-              <td>{{ s.name }}</td>
+              <td><a href="{{ url_for('search', **c) }}">{{ s.name }}</a></td>
               <td>{% if c.q %}"{{ c.q }}" · {% endif %}{% if c.city %}{{ c.city }} · {% endif %}{% if c.beds %}{{ c.beds }}+ bd · {% endif %}{% if c.price_max %}≤ ${{ c.price_max }} · {% endif %}{% if c.property_type %}{{ c.property_type }}{% endif %}</td>
               <td>{{ 'Yes' if s.notify else 'No' }}</td>
               <td>

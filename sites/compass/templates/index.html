@@ -1,75 +1,26 @@
 {% extends "base.html" %}
 {% block content %}
-
 <section class="cx-hero">
-  <h1>Find your place</h1>
-  <p class="sub">Search homes for sale, rentals, and new developments — guided by Compass agents.</p>
-  <form class="search-box" action="{{ url_for('search') }}" method="get" role="search">
-    <input type="text" name="q" placeholder="City, neighborhood, ZIP, or address" autocomplete="off">
-    <button type="submit">Search</button>
-  </form>
-</section>
-
-<section class="section container">
-  <div class="section-row">
-    <h2>Featured cities</h2>
-    <a class="link-more" href="{{ url_for('homes_for_sale_index') }}">All cities →</a>
-  </div>
-  <div class="grid-cards">
-    {% for c in FEATURED_CITIES %}
-      <a class="card" href="{{ url_for('city_for_sale', city_state=c.slug) }}">
-        <div class="city-tile" style="background-image:url('{{ c.hero_image }}')">
-          <div class="label">{{ c.name }}, {{ c.state }}</div>
-        </div>
-      </a>
-    {% endfor %}
+  <div class="hero-content">
+    <h1>Find your place</h1>
+    <form class="home-search" action="{{ url_for('search') }}" method="get" role="search">
+      <fieldset class="search-tabs"><legend class="sr-only">Search type</legend><label><input type="radio" name="status" value="for-sale" checked><span>Buy</span></label><label><input type="radio" name="status" value="for-rent"><span>Rent</span></label></fieldset>
+      <div class="search-box"><input id="home-query" type="search" name="q" aria-label="City, neighborhood, ZIP or address" placeholder="City, Neighborhood, Address, ZIP" autocomplete="off" list="search-cities"><button type="submit" aria-label="Search"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="m15 15 6 6" stroke="currentColor" stroke-width="2.4"/></svg></button></div>
+      <datalist id="search-cities">{% for c in FEATURED_CITIES %}<option value="{{ c.name }}">{% endfor %}</datalist>
+    </form>
   </div>
 </section>
-
 {% if featured %}
-<section style="background:var(--c-gray-1); margin: 0; padding: 64px 24px;">
- <div class="container">
-  <div class="section-row">
-    <div>
-      <h2>Compass Exclusives</h2>
-      <p style="color:var(--c-gray-4); font-size:14px; margin-top:-8px">Homes you can only find with Compass.</p>
-    </div>
-  </div>
-  <div class="grid-cards">
-    {% for L in featured %}
-      {% include "_card.html" %}
-    {% endfor %}
-  </div>
- </div>
+<section class="section container home-section">
+  <h2>Compass Exclusives</h2><p class="section-intro">Be the first to browse exclusive listings before they hit the market.</p>
+  <div class="grid-cards">{% for L in featured %}{% include "_card.html" %}{% endfor %}</div>
+  <div class="section-link"><a href="{{ url_for('search',compass_exclusive=1) }}">View All Compass Exclusives <span aria-hidden="true">→</span></a></div>
 </section>
 {% endif %}
-
-{% if new_listings %}
-<section class="section container">
-  <div class="section-row">
-    <h2>New on Compass</h2>
-    <a class="link-more" href="{{ url_for('new_listings') }}">See all new →</a>
-  </div>
-  <div class="grid-cards">
-    {% for L in new_listings %}
-      {% include "_card.html" %}
-    {% endfor %}
-  </div>
+<section class="section container home-section city-section">
+  <h2>Find the Neighborhood For You</h2><p class="section-intro">Explore homes and neighborhoods in our featured markets.</p>
+  <div class="city-grid">{% for c in FEATURED_CITIES %}<a class="city-tile" href="{{ url_for('city_for_sale',city_state=c.slug) }}"><img src="{{ c.hero_image }}" alt="Homes in {{ c.name }}" loading="lazy"><span class="label">{{ c.name }}</span></a>{% endfor %}</div>
 </section>
-{% endif %}
-
-{% if luxury %}
-<section class="section container">
-  <div class="section-row">
-    <h2>Compass Luxury</h2>
-    <a class="link-more" href="{{ url_for('luxury') }}">Explore →</a>
-  </div>
-  <div class="grid-cards">
-    {% for L in luxury[:6] %}
-      {% include "_card.html" %}
-    {% endfor %}
-  </div>
-</section>
-{% endif %}
-
+{% if luxury %}<section class="section container home-section"><h2>Compass Luxury</h2><div class="grid-cards">{% for L in luxury[:3] %}{% include "_card.html" %}{% endfor %}</div><div class="section-link"><a href="{{ url_for('luxury') }}">Explore Luxury Homes →</a></div></section>{% endif %}
+<section class="section container home-section popular-cities"><h2>Real Estate in Popular Cities</h2><p class="section-intro">Browse listings, view photos, and find your next home.</p><ul>{% for c in FEATURED_CITIES %}<li><a href="{{ url_for('city_for_sale',city_state=c.slug) }}">{{ c.name }} Real Estate</a></li>{% endfor %}<li><a href="{{ url_for('homes_for_sale_index') }}">View All Markets</a></li></ul></section>
 {% endblock %}

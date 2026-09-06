@@ -1,105 +1,31 @@
 {% extends "base.html" %}
-{% block title %}{{ listing.address }} | Compass{% endblock %}
+{% block title %}{{ listing.address }} | Compass<dialog id="share-property" class="share-property" aria-labelledby="share-heading"><header><h2 id="share-heading">Share this home</h2><button class="icon-button" type="button" data-close-dialog aria-label="Close sharing">×</button></header><label for="property-share-link">Link to this home</label><input id="property-share-link" type="url" readonly value="{{ request.base_url }}"><button class="btn" type="button" data-copy-property-link>Copy link</button><p role="status" data-copy-status></p></dialog>
+{% endblock %}
 {% block content %}
-
-<div class="container section">
-
-  {% set gallery = listing.get_gallery() %}
+{% set gallery = listing.get_gallery() %}
+<div id="overview" class="listing-page">
+  <div class="listing-navigation"><a href="{{ url_for('city_for_rent' if listing.is_rental or listing.status == 'for-rent' else 'city_for_sale',city_state=(listing.market_city or listing.city)|lower|replace(' ','-') ~ '-' ~ listing.state|lower) }}">‹ Search</a><nav aria-label="Property sections"><a href="#overview">Overview</a><a href="#description">Description</a><a href="#property-info">Property Info</a><a href="#similar-homes">Similar Homes</a></nav><div class="property-toolbar-actions">{% if current_user.is_authenticated %}<form method="post" action="{{ url_for('unsave_home' if is_saved else 'save_home',listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn outline tiny" type="submit">{{ '★ Saved' if is_saved else '☆ Save' }}</button></form>{% else %}<a class="btn outline tiny" href="{{ url_for('login',next=request.path) }}">☆ Save</a>{% endif %}<button class="btn outline tiny" type="button" data-open-dialog="share-property">Share</button></div></div>
   <div class="detail-gallery">
-    <div>
-      {% if listing.hero_image %}
-        <img src="{{ listing.hero_image }}" alt="{{ listing.address }}">
-      {% endif %}
-    </div>
-    <div class="thumbs">
-      {% for g in gallery[1:4] %}
-        <img src="{{ g }}" alt="{{ listing.address }} photo {{ loop.index + 1 }}">
-      {% endfor %}
-    </div>
+    {% for photo in gallery %}<button class="gallery-tile" type="button" data-gallery-src="{{ photo }}" aria-label="View photo {{ loop.index }}"><img src="{{ photo }}" alt="{{ listing.address }} — photo {{ loop.index }}"></button>{% endfor %}
+    {% if gallery %}<button class="btn photo-count" type="button" data-view-photos>{{ gallery|length }} Photos</button>{% endif %}
   </div>
-
-  <div class="detail-grid">
+  <div class="detail-grid container">
     <div class="detail-main">
-      <div class="price-big">{{ listing.price_display() }}</div>
-      <h1>{{ listing.address }}{% if listing.unit %}, Unit {{ listing.unit }}{% endif %}</h1>
-      <div style="color:var(--c-gray-4); margin-bottom:14px">
-        {{ listing.city }}, {{ listing.state }} {{ listing.zip }}
-        {% if listing.neighborhood %}· {{ listing.neighborhood }}{% endif %}
-      </div>
-
-      <div class="key-facts">
-        <div><strong>{{ listing.beds }}</strong>{{ 'Bedroom' if listing.beds == 1 else 'Bedrooms' }}</div>
-        <div><strong>{{ listing.baths_full + 0.5 * listing.baths_half }}</strong>{{ 'Bathroom' if (listing.baths_full + listing.baths_half) == 1 else 'Bathrooms' }}</div>
-        {% if listing.sqft %}<div><strong>{{ '{:,}'.format(listing.sqft) }}</strong>Sq. Ft.</div>{% endif %}
-        {% if listing.price_per_sqft() %}<div><strong>${{ '{:,}'.format(listing.price_per_sqft()) }}</strong>/Sq. Ft.</div>{% endif %}
-        <div><strong>{{ listing.year_built }}</strong>Year built</div>
-        <div><strong>{{ listing.property_type }}</strong>Property type</div>
-      </div>
-
-      <p class="lead">{{ listing.description }}</p>
-
-      <h3>Property details</h3>
-      <div class="fact-grid">
-        <div class="label">MLS #</div><div class="value">{{ listing.mls_number }}</div>
-        <div class="label">Status</div><div class="value">{{ listing.status|capitalize }}{% if listing.is_pending %} (Pending){% endif %}</div>
-        <div class="label">Days on Compass</div><div class="value">{{ listing.days_on_compass }}</div>
-        {% if listing.lot_sqft %}<div class="label">Lot size</div><div class="value">{{ '{:,}'.format(listing.lot_sqft) }} sq ft</div>{% endif %}
-        {% if listing.hoa_fee_usd_month %}<div class="label">HOA fee</div><div class="value">${{ listing.hoa_fee_usd_month }} / month</div>{% endif %}
-        <div class="label">Parking</div><div class="value">{% if listing.has_garage %}Garage{% elif listing.has_parking %}Driveway / off-street{% else %}Street{% endif %}</div>
-        <div class="label">Pool</div><div class="value">{{ 'Yes' if listing.has_pool else 'No' }}</div>
-        <div class="label">Pets</div><div class="value">{{ 'Allowed' if listing.pets_allowed else 'Not allowed' }}</div>
-      </div>
-
-      <h3>Features</h3>
-      <div style="margin-bottom:32px">
-        {% for f in listing.get_features() %}<span class="chip">{{ f }}</span>{% endfor %}
-      </div>
-
-      {% if listing.is_open_house %}
-        <h3>Open house</h3>
-        <p>{{ listing.open_house_date }} · {{ listing.open_house_time }}</p>
-      {% endif %}
-
-      {% if similar %}
-        <h3>Similar homes nearby</h3>
-        <div class="grid-cards">
-          {% for L in similar %}{% include "_card.html" %}{% endfor %}
-        </div>
-      {% endif %}
+      <div class="listing-heading"><div class="price-big">{{ listing.price_display() }}</div><div class="listing-dimensions"><span>{{ listing.beds if listing.beds is not none else '—' }} beds</span><span>{{ '%g'|format(listing.baths) if listing.baths is not none else '—' }} baths</span><span>{{ '{:,}'.format(listing.sqft) if listing.sqft else '—' }} sqft</span>{% if listing.price_per_sqft() %}<span>${{ '{:,}'.format(listing.price_per_sqft()) }}/sqft</span>{% endif %}</div><h1>{{ listing.address }}, {{ listing.city }}, {{ listing.state }} {{ listing.zip }}</h1></div>
+      <section id="description" class="property-section"><h2>Description</h2>{% if listing.description %}<p class="property-description">{{ listing.description }}</p>{% else %}<p class="muted">No description is available in this snapshot.</p>{% endif %}{% if listing.agent %}<p class="listing-credit">Listed by <a href="{{ url_for('agent_detail',slug=listing.agent.slug) }}">{{ listing.agent.name }}</a>{% if listing.agent.phone %} · {{ listing.agent.phone }}{% endif %}</p>{% endif %}</section>
+      <section id="property-info" class="property-section"><h2>Property Details for {{ listing.address }}</h2><dl class="property-facts">
+        {% set facts=listing.get_property_facts() %}
+        {% if facts %}{% for key,value in facts.items() %}<div><dt>{{ key }}</dt><dd>{{ value }}</dd></div>{% endfor %}{% else %}<div><dt>Status</dt><dd>{{ listing.status|replace('-',' ')|title }}</dd></div><div><dt>Property details</dt><dd>Not provided in the original snapshot</dd></div>{% endif %}
+        {% for key,value in listing.get_regional_facts().items() %}<div><dt>{{ key }}</dt><dd>{{ value }}</dd></div>{% endfor %}
+      </dl></section>
+      {% if listing.get_features() %}<section class="property-section"><h2>Amenities</h2><ul class="amenities">{% for feature in listing.get_features() %}<li>{{ feature }}</li>{% endfor %}</ul></section>{% endif %}
+      {% if listing.is_open_house %}<section class="property-section"><h2>Open house</h2><p>{{ listing.open_house_date }} · {{ listing.open_house_time }}</p></section>{% endif %}
+      <p class="snapshot-note">{% if listing.source_retrieved_at %}Listing snapshot checked {{ listing.source_retrieved_at[:10] }}.{% else %}Archived listing. Only facts supplied by the original source are shown.{% endif %} Availability and pricing may have changed.</p>
     </div>
-
-    <aside class="agent-sidebar">
-      {% if listing.agent %}
-      <div class="name"><a href="{{ url_for('agent_detail', slug=listing.agent.slug) }}">{{ listing.agent.name }}</a></div>
-      <div class="title">{{ listing.agent.title }} · {{ listing.agent.city }}, {{ listing.agent.state }}</div>
-      <div class="stats">
-        <div><strong>{{ listing.agent.years_experience }}</strong>Years</div>
-        <div><strong>{{ listing.agent.transactions_count }}</strong>Transactions</div>
-        <div><strong>{{ listing.agent.sales_volume_display() }}</strong>Sold</div>
-      </div>
-      {% endif %}
-
-      <div class="action-stack">
-        <a class="btn" href="{{ url_for('tour_request', listing_id=listing.id) }}">Request a tour</a>
-        <a class="btn outline" href="{{ url_for('inquiry_send', listing_id=listing.id) }}">Contact agent</a>
-        {% if current_user.is_authenticated %}
-          {% if is_saved %}
-            <form method="post" action="{{ url_for('unsave_home', listing_id=listing.id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="btn outline" type="submit">♥ Saved — remove</button>
-            </form>
-          {% else %}
-            <form method="post" action="{{ url_for('save_home', listing_id=listing.id) }}">
-              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-              <button class="btn outline" type="submit">♡ Save home</button>
-            </form>
-          {% endif %}
-        {% else %}
-          <a class="btn outline" href="{{ url_for('login') }}?next={{ url_for('listing_detail', slug=listing.slug) }}">Sign in to save</a>
-        {% endif %}
-      </div>
-    </aside>
+    <aside class="agent-sidebar" aria-label="Property actions"><div class="action-stack"><a class="btn" href="{{ url_for('tour_request',listing_id=listing.id) }}">Request a tour</a><a class="btn outline" href="{{ url_for('inquiry_send',listing_id=listing.id) }}">Contact an agent</a>{% if current_user.is_authenticated %}<form method="post" action="{{ url_for('unsave_home' if is_saved else 'save_home',listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn outline" type="submit">{{ '★ Saved — remove' if is_saved else '☆ Save home' }}</button></form>{% else %}<a class="btn outline" href="{{ url_for('login',next=url_for('listing_detail',slug=listing.slug)) }}">☆ Save home</a>{% endif %}{% if current_user.is_authenticated %}{% if collections %}<form class="collection-picker" method="post" action="{{ url_for('listing_add_to_collection',listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label for="collection-choice">Add to a collection</label><select id="collection-choice" name="collection_id" required>{% for collection in collections %}<option value="{{ collection.id }}">{{ collection.name }}</option>{% endfor %}</select><button class="btn outline" type="submit">Add to collection</button></form>{% else %}<a class="btn outline" href="{{ url_for('collection_new') }}">Create a collection</a>{% endif %}{% endif %}</div></aside>
   </div>
+  <section id="similar-homes" class="container property-section"><h2>Similar Homes</h2>{% if similar %}<div class="grid-cards">{% for L in similar %}{% include "_card.html" %}{% endfor %}</div>{% else %}<p class="muted">No similar listings are available.</p>{% endif %}</section>
 </div>
-
+{% if gallery %}<dialog id="photo-viewer" class="photo-viewer" aria-label="Property photos"><header><strong>{{ listing.address }}</strong><span data-photo-counter aria-live="polite"></span><button class="icon-button" type="button" data-close-dialog aria-label="Close photos">×</button></header><div class="photo-stage"><button class="icon-button photo-previous" type="button" data-previous-photo aria-label="Previous photo">‹</button><img src="{{ gallery[0] }}" alt="{{ listing.address }} — photo 1"><button class="icon-button photo-next" type="button" data-next-photo aria-label="Next photo">›</button></div></dialog>{% endif %}
+<dialog id="share-property" class="share-property" aria-labelledby="share-heading"><header><h2 id="share-heading">Share this home</h2><button class="icon-button" type="button" data-close-dialog aria-label="Close sharing">×</button></header><label for="property-share-link">Link to this home</label><input id="property-share-link" type="url" readonly value="{{ request.base_url }}"><button class="btn" type="button" data-copy-property-link>Copy link</button><p role="status" data-copy-status></p></dialog>
 {% endblock %}

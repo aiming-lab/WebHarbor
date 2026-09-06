@@ -34,6 +34,9 @@ RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instan
 # Apply tracked, idempotent Phys.org data corrections to the pinned seed asset.
 RUN cd /opt/WebSyn/phys_org && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
 
+# Rebuild Compass's source-backed catalog and benchmark state from tracked data.
+RUN cd /opt/WebSyn/compass && python migrate_seed.py && rm -rf instance
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py

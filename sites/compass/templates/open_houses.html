@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container section">
   <h1>Open Houses</h1>
-  <p style="color:var(--c-gray-4)">In-person tours scheduled by Compass agents.</p>
+  <p style="color:var(--c-gray-4)">Open house schedules recorded in this snapshot.</p>
 
   <form method="get" class="filter-bar">
     <div class="filter-group">
@@ -29,8 +29,8 @@
           <td>{{ L.open_house_time }}</td>
           <td><a href="{{ url_for('listing_detail', slug=L.slug) }}">{{ L.address }}</a></td>
           <td>{{ L.city }}, {{ L.state }}</td>
-          <td>{{ L.beds }}</td>
-          <td>{{ L.baths_full + 0.5 * L.baths_half }}</td>
+          <td>{{ L.beds if L.beds is not none else '—' }}</td>
+          <td>{{ '%g'|format(L.baths) if L.baths is not none else '—' }}</td>
           <td>{{ L.price_display() }}</td>
         </tr>
       {% endfor %}

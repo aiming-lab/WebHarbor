@@ -4,8 +4,11 @@ import math
 import os
 import re
 import secrets
+import sys
+import math
 from datetime import date, datetime, timedelta
 from functools import wraps
+from urllib.parse import urlsplit
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, session, url_for)
@@ -15,14 +18,19 @@ from flask_login import (LoginManager, UserMixin, current_user, login_required,
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from sqlalchemy import or_, func
+from email_validator import validate_email, EmailNotValidError
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# seed_data imports these models by module name, including when launched as a script.
+if __name__ == "__main__":
+    sys.modules["app"] = sys.modules[__name__]
+
 app = Flask(__name__, instance_path=os.path.join(BASE_DIR, "instance"))
 app.config["SECRET_KEY"] = "compass-mirror-secret-key-not-for-prod"
 app.config["SQLALCHEMY_DATABASE_URI"] = (
-    f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'compass.db')}"
+    "sqlite:///" + os.environ.get("COMPASS_DATABASE_PATH", os.path.join(BASE_DIR, "instance", "compass.db"))
 )
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["WTF_CSRF_TIME_LIMIT"] = None
@@ -106,9 +114,9 @@ class Agent(db.Model):
     license_number = db.Column(db.String(60), default="")
     city = db.Column(db.String(80), default="")
     state = db.Column(db.String(40), default="")
-    years_experience = db.Column(db.Integer, default=0)
-    sales_volume_usd = db.Column(db.BigInteger, default=0)
-    transactions_count = db.Column(db.Integer, default=0)
+    years_experience = db.Column(db.Integer)
+    sales_volume_usd = db.Column(db.BigInteger)
+    transactions_count = db.Column(db.Integer)
     languages = db.Column(db.Text, default="[]")
     specialties = db.Column(db.Text, default="[]")
     is_top_agent = db.Column(db.Boolean, default=False)
@@ -128,6 +136,8 @@ class Agent(db.Model):
             return []
 
     def sales_volume_display(self):
+        if self.sales_volume_usd is None:
+            return "Not available"
         v = self.sales_volume_usd or 0
         if v >= 1_000_000_000:
             return f"${v/1_000_000_000:.1f}B"
@@ -153,6 +163,12 @@ class Listing(db.Model):
     __tablename__ = "listings"
     id = db.Column(db.Integer, primary_key=True)
     listing_id_sha = db.Column(db.String(40), unique=True, index=True)
+    market_city = db.Column(db.String(80), index=True)
+    source_url = db.Column(db.Text, default="")
+    source_retrieved_at = db.Column(db.String(40), default="")
+    source_html_sha256 = db.Column(db.String(64), default="")
+    property_facts_json = db.Column(db.Text, default="{}")
+    regional_facts_json = db.Column(db.Text, default="{}")
     slug = db.Column(db.String(200), unique=True, nullable=False, index=True)
     address = db.Column(db.String(200), nullable=False)
     unit = db.Column(db.String(60), default="")
@@ -164,14 +180,16 @@ class Listing(db.Model):
     longitude = db.Column(db.Float)
 
     status = db.Column(db.String(20), default="for-sale", index=True)
-    price = db.Column(db.Integer, default=0)
-    beds = db.Column(db.Integer, default=0)
-    baths_full = db.Column(db.Integer, default=0)
-    baths_half = db.Column(db.Integer, default=0)
-    sqft = db.Column(db.Integer, default=0)
-    lot_sqft = db.Column(db.Integer, default=0)
-    year_built = db.Column(db.Integer, default=0)
-    property_type = db.Column(db.String(40), default="Single Family", index=True)
+    is_rental = db.Column(db.Boolean, default=False)
+    price = db.Column(db.Integer)
+    beds = db.Column(db.Integer)
+    baths_full = db.Column(db.Integer)
+    baths_half = db.Column(db.Integer)
+    baths_total = db.Column(db.Float)
+    sqft = db.Column(db.Integer)
+    lot_sqft = db.Column(db.Integer)
+    year_built = db.Column(db.Integer)
+    property_type = db.Column(db.String(40), default="", index=True)
 
     description = db.Column(db.Text, default="")
     features = db.Column(db.Text, default="[]")
@@ -179,9 +197,9 @@ class Listing(db.Model):
     gallery_images = db.Column(db.Text, default="[]")
 
     mls_number = db.Column(db.String(40), default="")
-    hoa_fee_usd_month = db.Column(db.Integer, default=0)
-    days_on_compass = db.Column(db.Integer, default=0)
-    listed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    hoa_fee_usd_month = db.Column(db.Integer)
+    days_on_compass = db.Column(db.Integer)
+    listed_at = db.Column(db.DateTime)
 
     is_open_house = db.Column(db.Boolean, default=False, index=True)
     open_house_date = db.Column(db.String(20), default="")
@@ -192,14 +210,15 @@ class Listing(db.Model):
     is_luxury = db.Column(db.Boolean, default=False)
     is_pending = db.Column(db.Boolean, default=False)
 
-    has_parking = db.Column(db.Boolean, default=False)
-    has_pool = db.Column(db.Boolean, default=False)
-    has_doorman = db.Column(db.Boolean, default=False)
-    has_elevator = db.Column(db.Boolean, default=False)
-    has_garage = db.Column(db.Boolean, default=False)
-    has_waterfront = db.Column(db.Boolean, default=False)
-    pets_allowed = db.Column(db.Boolean, default=True)
-    furnished = db.Column(db.Boolean, default=False)
+    # Missing source evidence is unknown, not a negative amenity assertion.
+    has_parking = db.Column(db.Boolean)
+    has_pool = db.Column(db.Boolean)
+    has_doorman = db.Column(db.Boolean)
+    has_elevator = db.Column(db.Boolean)
+    has_garage = db.Column(db.Boolean)
+    has_waterfront = db.Column(db.Boolean)
+    pets_allowed = db.Column(db.Boolean)
+    furnished = db.Column(db.Boolean)
 
     agent_id = db.Column(db.Integer, db.ForeignKey("agents.id"))
 
@@ -225,17 +244,29 @@ class Listing(db.Model):
 
     @property
     def baths(self):
+        if self.baths_total is not None:
+            return self.baths_total
+        if self.baths_full is None and self.baths_half is None:
+            return None
         return (self.baths_full or 0) + 0.5 * (self.baths_half or 0)
 
+    def get_property_facts(self):
+        return json.loads(self.property_facts_json or "{}")
+
+    def get_regional_facts(self):
+        return json.loads(self.regional_facts_json or "{}")
+
     def price_display(self):
-        if self.status == "for-rent":
+        if not self.price:
+            return "Price upon request"
+        if self.is_rental or self.status == "for-rent":
             return f"${self.price:,}/mo"
         return f"${self.price:,}"
 
     def price_per_sqft(self):
-        if not self.sqft or not self.price or self.status == "for-rent":
+        if not self.sqft or not self.price or self.is_rental or self.status == "for-rent":
             return 0
-        return round(self.price / self.sqft)
+        return math.floor(self.price / self.sqft + 0.5)
 
 
 class SavedHome(db.Model):
@@ -347,6 +378,39 @@ def _featured_cities():
 
 # ─── Helpers ───────────────────────────────────────────────────────────────────
 
+PROPERTY_TYPES = {"Single Family", "Condo", "Co-op", "Townhouse", "Multi-Family", "Apartment", "Land"}
+SEARCH_FIELDS = ("q", "city", "status", "property_type", "price_min", "price_max", "beds", "baths", "sqft_min", "year_built_min", "pool", "garage", "waterfront", "doorman", "open_house", "new", "compass_exclusive", "sort")
+TOUR_TIMES = ["9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM"]
+
+
+def local_return_url(value, fallback):
+    """Only return to a path on this mirror after an account action."""
+    if not value or "\\" in value or any(ord(c) < 32 for c in value):
+        return fallback
+    try:
+        target = urlsplit(value)
+        origin = urlsplit(request.host_url)
+        if target.scheme or target.netloc:
+            if (target.scheme, target.netloc) != (origin.scheme, origin.netloc):
+                return fallback
+        if not target.path.startswith("/") or target.path.startswith("//"):
+            return fallback
+        return target.path + ("?" + target.query if target.query else "")
+    except ValueError:
+        return fallback
+
+
+def valid_email(value):
+    try:
+        validate_email(value, check_deliverability=False)
+        return len(value) <= 120
+    except EmailNotValidError:
+        return False
+
+
+def valid_password(value):
+    return len(value) >= 6 and len(value.encode("utf-8")) <= 72
+
 
 def _tokens(s: str):
     if not s:
@@ -371,6 +435,8 @@ def search_listings(query: str, base_query=None):
     q = (query or "").strip()
     if base_query is None:
         base_query = Listing.query
+    if q and City.query.filter(func.lower(City.name) == q.lower()).first():
+        return [(listing, 0) for listing in base_query.filter(or_(func.lower(Listing.city) == q.lower(), func.lower(Listing.market_city) == q.lower())).all()]
     listings = base_query.all()
     if not q:
         return [(L, 0) for L in listings]
@@ -400,6 +466,9 @@ def search_listings(query: str, base_query=None):
 
 
 def filter_listings(qs, args):
+    city = (args.get("city") or "").strip()
+    if city:
+        qs = qs.filter(or_(func.lower(Listing.city) == city.lower(), func.lower(Listing.market_city) == city.lower()))
     status = args.get("status")
     if status:
         qs = qs.filter(Listing.status == status)
@@ -416,8 +485,8 @@ def filter_listings(qs, args):
     if beds and beds.isdigit():
         qs = qs.filter(Listing.beds >= int(beds))
     baths = args.get("baths")
-    if baths and baths.isdigit():
-        qs = qs.filter((Listing.baths_full + Listing.baths_half) >= int(baths))
+    if baths and re.fullmatch(r"\d+(?:\.\d+)?", baths):
+        qs = qs.filter(func.coalesce(Listing.baths_total, func.coalesce(Listing.baths_full, 0) + 0.5 * func.coalesce(Listing.baths_half, 0)) >= float(baths))
     sqft_min = args.get("sqft_min")
     if sqft_min and sqft_min.isdigit():
         qs = qs.filter(Listing.sqft >= int(sqft_min))
@@ -447,19 +516,19 @@ def sort_listings(items, key: str):
     def L(x): return x[0] if is_pair else x
 
     if key == "price_asc":
-        items.sort(key=lambda x: (L(x).price or 0))
+        items.sort(key=lambda x: (L(x).price is None, L(x).price or 0))
     elif key == "price_desc":
         items.sort(key=lambda x: -(L(x).price or 0))
     elif key == "newest":
-        items.sort(key=lambda x: (L(x).days_on_compass or 9999))
+        items.sort(key=lambda x: L(x).days_on_compass if L(x).days_on_compass is not None else 9999)
     elif key == "sqft_desc":
         items.sort(key=lambda x: -(L(x).sqft or 0))
     elif key == "beds_desc":
         items.sort(key=lambda x: -(L(x).beds or 0))
     elif key == "ppsf_asc":
-        items.sort(key=lambda x: L(x).price_per_sqft() or 10**12)
+        items.sort(key=lambda x: L(x).price / L(x).sqft if L(x).price_per_sqft() else float("inf"))
     elif key == "ppsf_desc":
-        items.sort(key=lambda x: -(L(x).price_per_sqft() or 0))
+        items.sort(key=lambda x: -L(x).price / L(x).sqft if L(x).price_per_sqft() else float("inf"))
     return items
 
 
@@ -485,7 +554,7 @@ def index():
                 .order_by(Listing.id).limit(6).all())
     new_listings = (Listing.query.filter_by(is_new=True)
                     .order_by(Listing.id.desc()).limit(6).all())
-    luxury = (Listing.query.filter_by(is_luxury=True)
+    luxury = (Listing.query.filter_by(is_luxury=True, status="for-sale")
               .order_by(Listing.id).limit(6).all())
     return render_template("index.html",
                            featured=featured, new_listings=new_listings,
@@ -520,7 +589,7 @@ def _city_listing_page(city_state, status):
     city, state = city_state_slug(city_state)
     if not city:
         abort(404)
-    qs = Listing.query.filter_by(city=city, state=state, status=status)
+    qs = Listing.query.filter_by(state=state, status=status).filter(or_(Listing.city == city, Listing.market_city == city))
     qs = filter_listings(qs, request.args)
     listings = qs.all()
     sort = request.args.get("sort", "newest")
@@ -555,7 +624,7 @@ def listing_detail(slug):
                     .filter_by(user_id=current_user.id, listing_id=L.id).first()
                     is not None)
     return render_template("listing_detail.html", listing=L, similar=similar,
-                           is_saved=is_saved)
+                           is_saved=is_saved, collections=Collection.query.filter_by(user_id=current_user.id).order_by(Collection.name).all() if current_user.is_authenticated else [])
 
 
 @app.route("/agents")
@@ -564,7 +633,7 @@ def agents_index():
     qs = Agent.query
     if city:
         qs = qs.filter(Agent.city.ilike(f"%{city}%"))
-    agents = qs.order_by(Agent.sales_volume_usd.desc()).all()
+    agents = qs.order_by(Agent.name).all()
     return render_template("agents.html", agents=agents, filter_city=city,
                            all_cities=sorted(set(a.city for a in Agent.query.all() if a.city)))
 
@@ -617,7 +686,7 @@ def new_listings():
 
 @app.route("/luxury")
 def luxury():
-    listings = (Listing.query.filter_by(is_luxury=True)
+    listings = (Listing.query.filter_by(is_luxury=True, status="for-sale")
                 .order_by(Listing.price.desc()).all())
     return render_template("luxury.html", listings=listings)
 
@@ -648,7 +717,7 @@ def login():
             error = "Invalid email or password."
         else:
             login_user(u, remember=bool(request.form.get("remember")))
-            return redirect(request.args.get("next") or url_for("account"))
+            return redirect(local_return_url(request.args.get("next"), url_for("account")))
     return render_template("login.html", error=error)
 
 
@@ -664,6 +733,10 @@ def register():
         pw2 = request.form.get("confirm") or ""
         if not name or not email or not pw:
             error = "Name, email and password are required."
+        elif len(name) > 120 or not valid_email(email):
+            error = "Enter a valid name and email address."
+        elif not valid_password(pw):
+            error = "Password must contain at least 6 characters and at most 72 UTF-8 bytes."
         elif pw != pw2:
             error = "Passwords do not match."
         elif User.query.filter_by(email=email).first():
@@ -678,7 +751,7 @@ def register():
     return render_template("register.html", error=error)
 
 
-@app.route("/logout", methods=["GET", "POST"])
+@app.route("/logout", methods=["POST"])
 def logout():
     logout_user()
     return redirect(url_for("index"))
@@ -726,8 +799,8 @@ def change_password():
             error = "Current password is incorrect."
         elif new != new2:
             error = "New passwords do not match."
-        elif len(new) < 6:
-            error = "Password must be at least 6 characters."
+        elif not valid_password(new):
+            error = "Password must contain at least 6 characters and at most 72 UTF-8 bytes."
         else:
             current_user.set_password(new)
             db.session.commit()
@@ -741,14 +814,26 @@ def change_password():
 def preferences():
     if request.method == "POST":
         try:
-            current_user.budget_min = int(request.form.get("budget_min") or 0)
-            current_user.budget_max = int(request.form.get("budget_max") or 0)
-            current_user.beds_min = int(request.form.get("beds_min") or 0)
+            budget_min = int(request.form.get("budget_min") or 0)
+            budget_max = int(request.form.get("budget_max") or 0)
+            beds_min = int(request.form.get("beds_min") or 0)
+            if min(budget_min, budget_max, beds_min) < 0 or max(budget_min, budget_max) > 10**12 or beds_min > 100:
+                raise ValueError
+            if budget_max and budget_max < budget_min:
+                raise ValueError
         except ValueError:
-            current_user.budget_min = current_user.budget_min or 0
+            flash("Enter valid nonnegative budgets and bedrooms; maximum budget must be at least the minimum.", "warning")
+            return render_template("preferences.html", user=current_user), 400
         types = request.form.getlist("property_types")
+        timeline = request.form.get("move_timeline") or ""
+        if not set(types) <= PROPERTY_TYPES or timeline not in {"", "0-3mo", "3-6mo", "6-12mo", "12mo+"}:
+            flash("Choose one of the available property types and move timelines.", "warning")
+            return render_template("preferences.html", user=current_user), 400
+        current_user.budget_min = budget_min
+        current_user.budget_max = budget_max
+        current_user.beds_min = beds_min
         current_user.preferred_property_types = json.dumps(types)
-        current_user.move_timeline = request.form.get("move_timeline") or ""
+        current_user.move_timeline = timeline
         current_user.has_agent = bool(request.form.get("has_agent"))
         current_user.receive_alerts = bool(request.form.get("receive_alerts"))
         db.session.commit()
@@ -778,7 +863,7 @@ def save_home(listing_id):
         db.session.add(SavedHome(user_id=current_user.id, listing_id=L.id))
         db.session.commit()
         flash(f"Saved {L.address}.", "success")
-    return redirect(request.referrer or url_for("listing_detail", slug=L.slug))
+    return redirect(local_return_url(request.referrer, url_for("listing_detail", slug=L.slug)))
 
 
 @app.route("/unsave/<int:listing_id>", methods=["POST"])
@@ -790,7 +875,7 @@ def unsave_home(listing_id):
         db.session.delete(row)
         db.session.commit()
         flash("Removed from saved homes.", "info")
-    return redirect(request.referrer or url_for("saved_list"))
+    return redirect(local_return_url(request.referrer, url_for("saved_list")))
 
 
 @app.route("/saved-searches", methods=["GET", "POST"])
@@ -798,14 +883,7 @@ def unsave_home(listing_id):
 def saved_searches():
     if request.method == "POST":
         name = (request.form.get("name") or "").strip()
-        criteria = {
-            "q": (request.form.get("q") or "").strip(),
-            "city": (request.form.get("city") or "").strip(),
-            "price_min": request.form.get("price_min") or "",
-            "price_max": request.form.get("price_max") or "",
-            "beds": request.form.get("beds") or "",
-            "property_type": request.form.get("property_type") or "",
-        }
+        criteria = {key: request.form.get(key, "").strip() for key in SEARCH_FIELDS if request.form.get(key, "").strip()}
         if name:
             ss = SavedSearch(user_id=current_user.id, name=name,
                              criteria_json=json.dumps(criteria))
@@ -872,7 +950,16 @@ def collection_add(cid, listing_id):
         c.set_listing_ids(ids)
         db.session.commit()
         flash(f'Added {L.address} to "{c.name}".', "success")
-    return redirect(request.referrer or url_for("collection_detail", cid=c.id))
+    return redirect(local_return_url(request.referrer, url_for("collection_detail", cid=c.id)))
+
+
+@app.route("/listing/<int:listing_id>/add-to-collection", methods=["POST"])
+@login_required
+def listing_add_to_collection(listing_id):
+    cid = request.form.get("collection_id", type=int)
+    if cid is None:
+        abort(400)
+    return collection_add(cid, listing_id)
 
 
 @app.route("/collections/<int:cid>/remove/<int:listing_id>", methods=["POST"])
@@ -917,11 +1004,22 @@ def tours_list():
 def tour_request(listing_id):
     L = Listing.query.get_or_404(listing_id)
     if request.method == "POST":
+        tour_date = (request.form.get("date") or "").strip()
+        tour_time = (request.form.get("time") or "").strip()
+        tour_type = (request.form.get("tour_type") or "in-person").strip()
+        try:
+            if date.fromisoformat(tour_date).isoformat() != tour_date:
+                raise ValueError
+            if tour_time not in TOUR_TIMES or tour_type not in {"in-person", "video"}:
+                raise ValueError
+        except ValueError:
+            flash("Choose a valid date, time and tour type.", "warning")
+            return render_template("tour_request.html", listing=L), 400
         t = Tour(
             user_id=current_user.id, listing_id=L.id,
-            requested_date=(request.form.get("date") or "").strip(),
-            requested_time=(request.form.get("time") or "").strip(),
-            tour_type=(request.form.get("tour_type") or "in-person").strip(),
+            requested_date=tour_date,
+            requested_time=tour_time,
+            tour_type=tour_type,
             contact_phone=(request.form.get("phone") or current_user.phone),
             notes=(request.form.get("notes") or "").strip(),
             status="requested",
@@ -956,18 +1054,24 @@ def inquiry_send(listing_id):
     L = Listing.query.get_or_404(listing_id)
     if request.method == "POST":
         uid = current_user.id if current_user.is_authenticated else None
+        name = (request.form.get("name") or (current_user.name if uid else "")).strip()
+        email = (request.form.get("email") or (current_user.email if uid else "")).strip().lower()
+        message = (request.form.get("message") or "").strip()
+        if not name or len(name) > 120 or not valid_email(email) or not message or len(message) > 10000:
+            flash("Enter your name, a valid email address and a message (up to 10,000 characters).", "warning")
+            return render_template("inquiry_send.html", listing=L), 400
         i = Inquiry(
             user_id=uid, listing_id=L.id, agent_id=L.agent_id,
-            name=(request.form.get("name") or (current_user.name if uid else "")),
-            email=(request.form.get("email") or (current_user.email if uid else "")),
+            name=name,
+            email=email,
             phone=(request.form.get("phone") or ""),
             subject=(request.form.get("subject") or
                      f"Inquiry about {L.address}"),
-            message=(request.form.get("message") or "").strip(),
+            message=message,
         )
         db.session.add(i)
         db.session.commit()
-        flash("Your message has been sent. The agent will reach out shortly.",
+        flash("Your message has been sent.",
               "success")
         if uid:
             return redirect(url_for("inquiries_list"))
@@ -1002,8 +1106,9 @@ from seed_data import seed_database, seed_benchmark_users  # noqa: E402
 
 with app.app_context():
     db.create_all()
-    seed_database()
-    seed_benchmark_users()
+    if os.environ.get("COMPASS_SKIP_SEED") != "1":
+        seed_database()
+        seed_benchmark_users()
 
 
 if __name__ == "__main__":
