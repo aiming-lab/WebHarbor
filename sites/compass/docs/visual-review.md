@@ -2,7 +2,7 @@
 
 Captured on 2026-09-06 using the same browser viewport and top-of-page scroll position for each row. Images are actual browser captures, without compositing or synthetic reconstruction. Click a screenshot for its original resolution. Capture URLs, times, viewport dimensions and SHA-256 values are in [captures.json](visual-review/captures.json).
 
-The before environment is original contribution `11b11cce5942be42cedc768f58e56db77e26696e` with its original asset PR. The after screenshots cover the source-backed refresh and UI fixes through `daa4a5bffd23728c149769f00da3fa7f51d7b0be`; the later short-gallery fix does not alter the captured five-tile Aspen or homepage layouts. All screenshots show anonymous sessions.
+The before environment is original contribution `11b11cce5942be42cedc768f58e56db77e26696e` with its original asset PR. The after screenshots cover the source-backed refresh and UI fixes through `daa4a5bffd23728c149769f00da3fa7f51d7b0be`; later accessible-label and account-table changes do not alter these anonymous homepage/detail layouts. All screenshots show anonymous sessions.
 
 Source pages: [homepage](https://www.compass.com/), [Aspen listing](https://www.compass.com/homedetails/501-W-Main-St-Unit-A101-Aspen-CO-81611/LRBC9_pid/), and [Miami listing](https://www.compass.com/homedetails/17145-SW-90th-Ave-Miami-FL-33157/1C7AS8_pid/).
 
@@ -39,6 +39,14 @@ The source mobile gallery failed to load its photo responses in this browser ses
 | Original website | Before | After |
 |---|---|---|
 | [![original Miami two-photo detail](visual-review/original-detail-miami-1440.jpg)](visual-review/original-detail-miami-1440.jpg) | [![before Miami two-photo detail](visual-review/before-detail-miami-1440.jpg)](visual-review/before-detail-miami-1440.jpg) | [![after Miami two-photo detail](visual-review/after-detail-miami-1440.jpg)](visual-review/after-detail-miami-1440.jpg) |
+
+## Miami search results
+
+The live site uses a map plus two-column list. The mirror implements a full-width list; live map interaction is outside its scope. This is a remaining layout/functional difference, not an answer-leak safeguard. Listings and ordering also differ because the mirror is a fixed snapshot. Fonts, cards, search/filter controls and spacing were improved, but this row does not claim complete visual equivalence.
+
+| Original website | Before | After |
+|---|---|---|
+| [![original Miami list](visual-review/original-miami-list-1440.jpg)](visual-review/original-miami-list-1440.jpg) | [![before Miami list](visual-review/before-miami-list-1440.jpg)](visual-review/before-miami-list-1440.jpg) | [![after Miami list](visual-review/after-miami-list-1440.jpg)](visual-review/after-miami-list-1440.jpg) |
 
 ## Scope and intentional differences
 
