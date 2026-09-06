@@ -48,9 +48,9 @@ for tarball in "$CACHE_DIR"/*.tar.gz; do
     if [[ -n "$ONLY_SITE" && "$site" != "$ONLY_SITE" ]]; then continue; fi
     echo "[fetch] extracting $site"
     if tar --version 2>/dev/null | grep -q 'GNU tar'; then
-        tar --warning=no-unknown-keyword -xzf "$tarball" -C sites/
+        tar --warning=no-unknown-keyword --exclude='._*' -xzf "$tarball" -C sites/
     else
-        tar -xzf "$tarball" -C sites/
+        COPYFILE_DISABLE=1 tar --exclude='._*' -xzf "$tarball" -C sites/
     fi
     migrator="sites/$site/migrate_seed.py"
     database="sites/$site/instance_seed/$site.db"

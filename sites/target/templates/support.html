@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Support | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Support center</p>
+        <h1>Support articles for shipping, pickup, rewards, and protection plans</h1>
+      </div>
+      <form class="inline-search" method="get">
+        <input type="search" name="q" value="{{ active_query }}" placeholder="Search support topics">
+        <button class="button button--secondary" type="submit">Search help</button>
+      </form>
+    </div>
+    <div class="support-actions">
+      {% if current_user.is_authenticated %}
+        <a class="button" href="{{ url_for('support_new_ticket') }}">Contact us</a>
+        <a class="button button--secondary" href="{{ url_for('account_support') }}">View support requests</a>
+      {% else %}
+        <a class="button" href="{{ url_for('login', next=url_for('support_new_ticket')) }}">Sign in to contact us</a>
+      {% endif %}
+    </div>
+    <div class="topic-row">
+      <a href="{{ url_for('support_page') }}" class="{% if not active_topic %}is-active{% endif %}">All topics</a>
+      {% for topic in topics %}
+        <a href="{{ url_for('support_page', topic=topic) }}" class="{% if active_topic == topic %}is-active{% endif %}">{{ topic }}</a>
+      {% endfor %}
+    </div>
+    <div class="support-grid">
+      {% for article in articles %}
+        <a href="{{ url_for('support_article_page', article_slug=article.slug) }}" class="support-card">
+          <span>{{ article.topic }}</span>
+          <strong>{{ article.title }}</strong>
+          <p>{{ article.summary }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}
+
+

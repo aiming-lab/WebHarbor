@@ -1,6 +1,6 @@
 # Compass
 
-An offline Compass mirror contributed in [WebHarbor #25](https://github.com/aiming-lab/WebHarbor/pull/25), with browsing, accounts, saved homes, saved searches, collections, tour requests, and inquiries. Compass uses port **40018** in the current 19-site registry.
+An offline Compass mirror contributed in [WebHarbor #25](https://github.com/aiming-lab/WebHarbor/pull/25), with browsing, accounts, saved homes, saved searches, collections, tour requests, and inquiries. Compass uses port **40019** in the current 20-site registry.
 
 ## Data and assets
 
@@ -24,7 +24,7 @@ python -m pip install -r sites/compass/requirements.txt huggingface_hub
 ./scripts/fetch_assets.sh compass
 mkdir -p sites/compass/instance
 cp sites/compass/instance_seed/compass.db sites/compass/instance/compass.db
-PORT=40018 python sites/compass/app.py
+PORT=40019 python sites/compass/app.py
 ```
 
 The default database can be overridden with `COMPASS_DATABASE_PATH`. `COMPASS_SKIP_SEED=1` is reserved for isolated tests. The full environment should be started with the repository's Docker and control-plane workflow so that reset restores the complete seed.
