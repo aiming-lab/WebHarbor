@@ -646,8 +646,9 @@ def _score_product(product, tokens):
 
 
 @app.route('/search')
+@app.route('/s')
 def search():
-    q = request.args.get('q', '').strip()
+    q = (request.args.get('q') or request.args.get('k') or '').strip()
     query_obj = Product.query
     query_obj = _apply_filters(query_obj)  # apply structural filters first
     candidates = query_obj.all()

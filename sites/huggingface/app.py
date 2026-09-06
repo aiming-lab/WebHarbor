@@ -2326,6 +2326,7 @@ def discussion_upvote(discussion_id):
 # Search
 # ------------------------------------------------------------
 @app.route("/search")
+@app.route("/search/full-text")
 def search():
     q_raw = request.args.get("q", "").strip()
     kind = request.args.get("type", "all")

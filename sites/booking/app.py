@@ -940,8 +940,9 @@ def _is_beach_relevant_city(city):
 
 
 @app.route('/search')
+@app.route('/searchresults.html')
 def search():
-    q = (request.args.get('q') or '').strip()
+    q = (request.args.get('q') or request.args.get('ss') or '').strip()
     dest = (request.args.get('dest') or request.args.get('destination') or '').strip()
     near = (request.args.get('near') or '').strip()
     city_id = request.args.get('city_id', type=int)

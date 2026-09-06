@@ -1,6 +1,19 @@
 /* ESPN Mirror - Main JavaScript */
 
 document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('form[data-path-search="espn"]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            const input = form.querySelector('input[name="q"]');
+            const query = input ? input.value.trim() : '';
+            if (!query) return;
+            event.preventDefault();
+            const params = new URLSearchParams(new FormData(form));
+            params.delete('q');
+            const suffix = params.toString();
+            window.location.href = '/search/_/q/' + encodeURIComponent(query) + (suffix ? '?' + suffix : '');
+        });
+    });
+
     // Mobile navigation toggle
     const menuToggle = document.querySelector('.mobile-menu-toggle');
     const navLinks = document.querySelector('.nav-links');
