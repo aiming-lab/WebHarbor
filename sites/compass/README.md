@@ -1,3 +1,5 @@
+> **Current homepage/navigation follow-up:** see [the latest report](docs/homepage-review.md). Application `9741284`, HF `e063074`; human acceptance and refreshed independent review pending. Earlier evidence below retains its recorded version.
+
 # Compass
 
 An offline Compass mirror contributed in [WebHarbor #25](https://github.com/aiming-lab/WebHarbor/pull/25), with browsing, accounts, saved homes, saved searches, collections, tour requests, and inquiries. Compass uses port **40019** in the current 20-site registry.

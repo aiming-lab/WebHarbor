@@ -1,3 +1,5 @@
+> **Homepage and navigation reconstruction:** see [the latest report](homepage-review.md). Application `9741284`, HF `e063074`; human acceptance and refreshed independent review pending. Earlier evidence below retains its recorded version.
+
 # Compass contribution review
 
 Reviewer takeover of [original PR #25](https://github.com/aiming-lab/WebHarbor/pull/25), contributed by **sarendis56 (Peichun Hua)**. The original commits remain in this branch. This Draft contains source/UI fixes and reviewer-authored grading contracts. Independent execution review is complete and reconciled; **human experience remains pending**, so it is not Ready for merge.
