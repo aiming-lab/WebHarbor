@@ -13,7 +13,7 @@ An offline Compass mirror contributed in [WebHarbor #25](https://github.com/aimi
 
 The contributor's generation of property years, MLS numbers, amenities, and agent sales statistics has been removed. Published listing details take precedence over assessor records when those sources disagree; they are not silently combined.
 
-`migrate_seed.py` rebuilds `instance_seed/compass.db` from the tracked catalog and available local images. It writes tables and indexes in a stable order for byte-reproducible seeds and never modifies the live `instance/compass.db`. Both asset fetch and the Docker build apply this migration.
+`migrate_seed.py` rebuilds `instance_seed/compass.db` from the tracked catalog and available local images. It writes tables and indexes in a stable order for byte-reproducible seeds within the same SQLite runtime and never modifies the live `instance/compass.db`. Both asset fetch and the Docker build apply this migration. Different SQLite versions can encode equivalent rows differently; reset comparisons use the seed rebuilt inside the same runtime.
 
 ## Local use
 

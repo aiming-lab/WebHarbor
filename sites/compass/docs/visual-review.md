@@ -12,19 +12,19 @@ The main corrections are official local fonts and hero imagery, measured header/
 
 | Original website | Before | After |
 |---|---|---|
-| [![original Homepage](visual-review/original-home-1440.png)](visual-review/original-home-1440.png) | [![before Homepage](visual-review/before-home-1440.png)](visual-review/before-home-1440.png) | [![after Homepage](visual-review/after-home-1440.png)](visual-review/after-home-1440.png) |
+| [![original Homepage](visual-review/original-home-1440.jpg)](visual-review/original-home-1440.jpg) | [![before Homepage](visual-review/before-home-1440.jpg)](visual-review/before-home-1440.jpg) | [![after Homepage](visual-review/after-home-1440.jpg)](visual-review/after-home-1440.jpg) |
 
 ## Homepage, mobile
 
 | Original website | Before | After |
 |---|---|---|
-| [![original Homepage, mobile](visual-review/original-home-390.png)](visual-review/original-home-390.png) | [![before Homepage, mobile](visual-review/before-home-390.png)](visual-review/before-home-390.png) | [![after Homepage, mobile](visual-review/after-home-390.png)](visual-review/after-home-390.png) |
+| [![original Homepage, mobile](visual-review/original-home-390.jpg)](visual-review/original-home-390.jpg) | [![before Homepage, mobile](visual-review/before-home-390.jpg)](visual-review/before-home-390.jpg) | [![after Homepage, mobile](visual-review/after-home-390.jpg)](visual-review/after-home-390.jpg) |
 
 ## Aspen detail
 
 | Original website | Before | After |
 |---|---|---|
-| [![original Aspen detail](visual-review/original-detail-aspen-1440.png)](visual-review/original-detail-aspen-1440.png) | [![before Aspen detail](visual-review/before-detail-aspen-1440.png)](visual-review/before-detail-aspen-1440.png) | [![after Aspen detail](visual-review/after-detail-aspen-1440.png)](visual-review/after-detail-aspen-1440.png) |
+| [![original Aspen detail](visual-review/original-detail-aspen-1440.jpg)](visual-review/original-detail-aspen-1440.jpg) | [![before Aspen detail](visual-review/before-detail-aspen-1440.jpg)](visual-review/before-detail-aspen-1440.jpg) | [![after Aspen detail](visual-review/after-detail-aspen-1440.jpg)](visual-review/after-detail-aspen-1440.jpg) |
 
 ## Aspen detail, mobile
 
@@ -32,13 +32,13 @@ The source mobile gallery failed to load its photo responses in this browser ses
 
 | Original website | Before | After |
 |---|---|---|
-| [![original Aspen detail, mobile](visual-review/original-detail-aspen-390.png)](visual-review/original-detail-aspen-390.png) | [![before Aspen detail, mobile](visual-review/before-detail-aspen-390.png)](visual-review/before-detail-aspen-390.png) | [![after Aspen detail, mobile](visual-review/after-detail-aspen-390.png)](visual-review/after-detail-aspen-390.png) |
+| [![original Aspen detail, mobile](visual-review/original-detail-aspen-390.jpg)](visual-review/original-detail-aspen-390.jpg) | [![before Aspen detail, mobile](visual-review/before-detail-aspen-390.jpg)](visual-review/before-detail-aspen-390.jpg) | [![after Aspen detail, mobile](visual-review/after-detail-aspen-390.jpg)](visual-review/after-detail-aspen-390.jpg) |
 
 ## Miami two-photo detail
 
 | Original website | Before | After |
 |---|---|---|
-| [![original Miami two-photo detail](visual-review/original-detail-miami-1440.png)](visual-review/original-detail-miami-1440.png) | [![before Miami two-photo detail](visual-review/before-detail-miami-1440.png)](visual-review/before-detail-miami-1440.png) | [![after Miami two-photo detail](visual-review/after-detail-miami-1440.png)](visual-review/after-detail-miami-1440.png) |
+| [![original Miami two-photo detail](visual-review/original-detail-miami-1440.jpg)](visual-review/original-detail-miami-1440.jpg) | [![before Miami two-photo detail](visual-review/before-detail-miami-1440.jpg)](visual-review/before-detail-miami-1440.jpg) | [![after Miami two-photo detail](visual-review/after-detail-miami-1440.jpg)](visual-review/after-detail-miami-1440.jpg) |
 
 ## Scope and intentional differences
 
