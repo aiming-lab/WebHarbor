@@ -22,7 +22,6 @@ REPO=$(awk '/^repo:/ {print $2}' .assets-revision)
 REVISION="${ASSETS_REVISION:-$(awk '/^revision:/ {print $2}' .assets-revision)}"
 ONLY_SITE="${1:-}"
 CACHE_DIR="sites/.cache/tarballs"
-TARGET_ASSETS_REVISION="${TARGET_ASSETS_REVISION:-674d5c19e2d337c6e45482f48bd7a0e2cfbd6216}"
 
 if ! command -v hf >/dev/null 2>&1; then
     echo "fetch_assets: 'hf' CLI not found. Install with: pip install -U \"huggingface_hub[cli]\"" >&2
@@ -34,20 +33,13 @@ echo "[fetch] huggingface.co/datasets/$REPO @ $REVISION -> sites/"
 
 if [[ -n "$ONLY_SITE" ]]; then
     INCLUDE="$ONLY_SITE.tar.gz"
-    DOWNLOAD_REVISION="$REVISION"
-    if [[ "$ONLY_SITE" == "target" ]]; then
-        DOWNLOAD_REVISION="$TARGET_ASSETS_REVISION"
-    fi
-    echo "[fetch] scope: $ONLY_SITE only @ $DOWNLOAD_REVISION"
-    hf download "$REPO" --repo-type dataset --revision "$DOWNLOAD_REVISION" \
-        --include "$INCLUDE" --local-dir "$CACHE_DIR"
+    echo "[fetch] scope: $ONLY_SITE only"
 else
-    hf download "$REPO" --repo-type dataset --revision "$REVISION" \
-        --include "*.tar.gz" --local-dir "$CACHE_DIR"
-    echo "[fetch] target asset override @ $TARGET_ASSETS_REVISION"
-    hf download "$REPO" --repo-type dataset --revision "$TARGET_ASSETS_REVISION" \
-        --include "target.tar.gz" --local-dir "$CACHE_DIR"
+    INCLUDE="*.tar.gz"
 fi
+
+hf download "$REPO" --repo-type dataset --revision "$REVISION" \
+    --include "$INCLUDE" --local-dir "$CACHE_DIR"
 
 shopt -s nullglob
 extracted=0
