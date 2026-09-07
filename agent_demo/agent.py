@@ -19,12 +19,14 @@ class AgentArgs:
     task_id: str = ""
     out_dir: str = "./runs/agent"
     max_steps: int = 15
-    model: str = "gpt-5.1"
-    api_key: str = ""
-    base_url: str = ""
-    headless: bool = True
+    model: str = ""          # agent LLM model id (env: JUDGE_MODEL if unset)
+    api_key: str = ""        # env: OPENAI_API_KEY
+    api_base: str = ""       # env: OPENAI_BASE_URL
+    headless: bool = True     # only used when MW_CDP_URL is unset (CDP takes priority)
     history_window: int = 5
     dom_char_limit: int = 12000
+    judge_rubric: str = ""   # carried into trajectory.json for the LLM judge
+    verifier_path: str = ""  # carried into trajectory.json for the verifier mode
 
     def post_process(self):
         if self.tasks_file:
@@ -41,6 +43,8 @@ class AgentArgs:
             self.task = self.task or row.get("ques", "")
             self.url = self.url or row.get("web", "")
             self.task_id = self.task_id or row.get("id", "")
+            self.judge_rubric = row.get("judge_rubric", "")
+            self.verifier_path = row.get("verifier_path", "")
         if not self.task or not self.url:
             raise SystemExit("provide --tasks_file [--task_id ID] or both --task and --url")
 
@@ -140,11 +144,15 @@ def save_screenshot_b64(b64, path):
 
 async def run(args):
     api_key = args.api_key or os.environ.get("OPENAI_API_KEY", "")
-    base_url = args.base_url or os.environ.get("OPENAI_BASE_URL", "")
+    api_base = args.api_base or os.environ.get("OPENAI_BASE_URL", "")
+    model = args.model or os.environ.get("JUDGE_MODEL", "")
     if not api_key:
         raise SystemExit("API key missing: set --api_key or OPENAI_API_KEY")
-    if not base_url:
-        raise SystemExit("Base URL missing: set --base_url or OPENAI_BASE_URL")
+    if not api_base:
+        raise SystemExit("API base missing: set --api_base or OPENAI_BASE_URL")
+    if not model:
+        raise SystemExit("model missing: set --model or JUDGE_MODEL")
+    args.model = model
 
     print(f"task_id={args.task_id or '<inline>'}  url={args.url}\n  ques: {args.task}")
 
@@ -153,9 +161,17 @@ async def run(args):
     shots = out / "screenshots"
     shots.mkdir(exist_ok=True)
 
-    client = OpenAI(base_url=base_url, api_key=api_key)
+    client = OpenAI(base_url=api_base, api_key=api_key)
 
-    browser = Browser(headless=args.headless)
+    # Connect to an externally-launched headless Chrome via CDP when MW_CDP_URL is
+    # set. browser-use's own Browser() launcher can hang on some hosts (watchdog
+    # timeout on BrowserStartEvent); a persistent CDP chrome avoids that and lets
+    # many agents run concurrently with cookie isolation (one chrome per agent).
+    cdp_url = os.environ.get("MW_CDP_URL", "")
+    if cdp_url:
+        browser = Browser(cdp_url=cdp_url)
+    else:
+        browser = Browser(headless=args.headless)
     await browser.start()
     tools = Tools()
 
@@ -175,6 +191,8 @@ async def run(args):
             "terminated": False,
             "termination_reason": None,
             "final_answer": None,
+            "judge_rubric": args.judge_rubric,
+            "verifier_path": args.verifier_path,
         }
 
         for step_idx in range(args.max_steps):

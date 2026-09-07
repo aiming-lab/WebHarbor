@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}{{ word.headword }} Definition &amp; Meaning - Merriam-Webster{% endblock %}
+{% block content %}
+<div class="container section">
+  <div class="entry-header">
+    <h1 class="entry-headword">{{ word.headword }}</h1>
+  </div>
+  <div class="entry-meta">
+    <span class="entry-pos">{{ word.pos }}</span>
+    {% if word.pronunciation %}<span class="entry-pron">{{ word.pronunciation }}</span>{% endif %}
+    {% if word.difficulty == 'advanced' %}<span class="muted"> · advanced</span>{% endif %}
+  </div>
+
+  {% if current_user.is_authenticated %}
+  <form method="post" action="{{ url_for('save_word', word_id=word.id) }}" style="margin:10px 0;">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% if is_saved %}
+      <button class="btn btn-outline" type="button" disabled>Saved ✓</button>
+    {% else %}
+      <button class="btn" type="submit">Save Word</button>
+    {% endif %}
+  </form>
+  {% endif %}
+
+  <div class="entry-section">
+    <h2>Definition</h2>
+    {% for d in word.get_definitions() %}
+    <div class="sense">
+      <span class="sense-num">{{ d.sense_num }}</span>
+      <span class="sense-def">: {{ d.text }}</span>
+      {% if d.examples %}
+      <ul class="examples">
+        {% for ex in d.examples %}<li>{{ ex }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if word.get_synonyms() %}
+  <div class="entry-section">
+    <h2>Synonyms</h2>
+    <div class="syn-chips">
+      {% for s in word.get_synonyms() %}
+      <a href="{{ url_for('search', q=s) }}">{{ s }}</a>
+      {% endfor %}
+    </div>
+    {% if thes %}
+    <p style="margin-top:10px;"><a href="{{ url_for('thesaurus_detail', slug=thes.slug) }}">See full thesaurus entry for {{ word.headword }} »</a></p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  {% if word.etymology %}
+  <div class="entry-section">
+    <h2>Word History &amp; Etymology</h2>
+    <p class="etym">{{ word.etymology }}</p>
+    {% if word.first_known_use %}
+    <p class="first-use"><strong>First Known Use:</strong> {{ word.first_known_use }}</p>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <div class="entry-section">
+    <h2>Browse Nearby Entries</h2>
+    <div class="browse-strip">
+      {% for n in nearby %}
+        {% if n.id == word.id %}
+        <span class="current">{{ n.headword }}</span>
+        {% else %}
+        <a href="{{ url_for('word_detail', slug=n.slug) }}">{{ n.headword }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

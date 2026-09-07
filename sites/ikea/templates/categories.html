@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}IKEA categories{% endblock %}
+{% block content %}
+<section class="section-heading page-lead">
+  <div>
+    <p class="eyebrow">Browse by room and category</p>
+    <h1>Explore every local IKEA demo department</h1>
+  </div>
+</section>
+
+<div class="category-grid">
+  {% for category in categories %}
+    <a class="category-card" href="{{ url_for('category_view', category_slug=category.slug) }}">
+      {% set image_product = category_images.get(category.slug) %}
+      {% if image_product %}
+        <img src="{{ url_for('static', filename=image_product.image_path) }}" alt="{{ category.name }} inspiration">
+      {% endif %}
+      <div>
+        <p class="eyebrow">{{ room_labels[category.room_slug] }}</p>
+        <h2>{{ category.name }}</h2>
+        <p>{{ category.description }}</p>
+      </div>
+    </a>
+  {% endfor %}
+</div>
+
+<section class="section-block">
+  <div class="section-heading">
+    <h2>Bundle-first planning</h2>
+    <a href="{{ url_for('room_planner') }}">Open room planner</a>
+  </div>
+  <div class="bundle-list">
+    {% for bundle in bundles %}
+      <article class="bundle-card">
+        <p class="eyebrow">{{ room_labels[bundle.room_slug] }}</p>
+        <h3>{{ bundle.name }}</h3>
+        <p>{{ bundle.summary }}</p>
+        <strong>{{ bundle.total_price|money }}</strong>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

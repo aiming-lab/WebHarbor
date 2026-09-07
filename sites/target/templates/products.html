@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">{{ category.section if category else 'Shop products' }}</p>
+        <h1>{{ page_title }}</h1>
+        <p>{{ page_description }}</p>
+      </div>
+      <div class="result-count">{{ pagination.total if pagination else products|length }} items</div>
+    </div>
+    <div class="catalog-layout">
+      <aside class="filter-card">
+        <details class="filter-disclosure" open>
+          <summary>Filters and sorting</summary>
+        <form method="get" class="filter-form">
+          {% if category %}
+            <input type="hidden" name="category" value="{{ category.slug }}">
+          {% endif %}
+          <label>Search
+            <input type="search" name="q" value="{{ request.args.get('q', active_query) }}" placeholder="Search this category">
+          </label>
+          <label>Brand
+            <select name="brand">
+              <option value="">All brands</option>
+              {% for brand in brands %}
+                <option value="{{ brand.slug }}" {% if request.args.get('brand') == brand.slug %}selected{% endif %}>{{ brand.name }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <div class="filter-form__row">
+            <label>Min price
+              <input type="number" name="min_price" step="1" value="{{ request.args.get('min_price', '') }}">
+            </label>
+            <label>Max price
+              <input type="number" name="max_price" step="1" value="{{ request.args.get('max_price', '') }}">
+            </label>
+          </div>
+          <label>Rating
+            <select name="rating">
+              <option value="">Any rating</option>
+              <option value="4.0" {% if request.args.get('rating') == '4.0' %}selected{% endif %}>4.0 and up</option>
+              <option value="4.5" {% if request.args.get('rating') == '4.5' %}selected{% endif %}>4.5 and up</option>
+            </select>
+          </label>
+          <label>Availability
+            <select name="availability">
+              <option value="">Any</option>
+              <option value="in-stock" {% if request.args.get('availability') == 'in-stock' %}selected{% endif %}>In stock</option>
+              <option value="pickup" {% if request.args.get('availability') == 'pickup' %}selected{% endif %}>Pickup eligible</option>
+            </select>
+          </label>
+          <label>Sort
+            <select name="sort">
+              <option value="featured" {% if request.args.get('sort', 'featured') == 'featured' %}selected{% endif %}>Featured</option>
+              <option value="price-asc" {% if request.args.get('sort') == 'price-asc' %}selected{% endif %}>Price low to high</option>
+              <option value="price-desc" {% if request.args.get('sort') == 'price-desc' %}selected{% endif %}>Price high to low</option>
+              <option value="rating" {% if request.args.get('sort') == 'rating' %}selected{% endif %}>Top rated</option>
+              <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest</option>
+            </select>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" name="deals" value="1" {% if request.args.get('deals') == '1' %}checked{% endif %}>
+            Deals only
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" name="delivery" value="1" {% if request.args.get('delivery') == '1' %}checked{% endif %}>
+            Delivery eligible only
+          </label>
+          <button class="button" type="submit">Apply filters</button>
+        </form>
+        </details>
+      </aside>
+      <div>
+        {% if products %}
+          {% if pagination %}
+            <p class="listing-count">
+              Showing {{ pagination.items|length }} of {{ pagination.total }} items
+              (page {{ pagination.page }} of {{ pagination.pages }})
+            </p>
+          {% endif %}
+          {% include "_product_cards.html" %}
+          {% include "_pagination.html" %}
+        {% else %}
+          <div class="empty-state">
+            <h3>No products matched those filters</h3>
+            <p>Try widening the price range or clearing one of the availability filters.</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+

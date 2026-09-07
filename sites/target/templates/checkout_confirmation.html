@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Confirmation | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 4 %}
+    {% include "_checkout_steps.html" %}
+    <div class="empty-state empty-state--success">
+      <h1>Order confirmed</h1>
+      <p>Your order <strong>{{ order.order_number }}</strong> has been created.</p>
+      <p>{{ order.confirmation_note }}</p>
+
+      {# The confirmation used to show only the order number, so a guest had no
+         way to see where or when they were collecting. #}
+      <dl class="confirmation-details">
+        {% if order.fulfillment_method == 'pickup' %}
+          <dt>Pickup store</dt>
+          <dd>{{ order.store.name }} — {{ order.store.city }}, {{ order.store.state }}</dd>
+          {% if order.pickup_slot_label %}
+            <dt>Pickup time</dt>
+            <dd>{{ order.pickup_slot_label }}</dd>
+          {% endif %}
+        {% else %}
+          <dt>Shipping to</dt>
+          <dd>
+            {{ order.shipping_name }}{% if order.shipping_street %}, {{ order.shipping_street }}{% endif %},
+            {{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_zip }}
+          </dd>
+        {% endif %}
+        <dt>Order total</dt>
+        <dd>{{ order.total|currency }}</dd>
+      </dl>
+      <div class="inline-actions inline-actions--center">
+        <a class="button" href="{{ url_for('order_detail', order_number=order.order_number) }}">View order</a>
+        <a class="button button--secondary" href="{{ url_for('account_orders') }}">Go to order history</a>
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} - IKEA demo{% endblock %}
+{% block content %}
+<article class="article-detail">
+  <p class="eyebrow">{{ article.category }}</p>
+  <h1>{{ article.title }}</h1>
+  <p>{{ article.summary }}</p>
+  {% for paragraph in article.body.split('\n\n') %}
+    <p>{{ paragraph }}</p>
+  {% endfor %}
+  <div class="topic-row">
+    {% for topic in article.related_topics %}
+      <span class="pill pill-muted">{{ topic }}</span>
+    {% endfor %}
+  </div>
+</article>
+<section class="section-block">
+  <div class="section-heading"><h2>Related help</h2></div>
+  <div class="article-list">
+    {% for item in related %}
+      <a class="article-card" href="{{ url_for('support_article', article_slug=item.slug) }}">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.summary }}</p>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}{{ entry.headword }} Synonyms &amp; Antonyms | Merriam-Webster Thesaurus{% endblock %}
+{% block content %}
+<div class="container section">
+  <div class="tab-row">
+    {% if word %}<a href="{{ url_for('word_detail', slug=word.slug) }}">Dictionary</a>{% endif %}
+    <a class="active" href="{{ url_for('thesaurus_detail', slug=entry.slug) }}">Thesaurus</a>
+  </div>
+
+  <div class="entry-header">
+    <h1 class="entry-headword">{{ entry.headword }}</h1>
+  </div>
+  {% if entry.short_def %}<p class="wotd-def">{{ entry.short_def }}</p>{% endif %}
+
+  <div class="entry-section">
+    <h2>Synonyms</h2>
+    {% if entry.get_synonyms() %}
+    <div class="syn-chips">
+      {% for s in entry.get_synonyms() %}
+      <a href="{{ url_for('search', q=s) }}">{{ s }}</a>
+      {% endfor %}
+    </div>
+    {% else %}<p class="muted">No synonyms recorded.</p>{% endif %}
+  </div>
+
+  <div class="entry-section">
+    <h2>Antonyms</h2>
+    {% if entry.get_antonyms() %}
+    <div class="ant-chips syn-chips">
+      {% for a in entry.get_antonyms() %}
+      <a href="{{ url_for('search', q=a) }}">{{ a }}</a>
+      {% endfor %}
+    </div>
+    {% else %}<p class="muted">No antonyms recorded.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

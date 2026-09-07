@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import article_card, pager %}
+{% block title %}{{ heading }} — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="section-heading">
+  <h2>{{ heading }}</h2>
+  <span class="text-muted">{{ description }}</span>
+</div>
+{% for a in pagination.items %}{{ article_card(a) }}{% endfor %}
+{{ pager(pagination, pager_endpoint) }}
+{% endblock %}

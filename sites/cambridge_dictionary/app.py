@@ -630,20 +630,25 @@ def quiz_detail(slug):
 
 @app.route('/plus/word-scramble')
 def word_scramble():
-    # Pick a random word for the scramble
+    # Pick a fixed word for the scramble. A local, seeded RNG (not the global
+    # random state) makes the puzzle deterministic so the "first example" is a
+    # stable, verifiable target across the agent run and the grader — while the
+    # output still looks scrambled. order_by pins the candidate order so the
+    # seeded choice can't drift with the query planner.
     words = Word.query.filter(
         Word.is_thesaurus_phrase == False,  # noqa
         func.length(Word.headword) >= 4,
         func.length(Word.headword) <= 12
-    ).all()
+    ).order_by(Word.id).all()
     if not words:
         word = None
         scrambled = ''
         definition = ''
     else:
-        word = random.choice(words)
+        rng = random.Random(42)
+        word = rng.choice(words)
         letters = list(word.headword.lower())
-        random.shuffle(letters)
+        rng.shuffle(letters)
         scrambled = ''.join(letters)
         defs = word.get_definitions()
         definition = defs[0]['definition'] if defs else word.guide_word

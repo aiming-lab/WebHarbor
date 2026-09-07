@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Payment - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Checkout step 3 of 4</p>
+  <h1>Enter demo payment details</h1>
+  <p>No real payment is processed in this benchmark environment.</p>
+</section>
+<form class="form-panel" method="post">
+  <label>Billing name
+    <input type="text" name="billing_name" value="{{ state.get('billing_name', current_user.full_name) }}">
+  </label>
+  <label>Payment method label
+    <select name="payment_method">
+      {% for label in ['IKEA Family Visa', 'Demo Mastercard', 'Demo Klarna', 'Gift card + demo card'] %}
+        <option value="{{ label }}" {% if state.get('payment_method', 'IKEA Family Visa') == label %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Card last four
+    <input type="text" name="payment_last4" value="{{ state.get('payment_last4', '4242') }}" maxlength="4">
+  </label>
+  <button type="submit">Review order</button>
+</form>
+{% endblock %}
