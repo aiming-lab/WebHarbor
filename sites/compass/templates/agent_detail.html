@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}{{ agent.name }} | Compass{% endblock %}
+{% block content %}
+<div class="container section"><h1>{{ agent.name }}</h1><p class="muted">{{ agent.title }} · {{ agent.city }}, {{ agent.state }}</p><dl class="property-facts">{% if agent.phone %}<div><dt>Phone</dt><dd>{{ agent.phone }}</dd></div>{% endif %}{% if agent.email %}<div><dt>Email</dt><dd>{{ agent.email }}</dd></div>{% endif %}</dl><section class="property-section"><h2>Listings</h2>{% if listings %}<div class="grid-cards">{% for L in listings %}{% include "_card.html" %}{% endfor %}</div>{% else %}<p>No listings are available.</p>{% endif %}</section></div>
+{% endblock %}

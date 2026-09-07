@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="home-hero">
+  <picture class="home-hero-image"><source media="(max-width: 767px)" srcset="{{ url_for('static',filename='external_cache/home-hero-mobile.jpg') }}"><source media="(max-width: 1279px)" srcset="{{ url_for('static',filename='external_cache/home-hero-tablet.jpg') }}"><img src="{{ url_for('static',filename='external_cache/home-hero-desktop.jpg') }}" alt="" fetchpriority="high"></picture>
+  <div class="home-hero-content">
+    <h1>Find your place</h1>
+    <form class="home-search" action="{{ url_for('search') }}" method="get" role="search">
+      <fieldset class="search-tabs"><legend class="sr-only">Search type</legend><label><input type="radio" name="status" value="for-sale" checked><span>Buy</span></label><label><input type="radio" name="status" value="for-rent"><span>Rent</span></label><a href="{{ url_for('sell', origin='sellTab') }}">Sell</a></fieldset>
+      <div class="search-box"><input id="home-query" type="search" name="q" aria-label="City, neighborhood, ZIP or address" placeholder="City, Neighborhood, Address, ZIP" autocomplete="off" list="search-cities"><button type="submit" aria-label="Search"><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="m15 15 6 6" stroke="currentColor" stroke-width="2.4"/></svg></button></div>
+      <datalist id="search-cities">{% for c in FEATURED_CITIES %}<option value="{{ c.name }}">{% endfor %}</datalist>
+    </form>
+  </div>
+</section>
+<div class="home-container">
+{% if featured %}
+<section class="home-listings">
+  <h2>Compass Exclusives</h2><p class="home-intro">Be the first to browse exclusive listings before they hit the market.</p>
+  <p class="home-snapshot">Explore a selection from our listing snapshot. Visit each property for its recorded status and details.</p>
+  <div class="home-card-grid">{% for L in featured[:5] %}{% include "_home_card.html" %}{% if loop.index == 2 %}<article class="home-exclusive-ad"><img src="{{ url_for('static',filename='external_cache/home-private-exclusives.svg') }}" alt="Compass Private Exclusives"><p>Discover homes marketed privately with Compass.</p><small>Explore the private listings available in this snapshot, or connect with an agent.</small><a class="home-pill light" href="{{ url_for('private_exclusives') }}">See Private Exclusives</a></article>{% endif %}{% endfor %}</div>
+  <div class="home-section-action"><a class="home-pill" href="{{ url_for('search',compass_exclusive=1) }}">View All Compass Exclusives <span aria-hidden="true">→</span></a></div>
+</section>
+{% endif %}
+<section class="home-mortgage">
+  <h2>Know your buying power with a preapproval<br class="home-desktop-break"> and custom rate in minutes</h2>
+  <a class="home-pill light" href="https://launchpad.rocketmortgage.com/?qls=COM_COMPRM26.EYQK1EJWRF&amp;i=purchase&amp;si=83" target="_blank" rel="noopener">See What I Qualify For <span aria-label="external website">↗</span></a>
+  <a class="mortgage-brand" href="https://launchpad.rocketmortgage.com/?qls=COM_COMPRM26.EYQK1EJWRF&amp;i=purchase&amp;si=83" target="_blank" rel="noopener"><img src="{{ url_for('static',filename='external_cache/home-mortgage.png') }}" alt="Rocket Mortgage"><sup>¹</sup></a>
+</section>
+<article class="home-concierge">
+  <div class="concierge-photos"><img class="concierge-desktop" src="{{ url_for('static',filename='external_cache/home-concierge-desktop.jpg') }}" alt="Concierge before and after example" loading="lazy"><div class="concierge-before"><picture><source media="(min-width: 768px) and (max-width: 1023px)" srcset="{{ url_for('static',filename='external_cache/home-concierge-before-tablet.jpg') }}"><img src="{{ url_for('static',filename='external_cache/home-concierge-before.jpg') }}" alt="Before home improvements" loading="lazy"></picture><span>Before Concierge</span></div><div class="concierge-after"><img src="{{ url_for('static',filename='external_cache/home-concierge-after.jpg') }}" alt="After home improvements" loading="lazy"><span>After Concierge</span></div></div>
+  <div class="concierge-copy"><h2>Compass Concierge</h2><p>Concierge helps you sell your home faster and for more money by covering the cost of home improvement services — zero due until closing.*</p><small>*Depending on your state of residence, fees or interest may apply.</small><a class="home-pill light" href="{{ url_for('concierge') }}">Learn More <span aria-hidden="true">→</span></a></div>
+</article>
+<section class="home-neighborhoods"><h2>Find the Neighborhood For You</h2><p class="home-intro">The neighborhoods best suited to your lifestyle, and the agents who know them best.</p>
+<div class="home-neighborhood-grid">{% for slug,name in [('nyc','New York City'),('hamptons','The Hamptons'),('miami','South Florida'),('boston','Greater Boston'),('la','Southern California'),('dc','DC, Maryland, & Virginia')] %}<a href="{{ url_for('neighborhoods', region=slug) }}"><img src="{{ url_for('static',filename='external_cache/home-neighborhood-' ~ slug ~ '.jpg') }}" alt="" loading="lazy"><span>{{ name }}</span></a>{% endfor %}</div>
+<div class="home-section-action"><a class="home-pill" href="{{ url_for('neighborhoods') }}">View More Neighborhoods <span aria-hidden="true">→</span></a></div>
+</section>
+<section class="home-market-links">
+<div class="home-market-group"><h2>Real Estate in Popular Cities</h2><p>Browse listings, view photos, and connect with an agent to schedule a viewing in some of our most popular cities.</p><button class="market-toggle" aria-expanded="false" aria-controls="home-cities">Show Cities <span aria-hidden="true">＋</span></button><ul id="home-cities">
+<li><a href="{{ url_for('city_for_sale',city_state='manhattan-ny') }}">Manhattan Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='brooklyn-ny') }}">Brooklyn Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='los-angeles-ca') }}">Los Angeles Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='san-francisco-ca') }}">San Francisco Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='washington-dc') }}">Washington DC Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='oakland-ca') }}">Oakland Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='queens-ny') }}">Queens Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='san-jose-ca') }}">San Jose Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='chicago-il') }}">Chicago Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='naples-fl') }}">Naples Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='santa-rosa-ca') }}">Santa Rosa Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='beverly-hills-ca') }}">Beverly Hills Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='miami-fl') }}">Miami Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='san-diego-ca') }}">San Diego Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='philadelphia-pa') }}">Philadelphia Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='pasadena-ca') }}">Pasadena Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='seattle-wa') }}">Seattle Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='san-antonio-tx') }}">San Antonio Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='sacramento-ca') }}">Sacramento Real Estate</a></li>
+<li><a href="{{ url_for('city_for_sale',city_state='port-st-lucie-fl') }}">Port St. Lucie Real Estate</a></li>
+</ul></div>
+<div class="home-market-group"><h2>Real Estate Markets</h2><p>Find your next dream home in one of our markets.</p><button class="market-toggle" aria-expanded="false" aria-controls="home-markets">Show Markets <span aria-hidden="true">＋</span></button><ul id="home-markets">
+<li><a href="{{ url_for('market',state='az') }}">Arizona Real Estate</a></li>
+<li><a href="{{ url_for('market',state='ca') }}">California Real Estate</a></li>
+<li><a href="{{ url_for('market',state='co') }}">Colorado Real Estate</a></li>
+<li><a href="{{ url_for('market',state='ct') }}">Connecticut Real Estate</a></li>
+<li><a href="{{ url_for('market',state='dc') }}">DC Real Estate</a></li>
+<li><a href="{{ url_for('market',state='fl') }}">Florida Real Estate</a></li>
+<li><a href="{{ url_for('market',state='ga') }}">Georgia Real Estate</a></li>
+<li><a href="{{ url_for('market',state='il') }}">Illinois Real Estate</a></li>
+<li><a href="{{ url_for('market',state='la') }}">Louisiana Real Estate</a></li>
+<li><a href="{{ url_for('market',state='md') }}">Maryland Real Estate</a></li>
+<li><a href="{{ url_for('market',state='ma') }}">Massachusetts Real Estate</a></li>
+<li><a href="{{ url_for('market',state='ms') }}">Mississippi Real Estate</a></li>
+<li><a href="{{ url_for('market',state='nj') }}">New Jersey Real Estate</a></li>
+<li><a href="{{ url_for('market',state='ny') }}">New York Real Estate</a></li>
+<li><a href="{{ url_for('market',state='pa') }}">Pennsylvania Real Estate</a></li>
+<li><a href="{{ url_for('market',state='tn') }}">Tennessee Real Estate</a></li>
+<li><a href="{{ url_for('market',state='tx') }}">Texas Real Estate</a></li>
+<li><a href="{{ url_for('market',state='va') }}">Virginia Real Estate</a></li>
+<li><a href="{{ url_for('market',state='wa') }}">Washington Real Estate</a></li>
+<li><a href="{{ url_for('homes_for_sale_index') }}">View All Markets</a></li>
+</ul></div>
+</section>
+</div>
+{% endblock %}

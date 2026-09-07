@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block content %}
+<form class="form-narrow" method="post" action="{{ url_for('register') }}">
+  <h1>Join Compass</h1>
+  <p style="color:var(--c-gray-4); margin-top:-12px">Save homes, schedule tours, and get personalized recommendations.</p>
+  {% if error %}<div class="flash warning">{{ error }}</div>{% endif %}
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="field"><label for="field-name">Full name</label><input id="field-name" type="text" name="name" required></div>
+  <div class="field"><label for="field-email">Email</label><input id="field-email" type="email" name="email" required></div>
+  <div class="field"><label for="field-password">Password</label><input id="field-password" type="password" name="password" required></div>
+  <div class="field"><label for="field-confirm">Confirm password</label><input id="field-confirm" type="password" name="confirm" required></div>
+  <button class="btn" type="submit">Create account</button>
+  <p style="margin-top:24px">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+</form>
+{% endblock %}

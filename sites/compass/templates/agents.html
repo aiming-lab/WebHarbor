@@ -1,0 +1,5 @@
+{% extends "base.html" %}
+{% block title %}Find an Agent | Compass{% endblock %}
+{% block content %}
+<div class="container section"><h1>Find an Agent</h1><p class="muted">Explore the listing agents represented in this collection of homes.</p><form method="get" class="filter-bar"><div class="filter-group"><label for="agent-city">City</label><select name="city" id="agent-city"><option value="">All cities</option>{% for c in all_cities %}<option value="{{ c }}" {% if filter_city==c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select></div><button class="btn tiny" type="submit">Filter</button><a class="btn outline tiny" href="?">Reset</a></form><div class="grid-cards agent-grid">{% for a in agents %}<a class="agent-card" href="{{ url_for('agent_detail',slug=a.slug) }}"><div class="av" aria-hidden="true">{{ a.name.split()[0][0] }}{{ a.name.split()[-1][0] }}</div><div><h2>{{ a.name }}</h2><p class="muted">{{ a.title }} · {{ a.city }}, {{ a.state }}</p></div></a>{% else %}<p>No agents match this city.</p>{% endfor %}</div></div>
+{% endblock %}

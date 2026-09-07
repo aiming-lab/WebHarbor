@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <h1>Saved searches</h1>
+    {% if searches %}
+      <div class="table-scroll" role="region" aria-label="Saved searches" tabindex="0"><table class="table">
+        <thead><tr><th>Name</th><th>Criteria</th><th>Notify</th><th></th></tr></thead>
+        <tbody>
+          {% for s in searches %}{% set c = s.get_criteria() %}
+            <tr>
+              <td><a href="{{ url_for('search', **c) }}">{{ s.name }}</a></td>
+              <td>{% if c.q %}"{{ c.q }}" · {% endif %}{% if c.city %}{{ c.city }} · {% endif %}{% if c.beds %}{{ c.beds }}+ bd · {% endif %}{% if c.price_max %}≤ ${{ c.price_max }} · {% endif %}{% if c.property_type %}{{ c.property_type }}{% endif %}</td>
+              <td>{{ 'Yes' if s.notify else 'No' }}</td>
+              <td>
+                <form method="post" action="{{ url_for('delete_saved_search', ssid=s.id) }}">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <button class="btn outline tiny" type="submit">Delete</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table></div>
+    {% else %}
+      <div class="empty"><h3>No saved searches</h3><p>Save a search from the results page.</p></div>
+    {% endif %}
+
+    <h2 style="margin-top:48px">Save a new search</h2>
+    <form method="post" class="form-narrow" style="margin:0">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label for="field-name">Name</label><input id="field-name" type="text" name="name" required></div>
+      <div class="field"><label for="field-q">Search terms</label><input id="field-q" type="text" name="q"></div>
+      <div class="field"><label for="field-city">City</label><input id="field-city" type="text" name="city"></div>
+      <div class="field"><label for="field-price_max">Max price ($)</label><input id="field-price_max" type="number" name="price_max"></div>
+      <div class="field"><label for="field-beds">Min beds</label><input id="field-beds" type="number" name="beds"></div>
+      <div class="field"><label for="field-property_type">Property type</label>
+        <select id="field-property_type" name="property_type">
+          <option value="">Any</option>
+          {% for t in ['Single Family','Condo','Co-op','Townhouse','Multi-Family','Apartment','Land'] %}
+            <option value="{{ t }}">{{ t }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn" type="submit">Save search</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 19 Flask mirror sites + control plane on :8101.
+# 20 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -35,11 +35,14 @@ RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instan
 RUN cd /opt/WebSyn/phys_org && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
 RUN cd /opt/WebSyn/target && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
 
+# Rebuild Compass's source-backed catalog and benchmark state from tracked data.
+RUN cd /opt/WebSyn/compass && python migrate_seed.py && rm -rf instance
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
 RUN chmod +x /opt/websyn_start.sh
 
-EXPOSE 8101 40000-40018
+EXPOSE 8101 40000-40019
 
 CMD ["/opt/websyn_start.sh"]
