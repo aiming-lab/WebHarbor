@@ -161,7 +161,7 @@
     {# User actions #}
     {% if current_user.is_authenticated %}
     <h2>Your Stuff</h2>
-    <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+    <div class="user-actions-grid">
       <form action="{{ url_for('rate', oid=g.bgg_id) }}" method="post">
         {{ rating_form.hidden_tag() }}
         <h3>Rate this game</h3>
@@ -212,6 +212,13 @@
         <button type="submit">Save</button>
       </form>
     </div>
+
+    {% if my_collection %}
+    <form action="{{ url_for('collection_remove', oid=g.bgg_id) }}" method="post" style="margin-top: 10px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-quiet" type="submit">Remove from collection</button>
+    </form>
+    {% endif %}
 
     <h3>Log a play</h3>
     <form action="{{ url_for('play_log', oid=g.bgg_id) }}" method="post" style="background: #fafbfc; padding: 12px; border-radius: 3px;">

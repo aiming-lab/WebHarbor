@@ -21,6 +21,7 @@ Loaded by seed_data.py — idempotent.
 """
 import os
 import re
+import sys
 from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
@@ -37,6 +38,13 @@ from wtforms import (StringField, PasswordField, TextAreaField, HiddenField,
 from wtforms.validators import DataRequired, Length, Optional, Email, NumberRange
 from sqlalchemy import or_, and_, desc, asc, func, text
 from markupsafe import Markup, escape
+
+
+# seed_data imports the model classes from ``app``.  When this file is started
+# directly, publish the running module under that name so Flask-SQLAlchemy is
+# initialized only once.
+if __name__ == '__main__':
+    sys.modules.setdefault('app', sys.modules[__name__])
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -1145,12 +1153,15 @@ def user_profile(username):
     reviews = Rating.query.filter_by(user_id=u.id).filter(Rating.review_html != '').count()
     recent_plays = Play.query.filter_by(user_id=u.id).order_by(Play.played_on.desc()).limit(5).all()
     top_rated = Rating.query.filter_by(user_id=u.id).order_by(Rating.value.desc()).limit(10).all()
-    geeklists = GeekList.query.filter_by(author_id=u.id).order_by(GeekList.created_at.desc()).limit(5).all()
+    geeklists_query = GeekList.query.filter_by(author_id=u.id)
+    geeklists_count = geeklists_query.count()
+    geeklists = geeklists_query.order_by(GeekList.created_at.desc()).limit(5).all()
     return render_template('user.html', u=u,
                            own=own, want=want, wishlist=wishlist,
                            plays_count=plays_count, rated=rated, reviews=reviews,
                            recent_plays=recent_plays, top_rated=top_rated,
-                           geeklists=geeklists)
+                           geeklists=geeklists,
+                           geeklists_count=geeklists_count)
 
 
 @app.route('/collection/<username>')
@@ -1241,6 +1252,9 @@ def rate(oid):
         flash('Rating must be between 1.0 and 10.0.', 'error')
         return redirect(url_for('game_detail', oid=oid, slug=g.slug))
     r = Rating.query.filter_by(user_id=current_user.id, game_id=g.id).first()
+    previous_value = r.value if r else None
+    previous_average = g.avg_rating or 0.0
+    previous_count = g.num_ratings or 0
     if not r:
         r = Rating(user_id=current_user.id, game_id=g.id,
                    value=form.value.data, review_html=escape_paragraphs(form.review.data or ''),
@@ -1250,11 +1264,20 @@ def rate(oid):
         r.value = form.value.data
         r.review_html = escape_paragraphs(form.review.data or '')
         r.created_at = MIRROR_NOW
-    # Recompute aggregate (cheap on the seeded scale)
-    ratings = [x.value for x in Rating.query.filter_by(game_id=g.id).all()] + [form.value.data]
-    g.num_ratings = max(g.num_ratings or 0, len(ratings))
-    if ratings:
-        g.avg_rating = sum(ratings) / len(ratings)
+    # The seeded average represents the full upstream population.  Fold this
+    # user's mutation into that aggregate exactly once instead of replacing it
+    # with the handful of local benchmark ratings.
+    if previous_value is None:
+        g.num_ratings = previous_count + 1
+        g.avg_rating = (
+            (previous_average * previous_count) + form.value.data
+        ) / g.num_ratings
+    elif previous_count:
+        g.avg_rating = (
+            (previous_average * previous_count) - previous_value + form.value.data
+        ) / previous_count
+    else:
+        g.avg_rating = form.value.data
     db.session.commit()
     flash(f'You rated {g.name}: {form.value.data:.1f}.', 'success')
     return redirect(url_for('game_detail', oid=oid, slug=g.slug))

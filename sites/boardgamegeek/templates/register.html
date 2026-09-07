@@ -6,9 +6,18 @@
     <h1>Create Account</h1>
     <form method="post">
       {{ form.hidden_tag() }}
-      <div class="field">{{ form.username.label }}{{ form.username() }}</div>
-      <div class="field">{{ form.email.label }}{{ form.email() }}</div>
-      <div class="field">{{ form.password.label }}{{ form.password() }}</div>
+      <div class="field">
+        {{ form.username.label }}{{ form.username() }}
+        {% for error in form.username.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.email.label }}{{ form.email() }}
+        {% for error in form.email.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
+      <div class="field">
+        {{ form.password.label }}{{ form.password() }}
+        {% for error in form.password.errors %}<div class="field-error">{{ error }}</div>{% endfor %}
+      </div>
       <div class="field">{{ form.real_name.label }}{{ form.real_name() }}</div>
       <div class="field">{{ form.country.label }}{{ form.country() }}</div>
       <button type="submit">Join</button>

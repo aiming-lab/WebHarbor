@@ -271,6 +271,9 @@ form input[type=number], form select, form textarea {
 form textarea { min-height: 100px; resize: vertical; }
 form .form-row { display: flex; gap: 10px; }
 form .form-row .field { flex: 1; }
+.field-error { color: var(--bgg-red); font-size: 11px; margin-top: 3px; }
+.user-actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.profile-layout { display: grid; grid-template-columns: 220px 1fr; gap: 20px; }
 
 button, .btn {
   display: inline-block;
@@ -385,10 +388,33 @@ button:hover, .btn:hover {
 /* ----- responsive: collapse to single column under 900 ----- */
 @media (max-width: 900px) {
   .page { grid-template-columns: 1fr; }
+  .page > * { min-width: 0; }
   .sidebar { order: 2; }
   .game-header { grid-template-columns: 1fr; }
+  .game-header .cover { max-width: 360px; margin: 0 auto; }
+  .collection_table { display: block; max-width: 100%; overflow-x: auto; }
+  .module .module-body { overflow-x: auto; }
+  .tab-bar { overflow-x: auto; }
   .post { grid-template-columns: 1fr; }
   .post .post-author { border-right: 0; border-bottom: 1px solid var(--bgg-border); }
+}
+
+@media (max-width: 600px) {
+  .site-header .topbar { flex-wrap: wrap; gap: 8px 12px; padding: 8px; }
+  .site-header .logo { flex: 1 1 auto; font-size: 20px; }
+  .site-header .user-area { margin-left: auto; }
+  .site-header nav { order: 3; flex: 1 1 100%; justify-content: space-between; gap: 8px; }
+  .search-bar { order: 4; flex: 1 1 100%; width: 100%; }
+  .search-bar input[type="text"] { flex: 1 1 auto; min-width: 0; width: auto; }
+  .subnav .inner { padding: 6px 8px; gap: 10px 14px; }
+  .page { padding: 8px; gap: 8px; }
+  .main, .sidebar { padding: 10px; }
+  .thread-row { grid-template-columns: minmax(0, 1fr) auto; gap: 2px 8px; }
+  .thread-row .views { display: none; }
+  .thread-row .last { grid-column: 1 / -1; text-align: left; }
+  .user-actions-grid, .profile-layout { grid-template-columns: 1fr; }
+  form .form-row { flex-wrap: wrap; }
+  form .form-row .field { flex: 1 1 140px; }
 }
 
 /* ----- ratings histogram ----- */
