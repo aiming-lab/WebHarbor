@@ -64,8 +64,8 @@
 .home-neighborhood-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:24px; }
 .home-neighborhood-grid a { position:relative; height:88px; overflow:hidden; color:white; }
 .home-neighborhood-grid img { width:100%; height:100%; object-fit:cover; }
-.home-neighborhood-grid a::after { content:''; position:absolute; inset:0; background:#0006; }
-.home-neighborhood-grid span { position:absolute; left:24px; bottom:12px; font:500 18px/24px var(--sans); text-decoration:underline; z-index:1; }
+.home-neighborhood-grid a::after { content:''; position:absolute; inset:0; background:#0009; }
+.home-neighborhood-grid span { position:absolute; left:24px; top:40px; font:500 18px/24px var(--sans); text-decoration:underline; z-index:1; }
 .home-market-links { margin:64px 0; }
 .home-market-links h2 { font-size:18px; line-height:24px; }
 .home-market-links p { font-size:16px; margin:8px 0 24px; }
@@ -73,10 +73,33 @@
 .home-market-links a { text-decoration:underline; }
 .home-market-group+.home-market-group { margin-top:32px; }
 .market-toggle { display:none; }
-@media (min-width:768px) and (max-width:1199px) {
-  .home-container { max-width:970px; }.home-card-grid { gap:16px; }
-  .home-mortgage { padding:24px; }.home-mortgage h2 { font-size:22px; }.home-desktop-break { display:none; }
-  .concierge-copy { padding:32px 24px; }.home-concierge { grid-template-columns:1fr 1fr; gap:16px; }
+@media (min-width:768px) and (max-width:1023px) {
+  .home-hero { height:500px; }
+  .home-card-grid,.home-neighborhood-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .home-exclusive-ad { grid-column:2; grid-row:1; }
+  .home-mortgage { column-gap:64px; row-gap:24px; }
+  .home-mortgage h2 { margin:0; }
+  .mortgage-brand { height:25.5px; }
+  .home-concierge { display:block; }
+  .concierge-desktop { display:none; }
+  .concierge-before,.concierge-after { position:relative; }
+  .concierge-after { margin-top:2px; }
+  .concierge-before img,.concierge-after img { display:block; width:100%; height:300px; object-fit:cover; }
+  .concierge-before span,.concierge-after span { left:24px; bottom:20px; }
+  .concierge-copy { padding:40px 16px; text-align:center; }
+  .concierge-copy p { padding:0 96px; margin:16px 0; }
+  .home-market-links h2 { line-height:23.4px; }
+  .home-market-links p { line-height:24px; margin:8px 0 16px; }
+  .home-market-group+.home-market-group { margin-top:64px; }
+  .home-market-links .market-toggle { padding:0; border:0; line-height:24px; justify-content:flex-start; gap:4px; text-decoration:underline; }
+  .home-market-links .market-toggle span { font-size:0; }
+  .home-market-links .market-toggle span::after { content:'▾'; font-size:12px; }
+  .home-market-links .market-toggle[aria-expanded=true] span::after { content:'▴'; }
+}
+@media (max-width:1023px) {
+  .market-toggle { display:flex; align-items:center; justify-content:space-between; border:0; border-bottom:1px solid #ccc; padding:0 0 12px; width:100%; font:500 16px var(--sans); background:white; cursor:pointer; }
+  .home-market-links ul { display:none; grid-template-columns:1fr; margin-top:16px; }
+  .market-toggle[aria-expanded=true]+ul { display:grid; }
 }
 @media (max-width:767px) {
   .home-hero { height:380px; padding:0 16px; }
