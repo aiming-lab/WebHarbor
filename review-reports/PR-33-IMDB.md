@@ -67,8 +67,7 @@ working set; no replacement questions were added to meet a quota.
 The revisions add needed detail lookups, specify movie/TV scope, define ties,
 distinguish monetary fields, and replace the two requests for an external
 human's choice with deterministic selection from each synthetic user's
-initial watchlist. Birth year is used where the seed has no supported
-birthplace. Questions, English rubrics and verifier entry points are kept in
+initial watchlist. Questions, English rubrics and verifier entry points are kept in
 one-to-one correspondence; expected answers are not placed in task rows.
 
 The verifiers derive expected entities and values from the before snapshot.
