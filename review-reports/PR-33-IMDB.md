@@ -1,7 +1,7 @@
 # IMDb reviewer validation
 
 Status: **work in progress; not ready for merge**. Ten task candidates remain after quality review; their evidence is sealed. Independent
-blind review and owner visual acceptance remain pending. A local unit
+blind review passes all ten recorded executions; owner visual acceptance remains pending. A local unit
 test or an asset hash check does not imply visual or task acceptance.
 
 This review preserves [@hqhq1025's original IMDb contribution, PR #33](https://github.com/aiming-lab/WebHarbor/pull/33)
@@ -185,7 +185,7 @@ of model success rate.
 [Per-task results, paths and original final screenshot excerpts](assets/pr33-imdb/tasks/task-table.md)
 include actual versions, hashes, failed attempts and context disclosures in
 [structured form](assets/pr33-imdb/tasks/task-results.json). One final image does
-not prove the full execution; complete original evidence is retained for blind review.
+not prove the full execution; complete original evidence was supplied for independent blind review.
 
 The retained task 17 pilot keeps its r1 code/input hashes and HF
 `4d5709e171d7c40fc742727adfa98b04b9023039`. The other nine used r2 code `50bcce5`
@@ -220,7 +220,35 @@ tasks 0, 12 and 14 perform comparisons. Task 10's multiple constraints and tied
 leaders, and tasks 15/16's personal initial-state selection and exact writes,
 support the design judgment that precision can challenge a frontier model.
 The observed routes do not prove a minimum over every legal path; empirical model
-difficulty is **NOT_VERIFIED**. Independent Claude judgments remain **NOT_EXECUTED**.
+difficulty is **NOT_VERIFIED**.
+
+## Independent frozen-run review
+
+Claude Code returned **10 PASS / 0 FAIL** for the ten retained main executions
+on 2026-09-08. The result identifies its model as `claude-fable-5-1`, as declared
+by that reviewer session; this identity is not independently attested. The input
+manifest and all 288 files, plus the received result SHA256, were independently
+verified on receipt. See the [per-task summary, review method and limitations](assets/pr33-imdb/independent-review-summary.json).
+
+The reviewer used task/rubric, original actions and answers, DOM, screenshots
+and read-only before/after databases. Ten key screenshots were viewed; the other
+98 PNGs were hash-checked. It reports no access to source, deterministic verdicts,
+hidden answers or earlier review conclusions. The three guided alternatives were
+not part of this blind review.
+
+All ten labels agree with the prior deterministic results. Coordinator spot-checks
+of tasks 9, 15, 16 and 17 against original DOM and full-table database differences
+found no substantive disagreement. The seven read-only
+runs leave identical database bytes; the three stateful runs each have only the
+requested single-row change. The task 9 selector failure was recovered. For tasks
+15 and 16, visible years exclude the unvisited alternatives without requiring
+extra navigation absent from the task. Task 17 adds exactly one review; its
+pre-existing review is not a new duplicate.
+
+These are judgments of the disclosed r1/r2 runs. The input versions and reuse
+basis above remain explicit; no run is relabeled as having executed at the target
+PR head. Source fidelity, owner visual acceptance, scorer-code correctness and
+model difficulty are outside the blind review conclusion.
 
 ## Reproduction
 
@@ -254,6 +282,6 @@ uv run --project agent_demo python agent_demo/eval_judge.py \
 
 - Final source/before/after visual evidence and owner-approved regression
   baseline, including explicit decisions on inherited content omissions.
-- Independent frozen-run review, reconciliation and maintainer handoff.
+- Maintainer handoff after the remaining visual acceptance; this PR stays Draft.
 
 Neither the code PR nor the HF PR should be merged by the reviewer.

@@ -2,7 +2,7 @@
 
 These are the ten retained task executions. The runner was isolated from implementation, answer keys and scoring outputs, but retained its own preceding UI context, including the retired tasks. This is not a fresh-context model success-rate study. Each final JPEG is copied byte-for-byte from the original capture and hash-checked; a final image is an excerpt, not evidence of the entire run.
 
-All ten retained executions pass the native deterministic evaluator at commit `a37df75a873842be0ed4510baab5dbff361ac9ad`. Claude review is **NOT_EXECUTED**. Full original evidence is retained privately.
+All ten retained executions pass the native deterministic evaluator at commit `a37df75a873842be0ed4510baab5dbff361ac9ad`. Independent Claude review also passes **10/10** recorded executions; see the [summary and limits](../independent-review-summary.json). Full original evidence is retained privately.
 
 | Task | Executed version | Recorded steps | Successful substantive actions | Recorded issue | Final JPEG |
 |---|---|---:|---:|---|---|
