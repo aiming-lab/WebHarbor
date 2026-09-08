@@ -364,6 +364,30 @@ def _check_16(run):
             "Local rating action followed by My ratings observed; reported title and year match"]
 
 
+def _reported_review_headlines(text, title_name):
+    text = normalize(text).translate(str.maketrans({"“": '"', "”": '"', "‘": "'", "’": "'"}))
+    headlines = re.findall(r"\b(?:headline|review(?: titled| called)?)\s*(?:is|:)?\s*[\"']([^\"']+)[\"']", text)
+    # A rating label or the named movie can start a separate clause. Arbitrary
+    # words after a conjunction, comma or parenthesis remain part of the value.
+    metadata = (r"(?:,\s*(?:and\s+)?|\s+(?:and|with)\s+)"
+                r"(?=(?:(?:a|the|my|review)\s+)?rating\b|rated\b|"
+                r"(?:(?:the|my|new)\s+)*review\s+(?:is|was|appears|appeared)\b)"
+                r"|\s*\((?=\d+(?:\.\d+)?\s*/\s*10\s*\))"
+                r"|\s+(?:for|on)\s+(?=" + re.escape(normalize(title_name)) + r"\b)")
+    for match in re.finditer(r"\bheadline\s*(?P<introducer>is\s+|[:=]\s*)?(?P<value>[^.;\n|]+)", text):
+        reported = match.group("value").strip()
+        # "The headline and 10/10 rating displayed" refers to an existing field.
+        # Explicit values such as "Headline: and beyond" must still be checked.
+        if not match.group("introducer") and re.match(r"(?:and|with|for|on)\b", reported):
+            continue
+        quoted = re.match(r"[\"']([^\"']+)[\"']", reported)
+        reported = quoted.group(1) if quoted else re.split(metadata, reported, maxsplit=1)[0]
+        reported = reported.strip(" \"'“”")
+        if reported not in {"as requested", "correct", "unchanged", "exactly as requested"}:
+            headlines.append(reported)
+    return headlines
+
+
 def _check_17(run):
     user = _user(run, "alice.j@test.com")
     title = _row(run.initial, "SELECT * FROM titles WHERE primary_title=? AND year=?", ("Interstellar", 2014))
@@ -381,12 +405,7 @@ def _check_17(run):
     text = _target_text(run, title, name_optional=True)
     _require(text and _confirmation(text, "review"), "The answer does not confirm the new review appears")
     _require(_rating_answer(text, 10, False), "The answer reports a different review rating")
-    headlines = re.findall(r"\b(?:headline|review(?: titled| called)?)\s*(?:is|:)?\s*[\"']([^\"']+)[\"']", normalize(text))
-    for match in re.finditer(r"\bheadline\s*(?:is\s+|[:=]\s*)?([^.;\n|]+)", normalize(text)):
-        reported = re.split(r",|\s+(?:and|with|for|on)\b|\s*\(", match.group(1))[0]
-        reported = reported.strip(" \"'“”")
-        if reported not in {"as requested", "correct", "unchanged", "exactly as requested"}:
-            headlines.append(reported)
+    headlines = _reported_review_headlines(text, title["primary_title"])
     _require(all(headline == "brilliant sci-fi epic" for headline in headlines), "The answer reports a different review headline")
     return ["Exactly one new Alice review matches the required Interstellar headline, rating and nonempty body",
             "Local review submission followed by that movie's reviews page observed; no other business table changed"]

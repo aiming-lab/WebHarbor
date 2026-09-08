@@ -494,6 +494,78 @@ class SyntheticStateTaskTests(unittest.TestCase):
         self.assert_rejects(17, 'Interstellar: headline Wrong headline. The new review is visible.')
         self.assert_accepts(17, 'Interstellar: headline Brilliant sci-fi epic; the new review is visible.')
 
+    def test_task17_pilot_answer_with_later_headline_reference(self):
+        # Genuine pilot-01 answer wording, exercised with synthetic DB/UI fixtures.
+        # The original run and its old verdict are separate, immutable calibration inputs.
+        self.apply_expected_delta(17)
+        self.assert_accepts(17, (
+            "Signed in as alice.j@test.com (Alice Johnson) and posted one written review "
+            "for Interstellar (2014). Headline: Brilliant sci-fi epic. Review rating: 10/10. "
+            "Body: A moving and ambitious science-fiction adventure, with stunning visuals, "
+            "memorable music, and a powerful story about family and exploration. "
+            "Confirmed the new review appears on Interstellar’s user reviews page, attributed "
+            "to Alice Johnson, with the headline and 10/10 rating displayed."
+        ))
+
+    def test_task17_headline_reference_is_not_an_additional_literal_value(self):
+        self.apply_expected_delta(17)
+        for reference in ("with the headline and 10/10 rating displayed",
+                          "with the headline with a 10/10 rating",
+                          "with the headline on the user reviews page"):
+            for prefix in ("", "Headline: Brilliant sci-fi epic. "):
+                with self.subTest(reference=reference, prefix=prefix):
+                    self.assert_accepts(17, prefix + "The Interstellar review is visible, " + reference + ".")
+
+    def test_task17_headline_value_can_precede_identifiable_metadata(self):
+        self.apply_expected_delta(17)
+        for field in ("Headline: Brilliant sci-fi epic", "Headline is Brilliant sci-fi epic",
+                      "Headline Brilliant sci-fi epic, review rating 10/10",
+                      "Headline: Brilliant sci-fi epic and review rating 10/10",
+                      "Headline: Brilliant sci-fi epic with a rating of 10/10",
+                      "Headline: Brilliant sci-fi epic for Interstellar (2014)",
+                      "Headline: Brilliant sci-fi epic and the new review is visible",
+                      "Headline: Brilliant sci-fi epic (10/10)",
+                      "Headline: Brilliant sci-fi epic, and rating 10/10",
+                      'Headline: "Brilliant sci-fi epic", rating 10/10'):
+            with self.subTest(field=field):
+                self.assert_accepts(17, field + ". Confirmed the Interstellar review is visible.")
+
+    def test_task17_explicit_wrong_headline_cannot_hide_behind_a_reference(self):
+        self.apply_expected_delta(17)
+        for field in ("Headline: Wrong headline", "Headline is Wrong headline",
+                      "Headline Wrong headline", 'Headline: "Wrong headline"',
+                      "Headline: and beyond", "Headline: with extras",
+                      "Headline: Brilliant sci-fi epic. Headline: Wrong headline"):
+            with self.subTest(field=field):
+                self.assert_rejects(17, field + ". The Interstellar review is visible, "
+                                    "with the headline and 10/10 rating displayed.")
+
+    def test_task17_unquoted_extra_headline_suffix_is_not_metadata(self):
+        self.apply_expected_delta(17)
+        for suffix in (" extended", " and beyond", " with extras", " for everyone",
+                       " on Mars", ", extended", " (extended)"):
+            with self.subTest(suffix=suffix):
+                self.assert_rejects(17, "Headline: Brilliant sci-fi epic" + suffix +
+                                    ". Confirmed the Interstellar review is visible.")
+
+    def test_task17_quoted_extra_headline_suffix_is_not_metadata(self):
+        self.apply_expected_delta(17)
+        for quotes in (('"', '"'), ("“", "”"), ("'", "'"), ("‘", "’")):
+            for suffix in (" extended", " and beyond", " with extras", " with a rating of 10/10"):
+                with self.subTest(quotes=quotes, suffix=suffix):
+                    self.assert_rejects(17, "Headline: " + quotes[0] + "Brilliant sci-fi epic" +
+                                        suffix + quotes[1] + ". Confirmed the Interstellar review is visible.")
+            self.assert_accepts(17, "Headline: " + quotes[0] + "Brilliant sci-fi epic" +
+                                quotes[1] + ". Confirmed the Interstellar review is visible.")
+
+    def test_task17_headline_reference_does_not_override_contradictory_rating(self):
+        self.apply_expected_delta(17)
+        for explicit, displayed in ((9, 10), (10, 9), (9, 9)):
+            with self.subTest(explicit=explicit, displayed=displayed):
+                self.assert_rejects(17, "Headline: Brilliant sci-fi epic. "
+                                    f"Review rating: {explicit}/10. The Interstellar review is visible, "
+                                    f"with the headline and {displayed}/10 rating displayed.")
+
     def test_explicit_cancel_text_does_not_count_as_a_submission(self):
         for number in USERS:
             with self.subTest(number=number):
