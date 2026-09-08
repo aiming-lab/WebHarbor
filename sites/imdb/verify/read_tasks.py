@@ -71,8 +71,32 @@ def _paragraph_answer(answer, entities):
     return "\n".join(output)
 
 
+def _fact_prefix_lines(answer, entities):
+    """Keep explicit rank/type prefixes with the following movie in prose."""
+    names = sorted({normalize(name) for aliases in entities.values() for name in aliases}, key=len, reverse=True)
+    rank = r"(?:#\s*\d+\b|rank(?:ed)?\s*(?::|=|is)?\s*(?:#|no\.?\s*)?\s*\d+\b|(?:first|third)[- ]ranked\b)"
+    rank_prefix = rank + r"\s*(?:(?:movie|film)\s*)?[:=-]?\s*"
+    type_prefix = (r"(?:(?:highest[- ]rated|top(?:[- ]rated)?)\s+)?(?:crime\s+)?"
+                   r"(?:movies?|films?|tv[- ]series|television(?: series)?|series|shows?)\s*[:=-]\s*")
+    heading = re.compile(r"(?<!\w)(?:(?:" + rank_prefix + "|" + type_prefix + r"))?(?:"
+                         + "|".join(re.escape(name) for name in names) + r")(?!\w)")
+    output = []
+    for line in normalize(answer).splitlines():
+        found = [key for key, aliases in entities.items() if any(mentions(line, name) for name in aliases)]
+        if "|" in line or len(found) < 2:
+            output.append(line)
+            continue
+        matches = list(heading.finditer(line))
+        # Keep the first entity's leading context; later explicit prefixes move
+        # with their entity. Consume full names so aliases cannot split them.
+        starts = [0] + [match.start() for match in matches[1:]]
+        output.extend(line[start:end] for start, end in zip(starts, starts[1:] + [len(line)]))
+    return "\n".join(output)
+
+
 def _bindings(answer, titles):
     entities = {title["id"]: _names(title) for title in titles}
+    answer = _fact_prefix_lines(answer, entities)
     answer = _paragraph_answer(answer, entities)
     texts = entity_texts(answer, entities)
     group = None
@@ -126,14 +150,20 @@ def _rating(text, value):
     return has_number(text, value)
 
 
-def _runtime(text, value):
+def _runtime(text, value, difference=None):
     if value is None:
         return False
     text = normalize(text)
-    measured = re.findall(r"(?<![\w.])(\d+)\s*(?:minutes?|mins?|m)\b", text)
-    labeled = re.findall(r"\bruntime\s*(?:\([^)]*\))?\s*(?:[:=]|is|of)?\s*(\d+)", text)
+    measured = []
+    for match in re.finditer(r"(?<![\w.])(\d+(?:\.\d+)?)\s*(?:minutes?|mins?|m)\b", text):
+        if re.search(r"\b(?:longer|shorter)\b[^.;\n]*\bby\s*$", text[:match.start()]):
+            if difference is None or Decimal(match.group(1)) != Decimal(str(difference)):
+                return False
+        else:
+            measured.append(match.group(1))
+    labeled = re.findall(r"\bruntime\s*(?:\([^)]*\))?\s*(?:[:=]|is|of)?\s*(\d+(?:\.\d+)?)", text)
     values = measured + labeled
-    return bool(values) and all(int(number) == value for number in values)
+    return bool(values) and all(Decimal(number) == Decimal(str(value)) for number in values)
 
 
 def _directors(run, title):
@@ -442,10 +472,11 @@ def _check_0(run):
     _require(run.visited("/chart/top"), "The Top 250 Movies chart was not visited")
     titles = [_one(run.initial, "SELECT * FROM titles WHERE title_type='movie' AND top_rank=?", (rank,)) for rank in (1, 3)]
     texts = _task_texts(run, titles)
+    difference = abs(titles[0]["runtime_min"] - titles[1]["runtime_min"])
     for rank, title in zip((1, 3), titles):
         _require(run.visited(_title_path(title)), "A ranked movie's title information was not visited")
         text = texts[title["id"]]
-        _require(_runtime(text, title["runtime_min"]), "A ranked movie's runtime is missing or incorrect")
+        _require(_runtime(text, title["runtime_min"], difference), "A ranked movie's runtime or explicit difference is missing or incorrect")
         _require(title["mpaa_rating"] and mentions(text, title["mpaa_rating"]), "A ranked movie's MPAA classification is missing or incorrect")
         reported_ranks = re.findall(r"(?:\brank(?:ed)?\s*(?::|=|is)?\s*(?:#|no\.?\s*)?|#)\s*(\d+)\b", normalize(text))
         word_ranks = re.findall(r"\b(first|third)[- ]ranked\b", normalize(text))
@@ -634,7 +665,13 @@ def _check_12(run):
         _require(all(re.search(pattern, texts[title["id"]]) for title in titles), "The highest-rated titles are not identified as movie versus TV series")
     entities = {"movie": ["movie", "movies", "film", "films"] + [name for title in movies for name in _names(title)],
                 "series": ["TV", "TV series", "television", "series", "show"] + [name for title in series for name in _names(title)]}
-    _require(_comparison(run.answer, entities, {"movie": movies[0]["rating_avg"], "series": series[0]["rating_avg"]}, "rating", single_metric=True),
+    # These colon labels identify winners within each already-checked group;
+    # they do not assert that both groups beat the other group's top rating.
+    comparison_answer = re.sub(
+        r"\b(?:highest[- ]rated|top(?:[- ]rated)?)\s+(?:crime\s+)?"
+        r"(?=(?:movies?|films?|tv[- ]series|television(?: series)?|series|shows?)\s*:)",
+        "", normalize(run.answer))
+    _require(_comparison(comparison_answer, entities, {"movie": movies[0]["rating_avg"], "series": series[0]["rating_avg"]}, "rating", single_metric=True),
              "The movie-versus-series top-rating comparison is missing or incorrect")
     return ["Crime genre visited; both type groups, complete top ties, years, ratings and group comparison match"]
 

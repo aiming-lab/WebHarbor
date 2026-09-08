@@ -355,6 +355,75 @@ The Dark Knight has the higher IMDb rating and the larger worldwide gross.
                  "The Dark Knight has the longer runtime.")
         self.assert_rejects(0, table)
 
+    def test_task0_genuine_single_line_answer_with_runtime_difference(self):
+        # Frozen candidate task0/run-01 wording; these DB/navigation fixtures are synthetic.
+        self.assert_accepts(0, "#1: The Shawshank Redemption — 142 minutes, MPAA R. "
+                            "#3: The Dark Knight — 152 minutes, MPAA PG-13. "
+                            "The Dark Knight has the longer runtime, by 10 minutes.")
+
+    def test_task0_prefix_ranks_bind_forward_in_single_and_multiple_lines(self):
+        for first, third in (("#1:", "#3:"), ("rank 1:", "rank 3:"),
+                             ("First-ranked movie:", "Third-ranked movie:")):
+            for separator in (" ", "\n"):
+                with self.subTest(first=first, separator=separator):
+                    answer = (f"{first} The Shawshank Redemption: 142 minutes, R." + separator +
+                              f"{third} The Dark Knight: 152 minutes, PG-13." + separator +
+                              "The Dark Knight has the longer runtime.")
+                    self.assert_accepts(0, answer)
+                    wrong = (f"{third} The Shawshank Redemption: 142 minutes, R." + separator +
+                             f"{first} The Dark Knight: 152 minutes, PG-13." + separator +
+                             "The Dark Knight has the longer runtime.")
+                    self.assert_rejects(0, wrong)
+
+    def test_task0_suffix_and_mixed_rank_positions_still_bind_correctly(self):
+        for first, third in (("The Shawshank Redemption, rank 1", "The Dark Knight, rank 3"),
+                             ("The Shawshank Redemption, rank 1", "#3: The Dark Knight"),
+                             ("#1: The Shawshank Redemption", "The Dark Knight, rank 3")):
+            for separator in (" ", "\n"):
+                with self.subTest(first=first, third=third, separator=separator):
+                    answer = (first + ": 142 minutes, R." + separator + third +
+                              ": 152 minutes, PG-13. The Dark Knight has the longer runtime.")
+                    self.assert_accepts(0, answer)
+                    self.assert_rejects(0, answer.replace("rank 1", "rank 3").replace("#1:", "#3:"))
+
+    def test_task0_difference_is_distinct_from_runtime_and_must_be_correct(self):
+        facts = ("#1: The Shawshank Redemption: 142 minutes, R.\n"
+                 "#3: The Dark Knight: 152 minutes, PG-13.\n")
+        for comparison in ("The Dark Knight has the longer runtime, by {delta} minutes.",
+                           "The Dark Knight is longer by {delta} minutes.",
+                           "The Shawshank Redemption is shorter by {delta} minutes."):
+            with self.subTest(comparison=comparison):
+                self.assert_accepts(0, facts + comparison.format(delta=10))
+                for wrong in (9, 11, 142, 152):
+                    self.assert_rejects(0, facts + comparison.format(delta=wrong))
+
+    def test_task0_reversed_runtimes_are_not_rescued_by_correct_difference(self):
+        self.assert_rejects(0, "#1: The Shawshank Redemption: 152 minutes, R. "
+                            "#3: The Dark Knight: 142 minutes, PG-13. "
+                            "The Dark Knight has the longer runtime, by 10 minutes.")
+
+    def test_task12_single_line_type_prefixes_stay_with_their_movies(self):
+        movie = "Highest-rated Crime movie: The Shawshank Redemption (1994), 9.3/10."
+        series = "Highest-rated Crime TV series: Synthetic Crime Series (2008), 9.5/10."
+        comparison = "Neither group has a tie. The TV-series group has the higher top rating, by 0.2 points."
+        for first, second in ((movie, series), (series, movie)):
+            for separator in (" ", "\n"):
+                with self.subTest(first=first, separator=separator):
+                    self.assert_accepts(12, separator.join((first, second, comparison)))
+
+    def test_task12_reversed_type_prefixes_are_not_rescued_by_correct_values(self):
+        movie = "Highest-rated Crime TV series: The Shawshank Redemption (1994), 9.3/10."
+        series = "Highest-rated Crime movie: Synthetic Crime Series (2008), 9.5/10."
+        for separator in (" ", "\n"):
+            self.assert_rejects(12, separator.join((movie, series, "The TV-series group has the higher top rating.")))
+
+    def test_task12_inline_extra_winner_and_wrong_comparison_are_rejected(self):
+        facts = ("Highest-rated Crime movie: The Shawshank Redemption (1994), 9.3/10. "
+                 "Highest-rated Crime TV series: Synthetic Crime Series (2008), 9.5/10. ")
+        self.assert_rejects(12, facts + "Highest-rated Crime movie: The Godfather (1972), 9.2/10. "
+                            "The TV-series group has the higher top rating.")
+        self.assert_rejects(12, facts + "The movie group has the higher top rating.")
+
     def test_explicit_director_assertions_reject_extra_people(self):
         self.assert_rejects(4, "The Godfather: directed by Francis Ford Coppola and Christopher Nolan; worldwide gross $246.1M.")
         self.assert_rejects(4, "The Godfather: directed by Francis Ford Coppola and John Example; worldwide gross $246.1M.")
