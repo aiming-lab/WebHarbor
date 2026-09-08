@@ -650,11 +650,11 @@ def index():
                 if len(hot_games) >= 15:
                     break
     top_overall = Game.query.filter(Game.overall_rank > 0) \
-        .order_by(Game.overall_rank.asc()).limit(10).all()
-    recent_lists = GeekList.query.order_by(GeekList.created_at.desc()).limit(8).all()
-    active_threads = Thread.query.order_by(Thread.last_post_at.desc()).limit(10).all()
+        .order_by(Game.overall_rank.asc()).limit(25).all()
+    recent_lists = GeekList.query.order_by(GeekList.created_at.desc()).limit(10).all()
+    active_threads = Thread.query.order_by(Thread.last_post_at.desc()).limit(15).all()
     recent_reviews = Rating.query.filter(Rating.review_html != '') \
-        .order_by(Rating.created_at.desc()).limit(8).all()
+        .order_by(Rating.created_at.desc()).limit(10).all()
     return render_template('index.html',
                            hot_games=hot_games,
                            top_overall=top_overall,
