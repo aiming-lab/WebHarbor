@@ -1,11 +1,11 @@
 #!/bin/bash
-# WebSyn startup: launch all mirror sites, then exec the original CMD.
+# WebSyn startup: launch all mirror sites, then exec the control plane.
 # This preserves the base image's browser env server (port 8100) as PID 1.
 set -e
 
 SITES=(allrecipes amazon apple arxiv bbc_news booking github
        google_flights google_map google_search huggingface wolfram_alpha
-       cambridge_dictionary coursera espn merriam_webster ikea phys_org target ted
+       cambridge_dictionary coursera espn merriam_webster ikea phys_org target ted osu
        boardgamegeek)
 BASE_PORT=40000
 PID_DIR=/tmp/websyn_pids
@@ -81,6 +81,6 @@ done
 echo "[WebSyn] Starting control server on :8101 (PID 1)..."
 
 # Control server becomes PID 1 — receives SIGTERM on `docker stop`,
-# keeps the container alive as long as it's running. The site
+# keeps the container alive as long as it is running. Site
 # subprocesses are managed via /tmp/websyn_pids/<site>.pid.
 exec python3 /opt/control_server.py --port 8101

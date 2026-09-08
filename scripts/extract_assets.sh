@@ -35,6 +35,9 @@ for site_dir in sites/*/; do
 
     members=()
     for sub in "${SUBPATHS[@]}"; do
+        if [[ "$sub" == "instance_seed" && -f "${site_dir}.build-generated-seed" ]]; then
+            continue
+        fi
         [[ -e "$site_dir$sub" ]] && members+=("$site/$sub")
     done
     if [[ ${#members[@]} -eq 0 ]]; then

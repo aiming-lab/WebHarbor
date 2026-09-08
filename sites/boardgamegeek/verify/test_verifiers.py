@@ -120,7 +120,7 @@ def mutation(task: int):
 
 
 def fixture(task: int, *, alternate: bool = False) -> tuple[list[dict], str, object | None]:
-    base = "http://127.0.0.1:40020" if alternate else "http://localhost:40020"
+    base = "http://127.0.0.1:40021" if alternate else "http://localhost:40021"
 
     def url(path: str) -> str:
         return base + path
@@ -266,9 +266,9 @@ class VerifierTests(unittest.TestCase):
                 finally:
                     connection.close()
             origin = start_url or (
-                "http://127.0.0.1:40020/"
+                "http://127.0.0.1:40021/"
                 if steps and "127.0.0.1" in steps[0]["url"]
-                else "http://localhost:40020/"
+                else "http://localhost:40021/"
             )
             trajectory = {
                 "task_id": f"BoardGameGeek--{task}",
