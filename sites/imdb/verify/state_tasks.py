@@ -70,12 +70,23 @@ def _action_ok(step):
     return isinstance(step.get("action_result"), dict) or status == "completed"
 
 
-def _control_text(step):
-    params = _params(step)
+def _locator_nodes(step):
+    """Only the recorder's explicit child chain describes nested controls."""
+    node = _params(step)
+    while isinstance(node, dict):
+        yield node
+        node = node.get("child")
+
+
+def _control_text(step, include_ancestors=False):
     keys = ("selector", "locator", "target", "button", "role", "name", "label")
     if normalize(step.get("action", "")) in {"click", "submit"}:
         keys += ("text",)
-    return normalize(" ".join(part for key in keys for part in _strings(params.get(key))))
+    nodes = list(_locator_nodes(step))
+    if not include_ancestors:
+        nodes = nodes[-1:]
+    return normalize(" ".join(part for node in nodes
+                              for key in keys for part in _strings(node.get(key))))
 
 
 def _interaction(step):
@@ -89,9 +100,7 @@ def _interaction(step):
 
 def _control_matches(run, step, operation, title=None):
     """Check explicit control descriptions; native DOM indices stay valid."""
-    text = _control_text(step)
-    if not text:
-        return True
+    text = _control_text(step, include_ancestors=True)
     for address in re.findall(r"https?://[^\s\"'\]]+", text):
         try:
             source, target = urlsplit(run.trajectory["start_url"]), urlsplit(address)
@@ -100,9 +109,20 @@ def _control_matches(run, step, operation, title=None):
         except ValueError:
             return False
     if title:
+        for node in _locator_nodes(step):
+            if "has_link" in node and (not isinstance(node["has_link"], str)
+                                       or normalize(node["has_link"]) != normalize(title["primary_title"])):
+                return False
         explicit = re.findall(r"/title/([^/\s\"'\]?]+)/(?:watchlist|rate|review)\b", text)
         if any(tt_id != title["tt_id"] for tt_id in explicit):
             return False
+    # Ancestors constrain origin/row identity; only the acted-on child names
+    # the action. A parent container saying Remove cannot turn Details into it.
+    ancestors_described = bool(text)
+    text = _control_text(step)
+    if not text:
+        index = list(_locator_nodes(step))[-1].get("index")
+        return not ancestors_described or (type(index) is int and index >= 0)
     if re.search(r"\b(?:cancel|add to watchlist|logout|log out|sign out)\b", text):
         return False
     action = normalize(step.get("action", ""))

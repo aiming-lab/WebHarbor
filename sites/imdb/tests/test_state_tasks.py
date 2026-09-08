@@ -216,6 +216,69 @@ class SyntheticStateTaskTests(unittest.TestCase):
         self.apply_expected_delta(15)
         self.assert_accepts(15, steps=self.task_steps(15, title_remove=True))
 
+    def test_task15_nested_watchlist_row_remove_button_is_valid(self):
+        self.apply_expected_delta(15)
+        steps = self.task_steps(15)
+        steps[-2]["params"] = {"selector": "li", "has_link": "Alpha Orbit",
+                               "child": {"role": "button", "name": "Remove"}}
+        self.assert_accepts(15, steps=steps)
+
+    def test_task15_nested_child_must_describe_the_removal_control(self):
+        self.apply_expected_delta(15)
+        for child in ({"role": "button", "name": "Cancel"},
+                      {"role": "button", "name": "Add to Watchlist"},
+                      {"role": "link", "name": "Alpha Orbit"},
+                      {"metadata": {"role": "button", "name": "Remove"}}):
+            with self.subTest(child=child):
+                steps = self.task_steps(15)
+                steps[-2]["params"] = {"selector": "li", "has_link": "Alpha Orbit", "child": child}
+                self.assert_rejects(15, steps=steps)
+
+    def test_task15_nested_locator_keeps_parent_title_and_origin_constraints(self):
+        self.apply_expected_delta(15)
+        variants = (
+            {"selector": "li", "has_link": "Beta Realm", "child": {"role": "button", "name": "Remove"}},
+            {"selector": "li", "has_link": {"name": "Alpha Orbit"}, "child": {"role": "button", "name": "Remove"}},
+            {"selector": 'form[action="/title/tt9100002/watchlist"]', "has_link": "Alpha Orbit", "child": {"role": "button", "name": "Remove"}},
+            {"selector": 'form[action="http://foreign.example/title/tt9100001/watchlist"]', "has_link": "Alpha Orbit", "child": {"role": "button", "name": "Remove"}},
+        )
+        for params in variants:
+            with self.subTest(params=params):
+                steps = self.task_steps(15)
+                steps[-2]["params"] = params
+                self.assert_rejects(15, steps=steps)
+
+    def test_task15_nested_button_does_not_rescue_noop_or_extra_write(self):
+        steps = self.task_steps(15)
+        steps[-2]["params"] = {"selector": "li", "has_link": "Alpha Orbit",
+                               "child": {"role": "button", "name": "Remove"}}
+        self.assert_rejects(15, steps=steps)
+        self.apply_expected_delta(15)
+        self.change("UPDATE news_items SET headline='Unexpected mutation' WHERE id=1")
+        self.assert_rejects(15, steps=steps)
+
+    def test_control_metadata_outside_locator_child_is_not_an_action_description(self):
+        self.apply_expected_delta(15)
+        steps = self.task_steps(15)
+        steps[-2]["params"] = {"selector": "li", "has_link": "Alpha Orbit",
+                               "metadata": {"role": "button", "name": "Remove"}}
+        self.assert_rejects(15, steps=steps)
+
+    def test_nested_action_cue_must_describe_child_not_parent_container(self):
+        self.apply_expected_delta(15)
+        steps = self.task_steps(15)
+        steps[-2]["params"] = {"selector": "li", "name": "Remove", "has_link": "Alpha Orbit",
+                               "child": {"role": "link", "name": "Details"}}
+        self.assert_rejects(15, steps=steps)
+
+    def test_nested_opaque_index_preserves_target_constraints(self):
+        self.apply_expected_delta(15)
+        steps = self.task_steps(15, native=True)
+        steps[-2]["params"] = {"selector": "li", "has_link": "Alpha Orbit", "child": {"index": 3}}
+        self.assert_accepts(15, steps=steps)
+        steps[-2]["params"] = {"has_link": "Beta Realm", "child": {"index": 3}}
+        self.assert_rejects(15, steps=steps)
+
     def test_task15_either_qualifying_genre_is_sufficient(self):
         self.change("UPDATE title_genre SET genre_id=2 WHERE title_id=1", both=True)
         self.apply_expected_delta(15)
