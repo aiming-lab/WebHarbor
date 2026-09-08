@@ -243,6 +243,114 @@ class SyntheticStateTaskTests(unittest.TestCase):
         self.apply_expected_delta(16)
         self.assert_accepts(16)
 
+    def test_task16_distinguishes_verified_previous_and_saved_ratings(self):
+        self.apply_expected_delta(16)
+        for report in (
+            "Updated Carol's personal rating from 6/10 to 8/10",
+            "Updated Carol's personal rating from 6 to 8",
+            "The personal rating was 6/10, now 8/10; confirmed on My ratings",
+            "The personal rating was 6, now 8; confirmed on My ratings",
+            "It was 6/10. Set the personal rating to 8/10 and confirmed My ratings",
+            "Previous personal rating: 6/10. Saved personal rating: 8/10",
+            "Originally rated 6/10; now rated 8/10 and confirmed on My ratings",
+            "The previous rating was 6/10. The current rating is 8/10, confirmed",
+            "The saved personal rating was 8/10, confirmed on My ratings",
+            "It was 6/10. The new personal rating was 8/10, confirmed",
+        ):
+            with self.subTest(report=report):
+                self.assert_accepts(16, "Alpha Crime (2020). " + report + ".")
+
+    def test_task16_real_answer_structure_binds_old_value_to_initial_snapshot(self):
+        self.change("UPDATE user_ratings SET rating=9 WHERE id=501", both=True)
+        self.apply_expected_delta(16)
+        self.assert_accepts(16, "Selected Alpha Crime (2020), the most recently released "
+                            "Crime movie in Carol's initial Watchlist with a personal rating "
+                            "other than 8/10 (it was 9/10). Set Carol's personal rating for "
+                            "Alpha Crime to 8/10 and confirmed the Alpha Crime 2020 row "
+                            "shows 8/10 on My ratings.")
+
+    def test_task16_from_release_year_is_not_a_previous_personal_rating(self):
+        self.apply_expected_delta(16)
+        self.assert_accepts(16, "Alpha Crime from 2020. Updated Carol's personal rating "
+                            "from 6 to 8 and confirmed 8/10 on My ratings.")
+
+    def test_task16_rating_transition_is_not_the_catalog_title_from(self):
+        self.change("INSERT INTO titles(id,tt_id,title_type,primary_title,year) "
+                    "VALUES(15,'tt9100015','tvSeries','From',2022)", both=True)
+        self.apply_expected_delta(16)
+        for text in (
+            "Alpha Crime (2020): updated Carol's personal rating from 6 to 8. Confirmed My ratings.",
+            "Alpha Crime (2020): updated Carol's personal rating from 6/10 to 8/10. Confirmed My ratings.",
+            "Alpha Crime from 2020. Set Carol's personal rating to 8/10, confirmed My ratings.",
+        ):
+            with self.subTest(text=text):
+                self.assert_accepts(16, text)
+        self.assert_rejects(16, "Alpha Crime (2020): updated Carol's personal rating from 9 to 8. Confirmed My ratings.")
+        self.assert_rejects(16, "Alpha Crime (2020). From (2022) is now rated 8/10 on My ratings.")
+        self.assert_rejects(16, "Alpha Crime (2020). From 2022 is now rated 8/10 on My ratings.")
+
+    def test_task16_rating_from_and_real_from_title_keep_separate_bindings(self):
+        self.change("INSERT INTO titles(id,tt_id,title_type,primary_title,year) "
+                    "VALUES(15,'tt9100015','tvSeries','From',2022)", both=True)
+        self.apply_expected_delta(16)
+        with self.subTest(previous="correct"):
+            self.assert_accepts(16, "Alpha Crime (2020): updated Carol's personal rating from 6 to 8. "
+                                "Confirmed My ratings.\n\nFrom (2022) is a TV series.")
+        with self.subTest(previous="incorrect"):
+            self.assert_rejects(16, "Alpha Crime (2020): now rated 8/10, confirmed My ratings; "
+                                "updated the personal rating from 9 to 8.\n\nFrom (2022) is a TV series.")
+
+    def test_task16_incorrect_previous_rating_is_rejected(self):
+        self.apply_expected_delta(16)
+        for report in (
+            "Updated personal rating from 9/10 to 8/10",
+            "Updated personal rating from 9 to 8",
+            "The personal rating was 9/10, now 8/10; confirmed",
+            "It was 9/10. Set the personal rating to 8/10 and confirmed",
+            "Previous personal rating: 9/10. Saved personal rating: 8/10",
+            "Originally rated 9/10; now rated 8/10 and confirmed",
+            "Previous rating was 6/10. It was 9/10. Now rated 8/10",
+        ):
+            with self.subTest(report=report):
+                self.assert_rejects(16, "Alpha Crime (2020). " + report + ".")
+
+    def test_task16_incorrect_current_rating_is_not_masked_by_history(self):
+        self.apply_expected_delta(16)
+        for report in (
+            "Updated personal rating from 6/10 to 9/10",
+            "Updated personal rating from 6 to 9",
+            "The personal rating was 6/10, now 9/10; confirmed",
+            "It was 6/10. The current personal rating is 9/10, confirmed",
+            "It was 6/10. Now rated 8/10, but My ratings shows 9/10",
+            "It was 6/10. Now rated 8/10, but the current rating is 9",
+            "The rating was set to 9/10. Now rated 8/10",
+            "The current personal rating was 6/10. Now rated 8/10",
+            "It was 6/10. The personal rating is now not 8/10, confirmed",
+        ):
+            with self.subTest(report=report):
+                self.assert_rejects(16, "Alpha Crime (2020). " + report + ".")
+
+    def test_task16_eligibility_or_history_alone_does_not_confirm_eight(self):
+        self.apply_expected_delta(16)
+        for report in (
+            "Selected a personal rating other than 8/10 (it was 6/10). Confirmed My ratings",
+            "The previous personal rating was 6/10. Confirmed My ratings",
+            "Updated the personal rating from 6. Confirmed My ratings",
+        ):
+            with self.subTest(report=report):
+                self.assert_rejects(16, "Alpha Crime (2020). " + report + ".")
+
+    def test_task16_unrated_initial_state_cannot_claim_a_previous_numeric_rating(self):
+        self.change("DELETE FROM user_ratings WHERE id=501", both=True)
+        self.change("INSERT INTO user_ratings VALUES (550,2,7,8,'2026-09-08 09:10:11')")
+        self.assert_rejects(16, "Alpha Crime (2020). It was 6/10. Now rated 8/10.")
+        self.assert_accepts(16, "Alpha Crime (2020) was unrated. Now rated 8/10 on My ratings.")
+
+    def test_task16_correct_history_cannot_rescue_extra_database_writes(self):
+        self.apply_expected_delta(16)
+        self.change("UPDATE news_items SET headline='Unexpected mutation' WHERE id=1")
+        self.assert_rejects(16, "Alpha Crime (2020). Updated personal rating from 6/10 to 8/10.")
+
     def test_task16_unrated_target_gets_one_new_rating(self):
         self.change("DELETE FROM user_ratings WHERE id=501", both=True)
         self.change("INSERT INTO user_ratings VALUES (550,2,7,8,'2026-09-08 09:10:11')")

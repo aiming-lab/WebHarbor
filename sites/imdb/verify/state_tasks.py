@@ -249,11 +249,12 @@ def _new_system_fields(row):
     return valid_id
 
 
-def _target_text(run, title, name_optional=False):
+def _target_text(run, title, name_optional=False, answer=None):
     """Bind continuation lines while respecting other named catalog titles."""
+    answer = run.answer if answer is None else answer
     catalog = [dict(row) for row in run.initial.execute("SELECT id, primary_title FROM titles")]
     candidates = []
-    source = normalize(run.answer)
+    source = normalize(answer)
     for row in catalog:
         name = normalize(row["primary_title"])
         for match in re.finditer(r"(?<!\w)" + re.escape(name) + r"(?!\w)", source):
@@ -265,11 +266,11 @@ def _target_text(run, title, name_optional=False):
             named[row["id"]] = row
             end = stop
     if not named and name_optional:
-        return run.answer
+        return answer
     entities = {key: [row["primary_title"]] for key, row in named.items()}
     entities.setdefault(title["id"], [title["primary_title"]])
     lines, active = [], None
-    for line in run.answer.splitlines():
+    for line in answer.splitlines():
         matches = [key for key, names in entities.items() if any(mentions(line, name) for name in names)]
         if "|" in line or not line.strip():
             active = None
@@ -302,6 +303,64 @@ def _rating_answer(text, expected, required):
     text = re.sub(r"\b(?:imdb|global)\s+rating\s*(?:is|of|:)?\s*\d+(?:\.\d+)?(?:\s*/\s*10)?", "", text)
     reported = re.findall(r"(?<!\d)(\d+(?:\.\d+)?)\s*/\s*10\b|\brating\s*(?:is|of|:)?\s*(\d+(?:\.\d+)?)", text)
     return (not required or has_number(text, expected)) and all(float(left or right) == expected for left, right in reported)
+
+
+def _personal_rating_answer(text, previous, expected=8):
+    """Check Task 16's explicit old values separately from its saved value."""
+    text = normalize(text)
+    score = r"(?P<score>\d+(?:\.\d+)?)(?:\s*/\s*10\b)?(?!\w|\.\d|\s*/\s*\d)"
+    text = re.sub(r"\b(?:imdb|global)\s+rating\s*(?:is|of|:)?\s*\d+(?:\.\d+)?(?:\s*/\s*10)?", "", text)
+    historical = (
+        r"\bfrom\s+",
+        r"\b(?:it\s+)?was\s+",
+        r"\b(?:previously|originally|initially)\s+(?:rated\s+)?",
+        r"\b(?:previous|prior|old|initial)\s+(?:personal\s+)?rating\s*(?:(?:was|of|is)\s+|[:=]\s*)?",
+    )
+    for prefix in historical:
+        matches = []
+        pattern = prefix + score
+        if prefix == historical[0]:
+            pattern += r"(?=\s+to\s+\d)"
+        for match in re.finditer(pattern, text):
+            clause = re.split(r"[.;,\n(]|\b(?:and|but)\b", text[:match.start()])[-1]
+            if prefix == historical[1] and re.search(r"\b(?:current|now|currently|saved|new)\b", clause):
+                continue
+            matches.append(match)
+        if any(previous is None or float(match["score"]) != previous for match in matches):
+            return False
+        for match in reversed(matches):
+            text = text[:match.start()] + " " + text[match.end():]
+
+    # A selection condition is not a claim that the new rating has been saved.
+    # A negated *current* rating, however, directly contradicts the result.
+    eligibility = r"\b(?:other than|not)\s+" + score
+    for match in re.finditer(eligibility, text):
+        preceding = re.split(r"[.;\n]", text[:match.start()])[-1]
+        if (float(match["score"]) != expected or previous == expected
+                or re.search(r"\b(?:now|currently|saved|new)\b", preceding)):
+            return False
+    text = re.sub(eligibility, " ", text)
+
+    # Read both /10 notation and ordinary numeric update clauses. History was
+    # checked against the initial snapshot above, rather than silently ignored.
+    current = [float(match[1]) for match in re.finditer(
+        r"(?<![\w.])(\d+(?:\.\d+)?)\s*/\s*10\b", text)]
+    labels = (r"\b(?:rating|rated|now|currently|to|shows?)\s*"
+              r"(?:(?:is|of|was|now|currently|at|to)\s+|[:=]\s*)?")
+    current.extend(float(match["score"]) for match in re.finditer(labels + score, text))
+    return bool(current) and all(value == expected for value in current)
+
+
+def _personal_rating_text(run, title):
+    # Normalize only unambiguous update/year phrases before entity binding.
+    # Otherwise the catalog series "From" can split a numeric rating change.
+    score = r"\d+(?:\.\d+)?(?:\s*/\s*10\b)?"
+    transition = r"\bfrom\s+(" + score + r")\s+to\s+(" + score + r")(?!\w|\.\d|\s*/\s*\d)"
+    answer = re.sub(transition, r"previously \1; now \2", run.answer, flags=re.I)
+    if normalize(title["primary_title"]) != "from":
+        year = r"\bfrom\s+" + re.escape(str(title["year"])) + r"\b"
+        answer = re.sub(year, "released in " + str(title["year"]), answer, flags=re.I)
+    return _target_text(run, title, answer=answer)
 
 
 def _watchlist_titles(run, user):
@@ -357,8 +416,10 @@ def _check_16(run):
                  and row["user_id"] == user["id"] and row["title_id"] == title["id"] and row["rating"] == 8
                  and _new_system_fields(row), "The inserted personal rating has incorrect fields")
     _mutation_step(run, user, title, "rate", {_title_path(title)}, {"/list/ratings"}, watchlist=True, fields={"rating": 8})
-    text = _target_text(run, title)
-    _require(text and has_number(text, title["year"]) and _rating_answer(text, 8, True), "The rated title, release year or personal 8/10 value is missing or incorrect")
+    text = _personal_rating_text(run, title)
+    _require(text and has_number(text, title["year"])
+             and _personal_rating_answer(text, old.get("rating") if old else None),
+             "The rated title, release year, previous rating or personal 8/10 result is missing or incorrect")
     _require(_confirmation(text, "rate"), "The answer does not confirm the personal-rating result")
     return ["Carol's initial eligible Watchlist selects the rated movie; only its personal rating changed to 8",
             "Local rating action followed by My ratings observed; reported title and year match"]
