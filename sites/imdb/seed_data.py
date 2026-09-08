@@ -34,7 +34,7 @@ import html
 import json
 import re
 import shutil
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -157,6 +157,7 @@ def _strip_year(h1):
 
 
 TT_FROM_URL = re.compile(r'/title/(tt\d+)')
+NM_FROM_URL = re.compile(r'/name/(nm\d+)(?:[/#?]|$)')
 
 
 def _ld_tt_id(ld):
@@ -165,6 +166,48 @@ def _ld_tt_id(ld):
     u = ld.get('url') or ''
     m = TT_FROM_URL.search(u)
     return m.group(1) if m else None
+
+
+def _ld_nm_id(ld):
+    """Return the exact Person identity, or None for missing/malformed URLs."""
+    url = (ld or {}).get('url')
+    match = NM_FROM_URL.search(url) if isinstance(url, str) else None
+    return match.group(1) if match else None
+
+
+MONTH_NUMBERS = {name: number for number, name in enumerate((
+    'January', 'February', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December'), 1)}
+RELEASE_DATE_RE = re.compile(
+    r'^(?:Release date\s*\|\s*)?('
+    + '|'.join(MONTH_NUMBERS)
+    + r')\s+(\d{1,2}),\s+(\d{4})(?=\s|[|(]|$)')
+
+
+def _parse_release_date(value):
+    """Extract an existing complete date; never invent a missing day/year."""
+    text = _u(value)
+    try:
+        if re.fullmatch(r'\d{4}-\d{2}-\d{2}', text):
+            return date.fromisoformat(text).isoformat()
+        match = RELEASE_DATE_RE.match(text)
+        if match:
+            month, day, year = match.groups()
+            return date(int(year), MONTH_NUMBERS[month], int(day)).isoformat()
+    except ValueError:
+        pass
+    return ''
+
+
+def _release_date_from_scrape(ld, details):
+    published = _u((ld or {}).get('datePublished'))
+    if re.fullmatch(r'\d{4}-\d{2}-\d{2}', published):
+        parsed = _parse_release_date(published)
+        if parsed:
+            return parsed
+    details = details or {}
+    return (_parse_release_date(details.get('releasedate'))
+            or _parse_release_date(details.get('releaseDate')))
 
 
 def _normalize_genre(name, name_to_genre):
@@ -418,6 +461,7 @@ def seed_all(db, Title, Person, Genre, Credit, Review, UserRating,
     # 3) Persons (load first so credits link cleanly) ---------------------
     nm_to_person = {}
     skipped_garbage = 0
+    skipped_person_identity = 0
     for f in sorted(SCRAPED.glob('name_*.json')):
         nm_id = f.stem.removeprefix('name_')
         try:
@@ -431,6 +475,11 @@ def seed_all(db, Title, Person, Genre, Credit, Review, UserRating,
             skipped_garbage += 1
             continue
         ld = d.get('ld') or {}
+        # A filename is the requested identity, not proof of the page returned.
+        # Fail closed for absent/malformed canonical URLs as well as redirects.
+        if _ld_nm_id(ld) != nm_id:
+            skipped_person_identity += 1
+            continue
         # Prefer h1 (stripped of year + (I)/(II) disambig) over ld.name.
         name = _strip_year(h1) or _u(ld.get('name')) or ''
         if not name:
@@ -473,7 +522,8 @@ def seed_all(db, Title, Person, Genre, Credit, Review, UserRating,
                    known_for_json=json.dumps(known_for))
         db.session.add(p)
         nm_to_person[nm_id] = p
-    print(f"[seed] persons loaded={len(nm_to_person)}, garbage_skipped={skipped_garbage}", flush=True)
+    print(f"[seed] persons loaded={len(nm_to_person)}, garbage_skipped={skipped_garbage}, "
+          f"identity_skipped={skipped_person_identity}", flush=True)
     db.session.flush()
 
     # 4) Titles + credits --------------------------------------------------
@@ -528,13 +578,7 @@ def seed_all(db, Title, Person, Genre, Credit, Review, UserRating,
         bo_ww   = _find_money(details, 'cumulativeworldwidegross', 'worldwidegross')
         bo_open = _find_money(details, 'openingweekenddomestic', 'openingweekend')
         budget  = _find_money(details, 'budget')
-        release_date = ''
-        if details.get('releasedate'):
-            release_date = _u(details['releasedate'])[:60]
-        elif details.get('releaseDate'):
-            release_date = _u(details['releaseDate'])[:60]
-        elif ld.get('datePublished'):
-            release_date = ld['datePublished']
+        release_date = _release_date_from_scrape(ld, details)
         poster_path = _copy_image(f'{tt_id}.jpg', f'{tt_id}.jpg') if (SCRAPED / 'images' / f'{tt_id}.jpg').exists() else ''
 
         tagline = _u(d.get('tagline'))
