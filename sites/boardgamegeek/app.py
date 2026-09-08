@@ -590,10 +590,16 @@ def _tpl_thousands(v):
 
 @app.context_processor
 def inject_globals():
+    nav_hot_games = (Game.query.filter(Game.featured == True)
+                     .order_by(Game.overall_rank.asc()).limit(12).all())
+    if not nav_hot_games:
+        nav_hot_games = (Game.query.filter(Game.overall_rank > 0)
+                         .order_by(Game.overall_rank.asc()).limit(12).all())
     return {
         'site_name': 'BoardGameGeek',
         'mirror_now': MIRROR_NOW,
         'current_year': MIRROR_NOW.year,
+        'nav_hot_games': nav_hot_games,
     }
 
 

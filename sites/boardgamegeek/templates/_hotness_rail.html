@@ -1,0 +1,13 @@
+<aside class="hotness-rail" aria-label="The Hotness">
+  <div class="rail-title">The Hotness</div>
+  <div class="rail-filter">Games <span>▾</span><span class="rail-more">⋮</span></div>
+  {% for hot in nav_hot_games %}
+  <a class="rail-game" href="{{ hot.detail_url }}">
+    {% if hot.thumb_filename %}
+      <img src="{{ url_for('static', filename='images/' + hot.thumb_filename) }}" alt="">
+    {% endif %}
+    <span><b>{{ hot.name }}</b><small>{{ hot.year_published or '—' }}</small></span>
+    <i class="{{ 'up' if loop.index % 3 else 'down' }}">{{ '▲' if loop.index % 3 else '▼' }}</i>
+  </a>
+  {% endfor %}
+</aside>

@@ -1,134 +1,93 @@
 {% extends "base.html" %}
 {% block title %}{{ site_name }} | Gaming Unplugged Since 2000{% endblock %}
 {% block content %}
-<div class="page">
-  <div class="main">
-    {# Hot games — large grid #}
-    <div class="module">
-      <div class="module-header">
-        <span>The Hotness</span>
-        <a href="{{ url_for('hotness') }}">All hot games →</a>
-      </div>
-      <div class="module-body">
-        <div class="game-grid">
-          {% for g in hot_games[:15] %}
-          <a class="game-card" href="{{ g.detail_url }}">
-            {% if g.thumb_filename %}
-              <img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">
-            {% else %}
-              <img src="{{ url_for('static', filename='icons/cover_placeholder.svg') }}" alt="{{ g.name }}">
-            {% endif %}
-            <span class="title">{{ g.name }}</span>
-            <span class="meta">({{ g.year_published or '—' }})</span>
-          </a>
-          {% endfor %}
-        </div>
-      </div>
-    </div>
+<div class="home-surface">
+  <nav class="home-tabs" aria-label="Home views">
+    <a class="active" href="{{ url_for('index') }}">Explore</a>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('user_profile', username=current_user.username) }}">Dashboard</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Dashboard</a>
+    {% endif %}
+  </nav>
 
-    {# Top overall #}
-    <div class="module">
-      <div class="module-header">
-        <span>Top Ranked Board Games</span>
-        <a href="{{ url_for('browse') }}">Full browse →</a>
-      </div>
-      <div class="module-body">
-        <table class="collection_table">
-          <thead><tr>
-            <th>#</th><th></th><th>Title</th>
-            <th class="collection_bggrating">Geek Rating</th>
-            <th class="collection_bggrating">Avg</th>
-            <th class="collection_bggrating">Voters</th>
-          </tr></thead>
-          <tbody>
-            {% for g in top_overall %}
-            <tr>
-              <td class="collection_rank">{{ g.overall_rank }}</td>
-              <td class="collection_thumbnail">
-                {% if g.thumb_filename %}
-                  <img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">
-                {% endif %}
-              </td>
-              <td class="collection_objectname">
-                <a class="primary" href="{{ g.detail_url }}">{{ g.name }}</a>
-                <span class="smallerfont">({{ g.year_published or '—' }})</span>
-              </td>
-              <td class="collection_bggrating">{{ g.bayes_average | one_decimal }}</td>
-              <td class="collection_bggrating">{{ g.avg_rating | one_decimal }}</td>
-              <td class="collection_bggrating">{{ g.num_ratings | thousands }}</td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-      </div>
+  <section class="featured-stories" aria-labelledby="featured-title">
+    <h1 id="featured-title" class="sr-only">Featured Stories</h1>
+    {% set hero = hot_games[0] if hot_games else none %}
+    {% if hero %}
+    <a class="featured-hero" href="{{ hero.detail_url }}">
+      {% if hero.image_filename %}
+        <img src="{{ url_for('static', filename='images/' + hero.image_filename) }}" alt="{{ hero.name }}">
+      {% elif hero.thumb_filename %}
+        <img src="{{ url_for('static', filename='images/' + hero.thumb_filename) }}" alt="{{ hero.name }}">
+      {% endif %}
+      <span class="featured-overlay">DISCOVER<br>YOUR NEXT<br>FAVORITE GAME</span>
+      <strong>{{ hero.name }}{% if hero.year_published %} ({{ hero.year_published }}){% endif %}</strong>
+      <small>Explore one of the community's most talked-about games</small>
+    </a>
+    {% endif %}
+    <div class="featured-list">
+      {% for story in hot_games[1:5] %}
+      <a href="{{ story.detail_url }}">
+        {% if story.thumb_filename %}<img src="{{ url_for('static', filename='images/' + story.thumb_filename) }}" alt="">{% endif %}
+        <span><b>{{ story.name }}</b><small>BoardGameGeek Community</small></span>
+      </a>
+      {% endfor %}
     </div>
+  </section>
 
-    {# Active forum threads #}
-    <div class="module">
-      <div class="module-header">
-        <span>Active Forum Threads</span>
-        <a href="{{ url_for('forums_index') }}">All forums →</a>
-      </div>
-      <div class="module-body">
-        {% for t in active_threads %}
-        <div class="thread-row">
-          <div class="subject">
-            {% if t.is_pinned %}<span class="pin-badge">PIN</span>{% endif %}
-            <a href="{{ url_for('thread_detail', tid=t.id) }}">{{ t.subject }}</a>
-            <span class="muted"> · in
-              <a href="{{ url_for('forum_detail', fid=t.forum_id) }}">{{ t.forum.title }}</a>
-              {% if t.forum.game %} ·
-                <a href="{{ t.forum.game.detail_url }}">{{ t.forum.game.name }}</a>
-              {% endif %}
-            </span>
-          </div>
-          <div class="replies">{{ t.num_posts - 1 }} replies</div>
-          <div class="views">{{ t.num_views | thousands }} views</div>
-          <div class="last">
-            <span>{{ t.last_post_at | time_ago }}</span>
-            by <span class="user">{{ t.author.username }}</span>
-          </div>
-        </div>
-        {% else %}
-        <p class="muted">No active threads yet.</p>
-        {% endfor %}
-      </div>
+  <section class="home-module" aria-labelledby="hotness-title">
+    <header class="home-module-header">
+      <div><h2 id="hotness-title">The Hotness</h2><p>Top trending games today</p></div>
+      <a href="{{ url_for('hotness') }}">See All ›</a>
+    </header>
+    <div class="card-strip hot-strip">
+      {% for g in hot_games[:8] %}
+      <a class="editorial-card" href="{{ g.detail_url }}">
+        {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">{% endif %}
+        <h3><span>{{ loop.index }}</span> {{ g.name }}</h3>
+        <p>{{ g.short_description[:105] if g.short_description else 'Discover this community favorite and see why players keep talking about it.' }}</p>
+      </a>
+      {% endfor %}
     </div>
-  </div>
+  </section>
 
-  <aside class="sidebar">
-    <div class="module" style="margin-top:0">
-      <div class="module-header">Recent GeekLists</div>
-      <div class="module-body">
-        {% for l in recent_lists %}
-          <div style="border-bottom: 1px dotted #ddd; padding: 6px 0;">
-            <a href="{{ url_for('geeklist_detail', lid=l.id) }}"><b>{{ l.title }}</b></a>
-            <div class="muted">
-              by {{ l.author.username }} · {{ l.num_items }} items · 👍 {{ l.num_thumbs }}
-            </div>
-          </div>
-        {% else %}
-          <p class="muted">No lists yet.</p>
-        {% endfor %}
-      </div>
+  <section class="home-module" aria-labelledby="countdown-title">
+    <header class="home-module-header">
+      <div><h2 id="countdown-title">Crowdfunding Countdown</h2><p>Projects ending soon</p></div>
+      <a href="{{ url_for('hotness') }}">See All ›</a>
+    </header>
+    <div class="card-strip campaign-strip">
+      {% for g in hot_games[5:11] %}
+      <a class="campaign-card" href="{{ g.detail_url }}">
+        {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">{% endif %}
+        <h3>{{ g.name }}</h3>
+        <small>Ends soon · {{ (g.num_ratings or 0) | thousands }} backers</small>
+        <p>{{ g.short_description[:95] if g.short_description else 'A tabletop project worth a closer look.' }}</p>
+        <span>Visit Project ↗</span>
+      </a>
+      {% endfor %}
     </div>
+  </section>
 
-    <div class="module">
-      <div class="module-header">Recent Reviews</div>
-      <div class="module-body">
-        {% for r in recent_reviews %}
-          <div style="border-bottom: 1px dotted #ddd; padding: 6px 0;">
-            <a href="{{ r.game.detail_url }}"><b>{{ r.game.name }}</b></a>
-            <span class="rating-chip" style="background: {{ r.value | rating_color }}">{{ r.value | one_decimal }}</span>
-            <div class="muted">
-              {{ r.user.username }} · {{ r.created_at | time_ago }}
-            </div>
-          </div>
-        {% else %}
-          <p class="muted">No reviews yet.</p>
-        {% endfor %}
-      </div>
+  <section class="preview-events" aria-label="Geek preview events">
+    <a href="{{ url_for('browse') }}"><strong>SPIEL</strong><span>GEEKPREVIEW<br><b>SPIEL ESSEN</b><small>Browse featured titles</small></span><i>Browse</i></a>
+    <a href="{{ url_for('browse') }}"><strong>GEN<br>CON</strong><span>GEEKPREVIEW<br><b>GEN CON PREVIEW</b><small>Discover new releases</small></span><i>Browse</i></a>
+  </section>
+
+  <section class="home-module featured-videos" aria-labelledby="videos-title">
+    <header class="home-module-header">
+      <div><h2 id="videos-title">Featured Videos</h2></div>
+      <a href="{{ url_for('forums_index') }}">See All ›</a>
+    </header>
+    <div class="video-grid">
+      {% for g in top_overall[:5] %}
+      <a href="{{ g.detail_url }}">
+        <div>{% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">{% endif %}<span>▶</span></div>
+        <b>{{ g.name }} — How to Play</b><small>BoardGameGeek</small>
+      </a>
+      {% endfor %}
     </div>
-  </aside>
+  </section>
 </div>
 {% endblock %}

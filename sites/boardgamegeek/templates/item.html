@@ -1,15 +1,19 @@
 {% extends "base.html" %}
 {% block title %}{{ g.name }} ({{ g.year_published or '—' }}) | {{ site_name }}{% endblock %}
 {% block content %}
-<div class="page single">
-  <div class="main">
+<div class="rail-layout">
+  {% include "_hotness_rail.html" %}
+  <div class="main item-main">
     <div class="crumb">
       <a href="{{ url_for('browse') }}">Browse</a> ›
       {% if g.subtype == 'boardgameexpansion' %}Expansion{% else %}Board Game{% endif %} ›
       {{ g.name }}
     </div>
 
-    <div class="game-header">
+    <div class="game-header game-hero">
+      {% if g.image_filename %}
+        <img class="game-hero-art" src="{{ url_for('static', filename='images/' + g.image_filename) }}" alt="">
+      {% endif %}
       <div class="cover">
         {% if g.image_filename %}
           <img src="{{ url_for('static', filename='images/' + g.image_filename) }}" alt="{{ g.name }}">
@@ -18,6 +22,9 @@
         {% endif %}
       </div>
       <div class="summary">
+        <div class="game-kicker">REIMPLEMENTED BY: {{ g.name | upper }} ·
+          {% if g.overall_rank %}RANK: OVERALL {{ g.overall_rank }}{% endif %}
+        </div>
         <h1>{{ g.name }} <span class="year">({{ g.year_published or '—' }})</span></h1>
         {% if g.short_description %}
           <p class="muted" style="font-size:14px;">{{ g.short_description }}</p>
@@ -54,6 +61,7 @@
         </div>
       </div>
       <div class="stats-box">
+        <div class="hero-rating">{{ g.avg_rating | one_decimal }}</div>
         <div class="stat-row">
           <span class="stat-label">Overall Rank</span>
           <span class="stat-value">{% if g.overall_rank %}#{{ g.overall_rank }}{% else %}—{% endif %}</span>
@@ -105,12 +113,29 @@
       </div>
     </div>
 
+    <div class="game-actions">
+      <a class="action-buy" href="{{ url_for('browse') }}">🛒 Buy a Copy</a>
+      <a class="action-sleeve" href="{{ url_for('game_credits', oid=g.bgg_id, slug=g.slug) }}">▣ Sleeve It</a>
+      {% if current_user.is_authenticated %}
+        <a class="action-collection" href="#your-stuff">☷ Add to Collection</a>
+      {% else %}
+        <a class="action-collection" href="{{ url_for('login') }}?next={{ request.path }}">☷ Add to Collection</a>
+      {% endif %}
+      <a class="action-light" href="#log-play">Log Play</a>
+      <a class="action-light" href="{{ url_for('game_ratings', oid=g.bgg_id, slug=g.slug) }}">♥ {{ g.num_owners | thousands }}</a>
+    </div>
+
     <div class="tab-bar">
       <a href="{{ g.detail_url }}" class="active">Overview</a>
-      <a href="{{ url_for('game_ratings', oid=g.bgg_id, slug=g.slug) }}">Ratings & Reviews</a>
-      <a href="{{ url_for('game_credits', oid=g.bgg_id, slug=g.slug) }}">Credits</a>
-      <a href="{{ url_for('game_expansions', oid=g.bgg_id, slug=g.slug) }}">Expansions</a>
+      <a href="{{ url_for('game_ratings', oid=g.bgg_id, slug=g.slug) }}" aria-label="Ratings & Reviews">Ratings</a>
       <a href="{{ url_for('game_forums', oid=g.bgg_id, slug=g.slug) }}">Forums</a>
+      <a href="{{ g.detail_url }}">Images</a>
+      <a href="{{ g.detail_url }}">Videos</a>
+      <a href="{{ url_for('game_credits', oid=g.bgg_id, slug=g.slug) }}">Files</a>
+      <a href="{{ url_for('game_credits', oid=g.bgg_id, slug=g.slug) }}">Stats</a>
+      <a href="{{ url_for('game_expansions', oid=g.bgg_id, slug=g.slug) }}">Expansions</a>
+      <a href="{{ g.detail_url }}">Shopping</a>
+      <a href="{{ g.detail_url }}">More ▾</a>
     </div>
 
     <h2>Description</h2>
@@ -160,7 +185,7 @@
 
     {# User actions #}
     {% if current_user.is_authenticated %}
-    <h2>Your Stuff</h2>
+    <h2 id="your-stuff">Your Stuff</h2>
     <div class="user-actions-grid">
       <form action="{{ url_for('rate', oid=g.bgg_id) }}" method="post">
         {{ rating_form.hidden_tag() }}
@@ -220,7 +245,7 @@
     </form>
     {% endif %}
 
-    <h3>Log a play</h3>
+    <h3 id="log-play">Log a play</h3>
     <form action="{{ url_for('play_log', oid=g.bgg_id) }}" method="post" style="background: #fafbfc; padding: 12px; border-radius: 3px;">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-row">

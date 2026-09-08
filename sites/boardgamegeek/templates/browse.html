@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 {% block title %}Browse Board Games | {{ site_name }}{% endblock %}
 {% block content %}
-<div class="page single">
-  <div class="main">
+<div class="rail-layout">
+  {% include "_hotness_rail.html" %}
+  <div class="main browse-main">
+    <div class="commission-note">We may earn a commission when you buy through our links.
+      <span>{{ page }}, <a href="{{ url_for('browse', page=page+1, sort=sort, dir=direction) }}">Next »</a></span>
+    </div>
     <h1>Browse Board Games</h1>
     <p class="muted">
       Showing {{ ((page - 1) * per_page) + 1 }} – {{ ((page - 1) * per_page) + games | length }}
@@ -26,6 +30,7 @@
           <th class="collection_bggrating">Avg Rating</th>
           <th class="collection_bggrating">Num Voters</th>
           <th class="collection_bggrating">Weight</th>
+          <th class="collection_shop">Shop</th>
         </tr>
       </thead>
       <tbody>
@@ -48,6 +53,7 @@
           <td class="collection_bggrating">{{ g.avg_rating | one_decimal }}</td>
           <td class="collection_bggrating">{{ g.num_ratings | thousands }}</td>
           <td class="collection_bggrating">{{ g.weight | two_decimal }}</td>
+          <td class="collection_shop"><a href="{{ g.detail_url }}">View</a></td>
         </tr>
         {% endfor %}
       </tbody>

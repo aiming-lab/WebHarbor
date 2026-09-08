@@ -12,58 +12,49 @@
 
 <header class="site-header">
   <div class="topbar">
-    <a class="logo" href="{{ url_for('index') }}">
-      <span class="accent">Board</span>GameGeek
+    <button class="menu-toggle" type="button" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    <a class="logo" href="{{ url_for('index') }}" aria-label="BoardGameGeek home">
+      <span class="logo-shield" aria-hidden="true"></span><span class="logo-type">BGG</span><span class="logo-caret">▾</span>
     </a>
-    <nav>
-      <a href="{{ url_for('index') }}">Home</a>
-      <a href="{{ url_for('browse') }}">Browse</a>
-      <a href="{{ url_for('hotness') }}">Hot</a>
-      <a href="{{ url_for('forums_index') }}">Forums</a>
-      <a href="{{ url_for('geeklists_index') }}">GeekLists</a>
+    <nav class="primary-nav" aria-label="Primary navigation">
+      <a href="{{ url_for('browse') }}">Browse <span>▾</span></a>
+      <a href="{{ url_for('forums_index') }}">Forums <span>▾</span></a>
+      <a href="{{ url_for('geeklists_index') }}">GeekLists <span>▾</span></a>
+      <a href="{{ url_for('hotness') }}">Shopping <span>▾</span></a>
+      <a href="{{ url_for('forums_index') }}">Community <span>▾</span></a>
+      <a href="{{ url_for('help_page') }}">Help <span>▾</span></a>
     </nav>
+    <div class="user-area">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('user_profile', username=current_user.username) }}">{{ current_user.username }}</a>
+        <a href="{{ url_for('account') }}">Account</a>
+        <form action="{{ url_for('logout') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="header-action" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign In</a>
+        <a href="{{ url_for('register') }}">Join (it's free)!</a>
+      {% endif %}
+    </div>
     <form class="search-bar" action="{{ url_for('search') }}" method="get">
-      <input type="text" name="q" placeholder="Search" value="{{ request.args.get('q','') }}">
+      <span class="search-icon" aria-hidden="true"></span>
+      <input type="text" name="q" aria-label="Search" placeholder="Search" value="{{ request.args.get('q','') }}">
       <select name="type">
         <option value="boardgame" {% if request.args.get('type','boardgame')=='boardgame' %}selected{% endif %}>Games</option>
         <option value="user" {% if request.args.get('type')=='user' %}selected{% endif %}>Users</option>
         <option value="geeklist" {% if request.args.get('type')=='geeklist' %}selected{% endif %}>GeekLists</option>
       </select>
-      <button type="submit">Go</button>
+      <button type="submit" aria-label="Submit search">Go</button>
     </form>
-    <div class="user-area">
-      {% if current_user.is_authenticated %}
-        <a href="{{ url_for('user_profile', username=current_user.username) }}">
-          {{ current_user.username }}{% if current_user.geekgold %} · {{ current_user.geekgold }}gg{% endif %}
-        </a>
-        <a href="{{ url_for('account') }}">Account</a>
-        <form action="{{ url_for('logout') }}" method="post" style="display:inline">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button class="btn btn-quiet" type="submit" style="padding:2px 8px;">Sign out</button>
-        </form>
-      {% else %}
-        <a href="{{ url_for('login') }}">Sign In</a>
-        <a href="{{ url_for('register') }}">Join</a>
-      {% endif %}
-    </div>
-  </div>
-  <div class="subnav">
-    <div class="inner">
-      <a href="{{ url_for('browse') }}?sort=rank">Top Rated</a>
-      <a href="{{ url_for('browse') }}?sort=numvoters&dir=desc">Most Rated</a>
-      <a href="{{ url_for('hotness') }}">Hotness</a>
-      <a href="{{ url_for('mechanics_index') }}">Mechanisms</a>
-      <a href="{{ url_for('categories_index') }}">Categories</a>
-      <a href="{{ url_for('designers_index') }}">Designers</a>
-      <a href="{{ url_for('publishers_index') }}">Publishers</a>
-      <a href="{{ url_for('geeklists_index') }}?sort=thumbs">Top GeekLists</a>
-      {% if current_user.is_authenticated %}
-        <a href="{{ url_for('collection_detail', username=current_user.username) }}">My Collection</a>
-        <a href="{{ url_for('plays_detail', username=current_user.username) }}">My Plays</a>
-      {% endif %}
-    </div>
   </div>
 </header>
+
+<div class="site-ad" aria-label="Promotional banner">
+  <div class="site-ad-art site-ad-art-left"></div>
+  <div class="site-ad-copy"><strong>GEEK<span>UP</span></strong><small>Upgrade Your Game</small></div>
+  <div class="site-ad-art site-ad-art-right"></div>
+</div>
 
 <main>
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -79,9 +70,8 @@
 </main>
 
 <footer class="site-footer">
-  © {{ current_year }} BoardGameGeek Mirror · WebHarbor benchmark environment ·
-  <a href="{{ url_for('about') }}">About</a> ·
-  <a href="{{ url_for('help_page') }}">Help</a>
+  <div class="footer-logo"><span class="logo-shield"></span><strong>BGG</strong></div>
+  <div>© {{ current_year }} BoardGameGeek · <a href="{{ url_for('about') }}">About</a> · <a href="{{ url_for('help_page') }}">Help</a></div>
 </footer>
 
 </body>
