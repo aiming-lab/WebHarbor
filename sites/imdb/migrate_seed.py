@@ -1,8 +1,8 @@
 """Apply the sourced IMDb corrections once, before packaging the HF seed.
 
 This is an offline asset migration, never a runtime/reset hook. It preserves
-identifiers, relationships and user state. Only the original source seed can
-be changed; a fully corrected seed is an exact byte-preserving no-op.
+identifiers, relationships and user state. Only explicitly hashed source seeds
+can be changed; a fully corrected seed is an exact byte-preserving no-op.
 """
 import argparse
 from collections import Counter
@@ -74,10 +74,28 @@ def _prepare_updates(connection, manifest):
                        if current[field] != value}
             if changes:
                 updates.append(('persons', current['id'], nm_id, changes))
-    for row_id, tt_id, original in connection.execute('SELECT id,tt_id,release_date FROM titles'):
+    title_years = {}
+    for record in manifest.get('title_year_corrections', []):
+        tt_id = record['tconst']
+        if (not re.fullmatch(r'tt\d+', tt_id) or tt_id in title_years
+                or type(record['before']) is not int or type(record['after']) is not int):
+            raise ValueError('Invalid or duplicate title-year correction')
+        title_years[tt_id] = record
+    for row_id, tt_id, original, year in connection.execute('SELECT id,tt_id,release_date,year FROM titles'):
+        changes = {}
         parsed = _parse_release_date(original)
         if parsed and parsed != original:
-            updates.append(('titles', row_id, tt_id, {'release_date': parsed}))
+            changes['release_date'] = parsed
+        correction = title_years.pop(tt_id, None)
+        if correction:
+            if year not in (correction['before'], correction['after']):
+                raise ValueError(f'Unexpected title year for correction: {tt_id}')
+            if year != correction['after']:
+                changes['year'] = correction['after']
+        if changes:
+            updates.append(('titles', row_id, tt_id, changes))
+    if title_years:
+        raise ValueError('Correction title missing from source seed')
     return updates
 
 
@@ -117,7 +135,9 @@ def migrate_seed(database, manifest_path=MANIFEST):
     with closing(sqlite3.connect(database.as_uri() + '?mode=rw', uri=True)) as connection:
         before = _snapshot(connection)
         updates = _prepare_updates(connection, manifest)
-        if updates and before_bytes != manifest['source_seed']['sha256']:
+        accepted_sources = {manifest['source_seed']['sha256']}
+        accepted_sources.update(source['sha256'] for source in manifest.get('additional_source_seeds', []))
+        if updates and before_bytes not in accepted_sources:
             raise ValueError('Refusing to change an unexpected source seed')
         if updates:
             try:

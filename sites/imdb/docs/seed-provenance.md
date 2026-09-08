@@ -8,8 +8,9 @@ scraped profile. Missing, malformed and mismatching identities are skipped.
 The existing title canonical-URL check remains in place.
 
 The contributor's title catalog, credit relationships, image files and user
-state are retained. `migrate_seed.py` is an offline asset migration; it is not
-called during app startup or reset.
+state are retained, with two sourced title-year corrections described below.
+`migrate_seed.py` is an offline asset migration; it is not called during app
+startup or reset.
 
 ## Sources and scope
 
@@ -61,15 +62,41 @@ contain a complete, valid date. The migration normalizes 390 existing dates
 without supplying new facts. The two year-only values remain unchanged:
 `tt0994314` (2008) and `tt33041431` (2027).
 
+Two title years are corrected by exact `tconst`, using the official IMDb title
+metadata observed through the search index on September 8, 2026:
+
+| Title | Previous `year` | Canonical `year` | Preserved regional `release_date` |
+|---|---|---|---|
+| [Memento](https://www.imdb.com/title/tt0209144/) | 2001 | 2000 | 2001-05-25 |
+| [Schindler's List](https://www.imdb.com/title/tt0108052/) | 1994 | 1993 | 1994-02-04 |
+
+The Schindler's List page separately lists its United States release on
+February 4, 1994. A regional release date can have a later year than the
+canonical title year. These two corrections change only `titles.year`; the
+regional dates and all other fields stay unchanged. The manifest records the
+before/after values, source URLs, observation date and source access method.
+Each `source_record_sha256` hashes the manifest's canonical JSON source record
+(UTF-8, sorted keys, compact separators), not an unavailable full webpage.
+No broader title-year correction or rating/gross refresh is included.
+
 ## Reproduction and validation
 
-After extracting the original asset revision into the checkout:
+For byte-identical reproduction of the latest candidate, extract the
+[previous reviewer asset revision](https://huggingface.co/datasets/ChilleD/WebHarbor/tree/4d5709e171d7c40fc742727adfa98b04b9023039)
+into the checkout, then run:
 
 ```bash
 python3 sites/imdb/migrate_seed.py --report /tmp/imdb-migration-first.json
 python3 sites/imdb/migrate_seed.py --report /tmp/imdb-migration-second.json
 python3 -m unittest discover -s sites/imdb/tests -p test_seed_data.py
 ```
+
+That input seed SHA256 is
+`27558f13a9dd3b003435463ceaad8538e2b6f9fc5095c3bd6831666fecaab5d9`.
+The original contributor revision is also a supported input and produces the
+same logical database. Its single-transaction history gives different SQLite
+file bytes from the previous-candidate path, so those two output hashes are
+not claimed to match.
 
 The migration refuses to modify an unexpected source seed. Its transaction
 checks the complete logical diff before committing. A completed migration
@@ -78,19 +105,23 @@ changed field names, not user values or old biographies.
 
 Verified locally with Python 3.11.3 / SQLite 3.40.1:
 
-- All six targeted tests pass: canonical identity rejection/import, complete
+- All nine targeted tests pass: canonical identity rejection/import, complete
   date parsing and precedence, preserved relationships/state, byte-identical
-  second migration, and rejection of a modified source.
+  second migration, rejection of a modified source, both supported migration
+  paths, and rejection of an unexpected title-year value.
 - 691 person rows change: 689 selected profiles and two birth years.
-- 390 title rows change only in `release_date`.
+- From the original seed, 390 title rows normalize `release_date`; two of those
+  rows also correct `year`. From the previous reviewer candidate, exactly two
+  `titles.year` values change and the complete remaining database is identical.
 - An independent comparison against the original seed confirms all other
   title/person fields and all credits, genres, news, reviews, ratings, users,
   watchlists and title/genre relationships are unchanged.
-- Second migration: zero changed rows and identical file SHA256.
+- Second migration: zero changed rows and identical file SHA256. Repeating
+  from the same previous-candidate input produces identical output bytes.
 - Original archive and the checkout's runtime database are unchanged.
 
 Candidate seed SHA256:
-`27558f13a9dd3b003435463ceaad8538e2b6f9fc5095c3bd6831666fecaab5d9`.
+`69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471`.
 
 These are source and migration checks. Container reset, browser behavior,
 visual comparison and task execution are separate validation steps. The

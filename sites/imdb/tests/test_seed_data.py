@@ -69,7 +69,7 @@ class SeedMigrationTests(unittest.TestCase):
                     birth_place TEXT, bio TEXT, primary_profession TEXT,
                     photo_path TEXT, known_for_json TEXT);
                 CREATE TABLE titles (id INTEGER PRIMARY KEY, tt_id TEXT,
-                    primary_title TEXT, release_date TEXT, rating_avg REAL);
+                    primary_title TEXT, release_date TEXT, rating_avg REAL, year INTEGER);
                 CREATE TABLE credits (id INTEGER PRIMARY KEY, title_id INTEGER,
                     person_id INTEGER, character TEXT);
                 CREATE TABLE users (id INTEGER PRIMARY KEY, name TEXT);
@@ -82,8 +82,10 @@ class SeedMigrationTests(unittest.TestCase):
                 INSERT INTO persons VALUES (3, 'nm0001855', 'Tom Wilson(LXXXVI)', NULL, NULL,
                     '', 'retain variant', 'Actor', 'variant.jpg', '[]');
                 INSERT INTO titles VALUES (1, 'tt4154796', 'Avengers: Endgame',
-                    'Release date | April 26, 2019 (United States)', 8.4);
-                INSERT INTO titles VALUES (2, 'tt0000002', 'Partial source', 'Release date | May 2, 20', 5.0);
+                    'Release date | April 26, 2019 (United States)', 8.4, 2019);
+                INSERT INTO titles VALUES (2, 'tt0000002', 'Partial source', 'Release date | May 2, 20', 5.0, 2020);
+                INSERT INTO titles VALUES (3, 'tt0209144', 'Memento', 'May 25, 2001 (United States)', 8.4, 2001);
+                INSERT INTO titles VALUES (4, 'tt0108052', 'Schindler''s List', 'February 4, 1994 (United States)', 9.0, 1994);
                 INSERT INTO credits VALUES (1, 1, 1, 'Thor');
                 INSERT INTO users VALUES (1, 'seed user');
                 INSERT INTO user_ratings VALUES (1, 1, 1, 8);
@@ -119,7 +121,7 @@ class SeedMigrationTests(unittest.TestCase):
         self.assertEqual(people[2], old_people[2])
         self.assertEqual(self.rows('titles')[0], old_titles[0][:3] + ('2019-04-26',) + old_titles[0][4:])
         self.assertEqual(self.rows('titles')[1], old_titles[1])
-        self.assertEqual(result['changed_rows'], {'persons': 2, 'titles': 1})
+        self.assertEqual(result['changed_rows'], {'persons': 2, 'titles': 3})
         self.assertEqual(result['protected_tables_unchanged'], ['credits', 'user_ratings', 'users'])
 
     def test_second_migration_is_byte_identical(self):
@@ -134,6 +136,57 @@ class SeedMigrationTests(unittest.TestCase):
             connection.execute("UPDATE users SET name='different state'")
         before = self.db_path.read_bytes()
         with self.assertRaisesRegex(ValueError, 'source seed'):
+            migrate_seed(self.db_path, self.manifest)
+        self.assertEqual(self.db_path.read_bytes(), before)
+
+    def add_title_corrections(self, include_current_source=False):
+        manifest = json.loads(self.manifest.read_text())
+        manifest['title_year_corrections'] = [
+            {'tconst': 'tt0209144', 'before': 2001, 'after': 2000},
+            {'tconst': 'tt0108052', 'before': 1994, 'after': 1993},
+        ]
+        if include_current_source:
+            manifest['additional_source_seeds'] = [
+                {'sha256': hashlib.sha256(self.db_path.read_bytes()).hexdigest()}]
+        self.manifest.write_text(json.dumps(manifest))
+
+    def test_original_source_combines_date_and_canonical_year_corrections(self):
+        self.add_title_corrections()
+        result = migrate_seed(self.db_path, self.manifest)
+        rows = self.rows('titles')
+        self.assertEqual(rows[2][3:], ('2001-05-25', 8.4, 2000))
+        self.assertEqual(rows[3][3:], ('1994-02-04', 9.0, 1993))
+        title_changes = {item['key']: item['fields'] for item in result['logical_diff']
+                         if item['table'] == 'titles'}
+        for identity in ('tt0209144', 'tt0108052'):
+            self.assertEqual(title_changes[identity], ['release_date', 'year'])
+        before = self.db_path.read_bytes()
+        self.assertEqual(migrate_seed(self.db_path, self.manifest)['changed_rows'], {})
+        self.assertEqual(self.db_path.read_bytes(), before)
+
+    def test_previous_candidate_changes_only_two_year_fields(self):
+        migrate_seed(self.db_path, self.manifest)
+        before = {table: self.rows(table) for table in
+                  ('persons', 'titles', 'credits', 'users', 'user_ratings')}
+        self.add_title_corrections(include_current_source=True)
+        result = migrate_seed(self.db_path, self.manifest)
+        self.assertEqual(result['changed_rows'], {'titles': 2})
+        self.assertEqual(result['changed_fields'], {'titles.year': 2})
+        for table, rows in before.items():
+            expected = [row[:-1] + ({3: 2000, 4: 1993}.get(row[0], row[-1]),)
+                        for row in rows] if table == 'titles' else rows
+            self.assertEqual(self.rows(table), expected)
+        first = self.db_path.read_bytes()
+        self.assertEqual(migrate_seed(self.db_path, self.manifest)['changed_rows'], {})
+        self.assertEqual(self.db_path.read_bytes(), first)
+
+    def test_unexpected_title_year_is_rejected_without_writes(self):
+        migrate_seed(self.db_path, self.manifest)
+        with sqlite3.connect(self.db_path) as connection:
+            connection.execute("UPDATE titles SET year=2002 WHERE tt_id='tt0209144'")
+        self.add_title_corrections(include_current_source=True)
+        before = self.db_path.read_bytes()
+        with self.assertRaisesRegex(ValueError, 'Unexpected title year'):
             migrate_seed(self.db_path, self.manifest)
         self.assertEqual(self.db_path.read_bytes(), before)
 
