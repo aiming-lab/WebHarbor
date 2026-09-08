@@ -15,12 +15,12 @@ class VerifierEntryTests(unittest.TestCase):
         self.fixture = fixtures.SyntheticReadTaskTests("runTest")
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
-        self.fixture.check(3)
+        self.fixture.check(2)
         self.run_dir = self.fixture.run_dir
         self.other_cwd = tempfile.TemporaryDirectory()
         self.addCleanup(self.other_cwd.cleanup)
 
-    def invoke(self, number=3):
+    def invoke(self, number=2):
         result = subprocess.run(
             [sys.executable, str(fixtures.SITE / "verify" / f"verify_{number}.py"),
              "--run_dir", str(self.run_dir)],
@@ -61,6 +61,15 @@ class VerifierEntryTests(unittest.TestCase):
                 code, verdict = self.invoke(number)
                 self.assertEqual(code, 1)
                 self.assertFalse(verdict["pass"])
+
+    def test_current_tasks_and_numbered_entries_are_one_to_one(self):
+        expected = {0, 2, 7, 9, 10, 12, 14, 15, 16, 17}
+        task_numbers = {int(task_id.split("--")[1]) for task_id in fixtures.TASKS}
+        entries = {int(path.stem.split("_")[1])
+                   for path in (fixtures.SITE / "verify").glob("verify_[0-9]*.py")}
+        self.assertEqual(task_numbers, expected)
+        self.assertEqual(entries, expected)
+        self.assertEqual(fixtures.read_tasks.READ_TASKS, expected - {15, 16, 17})
 
 
 if __name__ == "__main__":

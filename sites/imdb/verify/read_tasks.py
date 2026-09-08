@@ -16,7 +16,7 @@ from answer_checks import (amount_values, entity_texts, has_number,
 from verify_lib import VerificationError
 
 
-READ_TASKS = {0, 2, 3, 4, 7, 8, 9, 10, 12, 14}
+READ_TASKS = {0, 2, 7, 9, 10, 12, 14}
 
 
 def _require(condition, reason):
@@ -120,14 +120,6 @@ def _task_texts(run, titles):
     named = _reported_titles(run.answer, catalog)
     entities = {title["id"]: title for title in titles + named}
     return _bindings(run.answer, list(entities.values()))
-
-
-def _single_answer(run, title):
-    catalog = [dict(row) for row in run.initial.execute("SELECT * FROM titles")]
-    named = _reported_titles(run.answer, catalog)
-    if not named:
-        return run.answer
-    return _task_texts(run, [title])[title["id"]]
 
 
 def _money(text, field, value, allow_unlabeled=False):
@@ -496,25 +488,6 @@ def _check_2(run):
     return ["Catalog cumulative-domestic chart winner and title-page budget match"]
 
 
-def _check_3(run):
-    title = _named_title(run, "The Shawshank Redemption", 1994)
-    _require(run.visited(_title_path(title)), "The requested title page was not visited")
-    # The question fixes one movie; repeating its name is optional.
-    text = _single_answer(run, title)
-    _require(_money(text, "budget", title["budget"]), "Labeled production budget is missing or incorrect")
-    _require(_money(text, "opening", title["box_office_opening"]), "Labeled opening-weekend gross is missing or incorrect")
-    return ["Shawshank title page visited; budget and opening-weekend amounts are correctly labeled"]
-
-
-def _check_4(run):
-    title = _named_title(run, "The Godfather", 1972)
-    _require(run.visited(_title_path(title)), "The requested title page containing worldwide gross was not visited")
-    text = _single_answer(run, title)
-    _require(_all_directors(run, text, title), "A director credit is missing or incorrect")
-    _require(_money(text, "worldwide", title["box_office_world"], True), "The worldwide gross is missing or incorrect")
-    return ["Godfather title page visited; all director credits and worldwide gross match"]
-
-
 def _check_7(run):
     person = _one(run.initial, "SELECT * FROM persons WHERE name=?", ("Christopher Nolan",))
     _require(run.visited("/name/" + person["nm_id"]), "Christopher Nolan's Director filmography was not visited")
@@ -540,26 +513,6 @@ def _check_7(run):
         _require(not extra_winner, "An extra title is incorrectly reported as a highest-rating tie")
     _require(all(_rating_page_seen(run, title) for title in best), "A winning movie's rating lacks a relevant on-site listing or detail visit")
     return ["Director filmography used; all highest-rated movie ties include title, year and rating"]
-
-
-def _check_8(run):
-    title = _named_title(run, "The Dark Knight", 2008)
-    cast = [dict(row) for row in run.initial.execute(
-        "SELECT p.*, c.character, c.billing_order FROM credits c JOIN persons p ON p.id=c.person_id "
-        "WHERE c.title_id=? AND c.role='actor' ORDER BY CASE WHEN c.billing_order IS NULL OR c.billing_order=0 THEN 999 ELSE c.billing_order END, c.id",
-        (title["id"],))]
-    _require(bool(cast), "The title has no first-billed cast member")
-    actor = cast[0]
-    pages = [_title_path(title), _title_path(title) + "/fullcredits"]
-    person_path = "/name/" + actor["nm_id"]
-    _require(any(run.has_ordered_visits([path, person_path]) for path in pages), "The title cast and then the same actor's profile were not visited")
-    people = {row["id"]: [row["name"]] for row in run.initial.execute("SELECT id, name FROM persons")}
-    people[actor["id"]].append(actor["name"].split()[-1])
-    text = entity_texts(_paragraph_answer(run.answer, people), people)[actor["id"]]
-    _require(_person_mentioned(text, actor) and actor["character"] and mentions(text, actor["character"]),
-             "The first-billed actor or character is missing or incorrect")
-    _require(actor["birth_year"] is not None and has_number(text, actor["birth_year"]), "The actor's birth year is missing or incorrect")
-    return ["First-billed cast followed to the same actor profile; character and birth year match"]
 
 
 def _reported_titles(answer, titles):

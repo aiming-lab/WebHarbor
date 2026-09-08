@@ -33,7 +33,6 @@ PULP = "tt0110912"
 ECHO = "tt9000000"
 SERIES = "tt9000001"
 NOLAN = "nm0634240"
-BALE = "nm0000288"
 
 DRAMA_SEARCH = (
     "/search/title?title_type=movie&genre=drama&rating_min=8.5&sort=rating"
@@ -112,11 +111,7 @@ ANSWERS = {
         "#3 The Dark Knight: 152 minutes, PG-13.\n"
         "The Dark Knight has the longer runtime."),
     2: "The Dark Knight is first in cumulative domestic gross; production budget $185 million.",
-    3: ("The Shawshank Redemption: production budget $25.0M; "
-        "Opening weekend US & Canada $727.3K."),
-    4: "The Godfather: directed by Francis Ford Coppola; worldwide gross $246.1M.",
     7: "The Dark Knight (2008), IMDb rating 9.0/10.",
-    8: "Christian Bale plays Bruce Wayne; his birth year is 1974.",
     9: "1. The Shawshank Redemption\n2. The Godfather\n3. The Dark Knight",
     10: "The Shawshank Redemption: directed by Frank Darabont; worldwide gross $28.9M.",
     12: ("Movie: The Shawshank Redemption (1994), IMDb rating 9.3.\n"
@@ -130,10 +125,7 @@ ANSWERS = {
 PATHS = {
     0: ["/chart/top", f"/title/{DARK}", f"/title/{SHAW}"],
     2: ["/chart/boxoffice", f"/title/{DARK}"],
-    3: [f"/title/{SHAW}"],
-    4: [f"/title/{GOD}"],
     7: [f"/name/{NOLAN}", f"/title/{DARK}", f"/title/{INCEPTION}"],
-    8: [f"/title/{DARK}", f"/name/{BALE}"],
     9: [DRAMA_SEARCH],
     10: [CRIME_SEARCH, f"/title/{SHAW}"],
     12: ["/genre/crime", f"/title/{SHAW}", f"/title/{SERIES}"],
@@ -159,8 +151,6 @@ class SyntheticReadTaskTests(unittest.TestCase):
                 (1, "nm0001104", "Frank Darabont", 1959),
                 (2, "nm0000338", "Francis Ford Coppola", 1939),
                 (3, NOLAN, "Christopher Nolan", 1970),
-                (4, BALE, "Christian Bale", 1974),
-                (5, "nm0005132", "Heath Ledger", 1979),
                 (6, "nm0000233", "Quentin Tarantino", 1963),
                 (7, "nm9000001", "Synthetic Director", 1960),
             ])
@@ -183,8 +173,6 @@ class SyntheticReadTaskTests(unittest.TestCase):
                     (8, 3, "director", "", None),
                     (9, 3, "writer", "", None),
                     (9, 7, "director", "", None),
-                    (3, 5, "actor", "Joker", 2),
-                    (3, 4, "actor", "Bruce Wayne", 1),
                 ])
             db.executemany("INSERT INTO users VALUES (?,?,?,?,?)", [
                 (1, "synthetic-alice@example.test", "Synthetic Alice", "fixture-hash", "2020-01-01"),
@@ -232,19 +220,8 @@ class SyntheticReadTaskTests(unittest.TestCase):
         self.edit_catalog("UPDATE titles SET box_office_opening=999000000 WHERE tt_id=?", (PULP,))
         self.assert_accepts(2)
 
-    def test_task3_budget_and_opening_are_distinct_labeled_values(self):
-        self.assert_accepts(3)
-
-    def test_task4_director_and_worldwide_gross(self):
-        self.assert_accepts(4)
-        self.assert_accepts(4, paths=[f"/title/{GOD}/fullcredits", f"/title/{GOD}"])
-
     def test_task7_director_movies_exclude_writer_credit_and_tv(self):
         self.assert_accepts(7)
-
-    def test_task8_first_billed_cast_and_birth_year(self):
-        self.assert_accepts(8)
-        self.assert_accepts(8, paths=[f"/title/{DARK}/fullcredits", f"/name/{BALE}"])
 
     def test_task9_top_three_from_results_page(self):
         self.assert_accepts(9)
@@ -280,10 +257,7 @@ class SyntheticReadTaskTests(unittest.TestCase):
         examples = {
             0: "The Shawshank Redemption: 152 minutes, PG-13.\nThe Dark Knight: 142 minutes, R.\nThe Shawshank Redemption is longer.",
             2: "The Godfather ranks first; budget $6 million.",
-            3: "The Shawshank Redemption: production budget $25 million.",
-            4: "The Godfather: Francis Ford Coppola directed it.",
             7: "Synthetic Writer Only Feature (2021), rating 9.7.",
-            8: "Christian Bale plays Bruce Wayne; he was born in Wales.",
             9: "The Godfather\nThe Dark Knight\nPulp Fiction",
             10: "The Shawshank Redemption: worldwide gross $28.9M.",
             12: "Movie: The Shawshank Redemption (1994), rating 9.5.\nTV: Synthetic Crime Series (2008), rating 9.3.\nMovies have the higher rating.",
@@ -295,21 +269,22 @@ class SyntheticReadTaskTests(unittest.TestCase):
 
     def test_money_accepts_exact_amounts_and_equivalent_units(self):
         answers = [
-            "The Shawshank Redemption: budget USD 25,000,000; opening weekend US & Canada USD 727,327.",
-            "The Shawshank Redemption: budget 25 million dollars; opening weekend US & Canada 727.3 thousand dollars.",
-            "The Shawshank Redemption: budget $25000K; opening weekend US & Canada $0.7273M.",
+            "The Dark Knight: production budget USD 185,000,000.",
+            "The Dark Knight: production budget 185 million dollars.",
+            "The Dark Knight: production budget $185000K.",
         ]
         for answer in answers:
             with self.subTest(answer=answer):
-                self.assert_accepts(3, answer)
+                self.assert_accepts(2, answer)
 
-    def test_money_labels_cannot_be_swapped_or_omitted(self):
+    def test_another_money_field_cannot_supply_the_budget(self):
         for answer in (
-            "The Shawshank Redemption: production budget $727.3K; opening weekend US & Canada $25M.",
-            "The Shawshank Redemption: $25M and $727.3K.",
+            "The Dark Knight: worldwide gross $185M.",
+            "The Dark Knight: opening weekend US & Canada $185M.",
         ):
             with self.subTest(answer=answer):
-                self.assert_rejects(3, answer)
+                self.assert_rejects(2, answer)
+        self.assert_accepts(2, "The Dark Knight: $185M.")
 
     def test_markdown_rows_preserve_runtime_and_classification_binding(self):
         self.assert_accepts(0, """| Rank | Title | Runtime | MPAA |
@@ -333,9 +308,6 @@ The Dark Knight has the higher IMDb rating and the larger worldwide gross.
         self.edit_catalog("UPDATE titles SET budget=187000000 WHERE tt_id=?", (DARK,))
         self.assert_rejects(2)
         self.assert_accepts(2, "The Dark Knight is first; production budget $187M.")
-        self.edit_catalog("UPDATE persons SET birth_year=1975 WHERE nm_id=?", (BALE,))
-        self.assert_rejects(8)
-        self.assert_accepts(8, "Christian Bale plays Bruce Wayne; his birth year is 1975.")
 
     def test_task0_requires_both_title_details_and_chart(self):
         for paths in (["/chart/top", f"/title/{SHAW}"], [f"/title/{SHAW}", f"/title/{DARK}"]):
@@ -425,20 +397,20 @@ The Dark Knight has the higher IMDb rating and the larger worldwide gross.
         self.assert_rejects(12, facts + "The movie group has the higher top rating.")
 
     def test_explicit_director_assertions_reject_extra_people(self):
-        self.assert_rejects(4, "The Godfather: directed by Francis Ford Coppola and Christopher Nolan; worldwide gross $246.1M.")
-        self.assert_rejects(4, "The Godfather: directed by Francis Ford Coppola and John Example; worldwide gross $246.1M.")
-        self.assert_rejects(4, "The Godfather: directors: Francis Ford Coppola, John Example; worldwide gross $246.1M.")
+        self.assert_rejects(10, "The Shawshank Redemption: directed by Frank Darabont and Christopher Nolan; worldwide gross $28.9M.")
+        self.assert_rejects(10, "The Shawshank Redemption: directed by Frank Darabont and John Example; worldwide gross $28.9M.")
+        self.assert_rejects(10, "The Shawshank Redemption: directors: Frank Darabont, John Example; worldwide gross $28.9M.")
         self.assert_rejects(10, "The Shawshank Redemption: directors are Frank Darabont and Christopher Nolan; worldwide gross $28.9M.")
-        self.assert_accepts(4, "The Godfather: directed by Coppola, not Christopher Nolan; worldwide gross $246.1M.")
-        self.assert_accepts(4, "The Godfather: directed by Francis Ford Coppola, not John Example; worldwide gross $246.1M.")
-        self.assert_accepts(4, "The Godfather: directed by Francis Ford Coppola rather than Christopher Nolan; worldwide gross $246.1M.")
-        self.assert_accepts(4, ANSWERS[4] + "\nChristopher Nolan directed Inception.")
+        self.assert_accepts(10, "The Shawshank Redemption: directed by Darabont, not Christopher Nolan; worldwide gross $28.9M.")
+        self.assert_accepts(10, "The Shawshank Redemption: directed by Frank Darabont, not John Example; worldwide gross $28.9M.")
+        self.assert_accepts(10, "The Shawshank Redemption: directed by Frank Darabont rather than Christopher Nolan; worldwide gross $28.9M.")
+        self.assert_accepts(10, ANSWERS[10] + "\nChristopher Nolan directed Inception.")
         self.assert_accepts(10, ANSWERS[10] + "\nPulp Fiction was directed by Quentin Tarantino, but is a lower-rated result.")
 
     def test_director_full_names_do_not_match_unrelated_surnames(self):
-        self.edit_catalog("INSERT INTO persons (id,nm_id,name) VALUES (8,'nm9000008','Clive Francis')")
+        self.edit_catalog("INSERT INTO persons (id,nm_id,name) VALUES (8,'nm9000008','Clive Frank')")
         self.edit_catalog("INSERT INTO persons (id,nm_id,name) VALUES (9,'nm9000009','Caroline Quentin')")
-        self.assert_accepts(4)
+        self.assert_accepts(10)
         self.edit_catalog("UPDATE titles SET rating_avg=9.4 WHERE tt_id=?", (PULP,))
         self.assert_accepts(10, "Pulp Fiction: directed by Quentin Tarantino; worldwide gross $213.9M.",
                             [CRIME_SEARCH, f"/title/{PULP}"])
@@ -465,10 +437,6 @@ The Dark Knight has the higher IMDb rating and the larger worldwide gross.
         self.assert_rejects(7)
         self.assert_accepts(7, "The Dark Knight (2008): 9.0.\nInception (2010): 9.0.")
         self.assert_rejects(7, "The Dark Knight (2010): 9.0.\nInception (2008): 9.0.")
-
-    def test_task8_requires_same_actor_profile_and_correct_character(self):
-        self.assert_rejects(8, paths=[f"/title/{DARK}", "/name/nm0005132"])
-        self.assert_rejects(8, "Christian Bale plays Joker; born 1974.")
 
     def test_task9_filters_must_all_be_present_and_correct(self):
         for query in (
@@ -557,9 +525,6 @@ The Dark Knight has the higher IMDb rating and the larger worldwide gross.
         self.assert_rejects(10, "The Shawshank Redemption is the highest-rated result.\n"
                                "Pulp Fiction: directed by Frank Darabont; worldwide gross $28.9M.")
         self.assert_rejects(2, "The Dark Knight is first. Inception: production budget $185M.")
-        self.assert_rejects(3, "The Godfather: budget $25M; opening weekend $727.3K.")
-        self.assert_rejects(4, "The Godfather was selected.\n"
-                              "Pulp Fiction: Francis Ford Coppola, worldwide gross $246.1M.")
 
     def test_comparison_in_second_clause_keeps_its_own_subject(self):
         facts = ANSWERS[14].rsplit("\n", 1)[0]
@@ -604,10 +569,6 @@ The Dark Knight has the higher IMDb rating and the larger worldwide gross.
     def test_empty_advanced_results_do_not_prove_a_director_movie_rating(self):
         self.assert_rejects(7, paths=[f"/name/{NOLAN}", DRAMA_SEARCH + "&genre=drama"])
         self.assert_rejects(7, paths=[f"/name/{NOLAN}", DRAMA_SEARCH.replace("8.5", "9.5")])
-
-    def test_actor_character_and_birth_year_bind_to_the_same_actor(self):
-        self.assert_rejects(8, "Christian Bale plays Joker.\nHeath Ledger plays Bruce Wayne and was born in 1974.")
-        self.assert_rejects(8, "Christian Bale plays Bruce Wayne and was born in 1979.\nHeath Ledger was born in 1974.")
 
     def test_multi_line_fact_blocks_and_group_headings(self):
         self.assert_accepts(14, "The Dark Knight\nIMDb rating: 9.0\nWorldwide gross: $1 billion\n\n"
