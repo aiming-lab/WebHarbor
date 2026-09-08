@@ -44,6 +44,8 @@ class EnvironmentQualityTests(unittest.TestCase):
                 expected = f"sites/boardgamegeek/verify/verify_{number}.py"
                 self.assertEqual(expected, row["verifier_path"])
                 self.assertTrue((SITE_DIR.parents[1] / expected).is_file())
+                self.assertTrue(row["judge_rubric"].startswith("FACT CHECKPOINTS:"))
+                self.assertNotIn("answer", row)
 
     def test_registration_template_displays_validation_errors(self) -> None:
         template = (SITE_DIR / "templates" / "register.html").read_text(encoding="utf-8")
