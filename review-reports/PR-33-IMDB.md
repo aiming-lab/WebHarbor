@@ -1,7 +1,7 @@
 # IMDb reviewer validation
 
-Status: **work in progress; not ready for merge**. This report will be updated
-with the final candidate's browser runs and environment results. A local unit
+Status: **work in progress; not ready for merge**. Ten task candidates remain after quality review; their evidence is sealed. Independent
+blind review and owner visual acceptance remain pending. A local unit
 test or an asset hash check does not imply visual or task acceptance.
 
 This review preserves [@hqhq1025's original IMDb contribution, PR #33](https://github.com/aiming-lab/WebHarbor/pull/33)
@@ -53,12 +53,16 @@ personal ratings and user reviews are synthetic benchmark state.
 
 ## Task and scoring scope
 
-The candidate retains original IDs `0, 2, 3, 4, 7, 8, 9, 10, 12, 14, 15,
-16, 17` and retires `1, 5, 6, 11, 13`. The retired items were duplicate or shallow
-lookups whose complete answers were already exposed in the homepage/search
-cards, a count of static filter options, or helpfulness selection where the
-seed has only one review and therefore no meaningful comparison. Their corresponding site features
-remain available. Thirteen is a quality decision, not a target quota.
+The candidate retains original IDs `0, 2, 7, 9, 10, 12, 14, 15, 16, 17`
+and retires `1, 3, 4, 5, 6, 8, 11, 13`. Earlier retirements cover duplicate/shallow
+lookups with answers exposed on cards, a count of static filter options, and
+helpfulness selection where the seed has only one review. The final quality pass
+also removes tasks 3 and 4 because the first matching title detail exposes every
+requested value, and task 8 because its actor/character/birth-year combination
+has a stable common-knowledge shortcut. An extra same-page anchor click or a
+required profile visit does not remove those design problems. All corresponding
+site features and original frozen executions remain intact. Ten is the resulting
+working set; no replacement questions were added to meet a quota.
 
 The revisions add needed detail lookups, specify movie/TV scope, define ties,
 distinguish monetary fields, and replace the two requests for an external
@@ -147,17 +151,77 @@ from the host. The regular source build below remains the reproduction path.
 [engineering test output](assets/pr33-imdb/engineering-tests.txt) are included
 for independent inspection. These checks precede the offline parser-only fix.
 
-The validated local full image is
+The browser runtime image is
 `sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9`.
-The two initial independent UI pilots have complete screenshots and before/after
-snapshots. Task 3 passes the native deterministic evaluator. Task 17 revealed a
-false negative in headline-summary parsing despite the correct persisted review;
-the original verdict is retained. Commit `f98b5199c7c22ed9a59e34fd8b6e8c6da295f6ba`
-fixes that offline parser: the same frozen execution now passes, and 50 state
-verifier tests pass, including seven new methods with 54 positive/negative
-variants. No task or browser behavior changed in that commit. The remaining
-11 current tasks are being executed. No aggregate task pass rate or
-independent-review verdict is claimed yet.
+The final ten-task contract and scorer are commit
+`a37df75a873842be0ed4510baab5dbff361ac9ad`.
+Its complete local image is
+`sha256:a7ee01b145cc1bd90511114d260211a176eb5ab41002095d9ed69fb1fa0dc7f0`.
+Relative to the recorded browser image, only offline grading/tests/docs and the
+retired task subset change. Its isolated, network-disabled full IMDb suite passed
+**174 tests in 16.020 seconds**.
+[Final test output](assets/pr33-imdb/engineering-tests-final.txt) and
+[scorer identities, results and applicable/retired cases](assets/pr33-imdb/scoring-results.json)
+are included. Application, asset, port and control-plane bytes are unchanged;
+the recorded 22-site mechanics remain applicable. The ten retained task/rubric
+rows are byte-identical to their executed definitions.
+
+## Frozen task executions and scoring
+
+The final native deterministic regrade passes **10/10 retained main runs** and
+**3/3 separately recorded guided alternatives**: a different legal cutoff tie
+(task 9), Watchlist row removal (15), and Most recent review confirmation (17).
+All **30 applicable constructed cases (8 positive, 22 negative)**, seven historical
+controls and one extra unit calibration case match their prior expectations.
+The 529 original main/guided files are hash-preserved. Twelve retired input records
+remain linked to historical results and are excluded from current totals.
+
+Thirteen main executions were recorded before final quality review; **ten are
+retained for the candidate**. Each has actual actions, screenshots, a final answer
+and before/after snapshots. The selected ten contain 98 recorded steps and 80
+successful substantive actions. The runner was isolated from source, hidden
+answer keys and scoring outputs, but retained its own preceding UI context,
+including retired tasks. These are not ten fresh-context trials or an estimate
+of model success rate.
+[Per-task results, paths and original final screenshot excerpts](assets/pr33-imdb/tasks/task-table.md)
+include actual versions, hashes, failed attempts and context disclosures in
+[structured form](assets/pr33-imdb/tasks/task-results.json). One final image does
+not prove the full execution; complete original evidence is retained for blind review.
+
+The retained task 17 pilot keeps its r1 code/input hashes and HF
+`4d5709e171d7c40fc742727adfa98b04b9023039`. The other nine used r2 code `50bcce5`
+and current HF `e70f49d`. A file-by-file reuse audit found that the pilot's actual
+pages and facts were unchanged: the later application change was account-body
+logout, which it did not visit; the only data changes were two title years outside
+its observed titles. None is relabeled as an execution at the final PR head.
+Retirement only removes other task rows and their dedicated scoring entry points;
+the retained questions and rubrics are unchanged.
+
+The real runs exposed false rejections of task 17's headline reference,
+task 0's rank prefixes/runtime difference, task 12's group labels, and task 16's
+correctly reported previous rating. A guided row-Remove route also exposed a missed
+nested button locator. The repairs distinguish those statements and controls
+without relaxing task requirements. Wrong headline suffixes, ranks, comparison
+differences, old/current ratings, entities and extra database writes remain
+negative controls. Numeric “from 9 to 8” transitions are distinguished from the
+series “From” before entity binding. For nested controls, the row title and origin
+remain checked while only the actual child identifies the action. Original
+failed verdicts and source run files remain unchanged.
+
+The historical thirteen-task matrix passed 13 main regrades and four guided
+alternatives, 34 constructed cases (9 positive, 25 negative), 11 reconstructed
+historical controls and one additional unit calibration case. Those exact inputs
+and outputs remain separate from the final ten-task regrade. Retired-task samples
+are marked inapplicable to the current contract; they are not relabeled as current
+successes. Fixtures are not browser runs and these counts do not establish overall
+scorer accuracy. The public test suite reproduces the retained parser/state invariants.
+
+Seven observed retained paths used at least five successful substantive actions;
+tasks 0, 12 and 14 perform comparisons. Task 10's multiple constraints and tied
+leaders, and tasks 15/16's personal initial-state selection and exact writes,
+support the design judgment that precision can challenge a frontier model.
+The observed routes do not prove a minimum over every legal path; empirical model
+difficulty is **NOT_VERIFIED**. Independent Claude judgments remain **NOT_EXECUTED**.
 
 ## Reproduction
 
@@ -183,15 +247,14 @@ For a supplied run bundle, use an absolute run directory:
 
 ```bash
 uv run --project agent_demo python agent_demo/eval_judge.py \
-  --verifier True --run_dir /absolute/path/to/run
+  --verifier True --run_dir /absolute/path/to/run \
+  --out /absolute/path/to/separate-scoring-result.json
 ```
 
 ## Validation still required
 
 - Final source/before/after visual evidence and owner-approved regression
   baseline, including explicit decisions on inherited content omissions.
-- Actual candidate task runs with screenshots and before/after snapshots,
-  followed by deterministic scoring and adjudicated adversarial cases.
 - Independent frozen-run review, reconciliation and maintainer handoff.
 
 Neither the code PR nor the HF PR should be merged by the reviewer.
