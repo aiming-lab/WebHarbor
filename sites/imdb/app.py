@@ -12,10 +12,13 @@ import os
 import json
 import re
 from datetime import datetime
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, abort, jsonify)
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
+from email_validator import EmailNotValidError, validate_email
 from flask_login import (LoginManager, UserMixin, login_user, logout_user,
                          login_required, current_user)
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -33,6 +36,7 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
 
 db = SQLAlchemy(app)
+csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please sign in to use this feature.'
@@ -420,9 +424,16 @@ def title_write_review(tt_id):
         if not headline or not body:
             flash('Headline and body are required.', 'error')
             return render_template('title_write_review.html', title=t)
+        try:
+            rating = int(rating) if rating else None
+        except ValueError:
+            rating = 0
+        if rating is not None and not 1 <= rating <= 10:
+            flash('Rating must be a whole number from 1 to 10.', 'error')
+            return render_template('title_write_review.html', title=t)
         r = Review(title_id=t.id, user_id=current_user.id,
                    headline=headline[:160], body=body,
-                   rating=int(rating) if rating else None)
+                   rating=rating)
         db.session.add(r)
         db.session.commit()
         flash('Review posted.', 'success')
@@ -465,7 +476,37 @@ def title_watchlist_toggle(tt_id):
         db.session.add(WatchlistItem(user_id=current_user.id, title_id=t.id))
         flash('Added to Watchlist.', 'success')
     db.session.commit()
-    return redirect(request.referrer or url_for('title_detail', tt_id=t.tt_id))
+    return redirect(_same_origin_return(url_for('title_detail', tt_id=t.tt_id)))
+
+
+def _same_origin_return(fallback):
+    """Return only a same-origin path/query, never an authority or credentials."""
+    referrer = request.referrer
+    if not referrer:
+        return fallback
+    decoded = unquote(referrer)
+    if '\\' in decoded or any(ord(char) < 32 or ord(char) == 127 for char in decoded):
+        return fallback
+    try:
+        target = urlsplit(referrer)
+        current = urlsplit(request.host_url)
+
+        def origin(parts):
+            if parts.scheme not in ('http', 'https') or not parts.hostname:
+                return None
+            if parts.username is not None or parts.password is not None:
+                return None
+            port = parts.port
+            return parts.scheme, parts.hostname, port if port is not None else (443 if parts.scheme == 'https' else 80)
+
+        if origin(target) is None or origin(target) != origin(current):
+            return fallback
+    except ValueError:
+        return fallback
+    path = target.path or '/'
+    if not path.startswith('/') or unquote(path).startswith('//'):
+        return fallback
+    return urlunsplit(('', '', path, target.query, ''))
 
 
 @app.route('/name/<nm_id>')
@@ -504,8 +545,8 @@ def advanced_title_search():
     query = Title.query
     selected_genres = q.getlist('genre')
     title_type = q.get('title_type', '')
-    year_from = q.get('year_from', type=int)
-    year_to = q.get('year_to', type=int)
+    year_from = _search_year(q.get('year_from'))
+    year_to = _search_year(q.get('year_to'))
     rating_min = q.get('rating_min', type=float)
     sort = q.get('sort', 'popularity')
     if title_type:
@@ -540,6 +581,18 @@ def advanced_title_search():
                            title_type=title_type,
                            year_from=year_from, year_to=year_to,
                            rating_min=rating_min, sort=sort)
+
+
+def _search_year(raw):
+    if raw is None or not raw.strip():
+        return None
+    try:
+        year = int(raw)
+    except ValueError:
+        abort(400, description='Search year must be a whole number from 1 to 9999.')
+    if not 1 <= year <= 9999:
+        abort(400, description='Search year must be a whole number from 1 to 9999.')
+    return year
 
 
 @app.route('/chart/top')
@@ -585,9 +638,9 @@ def chart_boxoffice():
               .order_by(desc(Title.box_office_us))
               .limit(50).all())
     return render_template('chart.html', titles=titles,
-                           chart_name='Top Box Office (US)',
+                           chart_name='Domestic box office',
                            chart_slug='boxoffice',
-                           description='Highest US domestic gross.')
+                           description='Titles in this catalog, ranked by cumulative US & Canada gross.')
 
 
 @app.route('/genre/<slug>')
@@ -639,6 +692,11 @@ def register():
         if not email or not name or len(pw) < 6:
             flash('Email, name and a 6+ character password are required.', 'error')
             return render_template('register.html')
+        try:
+            validate_email(email, check_deliverability=False)
+        except EmailNotValidError:
+            flash('Enter a valid email address.', 'error')
+            return render_template('register.html')
         if User.query.filter_by(email=email).first():
             flash('Account with that email already exists.', 'error')
             return render_template('register.html')
@@ -669,7 +727,7 @@ def login():
     return render_template('login.html')
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()

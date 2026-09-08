@@ -1,9 +1,10 @@
 {% extends 'base.html' %}
+{% block body_class %}home-page{% endblock %}
 {% block content %}
 
 <section class="hero">
   <h1>What to watch</h1>
-  <p class="lede">Top picks, trending titles, and stories from IMDb editors.</p>
+  <p class="lede">Explore movies and TV shows.</p>
 </section>
 
 <section class="row">
@@ -14,7 +15,6 @@
   <ul class="card-grid">
     {% for t in top_picks %}
     <li class="card">
-      <div class="rank">#{{ t.top_rank }}</div>
       {% if t.poster_path %}
       <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">
         <img class="poster" src="{{ url_for('static', filename='images/' ~ t.poster_path) }}" alt="">
@@ -28,6 +28,17 @@
     </li>
     {% endfor %}
   </ul>
+</section>
+
+<section class="watchlist-prompt">
+  <h2>From your Watchlist</h2>
+  {% if current_user.is_authenticated %}
+  <p>Keep track of what you want to watch.</p>
+  <a class="btn" href="{{ url_for('my_watchlist') }}">Go to your Watchlist</a>
+  {% else %}
+  <p><strong>Sign in to access your Watchlist</strong><br>Save shows and movies to keep track of what you want to watch.</p>
+  <a class="btn" href="{{ url_for('login') }}">Sign in to IMDb</a>
+  {% endif %}
 </section>
 
 <section class="row">
@@ -61,6 +72,9 @@
   <ul class="card-grid">
     {% for t in in_theaters %}
     <li class="card">
+      {% if t.poster_path %}
+      <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}"><img class="poster" src="{{ url_for('static', filename='images/' ~ t.poster_path) }}" alt=""></a>
+      {% endif %}
       <a class="card-title" href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
       <div class="card-meta">
         <span class="star">&#9733;</span> {{ '%.1f'|format(t.rating_avg) }}

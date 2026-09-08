@@ -9,9 +9,10 @@
     <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
     <span class="muted">({{ t.year }}) &middot;
       <span class="star">&#9733;</span>{{ '%.1f'|format(t.rating_avg) }} &middot;
-      {{ t.runtime_min }}m
+      {% if t.runtime_min %}{{ t.runtime_min }}m{% endif %}
     </span>
     <form class="inline" method="post" action="{{ url_for('title_watchlist_toggle', tt_id=t.tt_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="link">Remove</button>
     </form>
   </li>

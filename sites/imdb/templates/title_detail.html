@@ -3,6 +3,12 @@
 {% block content %}
 
 <article class="title-detail">
+  <div class="title-overview">
+  <nav class="title-jumps" aria-label="Title sections">
+    <a href="#top-cast">Cast &amp; crew</a>
+    <a href="{{ url_for('title_reviews', tt_id=title.tt_id) }}">User reviews</a>
+    <a href="#title-details">Box office &amp; details</a>
+  </nav>
   <header class="title-head">
     <div class="title-head-left">
       <h1>{{ title.primary_title }}</h1>
@@ -10,7 +16,7 @@
         {% if title.title_type == 'tvSeries' %}TV Series &middot; {% endif %}
         {{ title.year }}{% if title.end_year and title.end_year != title.year %}&ndash;{{ title.end_year }}{% endif %}
         &middot; {{ title.mpaa_rating or 'Not Rated' }}
-        &middot; {{ title.runtime_min }}m
+        {% if title.runtime_min %}&middot; {{ title.runtime_min }}m{% endif %}
       </div>
       <div class="genre-pills">
         {% for g in title.genres %}
@@ -36,10 +42,12 @@
     </div>
   </header>
 
+  <div class="title-overview-body">
   {% if title.poster_path %}
   <img class="title-poster" src="{{ url_for('static', filename='images/' ~ title.poster_path) }}" alt="">
   {% endif %}
 
+  <div class="title-synopsis">
   {% if title.taglines() %}
   <p class="tagline">&ldquo;{{ title.taglines()[0] }}&rdquo;</p>
   {% endif %}
@@ -50,7 +58,11 @@
     <p class="plot-full">{{ title.plot }}</p>
   </section>
 
-  <section class="cast">
+  </div>
+  </div>
+  </div>
+
+  <section class="cast" id="top-cast">
     <h2>Top cast</h2>
     {% if cast %}
     <ul class="cast-grid">
@@ -85,7 +97,7 @@
     {% endif %}
   </section>
 
-  <section class="boxoffice">
+  <section class="boxoffice" id="title-details">
     <h2>Box office &amp; details</h2>
     <dl class="metadata">
       <dt>Release date</dt><dd>{{ title.release_date or '—' }}</dd>
@@ -102,11 +114,13 @@
   <section class="user-actions">
     {% if current_user.is_authenticated %}
       <form method="post" action="{{ url_for('title_watchlist_toggle', tt_id=title.tt_id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn">
           {% if title.id in in_watchlist %}&minus; Remove from Watchlist{% else %}+ Add to Watchlist{% endif %}
         </button>
       </form>
       <form method="post" action="{{ url_for('title_rate', tt_id=title.tt_id) }}" class="rate-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Your rating:
           <select name="rating">
             {% for n in range(1, 11) %}

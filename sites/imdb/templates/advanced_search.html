@@ -50,7 +50,7 @@
       ({{ t.year }}) &middot;
       <span class="star">&#9733;</span>{{ '%.1f'|format(t.rating_avg) }} &middot;
       {{ t.num_votes|compact_votes }} votes &middot;
-      {{ t.runtime_min }}m &middot;
+      {% if t.runtime_min %}{{ t.runtime_min }}m &middot;{% endif %}
       {% for g in t.genres %}{{ g.name }}{{ ', ' if not loop.last }}{% endfor %}
     </span>
     <p class="muted">{{ t.plot_short }}</p>

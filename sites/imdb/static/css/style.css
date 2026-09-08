@@ -234,3 +234,161 @@ h3 { font-size: 16px; margin: 16px 0 6px; }
   padding: 18px 0; font-size: 12px;
 }
 .footer a { color: var(--imdb-yellow); }
+
+/* IMDb navigation and shared layout. Keep all media local to the catalog. */
+body { font-family: Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; }
+.container { max-width: 1280px; padding-left: 24px; padding-right: 24px; }
+main.container { padding-top: 32px; padding-bottom: 60px; }
+.topbar { padding: 0; }
+.topbar .nav { min-height: 56px; gap: 16px; padding-left: 12px; padding-right: 12px; }
+.brand { flex: 0 0 64px; height: 32px; padding: 0 4px; text-align: center; font-family: Impact, 'Arial Narrow', sans-serif; font-size: 25px; line-height: 32px; letter-spacing: -1px; }
+.primary-nav { flex: none; }
+.primary-nav .menu { padding: 0; }
+.menu summary { list-style: none; padding: 8px; border-radius: 4px; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer; }
+.menu summary::-webkit-details-marker { display: none; }
+.menu summary span { margin-right: 4px; font-size: 18px; }
+.menu summary:hover, .menu[open] summary { background: #333; }
+.primary-nav .dropdown { display: none; background: #1f1f1f; border-color: #444; box-shadow: 0 8px 20px #0006; border-radius: 4px; }
+.primary-nav .menu:hover .dropdown, .primary-nav .menu:focus-within .dropdown { display: none; }
+.primary-nav .menu[open] .dropdown { display: block; }
+.primary-nav .dropdown a { color: #fff; padding: 10px 16px; }
+.primary-nav .dropdown a:hover { background: #333; }
+.search { max-width: none; min-width: 0; height: 32px; }
+.search select { max-width: 90px; border-right: 1px solid #bbb; background: white; padding: 4px 8px; }
+.search input { min-width: 0; padding: 4px 8px; background: white; }
+.search button { padding: 3px 10px; background: white; color: #666; }
+.search button svg { display: block; }
+.user-area { align-items: center; gap: 18px; flex: none; font-size: 14px; white-space: nowrap; }
+.user-area .nav-watchlist { border-left: 2px solid #444; padding-left: 18px; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid #5799ef; outline-offset: 3px; }
+h1 { font-size: 36px; font-weight: 400; line-height: 1.15; }
+h2 { font-size: 22px; line-height: 1.2; font-weight: 600; border-bottom: 0; border-left: 4px solid var(--imdb-yellow); padding: 0 0 0 10px; }
+.row-head h2 { border-bottom: 0; }
+.row-head { gap: 16px; }
+.eyebrow { font-size: 12px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+.card-grid { gap: 16px; }
+.card { padding: 0 0 16px; overflow: hidden; border-radius: 8px; }
+.card .poster { display: block; border-radius: 0; margin-bottom: 12px; }
+.card-title, .card-meta { padding: 0 12px; }
+.card-title { font-size: 16px; font-weight: 400; }
+.card-meta { font-size: 14px; }
+
+/* The offline home preserves the available catalog; it does not invent trailers. */
+.home-page { --imdb-bg: #000; --imdb-fg: #fff; --imdb-fg-muted: #aaa; --imdb-panel: #1a1a1a; --imdb-border: #333; --imdb-link: #5799ef; }
+.home-page .hero { padding-top: 12px; }
+.home-page .hero h1 { font-size: 28px; font-weight: 500; color: var(--imdb-yellow); }
+.home-page .hero .lede { margin-top: 8px; }
+.home-page .card-grid { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 80px) / 6); grid-template-columns: none; overflow-x: auto; padding-bottom: 12px; scroll-snap-type: x proximity; }
+.home-page .card { scroll-snap-align: start; }
+.home-page .row { margin-top: 32px; }
+.home-page .row-head h2 { margin-top: 12px; }
+.watchlist-prompt { margin-top: 36px; }
+.watchlist-prompt p { text-align: center; margin: 32px 0 18px; }
+.watchlist-prompt .btn { display: block; width: max-content; margin: 0 auto 48px; border-radius: 24px; padding: 8px 30px; background: #1a1a1a; color: #5799ef; }
+
+/* Poster list mirrors the chart's visual hierarchy without exposing detail-only task facts. */
+.chart-head { padding-top: 16px; }
+.chart-head .muted { margin-top: 8px; }
+.chart-layout { display: grid; grid-template-columns: minmax(0, 2.15fr) minmax(230px, 1fr); gap: 48px; }
+.chart-count { margin: 22px 0; }
+.chart-list { list-style: none; padding: 0; margin: 0; }
+.chart-item { min-height: 118px; display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 12px; }
+.chart-item:nth-child(odd) { background: #f8f8f8; }
+.chart-poster-link { flex: 0 0 72px; }
+.chart-poster { display: block; width: 72px; height: 106px; object-fit: cover; border-radius: 8px; }
+.chart-item-content { flex: 1; min-width: 0; }
+.chart-rank { display: inline-block; background: #3864b7; border-radius: 3px; padding: 0 10px; color: white; font-size: 14px; font-weight: 700; }
+.chart-title { display: block; border: 0; padding: 0; margin: 4px 0; font-size: 16px; line-height: 1.3; }
+.chart-title a { color: #222; }
+.chart-meta, .chart-rating, .chart-gross { font-size: 14px; }
+.chart-meta { color: #666; }
+.chart-watchlist { flex: none; }
+.chart-explore h2 { display: block; margin-top: 24px; }
+.chart-explore h3 { font-size: 22px; margin-top: 36px; }
+.chart-explore > a { display: flex; justify-content: space-between; gap: 8px; padding: 24px 16px; margin-top: 8px; border: 1px solid #ddd; border-radius: 12px; color: #222; }
+
+/* Title overview uses the existing poster and synopsis, with the source's dark header. */
+.title-overview { background: #1f1f1f; color: #fff; margin: -32px -24px 24px; padding: 16px 24px 28px; }
+.title-jumps { display: flex; justify-content: flex-end; gap: 16px; font-size: 14px; margin-bottom: 16px; }
+.title-jumps a { color: #fff; }
+.title-detail .title-head { align-items: flex-start; margin-bottom: 20px; }
+.title-head h1 { font-size: 48px; font-weight: 300; }
+.title-overview .title-sub, .title-overview .rating-label, .title-overview .rating-votes, .title-overview .small, .title-overview .tagline { color: #bbb; }
+.title-overview .pill { color: #fff; border-color: #777; font-size: 14px; padding: 3px 12px; }
+.title-overview .rating-label { font-size: 12px; letter-spacing: 1.5px; }
+.title-overview-body { display: grid; grid-template-columns: minmax(160px, 280px) minmax(0, 1fr); gap: 24px; }
+.title-poster { float: none; width: 100%; max-width: 280px; border-radius: 8px; margin: 0; }
+.title-synopsis { max-width: 700px; }
+.title-synopsis .plot { margin-top: 0; }
+.title-synopsis .plot-full { color: #fff; }
+.title-synopsis .plot h2 { margin-top: 16px; }
+.title-overview .rank-badge, .title-overview .popularity-badge { background: transparent; color: #ccc; padding: 0; }
+.cast-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+.cast-card { display: flow-root; padding: 8px 0; background: transparent; min-height: 84px; }
+.cast-photo { width: 80px; height: 80px; border-radius: 50%; margin-right: 16px; }
+.cast-card .character { font-size: 14px; margin-top: 4px; }
+.cast-card a { font-weight: 600; color: #222; }
+.metadata { grid-template-columns: minmax(170px, 32%) 1fr; }
+.metadata dt, .metadata dd { border-bottom: 1px solid #eee; padding: 8px 0; }
+.user-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.user-actions form { margin: 0; }
+.filters input[type=checkbox], .filters input[type=radio] { width: auto; }
+.filters fieldset { min-width: 0; }
+.review-card { border-left: 0; border: 1px solid #ddd; border-radius: 12px; background: #fff; padding: 20px; }
+.footer { clear: both; text-align: center; background: #000; color: #aaa; padding: 40px 0; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: center; gap: 16px 28px; margin-bottom: 28px; font-size: 14px; }
+.footer-links a { color: #fff; }
+
+@media (max-width: 900px) {
+  .topbar .nav { flex-wrap: wrap; gap: 10px; padding-top: 12px; padding-bottom: 12px; }
+  .primary-nav { order: -1; }
+  .user-area { margin-left: auto; }
+  .search { order: 3; flex-basis: 100%; }
+  .chart-layout { grid-template-columns: minmax(0, 1fr); }
+  .chart-explore { border-top: 1px solid #ddd; }
+  .home-page .card-grid { grid-auto-columns: calc((100% - 48px) / 4); }
+  .title-head h1 { font-size: 36px; }
+  .title-overview-body { grid-template-columns: 200px minmax(0, 1fr); }
+}
+@media (max-width: 600px) {
+  .container { padding-left: 16px; padding-right: 16px; }
+  main.container { padding-top: 24px; }
+  .topbar .nav { gap: 6px; }
+  .menu summary { font-size: 0; padding-left: 4px; }
+  .menu summary span { font-size: 21px; margin: 0; }
+  .user-area { gap: 12px; font-size: 13px; }
+  .user-area .nav-watchlist { display: none; }
+  h1 { font-size: 30px; }
+  .row-head { align-items: baseline; }
+  .row-head h2 { font-size: 20px; }
+  .see-all { font-size: 12px; }
+  .home-page .card-grid { grid-auto-columns: 155px; }
+  .card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .chart-head { padding-top: 4px; }
+  .chart-item { gap: 10px; flex-wrap: wrap; }
+  .chart-watchlist { margin-left: 82px; }
+  .title-overview { margin: -24px -16px 24px; padding: 16px; }
+  .title-jumps { justify-content: flex-start; gap: 12px; flex-wrap: wrap; font-size: 12px; }
+  .title-detail .title-head { display: block; }
+  .title-head h1 { font-size: 32px; }
+  .title-head-right { margin-top: 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .title-head-right .rating-box { text-align: left; }
+  .title-overview-body { grid-template-columns: 112px minmax(0, 1fr); gap: 16px; }
+  .title-synopsis { font-size: 14px; }
+  .title-synopsis .plot h2 { font-size: 18px; margin-top: 0; }
+  .tagline { display: none; }
+  .cast-grid { grid-template-columns: 1fr; gap: 12px; }
+  .metadata { grid-template-columns: minmax(110px, 44%) 1fr; gap: 0 12px; font-size: 14px; }
+  .metadata dd { overflow-wrap: anywhere; }
+  .filters { grid-template-columns: minmax(0, 1fr); }
+  .review-card header { gap: 12px; }
+  .review-rating { flex: none; }
+  .chart-table, .credits-table { font-size: 13px; }
+  .chart-table th, .chart-table td, .credits-table td { padding: 8px 4px; overflow-wrap: anywhere; }
+  .person-photo { width: 100px; }
+  .form { width: 100%; }
+}
+
+.logout-form { margin: 0; }
+.logout-form button { font: inherit; border: 0; padding: 0; background: transparent; color: #fff; cursor: pointer; }
+.logout-form button:hover { color: var(--imdb-yellow); }
