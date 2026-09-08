@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 20 Flask mirror sites + control plane on :8101.
+# 22 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -41,6 +41,16 @@ COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
 RUN chmod +x /opt/websyn_start.sh
 
-EXPOSE 8101 40000-40020
+# OSU's real-site image bundle is required, while its database is generated
+# deterministically from tracked source data.
+RUN test -n "$(ls -A /opt/WebSyn/osu/static/images)"
+RUN cd /opt/WebSyn/osu && python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/osu.db', 'instance_seed/osu.db'); \
+print('osu seed DB generated at build time.')" && rm -rf /opt/WebSyn/osu/instance
+
+EXPOSE 8101 40000-40021
 
 CMD ["/opt/websyn_start.sh"]
