@@ -29,6 +29,21 @@ RUNTIME_DB_PATH = INSTANCE_DIR / "4shared.db"
 SEED_DB_PATH = SEED_DIR / "4shared.db"
 PASSWORD_NAMESPACE = "webharbor-4shared-v1"
 
+PREMIUM_PLANS = {
+    "100": {"label": "Premium 100 GB", "account_plan": "Premium", "storage_mb": 102400, "annual": 77.88},
+    "500": {"label": "Premium 500 GB", "account_plan": "Premium 500 GB", "storage_mb": 512000, "annual": 29.99},
+    "1000": {"label": "Premium 1 TB", "account_plan": "Premium 1 TB", "storage_mb": 1048576, "annual": 39.99},
+}
+
+UPLOAD_CATEGORY_BY_EXTENSION = {
+    "aac": "Music", "flac": "Music", "m4a": "Music", "mp3": "Music", "ogg": "Music", "wav": "Music",
+    "avi": "Video", "mkv": "Video", "mov": "Video", "mp4": "Video", "webm": "Video",
+    "gif": "Images", "jpeg": "Images", "jpg": "Images", "png": "Images", "webp": "Images",
+    "epub": "Books", "mobi": "Books",
+    "7z": "Archives", "rar": "Archives", "tar": "Archives", "zip": "Archives",
+    "apk": "Apps", "dmg": "Apps", "exe": "Apps", "msi": "Apps",
+}
+
 INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
 SEED_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -431,7 +446,7 @@ def upload():
     folders = Folder.query.filter_by(user_id=current_user.id).order_by(Folder.name).all()
     if request.method == "POST":
         filename = request.form.get("filename", "").strip()[:220]
-        category_name = request.form.get("category", "Documents")[:32]
+        category_name = request.form.get("category", "auto")[:32]
         description = request.form.get("description", "").strip()[:1000]
         folder_id = request.form.get("folder_id", type=int)
         if folder_id and not Folder.query.filter_by(id=folder_id, user_id=current_user.id).first():
@@ -440,6 +455,10 @@ def upload():
             flash("Enter a filename with an extension, such as notes.pdf.", "error")
         else:
             extension = filename.rsplit(".", 1)[1].lower()[:12]
+            if category_name == "auto":
+                category_name = UPLOAD_CATEGORY_BY_EXTENSION.get(extension, "Documents")
+            elif category_name not in {"Music", "Video", "Apps", "Images", "Books", "Documents", "Archives"}:
+                category_name = "Documents"
             slug = f"{slugify(filename)}-{current_user.id}-{int(datetime.utcnow().timestamp())}"
             item = FileItem(
                 owner_id=current_user.id, folder_id=folder_id, filename=filename, slug=slug,
@@ -556,7 +575,7 @@ def save_file(file_id: int):
 @login_required
 def saved():
     rows = SavedFile.query.filter_by(user_id=current_user.id).order_by(SavedFile.created_at.desc()).all()
-    return render_template("favorites.html", files=[row.file for row in rows], title="Saved to My 4shared")
+    return render_template("favorites.html", files=[row.file for row in rows], title="Saved files")
 
 
 @app.route("/file/<int:file_id>/share", methods=["GET", "POST"])
@@ -618,24 +637,26 @@ def premium():
 @app.route("/premium/checkout", methods=["GET", "POST"])
 @login_required
 def premium_checkout():
-    periods = {"monthly": 9.95, "annual": 77.88}
-    period = request.values.get("period", "annual")
-    if period not in periods:
-        period = "annual"
+    plan_key = request.values.get("plan", "100")
+    if plan_key not in PREMIUM_PLANS:
+        plan_key = "100"
+    plan = PREMIUM_PLANS[plan_key]
+    period = "annual"
+    amount = plan[period]
     if request.method == "POST":
         card = re.sub(r"\D", "", request.form.get("card_number", ""))
         holder = request.form.get("cardholder", "").strip()
         if len(card) != 16 or len(holder) < 2:
             flash("Enter the demo 16-digit card number and cardholder name.", "error")
         else:
-            order = PlanOrder(user_id=current_user.id, plan_name="Premium", billing_period=period,
-                              amount=periods[period], card_last4=card[-4:], created_at=datetime.utcnow())
-            current_user.plan = "Premium"
-            current_user.storage_limit_mb = 102400
+            order = PlanOrder(user_id=current_user.id, plan_name=plan["label"], billing_period=period,
+                              amount=amount, card_last4=card[-4:], created_at=datetime.utcnow())
+            current_user.plan = plan["account_plan"]
+            current_user.storage_limit_mb = plan["storage_mb"]
             db.session.add(order)
             db.session.commit()
-            return render_template("premium_confirmed.html", order=order)
-    return render_template("premium_checkout.html", period=period, amount=periods[period])
+            return render_template("premium_confirmed.html", order=order, plan=plan)
+    return render_template("premium_checkout.html", period=period, amount=amount, plan=plan, plan_key=plan_key)
 
 
 @app.get("/help")
@@ -646,6 +667,31 @@ def help_center():
 @app.get("/about")
 def about():
     return render_template("about.html")
+
+
+@app.get("/press-room")
+def press_room():
+    return render_template("press_room.html")
+
+
+@app.get("/blog")
+def blog():
+    return render_template("blog.html")
+
+
+@app.route("/convert/<source_format>-to-pdf", methods=["GET", "POST"])
+def convert_to_pdf(source_format: str):
+    allowed_formats = {"doc", "pptx", "docx", "xls", "ppt", "xlsx", "cbr", "txt", "pps", "rtf", "cbz", "fb2", "epub", "djvu"}
+    if source_format not in allowed_formats:
+        abort(404)
+    converted_name = None
+    if request.method == "POST":
+        filename = request.form.get("filename", "").strip()[:220]
+        if not filename.lower().endswith(f".{source_format}"):
+            flash(f"Choose a .{source_format} file record to convert.", "error")
+        else:
+            converted_name = f"{filename.rsplit('.', 1)[0]}.pdf"
+    return render_template("converter.html", source_format=source_format, converted_name=converted_name)
 
 
 @app.get("/_health")

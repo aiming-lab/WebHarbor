@@ -13,7 +13,7 @@
       <a class="brand" href="{{ url_for('index') }}" aria-label="4shared home"><span class="brand-four">4</span><span>shared</span></a>
       {% if request.endpoint != 'index' or current_user.is_authenticated %}
       <form class="header-search" action="{{ url_for('search') }}" method="get">
-        <input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="{% if current_user.is_authenticated %}Search in account{% else %}Search files, music, videos, pictures{% endif %}" aria-label="Search 4shared">
+        <input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="Search public files" aria-label="Search 4shared">
         <button type="submit" aria-label="Search">⌕</button>
       </form>
       {% endif %}
@@ -36,15 +36,15 @@
   <footer class="site-footer">
     <div class="container">
       <div class="footer-grid">
-        <div><h4>Site Links</h4><a href="{{ url_for('premium') }}">Premium</a><a href="{{ url_for('search') }}">Search</a><a href="{{ url_for('about') }}">Press Room</a><a href="{{ url_for('about') }}">Blog</a></div>
+        <div><h4>Site Links</h4><a href="{{ url_for('premium') }}">Premium</a><a href="{{ url_for('search') }}">Search</a><a href="{{ url_for('press_room') }}">Press Room</a><a href="{{ url_for('blog') }}">Blog</a></div>
         <div><h4>Help</h4><a href="{{ url_for('help_center') }}">Support</a><a href="{{ url_for('help_center') }}">FAQ</a><a href="{{ url_for('help_center') }}">Quick Tour</a><a href="{{ url_for('help_center') }}">Features</a><a href="{{ url_for('help_center') }}">Contact Us</a></div>
         <div><h4>About</h4><a href="{{ url_for('about') }}">Company</a><a href="{{ url_for('about') }}">Advertising</a><a href="{{ url_for('about') }}">Copyright</a><a href="{{ url_for('about') }}">Developer</a></div>
-        <div><h4>Convert to PDF</h4><a href="{{ url_for('help_center') }}">DOC to PDF</a><a href="{{ url_for('help_center') }}">PPTX to PDF</a><a href="{{ url_for('help_center') }}">DOCX to PDF</a><a href="{{ url_for('help_center') }}">XLS to PDF</a><a href="{{ url_for('help_center') }}">PPT to PDF</a><a href="{{ url_for('help_center') }}">XLSX to PDF</a></div>
+        <div><h4>Convert to PDF</h4>{% for format in ['doc','pptx','docx','xls','ppt','xlsx'] %}<a href="{{ url_for('convert_to_pdf', source_format=format) }}">{{ format|upper }} to PDF</a>{% endfor %}</div>
         <div><h4>Legal</h4><a href="{{ url_for('about') }}">Terms of Use</a><a href="{{ url_for('about') }}">Privacy</a><a href="{{ url_for('about') }}">Copyright Infringement</a><a href="{{ url_for('about') }}">Security</a><a href="{{ url_for('about') }}">Music Identification</a><a href="{{ url_for('about') }}">SLA</a></div>
       </div>
       <div class="footer-bottom">
         <a class="brand footer-brand" href="{{ url_for('index') }}"><span class="brand-four">4</span><span>shared</span></a>
-        <div class="footer-pills"><span>● App Store</span><span>● Google Play</span><span>● AppGallery</span><span>◉ English⌄</span></div>
+        <div class="footer-pills"><span><img src="{{ url_for('static', filename='images/ui/logo-apple.svg') }}" alt=""> App Store</span><span><img src="{{ url_for('static', filename='images/ui/logo-google.svg') }}" alt=""> Google Play</span><span><img src="{{ url_for('static', filename='images/ui/logo-huawei.svg') }}" alt=""> AppGallery</span><span>◉ English⌄</span></div>
       </div>
     </div>
   </footer>

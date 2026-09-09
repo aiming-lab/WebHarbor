@@ -90,6 +90,11 @@ CATALOG = {
             ("AudioTag Library Tool", "Edit common audio metadata fields and organize albums.", "music audio tags organizer", "Version 4.1.1 · reads ID3 and Vorbis comments."),
             ("StudyTimer Focus Utility", "A simple configurable focus and break timer.", "timer study focus productivity", "Version 1.6.3 · three color themes · CSV session export."),
             ("ArchivePeek File Inspector", "Browse archive contents and checksums before extraction.", "archive zip checksum utility", "Version 2.2.4 · ZIP, TAR, and 7z read support."),
+            ("ArchivePeek File Inspector Legacy Build", "An archived compatibility build of the file inspector for older systems.", "archive file inspector legacy compatibility", "Version 1.7.9 · ZIP-only inspection · no checksum comparison."),
+            ("ArchivePeek File Inspector Checksums Add-on", "Optional checksum definitions for ArchivePeek deployments.", "archive file inspector checksum addon", "Version 2.1.0 · definitions package only · requires the main application."),
+            ("ArchivePeek File Inspector Portable Notes", "Release notes and deployment examples for portable ArchivePeek installations.", "archive file inspector portable documentation", "Version 2.2 notes · documentation package · contains no executable."),
+            ("ArchivePeek File Inspector Recovery Plug-in", "A recovery plug-in for damaged archive headers.", "archive file inspector recovery plugin", "Version 0.6.3 · experimental plug-in · TAR recovery only."),
+            ("ArchivePeek File Inspector Test Fixtures", "Sample archives for validating file-inspection workflows.", "archive file inspector test fixtures", "Version 2026.4 · 42 synthetic fixtures · not an application installer."),
             ("ColorScope Palette Assistant", "Inspect colors and create accessible palette combinations.", "design color accessibility palette", "Version 5.0.0 · WCAG contrast preview · GPL-3.0."),
             ("PocketWeather Sample Client", "Demonstration client for an open weather-data endpoint.", "weather sample api client", "Version 0.9.8 · demo data works offline · MIT license."),
             ("BookShelf EPUB Catalog", "Catalog local EPUB metadata and reading status.", "books epub catalog library", "Version 3.0.1 · OPF metadata import · local database only."),
@@ -111,15 +116,15 @@ CATALOG = {
             ("Library Reading Room Windows", "Tall windows and long study tables in a historic reading room.", "library architecture reading room", "Resolution 2400 × 1600 · natural light · no people."),
             ("Atlantic Coast Boardwalk", "Weathered boards leading through dunes toward the sea.", "ocean coast boardwalk landscape", "Resolution 3000 × 2000 · late afternoon · focal length 35 mm."),
             ("Community Garden Pollinators", "Bees visiting purple flowers in a neighborhood garden.", "garden flowers bees nature", "Resolution 2200 × 1467 · macro crop · photographed in July."),
-            ("Alpine Lake Morning Mist", "Thin mist lifting from a mountain lake at sunrise.", "mountain lake mist sunrise", "Resolution 3200 × 2133 · tripod capture · 06:21 local time."),
+            ("Grand Lake Sunrise", "Warm sunrise light over a mountain lake and surrounding ridges.", "mountain lake sunrise colorado", "Resolution 3200 × 2133 · tripod capture · 06:21 local time."),
             ("Ceramic Studio Workbench", "Tools, clay, and unfinished vessels on a working studio table.", "ceramics art studio craft", "Resolution 2600 × 1733 · window light · documentary series."),
             ("Red Bicycle by Brick Wall", "A city bicycle parked beside a warm red-brick facade.", "bicycle city street red", "Resolution 2400 × 1600 · 50 mm lens · overcast light."),
             ("Winter Pines After Snow", "Fresh snow resting on dense evergreen branches.", "winter snow trees forest", "Resolution 3000 × 2000 · temperature -6°C · polarizing filter."),
-            ("Open Notebook and Fountain Pen", "A clean desk scene with handwritten project notes.", "notebook desk writing productivity", "Resolution 2400 × 1600 · overhead composition · daylight."),
+            ("Music Notebook and Fountain Pen", "A patterned music notebook and fountain pen arranged on a wooden desk.", "notebook fountain pen desk music", "Resolution 2400 × 1600 · overhead composition · daylight."),
             ("Harbor Boats in Morning Fog", "Small sailboats emerging through pale harbor fog.", "harbor boats fog water", "Resolution 2800 × 1867 · 85 mm lens · photographed at 07:03."),
             ("Wildflower Trail in Spring", "A narrow hillside trail lined with yellow and blue flowers.", "wildflowers trail spring hiking", "Resolution 3200 × 2133 · elevation 1,120 m · April capture."),
             ("Classic Camera Detail", "Close view of the controls on a restored mechanical camera.", "camera vintage photography detail", "Resolution 2500 × 1667 · focus-stacked from six frames."),
-            ("Rainy Window City Lights", "Defocused evening traffic seen through raindrops on glass.", "rain city lights abstract", "Resolution 2400 × 1600 · 50 mm lens · manual focus."),
+            ("Rainy City Street at Night", "Wet pavement and storefront lights on a quiet city street after dark.", "rain city street night lights", "Resolution 2400 × 1600 · available-light photograph · monochrome."),
             ("Map and Compass Flat Lay", "A paper trail map, field compass, and pencil arranged for a hike.", "map compass hiking navigation", "Resolution 3000 × 2000 · overhead studio light · north arrow visible."),
         ],
     },
@@ -138,6 +143,11 @@ CATALOG = {
             ("The Jungle Book", "Stories and poems in a navigable illustrated edition.", "classic stories kipling jungle", "246 pages · 14 illustrations · poems indexed separately."),
             ("Meditations Public Domain Translation", "A clear English translation arranged by book and section.", "philosophy stoicism marcus aurelius", "192 pages · 12 books · searchable section numbers."),
             ("The Federalist Papers", "All 85 essays with author and topic index.", "history politics essays constitution", "672 pages · 85 essays · searchable topic index."),
+            ("The Anti-Federalist Papers Selection", "A selected set of arguments opposing ratification, with editorial context.", "history politics essays constitution federalist papers", "244 pages · 24 selected essays · chronological reading list."),
+            ("Federalist Papers Study Questions", "Classroom prompts organized around major constitutional themes.", "history politics education federalist papers", "118 pages · 60 study questions · instructor notes appendix."),
+            ("Federalist Papers Author Concordance", "A reference concordance comparing commonly attributed authorship.", "history politics reference federalist papers", "206 pages · author tables · no full essay text."),
+            ("Federalist Papers Historical Reader", "Speeches, letters, and newspaper extracts from the ratification debate.", "history politics primary sources federalist papers", "356 pages · 41 source extracts · timeline included."),
+            ("Federalist Papers Constitutional Index", "A subject index linking constitutional clauses to related debates.", "history politics constitution federalist papers", "174 pages · clause index · cross-references only."),
             ("Grimms Household Tales Selection", "Thirty selected tales in a reflowable reading edition.", "fairy tales folklore grimm", "318 pages · 30 tales · content notes included."),
             ("The Souls of Black Folk", "Du Bois's landmark essays with preserved musical epigraphs.", "history essays sociology du bois", "286 pages · 14 essays · musical bars encoded as images."),
             ("Leaves of Grass 1892 Edition", "The deathbed edition with section-level navigation.", "poetry whitman american", "476 pages · 17 sections · line breaks preserved."),
@@ -188,7 +198,24 @@ CATALOG = {
     },
 }
 
-THUMBNAILS = ["images/london.jpg", "images/new-york.jpg", "images/denali.jpg"]
+THUMBNAILS = [
+    "images/london.jpg",
+    "images/new-york.jpg",
+    "images/denali.jpg",
+    "images/library-reading-room.jpg",
+    "images/atlantic-boardwalk.jpg",
+    "images/garden-pollinators.jpg",
+    "images/alpine-lake-mist.jpg",
+    "images/ceramic-workbench.jpg",
+    "images/red-bicycle-brick-wall.jpg",
+    "images/winter-pines-snow.jpg",
+    "images/notebook-fountain-pen.jpg",
+    "images/harbor-boats-fog.jpg",
+    "images/wildflower-trail.jpg",
+    "images/classic-camera.jpg",
+    "images/rainy-window-lights.jpg",
+    "images/map-compass.jpg",
+]
 
 
 def seed_database():
@@ -200,7 +227,7 @@ def seed_database():
         for index, (title, description, tags, detail) in enumerate(spec["items"]):
             filename = f"{title}.{spec['ext']}"
             thumbnail = ""
-            if category == "Images" and index < len(THUMBNAILS):
+            if category == "Images":
                 thumbnail = THUMBNAILS[index]
             item = FileItem(
                 id=file_id,
