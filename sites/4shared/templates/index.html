@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero real-home">
+  <div class="cloud cloud-a"></div><div class="cloud cloud-b"></div>
+  <div class="container hero-inner">
+    <h1>Search, store and share easily</h1>
+    <p>All your files: music, videos, apps and more</p>
+    <form class="hero-search" action="{{ url_for('search') }}" method="get">
+      <input name="q" type="search" placeholder="Search 4shared" aria-label="Search files">
+      <button aria-label="Search">⌕</button>
+    </form>
+    <div class="or-separator">or</div>
+    <a class="drop-zone" href="{{ url_for('upload') if current_user.is_authenticated else url_for('register') }}">
+      <span class="upload-cloud">⇧</span>
+      <strong>Drop files here or</strong>
+      <span class="upload-button">Upload files</span>
+    </a>
+    <div class="hero-categories">
+      {% set icons = {'Music':'♫','Video':'▷','Apps':'♙','Images':'▧','Books':'▥'} %}
+      {% for item in ['Music','Video','Apps','Images','Books'] %}<a href="{{ url_for('category', category=item|lower) }}"><b>{{ icons[item] }}</b><span>{{ item }}</span></a>{% endfor %}
+      <a href="{{ url_for('search') }}"><b>□</b><span>All Files</span></a>
+    </div>
+  </div>
+</section>
+<section class="app-band"><div class="container"><h2>Get 4shared App</h2><p>Offline access&nbsp;&nbsp;•&nbsp;&nbsp;Faster downloads&nbsp;&nbsp;•&nbsp;&nbsp;Real-time updates</p><div class="qr-motif" aria-label="QR code decoration">▦</div><div class="app-badges"><span class="store-badge"><small>GET IT ON</small><strong>Google Play</strong></span><span class="store-badge"><small>Download on the</small><strong>App Store</strong></span><span class="store-badge"><small>Explore it on</small><strong>AppGallery</strong></span></div></div></section>
+{% endblock %}

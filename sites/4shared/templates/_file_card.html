@@ -1,0 +1,10 @@
+<article class="file-card">
+  <a class="file-thumb" href="{{ url_for('file_detail', slug=file.slug) }}" aria-label="Open {{ file.filename }}">
+    {% if file.thumbnail %}<img src="{{ url_for('static', filename=file.thumbnail) }}" alt="Preview of {{ file.stem }}">{% else %}<span class="file-icon">{{ file.extension }}</span>{% endif %}
+  </a>
+  <div class="file-card-body">
+    <a class="file-title" href="{{ url_for('file_detail', slug=file.slug) }}" title="{{ file.filename }}">{{ file.filename }}</a>
+    <div class="file-meta"><span>{{ file.size_bytes|filesize }}</span><span>•</span><span>{{ file.download_count }} downloads</span></div>
+    <div class="card-actions"><span class="chip">{{ file.category }}</span>{% if current_user.is_authenticated %}<form action="{{ url_for('toggle_favorite', file_id=file.id) }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path }}"><button class="icon-button {% if file.id in favorite_ids %}active{% endif %}" aria-label="Toggle favorite">♥</button></form>{% else %}<span class="rating">★ {{ '%.1f'|format(file.rating) }}</span>{% endif %}</div>
+  </div>
+</article>
