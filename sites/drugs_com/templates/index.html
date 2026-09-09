@@ -6,17 +6,17 @@
 <!-- Hero -->
 <div class="hero-section">
   <h1>Know more. Be sure.</h1>
-  <p class="hero-sub">Drug and health information, from pharmacists you can trust.</p>
-  <form action="{{ url_for('search') }}" method="get" class="hero-search-form" autocomplete="off">
+  <p class="hero-sub">Deterministic local medication interface fixtures for software evaluation.</p>
+  <form action="{{ url_for('search') }}" method="get" class="hero-search-form" autocomplete="off" role="search">
     <div class="hero-search-wrap">
       <input class="hero-search-input" type="search" name="q" id="hero-search-input"
              placeholder="Enter a drug name, condition, or imprint"
-             autocomplete="off" aria-label="Search drugs, conditions, or imprints">
+             autocomplete="off" aria-label="Search drugs, conditions, or imprints" role="combobox" aria-autocomplete="list" aria-controls="hero-autocomplete" aria-expanded="false">
       <button class="hero-search-btn" type="submit" aria-label="Search">
         <svg class="is-227" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" stroke-width="1.8"/><line x1="12.9" y1="12.9" x2="17" y2="17" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
         <span class="is-228">Search</span>
       </button>
-      <div class="hero-autocomplete search-autocomplete" id="hero-autocomplete" hidden></div>
+      <div class="hero-autocomplete search-autocomplete" id="hero-autocomplete" role="listbox" hidden></div>
     </div>
   </form>
   <script>
@@ -25,7 +25,7 @@
     var box = document.getElementById('hero-autocomplete');
     if (!input || !box) return;
     var timer = null, items = [], active = -1;
-    function hide(){ box.hidden = true; box.innerHTML = ''; items = []; active = -1; }
+    function hide(){ box.hidden = true; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); box.innerHTML = ''; items = []; active = -1; }
     function escapeHtml(s){
       return String(s).replace(/[&<>"']/g, function(c){
         return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
@@ -35,9 +35,10 @@
     function iconFor(t){ return t === 'condition' ? '\u{1F3E5}' : '\u{1F48A}'; }
     function setActive(i){
       var nodes = box.querySelectorAll('.autocomplete-item');
-      nodes.forEach(function(n){ n.classList.remove('active'); });
+      nodes.forEach(function(n){ n.classList.remove('active'); n.setAttribute('aria-selected', 'false'); });
       active = i;
-      if (i >= 0 && i < nodes.length) nodes[i].classList.add('active');
+      if (i >= 0 && i < nodes.length){ nodes[i].classList.add('active'); nodes[i].setAttribute('aria-selected', 'true'); input.setAttribute('aria-activedescendant', nodes[i].id); }
+      else input.removeAttribute('aria-activedescendant');
     }
     function render(data){
       items = data || [];
@@ -50,18 +51,21 @@
       });
       var html = '', idx = 0, reordered = [];
       order.forEach(function(g){
-        html += '<div class="autocomplete-group-header">' + groupLabel(g) + '</div>';
+        var groupId = 'hero-group-' + g;
+        html += '<div role="group" aria-labelledby="' + groupId + '"><div class="autocomplete-group-header" id="' + groupId + '">' + groupLabel(g) + '</div>';
         groups[g].forEach(function(r){
-          html += '<div class="autocomplete-item" data-idx="' + idx + '" data-url="' + r.url + '">'
+          html += '<div class="autocomplete-item" role="option" id="hero-option-' + idx + '" aria-selected="false" data-idx="' + idx + '" data-url="' + r.url + '">'
                 + '<span class="autocomplete-icon">' + iconFor(r.type) + '</span>'
                 + '<span class="autocomplete-label">' + escapeHtml(r.label) + '</span>'
                 + '</div>';
           reordered.push(r); idx++;
         });
+        html += '</div>';
       });
       items = reordered;
       box.innerHTML = html;
       box.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
       active = -1;
       Array.prototype.forEach.call(box.querySelectorAll('.autocomplete-item'), function(el){
         el.addEventListener('mousedown', function(e){ e.preventDefault(); window.location.href = el.getAttribute('data-url'); });
@@ -93,7 +97,7 @@
     <a href="{{ url_for('search') }}?q=lisinopril">lisinopril</a>
   </p>
   <p class="hero-trending">
-    <strong>Trending:</strong>
+    <strong>Featured fixture records:</strong>
     {% for d in trending[:6] %}
       <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>{% if not loop.last %},{% endif %}
     {% endfor %}
@@ -111,7 +115,7 @@
 <div class="container">
   <section class="quick-browse-section">
     <h2 class="quick-browse-title">Popular searches</h2>
-    <p class="quick-browse-sub">Jump straight to the most-searched medications on Drugs.com.</p>
+    <p class="quick-browse-sub">Open selected medication fixtures.</p>
     <div class="quick-browse-chips">
       {% for name in ['ibuprofen','acetaminophen','metformin','lisinopril','atorvastatin','amlodipine','omeprazole','gabapentin','sertraline','levothyroxine','amoxicillin','prednisone'] %}
         <a class="quick-chip" href="{{ url_for('search') }}?q={{ name }}">{{ name|capitalize }}</a>
@@ -204,7 +208,7 @@ function scrollCarousel(dir) {
 <div class="container">
   <section class="health-category-section">
     <h2>Browse by Health Category</h2>
-    <p class="health-category-sub">Find medications and treatment information organized by the conditions they treat.</p>
+    <p class="health-category-sub">Browse deterministic medication-condition relationship fixtures.</p>
     <div class="health-category-grid">
       <a class="health-category-card hc-pain" href="{{ url_for('search') }}?q=pain">
         <span class="hc-icon">&#9889;</span>
@@ -214,7 +218,7 @@ function scrollCarousel(dir) {
       <a class="health-category-card hc-antibiotics" href="{{ url_for('search') }}?q=antibiotic">
         <span class="hc-icon">&#9763;</span>
         <span class="hc-name">Antibiotics</span>
-        <span class="hc-desc">Treatments for bacterial infections</span>
+        <span class="hc-desc">Stored bacterial-infection relationships</span>
       </a>
       <a class="health-category-card hc-heart" href="{{ url_for('search') }}?q=blood+pressure">
         <span class="hc-icon">&#9829;</span>
@@ -239,7 +243,7 @@ function scrollCarousel(dir) {
       <a class="health-category-card hc-sleep" href="{{ url_for('search') }}?q=insomnia">
         <span class="hc-icon">&#9790;</span>
         <span class="hc-name">Sleep</span>
-        <span class="hc-desc">Insomnia treatments and sleep aids</span>
+        <span class="hc-desc">Stored insomnia relationships</span>
       </a>
       <a class="health-category-card hc-vitamins" href="{{ url_for('search') }}?q=vitamin">
         <span class="hc-icon">&#9728;</span>
@@ -255,14 +259,15 @@ function scrollCarousel(dir) {
 <div class="container">
   <div class="home-row">
     <div class="is-232">
-      <h2 class="is-071">Drug Images</h2>
-      <a class="is-233" href="{{ url_for('pill_identifier') }}">View all images &rsaquo;</a>
+      <h2 class="is-071">Synthetic pill descriptor diagrams</h2>
+      <a class="is-233" href="{{ url_for('pill_identifier') }}">Search descriptor fields &rsaquo;</a>
     </div>
     <div class="is-234">
       {% for d, img in image_samples %}
       <a class="is-235" href="{{ url_for('drug_images', slug=d.slug) }}">
-        <div class="is-236-wrap">
-          {{ render_pill('home-img-' ~ loop.index, img.shape or 'oval', img.color or 'white', img.imprint or '') }}
+        <div class="is-236-wrap" role="img" aria-label="Synthetic diagram for stored shape {{ img.shape or 'not stored' }}, color {{ img.color or 'not stored' }}, imprint {{ img.imprint or 'not stored' }}">
+          {{ render_pill('home-img-' ~ loop.index, img.shape, img.color, img.imprint) }}
+          <span class="muted">Synthetic fixture diagram</span>
         </div>
         <div class="is-237">{{ d.generic_name|capitalize }}</div>
         {% if img.shape or img.color %}
@@ -296,15 +301,15 @@ function scrollCarousel(dir) {
 
 <div class="container">
 <div class="newsletter-subscribe is-239">
-  <h3 class="is-240">Stay up to date on drug news</h3>
-  <p class="is-241">Subscribe to Drugs.com newsletters for the latest medication news, new drug approvals, alerts and updates.</p>
+  <h3 class="is-240">Local newsletter preference fixture</h3>
+  <p class="is-241">Store a simulated newsletter preference locally. No email is sent.</p>
   <form class="is-242" action="{{ url_for('newsletter_subscribe') }}" method="post">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="lists" value="general_updates">
-    <input class="is-243" type="email" name="email" placeholder="Enter your email address" required maxlength="254">
+    <input class="is-243" type="email" name="email" placeholder="Enter your email address" required maxlength="254" aria-label="Newsletter email">
     <button type="submit" class="btn btn-primary is-244">Subscribe</button>
   </form>
-  <p class="is-245">Drugs.com will never sell or share your email address.</p>
+  <p class="is-245">The address remains in the local account or signed browser session.</p>
 </div>
 </div>
 
@@ -312,13 +317,13 @@ function scrollCarousel(dir) {
 <div class="container">
   {% if fda_news %}
   <div class="home-row fda-alerts-strip">
-    <h2><span class="fda-badge">FDA</span> Recent Alerts</h2>
+    <h2>Simulated FDA-category article fixtures</h2>
     <ul>
       {% for a in fda_news %}
       <li><a href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a> <span class="muted">{{ a.published_at.strftime('%b %d') }}</span></li>
       {% endfor %}
     </ul>
-    <a href="{{ url_for('news_index') }}">View all FDA Alerts &rarr;</a>
+    <a href="{{ url_for('news_index') }}">View all simulated articles &rarr;</a>
   </div>
   {% endif %}
 
@@ -326,6 +331,7 @@ function scrollCarousel(dir) {
     <!-- Left: Browse Drugs -->
     <div>
       <div class="browse-panel-title">Browse by</div>
+      <noscript><style>#homeBrowseTabs{display:none}.browse-panel-content{display:block!important}</style><p class="muted">All browse groups are shown because JavaScript is disabled.</p></noscript>
       <div class="browse-panel-tabs" id="homeBrowseTabs">
         <button type="button" class="browse-tab active" data-target="browse-panel-drugs">Drugs A-Z</button>
         <button type="button" class="browse-tab" data-target="browse-panel-conditions">Conditions</button>
@@ -423,8 +429,8 @@ function scrollCarousel(dir) {
         <ul>
           <li><a href="{{ url_for('news_index') }}">Medical News</a></li>
           <li><a href="{{ url_for('news_category', category='clinical-trials') }}">Clinical Trials</a></li>
-          <li><a href="{{ url_for('news_category', category='fda-alerts') }}">FDA Drug Alerts</a></li>
-          <li><a href="{{ url_for('news_category', category='new-drug-approvals') }}">New FDA Approvals</a></li>
+          <li><a href="{{ url_for('news_category', category='fda-alerts') }}">Simulated FDA-alert fixtures</a></li>
+          <li><a href="{{ url_for('news_category', category='new-drug-approvals') }}">Simulated approval fixtures</a></li>
         </ul>
       </div>
     </div>
@@ -433,19 +439,17 @@ function scrollCarousel(dir) {
   <!-- Featured drugs -->
   <div class="home-row">
     <h2>Featured drugs</h2>
-    <p class="muted featured-drugs-sub">Popular medications with pill images, brand names, and availability.</p>
+    <p class="muted featured-drugs-sub">Selected fixture records with stored descriptors, brand-name fields, and availability fields.</p>
     <div class="card-grid featured-drugs-grid">
       {% for d in featured %}
         <a class="drug-card featured-drug-card" href="{{ url_for('drug_detail', slug=d.slug) }}">
           <div class="featured-drug-pill">
-            {% if d.slug|pill_image_exists %}
-              <img src="{{ url_for('static', filename='images/pills/' + d.slug + '.jpg') }}"
-                   alt="{{ d.generic_name|capitalize }} pill" class="featured-drug-pill-img" loading="lazy">
-            {% elif d.images and d.images|length > 0 %}
+            {% if d.images and d.images|length > 0 %}
               {% set img0 = d.images[0] %}
-              {{ render_pill('feat-home-' + d.slug, img0.shape or 'oval', img0.color or 'white', img0.imprint or d.slug[:4].upper()) }}
+              {{ render_pill('feat-home-' + d.slug, img0.shape, img0.color, img0.imprint) }}
+              <span class="muted">Synthetic descriptor diagram</span>
             {% else %}
-              {{ render_pill('feat-home-' + d.slug, 'oval', 'white', d.slug[:4].upper()) }}
+              <span class="muted">No pill descriptor stored</span>
             {% endif %}
           </div>
           <h3 class="featured-drug-name">{{ d.generic_name|capitalize }}</h3>
@@ -484,7 +488,7 @@ function scrollCarousel(dir) {
       <div class="home-left-nav-section">
         <h3 class="home-left-nav-head">Tools</h3>
         <ul>
-          <li><a href="{{ url_for('pill_identifier') }}">Identify a Pill</a></li>
+          <li><a href="{{ url_for('pill_identifier') }}">Search Pill Descriptors</a></li>
           <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
           <li><a href="{{ url_for('my_med_list') }}">Medication Record</a></li>
           <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
@@ -503,14 +507,14 @@ function scrollCarousel(dir) {
         <h3 class="home-left-nav-head">Professionals</h3>
         <ul>
           <li><a href="{{ url_for('pro_edition') }}">Pro Edition</a></li>
-          <li><a href="{{ url_for('drug_az') }}">Prescribing Information</a></li>
+          <li><a href="{{ url_for('drug_az') }}">Medication fixture index</a></li>
         </ul>
       </div>
     </aside>
 
     <!-- Center: news feed -->
     <div class="home-news-feed">
-      <h2 class="is-249">Latest Medical News</h2>
+      <h2 class="is-249">Simulated News Fixtures</h2>
       <ul class="news-list news-list--dense">
         {% for a in news %}
           <li>
@@ -523,16 +527,16 @@ function scrollCarousel(dir) {
           </li>
         {% endfor %}
       </ul>
-      <p class="is-250"><a href="{{ url_for('news_index') }}">Read more medical news &rsaquo;</a></p>
+      <p class="is-250"><a href="{{ url_for('news_index') }}">Open more simulated articles &rsaquo;</a></p>
     </div>
 
     <!-- Right sidebar: drug approvals + newsletter -->
     <aside class="home-right-sidebar">
       {% if new_approvals %}
       <div class="home-right-box">
-        <h3 class="home-right-box-head">New Drug Approvals</h3>
-        <p class="muted">Stay current on the latest FDA drug approvals.</p>
-        <a class="home-right-more" href="{{ url_for('news_category', category='new-drug-approvals') }}">View all approvals &rsaquo;</a>
+        <h3 class="home-right-box-head">Simulated Approval Records</h3>
+        <p class="muted">Deterministic article fixtures; no current regulatory status is claimed.</p>
+        <a class="home-right-more" href="{{ url_for('news_category', category='new-drug-approvals') }}">View simulated records &rsaquo;</a>
       </div>
       {% endif %}
 
@@ -547,12 +551,12 @@ function scrollCarousel(dir) {
       </div>
 
       <div class="home-right-box home-newsletter-box">
-        <h3 class="home-right-box-head">Subscribe to our newsletters</h3>
-        <p class="muted" style="font-size:0.82rem;">FDA alerts, drug approvals, and health news.</p>
+        <h3 class="home-right-box-head">Local newsletter preference</h3>
+        <p class="muted" style="font-size:0.82rem;">Stores a simulated preference locally; sends no email.</p>
         <form action="{{ url_for('newsletter_subscribe') }}" method="post">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="lists" value="general_updates">
-          <input type="email" name="email" placeholder="Enter your email" class="newsletter-email-input" style="width:100%;margin-bottom:6px;" required maxlength="254">
+          <input type="email" name="email" placeholder="Enter your email" class="newsletter-email-input" style="width:100%;margin-bottom:6px;" required maxlength="254" aria-label="Newsletter email">
           <button type="submit" class="btn btn-primary" style="width:100%;font-size:0.85rem;">Subscribe</button>
         </form>
       </div>
@@ -562,7 +566,7 @@ function scrollCarousel(dir) {
   <!-- Popular drug searches / Top drugs -->
   <div class="home-row">
     <h2>Popular Drug Searches</h2>
-    <p class="muted">Most-searched medications on Drugs.com.</p>
+    <p class="muted">Selected local medication records.</p>
     <div class="popular-searches popular-searches--wide">
       {% set top_drugs = ['acetaminophen','adderall','alprazolam','amoxicillin','atorvastatin','azithromycin','bupropion','buspirone','citalopram','clonazepam','cyclobenzaprine','doxycycline','duloxetine','escitalopram','fluoxetine','gabapentin','hydrochlorothiazide','hydroxyzine','ibuprofen','levothyroxine','lisinopril','loratadine','lorazepam','losartan','metformin','metoprolol','metronidazole','naproxen','omeprazole','oxycodone','pantoprazole','prednisone','sertraline','sildenafil','simvastatin','trazodone','trimethoprim','warfarin','zolpidem','amitriptyline','amlodipine','atenolol','carvedilol','cetirizine','clindamycin','clopidogrel','diazepam','diclofenac','diltiazem','doxazosin','enalapril','famotidine','finasteride','fluticasone','furosemide','glipizide','hydrocodone','insulin glargine','levofloxacin','meloxicam','memantine','methylphenidate','metoclopramide','mirtazapine','montelukast','morphine','naltrexone','nifedipine','nitrofurantoin','paroxetine','quetiapine','ramipril','ranitidine','rosuvastatin','semaglutide','spironolactone','tamsulosin','tirzepatide','topiramate','tramadol','valacyclovir','venlafaxine','verapamil'] %}
       {% for name in top_drugs %}
@@ -575,13 +579,13 @@ function scrollCarousel(dir) {
 <div class="newsletter-strip">
   <div class="container newsletter-inner">
     <div>
-      <h3>Stay up to date on drug news</h3>
-      <p class="muted">Get FDA alerts, drug approvals, and health news delivered to your inbox.</p>
+      <h3>Local newsletter preference fixture</h3>
+      <p class="muted">Store a simulated preference locally. No email is sent.</p>
     </div>
     <form action="{{ url_for('newsletter_subscribe') }}" method="post" class="newsletter-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="lists" value="general_updates">
-      <input type="email" name="email" placeholder="Enter your email address" class="newsletter-input" maxlength="254" required>
+      <input type="email" name="email" placeholder="Enter your email address" class="newsletter-input" maxlength="254" required aria-label="Newsletter email">
       <button type="submit" class="btn btn-primary">Subscribe</button>
     </form>
   </div>

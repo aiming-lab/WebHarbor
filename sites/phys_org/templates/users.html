@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Members — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="section-heading">
+  <h2>Members</h2>
+  <span class="text-muted">Browse public member profiles.</span>
+</div>
+<div class="member-grid">
+  {% for user in users %}
+    <article class="member-card">
+      <div>
+        <h3><a href="{{ url_for('user_profile', username=user.username) }}">{{ user.full_name or user.username }}</a></h3>
+        <p class="text-muted">@{{ user.username }}{% if user.location %} · {{ user.location }}{% endif %}</p>
+      </div>
+      {% if user.bio %}<p>{{ user.bio }}</p>{% endif %}
+      {% if user.interests %}<p class="text-muted">Interests: {{ user.interests }}</p>{% endif %}
+      <a class="btn secondary" href="{{ url_for('user_profile', username=user.username) }}">View profile</a>
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+<form method="get" class="browse-filters">
+  {% if q is defined %}<input class="location-filter" type="search" name="q" aria-label="Search terms" value="{{ q }}" placeholder="City, neighborhood, address, ZIP">{% endif %}
+  {% if active_filters.get('city') %}<input type="hidden" name="city" value="{{ active_filters.city }}">{% endif %}
+  {% if status is not defined %}<div class="filter-group"><label for="status-filter">Listing status</label><select id="status-filter" name="status"><option value="">Any status</option>{% for value,label in [('for-sale','For sale'),('for-rent','For rent'),('sold','Sold'),('closed','Closed'),('rented','Rented')] %}<option value="{{ value }}" {% if active_filters.get('status')==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>{% endif %}
+  <div class="filter-group"><label for="type-filter">Home type</label><select id="type-filter" name="property_type"><option value="">All home types</option>{% for type in ['Single Family','Condo','Co-op','Townhouse','Multi-Family','Apartment','Rental','Land','Office','Mixed Use','Other'] %}<option value="{{ type }}" {% if active_filters.get('property_type',active_filters.get('type'))==type %}selected{% endif %}>{{ type }}</option>{% endfor %}</select></div>
+  <div class="filter-group"><label for="beds-filter">Min beds</label><select id="beds-filter" name="beds"><option value="">Any beds</option>{% for number in range(1,6) %}<option value="{{ number }}" {% if active_filters.get('beds')==number|string %}selected{% endif %}>{{ number }}+</option>{% endfor %}</select></div>
+  <div class="filter-group"><label for="max-price-filter">Max price</label><input id="max-price-filter" type="number" min="0" step="1" name="price_max" value="{{ active_filters.get('price_max','') }}" placeholder="Any price"></div>
+  <button class="btn outline tiny" type="button" data-open-dialog="search-filters">Filters</button>
+  <button class="btn tiny" type="submit">Search</button>
+  <dialog id="search-filters" class="search-filters-dialog" aria-labelledby="filters-heading">
+    <header><h2 id="filters-heading">Filters</h2><button class="icon-button" type="button" data-close-dialog aria-label="Close filters">×</button></header>
+    <div class="advanced-filter-fields">
+      <div class="filter-group"><label for="min-price-filter">Min price</label><input id="min-price-filter" type="number" min="0" step="1" name="price_min" value="{{ active_filters.get('price_min','') }}" placeholder="No minimum"></div>
+      <div class="filter-group"><label for="baths-filter">Min baths</label><input id="baths-filter" type="number" min="0" step="0.5" name="baths" value="{{ active_filters.get('baths','') }}" placeholder="Any baths"></div>
+      <div class="filter-group"><label for="sqft-filter">Min square feet</label><input id="sqft-filter" type="number" min="0" step="1" name="sqft_min" value="{{ active_filters.get('sqft_min','') }}" placeholder="No minimum"></div>
+      <div class="filter-group"><label for="year-filter">Built in or after</label><input id="year-filter" type="number" min="1600" max="2100" step="1" name="year_built_min" value="{{ active_filters.get('year_built_min','') }}" placeholder="Any year"></div>
+      <fieldset class="amenity-filters"><legend>Features</legend>{% for value,label in [('pool','Pool'),('garage','Garage'),('waterfront','Waterfront'),('doorman','Doorman'),('open_house','Open house'),('new','New listing'),('compass_exclusive','Compass exclusive')] %}<label><input type="checkbox" name="{{ value }}" value="1" {% if active_filters.get(value) %}checked{% endif %}> {{ label }}</label>{% endfor %}</fieldset>
+    </div>
+    <footer><a class="btn outline" href="{{ request.path }}">Reset filters</a><button class="btn" type="submit">Apply filters</button></footer>
+  </dialog>
+  <div class="filter-group sort-filter"><label for="sort-filter">Sort by</label><select id="sort-filter" name="sort">{% for value,label in [('', 'Relevance'),('newest','Newest'),('price_asc','Price: low to high'),('price_desc','Price: high to low'),('beds_desc','Bedrooms'),('sqft_desc','Square feet'),('ppsf_asc','$/sqft: low to high'),('ppsf_desc','$/sqft: high to low')] %}<option value="{{ value }}" {% if sort==value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+</form>

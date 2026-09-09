@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_drug_sidebar.html" import drug_status_sidebar %}
 {% from "_pill_svg.html" import render_pill %}
-{% block title %}{{ drug.generic_name|capitalize }} Pill Images | {{ site_name }}{% endblock %}
+{% block title %}{{ drug.generic_name|capitalize }} Pill Descriptor Diagrams | {{ site_name }}{% endblock %}
 {% block content %}
 
 <nav class="breadcrumb" aria-label="Breadcrumb">
@@ -30,7 +30,7 @@
 </nav>
 
 <header class="drug-images-header">
-  <h1>{{ drug.generic_name|capitalize }} Images</h1>
+  <h1>{{ drug.generic_name|capitalize }} Pill Descriptor Diagrams</h1>
   <p class="drug-images-subtitle">
     {% if drug.drug_class %}
       <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
@@ -43,26 +43,19 @@
 </header>
 
 <div class="disclaimer-box">
-  <p><strong>Note:</strong> These images are for identification purposes only. Colors may vary between manufacturers and lots, and image rendering may differ slightly from the actual product.</p>
+  <p><strong>Local fixture limitation:</strong> Every diagram is generated from stored text fields. These are not photographs, do not show an actual product, and cannot identify or verify a real pill.</p>
 </div>
 
 {% if images %}
-  <p class="muted is-120">Showing {{ images|length }} pill image{{ '' if images|length == 1 else 's' }} for {{ drug.generic_name|capitalize }}.</p>
+  <p class="muted is-120">Showing {{ images|length }} synthetic descriptor diagram{{ '' if images|length == 1 else 's' }} for {{ drug.generic_name|capitalize }}.</p>
   <div class="pill-result-grid drug-images-grid">
     {% for img in images %}
       {% set color_lc = (img.color or '')|lower %}
       <article class="pill-result-card">
-        {% if loop.first and drug.slug|pill_image_exists %}
-        <div class="pill-icon-wrap pill-icon-wrap--photo" data-color="{{ color_lc }}">
-          <img src="{{ url_for('static', filename='images/pills/' + drug.slug + '.jpg') }}"
-               alt="{{ drug.generic_name|capitalize }}{% if img.shape %} {{ img.shape }}{% endif %}{% if img.color %} {{ img.color }}{% endif %} pill"
-               class="pill-photo" loading="lazy">
-        </div>
-        {% else %}
-        <div class="pill-icon-wrap" data-color="{{ color_lc }}">
+        <div class="pill-icon-wrap" data-color="{{ color_lc }}" role="img" aria-label="Synthetic diagram for stored shape {{ img.shape or 'not stored' }}, color {{ img.color or 'not stored' }}, imprint {{ img.imprint or 'not stored' }}">
           {{ render_pill('di-' ~ loop.index, img.shape, img.color, img.imprint) }}
+          <span class="muted">Synthetic descriptor diagram</span>
         </div>
-        {% endif %}
         <div class="pill-card-body">
           <h3 class="pill-card-name">
             {% if img.imprint %}Imprint <strong>{{ img.imprint }}</strong>{% else %}{{ drug.generic_name|capitalize }}{% endif %}
@@ -74,22 +67,21 @@
             {% if (img.shape or img.color) and img.strength %} &middot; {% endif %}
             {% if img.strength %}{{ img.strength }}{% endif %}
           </p>
-          {% if img.manufacturer %}<p class="pill-card-meta">Mfr: {{ img.manufacturer }}</p>{% endif %}
+          {% if img.manufacturer %}<p class="pill-card-meta">Stored manufacturer text: {{ img.manufacturer }}</p>{% endif %}
           {% if img.imprint %}
-            <a href="{{ url_for('pill_identifier_results', imprint=img.imprint) }}" class="pill-card-link">Identify this pill &rarr;</a>
+            <a href="{{ url_for('pill_identifier_results', imprint=img.imprint) }}" class="pill-card-link">Search this imprint &rarr;</a>
           {% endif %}
         </div>
       </article>
     {% endfor %}
   </div>
 {% else %}
-  <p class="muted is-121">No pill images are available for {{ drug.generic_name|capitalize }}.</p>
+  <p class="muted is-121">No pill descriptor fields are stored for {{ drug.generic_name|capitalize }}.</p>
 {% endif %}
 
 <section id="further-information">
   <h2>Further information</h2>
-  <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
-  <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com.</p>
+  <p>Local WebHarbor benchmark fixture. Do not use its synthetic diagrams for real identification.</p>
 </section>
 
 <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>

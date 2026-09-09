@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import article_card %}
+{% block title %}Search — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="section-heading">
+  <h2>Search</h2>
+  {% if query %}<span class="text-muted">{{ total }} result{{ '' if total == 1 else 's' }} for "{{ query }}"</span>{% endif %}
+</div>
+
+<form action="{{ url_for('search') }}" method="get" style="margin:0 0 18px;display:flex;gap:8px;flex-wrap:wrap;">
+  <input type="search" name="q" value="{{ query }}" placeholder="Search articles…"
+         style="flex:1;min-width:240px;padding:8px 10px;border:1px solid #ccc;border-radius:3px;">
+  <select name="category" style="padding:8px 10px;border:1px solid #ccc;border-radius:3px;">
+    <option value="">All categories</option>
+    {% for c in all_categories %}
+      <option value="{{ c.slug }}" {% if c.slug == selected_category %}selected{% endif %}>{{ c.name }}</option>
+    {% endfor %}
+  </select>
+  <button class="btn" type="submit">Search</button>
+</form>
+
+{% if query %}
+  {% if results %}
+    {% for a in results %}{{ article_card(a) }}{% endfor %}
+    <div class="pagination">
+      {% if has_prev %}
+        <a class="arrow" href="{{ url_for('search', q=query, category=selected_category, page=page-1) }}">‹ Prev</a>
+      {% else %}
+        <span class="arrow disabled">‹ Prev</span>
+      {% endif %}
+      <span class="page active">{{ page }}</span>
+      {% if has_next %}
+        <a class="arrow" href="{{ url_for('search', q=query, category=selected_category, page=page+1) }}">Next ›</a>
+      {% else %}
+        <span class="arrow disabled">Next ›</span>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="text-muted">No results matched your search. Try fewer keywords or a different category.</p>
+  {% endif %}
+{% else %}
+  <p class="text-muted">Type a query above to search across {{ all_categories|length }} categories.</p>
+{% endif %}
+{% endblock %}

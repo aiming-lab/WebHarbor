@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ condition.name }} - Medications & Treatment - Drugs.com{% endblock %}
+{% block title %}{{ condition.name }} Local Relationship Fixture | {{ site_name }}{% endblock %}
 {% block content %}
 <nav class="breadcrumb">
   <a href="{{ url_for('index') }}">Home</a> &rsaquo;
@@ -8,21 +8,18 @@
 </nav>
 
 <h1>{{ condition.name }}</h1>
-<p class="muted">Medically reviewed by Drugs.com. Last updated on May 13, 2026.</p>
+<p class="muted">Deterministic local benchmark fixture. This record has not been medically reviewed.</p>
 
 {% if condition.description %}
   <p class="lead">{{ condition.description }}</p>
 {% else %}
-  <p class="lead">{{ condition.name }} is a medical condition managed with a combination of
-  medications and lifestyle measures. The medications listed below are commonly prescribed or
-  recommended to treat {{ condition.name }}. Always consult a healthcare professional before
-  starting or stopping any treatment.</p>
+  <p class="lead muted">No description is stored for this local condition fixture.</p>
 {% endif %}
 
 {% if drugs_by_class %}
 <section class="standard-treatments is-063">
-  <h2 class="is-064">Standard treatments for {{ condition.name }}</h2>
-  <p class="muted is-064">Medications used for {{ condition.name }}, grouped by drug class.</p>
+  <h2 class="is-064">Stored medication relationships for {{ condition.name }}</h2>
+  <p class="muted is-064">Deterministic relationship rows grouped by stored class. They do not establish a treatment recommendation.</p>
   {% for cls_name, cls_drugs in drugs_by_class %}
     <div class="is-065">
       <h3 class="is-066">{{ cls_name }}
@@ -45,7 +42,7 @@
 <div class="two-col">
   <div class="main-col">
     <div class="is-070">
-      <h2 class="is-071">Drugs used for {{ condition.name }}</h2>
+      <h2 class="is-071">Medication fixtures linked to {{ condition.name }}</h2>
       <div class="sort-controls">
         <span class="muted is-072">Sort by:</span>
         <a href="?sort=rating" class="{% if sort == 'rating' or not sort %}active{% endif %}">Rating</a>
@@ -57,7 +54,7 @@
     {% if drugs %}
       <div class="is-073">
         <a class="btn btn-primary" href="{{ url_for('compare_drugs') }}?drugs={{ drugs[:3]|map(attribute='generic_name')|join(',') }}">
-          Compare top 3 drugs
+          Compare first 3 displayed fixtures
         </a>
         <label for="drug-class-filter" class="muted is-072">Filter by drug class:</label>
         <select id="drug-class-filter" class="drug-class-filter is-074">
@@ -71,6 +68,7 @@
         <span id="drug-class-filter-count" class="muted is-072"></span>
       </div>
 
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Treatments table">
       <table class="drug-table" id="condition-drug-table">
         <thead>
           <tr>
@@ -111,9 +109,10 @@
           {% endfor %}
         </tbody>
       </table>
+      </div>
 
       <p class="muted footnote">
-        <strong>Rating:</strong> User ratings on a scale of 1 (poor) to 10 (excellent).
+        <strong>Rating:</strong> Simulated fixture aggregate on a 1-to-10 interface scale.
         <strong>Rx</strong> = Prescription only.
         <strong>OTC</strong> = Over-the-counter.
       </p>
@@ -127,14 +126,10 @@
         {% if condition.description %}
           <p>{{ condition.description }}</p>
         {% endif %}
-        <p>
-          {{ condition.name }} can affect people of any age. Treatment goals typically include symptom relief,
-          slowing disease progression, and improving quality of life. Always consult a healthcare professional
-          before starting, stopping, or changing any medication used to treat {{ condition.name }}.
-        </p>
+        <p class="muted">No prevalence, population, progression, treatment-goal, or clinical-guidance data is stored on this page.</p>
         <ul>
           <li><a href="{{ url_for('search') }}?q={{ condition.name }}">Search articles about {{ condition.name }}</a></li>
-          <li><a href="{{ url_for('news_index') }}">Latest medical news</a></li>
+          <li><a href="{{ url_for('news_index') }}">Simulated article fixtures</a></li>
           <li><a href="{{ url_for('interaction_checker') }}">Check drug interactions</a></li>
         </ul>
       </div>
@@ -160,11 +155,9 @@
       <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a></li>
     </ul>
 
-    <h3>Subscribe to our newsletters</h3>
-    <p class="muted is-078">
-      Get the latest medication news, new drug approvals, alerts and updates.
-    </p>
-    <a class="btn btn-secondary" href="{{ url_for('newsletter') }}">Subscribe</a>
+    <h3>Local newsletter preference fixture</h3>
+    <p class="muted is-078">Stores simulated categories locally and sends no email.</p>
+    <a class="btn btn-secondary" href="{{ url_for('newsletter') }}">Open preferences</a>
   </aside>
 </div>
 

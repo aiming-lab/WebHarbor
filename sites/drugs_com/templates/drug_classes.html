@@ -1,21 +1,20 @@
 {% extends "base.html" %}
-{% block title %}Drug Classes - Browse All - Drugs.com{% endblock %}
+{% block title %}Drug Class Fixtures | {{ site_name }}{% endblock %}
 {% block content %}
 <nav class="breadcrumb">
   <a href="{{ url_for('index') }}">Home</a> &rsaquo;
   <span>Drug Classes</span>
 </nav>
 
-<h1>Drug Classes</h1>
-<p class="lead">Browse the comprehensive list of drug classes. Each class groups medications that share a similar
-mechanism of action, chemical structure, or therapeutic use.</p>
+<h1>Drug Class Fixtures</h1>
+<p class="lead">Browse stored class labels and their exact local membership relationships. A relationship does not establish mechanism, structure, therapeutic use, or current classification.</p>
 
 <p class="muted is-110"><strong>{{ total }}</strong> drug class{{ '' if total == 1 else 'es' }}</p>
 
 {% if popular_classes %}
 <section class="popular-classes" aria-labelledby="popular-classes-heading">
-  <h2 id="popular-classes-heading">Popular drug classes</h2>
-  <p class="muted popular-classes-sub">Top {{ popular_classes|length }} drug classes by number of medications.</p>
+  <h2 id="popular-classes-heading">Class fixtures with the most members</h2>
+  <p class="muted popular-classes-sub">The first {{ popular_classes|length }} classes ordered by local membership-row count.</p>
   <ol class="popular-classes-list">
     {% for item in popular_classes %}
       {% set c = item.obj %}

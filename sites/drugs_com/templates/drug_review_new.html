@@ -12,7 +12,7 @@
 
   <div class="review-new-wrap">
     <h1>{{ 'Edit your review of' if user_review else 'Write a review of' }} {{ drug.generic_name|capitalize }}</h1>
-    <p class="muted">Share your experience with {{ drug.generic_name|capitalize }} to help others. All fields below describe your experience as a patient.</p>
+    <p class="muted">Submit synthetic evaluation text only. Do not enter a real patient experience, health detail, medication event, or other sensitive information.</p>
 
     <form method="post" action="{{ url_for('submit_review', slug=drug.slug) }}" class="review-form review-form-full">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -20,18 +20,15 @@
 
       <fieldset class="review-fieldset">
         <legend>Overall rating</legend>
-        <label>Your rating: <span id="rating-display">{{ init_rating }}</span> / 10</label>
-        <div class="star-selector" id="star-selector">
-          {% for i in range(1, 11) %}
-            <span class="star-btn" data-value="{{ i }}" title="{{ i }}/10" role="button" tabindex="0">&#9733;</span>
-          {% endfor %}
-        </div>
-        <input type="hidden" name="rating" id="rating-input" value="{{ init_rating }}">
+        <label for="rating-input">Your rating</label>
+        <select name="rating" id="rating-input" required>
+          {% for i in range(1, 11) %}<option value="{{ i }}"{% if i == init_rating %} selected{% endif %}>{{ i }} / 10</option>{% endfor %}
+        </select>
       </fieldset>
 
       <fieldset class="review-fieldset">
-        <legend>About your treatment</legend>
-        <label for="review-condition">Condition treated</label>
+        <legend>Fixture context</legend>
+        <label for="review-condition">Condition fixture label</label>
         <input type="text" id="review-condition" name="condition_treated"
                list="known-conditions"
                value="{{ user_review.condition_treated if user_review else '' }}"
@@ -50,7 +47,7 @@
 
         <label for="review-body">Review</label>
         <textarea id="review-body" name="body" rows="8" maxlength="1000"
-                  placeholder="Share details of your experience with this medicine" required>{{ user_review.body if user_review else '' }}</textarea>
+                  placeholder="Enter synthetic interface-evaluation text" required>{{ user_review.body if user_review else '' }}</textarea>
         <div class="char-count muted"><span id="review-body-count">0</span>/1000 characters</div>
       </fieldset>
 
@@ -63,33 +60,6 @@
 </div>
 <script>
 (function() {
-  const selector = document.getElementById('star-selector');
-  const input = document.getElementById('rating-input');
-  const display = document.getElementById('rating-display');
-  if (selector && input) {
-    const stars = selector.querySelectorAll('.star-btn');
-    function paint(val) {
-      stars.forEach(s => {
-        const v = parseInt(s.dataset.value, 10);
-        s.classList.toggle('star-on', v <= val);
-        s.classList.toggle('star-off', v > val);
-      });
-    }
-    function setVal(v) {
-      input.value = v;
-      if (display) display.textContent = v;
-      paint(v);
-    }
-    stars.forEach(s => {
-      s.addEventListener('mouseenter', () => paint(parseInt(s.dataset.value, 10)));
-      s.addEventListener('click', () => setVal(parseInt(s.dataset.value, 10)));
-      s.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setVal(parseInt(s.dataset.value, 10)); }
-      });
-    });
-    selector.addEventListener('mouseleave', () => paint(parseInt(input.value, 10) || 0));
-    setVal(parseInt(input.value, 10) || 0);
-  }
   const body = document.getElementById('review-body');
   const count = document.getElementById('review-body-count');
   if (body && count) {

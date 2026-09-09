@@ -7,7 +7,7 @@
   <span>Subscriptions</span>
 </nav>
 
-<h1>Email Subscriptions &amp; Preferences</h1>
+<h1>Local Subscription Preferences</h1>
 
 <nav class="account-tabs">
   <a href="{{ url_for('account') }}">My Account</a>
@@ -21,8 +21,8 @@
   <form method="post" action="{{ url_for('save_subscriptions') }}" class="account-box is-028">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     {% set prefs = current_user.preferences %}
-    <h2>Email notification preferences</h2>
-    <p class="muted">Choose which Drugs.com emails to receive at <strong>{{ current_user.email }}</strong>.</p>
+    <h2>Simulated notification preferences</h2>
+    <p class="muted">Store local category preferences for <strong>{{ current_user.email }}</strong>. This benchmark sends no email.</p>
 
     <label class="is-029">
       <input type="checkbox" name="fda_alerts" {% if prefs.get('fda_alerts', true) %}checked{% endif %}> FDA Drug Safety Alerts
@@ -48,10 +48,10 @@
   {% set newsletter_lists = prefs.get('newsletter_lists', ['daily_mednews', 'weekly_safety']) %}
   <form method="post" action="{{ url_for('newsletter_subscribe') }}" class="account-box">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <h2>Newsletter delivery details</h2>
-    <p class="muted">View or update the exact address and newsletters saved to your account.</p>
+    <h2>Local newsletter details</h2>
+    <p class="muted">View or update the address and simulated categories stored in this account.</p>
     <label>
-      Delivery email
+      Stored email fixture
       <input type="email" name="email" maxlength="254" required value="{{ prefs.get('newsletter_email', current_user.email) }}">
     </label>
     <label class="is-029">
@@ -72,12 +72,10 @@
   </form>
 
   <section class="account-box">
-    <h2>Current subscription tier</h2>
-    <p><strong>Free Account</strong></p>
-    <p class="muted">You have access to the full consumer drug database, the interaction checker, the pill identifier, and your personal Med List.</p>
-    <h3 class="is-030">Drugs.com Pro Edition</h3>
-    <p>Unlock prescriber-grade monographs, advanced interaction reports, and clinical decision support designed for healthcare professionals.</p>
-    <a class="btn" href="{{ url_for('pro_edition') }}">Upgrade to Pro Edition</a>
+    <h2>Local account scope</h2>
+    <p><strong>Resettable benchmark account</strong></p>
+    <p class="muted">Preferences, reviews, and medication-list changes exist only in the local runtime database and are removed by reset.</p>
+    <a class="btn" href="{{ url_for('pro_edition') }}">Open professional-layout fixture</a>
   </section>
 </div>
 {% endblock %}

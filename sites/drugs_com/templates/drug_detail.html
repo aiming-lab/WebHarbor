@@ -13,6 +13,7 @@
     <span class="action-sep">|</span>
     {% if current_user.is_authenticated %}
       <a href="#" id="save-toggle" data-slug="{{ drug.slug }}" data-saved="{{ 'true' if saved else 'false' }}" class="action-link">{{ 'Saved' if saved else 'Save' }}</a>
+      <noscript><form method="post" action="{{ url_for('my_med_list_toggle') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ drug.slug }}"><input type="hidden" name="saved" value="{{ 'false' if saved else 'true' }}"><button type="submit" class="action-link action-button">{{ 'Remove from My Med List' if saved else 'Save to My Med List' }}</button></form></noscript>
     {% else %}
       <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="action-link">Save</a>
     {% endif %}
@@ -26,21 +27,17 @@
 </div>
 
 <article class="drug-detail">
-  <header class="drug-header">
+  <header class="drug-header drug-header--featured">
     <div class="drug-header-image-wrap">
-      <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-header-image drug-header-image--featured" aria-label="View {{ drug.generic_name }} pill images">
-        {% if drug.slug|pill_image_exists %}
-          <img src="{{ url_for('static', filename='images/pills/' + drug.slug + '.jpg') }}"
-               alt="{{ drug.generic_name|capitalize }} pill"
-               class="pill-photo pill-photo--header pill-photo--featured" loading="lazy">
-        {% elif drug.images and drug.images|length > 0 %}
-          {% set img0 = drug.images[0] %}
-          {{ render_pill('feat-' + drug.slug, img0.shape or 'round', img0.color or 'white', img0.imprint or drug.slug[:4].upper()) }}
-        {% else %}
-          {{ render_pill('feat-' + drug.slug, 'round', 'white', drug.slug[:4].upper()) }}
-        {% endif %}
-      </a>
-      <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-header-image-caption">View images &rsaquo;</a>
+      {% if drug.images and drug.images|length > 0 %}
+        {% set img0 = drug.images[0] %}
+        <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-header-image drug-header-image--featured" aria-label="View synthetic {{ drug.generic_name }} pill diagrams">
+          {{ render_pill('feat-' + drug.slug, img0.shape, img0.color, img0.imprint) }}
+        </a>
+        <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-header-image-caption">Synthetic diagram from local descriptor fields &rsaquo;</a>
+      {% else %}
+        <div class="drug-header-image drug-header-image--featured muted" role="img" aria-label="No pill descriptor is stored">No pill descriptor stored</div>
+      {% endif %}
     </div>
     <div class="drug-header-text">
     <h1 class="drug-title">{{ drug.generic_name|capitalize }} <button type="button" class="drug-pronounce-btn speaker-icon" aria-label="Pronounce {{ drug.generic_name }}" title="Hear pronunciation">&#128264;</button></h1>
@@ -54,37 +51,7 @@
           <span class="muted">N/A</span>
         {% endif %}
       </span>
-      <span class="drug-meta-item"><strong>Dosage forms:</strong>
-        {% set dc = (drug.drug_class.name if drug.drug_class else '')|lower %}
-        {% set gn = drug.generic_name|lower %}
-        {% if 'glp-1' in dc or 'glucagon-like' in dc or gn in ('semaglutide','liraglutide','tirzepatide','dulaglutide','exenatide') %}
-          subcutaneous injection
-        {% elif 'insulin' in dc or gn in ('insulin glargine','insulin aspart','insulin lispro','insulin detemir') %}
-          subcutaneous injection
-        {% elif 'monoclonal antibody' in dc or 'biologic' in dc or gn in ('adalimumab','rituximab','dupilumab','tofacitinib','enoxaparin') %}
-          injection, solution
-        {% elif 'inhal' in dc or 'bronchodilator' in dc or gn in ('fluticasone','tiotropium','salmeterol','formoterol','budesonide','ipratropium','albuterol') %}
-          inhalation aerosol, inhalation powder
-        {% elif 'ophthalm' in dc or gn in ('bimatoprost','latanoprost','timolol','brimonidine','tobramycin ophthalmic','ofloxacin ophthalmic') %}
-          ophthalmic solution
-        {% elif 'retinoid' in dc or gn in ('tretinoin','isotretinoin','adapalene') %}
-          cream, gel, topical solution
-        {% elif gn in ('testosterone','estradiol','fentanyl') and 'patch' not in gn %}
-          tablet, injection, topical gel
-        {% elif gn == 'nitroglycerin' %}
-          sublingual tablet, translingual spray, transdermal patch, injection
-        {% elif gn in ('calcitonin','oxytocin') %}
-          injection, nasal spray
-        {% elif gn in ('progesterone','levonorgestrel') %}
-          tablet, capsule, injection, intrauterine device
-        {% elif drug.availability == 'OTC' %}
-          tablet, capsule, liquid
-        {% elif 'injection' in dc %}
-          injection, solution
-        {% else %}
-          tablet, capsule, oral solution
-        {% endif %}
-      </span>
+      <span class="drug-meta-item"><strong>Dosage forms:</strong> <span class="muted">Not stored in this local fixture</span></span>
       <span class="drug-meta-item"><strong>Drug class:</strong>
         {% if drug.drug_class %}
           <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
@@ -110,8 +77,8 @@
         {{ (parts[0][0] if parts and parts[0] else 'M') ~ (parts[-1][0] if parts and parts|length > 1 else 'D') }}
       </span>
       <div class="reviewer-box-text">
-        <span class="reviewer-box-line"><span class="reviewer-box-label">Medically reviewed</span> by <strong>{{ drug.reviewer_name }}</strong>, {{ drug.reviewer_credential }}</span>
-        <span class="reviewer-box-meta">Last reviewed on {{ drug.last_updated.strftime('%b %d, %Y') }}</span>
+        <span class="reviewer-box-line"><span class="reviewer-box-label">Local dataset label</span>: <strong>{{ drug.reviewer_name }}</strong>, {{ drug.reviewer_credential }}</span>
+        <span class="reviewer-box-meta">Fixture date: {{ drug.last_updated.strftime('%b %d, %Y') }}; no medical review is claimed</span>
       </div>
     </div>
     <div class="drug-header-actions">
@@ -133,9 +100,9 @@
   <div class="drug-actions-bar">
     <a href="#" onclick="window.print();return false;" class="drug-action-link">Print</a>
     <span class="drug-action-sep">|</span>
-    <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-action-link">Drug images</a>
+    <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-action-link">Synthetic pill diagrams</a>
     <span class="drug-action-sep">|</span>
-    <a href="{{ url_for('drug_prices', slug=drug.slug) }}" class="drug-action-link">Pricing &amp; coupons</a>
+    <a href="{{ url_for('drug_prices', slug=drug.slug) }}" class="drug-action-link">Generated price fixture</a>
   </div>
 
   <nav class="section-tabs">
@@ -184,24 +151,17 @@
         {% else %}
         {{ rt_warnings | format_drug_text | safe }}
         {% endif %}
+        <div class="dosage-info-link"><a href="{{ url_for('drug_warnings', slug=drug.slug) }}">Detailed {{ drug.generic_name|capitalize }} warning information</a></div>
       </section>
 
       <section id="before-taking">
         <h2>Before taking this medicine</h2>
-        <div class="info-box">
-          <strong>Important:</strong> Tell your healthcare provider about all medications
-          you're taking before starting {{ drug.generic_name }}.
-        </div>
         {% if before_taking %}
         <p class="before-taking-detail">{{ before_taking }}</p>
+        <p class="muted">This is a local fixture field, not verified medical guidance.</p>
+        {% else %}
+        <p class="muted">No drug-specific before-taking record is stored in this local fixture.</p>
         {% endif %}
-        <p>Before taking {{ drug.generic_name }}, tell your doctor if you:</p>
-        <ul class="before-taking-list">
-          <li><strong>Have allergies</strong> &mdash; You should not use {{ drug.generic_name }} if you are allergic to it or any of its ingredients. Tell your doctor about all known drug or food allergies.</li>
-          <li><strong>Take other medications</strong> &mdash; Many drugs can interact with {{ drug.generic_name }}. Share a complete list of prescription medicines, over-the-counter products, vitamins, and herbal supplements with your healthcare provider. <a href="{{ url_for('interaction_checker') }}?drug={{ drug.slug }}">Check for drug interactions &rsaquo;</a></li>
-          <li><strong>Have medical conditions</strong> &mdash; Tell your doctor if you have ever had heart disease, high blood pressure, heart attack, stroke, blood clots, stomach ulcers or bleeding, liver or kidney disease, asthma, or other chronic conditions that may affect how {{ drug.generic_name }} works for you.</li>
-          <li><strong>Are pregnant or breastfeeding</strong> &mdash; Ask a doctor before using this medicine if you are pregnant, planning to become pregnant, or breastfeeding. See the <a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}">pregnancy and lactation information</a> for {{ drug.generic_name }} (pregnancy risk: {{ drug.pregnancy_risk }}).</li>
-        </ul>
       </section>
 
       <section id="dosage">
@@ -215,35 +175,23 @@
       </section>
 
       <section id="miss-dose">
-        <h2>What happens if I miss a dose?</h2>
-        <p>Since {{ drug.generic_name }} is often used when needed, you may not be on a dosing schedule. If you are on a schedule, take the missed dose as soon as you remember. Skip the missed dose if it is almost time for your next scheduled dose. Do not take extra medicine to make up the missed dose.</p>
+        <h2>Missed-dose data</h2>
+        <p>No drug-specific missed-dose instruction is included in this local fixture. Verify current official labeling and consult a qualified healthcare professional.</p>
       </section>
 
       <section id="overdose">
-        <h2>What happens if I overdose?</h2>
-        <p>Seek emergency medical attention or call the Poison Help line at 1-800-222-1222.</p>
+        <h2>Overdose data</h2>
+        <p>No drug-specific overdose instruction is included in this local fixture. For a real suspected overdose, contact local emergency services or an official poison-control service.</p>
       </section>
 
       <section id="what-to-avoid">
-        <h2>What to avoid</h2>
-        <p>While taking {{ drug.generic_name }}, you should avoid the following:</p>
-        <ul class="avoid-list">
-          {% for item in avoid_items %}
-            <li><strong>{{ item.title }}</strong> &mdash; {{ item.reason }}</li>
-          {% endfor %}
-        </ul>
-        <p class="muted">Ask a doctor or pharmacist before using other medicines that may interact with {{ drug.generic_name }}.</p>
+        <h2>What-to-avoid data</h2>
+        <p class="muted">No drug-specific what-to-avoid record is stored in this local fixture.</p>
       </section>
 
       <section id="side-effects">
         <h2>{{ drug.generic_name|capitalize }} side effects</h2>
-        <div class="serious-effects-callout" role="alert">
-          <span aria-hidden="true" class="serious-effects-icon">&#9888;</span>
-          <div class="serious-effects-body">
-            <strong class="serious-effects-title">Call your doctor at once if you experience:</strong>
-            <span class="muted">signs of an allergic reaction (hives; difficult breathing; swelling of your face, lips, tongue, or throat), severe or persistent symptoms, unusual bleeding or bruising, chest pain, or any of the serious side effects listed below.</span>
-          </div>
-        </div>
+        <p class="muted">The text below is a local fixture field and is not verified medical guidance.</p>
         {{ rt_side_effects | format_drug_text | safe }}
         <div class="dosage-info-link">
           <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Detailed {{ drug.generic_name|capitalize }} side effects information</a>
@@ -261,7 +209,7 @@
                 {% set ri0 = r.images[0] %}
                 {{ render_pill('rel-' + r.slug, ri0.shape or 'round', ri0.color or 'white', ri0.imprint or r.slug[:4].upper()) }}
               {% else %}
-                {{ render_pill('rel-' + r.slug, 'round', 'white', r.slug[:4].upper()) }}
+                <span class="muted">No pill descriptor</span>
               {% endif %}
             </div>
             <div class="related-drug-card-head">
@@ -277,15 +225,15 @@
       {% endif %}
 
       <section id="interactions">
-        <h2>What other drugs will affect {{ drug.generic_name }}?</h2>
+        <h2>Stored interaction fixtures</h2>
         {% if drug_interactions is defined and not drug_interactions %}
         <div class="interactions-empty-state">
-          <p class="interactions-empty-head"><strong>No documented drug-drug interactions found</strong> for {{ drug.generic_name }} in our database.</p>
-          <p class="muted interactions-empty-body">This does not mean none exist. Always tell your healthcare provider about every medication, supplement, and herbal product you take. <a href="{{ url_for('interaction_checker') }}?drug={{ drug.slug }}">Use the full interaction checker &rsaquo;</a></p>
+          <p class="interactions-empty-head"><strong>No matching pair fixture is stored</strong> for {{ drug.generic_name }}.</p>
+          <p class="muted interactions-empty-body">This does not establish absence of a real interaction. <a href="{{ url_for('interaction_checker') }}?drug={{ drug.slug }}">Open the local fixture checker &rsaquo;</a></p>
         </div>
         {% endif %}
         {% if drug_interactions is defined and drug_interactions %}
-        <p class="muted">{{ drug.generic_name|capitalize }} has {{ drug_interactions|length }} known drug interaction{{ 's' if drug_interactions|length != 1 else '' }}. Ask your doctor or pharmacist before using {{ drug.generic_name }} with any other medications, especially:</p>
+        <p class="muted">The local database has {{ drug_interactions|length }} pair fixture{{ 's' if drug_interactions|length != 1 else '' }} involving {{ drug.generic_name|capitalize }}:</p>
         <ul class="drug-interactions-list">
           {% for ix in (drug_interactions|sort(attribute='severity'))[:12] %}
             {% set other = ix.drug_b if ix.drug_a_id == drug.id else ix.drug_a %}
@@ -302,7 +250,7 @@
         {% endif %}
         {% endif %}
         {% if rt_interactions %}{{ rt_interactions | format_drug_text | safe }}{% endif %}
-        <p>This list is not complete. Other drugs may affect {{ drug.generic_name }}, including prescription and over-the-counter medicines, vitamins, and herbal products. Not all possible drug interactions are listed here.</p>
+        <p class="muted">The list is intentionally incomplete and has no claimed clinical review.</p>
         <div class="dosage-info-link">
           <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">View all {{ drug.generic_name|capitalize }} drug interactions</a>
         </div>
@@ -315,7 +263,7 @@
             <input type="hidden" name="drugs" value="{{ drug.slug }}">
             <input type="hidden" name="drugs" id="inline-checker-drug2" value="">
             <div class="inline-checker-row">
-              <input type="text" id="inline-checker-input" class="inline-checker-input" placeholder="Add another drug..." autocomplete="off">
+              <input type="text" id="inline-checker-input" class="inline-checker-input" placeholder="Add another drug..." autocomplete="off" aria-label="Add another drug to interaction checker">
               <button type="submit" class="btn btn-primary">Check interaction</button>
             </div>
           </form>
@@ -361,24 +309,24 @@
           <li><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Drug interactions</a></li>
           <li><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}">During pregnancy or breastfeeding</a></li>
           <li><a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}">User reviews ({{ drug.review_count }})</a></li>
-          <li><a href="{{ url_for('drug_images', slug=drug.slug) }}">Drug images</a></li>
-          <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}">Pricing &amp; coupons</a></li>
+          <li><a href="{{ url_for('drug_images', slug=drug.slug) }}">Synthetic pill descriptor diagrams</a></li>
+          <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}">Generated price fixture</a></li>
         </ul>
-        <h3>Patient resources</h3>
+        <h3>Local fixture layouts</h3>
         <ul class="more-about-links">
-          <li><a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} consumer information</a></li>
+          <li><a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} consumer-layout fixture</a></li>
           <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} side effects</a></li>
           <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} dosage</a></li>
           <li><a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} patient reviews</a></li>
         </ul>
-        <h3>Professional resources</h3>
+        <h3>Professional-layout fixtures</h3>
         <ul class="more-about-links">
-          <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} monograph</a></li>
-          <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} AHFS monograph</a></li>
-          <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} MedFacts</a></li>
+          <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} stored-field monograph</a></li>
+          <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} dosage fixture</a></li>
+          <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} side-effect fixture</a></li>
         </ul>
         {% if drug_conditions %}
-        <h3>Related treatment guides</h3>
+        <h3>Stored condition relationships</h3>
         <ul class="more-about-links">
           {% for c in drug_conditions %}
           <li><a href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a></li>
@@ -396,17 +344,7 @@
             <span class="status-icon rx-otc" aria-hidden="true">Rx</span>
             <div class="status-text">
               <span class="status-label">Availability</span>
-              <span class="status-value">
-                {% if 'Rx' in drug.availability and 'OTC' in drug.availability %}
-                  <span class="avail-badge avail-both">Rx/OTC</span> Rx and/or OTC
-                {% elif 'Rx' in drug.availability %}
-                  <span class="avail-badge avail-rx">Rx</span> Prescription only
-                {% elif 'OTC' in drug.availability %}
-                  <span class="avail-badge avail-otc">OTC</span> Over-the-counter
-                {% else %}
-                  {{ drug.availability }}
-                {% endif %}
-              </span>
+              <span class="status-value">{% if drug.availability %}Fixture field: {{ drug.availability }}{% else %}<span class="muted">Not stored</span>{% endif %}</span>
             </div>
           </li>
           <li class="status-row">
@@ -415,14 +353,7 @@
               <span class="status-label">Pregnancy &amp; Lactation</span>
               <span class="status-value">
                 <a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}" class="status-link">
-                  {% set _cat = drug.pregnancy_risk|preg_category %}
-                  {% if _cat %}
-                    <span class="preg-badge preg-badge--{{ _cat|lower }}">Category {{ _cat }}</span>
-                  {% elif drug.pregnancy_risk %}
-                    <span class="preg-badge preg-badge--other">{{ drug.pregnancy_risk }}</span>
-                  {% else %}
-                    <span class="preg-badge preg-badge--none">Consult Dr</span>
-                  {% endif %}
+                  {% if drug.pregnancy_risk %}Fixture field: {{ drug.pregnancy_risk }}{% else %}<span class="muted">Not stored</span>{% endif %}
                   <span class="status-arrow" aria-hidden="true">&rsaquo;</span>
                 </a>
               </span>
@@ -432,15 +363,7 @@
             <span class="status-icon csa" aria-hidden="true">CSA</span>
             <div class="status-text">
               <span class="status-label">CSA Schedule*</span>
-              <span class="status-value">
-                {% set _csa = (drug.csa_schedule or '')|lower %}
-                {% if drug.csa_schedule and _csa not in ['n/a', 'none', 'not scheduled', ''] and 'not a controlled' not in _csa and 'not controlled' not in _csa %}
-                  <span class="csa-badge csa-badge--scheduled">{{ drug.csa_schedule }}</span>
-                {% else %}
-                  <span class="csa-badge csa-badge--none">Not a controlled drug</span>
-                {% endif %}
-                <span class="status-arrow" aria-hidden="true">&rsaquo;</span>
-              </span>
+              <span class="status-value">{% if drug.csa_schedule %}Fixture field: {{ drug.csa_schedule }}{% else %}<span class="muted">Not stored</span>{% endif %}</span>
             </div>
           </li>
           <li class="status-row">
@@ -449,11 +372,7 @@
               <span class="status-label">Approval History</span>
               <span class="status-value">
                 <a href="{{ url_for('drug_detail', slug=drug.slug) }}#further-information" class="status-link">
-                  {% if drug.approval_date %}
-                    FDA approved {{ drug.approval_date.strftime('%b %Y') if drug.approval_date.strftime is defined else drug.approval_date }}
-                  {% else %}
-                    FDA approved &middot; Last updated {{ drug.last_updated.strftime('%b %Y') }}
-                  {% endif %}
+                  {% if drug.approval_date %}Fixture field: {{ drug.approval_date.strftime('%b %Y') if drug.approval_date.strftime is defined else drug.approval_date }}{% else %}<span class="muted">Not stored</span>{% endif %}
                   <span class="status-arrow" aria-hidden="true">&rsaquo;</span>
                 </a>
               </span>
@@ -463,7 +382,7 @@
             <span class="status-icon ingredients" aria-hidden="true">&#9670;</span>
             <div class="status-text">
               <span class="status-label">Ingredients</span>
-              <span class="status-value">Active &amp; Inactive <span class="status-arrow" aria-hidden="true">&rsaquo;</span></span>
+              <span class="status-value muted">Not stored</span>
             </div>
           </li>
         </ul>
@@ -497,7 +416,7 @@
 
       {% if related_news %}
       <div class="sidebar-box">
-        <h3>Related News</h3>
+        <h3>Related simulated news</h3>
         <ul class="sidebar-links">
           {% for n in related_news[:3] %}
             <li><a href="{{ url_for('news_article', article_id=n.id) }}">{{ n.title[:70] }}{% if n.title|length > 70 %}...{% endif %}</a></li>
@@ -511,17 +430,15 @@
         <div class="sidebar-images-row">
           {% if drug.images %}
             {% for img in drug.images[:3] %}
-            <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-pill-thumb" aria-label="{{ drug.generic_name|capitalize }} pill image">
+            <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-pill-thumb" aria-label="Synthetic {{ drug.generic_name|capitalize }} pill descriptor diagram">
               {{ render_pill('sb-' + drug.slug + '-' + loop.index|string, img.shape or 'round', img.color or 'white', img.imprint or drug.slug[:4].upper()) }}
             </a>
             {% endfor %}
           {% else %}
-            <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-pill-thumb" aria-label="{{ drug.generic_name|capitalize }} pill image">
-              {{ render_pill('sb-' + drug.slug, 'round', 'white', drug.slug[:4].upper()) }}
-            </a>
+            <span class="muted">No pill descriptor stored</span>
           {% endif %}
         </div>
-        <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-images-link">View larger images</a>
+        <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-images-link">View synthetic descriptor diagrams</a>
       </div>
 
       {% if recently_viewed %}
@@ -539,10 +456,8 @@
 
   <section id="further-information" class="further-information">
     <h2>Further information</h2>
-    <p>Remember, keep this and all other medicines out of the reach of children, never share your medicines with others, and use {{ drug.generic_name }} only for the indication prescribed.</p>
-    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
-    <p><a href="{{ url_for('drug_detail', slug=drug.slug) }}">Medical Disclaimer</a></p>
-    <p class="further-information-copyright muted">Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Cerner Multum, Inc. Version: {{ drug.last_updated.strftime('%m.%y') }}.</p>
+    <p>This page renders deterministic local fixture fields. It is not a verified source for medication handling, indication, prescribing, or other medical decisions.</p>
+    <p class="further-information-copyright muted">Local WebHarbor benchmark fixture. No third-party authorship or medical review is claimed.</p>
   </section>
 </article>
 

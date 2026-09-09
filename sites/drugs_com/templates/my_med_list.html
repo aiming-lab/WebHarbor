@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}My Med List - {{ site_name }}{% endblock %}
 {% block content %}
+<noscript><style>.med-notes-edit{display:block!important}.notes-edit-toggle,.notes-cancel{display:none!important}</style></noscript>
 <nav class="breadcrumb">
   <a href="{{ url_for('index') }}">Home</a> &rsaquo;
   <a href="{{ url_for('account') }}">My Account</a> &rsaquo;
@@ -8,7 +9,7 @@
 </nav>
 
 <h1>My Med List</h1>
-<p class="subtitle">Your personal medication list</p>
+<p class="subtitle">Resettable local medication-list fixture; not a clinical medication record.</p>
 
 <div class="med-list-layout">
   <div class="med-list-main">
@@ -39,7 +40,7 @@
     <form class="med-add-form" action="{{ url_for('search') }}" method="get" role="search">
       <label for="med-add-q" class="med-add-label">Add a medication</label>
       <div class="med-add-row">
-        <input id="med-add-q" type="search" name="q" placeholder="Search by generic or brand name (e.g. ibuprofen, Tylenol)" class="med-add-input" autocomplete="off">
+        <input id="med-add-q" type="search" name="q" placeholder="Search by generic or brand name (e.g. ibuprofen, Tylenol)" class="med-add-input" autocomplete="off" aria-label="Search medication to add">
         <button type="submit" class="btn btn-primary">Search</button>
       </div>
       <p class="muted instructions">
@@ -61,8 +62,8 @@
 
     <div class="med-interaction-cta">
       <div class="med-interaction-cta-text">
-        <h2>Your medications may interact with each other</h2>
-        <p>Run all {{ items|length }} medication{% if items|length != 1 %}s{% endif %} in your list through our interaction checker. We screen every pairwise combination and flag major, moderate, and minor interactions, plus food and alcohol warnings.</p>
+        <h2>Check local pair fixtures</h2>
+        <p>Submit all {{ items|length }} stored list item{% if items|length != 1 %}s{% endif %} to the deterministic checker. It reports only exact records present in the incomplete local interaction database.</p>
       </div>
       <form method="post" action="{{ url_for('interaction_checker') }}" class="med-list-check-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -93,7 +94,7 @@
           <div class="med-notes-display" id="notes-display-{{ item.id }}">
             {% if item.notes %}<p class="med-notes"><em>Notes:</em> {{ item.notes }}</p>{% else %}<p class="med-notes muted"><em>No notes added yet.</em></p>{% endif %}
             <div class="med-card-actions">
-              <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('notes-display-{{ item.id }}').style.display='none';document.getElementById('notes-edit-{{ item.id }}').style.display='block';">Edit notes</button>
+              <button type="button" class="btn btn-outline btn-sm notes-edit-toggle" onclick="document.getElementById('notes-display-{{ item.id }}').style.display='none';document.getElementById('notes-edit-{{ item.id }}').style.display='block';">Edit notes</button>
               <form method="post" action="{{ url_for('my_med_list_toggle') }}" class="med-remove">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <input type="hidden" name="slug" value="{{ item.drug.slug }}">
@@ -105,17 +106,18 @@
           <form method="post" action="{{ url_for('update_med_notes') }}" class="med-notes-edit" id="notes-edit-{{ item.id }}" style="display:none;">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="slug" value="{{ item.drug.slug }}">
-            <textarea name="notes" rows="3" maxlength="500" class="med-notes-textarea">{{ item.notes or '' }}</textarea>
+            <label for="med-notes-{{ item.id }}">Notes for {{ item.drug.generic_name|capitalize }}</label>
+            <textarea id="med-notes-{{ item.id }}" name="notes" rows="3" maxlength="500" class="med-notes-textarea">{{ item.notes or '' }}</textarea>
             <div class="med-card-actions">
               <button type="submit" class="btn btn-primary btn-sm">Save</button>
-              <button type="button" class="btn btn-outline btn-sm" onclick="document.getElementById('notes-display-{{ item.id }}').style.display='block';document.getElementById('notes-edit-{{ item.id }}').style.display='none';">Cancel</button>
+              <button type="button" class="btn btn-outline btn-sm notes-cancel" onclick="document.getElementById('notes-display-{{ item.id }}').style.display='block';document.getElementById('notes-edit-{{ item.id }}').style.display='none';">Cancel</button>
             </div>
           </form>
         </li>
       {% else %}
         <li class="result-card no-results med-empty">
           <h2 class="med-empty-title">Your Med List is empty</h2>
-          <p>Keep track of every prescription and over-the-counter medication you take so you can check for interactions, set reminders, and share an accurate list with your healthcare team.</p>
+          <p>Add local fixture records to exercise list ordering, notes, removal, and checker navigation. Do not use this benchmark as an accurate medication record.</p>
           <ul class="med-empty-steps">
             <li>Search for a medication using the box above, or <a href="{{ url_for('drug_az') }}">browse Drugs A-Z</a>.</li>
             <li>On the drug's page, click <strong>Add to My Med List</strong>.</li>
@@ -172,8 +174,8 @@
       <h2>Reminders &amp; tips</h2>
       <ul class="med-tips">
         <li>Take medications at the same time each day to build a routine.</li>
-        <li>Use the <strong>Notes</strong> field on each medication to record dosage, frequency, or prescriber instructions.</li>
-        <li>Review your list with your pharmacist or doctor at every appointment.</li>
+        <li>Use the <strong>Notes</strong> field to test local text persistence; do not store real dosage or prescriber instructions.</li>
+        <li>Do not use or share this resettable fixture as a real medication record.</li>
         <li>Never stop a prescription medication without consulting your healthcare provider.</li>
       </ul>
     </section>

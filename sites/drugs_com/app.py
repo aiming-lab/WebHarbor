@@ -5,6 +5,7 @@ interaction checker, pill identifier, conditions/classes, news, accounts,
 reviews, and a "My Med List" save feature.
 """
 import os
+import sys
 import json
 import re
 import secrets
@@ -12,10 +13,17 @@ import string
 import hashlib
 import threading
 import time
-from datetime import datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from itertools import combinations
 import difflib
+import fcntl
+from pathlib import Path
 from urllib.parse import urlsplit
+
+# Pin the SQLite implementation so canonical seed bytes are reproducible across
+# host distributions and the Docker base image.
+import pysqlite3
+sys.modules["sqlite3"] = pysqlite3
 
 from flask import (
     Flask, render_template, request, redirect, url_for, flash, jsonify,
@@ -34,12 +42,6 @@ from sqlalchemy import event, text
 from sqlalchemy.dialects.sqlite import insert as sqlite_insert
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import IntegrityError
-
-try:
-    import requests
-    HAS_REQUESTS = True
-except ImportError:
-    HAS_REQUESTS = False
 
 
 # ---------------------------------------------------------------------------
@@ -87,12 +89,51 @@ def _load_runtime_secret_key():
 app = Flask(__name__, instance_path=os.path.join(BASE_DIR, "instance"))
 app.url_map.strict_slashes = False
 app.config["SECRET_KEY"] = _load_runtime_secret_key()
-app.config["SQLALCHEMY_DATABASE_URI"] = (
-    "sqlite:///" + os.path.join(BASE_DIR, "instance", "drugs_com.db")
+DATABASE_PATH = os.environ.get(
+    "DRUGS_COM_DATABASE_PATH",
+    os.path.join(BASE_DIR, "instance", "drugs_com.db"),
 )
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + DATABASE_PATH
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["MAX_CONTENT_LENGTH"] = 1_000_000
+app.config["SESSION_COOKIE_NAME"] = "drugs_com_session"
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["REMEMBER_COOKIE_NAME"] = "drugs_com_remember_token"
+app.config["REMEMBER_COOKIE_HTTPONLY"] = True
+app.config["REMEMBER_COOKIE_SAMESITE"] = "Lax"
+_secure_cookies = os.environ.get("DRUGS_COM_SECURE_COOKIES", "0") == "1"
+app.config["SESSION_COOKIE_SECURE"] = _secure_cookies
+app.config["REMEMBER_COOKIE_SECURE"] = _secure_cookies
+SEED_VERSION = "drugs-com-source-v2"
+SEED_EPOCH = datetime(2026, 7, 9, 23, 14, 52)
+
+
+def _acquire_database_process_lock(database_path):
+    """Fail closed when another process already serves the same SQLite file."""
+    lock_path = Path(database_path).with_suffix(Path(database_path).suffix + ".process.lock")
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    handle = lock_path.open("a+")
+    try:
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError as error:
+        handle.close()
+        raise RuntimeError(f"database is already owned by another process: {database_path}") from error
+    return handle
+
+
+_DATABASE_PROCESS_LOCK = _acquire_database_process_lock(DATABASE_PATH)
+
+
+def _stable_day_offset(value):
+    digest = hashlib.sha256(value.encode("utf-8")).digest()
+    return int.from_bytes(digest[:4], "big") % 365
+
+
+def _utcnow():
+    return datetime.now(UTC).replace(tzinfo=None)
+
+
 _sqlite_write_lock = threading.RLock()
 _NON_SQLITE_MUTATING_ENDPOINTS = {
     "login",
@@ -145,6 +186,28 @@ def slugify(text):
     return text.strip("-")
 
 
+def _lookup_drug_exact(value):
+    """Resolve an exact slug, generic name, or complete brand-name element."""
+    key = (value or "").strip().casefold()
+    if not key:
+        return None
+    direct = Drug.query.filter(
+        db.or_(
+            db.func.lower(Drug.slug) == key,
+            db.func.lower(Drug.generic_name) == key,
+        )
+    ).all()
+    if len(direct) == 1:
+        return direct[0]
+    if len(direct) > 1:
+        return None
+    brand_hits = [
+        candidate for candidate in Drug.query.order_by(Drug.id).all()
+        if key in {str(brand).strip().casefold() for brand in candidate.brand_names}
+    ]
+    return brand_hits[0] if len(brand_hits) == 1 else None
+
+
 def _password_validation_error(password):
     if len(password) < 8:
         return "Password must be at least 8 characters."
@@ -159,12 +222,16 @@ _MAX_QUERY_TEXT_LENGTH = 200
 _MAX_FILTER_TEXT_LENGTH = 120
 _MAX_QUERY_PARAMETER_COUNT = 100
 _MAX_QUERY_PARAMETER_LENGTH = 2_048
+_MAX_QUERY_STRING_BYTES = 16_384
 _MAX_PAGE_NUMBER = 100_000
+_MULTI_VALUE_QUERY_PARAMETERS = {"drugs", "drugs[]", "symptom"}
 
 
 @app.before_request
 def _bound_query_parameters():
-    """Reject oversized query strings before templates can reflect them."""
+    """Reject oversized, duplicate scalar query parameters before use."""
+    if len(request.query_string) > _MAX_QUERY_STRING_BYTES:
+        abort(400)
     pairs = list(request.args.items(multi=True))
     if len(pairs) > _MAX_QUERY_PARAMETER_COUNT:
         abort(400)
@@ -174,6 +241,28 @@ def _bound_query_parameters():
         for key, value in pairs
     ):
         abort(400)
+    counts = {}
+    for key, _value in pairs:
+        counts[key] = counts.get(key, 0) + 1
+    if any(
+        count > 1 and key not in _MULTI_VALUE_QUERY_PARAMETERS
+        for key, count in counts.items()
+    ):
+        abort(400)
+
+
+@app.after_request
+def _security_headers(response):
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "same-origin")
+    response.headers.setdefault(
+        "Content-Security-Policy",
+        "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; "
+        "script-src 'self' 'unsafe-inline'; connect-src 'self'; object-src 'none'; "
+        "base-uri 'self'; frame-ancestors 'none'",
+    )
+    return response
 
 
 def _bounded_query_arg(name, default="", max_length=_MAX_QUERY_TEXT_LENGTH):
@@ -226,7 +315,7 @@ class User(UserMixin, db.Model):
     first_name = db.Column(db.String(80), default="")
     last_name = db.Column(db.String(80), default="")
     preferences_json = db.Column(db.Text, default="{}")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
 
     reviews = db.relationship("DrugReview", backref="user", lazy=True)
     saved_drugs = db.relationship("SavedDrug", backref="user", lazy=True)
@@ -269,12 +358,18 @@ class DrugClass(db.Model):
 
 
 class Drug(db.Model):
+    __table_args__ = (
+        db.CheckConstraint("availability IN ('Rx', 'OTC', 'Rx and/or OTC', 'Withdrawn fixture')", name="ck_drug_availability"),
+        db.CheckConstraint("avg_rating BETWEEN 0 AND 10", name="ck_drug_avg_rating"),
+        db.CheckConstraint("review_count >= 0", name="ck_drug_review_count"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     generic_name = db.Column(db.String(120), unique=True, nullable=False)
     slug = db.Column(db.String(120), unique=True, nullable=False)
     brand_names_json = db.Column(db.Text, default="[]")
     drug_class_id = db.Column(db.Integer, db.ForeignKey("drug_class.id"))
-    availability = db.Column(db.String(40), default="Rx")
+    availability = db.Column(db.String(40), nullable=False, default="Rx")
     csa_schedule = db.Column(db.String(40), default="Not a controlled drug")
     pregnancy_risk = db.Column(db.String(80), default="Consult your doctor")
     pronunciation = db.Column(db.String(120))
@@ -285,14 +380,14 @@ class Drug(db.Model):
     side_effects = db.Column(db.Text)
     interactions_text = db.Column(db.Text)
     faq_json = db.Column(db.Text, default="[]")
-    avg_rating = db.Column(db.Float, default=0.0)
-    review_count = db.Column(db.Integer, default=0)
+    avg_rating = db.Column(db.Float, nullable=False, default=0.0)
+    review_count = db.Column(db.Integer, nullable=False, default=0)
     is_featured = db.Column(db.Boolean, default=False)
     conditions_json = db.Column(db.Text, default="[]")
     related_drugs_json = db.Column(db.Text, default="[]")
-    reviewer_name = db.Column(db.String(120), default="Drugs.com editorial team")
-    reviewer_credential = db.Column(db.String(120), default="PharmD")
-    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+    reviewer_name = db.Column(db.String(120), default="Local fixture label")
+    reviewer_credential = db.Column(db.String(120), default="No credential")
+    last_updated = db.Column(db.DateTime, default=_utcnow)
 
     @property
     def brand_names(self):
@@ -324,6 +419,10 @@ class Drug(db.Model):
 
 
 class DrugImage(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint("drug_id", "imprint", name="uq_drug_image_imprint"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     drug_id = db.Column(db.Integer, db.ForeignKey("drug.id"), nullable=False)
     imprint = db.Column(db.String(80))
@@ -335,10 +434,16 @@ class DrugImage(db.Model):
 
 
 class DrugInteraction(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint("drug_a_id", "drug_b_id", name="uq_drug_interaction_pair"),
+        db.CheckConstraint("drug_a_id < drug_b_id", name="ck_drug_interaction_canonical_pair"),
+        db.CheckConstraint("severity IN ('major', 'moderate', 'minor')", name="ck_drug_interaction_severity"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     drug_a_id = db.Column(db.Integer, db.ForeignKey("drug.id"), nullable=False)
     drug_b_id = db.Column(db.Integer, db.ForeignKey("drug.id"), nullable=False)
-    severity = db.Column(db.String(20), default="unknown")
+    severity = db.Column(db.String(20), nullable=False)
     description = db.Column(db.Text)
     drug_a = db.relationship("Drug", foreign_keys=[drug_a_id])
     drug_b = db.relationship("Drug", foreign_keys=[drug_b_id])
@@ -347,6 +452,8 @@ class DrugInteraction(db.Model):
 class DrugReview(db.Model):
     __table_args__ = (
         db.UniqueConstraint("drug_id", "user_id", name="uq_drug_review_user"),
+        db.CheckConstraint("rating BETWEEN 1 AND 10", name="ck_drug_review_rating"),
+        db.CheckConstraint("helpful_count >= 0", name="ck_drug_review_helpful_count"),
     )
 
     id = db.Column(db.Integer, primary_key=True)
@@ -356,17 +463,22 @@ class DrugReview(db.Model):
     title = db.Column(db.String(200))
     body = db.Column(db.Text)
     condition_treated = db.Column(db.String(120))
-    helpful_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    helpful_count = db.Column(db.Integer, nullable=False, default=0)
+    is_fixture = db.Column(db.Boolean, nullable=False, default=False)
+    created_at = db.Column(db.DateTime, default=_utcnow)
     drug = db.relationship("Drug", backref="reviews")
 
 
 class Condition(db.Model):
+    __table_args__ = (
+        db.CheckConstraint("drug_count >= 0", name="ck_condition_drug_count"),
+    )
+
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), unique=True, nullable=False)
     slug = db.Column(db.String(120), unique=True, nullable=False)
     description = db.Column(db.Text)
-    drug_count = db.Column(db.Integer, default=0)
+    drug_count = db.Column(db.Integer, nullable=False, default=0)
 
 
 class DrugCondition(db.Model):
@@ -385,7 +497,7 @@ class NewsArticle(db.Model):
     category = db.Column(db.String(80), nullable=False)
     body = db.Column(db.Text)
     source = db.Column(db.String(120), default="Drugs.com")
-    published_at = db.Column(db.DateTime, default=datetime.utcnow)
+    published_at = db.Column(db.DateTime, default=_utcnow)
     is_featured = db.Column(db.Boolean, default=False)
 
     @property
@@ -403,8 +515,29 @@ class SavedDrug(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     drug_id = db.Column(db.Integer, db.ForeignKey("drug.id"), nullable=False)
     notes = db.Column(db.Text, default="")
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=_utcnow)
     drug = db.relationship("Drug")
+
+
+class LifestyleInteraction(db.Model):
+    __table_args__ = (
+        db.UniqueConstraint("drug_id", "item", name="uq_lifestyle_interaction_item"),
+        db.CheckConstraint("kind IN ('food', 'alcohol')", name="ck_lifestyle_interaction_kind"),
+        db.CheckConstraint("severity IN ('major', 'moderate', 'minor')", name="ck_lifestyle_interaction_severity"),
+    )
+
+    id = db.Column(db.Integer, primary_key=True)
+    drug_id = db.Column(db.Integer, db.ForeignKey("drug.id"), nullable=False)
+    item = db.Column(db.String(160), nullable=False)
+    kind = db.Column(db.String(20), nullable=False)
+    severity = db.Column(db.String(20), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    drug = db.relationship("Drug")
+
+
+class SeedMetadata(db.Model):
+    key = db.Column(db.String(80), primary_key=True)
+    value = db.Column(db.String(200), nullable=False)
 
 
 def _public_reviews_query():
@@ -436,17 +569,49 @@ def _refresh_drug_review_stats(drug):
 _LOCK_STRIPES = 64
 _saved_drug_locks = tuple(threading.Lock() for _ in range(_LOCK_STRIPES))
 _user_settings_locks = tuple(threading.Lock() for _ in range(_LOCK_STRIPES))
-_review_votes = {}
 _review_votes_lock = threading.Lock()
-_MAX_REVIEW_VOTES = 10_000
-_MAX_REVIEW_VOTE_RECORDS = 110_000
+_MAX_REVIEW_VOTES = 1_000
 _REVIEW_VOTES_PREFERENCE = "_review_votes"
-_REVIEW_VOTES_SESSION = "_review_votes"
-_REVIEW_VOTER_SESSION = "_review_voter_user_id"
-_REVIEW_BROWSER_SESSION = "_review_browser_id"
-_SERVER_BACKED_SESSION_VOTES = {"Y": "yes", "N": "no"}
 _MAX_REVIEW_VOTES_PER_SESSION = 1_000
-_MAX_REVIEW_SESSION_COOKIE_BYTES = 2_500
+_MAX_SAVED_DRUGS_PER_USER = 20
+_MAX_RUNTIME_USERS = 1_000
+_AUTH_FAILURE_LIMIT = 8
+_AUTH_FAILURE_WINDOW_SECONDS = 60
+_auth_failures = {}
+_auth_failures_lock = threading.Lock()
+
+
+def _auth_keys(email=""):
+    source = request.remote_addr or "unknown"
+    return (f"source:{source}", f"account:{email.casefold()}") if email else (f"source:{source}",)
+
+
+def _auth_is_limited(keys):
+    cutoff = time.monotonic() - _AUTH_FAILURE_WINDOW_SECONDS
+    with _auth_failures_lock:
+        for key in keys:
+            recent = [timestamp for timestamp in _auth_failures.get(key, ()) if timestamp >= cutoff]
+            if recent:
+                _auth_failures[key] = recent
+            else:
+                _auth_failures.pop(key, None)
+            if len(recent) >= _AUTH_FAILURE_LIMIT:
+                return True
+    return False
+
+
+def _record_auth_failure(keys):
+    now = time.monotonic()
+    with _auth_failures_lock:
+        for key in keys:
+            _auth_failures.setdefault(key, []).append(now)
+            _auth_failures[key] = _auth_failures[key][-_AUTH_FAILURE_LIMIT:]
+
+
+def _clear_auth_failures(keys):
+    with _auth_failures_lock:
+        for key in keys:
+            _auth_failures.pop(key, None)
 
 
 def _saved_drug_lock(user_id, drug_id):
@@ -467,39 +632,11 @@ def _valid_review_votes(value, limit=None):
     for review_identity, vote in value.items():
         key = str(review_identity)
         parts = key.split("-", 1)
-        vote = _SERVER_BACKED_SESSION_VOTES.get(vote, vote)
         if all(part.isdigit() for part in parts) and vote in {"yes", "no"}:
             votes[key] = vote
             if limit is not None and len(votes) >= limit:
                 break
     return votes
-
-
-def _server_backed_session_vote_ids(value):
-    """Return signed-cookie votes known to have had a server-ledger row.
-
-    Legacy cookies contain ``yes``/``no``. Current entries use compact
-    ``Y``/``N`` values so a missing server row can be distinguished from a
-    legacy vote whose helpful count may still be present.
-    """
-    if not isinstance(value, dict):
-        return set()
-    valid_votes = _valid_review_votes(value)
-    return {
-        str(identity)
-        for identity, vote in value.items()
-        if str(identity) in valid_votes and vote in _SERVER_BACKED_SESSION_VOTES
-    }
-
-
-def _encode_session_review_votes(votes, server_backed):
-    encoded = {}
-    for identity, vote in votes.items():
-        if identity in server_backed:
-            encoded[identity] = "Y" if vote == "yes" else "N"
-        else:
-            encoded[identity] = vote
-    return encoded
 
 
 def _prune_review_votes(value, limit=_MAX_REVIEW_VOTES_PER_SESSION):
@@ -566,384 +703,6 @@ def _remember_review_vote(
     return True
 
 
-def _review_votes_fit_session(votes, server_backed=()):
-    """Ensure an anonymous vote ledger still fits in a browser cookie."""
-    serializer = app.session_interface.get_signing_serializer(app)
-    if serializer is None:
-        return False
-    payload = dict(session)
-    payload[_REVIEW_VOTES_SESSION] = _encode_session_review_votes(
-        votes, set(server_backed)
-    )
-    return len(serializer.dumps(payload)) <= _MAX_REVIEW_SESSION_COOKIE_BYTES
-
-
-def _previous_review_voter_id():
-    """Return the account id that most recently logged out in this browser."""
-    raw_user_id = session.get(_REVIEW_VOTER_SESSION)
-    try:
-        return int(raw_user_id)
-    except (TypeError, ValueError):
-        return None
-
-
-def _review_session_key(create=False):
-    """Return a browser-scoped key for the process-local race ledger."""
-    csrf_token = session.get("csrf_token")
-    if isinstance(csrf_token, str) and csrf_token:
-        return "csrf:" + csrf_token
-    browser_id = session.get(_REVIEW_BROWSER_SESSION)
-    if not (
-        isinstance(browser_id, str)
-        and len(browser_id) == 32
-        and all(character in string.hexdigits for character in browser_id)
-    ):
-        if not create:
-            return None
-        browser_id = secrets.token_hex(16)
-        session[_REVIEW_BROWSER_SESSION] = browser_id
-    return "review:" + browser_id
-
-
-def _anonymous_review_vote_table_exists():
-    return db.session.execute(text(
-        "SELECT 1 FROM sqlite_master "
-        "WHERE type = 'table' AND name = 'anonymous_review_vote'"
-    )).scalar() is not None
-
-
-def _anonymous_review_vote_columns():
-    if not _anonymous_review_vote_table_exists():
-        return set()
-    return {
-        row[1]
-        for row in db.session.execute(text(
-            "PRAGMA table_info(anonymous_review_vote)"
-        )).all()
-    }
-
-
-def _anonymous_review_vote_has_claim_column():
-    return "claimed_user_id" in _anonymous_review_vote_columns()
-
-
-def _ensure_anonymous_review_vote_table():
-    db.session.execute(text(
-        "CREATE TABLE IF NOT EXISTS anonymous_review_vote ("
-        "voter_key TEXT NOT NULL, review_identity TEXT NOT NULL, "
-        "vote TEXT NOT NULL CHECK (vote IN ('yes', 'no')), "
-        "claimed_user_id INTEGER, "
-        "updated_at INTEGER NOT NULL DEFAULT 0, "
-        "PRIMARY KEY (voter_key, review_identity))"
-    ))
-    columns = _anonymous_review_vote_columns()
-    if "claimed_user_id" not in columns:
-        db.session.execute(text(
-            "ALTER TABLE anonymous_review_vote "
-            "ADD COLUMN claimed_user_id INTEGER"
-        ))
-    if "updated_at" not in columns:
-        db.session.execute(text(
-            "ALTER TABLE anonymous_review_vote "
-            "ADD COLUMN updated_at INTEGER NOT NULL DEFAULT 0"
-        ))
-    db.session.execute(text(
-        "UPDATE anonymous_review_vote SET updated_at = unixepoch() "
-        "WHERE updated_at = 0"
-    ))
-
-
-def _server_review_votes(review_session_key):
-    """Load this browser's restart-safe anonymous vote ledger."""
-    if not review_session_key or not _anonymous_review_vote_table_exists():
-        return {}
-    _ensure_anonymous_review_vote_table()
-    claim_filter = " AND claimed_user_id IS NULL"
-    rows = db.session.execute(
-        text(
-            "SELECT review_identity, vote FROM anonymous_review_vote "
-            "WHERE voter_key = :voter_key" + claim_filter
-            + " ORDER BY updated_at, rowid"
-        ),
-        {"voter_key": review_session_key},
-    ).all()
-    return _valid_review_votes(dict(rows), _MAX_REVIEW_VOTES_PER_SESSION)
-
-
-def _server_review_vote_record(review_session_key, review_identity):
-    if not review_session_key or not _anonymous_review_vote_table_exists():
-        return None
-    _ensure_anonymous_review_vote_table()
-    row = db.session.execute(
-        text(
-            "SELECT vote, claimed_user_id FROM anonymous_review_vote "
-            "WHERE voter_key = :voter_key AND review_identity = :identity"
-        ),
-        {"voter_key": review_session_key, "identity": review_identity},
-    ).first()
-    return tuple(row) if row is not None else None
-
-
-def _server_review_vote_was_claimed(review_session_key, review_identity):
-    record = _server_review_vote_record(
-        review_session_key, review_identity
-    )
-    return record is not None and record[1] is not None
-
-
-def _remember_server_review_vote(review_session_key, review_identity, vote):
-    """Persist an anonymous choice atomically with its helpful-count delta."""
-    _ensure_anonymous_review_vote_table()
-    existing = db.session.execute(
-        text(
-            "SELECT 1 FROM anonymous_review_vote "
-            "WHERE voter_key = :voter_key AND review_identity = :identity"
-        ),
-        {"voter_key": review_session_key, "identity": review_identity},
-    ).scalar()
-    total = db.session.execute(text(
-        "SELECT COUNT(*) FROM anonymous_review_vote"
-    )).scalar_one()
-    if existing is None and total >= _MAX_REVIEW_VOTE_RECORDS:
-        return False
-    db.session.execute(
-        text(
-            "INSERT INTO anonymous_review_vote "
-            "(voter_key, review_identity, vote, updated_at) "
-            "VALUES (:voter_key, :identity, :vote, "
-            "(SELECT COALESCE(MAX(updated_at), 0) + 1 "
-            "FROM anonymous_review_vote)) "
-            "ON CONFLICT(voter_key, review_identity) "
-            "DO UPDATE SET vote = excluded.vote, updated_at = "
-            "(SELECT COALESCE(MAX(updated_at), 0) + 1 "
-            "FROM anonymous_review_vote) "
-            "WHERE claimed_user_id IS NULL"
-        ),
-        {
-            "voter_key": review_session_key,
-            "identity": review_identity,
-            "vote": vote,
-        },
-    )
-    return True
-
-
-def _claim_server_review_votes(review_session_key, user_id):
-    if not review_session_key or not _anonymous_review_vote_table_exists():
-        return False
-    _ensure_anonymous_review_vote_table()
-    result = db.session.execute(
-        text(
-            "UPDATE anonymous_review_vote SET claimed_user_id = :user_id, "
-            "updated_at = (SELECT COALESCE(MAX(updated_at), 0) + 1 "
-            "FROM anonymous_review_vote) "
-            "WHERE voter_key = :voter_key AND claimed_user_id IS NULL"
-        ),
-        {"voter_key": review_session_key, "user_id": user_id},
-    )
-    return bool(result.rowcount)
-
-
-def _clear_session_review_votes(review_session_key):
-    """Clear the signed-cookie and process-local ledgers for this browser."""
-    session.pop(_REVIEW_VOTES_SESSION, None)
-    if review_session_key:
-        for key in [
-            key
-            for key in _review_votes
-            if key[:2] == ("session", review_session_key)
-        ]:
-            del _review_votes[key]
-
-
-def _undo_session_review_votes(session_votes):
-    """Undo anonymous yes-counts before discarding an unclaimable ledger."""
-    review_ids = {
-        _review_id_from_vote_identity(identity)
-        for identity, vote in session_votes.items()
-        if vote == "yes"
-    }
-    for review_id in review_ids:
-        DrugReview.query.filter(DrugReview.id == review_id).update(
-            {
-                DrugReview.helpful_count: db.func.max(
-                    0,
-                    db.func.coalesce(DrugReview.helpful_count, 0) - 1,
-                )
-            },
-            synchronize_session=False,
-        )
-
-
-def _claim_session_review_votes(user):
-    """Merge this browser's anonymous votes into a newly authenticated user.
-
-    Authenticated votes live in the existing preferences JSON so deduplication
-    survives a site restart without adding a table that would mutate the seed
-    database on boot. If the account had already voted, its earlier choice
-    wins and any duplicate anonymous "yes" increment is removed.
-    """
-    previous_voter_id = _previous_review_voter_id()
-    session.pop(_REVIEW_VOTER_SESSION, None)
-    raw_session_votes = session.get(_REVIEW_VOTES_SESSION)
-    session_votes = _valid_review_votes(raw_session_votes)
-    server_backed_votes = _server_backed_session_vote_ids(raw_session_votes)
-    review_session_key = _review_session_key(create=bool(session_votes))
-    with _review_votes_lock:
-        for review_identity, vote in _server_review_votes(
-            review_session_key
-        ).items():
-            _remember_review_vote(session_votes, review_identity, vote)
-            server_backed_votes.add(review_identity)
-        if review_session_key:
-            for key, vote in _review_votes.items():
-                if key[:2] == ("session", review_session_key):
-                    _remember_review_vote(
-                        session_votes,
-                        key[-1],
-                        vote,
-                    )
-                    server_backed_votes.add(key[-1])
-        session_votes = _prune_review_votes(session_votes)
-        for review_identity in list(session_votes):
-            if _server_review_vote_was_claimed(
-                review_session_key, review_identity
-            ):
-                session_votes.pop(review_identity, None)
-        if not session_votes:
-            _clear_session_review_votes(review_session_key)
-            return
-        for review_identity, vote in session_votes.items():
-            server_record = _server_review_vote_record(
-                review_session_key, review_identity
-            )
-            if (
-                server_record is None
-                and review_identity in server_backed_votes
-                and vote == "yes"
-            ):
-                review = db.session.get(
-                    DrugReview,
-                    _review_id_from_vote_identity(review_identity),
-                )
-                if (
-                    review is not None
-                    and _review_vote_identity(review) == review_identity
-                ):
-                    DrugReview.query.filter(
-                        DrugReview.id == review.id
-                    ).update(
-                        {
-                            DrugReview.helpful_count: db.func.coalesce(
-                                DrugReview.helpful_count, 0
-                            ) + 1
-                        },
-                        synchronize_session=False,
-                    )
-            if not _remember_server_review_vote(
-                review_session_key, review_identity, vote
-            ):
-                _undo_session_review_votes(session_votes)
-                # Existing rows must become tombstones before the browser
-                # ledger is cleared; otherwise a later stale-cookie replay
-                # could find a live "yes" row whose count was just undone.
-                _claim_server_review_votes(review_session_key, -1)
-                _clear_session_review_votes(review_session_key)
-                db.session.commit()
-                return
-        # Post-logout votes are genuinely anonymous. A return to the same
-        # account may reconcile them normally; a different account must not
-        # inherit them, so discard their ledger and undo any yes increments.
-        if previous_voter_id is not None and previous_voter_id != user.id:
-            _undo_session_review_votes(session_votes)
-            _claim_server_review_votes(review_session_key, -1)
-            _clear_session_review_votes(review_session_key)
-            db.session.commit()
-            return
-        with _user_settings_lock(user.id):
-            db.session.refresh(user)
-            preferences = user.preferences.copy()
-            user_votes = _prune_review_votes(
-                preferences.get(_REVIEW_VOTES_PREFERENCE),
-                _MAX_REVIEW_VOTES,
-            )
-            for review_identity, anonymous_vote in session_votes.items():
-                review = db.session.get(
-                    DrugReview,
-                    _review_id_from_vote_identity(review_identity),
-                )
-                if review is None or (
-                    "-" in review_identity
-                    and _review_vote_identity(review) != review_identity
-                ):
-                    continue
-                current_identity = _review_vote_identity(review)
-                if review.user_id == user.id:
-                    # A genuinely anonymous browser cannot be recognized as
-                    # the author until login. Remove that anonymous self-vote
-                    # instead of claiming it for the owner.
-                    user_votes.pop(str(review.id), None)
-                    user_votes.pop(current_identity, None)
-                    if anonymous_vote == "yes":
-                        DrugReview.query.filter(
-                            DrugReview.id == review.id
-                        ).update(
-                            {
-                                DrugReview.helpful_count: db.func.max(
-                                    0,
-                                    db.func.coalesce(
-                                        DrugReview.helpful_count, 0
-                                    ) - 1,
-                                )
-                            },
-                            synchronize_session=False,
-                        )
-                    continue
-                legacy_user_vote = user_votes.pop(str(review.id), None)
-                previous_user_vote = user_votes.get(
-                    current_identity,
-                    legacy_user_vote,
-                )
-                if previous_user_vote is None:
-                    remembered = _remember_review_vote(
-                        user_votes,
-                        current_identity,
-                        anonymous_vote,
-                        _MAX_REVIEW_VOTES_PER_SESSION,
-                    )
-                    if not remembered and anonymous_vote == "yes":
-                        DrugReview.query.filter(
-                            DrugReview.id == review.id
-                        ).update(
-                            {
-                                DrugReview.helpful_count: db.func.max(
-                                    0,
-                                    db.func.coalesce(
-                                        DrugReview.helpful_count, 0
-                                    ) - 1,
-                                )
-                            },
-                            synchronize_session=False,
-                        )
-                elif anonymous_vote == "yes":
-                    DrugReview.query.filter(DrugReview.id == review.id).update(
-                        {
-                            DrugReview.helpful_count: db.func.max(
-                                0,
-                                db.func.coalesce(
-                                    DrugReview.helpful_count, 0
-                                ) - 1,
-                            )
-                        },
-                        synchronize_session=False,
-                    )
-            preferences[_REVIEW_VOTES_PREFERENCE] = user_votes
-            user.set_preferences(preferences)
-            _claim_server_review_votes(review_session_key, user.id)
-            _clear_session_review_votes(review_session_key)
-            db.session.commit()
-
-
 @login_manager.user_loader
 def load_user(uid):
     raw_id, separator, fingerprint = str(uid).partition(":")
@@ -981,7 +740,8 @@ DRUG_CLASSES = [
     ("SNRIs", "Serotonin and norepinephrine reuptake inhibitors treat depression, anxiety, and pain."),
     ("Atypical antidepressants", "Atypical antidepressants work via novel mechanisms."),
     ("Benzodiazepines", "Benzodiazepines treat anxiety, seizures, and insomnia."),
-    ("Atypical antipsychotics", "Atypical antipsychotics treat schizophrenia, bipolar disorder, and other conditions."),
+    ("Atypical antipsychotics", "Local class-description fixture for atypical antipsychotic records."),
+    ("Typical antipsychotics", "Local class-description fixture for first-generation antipsychotic records."),
     ("Mood stabilizers", "Mood stabilizers manage bipolar disorder."),
     ("Tricyclic antidepressants", "TCAs treat depression and certain pain conditions."),
     ("Penicillins", "Penicillins are beta-lactam antibiotics."),
@@ -1197,7 +957,7 @@ DRUGS_DATA = [
     ("pantoprazole", "Proton pump inhibitors", "Rx", "Not a controlled drug", "pan-TOE-pra-zole", ["Protonix"], ["acid_reflux"]),
     ("esomeprazole", "Proton pump inhibitors", "Rx and/or OTC", "Not a controlled drug", "es-oh-MEP-ra-zole", ["Nexium"], ["acid_reflux"]),
     ("lansoprazole", "Proton pump inhibitors", "Rx and/or OTC", "Not a controlled drug", "lan-SOE-pra-zole", ["Prevacid"], ["acid_reflux"]),
-    ("ranitidine", "H2 blockers", "Rx", "Not a controlled drug", "ra-NI-ti-deen", ["Zantac"], ["acid_reflux"]),
+    ("ranitidine", "H2 blockers", "Withdrawn fixture", "Not a controlled drug", "ra-NI-ti-deen", ["Zantac"], ["acid_reflux"]),
     ("metoclopramide", "Prokinetics", "Rx", "Not a controlled drug", "met-oh-kloe-PRA-mide", ["Reglan"], ["acid_reflux", "nausea"]),
     ("loperamide", "Antidiarrheals", "OTC", "Not a controlled drug", "loe-PER-a-mide", ["Imodium"], ["diarrhea"]),
     ("bisacodyl", "Laxatives", "OTC", "Not a controlled drug", "bis-AK-oh-dil", ["Dulcolax"], ["constipation"]),
@@ -1249,7 +1009,7 @@ DRUGS_DATA = [
     ("mirtazapine", "Atypical antidepressants", "Rx", "Not a controlled drug", "mir-TAZ-a-peen", ["Remeron"], ["depression"]),
     ("olanzapine", "Atypical antipsychotics", "Rx", "Not a controlled drug", "oh-LAN-za-peen", ["Zyprexa"], ["schizophrenia", "bipolar_disorder"]),
     ("risperidone", "Atypical antipsychotics", "Rx", "Not a controlled drug", "ris-PER-i-done", ["Risperdal"], ["schizophrenia", "bipolar_disorder"]),
-    ("haloperidol", "Atypical antipsychotics", "Rx", "Not a controlled drug", "ha-loe-PER-i-dol", ["Haldol"], ["schizophrenia"]),
+    ("haloperidol", "Typical antipsychotics", "Rx", "Not a controlled drug", "ha-loe-PER-i-dol", ["Haldol"], ["schizophrenia"]),
     ("ziprasidone", "Atypical antipsychotics", "Rx", "Not a controlled drug", "zi-PRAS-i-done", ["Geodon"], ["schizophrenia", "bipolar_disorder"]),
     ("diazepam", "Benzodiazepines", "Rx", "C-IV", "dye-AZ-e-pam", ["Valium"], ["anxiety", "muscle_spasm"]),
     ("temazepam", "Benzodiazepines", "Rx", "C-IV", "tem-AZ-e-pam", ["Restoril"], ["insomnia"]),
@@ -1320,7 +1080,7 @@ DRUGS_DATA = [
     ("ramelteon", "Sleep aids", "Rx", "Not a controlled drug", "ra-MEL-tee-on", ["Rozerem"], ["insomnia"]),
     ("suvorexant", "Sleep aids", "Rx", "C-IV", "soo-voe-REX-ant", ["Belsomra"], ["insomnia"]),
     # J drugs
-    ("janumet", "Biguanides", "Rx", "Not a controlled drug", "JAN-yoo-met", ["Sitagliptin/Metformin"], ["diabetes"]),
+    ("sitagliptin/metformin", "DPP-4 inhibitors", "Rx", "Not a controlled drug", "sit-a-GLIP-tin met-FOR-min", ["Janumet"], ["diabetes"]),
     # U drugs
     ("ursodiol", "Gallstone solubilizing agents", "Rx", "Not a controlled drug", "ur-SOE-dee-ol", ["Actigall", "URSO 250"], ["gallstones"]),
     ("umeclidinium", "Anticholinergic bronchodilators", "Rx", "Not a controlled drug", "ue-mek-li-DIN-ee-um", ["Incruse Ellipta"], ["copd"]),
@@ -1498,139 +1258,324 @@ PILL_IMAGES_DATA = [
 ]
 
 
-INTERACTIONS_DATA = [
-    ("ibuprofen", "warfarin", "major", "Concurrent use of ibuprofen and warfarin significantly increases the risk of serious bleeding. NSAIDs inhibit platelet function and can cause GI ulceration; warfarin already increases bleeding risk."),
-    ("ibuprofen", "aspirin", "moderate", "Ibuprofen can interfere with the cardioprotective antiplatelet effect of low-dose aspirin. If both are needed, take ibuprofen at least 8 hours before or 30 minutes after aspirin."),
-    ("warfarin", "aspirin", "major", "Combining warfarin with aspirin substantially increases bleeding risk. Concurrent use should only occur under close medical supervision."),
-    ("sertraline", "tramadol", "major", "Combining sertraline (SSRI) with tramadol can cause serotonin syndrome — a potentially life-threatening reaction. Symptoms include agitation, hallucinations, rapid heart rate, fever."),
-    ("fluoxetine", "tramadol", "major", "Fluoxetine combined with tramadol may cause serotonin syndrome. Also, fluoxetine inhibits CYP2D6, reducing tramadol's analgesic effect."),
-    ("alprazolam", "oxycodone", "major", "Combining benzodiazepines with opioids can result in profound sedation, respiratory depression, coma, and death."),
-    ("alprazolam", "hydrocodone", "major", "Concurrent use of alprazolam and hydrocodone increases the risk of fatal respiratory depression."),
-    ("metoprolol", "verapamil", "major", "Combining a beta blocker with a non-dihydropyridine calcium channel blocker can cause severe bradycardia, hypotension, and heart block."),
-    ("ciprofloxacin", "warfarin", "major", "Ciprofloxacin can substantially increase warfarin's anticoagulant effect, raising INR and bleeding risk."),
-    ("lithium", "ibuprofen", "major", "NSAIDs reduce renal lithium clearance, potentially leading to lithium toxicity. Monitor lithium levels closely."),
-    ("metformin", "ciprofloxacin", "moderate", "Fluoroquinolones may disturb blood glucose, causing either hypo- or hyperglycemia in patients on metformin."),
-    ("prednisone", "ibuprofen", "major", "Combining corticosteroids with NSAIDs substantially increases the risk of GI ulceration and bleeding."),
-    ("sildenafil", "isosorbide", "major", "Combining PDE5 inhibitors with nitrates can cause severe, potentially fatal hypotension."),
-    ("clopidogrel", "omeprazole", "moderate", "Omeprazole inhibits CYP2C19 and can reduce the antiplatelet effect of clopidogrel. Consider pantoprazole instead."),
-    ("simvastatin", "amiodarone", "major", "Amiodarone can increase simvastatin levels, raising the risk of severe muscle injury (rhabdomyolysis)."),
-    ("escitalopram", "tramadol", "major", "Combining SSRIs with tramadol may precipitate serotonin syndrome."),
-    ("duloxetine", "tramadol", "major", "Both drugs increase serotonin levels; concurrent use can cause serotonin syndrome."),
-    ("methotrexate", "ibuprofen", "major", "NSAIDs can reduce methotrexate clearance, leading to severe methotrexate toxicity including pancytopenia."),
-    ("levothyroxine", "omeprazole", "moderate", "Reduced gastric acidity from PPIs can impair levothyroxine absorption. Separate dosing and monitor TSH."),
-    ("amlodipine", "simvastatin", "moderate", "Amlodipine increases simvastatin exposure; limit simvastatin dose to 20 mg when used with amlodipine."),
-    ("furosemide", "lisinopril", "moderate", "ACE inhibitors plus diuretics may cause symptomatic hypotension, especially with first doses."),
-    ("clonazepam", "hydrocodone", "major", "Benzodiazepine plus opioid combinations carry a serious risk of respiratory depression and death."),
-    ("lorazepam", "oxycodone", "major", "Concurrent benzodiazepine and opioid use can cause profound CNS and respiratory depression."),
-    ("aripiprazole", "fluoxetine", "moderate", "Fluoxetine inhibits CYP2D6 and may increase aripiprazole levels. Dose adjustments may be needed."),
-    ("hydrochlorothiazide", "lithium", "major", "Thiazide diuretics reduce lithium clearance and can cause lithium toxicity."),
-    # --- Additional major interactions ---
-    ("warfarin", "ibuprofen", "major", "NSAIDs can displace warfarin from plasma proteins and inhibit platelet function, greatly increasing bleeding risk."),
-    ("digoxin", "amiodarone", "major", "Amiodarone increases digoxin serum levels by inhibiting P-glycoprotein, raising the risk of digoxin toxicity. Reduce digoxin dose by 30-50%."),
-    ("simvastatin", "clarithromycin", "major", "Clarithromycin strongly inhibits CYP3A4, dramatically increasing simvastatin exposure and the risk of severe myopathy and rhabdomyolysis. Avoid combination."),
-    ("carbamazepine", "valproic acid", "major", "Carbamazepine induces metabolism of valproic acid, reducing its levels; valproate can also raise carbamazepine's active metabolite. Levels of both require monitoring."),
-    ("phenytoin", "warfarin", "major", "Phenytoin and warfarin interact bidirectionally: initial increase in INR followed by reduced anticoagulant effect; phenytoin levels may rise. Monitor closely."),
-    ("sertraline", "tryptophan", "major", "Combining SSRIs with tryptophan can precipitate serotonin syndrome with agitation, hyperthermia, and autonomic instability."),
-    ("phenelzine", "sertraline", "major", "MAOIs combined with SSRIs can cause life-threatening serotonin syndrome. A 14-day washout is required between agents."),
-    ("phenelzine", "fluoxetine", "major", "Combining MAOIs with fluoxetine carries a serious risk of serotonin syndrome. A 5-week washout after fluoxetine is required before starting an MAOI."),
-    ("tranylcypromine", "sertraline", "major", "MAOIs combined with SSRIs can precipitate fatal serotonin syndrome. Avoid combination."),
-    ("methylphenidate", "phenelzine", "major", "Stimulants combined with MAOIs can trigger hypertensive crisis. Contraindicated."),
-    ("amphetamine", "phenelzine", "major", "Amphetamines combined with MAOIs can cause severe hypertensive crisis. Contraindicated."),
-    ("bupropion", "tramadol", "major", "Both lower the seizure threshold; concurrent use substantially increases seizure risk."),
-    ("buspirone", "phenelzine", "major", "Buspirone with MAOIs can elevate blood pressure dangerously and contribute to serotonin syndrome."),
-    ("fluoxetine", "tamoxifen", "major", "Fluoxetine strongly inhibits CYP2D6, reducing conversion of tamoxifen to its active metabolite endoxifen and potentially decreasing efficacy in breast cancer treatment."),
-    ("paroxetine", "tamoxifen", "major", "Paroxetine strongly inhibits CYP2D6, reducing tamoxifen's active metabolite and potentially decreasing antineoplastic efficacy."),
-    ("pregabalin", "oxycodone", "major", "Gabapentinoids combined with opioids substantially increase the risk of profound sedation and respiratory depression."),
-    ("pregabalin", "hydrocodone", "major", "Concurrent pregabalin and opioids can produce severe CNS and respiratory depression."),
-    ("alprazolam", "hydromorphone", "major", "Benzodiazepine plus opioid combinations carry a black-box risk of fatal respiratory depression."),
-    ("diazepam", "oxycodone", "major", "Concurrent benzodiazepine and opioid use can cause profound CNS depression and death."),
-    ("metronidazole", "alcohol", "major", "Metronidazole inhibits aldehyde dehydrogenase; combination with alcohol causes a disulfiram-like reaction (flushing, vomiting, tachycardia)."),
-    ("warfarin", "fluconazole", "major", "Fluconazole inhibits CYP2C9, substantially increasing warfarin's anticoagulant effect and bleeding risk."),
-    ("simvastatin", "gemfibrozil", "major", "Gemfibrozil dramatically increases simvastatin exposure and the risk of rhabdomyolysis. Avoid combination."),
-    ("colchicine", "clarithromycin", "major", "Clarithromycin inhibits CYP3A4 and P-glycoprotein, markedly increasing colchicine levels with potential for fatal toxicity. Avoid combination."),
-    ("methotrexate", "trimethoprim", "major", "Trimethoprim potentiates methotrexate's antifolate effect, risking pancytopenia and severe bone marrow suppression."),
-    ("tadalafil", "isosorbide", "major", "PDE5 inhibitors combined with nitrates can cause severe, life-threatening hypotension. Contraindicated."),
-    ("vardenafil", "isosorbide", "major", "PDE5 inhibitors with any nitrate are contraindicated due to risk of profound hypotension."),
-
-    # --- Moderate interactions ---
-    ("metformin", "alcohol", "moderate", "Alcohol increases the risk of lactic acidosis in patients on metformin and can cause hypoglycemia. Limit alcohol intake."),
-    ("lisinopril", "potassium", "moderate", "ACE inhibitors raise serum potassium; concurrent potassium supplements can produce dangerous hyperkalemia. Monitor levels."),
-    ("atorvastatin", "fluconazole", "moderate", "Fluconazole inhibits CYP3A4, increasing atorvastatin levels and the risk of myopathy."),
-    ("sertraline", "alcohol", "moderate", "Combining SSRIs with alcohol enhances CNS depression and may worsen depressive symptoms."),
-    ("alprazolam", "alcohol", "moderate", "Concurrent use produces additive CNS depression, impaired coordination, and serious risk of overdose."),
-    ("gabapentin", "alcohol", "moderate", "Alcohol enhances gabapentin's sedative effects and risk of psychomotor impairment."),
-    ("quetiapine", "alcohol", "moderate", "Quetiapine plus alcohol produces additive sedation and orthostatic hypotension."),
-    ("lisinopril", "spironolactone", "moderate", "ACE inhibitors plus potassium-sparing diuretics can cause hyperkalemia. Monitor potassium and renal function."),
-    ("levothyroxine", "calcium", "moderate", "Calcium carbonate binds levothyroxine in the gut, reducing absorption. Separate dosing by 4 hours."),
-    ("levothyroxine", "iron", "moderate", "Iron supplements impair levothyroxine absorption. Separate by at least 4 hours and monitor TSH."),
-    ("doxycycline", "calcium carbonate", "moderate", "Antacids and calcium products chelate doxycycline, reducing oral absorption. Separate by 2-3 hours."),
-    ("clindamycin", "rocuronium", "moderate", "Clindamycin can prolong neuromuscular blockade with nondepolarizing agents."),
-    ("furosemide", "gentamicin", "moderate", "Loop diuretics combined with aminoglycosides increase the risk of ototoxicity and nephrotoxicity."),
-    ("spironolactone", "lisinopril", "moderate", "Combining potassium-sparing diuretics with ACE inhibitors elevates hyperkalemia risk; monitor potassium."),
-    ("prednisone", "naproxen", "moderate", "Corticosteroids and NSAIDs together substantially increase GI ulceration and bleeding risk."),
-    ("prednisone", "metformin", "moderate", "Corticosteroids elevate blood glucose, potentially reducing the effectiveness of metformin and other diabetes medications."),
-    ("prednisone", "insulin", "moderate", "Corticosteroids antagonize insulin's glucose-lowering effect; insulin dose adjustment may be needed."),
-    ("hydroxychloroquine", "azithromycin", "moderate", "Both agents prolong the QT interval; concurrent use raises the risk of torsades de pointes."),
-    ("tamsulosin", "sildenafil", "moderate", "Combined alpha-blocker and PDE5 inhibitor use can produce symptomatic hypotension. Stagger doses."),
-    ("finasteride", "warfarin", "moderate", "Finasteride may modestly affect warfarin's anticoagulant effect; monitor INR after initiation."),
-    ("trazodone", "alcohol", "moderate", "Trazodone and alcohol have additive sedative effects and increase orthostatic hypotension risk."),
-    ("lithium", "hydrochlorothiazide", "moderate", "Thiazides reduce renal lithium clearance, raising levels into the toxic range. Monitor lithium closely."),
-    ("valproic acid", "aspirin", "moderate", "Aspirin displaces valproate from plasma proteins and inhibits its metabolism, raising free valproate levels."),
-    ("lamotrigine", "valproic acid", "moderate", "Valproate inhibits lamotrigine glucuronidation, doubling its half-life. Lamotrigine doses must be halved when added to valproate."),
-    ("levetiracetam", "alcohol", "moderate", "Alcohol enhances the CNS-depressant effects of levetiracetam."),
-    ("celecoxib", "warfarin", "moderate", "Celecoxib inhibits CYP2C9 and platelet-independent bleeding risk; INR may rise. Monitor closely."),
-    ("naproxen", "warfarin", "moderate", "Naproxen increases bleeding risk via platelet inhibition and GI irritation in patients on warfarin."),
-    ("aspirin", "clopidogrel", "moderate", "Dual antiplatelet therapy increases bleeding risk; combination is often intentional after stenting but requires monitoring."),
-    ("metformin", "topiramate", "moderate", "Topiramate's carbonic anhydrase inhibition combined with metformin increases the risk of metabolic acidosis."),
-    ("fluoxetine", "alcohol", "moderate", "Alcohol potentiates SSRI sedation and may worsen depressive symptoms."),
-    ("escitalopram", "alcohol", "moderate", "Alcohol enhances CNS depressant effects of escitalopram and may aggravate depression."),
-    ("citalopram", "azithromycin", "moderate", "Both prolong the QT interval; combination may increase the risk of arrhythmia."),
-    ("amiodarone", "warfarin", "moderate", "Amiodarone inhibits CYP2C9, increasing warfarin's effect; warfarin dose typically needs reduction by 30-50%."),
-    ("rifampin", "warfarin", "moderate", "Rifampin induces CYP enzymes, reducing warfarin levels and anticoagulant effect; INR may drop."),
-    ("rifampin", "oral contraceptives", "moderate", "Rifampin induces hepatic metabolism, reducing oral contraceptive efficacy. Use a backup method."),
-    ("phenytoin", "fluconazole", "moderate", "Fluconazole inhibits CYP2C9, increasing phenytoin levels and the risk of toxicity."),
-    ("metoprolol", "fluoxetine", "moderate", "Fluoxetine inhibits CYP2D6, raising metoprolol levels and the risk of bradycardia or hypotension."),
-    ("propranolol", "verapamil", "moderate", "Beta blocker plus non-dihydropyridine calcium channel blocker can produce bradycardia and AV block."),
-    ("diltiazem", "simvastatin", "moderate", "Diltiazem inhibits CYP3A4, increasing simvastatin levels; limit simvastatin to 10 mg/day."),
-    ("atorvastatin", "clarithromycin", "moderate", "Clarithromycin can increase atorvastatin levels; consider holding the statin during the antibiotic course."),
-    ("omeprazole", "diazepam", "moderate", "Omeprazole inhibits CYP2C19, prolonging diazepam half-life and enhancing sedation."),
-    ("sumatriptan", "sertraline", "moderate", "Combination of triptans with SSRIs may increase the risk of serotonin syndrome."),
-    ("losartan", "potassium", "moderate", "Angiotensin receptor blockers raise serum potassium; concurrent supplementation may cause hyperkalemia."),
-    ("losartan", "spironolactone", "moderate", "ARBs combined with potassium-sparing diuretics increase hyperkalemia risk; monitor potassium."),
-    ("digoxin", "verapamil", "moderate", "Verapamil increases digoxin levels by inhibiting P-glycoprotein; reduce digoxin dose and monitor."),
-    ("digoxin", "furosemide", "moderate", "Furosemide-induced hypokalemia potentiates digoxin toxicity; monitor potassium."),
-    ("warfarin", "amoxicillin", "moderate", "Broad-spectrum antibiotics can disrupt vitamin K-producing gut flora, modestly raising INR."),
-    ("warfarin", "acetaminophen", "moderate", "High or sustained acetaminophen doses can increase INR in patients on warfarin."),
-    ("hydrochlorothiazide", "ibuprofen", "moderate", "NSAIDs blunt the antihypertensive and diuretic effects of thiazides and may worsen renal function."),
-    ("lisinopril", "ibuprofen", "moderate", "NSAIDs reduce the antihypertensive effect of ACE inhibitors and may impair renal function."),
-    ("clopidogrel", "esomeprazole", "moderate", "Esomeprazole inhibits CYP2C19 activation of clopidogrel; consider an alternative PPI such as pantoprazole."),
-    ("methotrexate", "naproxen", "moderate", "NSAIDs reduce renal clearance of methotrexate; high-dose methotrexate combinations should be avoided."),
-    ("levothyroxine", "ferrous sulfate", "moderate", "Iron salts impair levothyroxine absorption; separate dosing by 4 hours."),
-    ("ciprofloxacin", "calcium carbonate", "moderate", "Polyvalent cations chelate fluoroquinolones, reducing absorption. Separate by 2 hours before or 6 hours after."),
-    ("ciprofloxacin", "tizanidine", "moderate", "Ciprofloxacin inhibits CYP1A2, markedly elevating tizanidine levels with risk of hypotension and somnolence."),
-
-    # --- Minor interactions ---
-    ("ibuprofen", "atorvastatin", "minor", "Mild possible elevation of CK; rarely clinically significant. Monitor for muscle symptoms."),
-    ("omeprazole", "magnesium hydroxide", "minor", "Long-term PPI use may modestly reduce magnesium absorption; supplementation rarely needed."),
-    ("calcium carbonate", "ferrous sulfate", "minor", "Calcium can modestly reduce iron absorption. Separate dosing by 1-2 hours if both are needed."),
-    ("acetaminophen", "alcohol", "minor", "Chronic alcohol use combined with regular acetaminophen modestly increases the risk of hepatotoxicity. Limit to recommended doses."),
-    ("cetirizine", "alcohol", "minor", "Cetirizine has minimal sedation but alcohol can produce additive drowsiness in sensitive individuals."),
-    ("loratadine", "alcohol", "minor", "Loratadine is non-sedating but rare additive drowsiness with alcohol is possible."),
-    ("montelukast", "phenobarbital", "minor", "Phenobarbital may modestly induce montelukast metabolism, slightly reducing exposure."),
-    ("doxycycline", "calcium", "minor", "Dairy and calcium products can modestly reduce doxycycline absorption when taken simultaneously."),
-    ("ciprofloxacin", "caffeine", "minor", "Ciprofloxacin inhibits caffeine metabolism, potentially enhancing caffeine effects such as jitteriness."),
-    ("metformin", "cimetidine", "minor", "Cimetidine modestly reduces renal metformin clearance; clinical significance is generally low."),
-    ("famotidine", "ketoconazole", "minor", "H2 blockers raise gastric pH, modestly reducing ketoconazole absorption. Separate dosing when possible."),
-    ("aspirin", "ibuprofen", "minor", "Ibuprofen taken before low-dose aspirin can blunt antiplatelet effect; usually managed with timing rather than avoidance."),
-    ("simvastatin", "grapefruit", "minor", "Grapefruit juice modestly increases simvastatin exposure; limit intake while on the medication."),
-    ("naproxen", "caffeine", "minor", "Combination may slightly enhance analgesic effect; clinically minor."),
-    ("pseudoephedrine", "caffeine", "minor", "Additive stimulant effects may produce mild jitteriness or increased heart rate."),
-    ("diphenhydramine", "alcohol", "minor", "Additive sedation; effect is usually mild at typical OTC doses."),
-    ("ranitidine", "iron", "minor", "Reduced gastric acidity may slightly impair iron absorption; clinically minor."),
-    ("aluminum hydroxide", "ciprofloxacin", "minor", "Aluminum binds fluoroquinolones; small reductions in absorption are clinically minor with appropriate timing."),
-    ("vitamin k", "warfarin", "minor", "Routine dietary vitamin K does not require avoidance; consistency of intake is more important than absolute amount."),
-    ("green tea", "warfarin", "minor", "Green tea contains modest vitamin K and may slightly affect INR; keep intake consistent."),
-]
+INTERACTIONS_DATA = [('ibuprofen',
+  'warfarin',
+  'major',
+  'Concurrent use of ibuprofen and warfarin significantly increases the risk of serious bleeding. NSAIDs inhibit '
+  'platelet function and can cause GI ulceration; warfarin already increases bleeding risk.'),
+ ('ibuprofen',
+  'aspirin',
+  'moderate',
+  'Ibuprofen can interfere with the cardioprotective antiplatelet effect of low-dose aspirin. If both are needed, take '
+  'ibuprofen at least 8 hours before or 30 minutes after aspirin.'),
+ ('warfarin',
+  'aspirin',
+  'major',
+  'Combining warfarin with aspirin substantially increases bleeding risk. Concurrent use should only occur under close '
+  'medical supervision.'),
+ ('sertraline',
+  'tramadol',
+  'major',
+  'Combining sertraline (SSRI) with tramadol can cause serotonin syndrome — a potentially life-threatening reaction. '
+  'Symptoms include agitation, hallucinations, rapid heart rate, fever.'),
+ ('fluoxetine',
+  'tramadol',
+  'major',
+  'Fluoxetine combined with tramadol may cause serotonin syndrome. Also, fluoxetine inhibits CYP2D6, reducing '
+  "tramadol's analgesic effect."),
+ ('alprazolam',
+  'oxycodone',
+  'major',
+  'Combining benzodiazepines with opioids can result in profound sedation, respiratory depression, coma, and death.'),
+ ('alprazolam',
+  'hydrocodone',
+  'major',
+  'Concurrent use of alprazolam and hydrocodone increases the risk of fatal respiratory depression.'),
+ ('metoprolol',
+  'verapamil',
+  'major',
+  'Combining a beta blocker with a non-dihydropyridine calcium channel blocker can cause severe bradycardia, '
+  'hypotension, and heart block.'),
+ ('ciprofloxacin',
+  'warfarin',
+  'major',
+  "Ciprofloxacin can substantially increase warfarin's anticoagulant effect, raising INR and bleeding risk."),
+ ('lithium',
+  'ibuprofen',
+  'major',
+  'NSAIDs reduce renal lithium clearance, potentially leading to lithium toxicity. Monitor lithium levels closely.'),
+ ('metformin',
+  'ciprofloxacin',
+  'moderate',
+  'Fluoroquinolones may disturb blood glucose, causing either hypo- or hyperglycemia in patients on metformin.'),
+ ('prednisone',
+  'ibuprofen',
+  'major',
+  'Combining corticosteroids with NSAIDs substantially increases the risk of GI ulceration and bleeding.'),
+ ('sildenafil',
+  'isosorbide',
+  'major',
+  'Combining PDE5 inhibitors with nitrates can cause severe, potentially fatal hypotension.'),
+ ('clopidogrel',
+  'omeprazole',
+  'moderate',
+  'Omeprazole inhibits CYP2C19 and can reduce the antiplatelet effect of clopidogrel. Consider pantoprazole instead.'),
+ ('simvastatin',
+  'amiodarone',
+  'major',
+  'Amiodarone can increase simvastatin levels, raising the risk of severe muscle injury (rhabdomyolysis).'),
+ ('escitalopram', 'tramadol', 'major', 'Combining SSRIs with tramadol may precipitate serotonin syndrome.'),
+ ('duloxetine',
+  'tramadol',
+  'major',
+  'Both drugs increase serotonin levels; concurrent use can cause serotonin syndrome.'),
+ ('methotrexate',
+  'ibuprofen',
+  'major',
+  'NSAIDs can reduce methotrexate clearance, leading to severe methotrexate toxicity including pancytopenia.'),
+ ('levothyroxine',
+  'omeprazole',
+  'moderate',
+  'Reduced gastric acidity from PPIs can impair levothyroxine absorption. Separate dosing and monitor TSH.'),
+ ('amlodipine',
+  'simvastatin',
+  'moderate',
+  'Amlodipine increases simvastatin exposure; limit simvastatin dose to 20 mg when used with amlodipine.'),
+ ('furosemide',
+  'lisinopril',
+  'moderate',
+  'ACE inhibitors plus diuretics may cause symptomatic hypotension, especially with first doses.'),
+ ('clonazepam',
+  'hydrocodone',
+  'major',
+  'Benzodiazepine plus opioid combinations carry a serious risk of respiratory depression and death.'),
+ ('lorazepam',
+  'oxycodone',
+  'major',
+  'Concurrent benzodiazepine and opioid use can cause profound CNS and respiratory depression.'),
+ ('aripiprazole',
+  'fluoxetine',
+  'moderate',
+  'Fluoxetine inhibits CYP2D6 and may increase aripiprazole levels. Dose adjustments may be needed.'),
+ ('hydrochlorothiazide',
+  'lithium',
+  'major',
+  'Thiazide diuretics reduce lithium clearance and can cause lithium toxicity.'),
+ ('digoxin',
+  'amiodarone',
+  'major',
+  'Amiodarone increases digoxin serum levels by inhibiting P-glycoprotein, raising the risk of digoxin toxicity. '
+  'Reduce digoxin dose by 30-50%.'),
+ ('simvastatin',
+  'clarithromycin',
+  'major',
+  'Clarithromycin strongly inhibits CYP3A4, dramatically increasing simvastatin exposure and the risk of severe '
+  'myopathy and rhabdomyolysis. Avoid combination.'),
+ ('carbamazepine',
+  'valproic acid',
+  'major',
+  "Carbamazepine induces metabolism of valproic acid, reducing its levels; valproate can also raise carbamazepine's "
+  'active metabolite. Levels of both require monitoring.'),
+ ('phenytoin',
+  'warfarin',
+  'major',
+  'Phenytoin and warfarin interact bidirectionally: initial increase in INR followed by reduced anticoagulant effect; '
+  'phenytoin levels may rise. Monitor closely.'),
+ ('bupropion',
+  'tramadol',
+  'major',
+  'Both lower the seizure threshold; concurrent use substantially increases seizure risk.'),
+ ('pregabalin',
+  'oxycodone',
+  'major',
+  'Gabapentinoids combined with opioids substantially increase the risk of profound sedation and respiratory '
+  'depression.'),
+ ('pregabalin',
+  'hydrocodone',
+  'major',
+  'Concurrent pregabalin and opioids can produce severe CNS and respiratory depression.'),
+ ('diazepam',
+  'oxycodone',
+  'major',
+  'Concurrent benzodiazepine and opioid use can cause profound CNS depression and death.'),
+ ('warfarin',
+  'fluconazole',
+  'major',
+  "Fluconazole inhibits CYP2C9, substantially increasing warfarin's anticoagulant effect and bleeding risk."),
+ ('colchicine',
+  'clarithromycin',
+  'major',
+  'Clarithromycin inhibits CYP3A4 and P-glycoprotein, markedly increasing colchicine levels with potential for fatal '
+  'toxicity. Avoid combination.'),
+ ('methotrexate',
+  'trimethoprim',
+  'major',
+  "Trimethoprim potentiates methotrexate's antifolate effect, risking pancytopenia and severe bone marrow "
+  'suppression.'),
+ ('tadalafil',
+  'isosorbide',
+  'major',
+  'PDE5 inhibitors combined with nitrates can cause severe, life-threatening hypotension. Contraindicated.'),
+ ('vardenafil',
+  'isosorbide',
+  'major',
+  'PDE5 inhibitors with any nitrate are contraindicated due to risk of profound hypotension.'),
+ ('atorvastatin',
+  'fluconazole',
+  'moderate',
+  'Fluconazole inhibits CYP3A4, increasing atorvastatin levels and the risk of myopathy.'),
+ ('lisinopril',
+  'spironolactone',
+  'moderate',
+  'ACE inhibitors plus potassium-sparing diuretics can cause hyperkalemia. Monitor potassium and renal function.'),
+ ('doxycycline',
+  'calcium carbonate',
+  'moderate',
+  'Antacids and calcium products chelate doxycycline, reducing oral absorption. Separate by 2-3 hours.'),
+ ('prednisone',
+  'naproxen',
+  'moderate',
+  'Corticosteroids and NSAIDs together substantially increase GI ulceration and bleeding risk.'),
+ ('prednisone',
+  'metformin',
+  'moderate',
+  'Corticosteroids elevate blood glucose, potentially reducing the effectiveness of metformin and other diabetes '
+  'medications.'),
+ ('hydroxychloroquine',
+  'azithromycin',
+  'moderate',
+  'Both agents prolong the QT interval; concurrent use raises the risk of torsades de pointes.'),
+ ('tamsulosin',
+  'sildenafil',
+  'moderate',
+  'Combined alpha-blocker and PDE5 inhibitor use can produce symptomatic hypotension. Stagger doses.'),
+ ('finasteride',
+  'warfarin',
+  'moderate',
+  "Finasteride may modestly affect warfarin's anticoagulant effect; monitor INR after initiation."),
+ ('valproic acid',
+  'aspirin',
+  'moderate',
+  'Aspirin displaces valproate from plasma proteins and inhibits its metabolism, raising free valproate levels.'),
+ ('lamotrigine',
+  'valproic acid',
+  'moderate',
+  'Valproate inhibits lamotrigine glucuronidation, doubling its half-life. Lamotrigine doses must be halved when added '
+  'to valproate.'),
+ ('celecoxib',
+  'warfarin',
+  'moderate',
+  'Celecoxib inhibits CYP2C9 and platelet-independent bleeding risk; INR may rise. Monitor closely.'),
+ ('naproxen',
+  'warfarin',
+  'moderate',
+  'Naproxen increases bleeding risk via platelet inhibition and GI irritation in patients on warfarin.'),
+ ('aspirin',
+  'clopidogrel',
+  'moderate',
+  'Dual antiplatelet therapy increases bleeding risk; combination is often intentional after stenting but requires '
+  'monitoring.'),
+ ('metformin',
+  'topiramate',
+  'moderate',
+  "Topiramate's carbonic anhydrase inhibition combined with metformin increases the risk of metabolic acidosis."),
+ ('citalopram',
+  'azithromycin',
+  'moderate',
+  'Both prolong the QT interval; combination may increase the risk of arrhythmia.'),
+ ('amiodarone',
+  'warfarin',
+  'moderate',
+  "Amiodarone inhibits CYP2C9, increasing warfarin's effect; warfarin dose typically needs reduction by 30-50%."),
+ ('phenytoin',
+  'fluconazole',
+  'moderate',
+  'Fluconazole inhibits CYP2C9, increasing phenytoin levels and the risk of toxicity.'),
+ ('metoprolol',
+  'fluoxetine',
+  'moderate',
+  'Fluoxetine inhibits CYP2D6, raising metoprolol levels and the risk of bradycardia or hypotension.'),
+ ('propranolol',
+  'verapamil',
+  'moderate',
+  'Beta blocker plus non-dihydropyridine calcium channel blocker can produce bradycardia and AV block.'),
+ ('diltiazem',
+  'simvastatin',
+  'moderate',
+  'Diltiazem inhibits CYP3A4, increasing simvastatin levels; limit simvastatin to 10 mg/day.'),
+ ('atorvastatin',
+  'clarithromycin',
+  'moderate',
+  'Clarithromycin can increase atorvastatin levels; consider holding the statin during the antibiotic course.'),
+ ('omeprazole',
+  'diazepam',
+  'moderate',
+  'Omeprazole inhibits CYP2C19, prolonging diazepam half-life and enhancing sedation.'),
+ ('sumatriptan',
+  'sertraline',
+  'moderate',
+  'Combination of triptans with SSRIs may increase the risk of serotonin syndrome.'),
+ ('losartan',
+  'spironolactone',
+  'moderate',
+  'ARBs combined with potassium-sparing diuretics increase hyperkalemia risk; monitor potassium.'),
+ ('digoxin',
+  'verapamil',
+  'moderate',
+  'Verapamil increases digoxin levels by inhibiting P-glycoprotein; reduce digoxin dose and monitor.'),
+ ('digoxin',
+  'furosemide',
+  'moderate',
+  'Furosemide-induced hypokalemia potentiates digoxin toxicity; monitor potassium.'),
+ ('warfarin',
+  'amoxicillin',
+  'moderate',
+  'Broad-spectrum antibiotics can disrupt vitamin K-producing gut flora, modestly raising INR.'),
+ ('warfarin',
+  'acetaminophen',
+  'moderate',
+  'High or sustained acetaminophen doses can increase INR in patients on warfarin.'),
+ ('hydrochlorothiazide',
+  'ibuprofen',
+  'moderate',
+  'NSAIDs blunt the antihypertensive and diuretic effects of thiazides and may worsen renal function.'),
+ ('lisinopril',
+  'ibuprofen',
+  'moderate',
+  'NSAIDs reduce the antihypertensive effect of ACE inhibitors and may impair renal function.'),
+ ('clopidogrel',
+  'esomeprazole',
+  'moderate',
+  'Esomeprazole inhibits CYP2C19 activation of clopidogrel; consider an alternative PPI such as pantoprazole.'),
+ ('methotrexate',
+  'naproxen',
+  'moderate',
+  'NSAIDs reduce renal clearance of methotrexate; high-dose methotrexate combinations should be avoided.'),
+ ('levothyroxine',
+  'ferrous sulfate',
+  'moderate',
+  'Iron salts impair levothyroxine absorption; separate dosing by 4 hours.'),
+ ('ciprofloxacin',
+  'calcium carbonate',
+  'moderate',
+  'Polyvalent cations chelate fluoroquinolones, reducing absorption. Separate by 2 hours before or 6 hours after.'),
+ ('ciprofloxacin',
+  'tizanidine',
+  'major',
+  'Ciprofloxacin inhibits CYP1A2 and can markedly elevate tizanidine exposure, causing severe hypotension and '
+  'excessive sedation; concurrent use is contraindicated.'),
+ ('ibuprofen',
+  'atorvastatin',
+  'minor',
+  'Mild possible elevation of CK; rarely clinically significant. Monitor for muscle symptoms.'),
+ ('calcium carbonate',
+  'ferrous sulfate',
+  'minor',
+  'Calcium can modestly reduce iron absorption. Separate dosing by 1-2 hours if both are needed.'),
+ ('famotidine',
+  'ketoconazole',
+  'minor',
+  'H2 blockers raise gastric pH, modestly reducing ketoconazole absorption. Separate dosing when possible.')]
 
 
 NEWS_DATA = [
@@ -1811,7 +1756,6 @@ _PREGNANCY_RISK: dict[str, str] = {
     "valsartan": "Category D - Fetal toxicity; discontinue when pregnancy detected",
     "warfarin": "Category X - Contraindicated; causes fetal warfarin syndrome",
     "isotretinoin": "Category X - Absolutely contraindicated; causes severe birth defects",
-    "methotrexate": "Category X - Contraindicated; causes fetal death/malformations",
     "thalidomide": "Category X - Contraindicated; causes severe limb defects",
     "testosterone": "Category X - Contraindicated; causes virilization of female fetus",
     "finasteride": "Category X - Contraindicated in women; causes male fetal genital abnormalities",
@@ -1887,117 +1831,35 @@ BENCHMARK_USERS = [
     {"email": "david.k@test.com", "username": "david_k", "first_name": "David", "last_name": "Kim", "password": "TestPass123!"},
 ]
 
-
-# ---------------------------------------------------------------------------
-# OpenFDA fetch
-# ---------------------------------------------------------------------------
-def _openfda_label_matches(query_generic, label):
-    """Verify a label's own openfda.generic_name actually corresponds to the
-    queried drug. FDA's search endpoint does fuzzy/tokenized matching and can
-    return an unrelated drug's label for a query with no exact match (e.g.
-    querying "polyethylene glycol" has been observed to return a Naproxen
-    label) -- accepting such a result blindly would seed the wrong drug's
-    entire uses/warnings/dosage/side_effects text.
-    """
-    openfda = label.get("openfda") or {}
-    fda_names = openfda.get("generic_name") or []
-    if not fda_names:
-        return False
-
-    # A token match alone is not enough for a monotherapy query. For example,
-    # OpenFDA currently returns a sitagliptin/metformin combination label for
-    # both `sitagliptin` and `metformin`, and a lisinopril/HCTZ label for
-    # `hydrochlorothiazide`. Accepting those labels would silently describe a
-    # different product. Every hyphenated generic in DRUGS_DATA is an explicit
-    # combination product; non-hyphenated queries must resolve to one active
-    # substance and a non-combination generic name.
-    query_is_combination = "-" in query_generic
-    substances = [s for s in openfda.get("substance_name") or [] if s]
-    if not query_is_combination:
-        if len(substances) > 1:
-            return False
-        combination_markers = re.compile(r"\b(?:and|with)\b|[/;+]", re.IGNORECASE)
-        if any(combination_markers.search(name or "") for name in fda_names):
-            return False
-
-    q = query_generic.lower().replace("-", " ").strip()
-    q_tokens = set(q.split())
-    for name in fda_names:
-        n = (name or "").lower().replace("-", " ").strip()
-        if not n:
-            continue
-        if q == n or q in n or n in q:
-            return True
-        n_tokens = set(n.split())
-        if q_tokens and (q_tokens <= n_tokens or n_tokens <= q_tokens):
-            return True
-    return False
+# Fixed bcrypt hashes make source-built seed databases byte-reproducible while
+# retaining the documented benchmark passwords. Runtime-created accounts still
+# use fresh random bcrypt salts through User.set_password().
+SEED_PASSWORD_HASHES = {
+    "alice.j@test.com": "$2b$12$RlvNjLMRLCiAbhb8CnRpJOjFRZf21ASYhN0dRFYiBk8LF73OG4iDC",
+    "bob.c@test.com": "$2b$12$wcgxW2xJ0sVxVFDWJh3truVJj69WW3WVfq1o6aMFpkYEnotC353r.",
+    "carol.d@test.com": "$2b$12$N5wVraQgNagLwg3X64RVPe9Qf7VwVj5TwZOA/WdQO8gtVysD5Dax.",
+    "david.k@test.com": "$2b$12$WeMLQGX3HtWH/XgSKfukrOOZaAHwLeExMLVTEl7WYXwFfH3sfLw6a",
+    "chrisb79@example.com": "$2b$12$4oFA2EQUHBcygbXQbk3m8eJpfatocgDwXy0jG.HgpcS00LqXfnsXu",
+    "marym.health@example.com": "$2b$12$jdjp5Tf0EYU0/wWazuSfFeYz1JUPYeQY0OGMMyPWk6F4cZ8A4km06",
+    "johnd.rx@example.com": "$2b$12$6BdlNXZY8ujoQ3TFUNcO/.kppjSbDi..89VGDau.8qiiKdt6fORzq",
+    "sarahk2024@example.com": "$2b$12$Gylo2kWLi8CA2ONscCH5K.jtJYNAnd7QKpRksZxG3/ZeNIBozL9OS",
+    "patient.advocate@example.com": "$2b$12$D.3ZJIXM1C3bj4Kjp2rHZOaSu8O7oRgU82TWkBC2GUsj/vT/2KSUO",
+    "migraine.warrior@example.com": "$2b$12$w03KpnMAj6wjTJQbCQJEUO80sE7lZIOgzVL1CZxnELZVZZvXxb9VC",
+    "diabetes.mgmt@example.com": "$2b$12$OxNxssd21ut6/Rx0I1HPtOnk4Rms8iLQectDBKvE8F1PQkuzyZUYq",
+    "hearthealthpro@example.com": "$2b$12$LLZCzj/5UMF1n8bB6zUp2uMKPwN0teC50UpD7VVYPtnjgkiIfmuEu",
+}
 
 
-def fetch_openfda_label(generic):
-    """Fetch label info from OpenFDA. Returns dict or None on any failure,
-    including a fetched label whose own generic name doesn't match the query."""
-    if not HAS_REQUESTS:
-        return None
-    try:
-        r = requests.get(
-            "https://api.fda.gov/drug/label.json",
-            params={"search": f"openfda.generic_name:{generic}", "limit": 1},
-            timeout=4,
-        )
-        if r.status_code != 200:
-            return None
-        data = r.json()
-        results = data.get("results", [])
-        if not results:
-            return None
-        if not _openfda_label_matches(generic, results[0]):
-            return None
-        return results[0]
-    except Exception:
-        return None
-
-
-def first(text_field):
-    if not text_field:
-        return None
-    if isinstance(text_field, list):
-        return text_field[0] if text_field else None
-    return str(text_field)
-
-
-def truncate(text, n=2400):
-    if not text:
-        return text
-    text = str(text).strip()
-    return text if len(text) <= n else text[:n].rsplit(" ", 1)[0] + "..."
-
-
-def _trunc_at_sentence(text, max_chars=600):
-    """Truncate text at the last sentence boundary within max_chars."""
-    if not text:
-        return text
-    text = str(text).strip()
-    if len(text) <= max_chars:
-        return text
-    chunk = text[:max_chars]
-    for sep in (". ", "! ", "? "):
-        pos = chunk.rfind(sep)
-        if pos > max_chars // 3:
-            return chunk[:pos + 1]
-    return chunk.rsplit(" ", 1)[0] + "..."
-
-
-def synthetic_content(generic, cls_name, conditions):
-    """Generate realistic synthetic content when OpenFDA isn't available."""
-    cond_text = ", ".join(conditions) if conditions else "various medical conditions"
+# No runtime or build-time network content fetch is implemented.
+def empty_content_fixture():
+    """Return explicit missing values instead of synthesizing drug-specific claims."""
     return {
-        "description": f"{generic.capitalize()} is a {cls_name.lower()} medication used to treat {cond_text}. It works by addressing the underlying biological processes associated with these conditions.",
-        "uses": f"{generic.capitalize()} is indicated for the treatment of {cond_text}. Your doctor may prescribe this medication for other purposes not listed here. Always follow your healthcare provider's instructions regarding indications and proper use.",
-        "warnings": f"Do not use {generic} if you are allergic to it or to similar medications. Tell your doctor about all your medical conditions, especially kidney or liver problems, heart disease, and any history of allergic reactions. Inform your doctor if you are pregnant or breastfeeding. Stop taking {generic} and contact your doctor immediately if you experience severe allergic reactions, unusual bleeding, severe abdominal pain, or signs of a serious skin reaction.",
-        "dosage": f"The dose of {generic} should be individualized based on the patient's condition, age, and response to therapy. Follow the directions on your prescription label. Do not take more or less than prescribed. If you miss a dose, take it as soon as you remember. Do not double up on doses.",
-        "side_effects": f"Common side effects of {generic} may include headache, nausea, dizziness, drowsiness, and gastrointestinal upset. Less common but serious side effects include allergic reactions (rash, swelling, difficulty breathing), changes in mood or behavior, and unusual bleeding. Contact your healthcare provider if any side effect persists or worsens.",
-        "interactions_text": f"{generic.capitalize()} can interact with many other medications. Tell your doctor about all prescription and over-the-counter medications, vitamins, and herbal supplements you take. Pay particular attention to interactions with anticoagulants, NSAIDs, antidepressants, and certain antibiotics.",
+        "description": None,
+        "uses": None,
+        "warnings": None,
+        "dosage": None,
+        "side_effects": None,
+        "interactions_text": None,
     }
 
 
@@ -2010,7 +1872,7 @@ def seed_drug_classes():
         if name in existing:
             continue
         db.session.add(DrugClass(name=name, slug=slugify(name), description=desc))
-    db.session.commit()
+    db.session.flush()
 
 
 def seed_conditions():
@@ -2019,25 +1881,10 @@ def seed_conditions():
         if slug in existing:
             continue
         db.session.add(Condition(name=name, slug=slug, description=desc))
-    db.session.commit()
+    db.session.flush()
 
 
 DRUG_CONTENT_OVERRIDES = {
-    "ciprofloxacin": {
-        "description": "Ciprofloxacin (Cipro) is a broad-spectrum fluoroquinolone antibiotic active against both gram-negative and gram-positive organisms. Oral tablets are available as immediate-release (250, 500, 750 mg) and extended-release (500, 1000 mg) formulations.",
-        "uses": "Ciprofloxacin is indicated for urinary tract infections (including complicated UTIs and pyelonephritis), lower respiratory tract infections, skin and soft tissue infections, bone and joint infections, intra-abdominal infections (in combination with metronidazole), infectious diarrhea, typhoid fever, uncomplicated cervical and urethral gonorrhea, chronic bacterial prostatitis, inhalational anthrax (post-exposure prophylaxis), and plague. It is a key treatment option for drug-resistant gram-negative organisms.",
-        "warnings": "FDA BOXED WARNING: Fluoroquinolones, including ciprofloxacin, have been associated with disabling and potentially irreversible serious adverse reactions that have occurred together, including tendinitis and tendon rupture, peripheral neuropathy, and central nervous system effects. Discontinue ciprofloxacin immediately at first signs of tendon pain, swelling, or inflammation; peripheral neuropathy (pain, burning, tingling, numbness, weakness); or CNS reactions (convulsions, toxic psychosis, increased intracranial pressure). Reserve ciprofloxacin for infections that have no alternative treatment options. Ciprofloxacin may exacerbate muscle weakness in patients with myasthenia gravis. Risk of aortic aneurysm and dissection is increased, particularly in elderly patients and those with risk factors for aortic disease. Serious and occasionally fatal hypersensitivity reactions have been reported after the first dose. Clostridium difficile-associated diarrhea (CDAD) has been reported. Ciprofloxacin may prolong the QT interval. Avoid use in children, adolescents, and pregnant women due to arthropathic risk. Limit sun/UV light exposure due to photosensitivity risk.",
-        "side_effects": "Common: nausea, diarrhea, abnormal liver function tests, vomiting, abdominal pain or discomfort, headache, restlessness. Serious: tendon rupture (particularly Achilles tendon, risk increased in patients older than 60 years, on corticosteroids, or with organ transplants), peripheral neuropathy (may be irreversible), CNS effects (confusion, tremors, hallucinations, depression, seizures), QT prolongation and torsades de pointes, Clostridioides difficile-associated colitis, hepatic failure, anaphylaxis, severe skin reactions (Stevens-Johnson syndrome, toxic epidermal necrolysis), aortic aneurysm and dissection.",
-        "dosage": "Uncomplicated UTI: 250 mg every 12 hours for 3 days (IR) or 500 mg once daily for 3 days (XR). Complicated UTI / pyelonephritis: 500 mg every 12 hours for 7-14 days (IR) or 1000 mg once daily for 7-14 days (XR). Lower respiratory tract infection: 500-750 mg every 12 hours for 7-14 days. Skin and soft tissue infections: 500-750 mg every 12 hours for 7-14 days. Bone/joint: 500-750 mg every 12 hours for 4-8 weeks. Prostatitis: 500 mg every 12 hours for 28 days. Take immediate-release tablets with or without food; extended-release tablets with main meal. Avoid antacids, calcium, iron, and dairy products within 2 hours of immediate-release ciprofloxacin.",
-        "before_taking": "Do not take ciprofloxacin if you are allergic to ciprofloxacin, other fluoroquinolones (such as levofloxacin, moxifloxacin, norfloxacin), or any of its components. Tell your doctor if you have tendon problems, myasthenia gravis, QT interval prolongation or hypokalemia/hypomagnesemia, seizure disorder or CNS disease, diabetes, kidney or liver disease, joint problems, or aortic aneurysm. Avoid antacids containing magnesium or aluminum, calcium-containing products (including dairy), sucralfate, iron, or zinc within 2 hours before or 6 hours after taking ciprofloxacin, as they impair absorption. Limit caffeine and avoid excessive sun exposure.",
-    },
-    "levofloxacin": {
-        "description": "Levofloxacin (Levaquin) is a broad-spectrum fluoroquinolone antibiotic available as oral tablets (250, 500, 750 mg) and intravenous solution.",
-        "uses": "Levofloxacin is indicated for community-acquired pneumonia (including penicillin-resistant Streptococcus pneumoniae), nosocomial pneumonia, acute bacterial exacerbation of chronic bronchitis, acute bacterial sinusitis, complicated and uncomplicated skin infections, complicated UTI and pyelonephritis, chronic bacterial prostatitis, and inhalational anthrax (post-exposure). It is also used in combination regimens for tuberculosis.",
-        "warnings": "FDA BOXED WARNING: Serious, disabling, and potentially permanent side effects including tendinitis, tendon rupture, peripheral neuropathy, and CNS effects. Reserve for infections with no alternative treatment options. Risk of exacerbating myasthenia gravis. QT prolongation and torsades de pointes reported. Aortic aneurysm and dissection risk increased. Hypoglycemia and hyperglycemia, including hypoglycemic coma, have been reported (especially in elderly diabetics). Clostridioides difficile-associated diarrhea reported.",
-        "side_effects": "Common: nausea, headache, diarrhea, insomnia, constipation, dizziness. Serious: tendon rupture, peripheral neuropathy, CNS effects, QT prolongation, severe hypoglycemia, hepatotoxicity, CDAD.",
-        "dosage": "Community-acquired pneumonia (mild-moderate): 500 mg once daily for 7-14 days; (multi-drug-resistant S. pneumoniae): 750 mg once daily for 5 days. Nosocomial pneumonia: 750 mg once daily for 7-14 days. Skin infections: 500-750 mg once daily for 7-14 days. UTI/pyelonephritis: 250-750 mg once daily for 3-10 days. Take without regard to meals; avoid antacids and multivitamins within 2 hours.",
-    },
     "metformin": {
         "before_taking": "You should not take metformin if you are allergic to metformin, have severe kidney disease (eGFR below 30 mL/min/1.73 m^2), or have metabolic acidosis or diabetic ketoacidosis. Tell your doctor if you have moderate kidney problems, liver disease, heart failure, a history of alcohol abuse, or are scheduled for surgery or any procedure using iodinated contrast dye. Inform your doctor if you are pregnant, planning pregnancy, or breastfeeding.",
         "uses": "Metformin is a biguanide antidiabetic used to treat type 2 diabetes mellitus. It works by decreasing hepatic glucose production, decreasing intestinal absorption of glucose, and improving insulin sensitivity by increasing peripheral glucose uptake and utilization. Metformin is often the first-line medication for type 2 diabetes, particularly in overweight patients. It may also be used for polycystic ovary syndrome (PCOS).",
@@ -2046,13 +1893,6 @@ DRUG_CONTENT_OVERRIDES = {
         "side_effects": "Common side effects include nausea, vomiting, diarrhea, stomach upset, and metallic taste (especially when first starting the medication). These usually improve over time. Serious: lactic acidosis (rare), vitamin B12 deficiency with long-term use.",
         "dosage": "Adults: Initial dose 500 mg twice daily or 850 mg once daily with meals. Increase by 500 mg weekly or 850 mg every 2 weeks as tolerated. Maximum dose: 2550 mg/day. Extended-release: 500-1000 mg once daily with evening meal, max 2000-2500 mg/day. Pediatric (10+ years): 500 mg twice daily, max 2000 mg/day.",
         "interactions_text": "Metformin can interact with several medications that affect renal function or blood glucose. Carbonic anhydrase inhibitors (topiramate, zonisamide, acetazolamide) may increase the risk of lactic acidosis — consider more frequent monitoring. Drugs that reduce metformin clearance by inhibiting renal tubular transporters (OCT2/MATE) include dolutegravir, ranolazine, vandetanib, and cimetidine — use caution and monitor for metformin toxicity. Iodinated contrast agents: hold metformin at the time of or prior to iodinated contrast procedures and restart 48 hours after, only if renal function is stable. Alcohol potentiates the effect of metformin on lactate metabolism — warn patients against excessive alcohol use. Drugs that cause hyperglycemia (thiazides, corticosteroids, thyroid products, estrogens, phenytoin, nicotinic acid, sympathomimetics, calcium channel blockers, isoniazid) may lead to loss of glycemic control. Insulin secretagogues or insulin combined with metformin may increase hypoglycemia risk.",
-    },
-    "omeprazole": {
-        "uses": "Omeprazole is a proton pump inhibitor (PPI) indicated for the treatment of gastroesophageal reflux disease (GERD), erosive esophagitis, duodenal and gastric ulcers, pathological hypersecretory conditions including Zollinger-Ellison syndrome, and for the eradication of Helicobacter pylori infection in combination with appropriate antibiotics. It is also used to reduce the risk of gastric ulcers in patients on continuous NSAID therapy and, in over-the-counter strengths, for the short-term self-treatment of frequent heartburn occurring two or more days per week.",
-        "description": "Omeprazole (Prilosec) is an oral proton pump inhibitor that suppresses gastric acid secretion by irreversibly inhibiting the H+/K+ ATPase enzyme system at the secretory surface of gastric parietal cells. It is available by prescription and as an over-the-counter product.",
-        "warnings": "Long-term use, especially at higher doses (one year or longer), may increase the risk of osteoporosis-related fractures of the hip, wrist, or spine. PPI therapy has been associated with hypomagnesemia, vitamin B12 deficiency, acute interstitial nephritis, Clostridioides difficile-associated diarrhea, and cutaneous and systemic lupus erythematosus. Symptomatic response to omeprazole does not preclude the presence of gastric malignancy. Do not use OTC omeprazole for more than 14 days every 4 months without consulting a healthcare provider.",
-        "side_effects": "Common: headache, abdominal pain, nausea, diarrhea, vomiting, flatulence, and constipation. Serious but less common: acute interstitial nephritis, Clostridioides difficile-associated diarrhea, hypomagnesemia, vitamin B12 deficiency with long-term use, bone fractures, and cutaneous lupus erythematosus. Stop and seek care for severe diarrhea, signs of low magnesium (tremors, muscle cramps, seizures), or rash.",
-        "dosage": "Adults: GERD without erosive esophagitis - 20 mg once daily for up to 4 weeks. Erosive esophagitis - 20 mg once daily for 4 to 8 weeks, with maintenance at 20 mg daily. Duodenal ulcer - 20 mg daily for 4 weeks. Gastric ulcer - 40 mg daily for 4 to 8 weeks. H. pylori eradication - 20 mg twice daily for 10 days with amoxicillin and clarithromycin. Take 30 to 60 minutes before a meal; swallow capsules whole. OTC: 20 mg once daily for 14 days for frequent heartburn.",
     },
     "ibuprofen": {
         "before_taking": "You should not take ibuprofen if you are allergic to ibuprofen, aspirin, or any other NSAID. Tell your doctor if you have ever had a stomach ulcer, gastrointestinal bleeding, heart disease, high blood pressure, congestive heart failure, asthma, kidney or liver disease, or a bleeding or clotting disorder. Ibuprofen should not be used in the third trimester of pregnancy; talk to your doctor if you are pregnant, planning pregnancy, or breastfeeding.",
@@ -2069,72 +1909,12 @@ DRUG_CONTENT_OVERRIDES = {
         "side_effects": "Common: usually well tolerated at therapeutic doses; rare nausea, rash. Serious: hepatotoxicity (dose-related), acute liver failure, severe cutaneous adverse reactions, thrombocytopenia, and anaphylaxis. Overdose may produce minimal early symptoms followed by delayed hepatic necrosis. Seek emergency care after any suspected overdose; N-acetylcysteine is most effective when given within 8-10 hours.",
         "dosage": "Adults and children 12 years and older: 325-1000 mg every 4 to 6 hours as needed; do not exceed 4 grams (4000 mg) in 24 hours. Many guidelines recommend a maximum of 3 grams/day for chronic use or in patients at risk of hepatotoxicity. Pediatric: 10-15 mg/kg every 4 to 6 hours, not to exceed 5 doses or 75 mg/kg in 24 hours.",
     },
-    "aspirin": {
-        "uses": "Aspirin (acetylsalicylic acid) is an NSAID used for the relief of mild to moderate pain, fever, and inflammation, and at low doses for the secondary prevention of cardiovascular events (myocardial infarction, ischemic stroke) by irreversibly inhibiting platelet cyclooxygenase-1 and reducing thromboxane A2-mediated platelet aggregation. It is also used in acute coronary syndromes and after coronary stenting.",
-        "description": "Aspirin is an oral salicylate available over the counter and by prescription. Low-dose aspirin (81 mg) is widely used for antiplatelet effects, while higher analgesic doses (325-650 mg) are used for pain and fever.",
-        "warnings": "Aspirin should not be given to children or teenagers recovering from viral infections (flu, chickenpox) due to the risk of Reye syndrome. It increases the risk of gastrointestinal bleeding, peptic ulceration, and intracranial hemorrhage. Avoid in patients with bleeding disorders, active peptic ulcer disease, severe hepatic or renal impairment, or aspirin-exacerbated respiratory disease. Discontinue 7-10 days before elective surgery unless cardiology advises continuation.",
-        "side_effects": "Common: dyspepsia, nausea, heartburn, easy bruising. Serious: GI bleeding, peptic ulcer, hemorrhagic stroke, tinnitus and reversible hearing loss at high doses, salicylism (overdose), bronchospasm in aspirin-sensitive asthmatics, angioedema, and Reye syndrome in children.",
-        "dosage": "Analgesic/antipyretic (adults): 325-650 mg every 4 to 6 hours as needed; maximum 4 grams/day. Cardiovascular prevention: 75-100 mg once daily (commonly 81 mg). Acute coronary syndrome: 162-325 mg chewed at symptom onset. Take with food or a full glass of water to reduce GI irritation.",
-    },
-    "gabapentin": {
-        "before_taking": "You should not take gabapentin if you are allergic to gabapentin. Tell your doctor if you have kidney disease (you may need a lower dose), depression or mood disorders, suicidal thoughts, diabetes, breathing problems such as COPD, or a history of drug or alcohol abuse. Do not combine gabapentin with opioids or other CNS depressants without medical guidance, and tell your doctor if you are pregnant or breastfeeding. Do not stop gabapentin abruptly, as this can trigger withdrawal symptoms or seizures.",
-        "uses": "Gabapentin is an anticonvulsant and analgesic used as adjunctive therapy for partial seizures with or without secondary generalization, for the management of postherpetic neuralgia, and (gabapentin enacarbil) for moderate-to-severe restless legs syndrome. It is also widely used off-label for diabetic peripheral neuropathy and other neuropathic pain. It binds to the alpha-2-delta subunit of voltage-gated calcium channels, reducing excitatory neurotransmitter release.",
-        "description": "Gabapentin (Neurontin) is an oral GABA analogue, though it does not act directly at GABA receptors. It is renally eliminated and requires dose adjustment in renal impairment.",
-        "warnings": "Gabapentin can cause serious, life-threatening, or fatal respiratory depression when combined with opioids, benzodiazepines, or other CNS depressants, or in patients with underlying respiratory impairment. It carries a class warning for suicidal thoughts and behavior with antiepileptic drugs. Abrupt discontinuation may precipitate withdrawal symptoms or seizures; taper over at least one week. Dose adjustment is required for creatinine clearance below 60 mL/min.",
-        "side_effects": "Common: somnolence, dizziness, ataxia, fatigue, peripheral edema, weight gain, and blurred vision. Serious: respiratory depression (especially with CNS depressants), DRESS/multiorgan hypersensitivity, anaphylaxis and angioedema, suicidal ideation, and rarely myopathy. Drug-induced dependence and misuse have been reported.",
-        "dosage": "Postherpetic neuralgia (adults): 300 mg on day 1, 300 mg twice on day 2, 300 mg three times on day 3; titrate up to 1800 mg/day in three divided doses (maximum 3600 mg/day). Partial seizures (adults and children 12+): 300 mg three times daily, titrated to 1800 mg/day. Adjust dose for renal impairment.",
-    },
-    "alprazolam": {
-        "before_taking": "You should not take alprazolam if you are allergic to alprazolam or other benzodiazepines (such as diazepam, lorazepam, clonazepam), or if you have narrow-angle glaucoma. Tell your doctor if you have liver or kidney disease, breathing problems such as COPD or sleep apnea, depression, a history of suicidal thoughts, or a history of drug or alcohol abuse. Do not combine with opioids, alcohol, or other CNS depressants without explicit medical guidance, and tell your doctor if you are pregnant or breastfeeding.",
-        "uses": "Alprazolam is a short-acting benzodiazepine indicated for the management of generalized anxiety disorder and for the treatment of panic disorder, with or without agoraphobia. It enhances the inhibitory effect of GABA at GABA-A receptors, producing anxiolytic, sedative, hypnotic, anticonvulsant, and muscle-relaxant effects.",
-        "description": "Alprazolam (Xanax) is a Schedule IV controlled substance available as immediate-release and extended-release oral tablets and an oral solution. It has a relatively rapid onset and short half-life compared with longer-acting benzodiazepines.",
-        "warnings": "Concomitant use of benzodiazepines and opioids may result in profound sedation, respiratory depression, coma, and death; reserve combined use for patients with no adequate alternative. Alprazolam carries a high risk of dependence, abuse, and misuse. Abrupt discontinuation or rapid dose reduction can cause acute withdrawal, including seizures and life-threatening reactions; taper gradually. Avoid in pregnancy (associated with neonatal sedation and withdrawal) and in patients with severe respiratory insufficiency or acute narrow-angle glaucoma.",
-        "side_effects": "Common: drowsiness, fatigue, ataxia, slurred speech, memory impairment, dizziness, decreased libido, dry mouth, and constipation. Serious: respiratory depression, paradoxical reactions (agitation, rage), dependence and withdrawal, rebound anxiety, suicidal ideation, and cognitive impairment in older adults with increased fall and fracture risk.",
-        "dosage": "Anxiety (adults, immediate-release): 0.25-0.5 mg three times daily; titrate to maximum 4 mg/day in divided doses. Panic disorder (immediate-release): start 0.5 mg three times daily; mean effective dose 5-6 mg/day, maximum 10 mg/day. Extended-release (panic disorder): 0.5-1 mg once daily, increase by no more than 1 mg every 3-4 days to 3-6 mg/day. Use lowest effective dose in older adults and patients with hepatic impairment.",
-    },
-    "tramadol": {
-        "uses": "Tramadol is a centrally acting analgesic indicated for the management of moderate to moderately severe pain in adults for whom alternative treatments are inadequate. It is a mu-opioid receptor agonist and also inhibits reuptake of serotonin and norepinephrine.",
-        "description": "Tramadol is a Schedule IV controlled substance available as immediate-release and extended-release oral formulations. It has weaker mu-receptor affinity than morphine but additional monoaminergic activity contributing to analgesia.",
-        "warnings": "Tramadol carries risks of addiction, abuse, and misuse that can lead to overdose and death. Serious, life-threatening, or fatal respiratory depression may occur, especially during initiation or dose escalation, and is increased with concomitant use of benzodiazepines, alcohol, or other CNS depressants. Tramadol lowers seizure threshold, particularly at high doses, in patients with epilepsy, head trauma, or those taking serotonergic or other seizure-lowering medications. Risk of serotonin syndrome with serotonergic drugs. Contraindicated in children under 12 and for postoperative analgesia after tonsillectomy or adenoidectomy in those under 18.",
-        "side_effects": "Common: nausea, vomiting, constipation, dizziness, somnolence, headache, dry mouth, and sweating. Serious: respiratory depression, seizures, serotonin syndrome, adrenal insufficiency, severe hypotension, anaphylaxis, neonatal opioid withdrawal syndrome, and physical dependence.",
-        "dosage": "Immediate-release (adults): 50-100 mg every 4 to 6 hours as needed; maximum 400 mg/day. In patients not requiring rapid onset, start 25 mg daily and titrate by 25 mg every 3 days to 25 mg four times daily, then increase by 50 mg every 3 days to 50 mg four times daily. Extended-release: 100 mg once daily, titrate by 100 mg every 5 days to maximum 300 mg/day. Reduce dose in renal or hepatic impairment.",
-    },
-    "amoxicillin": {
-        "before_taking": "You should not take amoxicillin if you are allergic to amoxicillin or to any penicillin or cephalosporin antibiotic. Tell your doctor if you have kidney disease, mononucleosis, asthma, a history of any type of allergy, or a history of diarrhea caused by antibiotics. Inform your doctor if you are pregnant or breastfeeding, and tell your healthcare provider about all other medicines you take, including hormonal birth control, which may be less effective during treatment.",
-        "uses": "Amoxicillin is a broad-spectrum aminopenicillin antibiotic indicated for the treatment of infections caused by susceptible strains of gram-positive and some gram-negative bacteria, including otitis media, sinusitis, pharyngitis, lower respiratory tract infections, urinary tract infections, skin and soft tissue infections, and as part of multidrug regimens for Helicobacter pylori eradication. It inhibits bacterial cell wall synthesis by binding to penicillin-binding proteins.",
-        "description": "Amoxicillin is an oral beta-lactam antibiotic available as capsules, tablets, chewable tablets, and oral suspension. It is acid-stable and well absorbed orally with bioavailability of approximately 75-90 percent.",
-        "warnings": "Serious and occasionally fatal hypersensitivity (anaphylactic) reactions have been reported in patients on penicillin therapy; obtain a careful history of allergy to penicillins, cephalosporins, or other allergens before initiating. Clostridioides difficile-associated diarrhea has been reported. A high percentage of patients with mononucleosis develop a rash; avoid amoxicillin in suspected mononucleosis. Adjust dose in severe renal impairment.",
-        "side_effects": "Common: diarrhea, nausea, vomiting, rash, and vaginal candidiasis. Serious: anaphylaxis, severe cutaneous reactions (Stevens-Johnson syndrome, toxic epidermal necrolysis, DRESS, acute generalized exanthematous pustulosis), Clostridioides difficile colitis, hepatic dysfunction, interstitial nephritis, and hematologic abnormalities (anemia, thrombocytopenia, eosinophilia).",
-        "dosage": "Adults (mild-moderate infection): Usual dose is 250 mg every 8 hours or 500 mg every 8 hours (for more severe infections). Extended-release formulations: 500-875 mg every 12 hours. Severe infection or lower respiratory: 875 mg every 12 hours or 500 mg every 8 hours. Pediatric: 20-45 mg/kg/day in divided doses every 8-12 hours depending on infection severity; higher doses (80-90 mg/kg/day) for acute otitis media. H. pylori: 1 g twice daily with a PPI and clarithromycin for 10-14 days.",
-    },
-    "metoprolol": {
-        "uses": "Metoprolol is a cardioselective beta-1 adrenergic receptor blocker used to treat hypertension, angina pectoris, and to reduce mortality and hospitalization in patients with stable, symptomatic chronic heart failure with reduced ejection fraction. The immediate-release tartrate salt is also indicated for early and long-term treatment of myocardial infarction. It is also used for rate control in atrial fibrillation and for migraine prophylaxis.",
-        "description": "Metoprolol is available as immediate-release tartrate (Lopressor) and extended-release succinate (Toprol XL) oral tablets, and as an intravenous formulation. It is hepatically metabolized via CYP2D6.",
-        "warnings": "Do not abruptly discontinue metoprolol, particularly in patients with ischemic heart disease, as exacerbation of angina, myocardial infarction, and ventricular arrhythmias may occur; taper over 1 to 2 weeks. Use cautiously in patients with bronchospastic disease, decompensated heart failure, peripheral vascular disease, diabetes (may mask hypoglycemia), pheochromocytoma (use only with concurrent alpha-blockade), and thyrotoxicosis. Contraindicated in severe bradycardia, second- or third-degree AV block without pacemaker, decompensated heart failure, and cardiogenic shock.",
-        "side_effects": "Common: fatigue, dizziness, bradycardia, hypotension, depression, cold extremities, diarrhea, and shortness of breath. Serious: heart failure exacerbation, severe bradycardia or AV block, bronchospasm, masking of hypoglycemia, and rebound hypertension or angina with abrupt withdrawal.",
-        "dosage": "Hypertension (tartrate): 100 mg/day in single or divided doses, titrated weekly; usual range 100-450 mg/day. Hypertension (succinate ER): 25-100 mg once daily, titrated to maximum 400 mg/day. Heart failure (succinate ER): start 12.5-25 mg once daily, double every 2 weeks as tolerated to target 200 mg once daily. Angina (tartrate): 100 mg/day in two divided doses, up to 400 mg/day.",
-    },
-    "warfarin": {
-        "before_taking": "You should not take warfarin if you are allergic to warfarin, are pregnant (except in select patients with mechanical heart valves), have a bleeding disorder, recent or planned major surgery, uncontrolled high blood pressure, active bleeding, or a recent stroke. Tell your doctor about all medical conditions including liver or kidney disease, congestive heart failure, diabetes, recent trauma, or a history of falls. Many prescription, over-the-counter, herbal, and dietary items (especially vitamin K-rich foods) interact with warfarin; share a complete list with your healthcare provider before starting therapy.",
-        "uses": "Warfarin is an oral anticoagulant indicated for the prophylaxis and treatment of venous thromboembolism (deep vein thrombosis and pulmonary embolism), prevention of stroke and systemic embolism in atrial fibrillation and after mechanical heart valve replacement, and reduction of recurrent myocardial infarction and thromboembolic events after myocardial infarction. It inhibits vitamin K epoxide reductase, reducing synthesis of vitamin K-dependent clotting factors II, VII, IX, and X.",
-        "description": "Warfarin (Coumadin, Jantoven) is a coumarin derivative requiring routine INR monitoring. Mechanical heart valves still require warfarin rather than direct oral anticoagulants.",
-        "warnings": "BLACK BOX WARNING - BLEEDING RISK: Warfarin can cause major or fatal bleeding. Bleeding is more likely to occur during the starting period and with a higher dose (resulting in a higher INR). Risk factors for bleeding include high intensity of anticoagulation (INR greater than 4.0), age 65 or older, highly variable INRs, history of gastrointestinal bleeding, hypertension, cerebrovascular disease, serious heart disease, anemia, malignancy, trauma, renal impairment, certain genetic factors (such as CYP2C9 and VKORC1 polymorphisms), long duration of warfarin therapy, and concomitant antiplatelet drugs, NSAIDs, SSRIs, or other drugs that affect hemostasis. Regular monitoring of INR should be performed on all treated patients. Patients at high risk of bleeding may benefit from more frequent INR monitoring, careful dose adjustment, and shorter duration of therapy. Instruct patients about prevention measures to minimize bleeding risk and to immediately report signs and symptoms of bleeding (unusual bruising, pink or red urine, black or bloody stools, severe headache, joint pain or swelling, prolonged bleeding from cuts, heavier-than-normal menstrual bleeding). Other serious adverse reactions: tissue necrosis and gangrene of skin and other tissues (especially in patients with protein C or S deficiency, typically within the first few days of therapy), systemic atheroemboli and cholesterol microemboli (purple toes syndrome), heparin-induced thrombocytopenia (HIT), and calciphylaxis. Warfarin crosses the placenta, causes fetal hemorrhage and is teratogenic (warfarin embryopathy: nasal hypoplasia, stippled epiphyses, CNS abnormalities); contraindicated in pregnancy except in women with mechanical heart valves at high risk of thromboembolism. Many drug, dietary (vitamin K), herbal, and disease-state interactions can dramatically alter INR; review all concomitant therapy at every visit.",
-        "side_effects": "Common: bruising, minor bleeding (epistaxis, gum bleeding), nausea. Serious: major hemorrhage (intracranial, gastrointestinal, retroperitoneal), warfarin-induced skin necrosis, purple toe syndrome, cholesterol microembolization, calciphylaxis, and hypersensitivity reactions.",
-        "dosage": "Individualize based on INR. Typical adult starting dose: 2-5 mg once daily, with INR monitoring every 1-3 days during initiation. Target INR depends on indication: 2.0-3.0 for most indications (VTE, atrial fibrillation, bioprosthetic valves) and 2.5-3.5 for mechanical mitral valves and certain high-risk situations. Many drug, dietary (vitamin K), and disease interactions; monitor closely with any change.",
-    },
     "hydrocodone": {
         "uses": "Hydrocodone (in extended-release single-entity products) is indicated for the management of pain severe enough to require daily, around-the-clock, long-term opioid treatment in patients for whom alternative options are inadequate. Combination products with acetaminophen or ibuprofen are used for short-term management of acute moderate-to-severe pain. It also has antitussive activity in some combination products.",
         "description": "Hydrocodone is a semi-synthetic opioid agonist; single-entity hydrocodone products are Schedule II controlled substances. It is metabolized via CYP2D6 to hydromorphone (a more potent active metabolite) and via CYP3A4 to norhydrocodone.",
         "warnings": "Hydrocodone exposes patients and other users to risks of addiction, abuse, and misuse that can lead to overdose and death. Life-threatening respiratory depression may occur, particularly with dose initiation or titration. Concomitant use with benzodiazepines or other CNS depressants may result in profound sedation, respiratory depression, coma, and death. Accidental ingestion of even one dose by children can be fatal. Prolonged use during pregnancy can result in neonatal opioid withdrawal syndrome. CYP3A4 interactions can produce fatal overdose.",
         "side_effects": "Common: constipation, nausea, vomiting, somnolence, dizziness, pruritus, dry mouth, and headache. Serious: respiratory depression, profound sedation, hypotension, adrenal insufficiency, severe constipation or ileus, seizures, anaphylaxis, dependence, and neonatal withdrawal.",
         "dosage": "Combination immediate-release products (e.g., 5/325 hydrocodone/acetaminophen): one to two tablets every 4 to 6 hours as needed, limited by total acetaminophen of 4 g/day or less. Extended-release single-entity (opioid-naive): start 10 mg every 12 hours; titrate slowly. Use lowest effective dose for shortest duration.",
-    },
-    "oxycodone": {
-        "uses": "Oxycodone is a strong opioid analgesic indicated for the management of pain severe enough to require an opioid analgesic and for which alternative treatments are inadequate. Immediate-release formulations are used for acute moderate-to-severe pain; extended-release formulations are used for chronic pain requiring around-the-clock therapy.",
-        "description": "Oxycodone is a Schedule II controlled substance and a mu-opioid receptor agonist with some kappa activity. It is metabolized via CYP3A4 and CYP2D6 (the latter producing the active metabolite oxymorphone).",
-        "warnings": "Oxycodone carries risks of addiction, abuse, and misuse; life-threatening respiratory depression; neonatal opioid withdrawal syndrome with prolonged use in pregnancy; and life-threatening interactions with benzodiazepines, other CNS depressants, and CYP3A4 inhibitors. Accidental ingestion can be fatal in children. Adrenal insufficiency and severe hypotension may occur. Long-term use may produce hypogonadism.",
-        "side_effects": "Common: constipation, nausea, vomiting, somnolence, dizziness, pruritus, headache, dry mouth, and sweating. Serious: respiratory depression, severe hypotension, adrenal insufficiency, seizures, ileus, anaphylaxis, physical dependence, and neonatal opioid withdrawal.",
-        "dosage": "Immediate-release (opioid-naive adults): 5-15 mg every 4 to 6 hours as needed for pain. Extended-release (opioid-naive): start 10 mg every 12 hours; titrate based on response and tolerability. Reduce starting doses in elderly, debilitated patients, and those with hepatic or renal impairment. Avoid alcohol with extended-release formulations.",
     },
     "naproxen": {
         "before_taking": "You should not take naproxen if you are allergic to naproxen, aspirin, or other NSAIDs, or if you have had asthma or a severe allergic reaction triggered by aspirin or NSAIDs. Tell your doctor if you have heart disease, high blood pressure, a history of heart attack or stroke, stomach ulcers or bleeding, kidney or liver disease, or fluid retention. Avoid naproxen in the third trimester of pregnancy, and tell your doctor if you take blood thinners, low-dose aspirin for heart protection, or other NSAIDs.",
@@ -2167,14 +1947,6 @@ DRUG_CONTENT_OVERRIDES = {
         "side_effects": "Common: dry persistent cough, dizziness, headache, fatigue, hypotension, and hyperkalemia. Serious: angioedema (including intestinal), acute kidney injury, severe hyperkalemia, neutropenia and agranulocytosis (rare), hepatic failure, and symptomatic hypotension after the first dose.",
         "dosage": "Hypertension (adults): 10 mg once daily; usual maintenance 20-40 mg once daily, maximum 80 mg/day. Heart failure: start 5 mg once daily, titrate to maximum 40 mg/day. Acute MI: 5 mg within 24 hours, then 5 mg after 24 hours, 10 mg after 48 hours, and 10 mg once daily thereafter for 6 weeks. Reduce starting dose in renal impairment.",
     },
-    "amlodipine": {
-        "before_taking": "You should not take amlodipine if you are allergic to amlodipine or other dihydropyridine calcium channel blockers. Tell your doctor if you have severe aortic stenosis, severe coronary artery disease, congestive heart failure, liver disease, or low blood pressure. Inform your doctor if you are pregnant, planning pregnancy, or breastfeeding, and share a complete list of medications, since amlodipine can interact with simvastatin, certain antifungals, and other CYP3A4-affecting drugs.",
-        "uses": "Amlodipine is a long-acting dihydropyridine calcium channel blocker indicated for the treatment of hypertension, chronic stable angina, and confirmed or suspected vasospastic (Prinzmetal) angina. It produces vasodilation by inhibiting calcium influx into vascular smooth muscle, lowering peripheral vascular resistance.",
-        "description": "Amlodipine (Norvasc) is an oral once-daily antihypertensive with a long half-life (30-50 hours) allowing smooth 24-hour blood pressure control. It is hepatically metabolized.",
-        "warnings": "Symptomatic hypotension is possible, particularly in patients with severe aortic stenosis. Acute exacerbation of angina or myocardial infarction can occur, especially in patients with severe obstructive coronary artery disease, after starting or increasing the dose. Use cautiously in patients with severe hepatic impairment; start at the lowest dose and titrate slowly. Worsening heart failure has been reported in patients with severe heart failure.",
-        "side_effects": "Common: peripheral edema (dose-related), flushing, palpitations, dizziness, headache, fatigue, and nausea. Serious: symptomatic hypotension, reflex tachycardia, worsening angina or MI on initiation, gingival hyperplasia, and hepatic enzyme elevations.",
-        "dosage": "Hypertension (adults): 5 mg once daily; titrate over 7-14 days to maximum 10 mg once daily. Elderly, small or fragile patients, or those with hepatic impairment: start 2.5 mg once daily. Pediatric (6-17 years, hypertension): 2.5-5 mg once daily. Angina: 5-10 mg once daily.",
-    },
     "sertraline": {
         "before_taking": "You should not take sertraline if you are allergic to sertraline, are taking pimozide, or have used an MAO inhibitor within the past 14 days. Tell your doctor if you have liver or kidney disease, bipolar disorder, seizures, low sodium levels, bleeding or clotting problems, glaucoma, or a history of suicidal thoughts or behavior. Inform your doctor if you are pregnant or breastfeeding, and discuss the risks of combining sertraline with other serotonergic drugs (such as triptans, tramadol, or St. John's wort) and with NSAIDs or anticoagulants that may increase bleeding risk.",
         "uses": "Sertraline is a selective serotonin reuptake inhibitor (SSRI) indicated for the treatment of major depressive disorder, obsessive-compulsive disorder (in adults and children 6 years and older), panic disorder, post-traumatic stress disorder, social anxiety disorder, and premenstrual dysphoric disorder. It selectively inhibits presynaptic serotonin reuptake with minimal effect on norepinephrine and dopamine.",
@@ -2183,22 +1955,6 @@ DRUG_CONTENT_OVERRIDES = {
         "side_effects": "Common: nausea, diarrhea, dry mouth, insomnia, somnolence, dizziness, fatigue, tremor, sexual dysfunction, and increased sweating. Serious: serotonin syndrome, suicidal ideation, mania, seizures, hyponatremia, QT prolongation at high doses, and discontinuation syndrome on abrupt cessation.",
         "dosage": "Depression and OCD (adults): start 50 mg once daily; titrate at intervals of no less than one week to maximum 200 mg/day. Panic disorder, PTSD, social anxiety: start 25 mg once daily for one week, then 50 mg/day, up to 200 mg/day. PMDD: 50 mg daily continuously or during luteal phase only. Pediatric OCD (6-12 years): start 25 mg daily; (13-17 years): start 50 mg daily.",
     },
-    "levothyroxine": {
-        "before_taking": "You should not take levothyroxine if you are allergic to levothyroxine or thyroid hormone products, have untreated thyrotoxicosis, or an uncorrected adrenal insufficiency. Tell your doctor if you have heart disease, coronary artery disease, high blood pressure, diabetes, osteoporosis, adrenal or pituitary gland problems, or any blood-clotting disorder. Take levothyroxine on an empty stomach with water and separate it by at least four hours from calcium, iron, antacids, and certain other medications that reduce its absorption.",
-        "uses": "Levothyroxine is a synthetic form of thyroxine (T4) used as replacement therapy in primary, secondary, and tertiary hypothyroidism, including congenital hypothyroidism and after thyroidectomy or radioiodine therapy. It is also used as an adjunct to surgery and radioiodine in the management of well-differentiated thyroid cancer and to suppress TSH in certain patients with thyroid nodules or goiter.",
-        "description": "Levothyroxine (Synthroid, Levoxyl, Tirosint) is an oral and intravenous thyroid hormone replacement. Oral absorption is best with an empty stomach and consistent timing each day.",
-        "warnings": "Thyroid hormones, including levothyroxine, are not indicated for the treatment of obesity or weight loss; large doses, especially with sympathomimetic amines, may produce serious or life-threatening toxicity. Use cautiously in elderly patients and those with cardiovascular disease (coronary artery disease, arrhythmias) and start at lower doses. Over-replacement can precipitate or worsen atrial fibrillation and accelerate bone loss leading to osteoporosis in postmenopausal women.",
-        "side_effects": "At appropriate doses, side effects are generally those of hyperthyroidism: tachycardia, palpitations, arrhythmias, tremor, anxiety, insomnia, heat intolerance, weight loss, increased appetite, diarrhea, menstrual irregularities, and bone loss with long-term over-replacement. Allergic reactions to tablet dyes are possible (use dye-free formulation if needed).",
-        "dosage": "Adult hypothyroidism: typical full replacement 1.6 mcg/kg/day; younger healthy adults may start at full estimated dose. Elderly or cardiac disease: start 12.5-25 mcg/day and titrate every 6-8 weeks based on TSH. Pediatric doses are weight-based and higher per kg in infants (10-15 mcg/kg/day). Take on an empty stomach, 30-60 minutes before breakfast, with water; separate from calcium, iron, antacids, and certain other drugs by at least 4 hours.",
-    },
-    "fluoxetine": {
-        "uses": "Fluoxetine is a long-acting SSRI indicated for major depressive disorder, obsessive-compulsive disorder, bulimia nervosa, panic disorder, and (in combination with olanzapine) acute depressive episodes associated with bipolar I disorder and treatment-resistant depression. Pediatric indications include MDD (8 years and older) and OCD (7 years and older).",
-        "description": "Fluoxetine (Prozac) and its active metabolite norfluoxetine have long half-lives (1-3 days and 4-16 days respectively), allowing once-weekly dosing of a delayed-release formulation and a relatively benign discontinuation profile compared with shorter-acting SSRIs.",
-        "warnings": "Increased risk of suicidal thinking and behavior in children, adolescents, and young adults. Risk of serotonin syndrome with other serotonergic agents and MAOIs; allow at least 14 days between MAOI discontinuation and fluoxetine, and 5 weeks after stopping fluoxetine before starting an MAOI. QT prolongation has been reported. Hyponatremia (SIADH) and bleeding risk (especially with NSAIDs and anticoagulants) may occur.",
-        "side_effects": "Common: nausea, headache, insomnia, somnolence, anxiety, nervousness, decreased appetite, weight loss, diarrhea, dry mouth, and sexual dysfunction. Serious: serotonin syndrome, suicidality, mania, seizures, QT prolongation and torsades, hyponatremia, hypoglycemia in diabetics, and angle-closure glaucoma.",
-        "dosage": "MDD/OCD (adults): start 20 mg once daily in the morning; may increase after several weeks to maximum 80 mg/day. Bulimia: 60 mg once daily in the morning. Panic disorder: 10 mg/day for one week then 20 mg/day. Pediatric MDD (8-17 years): 10-20 mg/day. Once-weekly delayed-release (90 mg) may be used for maintenance MDD in stable patients.",
-        "before_taking": "You should not take fluoxetine if you are allergic to fluoxetine, are taking pimozide or thioridazine, or have used an MAO inhibitor within the past 14 days (or plan to use one within 5 weeks of stopping fluoxetine). Tell your doctor if you have liver disease, seizures or epilepsy, diabetes, bipolar disorder, a history of suicidal thoughts, low sodium, narrow-angle glaucoma, or a history of sexual dysfunction. Inform your doctor if you are pregnant or breastfeeding, and discuss any other serotonergic drugs you take.",
-    },
     "semaglutide": {
         "description": "Semaglutide is a glucagon-like peptide-1 (GLP-1) receptor agonist available as a once-weekly subcutaneous injection (Ozempic for type 2 diabetes, Wegovy for chronic weight management) and as once-daily oral tablets (Rybelsus for type 2 diabetes).",
         "uses": "Semaglutide (Ozempic) is indicated as an adjunct to diet and exercise to improve glycemic control in adults with type 2 diabetes mellitus, and to reduce the risk of major adverse cardiovascular events in adults with type 2 diabetes and established cardiovascular disease. Semaglutide (Wegovy) is indicated for chronic weight management in adults with obesity (BMI ≥30) or overweight (BMI ≥27) with at least one weight-related comorbidity, as an adjunct to a reduced-calorie diet and increased physical activity. Semaglutide (Rybelsus) is the oral formulation indicated for glycemic control in adults with type 2 diabetes.",
@@ -2206,12 +1962,6 @@ DRUG_CONTENT_OVERRIDES = {
         "side_effects": "Very common: nausea, vomiting, diarrhea, constipation, abdominal pain. These GI effects are most pronounced during dose escalation and generally decrease over time. Serious: pancreatitis, diabetic retinopathy complications, hypoglycemia (with insulin or sulfonylurea), acute kidney injury, anaphylaxis, gallbladder disease (cholelithiasis, cholecystitis), suicidal ideation and behavior (reported with weight-loss drugs generally). Injection-site reactions with subcutaneous formulations.",
         "dosage": "Ozempic (type 2 diabetes): Start 0.25 mg once weekly for 4 weeks, then 0.5 mg once weekly; may increase to 1 mg once weekly after at least 4 weeks; maximum 2 mg once weekly. Wegovy (weight management): Start 0.25 mg once weekly, increase by 0.25 mg every 4 weeks to maintenance dose of 2.4 mg once weekly. Rybelsus (oral): 3 mg once daily for 30 days, then 7 mg once daily; may increase to 14 mg once daily. Take Rybelsus on an empty stomach with up to 4 oz of water at least 30 minutes before the first food or drink of the day.",
         "before_taking": "You should not take semaglutide if you or a family member has ever had medullary thyroid carcinoma (MTC) or Multiple Endocrine Neoplasia syndrome type 2 (MEN 2), or if you are allergic to semaglutide or any of its ingredients. Tell your doctor if you have a history of pancreatitis, gallbladder disease, diabetic retinopathy, kidney disease, liver disease, or depression or suicidal thoughts. Tell your doctor about all medications you take, especially insulin or sulfonylureas (which increase hypoglycemia risk), and any orally administered medications (Rybelsus may affect their absorption). Semaglutide should not be used during pregnancy; use effective contraception and inform your doctor if you become pregnant.",
-    },
-    "omeprazole": {
-        "before_taking": "You should not take omeprazole if you are allergic to omeprazole, other proton pump inhibitors (such as lansoprazole, pantoprazole, esomeprazole), or any of its ingredients. Tell your doctor if you have liver disease, low magnesium levels, osteoporosis or bone fractures, lupus, or are scheduled for certain gastric or endoscopic tests. Inform your doctor if you are taking methotrexate, HIV medications (such as atazanavir, nelfinavir), clopidogrel, or warfarin, as omeprazole can affect their effectiveness. Tell your doctor if you are pregnant or breastfeeding. OTC omeprazole is intended only for self-treatment of frequent heartburn for up to 14 days; do not use for more than 3 fourteen-day treatment courses per year without consulting a healthcare provider.",
-    },
-    "aspirin": {
-        "before_taking": "You should not take aspirin if you are allergic to aspirin or other salicylates, or if your child or teenager has or is recovering from chickenpox or a flu-like illness (risk of Reye syndrome). Tell your doctor if you have a bleeding disorder, active peptic ulcer, severe kidney or liver disease, uncontrolled high blood pressure, heart failure, gout, or aspirin-exacerbated respiratory disease (nasal polyps with asthma). Aspirin interacts with anticoagulants, other NSAIDs, corticosteroids, and methotrexate. Do not take aspirin in the third trimester of pregnancy. Consult your healthcare provider before starting or stopping low-dose aspirin for cardiovascular prevention.",
     },
     "rosuvastatin": {
         "description": "Rosuvastatin (Crestor) is a fully synthetic, high-potency HMG-CoA reductase inhibitor (statin) available as 5, 10, 20, and 40 mg tablets. It produces greater LDL reduction per milligram than most other statins.",
@@ -2228,14 +1978,6 @@ DRUG_CONTENT_OVERRIDES = {
         "side_effects": "Common: dizziness, fatigue, hyperkalemia (especially in renal impairment), and hypotension. Unlike ACE inhibitors, losartan does not cause cough. Serious: angioedema (rare, less frequent than with ACE inhibitors), acute kidney injury, severe hyperkalemia, and fetal toxicity in pregnancy.",
         "dosage": "Hypertension (adults): 50 mg once daily; usual maintenance 25-100 mg once daily (may be given in two divided doses). LVH risk reduction: 50 mg once daily with hydrochlorothiazide 12.5 mg; titrate to losartan 100 mg + hydrochlorothiazide 25 mg. Diabetic nephropathy: 50 mg once daily, titrate to 100 mg once daily. May be taken with or without food.",
         "before_taking": "You should not take losartan if you are pregnant (Category D) — discontinue as soon as pregnancy is detected. Do not take losartan with aliskiren if you have diabetes. Tell your doctor if you have kidney disease or a single kidney, renal artery stenosis, liver disease, heart failure, dehydration, or low blood pressure. Tell your doctor about potassium supplements or salt substitutes, NSAIDs, diuretics, and lithium. Inform your doctor if you are breastfeeding.",
-    },
-    "azithromycin": {
-        "description": "Azithromycin (Zithromax, Z-Pak) is a macrolide antibiotic that inhibits bacterial protein synthesis by binding the 50S ribosomal subunit. It has a long tissue half-life (68 hours), allowing shorter treatment courses than most antibiotics.",
-        "uses": "Azithromycin is indicated for community-acquired pneumonia (mild to moderate), acute exacerbations of chronic bronchitis, pharyngitis/tonsillitis (as an alternative to first-line therapy), skin and skin-structure infections (uncomplicated), urethritis and cervicitis due to Chlamydia trachomatis or Neisseria gonorrhoeae, and acute otitis media in pediatric patients. It is also used for prevention and treatment of Mycobacterium avium complex (MAC) in HIV patients.",
-        "warnings": "Serious allergic reactions, including anaphylaxis and serious skin reactions (Stevens-Johnson syndrome, toxic epidermal necrolysis), have occurred. Azithromycin can cause QT interval prolongation and cases of torsades de pointes, particularly in patients with known QT prolongation, hypokalemia, hypomagnesemia, bradycardia, or taking other QT-prolonging drugs. Clostridioides difficile-associated diarrhea has been reported. Liver disease, including hepatic necrosis and hepatic failure resulting in death, has been reported. Exacerbation of myasthenia gravis has occurred. Use caution in patients with liver disease.",
-        "side_effects": "Common: diarrhea/loose stools, nausea, abdominal pain, and vomiting (especially with higher doses). Serious: QT prolongation and torsades de pointes, Clostridioides difficile colitis, hepatotoxicity, allergic reactions including anaphylaxis, severe skin reactions, and exacerbation of myasthenia gravis.",
-        "dosage": "Community-acquired pneumonia (adult, mild-moderate): 500 mg on Day 1, then 250 mg once daily on Days 2-5 (Z-Pak). Pharyngitis (adults): 500 mg on Day 1, then 250 mg/day for 4 days. Acute otitis media (pediatric, 6 months+): 30 mg/kg as single dose or 10 mg/kg once daily for 3 days or 10 mg/kg on Day 1 then 5 mg/kg/day for 4 days. Genital chlamydia/gonorrhea: 1 g single dose. Take tablets with or without food; avoid antacids within 2 hours.",
-        "before_taking": "You should not take azithromycin if you are allergic to azithromycin, erythromycin, or other macrolide antibiotics, or if you have a history of cholestatic jaundice or hepatic dysfunction associated with azithromycin. Tell your doctor if you have liver disease, kidney disease, myasthenia gravis, or a history of QT prolongation or cardiac arrhythmias. Tell your doctor about all medications you take, particularly antacids (reduce absorption), QT-prolonging drugs, and warfarin (azithromycin can increase INR). Inform your doctor if you are pregnant or breastfeeding.",
     },
     "escitalopram": {
         "description": "Escitalopram (Lexapro) is an S-enantiomer of citalopram — the most selective SSRI available, with high specificity for the serotonin transporter (SERT) and minimal effects on other receptors. Available as 5, 10, and 20 mg tablets and oral solution.",
@@ -2300,14 +2042,6 @@ DRUG_CONTENT_OVERRIDES = {
         "side_effects": "Common: increased urination, hypokalemia, dizziness, muscle cramps, weakness, and headache. Serious: severe electrolyte disturbances (life-threatening hyponatremia, hypokalemia), digoxin toxicity (via hypokalemia), hyperuricemia and gout, hyperglycemia, cholesterol elevation, photosensitivity, and acute pancreatitis (rare).",
         "dosage": "Hypertension: 12.5-25 mg once daily; maximum 50 mg/day. Edema: 25-100 mg once daily or twice daily. Take in the morning to avoid nighttime urination. Monitor electrolytes, renal function, glucose, and uric acid periodically.",
         "before_taking": "You should not take hydrochlorothiazide if you have anuria (no urine output) or if you are allergic to sulfonamide-derived medications or thiazide diuretics. Tell your doctor if you have kidney disease, liver disease, diabetes, gout, lupus, low blood potassium, or high blood calcium. Tell your doctor if you take lithium, digoxin, NSAIDs, corticosteroids, or other diuretics. Avoid excessive sun exposure — HCTZ increases photosensitivity and has been linked to an increased risk of non-melanoma skin cancer with long-term use. Inform your doctor if you are pregnant or breastfeeding.",
-    },
-    "doxycycline": {
-        "description": "Doxycycline is a broad-spectrum tetracycline antibiotic that inhibits protein synthesis by binding to the 30S ribosomal subunit. Available as hyclate and monohydrate salt formulations, in immediate-release capsules/tablets and delayed-release capsules.",
-        "uses": "Doxycycline is indicated for respiratory tract infections (including community-acquired pneumonia caused by susceptible organisms), skin and soft tissue infections, sexually transmitted infections (chlamydia, gonorrhea, syphilis), Lyme disease, rickettsia, malaria prophylaxis, Rocky Mountain spotted fever, acne vulgaris, anthrax prophylaxis, and as an alternative to other antibiotics in penicillin-allergic patients.",
-        "warnings": "Do not give doxycycline to children under 8 years of age (permanent tooth discoloration and bone growth inhibition). Doxycycline can cause photosensitivity — avoid excessive sun or UV light exposure and use sunscreen. Esophageal irritation and ulceration have occurred — take with adequate water and remain upright for at least 30 minutes. Clostridioides difficile-associated diarrhea has been reported. Use cautiously in patients with hepatic impairment. Avoid antacids, dairy products, and iron supplements within 2 hours of doxycycline as they impair absorption. Category D in pregnancy (tooth discoloration, bone inhibition).",
-        "side_effects": "Common: nausea, vomiting, diarrhea, esophageal irritation, and photosensitivity. Serious: Clostridioides difficile colitis, esophageal ulceration, severe skin reactions (SJS/TEN), pseudotumor cerebri (intracranial hypertension), and hepatotoxicity (rare).",
-        "dosage": "Most infections (adults): 100 mg every 12 hours or 200 mg on Day 1, then 100 mg once daily. Severe infections: 100 mg twice daily. Acne: 50-100 mg twice daily. Malaria prophylaxis: 100 mg once daily starting 1-2 days before travel. STIs: 100 mg twice daily for 7 days (chlamydia) or 21 days (syphilis). Take with a full glass of water; avoid antacids and dairy 2 hours before/after.",
-        "before_taking": "You should not take doxycycline if you are allergic to doxycycline or other tetracyclines, or if the patient is a child under 8 years of age. Tell your doctor if you have liver disease, kidney disease, esophageal problems, intracranial hypertension (pseudotumor cerebri), or myasthenia gravis. Avoid antacids, dairy products, and iron within 2 hours before or after. Separate from oral retinoids due to intracranial hypertension risk. Doxycycline may reduce oral contraceptive efficacy — use additional contraception. Inform your doctor if you are pregnant (Category D) or breastfeeding.",
     },
     "valsartan": {
         "description": "Valsartan (Diovan) is an angiotensin II receptor blocker (ARB) that selectively antagonizes the AT1 receptor subtype, blocking the vasoconstrictive and aldosterone-secreting effects of angiotensin II.",
@@ -2429,14 +2163,6 @@ DRUG_CONTENT_OVERRIDES = {
         "dosage": "Anxiety: 2-10 mg 2-4 times daily. Alcohol withdrawal: 10 mg 3-4 times daily initially, reducing to 5 mg 3-4 times daily. Muscle spasm: 2-10 mg 3-4 times daily. Use the lowest effective dose for the shortest duration. Extended use beyond 4 weeks is generally not recommended for anxiety.",
         "before_taking": "You should not take diazepam if you have severe respiratory insufficiency, severe hepatic insufficiency, myasthenia gravis, sleep apnea, or acute angle-closure glaucoma. Do not take diazepam with opioid medications without very close medical supervision. Tell your doctor about all medications — especially opioids, alcohol, antihistamines, antidepressants, antipsychotics, and other CNS depressants. Diazepam is habit-forming — take only as directed. Do not stop diazepam suddenly after regular use. Avoid alcohol completely. Do not drive or operate machinery until you know how diazepam affects you. Diazepam is Category D in pregnancy — avoid if possible. Not recommended during breastfeeding.",
     },
-    "gabapentin": {
-        "description": "Gabapentin (Neurontin, Gralise, Horizant) is an anticonvulsant and analgesic that structurally resembles GABA but does not bind to GABA receptors; instead it binds to the alpha-2-delta subunit of voltage-gated calcium channels in the CNS, reducing excitatory neurotransmitter release.",
-        "uses": "Gabapentin (Neurontin) is FDA-approved for postherpetic neuralgia (PHN) and as adjunctive therapy for partial-onset seizures (with or without secondary generalization) in patients ≥3 years. Horizant (extended-release) is approved for restless legs syndrome (RLS) and PHN. Gralise is approved for PHN. Gabapentin is widely used off-label for neuropathic pain, fibromyalgia, hot flashes, anxiety, and adjunct pain management.",
-        "warnings": "Gabapentin has additive CNS depressant effects when combined with opioids, benzodiazepines, alcohol, or other CNS depressants, potentially causing respiratory depression and death. Multiple states have classified gabapentin as a controlled substance due to abuse potential (not federally scheduled). Suicidal ideation/behavior has been reported with antiepileptic drugs. Gabapentin can cause somnolence, dizziness, and ataxia that impair driving/machinery operation. Respiratory depression can occur in patients with respiratory disease or with CNS depressants. Require dose adjustment in renal impairment. Abrupt withdrawal can precipitate seizures.",
-        "side_effects": "Common: dizziness, somnolence, ataxia, fatigue, nystagmus, tremor, weight gain, peripheral edema, and dry mouth. Serious: respiratory depression (with CNS depressants), suicidal ideation, Stevens-Johnson syndrome (rare), and hypersensitivity reactions (DRESS).",
-        "dosage": "PHN (Neurontin): 300 mg on Day 1, 300 mg twice daily on Day 2, 300 mg three times daily on Day 3; titrate to 1,800-3,600 mg/day in 3 divided doses. Epilepsy adjunct (adults): 300-1,200 mg three times daily; maximum 3,600 mg/day. RLS (Horizant): 600 mg once daily at 5 PM. Dose reduction required for renal impairment (CrCl-based). Take with or without food.",
-        "before_taking": "Tell your doctor if you have kidney disease (dose reduction required), respiratory disease, a history of depression or suicidal thoughts, or substance use disorder. Tell your doctor if you take opioid pain medications, benzodiazepines, sleep aids, or alcohol — combined use markedly increases the risk of respiratory depression. Do not stop gabapentin suddenly if used for seizures. Gabapentin can cause dizziness and drowsiness — avoid driving until you know how it affects you. Inform your doctor if you are pregnant or breastfeeding.",
-    },
     "metoprolol": {
         "description": "Metoprolol is a selective beta-1 adrenergic receptor blocker available as metoprolol succinate (Toprol-XL, extended-release) and metoprolol tartrate (Lopressor, immediate-release). It reduces heart rate, blood pressure, and cardiac output.",
         "uses": "Metoprolol tartrate (Lopressor) is indicated for hypertension, stable angina, and acute myocardial infarction. Metoprolol succinate (Toprol-XL) is indicated for hypertension, stable angina, and heart failure with reduced ejection fraction (to reduce mortality and hospitalization). Beta-blockers are first-line therapy for many cardiac conditions and are commonly used for rate control in atrial fibrillation.",
@@ -2476,14 +2202,6 @@ DRUG_CONTENT_OVERRIDES = {
         "side_effects": "Common: dizziness, somnolence, weight gain, peripheral edema, blurred vision, dry mouth, and concentration difficulties. Serious: angioedema, respiratory depression (with CNS depressants), suicidal ideation, myopathy, thrombocytopenia, and PR interval prolongation.",
         "dosage": "Diabetic neuropathy: 50-100 mg 3 times daily (start 50 mg TID); maximum 300 mg/day. PHN: 75-150 mg twice daily or 50-100 mg three times daily; maximum 300-600 mg/day. Fibromyalgia: 75 mg twice daily initially; maximum 225 mg twice daily (450 mg/day). Seizures (adjunct): 150-600 mg/day in 2-3 divided doses. Reduce dose proportionally to creatine clearance in renal impairment. Discontinue gradually over at least 1 week.",
         "before_taking": "You should not take pregabalin if you are allergic to it. Tell your doctor if you have heart failure or fluid retention, kidney disease, a history of drug or alcohol abuse, depression or suicidal thoughts, or a bleeding disorder. Tell your doctor if you take opioids, benzodiazepines, alcohol, or other CNS depressants (respiratory depression risk). Tell your doctor if you take ACE inhibitors (edema risk) or thiazolidinediones (weight gain and edema). Do not stop pregabalin suddenly — taper gradually. Pregabalin is a controlled substance (Schedule V). Inform your doctor if you are pregnant or breastfeeding.",
-    },
-    "warfarin": {
-        "description": "Warfarin (Coumadin, Jantoven) is a vitamin K antagonist oral anticoagulant that inhibits the hepatic synthesis of vitamin K-dependent clotting factors (II, VII, IX, X) and anticoagulant proteins C and S. It requires regular INR monitoring due to its narrow therapeutic index and numerous drug and food interactions.",
-        "uses": "Warfarin is indicated for the treatment and prophylaxis of venous thromboembolism (DVT and pulmonary embolism), atrial fibrillation (to prevent systemic embolism, including stroke), prosthetic heart valve thromboembolism prophylaxis, and secondary prevention of systemic embolism after myocardial infarction.",
-        "warnings": "The most serious risk of warfarin is hemorrhage (black box warning) — bleeding can occur at any site. Monitor INR regularly — target range is typically 2.0-3.0 (higher for mechanical heart valves). Many drugs, foods (especially vitamin K-rich vegetables like leafy greens, kale, spinach), and health conditions significantly alter INR. Skin necrosis (protein C/S deficiency) can occur early in therapy. Warfarin is highly teratogenic (fetal warfarin syndrome, spontaneous abortion) — contraindicated in pregnancy except for mechanical heart valves. Purple toe syndrome has been reported. VKORC1 and CYP2C9 genetic variants significantly affect warfarin dosing.",
-        "side_effects": "Common: minor bleeding (bruising, nosebleeds, gum bleeding), and INR fluctuations. Serious: major hemorrhage (intracranial, GI, retroperitoneal), skin necrosis, purple toe syndrome, and hypersensitivity reactions.",
-        "dosage": "Starting dose varies by individual; typical 2-5 mg/day with INR monitoring. Adjust dose based on INR results. Target INR 2.0-3.0 for most indications; 2.5-3.5 for mechanical prosthetic heart valves. Allow 2-3 days between dose changes before re-checking INR. Take at the same time each day — often in the late afternoon/evening.",
-        "before_taking": "You should not take warfarin if you are pregnant (except mechanical heart valves), have active bleeding, recent surgery of the CNS or eye, subacute bacterial endocarditis, or poor adherence to medical follow-up. Tell your doctor about ALL medications including OTC drugs, vitamins, and herbal supplements — hundreds of drugs interact with warfarin. Maintain a consistent intake of vitamin K-containing foods (green leafy vegetables) — do not eliminate them, just be consistent. Avoid alcohol (increases bleeding risk and alters INR). Tell your dentist and surgeon that you take warfarin before any procedure. Carry a medical alert card.",
     },
     "tramadol": {
         "description": "Tramadol (Ultram, Ultram ER, ConZip) is a centrally acting synthetic opioid analgesic with a dual mechanism: weak mu-opioid receptor agonism and inhibition of serotonin and norepinephrine reuptake (SNRI activity). It is a Schedule IV controlled substance.",
@@ -4057,59 +3775,38 @@ DRUG_CONTENT_OVERRIDES = {
 }
 
 
-REVIEWERS = [
-    ("Lisa Huang", "MD, Endocrinology"),
-    ("Robert Walsh", "PharmD, BCACP"),
-]
+def _content_override(generic_name):
+    return DRUG_CONTENT_OVERRIDES.get(generic_name, DRUG_CONTENT_OVERRIDES.get(slugify(generic_name), {}))
+
 
 
 def seed_drugs():
     existing = {d.generic_name for d in Drug.query.all()}
     cls_by_name = {c.name: c.id for c in DrugClass.query.all()}
     featured_targets = {"ibuprofen", "metformin", "lisinopril", "sertraline", "atorvastatin", "semaglutide", "amoxicillin", "levothyroxine"}
-    for idx, entry in enumerate(DRUGS_DATA):
+    for entry in DRUGS_DATA:
         gname, cname, avail, csa, pron, brands, conds = entry
         if gname in existing:
             continue
-        # Try OpenFDA first, fall back to synthetic.
-        openfda = fetch_openfda_label(gname)
-        if openfda:
-            uses = truncate(first(openfda.get("indications_and_usage")))
-            warn = truncate(first(openfda.get("warnings") or openfda.get("warnings_and_cautions")))
-            dose = truncate(first(openfda.get("dosage_and_administration")))
-            adv = truncate(first(openfda.get("adverse_reactions")))
-            inter = truncate(first(openfda.get("drug_interactions")))
-            desc = truncate(first(openfda.get("description")) or first(openfda.get("clinical_pharmacology")))
-        else:
-            uses = warn = dose = adv = inter = desc = None
-        if not any([uses, warn, dose, adv, inter, desc]):
-            syn = synthetic_content(gname, cname, conds)
-            uses = uses or syn["uses"]
-            warn = warn or syn["warnings"]
-            dose = dose or syn["dosage"]
-            adv = adv or syn["side_effects"]
-            inter = inter or syn["interactions_text"]
-            desc = desc or syn["description"]
-
-        # Manual overrides for drugs whose openFDA label resolved to a combination
-        # product or otherwise mismatched content. Each override fully replaces the
-        # uses/description/warnings/dosage/side_effects so the single-ingredient
-        # drug page reads correctly.
-        if gname in DRUG_CONTENT_OVERRIDES:
-            ov = DRUG_CONTENT_OVERRIDES[gname]
+        # Only explicitly tracked per-record fixture text is stored. Records without
+        # an override retain empty fields rather than receiving class/name-derived claims.
+        content = empty_content_fixture()
+        uses = content["uses"]
+        warn = content["warnings"]
+        dose = content["dosage"]
+        adv = content["side_effects"]
+        inter = content["interactions_text"]
+        desc = content["description"]
+        ov = _content_override(gname)
+        if ov:
             uses = ov.get("uses", uses)
             desc = ov.get("description", desc)
             warn = ov.get("warnings", warn)
             dose = ov.get("dosage", dose)
             adv = ov.get("side_effects", adv)
+            inter = ov.get("interactions_text", inter)
 
-        faq = [
-            {"q": f"What is {gname} used for?", "a": _trunc_at_sentence(uses) or f"{gname} is used to treat {', '.join(conds) if conds else 'various medical conditions'}."},
-            {"q": f"How should I take {gname}?", "a": _trunc_at_sentence(dose) or f"Take {gname} exactly as prescribed by your doctor."},
-            {"q": f"What are the most common side effects of {gname}?", "a": _trunc_at_sentence(adv) or "Common side effects vary; consult the side effects section above."},
-            {"q": f"Can I drink alcohol while taking {gname}?", "a": "Talk with your doctor or pharmacist about whether alcohol is safe to consume while on this medication. Alcohol can worsen side effects of many drugs."},
-            {"q": f"Is {gname} safe during pregnancy?", "a": "Discuss with your doctor before using this medication if you are pregnant, planning pregnancy, or breastfeeding."},
-        ]
+        faq = []
 
         d = Drug(
             generic_name=gname,
@@ -4118,7 +3815,7 @@ def seed_drugs():
             drug_class_id=cls_by_name.get(cname),
             availability=avail,
             csa_schedule=csa,
-            pregnancy_risk=_PREGNANCY_RISK.get(gname, "Discuss with your doctor"),
+            pregnancy_risk=_PREGNANCY_RISK.get(gname, ""),
             pronunciation=pron,
             description=desc,
             uses=uses,
@@ -4130,12 +3827,12 @@ def seed_drugs():
             conditions_json=json.dumps(conds),
             related_drugs_json=json.dumps([]),
             is_featured=(gname in featured_targets),
-            reviewer_name=REVIEWERS[idx % len(REVIEWERS)][0],
-            reviewer_credential=REVIEWERS[idx % len(REVIEWERS)][1],
-            last_updated=datetime.utcnow() - timedelta(days=hash(gname) % 365),
+            reviewer_name="WebHarbor dataset",
+            reviewer_credential="unverified benchmark fixture",
+            last_updated=SEED_EPOCH - timedelta(days=_stable_day_offset(gname)),
         )
         db.session.add(d)
-    db.session.commit()
+    db.session.flush()
 
     # Populate related_drugs by class
     all_drugs = Drug.query.all()
@@ -4145,7 +3842,7 @@ def seed_drugs():
     for d in all_drugs:
         peers = [n for n in by_class.get(d.drug_class_id, []) if n != d.generic_name][:6]
         d.related_drugs_json = json.dumps(peers)
-    db.session.commit()
+    db.session.flush()
 
 
 def seed_drug_conditions():
@@ -4156,11 +3853,11 @@ def seed_drug_conditions():
             c = cond_by_slug.get(c_slug)
             if c and (d.id, c.id) not in existing:
                 db.session.add(DrugCondition(drug_id=d.id, condition_id=c.id))
-    db.session.commit()
+    db.session.flush()
     # Update denormalized drug_count
     for c in Condition.query.all():
         c.drug_count = DrugCondition.query.filter_by(condition_id=c.id).count()
-    db.session.commit()
+    db.session.flush()
 
 
 def seed_pill_images():
@@ -4184,7 +3881,7 @@ def seed_pill_images():
             drug_id=d.id, imprint=imprint, shape=shape, color=color,
             strength=strength, manufacturer=mfg,
         ))
-    db.session.commit()
+    db.session.flush()
 
 
 def seed_interactions():
@@ -4209,9 +3906,10 @@ def seed_interactions():
             continue
         if (da.id, db_.id) in existing_pairs:
             continue
-        to_add.append((da, db_, sev, desc))
-        existing_pairs.add((da.id, db_.id))
-        existing_pairs.add((db_.id, da.id))
+        first, second = sorted((da, db_), key=lambda drug: drug.id)
+        to_add.append((first, second, sev, desc))
+        existing_pairs.add((first.id, second.id))
+        existing_pairs.add((second.id, first.id))
 
     if not to_add:
         return
@@ -4219,7 +3917,7 @@ def seed_interactions():
         db.session.add(DrugInteraction(
             drug_a_id=da.id, drug_b_id=db_.id, severity=sev, description=desc,
         ))
-    db.session.commit()
+    db.session.flush()
 
 
 def seed_news():
@@ -4230,15 +3928,15 @@ def seed_news():
     is used, the explicit source and publication date override the defaults.
     """
     existing = {n.title for n in NewsArticle.query.all()}
-    now = datetime.utcnow()
+    now = SEED_EPOCH
     for i, entry in enumerate(NEWS_DATA):
         if len(entry) == 5:
-            title, cat, body, source, pub_iso = entry
+            title, cat, body, _source, pub_iso = entry
             published_at = datetime.fromisoformat(pub_iso)
         else:
             title, cat, body = entry
-            source = "Drugs.com Medical News"
             published_at = now - timedelta(days=i * 2)
+        source = "WebHarbor benchmark fixture"
         if title in existing:
             continue
         db.session.add(NewsArticle(
@@ -4246,7 +3944,7 @@ def seed_news():
             published_at=published_at,
             is_featured=(i < 4),
         ))
-    db.session.commit()
+    db.session.flush()
 
 
 def seed_benchmark_users():
@@ -4264,8 +3962,9 @@ def seed_benchmark_users():
         user = User(
             username=u["username"], email=u["email"],
             first_name=u.get("first_name", ""), last_name=u.get("last_name", ""),
+            password_hash=SEED_PASSWORD_HASHES[u["email"]],
+            created_at=SEED_EPOCH + timedelta(seconds=idx),
         )
-        user.set_password(u["password"])
         db.session.add(user)
         db.session.flush()
         # Saved drugs (3+)
@@ -4278,7 +3977,11 @@ def seed_benchmark_users():
         if len(saved_pool) < 3:
             saved_pool = drugs[:5]
         for d in saved_pool[:4]:
-            db.session.add(SavedDrug(user_id=user.id, drug_id=d.id, notes=f"Tracking for ongoing treatment."))
+            db.session.add(SavedDrug(
+                user_id=user.id, drug_id=d.id,
+                notes="Tracking for ongoing treatment.",
+                created_at=SEED_EPOCH + timedelta(minutes=idx, seconds=d.id),
+            ))
         # Reviews (2+)
         for j in range(3):
             target = drugs[(idx * 5 + j * 11) % len(drugs)]
@@ -4289,8 +3992,10 @@ def seed_benchmark_users():
                 title=tmpl[0], body=tmpl[2].format(cond=_humanize_cond(conds[0])),
                 condition_treated=conds[0],
                 helpful_count=(idx + j) * 3,
+                is_fixture=True,
+                created_at=SEED_EPOCH - timedelta(days=idx * 3 + j),
             ))
-    db.session.commit()
+    db.session.flush()
 
 
 def seed_extra_reviews():
@@ -4314,15 +4019,18 @@ def seed_extra_reviews():
             legacy = f"reviewer{i}@example.com"
             u = User.query.filter_by(email=legacy).first()
         if not u:
-            u = User(username=uname, email=email)
-            u.set_password("review-seed-pw")
+            u = User(
+                username=uname, email=email,
+                password_hash=SEED_PASSWORD_HASHES[email],
+                created_at=SEED_EPOCH + timedelta(hours=i + 1),
+            )
             db.session.add(u)
             db.session.flush()
         elif u.username != uname:
             u.username = uname
             u.email = email
         reviewers.append(u)
-    db.session.commit()  # always persist username/email renames
+    db.session.flush()
     reviewer_ids = {u.id for u in reviewers}
     if DrugReview.query.filter(DrugReview.user_id.in_(reviewer_ids)).count() >= 700:
         return
@@ -4406,13 +4114,14 @@ def seed_extra_reviews():
                 title=tmpl[0], body=tmpl[2].format(cond=_humanize_cond(conds[j % len(conds)])),
                 condition_treated=conds[j % len(conds)],
                 helpful_count=(j + 1) * 4,
-                created_at=datetime.utcnow() - timedelta(days=(i * 4 + j)),
+                is_fixture=True,
+                created_at=SEED_EPOCH - timedelta(days=(i * 4 + j)),
             ))
             existing_pairs.add((d.id, u.id))
             count += 1
         if count >= 4000:
             break
-    db.session.commit()
+    db.session.flush()
     if count > 0:
         recompute_drug_ratings()
 
@@ -4426,29 +4135,160 @@ def recompute_drug_ratings():
         else:
             d.avg_rating = 0.0
             d.review_count = 0
-    db.session.commit()
+    db.session.flush()
+
+
+_CATALOG_DIGEST_QUERIES = {
+    "condition": "SELECT id,name,slug,description,drug_count FROM condition ORDER BY id",
+    "drug": "SELECT id,generic_name,slug,brand_names_json,drug_class_id,availability,csa_schedule,pregnancy_risk,pronunciation,description,uses,warnings,dosage,side_effects,interactions_text,faq_json,is_featured,conditions_json,related_drugs_json,reviewer_name,reviewer_credential,last_updated FROM drug ORDER BY id",
+    "drug_class": "SELECT id,name,slug,description FROM drug_class ORDER BY id",
+    "drug_condition": "SELECT id,drug_id,condition_id FROM drug_condition ORDER BY id",
+    "drug_image": "SELECT id,drug_id,imprint,shape,color,strength,manufacturer FROM drug_image ORDER BY id",
+    "drug_interaction": "SELECT id,drug_a_id,drug_b_id,severity,description FROM drug_interaction ORDER BY id",
+    "lifestyle_interaction": "SELECT id,drug_id,item,kind,severity,description FROM lifestyle_interaction ORDER BY id",
+    "news_article": "SELECT id,title,category,body,source,published_at,is_featured FROM news_article ORDER BY id",
+}
+
+
+def _rows_digest(queries):
+    payload = {}
+    for name, statement in sorted(queries.items()):
+        payload[name] = [list(row) for row in db.session.execute(text(statement)).all()]
+    encoded = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False, default=str)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _catalog_digest():
+    return _rows_digest(_CATALOG_DIGEST_QUERIES)
+
+
+def _schema_digest():
+    rows = db.session.execute(text(
+        "SELECT type,name,tbl_name,sql FROM sqlite_master "
+        "WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name,tbl_name,sql"
+    )).all()
+    encoded = json.dumps([list(row) for row in rows], separators=(",", ":"), ensure_ascii=False)
+    return hashlib.sha256(encoded.encode("utf-8")).hexdigest()
+
+
+def _load_seed_manifest():
+    manifest_path = Path(BASE_DIR) / "seed_manifest.json"
+    try:
+        value = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as error:
+        raise RuntimeError(f"invalid seed manifest: {error}") from error
+    if not isinstance(value, dict):
+        raise RuntimeError("invalid seed manifest object")
+    return value
+
+
+def _validate_seed_state(require_marker=True, *, canonical=False, verify_manifest=True):
+    counts = {
+        "drug_class": DrugClass.query.count(),
+        "drug": Drug.query.count(),
+        "drug_image": DrugImage.query.count(),
+        "drug_interaction": DrugInteraction.query.count(),
+        "condition": Condition.query.count(),
+        "drug_condition": DrugCondition.query.count(),
+        "news_article": NewsArticle.query.count(),
+        "user": User.query.count(),
+        "saved_drug": SavedDrug.query.count(),
+        "drug_review": DrugReview.query.count(),
+        "lifestyle_interaction": LifestyleInteraction.query.count(),
+    }
+    expected = {
+        "drug_class": 105,
+        "drug": 246,
+        "drug_image": 103,
+        "drug_interaction": 76,
+        "condition": 69,
+        "drug_condition": 379,
+        "news_article": 80,
+        "user": 12,
+        "saved_drug": 15,
+        "drug_review": 716,
+        "lifestyle_interaction": 11,
+    }
+    static_tables = {
+        "drug_class", "drug", "drug_image", "drug_interaction", "condition",
+        "drug_condition", "news_article", "lifestyle_interaction",
+    }
+    failures = [
+        f"{name}={counts[name]}!={expected_count}"
+        for name, expected_count in expected.items()
+        if (canonical or name in static_tables) and counts[name] != expected_count
+    ]
+    marker = db.session.get(SeedMetadata, "version")
+    if require_marker and (marker is None or marker.value != SEED_VERSION):
+        failures.append("missing or stale seed version marker")
+    if canonical:
+        required_users = {row[0] for row in db.session.query(User.email).all()}
+        for user in BENCHMARK_USERS:
+            if user["email"] not in required_users:
+                failures.append(f"missing benchmark user {user['email']}")
+    integrity = db.session.execute(text("PRAGMA integrity_check")).first()
+    if integrity is None or integrity[0] != "ok":
+        failures.append(f"integrity check failed: {integrity}")
+    foreign_key_failures = db.session.execute(text("PRAGMA foreign_key_check")).all()
+    if foreign_key_failures:
+        failures.append(f"foreign key failures: {foreign_key_failures[:3]}")
+    if verify_manifest:
+        manifest = _load_seed_manifest()
+        if manifest.get("version") != SEED_VERSION:
+            failures.append(f"manifest version {manifest.get('version')!r}!={SEED_VERSION!r}")
+        catalog_digest = _catalog_digest()
+        if manifest.get("catalog_sha256") != catalog_digest:
+            failures.append(f"catalog digest {catalog_digest} does not match manifest")
+        schema_digest = _schema_digest()
+        if manifest.get("schema_sha256") != schema_digest:
+            failures.append(f"schema digest {schema_digest} does not match manifest")
+    if failures:
+        raise RuntimeError("invalid Drugs.com seed: " + "; ".join(failures))
+    return counts
 
 
 def seed_database():
-    # Gate the entire seeding block: even a no-op commit bumps SQLite metadata
-    # and breaks /reset byte-identity. All-or-nothing is the correct invariant.
-    if Drug.query.count() > 0:
+    marker = db.session.get(SeedMetadata, "version")
+    if marker is not None:
+        if marker.value != SEED_VERSION:
+            raise RuntimeError(
+                f"unsupported Drugs.com seed version {marker.value!r}; expected {SEED_VERSION!r}"
+            )
+        _validate_seed_state(canonical=False)
         return
-    seed_drug_classes()
-    seed_conditions()
-    seed_drugs()
-    seed_drug_conditions()
-    seed_pill_images()
-    seed_interactions()
-    seed_news()
-    seed_benchmark_users()
-    seed_extra_reviews()
-    recompute_drug_ratings()
-    # Supplemental and backfill passes run once as part of initial seeding;
-    # they are defined later in the file but called here so the all-or-nothing
-    # gate above covers them too (avoids SQLite metadata bumps on every reset).
-    seed_supplemental()
-    seed_pregnancy_risks()
+
+    domain_models = (
+        DrugClass, Drug, DrugImage, DrugInteraction, DrugReview, Condition,
+        DrugCondition, NewsArticle, SavedDrug, User, LifestyleInteraction,
+    )
+    populated = [model.__tablename__ for model in domain_models if model.query.first() is not None]
+    if populated:
+        raise RuntimeError(
+            "refusing to use a partially populated, unversioned Drugs.com database: "
+            + ", ".join(populated)
+        )
+
+    try:
+        seed_drug_classes()
+        seed_conditions()
+        seed_drugs()
+        seed_drug_conditions()
+        seed_pill_images()
+        seed_interactions()
+        seed_news()
+        seed_benchmark_users()
+        seed_extra_reviews()
+        recompute_drug_ratings()
+        seed_supplemental()
+        seed_pregnancy_risks()
+        seed_lifestyle_interactions()
+        db.session.add(SeedMetadata(key="version", value=SEED_VERSION))
+        db.session.flush()
+        _validate_seed_state(canonical=True, verify_manifest=False)
+        db.session.commit()
+    except Exception:
+        db.session.rollback()
+        raise
 
 
 # ---------------------------------------------------------------------------
@@ -4640,7 +4480,7 @@ def inject_globals():
     return {
         "site_name": "Drugs.com",
         "site_tagline": "Know More. Be Sure.",
-        "current_year": datetime.utcnow().year,
+        "current_year": datetime.now(UTC).year,
         "all_letters": list(string.ascii_uppercase),
     }
 
@@ -4720,7 +4560,18 @@ def dosage_guide():
 @app.route("/pregnancy-safety.html")
 def pregnancy_safety():
     drugs = Drug.query.filter(Drug.pregnancy_risk.isnot(None)).order_by(Drug.generic_name).all()
-    return render_template("pregnancy_safety.html", drugs=drugs)
+    groups = {category: [] for category in "ABCDX"}
+    unclassified = []
+    for drug_record in drugs:
+        category = preg_category_filter(drug_record.pregnancy_risk)
+        if category:
+            groups[category].append(drug_record)
+        else:
+            unclassified.append(drug_record)
+    return render_template(
+        "pregnancy_safety.html", category_groups=groups,
+        unclassified_drugs=unclassified,
+    )
 
 
 @app.route("/drugs-a-z")
@@ -4734,14 +4585,14 @@ def drug_az():
         drugs = Drug.query.filter(Drug.generic_name.op("GLOB")("[0-9]*")).order_by(Drug.generic_name).all()
     else:
         if letter not in string.ascii_uppercase:
-            letter = "A"
+            abort(400)
         drugs = Drug.query.filter(Drug.generic_name.ilike(f"{letter}%")).order_by(Drug.generic_name).all()
     letter_counts = {
         L: Drug.query.filter(Drug.generic_name.ilike(f"{L}%")).count()
         for L in string.ascii_uppercase
     }
     letter_counts["0-9"] = Drug.query.filter(Drug.generic_name.op("GLOB")("[0-9]*")).count()
-    popular_drugs = Drug.query.order_by(Drug.review_count.desc()).limit(10).all()
+    popular_drugs = Drug.query.order_by(Drug.review_count.desc(), Drug.generic_name).limit(10).all()
 
     # Top 8 drug classes by number of associated drugs.
     class_counts = (
@@ -4796,76 +4647,46 @@ def _first_sentences(text, n):
 
 
 def _build_default_faq(drug):
-    """Generate a contextual FAQ from drug fields when faq_json is empty."""
+    """Present stored fixture fields as FAQ rows without inferring clinical facts."""
     name = drug.generic_name
-    name_cap = name.capitalize() if name else "this medicine"
     items = []
 
     uses_summary = _first_sentences(drug.uses, 2) or _first_sentences(drug.description, 2)
-    if uses_summary:
-        items.append({
-            "q": f"What is {name} used for?",
-            "a": uses_summary,
-        })
-
     items.append({
-        "q": f"How does {name} work?",
-        "a": (
-            f"{name_cap} belongs to the {drug.drug_class.name} class. "
-            f"{drug.drug_class.description}"
-        ) if drug.drug_class else (
-            f"{name_cap} works through its active pharmacological mechanism in the body. "
-            f"Talk to your doctor or pharmacist for a detailed explanation of how it works for your condition."
-        ),
+        "q": f"What is {name} used for?",
+        "a": f"Stored uses fixture: {uses_summary}" if uses_summary else "No uses text is stored in this local fixture.",
     })
 
-    se_summary = _first_sentences(drug.side_effects, 3)
-    if se_summary:
-        items.append({
-            "q": f"What are the most common side effects of {name}?",
-            "a": se_summary,
-        })
-
-    avail = (drug.availability or "").lower()
-    if "otc" in avail and "rx" in avail:
-        otc_answer = (
-            f"{name_cap} is available both over the counter and by prescription, "
-            f"depending on the strength and formulation."
-        )
-    elif "otc" in avail:
-        otc_answer = (
-            f"Yes. {name_cap} is available over the counter without a prescription. "
-            f"Always follow the directions on the label."
-        )
+    if drug.drug_class:
+        class_text = f"Stored class field: {drug.drug_class.name}."
+        if drug.drug_class.description:
+            class_text += f" Stored class-description fixture: {drug.drug_class.description}"
     else:
-        otc_answer = (
-            f"No. {name_cap} is a prescription-only medicine and is not available over the counter. "
-            f"You will need a prescription from a licensed healthcare provider."
-        )
-    items.append({
-        "q": f"Is {name} available over the counter?",
-        "a": otc_answer,
-    })
+        class_text = "No mechanism or drug-class text is stored in this local fixture."
+    items.append({"q": f"How does {name} work?", "a": class_text})
 
-    preg = (drug.pregnancy_risk or "").strip()
-    if preg:
+    side_effects = _first_sentences(drug.side_effects, 3)
+    items.append({
+        "q": f"What side-effect text is stored for {name}?",
+        "a": f"Stored side-effect fixture: {side_effects}" if side_effects else "No side-effect text is stored in this local fixture.",
+    })
+    items.append({
+        "q": f"What availability value is stored for {name}?",
+        "a": f"Stored availability field: {drug.availability or 'not stored'}.",
+    })
+    items.append({
+        "q": f"What pregnancy value is stored for {name}?",
+        "a": f"Stored pregnancy field: {drug.pregnancy_risk or 'not stored'}.",
+    })
+    items.append({
+        "q": f"What brand-name values are stored for {name}?",
+        "a": f"Stored brand-name fields: {', '.join(drug.brand_names) if drug.brand_names else 'none'}.",
+    })
+    if drug.dosage:
         items.append({
-            "q": f"Is {name} safe to take during pregnancy?",
-            "a": (
-                f"Pregnancy risk for {name}: {preg}. "
-                f"Always talk to your doctor before taking any medicine while pregnant or breastfeeding."
-            ),
+            "q": f"How should I take {name}?",
+            "a": f"Stored dosage fixture: {drug.dosage} This is unverified software-evaluation data, not an instruction.",
         })
-
-    items.append({
-        "q": f"Is there a generic version of {name}?",
-        "a": (
-            f"{name_cap} is itself a generic name. Generic versions are widely available "
-            f"and may be sold under several brand names: "
-            f"{', '.join(drug.brand_names) if drug.brand_names else 'see the brand names listed above'}."
-        ),
-    })
-
     return items
 
 
@@ -4874,29 +4695,13 @@ def _build_default_faq(drug):
 def drug_detail(slug):
     drug = Drug.query.filter_by(slug=slug).first()
     if not drug:
-        # Try matching by brand name — agents often navigate to brand URLs like /advil, /ozempic.
-        brand_q = slug.replace('-', ' ').replace('_', ' ')
-        brand_hit = Drug.query.filter(Drug.brand_names_json.ilike(f'%"{brand_q}"%')).first()
-        if not brand_hit:
-            brand_hit = Drug.query.filter(Drug.brand_names_json.ilike(f'%{brand_q}%')).first()
-        if brand_hit:
-            return redirect(url_for('drug_detail', slug=brand_hit.slug), 301)
+        brand_q = slug.replace("-", " ").replace("_", " ")
+        brand_hit = _lookup_drug_exact(brand_q)
+        if brand_hit and brand_hit.slug != slug:
+            return redirect(url_for("drug_detail", slug=brand_hit.slug), 301)
         abort(404)
-    # Track recently viewed drugs in session
-    viewed = session.get("recently_viewed", [])
-    if drug.slug in viewed:
-        viewed.remove(drug.slug)
-    viewed.insert(0, drug.slug)
-    viewed = viewed[:10]
-    session["recently_viewed"] = viewed
-    session.modified = True
-    # Fetch recently viewed Drug rows (excluding current page's drug) in session order
-    other_slugs = [s for s in viewed if s != drug.slug]
+    # Medication browsing history is intentionally not stored in the client cookie.
     recently_viewed = []
-    if other_slugs:
-        recently_viewed = Drug.query.filter(Drug.slug.in_(other_slugs)).all()
-        rv_order = {s: i for i, s in enumerate(other_slugs)}
-        recently_viewed.sort(key=lambda d: rv_order.get(d.slug, 99))
     reviews = (
         _public_reviews_query()
         .filter(DrugReview.drug_id == drug.id)
@@ -4955,21 +4760,9 @@ def drug_detail(slug):
         (DrugInteraction.drug_a_id == drug.id) | (DrugInteraction.drug_b_id == drug.id)
     ).all()
     faq_items = list(drug.faq or _build_default_faq(drug))
-    # Ensure NSAID drugs have an empty-stomach FAQ answer (common benchmark question)
-    if drug.drug_class and ('nsaid' in (drug.drug_class.name or '').lower() or 'nonsteroidal' in (drug.drug_class.name or '').lower()):
-        if not any('empty stomach' in (item.get('q') or '').lower() for item in faq_items):
-            faq_items.append({
-                "q": f"Can I take {drug.generic_name} on an empty stomach?",
-                "a": (f"It is recommended to take {drug.generic_name} with food, milk, or antacids to help prevent "
-                      f"stomach upset. Taking {drug.generic_name} on an empty stomach may increase the risk of "
-                      f"nausea, stomach pain, heartburn, and gastrointestinal irritation. If stomach upset occurs, "
-                      f"try taking it with a full glass of water and food."),
-            })
-    avoid_items = _build_avoid_items(drug)
-    _ov = DRUG_CONTENT_OVERRIDES.get(drug.generic_name) or DRUG_CONTENT_OVERRIDES.get(drug.generic_name.replace(' ', '-'), {})
+    _ov = _content_override(drug.generic_name)
     before_taking = _ov.get("before_taking")
-    # Apply runtime content overrides so drug pages reflect accurate info even if DB was seeded
-    # with incorrect OpenFDA data (e.g. wrong formulation) or generic fallbacks.
+    # Render the explicitly tracked per-record fixture fields without adding generic fallbacks.
     rt_uses = _ov.get("uses") or drug.uses
     rt_warnings = _ov.get("warnings") or drug.warnings
     rt_dosage = _ov.get("dosage") or drug.dosage
@@ -5013,78 +4806,7 @@ def drug_detail(slug):
                            related_news=related_news, related_drugs=related_drugs,
                            drug_interactions=drug_interactions,
                            faq_items=faq_items,
-                           avoid_items=avoid_items,
                            recently_viewed=recently_viewed)
-
-
-def _build_avoid_items(drug):
-    """Return a list of {title, reason} avoidance recommendations tailored to the drug's class.
-
-    Class-specific guidance is matched by keyword against the drug's class name; falls
-    back to a generic alcohol/driving warning when no class is matched. A generic
-    "other medicines with similar ingredients" item is always appended.
-    """
-    cname = (drug.drug_class.name or "").lower() if drug.drug_class else ""
-    items = []
-    rules = [
-        (("nsaid", "anti-inflammatory"), [
-            ("Alcohol", "Drinking alcohol while taking NSAIDs increases the risk of stomach bleeding and ulcers."),
-            ("Other NSAIDs", "Avoid combining with other NSAIDs (e.g., aspirin, naproxen) unless directed by your doctor."),
-        ]),
-        (("ssri", "snri", "antidepressant"), [
-            ("Alcohol", "Alcohol can worsen drowsiness and may reduce the effectiveness of the medication."),
-            ("MAO inhibitors", "Combining with MAOIs can cause a dangerous reaction known as serotonin syndrome."),
-            ("St. John's Wort", "This herbal supplement can increase the risk of serotonin syndrome."),
-        ]),
-        (("opioid", "narcotic"), [
-            ("Alcohol", "Mixing alcohol with opioids can cause severe drowsiness, slowed breathing, and overdose."),
-            ("Driving or operating machinery", "Opioids can impair your reactions and judgment until you know how this medicine affects you."),
-            ("Other CNS depressants", "Avoid benzodiazepines, sleep aids, and muscle relaxants unless directed."),
-        ]),
-        (("statin", "hmg-coa"), [
-            ("Grapefruit juice", "Grapefruit can raise statin levels in the blood and increase the risk of muscle and liver problems."),
-            ("Excessive alcohol", "Heavy alcohol use combined with statins increases the risk of liver damage."),
-        ]),
-        (("anticoagulant", "blood thinner"), [
-            ("NSAIDs and aspirin", "These medications increase the risk of bleeding when combined with anticoagulants."),
-            ("Vitamin K rich foods in large amounts", "Sudden changes in leafy green intake can affect how well warfarin-type drugs work."),
-            ("Alcohol", "Alcohol can increase bleeding risk and affect anticoagulant levels."),
-        ]),
-        (("benzodiazepine", "sedative", "hypnotic"), [
-            ("Alcohol", "Combining alcohol with sedatives can cause severe drowsiness and breathing problems."),
-            ("Driving or operating machinery", "This medicine can impair your reactions until you know how it affects you."),
-        ]),
-        (("antibiotic",), [
-            ("Alcohol", "Alcohol can worsen side effects and, with some antibiotics, cause severe reactions."),
-            ("Dairy or antacids near doses", "Some antibiotics are poorly absorbed when taken with calcium, iron, or antacids."),
-        ]),
-        (("antihistamine",), [
-            ("Alcohol", "Alcohol can intensify drowsiness caused by antihistamines."),
-            ("Driving or operating machinery", "Until you know how this medicine affects you, avoid activities requiring alertness."),
-        ]),
-        (("ace inhibitor", "arb", "angiotensin"), [
-            ("Potassium supplements and salt substitutes", "These can cause dangerously high potassium levels when combined with ACE inhibitors or ARBs."),
-            ("NSAIDs", "NSAIDs may reduce the blood-pressure-lowering effect and increase the risk of kidney problems."),
-        ]),
-        (("diabetes", "insulin", "biguanide", "sulfonylurea"), [
-            ("Alcohol", "Alcohol can cause unpredictable changes in blood sugar and increase the risk of low blood sugar."),
-            ("Skipping meals", "Missing meals while taking diabetes medication raises the risk of hypoglycemia."),
-        ]),
-    ]
-    for keywords, additions in rules:
-        if any(k in cname for k in keywords):
-            items.extend(additions)
-            break
-    if not items:
-        items = [
-            ("Alcohol", f"Drinking alcohol while taking {drug.generic_name} may worsen side effects."),
-            ("Driving or operating machinery", f"Until you know how {drug.generic_name} affects you, avoid activities requiring full alertness."),
-        ]
-    items.append((
-        "Other medicines with similar ingredients",
-        f"Ask a doctor or pharmacist before using other medicines for pain, fever, swelling, or cold/flu symptoms, as they may contain ingredients similar to {drug.generic_name}.",
-    ))
-    return [{"title": t, "reason": r} for t, r in items]
 
 
 @app.route("/comments/<slug>/")
@@ -5098,18 +4820,20 @@ def drug_reviews_page(slug):
     page = _bounded_page_arg()
     condition_filter = _bounded_query_arg('condition', '', 100)
     sort = _bounded_query_arg('sort', 'recent', 20)
+    if sort not in {"recent", "helpful", "highest", "lowest"}:
+        abort(400)
 
     query = _public_reviews_query().filter(DrugReview.drug_id == drug.id)
     if condition_filter:
         query = query.filter(DrugReview.condition_treated == condition_filter)
     if sort == 'helpful':
-        query = query.order_by(DrugReview.helpful_count.desc())
+        query = query.order_by(DrugReview.helpful_count.desc(), DrugReview.created_at.desc(), DrugReview.id.desc())
     elif sort == 'highest':
-        query = query.order_by(DrugReview.rating.desc())
+        query = query.order_by(DrugReview.rating.desc(), DrugReview.created_at.desc(), DrugReview.id.desc())
     elif sort == 'lowest':
-        query = query.order_by(DrugReview.rating.asc())
+        query = query.order_by(DrugReview.rating.asc(), DrugReview.created_at.desc(), DrugReview.id.desc())
     else:
-        query = query.order_by(DrugReview.created_at.desc())
+        query = query.order_by(DrugReview.created_at.desc(), DrugReview.id.desc())
 
     reviews = query.paginate(page=page, per_page=20, error_out=False)
     conditions = (
@@ -5164,15 +4888,20 @@ def drug_review_new(slug):
 def submit_review(slug):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
     try:
-        rating = int(request.form.get("rating", 5))
+        rating = int(request.form.get("rating", ""))
     except (TypeError, ValueError):
-        rating = 5
-    rating = max(1, min(10, rating))
-    title = (request.form.get("title") or "").strip()[:200]
-    body = (request.form.get("body") or "").strip()[:1000]
-    condition = (request.form.get("condition_treated") or "").strip()[:100]
+        rating = 0
+    if not 1 <= rating <= 10:
+        flash("Choose a rating from 1 to 10.", "danger")
+        return redirect(url_for("drug_review_new", slug=slug))
+    title = (request.form.get("title") or "").strip()
+    body = (request.form.get("body") or "").strip()
+    condition = (request.form.get("condition_treated") or "").strip()
     if not title or not body or not condition:
         flash("Condition, title, and review text are required.", "danger")
+        return redirect(url_for("drug_review_new", slug=slug))
+    if len(title) > 200 or len(body) > 1000 or len(condition) > 100:
+        flash("Review fields exceeded their allowed length.", "danger")
         return redirect(url_for("drug_review_new", slug=slug))
     insert_review = sqlite_insert(DrugReview).values(
         drug_id=drug.id,
@@ -5182,7 +4911,8 @@ def submit_review(slug):
         body=body,
         condition_treated=condition,
         helpful_count=0,
-        created_at=datetime.utcnow(),
+        is_fixture=False,
+        created_at=_utcnow(),
     )
     upsert_review = insert_review.on_conflict_do_update(
         index_elements=["drug_id", "user_id"],
@@ -5191,6 +4921,7 @@ def submit_review(slug):
             "title": insert_review.excluded.title,
             "body": insert_review.excluded.body,
             "condition_treated": insert_review.excluded.condition_treated,
+            "is_fixture": False,
         },
     )
     db.session.execute(upsert_review)
@@ -5201,205 +4932,42 @@ def submit_review(slug):
 
 
 @app.route("/<slug>/review/<int:review_id>/helpful", methods=["POST"])
+@login_required
 def review_helpful_vote(slug, review_id):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
     vote = (request.values.get("vote") or "yes").lower()
     if vote not in {"yes", "no"}:
         return jsonify({"error": "invalid_vote"}), 400
 
-    # A helpful vote is a yes/no choice, not an unbounded counter button.
-    # Authenticated votes are persisted in the existing user-preferences JSON;
-    # anonymous votes live in the signed session, a process-local race cache,
-    # and a request-time SQLite ledger that survives /restart atomically with
-    # the helpful-count update (a full /reset still restores the seed DB).
-    with _review_votes_lock:
+    with _review_votes_lock, _user_settings_lock(current_user.id):
         review = (
             _public_reviews_query()
             .filter(DrugReview.id == review_id, DrugReview.drug_id == drug.id)
             .first_or_404()
         )
-        ledger_user = (
-            current_user._get_current_object()
-            if current_user.is_authenticated
-            else None
+        if review.user_id == current_user.id:
+            return jsonify({"error": "self_vote_not_allowed"}), 403
+        db.session.refresh(current_user)
+        preferences = current_user.preferences.copy()
+        votes = _prune_review_votes(
+            preferences.get(_REVIEW_VOTES_PREFERENCE),
+            _MAX_REVIEW_VOTES_PER_SESSION,
         )
-        if ledger_user is not None and review.user_id == ledger_user.id:
-            return jsonify({"error": "self_vote_not_allowed"}), 403
-        if (
-            ledger_user is None
-            and _previous_review_voter_id() == review.user_id
-        ):
-            return jsonify({"error": "self_vote_not_allowed"}), 403
-        review_identity = _review_vote_identity(review)
-        preferences = None
-        user_votes = None
-        session_votes = None
-        vote_key = None
-        settings_lock = None
-        try:
-            if ledger_user is not None:
-                settings_lock = _user_settings_lock(ledger_user.id)
-                settings_lock.acquire()
-                db.session.refresh(ledger_user)
-                preferences = ledger_user.preferences.copy()
-                user_votes = _prune_review_votes(
-                    preferences.get(_REVIEW_VOTES_PREFERENCE),
-                    _MAX_REVIEW_VOTES,
-                )
-                previous_vote = user_votes.pop(str(review_id), None)
-                previous_vote = user_votes.get(
-                    review_identity, previous_vote
-                )
-            else:
-                raw_session_votes = session.get(_REVIEW_VOTES_SESSION)
-                session_votes = _valid_review_votes(
-                    raw_session_votes
-                )
-                server_backed_votes = _server_backed_session_vote_ids(
-                    raw_session_votes
-                )
-                review_session_key = _review_session_key(create=True)
-                server_record = _server_review_vote_record(
-                    review_session_key, review_identity
-                )
-                if server_record is not None and server_record[1] is not None:
-                    return jsonify({"error": "vote_already_claimed"}), 409
-                if server_record is not None:
-                    server_backed_votes.add(review_identity)
-                if review_session_key:
-                    for key, stored_vote in _review_votes.items():
-                        if key[:2] == ("session", review_session_key):
-                            _remember_review_vote(
-                                session_votes,
-                                key[-1],
-                                stored_vote,
-                            )
-                            server_backed_votes.add(key[-1])
-                server_votes = _server_review_votes(
-                    review_session_key
-                )
-                for stored_identity, stored_vote in server_votes.items():
-                    _remember_review_vote(
-                        session_votes, stored_identity, stored_vote
-                    )
-                    server_backed_votes.add(stored_identity)
-                session_votes = _prune_review_votes(session_votes)
-                if review_session_key:
-                    for key in [
-                        key
-                        for key in _review_votes
-                        if key[:2] == ("session", review_session_key)
-                        and key[-1] not in session_votes
-                    ]:
-                        del _review_votes[key]
-                vote_key = (
-                    "session", review_session_key, review_identity
-                )
-                legacy_previous_vote = session_votes.pop(
-                    str(review_id), None
-                )
-                legacy_previous_vote = session_votes.get(
-                    review_identity, legacy_previous_vote
-                )
-                previous_vote = (
-                    server_record[0]
-                    if server_record is not None
-                    else None
-                    if review_identity in server_backed_votes
-                    else legacy_previous_vote
-                )
-                if (
-                    previous_vote is None
-                    and review_identity not in session_votes
-                    and len(session_votes) >= _MAX_REVIEW_VOTES_PER_SESSION
-                ):
-                    return jsonify({"error": "vote_limit_reached"}), 429
-                if previous_vote is None:
-                    candidate_votes = session_votes.copy()
-                    _remember_review_vote(
-                        candidate_votes,
-                        review_identity,
-                        vote,
-                        _MAX_REVIEW_VOTES_PER_SESSION,
-                    )
-                    if not _review_votes_fit_session(
-                        candidate_votes,
-                        server_backed_votes | {review_identity},
-                    ):
-                        return jsonify({"error": "vote_limit_reached"}), 429
-                    session_votes = candidate_votes
-            if (
-                ledger_user is not None
-                and previous_vote is None
-                and len(user_votes) >= _MAX_REVIEW_VOTES_PER_SESSION
-            ):
-                return jsonify({"error": "vote_limit_reached"}), 429
-            delta = int(vote == "yes") - int(previous_vote == "yes")
-
-            if delta:
-                updated = DrugReview.query.filter(
-                    DrugReview.id == review.id
-                ).update(
-                    {
-                        DrugReview.helpful_count: db.func.max(
-                            0,
-                            db.func.coalesce(
-                                DrugReview.helpful_count, 0
-                            ) + delta,
-                        )
-                    },
-                    synchronize_session=False,
-                )
-                if not updated:
-                    db.session.rollback()
-                    return jsonify({"error": "review_not_found"}), 404
-
-            if ledger_user is not None:
-                remembered = _remember_review_vote(
-                    user_votes,
-                    review_identity,
-                    vote,
-                    _MAX_REVIEW_VOTES_PER_SESSION,
-                )
-                if not remembered:
-                    db.session.rollback()
-                    return jsonify({"error": "vote_limit_reached"}), 429
-                preferences[_REVIEW_VOTES_PREFERENCE] = user_votes
-                ledger_user.set_preferences(preferences)
-                db.session.commit()
-            else:
-                _remember_review_vote(
-                    session_votes,
-                    review_identity,
-                    vote,
-                    _MAX_REVIEW_VOTES_PER_SESSION,
-                )
-                if not _remember_server_review_vote(
-                    review_session_key, review_identity, vote
-                ):
-                    db.session.rollback()
-                    return jsonify({"error": "vote_limit_reached"}), 429
-                db.session.commit()
-                server_backed_votes.add(review_identity)
-                session[_REVIEW_VOTES_SESSION] = _encode_session_review_votes(
-                    session_votes, server_backed_votes
-                )
-                _review_votes[vote_key] = vote
-                while len(_review_votes) > _MAX_REVIEW_VOTES:
-                    del _review_votes[next(iter(_review_votes))]
-
-            current_count = (
-                db.session.query(DrugReview.helpful_count)
-                .filter(DrugReview.id == review_id)
-                .scalar()
-            )
-            if current_count is None:
-                if vote_key is not None:
-                    _review_votes.pop(vote_key, None)
-                return jsonify({"error": "review_not_found"}), 404
-        finally:
-            if settings_lock is not None:
-                settings_lock.release()
+        identity = _review_vote_identity(review)
+        previous = votes.pop(str(review.id), None)
+        previous = votes.get(identity, previous)
+        if previous is None and len(votes) >= _MAX_REVIEW_VOTES_PER_SESSION:
+            return jsonify({"error": "vote_limit_reached"}), 429
+        delta = int(vote == "yes") - int(previous == "yes")
+        if delta:
+            review.helpful_count = max(0, review.helpful_count + delta)
+        if not _remember_review_vote(votes, identity, vote, _MAX_REVIEW_VOTES_PER_SESSION):
+            db.session.rollback()
+            return jsonify({"error": "vote_limit_reached"}), 429
+        preferences[_REVIEW_VOTES_PREFERENCE] = votes
+        current_user.set_preferences(preferences)
+        db.session.commit()
+        current_count = review.helpful_count
     return jsonify({"votes": current_count, "review_id": review_id})
 
 
@@ -5420,10 +4988,20 @@ def search():
     drugs = Drug.query
     if class_slug:
         cls = DrugClass.query.filter_by(slug=class_slug).first()
-        if cls:
-            drugs = drugs.filter(Drug.drug_class_id == cls.id)
+        if cls is None:
+            abort(400)
+        drugs = drugs.filter(Drug.drug_class_id == cls.id)
     if avail:
-        drugs = drugs.filter(Drug.availability == avail)
+        availability_values = {
+            "Rx": ("Rx", "Rx and/or OTC"),
+            "OTC": ("OTC", "Rx and/or OTC"),
+            "Rx and/or OTC": ("Rx and/or OTC",),
+        }
+        if avail not in availability_values:
+            abort(400)
+        drugs = drugs.filter(Drug.availability.in_(availability_values[avail]))
+    if cond_slug and Condition.query.filter_by(slug=cond_slug).first() is None:
+        abort(400)
     drugs = drugs.all()
 
     if cond_slug:
@@ -5490,27 +5068,25 @@ def search():
         # Empty query: show popular drugs (most reviewed)
         if not (class_slug or cond_slug or avail):
             drugs = Drug.query.order_by(Drug.review_count.desc()).all()
-        results = sorted(drugs, key=lambda d: -d.review_count) if not q else sorted(drugs, key=lambda d: d.generic_name)
+        results = sorted(drugs, key=lambda d: (-(d.review_count or 0), d.generic_name)) if not q else sorted(drugs, key=lambda d: d.generic_name)
 
     # Conditions and News result groups (only when there's a query and no
     # restrictive drug-only filters are applied).
     condition_results = []
     news_results = []
-    if q:
+    if q and not (class_slug or cond_slug or avail):
         ql = q.lower()
         for c in Condition.query.all():
             if ql in c.name.lower() or ql in (c.slug or "").lower() \
                or ql in (c.description or "").lower():
                 condition_results.append(c)
         condition_results.sort(key=lambda c: c.name)
-        condition_results = condition_results[:10]
 
         for a in NewsArticle.query.all():
             if ql in a.title.lower() or ql in (a.body or "").lower() \
                or ql in (a.category or "").lower():
                 news_results.append(a)
-        news_results.sort(key=lambda a: a.published_at or datetime.min, reverse=True)
-        news_results = news_results[:10]
+        news_results.sort(key=lambda a: (a.published_at or datetime.min, a.id), reverse=True)
 
     # "Did you mean?" suggestions: 3 closest drug names by edit-distance
     # ratio whenever the query produced zero drug hits.
@@ -5581,15 +5157,21 @@ def autocomplete():
     ).strip().lower()
     if len(q) < 2:
         return jsonify([])
-    # Search generic names
-    drugs = Drug.query.filter(Drug.generic_name.ilike(f"{q}%")).limit(5).all()
-    # Also search brand names within the list
-    results = []
-    for d in drugs:
-        results.append({"type": "drug", "name": d.generic_name, "url": f"/{d.slug}.html", "label": d.generic_name.capitalize()})
-        for brand in (d.brand_names or [])[:1]:  # only first brand
-            if brand.lower().startswith(q):
-                results.append({"type": "brand", "name": brand, "url": f"/{d.slug}.html", "label": f"{brand} ({d.generic_name})"})
+    generic_matches = (
+        Drug.query.filter(Drug.generic_name.ilike(f"{q}%"))
+        .order_by(Drug.generic_name).limit(5).all()
+    )
+    results = [
+        {"type": "drug", "name": drug.generic_name, "url": f"/{drug.slug}.html", "label": drug.generic_name.capitalize()}
+        for drug in generic_matches
+    ]
+    generic_ids = {drug.id for drug in generic_matches}
+    for drug in Drug.query.order_by(Drug.generic_name):
+        for brand in drug.brand_names:
+            if brand.casefold().startswith(q) and drug.id not in generic_ids:
+                results.append({"type": "brand", "name": brand, "url": f"/{drug.slug}.html", "label": f"{brand} ({drug.generic_name})"})
+                generic_ids.add(drug.id)
+                break
     # Also search conditions
     conditions = Condition.query.filter(Condition.name.ilike(f"%{q}%")).limit(3).all()
     for c in conditions:
@@ -5603,6 +5185,12 @@ def autocomplete():
 @app.route("/drug-interactions/", methods=["GET", "POST"])
 @app.route("/drug-interactions", methods=["GET", "POST"])
 def interaction_checker():
+    if request.method == "POST":
+        submitted = _normalize_interaction_names(request.form.getlist("drugs"))
+        if submitted is None or len(submitted) < 2:
+            abort(400)
+        return redirect(url_for("interaction_checker", drugs=submitted))
+
     drugs = Drug.query.order_by(Drug.generic_name).all()
     drugs_input = None
     interactions = None
@@ -5734,28 +5322,9 @@ _FOOD_BY_GENERIC = {
     ],
 }
 
-_FOOD_BY_CLASS = {
-    "nsaids": [
-        {"item": "High-sodium foods", "severity": "minor",
-         "description": "NSAIDs promote sodium and water retention. Diets high in sodium can amplify blood-pressure increases and edema, especially in older adults or those with cardiac disease."},
-    ],
-    "statins": [
-        {"item": "Grapefruit juice", "severity": "major",
-         "description": "Grapefruit inhibits intestinal CYP3A4 and substantially raises serum levels of simvastatin, lovastatin, and atorvastatin. Elevated exposure increases the risk of myopathy and rhabdomyolysis."},
-    ],
-    "ssris": [
-        {"item": "Tyramine-rich foods (aged cheese, cured meats)", "severity": "minor",
-         "description": "While SSRIs are safer than MAOIs with tyramine, large tyramine loads can occasionally precipitate hypertensive or serotonergic symptoms in susceptible patients."},
-    ],
-    "anticoagulants": [
-        {"item": "Vitamin K-rich foods (kale, spinach, broccoli)", "severity": "moderate",
-         "description": "Vitamin K antagonizes warfarin-type anticoagulants. Keep daily vitamin K intake consistent to maintain stable INR; abrupt changes alter anticoagulant control."},
-    ],
-    "ace inhibitors": [
-        {"item": "Potassium-rich foods (bananas, oranges, salt substitutes)", "severity": "moderate",
-         "description": "ACE inhibitors reduce aldosterone-mediated potassium excretion. Excess dietary potassium, especially with salt substitutes, can produce clinically significant hyperkalemia."},
-    ],
-}
+_GRAPEFRUIT_FIXTURE = {"item": "Grapefruit juice", "severity": "major", "description": "This local fixture associates grapefruit with simvastatin, lovastatin, and atorvastatin. It is not verified interaction guidance."}
+for _generic in ("simvastatin", "lovastatin", "atorvastatin"):
+    _FOOD_BY_GENERIC.setdefault(_generic, []).append(_GRAPEFRUIT_FIXTURE)
 
 _ALCOHOL_BY_GENERIC = {
     "metronidazole": {"severity": "major",
@@ -5768,54 +5337,67 @@ _ALCOHOL_BY_GENERIC = {
         "description": "Alcohol increases the risk of lactic acidosis in patients taking metformin, especially in those who drink heavily. Alcohol can also cause hypoglycemia or hyperglycemia and masks warning symptoms. Limit or avoid alcohol while taking metformin."},
 }
 
-_ALCOHOL_BY_CLASS = {
-    "nsaids": {"severity": "major",
-        "description": "Combining NSAIDs with alcohol substantially increases the risk of gastrointestinal bleeding, ulceration, and renal injury. Avoid or minimize alcohol while taking NSAIDs."},
-    "ssris": {"severity": "moderate",
-        "description": "SSRIs combined with alcohol increase central nervous system depression, sedation, and impaired judgment. Alcohol may also worsen depressive symptoms and reduce SSRI efficacy."},
-    "benzodiazepines": {"severity": "major",
-        "description": "Benzodiazepines plus alcohol cause additive CNS and respiratory depression. The combination can produce profound sedation, respiratory arrest, and death."},
-    "opioids": {"severity": "major",
-        "description": "Opioids and alcohol both depress the CNS and respiratory drive. Concurrent use markedly increases the risk of fatal respiratory depression and overdose."},
-    "anticoagulants": {"severity": "major",
-        "description": "Alcohol affects both anticoagulant metabolism and platelet function, increasing the risk of major bleeding. Patients should limit intake and discuss safe thresholds with their clinician."},
-    "antihistamines": {"severity": "moderate",
-        "description": "First-generation antihistamines combined with alcohol produce additive sedation and psychomotor impairment, raising the risk of falls and motor-vehicle accidents."},
-    "antidiabetics": {"severity": "moderate",
-        "description": "Alcohol can cause hypoglycemia (especially fasting) and impair recognition of warning symptoms. Sulfonylureas and insulin carry the greatest risk."},
-}
+_ALCOHOL_BY_GENERIC.update({
+    "alprazolam": {"severity": "major", "description": "This local fixture marks alprazolam and alcohol as major and mentions additive central nervous system and respiratory depression."},
+    "oxycodone": {"severity": "major", "description": "This local fixture marks oxycodone and alcohol as major and mentions additive central nervous system and respiratory depression."},
+})
+
+
+def seed_lifestyle_interactions():
+    existing = {
+        (row.drug_id, row.item)
+        for row in LifestyleInteraction.query.all()
+    }
+    for drug in Drug.query.order_by(Drug.id):
+        generic = (drug.generic_name or "").lower()
+        food_entries = list(_FOOD_BY_GENERIC.get(generic, []))
+        for entry in food_entries:
+            key = (drug.id, entry["item"])
+            if key in existing:
+                continue
+            db.session.add(LifestyleInteraction(
+                drug_id=drug.id, item=entry["item"], kind="food",
+                severity=entry["severity"], description=entry["description"],
+            ))
+            existing.add(key)
+        alcohol = _ALCOHOL_BY_GENERIC.get(generic)
+        if alcohol and (drug.id, "Alcohol") not in existing:
+            db.session.add(LifestyleInteraction(
+                drug_id=drug.id, item="Alcohol", kind="alcohol",
+                severity=alcohol["severity"], description=alcohol["description"],
+            ))
+            existing.add((drug.id, "Alcohol"))
+    db.session.flush()
 
 
 def _lifestyle_interactions(resolved_drugs):
-    """Return (food_interactions, alcohol_interactions) for the given Drug rows.
-
-    Each food entry is {drug, item, severity, description}; each alcohol entry
-    is {drug, severity, description}. Lookups are by lowercased generic name
-    and drug-class name against hardcoded reference tables; drugs without
-    matches contribute nothing. Lists are sorted major -> moderate -> minor,
-    deduplicated per (drug, item) for food and one entry per drug for alcohol.
-    """
-    sev_order = {"major": 0, "moderate": 1, "minor": 2}
-    food, alcohol = [], []
-    seen_food = set()
-    seen_alc = set()
-    for d in resolved_drugs:
-        gname = (d.generic_name or "").lower()
-        cname = (d.drug_class.name or "").lower() if d.drug_class else ""
-        candidates = list(_FOOD_BY_GENERIC.get(gname, []))
-        candidates.extend(_FOOD_BY_CLASS.get(cname, []))
-        for entry in candidates:
-            key = (d.id, entry["item"])
-            if key in seen_food:
-                continue
-            seen_food.add(key)
-            food.append({"drug": d, **entry})
-        alc = _ALCOHOL_BY_GENERIC.get(gname) or _ALCOHOL_BY_CLASS.get(cname)
-        if alc and d.id not in seen_alc:
-            seen_alc.add(d.id)
-            alcohol.append({"drug": d, **alc})
-    food.sort(key=lambda x: sev_order.get(x["severity"], 99))
-    alcohol.sort(key=lambda x: sev_order.get(x["severity"], 99))
+    """Return deterministic food and alcohol interactions stored in SQLite."""
+    if not resolved_drugs:
+        return [], []
+    by_id = {drug.id: drug for drug in resolved_drugs}
+    rows = (
+        LifestyleInteraction.query
+        .filter(LifestyleInteraction.drug_id.in_(by_id))
+        .order_by(LifestyleInteraction.id)
+        .all()
+    )
+    severity_order = {"major": 0, "moderate": 1, "minor": 2}
+    food = [
+        {
+            "drug": by_id[row.drug_id], "item": row.item,
+            "severity": row.severity, "description": row.description,
+        }
+        for row in rows if row.kind == "food"
+    ]
+    alcohol = [
+        {
+            "drug": by_id[row.drug_id],
+            "severity": row.severity, "description": row.description,
+        }
+        for row in rows if row.kind == "alcohol"
+    ]
+    food.sort(key=lambda item: (severity_order.get(item["severity"], 99), item["drug"].id, item["item"]))
+    alcohol.sort(key=lambda item: (severity_order.get(item["severity"], 99), item["drug"].id))
     return food, alcohol
 
 
@@ -5862,7 +5444,7 @@ def api_interaction_check():
             name_to_drug[n] = d
     interactions = []
     pair_keys = set()
-    no_interaction = []
+    unrepresented_pairs = []
     for a, b in combinations(matched, 2):
         # Try a-b and b-a
         rec = DrugInteraction.query.filter(
@@ -5881,7 +5463,7 @@ def api_interaction_check():
                 "description": rec.description,
             })
         else:
-            no_interaction.append([a.generic_name, b.generic_name])
+            unrepresented_pairs.append([a.generic_name, b.generic_name])
     if has_alcohol:
         _, alcohol_hits = _lifestyle_interactions(matched)
         for hit in alcohol_hits:
@@ -5895,7 +5477,8 @@ def api_interaction_check():
         "interactions": interactions,
         "drugs_checked": [d.generic_name for d in matched] + (["alcohol"] if has_alcohol else []),
         "unrecognized": [n for n in names if n not in name_to_drug],
-        "no_interaction_pairs": no_interaction,
+        "unrepresented_pairs": unrepresented_pairs,
+        "coverage_complete": False,
     })
 
 
@@ -5916,15 +5499,19 @@ def pill_identifier():
         "color", max_length=_MAX_FILTER_TEXT_LENGTH
     ).strip()
     shapes = sorted({i.shape for i in DrugImage.query.all() if i.shape})
-    colors = sorted({i.color for i in DrugImage.query.all() if i.color})
+    colors = sorted({component.strip() for image in DrugImage.query.all() for component in (image.color or "").split("/") if component.strip()})
+    if shape and shape.casefold() not in {value.casefold() for value in shapes}:
+        abort(400)
+    if color and color.casefold() not in {value.casefold() for value in colors}:
+        abort(400)
     if not imprint and not shape and not color:
         return render_template("pill_identifier.html", shapes=shapes, colors=colors, results=None)
     q = DrugImage.query.order_by(DrugImage.id)
     if shape:
         q = q.filter(db.func.lower(DrugImage.shape) == shape.lower())
-    if color:
-        q = q.filter(db.func.lower(DrugImage.color) == color.lower())
     candidates = q.all()
+    if color:
+        candidates = [image for image in candidates if color.casefold() in {component.strip().casefold() for component in (image.color or "").split("/")}]
     if imprint:
         def _norm(s):
             return re.sub(r"[\s\-]+", "", (s or "")).lower()
@@ -5947,12 +5534,18 @@ def pill_identifier_results():
     color = _bounded_query_arg(
         "color", max_length=_MAX_FILTER_TEXT_LENGTH
     ).strip()
+    shapes = sorted({i.shape for i in DrugImage.query.all() if i.shape})
+    colors = sorted({component.strip() for image in DrugImage.query.all() for component in (image.color or "").split("/") if component.strip()})
+    if shape and shape.casefold() not in {value.casefold() for value in shapes}:
+        abort(400)
+    if color and color.casefold() not in {value.casefold() for value in colors}:
+        abort(400)
     q = DrugImage.query.order_by(DrugImage.id)
     if shape:
         q = q.filter(db.func.lower(DrugImage.shape) == shape.lower())
-    if color:
-        q = q.filter(db.func.lower(DrugImage.color) == color.lower())
     candidates = q.all()
+    if color:
+        candidates = [image for image in candidates if color.casefold() in {component.strip().casefold() for component in (image.color or "").split("/")}]
     if imprint:
         # Partial, case-insensitive match that ignores spaces and hyphens so
         # "I-2", "I 2", and "i2" all match a stored imprint of "I-2".
@@ -5962,8 +5555,6 @@ def pill_identifier_results():
         results = [r for r in candidates if needle in _norm(r.imprint)]
     else:
         results = candidates
-    shapes = sorted({i.shape for i in DrugImage.query.all() if i.shape})
-    colors = sorted({i.color for i in DrugImage.query.all() if i.color})
     return render_template("pill_identifier.html", shapes=shapes, colors=colors,
                            results=results, imprint=imprint, shape=shape, color=color)
 
@@ -5979,12 +5570,13 @@ def condition_page(slug):
         alt = slug.replace('-', '_') if '-' in slug else slug.replace('_', '-')
         cond = Condition.query.filter_by(slug=alt).first()
     if cond is None:
-        from flask import abort
         abort(404)
     links = DrugCondition.query.filter_by(condition_id=cond.id).all()
-    drugs = [Drug.query.get(l.drug_id) for l in links]
+    drugs = [db.session.get(Drug, link.drug_id) for link in links]
     drugs = [d for d in drugs if d]
     sort = _bounded_query_arg("sort", "rating", 20).lower()
+    if sort not in {"rating", "name"}:
+        abort(400)
     if sort == "name":
         drugs.sort(key=lambda d: d.generic_name)
     else:
@@ -6010,7 +5602,7 @@ def condition_page(slug):
             .all()
         )
         for cid, _shared in shared_rows:
-            other = Condition.query.get(cid)
+            other = db.session.get(Condition, cid)
             if other is not None:
                 related.append(other)
     if not related:
@@ -6030,470 +5622,7 @@ def condition_page(slug):
     )
 
 
-CLASS_DESCRIPTIONS = {
-    "NSAID": "Nonsteroidal anti-inflammatory drugs (NSAIDs) reduce pain, fever, and inflammation by blocking cyclooxygenase enzymes.",
-    "NSAIDs": "Nonsteroidal anti-inflammatory drugs (NSAIDs) reduce pain, fever, and inflammation by blocking cyclooxygenase enzymes.",
-    "SSRI": "Selective serotonin reuptake inhibitors (SSRIs) increase serotonin levels in the brain and are used to treat depression and anxiety disorders.",
-    "SSRIs": "Selective serotonin reuptake inhibitors (SSRIs) increase serotonin levels in the brain and are used to treat depression and anxiety disorders.",
-    "SNRI": "Serotonin-norepinephrine reuptake inhibitors (SNRIs) raise serotonin and norepinephrine levels, used for depression, anxiety, and chronic pain.",
-    "ACE Inhibitor": "ACE inhibitors block the angiotensin-converting enzyme to lower blood pressure and treat heart failure.",
-    "ACE Inhibitors": "ACE inhibitors block the angiotensin-converting enzyme to lower blood pressure and treat heart failure.",
-    "ARB": "Angiotensin II receptor blockers (ARBs) relax blood vessels by blocking angiotensin II, used to treat hypertension and heart failure.",
-    "Beta Blocker": "Beta blockers slow the heart rate and lower blood pressure by blocking adrenaline effects on beta receptors.",
-    "Beta Blockers": "Beta blockers slow the heart rate and lower blood pressure by blocking adrenaline effects on beta receptors.",
-    "Calcium Channel Blocker": "Calcium channel blockers relax blood vessels and reduce the heart's workload by blocking calcium entry into cardiac and smooth muscle cells.",
-    "Statin": "Statins lower LDL cholesterol by inhibiting HMG-CoA reductase in the liver, reducing the risk of cardiovascular events.",
-    "Statins": "Statins lower LDL cholesterol by inhibiting HMG-CoA reductase in the liver, reducing the risk of cardiovascular events.",
-    "PPI": "Proton pump inhibitors (PPIs) suppress stomach acid production by blocking the H+/K+ ATPase pump, used for GERD and ulcers.",
-    "Proton Pump Inhibitor": "Proton pump inhibitors (PPIs) suppress stomach acid production by blocking the H+/K+ ATPase pump, used for GERD and ulcers.",
-    "Antibiotic": "Antibiotics kill or inhibit bacteria and are used to treat bacterial infections.",
-    "Antibiotics": "Antibiotics kill or inhibit bacteria and are used to treat bacterial infections.",
-    "Antihistamine": "Antihistamines block histamine receptors to relieve allergy symptoms such as sneezing, itching, and runny nose.",
-    "Antihistamines": "Antihistamines block histamine receptors to relieve allergy symptoms such as sneezing, itching, and runny nose.",
-    "Benzodiazepine": "Benzodiazepines enhance GABA activity in the brain to produce calming effects, used for anxiety, insomnia, and seizures.",
-    "Opioid": "Opioids bind to opioid receptors to relieve moderate to severe pain; they carry risk of dependence and respiratory depression.",
-    "Opioids": "Opioids bind to opioid receptors to relieve moderate to severe pain; they carry risk of dependence and respiratory depression.",
-    "Corticosteroid": "Corticosteroids reduce inflammation and suppress the immune response, used for asthma, allergies, and autoimmune conditions.",
-    "Diuretic": "Diuretics increase urine output to remove excess fluid, used for hypertension, heart failure, and edema.",
-    "Biguanide": "Biguanides such as metformin lower blood glucose by reducing hepatic glucose production, used as first-line therapy for type 2 diabetes.",
-}
-
-
-# Extended, multi-paragraph profiles for major drug classes. Each entry has:
-#   overview     - "What are X?" mechanism-of-action paragraph
-#   uses         - "What are X used for?" paragraph
-#   side_effects - list of common side effects shared across the class
-# Lookup by class name OR singular form (stripping trailing 's').
-DRUG_CLASS_DESCRIPTIONS_EXTENDED = {
-    "Benzodiazepines": {
-        "overview": (
-            "Benzodiazepines are central nervous system depressants that enhance the activity of "
-            "gamma-aminobutyric acid (GABA), the brain's main inhibitory neurotransmitter. By binding to "
-            "a specific site on the GABA-A receptor, they increase the frequency with which chloride "
-            "channels open in response to GABA, producing sedation, anxiolysis, muscle relaxation, and "
-            "anticonvulsant effects. Individual benzodiazepines differ mainly in onset and duration of "
-            "action, which determines whether a given drug is preferred for acute anxiety, panic attacks, "
-            "alcohol withdrawal, status epilepticus, or short-term insomnia."
-        ),
-        "uses": (
-            "Benzodiazepines are most often prescribed for the short-term management of generalized "
-            "anxiety disorder, panic disorder, and acute situational anxiety. They are also used to "
-            "control acute seizures and status epilepticus, manage alcohol and sedative withdrawal, "
-            "produce sedation for medical procedures, treat severe insomnia for limited periods, and "
-            "relieve muscle spasm. Because of the risk of tolerance, dependence, and withdrawal, "
-            "guidelines generally recommend the lowest effective dose for the shortest duration."
-        ),
-        "side_effects": [
-            "Drowsiness and sedation",
-            "Dizziness and unsteadiness",
-            "Impaired coordination and falls (especially in older adults)",
-            "Memory problems and anterograde amnesia",
-            "Slowed reaction time and impaired driving",
-            "Confusion and cognitive slowing",
-            "Tolerance, physical dependence, and withdrawal on abrupt discontinuation",
-            "Respiratory depression when combined with opioids or alcohol",
-        ],
-    },
-    "SSRIs": {
-        "overview": (
-            "Selective serotonin reuptake inhibitors (SSRIs) block the serotonin transporter on "
-            "presynaptic neurons, increasing the amount of serotonin available in the synapse. Over "
-            "several weeks, this leads to downstream adaptations in serotonin receptor signaling that "
-            "are thought to underlie their antidepressant and anxiolytic effects. SSRIs are the most "
-            "widely prescribed class of antidepressants because they are generally better tolerated and "
-            "considerably safer in overdose than older tricyclic antidepressants and MAO inhibitors."
-        ),
-        "uses": (
-            "SSRIs are first-line therapy for major depressive disorder and most anxiety disorders, "
-            "including generalized anxiety disorder, panic disorder, social anxiety disorder, "
-            "obsessive-compulsive disorder, and post-traumatic stress disorder. They are also used for "
-            "premenstrual dysphoric disorder, bulimia nervosa, and certain forms of chronic pain. Full "
-            "therapeutic effect typically takes four to six weeks, and treatment is usually continued "
-            "for at least six months after symptom remission."
-        ),
-        "side_effects": [
-            "Nausea and gastrointestinal upset",
-            "Headache",
-            "Insomnia or, conversely, drowsiness",
-            "Sexual dysfunction (decreased libido, delayed orgasm)",
-            "Weight changes",
-            "Dry mouth",
-            "Sweating",
-            "Increased risk of bleeding, especially with NSAIDs",
-            "Hyponatremia (low sodium), particularly in older adults",
-            "Discontinuation syndrome if stopped abruptly",
-        ],
-    },
-    "Statins": {
-        "overview": (
-            "Statins are HMG-CoA reductase inhibitors. By blocking the rate-limiting enzyme of "
-            "cholesterol synthesis in the liver, they reduce hepatic cholesterol production, upregulate "
-            "LDL receptors on liver cells, and increase clearance of LDL particles from the blood. The "
-            "net effect is a substantial reduction in LDL cholesterol and a modest reduction in "
-            "triglycerides, along with anti-inflammatory and plaque-stabilizing effects on the arterial "
-            "wall. Decades of large randomized trials have established that statins reduce the risk of "
-            "heart attack, stroke, and cardiovascular death."
-        ),
-        "uses": (
-            "Statins are prescribed for primary and secondary prevention of cardiovascular disease in "
-            "people with elevated LDL cholesterol, established coronary artery disease, prior stroke, "
-            "diabetes, or a high calculated 10-year risk of atherosclerotic events. They are also used "
-            "in familial hypercholesterolemia. Guidelines emphasize high-intensity statin therapy for "
-            "those at highest risk and moderate-intensity therapy for intermediate-risk patients."
-        ),
-        "side_effects": [
-            "Muscle aches and pains (myalgia)",
-            "Muscle weakness",
-            "Elevated liver enzymes",
-            "Headache",
-            "Digestive symptoms (nausea, constipation, diarrhea)",
-            "Increased blood sugar and small increased risk of new-onset diabetes",
-            "Rarely, rhabdomyolysis (severe muscle breakdown)",
-            "Memory or concentration complaints (uncommon and usually reversible)",
-        ],
-    },
-    "ACE inhibitors": {
-        "overview": (
-            "Angiotensin-converting enzyme (ACE) inhibitors block the enzyme that converts angiotensin "
-            "I to angiotensin II, a potent vasoconstrictor that also stimulates aldosterone release. "
-            "By lowering angiotensin II levels, ACE inhibitors relax blood vessels, reduce sodium and "
-            "water retention, and decrease the workload on the heart. They also reduce bradykinin "
-            "breakdown, which contributes to their vasodilatory effect and to their characteristic dry "
-            "cough. Long-term use slows progression of kidney disease, particularly in diabetes."
-        ),
-        "uses": (
-            "ACE inhibitors are a first-line treatment for hypertension and are central to the "
-            "management of heart failure with reduced ejection fraction, where they improve survival "
-            "and reduce hospitalization. They are also used after myocardial infarction to limit "
-            "ventricular remodeling, and in patients with diabetic nephropathy or chronic kidney "
-            "disease with proteinuria, where they slow progression of kidney damage."
-        ),
-        "side_effects": [
-            "Dry, persistent cough",
-            "Elevated blood potassium (hyperkalemia)",
-            "Dizziness or lightheadedness, especially with the first dose",
-            "Low blood pressure",
-            "Worsening kidney function in susceptible patients",
-            "Loss of taste",
-            "Rash",
-            "Angioedema (rare but serious swelling of the face, lips, or airway)",
-            "Should not be used in pregnancy due to fetal harm",
-        ],
-    },
-    "Nonsteroidal anti-inflammatory drugs": {
-        "overview": (
-            "Nonsteroidal anti-inflammatory drugs (NSAIDs) are among the most widely used medications "
-            "in the world. They relieve pain, reduce fever, and decrease inflammation by inhibiting "
-            "cyclooxygenase enzymes (COX-1 and COX-2), which are responsible for producing prostaglandins "
-            "— lipid compounds that promote inflammation, sensitize pain receptors, and regulate several "
-            "physiological processes. Traditional NSAIDs inhibit both COX-1 and COX-2, while selective "
-            "COX-2 inhibitors (coxibs) preferentially target the inducible isoform to reduce gastrointestinal "
-            "risk. NSAIDs are available both over-the-counter (e.g., ibuprofen, naproxen, aspirin) and "
-            "by prescription (e.g., diclofenac, indomethacin, meloxicam, celecoxib)."
-        ),
-        "uses": (
-            "NSAIDs are used for a wide range of conditions including headaches, dental pain, menstrual "
-            "cramps, muscle aches, minor injuries, osteoarthritis, rheumatoid arthritis, ankylosing "
-            "spondylitis, and gout. Low-dose aspirin has a separate role in cardiovascular prevention by "
-            "irreversibly inhibiting platelet thromboxane A2 synthesis. Prescription NSAIDs are also used "
-            "for acute gout flares, pericarditis, and perioperative pain management."
-        ),
-        "side_effects": [
-            "Stomach upset, nausea, indigestion",
-            "Gastric or duodenal ulcers and gastrointestinal bleeding",
-            "Increased blood pressure",
-            "Fluid retention and edema",
-            "Reduced kidney function (especially with long-term or high-dose use)",
-            "Cardiovascular events (heart attack, stroke) with chronic use",
-            "Allergic reactions including rash, hives",
-            "Liver enzyme elevations (rare)",
-            "Increased bleeding time (especially aspirin)",
-        ],
-    },
-    "Beta blockers": {
-        "overview": (
-            "Beta blockers (beta-adrenergic blocking agents) work by blocking the action of epinephrine "
-            "(adrenaline) at beta-adrenergic receptors in the heart, kidneys, and other organs. This slows "
-            "heart rate, reduces the force of cardiac contractions, and lowers blood pressure. Beta-1 "
-            "selective agents (cardioselective) primarily affect the heart, while non-selective beta "
-            "blockers also block beta-2 receptors in the lungs and peripheral vasculature. Some beta "
-            "blockers also have intrinsic sympathomimetic activity or additional alpha-blocking properties."
-        ),
-        "uses": (
-            "Beta blockers are prescribed for hypertension, angina pectoris, heart failure with reduced "
-            "ejection fraction, rate control in atrial fibrillation and flutter, prevention of "
-            "re-infarction after myocardial infarction, supraventricular tachycardias, essential tremor, "
-            "migraine prophylaxis, and hyperthyroidism. They are also used to reduce anxiety symptoms in "
-            "performance-related situational anxiety and are a component of post-MI secondary prevention."
-        ),
-        "side_effects": [
-            "Fatigue and exercise intolerance",
-            "Bradycardia (slow heart rate)",
-            "Cold extremities",
-            "Dizziness or lightheadedness",
-            "Shortness of breath (especially non-selective agents in asthma/COPD patients)",
-            "Sexual dysfunction",
-            "Masking of hypoglycemia symptoms in diabetic patients",
-            "Sleep disturbances and vivid dreams",
-            "Weight gain",
-        ],
-    },
-    "Proton pump inhibitors": {
-        "overview": (
-            "Proton pump inhibitors (PPIs) are a class of acid-suppressing medications that work by "
-            "irreversibly (and with omeprazole/esomeprazole) or reversibly inhibiting the hydrogen-potassium "
-            "ATPase enzyme (the 'proton pump') on the secretory surface of gastric parietal cells. This "
-            "blocks the final step of gastric acid production regardless of the stimulus. PPIs are the "
-            "most potent acid-suppressing agents available and produce sustained suppression of both basal "
-            "and stimulated gastric acid secretion. They require conversion from an inactive prodrug form "
-            "in the acidic environment of the parietal cell canaliculi."
-        ),
-        "uses": (
-            "PPIs are used for gastroesophageal reflux disease (GERD), erosive esophagitis, peptic ulcer "
-            "disease (both treatment and prevention of NSAID-induced ulcers), Helicobacter pylori "
-            "eradication (in combination with antibiotics), Zollinger-Ellison syndrome and other "
-            "hypersecretory conditions, and Barrett's esophagus. Short-course OTC formulations are "
-            "approved for frequent heartburn occurring 2 or more days per week."
-        ),
-        "side_effects": [
-            "Headache",
-            "Nausea, diarrhea, or constipation",
-            "Abdominal pain",
-            "Hypomagnesemia with prolonged use",
-            "Vitamin B12 deficiency with long-term use",
-            "Increased risk of Clostridioides difficile infection",
-            "Possible increased risk of bone fractures with long-term high-dose use",
-            "Acute interstitial nephritis (rare)",
-            "Drug interactions (especially with clopidogrel and methotrexate)",
-        ],
-    },
-    "Fluoroquinolones": {
-        "overview": (
-            "Fluoroquinolones are broad-spectrum synthetic antibiotics that kill bacteria by inhibiting "
-            "two essential bacterial enzymes: DNA gyrase (topoisomerase II) and topoisomerase IV. These "
-            "enzymes are required for bacterial DNA replication, transcription, repair, and recombination. "
-            "By trapping the enzyme-DNA complex in a broken state, fluoroquinolones cause rapid "
-            "bactericidal activity. Their excellent oral bioavailability and penetration into tissues "
-            "and cells make them useful for treating a wide range of infections. However, growing "
-            "resistance and a distinctive serious adverse effect profile have led guidelines to "
-            "recommend reserving them for infections with few alternatives."
-        ),
-        "uses": (
-            "Fluoroquinolones are used for community-acquired pneumonia, complicated urinary tract "
-            "infections and pyelonephritis, bacterial prostatitis, intra-abdominal infections, skin "
-            "and soft tissue infections, sexually transmitted infections including gonorrhea and "
-            "certain cases of chlamydia, traveler's diarrhea, anthrax and plague (as part of "
-            "post-exposure prophylaxis), and Mycobacterium avium complex. They are also used in "
-            "combination regimens for tuberculosis (levofloxacin, moxifloxacin)."
-        ),
-        "side_effects": [
-            "Nausea, diarrhea, abdominal discomfort",
-            "Headache and dizziness",
-            "Tendinitis and tendon rupture (especially Achilles tendon)",
-            "Peripheral neuropathy (may be permanent)",
-            "CNS effects: insomnia, restlessness, confusion, seizures (rare)",
-            "QT interval prolongation (especially moxifloxacin)",
-            "Aortic aneurysm and aortic dissection (increased risk)",
-            "Hypoglycemia (especially in elderly diabetic patients)",
-            "Clostridioides difficile-associated diarrhea",
-            "Photosensitivity reactions",
-            "FDA Boxed Warning: disabling and potentially permanent side effects involving tendons, muscles, joints, nerves, and CNS",
-        ],
-    },
-    "Opioids": {
-        "overview": (
-            "Opioids are a class of drugs that act primarily on opioid receptors (mu, kappa, and delta) "
-            "in the brain, spinal cord, and peripheral tissues to produce analgesia, sedation, and "
-            "euphoria. Natural opioids (morphine, codeine) are derived from the opium poppy; "
-            "semi-synthetic opioids (oxycodone, hydrocodone, buprenorphine) are chemically modified "
-            "natural opioids; and fully synthetic opioids (fentanyl, methadone, tramadol) are produced "
-            "entirely in the laboratory. Opioid analgesics are among the most effective treatments for "
-            "severe acute pain and cancer pain, but their use in chronic non-cancer pain is controversial "
-            "due to risks of tolerance, physical dependence, addiction, and overdose. Most strong opioids "
-            "are classified as Schedule II controlled substances in the United States."
-        ),
-        "uses": (
-            "Opioids are indicated for severe acute pain (post-surgical, trauma, burn), cancer-related "
-            "pain, and moderate-to-severe chronic pain in carefully selected patients when alternatives "
-            "are inadequate. Methadone and buprenorphine are used in medication-assisted treatment of "
-            "opioid use disorder. Codeine and hydrocodone are used in low doses for cough suppression. "
-            "Loperamide (a peripheral opioid) is used for diarrhea. Palliative care relies heavily on "
-            "opioids for end-of-life symptom management."
-        ),
-        "side_effects": [
-            "Constipation (nearly universal; does not develop tolerance)",
-            "Nausea and vomiting (especially initially)",
-            "Sedation and drowsiness",
-            "Respiratory depression (dose-dependent; most serious acute risk)",
-            "Itching (pruritus)",
-            "Urinary retention",
-            "Tolerance and physical dependence with ongoing use",
-            "Risk of addiction and opioid use disorder",
-            "Overdose (miosis, stupor, respiratory depression; treat with naloxone)",
-            "Hormonal effects: hypogonadism, decreased testosterone/estrogen with long-term use",
-            "Opioid-induced hyperalgesia with prolonged high-dose use",
-        ],
-    },
-    "SNRIs": {
-        "overview": (
-            "Serotonin-norepinephrine reuptake inhibitors (SNRIs) inhibit the reuptake of both serotonin "
-            "and norepinephrine into presynaptic neurons, increasing availability of both neurotransmitters "
-            "in the synapse. The dual mechanism distinguishes them from SSRIs and contributes to their "
-            "effectiveness in both mood and pain conditions. Common SNRIs include venlafaxine (Effexor), "
-            "duloxetine (Cymbalta), desvenlafaxine (Pristiq), and levomilnacipran (Fetzima)."
-        ),
-        "uses": (
-            "SNRIs are approved for major depressive disorder, generalized anxiety disorder, social anxiety "
-            "disorder, and panic disorder. Duloxetine has additional FDA approvals for diabetic peripheral "
-            "neuropathic pain, fibromyalgia, and chronic musculoskeletal pain. Venlafaxine extended-release "
-            "is used for hot flashes in menopausal women. They are also used off-label for migraine prevention "
-            "and stress urinary incontinence."
-        ),
-        "side_effects": [
-            "Nausea (often transient, especially at initiation)",
-            "Headache, dizziness, somnolence or insomnia",
-            "Dry mouth, constipation",
-            "Increased sweating",
-            "Sexual dysfunction (decreased libido, anorgasmia, delayed ejaculation)",
-            "Dose-dependent hypertension (especially venlafaxine at higher doses)",
-            "Tachycardia",
-            "Discontinuation syndrome on abrupt cessation (dizziness, sensory disturbances, irritability)",
-            "Suicidal ideation (boxed warning in children, adolescents, and young adults)",
-            "Serotonin syndrome (especially with other serotonergic agents)",
-            "Hyponatremia (SIADH, particularly in elderly patients)",
-            "Increased bleeding risk (with anticoagulants or NSAIDs)",
-        ],
-    },
-    "GLP-1 receptor agonists": {
-        "overview": (
-            "GLP-1 receptor agonists mimic the action of glucagon-like peptide-1, an incretin hormone "
-            "released after meals. They stimulate insulin secretion in a glucose-dependent manner, suppress "
-            "glucagon release, slow gastric emptying, and reduce appetite via central mechanisms. This class "
-            "includes exenatide (Byetta, Bydureon), liraglutide (Victoza, Saxenda), semaglutide (Ozempic, "
-            "Wegovy, Rybelsus), dulaglutide (Trulicity), and tirzepatide (Mounjaro, Zepbound), the last "
-            "being a dual GIP/GLP-1 receptor agonist."
-        ),
-        "uses": (
-            "GLP-1 receptor agonists are used as adjuncts to diet and exercise in adults with type 2 "
-            "diabetes mellitus to improve glycemic control. Several agents in this class also carry "
-            "cardiovascular risk reduction indications in patients with type 2 diabetes and established "
-            "cardiovascular disease. Higher-dose formulations of semaglutide (Wegovy) and liraglutide "
-            "(Saxenda) are approved for chronic weight management in adults and adolescents with obesity "
-            "or overweight with comorbidities."
-        ),
-        "side_effects": [
-            "Nausea, vomiting, diarrhea, constipation (most common, especially during dose escalation)",
-            "Abdominal pain, dyspepsia",
-            "Injection-site reactions (for subcutaneous formulations)",
-            "Decreased appetite and weight loss",
-            "Pancreatitis (rare but serious; discontinue if suspected)",
-            "Cholelithiasis and cholecystitis (increased risk with weight loss)",
-            "Hypoglycemia (mainly when combined with insulin or sulfonylureas)",
-            "Diabetic retinopathy complications (with rapid glycemic improvement, particularly semaglutide)",
-            "Acute kidney injury (often secondary to dehydration from GI side effects)",
-            "Thyroid C-cell tumors (rodent carcinogenicity data; boxed warning; avoid in MEN 2 or MTC history)",
-            "Tachycardia",
-        ],
-    },
-    "SGLT2 inhibitors": {
-        "overview": (
-            "Sodium-glucose cotransporter 2 (SGLT2) inhibitors block SGLT2 in the proximal renal tubule, "
-            "reducing glucose reabsorption and increasing urinary glucose excretion. This insulin-independent "
-            "mechanism lowers blood glucose, body weight, and blood pressure. Members include canagliflozin "
-            "(Invokana), dapagliflozin (Farxiga), empagliflozin (Jardiance), and ertugliflozin (Steglatro)."
-        ),
-        "uses": (
-            "SGLT2 inhibitors are used to improve glycemic control in adults with type 2 diabetes mellitus. "
-            "Several have additional cardiorenal indications: empagliflozin and dapagliflozin reduce the risk "
-            "of cardiovascular death and hospitalization for heart failure in adults with established CVD or "
-            "cardiovascular risk factors; dapagliflozin and canagliflozin slow progression of diabetic kidney "
-            "disease. Dapagliflozin is also approved for heart failure with reduced ejection fraction "
-            "regardless of diabetes status."
-        ),
-        "side_effects": [
-            "Genital mycotic infections (vulvovaginal candidiasis, balanitis; most common class side effect)",
-            "Urinary tract infections (increased due to glucosuria)",
-            "Polyuria, pollakiuria",
-            "Hypotension and dehydration (especially in elderly and with diuretics)",
-            "Hypoglycemia (mainly when combined with insulin or sulfonylureas)",
-            "Fournier's gangrene (necrotizing fasciitis of the perineum; rare but serious)",
-            "Diabetic ketoacidosis, often euglycemic (especially with type 1 diabetes or peri-surgical use)",
-            "Increased LDL cholesterol",
-            "Lower limb amputations (canagliflozin; avoid in high-risk patients)",
-            "Bone fractures (canagliflozin; mechanism unclear)",
-            "Acute kidney injury on initiation (volume depletion–mediated)",
-        ],
-    },
-    "ARBs": {
-        "overview": (
-            "Angiotensin receptor blockers (ARBs) selectively block the angiotensin II type 1 (AT1) receptor, "
-            "preventing angiotensin II from causing vasoconstriction and aldosterone release. Unlike ACE "
-            "inhibitors, ARBs do not inhibit bradykinin degradation and therefore rarely cause cough. "
-            "Common ARBs include losartan (Cozaar), valsartan (Diovan), irbesartan (Avapro), olmesartan "
-            "(Benicar), telmisartan (Micardis), and candesartan (Atacand)."
-        ),
-        "uses": (
-            "ARBs are primarily used for hypertension and heart failure with reduced ejection fraction (as "
-            "alternatives to ACE inhibitors). Losartan and irbesartan have specific approvals for nephropathy "
-            "in type 2 diabetics. Valsartan reduces cardiovascular mortality and hospitalization after "
-            "myocardial infarction. ARBs are first-line for patients who require renin-angiotensin system "
-            "blockade but cannot tolerate ACE inhibitor–induced cough."
-        ),
-        "side_effects": [
-            "Hyperkalemia (especially with potassium-sparing diuretics or renal impairment)",
-            "Hypotension (particularly in volume-depleted patients)",
-            "Acute kidney injury (with bilateral renal artery stenosis or severe volume depletion)",
-            "Angioedema (rare, but cross-reactivity with ACE inhibitor history is possible)",
-            "Dizziness, lightheadedness",
-            "Elevated serum creatinine on initiation (usually mild and stabilizes)",
-            "Fetal and neonatal toxicity (BOXED WARNING: contraindicated in pregnancy)",
-            "Hepatotoxicity (olmesartan-associated sprue-like enteropathy, rare)",
-        ],
-    },
-    "Anticonvulsants": {
-        "overview": (
-            "Anticonvulsants (antiepileptic drugs, AEDs) are a diverse group of medications that reduce "
-            "seizure frequency and severity through multiple mechanisms including voltage-gated sodium channel "
-            "blockade (phenytoin, carbamazepine, lamotrigine), enhancement of GABAergic inhibition "
-            "(valproate, benzodiazepines, gabapentin analogs), calcium channel modulation (gabapentin, "
-            "pregabalin), and glutamate receptor antagonism (perampanel). Many also have indications "
-            "for mood stabilization, neuropathic pain, and migraine prevention."
-        ),
-        "uses": (
-            "AEDs are used as monotherapy or adjunctive therapy for focal and generalized epileptic seizures. "
-            "Selected agents are used for bipolar disorder mood stabilization (valproate, lamotrigine, "
-            "carbamazepine), neuropathic pain (gabapentin, pregabalin), migraine prophylaxis (valproate, "
-            "topiramate), and anxiety disorders (pregabalin). Phenytoin is used for acute seizure management "
-            "and cardiac arrhythmias. Status epilepticus is managed with intravenous benzodiazepines and "
-            "phenytoin or levetiracetam."
-        ),
-        "side_effects": [
-            "Sedation, somnolence, cognitive slowing (dose-related, most common class effect)",
-            "Dizziness, ataxia, diplopia (especially at initiation or with dose increases)",
-            "Nausea, vomiting, weight changes (gain with valproate/gabapentin; loss with topiramate/zonisamide)",
-            "Rash (ranging from mild maculopapular to severe Stevens-Johnson syndrome/TEN, especially lamotrigine, carbamazepine, phenytoin)",
-            "Hyponatremia (carbamazepine, oxcarbazepine; via SIADH mechanism)",
-            "Teratogenicity (valproate: highest risk—neural tube defects, cognitive impairment; carbamazepine, phenytoin also teratogenic)",
-            "Osteoporosis with long-term use (enzyme-inducing AEDs accelerate vitamin D metabolism)",
-            "Drug interactions (enzyme inducers carbamazepine, phenytoin, phenobarbital decrease many co-medications)",
-            "Suicidal ideation and behavior (class warning for all AEDs)",
-            "Valproate-specific: hepatotoxicity, pancreatitis, hyperammonemia, thrombocytopenia, PCOS",
-            "Phenytoin-specific: gingival hyperplasia, peripheral neuropathy, folate deficiency, cerebellar atrophy with toxicity",
-        ],
-    },
-}
-
-
-def get_extended_class_profile(class_name):
-    """Return the extended profile dict for a class name, or None if not present."""
-    if not class_name:
-        return None
-    return (
-        DRUG_CLASS_DESCRIPTIONS_EXTENDED.get(class_name)
-        or DRUG_CLASS_DESCRIPTIONS_EXTENDED.get(class_name.rstrip("s"))
-    )
-
-
+# Class pages render only tracked DrugClass.description fields; no class-wide clinical text is synthesized.
 _DRUG_CLASS_SLUG_ALIASES: dict[str, str] = {
     # Long-name aliases for DB slugs that use short names
     "nsaids": "nonsteroidal-anti-inflammatory-drugs",
@@ -6526,9 +5655,10 @@ def drug_class_page(slug):
         alt = slug.replace('-', '_') if '-' in slug else slug.replace('_', '-')
         cls = DrugClass.query.filter_by(slug=alt).first()
     if cls is None:
-        from flask import abort
         abort(404)
     sort = _bounded_query_arg("sort", "name", 20).lower()
+    if sort not in {"name", "rating", "reviews"}:
+        abort(400)
     drugs_q = Drug.query.filter_by(drug_class_id=cls.id)
     if sort == "rating":
         drugs = drugs_q.order_by(Drug.avg_rating.desc(), Drug.generic_name).all()
@@ -6544,17 +5674,7 @@ def drug_class_page(slug):
         .all()
     )
 
-    extended = get_extended_class_profile(cls.name) or {}
-    class_overview = extended.get("overview")
-    class_uses = extended.get("uses")
-    class_side_effects = extended.get("side_effects") or []
-
-    class_description = (
-        class_overview
-        or cls.description
-        or CLASS_DESCRIPTIONS.get(cls.name)
-        or CLASS_DESCRIPTIONS.get((cls.name or "").rstrip("s"))
-    )
+    class_description = cls.description
 
     drug_ids = [d.id for d in drugs]
     common_conditions = []
@@ -6594,9 +5714,6 @@ def drug_class_page(slug):
         sort=sort,
         drug_count=len(drugs),
         class_description=class_description,
-        class_overview=class_overview,
-        class_uses=class_uses,
-        class_side_effects=class_side_effects,
         common_conditions=common_conditions,
         notable_drugs=notable_drugs,
     )
@@ -6635,7 +5752,7 @@ def news_index():
     total = query.count()
     total_pages = max(1, (total + per_page - 1) // per_page)
     page = min(max(1, page), total_pages)
-    articles = query.order_by(NewsArticle.published_at.desc()).offset((page - 1) * per_page).limit(per_page).all()
+    articles = query.order_by(NewsArticle.published_at.desc(), NewsArticle.id.desc()).offset((page - 1) * per_page).limit(per_page).all()
     categories = ["New Drug Approvals", "Medical", "FDA Alerts", "Clinical Trials", "Health"]
     fda_alerts = NewsArticle.query.filter(
         NewsArticle.category.in_(["FDA Alerts", "Safety"])
@@ -6653,7 +5770,7 @@ def news_article_slug(slug, article_id):
 
 @app.route("/news/article/<int:article_id>")
 def news_article(article_id):
-    article = NewsArticle.query.get_or_404(article_id)
+    article = db.get_or_404(NewsArticle, article_id)
     related = (
         NewsArticle.query.filter(
             NewsArticle.category == article.category,
@@ -6688,7 +5805,7 @@ def news_category(category):
     cat = cat_map.get(category.lower()) or (category if category in cat_map.values() else None)
     if not cat:
         abort(404)
-    articles = NewsArticle.query.filter_by(category=cat).order_by(NewsArticle.published_at.desc()).all()
+    articles = NewsArticle.query.filter_by(category=cat).order_by(NewsArticle.published_at.desc(), NewsArticle.id.desc()).all()
     categories = list(dict.fromkeys(cat_map.values()))
     fda_alerts = NewsArticle.query.filter(
         NewsArticle.category.in_(["FDA Alerts", "Safety"])
@@ -6703,11 +5820,7 @@ def drug_classes_list():
     class_data = []
     for dc in classes:
         count = Drug.query.filter_by(drug_class_id=dc.id).count()
-        description = (
-            CLASS_DESCRIPTIONS.get(dc.name)
-            or CLASS_DESCRIPTIONS.get((dc.name or "").rstrip("s"))
-            or (dc.description or "")
-        )
+        description = dc.description or ""
         class_data.append({
             "obj": dc,
             "count": count,
@@ -6935,13 +6048,20 @@ def login():
     if request.method == "POST":
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
-        user = User.query.filter_by(email=email).first()
+        auth_keys = _auth_keys(email)
+        if _auth_is_limited(auth_keys):
+            flash("Too many failed sign-in attempts. Try again later.", "error")
+            return render_template("login.html", next_url=next_url), 429
+        if len(email) > 120 or len(password.encode("utf-8")) > 72:
+            user = None
+        else:
+            user = User.query.filter_by(email=email).first()
         if user and user.check_password(password):
-            with _sqlite_write_lock:
-                _claim_session_review_votes(user)
+            _clear_auth_failures(auth_keys)
             login_user(user, remember=request.form.get("remember_me"))
             flash("Welcome back!", "success")
             return redirect(next_url or url_for("account"))
+        _record_auth_failure(auth_keys)
         flash("Invalid email or password.", "error")
     return render_template("login.html", next_url=next_url)
 
@@ -6966,6 +6086,8 @@ def register():
             flash("Enter a username, valid email address, and password.", "danger")
         elif len(username) > 80:
             flash("Username must be 80 characters or fewer.", "danger")
+        elif not re.fullmatch(r"[A-Za-z0-9_.-]+", username):
+            flash("Username may contain letters, numbers, periods, underscores, and hyphens.", "danger")
         elif len(email) > 120:
             flash("Email address must be 120 characters or fewer.", "danger")
         elif password != confirm:
@@ -6975,21 +6097,27 @@ def register():
         elif not request.form.get("agree_terms"):
             flash("You must agree to the Terms of Use and Privacy Policy.", "danger")
         elif User.query.filter_by(email=email).first():
-            flash("Email already registered.", "danger")
+            flash("Unable to create an account with the supplied details.", "danger")
         elif User.query.filter_by(username=username).first():
-            flash("Username already taken.", "danger")
+            flash("Unable to create an account with the supplied details.", "danger")
         else:
             user = User(username=username, email=email)
             user.set_password(password)
             with _sqlite_write_lock:
+                if User.query.count() >= _MAX_RUNTIME_USERS:
+                    flash("The local account fixture has reached its capacity.", "danger")
+                    return render_template("register.html"), 429
                 db.session.add(user)
                 try:
+                    db.session.flush()
                     db.session.commit()
                 except IntegrityError:
                     db.session.rollback()
-                    flash("Email or username already registered.", "danger")
+                    flash("Unable to create an account with the supplied details.", "danger")
                     return render_template("register.html")
-                _claim_session_review_votes(user)
+                except Exception:
+                    db.session.rollback()
+                    raise
             login_user(user)
             flash("Account created.", "success")
             return redirect(url_for("account"))
@@ -6999,12 +6127,6 @@ def register():
 @app.route("/logout", methods=["POST"])
 @login_required
 def logout():
-    prior_user_id = current_user.id
-    review_session_key = _review_session_key()
-    with _review_votes_lock:
-        _clear_session_review_votes(review_session_key)
-    session.pop("recently_viewed", None)
-    session[_REVIEW_VOTER_SESSION] = prior_user_id
     logout_user()
     return redirect(url_for("index"))
 
@@ -7015,15 +6137,8 @@ def logout():
 def account():
     reviews = DrugReview.query.filter_by(user_id=current_user.id).order_by(DrugReview.created_at.desc()).all()
     saved_count = SavedDrug.query.filter_by(user_id=current_user.id).count()
-    recently_viewed_slugs = session.get("recently_viewed", [])
-    recently_viewed = []
-    if recently_viewed_slugs:
-        recently_viewed = Drug.query.filter(Drug.slug.in_(recently_viewed_slugs)).all()
-        slug_order = {s: i for i, s in enumerate(recently_viewed_slugs)}
-        recently_viewed.sort(key=lambda d: slug_order.get(d.slug, 99))
     return render_template("account.html", reviews=reviews, saved_count=saved_count,
-                           recently_viewed=recently_viewed,
-                           recently_viewed_count=len(recently_viewed_slugs))
+                           recently_viewed=[], recently_viewed_count=0)
 
 
 @app.route("/my-med-list.html")
@@ -7058,11 +6173,16 @@ def my_med_list_toggle():
     desired_value = data.get("saved") if "saved" in data else request.form.get("saved")
     desired_saved = None
     if desired_value is not None:
-        desired_saved = (
-            desired_value
-            if isinstance(desired_value, bool)
-            else str(desired_value).lower() in {"1", "true", "yes", "on"}
-        )
+        if isinstance(desired_value, bool):
+            desired_saved = desired_value
+        elif desired_value in {"1", "true", "yes", "on"}:
+            desired_saved = True
+        elif desired_value in {"0", "false", "no", "off"}:
+            desired_saved = False
+        elif request.is_json:
+            return jsonify({"ok": False, "error": "invalid_request"}), 400
+        else:
+            abort(400)
 
     # Werkzeug serves this site with threads. Serialize the legacy toggle
     # fallback for parity semantics; current UI requests send an idempotent
@@ -7075,11 +6195,16 @@ def my_med_list_toggle():
         if desired_saved is None:
             desired_saved = existing is None
         if desired_saved and not existing:
+            if SavedDrug.query.filter_by(user_id=current_user.id).count() >= _MAX_SAVED_DRUGS_PER_USER:
+                if request.is_json:
+                    return jsonify({"ok": False, "error": "med_list_limit_reached"}), 409
+                flash(f"My Med List is limited to {_MAX_SAVED_DRUGS_PER_USER} medications.", "danger")
+                return redirect(url_for("my_med_list"))
             add_saved_drug = sqlite_insert(SavedDrug).values(
                 user_id=current_user.id,
                 drug_id=drug.id,
                 notes="",
-                created_at=datetime.utcnow(),
+                created_at=_utcnow(),
             ).on_conflict_do_nothing(index_elements=["user_id", "drug_id"])
             db.session.execute(add_saved_drug)
         elif not desired_saved and existing:
@@ -7115,41 +6240,7 @@ def compare_drugs_slug(vs_slug):
 @app.route("/compare-drugs.html")
 def compare_drugs():
     def _lookup(q):
-        if not q:
-            return None
-        q = q.strip()
-        if not q:
-            return None
-        d = Drug.query.filter(db.func.lower(Drug.slug) == q.lower()).first()
-        if d:
-            return d
-        d = Drug.query.filter(db.func.lower(Drug.generic_name) == q.lower()).first()
-        if d:
-            return d
-        # brand name fallback (substring match against brand_names_json)
-        return Drug.query.filter(Drug.brand_names_json.ilike(f"%{q}%")).first()
-
-    def _dosage_forms(drug):
-        if not drug:
-            return "—"
-        shapes = {img.shape for img in drug.images if img.shape}
-        if shapes:
-            return ", ".join(sorted(shapes))
-        dc = (drug.drug_class.name if drug.drug_class else "").lower()
-        gn = drug.generic_name.lower()
-        if "glp-1" in dc or "glucagon-like" in dc or gn in ("semaglutide", "liraglutide", "tirzepatide"):
-            return "subcutaneous injection"
-        if "insulin" in dc or "insulin" in gn:
-            return "subcutaneous injection"
-        if "monoclonal" in dc or "biologic" in dc or gn in ("adalimumab", "rituximab", "dupilumab", "enoxaparin"):
-            return "injection"
-        if "inhal" in dc or "bronchodilator" in dc or gn in ("fluticasone", "tiotropium", "salmeterol", "budesonide", "ipratropium"):
-            return "inhalation aerosol/powder"
-        if "ophthalm" in dc or gn in ("bimatoprost", "latanoprost", "timolol ophthalmic", "brimonidine"):
-            return "ophthalmic solution"
-        if "retinoid" in dc or gn in ("tretinoin", "isotretinoin", "adapalene"):
-            return "cream, gel"
-        return "Tablet"
+        return _lookup_drug_exact(q)
 
     # Support ?drug1=X&drug2=Y, ?drugs=X&drugs=Y, and ?drugs=X,Y formats
     drugs_list = request.args.getlist("drugs")
@@ -7179,11 +6270,7 @@ def compare_drugs():
     )):
         abort(400)
     popular = Drug.query.order_by(Drug.review_count.desc()).limit(20).all()
-    dosage_forms = {
-        "drug1": _dosage_forms(drug1),
-        "drug2": _dosage_forms(drug2),
-        "drug3": _dosage_forms(drug3),
-    }
+    dosage_forms = {"drug1": "", "drug2": "", "drug3": ""}
     return render_template(
         "compare_drugs.html",
         drug1=drug1,
@@ -7209,26 +6296,11 @@ def delete_review(review_id):
             id=review_id,
             user_id=current_user.id,
         ).first_or_404()
-        review_identity = _review_vote_identity(review)
         drug = review.drug
         db.session.delete(review)
         db.session.flush()
         _refresh_drug_review_stats(drug)
-        if _anonymous_review_vote_table_exists():
-            db.session.execute(
-                text(
-                    "DELETE FROM anonymous_review_vote "
-                    "WHERE review_identity = :identity"
-                ),
-                {"identity": review_identity},
-            )
         db.session.commit()
-        for key in [
-            key
-            for key in _review_votes
-            if key[-1] in {review_id, review_identity}
-        ]:
-            del _review_votes[key]
     return redirect(url_for("my_reviews"))
 
 
@@ -7237,6 +6309,9 @@ def delete_review(review_id):
 def update_med_notes():
     slug = request.form.get("slug")
     notes = request.form.get("notes", "")
+    if not isinstance(notes, str) or len(notes) > 500:
+        flash("Notes must be 500 characters or fewer.", "danger")
+        return redirect(url_for("my_med_list"))
     drug = Drug.query.filter_by(slug=slug).first_or_404()
     with _saved_drug_lock(current_user.id, drug.id):
         item = SavedDrug.query.filter_by(
@@ -7246,7 +6321,7 @@ def update_med_notes():
         if item is None:
             flash("That medication is no longer in your Med List.", "danger")
             return redirect(url_for("my_med_list"))
-        item.notes = notes[:500]
+        item.notes = notes
         db.session.commit()
     return redirect(url_for("my_med_list"))
 
@@ -7260,7 +6335,10 @@ def account_settings():
 @app.route("/account/settings/save", methods=["POST"])
 @login_required
 def save_settings():
-    return_to = "account" if request.form.get("settings_form") == "dashboard" else "account_settings"
+    settings_form = request.form.get("settings_form")
+    if settings_form not in {"dashboard", "settings"}:
+        abort(400)
+    return_to = "account" if settings_form == "dashboard" else "account_settings"
     password_changed = False
     email = (request.form.get("email") or current_user.email).strip().lower()
     try:
@@ -7270,6 +6348,9 @@ def save_settings():
         return redirect(url_for(return_to))
     if len(email) > 120:
         flash("Email address must be 120 characters or fewer.", "danger")
+        return redirect(url_for(return_to))
+    if email != current_user.email and not current_user.check_password(request.form.get("current_password") or ""):
+        flash("Current password is required to change the email address.", "danger")
         return redirect(url_for(return_to))
     duplicate = User.query.filter(User.email == email, User.id != current_user.id).first()
     if duplicate:
@@ -7427,7 +6508,7 @@ def side_effects_page():
     popular = Drug.query.order_by(Drug.review_count.desc()).limit(10).all()
     # Attach override side_effects text so template can use cleaner content
     for d in popular:
-        _ov = DRUG_CONTENT_OVERRIDES.get(d.generic_name) or DRUG_CONTENT_OVERRIDES.get(d.generic_name.replace(' ', '-'), {})
+        _ov = _content_override(d.generic_name)
         d._se_text = _ov.get("side_effects") or d.side_effects or ""
     return render_template(
         "side_effects.html",
@@ -7505,7 +6586,6 @@ def newsletter():
         saved_subscription = session.get("newsletter_subscription", {})
         if isinstance(saved_subscription, dict):
             selected_lists = saved_subscription.get("lists", selected_lists)
-            subscription_email = saved_subscription.get("email", "")
     return render_template(
         "newsletter.html",
         recent_articles=recent_articles,
@@ -7526,6 +6606,11 @@ def newsletter_subscribe():
         flash("Email address must be 254 characters or fewer.", "danger")
         return redirect(url_for("newsletter"))
     requested_lists = request.form.getlist("lists") + request.form.getlist("subs")
+    if len(requested_lists) > 20 or any(
+        not isinstance(item, str) or len(item) > 40
+        for item in requested_lists
+    ):
+        abort(400)
     list_aliases = {
         "general_updates": {
             "daily_mednews", "weekly_safety", "approvals_monthly", "clinical_trials",
@@ -7560,7 +6645,7 @@ def newsletter_subscribe():
         flash("Newsletter preferences saved to your account.", "success")
     else:
         session["newsletter_subscription"] = {
-            "email": email,
+            "email_receipt": hashlib.sha256(email.encode("utf-8")).hexdigest()[:16],
             "lists": selected_lists,
         }
         flash(
@@ -7589,6 +6674,8 @@ def contact():
         name = (request.form.get("name") or "").strip()[:80]
         email = (request.form.get("email") or "").strip().lower()
         subject = (request.form.get("subject") or "").strip()
+        if len(email) > 254 or len(subject) > 40:
+            abort(400)
         message = (request.form.get("message") or "").strip()[:500]
         allowed_subjects = {"general", "error", "feedback", "drug_info"}
         if not name or subject not in allowed_subjects or not message:
@@ -7601,11 +6688,8 @@ def contact():
             else:
                 receipt_source = "\0".join((name, email, subject, message))
                 session["contact_submission"] = {
-                    "subject": subject,
-                    "receipt": hashlib.sha256(
-                        receipt_source.encode("utf-8")
-                    ).hexdigest()[:16],
-                    "saved_at": datetime.utcnow().isoformat(timespec="seconds"),
+                    "receipt": hashlib.sha256(receipt_source.encode("utf-8")).hexdigest()[:16],
+                    "saved_at": datetime.now(UTC).isoformat(timespec="seconds"),
                 }
                 submitted = True
     return render_template("contact.html", submitted=submitted)
@@ -7648,26 +6732,7 @@ def _price_seed_unit(drug_id, pharmacy, qty):
 
 
 def generate_drug_prices(drug):
-    """Build a deterministic per-pharmacy price table for a drug.
-
-    Pricing tier is chosen from drug attributes:
-      * Controlled substances (`csa_schedule` starts with "Schedule") use a
-        mid-to-high band ($40-$220 / 30-day supply).
-      * Brand-only drugs (Rx, has brand names, no generic equivalent flag)
-        use the brand band ($80-$520 / 30-day supply).
-      * OTC drugs use a low band ($4-$25 / 30-day supply).
-      * Everything else (generic Rx) uses $6-$45 / 30-day supply.
-
-    Prices are emitted for three quantity tiers (30, 60, 90) using a
-    hash-based per-(drug, pharmacy, qty) seed so the same drug always
-    quotes the same numbers. The 60- and 90-tablet tiers apply a bulk
-    discount multiplier (1.85 and 2.6 respectively) versus 30.
-
-    Returns:
-        {tier, base_retail, quantities, prices_by_qty, rows, ...}
-    where `prices_by_qty[qty]` is the list of pharmacy rows for that qty
-    and `rows` is the 30-tablet row list (kept for backward compatibility).
-    """
+    """Build deterministic synthetic numbers for price-layout testing."""
     seed = (drug.id * 31 + len(drug.generic_name or "") * 7) % 997
     csa = (drug.csa_schedule or "").lower()
     avail = (drug.availability or "Rx").lower()
@@ -7688,12 +6753,12 @@ def generate_drug_prices(drug):
         tier = "generic"
 
     pharmacies = [
-        ("CVS Pharmacy",     1.12, True),
-        ("Walgreens",        1.15, True),
-        ("Walmart Pharmacy", 0.88, False),
-        ("Rite Aid",         1.06, True),
-        ("Costco Pharmacy",  0.82, False),
-        ("GoodRx Price",     0.55, True),
+        ("Generated comparator 1", 1.12, True),
+        ("Generated comparator 2", 1.15, True),
+        ("Generated comparator 3", 0.88, False),
+        ("Generated comparator 4", 1.06, True),
+        ("Generated comparator 5", 0.82, False),
+        ("Generated comparator 6", 0.55, True),
     ]
 
     # Quantity tiers and bulk-discount multipliers vs base 30-tablet supply.
@@ -7806,7 +6871,7 @@ def _parse_dosage_rows(text, drug_name):
 @app.route("/<slug>/dosage.html")
 def drug_dosage(slug):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
-    _ov = DRUG_CONTENT_OVERRIDES.get(drug.generic_name) or DRUG_CONTENT_OVERRIDES.get(drug.generic_name.replace(' ', '-'), {})
+    _ov = _content_override(drug.generic_name)
     rt_dosage = _ov.get("dosage") or drug.dosage
     dosage_rows = _parse_dosage_rows(rt_dosage, drug.generic_name)
     related_drugs = []
@@ -7844,7 +6909,7 @@ def _parse_side_effects(text):
 @app.route("/<slug>/side-effects.html")
 def drug_side_effects(slug):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
-    _ov = DRUG_CONTENT_OVERRIDES.get(drug.generic_name) or DRUG_CONTENT_OVERRIDES.get(drug.generic_name.replace(' ', '-'), {})
+    _ov = _content_override(drug.generic_name)
     rt_side_effects = _ov.get("side_effects") or drug.side_effects
     se_parsed = _parse_side_effects(rt_side_effects)
     related_drugs = []
@@ -7858,277 +6923,23 @@ def drug_side_effects(slug):
                            se_parsed=se_parsed, related_drugs=related_drugs, faq_items=faq_items)
 
 
-# FDA pregnancy category mapping for common drugs. Drugs not listed fall through
-# to a class-based heuristic, then to a neutral default. The historical
-# A/B/C/D/X letter system is used because it remains the form most agents and
-# benchmark tasks expect, even though FDA replaced it with PLLR labeling in 2015.
-PREGNANCY_CATEGORIES = {
-    "lisinopril": "D",
-    "enalapril": "D",
-    "losartan": "D",
-    "valsartan": "D",
-    "warfarin": "X",
-    "isotretinoin": "X",
-    "methotrexate": "X",
-    "thalidomide": "X",
-    "atorvastatin": "X",
-    "simvastatin": "X",
-    "rosuvastatin": "X",
-    "ibuprofen": "C",
-    "naproxen": "C",
-    "aspirin": "D",
-    "celecoxib": "C",
-    "metformin": "B",
-    "amoxicillin": "B",
-    "azithromycin": "B",
-    "cephalexin": "B",
-    "acetaminophen": "B",
-    "metoprolol": "C",
-    "amlodipine": "C",
-    "hydrochlorothiazide": "B",
-    "furosemide": "C",
-    "sertraline": "C",
-    "fluoxetine": "C",
-    "escitalopram": "C",
-    "alprazolam": "D",
-    "diazepam": "D",
-    "lorazepam": "D",
-    "clonazepam": "D",
-    "oxycodone": "C",
-    "hydrocodone": "C",
-    "tramadol": "C",
-    "morphine": "C",
-    "codeine": "C",
-    "prednisone": "C",
-    "albuterol": "C",
-    "omeprazole": "C",
-    "atenolol": "D",
-    "carbamazepine": "D",
-    "phenytoin": "D",
-    "valproic acid": "X",
-    "topiramate": "D",
-    "lithium": "D",
-    "tetracycline": "D",
-    "doxycycline": "D",
-    "ciprofloxacin": "C",
-    "levofloxacin": "C",
-}
-
-# Per-class fallback when a specific drug isn't mapped above.
-PREGNANCY_CATEGORY_BY_CLASS = {
-    "ACE inhibitors": "D",
-    "Angiotensin II receptor blockers": "D",
-    "Nonsteroidal anti-inflammatory drugs": "C",
-    "HMG-CoA reductase inhibitors": "X",
-    "Statins": "X",
-    "Benzodiazepines": "D",
-    "Tetracycline antibiotics": "D",
-    "Penicillin antibiotics": "B",
-    "Macrolide antibiotics": "B",
-    "Cephalosporin antibiotics": "B",
-    "Fluoroquinolone antibiotics": "C",
-    "Opioid analgesics": "C",
-    "Selective serotonin reuptake inhibitors": "C",
-    "Beta blockers": "C",
-    "Calcium channel blockers": "C",
-    "Thiazide diuretics": "B",
-    "Loop diuretics": "C",
-    "Proton pump inhibitors": "C",
-    "Corticosteroids": "C",
-    "Antiepileptics": "D",
-}
-
-
 def _pregnancy_info(drug):
-    """Derive an FDA pregnancy category and risk profile for `drug`.
-
-    Resolution order: explicit `PREGNANCY_CATEGORIES` mapping, then
-    `PREGNANCY_CATEGORY_BY_CLASS` heuristic, then a neutral "Not classified"
-    fallback. Returns a dict consumed by `drug_pregnancy.html` containing:
-
-      category       single-letter code A/B/C/D/X or "" if unclassified
-      label          human label e.g. "Category D"
-      cat_class      CSS class suffix for `.preg-badge--*`
-      risk_summary   one-paragraph plain-language risk summary
-      considerations list of clinical-consideration bullet strings
-      fetal_data     list of fetal-risk evidence bullet strings
-      breastfeeding  one-paragraph lactation summary
-      severity_rank  0-4 used to drive emphasis / banner color
-    """
-    name = (drug.generic_name or "").lower()
-    cls_name = drug.drug_class.name if getattr(drug, "drug_class", None) else ""
-
-    cat = PREGNANCY_CATEGORIES.get(name)
-    if not cat:
-        cat = PREGNANCY_CATEGORY_BY_CLASS.get(cls_name, "")
-
-    name_cap = (drug.generic_name or "this medication").title()
-
-    if cat == "A":
-        return {
-            "category": "A",
-            "label": "Category A",
-            "cat_class": "a",
-            "severity_rank": 0,
-            "risk_summary": (
-                f"Adequate and well-controlled studies in pregnant women have not "
-                f"demonstrated a risk to the fetus with {name_cap} in any trimester. "
-                f"This is the lowest pregnancy-risk classification."
-            ),
-            "considerations": [
-                f"{name_cap} is generally considered safe across all trimesters when used at standard doses.",
-                "Routine prenatal monitoring is sufficient; no additional fetal surveillance is required for this drug.",
-                "Continue to discuss any new medication with your obstetrician.",
-            ],
-            "fetal_data": [
-                "Human studies: no increased rate of congenital malformations in exposed pregnancies.",
-                "Animal reproduction studies: no evidence of fetal harm at clinically relevant doses.",
-                "Postmarketing surveillance: no signal for adverse fetal outcomes.",
-            ],
-            "breastfeeding": (
-                f"{name_cap} is generally compatible with breastfeeding. Infant exposure through "
-                f"breast milk is low and no adverse effects on the breastfed infant have been observed."
-            ),
-        }
-    if cat == "B":
-        return {
-            "category": "B",
-            "label": "Category B",
-            "cat_class": "b",
-            "severity_rank": 1,
-            "risk_summary": (
-                f"Animal reproduction studies have not demonstrated a fetal risk with {name_cap}, "
-                f"but there are no adequate and well-controlled studies in pregnant women. "
-                f"{name_cap} is generally considered acceptable when clinically indicated."
-            ),
-            "considerations": [
-                f"{name_cap} may be used during pregnancy when the potential benefit justifies the potential risk.",
-                "Use the lowest effective dose for the shortest required duration.",
-                "Inform your obstetrician of all current medications, including over-the-counter products.",
-            ],
-            "fetal_data": [
-                "Animal reproduction studies: no evidence of impaired fertility or fetal harm.",
-                "Human pregnancy registries: limited data, no consistent signal for major congenital anomalies.",
-                "Population studies have not shown an increased rate of birth defects above baseline (~3%).",
-            ],
-            "breastfeeding": (
-                f"{name_cap} is typically compatible with breastfeeding. Small amounts may pass into breast "
-                f"milk; monitor the infant for unusual symptoms and notify the pediatrician if any occur."
-            ),
-        }
-    if cat == "C":
-        return {
-            "category": "C",
-            "label": "Category C",
-            "cat_class": "c",
-            "severity_rank": 2,
-            "risk_summary": (
-                f"Animal reproduction studies have shown an adverse effect on the fetus with {name_cap}, "
-                f"or no animal studies have been conducted, and there are no adequate well-controlled "
-                f"studies in humans. The drug should be used in pregnancy only if the potential benefit "
-                f"justifies the potential risk to the fetus."
-            ),
-            "considerations": [
-                f"Reserve {name_cap} for situations where clearly indicated and alternatives with better safety data are not appropriate.",
-                "Use the lowest effective dose for the shortest required duration, particularly during the first trimester.",
-                "Discuss the risk-benefit balance with your obstetrician before continuing or starting therapy.",
-                "Consider switching to a Category A or B alternative if one is available for your indication.",
-            ],
-            "fetal_data": [
-                "Animal studies: evidence of teratogenicity or embryolethality at doses approaching the human exposure range.",
-                "Human data: insufficient or conflicting; pregnancy registries are ongoing.",
-                "Mechanism-based concerns may exist depending on the drug's pharmacology (e.g., late-trimester NSAID exposure can affect ductus arteriosus closure).",
-            ],
-            "breastfeeding": (
-                f"Use {name_cap} during breastfeeding only with healthcare-provider guidance. The drug may be "
-                f"excreted in human milk; the decision should weigh maternal benefit against potential infant exposure."
-            ),
-        }
-    if cat == "D":
-        return {
-            "category": "D",
-            "label": "Category D",
-            "cat_class": "d",
-            "severity_rank": 3,
-            "risk_summary": (
-                f"There is positive evidence of human fetal risk based on adverse-reaction data from "
-                f"investigational or marketing experience or studies in humans. However, the potential "
-                f"benefits from use of {name_cap} in pregnant women may be acceptable despite its risks "
-                f"in serious or life-threatening situations when safer drugs cannot be used or are ineffective."
-            ),
-            "considerations": [
-                f"Avoid {name_cap} during pregnancy whenever a safer alternative is available for your condition.",
-                "If pregnancy is detected while on therapy, contact your obstetrician promptly so the regimen can be reassessed.",
-                "Effective contraception is recommended for patients of reproductive potential.",
-                "If continued use is clinically necessary, enhanced fetal surveillance (e.g., targeted ultrasound) may be warranted.",
-                "Do not stop chronic therapy abruptly without medical advice; abrupt discontinuation may itself pose risks.",
-            ],
-            "fetal_data": [
-                f"Human data: documented adverse fetal effects have been observed in pregnancies exposed to {name_cap}.",
-                "Second- and third-trimester exposure is associated with the strongest signals for fetal harm in this category.",
-                "Specific risks vary by drug class — ACE inhibitors and ARBs are linked to oligohydramnios, fetal renal dysfunction, skull hypoplasia, and neonatal death; benzodiazepines with neonatal withdrawal and floppy infant syndrome.",
-                "First-trimester exposure may carry an elevated risk of structural malformations versus the baseline rate of ~3%.",
-            ],
-            "breastfeeding": (
-                f"Use of {name_cap} during breastfeeding requires careful evaluation. Some Category D drugs "
-                f"are still compatible with nursing at standard maternal doses; others are not. Confirm with "
-                f"your healthcare provider before continuing therapy while breastfeeding."
-            ),
-        }
-    if cat == "X":
-        return {
-            "category": "X",
-            "label": "Category X",
-            "cat_class": "x",
-            "severity_rank": 4,
-            "risk_summary": (
-                f"Studies in animals or humans have demonstrated fetal abnormalities, or there is positive "
-                f"evidence of fetal risk based on human experience, or both. The risk of use of {name_cap} "
-                f"in a pregnant woman clearly outweighs any possible benefit. {name_cap} is CONTRAINDICATED "
-                f"in women who are or may become pregnant."
-            ),
-            "considerations": [
-                f"{name_cap} must NOT be used during pregnancy.",
-                "Patients of reproductive potential must use effective contraception throughout therapy and for an appropriate washout period after discontinuation.",
-                "If pregnancy occurs during therapy, discontinue the drug immediately and notify the obstetrician for counseling regarding fetal risk.",
-                "A negative pregnancy test may be required prior to initiating therapy.",
-                "Enrollment in a manufacturer pregnancy-prevention or REMS program may be required (e.g., iPLEDGE for isotretinoin).",
-            ],
-            "fetal_data": [
-                f"Multiple human pregnancies exposed to {name_cap} have documented major congenital malformations, fetal demise, or both.",
-                "Effects are typically dose-independent at therapeutic exposure and may occur with even brief first-trimester exposure.",
-                "Pattern of teratogenicity is drug-specific and well characterized in postmarketing registries.",
-            ],
-            "breastfeeding": (
-                f"{name_cap} is generally contraindicated during breastfeeding. Discuss safer alternatives "
-                f"with your healthcare provider before initiating therapy if nursing is planned."
-            ),
-        }
-
-    # Unclassified fallback.
+    """Return one route-independent view of the stored pregnancy fixture."""
+    risk = (drug.pregnancy_risk or "Not classified").strip()
+    category = preg_category_filter(risk)
     return {
-        "category": "",
-        "label": "Not classified",
-        "cat_class": "none",
-        "severity_rank": 2,
-        "risk_summary": (
-            f"{name_cap} has not been assigned a specific FDA pregnancy category in this reference, or its "
-            f"PLLR-format labeling does not map cleanly to the legacy A/B/C/D/X system. Pregnancy safety "
-            f"should be assessed by your healthcare provider based on the latest prescribing information."
-        ),
+        "category": category,
+        "label": f"Category {category}" if category else "Not classified",
+        "cat_class": category.casefold() if category else "unknown",
+        "severity_rank": {"A": 0, "B": 1, "C": 2, "D": 3, "X": 4}.get(category, 0),
+        "risk_summary": risk,
         "considerations": [
-            f"Discuss {name_cap} with your obstetrician before continuing or starting therapy in pregnancy.",
-            "Bring the current prescribing information (package insert) to your prenatal visit.",
-            "Use the lowest effective dose for the shortest required duration if therapy is continued.",
+            "This value is a deterministic local benchmark fixture and does not establish current pregnancy guidance."
         ],
-        "fetal_data": [
-            "Human data: limited or not summarized in this reference.",
-            "Animal data: refer to the manufacturer prescribing information.",
-            "Consult the FDA Pregnancy and Lactation Labeling Rule (PLLR) section of the official label for the full risk summary.",
-        ],
+        "fetal_data": [],
         "breastfeeding": (
-            f"Lactation safety for {name_cap} should be evaluated individually. Consult your healthcare "
-            f"provider or a lactation specialist before nursing while on this medication."
+            "No drug-specific lactation evidence is included in this local fixture. "
+            "Consult current official labeling and a qualified healthcare professional."
         ),
     }
 
@@ -8149,7 +6960,7 @@ def drug_pregnancy(slug):
 @app.route("/<slug>/warnings.html")
 def drug_warnings(slug):
     drug = Drug.query.filter_by(slug=slug).first_or_404()
-    _ov = DRUG_CONTENT_OVERRIDES.get(drug.generic_name) or DRUG_CONTENT_OVERRIDES.get(drug.generic_name.replace(' ', '-'), {})
+    _ov = _content_override(drug.generic_name)
     text = (_ov.get("warnings") or drug.warnings or "").strip()
     boxed_warning = None
     lowered = text.lower()
@@ -8197,6 +7008,7 @@ def drug_warnings(slug):
         cards.append(("General warnings", general))
     return render_template("drug_warnings.html",
                            drug=drug,
+                           rt_warnings=text,
                            boxed_warning=boxed_warning,
                            warning_cards=cards)
 
@@ -8214,7 +7026,7 @@ def drug_faq_page(slug):
 @app.route("/<slug>/professional")
 @app.route("/<slug>/professional.html")
 def drug_professional_page(slug):
-    drug = Drug.query.filter_by(slug=slug).first_or_404()
+    Drug.query.filter_by(slug=slug).first_or_404()
     return redirect(url_for('drug_pro_monograph', slug=slug), 301)
 
 
@@ -8232,7 +7044,7 @@ def drug_interactions_page(slug):
     interaction_details = []
     for i in interactions:
         other_id = i.drug_b_id if i.drug_a_id == drug.id else i.drug_a_id
-        other = Drug.query.get(other_id)
+        other = db.session.get(Drug, other_id)
         if other is None:
             continue
         interaction_details.append({
@@ -8280,7 +7092,25 @@ def emergency_info():
 
 @app.route("/_health")
 def health():
-    return {"ok": True, "site": "drugs_com"}
+    marker = db.session.get(SeedMetadata, "version")
+    try:
+        _validate_seed_state(canonical=False)
+        ok = True
+        error = None
+    except Exception as validation_error:
+        db.session.rollback()
+        ok = False
+        error = f"{type(validation_error).__name__}: seed validation failed"
+    payload = {
+        "ok": ok,
+        "site": "drugs_com",
+        "seed_version": marker.value if marker else None,
+        "drugs": Drug.query.count(),
+        "users": User.query.count(),
+    }
+    if error:
+        payload["error"] = error
+    return payload, (200 if ok else 503)
 
 
 @app.errorhandler(404)
@@ -8364,7 +7194,7 @@ def seed_supplemental():
             existing_cond_slugs.add(slug)
             changed = True
     if changed:
-        db.session.commit()
+        db.session.flush()
         changed = False
 
     cond_by_slug = {c.slug: c.id for c in Condition.query.all()}
@@ -8396,7 +7226,7 @@ def seed_supplemental():
             drug.conditions_json = json.dumps(merged)
             changed = True
     if changed:
-        db.session.commit()
+        db.session.flush()
 
     # Keep the denormalized counts used by the conditions index in sync with
     # supplemental links. Previously every supplemental condition displayed
@@ -8413,7 +7243,7 @@ def seed_supplemental():
             condition.drug_count = actual
             counts_changed = True
     if counts_changed:
-        db.session.commit()
+        db.session.flush()
 
 
 def seed_pregnancy_risks():
@@ -8429,7 +7259,7 @@ def seed_pregnancy_risks():
             d.pregnancy_risk = risk
             changed = True
     if changed:
-        db.session.commit()
+        db.session.flush()
 
 
 def init_app():

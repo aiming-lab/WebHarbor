@@ -1,16 +1,13 @@
-{# Photorealistic pill SVG macro.
+{# Synthetic pill-descriptor SVG macro.
 
-  Renders a pill with 3D shading: radial body gradient for volume,
-  specular highlight in the upper-left, drop shadow, and optional
-  embossed imprint text. Supports Capsule (two-tone), Oval, Round,
-  Rectangle, Triangle, Diamond, Pentagon, Bullet, Figure 8.
+  This deterministic schematic is not a photograph and cannot establish a real pill identity. It renders locally stored shape, color, and imprint fields. Supports Capsule (two-tone), Oval, Oblong, Round, Rectangle, Triangle, Diamond, Pentagon, Bullet, Figure 8.
 
   Args:
     uid:        unique id suffix (loop.index or similar) used to namespace
                 gradient / filter / clipPath ids across multiple SVGs on
                 the page.
-    shape:      pill shape string (case-insensitive). Unknown -> Round.
-    color:      pill color string (case-insensitive). Unknown -> light gray.
+    shape:      pill shape string (case-insensitive). Unknown -> labeled empty-state diagram.
+    color:      pill color string (case-insensitive). Unknown -> neutral synthetic diagram; the caller must also show the stored text field.
     imprint:    text to render on the pill (optional, may be None / '').
     pair_color: secondary hex for capsule's right half. If omitted, falls
                 back to a sensible complement of `color`.
@@ -42,7 +39,7 @@
   {% set text_shadow = '#ffffff' if is_light else '#000000' %}
 
   {# Choose viewBox sized for the shape so wide pills get a wide canvas. #}
-  {% if slc in ['capsule','oval','rectangle','bullet','figure 8'] %}
+  {% if slc in ['capsule','oval','oblong','rectangle','bullet','figure 8'] %}
     {% set vbw = 280 %}{% set vbh = 160 %}
   {% else %}
     {% set vbw = 200 %}{% set vbh = 200 %}
@@ -101,7 +98,7 @@
       <ellipse cx="{{ x + w * 0.30 }}" cy="{{ y + h * 0.30 }}"
                rx="{{ w * 0.22 }}" ry="{{ h * 0.18 }}" fill="url(#spec-{{ uid }})"/>
 
-    {% elif slc == 'oval' %}
+    {% elif slc in ['oval', 'oblong'] %}
       <ellipse cx="{{ cx }}" cy="{{ cy }}" rx="{{ vbw * 0.42 }}" ry="{{ vbh * 0.32 }}"
                fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"/>
       <ellipse cx="{{ cx - vbw * 0.12 }}" cy="{{ cy - vbh * 0.13 }}"
@@ -149,8 +146,7 @@
                stroke-linejoin="round"/>
       <ellipse cx="{{ cx - 22 }}" cy="{{ cy - 22 }}" rx="28" ry="14" fill="url(#spec-{{ uid }})"/>
 
-    {% else %}
-      {# Round (default) #}
+    {% elif slc == 'round' %}
       {% set r = (vbw if vbw < vbh else vbh) * 0.4 %}
       <circle cx="{{ cx }}" cy="{{ cy }}" r="{{ r }}"
               fill="url(#body-{{ uid }})" stroke="#2c2c2c" stroke-width="1.3" stroke-opacity="0.5"/>
@@ -158,12 +154,15 @@
             stroke="#2a2a2a" stroke-width="1.1" stroke-opacity="0.32"/>
       <ellipse cx="{{ cx - r * 0.32 }}" cy="{{ cy - r * 0.42 }}"
                rx="{{ r * 0.45 }}" ry="{{ r * 0.28 }}" fill="url(#spec-{{ uid }})"/>
+    {% else %}
+      <rect x="14" y="14" width="{{ vbw - 28 }}" height="{{ vbh - 28 }}" rx="8" fill="#f4f5f6" stroke="#6c757d" stroke-width="2" stroke-dasharray="8 6"/>
+      <text x="{{ vbw // 2 }}" y="{{ vbh // 2 }}" font-family="Arial, sans-serif" font-size="16" text-anchor="middle" fill="#495057">SHAPE NOT RENDERED</text>
     {% endif %}
     </g>
 
-    {% if imprint %}
+    {% if imprint and slc in ['capsule','oval','oblong','rectangle','bullet','figure 8','triangle','diamond','pentagon','round'] %}
       {% set ilen = imprint|length %}
-      {% if slc in ['capsule','oval','rectangle','bullet','figure 8'] %}
+      {% if slc in ['capsule','oval','oblong','rectangle','bullet','figure 8'] %}
         {% set fsize = 32 if ilen <= 4 else (26 if ilen <= 7 else 20) %}
       {% else %}
         {% set fsize = 30 if ilen <= 4 else (24 if ilen <= 7 else 18) %}

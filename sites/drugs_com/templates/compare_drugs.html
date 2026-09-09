@@ -7,9 +7,7 @@
 
 <h1>Compare Drugs Side by Side</h1>
 <p class="muted is-056">
-  Select up to three medications below to view a side-by-side comparison of their generic and brand
-  names, drug class, dosage forms, availability, indications, warnings, side effects, and average
-  user rating.
+  Select up to three deterministic medication fixtures to compare stored names, class, availability, warnings, side effects, dosage text, and simulated review aggregates. No comparative clinical conclusion is produced.
 </p>
 
 {% set selected_drugs = [] %}
@@ -21,24 +19,24 @@
   <div class="compare-form-grid">
     <div class="compare-form-field compare-ac-wrap">
       <label for="drug1">First drug</label>
-      <input type="text" name="drug1" id="drug1" autocomplete="off"
+      <input type="text" name="drug1" id="drug1" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="compare-ac-1" aria-expanded="false"
              value="{{ drug1.generic_name if drug1 else '' }}"
              placeholder="Type a drug name (e.g. ibuprofen)" class="compare-ac-input">
-      <div class="compare-ac-drop" id="compare-ac-1" hidden></div>
+      <div class="compare-ac-drop" id="compare-ac-1" role="listbox" hidden></div>
     </div>
     <div class="compare-form-field compare-ac-wrap">
       <label for="drug2">Second drug</label>
-      <input type="text" name="drug2" id="drug2" autocomplete="off"
+      <input type="text" name="drug2" id="drug2" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="compare-ac-2" aria-expanded="false"
              value="{{ drug2.generic_name if drug2 else '' }}"
              placeholder="Type a drug name (e.g. naproxen)" class="compare-ac-input">
-      <div class="compare-ac-drop" id="compare-ac-2" hidden></div>
+      <div class="compare-ac-drop" id="compare-ac-2" role="listbox" hidden></div>
     </div>
     <div class="compare-form-field compare-ac-wrap">
       <label for="drug3">Third drug <span class="muted compare-form-optional">(optional)</span></label>
-      <input type="text" name="drug3" id="drug3" autocomplete="off"
+      <input type="text" name="drug3" id="drug3" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="compare-ac-3" aria-expanded="false"
              value="{{ drug3.generic_name if drug3 else '' }}"
              placeholder="Type a drug name (e.g. aspirin)" class="compare-ac-input">
-      <div class="compare-ac-drop" id="compare-ac-3" hidden></div>
+      <div class="compare-ac-drop" id="compare-ac-3" role="listbox" hidden></div>
     </div>
     <button type="submit" class="btn btn-primary compare-form-submit">Compare</button>
   </div>
@@ -46,47 +44,18 @@
 </form>
 <script>
 (function(){
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, function(c){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-    });
-  }
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
   function setupCompareAC(inputId, dropId){
-    var inp = document.getElementById(inputId);
-    var drop = document.getElementById(dropId);
-    if(!inp||!drop) return;
-    var timer=null;
-    function hide(){ drop.hidden=true; drop.innerHTML=''; }
-    inp.addEventListener('input', function(){
-      clearTimeout(timer);
-      var q = inp.value.trim();
-      if(q.length < 2){ hide(); return; }
-      timer = setTimeout(function(){
-        fetch('/api/autocomplete?q='+encodeURIComponent(q))
-          .then(function(r){ return r.json(); })
-          .then(function(data){
-            var drugs = (data||[]).filter(function(r){ return r.type !== 'condition'; }).slice(0,8);
-            if(!drugs.length){ hide(); return; }
-            var html='';
-            drugs.forEach(function(r){
-              html+='<div class="compare-ac-item" data-val="'+r.name.replace(/"/g,'&quot;')+'">'+escapeHtml(r.label)+'</div>';
-            });
-            drop.innerHTML=html; drop.hidden=false;
-            drop.querySelectorAll('.compare-ac-item').forEach(function(el){
-              el.addEventListener('mousedown',function(e){
-                e.preventDefault();
-                inp.value=el.getAttribute('data-val');
-                hide();
-              });
-            });
-          }).catch(hide);
-      }, 180);
-    });
-    inp.addEventListener('blur', function(){ setTimeout(hide, 200); });
+    var inp=document.getElementById(inputId),drop=document.getElementById(dropId),timer=null,items=[],active=-1;
+    if(!inp||!drop)return;
+    function hide(){drop.hidden=true;drop.innerHTML='';items=[];active=-1;inp.setAttribute('aria-expanded','false');inp.removeAttribute('aria-activedescendant');}
+    function choose(index){if(index<0||index>=items.length)return;inp.value=items[index].name;hide();}
+    function setActive(index){var nodes=drop.querySelectorAll('[role=option]');nodes.forEach(function(node){node.setAttribute('aria-selected','false');node.classList.remove('active');});active=index;if(index>=0&&index<nodes.length){nodes[index].setAttribute('aria-selected','true');nodes[index].classList.add('active');inp.setAttribute('aria-activedescendant',nodes[index].id);}}
+    inp.addEventListener('input',function(){clearTimeout(timer);var q=inp.value.trim();if(q.length<2){hide();return;}timer=setTimeout(function(){fetch('/api/autocomplete?q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(data){items=(data||[]).filter(function(row){return row.type!=='condition';}).slice(0,8);if(!items.length){hide();return;}drop.innerHTML=items.map(function(row,index){return '<div class="compare-ac-item" role="option" aria-selected="false" id="'+dropId+'-option-'+index+'" data-index="'+index+'">'+escapeHtml(row.label)+'</div>';}).join('');drop.hidden=false;inp.setAttribute('aria-expanded','true');drop.querySelectorAll('[role=option]').forEach(function(node){node.addEventListener('mousedown',function(event){event.preventDefault();choose(Number(node.dataset.index));});});}).catch(hide);},180);});
+    inp.addEventListener('keydown',function(event){if(drop.hidden||!items.length)return;if(event.key==='ArrowDown'){event.preventDefault();setActive((active+1)%items.length);}else if(event.key==='ArrowUp'){event.preventDefault();setActive((active-1+items.length)%items.length);}else if(event.key==='Enter'&&active>=0){event.preventDefault();choose(active);}else if(event.key==='Escape'){hide();}});
+    inp.addEventListener('blur',function(){setTimeout(hide,200);});
   }
-  setupCompareAC('drug1','compare-ac-1');
-  setupCompareAC('drug2','compare-ac-2');
-  setupCompareAC('drug3','compare-ac-3');
+  setupCompareAC('drug1','compare-ac-1');setupCompareAC('drug2','compare-ac-2');setupCompareAC('drug3','compare-ac-3');
 })();
 </script>
 
@@ -98,6 +67,7 @@
   <!-- Quick comparison table -->
   <div class="compare-quick-wrap">
     <h3 class="compare-quick-heading">Quick comparison</h3>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Drug comparison table">
     <table class="compare-quick-table">
       <thead>
         <tr>
@@ -128,10 +98,8 @@
           {% endfor %}
         </tr>
         <tr>
-          <td class="cq-attr">Pregnancy category</td>
-          {% for _, d, _f in selected_drugs %}
-            <td>{% set _cat = d.pregnancy_risk|preg_category %}{% if _cat %}Category {{ _cat }}{% else %}{{ d.pregnancy_risk or '—' }}{% endif %}</td>
-          {% endfor %}
+          <td class="cq-attr">Pregnancy fixture field</td>
+          {% for _, d, _f in selected_drugs %}<td>{{ d.pregnancy_risk or 'Not stored' }}</td>{% endfor %}
         </tr>
         <tr>
           <td class="cq-attr">CSA schedule</td>
@@ -143,12 +111,6 @@
           <td class="cq-attr">Brand names</td>
           {% for _, d, _f in selected_drugs %}
             <td>{{ d.brand_names|join(', ') or '—' }}</td>
-          {% endfor %}
-        </tr>
-        <tr>
-          <td class="cq-attr">Dosage forms</td>
-          {% for _, _d, f in selected_drugs %}
-            <td>{{ f or '—' }}</td>
           {% endfor %}
         </tr>
         {% set _rounded_ratings = [] %}
@@ -182,12 +144,13 @@
           <td class="cq-attr"></td>
           <td colspan="{{ selected_drugs|length }}" class="cq-rating-tie-note">
             <span class="cq-tie-badge">Tie</span>
-            Two or more drugs share the same average rating &mdash; consider review counts and side-effect profiles below.
+            Two or more fixture records share the same simulated average rating.
           </td>
         </tr>
         {% endif %}
       </tbody>
     </table>
+    </div>
   </div>
 
   {% set _classes = selected_drugs|map(attribute='1')|map(attribute='drug_class')|select|map(attribute='name')|list|unique|list %}
@@ -200,7 +163,7 @@
         {% if _classes|length == 1 %}<li>Same drug class: <strong>{{ _classes[0] }}</strong></li>{% endif %}
         {% if _avails|length == 1 %}<li>Same availability: <strong>{{ _avails[0] }}</strong></li>{% endif %}
         {% if _pregs|length == 1 and _pregs[0] %}<li>Same pregnancy category: <strong>{{ _pregs[0] }}</strong></li>{% endif %}
-        {% if _classes|length > 1 and _avails|length > 1 and (_pregs|length > 1 or not _pregs) %}<li class="muted">No major attribute overlap &mdash; see differences.</li>{% endif %}
+        {% if _classes|length > 1 and _avails|length > 1 and (_pregs|length > 1 or not _pregs) %}<li class="muted">No identical value among the compared class, availability, and pregnancy fixture fields.</li>{% endif %}
       </ul>
     </div>
     <div class="compare-simdiff-col compare-simdiff-diff">
@@ -211,7 +174,7 @@
         {% if _pregs|length > 1 %}<li>Different pregnancy categories: {{ _pregs|join(' vs. ') }}</li>{% endif %}
         {% set _schedules = selected_drugs|map(attribute='1')|map(attribute='csa_schedule')|select|list|unique|list %}
         {% if _schedules|length > 1 %}<li>Different CSA schedules: {{ _schedules|join(' vs. ') }}</li>{% endif %}
-        {% if _classes|length == 1 and _avails|length == 1 %}<li class="muted">Largely overlapping &mdash; compare side effects and dosing below.</li>{% endif %}
+        {% if _classes|length == 1 and _avails|length == 1 %}<li class="muted">The stored class and availability fields match.</li>{% endif %}
       </ul>
     </div>
   </div>
@@ -230,7 +193,7 @@
 
 {% if selected_drugs %}
 <section class="detailed-comparison">
-  <h2>Detailed comparison</h2>
+  <h2>Stored fixture text comparison</h2>
 
   {% set col_count = selected_drugs|length %}
 
@@ -240,7 +203,7 @@
       {% for slug, drug, _ in selected_drugs %}
       <div class="compare-col">
         <h4 class="compare-col-header">{{ drug.generic_name|capitalize }}</h4>
-        {% set cd = (drug.uses or drug.description or 'See full prescribing information.')|clean_desc %}
+        {% set cd = (drug.uses or drug.description or 'Not stored in this fixture.')|clean_desc %}
         <p>{{ cd[:300] }}{% if cd|length > 300 %}...{% endif %}</p>
         <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="compare-col-link">Full information &rsaquo;</a>
       </div>
@@ -254,7 +217,7 @@
       {% for slug, drug, _ in selected_drugs %}
       <div class="compare-col">
         <h4 class="compare-col-header">{{ drug.generic_name|capitalize }}</h4>
-        <p>{{ (drug.warnings or 'See prescribing information for complete warnings.')[:300] }}{% if (drug.warnings or '')|length > 300 %}...{% endif %}</p>
+        <p>{{ (drug.warnings or 'Not stored in this fixture.')[:300] }}{% if (drug.warnings or '')|length > 300 %}...{% endif %}</p>
       </div>
       {% endfor %}
     </div>
@@ -266,7 +229,7 @@
       {% for slug, drug, _ in selected_drugs %}
       <div class="compare-col">
         <h4 class="compare-col-header">{{ drug.generic_name|capitalize }}</h4>
-        <p>{{ (drug.side_effects or 'See prescribing information.')[:300] }}{% if (drug.side_effects or '')|length > 300 %}...{% endif %}</p>
+        <p>{{ (drug.side_effects or 'Not stored in this fixture.')[:300] }}{% if (drug.side_effects or '')|length > 300 %}...{% endif %}</p>
       </div>
       {% endfor %}
     </div>
@@ -278,7 +241,7 @@
       {% for slug, drug, _ in selected_drugs %}
       <div class="compare-col">
         <h4 class="compare-col-header">{{ drug.generic_name|capitalize }}</h4>
-        <p>{{ (drug.dosage or 'See prescribing information.')[:300] }}{% if (drug.dosage or '')|length > 300 %}...{% endif %}</p>
+        <p>{{ (drug.dosage or 'Not stored in this fixture.')[:300] }}{% if (drug.dosage or '')|length > 300 %}...{% endif %}</p>
         <a href="{{ url_for('drug_dosage', slug=drug.slug) }}" class="compare-col-link">Full dosage guide &rsaquo;</a>
       </div>
       {% endfor %}
@@ -292,40 +255,27 @@
 <div class="bottom-line-box">
   <div class="bottom-line-header">
     <span class="bottom-line-icon" aria-hidden="true">i</span>
-    <h2>Bottom line</h2>
+    <h2>Stored comparison summary</h2>
   </div>
   <p>
-    You are comparing
-    {% for _, d, _f in selected_drugs %}<strong>{{ d.generic_name|capitalize }}</strong>{% if not loop.last %}{% if loop.revindex == 2 %} and {% else %}, {% endif %}{% endif %}{% endfor %}.
-    {% set classes = selected_drugs|map(attribute='1')|map(attribute='drug_class')|select|map(attribute='name')|list|unique|list %}
-    {% if classes|length == 1 %}
-      All belong to the <strong>{{ classes[0] }}</strong> drug class, so they share a similar mechanism of action and overlapping side-effect profiles.
-    {% else %}
-      They span different drug classes ({{ classes|join(', ') }}), so their mechanisms, indications, and side-effect profiles differ meaningfully.
-    {% endif %}
+    Compared local records: {% for _, d, _f in selected_drugs %}<strong>{{ d.generic_name|capitalize }}</strong>{% if not loop.last %}{% if loop.revindex == 2 %} and {% else %}, {% endif %}{% endif %}{% endfor %}.
   </p>
-  {% set rx = selected_drugs|map(attribute='1')|selectattr('availability','equalto','Rx')|list %}
-  {% set otc = selected_drugs|map(attribute='1')|selectattr('availability','equalto','OTC')|list %}
-  {% if rx and otc %}
-    <p>The comparison mixes prescription-only and over-the-counter options &mdash; the OTC choice is easier to access, but the Rx option is typically reserved for cases where stronger or more targeted therapy is warranted.</p>
-  {% endif %}
   {% if best_rated[1].review_count and best_rated[1].review_count > 0 %}
     <p>
-      <span class="bl-pick">Highest user rating</span>
+      <span class="bl-pick">Highest simulated fixture rating</span>
       <strong>{{ best_rated[1].generic_name|capitalize }}</strong>
-      leads on user reviews at <strong>{{ '%.1f'|format(best_rated[1].avg_rating or 0) }}/10</strong>
-      across {{ best_rated[1].review_count }} ratings. User ratings reflect patient experience and should not replace medical judgment.
+      has the largest stored simulated-review average at <strong>{{ '%.1f'|format(best_rated[1].avg_rating or 0) }}/10</strong> across {{ best_rated[1].review_count }} fixture ratings.
     </p>
   {% endif %}
   <p class="muted is-058">
-    This summary is generated from the comparison data above. Always consult a healthcare professional before starting, stopping, or switching medications.
+    This summary compares fixture values only and does not rank safety, efficacy, suitability, accessibility, or treatment choice.
   </p>
 </div>
 {% endif %}
 {% endif %}
 
 <section class="compare-popular-section">
-  <h2>Popular comparisons</h2>
+  <h2>Example fixture comparisons</h2>
   {% set pop_groups = [
     ('Type 2 Diabetes', [
       ('metformin','glipizide'), ('semaglutide','tirzepatide'), ('metformin','sitagliptin')

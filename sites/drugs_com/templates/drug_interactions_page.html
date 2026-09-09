@@ -31,13 +31,13 @@
 </nav>
 
 <h1>{{ drug.generic_name|title }} Interactions</h1>
-<p class="lead">There are {{ summary.total if summary else 0 }} known drug interactions with {{ drug.generic_name|title }}. Use the <a href="{{ url_for('interaction_checker') }}">interaction checker</a> to check a specific combination of medications.</p>
+<p class="lead">This local database contains {{ summary.total if summary else 0 }} interaction fixture record{{ '' if summary and summary.total == 1 else 's' }} involving {{ drug.generic_name|title }}. It is not an exhaustive or verified interaction source.</p>
 
 <div class="ix-inline-checker">
   <p>Does {{ drug.generic_name|title }} interact with any of my other drugs?</p>
   <form action="{{ url_for('interaction_checker') }}" method="get" class="ix-inline-form">
     <input type="hidden" name="drug" value="{{ drug.slug }}">
-    <input type="text" name="add" class="ix-inline-input" placeholder="Add another medication...">
+    <input type="text" name="add" class="ix-inline-input" placeholder="Add another medication..." aria-label="Add another medication">
     <button type="submit" class="btn btn-primary">Check</button>
   </form>
 </div>
@@ -57,8 +57,8 @@
 
 {% if interactions %}
 <section class="ix-frequently-checked">
-  <h2>Most frequently checked interactions</h2>
-  <p>View interaction reports for {{ drug.generic_name|title }} and the medicines listed below.</p>
+  <h2>Stored pair fixtures</h2>
+  <p>Open the local checker with each stored pair.</p>
   <ul class="ix-freq-list">
     {% for it in interactions[:20] %}
     <li>
@@ -77,7 +77,7 @@
     {% set group = interactions_by_severity.get(sev) %}
     {% if group %}
       <h3 class="is-128">{{ sev }} ({{ group|length }})</h3>
-      <table class="interactions-table is-129">
+      <div class="table-scroll" role="region" aria-label="{{ sev }} interaction fixture table" tabindex="0"><table class="interactions-table is-129">
         <thead>
           <tr class="is-130">
             <th class="is-131">Severity</th>
@@ -96,17 +96,16 @@
             </tr>
           {% endfor %}
         </tbody>
-      </table>
+      </table></div>
     {% endif %}
   {% endfor %}
 {% else %}
-<p>No drug-drug interactions for {{ drug.generic_name|title }} are recorded in our database.
-This does not mean none exist &mdash; always confirm with a pharmacist or clinician.</p>
+<p>No drug-drug fixture record for {{ drug.generic_name|title }} is stored in this local database. This does not establish absence of a real interaction.</p>
 {% endif %}
 
 <h2 class="is-134">Drug-food interactions</h2>
 {% if food_interactions %}
-<table class="interactions-table is-135">
+<div class="table-scroll" role="region" aria-label="Food interaction fixture table" tabindex="0"><table class="interactions-table is-135">
   <thead>
     <tr class="is-130">
       <th class="is-131">Severity</th>
@@ -123,9 +122,9 @@ This does not mean none exist &mdash; always confirm with a pharmacist or clinic
       </tr>
     {% endfor %}
   </tbody>
-</table>
+</table></div>
 {% else %}
-<p>No significant food interactions are recorded for {{ drug.generic_name|title }}.</p>
+<p>No food-interaction fixture record is stored for {{ drug.generic_name|title }}.</p>
 {% endif %}
 
 <h2 class="is-134">Drug-alcohol interactions</h2>
@@ -137,24 +136,15 @@ This does not mean none exist &mdash; always confirm with a pharmacist or clinic
     </div>
   {% endfor %}
 {% else %}
-<p>No specific alcohol interaction is recorded for {{ drug.generic_name|title }}. Discuss
-alcohol use with your clinician regardless.</p>
+<p>No alcohol-interaction fixture record is stored for {{ drug.generic_name|title }}.</p>
 {% endif %}
 
-<h3>{{ drug.generic_name|title }} disease interactions</h3>
-<p>There are {{ drug.drug_class.name if drug.drug_class else 'this drug class' }} disease interactions that affect {{ drug.generic_name|title }}, including:</p>
-<ul class="disease-interaction-list">
-  <li>Renal dysfunction</li>
-  <li>Hepatic dysfunction</li>
-  <li>Cardiovascular disease</li>
-  <li>Gastrointestinal disorders</li>
-  <li>Coagulation disorders</li>
-</ul>
+<h3>Disease-interaction data</h3>
+<p>No drug-specific disease-interaction dataset is included for {{ drug.generic_name|title }}. This page does not infer disease interactions from unrelated medications.</p>
 
 <section class="check-more is-138">
   <h2 class="is-064">Check for more interactions</h2>
-  <p>Add other medications you take alongside {{ drug.generic_name|title }} to see how they
-  interact.</p>
+  <p>Add another stored medication name to look for an exact local pair fixture.</p>
   <p><a class="btn btn-primary" href="{{ url_for('interaction_checker') }}?drug={{ drug.slug }}">Open the interaction checker with {{ drug.generic_name|title }} pre-filled</a></p>
 </section>
 
@@ -177,9 +167,8 @@ alcohol use with your clinician regardless.</p>
 {% endif %}
 
 <section id="further-information">
-  <h2>Further information</h2>
-  <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
-  <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com. Version: {{ drug.last_updated.strftime('%m.%y') }}.</p>
+  <h2>External verification</h2>
+  <p>Verify real interaction guidance against current official labeling and a qualified healthcare professional.</p>
 </section>
 
 <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&larr; Back to full {{ drug.generic_name|title }} information</a></p>

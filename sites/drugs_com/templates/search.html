@@ -9,7 +9,7 @@
 <h1>{% if q %}Search results for "{{ q }}"{% else %}Browse drugs{% endif %}</h1>
 
 <form method="get" action="{{ url_for('search') }}" class="search-bar-top">
-  <input type="search" name="q" value="{{ q }}" placeholder="Search drugs, conditions, brand names..." class="search-input-lg">
+  <input type="search" name="q" value="{{ q }}" placeholder="Search drugs, conditions, brand names..." class="search-input-lg" aria-label="Search drugs, conditions, and brand names">
   <button type="submit" class="btn btn-primary">Search</button>
 </form>
 
@@ -22,7 +22,7 @@
         <a href="{{ url_for('drug_detail', slug=exact_drug.slug) }}">{{ exact_drug.generic_name|capitalize }}</a>
       </h2>
       <div class="exact-match-links">
-        <a href="{{ url_for('drug_detail', slug=exact_drug.slug) }}" class="btn btn-primary btn-sm">Full prescribing information</a>
+        <a href="{{ url_for('drug_detail', slug=exact_drug.slug) }}" class="btn btn-primary btn-sm">Open local medication fixture</a>
         <a href="{{ url_for('drug_side_effects', slug=exact_drug.slug) }}">Side effects</a>
         <a href="{{ url_for('drug_dosage', slug=exact_drug.slug) }}">Dosage</a>
         <a href="{{ url_for('drug_interactions_page', slug=exact_drug.slug) }}">Interactions</a>

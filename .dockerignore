@@ -8,12 +8,19 @@ sites/*/instance/
 # Don't ship — runtime doesn't need scrape intermediate (data is in instance_seed/*.db).
 sites/*/scraped_data/
 
-# Don't ship — bytecode / venvs. `uv` creates `.venv`, so cover both names.
+# Don't ship — per-site local dev helpers (asset harvest, smoke tests, leak audits).
+sites/*/scripts_dev/
+sites/*/tests/
+sites/*/verify/tests/
+sites/*/verify/test*.py
+agent_demo/runs/
+.venv/
+**/.venv/
+
+# Don't ship — bytecode / venvs.
 sites/*/__pycache__/
 **/__pycache__/
 sites/*/venv/
-sites/*/.venv/
-**/.venv/
 sites/*/*.pyc
 
 # Don't ship — HF asset tarballs are build-time inputs (fetched/extracted by

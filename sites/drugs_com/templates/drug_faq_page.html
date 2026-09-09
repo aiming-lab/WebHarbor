@@ -32,7 +32,7 @@
   <header class="drug-header">
     <h1>{{ drug.generic_name|capitalize }} — Frequently Asked Questions</h1>
     <p class="reviewer-line">
-      <span>Medically reviewed by {{ drug.reviewer_name }}, {{ drug.reviewer_credential }}. Last updated on {{ drug.last_updated.strftime('%b %d, %Y') }}.</span>
+      <span>Fixture date: {{ drug.last_updated.strftime('%b %d, %Y') }}. Answers present stored fixture fields and have no claimed author or medical review.</span>
     </p>
   </header>
 
@@ -60,17 +60,15 @@
       <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage information</a></li>
       <li><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Drug interactions</a></li>
       <li><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}">During pregnancy or breastfeeding</a></li>
-      <li><a href="{{ url_for('drug_images', slug=drug.slug) }}">Drug images</a></li>
-      <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}">Pricing &amp; coupons</a></li>
-      <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}">Professional information</a></li>
+      <li><a href="{{ url_for('drug_images', slug=drug.slug) }}">Synthetic pill descriptor diagrams</a></li>
+      <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}">Generated price fixture</a></li>
+      <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}">Professional-layout fixture</a></li>
     </ul>
   </section>
 
   <section id="further-information">
-    <h2>Further information</h2>
-    <p>Remember, keep this and all other medicines out of the reach of children, never share your medicines with others, and use {{ drug.generic_name|capitalize }} only for the indication prescribed.</p>
-    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
-    <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com. Version: {{ drug.last_updated.strftime('%m.%y') }}.</p>
+    <h2>Data limitation</h2>
+    <p>Local WebHarbor benchmark fixture. The FAQ does not establish current indication, dosage, safety, efficacy, availability, pregnancy, or brand status.</p>
   </section>
 
   <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>

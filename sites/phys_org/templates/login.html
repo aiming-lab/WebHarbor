@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Sign in — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Sign in</h1>
+  <form method="post">
+    {{ form.csrf_token }}
+    <div class="field">
+      <label>Email or username</label>
+      {{ form.email(size=40) }}
+      {% if form.email.errors %}<div class="errors">{{ form.email.errors[0] }}</div>{% endif %}
+    </div>
+    <div class="field">
+      <label>Password</label>
+      {{ form.password(size=40) }}
+      {% if form.password.errors %}<div class="errors">{{ form.password.errors[0] }}</div>{% endif %}
+    </div>
+    <div class="actions">
+      <button type="submit" class="btn">Sign in</button>
+    </div>
+    <div class="alt">No account? <a href="{{ url_for('register') }}">Create one</a>.</div>
+  </form>
+</div>
+{% endblock %}

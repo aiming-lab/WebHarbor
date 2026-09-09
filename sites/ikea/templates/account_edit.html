@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Edit profile - IKEA demo{% endblock %}
+{% block content %}
+<form class="form-panel wide" method="post">
+  <h1>Edit account</h1>
+  <div class="form-grid">
+    <label>First name<input type="text" name="first_name" value="{{ current_user.first_name }}"></label>
+    <label>Last name<input type="text" name="last_name" value="{{ current_user.last_name }}"></label>
+    <label>Phone<input type="text" name="phone" value="{{ current_user.phone }}"></label>
+    <label>City<input type="text" name="city" value="{{ current_user.city }}"></label>
+    <label>State<input type="text" name="state" value="{{ current_user.state }}"></label>
+    <label>ZIP code<input type="text" name="zip_code" value="{{ current_user.zip_code }}"></label>
+    <label>Preferred store
+      <select name="preferred_store_slug">
+        {% for store in store_options %}
+          <option value="{{ store.slug }}" {% if current_user.preferred_store_slug == store.slug %}selected{% endif %}>{{ store.name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="checkbox-row"><input type="checkbox" name="newsletter_opt_in" {% if current_user.newsletter_opt_in %}checked{% endif %}> Receive demo newsletter updates</label>
+  </div>
+  <button type="submit">Save changes</button>
+</form>
+{% endblock %}

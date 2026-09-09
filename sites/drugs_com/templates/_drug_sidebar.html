@@ -4,84 +4,45 @@
     <div class="sidebar-box-title">Drug Status</div>
     <ul class="status-list status-list--sidebar">
       <li class="status-row">
-        {% set _av = (drug.availability or '')|lower %}
-        <span class="status-icon rx-otc" aria-hidden="true">{% if 'rx' in _av and 'otc' in _av %}Rx<br>OTC{% elif 'rx' in _av %}Rx{% else %}OTC{% endif %}</span>
+        <span class="status-icon rx-otc" aria-hidden="true">AV</span>
         <div class="status-text">
-          <span class="status-label">Availability</span>
-          <span class="status-value">
-            {% if 'rx' in _av and 'otc' in _av %}
-              <span class="avail-badge avail-both">Rx/OTC</span> Rx and/or OTC
-            {% elif 'rx' in _av %}
-              <span class="avail-badge avail-rx">Rx</span> Prescription only
-            {% else %}
-              <span class="avail-badge avail-otc">OTC</span> Over-the-counter
-            {% endif %}
-          </span>
+          <span class="status-label">Availability fixture</span>
+          <span class="status-value">{{ drug.availability if drug.availability else 'Not stored' }}</span>
         </div>
       </li>
       <li class="status-row">
         <span class="status-icon pregnancy" aria-hidden="true">&#9792;</span>
         <div class="status-text">
-          <span class="status-label">Pregnancy &amp; Lactation</span>
-          <span class="status-value">
-            <a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}" class="status-link">
-              {% set _cat = drug.pregnancy_risk|preg_category %}
-              {% if _cat %}
-                <span class="preg-badge preg-badge--{{ _cat|lower }}">Category {{ _cat }}</span>
-              {% elif drug.pregnancy_risk %}
-                <span class="preg-badge preg-badge--other">{{ drug.pregnancy_risk[:20] }}</span>
-              {% else %}
-                <span class="preg-badge preg-badge--none">Risk data available</span>
-              {% endif %}
-              <span class="status-arrow" aria-hidden="true">&rsaquo;</span>
-            </a>
-          </span>
+          <span class="status-label">Pregnancy fixture</span>
+          <span class="status-value"><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}" class="status-link">{{ drug.pregnancy_risk if drug.pregnancy_risk else 'Not stored' }} <span class="status-arrow" aria-hidden="true">&rsaquo;</span></a></span>
         </div>
       </li>
       <li class="status-row">
-        <span class="status-icon csa" aria-hidden="true">
-          {% set _csa = (drug.csa_schedule or '')|lower %}
-          {% if drug.csa_schedule and _csa not in ['n/a', 'none', 'not scheduled', ''] and 'not a controlled' not in _csa %}
-            <span class="csa-badge csa-badge--scheduled">{{ drug.csa_schedule[:4] }}</span>
-          {% else %}
-            <span class="csa-badge csa-badge--none">N/A</span>
-          {% endif %}
-        </span>
+        <span class="status-icon csa" aria-hidden="true">CSA</span>
         <div class="status-text">
-          <span class="status-label">CSA Schedule*</span>
-          <span class="status-value">
-            {% set _csa = (drug.csa_schedule or '')|lower %}
-            {% if drug.csa_schedule and _csa not in ['n/a', 'none', 'not scheduled', ''] and 'not a controlled' not in _csa %}
-              {{ drug.csa_schedule }}
-            {% else %}
-              Not a controlled drug
-            {% endif %}
-            <span class="status-arrow" aria-hidden="true">&rsaquo;</span>
-          </span>
+          <span class="status-label">CSA fixture</span>
+          <span class="status-value">{{ drug.csa_schedule if drug.csa_schedule else 'Not stored' }}</span>
         </div>
       </li>
       <li class="status-row">
-        <span class="status-icon approval" aria-hidden="true">FDA</span>
+        <span class="status-icon approval" aria-hidden="true">DATE</span>
         <div class="status-text">
-          <span class="status-label">Approval History</span>
-          <span class="status-value">
-            FDA approved &middot; Last updated {{ drug.last_updated.strftime('%b %Y') }}
-            <span class="status-arrow" aria-hidden="true">&rsaquo;</span>
-          </span>
+          <span class="status-label">Approval-date fixture</span>
+          <span class="status-value">{% if drug.approval_date %}{{ drug.approval_date.strftime('%b %Y') if drug.approval_date.strftime is defined else drug.approval_date }}{% else %}Not stored{% endif %}</span>
         </div>
       </li>
       <li class="status-row">
         <span class="status-icon ingredients" aria-hidden="true">&#9670;</span>
         <div class="status-text">
           <span class="status-label">Ingredients</span>
-          <span class="status-value">Active &amp; Inactive <span class="status-arrow" aria-hidden="true">&rsaquo;</span></span>
+          <span class="status-value">Not stored</span>
         </div>
       </li>
     </ul>
   </div>
 
   <div class="sidebar-box rating-box">
-    <h3>User Reviews &amp; Ratings</h3>
+    <h3>Simulated Reviews &amp; Ratings</h3>
     {% if drug.avg_rating %}
     <div class="rating-score">{{ "%.1f"|format(drug.avg_rating) }}<span class="rating-score-denom"> / 10</span></div>
     <div class="rating-bar-wrap">
@@ -106,9 +67,9 @@
       <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}"{% if ep == 'drug_side_effects' %} class="active"{% endif %}>Side effects</a></li>
       <li><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}"{% if ep == 'drug_interactions_page' %} class="active"{% endif %}>Drug interactions</a></li>
       <li><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}"{% if ep == 'drug_pregnancy' %} class="active"{% endif %}>Pregnancy &amp; lactation</a></li>
-      <li><a href="{{ url_for('drug_images', slug=drug.slug) }}"{% if ep == 'drug_images' %} class="active"{% endif %}>Pill images</a></li>
-      <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}"{% if ep == 'drug_prices' %} class="active"{% endif %}>Prices &amp; coupons</a></li>
-      <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}"{% if ep == 'drug_pro_monograph' %} class="active"{% endif %}>Professional monograph</a></li>
+      <li><a href="{{ url_for('drug_images', slug=drug.slug) }}"{% if ep == 'drug_images' %} class="active"{% endif %}>Synthetic pill diagrams</a></li>
+      <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}"{% if ep == 'drug_prices' %} class="active"{% endif %}>Generated price fixture</a></li>
+      <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}"{% if ep == 'drug_pro_monograph' %} class="active"{% endif %}>Professional-layout fixture</a></li>
     </ul>
   </div>
 </aside>

@@ -113,7 +113,7 @@
           <header class="review-header">
             <span class="review-rating-badge {{ rclass }}">{{ rscore }}<span class="rb-denom">/10</span></span>
             <div class="review-header-meta">
-              <strong class="review-title">{{ r.title }}</strong>
+              <strong class="review-title">{{ r.title }}</strong>{% if r.is_fixture %} <span class="badge">Simulated fixture</span>{% endif %}
               <div class="review-byline muted">
                 <span class="review-stars" aria-hidden="true">
                   {% for s in range(1, 6) %}<span class="star {% if s <= rstar5 %}star-on{% else %}star-off{% endif %}">&#9733;</span>{% endfor %}
@@ -132,10 +132,12 @@
           <div class="review-helpful muted" data-review-id="{{ r.id }}" data-slug="{{ drug.slug }}">
             {% if current_user.is_authenticated and r.user_id == current_user.id %}
             <span class="review-helpful-label">Your review</span>
-            {% else %}
-            <span class="review-helpful-label">Was this review helpful?</span>
+            {% elif current_user.is_authenticated %}
+            <span class="review-helpful-label">Was this simulated review useful for interface evaluation?</span>
             <button type="button" class="btn btn-sm btn-outline review-helpful-yes">&#128077; Yes (<span class="review-helpful-count">{{ r.helpful_count or 0 }}</span>)</button>
             <button type="button" class="btn btn-sm btn-outline review-helpful-no">&#128078; No</button>
+            {% else %}
+            <a href="{{ url_for('login', next=url_for('drug_reviews_page', slug=drug.slug)) }}">Sign in to record a bounded local fixture vote</a>
             {% endif %}
           </div>
         </article>
@@ -193,14 +195,12 @@
   </section>
   {% endif %}
 
-  <p class="reviews-disclaimer muted">Reviews may be edited to correct grammar/spelling or remove inappropriate content. Reviews appearing to come from parties with a vested interest are not published. This information is not intended to endorse any medication and should not replace the expertise and judgment of healthcare professionals.</p>
+  <p class="reviews-disclaimer muted">Rows marked “Simulated fixture” were generated for benchmark testing and are not user testimonials or medical evidence.</p>
 
-   <section id="further-information">
-    <h2>Further information</h2>
-    <p>Always consult your healthcare provider to ensure the information displayed on this page applies to your personal circumstances.</p>
-    <p>Copyright 1996-{{ drug.last_updated.strftime('%Y') }} Drugs.com.</p>
+  <section id="further-information">
+    <h2>External verification</h2>
+    <p>Do not use local review fixtures for medication decisions. Consult current official information and a qualified healthcare professional.</p>
   </section>
-</div>
 </div>
 
 {{ drug_status_sidebar(drug) }}

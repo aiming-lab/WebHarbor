@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ order.order_number }} | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        {# Signed-in guests arrive here from order history and previously had
+           no way back; anonymous order-lookup users get the lookup form. #}
+        {% if current_user.is_authenticated %}
+          <a class="back-link" href="{{ url_for('account_orders') }}">&larr; Back to order history</a>
+        {% else %}
+          <a class="back-link" href="{{ url_for('order_lookup') }}">&larr; Back to order lookup</a>
+        {% endif %}
+        <p class="eyebrow">Order detail</p>
+        <h1>{{ order.order_number }}</h1>
+        <p>{{ order.status }} | {{ order.fulfillment_method|title }} | {{ order.placed_at.strftime('%b %d, %Y') }}</p>
+      </div>
+      <div class="result-count">{{ order.total|currency }}</div>
+    </div>
+    <div class="checkout-layout">
+      <div class="panel">
+        <h2>Items</h2>
+        {% for item in order.items %}
+          <div class="cart-row">
+            <a class="mini-product" href="{{ url_for('product_page', sku=item.product.sku) }}">
+              <img src="{{ url_for('static', filename=item.product.image_path) }}" alt="{{ item.item_name }}">
+              <div>
+                <strong>{{ item.item_name }}</strong>
+                <p>Qty {{ item.quantity }} | {{ item.unit_price|currency }}</p>
+                {% if item.protection_plan_name %}
+                  <span>{{ item.protection_plan_name }}</span>
+                {% endif %}
+              </div>
+            </a>
+          </div>
+        {% endfor %}
+      </div>
+      <aside class="panel order-summary">
+        <h2>Summary</h2>
+        <div class="summary-row"><span>Subtotal</span><strong>{{ order.subtotal|currency }}</strong></div>
+        <div class="summary-row"><span>Tax</span><strong>{{ order.tax|currency }}</strong></div>
+        <div class="summary-row summary-row--total"><span>Total</span><strong>{{ order.total|currency }}</strong></div>
+        <div class="summary-row"><span>Payment</span><strong>{{ order.payment_brand }} ending {{ order.payment_last4 }}</strong></div>
+        {% if order.store %}
+          <div class="summary-row"><span>Pickup store</span><strong>{{ order.store.name }}</strong></div>
+          <div class="summary-row"><span>Pickup time</span><strong>{{ order.pickup_slot_label }}</strong></div>
+        {% endif %}
+        {% if order.delivery_option %}
+          <div class="summary-row"><span>Delivery</span><strong>{{ order.delivery_option.title }}</strong></div>
+          <div class="delivery-address">
+            <span>Shipping to</span>
+            <strong>{{ order.shipping_name }}</strong>
+            <span>{{ order.shipping_street }}, {{ order.shipping_city }}, {{ order.shipping_state }} {{ order.shipping_zip }}</span>
+          </div>
+        {% endif %}
+      </aside>
+    </div>
+  </section>
+{% endblock %}
+
+

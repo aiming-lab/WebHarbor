@@ -21,6 +21,7 @@ if [[ "$ARG2" == "--push" ]]; then PUSH="--push"; else ONLY_SITE="$ARG2"; fi
 
 REPO=$(awk '/^repo:/ {print $2}' .assets-revision)
 mkdir -p "$TARGET"
+shopt -s nullglob
 
 # Subpaths inside each site/<site>/ that the tarball should include.
 # Keep in sync with .assetpaths.
@@ -33,8 +34,19 @@ for site_dir in sites/*/; do
     [[ -d "$site_dir" ]] || continue
     if [[ -n "$ONLY_SITE" && "$site" != "$ONLY_SITE" ]]; then continue; fi
 
+    if [[ ! -f "${site_dir}.build-generated-seed" ]]; then
+        seed_databases=("${site_dir}instance_seed/"*.db)
+        if [[ ${#seed_databases[@]} -ne 1 || ! -s "${seed_databases[0]:-}" ]]; then
+            echo "[pack] $site must have exactly one non-empty instance_seed/*.db file" >&2
+            exit 1
+        fi
+    fi
+
     members=()
     for sub in "${SUBPATHS[@]}"; do
+        if [[ "$sub" == "instance_seed" && -f "${site_dir}.build-generated-seed" ]]; then
+            continue
+        fi
         [[ -e "$site_dir$sub" ]] && members+=("$site/$sub")
     done
     if [[ ${#members[@]} -eq 0 ]]; then
@@ -42,15 +54,12 @@ for site_dir in sites/*/; do
     fi
 
     out="$TARGET/$site.tar.gz"
-    # Drop any macOS junk already on disk, then pack with COPYFILE_DISABLE=1 so
-    # Apple's bsdtar does not synthesize ._* AppleDouble sidecars from extended
-    # attributes (e.g. com.apple.provenance on Sonoma+). GNU tar ignores the env
-    # var, so this stays correct on Linux. Keeps every <site>.tar.gz free of
-    # ._* / .DS_Store cruft regardless of which machine packs it.
-    for m in "${members[@]}"; do
-        find "sites/$m" \( -name '._*' -o -name '.DS_Store' \) -delete 2>/dev/null || true
-    done
-    COPYFILE_DISABLE=1 tar -czf "$out" -C sites "${members[@]}"
+    # macOS may synthesize AppleDouble ``._*`` metadata while archiving files.
+    # Exclude it explicitly so uploaded assets are portable and reproducible.
+    COPYFILE_DISABLE=1 tar --exclude='._*' -czf "$out" -C sites "${members[@]}"
+    validator_args=()
+    [[ -f "${site_dir}.build-generated-seed" ]] && validator_args+=(--allow-missing-seed)
+    python3 scripts/validate_asset_archive.py "$out" "$site" "${validator_args[@]}"
     sz=$(du -sh "$out" 2>/dev/null | cut -f1)
     printf "  %-22s -> %-30s %s\n" "$site" "$site.tar.gz" "$sz"
     count=$((count + 1))

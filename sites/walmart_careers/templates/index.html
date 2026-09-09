@@ -1,0 +1,185 @@
+{% extends "base.html" %}
+{% block body_class %}l1{% endblock %}
+{% from "_job_card.html" import job_card %}
+{% block title %}Careers at Walmart{% endblock %}
+{% block content %}
+<div class="hero">
+  <div class="inner">
+    <h1><span>{{ content.HERO_HEADLINE_1 }}</span><span>{{ content.HERO_HEADLINE_2 }}</span></h1>
+    <form class="hero-search" action="{{ url_for('results') }}" method="get" role="search">
+      <input type="text" name="q" placeholder="{{ content.SEARCH_PLACEHOLDER }}" aria-label="Search open roles">
+      <button type="submit" aria-label="Search">
+        <svg viewBox="0 0 24 24" width="28" height="28" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M15.2 15.2 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18.4 3.2l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z" fill="currentColor"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+  <div class="hero-strip">
+    <img src="{{ url_for('static', filename='images/area-corporate.jpg') }}" alt="Associates in a home office space">
+    <div class="hero-strip-mid">
+      <img src="{{ url_for('static', filename='images/home-hero.jpg') }}" alt="Walmart associates at work">
+      <a class="pill hero-pill" href="{{ url_for('career_area', slug='stores-and-clubs') }}">Stores &amp; Clubs Careers <span>+</span></a>
+    </div>
+    <img src="{{ url_for('static', filename='images/area-supply-chain.jpg') }}" alt="Associates in a distribution center">
+  </div>
+</div>
+
+<section class="after-hero">
+  <div class="wrap">
+    <h2>Trending roles</h2>
+    <div class="job-grid three-col">
+      {% for job in trending %}{{ job_card(job, saved_ids, compact=True) }}{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="ribbon-section">
+  <div class="wrap">
+    <div class="ribbon">
+      {% for area in ribbon_areas %}
+        <a class="ribbon-seg seg-{{ loop.index }}" href="{{ url_for('career_area', slug=area.slug) }}">
+          <span>{{ area.name }}</span>
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="bento-section">
+  <div class="wrap-bleed">
+    <div class="bento-layout">
+      <div class="bento">
+        <a class="tile tile-sky tile-sq" href="{{ url_for('results') }}">
+          <span class="tile-label">Grow your career here</span>
+          <span class="circle-arrow">&#8250;</span>
+        </a>
+        <div class="tile tile-photo tile-sq">
+          <img src="{{ url_for('static', filename='images/area-stores.jpg') }}" alt="An associate helping a customer in the grocery aisle">
+        </div>
+        <div class="tile tile-blue tile-sq tile-center">
+          <img class="spark-card" src="{{ url_for('static', filename='icons/spark-yellow-card.svg') }}" alt="">
+        </div>
+        <div class="tile tile-photo tile-wide">
+          <img src="{{ url_for('static', filename='images/supply-drone.jpg') }}" alt="A delivery drone in flight">
+        </div>
+        <a class="tile tile-navy tile-sq" href="{{ url_for('about_us') }}">
+          <span class="tile-label">People-led. Tech-powered.</span>
+          <span class="circle-arrow circle-arrow-back">&#8249;</span>
+        </a>
+        <a class="tile tile-sky tile-sq" href="{{ url_for('about_us') }}">
+          <span class="tile-label">Guided by our values</span>
+          <span class="circle-arrow">&#8250;</span>
+        </a>
+        <div class="tile tile-photo tile-wide">
+          <img src="{{ url_for('static', filename='images/life-home-office.jpg') }}" alt="The Walmart home office campus">
+        </div>
+        <div class="tile tile-blue tile-short"><span class="tile-label">Strive for excellence</span></div>
+        <div class="tile tile-sky tile-mini tile-center">
+          <svg viewBox="0 0 64 64" width="72" height="72" aria-hidden="true">
+            <circle cx="32" cy="32" r="28" fill="#ffc220" stroke="#001e60" stroke-width="2"/>
+            <circle cx="22" cy="26" r="3" fill="#001e60"/><circle cx="42" cy="26" r="3" fill="#001e60"/>
+            <path d="M20 39c6 7 18 7 24 0" fill="none" stroke="#001e60" stroke-width="3" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="tile tile-spark tile-mini tile-center">
+          <img class="tile-heart" src="{{ url_for('static', filename='icons/heart-blue.svg') }}" alt="">
+        </div>
+        <div class="tile tile-sky tile-short"><span class="tile-label">Respect for the individual</span></div>
+        <a class="tile tile-navy tile-sq tile-center" href="{{ url_for('results', brand="Sam's Club") }}">
+          <img class="tile-diamond" src="{{ url_for('static', filename='icons/sams-logo.svg') }}" alt="Sam's Club">
+          <span class="circle-arrow">&#8250;</span>
+        </a>
+        <div class="tile tile-photo tile-wide">
+          <img src="{{ url_for('static', filename='images/jobhero-sams-1.png') }}" alt="A Member Services associate at Sam's Club">
+        </div>
+      </div>
+      <div class="bento-aside">
+        <h2>{{ content.HOME_INTRO_HEADLINE[0] }}<br>{{ content.HOME_INTRO_HEADLINE[1] }}</h2>
+        <a class="btn btn-secondary" href="{{ url_for('about_us') }}">{{ content.HOME_INTRO_CTA }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Explore our Benefits</h2>
+    <div class="benefits-layout">
+      <div class="benefit-grid">
+        {% for name, blurb, icon in content.BENEFIT_ROWS %}
+          <div class="benefit-item">
+            <img src="{{ url_for('static', filename='icons/' ~ icon) }}" alt="">
+            <b>{{ name }}</b>
+            <span>{{ blurb }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="benefits-aside">
+        <p>{{ content.BENEFITS_ASIDE }}</p>
+        <a class="btn btn-secondary" href="{{ url_for('about_us') }}">{{ content.BENEFITS_CTA }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="milestones">
+  <div class="wrap">
+    <div class="milestone-layout">
+      <h2>{{ content.MILESTONE_HEADING }}</h2>
+      <div class="badge-stack">
+        {% for sentence, label, style in content.MILESTONE_BADGES %}
+          <div class="badge-row row-{{ loop.index }}">
+            {% if loop.index is even %}<span class="badge-blank blank-{{ style }}"></span>{% endif %}
+            <div class="badge badge-{{ style }}">
+              <div class="badge-top"><span class="grip"></span>{% if label %}<em>{{ label }}</em>{% endif %}</div>
+              <div class="badge-body">{{ sentence }}</div>
+              {% if label != '10 YEARS' %}<div class="badge-foot">Walmart</div>{% else %}<div class="badge-foot plain">{{ label }}</div>{% endif %}
+            </div>
+            {% if loop.index is odd %}<span class="badge-blank blank-{{ style }}"></span>{% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2 class="tight">{{ content.ASSOCIATES_HEADING }}</h2>
+    <p class="section-blurb">{{ content.ASSOCIATES_BLURB }}</p>
+    <div class="video-strip">
+      {% for role, kicker in [('Store Coach', 'Day in the life'),
+                              ('Optician', 'Day in Life'),
+                              ('Store Manager', 'Day in the life')] %}
+        <div class="video-tile{% if loop.index == 2 %} wide{% endif %}">
+          <img class="v-spark" src="{{ url_for('static', filename='icons/spark-yellow.svg') }}" alt="">
+          <div class="v-cap"><em>{{ kicker }}</em><b>{{ role }}</b>
+            </div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="find-role">
+  <div class="wrap">
+    <h2>{{ content.FIND_ROLE_HEADING }}</h2>
+    <form class="find-search" action="{{ url_for('results') }}" method="get" role="search">
+      <input type="text" name="q" placeholder="{{ content.FIND_ROLE_PLACEHOLDER }}" aria-label="Search open roles">
+      <button type="submit" aria-label="Search">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M15.2 15.2 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18.4 3.2l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z" fill="currentColor"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+</section>
+{% endblock %}

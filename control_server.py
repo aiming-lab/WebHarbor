@@ -1,4 +1,6 @@
-"""WebSyn control plane on :8101.
+"""Bearer-authenticated WebSyn control plane on :8101.
+
+Set WEBSYN_CONTROL_TOKEN to a secret of at least 32 characters. If absent, a random token is written with mode 0600 to /tmp/websyn_control_token.
 
 Endpoints:
     GET  /health             -> per-site PID + alive status
@@ -9,24 +11,27 @@ Endpoints:
 PID tracking: each site's PID lives at /tmp/websyn_pids/<site>.pid. websyn_start.sh
 writes the initial PIDs; this server overwrites them on respawn.
 """
+import hmac
 import os
+import secrets
 import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 import urllib.request
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 
 SITES = [
     'allrecipes', 'amazon', 'apple', 'arxiv', 'bbc_news', 'booking',
     'github', 'google_flights', 'google_map', 'google_search',
     'huggingface', 'wolfram_alpha', 'cambridge_dictionary',
-    'coursera', 'espn', 'merriam_webster', 'drugs_com',
+    'coursera', 'espn', 'merriam_webster', 'ikea', 'phys_org', 'target', 'ted', 'osu', 'rotten_tomatoes', 'compass', 'walmart_careers', 'drugs_com',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'
@@ -47,6 +52,8 @@ _site_locks = {s: threading.Lock() for s in SITES}
 # their first respawn — kill_site falls back to os.killpg + zombie poll
 # for those.
 _site_procs: dict = {}
+_site_procs_lock = threading.Lock()
+_reap_lock = threading.Lock()
 
 # We tried graceful SIGTERM. Werkzeug's threaded serve_forever() doesn't
 # honor it. Since /reset wipes instance/ next anyway, in-flight transactions
@@ -55,6 +62,37 @@ _site_procs: dict = {}
 REAP_GRACE_SECS = 5.0
 
 app = Flask(__name__)
+
+
+def _load_control_token() -> str:
+    configured = os.environ.get('WEBSYN_CONTROL_TOKEN')
+    if configured is not None:
+        if len(configured) < 32:
+            raise RuntimeError('WEBSYN_CONTROL_TOKEN must contain at least 32 characters')
+        return configured
+    token_path = Path(os.environ.get('WEBSYN_CONTROL_TOKEN_FILE', '/tmp/websyn_control_token'))
+    try:
+        value = token_path.read_text(encoding='utf-8').strip()
+        if len(value) >= 32:
+            return value
+    except FileNotFoundError:
+        pass
+    generated = secrets.token_urlsafe(48)
+    descriptor = os.open(token_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, 'w', encoding='utf-8') as token_file:
+        token_file.write(generated)
+    return generated
+
+
+CONTROL_TOKEN = _load_control_token()
+
+
+@app.before_request
+def require_control_authentication():
+    supplied = request.headers.get('Authorization', '')
+    expected = f'Bearer {CONTROL_TOKEN}'
+    if not hmac.compare_digest(supplied.encode('utf-8'), expected.encode('utf-8')):
+        return jsonify({'error': 'unauthorized'}), 401
 
 
 def site_port(site: str) -> int:
@@ -90,6 +128,18 @@ def is_alive(pid) -> bool:
         return False
 
 
+def reap_exited_children() -> None:
+    """Reap every exited direct child, including re-parented Flask workers."""
+    with _reap_lock:
+        while True:
+            try:
+                pid, _status = os.waitpid(-1, os.WNOHANG)
+            except ChildProcessError:
+                return
+            if pid <= 0:
+                return
+
+
 def kill_site(site: str, reap_grace: float = REAP_GRACE_SECS):
     pid = read_pid(site)
     if not pid:
@@ -100,33 +150,63 @@ def kill_site(site: str, reap_grace: float = REAP_GRACE_SECS):
         os.killpg(pid, signal.SIGKILL)
     except ProcessLookupError:
         pass
-    # If we own a Popen for this supervisor, wait()+reap so it doesn't
-    # linger as a zombie. (Supervisors started at boot via websyn_start.sh
-    # aren't tracked here; we still adopted them as children via container
-    # init, but Python won't reap them — they stay zombies until container
-    # exit. That's harmless: is_alive() correctly reports them as dead.)
-    proc = _site_procs.pop(site, None)
+    # Reap supervisors created through Popen and boot-time supervisors that
+    # became direct children when websyn_start.sh exec'd this control process.
+    with _site_procs_lock:
+        proc = _site_procs.pop(site, None)
     if proc is not None:
         try:
             proc.wait(timeout=reap_grace)
         except subprocess.TimeoutExpired:
             pass
+    reap_exited_children()
     # Belt-and-suspenders: confirm the supervisor is actually dead before
     # returning, even when we don't own the Popen. is_alive() looks at
     # /proc state and returns False for zombies, so this loop exits in ms.
     deadline = time.time() + reap_grace
     while time.time() < deadline:
         if not is_alive(pid):
+            for _ in range(10):
+                reap_exited_children()
+                time.sleep(0.01)
             return
         time.sleep(0.01)
+    raise RuntimeError(f'failed to stop {site} process group {pid}')
 
 
 def reset_db(site: str):
-    inst = Path(WEBSYN_DIR) / site / 'instance'
-    seed = Path(WEBSYN_DIR) / site / 'instance_seed'
-    if inst.exists():
-        shutil.rmtree(inst)
-    shutil.copytree(seed, inst)
+    site_dir = Path(WEBSYN_DIR) / site
+    inst = site_dir / 'instance'
+    seed = site_dir / 'instance_seed'
+    if not seed.is_dir() or not any(seed.iterdir()):
+        raise RuntimeError(f'missing or empty seed directory for {site}')
+    staging = Path(tempfile.mkdtemp(prefix='.instance-reset-', dir=site_dir))
+    backup = staging.with_name(staging.name + '-backup')
+    shutil.rmtree(staging)
+    old_moved = False
+    installed = False
+    try:
+        shutil.copytree(seed, staging)
+        if inst.exists():
+            inst.rename(backup)
+            old_moved = True
+        staging.rename(inst)
+        installed = True
+    except Exception:
+        if staging.exists():
+            shutil.rmtree(staging, ignore_errors=True)
+        if old_moved and backup.exists():
+            if inst.exists():
+                shutil.rmtree(inst, ignore_errors=True)
+            backup.rename(inst)
+        raise
+    cleanup_error = None
+    if installed and backup.exists():
+        try:
+            shutil.rmtree(backup)
+        except OSError as error:
+            cleanup_error = f'{type(error).__name__}: {error}'
+    return cleanup_error
 
 
 def start_site(site: str) -> int:
@@ -137,12 +217,16 @@ def start_site(site: str) -> int:
     # the rationale. start_new_session=True is redundant with the supervisor's
     # own setsid() but harmless and gives us a session leader from the very
     # first instant.
-    proc = subprocess.Popen(
-        ['python3', '/opt/site_runner.py', site, str(port)],
-        stdout=log, stderr=subprocess.STDOUT,
-        start_new_session=True,
-    )
-    _site_procs[site] = proc
+    try:
+        proc = subprocess.Popen(
+            ['python3', '/opt/site_runner.py', site, str(port)],
+            stdout=log, stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    finally:
+        log.close()
+    with _site_procs_lock:
+        _site_procs[site] = proc
     pid_path(site).write_text(str(proc.pid))
     return proc.pid
 
@@ -162,10 +246,18 @@ def wait_ready(site: str, timeout: float = 30.0) -> bool:
 def reset_one(site: str) -> dict:
     with _site_locks[site]:
         kill_site(site)
-        reset_db(site)
+        try:
+            cleanup_error = reset_db(site)
+        except Exception:
+            pid = start_site(site)
+            recovery_ready = wait_ready(site)
+            raise RuntimeError(f'reset failed; prior state restart ready={recovery_ready}')
         pid = start_site(site)
         ready = wait_ready(site)
-    return {'site': site, 'pid': pid, 'ready': ready}
+    result = {'site': site, 'pid': pid, 'ready': ready}
+    if cleanup_error:
+        result['cleanup_warning'] = cleanup_error
+    return result
 
 
 def restart_one(site: str) -> dict:
@@ -180,14 +272,25 @@ def restart_one(site: str) -> dict:
 
 @app.route('/health')
 def health():
-    sites = {}
-    all_ok = True
-    for s in SITES:
-        pid = read_pid(s)
+    reap_exited_children()
+
+    def status(site):
+        pid = read_pid(site)
         alive = is_alive(pid)
-        sites[s] = {'pid': pid, 'alive': alive, 'port': site_port(s)}
-        if not alive:
-            all_ok = False
+        ready = False
+        if alive:
+            try:
+                with urllib.request.urlopen(
+                        f'http://127.0.0.1:{site_port(site)}/', timeout=1) as response:
+                    ready = response.status < 500
+            except Exception:
+                ready = False
+        return site, {'pid': pid, 'alive': alive, 'ready': ready,
+                      'port': site_port(site)}
+
+    with ThreadPoolExecutor(max_workers=len(SITES)) as executor:
+        sites = dict(executor.map(status, SITES))
+    all_ok = all(item['alive'] and item['ready'] for item in sites.values())
     return jsonify({'ok': all_ok, 'sites': sites}), (200 if all_ok else 503)
 
 
@@ -196,24 +299,40 @@ def reset_site(site):
     if site not in SITES:
         return jsonify({'error': f'unknown site: {site}',
                         'valid_sites': SITES}), 404
-    result = reset_one(site)
+    try:
+        result = reset_one(site)
+    except Exception as error:
+        return jsonify({'site': site, 'ready': False, 'error': f'{type(error).__name__}: {error}'}), 503
     return jsonify(result), (200 if result['ready'] else 503)
 
 
 @app.route('/reset-all', methods=['POST'])
 def reset_all():
-    with ThreadPoolExecutor(max_workers=len(SITES)) as ex:
-        results = list(ex.map(reset_one, SITES))
-    out = {r['site']: r for r in results}
-    ok = all(r['ready'] for r in results)
-    return jsonify({'ok': ok, 'sites': out}), (200 if ok else 503)
+    def reset_with_result(site):
+        try:
+            return reset_one(site)
+        except Exception as error:
+            return {
+                'site': site,
+                'ready': False,
+                'error': f'{type(error).__name__}: {error}',
+            }
+
+    with ThreadPoolExecutor(max_workers=len(SITES)) as executor:
+        results = list(executor.map(reset_with_result, SITES))
+    out = {result['site']: result for result in results}
+    ok = all(result.get('ready') for result in results)
+    return jsonify({'ok': ok, 'partial': not ok, 'sites': out}), (200 if ok else 503)
 
 
 @app.route('/restart/<site>', methods=['POST'])
 def restart_site(site):
     if site not in SITES:
         return jsonify({'error': f'unknown site: {site}'}), 404
-    result = restart_one(site)
+    try:
+        result = restart_one(site)
+    except Exception as error:
+        return jsonify({'site': site, 'ready': False, 'error': f'{type(error).__name__}: {error}'}), 503
     return jsonify(result), (200 if result['ready'] else 503)
 
 

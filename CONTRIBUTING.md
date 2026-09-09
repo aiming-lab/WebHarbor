@@ -23,8 +23,10 @@ Workflows A and B below are the **contributor's** job. The **Reviewer role** sec
 git clone https://github.com/<you>/webharbor && cd webharbor
 ./scripts/fetch_assets.sh                       # pull current assets
 ./scripts/new_site.py mywebsite                 # OR edit an existing site
-./scripts/build.sh && docker run -d --rm \
-  -p 8101:8101 -p 40000-40016:40000-40016 webharbor:dev
+./scripts/build.sh
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+docker run -d --rm -e WEBSYN_CONTROL_TOKEN \
+  -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
 # iterate locally...
 
 ./scripts/extract_assets.sh ../webharbor-static-pr/   # split assets out
@@ -32,7 +34,7 @@ cd ../webharbor-static-pr
 hf upload-large-folder <your-fork>/WebHarbor . --repo-type dataset
 # open PR on HF first → grab the merge sha
 cd ../webharbor
-echo "revision: <hf-merge-sha>" > .assets-revision
+sed -i "s/^revision:.*/revision: <hf-merge-sha>/" .assets-revision
 git commit -am "feat(mywebsite): add site + bump assets to <sha>"
 gh pr create
 ```
@@ -94,12 +96,13 @@ If your site has multiple categories / pages / topics, make sure the seed DB has
 
 ```bash
 ./scripts/build.sh
-docker run -d --rm --name wh-test \
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+docker run -d --rm --name wh-test -e WEBSYN_CONTROL_TOKEN \
   -p 8101:8101 -p 40000-400NN:40000-400NN webharbor:dev
 
 # the new site should be on port 40000+i
 curl -so /dev/null -w "%{http_code}\n" http://localhost:400NN/
-curl -X POST http://localhost:8101/reset/mywebsite
+curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8101/reset/mywebsite
 
 # make sure /reset/mywebsite keeps the DB byte-identical to the seed
 docker exec wh-test md5sum \

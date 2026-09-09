@@ -1,0 +1,29 @@
+{#
+  Shared benefits block: the three coloured tiles, the two-column icon rows and a
+  button. The job detail page ("Benefits you'll enjoy") and the career-area pages
+  ("Explore our benefits") both render this partial so the two stay identical.
+#}
+{% macro benefits_block(heading, tiles, rows, button_label, button_href, section_id=None) -%}
+<section class="benefits-block"{% if section_id %} id="{{ section_id }}"{% endif %}>
+  <h2>{{ heading }}</h2>
+  <div class="benefit-tiles">
+    {% for name, headline, blurb, icon in tiles %}
+      <div class="benefit-tile tile-{{ loop.index }}">
+        <img src="{{ url_for('static', filename='icons/' ~ icon) }}" alt="">
+        <em>{{ name }}</em>
+        <b>{{ headline }}</b>
+        <p>{{ blurb }}</p>
+      </div>
+    {% endfor %}
+  </div>
+  <div class="benefit-rows">
+    {% for name, blurb, icon in rows %}
+      <div class="benefit-row">
+        <img src="{{ url_for('static', filename='icons/' ~ icon) }}" alt="">
+        <div><b>{{ name }}</b><span>{{ blurb }}</span></div>
+      </div>
+    {% endfor %}
+  </div>
+  <p class="benefits-cta"><a class="btn btn-secondary btn-sm" href="{{ button_href }}">{{ button_label }}</a></p>
+</section>
+{%- endmacro %}

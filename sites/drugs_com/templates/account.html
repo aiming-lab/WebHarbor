@@ -95,7 +95,7 @@
           <span class="stars">{% for _ in range(stars) %}&#9733;{% endfor %}{% for _ in range(5 - stars) %}&#9734;{% endfor %}</span>
           <span class="muted">{{ r.rating }}/10</span>
         </div>
-        <strong>{{ r.title }}</strong>
+        <strong>{{ r.title }}</strong>{% if r.is_fixture %} <span class="badge">Simulated fixture</span>{% endif %}
         <p class="muted">for {{ r.condition_treated|replace('_',' ')|replace('-',' ')|title }} &middot; {{ r.created_at.strftime('%B %d, %Y') }}</p>
         <p>{{ r.body }}</p>
         <div class="review-actions">

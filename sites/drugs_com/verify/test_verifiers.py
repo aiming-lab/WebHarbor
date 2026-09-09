@@ -1,0 +1,431 @@
+from __future__ import annotations
+
+import json
+import re
+import shutil
+import sqlite3
+import subprocess
+import sys
+from pathlib import Path
+from urllib.parse import urlencode
+
+import pytest
+from PIL import Image, ImageDraw
+
+SITE = Path(__file__).resolve().parents[1]
+VERIFY = Path(__file__).resolve().parent
+PYTHON = sys.executable
+ROOT = "http://localhost:40024"
+
+
+def query(database, sql, params=()):
+    connection = sqlite3.connect(database)
+    connection.row_factory = sqlite3.Row
+    try:
+        return connection.execute(sql, params).fetchall()
+    finally:
+        connection.close()
+
+
+@pytest.fixture(scope="session")
+def canonical_seed():
+    process = subprocess.run([PYTHON, str(SITE / "seed_data.py")], cwd=SITE, capture_output=True, text=True, timeout=180)
+    assert process.returncode == 0, process.stdout + process.stderr
+    return SITE / "instance_seed" / "drugs_com.db"
+
+
+@pytest.fixture
+def snapshots(canonical_seed, tmp_path):
+    initial = tmp_path / "initial.db"
+    after = tmp_path / "after.db"
+    shutil.copy2(canonical_seed, initial)
+    shutil.copy2(canonical_seed, after)
+    return initial, after
+
+
+def drug(database, slug):
+    return dict(query(database, "SELECT d.*,c.name class_name FROM drug d JOIN drug_class c ON c.id=d.drug_class_id WHERE d.slug=?", (slug,))[0])
+
+
+def brands(record):
+    return json.loads(record["brand_names_json"])
+
+
+def conditions(database, drug_id):
+    return [row[0] for row in query(database, "SELECT c.name FROM drug_condition x JOIN condition c ON c.id=x.condition_id WHERE x.drug_id=? ORDER BY c.name", (drug_id,))]
+
+
+def condition_drugs(database, slug):
+    return [row[0] for row in query(database, "SELECT d.generic_name FROM drug_condition x JOIN condition c ON c.id=x.condition_id JOIN drug d ON d.id=x.drug_id WHERE c.slug=? ORDER BY d.generic_name", (slug,))]
+
+
+def class_drugs(database, slug):
+    return [row[0] for row in query(database, "SELECT d.generic_name FROM drug d JOIN drug_class c ON c.id=d.drug_class_id WHERE c.slug=? ORDER BY d.generic_name", (slug,))]
+
+
+def interaction_url(names):
+    return ROOT + "/drug-interactions?" + urlencode({"drugs": names}, doseq=True)
+
+
+def positive_answer(number, database):
+    if number == 0:
+        record = drug(database, "ibuprofen")
+        return f"Ibuprofen; class {record['class_name']}; brands {', '.join(brands(record))}."
+    if number == 1:
+        record = drug(database, "metformin")
+        return f"Metformin availability: {record['availability']}; CSA schedule: {record['csa_schedule']}."
+    if number == 2:
+        row = query(database, "SELECT i.severity,i.description FROM drug_interaction i JOIN drug a ON a.id=i.drug_a_id JOIN drug b ON b.id=i.drug_b_id WHERE (a.slug='ibuprofen' AND b.slug='warfarin') OR (a.slug='warfarin' AND b.slug='ibuprofen')")[0]
+        return f"Ibuprofen and warfarin have a {row['severity']} interaction: {row['description']}"
+    if number == 3:
+        row = query(database, "SELECT d.generic_name,i.shape,i.color FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE i.imprint='I-2'")[0]
+        return f"I-2 matches the local {row['generic_name']} record; shape {row['shape']}; color {row['color']}."
+    if number == 4:
+        values = [row[0] for row in query(database, "SELECT generic_name FROM drug WHERE lower(generic_name) LIKE 'l%' ORDER BY generic_name LIMIT 5")]
+        return ", ".join(values)
+    if number == 5:
+        record = drug(database, "sertraline")
+        return f"Sertraline brands: {', '.join(brands(record))}; conditions: {', '.join(conditions(database, record['id']))}."
+    if number == 6:
+        return ", ".join(condition_drugs(database, "diabetes")[:4])
+    if number == 7:
+        record = drug(database, "semaglutide")
+        return f"Semaglutide brands: {', '.join(brands(record))}; class: {record['class_name']}."
+    if number == 8:
+        rows = query(database, "SELECT id,slug FROM drug WHERE slug IN ('alprazolam','oxycodone')")
+        ids = {row["slug"]: row["id"] for row in rows}
+        severities = [row[0] for row in query(database, "SELECT severity FROM drug_interaction WHERE (drug_a_id=? AND drug_b_id=?) OR (drug_a_id=? AND drug_b_id=?)", (ids["alprazolam"], ids["oxycodone"], ids["oxycodone"], ids["alprazolam"]))]
+        severities += [row[0] for row in query(database, "SELECT severity FROM lifestyle_interaction WHERE kind='alcohol' AND drug_id IN (?,?)", (ids["alprazolam"], ids["oxycodone"]))]
+        highest = max(severities, key={"minor": 1, "moderate": 2, "major": 3}.get)
+        return f"For alprazolam, oxycodone, and alcohol, there are {len(severities)} interactions; the highest severity is {highest}."
+    if number == 9:
+        return ", ".join(class_drugs(database, "statins")[:3])
+    if number == 10:
+        record = drug(database, "ibuprofen")
+        match = re.search(r"(\d+)-(\d+) mg every (\d+) to (\d+) hours.*?exceed (\d+) mg in (\d+) hours", record["dosage"], re.I)
+        return f"Ibuprofen OTC: {match[1]}-{match[2]} mg every {match[3]}-{match[4]} hours; maximum {match[5]} mg in {match[6]} hours."
+    if number == 11:
+        return query(database, "SELECT title FROM news_article WHERE category='New Drug Approvals' ORDER BY published_at DESC,id DESC LIMIT 1")[0]["title"]
+    if number == 12:
+        record = drug(database, "atorvastatin")
+        return f"Atorvastatin has a rating of {record['avg_rating']}/10 and {record['review_count']} reviews."
+    if number == 13:
+        rows = query(database, "SELECT d.generic_name,i.imprint FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE lower(i.shape)='oval' AND lower(i.color)='white' ORDER BY i.id LIMIT 3")
+        return "; ".join(f"{row['generic_name']} — {row['imprint']}" for row in rows)
+    if number == 14:
+        values = [row[0] for row in query(database, "SELECT d.generic_name FROM saved_drug s JOIN drug d ON d.id=s.drug_id JOIN user u ON u.id=s.user_id WHERE u.email='alice.j@test.com' ORDER BY d.generic_name")]
+        return ", ".join(values)
+    if number == 15:
+        record = drug(database, "lisinopril")
+        return f"Lisinopril has a fetal toxicity warning: discontinue when pregnancy is detected. Availability: {record['availability']}."
+    if number == 16:
+        return ", ".join(class_drugs(database, "benzodiazepines")[:3])
+    if number == 17:
+        record = drug(database, "ciprofloxacin")
+        return f"Ciprofloxacin; brands: {', '.join(brands(record))}; conditions: {', '.join(conditions(database, record['id']))}."
+    if number == 18:
+        return "Amoxicillin standard adult frequency: every 8 hours."
+    if number == 19:
+        row = query(database, "SELECT li.severity,li.description FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")[0]
+        return f"Metformin and alcohol have a {row['severity']} interaction: {row['description']}"
+    if number == 20:
+        return ", ".join(condition_drugs(database, "hypertension")[:5])
+    raise AssertionError(number)
+
+
+def _click(url):
+    return {"url": url, "action": "click", "params": {"index": 1}}
+
+
+def _input(url, text):
+    return {"url": url, "action": "input", "params": {"index": 1, "text": text}}
+
+
+def positive_steps(number):
+    root = ROOT + "/"
+    if number in {0, 5, 7, 12}:
+        slug = {0: "ibuprofen", 5: "sertraline", 7: "semaglutide", 12: "atorvastatin"}[number]
+        return [_click(root), {"url": ROOT + f"/{slug}", "action": "done"}]
+    if number == 1:
+        return [_input(root, "metformin"), _click(root), _click(ROOT + "/search?q=metformin"), {"url": ROOT + "/metformin", "action": "done"}]
+    if number in {2, 8, 19}:
+        names = {2: ["ibuprofen", "warfarin"], 8: ["alprazolam", "oxycodone", "alcohol"], 19: ["metformin", "alcohol"]}[number]
+        steps = [_click(root)]
+        steps += [_input(ROOT + "/drug-interactions", name) for name in names]
+        steps += [_click(ROOT + "/drug-interactions"), {"url": interaction_url(names), "action": "done"}]
+        return steps
+    if number == 3:
+        return [_click(root), _input(ROOT + "/pill-identifier", "I-2"), _click(ROOT + "/pill-identifier"), {"url": ROOT + "/pill-identifier?imprint=I-2", "action": "done"}]
+    if number == 4:
+        return [_click(root), _click(ROOT + "/drug_information.html"), {"url": ROOT + "/drug_information.html?letter=L", "action": "done"}]
+    if number in {6, 20}:
+        slug = "diabetes" if number == 6 else "hypertension"
+        return [_click(root), _click(ROOT + "/conditions"), {"url": ROOT + f"/conditions/{slug}", "action": "done"}]
+    if number in {9, 16}:
+        slug = "statins" if number == 9 else "benzodiazepines"
+        return [_click(root), _click(ROOT + "/drug-classes"), {"url": ROOT + f"/drug-classes/{slug}", "action": "done"}]
+    if number == 10:
+        return [_click(root), _click(ROOT + "/ibuprofen"), {"url": ROOT + "/ibuprofen/faq", "action": "done"}]
+    if number == 11:
+        return [_click(root), _click(ROOT + "/news"), {"url": ROOT + "/new-drug-approvals", "action": "done"}]
+    if number == 13:
+        return [_click(root), _click(ROOT + "/pill-identifier"), _click(ROOT + "/pill-identifier"), _click(ROOT + "/pill-identifier"), {"url": ROOT + "/pill-identifier?shape=Oval&color=White", "action": "done"}]
+    if number == 14:
+        return [_click(root), _input(ROOT + "/login", "alice.j@test.com"), _input(ROOT + "/login", "TestPass123!"), _click(ROOT + "/login"), _click(ROOT + "/account"), {"url": ROOT + "/my-med-list", "action": "done"}]
+    if number == 15:
+        return [_click(root), _click(ROOT + "/lisinopril"), {"url": ROOT + "/lisinopril/warnings", "action": "done"}]
+    if number == 17:
+        return [_input(root, "antibiotics"), _click(root), _click(ROOT + "/search?q=antibiotics"), {"url": ROOT + "/ciprofloxacin", "action": "done"}]
+    if number == 18:
+        return [_click(root), _click(ROOT + "/amoxicillin"), {"url": ROOT + "/amoxicillin/dosage", "action": "done"}]
+    raise AssertionError(number)
+
+
+def _write_rich_screenshot(path, index):
+    image = Image.new("RGB", (1024, 768), (248, 249, 252))
+    draw = ImageDraw.Draw(image)
+    for y in range(0, 768, 24):
+        color = ((17 * index + y) % 190 + 30, (37 * index + 2 * y) % 180 + 35, (71 * index + y) % 170 + 40)
+        draw.rectangle((0, y, 1024, y + 11), fill=color)
+    draw.rectangle((35 + index * 3, 45, 960, 180 + index * 2), fill=(255, 255, 255), outline=(10, 70, 130), width=4)
+    draw.text((60, 80), f"Browser page evidence step {index}", fill=(0, 0, 0))
+    image.save(path, format="PNG")
+
+
+def make_run(tmp_path, number, database, *, steps=None, answer=None, task_id=None, origin=ROOT):
+    run = tmp_path / f"run-{number}-{len(list(tmp_path.iterdir()))}"
+    shots = run / "screenshots"
+    shots.mkdir(parents=True)
+    steps = [dict(step) for step in (steps if steps is not None else positive_steps(number))]
+    answer = positive_answer(number, database) if answer is None else answer
+    records = []
+    for index, specification in enumerate(steps):
+        action = specification["action"]
+        params = dict(specification.get("params", {}))
+        if action == "done":
+            params = {"text": answer, "success": True}
+        record = {
+            "step": index,
+            "url": specification["url"],
+            "title": f"Local benchmark page {index}",
+            "thought": "test protocol fixture",
+            "action": action,
+            "params": params,
+            "screenshot_before": f"step_{index:03d}.png",
+            "screenshot_after": f"step_{index + 1:03d}.png",
+        }
+        if action != "done":
+            record["action_result"] = {"success": True, "error": None, "is_done": False, "extracted_content": ""}
+        records.append(record)
+    for index in range(len(records) + 1):
+        _write_rich_screenshot(shots / f"step_{index:03d}.png", index if index < len(records) else max(0, index - 1))
+    trajectory = {
+        "task_id": task_id or f"Drugs.com--{number}",
+        "start_url": origin + "/",
+        "steps": records,
+        "terminated": True,
+        "termination_reason": "agent_done",
+        "success_self_report": True,
+        "final_answer": answer,
+    }
+    (run / "trajectory.json").write_text(json.dumps(trajectory), encoding="utf-8")
+    return run
+
+
+def execute(number, run, initial, after):
+    return subprocess.run([PYTHON, str(VERIFY / f"verify_{number}.py"), "--run_dir", str(run), "--initial_db", str(initial), "--after_db", str(after), "--no_llm"], cwd=VERIFY, capture_output=True, text=True, timeout=60)
+
+
+def assert_fails(number, run, snapshots):
+    process = execute(number, run, *snapshots)
+    assert process.returncode == 1, process.stdout + process.stderr
+    assert json.loads(process.stdout)["pass"] is False
+
+
+@pytest.mark.parametrize("number", range(21))
+def test_positive_entrypoint(number, snapshots, tmp_path):
+    initial, after = snapshots
+    process = execute(number, make_run(tmp_path, number, initial), initial, after)
+    assert process.returncode == 0, process.stdout + process.stderr
+    assert json.loads(process.stdout)["pass"] is True
+
+
+@pytest.mark.parametrize("number", range(21))
+def test_direct_done_shortcut_fails(number, snapshots, tmp_path):
+    initial, _after = snapshots
+    steps = [_click(ROOT + "/"), {"url": ROOT + "/", "action": "done"}]
+    assert_fails(number, make_run(tmp_path, number, initial, steps=steps), snapshots)
+
+
+@pytest.mark.parametrize("number", range(21))
+def test_wrong_answer_fails(number, snapshots, tmp_path):
+    initial, _after = snapshots
+    assert_fails(number, make_run(tmp_path, number, initial, answer="No relevant information is available."), snapshots)
+
+
+def test_wrong_task_id_fails(snapshots, tmp_path):
+    assert_fails(0, make_run(tmp_path, 0, snapshots[0], task_id="Drugs.com--20"), snapshots)
+
+
+@pytest.mark.parametrize("origin", ["http://localhost:9", "http://127.0.0.1:40024", "http://evil.example"])
+def test_noncanonical_origin_fails(origin, snapshots, tmp_path):
+    initial, _after = snapshots
+    steps = positive_steps(0)
+    for step in steps:
+        step["url"] = step["url"].replace(ROOT, origin)
+    assert_fails(0, make_run(tmp_path, 0, initial, steps=steps, origin=origin), snapshots)
+
+
+def test_blank_inspect_only_evidence_fails(snapshots, tmp_path):
+    run = make_run(tmp_path, 0, snapshots[0])
+    trajectory_path = run / "trajectory.json"
+    trajectory = json.loads(trajectory_path.read_text())
+    for step in trajectory["steps"]:
+        step["action"] = "done" if step is trajectory["steps"][-1] else "inspect"
+    trajectory_path.write_text(json.dumps(trajectory))
+    for image in (run / "screenshots").glob("*.png"):
+        Image.new("RGB", (1024, 768), "white").save(image)
+    assert_fails(0, run, snapshots)
+
+
+def test_failed_browser_action_fails(snapshots, tmp_path):
+    run = make_run(tmp_path, 1, snapshots[0])
+    path = run / "trajectory.json"
+    value = json.loads(path.read_text())
+    value["steps"][0]["action_result"] = {"success": False, "error": "injected"}
+    path.write_text(json.dumps(value))
+    assert_fails(1, run, snapshots)
+
+
+def test_corrupt_png_fails(snapshots, tmp_path):
+    run = make_run(tmp_path, 0, snapshots[0])
+    (run / "screenshots" / "step_001.png").write_bytes(b"\x89PNG\r\n\x1a\ncorrupt")
+    assert_fails(0, run, snapshots)
+
+
+def test_reused_visual_evidence_fails(snapshots, tmp_path):
+    run = make_run(tmp_path, 0, snapshots[0])
+    shutil.copy2(run / "screenshots" / "step_000.png", run / "screenshots" / "step_001.png")
+    assert_fails(0, run, snapshots)
+
+
+def test_database_row_mutation_fails(snapshots, tmp_path):
+    initial, after = snapshots
+    connection = sqlite3.connect(after)
+    connection.execute("UPDATE user SET first_name='Changed' WHERE id=1")
+    connection.commit()
+    connection.close()
+    assert_fails(0, make_run(tmp_path, 0, initial), snapshots)
+
+
+def test_database_schema_mutation_fails(snapshots, tmp_path):
+    initial, after = snapshots
+    connection = sqlite3.connect(after)
+    connection.execute("CREATE INDEX forbidden_index ON drug(generic_name)")
+    connection.commit()
+    connection.close()
+    assert_fails(0, make_run(tmp_path, 0, initial), snapshots)
+
+
+def test_substituted_initial_database_fails(snapshots, tmp_path):
+    initial, after = snapshots
+    connection = sqlite3.connect(initial)
+    connection.execute("UPDATE drug SET warnings='forged' WHERE slug='ibuprofen'")
+    connection.commit()
+    connection.close()
+    shutil.copy2(initial, after)
+    assert_fails(0, make_run(tmp_path, 0, initial), snapshots)
+
+
+def test_task14_decoy_credentials_without_input_fail(snapshots, tmp_path):
+    run = make_run(tmp_path, 14, snapshots[0])
+    path = run / "trajectory.json"
+    value = json.loads(path.read_text())
+    for step in value["steps"]:
+        if step["action"] == "input":
+            step["action"] = "scroll"
+            step["params"] = {"note": "alice.j@test.com TestPass123!", "down": True, "pages": 1}
+    path.write_text(json.dumps(value))
+    assert_fails(14, run, snapshots)
+
+
+def test_task14_extra_medication_fails(snapshots, tmp_path):
+    answer = positive_answer(14, snapshots[0]) + ", aspirin"
+    assert_fails(14, make_run(tmp_path, 14, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number", [2, 3, 4, 6, 8, 9, 11, 13, 16, 19, 20])
+def test_direct_final_filtered_url_without_workflow_fails(number, snapshots, tmp_path):
+    initial, _after = snapshots
+    destination = positive_steps(number)[-1]["url"]
+    steps = [_click(ROOT + "/"), {"url": destination, "action": "done"}]
+    assert_fails(number, make_run(tmp_path, number, initial, steps=steps), snapshots)
+
+
+def test_correct_fact_followed_by_contradiction_fails(snapshots, tmp_path):
+    record = drug(snapshots[0], "ibuprofen")
+    answer = positive_answer(0, snapshots[0]) + f" However, {record['class_name']} is incorrect."
+    assert_fails(0, make_run(tmp_path, 0, snapshots[0], answer=answer), snapshots)
+
+
+def test_correct_list_with_invalid_extra_drug_fails(snapshots, tmp_path):
+    answer = positive_answer(6, snapshots[0]) + ", lisinopril"
+    assert_fails(6, make_run(tmp_path, 6, snapshots[0], answer=answer), snapshots)
+
+
+def test_negated_rating_and_review_count_fail(snapshots, tmp_path):
+    record = drug(snapshots[0], "atorvastatin")
+    answer = f"Atorvastatin rating: not {record['avg_rating']}/10; reviews: not {record['review_count']}."
+    assert_fails(12, make_run(tmp_path, 12, snapshots[0], answer=answer), snapshots)
+
+
+def test_wrong_interaction_count_with_unrelated_expected_number_fails(snapshots, tmp_path):
+    answer = "For alprazolam, oxycodone, and alcohol there are 99 interactions; 3 is an unrelated number; highest severity major."
+    assert_fails(8, make_run(tmp_path, 8, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("answer_builder", [
+    lambda rows: f"{rows[0]['generic_name']}, {rows[1]['generic_name']}, {rows[2]['generic_name']}; imprints: {rows[0]['imprint']}, {rows[1]['imprint']}, {rows[2]['imprint']}",
+    lambda rows: f"{rows[0]['generic_name']} — {rows[1]['imprint']}; {rows[1]['generic_name']} — {rows[2]['imprint']}; {rows[2]['generic_name']} — {rows[0]['imprint']}",
+])
+def test_task13_unpaired_or_swapped_pairs_fail(answer_builder, snapshots, tmp_path):
+    rows = query(snapshots[0], "SELECT d.generic_name,i.imprint FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE lower(i.shape)='oval' AND lower(i.color)='white' ORDER BY i.id LIMIT 3")
+    assert len(rows) == 3
+    assert_fails(13, make_run(tmp_path, 13, snapshots[0], answer=answer_builder(rows)), snapshots)
+
+
+def test_task13_verbose_exact_pairs_pass(snapshots, tmp_path):
+    rows = query(snapshots[0], "SELECT d.generic_name,i.imprint FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE lower(i.shape)='oval' AND lower(i.color)='white' ORDER BY i.id LIMIT 3")
+    filler = " with an explicitly local synthetic descriptor diagram and no claim about a real pill " * 3
+    answer = "; ".join(f"{row['generic_name']}{filler}imprint {row['imprint']}" for row in rows)
+    process = execute(13, make_run(tmp_path, 13, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_task12_natural_number_before_reviews_passes(snapshots, tmp_path):
+    record = drug(snapshots[0], "atorvastatin")
+    answer = f"Atorvastatin rating: {record['avg_rating']}/10; it has {record['review_count']} reviews."
+    process = execute(12, make_run(tmp_path, 12, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_task2_semantic_paraphrase_passes(snapshots, tmp_path):
+    answer = "Ibuprofen and warfarin have a major interaction because the combination can cause gastrointestinal hemorrhage."
+    process = execute(2, make_run(tmp_path, 2, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_task10_shuffled_numbers_fail(snapshots, tmp_path):
+    answer = "Ibuprofen numbers are 24, 1200, 6, 4, 400, and 200 mg hours."
+    assert_fails(10, make_run(tmp_path, 10, snapshots[0], answer=answer), snapshots)
+
+
+def test_task18_negated_frequency_fails(snapshots, tmp_path):
+    answer = "Amoxicillin is not taken every 8 hours for standard adult infections."
+    assert_fails(18, make_run(tmp_path, 18, snapshots[0], answer=answer), snapshots)
+
+
+def test_duplicate_query_values_fail(snapshots, tmp_path):
+    steps = positive_steps(1)
+    steps[2]["url"] = ROOT + "/search?q=wrong&q=metformin"
+    assert_fails(1, make_run(tmp_path, 1, snapshots[0], steps=steps), snapshots)

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ city_name }}, {{ state }} {{ status_label }} | Compass{% endblock %}
+{% block content %}
+<div class="container section browse-page">
+  <h1>{{ city_name }}, {{ state }} Homes {{ status_label }}</h1>
+  {% if city_row %}<p style="color:var(--c-gray-4); max-width:760px">{{ city_row.blurb }}</p>{% endif %}
+
+  {% include "_filters.html" %}
+
+  <div class="result-summary">{{ listings|length }} {{ status_label|lower }} listings in {{ city_name }}, {{ state }}.</div>
+
+  {% if listings %}
+    <div class="grid-cards">
+      {% for L in listings %}
+        {% include "_card.html" %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><h3>No matching homes</h3><p>Try widening your filters.</p></div>
+  {% endif %}
+</div>
+{% endblock %}

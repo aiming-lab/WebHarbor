@@ -8,7 +8,7 @@
 <div class="row-section split">
   <div class="az-main">
     <h1>Drugs &amp; Medications A to Z</h1>
-    <p class="lead">Detailed and accurate information is provided on over 24,000 prescription and over-the-counter medicines for both consumers and healthcare professionals.</p>
+    <p class="lead">Browse 246 deterministic local medication fixtures for software evaluation. These records are not medical guidance.</p>
 
     <section class="row-section az-search-section">
       <h2>Search</h2>
@@ -78,43 +78,19 @@
     </section>
 
     <section class="row-section drug-sources">
-      <h2>Consumer drug sources</h2>
+      <h2>Local data status</h2>
       <div class="drug-sources-grid">
-        <div class="source-card">
-          <h3>Cerner Multum Consumer Drug Information</h3>
-          <p>Multum provides current, accurate drug information such as drug descriptions, side effects, dosing, and warnings, as well as its use in the treatment and prevention of diseases.</p>
-          <p class="source-card-note">The leaflets are available in three languages and are tailored for use by adults.</p>
-        </div>
-        <div class="source-card">
-          <h3>Micromedex Consumer Drug Information (Advanced)</h3>
-          <p>Micromedex Advanced Consumer drug information pertaining to a wide variety of drugs (ie, Rx, OTC, vitamins) written using everyday language.</p>
-        </div>
-        <div class="source-card">
-          <h3>Natural Product Information (Consumer)</h3>
-          <p>The Natural database consumer information pertains to natural/herbal products containing possible drug-drug interactions, possible drug interactions with other health conditions, and drug effects.</p>
-        </div>
+        <div class="source-card"><h3>Tracked source fixtures</h3><p>Medication names, classes, benchmark facts, and interface records are generated from the versioned source included with this environment.</p></div>
+        <div class="source-card"><h3>Deterministic SQLite seed</h3><p>The build recreates the database without live network access and verifies exact row counts, foreign keys, schema constraints, and a version marker.</p></div>
+        <div class="source-card"><h3>Medical-use restriction</h3><p>The local records and simulated reviews/news must not be used for diagnosis, prescribing, treatment, or current regulatory verification.</p></div>
       </div>
     </section>
 
     <section class="row-section drug-sources">
-      <h2>Professional drug sources</h2>
+      <h2>External verification</h2>
       <div class="drug-sources-grid drug-sources-grid-2col">
-        <div class="source-card">
-          <h3>AHFS DI Monographs</h3>
-          <p>The American Society of Health-System Pharmacists (ASHP) provides comprehensive professional monographs including pharmacokinetics, mechanism of action, thorough descriptions of indications, contraindications, adverse effects and precautions, drug interactions, and patient information pertaining to the proper use of drugs. FDA approved labeling to ensure that monographs include evidence-based findings in the review of drug information.</p>
-        </div>
-        <div class="source-card">
-          <h3>Professional Patient Advice</h3>
-          <p>Drugs.com provides 5 Patient Advices for the professional. These are evidence-based clinical tools for clinicians with detailed pharmacokinetic data, clinical guidelines, and prescribing information.</p>
-        </div>
-        <div class="source-card">
-          <h3>Natural Product Information (Professional)</h3>
-          <p>The Natural database professional information pertaining to natural/herbal products contains possible drug-drug interactions, possible drug interactions with other health conditions, and drug effects with appropriate citations.</p>
-        </div>
-        <div class="source-card">
-          <h3>Natural Product Information (Advanced)</h3>
-          <p>The Natural database professional information (advanced) pertaining to natural/herbal products contains possible drug interactions, efficacy, and safety information along with appropriate citations.</p>
-        </div>
+        <div class="source-card"><h3>Current official labeling</h3><p>Use current FDA-approved labeling and DailyMed records when verifying real medication information.</p></div>
+        <div class="source-card"><h3>Qualified clinical guidance</h3><p>Consult a qualified healthcare professional for decisions involving medication use, interactions, dosage, pregnancy, or adverse effects.</p></div>
       </div>
     </section>
   </div>
@@ -151,47 +127,40 @@
     {% endif %}
 
     <div class="sidebar-box newsletter-subscribe-box">
-      <h3>Subscribe to our newsletters</h3>
+      <h3>Local newsletter preferences</h3>
+      <p class="muted">Stores selections locally; sends no email.</p>
       <form action="{{ url_for('newsletter_subscribe') }}" method="post">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label class="newsletter-check"><input type="checkbox" name="subs" value="monthly" checked> Monthly newsletter</label>
         <label class="newsletter-check"><input type="checkbox" name="subs" value="mednews" checked> Daily MedNews</label>
         <label class="newsletter-check"><input type="checkbox" name="subs" value="fda"> FDA safety alerts</label>
-        <input type="email" name="email" placeholder="Enter your email address" class="newsletter-email-input" required maxlength="254">
+        <label for="az-newsletter-email">Stored email fixture</label>
+        <input id="az-newsletter-email" type="email" name="email" placeholder="Enter an email fixture" class="newsletter-email-input" required maxlength="254">
         <button type="submit" class="btn btn-primary newsletter-subscribe-button">Subscribe</button>
       </form>
     </div>
 
     <div class="sidebar-box">
-      <h3>Trending drugs</h3>
+      <h3>Selected fixture records</h3>
       <ul>
         <li><a href="{{ url_for('drug_detail', slug='semaglutide') }}">Semaglutide</a></li>
-        <li><a href="{{ url_for('drug_detail', slug='ozempic') }}">Ozempic</a></li>
-        <li><a href="{{ url_for('drug_detail', slug='mounjaro') }}">Mounjaro</a></li>
-        <li><a href="{{ url_for('drug_detail', slug='wegovy') }}">Wegovy</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='tirzepatide') }}">Tirzepatide</a></li>
         <li><a href="{{ url_for('drug_detail', slug='metformin') }}">Metformin</a></li>
         <li><a href="{{ url_for('drug_detail', slug='lisinopril') }}">Lisinopril</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='ibuprofen') }}">Ibuprofen</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='amoxicillin') }}">Amoxicillin</a></li>
       </ul>
     </div>
 
     <div class="sidebar-box">
-      <h3>Recently Approved</h3>
-      <ul>
-        <li><a href="{{ url_for('drug_detail', slug='semaglutide') }}">Semaglutide (Ozempic)</a><br><span class="muted recently-approved-blurb">Type 2 diabetes, weight loss</span></li>
-        <li><a href="{{ url_for('drug_detail', slug='tirzepatide') }}">Tirzepatide (Mounjaro)</a><br><span class="muted recently-approved-blurb">Type 2 diabetes, obesity</span></li>
-        <li><a href="{{ url_for('drug_detail', slug='lecanemab') }}">Lecanemab (Leqembi)</a><br><span class="muted recently-approved-blurb">Alzheimer's disease</span></li>
-        <li><a href="{{ url_for('news_index') }}" class="more-approvals-link">More New Drug Approvals &rsaquo;</a></li>
-      </ul>
+      <h3>Simulated approval category</h3>
+      <p class="muted">No current regulatory status is claimed.</p>
+      <p><a href="{{ url_for('news_category', category='new-drug-approvals') }}" class="more-approvals-link">Open simulated article fixtures &rsaquo;</a></p>
     </div>
 
     <div class="sidebar-box">
-      <h3>Recent news</h3>
-      <ul>
-        <li><a href="{{ url_for('news_index') }}">FDA approves new treatment options</a></li>
-        <li><a href="{{ url_for('news_index') }}">Drug safety alerts &amp; recalls</a></li>
-        <li><a href="{{ url_for('news_index') }}">Clinical trial results</a></li>
-        <li><a href="{{ url_for('news_index') }}">New drug approvals</a></li>
-      </ul>
+      <h3>Simulated article fixtures</h3>
+      <p><a href="{{ url_for('news_index') }}">Browse deterministic simulated articles</a></p>
     </div>
   </aside>
 </div>
