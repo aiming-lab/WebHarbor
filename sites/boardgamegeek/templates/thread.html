@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ thread.subject }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      <a href="{{ url_for('forums_index') }}">Forums</a> ›
+      <a href="{{ url_for('forum_detail', fid=thread.forum_id) }}">{{ thread.forum.title }}</a>
+      › {{ thread.subject }}
+    </div>
+    <h1>{{ thread.subject }}</h1>
+    <p class="muted">
+      {% if thread.is_pinned %}<span class="pin-badge">PIN</span>{% endif %}
+      Started by <a href="{{ url_for('user_profile', username=thread.author.username) }}">{{ thread.author.username }}</a>
+      · {{ thread.created_at | time_ago }}
+      · {{ thread.num_posts }} posts · {{ thread.num_views | thousands }} views
+      {% if thread.is_locked %} · <b>(Locked)</b>{% endif %}
+    </p>
+
+    {% for p in posts %}
+    <div class="post" id="post-{{ p.id }}">
+      <div class="post-author">
+        <div class="username">
+          <a href="{{ url_for('user_profile', username=p.author.username) }}">{{ p.author.username }}</a>
+        </div>
+        {% if p.author.display_location %}<div class="location">{{ p.author.display_location }}</div>{% endif %}
+        <div class="muted">{{ p.author.geekgold or 0 }}gg</div>
+      </div>
+      <div class="post-body">
+        <div class="post-meta">
+          <span>#{{ loop.index }} · {{ p.created_at | time_ago }}</span>
+          <span>👍 {{ p.thumbs }}</span>
+        </div>
+        {{ p.body_html | safe_html }}
+        {% if current_user.is_authenticated %}
+          <div style="margin-top:8px;">
+            <form action="{{ url_for('thumb') }}" method="post" style="display:inline;">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="kind" value="post">
+              <input type="hidden" name="id" value="{{ p.id }}">
+              <input type="hidden" name="next" value="{{ url_for('thread_detail', tid=thread.id) }}#post-{{ p.id }}">
+              <button class="btn btn-quiet" type="submit">👍 Thumb</button>
+            </form>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+
+    {% if current_user.is_authenticated and not thread.is_locked %}
+    <h3>Reply</h3>
+    <form action="{{ url_for('thread_reply', tid=thread.id) }}" method="post">
+      {{ reply_form.hidden_tag() }}
+      <div class="field">
+        <textarea name="body" required></textarea>
+      </div>
+      <button type="submit">Post reply</button>
+    </form>
+    {% else %}
+      <p class="muted">
+        {% if thread.is_locked %}Thread is locked.
+        {% else %}<a href="{{ url_for('login') }}?next={{ request.path }}">Sign in</a> to reply.{% endif %}
+      </p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

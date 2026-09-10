@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}{{ u.username }}'s collection | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>{{ u.username }}'s collection</h1>
+    <p class="muted">
+      Filter:
+      <a href="?status=own">Own</a> ·
+      <a href="?status=prevowned">Previously owned</a> ·
+      <a href="?status=wishlist">Wishlist</a> ·
+      <a href="?status=wanttoplay">Want to play</a> ·
+      <a href="?status=wanttobuy">Want to buy</a> ·
+      <a href="?status=preorder">Pre-ordered</a> ·
+      <a href="?status=fortrade">For trade</a> ·
+      <a href="?status=rated">Rated</a>
+    </p>
+    <p class="muted">
+      Sort: <a href="?status={{ status }}&sort=name">Name</a> ·
+      <a href="?status={{ status }}&sort=rank">Rank</a> ·
+      <a href="?status={{ status }}&sort=rating">My rating</a> ·
+      <a href="?status={{ status }}&sort=year">Year</a> ·
+      <a href="?status={{ status }}&sort=recent">Most recently updated</a> ·
+      <a href="?status={{ status }}&sort=acquired">Acquired</a>
+    </p>
+    <p><b>{{ total }}</b> games in this view.</p>
+
+    <table class="collection_table">
+      <thead><tr>
+        <th></th><th>Title</th>
+        <th class="collection_bggrating">My rating</th>
+        <th class="collection_bggrating">Rank</th>
+        <th class="collection_bggrating">Year</th>
+        <th>Comment</th>
+      </tr></thead>
+      <tbody>
+        {% for x in entries %}
+        <tr>
+          <td class="collection_thumbnail">
+            {% if x.game.thumb_filename %}<img src="{{ url_for('static', filename='images/' + x.game.thumb_filename) }}" alt="">{% endif %}
+          </td>
+          <td class="collection_objectname">
+            <a class="primary" href="{{ x.game.detail_url }}">{{ x.game.name }}</a>
+            <span class="smallerfont">
+              {% if x.entry.own %}[own]{% endif %}
+              {% if x.entry.wishlist %}[wish #{{ x.entry.wishlist_priority }}]{% endif %}
+              {% if x.entry.want_to_buy %}[want]{% endif %}
+              {% if x.entry.want_to_play %}[wanttoplay]{% endif %}
+              {% if x.entry.preordered %}[preorder]{% endif %}
+              {% if x.entry.for_trade %}[trade]{% endif %}
+            </span>
+          </td>
+          <td class="collection_bggrating">
+            {% if x.rating %}<span class="rating-chip" style="background: {{ x.rating.value | rating_color }}">{{ x.rating.value | one_decimal }}</span>
+            {% else %}<span class="muted">—</span>{% endif %}
+          </td>
+          <td class="collection_bggrating">{{ x.game.overall_rank or '—' }}</td>
+          <td class="collection_bggrating">{{ x.game.year_published or '—' }}</td>
+          <td class="muted">{{ x.entry.comment }}</td>
+        </tr>
+        {% else %}
+          <tr><td colspan="6" class="muted">No games match this filter.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

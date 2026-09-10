@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}{{ site_name }}{% endblock %}</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/bgg.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/svg+xml">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+
+<header class="site-header">
+  <div class="topbar">
+    <button class="menu-toggle" type="button" aria-label="Toggle menu"><span></span><span></span><span></span></button>
+    <a class="logo" href="{{ url_for('index') }}" aria-label="BoardGameGeek home">
+      <span class="logo-shield" aria-hidden="true"></span><span class="logo-type">BGG</span><span class="logo-caret">▾</span>
+    </a>
+    <nav class="primary-nav" aria-label="Primary navigation">
+      <a href="{{ url_for('browse') }}">Browse <span>▾</span></a>
+      <a href="{{ url_for('forums_index') }}">Forums <span>▾</span></a>
+      <a href="{{ url_for('geeklists_index') }}">GeekLists <span>▾</span></a>
+      <a href="{{ url_for('hotness') }}">Shopping <span>▾</span></a>
+      <a href="{{ url_for('forums_index') }}">Community <span>▾</span></a>
+      <a href="{{ url_for('help_page') }}">Help <span>▾</span></a>
+    </nav>
+    <div class="user-area">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('user_profile', username=current_user.username) }}">{{ current_user.username }}</a>
+        <a href="{{ url_for('account') }}">Account</a>
+        <form action="{{ url_for('logout') }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="header-action" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign In</a>
+        <a href="{{ url_for('register') }}">Join (it's free)!</a>
+      {% endif %}
+    </div>
+    <form class="search-bar" action="{{ url_for('search') }}" method="get">
+      <span class="search-icon" aria-hidden="true"></span>
+      <input type="text" name="q" aria-label="Search" placeholder="Search" value="{{ request.args.get('q','') }}">
+      <select name="type">
+        <option value="boardgame" {% if request.args.get('type','boardgame')=='boardgame' %}selected{% endif %}>Games</option>
+        <option value="user" {% if request.args.get('type')=='user' %}selected{% endif %}>Users</option>
+        <option value="geeklist" {% if request.args.get('type')=='geeklist' %}selected{% endif %}>GeekLists</option>
+      </select>
+      <button type="submit" aria-label="Submit search">Go</button>
+    </form>
+  </div>
+</header>
+
+<div class="site-ad" aria-label="Promotional banner">
+  <div class="site-ad-art site-ad-art-left"></div>
+  <div class="site-ad-copy"><strong>GEEK<span>UP</span></strong><small>Upgrade Your Game</small></div>
+  <div class="site-ad-art site-ad-art-right"></div>
+</div>
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div style="max-width:1280px; margin: 14px auto 0; padding: 0 16px;">
+        {% for cat, msg in messages %}
+          <div class="flash {{ cat }}">{{ msg }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-logo"><span class="logo-shield"></span><strong>BGG</strong></div>
+  <div>© {{ current_year }} BoardGameGeek · <a href="{{ url_for('about') }}">About</a> · <a href="{{ url_for('help_page') }}">Help</a></div>
+</footer>
+
+</body>
+</html>

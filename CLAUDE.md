@@ -16,4 +16,4 @@ The full agent guide is loaded above via `@AGENTS.md`. The notes below apply onl
 
 ## Existing containers
 
-If a container is already running on `:8101` / `:40000-40023`, treat it as the user's working environment — don't `docker stop` or `docker rm` it without explicit confirmation. Spin up your test container under a different name on alt ports (`:8201`, `:41000-41023`).
+If a container is already running on `:8101` / `:40000-40024`, treat it as the user's working environment — don't `docker stop` or `docker rm` it without explicit confirmation. Spin up your test container under a different name on alt ports (`:8201`, `:41000-41024`).
