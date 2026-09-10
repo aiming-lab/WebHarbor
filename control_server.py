@@ -205,11 +205,14 @@ def start_site(site: str) -> int:
     # the rationale. start_new_session=True is redundant with the supervisor's
     # own setsid() but harmless and gives us a session leader from the very
     # first instant.
+    site_environment = os.environ.copy()
+    site_environment.pop('WEBSYN_CONTROL_TOKEN', None)
     try:
         proc = subprocess.Popen(
             ['python3', '/opt/site_runner.py', site, str(port)],
             stdout=log, stderr=subprocess.STDOUT,
             start_new_session=True,
+            env=site_environment,
         )
     finally:
         log.close()

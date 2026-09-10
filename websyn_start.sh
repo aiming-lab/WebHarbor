@@ -30,7 +30,7 @@ for i in "${!SITES[@]}"; do
     port=$((BASE_PORT + i))
     # Spawn via /opt/site_runner.py supervisor so SIGTERM works.
     # See site_runner.py for the rationale (Werkzeug ignores SIGTERM).
-    exec python3 /opt/site_runner.py "$site" "$port" \
+    exec env -u WEBSYN_CONTROL_TOKEN python3 /opt/site_runner.py "$site" "$port" \
         > "/tmp/websyn_${site}.log" 2>&1 &
     echo "$!" > "$PID_DIR/${site}.pid"
     echo "  $site -> port $port (PID $!)"

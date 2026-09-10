@@ -124,6 +124,27 @@ def test_hf_pin_is_immutable_merged_25_archive_revision():
     assert (ROOT / "sites/drugs_com/asset_inventory.json").is_file()
 
 
+def test_control_token_is_removed_from_all_site_process_environments(tmp_path, monkeypatch):
+    module = load_control_server()
+    module.PID_DIR = tmp_path / "pids"
+    module.PID_DIR.mkdir()
+    monkeypatch.setenv("WEBSYN_CONTROL_TOKEN", "x" * 48)
+    captured = {}
+
+    class Process:
+        pid = 12345
+
+    def fake_popen(*args, **kwargs):
+        captured.update(kwargs)
+        return Process()
+
+    monkeypatch.setattr(module.subprocess, "Popen", fake_popen)
+    module.start_site("drugs_com")
+    assert "WEBSYN_CONTROL_TOKEN" not in captured["env"]
+    startup = (ROOT / "websyn_start.sh").read_text()
+    assert "exec env -u WEBSYN_CONTROL_TOKEN python3 /opt/site_runner.py" in startup
+
+
 def test_reset_db_replaces_instance_from_complete_staging(tmp_path):
     module = load_control_server()
     site = tmp_path / "drugs_com"

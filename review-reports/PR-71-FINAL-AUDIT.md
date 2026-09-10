@@ -13,7 +13,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The original control plane allowed unauthenticated reset/restart operations. Session secrets, login controls, input bounds, transaction behavior, account ownership, anonymous review voting, and SQLite constraints also required review.
 - **Verification:** Direct source inspection confirmed public mutation routes in `control_server.py`, process-local concurrency assumptions, anonymous vote-ledger growth, registration commit ordering, weak nullability, and session-cookie data exposure.
 - **Remediation:** Every control endpoint now requires a constant-time bearer-token check. Drugs.com has a cryptographically random runtime secret, bounded requests and fields, CSRF on mutations, strict safe redirects, login throttling, a bounded runtime account count, unique site-specific cookie names, optional secure cookies for TLS deployments, authenticated-only bounded helpful votes, ownership-scoped mutations, non-null/check/unique/FK constraints, and an exclusive per-database process lock. Anonymous email and medication-browsing history are not stored in the client cookie.
-- **Evidence:** `sites/drugs_com/tests/test_app.py`; authenticated and unauthenticated control-plane tests in `sites/drugs_com/tests/test_integration.py`; final Drugs.com suite: 257 passed.
+- **Evidence:** `sites/drugs_com/tests/test_app.py`; authenticated and unauthenticated control-plane tests in `sites/drugs_com/tests/test_integration.py`; final Drugs.com suite: 276 passed.
 
 ### Reviewer 2 — application behavior and data consistency
 
@@ -34,7 +34,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The original verifiers accepted fabricated origins, `inspect`-only trajectories, blank screenshots, loose final-URL shortcuts, negated or numerically reassociated answers, wrong entity associations, and incorrect Task 13 pairings.
 - **Verification:** Adversarial fixtures reproduced wrong-origin, shortcut, contradiction, extra-entity, wrong-credential, malformed-PNG, schema mutation, row mutation, number-binding, and pair-swapping false positives.
 - **Remediation:** Verifiers now require the exact task ID and `localhost:40024` origin, successful supported browser actions, ordered UI transitions, exact input multisets, decoded nonblank PNG sequences with visual transitions, a final `done` action bound to the answer, canonical initial seed SHA-256, exact schema/table/row/byte equality, task-specific entity and numeric binding, explicit contradiction checks, domain exclusivity, and exact ordered drug/imprint pair segments.
-- **Evidence:** 144 positive and adversarial verifier cases are included in the 257-test Drugs.com suite; final real-browser run passes all 21 entry points. The verifier trusts the browser harness to write `action_result`; it does not claim a cryptographic attestation against a process that can arbitrarily rewrite the complete run directory.
+- **Evidence:** 160 positive and adversarial verifier cases are included in the 276-test Drugs.com suite; final real-browser run passes all 21 entry points. The verifier trusts the browser harness to write `action_result`; it does not claim a cryptographic attestation against a process that can arbitrarily rewrite the complete run directory.
 
 ### Reviewer 5 — UI, responsive behavior, accessibility, and progressive enhancement
 
@@ -48,7 +48,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The original branch targeted an obsolete site count and port, used a stale asset revision, and had no final Docker artifact or robust reset evidence.
 - **Verification:** The 25-site order was compared across `websyn_start.sh`, `control_server.py`, Docker, docs, task manifests, and current main. The pinned HF revision and archive set were fetched from scratch.
 - **Remediation:** Drugs.com is site 25 at `40024`; `.assets-revision` pins immutable HF commit `18e64e4d230794f990199f3327432d26db36866f`; fetch validates the exact archive-name set and site-aware seed requirements; Docker performs a final 25-database integrity gate; control reset uses staging/rename and treats backup cleanup outside rollback; reset-all returns structured partial results.
-- **Evidence:** Fresh 25-archive fetch/check passed. Drugs.com archive: 134 bytes, SHA-256 `fa2092873de0d2a06c2ecac5fd389a8863ab3e271b9c197f9c3dd5fa984f378b`. No-cache image build `sha256:8e064f61c8fef6704113996b1a4ad021b0e05a573acc8348c01cd4f55746287e` passed its 25-seed gate.
+- **Evidence:** Fresh 25-archive fetch/check passed. Drugs.com archive: 134 bytes, SHA-256 `fa2092873de0d2a06c2ecac5fd389a8863ab3e271b9c197f9c3dd5fa984f378b`. No-cache image build `sha256:bb88f2332db442bb05450f07bbda4297124cf54061d901a22874d665e46fb319` passed its 25-seed gate.
 
 ### Reviewer 7 — tests, evidence, and repository hygiene
 
@@ -104,7 +104,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The immutable review found global retraction and severity-decoy bypasses, numeric polarity/competition gaps, a valid “do not exceed” false negative, normalized-password acceptance, extra query-state acceptance, non-root starts, and failure-output answer leakage.
 - **Verification:** Concrete positive and negative sentences and trajectories from the review were added directly as regression cases.
 - **Remediation:** Global retractions and domain contradictions are rejected; interaction severity and primary risk must share the entity-bound sentence and conflicting severity is forbidden; count/rating/review/frequency competitors are rejected; “do not exceed” is accepted; Alice’s password is byte-exact and ordered; result queries and root entry state are exact; verifier evidence exposes check names without expected answer values.
-- **Evidence:** 144 verifier cases pass, including every new counterexample and the 21 real-browser runs.
+- **Evidence:** 160 verifier cases pass, including every new counterexample and the 21 real-browser runs.
 
 ### Reviewer 15 — immutable UI/provenance audit
 
@@ -132,7 +132,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The immutable candidate still accepted retracted Task 8 claims, values assigned to wrong fields, invented closed-world list entries, competing dosage/shape/color claims, inputs logged on unrelated pages, extra query state on path-only destinations, and SQLite changes present only in WAL. It also required a pixel change after every successful action and accepted only one natural Task 8 severity word order.
 - **Verification:** Each supplied counterexample was added as a direct verifier regression. A live WAL mutation and a valid same-page action with unchanged pixels were exercised.
 - **Remediation:** Count/severity claims require affirmed relations in both natural word orders; brands/classes/conditions/shape/color are label-bound; closed-world list segments and pill pairs are exhaustive; competing numeric and descriptor claims fail; inputs are route- and order-bound; non-query destinations require empty query state; snapshots use SQLite backup semantics in the host and container; only actual navigation transitions require changed pixels.
-- **Evidence:** 144 verifier cases and 21 real-browser task workflows pass. Browser control identity and screenshot provenance remain explicitly bound to the trusted harness `action_result` contract; no claim is made against an executor that can rewrite the complete run directory.
+- **Evidence:** 160 verifier cases and 21 real-browser task workflows pass. Browser control identity and screenshot provenance remain explicitly bound to the trusted harness `action_result` contract; no claim is made against an executor that can rewrite the complete run directory.
 
 ### Reviewer 15 — second immutable UI/provenance completion audit
 
@@ -160,7 +160,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** Correct-first/false-later fields, number-word competitors, an asserted different main risk, and reordered search/login stages remained accepted; several natural field/risk/pregnancy/count paraphrases were rejected. The review also restated the run-directory, snapshot-invocation, and hidden-answer orchestration boundaries.
 - **Verification:** Every concrete semantic and trajectory counterexample was added, together with the valid natural-language variants.
 - **Remediation:** Every repeated field clause must remain consistent; workflow indices are ordered and the required destination is the final state; number words participate in count/rating/dosage/frequency competition; explicit main-risk claims must contain expected risk concepts; accepted deterministic paraphrase groups were expanded. `verify/README.md` now defines the browser-only sandbox and trusted ownership of trajectories, screenshots, action results, snapshots, arguments, and verifier execution; tests and answer derivation are excluded from the evaluated runtime boundary.
-- **Evidence:** 144 verifier cases pass. The verifier remains intentionally unsuitable when an evaluated process can read source/seed answers or rewrite orchestrator-owned artifacts.
+- **Evidence:** 160 verifier cases pass. The verifier remains intentionally unsuitable when an evaluated process can read source/seed answers or rewrite orchestrator-owned artifacts.
 
 ### Reviewer 15 — third immutable UI/accessibility completion audit
 
@@ -190,6 +190,26 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Remediation:** Normal full fetch verifies each archive against the tracked manifest before tar/SQLite/migration processing and re-verifies the complete set/tree before commit; `requirements.lock` pins the selected Python 3.12 Linux wheel SHA-256 for every resolved package and Docker uses `--require-hashes`; docs discover application-defined database filenames, use SHA-256, and make no reset-duration claim.
 - **Evidence:** Integrity-before-consumption ordering tests and a no-cache hash-locked Docker build pass; maintainer-only manifest refresh remains explicit and rollback-protected because a new immutable revision has no prior archive manifest.
 
+### Reviewer 13 — fifth immutable security/application completion audit
+
+- **Observation:** Site processes inherited the control bearer credential; duplicate/unresolved interaction inputs could produce a zero-pair result; controlled generated-price tier detection did not recognize the catalog's `C-II` through `C-V` representation.
+- **Verification:** Spawn environments, duplicate browser/API requests, one-recognized/one-unrecognized API input, and controlled/noncontrolled tier records were exercised.
+- **Remediation:** Initial and respawned site supervisors remove `WEBSYN_CONTROL_TOKEN`; both interaction surfaces require at least two distinct resolved items including alcohol; normalized `C-I` through `C-V` values select the controlled synthetic tier.
+- **Evidence:** Child-environment credential isolation, distinct-cardinality, and generated-tier tests pass.
+
+### Reviewer 14 — fifth immutable task/verifier completion audit
+
+- **Observation:** Remaining counterexamples used unknown schedule/severity words, dozen/no/hourly forms, pregnancy continuation claims, globally unbound secondary risk concepts, and NSAID alias contradiction; numbered lists and one clear unlabeled status sentence were false negatives.
+- **Verification:** All six contradiction forms, secondary-risk heading decoy, alias contradiction, seven numbered-list variants, and valid unlabeled status sentence were added directly.
+- **Remediation:** Schedule/severity clauses reject incompatible additions; dozen/zero/no/hourly and number words participate in contradiction checks; pregnancy continuation conflicts fail; every required risk concept binds to a sentence containing a relevant entity/alias; class aliases cannot negate the canonical class; numbered list markers are accepted; unambiguous prescription/noncontrolled prose is accepted without forced labels.
+- **Evidence:** 160 verifier cases and the full 21-task browser run pass. The trusted orchestrator/browser-only boundary remains explicitly documented and unchanged.
+
+### Integration stability follow-up
+
+- **Observation:** One heavily loaded candidate run reported a structured reset-all 503 when a site exceeded the former 30-second readiness window; an immediate captured retry completed all 25 sites in 1.178 seconds.
+- **Remediation:** Control readiness allows 60 seconds while preserving structured partial failure and fail-closed semantics; candidate tests capture and print every reset-all failure response and allow 90 seconds at the HTTP client.
+- **Evidence:** The final candidate completes two reset-all cycles, all seed/runtime byte comparisons, process/FD/zombie checks, and restart readiness.
+
 ## Canonical Drugs.com Seed
 
 - Version: `drugs-com-source-v2`
@@ -203,7 +223,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 
 | Scope | Result |
 |---|---|
-| Drugs.com application, seed, integration, verifier positive/adversarial tests | 257 passed, including 144 verifier cases |
+| Drugs.com application, seed, integration, verifier positive/adversarial tests | 276 passed, including 160 verifier cases |
 | Real browser tasks | 21/21 passed, 99 successful steps |
 | Responsive/accessibility route matrix | 464 passed, 8 widths, 58 route/auth cases per width |
 | Targeted keyboard/filter/navigation browser checks | 9/9 passed |
@@ -214,7 +234,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 | TED regression | 27 passed, 291 subtests passed |
 | Compass regression | 229 passed |
 | Fresh HF archive fetch and asset/seed checks | 25 archives passed |
-| No-cache Docker build | passed; image `sha256:8e064f61c8fef6704113996b1a4ad021b0e05a573acc8348c01cd4f55746287e` |
+| No-cache Docker build | passed; image `sha256:bb88f2332db442bb05450f07bbda4297124cf54061d901a22874d665e46fb319` |
 | Candidate container | 25 roots passed; 25 seed DBs valid; 11 individual Drugs.com resets; 2 reset-all cycles; restart passed |
 | Candidate process stability | control FDs 4→4; processes 52→52; zombies 0 |
 

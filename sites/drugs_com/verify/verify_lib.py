@@ -529,6 +529,7 @@ def answer_uses_only_terms(answer, terms, *, allowed_words=()):
         remainder = term_pattern(term).sub(" ", remainder)
     leftover = set(norm(remainder).split())
     permitted = _LIST_PROSE_WORDS | {word for value in allowed_words for word in norm(value).split()}
+    permitted.update(str(index) for index in range(1, len(set(terms)) + 1))
     return not (leftover - permitted), sorted(leftover - permitted)
 
 
@@ -573,7 +574,7 @@ def check_labelled_terms(judge, name, answer, labels, expected, domain):
     judge.check(name, valid, repr(details))
 
 
-_NUMBER_ONES = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19}
+_NUMBER_ONES = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "dozen": 12, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19}
 _NUMBER_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90}
 
 
@@ -655,7 +656,7 @@ def check_single_drug(judge, answer, record, *, require_brands=False, require_cl
         for class_clause in class_clauses:
             class_ok = any(affirmed(class_clause, term) for term in alternatives)
             detected = set(detected_terms(class_clause, all_class_names(judge.initial)))
-            valid_clause = class_ok and not (detected - {class_name})
+            valid_clause = class_ok and not (detected - {class_name}) and not contradicted(class_clause, class_name)
             class_valid = class_valid and valid_clause
             class_details.append((class_clause, detected))
         judge.check("answer_class_bound_to_field", class_valid, repr(class_details))
@@ -692,7 +693,16 @@ def _check_interaction_answer(judge, answer, drug_terms, severity, concept_group
     for alternatives in concept_groups:
         match = next((term for term in alternatives if affirmed(answer, term)), None)
         concepts.append(match)
-    judge.check("answer_main_risk", all(concepts), repr(concepts))
+    sentences = re.split(r"(?<=[.!?;\n])\s*", answer)
+    concept_bindings = [
+        any(
+            (any(affirmed(sentence, entity) for entity in drug_terms) or ("ibuprofen" in drug_terms and (affirmed(sentence, "NSAID") or affirmed(sentence, "NSAIDs"))))
+            and any(affirmed(sentence, term) for term in alternatives)
+            for sentence in sentences
+        )
+        for alternatives in concept_groups
+    ]
+    judge.check("answer_main_risk", all(concepts) and all(concept_bindings), f"concepts={concepts!r} bindings={concept_bindings!r}")
     bound_terms = [*drug_terms, severity, concepts[0]] if concepts and concepts[0] else []
     judge.check("answer_interaction_fact_binding", bool(bound_terms) and _sentence_with_terms(answer, bound_terms) is not None)
     conflicting = [value for value in SEVERITY_ORDER if value != severity and affirmed(answer, value)]
@@ -752,19 +762,22 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         check_single_drug(judge, answer, record)
         if record:
             availability_clauses = labelled_clauses(answer, ("availability",))
-            availability_ok = bool(availability_clauses) and all(
+            availability_scopes = availability_clauses or [answer]
+            availability_ok = all(
                 (affirmed(clause, record["availability"]) or (record["availability"] == "Rx" and affirmed(clause, "prescription")))
                 and not (record["availability"] == "Rx" and any(mentions(clause, item) for item in ("OTC", "both", "over the counter")))
-                for clause in availability_clauses
+                for clause in availability_scopes
             )
             judge.check("answer_availability_bound_to_field", availability_ok, repr(availability_clauses))
             csa_clauses = labelled_clauses(answer, ("CSA schedule", "controlled substance schedule"))
-            csa_ok = bool(csa_clauses) and all(
+            csa_scopes = csa_clauses or [answer]
+            csa_ok = all(
                 affirmed(clause, record["csa_schedule"])
                 or ("not a controlled" in norm(record["csa_schedule"]) and (affirmed(clause, "not controlled") or affirmed(clause, "not a controlled drug")))
-                for clause in csa_clauses
+                for clause in csa_scopes
             )
-            judge.check("answer_csa_schedule_bound_to_field", csa_ok, repr(csa_clauses))
+            conflicting_schedule = "not a controlled" in norm(record["csa_schedule"]) and re.search(r"\b(?:schedule|c)\s*[- ]?(?:i|ii|iii|iv|v|[1-5])\b", answer, re.I)
+            judge.check("answer_csa_schedule_bound_to_field", csa_ok and not conflicting_schedule, repr(csa_clauses))
 
     elif number in {2, 8, 19}:
         names = {2: ["ibuprofen", "warfarin"], 8: ["alprazolam", "oxycodone", "alcohol"], 19: ["metformin", "alcohol"]}[number]
@@ -798,7 +811,9 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             )
             severity_matches = [match for pattern in severity_patterns for match in re.finditer(pattern, answer, re.I)]
             conflicting = [value for value in SEVERITY_ORDER if value != expected_severity and affirmed(answer, value)]
-            judge.check("answer_highest_severity", bool(severity_matches) and all(claim_is_affirmed(answer, match) for match in severity_matches) and not conflicting)
+            severity_clauses = labelled_clauses(answer, ("severity",))
+            severity_clauses_valid = all(affirmed(clause, expected_severity) and not any(affirmed(clause, value) for value in SEVERITY_ORDER if value != expected_severity) for clause in severity_clauses)
+            judge.check("answer_highest_severity", bool(severity_matches) and all(claim_is_affirmed(answer, match) for match in severity_matches) and not conflicting and severity_clauses_valid)
             check_required_terms(judge, "answer_interaction_entities", answer, names)
         else:
             rows = initial.query("SELECT li.severity,li.description FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")
@@ -885,7 +900,7 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             dose_ok = re.search(rf"\b{low}\s*[-–](?:\s*){high}\s*mg\b", answer, re.I)
             interval_ok = re.search(rf"\bevery\s+{interval_low}\s*(?:to|[-–])\s*{interval_high}\s+hours?\b", answer, re.I)
             maximum_ok = re.search(rf"\b(?:maximum|max|do not exceed)[^.;\n]{{0,45}}\b{maximum}\s*mg\b[^.;\n]{{0,45}}\b{period}\s+hours?\b", answer, re.I)
-            conflict = re.search(r"\b(?<!do )(?:not|incorrect|wrong|false)\b[^.;\n]{0,30}(?:mg|hours?)", answer, re.I)
+            conflict = re.search(r"\b(?<!do )(?:no|not|incorrect|wrong|false)\b[^.;\n]{0,30}(?:maximum|mg|hours?)", answer, re.I)
             stated_numbers = {int(value) for value in re.findall(r"(?<![\w.])\d+(?![\w.])", answer)} | set(word_number_values(answer))
             allowed_numbers = {int(value) for value in (low, high, interval_low, interval_high, maximum, period)}
             maximum_affirmed = bool(maximum_ok) and (norm(maximum_ok.group(0)).startswith("do not exceed") or claim_is_affirmed(answer, maximum_ok))
@@ -922,8 +937,10 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             review_negated = any(re.search(r"\b(?:not|never|incorrect|wrong)\b", " ".join(_nearby_words(answer, match.start(), match.end())[0][-3:] + _nearby_words(answer, match.start(), match.end())[1][:3])) for match in review_matches)
             word_numbers = set(word_number_values(answer))
             allowed_numbers = {int(float(record["avg_rating"])), 10, int(record["review_count"])}
-            judge.check("answer_rating_context", bool(rating_values) and set(rating_values) == {float(record["avg_rating"])} and not rating_negated and word_numbers <= allowed_numbers)
-            judge.check("answer_review_count_context", bool(review_numbers) and set(review_numbers) == {record["review_count"]} and not review_negated and word_numbers <= allowed_numbers)
+            verbal_rating_conflict = re.search(r"\b(?:actual\s+)?rating\b[^.;\n]{0,40}\b(?:not|false|wrong|incorrect)\b|\b(?:not|never)\b[^.;\n]{0,20}\bout of ten\b", answer, re.I)
+            no_reviews = re.search(r"\b(?:no|zero)\s+reviews?\b", answer, re.I)
+            judge.check("answer_rating_context", bool(rating_values) and set(rating_values) == {float(record["avg_rating"])} and not rating_negated and word_numbers <= allowed_numbers and not verbal_rating_conflict)
+            judge.check("answer_review_count_context", bool(review_numbers) and set(review_numbers) == {record["review_count"]} and not review_negated and word_numbers <= allowed_numbers and not no_reviews)
 
     elif number == 13:
         result_pred = lambda visit: path_is(visit, *pill_paths) and exact_query(visit, [("imprint", ""), ("shape", "Oval"), ("color", "White")])
@@ -983,7 +1000,8 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         if record:
             fetal = affirmed(answer, "fetal toxicity") or (affirmed(answer, "fetus") and (affirmed(answer, "injury") or affirmed(answer, "death"))) or (affirmed(answer, "unborn baby") and (affirmed(answer, "harm") or affirmed(answer, "kill")))
             discontinue = (affirmed(answer, "discontinue") or affirmed(answer, "stop taking")) and (affirmed(answer, "pregnancy") or affirmed(answer, "pregnant"))
-            judge.check("answer_pregnancy_warning", fetal and discontinue, f"pregnancy_field={record['pregnancy_risk']!r}")
+            pregnancy_conflict = re.search(r"\b(?:safe\s+to\s+continue|continue\b[^.;\n]{0,30}\b(?:throughout|during)\s+pregnancy|does\s+not\s+(?:harm|injure))\b", answer, re.I)
+            judge.check("answer_pregnancy_warning", fetal and discontinue and not pregnancy_conflict, f"pregnancy_field={record['pregnancy_risk']!r}")
             availability_clauses = labelled_clauses(answer, ("availability",))
             availability_ok = bool(availability_clauses) and all(
                 (affirmed(clause, record["availability"]) or (record["availability"] == "Rx" and affirmed(clause, "prescription")))
@@ -1032,7 +1050,8 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             stated_frequencies = {int(value) for value in re.findall(r"\bevery\s+(\d+)\s+hours?\b", answer, re.I)}
             word_numbers = set(word_number_values(answer))
             allowed_word_numbers = {int(frequency), 3} if frequency == "8" else {int(frequency)}
-            judge.check("answer_standard_adult_frequency", frequency_ok and not conflict and stated_frequencies <= {int(frequency)} and word_numbers <= allowed_word_numbers)
+            hourly_conflict = int(frequency) != 1 and re.search(r"\b(?:actual\s+)?(?:standard\s+)?frequency\b[^.;\n]{0,30}\bhourly\b", answer, re.I)
+            judge.check("answer_standard_adult_frequency", frequency_ok and not conflict and not hourly_conflict and stated_frequencies <= {int(frequency)} and word_numbers <= allowed_word_numbers)
 
     else:
         judge.check("known_task", False, f"number={number}")

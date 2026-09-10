@@ -5313,6 +5313,10 @@ def interaction_checker():
             elif not d:
                 unrecognized.append(n)
 
+        has_alcohol = any(n.lower() == "alcohol" for n in drugs_input or [])
+        if len(resolved) + int(has_alcohol) < 2:
+            abort(400)
+
         interactions = []
         pair_keys = set()
         for a, b in combinations(resolved, 2):
@@ -5344,7 +5348,7 @@ def interaction_checker():
         }
         food_interactions, alcohol_interactions = _lifestyle_interactions(resolved)
         # If "alcohol" was explicitly entered, fold its interactions into main results
-        if any(n.lower() == "alcohol" for n in drugs_input or []):
+        if has_alcohol:
             alcohol_hit_ids = {alc["drug"].id for alc in alcohol_interactions}
             for drug in resolved:
                 if drug.id not in alcohol_hit_ids:
@@ -5518,6 +5522,8 @@ def api_interaction_check():
                 matched.append(d)
                 matched_ids.add(d.id)
             name_to_drug[n] = d
+    if len(matched) + int(has_alcohol) < 2:
+        return jsonify({"ok": False, "error": "at_least_two_distinct_recognized_items_required"}), 400
     interactions = []
     pair_keys = set()
     unrepresented_pairs = []
@@ -6831,11 +6837,11 @@ def _price_seed_unit(drug_id, pharmacy, qty):
 def generate_drug_prices(drug):
     """Build deterministic synthetic numbers for price-layout testing."""
     seed = (drug.id * 31 + len(drug.generic_name or "") * 7) % 997
-    csa = (drug.csa_schedule or "").lower()
+    csa = re.sub(r"[^a-z0-9]+", " ", (drug.csa_schedule or "").lower()).strip()
     avail = (drug.availability or "Rx").lower()
     brands = drug.brand_names or []
 
-    if csa.startswith("schedule"):
+    if csa.startswith("schedule") or re.fullmatch(r"c (?:i|ii|iii|iv|v)", csa):
         base = 40 + (seed % 180)
         tier = "controlled"
     elif "otc" in avail:

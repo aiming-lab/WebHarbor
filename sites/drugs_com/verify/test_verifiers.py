@@ -661,6 +661,49 @@ def test_login_and_med_list_workflow_order_is_enforced(snapshots, tmp_path):
     assert_fails(14, make_run(tmp_path, 14, snapshots[0], steps=steps), snapshots)
 
 
+@pytest.mark.parametrize("number,answer", [
+    (1, "Metformin availability: Rx; CSA schedule: Not a controlled drug and Schedule II."),
+    (8, "For alprazolam, oxycodone, and alcohol, there are 3 interactions; the highest severity is major. The actual total is a dozen and the actual severity is catastrophic."),
+    (10, "Ibuprofen OTC: 200-400 mg every 4-6 hours; maximum 1200 mg in 24 hours. In fact, there is no maximum in 24 hours."),
+    (12, "Atorvastatin rating: 7.0/10; 4 reviews. The actual rating is not seven out of ten, and there are no reviews."),
+    (15, "Lisinopril can harm or kill the unborn baby; stop taking it when pregnancy is recognized. Availability: Rx. It is actually safe to continue throughout pregnancy."),
+    (18, "Amoxicillin standard adult frequency: every 8 hours. The actual standard frequency is hourly."),
+])
+def test_explicit_non_digit_and_status_contradictions_fail(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_all_interaction_risk_concepts_require_entity_binding(snapshots, tmp_path):
+    answer = "Ibuprofen and warfarin have a major interaction causing brain bleeding. Gastrointestinal is only a navigation heading."
+    assert_fails(2, make_run(tmp_path, 2, snapshots[0], answer=answer), snapshots)
+
+
+def test_nsaid_alias_cannot_negate_expanded_class(snapshots, tmp_path):
+    answer = "Ibuprofen; class: NSAID, not Nonsteroidal anti-inflammatory drugs; brands: Advil, Motrin, Nuprin."
+    assert_fails(0, make_run(tmp_path, 0, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number", [4, 6, 9, 14, 16, 20])
+def test_numbered_known_item_lists_pass(number, snapshots, tmp_path):
+    items = [item.strip() for item in positive_answer(number, snapshots[0]).split(",")]
+    answer = "\n".join(f"{index}. {item}" for index, item in enumerate(items, 1))
+    process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_numbered_pill_pairs_pass(snapshots, tmp_path):
+    items = positive_answer(13, snapshots[0]).split("; ")
+    answer = "; ".join(f"{index}. {item}" for index, item in enumerate(items, 1))
+    process = execute(13, make_run(tmp_path, 13, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_unlabelled_clear_status_sentence_passes(snapshots, tmp_path):
+    answer = "Metformin is prescription-only and is not a controlled drug."
+    process = execute(1, make_run(tmp_path, 1, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
     run = make_run(tmp_path, 0, snapshots[0], answer="wrong")
     process = execute(0, run, *snapshots)

@@ -443,6 +443,24 @@ def test_brand_autocomplete_is_independent_of_generic_prefix(client):
     assert any(row["name"] == "Ozempic" and row["url"] == "/semaglutide.html" for row in response.json)
 
 
+def test_interaction_check_requires_two_distinct_resolved_items(client):
+    duplicate_browser = client.get("/drug-interactions?drugs=ibuprofen&drugs=ibuprofen")
+    assert duplicate_browser.status_code == 400
+    duplicate_api = client.post("/api/interaction-check", json={"drugs": ["ibuprofen", "ibuprofen"]})
+    assert duplicate_api.status_code == 400
+    assert duplicate_api.json["error"] == "at_least_two_distinct_recognized_items_required"
+    unresolved_api = client.post("/api/interaction-check", json={"drugs": ["ibuprofen", "not-in-fixture"]})
+    assert unresolved_api.status_code == 400
+
+
+def test_controlled_price_fixture_tier_matches_csa_representation(client, drugs_app):
+    with drugs_app.app.app_context():
+        controlled = drugs_app.Drug.query.filter_by(slug="oxycodone").one()
+        ordinary = drugs_app.Drug.query.filter_by(slug="metformin").one()
+        assert drugs_app.generate_drug_prices(controlled)["tier"] == "controlled"
+        assert drugs_app.generate_drug_prices(ordinary)["tier"] != "controlled"
+
+
 def test_lifestyle_and_contraindicated_interactions_are_consistent(client):
     alprazolam = client.get("/drug-interactions?drugs=alprazolam&drugs=alcohol")
     assert alprazolam.status_code == 200
