@@ -1,0 +1,51 @@
+{
+  "schema": "imdb-public-expansion-independent-review-summary/v1",
+  "received_at": "2026-09-10T07:31:39Z",
+  "received_result_sha256": "badf06f34a2b5d830b87c0847f29d50a4951e3a2fc8b21e288a4bb7eedf96865",
+  "input_manifest_sha256": "f609c60f5229c0f91d75bbdea3dd2ff29ce8e82d6534cc9cfb7f0ac9183dbfdd",
+  "target_candidate": "3d9fc7205c55e7403c8cc8637675649710820b48",
+  "reviewer": {
+    "harness": "Claude Code",
+    "model_declared": "claude-opus-5 (Claude Opus 5)",
+    "identity_limit": "Model identifier declared by the reviewer session; no independent runtime attestation."
+  },
+  "coverage": {
+    "task_ids": ["IMDb--18", "IMDb--19", "IMDb--20", "IMDb--21", "IMDb--22", "IMDb--23", "IMDb--24", "IMDb--25", "IMDb--26", "IMDb--27"],
+    "main_tasks": 10,
+    "pass": 10,
+    "fail": 0,
+    "packet_files_hash_checked": 540,
+    "recorded_steps": 219,
+    "selected_action_failures": 0,
+    "selected_capture_failures": 0,
+    "screenshots_spot_checked": ["IMDb--24 step 19", "IMDb--26 step 34", "IMDb--27 step 21"]
+  },
+  "method": "Independent read-only review of frozen task/rubric, trajectories, event logs, final answers, step DOM, selected screenshots and read-only before/after SQLite snapshots. The reviewer replayed actions, checked facts against same-run DOM, recomputed calculations, enumerated complete candidate sets from the frozen before state, and compared every business table. Verifier source/results, expected labels, prior reviews, repository contents and network sources were excluded.",
+  "results": [
+    {"task_id": "IMDb--18", "verdict": "PASS", "basis": "The constrained pair, unique optimum and read-only state are supported by the submitted filters, opened title details and complete frozen candidate set."},
+    {"task_id": "IMDb--19", "verdict": "PASS", "basis": "Role-scoped filmographies, displayed monetary fields and the unique percentage maximum are correctly bound; displayed-value rounding is 57.9%."},
+    {"task_id": "IMDb--20", "verdict": "PASS", "basis": "All six actor credits and their displayed domestic/worldwide grosses support the reported remainder shares and unique maximum."},
+    {"task_id": "IMDb--21", "verdict": "PASS", "basis": "Separate account sessions, ratings and Watchlists support the complete movie-only set difference and detail facts without state changes."},
+    {"task_id": "IMDb--22", "verdict": "PASS", "basis": "The deduplicated account-title union and all relevant review pages support exactly one complete duplicate-headline group."},
+    {"task_id": "IMDb--23", "verdict": "PASS", "basis": "All six role-scoped movie credits were opened; full release dates support the ordered timeline and both tied minimum intervals."},
+    {"task_id": "IMDb--24", "verdict": "PASS", "basis": "The full filter set yields exactly two qualifying titles, both added to the correct Watchlist while all prior rows remain."},
+    {"task_id": "IMDb--25", "verdict": "PASS", "basis": "The source account's qualifying movie ratings and destination account's prior Watchlist support exactly one added recommendation."},
+    {"task_id": "IMDb--26", "verdict": "PASS", "basis": "The run creates one requested account, persists the exact two-title queue through sign-out/sign-in, and changes no unrelated rows; producer provenance metadata is internally inconsistent."},
+    {"task_id": "IMDb--27", "verdict": "PASS", "basis": "The account's Watchlist, ratings and review attribution identify one title, and exactly one personal-rating row is added at the review-derived score."}
+  ],
+  "state_delta": {
+    "read_only_tasks": "IMDb--18 through IMDb--23 changed no business-table rows.",
+    "IMDb--24": "+2 Watchlist rows for the requested existing user; no other change.",
+    "IMDb--25": "+1 Watchlist row for the requested destination user; no other change.",
+    "IMDb--26": "+1 user and +2 Watchlist rows for that new user; no original row changed and no rating/review was created.",
+    "IMDb--27": "+1 personal-rating row for the requested user/title; no other change."
+  },
+  "limits": [
+    "This review judges completion of the ten recorded runs; it does not certify source fidelity, verifier implementation, visual acceptance or empirical frontier-model difficulty.",
+    "Task 26 run-start and seal-time model, prior-answer-knowledge, runner-identity and intervention metadata disagree. The direct run evidence supports completion, but the producer metadata is not a reliable independent-exploration attestation.",
+    "Task 19 is computed from displayed rounded monetary values: 30.1 / 52.0 rounds to 57.9%. Hidden raw values would round to 57.8%, without changing the maximum.",
+    "The recorded run URL used port 40021 while the target registry uses port 40024; the task question/rubric and non-port runtime inputs are unchanged.",
+    "The target asset revision is a union commit; the reviewed IMDb archive SHA256 is unchanged from the recorded asset revision.",
+    "Owner visual acceptance remains pending, so formal gates remain sequential and the PR stays Draft."
+  ]
+}

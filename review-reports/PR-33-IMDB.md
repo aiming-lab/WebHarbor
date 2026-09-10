@@ -1,6 +1,6 @@
 # IMDb reviewer validation
 
-Status: **work in progress; not ready for merge**. Twenty distinct task candidates remain after quality review. The original retained ten have sealed deterministic and independent blind-review evidence. Ten additions, IDs 18–27, have complete sealed UI runs and deterministic 10/10 results; their independent blind review remains pending. Owner visual acceptance also remains pending. A local unit test, deterministic verdict or asset hash check does not imply visual or final task acceptance.
+Status: **work in progress; not ready for merge**. Twenty distinct task candidates remain after quality review. All twenty have complete sealed UI runs, deterministic PASS and independent frozen-run PASS evidence. Owner visual acceptance remains pending, so the formal review gates stay sequential and this PR remains Draft. A local unit test, deterministic verdict, blind run-completion verdict or asset hash check does not imply visual acceptance.
 
 This review preserves [@hqhq1025's original IMDb contribution, PR #33](https://github.com/aiming-lab/WebHarbor/pull/33)
 and its commit history. The reviewer branch integrates main at `36004932bdf82afbe36dc14e00f66841eccf9946`, including
@@ -172,7 +172,7 @@ rows are byte-identical to their executed definitions.
 
 The ten added candidates each have one complete canonical run and deterministic PASS, totaling **219 recorded steps** with no action or capture failure in the selected runs. Task 18 also preserves a complete one-step environment failure stopped at an incorrect viewport. Task 21 preserves an incomplete earlier attempt with no final answer or after snapshot; neither attempt is counted as a task or a passing run. Original run files were not rewritten when scoring-format false negatives were fixed.
 
-The added set covers six read-only tasks (18–23) and four exact state transitions (24–27). Every read-only run leaves all business tables unchanged. The stateful runs constrain destination owner, permitted rows, preserved pre-existing state and required confirmation. Deterministic 10/10 is engineering evidence only; the new ten remain pending independent frozen-run review.
+The added set covers six read-only tasks (18–23) and four exact state transitions (24–27). Every read-only run leaves all business tables unchanged. The stateful runs constrain destination owner, permitted rows, preserved pre-existing state and required confirmation. Deterministic 10/10 is engineering evidence only; a separate frozen-run review also returned 10/10 PASS.
 [Public expansion counts and limits](assets/pr33-imdb/task-expansion-summary.json) are recorded without private run contents.
 
 The final native deterministic regrade passes **10/10 retained main runs** and
@@ -244,7 +244,9 @@ and read-only before/after databases. Ten key screenshots were viewed; the other
 hidden answers or earlier review conclusions. The three guided alternatives were
 not part of this blind review.
 
-This result covers only the original retained IDs `0, 2, 7, 9, 10, 12, 14, 15, 16, 17`. A separate neutral packet for IDs `18–27` must be reviewed before any twenty-task blind-review claim is made.
+This result covers the original retained IDs `0, 2, 7, 9, 10, 12, 14, 15, 16, 17`. A separate neutral packet for IDs `18–27`, targeting code `3d9fc7205c55e7403c8cc8637675649710820b48`, was then reviewed by a session declaring `claude-opus-5`. Its 540-file manifest and received result hash were verified; it returned **10 PASS / 0 FAIL**. The reviewer replayed actions, checked same-run DOM evidence, recomputed derived quantities, and compared read-only before/after databases. For stateful runs it confirmed only the requested rows changed. See the [expansion review summary and limitations](assets/pr33-imdb/task-expansion-independent-review-summary.json).
+
+Task 19 is evaluated from the amounts displayed by the mirror: `$30.1M / $52.0M` rounds to **57.9%**. Calculating from hidden raw values would produce 57.8%, but does not change the unique maximum. Task 26 completed its requested registration, sign-out/sign-in and Watchlist persistence flow, but its run-start and seal-time model, prior-answer-knowledge and intervention metadata disagree. The completion verdict therefore remains PASS on direct run evidence, while the run producer's provenance is not treated as a reliable independent-exploration attestation.
 
 All ten labels agree with the prior deterministic results. Coordinator spot-checks
 of tasks 9, 15, 16 and 17 against original DOM and full-table database differences
@@ -255,10 +257,7 @@ requested single-row change. The task 9 selector failure was recovered. For task
 extra navigation absent from the task. Task 17 adds exactly one review; its
 pre-existing review is not a new duplicate.
 
-These are judgments of the disclosed r1/r2 runs. The input versions and reuse
-basis above remain explicit; no run is relabeled as having executed at the target
-PR head. Source fidelity, owner visual acceptance, scorer-code correctness and
-model difficulty are outside the blind review conclusion.
+Together, the two reviews cover all twenty candidate task executions with **20 PASS / 0 FAIL**. These are judgments of the disclosed recorded runs. The input versions and reuse basis above remain explicit; no run is relabeled as having executed at a version it did not use. Source fidelity, owner visual acceptance, scorer-code correctness, runner-model provenance and empirical model difficulty are outside the blind-review conclusions.
 
 ## Reproduction
 
