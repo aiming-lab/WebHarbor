@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ practice.name }} - {{ practice.city.name }}, {{ practice.city.state }}{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('grouppractices_index') }}">Group Practices</a><span class="sep">›</span><a href="{{ url_for('grouppractices_state', state=practice.city.state_slug) }}">{{ practice.city.state }}</a><span class="sep">›</span><span>{{ practice.name }}</span></div>
+  <div class="hub-hero"><h1>{{ practice.name }} <a href="#" style="font-size:16px;font-weight:400;margin-left:12px">Claim your practice</a></h1></div>
+  <div class="hub-meta">
+    <div class="stats"><span>{{ specialty_rows | length | plural_word('Specialty', 'Specialties') }}</span><span>{{ doctors | length | plural_word('Practicing Physician') }}</span></div>
+    <div class="rating-line" id="ratings">{% with rating=practice.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} ({{ practice.ratings_count }}) | <a href="#ratings"><svg class="ic"><use href="#i-edit"/></svg> Write A Review</a></div>
+    <div><svg class="ic ic-blue"><use href="#i-pin"/></svg> <strong>{{ practice.name }}</strong><br><span style="margin-left:22px">{{ practice.street }} {{ practice.city.name }}, {{ practice.city.state }} {{ practice.zip }}</span></div>
+    <a class="btn btn-primary btn-pill" style="margin-top:12px" href="#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ practice.phone }}</a>
+  </div>
+  <div class="profile-grid">
+    <div class="stack">
+      <section class="panel"><div class="panel-head"><svg class="ic"><use href="#i-doc"/></svg><h2>Overview</h2></div><div class="panel-body"><p>{{ practice.overview_text }}</p></div></section>
+      <section class="panel" id="physicians">
+        <div class="panel-head"><svg class="ic"><use href="#i-people"/></svg><h2>Physicians At {{ practice.name }}</h2></div>
+        <div class="panel-body">
+          <div class="showing">Showing <strong>{{ page.start }}-{{ page.end }}</strong> of <strong>{{ page.total }}</strong> Physicians</div>
+          <div class="phys-grid">
+            {% for doctor in page.rows %}
+              <div class="phys-row">
+                <img class="avatar" src="{{ url_for('static', filename=doctor.avatar_path) }}" alt="">
+                <div>
+                  <div class="name"><a href="{{ url_for('doctor_profile', slug=doctor.slug) }}">{{ doctor.display_name }}</a></div>
+                  <div class="sub">{{ doctor.primary_specialty.name }}</div>
+                  <div class="rating-line" style="margin:2px 0">{% with rating=doctor.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} <a href="{{ url_for('doctor_profile', slug=doctor.slug) }}#reviews">({{ doctor.ratings_count }})</a></div>
+                  {% if doctor.accepting_new_patients %}<div class="sub">Accepting New Patients</div>{% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          {% include "_pagination.html" %}
+        </div>
+      </section>
+      <section class="panel"><div class="panel-head"><svg class="ic"><use href="#i-list"/></svg><h2>Patient Satisfaction Poll</h2></div><div class="panel-body">{% for row in poll_rows %}<div class="poll"><div><div class="q">{{ row.question }}</div><div class="yn"><span>Yes</span><span>No</span></div></div><div class="counts"><span>Yes ({{ row.yes }})</span><span class="bar"></span><span>No ({{ row.no }})</span></div></div>{% endfor %}</div></section>
+      <section class="panel"><div class="panel-head"><svg class="ic"><use href="#i-stethoscope"/></svg><h2>Specialties</h2></div><div class="panel-body"><p><strong>{{ doctors | length }}</strong> practicing physicians across <strong>{{ specialty_rows | length }}</strong> specialties are affiliated with this practice.</p><ul class="two-col">{% for name, count in specialty_rows %}<li>{{ name }} ({{ count }})</li>{% endfor %}</ul></div></section>
+      <section class="panel" id="insurance"><div class="panel-head"><svg class="ic"><use href="#i-shield"/></svg><h2>Insurance Plans Accepted ({{ insurers | length }})</h2></div><div class="panel-body"><p class="muted" style="font-size:13px">Please verify insurance information with your doctor's office as it may change frequently.</p><ul class="two-col">{% for name in insurers %}<li>{{ name }}</li>{% endfor %}</ul></div></section>
+      <section class="panel" id="locations"><div class="panel-head"><svg class="ic"><use href="#i-pin"/></svg><h2>Locations</h2></div><div class="panel-body">
+        <div class="loc"><div>
+          <div class="loc-name">{{ practice.name }}</div>
+          <div>{{ practice.street }}<br>{{ practice.city.name }}, {{ practice.city.state }} {{ practice.zip }}</div>
+          <div style="margin-top:8px">Tel: <a href="#locations">{{ practice.phone }}</a></div>
+          <div><a href="{{ practice.website }}" rel="nofollow">{{ practice.website }}</a></div>
+          <div class="flag-row">
+            <span><svg class="ic{{ '' if flags.medicare else ' no' }}"><use href="#i-check-circle"/></svg> {{ 'Accepts' if flags.medicare else 'Does not accept' }} Medicare</span>
+            <span><svg class="ic{{ '' if flags.medicaid else ' no' }}"><use href="#i-check-circle"/></svg> {{ 'Accepts' if flags.medicaid else 'Does not accept' }} Medicaid</span>
+            <span><svg class="ic{{ '' if flags.new_patients else ' no' }}"><use href="#i-check-circle"/></svg> {{ 'Accepting' if flags.new_patients else 'Not accepting' }} new patients</span>
+          </div>
+          <dl class="hours">{% for row in practice.hours_rows() %}<dt>{{ row.day }}</dt><dd>{{ row.text }}</dd>{% endfor %}</dl>
+        </div><div class="map">Map unavailable in mirror</div></div>
+      </div></section>
+      <section class="panel faq"><div class="panel-head"><svg class="ic"><use href="#i-question"/></svg><h2>Frequently Asked Questions</h2></div><div class="panel-body"><dl>
+        <dt>Where is {{ practice.name }} located?</dt><dd>{{ practice.name }} is located at {{ practice.street }}, {{ practice.city.name }}, {{ practice.city.state }}, {{ practice.zip }}.</dd>
+        <dt>What is {{ practice.name }}'s phone number?</dt><dd>The contact number for {{ practice.name }} is {{ practice.phone }}.</dd>
+        <dt>What specialties are available at {{ practice.name }}?</dt><dd>There are {{ doctors | length }} practicing providers across {{ specialty_rows | length }} specialties at {{ practice.name }}. Top specialties include {{ top_specialties | join(', ') }}.</dd>
+        <dt>Does {{ practice.name }} accept my insurance plan?</dt><dd>Providers at {{ practice.name }} list {{ insurers | length }} insurance carriers, including {{ insurers[:3] | join(', ') }}. To verify, call {{ practice.phone }}.</dd>
+      </dl></div></section>
+    </div>
+    <aside class="rail"></aside>
+  </div>
+</div>
+{% endblock %}

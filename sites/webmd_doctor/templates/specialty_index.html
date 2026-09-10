@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Find Top Doctors for All Specialties{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('specialty_index') }}">Providers</a><span class="sep">›</span><span>Specialties</span></div>
+  <div class="center-panel">
+    <div style="text-align:center;color:var(--blue)"><svg class="ic ic-lg"><use href="#i-stethoscope"/></svg></div>
+    <h1>Find Top Doctors for All Specialties</h1>
+    {% set letters = specialties | map(attribute='name') | map('first') | list %}
+    <div class="alpha-bar"><a class="on" href="#">All</a>{% for letter in 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' %}{% if letter in letters %}<a href="#spec-{{ letter }}">{{ letter }}</a>{% else %}<span>{{ letter }}</span>{% endif %}{% endfor %}</div>
+    <div class="spec-index">
+      {% for specialty in specialties %}<a id="spec-{{ specialty.name[0] }}" href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.name }}</a>{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

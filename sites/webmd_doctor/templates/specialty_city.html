@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Best {{ specialty.plural }} in {{ city.name }}, {{ city.state }}{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb"><a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.name }}</a><span class="sep">›</span><a href="{{ url_for('specialty_state', spec=specialty.slug, state=city.state_slug) }}">{{ city.state }}</a><span class="sep">›</span><span>{{ city.name }}</span></div>
+  <h1 class="page-title dark" style="text-align:center">Best <strong>{{ specialty.plural }}</strong> in <strong>{{ city.name }}, {{ city.state }}</strong></h1>
+  <p class="page-sub" style="text-align:center;max-width:960px;margin:0 auto 18px">{{ city.name }}, {{ city.state }} has <strong>{{ total }} {{ specialty.singular }}</strong> results with an average of <strong>{{ average_experience }} years of experience</strong> and <strong>a total of {{ total_reviews }} ratings</strong>. Currently, <strong>{{ accepting }} providers</strong> have noted they are <strong>accepting new patients</strong>. Conditions treated by {{ specialty.plural }} often include <strong>{{ conditions | map(attribute='name') | join(', ') }}</strong>. Some common procedures performed by {{ specialty.plural }} include <strong>{{ procedures | map(attribute='name') | join(', ') }}</strong>.</p>
+  {% include "_filter_bar.html" %}
+  <div class="info-banner"><span class="badge">WebMD PATIENT'S CHOICE</span><span><strong style="color:var(--card-navy)">Patients' Choice</strong> awards are assigned based on patient satisfaction ratings for key specialties in select geographic locations.</span></div>
+  <div class="section-label">All Results ({{ page.total }})</div>
+  {% if page.rows %}
+  <div class="card-list">
+    {% for row in page.rows %}{% with doctor=row.doctor %}{% include "_physician_card.html" %}{% endwith %}{% endfor %}
+  </div>
+  {% include "_pagination.html" %}
+  {% else %}
+  <div class="panel empty">No {{ specialty.plural }} in {{ city.name }} matched these filters.</div>
+  {% endif %}
+</div>
+{% endblock %}

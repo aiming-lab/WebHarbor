@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Saved Providers{% endblock %}
+{% block content %}
+<div class="container page">
+  <h1 class="page-title">Saved Providers</h1>
+  <p class="page-sub">{{ rows | length | plural_word('provider') }} saved to your account, {{ current_user.display_name }}.</p>
+  {% if rows %}
+    <div class="card-list">
+      {% for row in rows %}{% with doctor=row.doctor, show_remove=true %}{% include "_physician_card.html" %}{% endwith %}{% endfor %}
+    </div>
+  {% else %}
+    <div class="panel empty">You have not saved any providers yet. Use "Save Provider" on a profile to add one.</div>
+  {% endif %}
+</div>
+{% endblock %}

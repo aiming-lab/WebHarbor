@@ -1,0 +1,37 @@
+{# one shared physician card: `doctor`, optional `distance`, optional `award_line`, optional `show_remove` #}
+{% set loc = doctor.primary_location %}
+<article class="phys-card{% if doctor.is_enhanced %} enhanced{% endif %}" data-doctor="{{ doctor.slug }}">
+  <div class="avatar-col">
+    <a href="{{ url_for('doctor_profile', slug=doctor.slug) }}"><img class="avatar" src="{{ url_for('static', filename=doctor.avatar_path) }}" alt="{{ doctor.display_name }}"></a>
+    {% if doctor.is_enhanced %}<span class="verified"><svg class="ic"><use href="#i-verified"/></svg> VERIFIED</span>{% endif %}
+  </div>
+  <div class="body">
+    <h3><a href="{{ url_for('doctor_profile', slug=doctor.slug) }}">{{ doctor.display_name }}</a></h3>
+    <div class="spec">{{ doctor.primary_specialty.name }}</div>
+    <div class="rating-line">
+      {% if doctor.avg_rating is not none %}<span class="num">{{ doctor.avg_rating | rating1 }}</span>{% endif %}
+      {% with rating=doctor.avg_rating %}{% include "_stars.html" %}{% endwith %}
+      <a href="{{ url_for('doctor_profile', slug=doctor.slug) }}#reviews">({{ doctor.ratings_count | plural_word('Rating') }})</a>
+    </div>
+    <ul class="facts">
+      {% for line in doctor.award_lines %}<li><svg class="ic"><use href="#i-award"/></svg> {{ line }}</li>{% endfor %}
+      {% if doctor.is_enhanced and doctor.callout_label %}<li><svg class="ic"><use href="#i-thumb"/></svg> {{ doctor.callout_label }}</li>{% endif %}
+      <li><svg class="ic"><use href="#i-briefcase"/></svg> {{ doctor.years_experience }} Years Experience</li>
+      {% if doctor.is_enhanced %}<li><svg class="ic {{ '' if doctor.accepting_new_patients else 'gray' }}"><use href="#i-check-circle"/></svg> {{ 'Accepting New Patients' if doctor.accepting_new_patients else 'Not Accepting New Patients' }}</li>{% endif %}
+    </ul>
+    {% if doctor.is_enhanced and doctor.virtual_visit %}<span class="tele-pill">Telehealth Available</span>{% endif %}
+    <div class="addr">{{ loc.address_line }}{% if distance is defined and distance is not none %}<span class="dist">{{ distance | miles }}</span>{% endif %}</div>
+    <p class="snippet">"{{ doctor.card_snippet }}"</p>
+    {% if show_remove %}
+      <div class="card-actions">
+        <form method="post" action="{{ url_for('account_saved_remove', slug=doctor.slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline btn-sm" type="submit">Remove</button></form>
+      </div>
+    {% endif %}
+  </div>
+  {% if doctor.is_enhanced %}
+    <div class="cta-col">
+      <a class="btn btn-primary" href="{{ url_for('doctor_profile', slug=doctor.slug) }}#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ loc.phone }}</a>
+      <a class="btn btn-ghost" href="{{ url_for('book_appointment', slug=doctor.slug) }}"><svg class="ic"><use href="#i-calendar"/></svg> Request Now</a>
+    </div>
+  {% endif %}
+</article>

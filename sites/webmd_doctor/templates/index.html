@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% set hide_search_row = true %}
+{% block body_class %}home{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <div class="kicker">8 million+ Physician Ratings &amp; Reviews</div>
+    <h1>Find Doctors and Dentists Near You</h1>
+    {% with search_bar_id='hero' %}{% include "_search_bar.html" %}{% endwith %}
+    <div class="chips">
+      {% for label, href in preset_chips %}<a class="chip" href="{{ href }}">{{ label }}</a>{% endfor %}
+    </div>
+  </div>
+</section>
+<section class="home-promo">
+  <div class="container grid">
+    <div>
+      <h2>Choose the healthcare<br>that is right for you</h2>
+      <ul>
+        <li><span>Profiles for <strong>3 million+ physicians</strong></span></li>
+        <li><span><strong>Book appointments online</strong> including Video Visit and Chat Now options</span></li>
+        <li><span>Find <strong>award winning hospitals</strong> by specialty</span></li>
+      </ul>
+    </div>
+    <div class="promo-art">
+      <div class="promo-photo" aria-hidden="true"></div>
+      <div class="promo-card rating"><strong>Doctors Rating</strong><div class="rating-line">{% with rating=5.0, small=true %}{% include "_stars.html" %}{% endwith %} <strong>5.0</strong></div><div class="muted">16 Reviews</div><hr style="border:0;border-top:1px solid #e4e7ed;margin:10px 0"><div><svg class="ic ic-blue"><use href="#i-thumb"/></svg> Explains conditions and treatments</div></div>
+      <div class="promo-card facts"><ul><li><svg class="ic ic-blue"><use href="#i-briefcase"/></svg> 14 Years Experience</li><li><svg class="ic ic-blue"><use href="#i-check"/></svg> Accepts Medicare</li><li><svg class="ic ic-blue"><use href="#i-people"/></svg> Speaks Spanish</li><li><svg class="ic ic-blue"><use href="#i-calendar"/></svg> Book Today</li></ul></div>
+    </div>
+  </div>
+</section>
+<section class="home-section">
+  <div class="container">
+    <h2>Popular specialties</h2>
+    <div class="spec-grid">
+      {% for specialty in specialties %}<a class="spec-tile" href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.singular }}</a>{% endfor %}
+    </div>
+  </div>
+</section>
+<section class="home-section top-docs" style="background:#f7f9fc">
+  <div class="container">
+    <div class="kicker">Top Doctors Near</div>
+    <div class="place">Newark, DE</div>
+    <div class="mini-grid three">
+      {% for doctor in top_doctors %}{% include "_mini_card.html" %}{% endfor %}
+    </div>
+    <p style="margin-top:20px"><a class="btn btn-ghost btn-pill" href="{{ url_for('results') }}">FIND YOUR DOCTOR</a></p>
+    <p class="muted">Physicians: <a href="#">Claim Your Profile ›</a></p>
+  </div>
+</section>
+<section class="awards-band">
+  <div class="container grid">
+    <div class="art" aria-hidden="true"></div>
+    <div>
+      <h3>WebMD Choice Awards</h3>
+      <h2>Power to the Patients</h2>
+      <p>You need information that you can trust when seeking care. The WebMD Choice Awards is the only hospital recognition program based on the opinion of patients and health care providers. Because we believe when patients have a voice, everybody wins.</p>
+      <a class="btn btn-pill" style="border-color:#fff;color:#fff" href="{{ url_for('choice_awards') }}">SEE HOSPITAL RANKINGS</a>
+    </div>
+  </div>
+</section>
+<section class="by-specialty">
+  <div class="container">
+    <h2>Healthcare specialists for everyone everywhere</h2>
+    <div class="label">BY SPECIALTY</div>
+    <div class="spec-cols">
+      {% for specialty in specialties %}<a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.name }}</a>{% endfor %}
+    </div>
+    <p style="margin-top:20px"><a href="{{ url_for('specialty_index') }}">View all specialties ›</a></p>
+  </div>
+</section>
+<section class="hero compact">
+  <div class="container">
+    <div class="kicker">8 million+ Physician Ratings &amp; Reviews</div>
+    <h1>Find Doctors and Dentists Near You</h1>
+    {% with search_bar_id='bottom' %}{% include "_search_bar.html" %}{% endwith %}
+    <div class="chips">
+      {% for label, href in preset_chips %}<a class="chip" href="{{ href }}">{{ label }}</a>{% endfor %}
+    </div>
+  </div>
+</section>
+<section class="browse-popular">
+  <div class="container">
+    <h2>Browse Popular Specialties</h2>
+    <div class="browse-grid">
+      {% for specialty in specialties %}<a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.name }} <svg class="ic ic-blue"><use href="#i-chevron"/></svg></a>{% endfor %}
+    </div>
+  </div>
+</section>
+<script id="typeahead-data" type="application/json">{{ typeahead | tojson }}</script>
+{% endblock %}

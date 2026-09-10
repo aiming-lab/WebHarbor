@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ hospital.name }} - {{ hospital.city.name }}, {{ hospital.city.state }}{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('hospitals_index') }}">Hospitals</a><span class="sep">›</span><a href="{{ url_for('hospitals_state', state=hospital.city.state_slug) }}">{{ hospital.city.state }}</a><span class="sep">›</span><span>{{ hospital.name }}</span></div>
+  <div class="hub-hero"><h1>{{ hospital.name }}</h1></div>
+  <div class="hub-meta">
+    <div class="stats"><span>{{ specialty_rows | length | plural_word('Specialty', 'Specialties') }}</span><span>{{ doctors | length | plural_word('Practicing Physician') }}</span></div>
+    <div class="rating-line" id="ratings">{% with rating=hospital.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} ({{ hospital.ratings_count }}) | <a href="#ratings"><svg class="ic"><use href="#i-edit"/></svg> Write A Review</a></div>
+    <div><svg class="ic ic-blue"><use href="#i-pin"/></svg> {{ hospital.street }} {{ hospital.city.name }}, {{ hospital.city.state }} {{ hospital.zip }}</div>
+    <a class="btn btn-primary btn-pill" style="margin-top:12px" href="#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ hospital.phone }}</a>
+  </div>
+  <div class="profile-grid">
+    <div class="stack">
+      <section class="panel"><div class="panel-head"><svg class="ic"><use href="#i-doc"/></svg><h2>Overview</h2></div><div class="panel-body"><p>{{ hospital.overview_text }}</p></div></section>
+      <section class="panel" id="physicians">
+        <div class="panel-head"><svg class="ic"><use href="#i-people"/></svg><h2>Physicians At {{ hospital.name }}</h2></div>
+        <div class="panel-body">
+          <div class="showing">Showing <strong>{{ page.start }}-{{ page.end }}</strong> of <strong>{{ page.total }}</strong> Physicians</div>
+          <div class="phys-grid">
+            {% for doctor in page.rows %}
+              <div class="phys-row">
+                <img class="avatar" src="{{ url_for('static', filename=doctor.avatar_path) }}" alt="">
+                <div>
+                  <div class="name"><a href="{{ url_for('doctor_profile', slug=doctor.slug) }}">{{ doctor.display_name }}</a></div>
+                  <div class="sub">{{ doctor.primary_specialty.name }}</div>
+                  <div class="rating-line" style="margin:2px 0">{% with rating=doctor.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} <a href="{{ url_for('doctor_profile', slug=doctor.slug) }}#reviews">({{ doctor.ratings_count }})</a></div>
+                  {% if doctor.accepting_new_patients %}<div class="sub">Accepting New Patients</div>{% endif %}
+                </div>
+              </div>
+            {% endfor %}
+          </div>
+          {% include "_pagination.html" %}
+        </div>
+      </section>
+      <section class="panel"><div class="panel-head"><svg class="ic"><use href="#i-stethoscope"/></svg><h2>Specialties</h2></div><div class="panel-body"><p><strong>{{ doctors | length }}</strong> practicing physicians across <strong>{{ specialty_rows | length }}</strong> specialties are affiliated with this hospital.</p><ul class="two-col">{% for name, count in specialty_rows %}<li>{{ name }} ({{ count }})</li>{% endfor %}</ul></div></section>
+      <section class="panel" id="locations"><div class="panel-head"><svg class="ic"><use href="#i-pin"/></svg><h2>Locations</h2></div><div class="panel-body"><div class="loc"><div><div class="loc-name">{{ hospital.name }}</div><div>{{ hospital.street }}<br>{{ hospital.city.name }}, {{ hospital.city.state }} {{ hospital.zip }}</div><div style="margin-top:8px">Tel: <a href="#locations">{{ hospital.phone }}</a></div><div><a href="{{ hospital.website }}" rel="nofollow">{{ hospital.website }}</a></div></div><div class="map">Map unavailable in mirror</div></div></div></section>
+      <section class="panel"><div class="panel-head"><svg class="ic"><use href="#i-star"/></svg><h2>Ratings And Reviews</h2></div><div class="panel-body"><div class="review-summary"><div><strong>{{ hospital.name }} Rating</strong><div class="rating-line">{% with rating=hospital.avg_rating %}{% include "_stars.html" %}{% endwith %} {{ hospital.ratings_count | plural_word('Rating') }}</div></div><div><span class="muted">Reviews are written on provider profiles</span></div></div></div></section>
+      <section class="panel"><div class="panel-head"><svg class="ic"><use href="#i-list"/></svg><h2>Patient Satisfaction Poll</h2></div><div class="panel-body">{% for row in poll_rows %}<div class="poll"><div><div class="q">{{ row.question }}</div><div class="yn"><span>Yes</span><span>No</span></div></div><div class="counts"><span>Yes ({{ row.yes }})</span><span class="bar"></span><span>No ({{ row.no }})</span></div></div>{% endfor %}</div></section>
+      <section class="panel faq"><div class="panel-head"><svg class="ic"><use href="#i-question"/></svg><h2>Frequently Asked Questions</h2></div><div class="panel-body"><dl>
+        <dt>Where is {{ hospital.name }} located?</dt><dd>{{ hospital.name }} is located at {{ hospital.street }}, {{ hospital.city.name }}, {{ hospital.city.state }}, {{ hospital.zip }}.</dd>
+        <dt>What is {{ hospital.name }}'s phone number?</dt><dd>The contact number for {{ hospital.name }} is {{ hospital.phone }}.</dd>
+        <dt>Has {{ hospital.name }} won any recent awards from WebMD?</dt><dd>{% if award_count %}{{ award_count | plural_word('physician award') }} have been earned by providers affiliated with {{ hospital.name }}.{% else %}No, {{ hospital.name }} has not received any WebMD Choice awards.{% endif %}</dd>
+        <dt>What specialties are available at {{ hospital.name }}?</dt><dd>There are {{ doctors | length }} practicing providers across {{ specialty_rows | length }} specialties working at {{ hospital.name }}. Top specialties include {{ top_specialties | join(', ') }}.</dd>
+        <dt>How do I schedule an initial appointment at {{ hospital.name }}?</dt><dd>You can call {{ hospital.phone }} to schedule an appointment at {{ hospital.name }} or you can call any of the providers listed under "Physicians At This Hospital".</dd>
+      </dl></div></section>
+    </div>
+    <aside class="rail"></aside>
+  </div>
+</div>
+{% endblock %}

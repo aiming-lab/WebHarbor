@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ term }} near {{ heading_place }}{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="results-head">
+    <h1>{{ term }} <span class="muted" style="font-weight:400">near</span> <strong>{{ heading_place }}</strong></h1>
+    <div class="count">{{ page.total | plural_word('Result') }}</div>
+  </div>
+  {% if loc.fallback %}<div class="notice">Showing providers near Newark, DE 19711 — we couldn't match '{{ loc.input }}'.</div>{% endif %}
+  {% include "_filter_bar.html" %}
+  <div class="info-banner"><span class="badge">WebMD PATIENT'S CHOICE</span><span><strong style="color:var(--card-navy)">Patients' Choice</strong> awards are assigned based on patient satisfaction ratings for key specialties in select geographic locations.</span></div>
+  <div class="section-label">All Results</div>
+  {% if page.rows %}
+    <div class="card-list">
+      {% for row in page.rows %}{% with doctor=row.doctor, distance=row.distance %}{% include "_physician_card.html" %}{% endwith %}{% endfor %}
+    </div>
+    {% include "_pagination.html" %}
+  {% else %}
+    <div class="panel empty">No providers matched these filters near {{ heading_place }}. Try widening the distance or clearing a filter.</div>
+  {% endif %}
+</div>
+{% endblock %}

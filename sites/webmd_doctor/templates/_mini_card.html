@@ -1,0 +1,12 @@
+<div class="mini-card">
+  <img class="avatar" src="{{ url_for('static', filename=doctor.avatar_path) }}" alt="">
+  <div class="name">{{ doctor.display_name }}</div>
+  <div class="spec">{{ doctor.primary_specialty.name }}</div>
+  <div class="rating-line" style="justify-content:center">
+    <span>{{ doctor.avg_rating | rating1 }}</span>
+    {% with rating=doctor.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %}
+    <a href="{{ url_for('doctor_profile', slug=doctor.slug) }}#reviews">({{ doctor.ratings_count | plural_word('Rating') }})</a>
+  </div>
+  <div class="meta"><svg class="ic ic-blue"><use href="#i-briefcase"/></svg> {{ doctor.years_experience }} Years Exp{% if doctor.awards %} · <svg class="ic ic-blue"><use href="#i-award"/></svg> {{ doctor.awards | length | plural_word('Award') }}{% endif %}</div>
+  <a class="btn btn-ghost btn-wide btn-sm" href="{{ url_for('doctor_profile', slug=doctor.slug) }}">View Profile</a>
+</div>
