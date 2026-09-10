@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Homes {{ status_label }} | Compass{% endblock %}
+{% block content %}
+<div class="container section">
+  <h1>{{ status_label }} — Browse by city</h1>
+  <p style="color:var(--c-gray-4)">Pick a market to see available homes.</p>
+  <div class="grid-cards" style="margin-top:32px">
+    {% for c in cities %}
+      <a class="card" href="{% if status == 'for-sale' %}{{ url_for('city_for_sale', city_state=c.slug) }}{% else %}{{ url_for('city_for_rent', city_state=c.slug) }}{% endif %}">
+        <div class="city-tile" style="background-image:url('{{ c.hero_image }}')">
+          <div class="label">{{ c.name }}, {{ c.state }}</div>
+        </div>
+        <div class="meta" style="margin-top:8px; color:var(--c-gray-4); font-size:13px">{{ c.blurb[:90] }}…</div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

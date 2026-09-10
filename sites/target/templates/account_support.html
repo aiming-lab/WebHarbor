@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Support requests | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section account-layout">
+    {% include "_account_nav.html" %}
+    <div>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Account</p>
+          <h1>Your support requests</h1>
+        </div>
+        <a class="button" href="{{ url_for('support_new_ticket') }}">Contact us</a>
+      </div>
+
+      {% if tickets %}
+        <div class="panel">
+          {% for ticket in tickets %}
+            <article class="summary-row summary-row--stacked">
+              <div>
+                <strong>{{ ticket.subject }}</strong>
+                <p>{{ ticket.summary }}</p>
+                <span class="muted">{{ ticket.channel }} · opened {{ ticket.created_at.strftime('%b %d, %Y') }}</span>
+              </div>
+              <span class="status-pill">{{ ticket.status }}</span>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <h3>No support requests yet</h3>
+          <p>If something goes wrong with an order, start a request and we'll track it here.</p>
+          <a class="button" href="{{ url_for('support_new_ticket') }}">Contact us</a>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container dashboard">
+  {% include "_account_nav.html" %}
+  <div>
+    <div class="section-row" style="margin-top:0">
+      <div>
+        <h1>{{ collection.name }}</h1>
+        <p style="color:var(--c-gray-4)">{{ collection.description }}</p>
+        <p style="font-size:13px; color:var(--c-gray-4)">Share token: <code>{{ collection.share_token }}</code> ·
+          <a href="{{ url_for('collection_share', token=collection.share_token) }}">Public link</a>
+        </p>
+      </div>
+      <form method="post" action="{{ url_for('collection_delete', cid=collection.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn outline tiny" type="submit" onclick="return confirm('Delete this collection?');">Delete collection</button>
+      </form>
+    </div>
+
+    {% if listings %}
+      <div class="grid-cards" style="grid-template-columns: repeat(2, 1fr)">
+        {% for L in listings %}
+          <div>
+            {% include "_card.html" %}
+            <form method="post" action="{{ url_for('collection_remove', cid=collection.id, listing_id=L.id) }}" style="margin-top:6px">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="btn outline tiny" type="submit">Remove from collection</button>
+            </form>
+          </div>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty">No homes in this collection yet. Visit a listing and add it to "{{ collection.name }}".</div>
+    {% endif %}
+
+    <div class="property-section"><h2>Add homes to your collection</h2><p>Open a home's details and choose this collection from the property actions.</p><a class="btn outline" href="{{ url_for('search') }}">Find homes to add</a></div>
+  </div>
+</div>
+{% endblock %}

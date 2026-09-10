@@ -26,7 +26,7 @@ SITES = [
     'allrecipes', 'amazon', 'apple', 'arxiv', 'bbc_news', 'booking',
     'github', 'google_flights', 'google_map', 'google_search',
     'huggingface', 'wolfram_alpha', 'cambridge_dictionary',
-    'coursera', 'espn',
+    'coursera', 'espn', 'merriam_webster', 'ikea', 'phys_org', 'target', 'ted', 'osu', 'rotten_tomatoes', 'compass', 'walmart_careers',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'
@@ -47,6 +47,8 @@ _site_locks = {s: threading.Lock() for s in SITES}
 # their first respawn — kill_site falls back to os.killpg + zombie poll
 # for those.
 _site_procs: dict = {}
+_site_procs_lock = threading.Lock()
+_reap_lock = threading.Lock()
 
 # We tried graceful SIGTERM. Werkzeug's threaded serve_forever() doesn't
 # honor it. Since /reset wipes instance/ next anyway, in-flight transactions
@@ -90,6 +92,18 @@ def is_alive(pid) -> bool:
         return False
 
 
+def reap_exited_children() -> None:
+    """Reap every exited direct child, including re-parented Flask workers."""
+    with _reap_lock:
+        while True:
+            try:
+                pid, _status = os.waitpid(-1, os.WNOHANG)
+            except ChildProcessError:
+                return
+            if pid <= 0:
+                return
+
+
 def kill_site(site: str, reap_grace: float = REAP_GRACE_SECS):
     pid = read_pid(site)
     if not pid:
@@ -100,25 +114,28 @@ def kill_site(site: str, reap_grace: float = REAP_GRACE_SECS):
         os.killpg(pid, signal.SIGKILL)
     except ProcessLookupError:
         pass
-    # If we own a Popen for this supervisor, wait()+reap so it doesn't
-    # linger as a zombie. (Supervisors started at boot via websyn_start.sh
-    # aren't tracked here; we still adopted them as children via container
-    # init, but Python won't reap them — they stay zombies until container
-    # exit. That's harmless: is_alive() correctly reports them as dead.)
-    proc = _site_procs.pop(site, None)
+    # Reap supervisors created through Popen and boot-time supervisors that
+    # became direct children when websyn_start.sh exec'd this control process.
+    with _site_procs_lock:
+        proc = _site_procs.pop(site, None)
     if proc is not None:
         try:
             proc.wait(timeout=reap_grace)
         except subprocess.TimeoutExpired:
             pass
+    reap_exited_children()
     # Belt-and-suspenders: confirm the supervisor is actually dead before
     # returning, even when we don't own the Popen. is_alive() looks at
     # /proc state and returns False for zombies, so this loop exits in ms.
     deadline = time.time() + reap_grace
     while time.time() < deadline:
         if not is_alive(pid):
+            for _ in range(10):
+                reap_exited_children()
+                time.sleep(0.01)
             return
         time.sleep(0.01)
+    raise RuntimeError(f'failed to stop {site} process group {pid}')
 
 
 def reset_db(site: str):
@@ -137,12 +154,16 @@ def start_site(site: str) -> int:
     # the rationale. start_new_session=True is redundant with the supervisor's
     # own setsid() but harmless and gives us a session leader from the very
     # first instant.
-    proc = subprocess.Popen(
-        ['python3', '/opt/site_runner.py', site, str(port)],
-        stdout=log, stderr=subprocess.STDOUT,
-        start_new_session=True,
-    )
-    _site_procs[site] = proc
+    try:
+        proc = subprocess.Popen(
+            ['python3', '/opt/site_runner.py', site, str(port)],
+            stdout=log, stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    finally:
+        log.close()
+    with _site_procs_lock:
+        _site_procs[site] = proc
     pid_path(site).write_text(str(proc.pid))
     return proc.pid
 
@@ -180,14 +201,25 @@ def restart_one(site: str) -> dict:
 
 @app.route('/health')
 def health():
-    sites = {}
-    all_ok = True
-    for s in SITES:
-        pid = read_pid(s)
+    reap_exited_children()
+
+    def status(site):
+        pid = read_pid(site)
         alive = is_alive(pid)
-        sites[s] = {'pid': pid, 'alive': alive, 'port': site_port(s)}
-        if not alive:
-            all_ok = False
+        ready = False
+        if alive:
+            try:
+                with urllib.request.urlopen(
+                        f'http://127.0.0.1:{site_port(site)}/', timeout=1) as response:
+                    ready = response.status < 500
+            except Exception:
+                ready = False
+        return site, {'pid': pid, 'alive': alive, 'ready': ready,
+                      'port': site_port(site)}
+
+    with ThreadPoolExecutor(max_workers=len(SITES)) as executor:
+        sites = dict(executor.map(status, SITES))
+    all_ok = all(item['alive'] and item['ready'] for item in sites.values())
     return jsonify({'ok': all_ok, 'sites': sites}), (200 if all_ok else 503)
 
 

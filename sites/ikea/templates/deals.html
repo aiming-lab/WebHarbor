@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Deals - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <h1>Deals and local promos</h1>
+  <p>These promotions are synthetic and deterministic for benchmark use.</p>
+</section>
+<div class="deal-grid">
+  {% for deal in deals %}
+    {% set product = highlighted.get(deal.product_sku) %}
+    <article class="deal-card large">
+      <span class="pill">{{ deal.badge }}</span>
+      <h2>{{ deal.title }}</h2>
+      <p>{{ deal.summary }}</p>
+      <strong>{{ deal.discount_text }}</strong>
+      {% if product %}
+        <a href="{{ url_for('product_detail', sku=product.sku) }}">Open {{ product.name }}</a>
+      {% endif %}
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{# Steps already completed link back, so a guest can return and correct an
+   earlier answer (an address typo used to mean restarting the whole flow).
+   The current and future steps stay inert — you can't skip ahead. #}
+{# confirmation renders without a checkout dict, so default before reading it #}
+{% set _co = checkout if checkout is defined and checkout else {} %}
+{% set steps = [
+  ('Choose fulfillment', 'checkout'),
+  ('Shipping / pickup',  _co.get('mode') == 'pickup' and 'checkout_pickup' or 'checkout_shipping'),
+  ('Payment',            'checkout_payment'),
+  ('Review',             'checkout_review'),
+  ('Confirmation',       none),
+] %}
+<div class="checkout-steps">
+  {% for label, endpoint in steps %}
+    {% if loop.index0 < current_step and endpoint %}
+      <a class="checkout-step is-active checkout-step--link" href="{{ url_for(endpoint) }}">
+        <span>{{ loop.index }}</span>
+        <strong>{{ label }}</strong>
+      </a>
+    {% else %}
+      <div class="checkout-step {% if loop.index0 <= current_step %}is-active{% endif %}">
+        <span>{{ loop.index }}</span>
+        <strong>{{ label }}</strong>
+      </div>
+    {% endif %}
+  {% endfor %}
+</div>

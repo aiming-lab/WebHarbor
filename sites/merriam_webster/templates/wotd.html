@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Word of the Day: {{ wotd.headword }} | Merriam-Webster{% endblock %}
+{% block content %}
+<div class="container section">
+  <div class="wotd-feature">
+    <div>
+      <div class="wotd-label">Word of the Day · {{ wotd.feature_date.strftime('%B %d, %Y') }}</div>
+      <h1 class="wotd-word">{{ wotd.headword }}</h1>
+      <div class="wotd-pos">{{ wotd.pos }}
+        {% if wotd.pronunciation %}<span class="wotd-pron">| {{ wotd.pronunciation }}</span>{% endif %}
+      </div>
+
+      <div class="entry-section">
+        <h2>What It Means</h2>
+        <p class="wotd-def">{{ wotd.definition }}</p>
+      </div>
+
+      {% if wotd.get_examples() %}
+      <div class="entry-section">
+        <h2>Examples</h2>
+        <ul class="examples">
+          {% for ex in wotd.get_examples() %}<li>{{ ex }}</li>{% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      {% if wotd.did_you_know %}
+      <div class="wotd-dyk entry-section">
+        <h3>Did You Know?</h3>
+        <p>{{ wotd.did_you_know }}</p>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if recent %}
+  <div class="entry-section">
+    <h2 class="section-title">Recent Words of the Day</h2>
+    <div class="card-grid">
+      {% for r in recent %}
+      <a class="word-card" href="{{ url_for('word_of_the_day', slug=r.headword) }}">
+        <div class="wc-head">{{ r.headword }}</div>
+        <div class="wc-pos">{{ r.feature_date.strftime('%b %d, %Y') }}</div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

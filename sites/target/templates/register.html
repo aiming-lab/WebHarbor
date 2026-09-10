@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Register | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section auth-layout">
+    <div class="panel">
+      <p class="eyebrow">Register</p>
+      <h1>Create your Target account</h1>
+      <form method="post" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Full name
+          <input type="text" name="full_name" required>
+        </label>
+        <label>Email
+          <input type="email" name="email" required>
+        </label>
+        <label>Password
+          <input type="password" name="password" required>
+        </label>
+        <label>Confirm password
+          <input type="password" name="confirm_password" required>
+        </label>
+        <label>Preferred store
+          <select name="preferred_store_slug">
+            <option value="">Pick later</option>
+            {% for store in stores %}
+              <option value="{{ store.slug }}">{{ store.name }}  - {{ store.city }}, {{ store.state }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="filter-form__row">
+          <label>City
+            <input type="text" name="city">
+          </label>
+          <label>State
+            <input type="text" name="state">
+          </label>
+        </div>
+        <label>Phone
+          <input type="text" name="phone" placeholder="Optional">
+        </label>
+        <button class="button" type="submit">Create account</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>Why register?</h2>
+      <ul class="bullet-list">
+        <li>Save your wishlist, cart, and rewards.</li>
+        <li>Track your orders and manage returns.</li>
+        <li>Earn points with every purchase.</li>
+      </ul>
+    </div>
+  </section>
+{% endblock %}
+
+

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Categories | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Category map</p>
+        <h1>Shop by category</h1>
+      </div>
+    </div>
+    {# Grouped by section so the two-level taxonomy is reachable without
+       hovering the header flyout. #}
+    {% for section, cats in nav_sections %}
+      <div class="category-section">
+        <h2 class="category-section__heading">{{ section }}</h2>
+        <div class="category-grid">
+          {% for category in cats %}
+            <a href="{{ url_for('category_page', category_slug=category.slug) }}" class="category-card">
+              <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+              <div>
+                <strong>{{ category.name }}</strong>
+                <p>{{ category.description }}</p>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+  </section>
+{% endblock %}
+
+

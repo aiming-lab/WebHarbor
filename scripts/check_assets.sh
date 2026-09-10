@@ -18,16 +18,25 @@ warnings=0
 for site in sites/*/; do
     s=$(basename "$site")
     for sub in "${REQUIRED[@]}"; do
+        if [[ -f "sites/$s/.build-generated-seed" && "$sub" == "instance_seed" ]]; then
+            continue
+        fi
         if [[ ! -d "sites/$s/$sub" ]] || [[ -z $(ls -A "sites/$s/$sub" 2>/dev/null) ]]; then
             echo "  MISSING (required): sites/$s/$sub"
             missing=$((missing + 1))
         fi
     done
     for sub in "${OPTIONAL[@]}"; do
-        if [[ ! -d "sites/$s/$sub" ]] || [[ -z $(ls -A "sites/$s/$sub" 2>/dev/null) ]]; then
+        if { [[ -f "sites/$s/.requires-images" && "$sub" == "static/images" ]] || [[ -f "sites/$s/.requires-external-cache" && "$sub" == "static/external_cache" ]]; } && { [[ ! -d "sites/$s/$sub" ]] || [[ -z $(ls -A "sites/$s/$sub" 2>/dev/null) ]]; }; then
+            echo "  MISSING (required): sites/$s/$sub"
+            missing=$((missing + 1))
+        elif [[ ! -d "sites/$s/$sub" ]] || [[ -z $(ls -A "sites/$s/$sub" 2>/dev/null) ]]; then
             warnings=$((warnings + 1))
         fi
     done
+    if [[ -f "sites/$s/asset_inventory.json" ]]; then
+        python3 scripts/check_asset_inventory.py "sites/$s"
+    fi
 done
 
 if (( missing > 0 )); then
