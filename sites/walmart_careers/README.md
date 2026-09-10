@@ -1,6 +1,6 @@
 # Walmart Careers mirror
 
-This directory contains an offline Flask mirror modeled on `https://careers.walmart.com`. In the 24-site registry it runs on container port `40023`. All jobs, stores, requisition identifiers, user accounts, saved roles and applications are deterministic synthetic benchmark data.
+This directory contains an offline Flask mirror modeled on `https://careers.walmart.com`. In the 25-site registry it runs on container port `40023`. All jobs, stores, requisition identifiers, user accounts, saved roles and applications are deterministic synthetic benchmark data.
 
 ## Runtime
 
