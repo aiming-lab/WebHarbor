@@ -346,8 +346,8 @@
     if (q.length < 2){ hide(); return; }
     fetch('/api/autocomplete?q=' + encodeURIComponent(q))
       .then(function(r){ return r.json(); })
-      .then(render)
-      .catch(function(){ hide(); });
+      .then(function(data){ if (input.value.trim() === q) render(data); })
+      .catch(function(){ if (input.value.trim() === q) hide(); });
   }
 
   input.addEventListener('input', function(){

@@ -222,6 +222,29 @@ def test_remaining_navigation_and_layout_contracts_are_explicit():
         assert '<nav class="breadcrumb">' not in template.read_text(), template.name
 
 
+def test_final_provenance_table_and_dynamic_feedback_contracts():
+    templates = SITE / "templates"
+    detail = (templates / "drug_detail.html").read_text()
+    compare = (templates / "compare_drugs.html").read_text()
+    register = (templates / "register.html").read_text()
+    review = (templates / "drug_review_new.html").read_text()
+    inventory = json.loads((SITE / "content_inventory.json").read_text())
+    css = (SITE / "static" / "css" / "main.css").read_text()
+    assert "startswith('WARNING:')" not in detail
+    assert inventory["external_runtime_network_fetches"] == 0
+    assert "runtime_network_fetches" not in inventory
+    assert any(item["name"] == "template-defined navigation taxonomy and comparison suggestions" for item in inventory["content_families"])
+    assert compare.count('<th scope="row" class="cq-attr">') == 7
+    assert 'aria-describedby="pw-label"' in register and 'id="pw-label" class="muted is-087" role="status" aria-live="polite"' in register
+    assert 'aria-describedby="review-body-status"' in review and 'id="review-body-status" role="status" aria-live="polite"' in review
+    assert ".btn-primary:hover { background: #8f4000;" in css
+    assert ".hc-vitamins     { background: linear-gradient(135deg, #9b4600, #6d2f00); }" in css
+    assert ".news-article .article-body p { margin: 0 0 16px; }" in css
+    for template_name in ("base.html", "index.html", "compare_drugs.html", "interaction_checker.html"):
+        source = (templates / template_name).read_text()
+        assert "value.trim() === q" in source or "value.trim()===q" in source
+
+
 def test_missing_medical_fields_have_local_empty_states():
     templates = SITE / "templates"
     side_effects = (templates / "drug_side_effects.html").read_text()

@@ -126,12 +126,12 @@
         <h2>Warnings</h2>
         {% set _warn_text = (rt_warnings or '') %}
         {% set _warn_lower = _warn_text|lower %}
-        {% set _has_boxed = _warn_text and ('boxed warning' in _warn_lower or 'black box' in _warn_lower or _warn_text.lstrip().startswith('WARNING:')) %}
+        {% set _has_boxed = _warn_text and ('boxed warning' in _warn_lower or 'black box' in _warn_lower) %}
         {% if _has_boxed %}
         {% set _paras = _warn_text.split('\n\n') %}
         {% set _bx = namespace(text=None, rest=[]) %}
         {% for _p in _paras %}
-          {% if _bx.text is none and ('boxed warning' in _p|lower or 'black box' in _p|lower or _p.lstrip().startswith('WARNING:')) %}
+          {% if _bx.text is none and ('boxed warning' in _p|lower or 'black box' in _p|lower) %}
             {% set _bx.text = _p %}
           {% else %}
             {% set _bx.rest = _bx.rest + [_p] %}

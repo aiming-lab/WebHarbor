@@ -51,7 +51,7 @@
     function hide(){drop.hidden=true;drop.innerHTML='';items=[];active=-1;inp.setAttribute('aria-expanded','false');inp.removeAttribute('aria-activedescendant');}
     function choose(index){if(index<0||index>=items.length)return;inp.value=items[index].name;hide();}
     function setActive(index){var nodes=drop.querySelectorAll('[role=option]');nodes.forEach(function(node){node.setAttribute('aria-selected','false');node.classList.remove('active');});active=index;if(index>=0&&index<nodes.length){nodes[index].setAttribute('aria-selected','true');nodes[index].classList.add('active');inp.setAttribute('aria-activedescendant',nodes[index].id);}}
-    inp.addEventListener('input',function(){clearTimeout(timer);var q=inp.value.trim();if(q.length<2){hide();return;}timer=setTimeout(function(){fetch('/api/autocomplete?q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(data){items=(data||[]).filter(function(row){return row.type!=='condition';}).slice(0,8);if(!items.length){hide();return;}drop.innerHTML=items.map(function(row,index){return '<div class="compare-ac-item" role="option" aria-selected="false" id="'+dropId+'-option-'+index+'" data-index="'+index+'">'+escapeHtml(row.label)+'</div>';}).join('');drop.hidden=false;inp.setAttribute('aria-expanded','true');drop.querySelectorAll('[role=option]').forEach(function(node){node.addEventListener('mousedown',function(event){event.preventDefault();choose(Number(node.dataset.index));});});}).catch(hide);},180);});
+    inp.addEventListener('input',function(){clearTimeout(timer);var q=inp.value.trim();if(q.length<2){hide();return;}timer=setTimeout(function(){fetch('/api/autocomplete?q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(data){if(inp.value.trim()!==q)return;items=(data||[]).filter(function(row){return row.type!=='condition';}).slice(0,8);if(!items.length){hide();return;}drop.innerHTML=items.map(function(row,index){return '<div class="compare-ac-item" role="option" aria-selected="false" id="'+dropId+'-option-'+index+'" data-index="'+index+'">'+escapeHtml(row.label)+'</div>';}).join('');drop.hidden=false;inp.setAttribute('aria-expanded','true');drop.querySelectorAll('[role=option]').forEach(function(node){node.addEventListener('mousedown',function(event){event.preventDefault();choose(Number(node.dataset.index));});});}).catch(function(){if(inp.value.trim()===q)hide();});},180);});
     inp.addEventListener('keydown',function(event){if(drop.hidden||!items.length)return;if(event.key==='ArrowDown'){event.preventDefault();setActive((active+1)%items.length);}else if(event.key==='ArrowUp'){event.preventDefault();setActive((active-1+items.length)%items.length);}else if(event.key==='Enter'&&active>=0){event.preventDefault();choose(active);}else if(event.key==='Escape'){hide();}});
     inp.addEventListener('blur',function(){setTimeout(hide,200);});
   }
@@ -86,29 +86,29 @@
       </thead>
       <tbody>
         <tr>
-          <td class="cq-attr">Drug class</td>
+          <th scope="row" class="cq-attr">Drug class</th>
           {% for _, d, _f in selected_drugs %}
             <td>{{ d.drug_class.name if d.drug_class else '—' }}</td>
           {% endfor %}
         </tr>
         <tr>
-          <td class="cq-attr">Availability</td>
+          <th scope="row" class="cq-attr">Availability</th>
           {% for _, d, _f in selected_drugs %}
             <td>{{ d.availability or '—' }}</td>
           {% endfor %}
         </tr>
         <tr>
-          <td class="cq-attr">Pregnancy fixture field</td>
+          <th scope="row" class="cq-attr">Pregnancy fixture field</th>
           {% for _, d, _f in selected_drugs %}<td>{{ d.pregnancy_risk or 'Not stored' }}</td>{% endfor %}
         </tr>
         <tr>
-          <td class="cq-attr">CSA schedule</td>
+          <th scope="row" class="cq-attr">CSA schedule</th>
           {% for _, d, _f in selected_drugs %}
             <td>{{ d.csa_schedule or 'N/A' }}</td>
           {% endfor %}
         </tr>
         <tr>
-          <td class="cq-attr">Brand names</td>
+          <th scope="row" class="cq-attr">Brand names</th>
           {% for _, d, _f in selected_drugs %}
             <td>{{ d.brand_names|join(', ') or '—' }}</td>
           {% endfor %}
@@ -119,7 +119,7 @@
         {% endfor %}
         {% set _rating_tie = _rounded_ratings|length >= 2 and (_rounded_ratings|unique|list)|length < _rounded_ratings|length %}
         <tr>
-          <td class="cq-attr">Average rating</td>
+          <th scope="row" class="cq-attr">Average rating</th>
           {% for _, d, _f in selected_drugs %}
             <td>
               {% if d.review_count and d.review_count > 0 %}
@@ -141,7 +141,7 @@
         </tr>
         {% if _rating_tie %}
         <tr>
-          <td class="cq-attr"></td>
+          <th scope="row" class="cq-attr"><span class="visually-hidden">Rating comparison note</span></th>
           <td colspan="{{ selected_drugs|length }}" class="cq-rating-tie-note">
             <span class="cq-tie-badge">Tie</span>
             Two or more fixture records share the same simulated average rating.

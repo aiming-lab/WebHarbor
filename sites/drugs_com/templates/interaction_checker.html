@@ -287,7 +287,7 @@
       fetch('/api/autocomplete?q=' + encodeURIComponent(q))
         .then(function(r){ return r.json(); })
         .then(function(data){
-          if(!input.value.trim()){ acHide(); return; }
+          if(input.value.trim() !== q){ return; }
           acItems = (data||[]).filter(function(r){ return r.type !== 'condition'; }).slice(0,8);
           if(!acItems.length){ acHide(); return; }
           acDrop.innerHTML = acItems.map(function(row, index){ return '<div class="checker-ac-item" role="option" aria-selected="false" id="checker-option-' + index + '" data-index="' + index + '">' + escapeHtml(row.label) + '</div>'; }).join('');
@@ -295,7 +295,7 @@
           acDrop.querySelectorAll('[role=option]').forEach(function(el){
             el.addEventListener('mousedown', function(e){ e.preventDefault(); acChoose(Number(el.dataset.index)); });
           });
-        }).catch(acHide);
+        }).catch(function(){ if(input.value.trim() === q) acHide(); });
     }, 180);
   });
   input.addEventListener('blur', function(){ setTimeout(acHide, 200); });

@@ -76,7 +76,7 @@
       var q = input.value.trim();
       if (q.length < 2){ hide(); return; }
       fetch('/api/autocomplete?q=' + encodeURIComponent(q))
-        .then(function(r){ return r.json(); }).then(render).catch(hide);
+        .then(function(r){ return r.json(); }).then(function(data){ if (input.value.trim() === q) render(data); }).catch(function(){ if (input.value.trim() === q) hide(); });
     }
     input.addEventListener('input', function(){ if (timer) clearTimeout(timer); timer = setTimeout(fetchSuggestions, 180); });
     input.addEventListener('keydown', function(e){

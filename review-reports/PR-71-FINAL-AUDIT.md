@@ -13,7 +13,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The original control plane allowed unauthenticated reset/restart operations. Session secrets, login controls, input bounds, transaction behavior, account ownership, anonymous review voting, and SQLite constraints also required review.
 - **Verification:** Direct source inspection confirmed public mutation routes in `control_server.py`, process-local concurrency assumptions, anonymous vote-ledger growth, registration commit ordering, weak nullability, and session-cookie data exposure.
 - **Remediation:** Every control endpoint now requires a constant-time bearer-token check. Drugs.com has a cryptographically random runtime secret, bounded requests and fields, CSRF on mutations, strict safe redirects, login throttling, a bounded runtime account count, unique site-specific cookie names, optional secure cookies for TLS deployments, authenticated-only bounded helpful votes, ownership-scoped mutations, non-null/check/unique/FK constraints, and an exclusive per-database process lock. Anonymous email and medication-browsing history are not stored in the client cookie.
-- **Evidence:** `sites/drugs_com/tests/test_app.py`; authenticated and unauthenticated control-plane tests in `sites/drugs_com/tests/test_integration.py`; final Drugs.com suite: 328 passed.
+- **Evidence:** `sites/drugs_com/tests/test_app.py`; authenticated and unauthenticated control-plane tests in `sites/drugs_com/tests/test_integration.py`; final Drugs.com suite: 329 passed.
 
 ### Reviewer 2 — application behavior and data consistency
 
@@ -34,7 +34,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The original verifiers accepted fabricated origins, `inspect`-only trajectories, blank screenshots, loose final-URL shortcuts, negated or numerically reassociated answers, wrong entity associations, and incorrect Task 13 pairings.
 - **Verification:** Adversarial fixtures reproduced wrong-origin, shortcut, contradiction, extra-entity, wrong-credential, malformed-PNG, schema mutation, row mutation, number-binding, and pair-swapping false positives.
 - **Remediation:** Verifiers now require the exact task ID and `localhost:40024` origin, successful supported browser actions, ordered UI transitions, exact input multisets, decoded nonblank PNG sequences with visual transitions, a final `done` action bound to the answer, canonical initial seed SHA-256, exact schema/table/row/byte equality, task-specific entity and numeric binding, explicit contradiction checks, domain exclusivity, and exact ordered drug/imprint pair segments.
-- **Evidence:** 204 positive and adversarial verifier cases are included in the 328-test Drugs.com suite; final real-browser run passes all 21 entry points. The verifier trusts the browser harness to write `action_result`; it does not claim a cryptographic attestation against a process that can arbitrarily rewrite the complete run directory.
+- **Evidence:** 204 positive and adversarial verifier cases are included in the 329-test Drugs.com suite; final real-browser run passes all 21 entry points. The verifier trusts the browser harness to write `action_result`; it does not claim a cryptographic attestation against a process that can arbitrarily rewrite the complete run directory.
 
 ### Reviewer 5 — UI, responsive behavior, accessibility, and progressive enhancement
 
@@ -48,7 +48,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The original branch targeted an obsolete site count and port, used a stale asset revision, and had no final Docker artifact or robust reset evidence.
 - **Verification:** The 25-site order was compared across `websyn_start.sh`, `control_server.py`, Docker, docs, task manifests, and current main. The pinned HF revision and archive set were fetched from scratch.
 - **Remediation:** Drugs.com is site 25 at `40024`; `.assets-revision` pins immutable HF commit `18e64e4d230794f990199f3327432d26db36866f`; fetch validates the exact archive-name set and site-aware seed requirements; Docker performs a final 25-database integrity gate; control reset uses staging/rename and treats backup cleanup outside rollback; reset-all returns structured partial results.
-- **Evidence:** Fresh 25-archive fetch/check passed. Drugs.com archive: 134 bytes, SHA-256 `fa2092873de0d2a06c2ecac5fd389a8863ab3e271b9c197f9c3dd5fa984f378b`. No-cache image build `sha256:96e021b50b3f720664d02ee511cd5922e7bc6caffeddc0a687dc9736ee9f051a` passed its 25-seed gate.
+- **Evidence:** Fresh 25-archive fetch/check passed. Drugs.com archive: 134 bytes, SHA-256 `fa2092873de0d2a06c2ecac5fd389a8863ab3e271b9c197f9c3dd5fa984f378b`. The no-cache image build passed its 25-seed gate; the post-commit image digest is recorded in the external completion packet to avoid a self-referential tracked artifact.
 
 ### Reviewer 7 — tests, evidence, and repository hygiene
 
@@ -167,7 +167,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** Several review/action links had missing or wrong destinations; missing availability produced Rx/Rx-OTC claims; two search inputs lacked focus indication; tabs lacked roving `tabindex`; account/current navigation lacked semantics; optional pill radio criteria could not be cleared independently.
 - **Verification:** Every cited link, fallback, focus selector, tab state, landmark, and pill form was inspected and exercised in source and browser tests.
 - **Remediation:** Links target dedicated review/compare routes without missing fragments; availability uses literal stored/empty states and the status icon reflects the field; focus-visible outlines are explicit; custom tabs implement roving `tabindex`; account and drug-detail navigation has labels/current state; Any shape/Any color and an always-available clear action support independent filter removal.
-- **Evidence:** Source contracts, the full responsive/accessibility and no-JavaScript matrices, and fourteen targeted browser checks for roving tabs, visible focus, independent pill-filter clearing, and link destinations pass.
+- **Evidence:** Source contracts, the full responsive/accessibility and no-JavaScript matrices, and seventeen targeted browser checks for roving tabs, visible focus, independent pill-filter clearing, and link destinations pass.
 
 ### Reviewer 16 — third immutable integration/release completion audit
 
@@ -181,7 +181,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** Search empty-state wording still suggested a real-pill use case for a synthetic matcher; JavaScript-disabled checker/price pages retained dead controls; small orange badges failed normal-text contrast; dynamic filter counts lacked live status semantics; empty condition letters were pointer-disabled links that remained keyboard-operable.
 - **Verification:** The cited wording and controls were inspected with JavaScript disabled; computed contrast, live-region attributes, and empty-letter element semantics were exercised.
 - **Remediation:** Search now limits the matcher to synthetic fixture fields and explicitly denies real identification; JavaScript-only controls are hidden beside native fallbacks; orange text backgrounds use the tested dark palette; filter counts use polite status regions; empty letters are noninteractive disabled spans.
-- **Evidence:** Twelve no-JavaScript workflows, the 464-page matrix, and fourteen targeted UI/browser checks pass.
+- **Evidence:** Twelve no-JavaScript workflows, the 464-page matrix, and seventeen targeted UI/browser checks pass.
 
 ### Reviewer 16 — fourth immutable integration/release completion audit
 
@@ -257,7 +257,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The JavaScript demo identifier was CSS-hidden after activation; symptoms auto-submitted on change; breadcrumbs were unnamed; Pro/source/sitemap layouts lacked narrow contracts; sitemap copy implied external completeness.
 - **Verification:** The same controls were checked through computed display/ARIA state, multi-selection without navigation, landmark names, and 360-pixel computed layout.
 - **Remediation:** Hidden state and disclosure state agree; symptoms wait for explicit submit; every breadcrumb is named; resource and inventory layouts collapse; sitemap copy states the local incomplete scope.
-- **Evidence:** Fourteen targeted browser checks, 464 matrix checks, and twelve no-JavaScript workflows pass.
+- **Evidence:** Seventeen targeted browser checks, 464 matrix checks, and twelve no-JavaScript workflows pass.
 
 ### Reviewer 16 — seventh immutable integration/release completion audit
 
@@ -300,7 +300,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 
 - **Observation:** Synthetic captions shared cramped row-flex visuals; carousel arrows remained active after the track became a mobile grid; no-JavaScript review deletion lost confirmation.
 - **Remediation:** Pill visual/caption wrappers use vertical contained layout, fixed card dimensions were removed, mobile-grid arrows are hidden, and deletion requires a visible native checkbox plus server-side confirmation for every browser mode.
-- **Evidence:** Fourteen targeted browser checks and twelve no-JavaScript workflows pass, including caption containment, mobile control state, and native deletion confirmation.
+- **Evidence:** Seventeen targeted browser checks and twelve no-JavaScript workflows pass, including caption containment, mobile control state, and native deletion confirmation.
 
 ### Reviewer 13 — tenth immutable security/application audit
 
@@ -316,7 +316,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 
 - **Observation:** Pill captions competed horizontally with synthetic diagrams, mobile carousel arrows had no horizontal track, and no-JavaScript deletion lost confirmation.
 - **Remediation:** Pill wrappers are vertical and contained, mobile-grid arrows are hidden, and deletion requires a native required checkbox plus server-side confirmation.
-- **Evidence:** Fourteen targeted browser checks and twelve no-JavaScript workflows cover these paths.
+- **Evidence:** Seventeen targeted browser checks and twelve no-JavaScript workflows cover these paths.
 
 ### Reviewer 16 — tenth immutable integration/release audit
 
@@ -327,6 +327,12 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** Count/severity, dosage, rating/review, status, pregnancy, and frequency facts could be reassigned to another entity; gastrointestinal and bleeding terms could describe separate risks; credential inputs reused one control index; additional neutral phrasings were rejected.
 - **Remediation:** Every requested fact set now shares a sentence with its named entity; Task 2 requires an explicit gastrointestinal/digestive-system bleeding relation; login credential inputs require distinct trusted control indices; categorized/trade-name, mild-to-moderate adult, and digestive-system phrasings are supported.
 - **Evidence:** 204 verifier cases and the final 21-task browser run pass within the documented trusted harness boundary.
+
+### Reviewer 15 — twelfth UI/accessibility remediation
+
+- **Observation:** A generic `WARNING:` prefix was promoted to regulatory boxed-warning status; template-defined navigation taxonomy was omitted from provenance; comparison attributes lacked row headers; dynamic strength/count feedback lacked live semantics; several normal-text colors failed contrast; autocomplete responses could overwrite newer queries; article CSS targeted unused selectors.
+- **Remediation:** Boxed styling requires explicit boxed/black-box text; inventory distinguishes external from same-origin fetches and maps template navigation declarations; comparison attributes are scoped row headers; feedback is described polite status; all cited colors meet contrast; every autocomplete response verifies the current query; actual article markup receives typography/layout rules.
+- **Evidence:** Seventeen targeted browser checks and the source-contract suite cover row headers, live feedback, stale-response suppression, contrast, and article spacing.
 
 ## Canonical Drugs.com Seed
 
@@ -341,10 +347,10 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 
 | Scope | Result |
 |---|---|
-| Drugs.com application, seed, integration, verifier positive/adversarial tests | 328 passed, including 204 verifier cases |
+| Drugs.com application, seed, integration, verifier positive/adversarial tests | 329 passed, including 204 verifier cases |
 | Real browser tasks | 21/21 passed, 99 successful steps |
 | Responsive/accessibility route matrix | 464 passed, 8 widths, 58 route/auth cases per width |
-| Targeted keyboard/filter/navigation browser checks | 14/14 passed |
+| Targeted keyboard/filter/navigation browser checks | 17/17 passed |
 | No-JavaScript workflows | 12/12 passed |
 | Walmart Careers regression | 297 passed, 16 subtests passed |
 | Rotten Tomatoes regression | 66 passed, 4143 subtests passed, 28 SQLAlchemy legacy warnings |
@@ -352,7 +358,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 | TED regression | 27 passed, 291 subtests passed |
 | Compass regression | 229 passed |
 | Fresh HF archive fetch and asset/seed checks | 25 archives passed |
-| No-cache Docker build | passed; image `sha256:96e021b50b3f720664d02ee511cd5922e7bc6caffeddc0a687dc9736ee9f051a` |
+| No-cache Docker build | passed; post-commit digest recorded in the external completion packet |
 | Candidate container | 25 roots passed; 25 seed DBs valid; 11 individual Drugs.com resets; 2 reset-all cycles; restart passed |
 | Candidate process stability | control FDs 4→4; processes 52→52; zombies 0 |
 
