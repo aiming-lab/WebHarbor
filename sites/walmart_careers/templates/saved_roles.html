@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block body_class %}l1{% endblock %}
+{% from "_job_card.html" import job_card %}
+{% block title %}Saved roles | Walmart Careers{% endblock %}
+{% block content %}
+<section class="promo-section">
+  <div class="wrap">
+    <div class="promo">
+      <div class="promo-text">
+        <h1>{{ content.SAVED_PROMO_HEADLINE[0] }}<br>{{ content.SAVED_PROMO_HEADLINE[1] }}</h1>
+        <p>{{ content.SAVED_PROMO_BLURB }}</p>
+        {% if current_user.is_authenticated %}
+          <a class="btn" href="{{ url_for('results') }}">See all open roles</a>
+        {% else %}
+          <a class="btn" href="{{ url_for('login', next=url_for('saved_roles')) }}">Sign in or create account</a>
+        {% endif %}
+      </div>
+      <img class="promo-photo" src="{{ url_for('static', filename='images/' ~ content.SAVED_PROMO_IMAGE) }}"
+           alt="A Walmart associate outside a store">
+    </div>
+  </div>
+</section>
+
+<section class="saved-section">
+  <div class="wrap">
+    <h2 class="saved-heading">Saved roles ({{ rows|length }})</h2>
+    {% if not current_user.is_authenticated %}
+      <p class="saved-note">{{ content.SAVED_EMPTY_NOTE }}
+        <a href="{{ url_for('login', next=url_for('saved_roles')) }}">Sign in</a> to see the roles you have
+        saved, <a href="{{ url_for('results') }}">search for a role</a>, or view your recommended roles below.</p>
+    {% elif not rows %}
+      <p class="saved-note">{{ content.SAVED_EMPTY_NOTE }}
+        <a href="{{ url_for('results') }}">Search for a role</a>, or view your recommended roles below.</p>
+    {% else %}
+      <div class="job-grid saved-grid">
+        {% for row in rows %}{{ job_card(row.job, saved_ids, unsave=True) }}{% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</section>
+{# Recommendations only fill the page when there is nothing saved to show. #}
+{% if not current_user.is_authenticated or not rows %}
+<section class="trending-section">
+  <div class="wrap">
+    <h3 class="trending-heading">Trending roles</h3>
+    <div class="job-grid three-col">
+      {% for job in trending %}{{ job_card(job, saved_ids, compact=True) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

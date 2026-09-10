@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}My Reviews | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="profile-page">
+    <h1>My Reviews</h1>
+
+    {% set active_tab = 'reviews' %}
+    {% include 'profile_tabs.html' %}
+
+    {% if reviews %}
+    <div class="reviews-list">
+        {% for review in reviews %}
+        {% set movie = review.movie %}
+        <div class="user-review-card">
+            <a href="/m/{{ movie.slug }}" class="review-movie-link">
+                <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" class="review-poster" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
+            </a>
+            <div class="review-body">
+                <a href="/m/{{ movie.slug }}" class="review-movie-title">{{ movie.title }} ({{ movie.year }})</a>
+                <div class="user-star-rating">
+                    {% for i in range(1, 6) %}
+                        {% if i <= review.score|int %}★{% else %}☆{% endif %}
+                    {% endfor %}
+                    <span class="rating-value">{{ review.score }}/5</span>
+                </div>
+                <p class="review-text">{{ review.text }}</p>
+                <div class="review-date">{{ review.review_date.strftime('%b %d, %Y') if review.review_date else '' }}</div>
+                <form action="/user/reviews/delete/{{ review.id }}" method="POST" class="delete-review-form">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="delete-review-btn" onclick="return confirm('Delete this review?')">🗑 Delete</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">You haven't written any reviews yet.</p>
+    <a href="/browse/movies/" class="btn btn-primary">Browse Movies</a>
+    {% endif %}
+</div>
+{% endblock %}

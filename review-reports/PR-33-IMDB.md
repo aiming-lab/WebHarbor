@@ -3,16 +3,18 @@
 Status: **work in progress; not ready for merge**. Twenty distinct task candidates remain after quality review. The original retained ten have sealed deterministic and independent blind-review evidence. Ten additions, IDs 18–27, have complete sealed UI runs and deterministic 10/10 results; their independent blind review remains pending. Owner visual acceptance also remains pending. A local unit test, deterministic verdict or asset hash check does not imply visual or final task acceptance.
 
 This review preserves [@hqhq1025's original IMDb contribution, PR #33](https://github.com/aiming-lab/WebHarbor/pull/33)
-and its commit history. The reviewer branch integrates main at `7269134e9db9d10b1a6ac321797be51c72bb1a36`, including
-OSU at port 40020, and appends IMDb at **40021** (22 registered sites).
+and its commit history. The reviewer branch integrates main at `36004932bdf82afbe36dc14e00f66841eccf9946`, including
+OSU, Rotten Tomatoes, Compass and Walmart Careers, and appends IMDb at **40024**
+(25 registered sites).
 
 ## Asset and source corrections
 
 The [reviewer asset PR #57](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/57)
-adds only `imdb.tar.gz` to the existing asset tree. It remains open and unmerged.
-The code pin uses its remotely verified, immutable commit
-`e70f49d8b6d0f32c940688e8e53e7c558f57a788`.
-The existing 21 site archives, including OSU, retain their original hashes.
+adds only `imdb.tar.gz` relative to the current asset main. It remains open and
+unmerged. The code pin uses its remotely verified union commit
+`c2791ad0bd9a55c74046c6407566301b17348f50`: all 28 files from asset main
+`18e64e4d230794f990199f3327432d26db36866f` are byte-identical, and the
+reviewed IMDb archive is preserved as the sole additional file.
 
 | Artifact | SHA256 |
 |---|---|
@@ -267,10 +269,10 @@ Fetch the pinned candidate and build the source branch:
 ./scripts/build.sh webharbor:review-imdb-pr33
 docker run -d --name wh-review033-candidate \
   -p 127.0.0.1:8961:8101 \
-  -p 127.0.0.1:49000-49021:40000-40021 webharbor:review-imdb-pr33
+  -p 127.0.0.1:49000-49024:40000-40024 webharbor:review-imdb-pr33
 ```
 
-IMDb is then available at `http://localhost:49021/`. Run engineering tests
+IMDb is then available at `http://localhost:49024/`. Run engineering tests
 with the image's pinned Flask dependencies:
 
 ```bash

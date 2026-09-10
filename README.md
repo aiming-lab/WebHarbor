@@ -36,17 +36,17 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 21 sites today, scaling to 100+ together
+- **Community-driven** — 24 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
 One command to run all web environments:
 
 ```bash
-docker run -p 8101:8101 -p 40000-40020:40000-40020 battalion7244/webharbor:latest
+docker run -p 8101:8101 -p 40000-40023:40000-40023 battalion7244/webharbor:latest
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40020` to explore 21 local mirrors of webvoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, and Ohio State University`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40023` to explore 24 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, and Walmart Careers`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -63,10 +63,10 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 ./scripts/build.sh                                 # docker build -t webharbor:dev .
 ```
 
-This source branch also includes IMDb at port `40021` (22 mirrors total). After fetching the pinned assets and building locally, run it with:
+This source branch also includes IMDb at port `40024` (25 mirrors total). After fetching the pinned assets and building locally, run it with:
 
 ```bash
-docker run -p 8101:8101 -p 40000-40021:40000-40021 webharbor:dev
+docker run -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
 ```
 
 The published image above is released separately; use the local build to review the IMDb contribution.
@@ -74,7 +74,7 @@ The published image above is released separately; use the local build to review 
 
 ## 🤝 Contribute
 
-We have built 21 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
+We have built 23 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
 
 There are two ways to join the author list:
 

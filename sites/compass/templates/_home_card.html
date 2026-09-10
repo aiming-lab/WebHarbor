@@ -1,0 +1,9 @@
+{% set photos = L.get_gallery() or [L.hero_image] %}
+<article class="home-card{% if loop.index > 3 %} home-card-desktop{% endif %}">
+  <div class="home-card-photo" data-home-gallery='{{ photos|tojson }}'>
+    <a href="{{ url_for('listing_detail',slug=L.slug) }}" aria-label="View {{ L.address }}"><img src="{{ photos[0] }}" alt="{{ L.address }}" loading="lazy"></a>
+    {% if L.status not in ['for-sale','for-rent'] %}<span class="home-card-badge">{{ L.status|title }}</span>{% elif L.is_compass_exclusive %}<span class="home-card-badge">Compass Exclusive</span>{% endif %}
+    {% if photos|length > 1 %}<button class="home-photo-prev" data-home-previous aria-label="Previous image for {{ L.address }}" type="button">‹</button><button class="home-photo-next" data-home-next aria-label="Next image for {{ L.address }}" type="button">›</button><span class="home-photo-count" aria-live="polite">1/{{ photos|length }}</span>{% endif %}
+  </div>
+  <a class="home-card-info" href="{{ url_for('listing_detail',slug=L.slug) }}"><p class="home-card-price">{{ L.price_display() }}</p><p class="home-card-meta"><span>{{ L.beds if L.beds is not none else '—' }} beds</span><span>{{ '%g'|format(L.baths) if L.baths is not none else '—' }} baths</span><span>{{ '{:,}'.format(L.sqft) if L.sqft else '—' }} sqft</span></p><p class="home-card-address">{{ L.address }}, {{ L.city }}, {{ L.state }} {{ L.zip }}</p></a>
+</article>

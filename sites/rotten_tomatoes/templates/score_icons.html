@@ -1,0 +1,9 @@
+{% macro tomato(movie, icon_only=false) -%}
+{% set status = movie.tomatometer_status %}
+<img class="rating-icon" src="/static/external_cache/rt_brand/{% if status == 'certified-fresh' %}certified_fresh.svg{% else %}tomatometer-{{ status }}.svg{% endif %}" alt="{% if status == 'certified-fresh' %}Certified Fresh{% elif status == 'empty' %}No Tomatometer score{% else %}{{ status|capitalize }}{% endif %}">
+{% if not icon_only %}{% if movie.tomatometer is not none %}{{ movie.tomatometer }}%{% else %}--{% endif %}{% endif %}
+{%- endmacro %}
+{% macro audience(movie, icon_only=false) -%}
+<img class="rating-icon" src="/static/external_cache/rt_brand/aud_score-{% if movie.audience_score is none %}empty{% elif movie.audience_score >= 60 %}fresh{% else %}rotten{% endif %}.svg" alt="Audience score">
+{% if not icon_only %}{% if movie.audience_score is not none %}{{ movie.audience_score }}%{% else %}--{% endif %}{% endif %}
+{%- endmacro %}
