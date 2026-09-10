@@ -10,6 +10,7 @@ current WebHarbor task and grading contract.
 - Reviewed upstream base: `36004932bdf82afbe36dc14e00f66841eccf9946`
 - Current-main integration: `de3e45631db5f053b5157b9b16b57ace90875113`
 - Validator remediation: `142bae2c32c4f3fc8b1ceae51b1b63511b401f7d`
+- Blind-reviewed head: `1a87f18f16ff83b6549a6a4e75cdb8e8ffca2cfe`
 
 PR #45 is repository tooling, not a mirror contribution. It changes no site application,
 seed database, route, UI, asset archive, or Hugging Face revision. Docker health/reset,
@@ -70,6 +71,31 @@ pyright:           0 errors, 0 warnings
 git diff --check:  passed
 ```
 
+## Independent blind review
+
+A fresh Claude Code session reviewed a frozen, checksum-verified packet containing the
+18 scenario requirements, inputs, recorded invocations/results, and before/after state.
+Validator source, tests, expected-result oracles, prior conclusions, and PR discussion
+were excluded from its first pass.
+
+- Self-reported model: `claude-fable-5-1`
+- Packet manifest SHA-256: `bce1317c4b1985a248a0e0d3e1d9c55634cd19e8631d4f8014cd7cf2c173cae9`
+- Verdict artifact SHA-256: `f9a125c1f8b9e52eca09fb58ce6e406357dc50b96ca5eb437f0e6656ac22b239`
+- Coverage: 18/18 scenarios reviewed; 18 PASS / 0 FAIL
+- Public result: [PR #91 blind-review comment](https://github.com/aiming-lab/WebHarbor/pull/91#issuecomment-5614696822)
+
+The blind reviewer did not re-execute the validator or inspect its implementation and
+could not reconstruct the packet's aggregate tree-hash algorithm. Reconciliation
+independently reproduced all 36 before/after tree hashes, matched all 18 recorded-result
+hashes, and confirmed that every blind verdict agrees with the predeclared task contract.
+The omitted implementation and CLI coverage is supplied by the committed 31-test suite,
+fresh CLI runs, and static checks above rather than attributed to the blind review.
+
+Non-blocking output notes remain: registry-set drift uses the broad message “site order
+differs”; `task_count` counts nonblank JSONL entries even when one is malformed; and a
+full scan lists an expected but missing registered-site file among checked targets. These
+do not alter finding codes, severity, mutation guarantees, or process exit status.
+
 ## Reproduce
 
 ```bash
@@ -89,9 +115,10 @@ git diff --check
 ## Evidence use and current status
 
 - Engineering evidence: unit/static checks and the 18 guided contract executions above.
-- Independent review input: a separate, verifier-result-free packet will contain only each
-  scenario requirement, frozen input state, recorded invocation/result, and after-state.
+- Independent review: checksum-verified, oracle-free first pass, 18 PASS / 0 FAIL, followed
+  by result/state/hash reconciliation against the task contracts.
 - Public maintainer evidence: this report, the committed tests, and the reproduction commands.
 
-The branch remains Draft. Independent review and final reconciliation are not yet complete.
-No GitHub or Hugging Face merge is performed by this review.
+The reviewed behavior and current corpus are ready for maintainer review. The report-only
+commit after the blind-reviewed head does not change validator behavior or frozen inputs.
+No Hugging Face action is applicable, and this review performs no GitHub merge.
