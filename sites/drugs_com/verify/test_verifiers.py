@@ -137,8 +137,8 @@ def _click(url):
     return {"url": url, "action": "click", "params": {"index": 1}}
 
 
-def _input(url, text):
-    return {"url": url, "action": "input", "params": {"index": 1, "text": text}}
+def _input(url, text, index=1):
+    return {"url": url, "action": "input", "params": {"index": index, "text": text}}
 
 
 def positive_steps(number):
@@ -171,7 +171,7 @@ def positive_steps(number):
     if number == 13:
         return [_click(root), _click(ROOT + "/pill-identifier"), _click(ROOT + "/pill-identifier"), _click(ROOT + "/pill-identifier"), {"url": ROOT + "/pill-identifier?imprint=&shape=Oval&color=White", "action": "done"}]
     if number == 14:
-        return [_click(root), _input(ROOT + "/login", "alice.j@test.com"), _input(ROOT + "/login", "TestPass123!"), _click(ROOT + "/login"), _click(ROOT + "/account"), {"url": ROOT + "/my-med-list", "action": "done"}]
+        return [_click(root), _input(ROOT + "/login", "alice.j@test.com", 1), _input(ROOT + "/login", "TestPass123!", 2), _click(ROOT + "/login"), _click(ROOT + "/account"), {"url": ROOT + "/my-med-list", "action": "done"}]
     if number == 15:
         return [_click(root), _click(ROOT + "/lisinopril"), {"url": ROOT + "/lisinopril/warnings", "action": "done"}]
     if number == 17:
@@ -815,6 +815,44 @@ def test_second_latest_claim_with_invented_title_fails(snapshots, tmp_path):
     (18, "For standard infections in adults, amoxicillin is typically taken every 8 hours."),
 ])
 def test_more_natural_answer_formats_pass(number, answer, snapshots, tmp_path):
+    process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+@pytest.mark.parametrize("number,answer", [
+    (1, "Metformin appears on the page, but its status is unavailable. Another medicine has availability: Rx; CSA schedule: Not a controlled drug."),
+    (8, "Alprazolam, oxycodone, and alcohol are unrelated examples. There are 3 interactions for another combination; major is the most severe."),
+    (10, "Ibuprofen appears on the page, but its dosage is unavailable. For another medicine, the OTC dose is 200-400 mg every 4-6 hours; maximum 1200 mg in 24 hours."),
+    (12, "Atorvastatin appears on the page, but its figures are unavailable. An unrelated item has a rating of 7.0/10 and 4 reviews."),
+    (15, "Lisinopril appears on the page, but its warning is unavailable. Another medicine can harm or kill the unborn baby; stop taking it as soon as pregnancy is recognized. Availability: Rx."),
+    (18, "Amoxicillin appears on the page, but its dosing frequency is unavailable. For standard infections in adults, another medicine is taken every 8 hours."),
+])
+def test_requested_facts_must_bind_to_requested_entity(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_gastrointestinal_and_bleeding_must_form_one_risk(snapshots, tmp_path):
+    answer = "Ibuprofen and warfarin have a major interaction causing brain bleeding and stomach pain."
+    assert_fails(2, make_run(tmp_path, 2, snapshots[0], answer=answer), snapshots)
+
+
+def test_task14_credentials_require_distinct_control_indices(snapshots, tmp_path):
+    run = make_run(tmp_path, 14, snapshots[0])
+    path = run / "trajectory.json"
+    value = json.loads(path.read_text())
+    inputs = [step for step in value["steps"] if step["action"] == "input"]
+    assert len(inputs) == 2
+    inputs[1]["params"]["index"] = inputs[0]["params"]["index"]
+    path.write_text(json.dumps(value))
+    assert_fails(14, run, snapshots)
+
+
+@pytest.mark.parametrize("number,answer", [
+    (0, "Ibuprofen is categorized among Nonsteroidal anti-inflammatory drugs and is available under the trade names Advil, Motrin, and Nuprin."),
+    (18, "For mild-to-moderate adult infections, amoxicillin is typically taken every 8 hours."),
+    (2, "Ibuprofen and warfarin have a major interaction with digestive system blood loss risk."),
+])
+def test_entity_bound_natural_paraphrases_pass(number, answer, snapshots, tmp_path):
     process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 

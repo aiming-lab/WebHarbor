@@ -519,7 +519,7 @@ _LIST_PROSE_WORDS = {
     "availability", "brand", "brands", "class", "condition", "conditions", "csa", "and", "are", "currently", "drug", "drugs", "example", "examples", "first",
     "fixture", "fixtures", "following", "include", "includes", "imprint", "imprints",
     "list", "listed", "local", "medication", "medications", "name", "names", "rating", "ratings", "result", "results", "review", "reviews", "saved", "schedule",
-    "according", "are", "as", "belongs", "called", "com", "five", "four", "has", "have", "here", "in", "is", "its", "known", "marketed", "not", "only", "oval", "page", "pill", "pills", "shown", "sold", "the", "three", "to", "treats", "under", "which", "white", "with", "fluoroquinolone", "fluoroquinolones",
+    "according", "among", "are", "as", "available", "belongs", "called", "categorized", "com", "five", "four", "has", "have", "here", "in", "is", "its", "known", "marketed", "not", "only", "oval", "page", "pill", "pills", "shown", "sold", "the", "three", "to", "trade", "treats", "under", "which", "white", "with", "fluoroquinolone", "fluoroquinolones",
 }
 
 
@@ -657,7 +657,7 @@ def check_single_drug(judge, answer, record, *, require_brands=False, require_cl
         if labelled_clauses(answer, ("brand", "brands")):
             check_labelled_terms(judge, "answer_brands_bound_to_field", answer, ("brand", "brands"), expected, all_brand_names(judge.initial) + all_class_names(judge.initial) + all_condition_names(judge.initial) + all_drug_names(judge.initial))
         else:
-            marketed = re.search(r"\b(?:marketed\s+as|sold\s+under)\b([^.;\n]+)", answer, re.I)
+            marketed = re.search(r"\b(?:marketed\s+as|sold\s+under|available\s+under\s+(?:the\s+)?trade\s+names?)\b([^.;\n]+)", answer, re.I)
             marketed_text = marketed.group(1) if marketed else ""
             valid_marketed = bool(marketed) and all(affirmed(marketed_text, item) for item in expected) and not (set(detected_terms(marketed_text, all_brand_names(judge.initial))) - set(expected))
             judge.check("answer_brands_bound_to_field", valid_marketed, repr(marketed_text))
@@ -667,6 +667,8 @@ def check_single_drug(judge, answer, record, *, require_brands=False, require_cl
         if "nonsteroidal anti-inflammatory" in norm(class_name):
             alternatives.append("NSAID")
         class_clauses = [segment.strip() for segment in re.split(r"[;\n.]+", answer) if mentions(segment, "class")]
+        if not class_clauses:
+            class_clauses = [match.group(0) for match in re.finditer(r"\bcategorized\s+among\b[^.;\n]+", answer, re.I)]
         class_valid = bool(class_clauses)
         class_details = []
         for class_clause in class_clauses:
@@ -800,6 +802,13 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             )
             conflicting_schedule = "not a controlled" in norm(record["csa_schedule"]) and re.search(r"\b(?:schedule|c)\s*[- ]?(?:i|ii|iii|iv|v|[1-5])\b", answer, re.I)
             judge.check("answer_csa_schedule_bound_to_field", csa_ok and not conflicting_schedule, repr(csa_clauses))
+            status_relation = any(
+                affirmed(sentence, record["generic_name"])
+                and (affirmed(sentence, record["availability"]) or affirmed(sentence, "prescription"))
+                and (affirmed(sentence, record["csa_schedule"]) or affirmed(sentence, "not controlled") or affirmed(sentence, "not a controlled drug"))
+                for sentence in re.split(r"(?<=[.!?\n])\s*", answer)
+            )
+            judge.check("answer_status_bound_to_metformin", status_relation)
 
     elif number in {2, 8, 19}:
         names = {2: ["ibuprofen", "warfarin"], 8: ["alprazolam", "oxycodone", "alcohol"], 19: ["metformin", "alcohol"]}[number]
@@ -810,7 +819,13 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             rows = initial.query("SELECT i.severity,i.description FROM drug_interaction i JOIN drug a ON a.id=i.drug_a_id JOIN drug b ON b.id=i.drug_b_id WHERE (a.slug=? AND b.slug=?) OR (a.slug=? AND b.slug=?)", ("ibuprofen", "warfarin", "warfarin", "ibuprofen"))
             judge.check("unique_interaction_truth", len(rows) == 1, f"rows={len(rows)}")
             if len(rows) == 1:
-                _check_interaction_answer(judge, answer, names, rows[0]["severity"], [("bleeding", "hemorrhage", "blood loss"), ("gastrointestinal", "GI", "stomach", "ulcer", "platelet", "digestive tract")])
+                _check_interaction_answer(judge, answer, names, rows[0]["severity"], [("bleeding", "hemorrhage", "blood loss"), ("gastrointestinal", "GI", "stomach", "ulcer", "platelet", "digestive tract", "digestive system")])
+                combined_gi_risk = any(
+                    all(affirmed(sentence, term) for term in [*names, rows[0]["severity"]])
+                    and re.search(r"\b(?:gastrointestinal|GI|stomach)\s+(?:bleeding|hemorrhage|blood\s+loss)\b|\bdigestive\W+(?:tract|system)\b[^.;\n]{0,25}\b(?:bleeding|hemorrhage|blood\s+loss)\b", sentence, re.I)
+                    for sentence in re.split(r"(?<=[.!?;\n])\s*", answer)
+                )
+                judge.check("answer_gastrointestinal_bleeding_relation", combined_gi_risk)
         elif number == 8:
             drug_rows = initial.query("SELECT id,slug FROM drug WHERE slug IN ('alprazolam','oxycodone')")
             by_slug = {row["slug"]: row["id"] for row in drug_rows}
@@ -839,6 +854,14 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             ranked_subjects = [match.group(1) for match in re.finditer(r"\b([a-z]+)\s+(?:actually\s+)?(?:outranks|is\s+(?:actually\s+)?more\s+severe\s+than|is\s+(?:actually\s+)?higher\s+than)\b", answer, re.I)]
             comparative_claims_valid = all(affirmed(sentence, expected_severity) for sentence in comparative_claims) and all(norm(subject) == norm(expected_severity) for subject in ranked_subjects)
             judge.check("answer_highest_severity", bool(severity_matches) and all(claim_is_affirmed(answer, match) for match in severity_matches) and not conflicting and severity_clauses_valid and comparative_claims_valid)
+            combined_summary = any(
+                all(affirmed(sentence, name) for name in names)
+                and re.search(rf"\b(?:{len(severities)}|{count_word})\s+interactions?\b", sentence, re.I)
+                and affirmed(sentence, expected_severity)
+                and re.search(r"\b(?:highest|most severe|max(?:imum)?)\b", sentence, re.I)
+                for sentence in re.split(r"(?<=[.!?\n])\s*", answer)
+            )
+            judge.check("answer_count_severity_bound_to_inputs", combined_summary)
             check_required_terms(judge, "answer_interaction_entities", answer, names)
         else:
             rows = initial.query("SELECT li.severity,li.description FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")
@@ -930,7 +953,14 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             allowed_numbers = {float(value) for value in (low, high, interval_low, interval_high, maximum, period)}
             maximum_affirmed = bool(maximum_ok) and (norm(maximum_ok.group(0)).startswith("do not exceed") or claim_is_affirmed(answer, maximum_ok))
             claims_affirmed = all(match and claim_is_affirmed(answer, match) for match in (dose_ok, interval_ok)) and maximum_affirmed
-            judge.check("answer_bound_otc_dosage", claims_affirmed and not conflict and stated_numbers <= allowed_numbers, f"dose={bool(dose_ok)} interval={bool(interval_ok)} max={bool(maximum_ok)} affirmed={claims_affirmed} conflict={bool(conflict)} numbers={sorted(stated_numbers)!r}")
+            dosage_relation = any(
+                affirmed(sentence, "ibuprofen")
+                and re.search(rf"\b{low}\s*[-–]\s*{high}\s*mg\b", sentence, re.I)
+                and re.search(rf"\bevery\s+{interval_low}\s*(?:to|[-–])\s*{interval_high}\s+hours?\b", sentence, re.I)
+                and re.search(rf"\b{maximum}\s*mg\b", sentence, re.I)
+                for sentence in re.split(r"(?<=[.!?\n])\s*", answer)
+            )
+            judge.check("answer_bound_otc_dosage", claims_affirmed and dosage_relation and not conflict and stated_numbers <= allowed_numbers, f"dose={bool(dose_ok)} interval={bool(interval_ok)} max={bool(maximum_ok)} affirmed={claims_affirmed} conflict={bool(conflict)} numbers={sorted(stated_numbers)!r}")
 
     elif number == 11:
         destination_pred = lambda visit: route_is(visit, "/new-drug-approvals", "/news/new-drug-approvals", "/news/category/new-drug-approvals", "/newdrugs.html")
@@ -981,6 +1011,13 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             digit_reviews_ok = bool(review_numbers) and set(review_numbers) == {record["review_count"]}
             judge.check("answer_rating_context", (digit_rating_ok or rating_word_relation) and not rating_negated and word_numbers <= allowed_numbers and not verbal_rating_conflict)
             judge.check("answer_review_count_context", (digit_reviews_ok or review_word_relation) and not review_negated and word_numbers <= allowed_numbers and not no_reviews)
+            rating_review_relation = any(
+                affirmed(sentence, record["generic_name"])
+                and (re.search(r"\brat(?:ing|ed)\b", sentence, re.I))
+                and re.search(r"\breviews?\b", sentence, re.I)
+                for sentence in re.split(r"(?<!\d)\.(?!\d)\s*|[!?\n]+\s*", answer)
+            )
+            judge.check("answer_rating_reviews_bound_to_atorvastatin", rating_review_relation)
 
     elif number == 13:
         result_pred = lambda visit: path_is(visit, *pill_paths) and exact_query(visit, [("imprint", ""), ("shape", "Oval"), ("color", "White")])
@@ -1016,9 +1053,13 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         submit_index = account_index - 1 if account_index is not None else None
         email_steps = input_indices(trajectory, "alice.j@test.com", exact=True, visits=visits, page_predicate=login_pred)
         password_steps = input_indices(trajectory, "TestPass123!", exact=True, visits=visits, page_predicate=login_pred)
+        email_control = trajectory.get("steps", [])[min(email_steps)].get("params", {}).get("index") if email_steps else None
+        password_control = trajectory.get("steps", [])[min(password_steps)].get("params", {}).get("index") if password_steps else None
         credentials_valid = (
             submit_index is not None and email_steps and password_steps
             and min(email_steps) < min(password_steps) < submit_index
+            and isinstance(email_control, int) and isinstance(password_control, int)
+            and email_control != password_control
         )
         judge.check("ui_enter_exact_alice_credentials", credentials_valid)
         med_index = require_click_transition(judge, trajectory, visits, "ui_open_authenticated_med_list", account_pred, med_pred)
@@ -1047,6 +1088,7 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
                 )
                 and (affirmed(sentence, "discontinue") or affirmed(sentence, "stop taking"))
                 and (affirmed(sentence, "pregnancy") or affirmed(sentence, "pregnant"))
+                and affirmed(sentence, record["generic_name"])
                 for sentence in pregnancy_sentences
             )
             pregnancy_conflict = re.search(r"\b(?:myth|rather\s+than\s+(?:stop|discontinue)|safe\s+to\s+continue|continu(?:e|ing)\b[^.;\n]{0,35}\b(?:throughout|during)\s+pregnancy(?:\s+is\s+safe)?|does\s+not\s+(?:harm|injure))\b", answer, re.I)
@@ -1103,7 +1145,7 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         if match:
             frequency = match.group(1)
             frequency_word = next((word for word, value in _NUMBER_ONES.items() if value == int(frequency)), "")
-            frequency_scopes = [sentence for sentence in re.split(r"(?<=[.!?;\n])\s*", answer) if re.search(r"\bstandard\s+adult\b|\bstandard\s+infections?\b[^.;\n]{0,30}\badults?\b|\badults?\b[^.;\n]{0,30}\bstandard\s+infections?\b", sentence, re.I)]
+            frequency_scopes = [sentence for sentence in re.split(r"(?<=[.!?;\n])\s*", answer) if affirmed(sentence, record["generic_name"]) and re.search(r"\bstandard\s+adult\b|\bstandard\s+infections?\b[^.;\n]{0,30}\badults?\b|\badults?\b[^.;\n]{0,30}\bstandard\s+infections?\b|\bmild\W+(?:to\W+)?moderate\b[^.;\n]{0,35}\badult\s+infections?\b|\badult\s+infections?\b[^.;\n]{0,35}\bmild\W+(?:to\W+)?moderate\b", sentence, re.I)]
             frequency_ok = any(
                 re.search(rf"\bevery\s+(?:{frequency}|{frequency_word})\s+hours?\b", sentence, re.I)
                 or (frequency == "8" and re.search(r"\bthree\s+times\s+(?:a|per)\s+day\b", sentence, re.I))
