@@ -7,8 +7,9 @@
     <div class="count">{{ page.total | plural_word('Result') }}</div>
   </div>
   {% if loc.fallback %}<div class="notice">Showing providers near Newark, DE 19711 — we couldn't match '{{ loc.input }}'.</div>{% endif %}
+  {% if unmatched_q %}<div class="notice">Showing all providers near {{ heading_place }} — we couldn't match '{{ unmatched_q }}'. Search by specialty, condition, procedure or insurance carrier.</div>{% endif %}
   {% include "_filter_bar.html" %}
-  <div class="info-banner"><span class="badge">WebMD PATIENT'S CHOICE</span><span><strong style="color:var(--card-navy)">Patients' Choice</strong> awards are assigned based on patient satisfaction ratings for key specialties in select geographic locations.</span></div>
+  <div class="info-banner"><span class="badge">WebMD PATIENT'S CHOICE</span><span><strong style="color:var(--card-navy)">Patients' Choice</strong> awards are assigned based on patient satisfaction ratings for key specialties in select geographic locations.</span><button type="button" class="close" data-dismiss aria-label="Dismiss">×</button></div>
   <div class="section-label">All Results</div>
   {% if page.rows %}
     <div class="card-list">

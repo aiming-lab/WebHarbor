@@ -103,7 +103,7 @@ EXPECTED_COUNTS = {
     "doctor_conditions": 1677,
     "doctor_procedures": 1252,
     "doctor_expertise": 686,
-    "doctor_insurances": 2274,
+    "doctor_insurances": 2208,
     "reviews": 1206,
     "doctor_perspectives": 1582,
     "certifications": 296,
@@ -1132,6 +1132,26 @@ def _topup_languages(doctors: list[Doctor]) -> None:
     db.session.flush()
 
 
+def _sync_public_payer_rows(doctors: list[Doctor]) -> None:
+    """The Medicare / Medicaid entries of the profile's Insurance card follow the primary office's
+    Accepts-Medicare / Accepts-Medicaid flags (the values the results filter and the practice page
+    use). Deterministic, consumes no RNG, so it runs after every other builder."""
+    payer_plans = {}
+    for insurer in Insurer.query.filter(Insurer.slug.in_(("medicare", "medicaid"))).order_by(Insurer.id).all():
+        payer_plans[insurer.slug] = InsurancePlan.query.filter_by(insurer_id=insurer.id).order_by(InsurancePlan.id).all()
+    for doctor in doctors:
+        primary = next(location for location in doctor.locations if location.is_primary)
+        for slug, accepted in (("medicare", primary.medicare), ("medicaid", primary.medicaid)):
+            plan_ids = {plan.id for plan in payer_plans[slug]}
+            rows = [row for row in doctor.insurances if row.plan_id in plan_ids]
+            if accepted and not rows:
+                db.session.add(DoctorInsurance(doctor_id=doctor.id, plan_id=payer_plans[slug][0].id, is_verified=True))
+            elif not accepted:
+                for row in rows:
+                    db.session.delete(row)
+    db.session.flush()
+
+
 def seed_database(force: bool = False) -> None:
     if Doctor.query.count() > 0 and not force:
         return
@@ -1146,6 +1166,7 @@ def seed_database(force: bool = False) -> None:
     _build_awards(doctors, vocab)
     _finish_hubs(Hospital.query.order_by(Hospital.id).all(), Practice.query.order_by(Practice.id).all())
     _topup_languages(doctors)
+    _sync_public_payer_rows(doctors)
     for doctor in doctors:
         del doctor._slot
         del doctor._practice

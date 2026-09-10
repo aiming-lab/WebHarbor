@@ -77,9 +77,18 @@
     </aside>
     {% endif %}
 
-  <nav class="tabs" aria-label="Profile sections">
+  <nav class="tabs" id="profile-tabs" aria-label="Profile sections">
     <a class="on" href="#overview">OVERVIEW</a><a href="#locations">LOCATIONS</a><a href="#reviews">RATINGS &amp; REVIEWS</a><a href="#insurance">INSURANCE</a>
   </nav>
+  </div>
+  <div class="sticky-doc" id="sticky-doc" hidden>
+    <div class="container"><div class="inner">
+      <img class="avatar" src="{{ url_for('static', filename=doctor.avatar_path) }}" alt="">
+      <div class="who"><strong>{{ doctor.display_name }}</strong><span class="rating-line">{% with rating=doctor.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} ({{ doctor.ratings_count }})</span></div>
+      {% if doctor.accepting_new_patients %}<span class="accept-pill">Accepting New Patients</span>{% endif %}
+      <a class="btn btn-red btn-pill btn-sm" href="#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ primary.phone }}</a>
+      {% if doctor.is_enhanced %}<a class="btn btn-primary btn-pill btn-sm" href="{{ url_for('book_appointment', slug=doctor.slug) }}">Request Now</a>{% endif %}
+    </div></div>
   </div>
 
   <div class="profile-grid">
@@ -226,7 +235,7 @@
               </div>
             {% endfor %}
           {% endif %}
-          <details class="top20"><summary>View Top 20 Conditions treated by {{ doctor.display_name }}</summary>
+          <details class="top20"><summary data-open-text="View Less">View Top 20 Conditions treated by {{ doctor.display_name }}</summary>
             <ol>{% for row in (more_conditions if doctor.is_enhanced else doctor.conditions) %}<li>{{ row.condition.name }}</li>{% endfor %}</ol>
           </details>
         </div>
@@ -246,7 +255,7 @@
               </div>
             {% endfor %}
           {% endif %}
-          <details class="top20"><summary>View Top 20 Procedures performed by {{ doctor.display_name }}</summary>
+          <details class="top20"><summary data-open-text="View Less">View Top 20 Procedures performed by {{ doctor.display_name }}</summary>
             <ol>{% for row in (more_procedures if doctor.is_enhanced else doctor.procedures) %}<li>{{ row.procedure.name }}</li>{% endfor %}</ol>
           </details>
         </div>
@@ -392,14 +401,15 @@
       {% endif %}
     </aside>
 
-    <section class="wide-panel">
+    <section class="wide-panel grey">
       <h3>Other {{ doctor.primary_specialty.plural }} Nearby</h3>
       <div class="city-links">{% for city in nearby_cities %}<a href="{{ url_for('specialty_city', spec=doctor.primary_specialty.slug, state=city.state_slug, city=city.slug) }}">{{ city.name }}, {{ city.state }}</a>{% endfor %}</div>
     </section>
-    <section class="wide-panel">
+    <section class="wide-panel grey">
       <h3>Data Transparency and Trust: Understanding WebMD Doctor Listings and Reviews</h3>
       <p>We know that finding the right doctor or provider is important to your health. That's why we want to ensure you have confidence in the provider profiles and listings you see on WebMD Care. Provider data in this mirror is synthetic benchmark data; on the live site it is sourced from physicians themselves and publicly available databases.</p>
       <p>All the physician and provider reviews on WebMD Care are provided by users just like you. Providers are not able to remove or modify reviews on their own.</p>
+      <p>Every review is checked against the <a href="{{ url_for('reviews_guidelines') }}">Reviews Guidelines</a> before it is published. Newly submitted reviews appear to their author as "Pending review" until moderation is complete, so the ratings you see reflect verified patient feedback.</p>
     </section>
   </div>
 </div>

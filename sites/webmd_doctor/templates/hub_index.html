@@ -12,6 +12,7 @@
     <input type="text" name="name" placeholder="Search {{ title }} by Name" aria-label="Search {{ title | lower }} by name">
     <button class="btn btn-primary" type="submit">Search</button>
   </form>
+  <hr class="rule">
   <h2 class="h2">Top {{ title }} {{ 'in' if kind == 'hospitals' else 'near' }} {{ anchor.state_name }}</h2>
   <div class="hub-mini-grid">
     {% for item in top_items %}
@@ -32,7 +33,7 @@
   </div>
   {% else %}
   <div class="find-doctors-strip">
-    <a href="{{ url_for('specialty_index') }}">Find Doctors ›</a>
+    <a href="{{ url_for('specialty_index') }}">Find Doctors <svg class="ic"><use href="#i-chevron"/></svg></a>
     <div class="links">{% for specialty in menu_specialties %}<a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.plural }}</a>{% endfor %}</div>
   </div>
   {% endif %}

@@ -19,23 +19,10 @@
     <div class="stat"><div class="n"><svg class="ic ic-lg ic-blue"><use href="#i-star"/></svg> {{ average_rating | rating1 }} <small>average<br>rating</small></div><div class="t">These ratings help you find the best doctor that suits your specific medical needs.</div></div>
     <div class="stat"><div class="n"><svg class="ic ic-lg ic-blue"><use href="#i-pin"/></svg> {{ total }} <small>across<br>{{ city_chips | length }} cities</small></div><div class="t">There are {{ total }} {{ specialty.plural }} across the {{ city_chips | length }} cities covered by WebMD Care.</div></div>
   </div>
-  <div class="panel faq">
-    <div class="panel-head"><svg class="ic"><use href="#i-question"/></svg><h2>Frequently Asked Questions</h2></div>
-    <div class="panel-body">
-      <dl>
-        <dt>What does a {{ specialty.singular | lower }} treat?</dt>
-        <dd>{{ specialty.description }} Common conditions include {{ conditions | map(attribute='name') | join(', ') }}.</dd>
-        <dt>What procedures do {{ specialty.plural | lower }} perform?</dt>
-        <dd>{{ specialty.plural }} on WebMD Care most often list {{ procedures | map(attribute='name') | join(', ') }}.</dd>
-        <dt>How are {{ specialty.plural | lower }} certified?</dt>
-        <dd>Board certification for {{ specialty.name }} is issued by the {{ specialty.board_name }}. Each profile's Certifications, License &amp; Education section lists the certifying board and year.</dd>
-      </dl>
-    </div>
-  </div>
   <div class="panel" style="margin-top:16px">
     <h3 style="font-size:16px;margin-bottom:10px">Find {{ specialty.plural }} by City</h3>
     <div class="chip-row" style="margin:0">
-      {% for city in city_chips %}<a href="{{ url_for('specialty_city', spec=specialty.slug, state=city.state_slug, city=city.slug) }}">{{ city.name }}, {{ city.state }} ({{ city.count }})</a>{% endfor %}
+      {% for city in city_chips %}<a href="{{ url_for('specialty_city', spec=specialty.slug, state=city.state_slug, city=city.slug) }}">{{ city.name }}, {{ city.state }}</a>{% endfor %}
     </div>
   </div>
 </div>

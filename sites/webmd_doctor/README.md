@@ -20,7 +20,7 @@ The Docker build regenerates `instance_seed/webmd_doctor.db` from `seed_data.py`
 |---|---|---|---|
 | doctors | 226 (202 within 40 mi of Newark, DE 19711 + 24 in Baltimore, MD) | locations | 348 |
 | specialties | 10 | conditions / procedures / expertise_areas | 40 / 30 / 40 |
-| doctor_conditions / doctor_procedures / doctor_expertise | 1677 / 1252 / 686 | insurers / insurance_plans / doctor_insurances | 12 / 28 / 2274 |
+| doctor_conditions / doctor_procedures / doctor_expertise | 1677 / 1252 / 686 | insurers / insurance_plans / doctor_insurances | 12 / 28 / 2208 |
 | cities / city_zips | 8 / 24 | hospitals / practices | 12 / 30 |
 | reviews | 1206 | doctor_perspectives | 1582 |
 | certifications / licenses / education | 296 / 316 / 567 | awards / doctor_languages | 50 / 351 |

@@ -11,7 +11,7 @@
       <option value="">All States</option>
       {% for option in state_options %}<option value="{{ option.slug }}" {% if option.slug == state_filter %}selected{% endif %}>{{ option.name }}</option>{% endfor %}
     </select>
-    {% for key, value in award_classes.items() %}<a class="tag" href="{{ url_for('award_recipients', **{'award-class': key}) }}" {% if key == award_class %}style="background:var(--bg-2)"{% endif %}>{{ value[2] }}{% if key == award_class %} ✕{% endif %}</a>{% endfor %}
+    <a class="tag active" href="{{ url_for('choice_awards') }}#class" title="Choose another award class">{{ award_classes[award_class][2] }} ✕</a>
   </form>
   <div class="card-list">
     {% set ns = namespace(state=None) %}

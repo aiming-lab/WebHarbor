@@ -130,6 +130,35 @@
     });
   }
 
+  // Patients' Choice banner dismiss.
+  document.querySelectorAll("[data-dismiss]").forEach(function (button) {
+    button.addEventListener("click", function () {
+      var banner = button.closest(".info-banner");
+      if (banner) { banner.hidden = true; }
+    });
+  });
+
+  // "View Top 20 ..." <-> "View Less".
+  document.querySelectorAll("details.top20").forEach(function (details) {
+    var summary = details.querySelector("summary");
+    if (!summary) { return; }
+    var closedText = summary.textContent;
+    details.addEventListener("toggle", function () {
+      summary.textContent = details.open ? (summary.getAttribute("data-open-text") || closedText) : closedText;
+    });
+  });
+
+  // Compact provider bar once the hero has scrolled out of view.
+  var stickyDoc = document.getElementById("sticky-doc");
+  var profileHero = document.querySelector(".profile-hero");
+  if (stickyDoc && profileHero) {
+    var syncSticky = function () {
+      stickyDoc.hidden = profileHero.getBoundingClientRect().bottom > 0;
+    };
+    window.addEventListener("scroll", syncSticky, { passive: true });
+    syncSticky();
+  }
+
   // Overview "View more".
   document.querySelectorAll("[data-expand]").forEach(function (button) {
     button.addEventListener("click", function (event) {

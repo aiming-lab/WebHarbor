@@ -1049,7 +1049,19 @@ def search_heading_term(params: dict) -> str:
         insurer = db.session.get(Insurer, params["insuranceid"])
         if insurer is not None:
             return f"Providers accepting {insurer.name}"
+    if params["q"].strip() and params.get("resolved") and not params["resolved"]["matched"]:
+        return "All Providers"  # every unmatched token is ignored (mirror renders a notice instead)
     return params["q"].strip() or "All Providers"
+
+
+def unmatched_search_text(params: dict) -> str:
+    """The typed search text when none of it resolved to a seeded vocabulary term."""
+    text = params["q"].strip()
+    if not text or params.get("resolved") is None or params["resolved"]["matched"]:
+        return ""
+    if any(params[key] is not None for key in ("sids", "cid", "pid", "insuranceid")):
+        return ""
+    return text
 
 
 def filter_bar_context(params: dict, *, show_distance: bool = True) -> dict:
@@ -1191,6 +1203,7 @@ def results():
         loc=loc,
         page=page,
         term=term,
+        unmatched_q=unmatched_search_text(params),
         heading_place=loc["label"],
         filter_bar=filter_bar_context(params, show_distance=True),
         saved_ids=saved_doctor_ids(),
@@ -1518,7 +1531,7 @@ def specialty_city(spec: str, state: str, city: str):
     city_row = City.query.filter_by(state_slug=state, slug=city).first()
     if city_row is None:
         abort(404)
-    params = read_search_params({"sids": specialty.id, "city_id": city_row.id, "use_distance": False})
+    params = read_search_params({"sids": specialty.id, "city_id": city_row.id, "use_distance": True})
     params["loc_label"] = ""
     ranked = search_doctors(params, city_row)
     page = paginate(ranked, params["page"])
@@ -1535,9 +1548,12 @@ def specialty_city(spec: str, state: str, city: str):
         city=city_row,
         page=page,
         params=params,
-        filter_bar=filter_bar_context(params, show_distance=False),
+        filter_bar=filter_bar_context(params, show_distance=True),
         saved_ids=saved_doctor_ids(),
         base_path=url_for("specialty_city", spec=spec, state=state, city=city),
+        related_specialties=[row for row in specialties_for_menu() if row.id != specialty.id],
+        all_conditions=Condition.query.filter_by(specialty_id=specialty.id).order_by(Condition.id).all(),
+        all_procedures=Procedure.query.filter_by(specialty_id=specialty.id).order_by(Procedure.id).all(),
         page_qs=lambda n: filter_query_string(params, page=n),
         total=len(all_rows),
         average_experience=average_experience,

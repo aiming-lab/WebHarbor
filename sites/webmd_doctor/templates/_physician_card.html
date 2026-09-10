@@ -21,7 +21,7 @@
     </ul>
     {% if doctor.is_enhanced and doctor.virtual_visit %}<span class="tele-pill">Telehealth Available</span>{% endif %}
     <div class="addr">{{ loc.address_line }}{% if distance is defined and distance is not none %}<span class="dist">{{ distance | miles }}</span>{% endif %}</div>
-    <p class="snippet">"{{ doctor.card_snippet }}"</p>
+    <p class="snippet">"{{ doctor.card_snippet }}"{% if not doctor.is_enhanced %} <a class="view-link" href="{{ url_for('doctor_profile', slug=doctor.slug) }}">View Profile</a>{% endif %}</p>
     {% if show_remove %}
       <div class="card-actions">
         <form method="post" action="{{ url_for('account_saved_remove', slug=doctor.slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn-outline btn-sm" type="submit">Remove</button></form>
