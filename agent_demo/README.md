@@ -19,7 +19,7 @@ export OPENAI_BASE_URL=https://api.openai.com/v1   # or your Azure / vLLM endpoi
 
 ## Run a task
 
-WebHarbor must already be running locally (`docker run -p 8101:8101 -p 40000-40023:40000-40023 battalion7244/webharbor:latest`).
+WebHarbor must already be running locally. For agent tasks that do not call the control plane, expose only the site ports from a locally built image: `docker run -p 40000-40024:40000-40024 webharbor:dev`. If you expose `8101`, set `WEBSYN_CONTROL_TOKEN` and send it as a bearer token as documented in the root README.
 
 Run a single task from a site's `tasks.jsonl`:
 

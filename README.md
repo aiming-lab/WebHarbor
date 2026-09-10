@@ -35,24 +35,29 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Stable & reproducible** — no network noise, no content drift, no geo-blocks
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
-- **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 24 sites today, scaling to 100+ together
+- **RL-ready** — deterministic database resets between rollouts
+- **Community-driven** — 25 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
-One command to run all web environments:
+After fetching assets and building the local image, start all web environments with an explicit control-plane token:
 
 ```bash
-docker run -p 8101:8101 -p 40000-40023:40000-40023 battalion7244/webharbor:latest
+./scripts/fetch_assets.sh
+./scripts/build.sh
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40023` to explore 24 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, and Walmart Careers`.
+The fetch and build paths verify the immutable HF revision, every archive size and SHA-256, and the extracted managed-tree digest against tracked `assets-manifest.json`; Docker dependencies are installed from exact versions and wheel SHA-256 values in `requirements.lock`.
 
-For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
+Then point your agent at `http://localhost:40000` through `http://localhost:40024` to explore 25 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, and Drugs.com`.
+
+For deterministic reset between rollouts, expose the control plane and call `/reset/<site>`:
 
 ```bash
-curl -X POST http://localhost:8101/reset/amazon          # one site
-curl -X POST http://localhost:8101/reset-all             # all sites in parallel
+curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8101/reset/amazon   # one site
+curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8101/reset-all      # all sites in parallel
 ```
 
 If you prefer to build the image yourself:
@@ -65,7 +70,7 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 
 ## 🤝 Contribute
 
-We have built 23 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
+We have built 25 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
 
 There are two ways to join the author list:
 

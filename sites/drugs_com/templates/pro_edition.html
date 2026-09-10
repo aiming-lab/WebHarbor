@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Professional-layout Fixture | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="pro-page">
+  <section class="pro-hero">
+    <span class="pro-badge">LOCAL LAYOUT FIXTURE</span>
+    <h1>Professional-layout medication index</h1>
+    <p>This page exercises dense navigation and record-layout interfaces. It is not a professional reference, prescribing resource, clinical decision-support system, or calculator service.</p>
+    <form action="{{ url_for('search') }}" method="get" class="pro-search-form">
+      <label for="pro-drug-search">Search local medication records</label>
+      <div class="pro-search-row"><input id="pro-drug-search" name="q" type="search" placeholder="Enter a stored generic or brand name" required><button type="submit" class="btn btn-primary">Search</button></div>
+    </form>
+  </section>
+
+  <div class="disclaimer-box"><p><strong>Data limitation:</strong> All values are deterministic fixtures. No field establishes current labeling, review, evidence, safety, efficacy, pharmacology, regulatory status, dose, or clinical recommendation.</p></div>
+
+  <section class="pro-section">
+    <h2>Local record index</h2>
+    <div class="pro-resource-grid">
+      <a class="pro-resource-card" href="{{ url_for('drug_az') }}"><h3>Medication fixtures A-Z</h3><p>Browse stored generic-name records.</p></a>
+      <a class="pro-resource-card" href="{{ url_for('drug_classes_list') }}"><h3>Class fixtures</h3><p>Browse stored class-name relationships.</p></a>
+      <a class="pro-resource-card" href="{{ url_for('interaction_checker') }}"><h3>Interaction fixtures</h3><p>Inspect locally stored pair records.</p></a>
+      <a class="pro-resource-card" href="{{ url_for('dosage_guide') }}"><h3>Dosage-text fixtures</h3><p>Open deterministic, unverified text fields.</p></a>
+      <a class="pro-resource-card" href="{{ url_for('warnings_index') }}"><h3>Warning fixtures</h3><p>Browse stored and simulated warning-category interfaces.</p></a>
+      <a class="pro-resource-card" href="{{ url_for('news_index') }}"><h3>Simulated article fixtures</h3><p>Exercise article list and detail navigation.</p></a>
+    </div>
+  </section>
+
+  <section class="pro-section">
+    <h2>Recently updated fixture records</h2>
+    {% if recently_updated %}
+    <div class="table-scroll" role="region" aria-label="Recently updated local fixture records" tabindex="0"><table><thead><tr><th>Record</th><th>Stored class</th><th>Fixture date</th></tr></thead><tbody>{% for d in recently_updated[:20] %}<tr><td><a href="{{ url_for('drug_pro_monograph', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a></td><td>{{ d.drug_class.name if d.drug_class else 'Not stored' }}</td><td>{{ d.last_updated.strftime('%b %d, %Y') }}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}<p class="muted">No records are available.</p>{% endif %}
+  </section>
+
+  <section class="pro-section">
+    <h2>Excluded workflows</h2>
+    <p>Clinical calculators, treatment recommendations, professional alerts, prescribing actions, and downloadable reference products are intentionally absent because this repository has no verified data or service implementation for them.</p>
+  </section>
+</div>
+{% endblock %}

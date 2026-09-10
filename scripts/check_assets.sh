@@ -43,4 +43,5 @@ if (( missing > 0 )); then
     echo "[check] $missing required asset dirs missing — run scripts/fetch_assets.sh"
     exit 1
 fi
-echo "[check] all sites have instance_seed/ ($warnings sites lack at least one optional asset dir — that's OK)"
+python3 scripts/check_seed_databases.py sites --allow-build-generated
+echo "[check] all non-build-generated sites have one valid SQLite seed database ($warnings sites lack at least one optional asset dir — that's OK)"

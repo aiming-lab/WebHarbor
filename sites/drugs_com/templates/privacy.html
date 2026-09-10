@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Local Data Handling | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="is-350">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Local data handling</span></nav>
+  <h1 class="is-091">Local Data Handling</h1>
+
+  <h2 class="is-352">Runtime database</h2>
+  <p>Registered account fields, password hashes, reviews, medication-list fixtures, notes, settings, and authenticated newsletter preferences are stored in the local SQLite runtime database. A site reset replaces that database with the deterministic seed.</p>
+
+  <h2 class="is-352">Browser session</h2>
+  <p>A signed browser cookie maintains login state. Signed cookies prevent undetected modification but are not encrypted. Authenticated review-vote choices are bounded and stored in the local account preference record. Anonymous newsletter and contact workflows retain only truncated SHA-256 receipt values and selected fixture categories; they do not retain a raw anonymous email, message, or medication-browsing history in the cookie.</p>
+
+  <h2 class="is-352">Network behavior</h2>
+  <p>The application performs no runtime analytics request, advertising request, email delivery, newsletter delivery, contact delivery, or other background request to an external service. User-activated links labeled as external can leave the local environment.</p>
+
+  <h2 class="is-352">Operational logs</h2>
+  <p>The surrounding WebHarbor process may write ordinary local HTTP access and error logs. Log retention and host access are controlled by the operator of the benchmark environment.</p>
+
+  <h2 class="is-352">Local controls</h2>
+  <p>Account fields and public-review visibility can be changed in <a href="{{ url_for('account_settings') }}">account settings</a>. Account deletion and external data requests are not implemented. Use only synthetic evaluation data in this environment.</p>
+</div>
+{% endblock %}

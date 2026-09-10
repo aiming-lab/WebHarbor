@@ -1,0 +1,336 @@
+{% extends "base.html" %}
+{% block title %}Local Interaction Fixture Checker - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a>
+  <span class="sep">&rsaquo;</span>
+  <span class="current">Drug Interaction Checker</span>
+</nav>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+
+<h1>Local Interaction Fixture Checker</h1>
+<p class="lead">Enter stored names to retrieve exact records from the incomplete deterministic fixture database.</p>
+
+<form method="post" action="{{ url_for('interaction_checker') }}" class="checker-box" id="checker-form">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <div class="checker-input-group" role="group" aria-labelledby="checker-input-label">
+  <span id="checker-input-label" class="checker-field-label">Medication or substance inputs</span>
+  <div class="checker-input checker-ac-wrap js-required-control">
+    <label for="drug-input" class="visually-hidden">Enter a stored medication or substance name</label>
+    <input type="text" id="drug-input" placeholder="Enter a drug name" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="checker-ac-drop" aria-expanded="false">
+    <div class="checker-ac-drop" id="checker-ac-drop" role="listbox" hidden></div>
+    <button type="button" id="add-drug" class="add-btn" aria-label="Add entered name to interaction inputs">Add</button>
+  </div>
+
+  <noscript>
+    <fieldset class="checker-noscript">
+      <legend>Enter at least two medications or substances</legend>
+      <label for="drug-noscript-1">Medication 1</label>
+      <input id="drug-noscript-1" name="drugs" maxlength="120" required>
+      <label for="drug-noscript-2">Medication 2</label>
+      <input id="drug-noscript-2" name="drugs" maxlength="120" required>
+      <label for="drug-noscript-3">Medication 3 (optional)</label>
+      <input id="drug-noscript-3" name="drugs" maxlength="120">
+      <button type="submit" class="btn btn-primary">Check interactions</button>
+    </fieldset>
+  </noscript>
+
+  <p id="empty-hint" class="checker-hint"{% if drugs_input or prefill %} style="display:none;"{% endif %}>
+    Type a drug name in the box above to get started.
+  </p>
+
+  <ul id="drug-list" class="checker-drug-list">
+    {% set initial = drugs_input if drugs_input else ([prefill] if prefill else []) %}
+    {% for name in initial %}
+      <li class="checker-drug-tag">
+        <span class="drug-name">{{ name }}</span>
+        <input type="hidden" name="drugs" value="{{ name }}">
+        <button type="button" class="remove-drug" aria-label="Remove {{ name }}">&times;</button>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <button type="submit" id="check-btn" class="btn btn-primary"{% if not drugs_input or drugs_input|length < 2 %} style="display:none;"{% endif %}>
+    Check local fixtures
+  </button>
+  </div>
+</form>
+
+
+<p class="checker-disclaimer">No result from this local checker establishes safety, completeness, or an absence of real interactions.</p>
+
+{% if drugs_input %}
+<section class="checker-results">
+  <div class="allergy-reminder is-270"><strong>Local fixture limitation:</strong> Results are exact records from a small deterministic database. Absence of a result does not establish absence of a real interaction.</div>
+  <h2>Interaction Results</h2>
+  <p class="muted">Drugs checked: {{ drugs_input | join(', ') }}</p>
+  {% if unrecognized %}
+    <p class="muted"><em>Not recognized:</em> {{ unrecognized | join(', ') }}</p>
+  {% endif %}
+  {% if unrepresented_pairs %}
+    <div class="disclaimer-box" role="status">
+      <strong>No stored coverage for {{ unrepresented_pairs|length }} recognized pair{{ '' if unrepresented_pairs|length == 1 else 's' }}:</strong>
+      <ul>{% for pair in unrepresented_pairs %}<li>{{ pair[0] }} + {{ pair[1] }}</li>{% endfor %}</ul>
+      <p>These pairs are unrepresented in the local fixture; this is not a “no interaction” result.</p>
+    </div>
+  {% endif %}
+
+  {% if summary %}
+    <div class="interaction-summary results-summary-header">
+      <div class="results-summary-count">{{ summary.total }} interaction{{ '' if summary.total == 1 else 's' }} found</div>
+      <div class="results-summary-breakdown">
+        <span class="sev-badge sev-major">&#9888; {{ summary.major }} major</span>
+        <span class="sev-badge sev-moderate">&#9889; {{ summary.moderate }} moderate</span>
+        <span class="sev-badge sev-minor">&#8505; {{ summary.minor }} minor</span>
+      </div>
+    </div>
+  {% endif %}
+
+  <div class="severity-legend is-274">
+    <strong>Stored severity labels</strong>
+    <ul class="is-275"><li><span class="sev-badge sev-major is-276">Major</span></li><li class="is-277"><span class="sev-badge sev-moderate is-278">Moderate</span></li><li class="is-277"><span class="sev-badge sev-minor is-279">Minor</span></li></ul>
+    <p class="muted">This mirror does not define, verify, or interpret these fixture labels.</p>
+  </div>
+
+  {% if interactions %}
+    {% set sev_groups = [
+      ('major', 'Major Interactions', '&#9888;'),
+      ('moderate', 'Moderate Interactions', '&#9889;'),
+      ('minor', 'Minor Interactions', '&#8505;'),
+    ] %}
+    {% for sev, label, icon in sev_groups %}
+      {% set group_items = interactions | selectattr('severity', 'equalto', sev) | list %}
+      {% if group_items %}
+        <div class="severity-group sev-group-{{ sev }}">
+          <h3 class="severity-group-head severity-group-head--{{ sev }}">
+            {{ icon|safe }} {{ label }} ({{ group_items|length }})
+          </h3>
+          <ul class="interaction-list">
+            {% for it in group_items %}
+              <li class="interaction interaction-row sev-{{ it.severity }} interaction-row--{{ it.severity }}">
+                <div class="interaction-row-head">
+                  <span class="sev-badge sev-{{ it.severity }}">{{ icon|safe }} {{ it.severity | capitalize }}</span>
+                  <strong class="interaction-row-drugs">
+                    <a href="{{ url_for('drug_detail', slug=it.drug_a.slug) }}">{{ it.drug_a.generic_name }}</a>
+                    +
+                    {% if it.drug_b %}
+                      <a href="{{ url_for('drug_detail', slug=it.drug_b.slug) }}">{{ it.drug_b.generic_name }}</a>
+                    {% else %}
+                      {{ it.drug_b_name or 'Alcohol' }}
+                    {% endif %}
+                  </strong>
+                </div>
+                <p class="is-282">{{ it.description }}</p>
+                <p class="is-283">
+                  <a href="{{ url_for('drug_detail', slug=it.drug_a.slug) }}#interactions">Learn more &rsaquo;</a>
+                </p>
+                <details class="is-284">
+                  <summary class="is-285">More information</summary>
+                  <div class="is-286">
+                    <p>Stored severity field: <strong>{{ it.severity }}</strong>.</p>
+                    <p>No separate pharmacology, management, monitoring, or dose-adjustment source is stored for this fixture.</p>
+                  </div>
+                </details>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <p>No matching drug-drug fixture record was found in this local database. This is not evidence that a real combination has no interaction.</p>
+  {% endif %}
+
+  {% if food_interactions %}
+    <h3 class="is-127">Drug-Food Interactions</h3>
+    <p class="muted">Matching local food-interaction fixture records.</p>
+    <ul class="interaction-list">
+      {% for it in food_interactions %}
+        {% set icon = '&#9888;' if it.severity == 'major' else ('&#9889;' if it.severity == 'moderate' else '&#8505;') %}
+        <li class="interaction interaction-row sev-{{ it.severity }} interaction-row--{{ it.severity }}">
+          <div class="interaction-row-head">
+            <span class="sev-badge sev-{{ it.severity }}">{{ icon|safe }} {{ it.severity | capitalize }}</span>
+            <strong class="interaction-row-drugs">
+              <a href="{{ url_for('drug_detail', slug=it.drug.slug) }}">{{ it.drug.generic_name }}</a>
+              + {{ it.item }}
+            </strong>
+          </div>
+          <p class="interaction-row-desc">{{ it.description }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {% if alcohol_interactions %}
+    <h3 class="is-127">Drug-Alcohol Interactions</h3>
+    <p class="muted">Matching local alcohol-interaction fixture records.</p>
+    <ul class="interaction-list">
+      {% for it in alcohol_interactions %}
+        {% set icon = '&#9888;' if it.severity == 'major' else ('&#9889;' if it.severity == 'moderate' else '&#8505;') %}
+        <li class="interaction interaction-row sev-{{ it.severity }} interaction-row--{{ it.severity }}">
+          <div class="interaction-row-head">
+            <span class="sev-badge sev-{{ it.severity }}">{{ icon|safe }} {{ it.severity | capitalize }}</span>
+            <strong class="interaction-row-drugs">
+              <a href="{{ url_for('drug_detail', slug=it.drug.slug) }}">{{ it.drug.generic_name }}</a>
+              + Alcohol
+            </strong>
+          </div>
+          <p class="interaction-row-desc">{{ it.description }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="faq-section">
+  <h2>Local checker help</h2>
+  <details class="faq-detail"><summary>How do I use this fixture?</summary><p>Enter at least two stored medication names, or use the inline add controls, and submit the form. The result page lists exact matching pair records.</p></details>
+  <details class="faq-detail"><summary>What is outside the data scope?</summary><p>The database is intentionally incomplete and has no source for exhaustive interaction coverage, clinical severity definitions, management advice, dose adjustment, or patient-specific guidance.</p></details>
+</section>
+
+<p class="reviewer-line">Deterministic local interaction fixtures; no external author, medical reviewer, or clinical editorial team is claimed.</p>
+
+<section id="further-information">
+  <h2>Further information</h2>
+  <p>Local WebHarbor benchmark fixture. Use current verified sources for real interaction decisions.</p>
+</section>
+
+</div>
+
+<aside class="sidebar">
+  <div class="sidebar-box popular-tools">
+    <h3>Popular tools &amp; resources</h3>
+    <ul class="sidebar-links">
+      <li><a href="{{ url_for('my_med_list') }}">My Med List</a></li>
+      <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+      <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+      <li><a href="{{ url_for('news_index') }}">Medical Q &amp; A</a></li>
+      <li><a href="{{ url_for('news_index') }}">Simulated Article Fixtures</a></li>
+    </ul>
+  </div>
+</aside>
+</div>
+
+<script>
+(function(){
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  var form = document.getElementById('checker-form');
+  var input = document.getElementById('drug-input');
+  var addBtn = document.getElementById('add-drug');
+  var listEl = document.getElementById('drug-list');
+  var emptyHint = document.getElementById('empty-hint');
+  var checkBtn = document.getElementById('check-btn');
+
+  function updateState(){
+    var count = listEl.querySelectorAll('li').length;
+    emptyHint.style.display = count ? 'none' : '';
+    checkBtn.style.display = count >= 2 ? '' : 'none';
+  }
+
+  function addDrug(name){
+    if(!name) return;
+    var lower = name.toLowerCase();
+    var existing = listEl.querySelectorAll('input[name="drugs"]');
+    for(var i=0; i<existing.length; i++){
+      if(existing[i].value.toLowerCase() === lower) return;
+    }
+    var li = document.createElement('li');
+    li.className = 'checker-drug-tag';
+
+    var span = document.createElement('span');
+    span.className = 'drug-name';
+    span.textContent = name;
+
+    var hidden = document.createElement('input');
+    hidden.type = 'hidden';
+    hidden.name = 'drugs';
+    hidden.value = name;
+
+    var rm = document.createElement('button');
+    rm.type = 'button';
+    rm.className = 'remove-drug';
+    rm.setAttribute('aria-label', 'Remove ' + name);
+    rm.innerHTML = '&times;';
+    rm.addEventListener('click', function(){ li.remove(); updateState(); });
+
+    li.appendChild(span);
+    li.appendChild(hidden);
+    li.appendChild(rm);
+    listEl.appendChild(li);
+    updateState();
+  }
+
+  // Autocomplete
+  var acDrop = document.getElementById('checker-ac-drop');
+  var acTimer = null, acItems = [], acActive = -1;
+  function acHide(){ acDrop.hidden = true; acDrop.innerHTML = ''; acItems = []; acActive = -1; input.setAttribute('aria-expanded', 'false'); input.removeAttribute('aria-activedescendant'); }
+  function acSetActive(index){
+    var nodes = acDrop.querySelectorAll('[role=option]');
+    nodes.forEach(function(node){ node.classList.remove('active'); node.setAttribute('aria-selected', 'false'); });
+    acActive = index;
+    if(index >= 0 && index < nodes.length){ nodes[index].classList.add('active'); nodes[index].setAttribute('aria-selected', 'true'); input.setAttribute('aria-activedescendant', nodes[index].id); }
+  }
+  function acChoose(index){ if(index < 0 || index >= acItems.length) return; input.value = acItems[index].name; acHide(); addBtn.click(); }
+  input.addEventListener('input', function(){
+    clearTimeout(acTimer);
+    var q = input.value.trim();
+    if(q.length < 2){ acHide(); return; }
+    acTimer = setTimeout(function(){
+      fetch('/api/autocomplete?q=' + encodeURIComponent(q))
+        .then(function(r){ return r.json(); })
+        .then(function(data){
+          if(input.value.trim() !== q){ return; }
+          acItems = (data||[]).filter(function(r){ return r.type !== 'condition'; }).slice(0,8);
+          if(!acItems.length){ acHide(); return; }
+          acDrop.innerHTML = acItems.map(function(row, index){ return '<div class="checker-ac-item" role="option" aria-selected="false" id="checker-option-' + index + '" data-index="' + index + '">' + escapeHtml(row.label) + '</div>'; }).join('');
+          acDrop.hidden = false; input.setAttribute('aria-expanded', 'true');
+          acDrop.querySelectorAll('[role=option]').forEach(function(el){
+            el.addEventListener('mousedown', function(e){ e.preventDefault(); acChoose(Number(el.dataset.index)); });
+          });
+        }).catch(function(){ if(input.value.trim() === q) acHide(); });
+    }, 180);
+  });
+  input.addEventListener('blur', function(){ setTimeout(acHide, 200); });
+
+  addBtn.addEventListener('click', function(){
+    var v = input.value.trim();
+    if(v){ addDrug(v); input.value = ''; acHide(); input.focus(); }
+  });
+
+  input.addEventListener('keydown', function(e){
+    if(!acDrop.hidden && acItems.length && e.key === 'ArrowDown'){ e.preventDefault(); acSetActive((acActive + 1) % acItems.length); }
+    else if(!acDrop.hidden && acItems.length && e.key === 'ArrowUp'){ e.preventDefault(); acSetActive((acActive - 1 + acItems.length) % acItems.length); }
+    else if(!acDrop.hidden && acActive >= 0 && e.key === 'Enter'){ e.preventDefault(); acChoose(acActive); }
+    else if(e.key === 'Escape'){ acHide(); }
+    else if(e.key === 'Enter'){ e.preventDefault(); addBtn.click(); }
+  });
+
+  // Wire up "Common interactions" quick-fill buttons.
+  Array.prototype.forEach.call(document.querySelectorAll('.common-pair-btn'), function(btn){
+    btn.addEventListener('click', function(){
+      var a = btn.getAttribute('data-drug-a');
+      var b = btn.getAttribute('data-drug-b');
+      // Clear existing list so the pair shows cleanly.
+      Array.prototype.forEach.call(listEl.querySelectorAll('li'), function(li){ li.remove(); });
+      if(a) addDrug(a);
+      if(b) addDrug(b);
+    });
+  });
+
+  // Wire up pre-rendered remove buttons (server-rendered tags).
+  Array.prototype.forEach.call(listEl.querySelectorAll('.remove-drug'), function(btn){
+    btn.addEventListener('click', function(){ btn.closest('li').remove(); updateState(); });
+  });
+
+  updateState();
+})();
+</script>
+{% endblock %}

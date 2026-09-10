@@ -1,0 +1,76 @@
+{% macro drug_status_sidebar(drug) %}
+<aside class="sidebar">
+  <div class="sidebar-box drug-status-box">
+    <div class="sidebar-box-title">Drug Status</div>
+    <ul class="status-list status-list--sidebar">
+      <li class="status-row">
+        <span class="status-icon rx-otc" aria-hidden="true">AV</span>
+        <div class="status-text">
+          <span class="status-label">Availability fixture</span>
+          <span class="status-value">{{ drug.availability if drug.availability else 'Not stored' }}</span>
+        </div>
+      </li>
+      <li class="status-row">
+        <span class="status-icon pregnancy" aria-hidden="true">&#9792;</span>
+        <div class="status-text">
+          <span class="status-label">Pregnancy fixture</span>
+          <span class="status-value"><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}" class="status-link">{{ drug.pregnancy_risk if drug.pregnancy_risk else 'Not stored' }} <span class="status-arrow" aria-hidden="true">&rsaquo;</span></a></span>
+        </div>
+      </li>
+      <li class="status-row">
+        <span class="status-icon csa" aria-hidden="true">CSA</span>
+        <div class="status-text">
+          <span class="status-label">CSA fixture</span>
+          <span class="status-value">{{ drug.csa_schedule if drug.csa_schedule else 'Not stored' }}</span>
+        </div>
+      </li>
+      <li class="status-row">
+        <span class="status-icon approval" aria-hidden="true">DATE</span>
+        <div class="status-text">
+          <span class="status-label">Approval-date fixture</span>
+          <span class="status-value">{% if drug.approval_date %}{{ drug.approval_date.strftime('%b %Y') if drug.approval_date.strftime is defined else drug.approval_date }}{% else %}Not stored{% endif %}</span>
+        </div>
+      </li>
+      <li class="status-row">
+        <span class="status-icon ingredients" aria-hidden="true">&#9670;</span>
+        <div class="status-text">
+          <span class="status-label">Ingredients</span>
+          <span class="status-value">Not stored</span>
+        </div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="sidebar-box rating-box">
+    <h3>Simulated Reviews &amp; Ratings</h3>
+    {% if drug.avg_rating %}
+    <div class="rating-score">{{ "%.1f"|format(drug.avg_rating) }}<span class="rating-score-denom"> / 10</span></div>
+    <div class="rating-bar-wrap">
+      {% set pct = ((drug.avg_rating or 0) * 10)|round(0, 'floor')|int %}
+      <div class="rating-bar" style="width: {{ pct }}%"></div>
+    </div>
+    {% else %}
+    <p class="muted">No ratings yet.</p>
+    {% endif %}
+    <div class="muted review-count-line">
+      <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}">{{ drug.review_count or 0 }} reviews</a>
+    </div>
+    <a href="{{ url_for('drug_review_new', slug=drug.slug) }}" class="btn btn-primary btn-block mt-2">&#9998; Write a Review</a>
+  </div>
+
+  <div class="sidebar-box more-about">
+    <h3>More about {{ drug.generic_name }}</h3>
+    <ul class="more-about-list">
+      {% set ep = request.endpoint %}
+      <li><a href="{{ url_for('drug_detail', slug=drug.slug) }}"{% if ep == 'drug_detail' %} class="active"{% endif %}>Drug overview</a></li>
+      <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}"{% if ep == 'drug_dosage' %} class="active"{% endif %}>Dosage guide</a></li>
+      <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}"{% if ep == 'drug_side_effects' %} class="active"{% endif %}>Side effects</a></li>
+      <li><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}"{% if ep == 'drug_interactions_page' %} class="active"{% endif %}>Drug interactions</a></li>
+      <li><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}"{% if ep == 'drug_pregnancy' %} class="active"{% endif %}>Pregnancy &amp; lactation</a></li>
+      <li><a href="{{ url_for('drug_images', slug=drug.slug) }}"{% if ep == 'drug_images' %} class="active"{% endif %}>Synthetic pill diagrams</a></li>
+      <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}"{% if ep == 'drug_prices' %} class="active"{% endif %}>Generated price fixture</a></li>
+      <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}"{% if ep == 'drug_pro_monograph' %} class="active"{% endif %}>Professional-layout fixture</a></li>
+    </ul>
+  </div>
+</aside>
+{% endmacro %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Local Pregnancy-Field Fixture Index | {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Pregnancy-field fixtures</span></nav>
+<div class="page-with-sidebar">
+<div class="main-col">
+  <h1>Local Pregnancy-Field Fixture Index</h1>
+  <p class="muted">This page groups raw deterministic fixture strings by a detected legacy category letter for interface testing. It does not define those letters or establish pregnancy, lactation, fetal-risk, contraindication, or current regulatory guidance.</p>
+
+  {% for cat in ['A', 'B', 'C', 'D', 'X'] %}
+    {% set cat_drugs = category_groups[cat] %}
+    {% if cat_drugs %}
+    <section>
+      <h2>Detected fixture prefix: {{ cat }}</h2>
+      <ul class="dosage-guide-list">{% for drug in cat_drugs %}<li class="dosage-guide-item"><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}"><strong>{{ drug.generic_name|capitalize }}</strong></a>{% if drug.pregnancy_risk %}<span class="muted"> — {{ drug.pregnancy_risk }}</span>{% endif %}</li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+  {% endfor %}
+
+  {% if unclassified_drugs %}
+  <section><h2>Other stored fixture values</h2><ul class="dosage-guide-list">{% for drug in unclassified_drugs %}<li class="dosage-guide-item"><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}"><strong>{{ drug.generic_name|capitalize }}</strong></a>{% if drug.pregnancy_risk %}<span class="muted"> — {{ drug.pregnancy_risk }}</span>{% endif %}</li>{% endfor %}</ul></section>
+  {% endif %}
+</div>
+<aside class="sidebar"><div class="sidebar-box"><div class="sidebar-box-title">Data limitation</div><p class="muted small">Use current verified labeling and qualified professional guidance for real decisions.</p></div></aside>
+</div>
+{% endblock %}

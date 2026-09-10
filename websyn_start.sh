@@ -1,11 +1,16 @@
 #!/bin/bash
 # WebSyn startup: launch all mirror sites, then exec the control plane.
-# This preserves the base image's browser env server (port 8100) as PID 1.
+# The control server becomes PID 1 after all per-site supervisors are launched.
 set -e
+
+if [[ ${#WEBSYN_CONTROL_TOKEN} -lt 32 ]]; then
+    echo "[WebSyn] WEBSYN_CONTROL_TOKEN is required and must contain at least 32 characters" >&2
+    exit 1
+fi
 
 SITES=(allrecipes amazon apple arxiv bbc_news booking github
        google_flights google_map google_search huggingface wolfram_alpha
-       cambridge_dictionary coursera espn merriam_webster ikea phys_org target ted osu rotten_tomatoes compass walmart_careers)
+       cambridge_dictionary coursera espn merriam_webster ikea phys_org target ted osu rotten_tomatoes compass walmart_careers drugs_com)
 BASE_PORT=40000
 PID_DIR=/tmp/websyn_pids
 mkdir -p "$PID_DIR"
@@ -25,10 +30,9 @@ for i in "${!SITES[@]}"; do
     port=$((BASE_PORT + i))
     # Spawn via /opt/site_runner.py supervisor so SIGTERM works.
     # See site_runner.py for the rationale (Werkzeug ignores SIGTERM).
-    exec python3 /opt/site_runner.py "$site" "$port" \
+    exec env -u WEBSYN_CONTROL_TOKEN python3 /opt/site_runner.py "$site" "$port" \
         > "/tmp/websyn_${site}.log" 2>&1 &
-    echo "$!" > "$PID_DIR/${site}.pid"
-    echo "  $site -> port $port (PID $!)"
+    echo "  $site -> port $port (PID $!; identity record written by supervisor)"
 done
 
 
@@ -81,11 +85,7 @@ done
 
 if [ "$failed" -ne 0 ]; then
     echo "[WebSyn] Startup failed; stopping site supervisors." >&2
-    for pid_file in "$PID_DIR"/*.pid; do
-        [ -f "$pid_file" ] || continue
-        pid=$(cat "$pid_file")
-        kill -KILL -- "-$pid" 2>/dev/null || true
-    done
+    python3 /opt/control_server.py --stop-sites || true
     exit 1
 fi
 

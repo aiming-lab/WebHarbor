@@ -1,0 +1,57 @@
+{
+  "version": 1,
+  "external_runtime_network_fetches": 0,
+  "same_origin_runtime_fetches": ["autocomplete", "review vote"],
+  "content_families": [
+    {
+      "name": "medication and class text fixtures",
+      "tracked_source": "sites/drugs_com/app.py: DRUGS_DATA, DRUG_CLASSES, DRUG_CONTENT_OVERRIDES, _PREGNANCY_RISK",
+      "provenance_status": "No per-record external source or medical-review evidence was supplied with PR 71. The application labels these records as deterministic unverified benchmark fixtures and does not synthesize missing drug-specific fields."
+    },
+    {
+      "name": "interaction fixtures",
+      "tracked_source": "sites/drugs_com/app.py: INTERACTIONS_DATA, _FOOD_BY_GENERIC, _ALCOHOL_BY_GENERIC",
+      "provenance_status": "No clinical-source mapping was supplied. Rules are explicitly keyed to generic names, are labeled as incomplete fixtures, and absence of a row is reported as unrepresented coverage rather than no interaction."
+    },
+    {
+      "name": "article fixtures",
+      "tracked_source": "sites/drugs_com/app.py: NEWS_DATA and supplemental simulated news declarations",
+      "provenance_status": "Simulated. Titles, bodies, source labels, dates, regulatory events, studies, and quotations do not claim to report real current events."
+    },
+    {
+      "name": "review fixtures",
+      "tracked_source": "sites/drugs_com/app.py: benchmark users and review template declarations",
+      "provenance_status": "Simulated and marked with is_fixture in SQLite and visible labels in the interface."
+    },
+    {
+      "name": "pill descriptor fixtures",
+      "tracked_source": "sites/drugs_com/app.py: PILL_IMAGES_DATA",
+      "provenance_status": "Text-only shape, color, imprint, strength, and manufacturer fixture fields. Runtime visuals are synthetic SVG diagrams, are visibly labeled, and are not photographs or identification evidence."
+    },
+    {
+      "name": "condition descriptions and medication-condition relationships",
+      "tracked_source": "sites/drugs_com/app.py: CONDITIONS_DATA, DRUGS_DATA condition lists, _SUPPLEMENTAL_CONDITIONS, _SUPPLEMENTAL_DRUG_CONDITIONS",
+      "provenance_status": "No clinical-source mapping was supplied. Descriptions and links are labeled as unreviewed deterministic relationship fixtures and do not establish treatment guidance."
+    },
+    {
+      "name": "symptom-label matcher fixtures",
+      "tracked_source": "sites/drugs_com/app.py: SYMPTOM_BODY_SYSTEMS, SYMPTOM_CONDITION_MAP",
+      "provenance_status": "Synthetic token-matching inputs and mappings for interface evaluation. Results explicitly do not establish symptom association, diagnosis, or triage."
+    },
+    {
+      "name": "generated price-layout fixtures",
+      "tracked_source": "sites/drugs_com/app.py: generate_drug_prices",
+      "provenance_status": "Deterministically generated interface numbers and identifiers. They are not prices, quotations, discounts, coupons, insurance benefits, purchase offers, or historical data."
+    },
+    {
+      "name": "template-defined navigation taxonomy and comparison suggestions",
+      "tracked_source": "sites/drugs_com/templates/index.html: health-category navigation; sites/drugs_com/templates/compare_drugs.html: popular comparison navigation",
+      "provenance_status": "Hardcoded local navigation fixtures for interface evaluation. Category descriptions and suggested pairs do not establish medical taxonomy, treatment association, efficacy, or recommendation."
+    },
+    {
+      "name": "account, contact, subscription, and preference workflows",
+      "tracked_source": "sites/drugs_com/app.py: account and local form route handlers",
+      "provenance_status": "Local resettable workflow state only. The application performs no email, newsletter, contact, analytics, provider-portal, or other external delivery."
+    }
+  ]
+}

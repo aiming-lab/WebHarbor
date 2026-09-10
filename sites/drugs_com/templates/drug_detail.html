@@ -1,0 +1,510 @@
+{% extends "base.html" %}
+{% from "_pill_svg.html" import render_pill %}
+{% block title %}{{ drug.generic_name|capitalize }} Uses, Dosage & Side Effects - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumb-row">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+    <span>{{ drug.generic_name|capitalize }}</span>
+  </nav>
+  <div class="breadcrumb-actions">
+    <button type="button" onclick="window.print()" class="action-link action-button js-required-control">Print</button>
+    <span class="action-sep js-required-control">|</span>
+    {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('my_med_list_toggle') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ drug.slug }}"><input type="hidden" name="saved" value="{{ 'false' if saved else 'true' }}"><button type="submit" class="action-link action-button">{{ 'Remove from My Med List' if saved else 'Save to My Med List' }}</button></form>
+    {% else %}
+      <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="action-link">Save</a>
+    {% endif %}
+  </div>
+</div>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<article class="drug-detail">
+  <header class="drug-header drug-header--featured">
+    <div class="drug-header-image-wrap">
+      {% if drug.images and drug.images|length > 0 %}
+        {% set img0 = drug.images[0] %}
+        <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-header-image drug-header-image--featured" aria-label="View synthetic {{ drug.generic_name }} pill diagrams">
+          {{ render_pill('feat-' + drug.slug, img0.shape, img0.color, img0.imprint) }}
+        </a>
+        <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-header-image-caption">Synthetic diagram from local descriptor fields &rsaquo;</a>
+      {% else %}
+        <div class="drug-header-image drug-header-image--featured muted" role="img" aria-label="No pill descriptor is stored">No pill descriptor stored</div>
+      {% endif %}
+    </div>
+    <div class="drug-header-text">
+    <h1 class="drug-title">{{ drug.generic_name|capitalize }} <button type="button" class="drug-pronounce-btn speaker-icon js-required-control" aria-label="Pronounce {{ drug.generic_name }}" title="Hear pronunciation">&#128264;</button></h1>
+    {% if drug.pronunciation %}<p class="pronunciation">Pronunciation: <em>{{ drug.pronunciation }}</em></p>{% endif %}
+    <div class="drug-meta-line">
+      <span class="drug-meta-item"><strong>Generic name:</strong> {{ drug.generic_name }}</span>
+      <span class="drug-meta-item"><strong>Brand names:</strong>
+        {% if drug.brand_names %}
+          {% for bn in drug.brand_names %}<a href="{{ url_for('search') }}?q={{ bn|urlencode }}" class="brand-chip">{{ bn }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+        {% else %}
+          <span class="muted">N/A</span>
+        {% endif %}
+      </span>
+      <span class="drug-meta-item"><strong>Dosage forms:</strong> <span class="muted">Not stored in this local fixture</span></span>
+      <span class="drug-meta-item"><strong>Drug class:</strong>
+        {% if drug.drug_class %}
+          <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
+        {% else %}N/A{% endif %}
+      </span>
+    </div>
+    {% if drug.avg_rating %}
+    {% set full_stars = (drug.avg_rating / 2) | int %}
+    {% set half_star = ((drug.avg_rating / 2) - full_stars) >= 0.5 %}
+    <div class="star-display" aria-label="Average rating {{ '%.1f'|format(drug.avg_rating) }} out of 10">
+      <span class="stars">
+        {% for i in range(full_stars) %}<span class="star star-full">&#9733;</span>{% endfor %}
+        {% if half_star %}<span class="star star-half-visual" aria-hidden="true">&#9733;</span>{% endif %}
+        {% for i in range(5 - full_stars - (1 if half_star else 0)) %}<span class="star star-empty">&#9734;</span>{% endfor %}
+      </span>
+      <span class="rating-num">{{ "%.1f"|format(drug.avg_rating) }}/10</span>
+      <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}" class="rating-num-count">({{ drug.review_count }} simulated fixture reviews)</a>
+    </div>
+    {% endif %}
+    <div class="reviewer-box">
+      <span class="reviewer-avatar" aria-hidden="true">
+        {%- set parts = (drug.reviewer_name or 'MD').split() -%}
+        {{ (parts[0][0] if parts and parts[0] else 'M') ~ (parts[-1][0] if parts and parts|length > 1 else 'D') }}
+      </span>
+      <div class="reviewer-box-text">
+        <span class="reviewer-box-line"><span class="reviewer-box-label">Local dataset label</span>: <strong>{{ drug.reviewer_name }}</strong>, {{ drug.reviewer_credential }}</span>
+        <span class="reviewer-box-meta">Fixture date: {{ drug.last_updated.strftime('%b %d, %Y') }}; no medical review is claimed</span>
+      </div>
+    </div>
+    <div class="drug-header-actions">
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('my_med_list_toggle') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ drug.slug }}"><input type="hidden" name="saved" value="{{ 'false' if saved else 'true' }}"><button type="submit" class="btn-med-list btn-med-list--header">
+          <span class="btn-med-list-icon" aria-hidden="true">{% if saved %}&#10003;{% else %}&#43;{% endif %}</span>
+          <span class="btn-med-list-text">{{ 'In My Med List — Remove' if saved else 'Add to My Med List' }}</span>
+        </button></form>
+      {% else %}
+        <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="btn-med-list btn-med-list--header">
+          <span class="btn-med-list-icon" aria-hidden="true">&#43;</span>
+          <span class="btn-med-list-text">Add to My Med List</span>
+        </a>
+      {% endif %}
+    </div>
+    </div>
+  </header>
+
+  <div class="drug-actions-bar">
+    <button type="button" onclick="window.print()" class="drug-action-link action-button js-required-control">Print</button>
+    <span class="drug-action-sep js-required-control">|</span>
+    <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-action-link">Synthetic pill diagrams</a>
+    <span class="drug-action-sep">|</span>
+    <a href="{{ url_for('drug_prices', slug=drug.slug) }}" class="drug-action-link">Generated price fixture</a>
+  </div>
+
+  <nav class="section-tabs" aria-label="Drug record sections">
+    <a href="#uses">Uses</a>
+    <a href="#warnings">Warnings</a>
+    <a href="#before-taking">Before taking</a>
+    <a href="#dosage">Dosage</a>
+    <a href="#side-effects">Side effects</a>
+    <a href="#interactions">Interactions</a>
+    <a href="#faq">FAQ</a>
+  </nav>
+
+  <div class="detail-grid">
+    <div class="detail-main">
+      <section id="uses">
+        <h2>What is {{ drug.generic_name }}?</h2>
+        {% if rt_description %}{{ rt_description | format_drug_text | safe }}{% endif %}
+        {% if rt_uses %}{{ rt_uses | format_drug_text | safe }}{% elif not rt_description %}<p class="muted">No drug-specific description or uses text is stored in this local fixture.</p>{% endif %}
+      </section>
+
+      <section id="warnings">
+        <h2>Warnings</h2>
+        {% set _warn_text = (rt_warnings or '') %}
+        {% set _warn_lower = _warn_text|lower %}
+        {% set _has_boxed = _warn_text and ('boxed warning' in _warn_lower or 'black box' in _warn_lower) %}
+        {% if _has_boxed %}
+        {% set _paras = _warn_text.split('\n\n') %}
+        {% set _bx = namespace(text=None, rest=[]) %}
+        {% for _p in _paras %}
+          {% if _bx.text is none and ('boxed warning' in _p|lower or 'black box' in _p|lower) %}
+            {% set _bx.text = _p %}
+          {% else %}
+            {% set _bx.rest = _bx.rest + [_p] %}
+          {% endif %}
+        {% endfor %}
+        <div class="black-box-warning" role="alert">
+          <div class="black-box-warning-head">
+            <span aria-hidden="true" class="black-box-warning-icon">&#9888;</span>
+            <strong class="black-box-warning-title">Boxed Warning</strong>
+          </div>
+          <div class="black-box-warning-body">
+            {{ (_bx.text or _warn_text[:400]) | format_drug_text | safe }}
+          </div>
+        </div>
+        {{ _bx.rest | join('\n\n') | format_drug_text | safe }}
+        {% else %}
+        {% if rt_warnings %}{{ rt_warnings | format_drug_text | safe }}{% else %}<p class="muted">No drug-specific warning text is stored in this local fixture.</p>{% endif %}
+        {% endif %}
+        <div class="dosage-info-link"><a href="{{ url_for('drug_warnings', slug=drug.slug) }}">Detailed {{ drug.generic_name|capitalize }} warning information</a></div>
+      </section>
+
+      <section id="before-taking">
+        <h2>Before taking this medicine</h2>
+        {% if before_taking %}
+        <p class="before-taking-detail">{{ before_taking }}</p>
+        <p class="muted">This is a local fixture field, not verified medical guidance.</p>
+        {% else %}
+        <p class="muted">No drug-specific before-taking record is stored in this local fixture.</p>
+        {% endif %}
+      </section>
+
+      <section id="dosage">
+        <h2>How should I take {{ drug.generic_name }}?</h2>
+        {% if rt_dosage %}{{ rt_dosage | format_drug_text | safe }}{% else %}<p class="muted">No drug-specific dosage text is stored in this local fixture.</p>{% endif %}
+        {% if rt_dosage %}
+        <div class="dosage-info-link">
+          <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Detailed {{ drug.generic_name|capitalize }} dosage information</a>
+        </div>
+        {% endif %}
+      </section>
+
+      <section id="miss-dose">
+        <h2>Missed-dose data</h2>
+        <p>No drug-specific missed-dose instruction is included in this local fixture. Verify current official labeling and consult a qualified healthcare professional.</p>
+      </section>
+
+      <section id="overdose">
+        <h2>Overdose data</h2>
+        <p>No drug-specific overdose instruction is included in this local fixture. For a real suspected overdose, contact local emergency services or an official poison-control service.</p>
+      </section>
+
+      <section id="what-to-avoid">
+        <h2>What-to-avoid data</h2>
+        <p class="muted">No drug-specific what-to-avoid record is stored in this local fixture.</p>
+      </section>
+
+      <section id="side-effects">
+        <h2>{{ drug.generic_name|capitalize }} side effects</h2>
+        <p class="muted">The text below is a local fixture field and is not verified medical guidance.</p>
+        {% if rt_side_effects %}{{ rt_side_effects | format_drug_text | safe }}{% else %}<p class="muted">No drug-specific side-effect text is stored in this local fixture.</p>{% endif %}
+        <div class="dosage-info-link">
+          <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Detailed {{ drug.generic_name|capitalize }} side effects information</a>
+        </div>
+      </section>
+
+      {% if related_drugs %}
+      <section id="similar-drugs">
+        <h2>Related/similar drugs</h2>
+        <div class="related-drugs-carousel">
+          {% for r in related_drugs[:8] %}
+          <a href="{{ url_for('drug_detail', slug=r.slug) }}" class="related-drug-card">
+            <div class="related-drug-card-pill">
+              {% if r.images and r.images|length > 0 %}
+                {% set ri0 = r.images[0] %}
+                {% if ri0.shape and ri0.color and ri0.imprint %}
+                  {{ render_pill('rel-' + r.slug, ri0.shape, ri0.color, ri0.imprint) }}
+                  <span class="muted">Synthetic descriptor diagram</span>
+                {% else %}
+                  <span class="muted">Incomplete pill descriptor; no diagram rendered</span>
+                {% endif %}
+              {% else %}
+                <span class="muted">No pill descriptor</span>
+              {% endif %}
+            </div>
+            <div class="related-drug-card-head">
+              <strong class="related-drug-name">{{ r.generic_name|capitalize }}</strong>
+              {% if r.avg_rating %}
+              <span class="related-drug-rating-badge">&#9733; {{ "%.1f"|format(r.avg_rating) }}</span>
+              {% endif %}
+            </div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section id="interactions">
+        <h2>Stored interaction fixtures</h2>
+        {% if drug_interactions is defined and not drug_interactions %}
+        <div class="interactions-empty-state">
+          <p class="interactions-empty-head"><strong>No matching pair fixture is stored</strong> for {{ drug.generic_name }}.</p>
+          <p class="muted interactions-empty-body">This does not establish absence of a real interaction. <a href="{{ url_for('interaction_checker') }}?drug={{ drug.slug }}">Open the local fixture checker &rsaquo;</a></p>
+        </div>
+        {% endif %}
+        {% if drug_interactions is defined and drug_interactions %}
+        <p class="muted">The local database has {{ drug_interactions|length }} pair fixture{{ 's' if drug_interactions|length != 1 else '' }} involving {{ drug.generic_name|capitalize }}:</p>
+        <ul class="drug-interactions-list">
+          {% for ix in (drug_interactions|sort(attribute='severity'))[:12] %}
+            {% set other = ix.drug_b if ix.drug_a_id == drug.id else ix.drug_a %}
+            {% if other %}
+            <li>
+              <a href="{{ url_for('drug_detail', slug=other.slug) }}">{{ other.generic_name|capitalize }}</a>
+              <span class="muted"> ({{ (ix.severity or 'unknown') }} interaction)</span>
+            </li>
+            {% endif %}
+          {% endfor %}
+        </ul>
+        {% if drug_interactions|length > 12 %}
+        <p><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">View all {{ drug_interactions|length }} interactions &rsaquo;</a></p>
+        {% endif %}
+        {% endif %}
+        {% if rt_interactions %}{{ rt_interactions | format_drug_text | safe }}{% endif %}
+        <p class="muted">The list is intentionally incomplete and has no claimed clinical review.</p>
+        <div class="dosage-info-link">
+          <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">View all {{ drug.generic_name|capitalize }} drug interactions</a>
+        </div>
+
+        <div class="inline-interaction-checker">
+          <h3>Does {{ drug.generic_name|capitalize }} interact with my other drugs?</h3>
+          <p class="muted">Enter a drug name to check for interactions with {{ drug.generic_name }}.</p>
+          <form action="{{ url_for('interaction_checker') }}" method="post" class="inline-checker-form" id="inline-checker-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="drugs" value="{{ drug.slug }}">
+            <div class="inline-checker-row">
+              <input type="text" id="inline-checker-input" name="drugs" class="inline-checker-input" placeholder="Add another stored drug name..." autocomplete="off" maxlength="120" required aria-label="Add another drug to interaction checker">
+              <button type="submit" class="btn btn-primary">Check local interaction fixture</button>
+            </div>
+          </form>
+        </div>
+      </section>
+
+      {% if faq_items %}
+      <section id="faq">
+        <h2>Popular FAQ</h2>
+        <div class="faq-list faq-accordion">
+        {% for item in faq_items %}
+          <details class="faq-item" {% if loop.first %}open{% endif %}>
+            <summary class="faq-question">{{ item.q }}</summary>
+            <div class="faq-answer"><p>{{ item.a }}</p></div>
+          </details>
+        {% endfor %}
+        </div>
+        <h3>More FAQ</h3>
+        <ul class="more-faq-list">
+          <li><a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">View more {{ drug.generic_name|capitalize }} FAQ&hellip;</a></li>
+        </ul>
+      </section>
+      {% endif %}
+
+      <section id="more-about" class="more-about-section">
+        <h2>More about {{ drug.generic_name }}</h2>
+        <ul class="more-about-links">
+          <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a></li>
+          <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage information</a></li>
+          <li><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Drug interactions</a></li>
+          <li><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}">During pregnancy or breastfeeding</a></li>
+          <li><a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}">User reviews ({{ drug.review_count }})</a></li>
+          <li><a href="{{ url_for('drug_images', slug=drug.slug) }}">Synthetic pill descriptor diagrams</a></li>
+          <li><a href="{{ url_for('drug_prices', slug=drug.slug) }}">Generated price fixture</a></li>
+        </ul>
+        <h3>Local fixture layouts</h3>
+        <ul class="more-about-links">
+          <li><a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} consumer-layout fixture</a></li>
+          <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} side effects</a></li>
+          <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} dosage</a></li>
+          <li><a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} patient reviews</a></li>
+        </ul>
+        <h3>Professional-layout fixtures</h3>
+        <ul class="more-about-links">
+          <li><a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} stored-field monograph</a></li>
+          <li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} dosage fixture</a></li>
+          <li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">{{ drug.generic_name|capitalize }} side-effect fixture</a></li>
+        </ul>
+        {% if drug_conditions %}
+        <h3>Stored condition relationships</h3>
+        <ul class="more-about-links">
+          {% for c in drug_conditions %}
+          <li><a href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </section>
+    </div>
+
+    <aside class="detail-sidebar">
+      <div class="status-box">
+        <h3 class="status-box-title">DRUG STATUS</h3>
+        <ul class="status-list">
+          <li class="status-row">
+            <span class="status-icon rx-otc" aria-hidden="true">{% if drug.availability == 'Rx' %}Rx{% elif drug.availability == 'OTC' %}OTC{% elif drug.availability %}Both{% else %}?{% endif %}</span>
+            <div class="status-text">
+              <span class="status-label">Availability</span>
+              <span class="status-value">{% if drug.availability %}Fixture field: {{ drug.availability }}{% else %}<span class="muted">Not stored</span>{% endif %}</span>
+            </div>
+          </li>
+          <li class="status-row">
+            <span class="status-icon pregnancy" aria-hidden="true">&#9792;</span>
+            <div class="status-text">
+              <span class="status-label">Pregnancy &amp; Lactation</span>
+              <span class="status-value">
+                <a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}" class="status-link">
+                  {% if drug.pregnancy_risk %}Fixture field: {{ drug.pregnancy_risk }}{% else %}<span class="muted">Not stored</span>{% endif %}
+                  <span class="status-arrow" aria-hidden="true">&rsaquo;</span>
+                </a>
+              </span>
+            </div>
+          </li>
+          <li class="status-row">
+            <span class="status-icon csa" aria-hidden="true">CSA</span>
+            <div class="status-text">
+              <span class="status-label">CSA Schedule*</span>
+              <span class="status-value">{% if drug.csa_schedule %}Fixture field: {{ drug.csa_schedule }}{% else %}<span class="muted">Not stored</span>{% endif %}</span>
+            </div>
+          </li>
+          <li class="status-row">
+            <span class="status-icon approval" aria-hidden="true">FDA</span>
+            <div class="status-text">
+              <span class="status-label">Approval History</span>
+              <span class="status-value">
+                <a href="{{ url_for('drug_detail', slug=drug.slug) }}#further-information" class="status-link">
+                  {% if drug.approval_date %}Fixture field: {{ drug.approval_date.strftime('%b %Y') if drug.approval_date.strftime is defined else drug.approval_date }}{% else %}<span class="muted">Not stored</span>{% endif %}
+                  <span class="status-arrow" aria-hidden="true">&rsaquo;</span>
+                </a>
+              </span>
+            </div>
+          </li>
+          <li class="status-row">
+            <span class="status-icon ingredients" aria-hidden="true">&#9670;</span>
+            <div class="status-text">
+              <span class="status-label">Ingredients</span>
+              <span class="status-value muted">Not stored</span>
+            </div>
+          </li>
+        </ul>
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('my_med_list_toggle') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ drug.slug }}"><input type="hidden" name="saved" value="{{ 'false' if saved else 'true' }}"><button type="submit" class="btn-med-list btn-med-list--lg">
+          <span class="btn-med-list-icon" aria-hidden="true">{% if saved %}&#10003;{% else %}&#43;{% endif %}</span>
+          <span class="btn-med-list-text">{{ 'Remove from My Med List' if saved else 'Add to My Med List' }}</span>
+        </button></form>
+        {% else %}
+        <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="btn-med-list btn-med-list--lg">
+          <span class="btn-med-list-icon" aria-hidden="true">&#43;</span>
+          <span class="btn-med-list-text">Sign in to save</span>
+        </a>
+        {% endif %}
+      </div>
+
+      <div class="sidebar-box rating-box">
+        <h3>Simulated Reviews &amp; Ratings</h3>
+        {% if drug.avg_rating %}
+        <div class="rating-score">{{ "%.1f"|format(drug.avg_rating) }}<span class="rating-score-denom"> / 10</span></div>
+        <div class="rating-bar-wrap">
+          {% set pct = ((drug.avg_rating or 0) * 10)|round(0, 'floor')|int %}
+          <div class="rating-bar" style="width: {{ pct }}%"></div>
+        </div>
+        {% else %}
+        <p class="muted">No ratings yet.</p>
+        {% endif %}
+        <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}" class="rating-count">{{ drug.review_count }} simulated fixture reviews</a>
+        <a href="{{ url_for('drug_review_new', slug=drug.slug) }}" class="sidebar-write-review">Write a review</a>
+      </div>
+
+      {% if related_news %}
+      <div class="sidebar-box">
+        <h3>Related simulated news</h3>
+        <ul class="sidebar-links">
+          {% for n in related_news[:3] %}
+            <li><a href="{{ url_for('news_article', article_id=n.id) }}">{{ n.title[:70] }}{% if n.title|length > 70 %}...{% endif %}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+
+      <div class="sidebar-box images-box">
+        <h3>Images</h3>
+        <div class="sidebar-images-row">
+          {% if drug.images %}
+            {% for img in drug.images[:3] %}
+              {% if img.shape and img.color and img.imprint %}
+              <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-pill-thumb" aria-label="Synthetic {{ drug.generic_name|capitalize }} pill descriptor diagram">
+                {{ render_pill('sb-' + drug.slug + '-' + loop.index|string, img.shape, img.color, img.imprint) }}
+              </a>
+              {% else %}
+              <span class="muted">Incomplete pill descriptor; no diagram rendered</span>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <span class="muted">No pill descriptor stored</span>
+          {% endif %}
+        </div>
+        <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-images-link">View synthetic descriptor diagrams</a>
+      </div>
+
+      {% if recently_viewed %}
+      <div class="sidebar-box recently-viewed-box">
+        <h3>Recently viewed</h3>
+        <ul class="sidebar-links">
+          {% for d in recently_viewed[:4] %}
+            <li><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a></li>
+          {% endfor %}
+        </ul>
+      </div>
+      {% endif %}
+    </aside>
+  </div>
+
+  <section id="further-information" class="further-information">
+    <h2>Further information</h2>
+    <p>This page renders deterministic local fixture fields. It is not a verified source for medication handling, indication, prescribing, or other medical decisions.</p>
+    <p class="further-information-copyright muted">Local WebHarbor benchmark fixture. No third-party authorship or medical review is claimed.</p>
+  </section>
+</article>
+
+<script>
+(function(){
+  var sections = ['uses','warnings','before-taking','dosage','miss-dose','overdose','side-effects','similar-drugs','interactions','faq','more-about'];
+  var tabs = document.querySelectorAll('.section-tabs a');
+  function updateActive() {
+    var scrollY = window.scrollY + 120;
+    var active = sections[0];
+    sections.forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && el.offsetTop <= scrollY) active = id;
+    });
+    tabs.forEach(function(t) {
+      var href = t.getAttribute('href');
+      t.classList.toggle('active', href === '#' + active);
+    });
+  }
+  window.addEventListener('scroll', updateActive, {passive: true});
+  updateActive();
+})();
+</script>
+
+<script>
+(function(){
+  var pronounceBtn = document.querySelector('.drug-pronounce-btn');
+  if (pronounceBtn && 'speechSynthesis' in window) {
+    pronounceBtn.addEventListener('click', function() {
+      var utterance = new SpeechSynthesisUtterance({{ drug.generic_name | tojson }});
+      utterance.rate = 0.8;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+    });
+  }
+})();
+</script>
+
+<script>
+document.querySelectorAll('.review-helpful').forEach(function(box) {
+  var rid = box.dataset.reviewId, slug = box.dataset.slug;
+  var countEl = box.querySelector('.review-helpful-count');
+  function send(vote) {
+    var fd = new FormData(); fd.append('vote', vote); fd.append('csrf_token', '{{ csrf_token() }}');
+    fetch('/' + slug + '/review/' + rid + '/helpful', {method:'POST', body:fd})
+      .then(function(r){return r.json();})
+      .then(function(data){if(countEl && data.votes !== undefined) countEl.textContent = data.votes;})
+      .catch(function(){});
+  }
+  var yes = box.querySelector('.review-helpful-yes');
+  var no = box.querySelector('.review-helpful-no');
+  if (yes) yes.addEventListener('click', function(){ send('yes'); });
+  if (no) no.addEventListener('click', function(){ send('no'); });
+});
+</script>
+{% endblock %}

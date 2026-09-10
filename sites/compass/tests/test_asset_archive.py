@@ -37,7 +37,7 @@ def archive(tmp_path, name, *, kind="file", link=""):
 
 
 def test_valid_media_member_is_accepted(tmp_path):
-    assert VALIDATOR.validate(archive(tmp_path, "compass/static/images/photo.webp"), "compass") == 1
+    assert VALIDATOR.validate(archive(tmp_path, "compass/static/images/photo.webp"), "compass", allow_missing_seed=True) == 1
 
 
 @pytest.mark.parametrize("name", [
@@ -56,6 +56,9 @@ def test_archive_links_are_rejected(tmp_path):
 
 def test_staged_install_removes_stale_managed_files(tmp_path):
     sites = tmp_path / "sites"
+    marker = sites / "compass" / ".build-generated-seed"
+    marker.parent.mkdir(parents=True)
+    marker.write_text("compass-source-v1")
     stale_images = sites / "compass" / "static" / "images"
     stale_cache = sites / "compass" / "static" / "external_cache"
     stale_images.mkdir(parents=True)

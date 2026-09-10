@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block title %}Compare Drugs - Drugs.com{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Compare Drugs</span>
+</nav>
+
+<h1>Compare Drugs Side by Side</h1>
+<p class="muted is-056">
+  Select up to three deterministic medication fixtures to compare stored names, class, availability, warnings, side effects, dosage text, and simulated review aggregates. No comparative clinical conclusion is produced.
+</p>
+
+{% set selected_drugs = [] %}
+{% if drug1 %}{% set _ = selected_drugs.append(('drug1', drug1, dosage_forms.drug1)) %}{% endif %}
+{% if drug2 %}{% set _ = selected_drugs.append(('drug2', drug2, dosage_forms.drug2)) %}{% endif %}
+{% if drug3 %}{% set _ = selected_drugs.append(('drug3', drug3, dosage_forms.drug3)) %}{% endif %}
+
+<form action="{{ url_for('compare_drugs') }}" method="get" class="compare-form">
+  <div class="compare-form-grid">
+    <div class="compare-form-field compare-ac-wrap">
+      <label for="drug1">First drug</label>
+      <input type="text" name="drug1" id="drug1" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="compare-ac-1" aria-expanded="false"
+             value="{{ drug1.generic_name if drug1 else '' }}"
+             placeholder="Type a drug name (e.g. ibuprofen)" class="compare-ac-input">
+      <div class="compare-ac-drop" id="compare-ac-1" role="listbox" hidden></div>
+    </div>
+    <div class="compare-form-field compare-ac-wrap">
+      <label for="drug2">Second drug</label>
+      <input type="text" name="drug2" id="drug2" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="compare-ac-2" aria-expanded="false"
+             value="{{ drug2.generic_name if drug2 else '' }}"
+             placeholder="Type a drug name (e.g. naproxen)" class="compare-ac-input">
+      <div class="compare-ac-drop" id="compare-ac-2" role="listbox" hidden></div>
+    </div>
+    <div class="compare-form-field compare-ac-wrap">
+      <label for="drug3">Third drug <span class="muted compare-form-optional">(optional)</span></label>
+      <input type="text" name="drug3" id="drug3" autocomplete="off" role="combobox" aria-autocomplete="list" aria-controls="compare-ac-3" aria-expanded="false"
+             value="{{ drug3.generic_name if drug3 else '' }}"
+             placeholder="Type a drug name (e.g. aspirin)" class="compare-ac-input">
+      <div class="compare-ac-drop" id="compare-ac-3" role="listbox" hidden></div>
+    </div>
+    <button type="submit" class="btn btn-primary compare-form-submit">Compare</button>
+  </div>
+  <p class="muted compare-form-tip">Tip: type the generic name, e.g. <code>ibuprofen</code>, <code>naproxen</code>.</p>
+</form>
+<script>
+(function(){
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+  function setupCompareAC(inputId, dropId){
+    var inp=document.getElementById(inputId),drop=document.getElementById(dropId),timer=null,items=[],active=-1;
+    if(!inp||!drop)return;
+    function hide(){drop.hidden=true;drop.innerHTML='';items=[];active=-1;inp.setAttribute('aria-expanded','false');inp.removeAttribute('aria-activedescendant');}
+    function choose(index){if(index<0||index>=items.length)return;inp.value=items[index].name;hide();}
+    function setActive(index){var nodes=drop.querySelectorAll('[role=option]');nodes.forEach(function(node){node.setAttribute('aria-selected','false');node.classList.remove('active');});active=index;if(index>=0&&index<nodes.length){nodes[index].setAttribute('aria-selected','true');nodes[index].classList.add('active');inp.setAttribute('aria-activedescendant',nodes[index].id);}}
+    inp.addEventListener('input',function(){clearTimeout(timer);var q=inp.value.trim();if(q.length<2){hide();return;}timer=setTimeout(function(){fetch('/api/autocomplete?q='+encodeURIComponent(q)).then(function(r){return r.json();}).then(function(data){if(inp.value.trim()!==q)return;items=(data||[]).filter(function(row){return row.type!=='condition';}).slice(0,8);if(!items.length){hide();return;}drop.innerHTML=items.map(function(row,index){return '<div class="compare-ac-item" role="option" aria-selected="false" id="'+dropId+'-option-'+index+'" data-index="'+index+'">'+escapeHtml(row.label)+'</div>';}).join('');drop.hidden=false;inp.setAttribute('aria-expanded','true');drop.querySelectorAll('[role=option]').forEach(function(node){node.addEventListener('mousedown',function(event){event.preventDefault();choose(Number(node.dataset.index));});});}).catch(function(){if(inp.value.trim()===q)hide();});},180);});
+    inp.addEventListener('keydown',function(event){if(drop.hidden||!items.length)return;if(event.key==='ArrowDown'){event.preventDefault();setActive((active+1)%items.length);}else if(event.key==='ArrowUp'){event.preventDefault();setActive((active-1+items.length)%items.length);}else if(event.key==='Enter'&&active>=0){event.preventDefault();choose(active);}else if(event.key==='Escape'){hide();}});
+    inp.addEventListener('blur',function(){setTimeout(hide,200);});
+  }
+  setupCompareAC('drug1','compare-ac-1');setupCompareAC('drug2','compare-ac-2');setupCompareAC('drug3','compare-ac-3');
+})();
+</script>
+
+{% if selected_drugs|length >= 2 %}
+  <h2>
+    {% for _, d, _f in selected_drugs %}{{ d.generic_name|capitalize }}{% if not loop.last %} vs. {% endif %}{% endfor %}
+  </h2>
+
+  <!-- Quick comparison table -->
+  <div class="compare-quick-wrap">
+    <h3 class="compare-quick-heading">Quick comparison</h3>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Drug comparison table">
+    <table class="compare-quick-table">
+      <thead>
+        <tr>
+          <th class="cq-attr-head">Attribute</th>
+          {% for _, d, _f in selected_drugs %}
+            <th>
+              <span class="cq-generic">{{ d.generic_name|capitalize }}</span>
+              {% if d.brand_names %}
+                <span class="cq-brands">{{ d.brand_names|join(', ') }}</span>
+              {% else %}
+                <span class="cq-brands">Generic only</span>
+              {% endif %}
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <th scope="row" class="cq-attr">Drug class</th>
+          {% for _, d, _f in selected_drugs %}
+            <td>{{ d.drug_class.name if d.drug_class else '—' }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <th scope="row" class="cq-attr">Availability</th>
+          {% for _, d, _f in selected_drugs %}
+            <td>{{ d.availability or '—' }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <th scope="row" class="cq-attr">Pregnancy fixture field</th>
+          {% for _, d, _f in selected_drugs %}<td>{{ d.pregnancy_risk or 'Not stored' }}</td>{% endfor %}
+        </tr>
+        <tr>
+          <th scope="row" class="cq-attr">CSA schedule</th>
+          {% for _, d, _f in selected_drugs %}
+            <td>{{ d.csa_schedule or 'N/A' }}</td>
+          {% endfor %}
+        </tr>
+        <tr>
+          <th scope="row" class="cq-attr">Brand names</th>
+          {% for _, d, _f in selected_drugs %}
+            <td>{{ d.brand_names|join(', ') or '—' }}</td>
+          {% endfor %}
+        </tr>
+        {% set _rounded_ratings = [] %}
+        {% for _, d, _f in selected_drugs %}
+          {% if d.review_count and d.review_count > 0 %}{% set _ = _rounded_ratings.append('%.1f'|format(d.avg_rating or 0)) %}{% endif %}
+        {% endfor %}
+        {% set _rating_tie = _rounded_ratings|length >= 2 and (_rounded_ratings|unique|list)|length < _rounded_ratings|length %}
+        <tr>
+          <th scope="row" class="cq-attr">Average rating</th>
+          {% for _, d, _f in selected_drugs %}
+            <td>
+              {% if d.review_count and d.review_count > 0 %}
+                {% set r = d.avg_rating or 0 %}
+                {% if r >= 7 %}
+                  <span class="rating-pill rating-pill-good">{{ '%.1f'|format(r) }}/10</span>
+                {% elif r >= 5 %}
+                  <span class="rating-pill rating-pill-mid">{{ '%.1f'|format(r) }}/10</span>
+                {% else %}
+                  <span class="rating-pill rating-pill-bad">{{ '%.1f'|format(r) }}/10</span>
+                {% endif %}
+                <span class="rating-count">{{ d.review_count }} reviews</span>
+              {% else %}
+                <span class="rating-pill rating-pill-na">N/A</span>
+                <span class="rating-count">no reviews</span>
+              {% endif %}
+            </td>
+          {% endfor %}
+        </tr>
+        {% if _rating_tie %}
+        <tr>
+          <th scope="row" class="cq-attr"><span class="visually-hidden">Rating comparison note</span></th>
+          <td colspan="{{ selected_drugs|length }}" class="cq-rating-tie-note">
+            <span class="cq-tie-badge">Tie</span>
+            Two or more fixture records share the same simulated average rating.
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+    </div>
+  </div>
+
+  {% set _classes = selected_drugs|map(attribute='1')|map(attribute='drug_class')|select|map(attribute='name')|list|unique|list %}
+  {% set _avails = selected_drugs|map(attribute='1')|map(attribute='availability')|select|list|unique|list %}
+  {% set _pregs = selected_drugs|map(attribute='1')|map(attribute='pregnancy_risk')|select|list|unique|list %}
+  <div class="compare-simdiff">
+    <div class="compare-simdiff-col compare-simdiff-sim">
+      <h4>Similarities</h4>
+      <ul>
+        {% if _classes|length == 1 %}<li>Same drug class: <strong>{{ _classes[0] }}</strong></li>{% endif %}
+        {% if _avails|length == 1 %}<li>Same availability: <strong>{{ _avails[0] }}</strong></li>{% endif %}
+        {% if _pregs|length == 1 and _pregs[0] %}<li>Same pregnancy category: <strong>{{ _pregs[0] }}</strong></li>{% endif %}
+        {% if _classes|length > 1 and _avails|length > 1 and (_pregs|length > 1 or not _pregs) %}<li class="muted">No identical value among the compared class, availability, and pregnancy fixture fields.</li>{% endif %}
+      </ul>
+    </div>
+    <div class="compare-simdiff-col compare-simdiff-diff">
+      <h4>Differences</h4>
+      <ul>
+        {% if _classes|length > 1 %}<li>Different drug classes: {{ _classes|join(' vs. ') }}</li>{% endif %}
+        {% if _avails|length > 1 %}<li>Mixed availability: {{ _avails|join(' vs. ') }}</li>{% endif %}
+        {% if _pregs|length > 1 %}<li>Different pregnancy categories: {{ _pregs|join(' vs. ') }}</li>{% endif %}
+        {% set _schedules = selected_drugs|map(attribute='1')|map(attribute='csa_schedule')|select|list|unique|list %}
+        {% if _schedules|length > 1 %}<li>Different CSA schedules: {{ _schedules|join(' vs. ') }}</li>{% endif %}
+        {% if _classes|length == 1 and _avails|length == 1 %}<li class="muted">The stored class and availability fields match.</li>{% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <p class="is-057">
+    See the side-by-side detailed comparison below for uses, warnings, side effects, and dosage.
+  </p>
+  <p>
+    {% for _, d, _f in selected_drugs %}
+      <a href="{{ url_for('drug_detail', slug=d.slug) }}">Full {{ d.generic_name }} page</a>{% if not loop.last %} &middot; {% endif %}
+    {% endfor %}
+  </p>
+{% elif selected_drugs|length == 1 %}
+  <p class="muted">Select at least one more drug above to see the comparison.</p>
+{% endif %}
+
+{% if selected_drugs %}
+<section class="detailed-comparison">
+  <h2>Stored fixture text comparison</h2>
+
+  {% set col_count = selected_drugs|length %}
+
+  <div class="compare-section">
+    <h3>What are these drugs used for?</h3>
+    <div class="compare-cols compare-cols--{{ col_count }}">
+      {% for slug, drug, _ in selected_drugs %}
+      <div class="compare-col">
+        <h4 class="compare-col-header">{{ drug.generic_name|capitalize }}</h4>
+        {% set cd = (drug.uses or drug.description or 'Not stored in this fixture.')|clean_desc %}
+        <p>{{ cd[:300] }}{% if cd|length > 300 %}...{% endif %}</p>
+        <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="compare-col-link">Full information &rsaquo;</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="compare-section">
+    <h3>Warnings</h3>
+    <div class="compare-cols compare-cols--{{ col_count }}">
+      {% for slug, drug, _ in selected_drugs %}
+      <div class="compare-col">
+        <h4 class="compare-col-header">{{ drug.generic_name|capitalize }}</h4>
+        <p>{{ (drug.warnings or 'Not stored in this fixture.')[:300] }}{% if (drug.warnings or '')|length > 300 %}...{% endif %}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="compare-section">
+    <h3>Common side effects</h3>
+    <div class="compare-cols compare-cols--{{ col_count }}">
+      {% for slug, drug, _ in selected_drugs %}
+      <div class="compare-col">
+        <h4 class="compare-col-header">{{ drug.generic_name|capitalize }}</h4>
+        <p>{{ (drug.side_effects or 'Not stored in this fixture.')[:300] }}{% if (drug.side_effects or '')|length > 300 %}...{% endif %}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="compare-section">
+    <h3>Dosage</h3>
+    <div class="compare-cols compare-cols--{{ col_count }}">
+      {% for slug, drug, _ in selected_drugs %}
+      <div class="compare-col">
+        <h4 class="compare-col-header">{{ drug.generic_name|capitalize }}</h4>
+        <p>{{ (drug.dosage or 'Not stored in this fixture.')[:300] }}{% if (drug.dosage or '')|length > 300 %}...{% endif %}</p>
+        <a href="{{ url_for('drug_dosage', slug=drug.slug) }}" class="compare-col-link">Full dosage guide &rsaquo;</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if selected_drugs|length >= 2 %}
+{% set reviewed_drugs = selected_drugs|selectattr('1.review_count')|list %}
+{% set best_rated = (reviewed_drugs if reviewed_drugs else selected_drugs)|sort(attribute='1.avg_rating', reverse=true)|first %}
+<div class="bottom-line-box">
+  <div class="bottom-line-header">
+    <span class="bottom-line-icon" aria-hidden="true">i</span>
+    <h2>Stored comparison summary</h2>
+  </div>
+  <p>
+    Compared local records: {% for _, d, _f in selected_drugs %}<strong>{{ d.generic_name|capitalize }}</strong>{% if not loop.last %}{% if loop.revindex == 2 %} and {% else %}, {% endif %}{% endif %}{% endfor %}.
+  </p>
+  {% if best_rated[1].review_count and best_rated[1].review_count > 0 %}
+    <p>
+      <span class="bl-pick">Highest simulated fixture rating</span>
+      <strong>{{ best_rated[1].generic_name|capitalize }}</strong>
+      has the largest stored simulated-review average at <strong>{{ '%.1f'|format(best_rated[1].avg_rating or 0) }}/10</strong> across {{ best_rated[1].review_count }} fixture ratings.
+    </p>
+  {% endif %}
+  <p class="muted is-058">
+    This summary compares fixture values only and does not rank safety, efficacy, suitability, accessibility, or treatment choice.
+  </p>
+</div>
+{% endif %}
+{% endif %}
+
+<section class="compare-popular-section">
+  <h2>Example fixture comparisons</h2>
+  {% set pop_groups = [
+    ('Type 2 Diabetes', [
+      ('metformin','glipizide'), ('semaglutide','tirzepatide'), ('metformin','sitagliptin')
+    ]),
+    ('Weight Loss', [
+      ('semaglutide','tirzepatide'), ('semaglutide','liraglutide')
+    ]),
+    ('Depression', [
+      ('sertraline','escitalopram'), ('fluoxetine','sertraline'), ('bupropion','sertraline'),
+      ('duloxetine','venlafaxine')
+    ]),
+    ('High Blood Pressure', [
+      ('lisinopril','losartan'), ('amlodipine','lisinopril'), ('metoprolol','atenolol'),
+      ('lisinopril','metoprolol')
+    ]),
+    ('Pain &amp; Inflammation', [
+      ('ibuprofen','naproxen'), ('ibuprofen','acetaminophen'), ('naproxen','celecoxib'),
+      ('ibuprofen','aspirin')
+    ]),
+    ('High Cholesterol', [
+      ('atorvastatin','simvastatin'), ('atorvastatin','rosuvastatin'), ('simvastatin','pravastatin'),
+      ('ezetimibe','atorvastatin')
+    ])
+  ] %}
+  <div class="compare-popular-grid">
+    {% for group_name, pairs in pop_groups %}
+    <div class="compare-popular-group">
+      <h3 class="compare-popular-group-title">{{ group_name|safe }}</h3>
+      <ul class="compare-popular-list">
+        {% for a, b in pairs %}
+        <li><a href="{{ url_for('compare_drugs') }}?drug1={{ a|replace(' ','+') }}&drug2={{ b|replace(' ','+') }}">{{ a|capitalize }} vs {{ b|capitalize }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -11,7 +11,7 @@ EXPECTED = [
     "allrecipes", "amazon", "apple", "arxiv", "bbc_news", "booking", "github",
     "google_flights", "google_map", "google_search", "huggingface", "wolfram_alpha",
     "cambridge_dictionary", "coursera", "espn", "merriam_webster", "ikea", "phys_org",
-    "target", "ted", "osu", "rotten_tomatoes", "compass", "walmart_careers",
+    "target", "ted", "osu", "rotten_tomatoes", "compass", "walmart_careers", "drugs_com",
 ]
 
 
@@ -28,22 +28,25 @@ def control_sites():
     raise AssertionError("control SITES not found")
 
 
-def test_exact_24_site_registry_and_port():
+def test_exact_25_site_registry_and_port():
     assert shell_sites() == control_sites() == EXPECTED
     assert EXPECTED.index("rotten_tomatoes") + 40000 == 40021
     assert EXPECTED.index("compass") + 40000 == 40022
     assert EXPECTED.index("walmart_careers") + 40000 == 40023
+    assert EXPECTED.index("drugs_com") + 40000 == 40024
 
 
-def test_docker_preserves_current_main_build_gates_and_adds_walmart():
+def test_docker_preserves_current_main_build_gates_and_adds_drugs_com():
     text = (ROOT / "Dockerfile").read_text()
-    assert "24 Flask mirror sites" in text
-    assert "EXPOSE 8101 40000-40023" in text
+    assert "25 Flask mirror sites" in text
+    assert "EXPOSE 8101 40000-40024" in text
     assert "check_asset_inventory.py /opt/WebSyn/compass" in text
     assert "check_asset_inventory.py /opt/WebSyn/walmart_careers" in text
     assert "walmart_careers/check_tracked_assets.py" in text
     assert "cd /opt/WebSyn/compass" in text and "cd /opt/WebSyn/osu" in text
     assert "cd /opt/WebSyn/rotten_tomatoes" in text and "cd /opt/WebSyn/walmart_careers" in text
+    assert "check_asset_inventory.py /opt/WebSyn/drugs_com" in text
+    assert "cd /opt/WebSyn/drugs_com" in text
 
 
 def test_tasks_and_verifiers_are_complete_and_use_site_24():
@@ -58,18 +61,18 @@ def test_tasks_and_verifiers_are_complete_and_use_site_24():
 def test_assets_pin_is_immutable_merged_revision():
     text = (ROOT / ".assets-revision").read_text()
     revision = re.search(r"^revision:\s*([0-9a-f]+)$", text, re.M).group(1)
-    assert revision == "65c479f894763f64c6073e0d180ebf542d1d2c02"
+    assert revision == "18e64e4d230794f990199f3327432d26db36866f"
     assert (SITE / ".build-generated-seed").is_file()
     assert (SITE / ".requires-images").is_file()
     assert (SITE / "asset_inventory.json").is_file()
     assert (SITE / "tracked_asset_inventory.json").is_file()
 
 
-def test_shared_documentation_uses_24_site_range():
+def test_shared_documentation_uses_25_site_range():
     for relative in ["README.md", "AGENTS.md", "CONTRIBUTING.md", "CLAUDE.md", "agent_demo/README.md"]:
         text = (ROOT / relative).read_text()
-        assert "40000-40022" not in text, relative
-        assert "40000-40023" in text, relative
+        assert "40000-40023" not in text, relative
+        assert "40000-40024" in text, relative
 
 
 def test_no_merge_conflict_markers_in_release_files():

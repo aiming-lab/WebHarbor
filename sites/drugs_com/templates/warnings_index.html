@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Local Warning and Simulated Alert Fixtures | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="warnings-index">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <span>Drug Warnings</span>
+  </nav>
+
+  <h1 class="page-title">Local Warning and Simulated Alert Fixtures</h1>
+  <p class="page-subtitle">Browse deterministic warning text and simulated article records. This is not a current recall, regulatory-alert, labeling, or safety service.</p>
+
+  <section class="warning-callout">
+    <h2>Data limitation</h2>
+    <p>Category names reproduce interface labels only. Every linked alert is simulated, and stored medication warning text has no claimed medical review or current regulatory status.</p>
+  </section>
+
+  <nav class="warning-filter-tabs" aria-label="Filter warnings by category">
+    <a class="warning-tab {% if category == 'all' %}is-active{% endif %}" href="{{ url_for('warnings_index') }}">All warnings</a>
+    <a class="warning-tab {% if category == 'blackbox' %}is-active{% endif %}" href="{{ url_for('warnings_index', category='blackbox') }}">Black Box Warnings</a>
+    <a class="warning-tab {% if category == 'recalls' %}is-active{% endif %}" href="{{ url_for('warnings_index', category='recalls') }}">FDA Recalls</a>
+    <a class="warning-tab {% if category == 'safety' %}is-active{% endif %}" href="{{ url_for('warnings_index', category='safety') }}">Safety Alerts</a>
+  </nav>
+
+  {% if category in ('all', 'recalls', 'safety') and fda_alerts %}
+  <section class="warning-section">
+    <h2 class="warning-section-title">{% if category == 'recalls' %}Simulated recall-category fixtures{% elif category == 'safety' %}Simulated safety-category fixtures{% else %}Simulated alert and recall-category fixtures{% endif %}</h2>
+    <ul class="warning-alert-list">
+      {% for a in fda_alerts %}
+        <li class="warning-alert-item">
+          <span class="warning-alert-badge cat-{{ a.category|lower|replace(' ', '-') }}">{{ a.category }}</span>
+          <a class="warning-alert-title" href="{{ url_for('news_article', article_id=a.id) }}">{{ a.title }}</a>
+          <span class="warning-alert-date">{{ a.published_at.strftime('%b %d, %Y') }}</span>
+          {% if a.body %}<p class="warning-alert-snippet">{{ a.body[:220] }}{% if a.body|length > 220 %}&hellip;{% endif %}</p>{% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if category in ('all', 'blackbox') %}
+  <section class="warning-section">
+    <h2 class="warning-section-title">Medication records with stored warning text</h2>
+    <p class="muted">Open a record to inspect its complete local warning fixture.</p>
+    <div class="table-scroll" tabindex="0" role="region" aria-label="Drug warning summary table">
+    <table class="warning-table">
+      <thead>
+        <tr>
+          <th>Drug</th>
+          <th>Warning summary</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for d in drugs %}
+          <tr>
+            <td class="warning-table-drug"><a href="{{ url_for('drug_warnings', slug=d.slug) }}">{{ d.generic_name }}</a></td>
+            <td>{{ (d.warnings or '')[:280] }}{% if d.warnings and d.warnings|length > 280 %}&hellip;{% endif %}</td>
+          </tr>
+        {% else %}
+          <tr><td colspan="2" class="muted">No drug warnings found.</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="warning-resources">
+    <h2 class="warning-section-title">Related safety resources</h2>
+    <ul>
+      <li><a href="{{ url_for('interaction_checker') }}">Local interaction fixtures</a></li>
+      <li><a href="{{ url_for('side_effects_page') }}">Local side-effect fixture index</a></li>
+      <li><a href="{{ url_for('news_category', category='fda-alerts') }}">Simulated FDA-alert category</a></li>
+      <li><a href="{{ url_for('drug_az') }}">Medication fixtures A-Z</a></li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

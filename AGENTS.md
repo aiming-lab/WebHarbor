@@ -4,7 +4,7 @@ A coding agent (Claude Code, Cursor, Aider, Codex, ...) is reading this. Read on
 
 ## What it is
 
-23 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
+25 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
 
 Two repos:
 - **code** (this one) — Flask apps, control plane, scripts.
@@ -27,14 +27,16 @@ sites/<site>/
 ├── static/{css,js,icons}/       small UI, in git
 ├── static/images/               heavy, in HF dataset
 ├── static/external_cache/       optional, in HF dataset
-└── instance_seed/<site>.db      seed DB, in HF dataset
+└── instance_seed/<database>.db  exactly one valid SQLite seed (new sites should use <site>.db)
 
 control_server.py                :8101 control plane
 site_runner.py                   per-site supervisor (setsid + killpg)
 websyn_start.sh                  container entrypoint
 Dockerfile
+requirements.lock                exact Docker dependency versions and wheel SHA-256 values
 .assetpaths                      paths managed via HF
 .assets-revision                 pins HF dataset repo + revision
+assets-manifest.json              tracked SHA-256/size map for all HF archives plus extracted-tree digest
 scripts/{fetch,extract,check}_assets.sh
 scripts/build.sh
 scripts/new_site.py
@@ -48,21 +50,17 @@ Inside the image, sites live at `/opt/WebSyn/<site>/`. The path predates the ren
 # fresh clone
 ./scripts/fetch_assets.sh                     # pulls assets from HF
 ./scripts/build.sh                            # docker build -t webharbor:dev .
-docker run -d -p 8101:8101 -p 40000-40023:40000-40023 webharbor:dev
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+docker run -d -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
 ```
 
-Or use the published image directly:
+A published image may lag the repository. Do not treat it as evidence for the checked-out source revision; build and test the local image when reviewing a PR.
 
-```bash
-docker run -d -p 8101:8101 -p 40000-40023:40000-40023 \
-  battalion7244/webharbor:latest
-```
-
-Sites are on `40000`-`40023` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
+Sites are on `40000`-`40024` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
 
 | Method | Path                | Purpose                                   |
 |--------|---------------------|-------------------------------------------|
-| GET    | `/health`           | per-site PID + alive                      |
+| GET    | `/health`           | authenticated per-site PID + alive        |
 | POST   | `/reset/<site>`     | wipe `instance/`, restore from seed, respawn |
 | POST   | `/reset-all`        | parallel reset of every site              |
 | POST   | `/restart/<site>`   | respawn process; **DB not reset**         |
@@ -135,23 +133,25 @@ python3 -m py_compile sites/<site>/app.py
 ./scripts/build.sh webharbor:dev
 
 # 3. run on alt ports (don't collide with anything you already have running)
-docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41023:40000-40023 webharbor:dev
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+docker run -d --rm --name wh-test -e WEBSYN_CONTROL_TOKEN \
+  -p 8201:8101 -p 41000-41024:40000-40024 webharbor:dev
 
-# 4. control plane healthy, all sites alive
-curl -s http://localhost:8201/health | python3 -m json.tool | head
+# 4. authenticated control plane healthy, all sites alive
+curl -s -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8201/health | python3 -m json.tool | head
 
 # 5. every site renders 200
-for p in $(seq 41000 41023); do
+for p in $(seq 41000 41024); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
 # 6. byte-identical reset (the strict invariant)
-curl -X POST http://localhost:8201/reset/<your_site>
-docker exec wh-test md5sum \
-  /opt/WebSyn/<your_site>/instance/<your_site>.db \
-  /opt/WebSyn/<your_site>/instance_seed/<your_site>.db
-# the two md5s MUST match — if not, see "Idempotent seeding"
+curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8201/reset/<your_site>
+DB_NAME=$(docker exec wh-test sh -ec 'set -- /opt/WebSyn/<your_site>/instance_seed/*.db; test "$#" -eq 1; basename "$1"')
+docker exec wh-test sha256sum \
+  "/opt/WebSyn/<your_site>/instance/$DB_NAME" \
+  "/opt/WebSyn/<your_site>/instance_seed/$DB_NAME"
+# the two SHA-256 values MUST match — if not, see "Idempotent seeding"
 
 # 7. teardown
 docker stop wh-test
@@ -209,7 +209,7 @@ Per-row gates aren't enough — even a no-op `db.session.commit()` bumps SQLite 
 
 ### Runtime data lives in `instance_seed/*.db`, not JSON
 
-HTTP handlers must read from SQLAlchemy, not from `scraped_data/*.json`. If you have intermediate scrape JSON, fold it into `instance_seed/<site>.db` at build time via `seed_data.py`. The `scraped_data/` dir is gitignored + dockerignored — never shipped.
+HTTP handlers must read from SQLAlchemy, not from `scraped_data/*.json`. If you have intermediate scrape JSON, fold it into the site's single `instance_seed/*.db` at build time via `seed_data.py`. The `scraped_data/` dir is gitignored + dockerignored — never shipped.
 
 ### Sites are isolated
 

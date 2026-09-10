@@ -19,12 +19,14 @@ Workflows A and B below are the **contributor's** job. The **Reviewer role** sec
 ## TL;DR
 
 ```bash
-# fork github.com/webharbor/webharbor + huggingface.co/datasets/ChilleD/WebHarbor
+# fork github.com/aiming-lab/WebHarbor + huggingface.co/datasets/ChilleD/WebHarbor
 git clone https://github.com/<you>/webharbor && cd webharbor
 ./scripts/fetch_assets.sh                       # pull current assets
 ./scripts/new_site.py mywebsite                 # OR edit an existing site
-./scripts/build.sh && docker run -d --rm \
-  -p 8101:8101 -p 40000-40023:40000-40023 webharbor:dev
+./scripts/build.sh
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+docker run -d --rm -e WEBSYN_CONTROL_TOKEN \
+  -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
 # iterate locally...
 
 ./scripts/extract_assets.sh ../webharbor-static-pr/   # split assets out
@@ -32,7 +34,9 @@ cd ../webharbor-static-pr
 hf upload-large-folder <your-fork>/WebHarbor . --repo-type dataset
 # open PR on HF first → grab the merge sha
 cd ../webharbor
-echo "revision: <hf-merge-sha>" > .assets-revision
+sed -i "s/^revision:.*/revision: <hf-merge-sha>/" .assets-revision
+./scripts/fetch_assets.sh --refresh-manifest  # full fetch; rewrites tracked archive/tree digests
+git add .assets-revision assets-manifest.json
 git commit -am "feat(mywebsite): add site + bump assets to <sha>"
 gh pr create
 ```
@@ -64,7 +68,7 @@ mywebsite/
 ├── requirements.txt    ← only Flask by default
 ├── templates/index.html
 ├── static/{css,js,icons,images,external_cache}/
-├── instance_seed/      ← drop your seed DB here as <name>.db
+├── instance_seed/      ← exactly one valid SQLite DB; new sites should use <name>.db
 ├── instance/           ← gitignored, recreated at boot
 └── scraped_data/       ← gitignored, build-time only
 ```
@@ -77,8 +81,8 @@ A typical seed flow:
 
 1. Define SQLAlchemy models in `app.py` (User, Product, Article, ...)
 2. Write a `seed_data.py` that materializes a dataset into the DB. Make the function **idempotent** — `if Foo.query.count() > 0: return` at the top.
-3. Run once locally to produce `instance/<name>.db`.
-4. Copy it to `instance_seed/<name>.db`. **This is your seed.**
+3. Run once locally to produce the application-defined database filename (new sites should use `instance/<name>.db`).
+4. Copy that single database to `instance_seed/` with the same filename. **This is your seed.**
 
 ### 4. Functional checklist
 
@@ -94,18 +98,20 @@ If your site has multiple categories / pages / topics, make sure the seed DB has
 
 ```bash
 ./scripts/build.sh
-docker run -d --rm --name wh-test \
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+docker run -d --rm --name wh-test -e WEBSYN_CONTROL_TOKEN \
   -p 8101:8101 -p 40000-400NN:40000-400NN webharbor:dev
 
 # the new site should be on port 40000+i
 curl -so /dev/null -w "%{http_code}\n" http://localhost:400NN/
-curl -X POST http://localhost:8101/reset/mywebsite
+curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8101/reset/mywebsite
 
-# make sure /reset/mywebsite keeps the DB byte-identical to the seed
-docker exec wh-test md5sum \
-  /opt/WebSyn/mywebsite/instance/<name>.db \
-  /opt/WebSyn/mywebsite/instance_seed/<name>.db
-# both md5s MUST match — see "Idempotent seeding" below
+# make sure /reset/mywebsite keeps the one application-defined DB byte-identical to the seed
+DB_NAME=$(docker exec wh-test sh -ec 'set -- /opt/WebSyn/mywebsite/instance_seed/*.db; test "$#" -eq 1; basename "$1"')
+docker exec wh-test sha256sum \
+  "/opt/WebSyn/mywebsite/instance/$DB_NAME" \
+  "/opt/WebSyn/mywebsite/instance_seed/$DB_NAME"
+# both SHA-256 values MUST match — see "Idempotent seeding" below
 ```
 
 ### 6. Write the tasks (`tasks.jsonl`)
@@ -140,9 +146,10 @@ hf upload mywebsite.tar.gz <your-fork>/WebHarbor mywebsite.tar.gz --repo-type da
 # After it's merged, copy the merge commit sha.
 
 cd ../webharbor
-# bump the pin
+# bump the pin and bind every downloaded archive plus the extracted tree
 sed -i "s/^revision:.*/revision: <hf-merge-sha>/" .assets-revision
-git add .
+./scripts/fetch_assets.sh --refresh-manifest
+git add .assets-revision assets-manifest.json .
 git commit -m "feat(mywebsite): add new site
 
 Adds Flask app, templates, and seed DB for <real-site-name>.
@@ -172,7 +179,7 @@ hf upload amazon.tar.gz <your-fork>/WebHarbor amazon.tar.gz --repo-type dataset
 # (single-file upload keeps the PR scoped to one site)
 ```
 
-Open the HF PR; once merged, bump `.assets-revision` in this repo and open the GitHub PR. CI on the GitHub PR will fail-closed if the pinned revision isn't reachable.
+Open the HF PR; once merged, bump `.assets-revision`, run `./scripts/fetch_assets.sh --refresh-manifest`, commit `assets-manifest.json`, and open the GitHub PR. CI on the GitHub PR will fail-closed if the pinned revision isn't reachable.
 
 ## Reviewer role — validate the site and grade the tasks
 
@@ -182,7 +189,7 @@ The reviewer picks up a contributor's PR (site + `tasks.jsonl` with the basic ke
 
 Build the image from the branch and run it on alt ports (see AGENTS.md "Pre-PR checks" for the exact commands). Then:
 
-1. **Mechanical** — every site returns 200; `/health` all alive; `POST /reset/<site>` wipes runtime writes and restores the DB **byte-identical** to the seed (`md5(instance) == md5(instance_seed)`); `reset-all` completes in ~1s.
+1. **Mechanical** — every site returns 200; `/health` all alive; `POST /reset/<site>` wipes runtime writes and restores the DB **byte-identical** to the seed (`sha256(instance) == sha256(instance_seed)`); verify reset-all completion from its structured per-site response.
 2. **Functional** — drive the site's routes (auth, search, list/detail, any stateful action) and confirm each renders correct, non-empty content. The contributor's tasks must be genuinely completable on these pages.
 3. **Task feasibility** — for each task in `tasks.jsonl`, confirm it is **solvable by navigating the site** and is **not trivially answerable from an LLM's prior knowledge**. Drive a few tasks end-to-end (manually or with `agent_demo/agent.py`). Reject — and send back to the contributor — tasks that:
    - can be answered without ever opening the site (e.g. a common dictionary definition),
@@ -258,10 +265,10 @@ Per-row gates are not enough: the bare act of opening a SQLAlchemy session and c
 If you have *multiple* seed phases (`seed_database`, `seed_benchmark_users`, `seed_extras`), gate **each** of them. After a fresh seed, re-running the boot path should be a no-op. Test with:
 
 ```bash
-docker exec wh-test md5sum /opt/WebSyn/<site>/instance{,_seed}/<site>.db
+docker exec wh-test sh -ec 'set -- /opt/WebSyn/<site>/instance_seed/*.db; test "$#" -eq 1; db=$(basename "$1"); sha256sum "/opt/WebSyn/<site>/instance/$db" "/opt/WebSyn/<site>/instance_seed/$db"'
 # must match
 docker restart wh-test && sleep 5
-docker exec wh-test md5sum /opt/WebSyn/<site>/instance{,_seed}/<site>.db
+docker exec wh-test sh -ec 'set -- /opt/WebSyn/<site>/instance_seed/*.db; test "$#" -eq 1; db=$(basename "$1"); sha256sum "/opt/WebSyn/<site>/instance/$db" "/opt/WebSyn/<site>/instance_seed/$db"'
 # must STILL match
 ```
 

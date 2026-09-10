@@ -1,5 +1,7 @@
 # HF download metadata produced by `hf download` — not part of the image.
 sites/.cache/
+sites/.assets-state.json
+sites/**/*.asset-backup
 **/.cache/huggingface/
 
 # Don't ship — websyn_start.sh recreates instance/ from instance_seed/ at boot.
@@ -12,8 +14,10 @@ sites/*/scraped_data/
 sites/*/scripts_dev/
 sites/*/tests/
 sites/*/verify/tests/
+sites/*/verify/test*.py
 agent_demo/runs/
 .venv/
+**/.venv/
 
 # Don't ship — bytecode / venvs.
 sites/*/__pycache__/
@@ -25,6 +29,13 @@ sites/*/*.pyc
 # scripts/fetch_assets.sh into sites/<site>/); the runtime only needs the
 # extracted content. Shipping both doubles the COPY layer.
 sites/*.tar.gz
+
+# Never admit Git-ignored local configuration or secret-key material into a layer.
+**/.env
+**/.env.*
+**/secrets.json
+**/*.pem
+**/*.key
 
 # Build / CI workspace not part of the image.
 build/
