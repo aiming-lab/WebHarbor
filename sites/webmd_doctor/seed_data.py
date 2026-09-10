@@ -337,6 +337,7 @@ PRACTICES = {
 SECONDARY_OFFICE_TAGS = ["North Office", "Medical Arts Building", "Outpatient Center", "Professional Plaza", "Annex", "Satellite Office", "Pavilion", "Wellness Center"]
 SECONDARY_STREETS = ["Concord Pike", "Kirkwood Hwy", "Limestone Rd", "Marsh Rd", "Naamans Rd", "Elkton Rd", "Pulaski Hwy", "Lancaster Pike", "Baltimore Pike", "Paoli Pike", "Salem Quinton Rd", "Route 40", "Silverside Rd", "Chestnut Hill Rd", "Old Baltimore Pike", "Eastern Ave", "Falls Rd", "Harford Rd"]
 STREET_TYPES = ["Ste 100", "Ste 210", "Ste 305", "Bldg B", "Fl 2", "Ste 12", "Ste 400"]
+DAY_KEYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 HOURS_PATTERNS = [
     # (mon-fri open, close, sat open, sat close, sun open, sun close)
     ("8:00 am", "5:00 pm", None, None, None, None),
@@ -1152,6 +1153,72 @@ def _sync_public_payer_rows(doctors: list[Doctor]) -> None:
     db.session.flush()
 
 
+def _assign_office_lines(doctors: list[Doctor]) -> None:
+    """Every office gets its own direct line: primary offices were seeded with the practice's main
+    number, which would surface a Basic doctor's office phone on colleagues' cards. Deterministic
+    in the location id (no RNG); numbers stay unique across hospitals, practices and offices."""
+    used = {row.phone for row in Hospital.query.all()} | {row.phone for row in Practice.query.all()}
+    used |= {row.phone for row in Location.query.all()}
+    for location in Location.query.order_by(Location.id).all():
+        practice = location.practice
+        if location.phone != practice.phone:
+            continue
+        area, last4 = practice.phone[1:4], int(practice.phone[-4:])
+        step = 0
+        while True:
+            candidate = f"({area}) 555-{(last4 + 37 * location.id + 101 * step) % 9000 + 1000:04d}"
+            if candidate not in used:
+                break
+            step += 1
+        used.add(candidate)
+        location.phone = candidate
+    db.session.flush()
+
+
+def _unify_practice_hours() -> None:
+    """A practice publishes one schedule and every office located at it posts the same hours.
+    The site schedule is the longest weekly schedule among the offices at the practice (ties by
+    location id), so a practice never contradicts its own offices. No RNG."""
+    def minutes(value: str | None) -> int:
+        if not value:
+            return 0
+        clock, meridiem = value.split(" ")
+        hours, mins = (int(part) for part in clock.split(":"))
+        return (hours % 12 + (12 if meridiem == "pm" else 0)) * 60 + mins
+
+    def weekly(target) -> int:
+        return sum(max(0, minutes(getattr(target, f"{key}_close")) - minutes(getattr(target, f"{key}_open"))) for key in DAY_KEYS)
+
+    def pattern(target) -> tuple:
+        return tuple(getattr(target, f"{key}_{edge}") for key in DAY_KEYS for edge in ("open", "close"))
+
+    for practice in Practice.query.order_by(Practice.id).all():
+        offices = sorted(practice.locations, key=lambda row: row.id)
+        if not offices:
+            continue
+        site = max(offices, key=lambda row: (weekly(row), -row.id))
+        values = pattern(site)
+        for target in [practice, *offices]:
+            for (key, edge), value in zip(((key, edge) for key in DAY_KEYS for edge in ("open", "close")), values):
+                setattr(target, f"{key}_{edge}", value)
+    db.session.flush()
+
+
+def _bound_perspective_votes(doctors: list[Doctor]) -> None:
+    """Patients' Perspective votes are bounded by the doctor's ratings: per criterion,
+    did-well + needs-improvement <= ratings_count, and each side is at least the number of
+    visible reviews that marked it that way. No RNG."""
+    for doctor in doctors:
+        total = doctor.ratings_count
+        for row in doctor.perspectives:
+            marks = [getattr(review, f"c{row.criterion}") for review in doctor.reviews]
+            visible_yes = sum(1 for mark in marks if mark == 1)
+            visible_no = len(marks) - visible_yes
+            row.did_well = max(visible_yes, min(row.did_well, total - visible_no))
+            row.needs_improvement = max(visible_no, min(row.needs_improvement, total - row.did_well))
+    db.session.flush()
+
+
 def seed_database(force: bool = False) -> None:
     if Doctor.query.count() > 0 and not force:
         return
@@ -1167,6 +1234,9 @@ def seed_database(force: bool = False) -> None:
     _finish_hubs(Hospital.query.order_by(Hospital.id).all(), Practice.query.order_by(Practice.id).all())
     _topup_languages(doctors)
     _sync_public_payer_rows(doctors)
+    _assign_office_lines(doctors)
+    _unify_practice_hours()
+    _bound_perspective_votes(doctors)
     for doctor in doctors:
         del doctor._slot
         del doctor._practice

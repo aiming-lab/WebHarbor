@@ -1049,8 +1049,6 @@ def search_heading_term(params: dict) -> str:
         insurer = db.session.get(Insurer, params["insuranceid"])
         if insurer is not None:
             return f"Providers accepting {insurer.name}"
-    if params["q"].strip() and params.get("resolved") and not params["resolved"]["matched"]:
-        return "All Providers"  # every unmatched token is ignored (mirror renders a notice instead)
     return params["q"].strip() or "All Providers"
 
 
@@ -1194,7 +1192,8 @@ def results():
     params["sids_explicit"] = single_arg("sids", "").isdigit()
     loc = resolve_location(single_arg("loc", ""), single_arg("zc", ""), single_arg("city", ""), single_arg("state", ""))
     params["loc_label"] = loc["label"]
-    rows = search_doctors(params, loc["city"])
+    unmatched_q = unmatched_search_text(params)
+    rows = [] if unmatched_q else search_doctors(params, loc["city"])  # nothing resolved -> upstream-style empty state
     page = paginate(rows, params["page"])
     term = search_heading_term(params)
     return render_template(
@@ -1203,7 +1202,7 @@ def results():
         loc=loc,
         page=page,
         term=term,
-        unmatched_q=unmatched_search_text(params),
+        unmatched_q=unmatched_q,
         heading_place=loc["label"],
         filter_bar=filter_bar_context(params, show_distance=True),
         saved_ids=saved_doctor_ids(),
