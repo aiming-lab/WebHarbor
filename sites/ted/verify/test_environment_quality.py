@@ -1,5 +1,7 @@
 """Regression checks for the reviewed TED mirror."""
 from __future__ import annotations
+import ast
+import re
 import hashlib
 import json
 import shutil
@@ -17,12 +19,16 @@ SEED=SITE_DIR/'instance_seed'/'ted.db'
 class EnvironmentQualityTests(unittest.TestCase):
  def test_site_registration_and_task_port(self):
   startup=(ROOT/'websyn_start.sh').read_text();control=(ROOT/'control_server.py').read_text();docker=(ROOT/'Dockerfile').read_text()
-  self.assertIn('target ted)',startup);self.assertIn("'target', 'ted'",control);self.assertIn('40000-40019',docker)
+  sites=re.search(r'SITES=\((.*?)\)',startup,re.S).group(1).split()
+  control_sites=next(ast.literal_eval(node.value) for node in ast.parse(control).body if isinstance(node,ast.Assign) and any(isinstance(target,ast.Name) and target.id=='SITES' for target in node.targets))
+  self.assertEqual(sites,control_sites);self.assertEqual(len(sites),len(set(sites)))
+  self.assertEqual(sites.index('ted'),19)
+  self.assertIn(f'EXPOSE 8101 40000-{40000+len(sites)-1}',docker)
   rows=[json.loads(line) for line in (SITE_DIR/'tasks.jsonl').read_text().splitlines() if line.strip()];self.assertEqual(len(rows),20)
   for i,row in enumerate(rows):self.assertEqual(row['id'],f'TED--{i}');self.assertEqual(row['web'],'http://localhost:40019/');self.assertEqual(row['verifier_path'],f'sites/ted/verify/verify_{i}.py');self.assertNotIn('answer',row)
- def test_asset_pin_points_to_merged_ted_revision(self):
+ def test_asset_pin_is_immutable_and_ted_uses_shared_fetch_path(self):
   revision=next(line.split(':',1)[1].strip() for line in (ROOT/'.assets-revision').read_text().splitlines() if line.startswith('revision:'))
-  script=(ROOT/'scripts/fetch_assets.sh').read_text();self.assertEqual(revision,'480c892e976bada6c0ea3f5a66e2b9efda65525d');self.assertNotIn('TED_ASSETS_REVISION',script);self.assertTrue(SEED.is_file())
+  script=(ROOT/'scripts/fetch_assets.sh').read_text();self.assertRegex(revision,r'^[0-9a-f]{40}$');self.assertNotIn('TED_ASSETS_REVISION',script);self.assertTrue(SEED.is_file())
  def test_seed_ground_truth(self):
   con=sqlite3.connect(SEED)
   try:

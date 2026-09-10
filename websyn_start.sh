@@ -5,8 +5,7 @@ set -e
 
 SITES=(allrecipes amazon apple arxiv bbc_news booking github
        google_flights google_map google_search huggingface wolfram_alpha
-       cambridge_dictionary coursera espn merriam_webster ikea phys_org target ted osu
-       boardgamegeek)
+       cambridge_dictionary coursera espn merriam_webster ikea phys_org target ted osu rotten_tomatoes compass walmart_careers boardgamegeek)
 BASE_PORT=40000
 PID_DIR=/tmp/websyn_pids
 mkdir -p "$PID_DIR"
@@ -62,6 +61,7 @@ done
 
 # Final status report
 echo "[WebSyn] Site status:"
+failed=0
 for i in "${!SITES[@]}"; do
     site="${SITES[$i]}"
     port=$((BASE_PORT + i))
@@ -75,8 +75,19 @@ except Exception: exit(1)
         echo "  [OK] $site :$port"
     else
         echo "  [!!] $site :$port FAILED -- check /tmp/websyn_${site}.log"
+        failed=1
     fi
 done
+
+if [ "$failed" -ne 0 ]; then
+    echo "[WebSyn] Startup failed; stopping site supervisors." >&2
+    for pid_file in "$PID_DIR"/*.pid; do
+        [ -f "$pid_file" ] || continue
+        pid=$(cat "$pid_file")
+        kill -KILL -- "-$pid" 2>/dev/null || true
+    done
+    exit 1
+fi
 
 echo "[WebSyn] Starting control server on :8101 (PID 1)..."
 

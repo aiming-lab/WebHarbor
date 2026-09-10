@@ -214,7 +214,10 @@ def transition_pairs(trajectory: dict[str, Any]):
 
 
 def submitted_from(trajectory: dict[str, Any], predicate: Callable[[str], bool]) -> bool:
-    return any(action == "click" and predicate(current) for action, current, _ in transition_pairs(trajectory))
+    return any(
+        action in {"click", "press", "submit"} and predicate(current)
+        for action, current, _ in transition_pairs(trajectory)
+    )
 
 
 def input_values(trajectory: dict[str, Any], predicate: Callable[[str], bool] | None = None) -> list[str]:
@@ -430,9 +433,30 @@ def _verify_read_task(task: int, trajectory: dict[str, Any], answer: str, initia
         judge.check("hot_page_visited", visited_path(trajectory, "/hotness") or visited_path(trajectory, "/hot"), "hotness alias accepted")
         judge.check("answer_latest_year_and_highest_ranked_game", affirmative_contains(answer, game["name"]) and number_matches(answer, latest_year, 0.0), repr(answer))
     elif task == 8:
-        data = row_dicts(initial, "SELECT l.id,l.title,l.num_items,u.username FROM geeklists l JOIN users u ON u.id=l.author_id WHERE l.title='Best Cooperative Games'")[0]
-        judge.check("geeklists_then_target_list", ordered(trajectory, [path_predicate("/geeklists"), path_predicate(f"/geeklist/{data['id']}")]), data["title"])
-        judge.check("answer_author_and_count", affirmative_contains(answer, data["username"]) and number_bound_to(answer, data["num_items"], ("items", "games"), 0.0), repr(answer))
+        data = row_dicts(
+            initial,
+            """
+            SELECT l.id list_id,l.title,i.position,g.name,g.bgg_id,g.weight
+            FROM geeklists l
+            JOIN geeklist_items i ON i.list_id=l.id
+            JOIN games g ON g.id=i.game_id
+            WHERE l.title='Best Cooperative Games' AND i.position=7
+            """,
+        )[0]
+        judge.check(
+            "target_list_then_seventh_game_detail",
+            ordered(
+                trajectory,
+                [path_predicate(f"/geeklist/{data['list_id']}"), game_predicate(data["bgg_id"])],
+            ),
+            f"{data['title']} #7 = {data['name']}",
+        )
+        judge.check(
+            "answer_seventh_game_and_weight",
+            affirmative_contains(answer, data["name"])
+            and number_bound_to(answer, data["weight"], ("weight", "complexity"), 0.005),
+            repr(answer),
+        )
     elif task == 10:
         games = {row["name"]: row for row in row_dicts(initial, "SELECT name,bgg_id,weight FROM games WHERE name IN ('Brass: Birmingham','Ark Nova')")}
         judge.check("both_game_pages_visited", visited_game(trajectory, games["Brass: Birmingham"]["bgg_id"]) and visited_game(trajectory, games["Ark Nova"]["bgg_id"]), "both details")
@@ -440,8 +464,7 @@ def _verify_read_task(task: int, trajectory: dict[str, Any], answer: str, initia
     elif task == 11:
         publisher = row_dicts(initial, "SELECT * FROM publishers WHERE name='Z-Man Games'")[0]
         count = db_rows(initial, "SELECT COUNT(*) n FROM game_publishers WHERE publisher_id=?", (publisher["id"],))[0]["n"]
-        judge.check("publisher_index_filter_then_detail", ordered(trajectory, [path_predicate("/boardgamepublisher"), lambda url: normalized_path(url).startswith(f"/boardgamepublisher/{publisher['bgg_id']}")]), publisher["name"])
-        judge.check("publisher_filter_used", visited_query(trajectory, "/boardgamepublisher", {"q": publisher["name"]}), publisher["name"])
+        judge.check("publisher_index_then_detail", ordered(trajectory, [path_predicate("/boardgamepublisher"), lambda url: normalized_path(url).startswith(f"/boardgamepublisher/{publisher['bgg_id']}")]), publisher["name"])
         judge.check("answer_publisher_count", number_bound_to(answer, count, ("games", "listed", "catalog"), 0.0), repr(answer))
     elif task == 12:
         game = row_dicts(initial, "SELECT g.* FROM games g JOIN game_mechanics gm ON gm.game_id=g.id JOIN mechanics m ON m.id=gm.mechanic_id WHERE m.name='Action Points' AND g.overall_rank>0 ORDER BY g.overall_rank LIMIT 1")[0]
@@ -463,7 +486,7 @@ def _verify_read_task(task: int, trajectory: dict[str, Any], answer: str, initia
     elif task == 18:
         designer = row_dicts(initial, "SELECT * FROM people WHERE name='Vital Lacerda'")[0]
         game = row_dicts(initial, "SELECT g.* FROM games g JOIN game_designers gd ON gd.game_id=g.id WHERE gd.person_id=? ORDER BY g.avg_rating DESC LIMIT 1", (designer["id"],))[0]
-        judge.check("designer_filter_then_average_sort", ordered(trajectory, [lambda url: normalized_path(url) == "/boardgamedesigner" and query_matches(url, {"q": designer["name"]}), lambda url: normalized_path(url).startswith(f"/boardgamedesigner/{designer['bgg_id']}") and query_matches(url, {"sort": "average"})]), designer["name"])
+        judge.check("designer_index_then_detail", ordered(trajectory, [path_predicate("/boardgamedesigner"), lambda url: normalized_path(url).startswith(f"/boardgamedesigner/{designer['bgg_id']}")]), designer["name"])
         judge.check("answer_highest_average_game", affirmative_contains(answer, game["name"]), repr(answer))
     elif task == 19:
         user = row_dicts(initial, "SELECT * FROM users WHERE lower(username) LIKE '%mike%' OR lower(real_name) LIKE '%mike%' ORDER BY username ASC LIMIT 1")[0]

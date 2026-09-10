@@ -179,8 +179,9 @@ def fixture(task: int, *, alternate: bool = False) -> tuple[list[dict], str, obj
         paths = [nav("/hot" if alternate else "/hotness")]
         answer = "The latest year is 2025; The Lord of the Rings: Fate of the Fellowship is the highest-ranked game from that year."
     elif task == 8:
-        paths = [nav("/geeklists"), click("/geeklists", "/geeklist/7"), nav("/geeklist/7")]
-        answer = "Best Cooperative Games is by Alan How and has 25 items."
+        target = game(167355, "nemesis")
+        paths = [nav("/geeklists"), click("/geeklists", "/geeklist/7"), nav("/geeklist/7"), click("/geeklist/7", target), nav(target)]
+        answer = "The #7 entry is Nemesis, with a weight of 3.49."
     elif task == 9:
         new_id = 17
         paths = login("david_k") + [nav("/geeklist/new"), enter("/geeklist/new", "My COIN Series Picks"), enter("/geeklist/new", "Light, deep, and historical."), click("/geeklist/new", f"/geeklist/{new_id}"), nav(f"/geeklist/{new_id}")]
@@ -334,6 +335,46 @@ class VerifierTests(unittest.TestCase):
                 code, verdict = self.run_verifier(task, [], answer, mutate)
                 self.assertNotEqual(0, code, verdict)
                 self.assertFalse(verdict["pass"], verdict)
+
+    def test_prompt_permitted_browse_and_compare_paths_pass(self) -> None:
+        variants = {}
+
+        steps, answer, mutate = fixture(11)
+        for step in steps:
+            for key in ("url", "url_after"):
+                if key in step:
+                    step[key] = step[key].replace(
+                        "/boardgamepublisher?q=Z-Man+Games", "/boardgamepublisher"
+                    )
+        variants[11] = (steps, answer, mutate)
+
+        steps, answer, mutate = fixture(18)
+        for step in steps:
+            for key in ("url", "url_after"):
+                if key in step:
+                    step[key] = step[key].replace(
+                        "/boardgamedesigner?q=Vital+Lacerda", "/boardgamedesigner"
+                    ).replace("?sort=average", "")
+        variants[18] = (steps, answer, mutate)
+
+        for task, (steps, answer, mutate) in variants.items():
+            with self.subTest(task=task):
+                code, verdict = self.run_verifier(task, steps, answer, mutate)
+                self.assertEqual(0, code, verdict)
+                self.assertTrue(verdict["pass"], verdict)
+
+    def test_keyboard_form_submission_passes_stateful_tasks(self) -> None:
+        for task in (5, 6, 9, 13, 15):
+            with self.subTest(task=task):
+                steps, answer, mutate = fixture(task)
+                for step in reversed(steps):
+                    if step["action"] == "click":
+                        step["action"] = "press"
+                        step["params"] = {"key": "Enter"}
+                        break
+                code, verdict = self.run_verifier(task, steps, answer, mutate)
+                self.assertEqual(0, code, verdict)
+                self.assertTrue(verdict["pass"], verdict)
 
 
 if __name__ == "__main__":

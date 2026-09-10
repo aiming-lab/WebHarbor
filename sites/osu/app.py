@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Ohio State University mirror — Flask application."""
 import json
+import mimetypes
 import os
 import re
 import secrets
@@ -27,6 +28,8 @@ BENCHMARK_NOW = datetime(2024, 10, 15, 12, 0, 0)
 with open(os.path.join(BASE_DIR, 'image_sources.json'), encoding='utf-8') as image_manifest_file:
     IMAGE_ASSETS = {item['file'].removesuffix('.webp'): item for item in json.load(image_manifest_file)['images']}
 
+# Python slim images may omit the system MIME database.
+mimetypes.add_type("image/webp", ".webp")
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.environ.get('OSU_SECRET_KEY') or secrets.token_hex(32)
 app.config['SQLALCHEMY_DATABASE_URI'] = (

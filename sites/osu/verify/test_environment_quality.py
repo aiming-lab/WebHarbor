@@ -1,13 +1,17 @@
 """Static and seed-quality regressions for the OSU mirror."""
 from __future__ import annotations
-import hashlib,json,shutil,sqlite3,subprocess,sys,tempfile,unittest
+import ast,re,hashlib,json,shutil,sqlite3,subprocess,sys,tempfile,unittest
 from urllib.parse import urlparse
 from pathlib import Path
 from sites.osu.verify.test_support import ensure_seed
 SITE=Path(__file__).resolve().parents[1];ROOT=SITE.parents[1];SEED=ensure_seed()
 class EnvironmentTests(unittest.TestCase):
  def test_site_registration_and_task_manifest(self):
-  self.assertIn('ted osu', (ROOT/'websyn_start.sh').read_text());self.assertIn("'ted', 'osu'",(ROOT/'control_server.py').read_text());self.assertIn('40000-40021',(ROOT/'Dockerfile').read_text())
+  sites=re.search(r'SITES=\((.*?)\)',(ROOT/'websyn_start.sh').read_text(),re.S).group(1).split()
+  control_sites=next(ast.literal_eval(node.value) for node in ast.parse((ROOT/'control_server.py').read_text()).body if isinstance(node,ast.Assign) and any(isinstance(target,ast.Name) and target.id=='SITES' for target in node.targets))
+  self.assertEqual(sites,control_sites);self.assertEqual(len(sites),len(set(sites)))
+  self.assertEqual(sites.index('osu'),20)
+  self.assertIn(f'EXPOSE 8101 40000-{40000+len(sites)-1}',(ROOT/'Dockerfile').read_text())
   rows=[json.loads(x) for x in (SITE/'tasks.jsonl').read_text().splitlines()];self.assertEqual(len(rows),20)
   for i,r in enumerate(rows):self.assertEqual(r['id'],f'Ohio State University--{i}');self.assertEqual(r['web'],'http://localhost:40020/');self.assertTrue((ROOT/r['verifier_path']).is_file());self.assertNotIn('answer',r)
  def test_real_image_manifest_and_files(self):
@@ -24,13 +28,23 @@ class EnvironmentTests(unittest.TestCase):
    self.assertEqual({t:c.execute(f'select count(*) from {t}').fetchone()[0] for t in expected},expected)
    indexes={r[1] for r in c.execute('pragma index_list(bookmarks)')};self.assertTrue(any('bookmark' in x for x in indexes),indexes)
   finally:c.close()
- def test_seed_generation_is_byte_deterministic(self):
+ def test_build_seed_generation_is_byte_deterministic(self):
   hashes=[]
   with tempfile.TemporaryDirectory(prefix='osu-seed-') as tmp:
    for n in (1,2):
-    d=Path(tmp)/str(n);d.mkdir();shutil.copy2(SITE/'app.py',d/'app.py');shutil.copy2(SITE/'seed_data.py',d/'seed_data.py');shutil.copy2(SITE/'image_sources.json',d/'image_sources.json')
-    subprocess.run([sys.executable,'-c','import app'],cwd=d,check=True,capture_output=True,text=True);database=d/'instance/osu.db';hashes.append(hashlib.sha256(database.read_bytes()).hexdigest())
+    d=Path(tmp)/str(n);d.mkdir();shutil.copy2(SITE/'app.py',d/'app.py');shutil.copy2(SITE/'seed_data.py',d/'seed_data.py');shutil.copy2(SITE/'image_sources.json',d/'image_sources.json');shutil.copy2(SITE/'migrate_seed.py',d/'migrate_seed.py')
+    subprocess.run([sys.executable,'migrate_seed.py'],cwd=d,check=True,capture_output=True,text=True);database=d/'instance_seed/osu.db';hashes.append(hashlib.sha256(database.read_bytes()).hexdigest())
   self.assertEqual(hashes[0],hashes[1])
+ def test_build_seed_preserves_existing_runtime(self):
+  with tempfile.TemporaryDirectory(prefix='osu-live-preserve-') as tmp:
+   d=Path(tmp)
+   for name in ('app.py','seed_data.py','image_sources.json','migrate_seed.py'):shutil.copy2(SITE/name,d/name)
+   (d/'instance').mkdir();runtime=d/'instance/osu.db';shutil.copy2(SEED,runtime)
+   with sqlite3.connect(runtime) as connection:connection.execute("UPDATE users SET full_name='Preserved local user' WHERE id=1")
+   before=hashlib.sha256(runtime.read_bytes()).hexdigest()
+   subprocess.run([sys.executable,'migrate_seed.py'],cwd=d,check=True,capture_output=True,text=True)
+   self.assertEqual(hashlib.sha256(runtime.read_bytes()).hexdigest(),before)
+   self.assertTrue((d/'instance_seed/osu.db').is_file())
  def test_post_forms_have_csrf(self):
   missing=[]
   for p in (SITE/'templates').glob('*.html'):

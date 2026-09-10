@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}My Profile | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="profile-page">
+    <div class="profile-header">
+        <div class="profile-avatar">{{ current_user.name[0]|upper }}</div>
+        <div class="profile-info">
+            <h1>{{ current_user.name }}</h1>
+            <p class="profile-email">{{ current_user.email }}</p>
+            <p class="profile-joined">Member since {{ current_user.created_at.strftime('%B %Y') }}</p>
+            <a href="/account/edit" class="btn btn-outline btn-sm">Edit Profile</a>
+        </div>
+    </div>
+
+    {% set active_tab = 'profile' %}
+    {% include 'profile_tabs.html' %}
+
+    <div class="profile-stats">
+        <div class="stat-card">
+            <div class="stat-number">{{ rating_count }}</div>
+            <div class="stat-label">Ratings</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ review_count }}</div>
+            <div class="stat-label">Reviews</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-number">{{ watchlist_count }}</div>
+            <div class="stat-label">Watchlist</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

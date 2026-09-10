@@ -40,7 +40,7 @@ class EnvironmentQualityTests(unittest.TestCase):
         for number, row in enumerate(rows):
             with self.subTest(task=number):
                 self.assertEqual(f"BoardGameGeek--{number}", row["id"])
-                self.assertEqual("http://localhost:40021/", row["web"])
+                self.assertEqual("http://localhost:40024/", row["web"])
                 expected = f"sites/boardgamegeek/verify/verify_{number}.py"
                 self.assertEqual(expected, row["verifier_path"])
                 self.assertTrue((SITE_DIR.parents[1] / expected).is_file())

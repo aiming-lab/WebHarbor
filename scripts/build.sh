@@ -14,6 +14,10 @@ for site in sites/*/; do
         need_fetch=1
         break
     fi
+    if [[ -f "${site}.requires-external-cache" ]] && { [[ ! -d "${site}static/external_cache" ]] || [[ -z $(ls -A "${site}static/external_cache" 2>/dev/null) ]]; }; then
+        need_fetch=1
+        break
+    fi
     if [[ -f "${site}.build-generated-seed" ]]; then
         continue
     fi

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% from "_job_card.html" import job_card %}
+{% from "_benefits.html" import benefits_block %}
+{% from "_life.html" import life_block %}
+{% block title %}{{ job.title }} in {{ job.store.city }}, {{ job.store.state }} | Walmart Careers{% endblock %}
+{% block content %}
+{% set salaried = job.population == 'salaried' %}
+
+{#
+  Both populations use the live three-photo masthead; the identity card in the
+  middle column is solid ld-blue for salaried postings and blue-over-navy for
+  hourly ones, exactly as reference/job_detail_corp.png vs reference/job_detail.png.
+#}
+<div class="detail-top">
+  <div class="wrap wrap-bleed">
+    <div class="hero-grid">
+      <div class="hero-col">
+        <div class="spark-pill">
+          <img src="{{ url_for('static', filename='icons/spark-yellow.svg') }}" alt="Walmart spark">
+        </div>
+        {% if job.hero_images|length > 0 %}
+          <img class="hero-photo-tall" src="{{ url_for('static', filename='images/' ~ job.hero_images[0]) }}" alt="">
+        {% endif %}
+      </div>
+      <div class="hero-col">
+        {% if job.hero_images|length > 1 %}
+          <img class="hero-photo-wide" src="{{ url_for('static', filename='images/' ~ job.hero_images[1]) }}" alt="">
+        {% endif %}
+        <div class="id-card {{ 'id-salaried' if salaried else 'id-hourly' }}">
+          <div class="id-top">
+            <span class="grip" aria-hidden="true"></span>
+            <img class="id-spark" src="{{ url_for('static', filename='icons/spark-yellow.svg') }}" alt="">
+          </div>
+          <div class="id-body">
+            <div class="id-title">{{ job.title }}</div>
+            <div class="id-loc">{{ job.store.city }}, {{ job.store.state }}</div>
+          </div>
+          <div class="id-actions">
+            {% if is_saved %}
+              <form method="post" action="{{ url_for('unsave_job', job_id=job.job_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ url_for('job_detail', job_id=job.job_id) }}">
+                <button type="submit" class="icon-btn on" title="Saved role — remove" aria-label="Remove saved role">
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path d="M7 3h10v18l-5-4-5 4Z" fill="currentColor"/>
+                  </svg>
+                </button>
+              </form>
+            {% else %}
+              <form method="post" action="{{ url_for('save_job', job_id=job.job_id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="next" value="{{ url_for('job_detail', job_id=job.job_id) }}">
+                <button type="submit" class="icon-btn" title="Save role" aria-label="Save role">
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
+                    <path d="M7 3h10v18l-5-4-5 4Z" fill="none" stroke="currentColor" stroke-width="1.7"
+                          stroke-linejoin="round"/>
+                  </svg>
+                </button>
+              </form>
+            {% endif %}
+            <a class="btn btn-sm apply-now" href="{{ url_for('apply_contact', job_id=job.job_id) }}">Apply now <span>+</span></a>
+          </div>
+        </div>
+      </div>
+      {% if job.hero_images|length > 2 %}
+        <img class="hero-photo-tall" src="{{ url_for('static', filename='images/' ~ job.hero_images[2]) }}" alt="">
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{#
+  Below the masthead the live page is one two-column layout: the sticky
+  "On this page" panel on the left, and on the right the role details, the
+  benefits block and "Life at Walmart" one after another in the same column.
+#}
+<div class="detail-layout">
+  <nav class="detail-nav" aria-label="On this page">
+    <ul>
+      <li><a href="#role-details">Role Details</a></li>
+      {% if not salaried %}
+        <li class="sub"><a href="#role-summary">Role summary</a></li>
+        <li class="sub"><a href="#what-youll-do">What you'll do</a></li>
+        <li class="sub"><a href="#what-youll-bring">What you'll bring</a></li>
+      {% endif %}
+      <li><a href="#benefits">Benefits</a></li>
+      <li><a href="#life-at-walmart">Life at Walmart</a></li>
+    </ul>
+  </nav>
+
+  <div class="detail-main">
+    <div id="role-details">
+      <h1>{{ job.title }}</h1>
+
+      <div class="fact-row">
+        <div class="fact-col">
+          {% if not job.store.is_office %}
+            <div class="banner-line">{{ job.store.banner }} #{{ job.store.store_number }}</div>
+          {% endif %}
+          <address>
+            {{ job.store.street }}<br>
+            {{ job.store.city }}, {{ job.store.state }} {{ job.store.zip }}
+          </address>
+          {% if job.positions_available %}
+            <div><span class="positions">{{ job.positions_available }} open position{{ '' if job.positions_available == 1 else 's' }}</span></div>
+          {% endif %}
+          <span class="req-id">{{ job.job_id }}</span>
+        </div>
+        <div class="map-col">{{ map_svg|safe }}</div>
+      </div>
+
+      <div class="chips">
+        <span class="chip">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            <path d="M14.4 9.4c-.5-.9-1.4-1.3-2.4-1.3-1.3 0-2.3.7-2.3 1.8 0 2.4 4.9 1.3 4.9 3.8 0
+                     1.1-1 1.9-2.4 1.9-1.1 0-2.1-.5-2.6-1.4M12 6.4v11.2"
+                  fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+          </svg>
+          {{ job.pay_range }}{% if job.min_age_note %}*{% endif %}
+        </span>
+        {% if salaried %}
+          <span class="chip">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3.5" y="5.5" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M3.5 10h17M8 3.5v4M16 3.5v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            {{ job.worker_type }}
+          </span>
+          <span class="chip">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="8.5" cy="8.5" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              <circle cx="16" cy="8.5" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              <circle cx="8.5" cy="16" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              <circle cx="16" cy="16" r="3.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+            </svg>
+            Salaried
+          </span>
+        {% else %}
+          <span class="chip">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <rect x="3.5" y="5.5" width="17" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M3.5 10h17M8 3.5v4M16 3.5v4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            {{ job.employment_type }}
+          </span>
+          <span class="chip">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M12 6.8V12l3.4 2" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+            {{ job.shift_time or job.shift_label }}
+          </span>
+          {% if job.shifts|length > 1 %}
+            <span class="chip">Eligible shifts: {{ job.shifts|join(', ') }}</span>
+          {% endif %}
+        {% endif %}
+      </div>
+      {% if job.min_age_note %}
+        <p class="footnote">* Must be at least 18 years old</p>
+      {% endif %}
+
+      <div class="detail-body{% if salaried %} salaried{% endif %}">
+        {% if salaried %}
+          <h2 id="role-summary">Position Summary...</h2>
+          <p>{{ job.summary }}</p>
+          <h2 id="what-youll-do">What you'll do...</h2>
+          {% for paragraph in job.description.split('\n\n') %}<p>{{ paragraph }}</p>{% endfor %}
+          {% if job.about_team %}
+            <p class="sub-heading">About the team:</p>
+            <p>{{ job.about_team }}</p>
+          {% endif %}
+          {% if job.additional_description %}
+            <p class="sub-heading" id="what-youll-bring">What you'll bring:</p>
+            <ul>
+              {% for bullet in job.additional_description %}<li>{{ bullet }}</li>{% endfor %}
+            </ul>
+          {% endif %}
+          {% set about = content.SALARIED_ABOUT_AREA.get(job.area.slug, content.SALARIED_ABOUT_DEFAULT) %}
+          <p class="sub-heading">{{ about[0] }}</p>
+          <p>{{ about[1] }}</p>
+          {% if job.store.is_office %}
+            <p class="sub-heading">Flexible, hybrid work:</p>
+            <p>{{ content.SALARIED_HYBRID_NOTE }}</p>
+          {% endif %}
+          <p class="sub-heading">Benefits:</p>
+          <p>{{ content.SALARIED_BENEFITS_NOTE }}</p>
+          <p class="sub-heading">Equal Opportunity Employer:</p>
+          <p>{{ content.SALARIED_EEO_NOTE }}</p>
+          <p>{{ content.SALARIED_SCOPE_NOTE }}</p>
+          <p>{{ content.SALARIED_PAY_NOTE }}
+             The annual salary range for this position is {{ job.pay_range }}.
+             Additional compensation includes annual or quarterly performance bonuses.</p>
+          <h2 id="minimum-qualifications">Minimum Qualifications...</h2>
+          <p class="preamble">{{ content.MIN_QUAL_PREAMBLE }}</p>
+          <ul>
+            {% for option in job.min_qualifications %}<li>{{ option }}</li>{% endfor %}
+          </ul>
+          <h2 id="preferred-qualifications">Preferred Qualifications...</h2>
+          <p class="preamble">{{ content.PREF_QUAL_PREAMBLE }}</p>
+          <p>{{ job.preferred_qualifications }}</p>
+          <h2 id="primary-location">Primary Location...</h2>
+          <p>{{ job.store.street }}, {{ job.store.city }}, {{ job.store.state }} {{ job.store.zip }},
+             United States of America</p>
+        {% else %}
+          <h2 id="role-summary">Role summary</h2>
+          <p>{{ job.summary }}</p>
+          <h2 id="what-youll-do">What you'll do</h2>
+          {% for paragraph in job.description.split('\n\n') %}<p>{{ paragraph }}</p>{% endfor %}
+          <h2 id="what-youll-bring">What you'll bring</h2>
+          <ul>
+            {% for bullet in job.additional_description %}<li>{{ bullet }}</li>{% endfor %}
+          </ul>
+          {% if job.hashtag %}
+            <p><a class="hashtag" href="{{ url_for('results', q=job.hashtag) }}">{{ job.hashtag }}</a></p>
+          {% endif %}
+          <div class="legal">
+            {% for line in content.HOURLY_PAY_NOTICE %}<p>*{{ line }}</p>{% endfor %}
+          </div>
+        {% endif %}
+        <p class="legal">{{ content.DRUG_FREE_NOTICE }}</p>
+      </div>
+    </div>
+
+    {{ benefits_block("Benefits you'll enjoy", benefit_tiles, content.JOB_BENEFIT_ROWS,
+                      'Learn more', url_for('resources_hiring'), section_id='benefits') }}
+
+    {{ life_block(content.LIFE_AT_WALMART_HEADING,
+                  content.LIFE_AT_WALMART_CORP if salaried and job.store.city == 'Bentonville' else content.LIFE_AT_WALMART_FIELD) }}
+  </div>
+</div>
+
+{% if related %}
+<section class="related-section">
+  <div class="wrap-hub">
+    <h2>Related roles</h2>
+    <div class="job-grid three-col">
+      {% for other in related %}{{ job_card(other, saved_ids, compact=True) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
