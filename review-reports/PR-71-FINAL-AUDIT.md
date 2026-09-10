@@ -13,7 +13,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The original control plane allowed unauthenticated reset/restart operations. Session secrets, login controls, input bounds, transaction behavior, account ownership, anonymous review voting, and SQLite constraints also required review.
 - **Verification:** Direct source inspection confirmed public mutation routes in `control_server.py`, process-local concurrency assumptions, anonymous vote-ledger growth, registration commit ordering, weak nullability, and session-cookie data exposure.
 - **Remediation:** Every control endpoint now requires a constant-time bearer-token check. Drugs.com has a cryptographically random runtime secret, bounded requests and fields, CSRF on mutations, strict safe redirects, login throttling, a bounded runtime account count, unique site-specific cookie names, optional secure cookies for TLS deployments, authenticated-only bounded helpful votes, ownership-scoped mutations, non-null/check/unique/FK constraints, and an exclusive per-database process lock. Anonymous email and medication-browsing history are not stored in the client cookie.
-- **Evidence:** `sites/drugs_com/tests/test_app.py`; authenticated and unauthenticated control-plane tests in `sites/drugs_com/tests/test_integration.py`; final Drugs.com suite: 396 passed.
+- **Evidence:** `sites/drugs_com/tests/test_app.py`; authenticated and unauthenticated control-plane tests in `sites/drugs_com/tests/test_integration.py`; final Drugs.com suite: 404 passed.
 
 ### Reviewer 2 — application behavior and data consistency
 
@@ -34,7 +34,7 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 - **Observation:** The original verifiers accepted fabricated origins, `inspect`-only trajectories, blank screenshots, loose final-URL shortcuts, negated or numerically reassociated answers, wrong entity associations, and incorrect Task 13 pairings.
 - **Verification:** Adversarial fixtures reproduced wrong-origin, shortcut, contradiction, extra-entity, wrong-credential, malformed-PNG, schema mutation, row mutation, number-binding, and pair-swapping false positives.
 - **Remediation:** Verifiers now require the exact task ID and `localhost:40024` origin, successful supported browser actions, ordered UI transitions, exact input multisets, decoded nonblank PNG sequences with visual transitions, a final `done` action bound to the answer, canonical initial seed SHA-256, exact schema/table/row/byte equality, task-specific entity and numeric binding, explicit contradiction checks, domain exclusivity, and exact ordered drug/imprint pair segments.
-- **Evidence:** 268 positive and adversarial verifier cases are included in the 396-test Drugs.com suite; final real-browser run passes all 21 entry points. The verifier trusts the browser harness to write `action_result`; it does not claim a cryptographic attestation against a process that can arbitrarily rewrite the complete run directory.
+- **Evidence:** 273 positive and adversarial verifier cases are included in the 404-test Drugs.com suite; final real-browser run passes all 21 entry points. The verifier trusts the browser harness to write `action_result`; it does not claim a cryptographic attestation against a process that can arbitrarily rewrite the complete run directory.
 
 ### Reviewer 5 — UI, responsive behavior, accessibility, and progressive enhancement
 
@@ -330,21 +330,21 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 
 ### Reviewer 15 — twelfth UI/accessibility remediation
 
-- **Observation:** A generic `WARNING:` prefix was promoted to regulatory boxed-warning status; template-defined navigation taxonomy was omitted from provenance; comparison attributes lacked row headers; dynamic strength/count feedback lacked live semantics; several normal-text colors failed contrast; autocomplete responses could overwrite newer queries; article CSS targeted unused selectors; two related/sidebar pill paths invented fallback shape, color, and imprint values when descriptors were absent.
-- **Remediation:** Boxed styling requires explicit boxed/black-box text; inventory distinguishes external from same-origin fetches and maps template navigation declarations; comparison attributes are scoped row headers; feedback is described polite status; all cited colors meet contrast; every autocomplete response verifies the current query; actual article markup receives typography/layout rules; incomplete related/sidebar pill descriptors now produce an explicit no-diagram empty state instead of fabricated visual values.
-- **Evidence:** Seventeen targeted browser checks, a runtime missing-descriptor test, and the source-contract suite cover row headers, live feedback, stale-response suppression, contrast, article spacing, and the absence of descriptor fallbacks.
+- **Observation:** A generic `WARNING:` prefix was promoted to regulatory boxed-warning status; template-defined navigation taxonomy was omitted from provenance; comparison attributes lacked row headers; dynamic strength/count feedback lacked live semantics; several normal-text colors failed contrast; autocomplete responses could overwrite newer queries; article CSS targeted unused selectors; two related/sidebar pill paths invented fallback shape, color, and imprint values when descriptors were absent; a one-item medication list offered a pair-checker action that requires two inputs.
+- **Remediation:** Boxed styling requires explicit boxed/black-box text; inventory distinguishes external from same-origin fetches and maps template navigation declarations; comparison attributes are scoped row headers; feedback is described polite status; all cited colors meet contrast; every autocomplete response verifies the current query; actual article markup receives typography/layout rules; incomplete related/sidebar pill descriptors now produce an explicit no-diagram empty state instead of fabricated visual values; the medication-list checker form renders only for at least two items and one item receives an explicit add-another state.
+- **Evidence:** Eighteen targeted browser checks, runtime missing-descriptor and one-item-list tests, and the source-contract suite cover row headers, live feedback, stale-response suppression, contrast, article spacing, and the absence of descriptor fallbacks.
 
 ### Reviewer 13 — twelfth security/application remediation
 
-- **Observation:** A stale PID file contained only an integer, so Linux PID reuse could cause an authenticated reset to signal an unrelated process group.
-- **Remediation:** Each site supervisor atomically owns a JSON identity record binding PID, Linux start time, site, and port. Health and reset additionally validate the expected command line and process-group leadership before signaling that identity and fail closed before signaling a mismatched live PID.
-- **Evidence:** Integration tests inject a reused PID identity and assert that `os.killpg` is never called; final container reset/restart tests exercise supervisor-owned records.
+- **Observation:** A stale PID file contained only an integer, and a dead/missing supervisor identity could allow reset while an orphan Flask worker remained in the old process group.
+- **Remediation:** Each site supervisor atomically owns a JSON identity record binding PID, Linux start time, site, and port. Health and reset additionally validate the expected command line and process-group leadership before signaling that identity. Supervisor identity records persist after exit; reset refuses missing records and dead leaders whose process groups still exist, removes a dead identity only after proving its group absent, and binds readiness to the newly started PID.
+- **Evidence:** Integration tests inject a reused PID, a missing boot identity, an orphaned process group, and an absent dead group; final container reset/restart tests exercise supervisor-owned records.
 
-### Reviewer 14 — twelfth and thirteenth task/verifier remediation
+### Reviewer 14 — twelfth through fourteenth task/verifier remediation
 
 - **Observation:** Relation denials and list retractions could pass token co-occurrence checks; later corrections could use unparsed synonyms, while unrestricted correct prose and incidental numbers could be rejected by fixed vocabularies.
-- **Remediation:** Every task question now declares a closed, task-specific JSON result schema. The verifier rejects malformed JSON, duplicate/extra/missing keys, wrong types, out-of-domain values, incorrect list cardinality/order, prose outside the object, and any corrective field. Valid structured values are then rechecked by the existing route-specific ground-truth semantics. Free-form prose is explicitly outside the declared answer contract, eliminating reliance on open-ended synonym interpretation.
-- **Evidence:** 268 verifier cases cover all 21 structured positive entry points, pretty/key-order serialization variants, missing/wrong/extra fields for every task, duplicate keys, trailing prose, corrective keys, wrong types, relation denials, token soups, list composition, and trusted browser artifacts. The final real-browser run passes 21/21 tasks and 99/99 steps with the declared JSON answers.
+- **Remediation:** Every task question now declares a closed, task-specific JSON result schema. The verifier rejects malformed JSON, duplicate/extra/missing keys, wrong types, out-of-domain values, incorrect list cardinality/order, prose outside the object, and any corrective field. Valid structured values are then rechecked by the existing route-specific ground-truth semantics. Free-form prose is explicitly outside the declared answer contract, eliminating reliance on open-ended synonym interpretation. Structured text comparison uses lossless Unicode NFKC/casefold/whitespace normalization rather than ASCII deletion, and integer arrays require exact integer element types.
+- **Evidence:** 273 verifier cases cover all 21 structured positive entry points, pretty/key-order serialization variants, missing/wrong/extra fields for every task, duplicate keys, trailing prose, corrective keys, wrong types, relation denials, token soups, list composition, and trusted browser artifacts. The final real-browser run passes 21/21 tasks and 99/99 steps with the declared JSON answers.
 
 ### Reviewer 16 — eleventh integration/release remediation
 
@@ -365,10 +365,10 @@ This audit did not post a GitHub comment and does not authorize merging the upst
 
 | Scope | Result |
 |---|---|
-| Drugs.com application, seed, integration, verifier positive/adversarial tests | 396 passed, including 268 verifier cases |
+| Drugs.com application, seed, integration, verifier positive/adversarial tests | 404 passed, including 273 verifier cases |
 | Real browser tasks | 21/21 passed, 99 successful steps |
 | Responsive/accessibility route matrix | 464 passed, 8 widths, 58 route/auth cases per width |
-| Targeted keyboard/filter/navigation browser checks | 17/17 passed |
+| Targeted keyboard/filter/navigation browser checks | 18/18 passed |
 | No-JavaScript workflows | 12/12 passed |
 | Walmart Careers regression | 297 passed, 16 subtests passed |
 | Rotten Tomatoes regression | 66 passed, 4143 subtests passed, 28 SQLAlchemy legacy warnings |

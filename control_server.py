@@ -150,6 +150,16 @@ def process_matches_site(site: str, record: dict) -> bool:
     return len(arguments) >= 4 and arguments[-3:] == expected_tail
 
 
+def process_group_exists(process_group: int) -> bool:
+    try:
+        os.killpg(process_group, 0)
+        return True
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+
+
 def wait_for_pid_record(site: str, expected_pid: int, timeout: float = 5.0) -> dict:
     deadline = time.monotonic() + timeout
     while time.monotonic() < deadline:
@@ -179,15 +189,18 @@ def kill_site(site: str, reap_grace: float = REAP_GRACE_SECS):
     with _site_procs_lock:
         tracked_proc = _site_procs.get(site)
     if record is None:
-        if pid_path(site).exists() or pid_path(site).is_symlink():
-            raise RuntimeError(f'invalid PID identity record for {site}; refusing to reset')
-        if tracked_proc is not None and tracked_proc.poll() is None:
-            raise RuntimeError(f'missing PID identity record for live {site} supervisor')
-        return
+        state = 'invalid' if pid_path(site).exists() or pid_path(site).is_symlink() else 'missing'
+        raise RuntimeError(f'{state} PID identity record for {site}; refusing to reset')
     pid = record['pid']
     if not is_alive(pid):
-        pid_path(site).unlink(missing_ok=True)
+        if tracked_proc is not None:
+            tracked_proc.poll()
         reap_exited_children()
+        if process_group_exists(pid):
+            raise RuntimeError(f'{site} supervisor {pid} exited but its process group remains; refusing to reset')
+        with _site_procs_lock:
+            _site_procs.pop(site, None)
+        pid_path(site).unlink(missing_ok=True)
         return
     if not process_matches_site(site, record):
         raise RuntimeError(f'PID identity mismatch for {site} supervisor {pid}; refusing to signal')
@@ -290,13 +303,17 @@ def start_site(site: str) -> int:
     return proc.pid
 
 
-def wait_ready(site: str, timeout: float = 60.0) -> bool:
+def wait_ready(site: str, expected_pid: int, timeout: float = 60.0) -> bool:
     port = site_port(site)
-    deadline = time.time() + timeout
-    while time.time() < deadline:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        record = read_pid_record(site)
+        if not record or record['pid'] != expected_pid or not process_matches_site(site, record):
+            return False
         try:
             urllib.request.urlopen(f'http://127.0.0.1:{port}/', timeout=2).read(1)
-            return True
+            confirmed = read_pid_record(site)
+            return bool(confirmed and confirmed['pid'] == expected_pid and process_matches_site(site, confirmed))
         except Exception:
             time.sleep(0.3)
     return False
@@ -309,10 +326,10 @@ def reset_one(site: str) -> dict:
             cleanup_error = reset_db(site)
         except Exception:
             pid = start_site(site)
-            recovery_ready = wait_ready(site)
+            recovery_ready = wait_ready(site, pid)
             raise RuntimeError(f'reset failed; prior state restart ready={recovery_ready}')
         pid = start_site(site)
-        ready = wait_ready(site)
+        ready = wait_ready(site, pid)
     result = {'site': site, 'pid': pid, 'ready': ready}
     if cleanup_error:
         result['cleanup_warning'] = cleanup_error
@@ -324,7 +341,7 @@ def restart_one(site: str) -> dict:
     with _site_locks[site]:
         kill_site(site)
         pid = start_site(site)
-        ready = wait_ready(site)
+        ready = wait_ready(site, pid)
     return {'site': site, 'pid': pid, 'ready': ready,
             'note': 'restart only, DB not reset'}
 

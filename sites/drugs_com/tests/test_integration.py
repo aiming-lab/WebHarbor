@@ -167,6 +167,35 @@ def test_control_refuses_to_signal_a_reused_pid_identity(tmp_path, monkeypatch):
     assert module.read_pid_record(site) == record
 
 
+def test_control_refuses_missing_boot_identity_and_orphaned_group(tmp_path, monkeypatch):
+    module = load_control_server()
+    module.PID_DIR = tmp_path / "pids"
+    module.PID_DIR.mkdir()
+    site = "drugs_com"
+    with pytest.raises(RuntimeError, match="missing PID identity"):
+        module.kill_site(site)
+    record = {"pid": 434343, "start_time": 100, "site": site, "port": module.site_port(site)}
+    module.pid_path(site).write_text(json.dumps(record))
+    monkeypatch.setattr(module, "is_alive", lambda pid: False)
+    monkeypatch.setattr(module, "process_group_exists", lambda pgid: pgid == record["pid"])
+    with pytest.raises(RuntimeError, match="process group remains"):
+        module.kill_site(site)
+    assert module.read_pid_record(site) == record
+
+
+def test_control_cleans_dead_identity_only_after_group_is_absent(tmp_path, monkeypatch):
+    module = load_control_server()
+    module.PID_DIR = tmp_path / "pids"
+    module.PID_DIR.mkdir()
+    site = "drugs_com"
+    record = {"pid": 444444, "start_time": 100, "site": site, "port": module.site_port(site)}
+    module.pid_path(site).write_text(json.dumps(record))
+    monkeypatch.setattr(module, "is_alive", lambda pid: False)
+    monkeypatch.setattr(module, "process_group_exists", lambda pgid: False)
+    module.kill_site(site)
+    assert not module.pid_path(site).exists()
+
+
 def test_reset_db_replaces_instance_from_complete_staging(tmp_path):
     module = load_control_server()
     site = tmp_path / "drugs_com"

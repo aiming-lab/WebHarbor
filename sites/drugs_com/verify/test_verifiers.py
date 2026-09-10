@@ -942,6 +942,30 @@ def test_structured_answer_rejects_semantic_overrides_and_wrong_types(snapshots,
     assert_fails(1, make_run(tmp_path, 1, snapshots[0], answer=json.dumps(status)), snapshots)
 
 
+@pytest.mark.parametrize("number,key,suffix", [
+    (1, "availability", " ＯＴＣ"),
+    (2, "severity", " ＭＩＮＯＲ"),
+    (8, "highest_severity", " ＭＩＮＯＲ"),
+])
+def test_structured_text_rejects_unicode_normalization_suffixes(number, key, suffix, snapshots, tmp_path):
+    value = json.loads(positive_answer(number, snapshots[0]))
+    value[key] += suffix
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=json.dumps(value)), snapshots)
+
+
+def test_structured_lists_reject_unicode_suffixes(snapshots, tmp_path):
+    value = json.loads(positive_answer(4, snapshots[0]))
+    value["drugs"][0] += " 假药"
+    assert_fails(4, make_run(tmp_path, 4, snapshots[0], answer=json.dumps(value)), snapshots)
+
+
+def test_task10_integer_arrays_reject_equal_floats(snapshots, tmp_path):
+    value = json.loads(positive_answer(10, snapshots[0]))
+    value["otc_dose_mg"] = [200.0, 400.0]
+    value["interval_hours"] = [4.0, 6.0]
+    assert_fails(10, make_run(tmp_path, 10, snapshots[0], answer=json.dumps(value)), snapshots)
+
+
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
     run = make_run(tmp_path, 0, snapshots[0], answer="wrong")
     process = execute(0, run, *snapshots)

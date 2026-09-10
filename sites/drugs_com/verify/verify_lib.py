@@ -10,6 +10,7 @@ import re
 import sqlite3
 import subprocess
 import tempfile
+import unicodedata
 import uuid
 from collections import Counter
 from dataclasses import dataclass
@@ -849,8 +850,12 @@ def _parse_answer_object(answer):
     return value if isinstance(value, dict) and not duplicate else None
 
 
+def _structured_text(value) -> str:
+    return " ".join(unicodedata.normalize("NFKC", str(value)).casefold().split())
+
+
 def _text_equal(value, expected) -> bool:
-    return isinstance(value, str) and norm(value) == norm(expected)
+    return isinstance(value, str) and _structured_text(value) == _structured_text(expected)
 
 
 def _text_list(value):
@@ -859,16 +864,20 @@ def _text_list(value):
 
 def _same_text_set(value, expected) -> bool:
     items = _text_list(value)
-    return items is not None and len(items) == len(expected) and {norm(item) for item in items} == {norm(item) for item in expected}
+    return items is not None and len(items) == len(expected) and {_structured_text(item) for item in items} == {_structured_text(item) for item in expected}
 
 
 def _subset_text_list(value, domain, minimum, maximum=None) -> bool:
     items = _text_list(value)
-    if items is None or len(items) != len({norm(item) for item in items}) or len(items) < minimum:
+    if items is None or len(items) != len({_structured_text(item) for item in items}) or len(items) < minimum:
         return False
     if maximum is not None and len(items) > maximum:
         return False
-    return {norm(item) for item in items} <= {norm(item) for item in domain}
+    return {_structured_text(item) for item in items} <= {_structured_text(item) for item in domain}
+
+
+def _exact_integer_list(value, expected) -> bool:
+    return isinstance(value, list) and len(value) == len(expected) and all(type(item) is int for item in value) and value == expected
 
 
 def structured_answer_contract(number, answer, initial):
@@ -935,7 +944,7 @@ def structured_answer_contract(number, answer, initial):
         valid = exact_keys("class", "drugs") and _text_equal(value["class"], slug) and _subset_text_list(value["drugs"], choices, 3)
         semantic = ", ".join(value["drugs"]) if valid else answer
     elif number == 10:
-        valid = exact_keys("drug", "otc_dose_mg", "interval_hours", "maximum_mg", "period_hours") and _text_equal(value["drug"], "ibuprofen") and value["otc_dose_mg"] == [200, 400] and value["interval_hours"] == [4, 6] and type(value["maximum_mg"]) is int and value["maximum_mg"] == 1200 and type(value["period_hours"]) is int and value["period_hours"] == 24
+        valid = exact_keys("drug", "otc_dose_mg", "interval_hours", "maximum_mg", "period_hours") and _text_equal(value["drug"], "ibuprofen") and _exact_integer_list(value["otc_dose_mg"], [200, 400]) and _exact_integer_list(value["interval_hours"], [4, 6]) and type(value["maximum_mg"]) is int and value["maximum_mg"] == 1200 and type(value["period_hours"]) is int and value["period_hours"] == 24
         semantic = "Ibuprofen OTC: 200-400 mg every 4-6 hours; maximum 1200 mg in 24 hours."
     elif number == 11:
         rows = initial.query("SELECT title FROM news_article WHERE category='New Drug Approvals' ORDER BY published_at DESC,id DESC LIMIT 1")

@@ -39,16 +39,6 @@ def _write_pid_record(site: str, port: int) -> dict:
     return record
 
 
-def _remove_pid_record(site: str, record: dict) -> None:
-    destination = PID_DIR / f'{site}.pid'
-    try:
-        current = json.loads(destination.read_text())
-    except (FileNotFoundError, json.JSONDecodeError, OSError):
-        return
-    if current == record:
-        destination.unlink(missing_ok=True)
-
-
 def main():
     site = sys.argv[1]
     port = int(sys.argv[2])
@@ -63,7 +53,7 @@ def main():
     except OSError:
         pass
 
-    record = _write_pid_record(site, port)
+    _write_pid_record(site, port)
     child = None
     try:
         child = subprocess.Popen(
@@ -79,7 +69,6 @@ def main():
                 child.kill()  # SIGKILL — Flask won't shut down gracefully anyway
             except ProcessLookupError:
                 pass
-            _remove_pid_record(site, record)
             os._exit(0)
 
         signal.signal(signal.SIGTERM, shutdown)
@@ -89,7 +78,9 @@ def main():
         if child is not None and child.poll() is None:
             child.kill()
             child.wait()
-        _remove_pid_record(site, record)
+        # Keep the identity record after exit. The control plane needs the
+        # original process-group ID to prove that no orphan worker survives
+        # before it may reset storage or start a replacement.
     sys.exit(rc)
 
 

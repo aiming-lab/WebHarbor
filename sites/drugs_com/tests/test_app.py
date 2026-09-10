@@ -285,6 +285,21 @@ def test_med_list_desired_state_is_idempotent(client, drugs_app):
     assert rows == [(0,)]
 
 
+def test_one_item_med_list_does_not_offer_pair_checker_submission(client, drugs_app):
+    with drugs_app.app.app_context():
+        user = drugs_app.User.query.filter_by(email="alice.j@test.com").one()
+        drug = drugs_app.Drug.query.filter_by(slug="ibuprofen").one()
+        drugs_app.SavedDrug.query.filter_by(user_id=user.id).delete()
+        drugs_app.db.session.add(drugs_app.SavedDrug(user_id=user.id, drug_id=drug.id))
+        drugs_app.db.session.commit()
+    assert login(client).status_code == 302
+    response = client.get("/my-med-list")
+    assert response.status_code == 200
+    assert b"requires at least two distinct inputs" in response.data
+    assert b"med-list-check-form" not in response.data
+    assert b"Check all 1 medication" not in response.data
+
+
 def test_med_list_rejects_malformed_desired_state(client):
     assert login(client).status_code == 302
     page = client.get("/acetaminophen")

@@ -63,15 +63,21 @@
     <div class="med-interaction-cta">
       <div class="med-interaction-cta-text">
         <h2>Check local pair fixtures</h2>
-        <p>Submit all {{ items|length }} stored list item{% if items|length != 1 %}s{% endif %} to the deterministic checker. It reports only exact records present in the incomplete local interaction database.</p>
+        {% if items|length >= 2 %}
+        <p>Submit all {{ items|length }} stored list items to the deterministic checker. It reports only exact records present in the incomplete local interaction database.</p>
+        {% else %}
+        <p>Add at least one more medication before checking local pair fixtures. The deterministic checker requires at least two distinct inputs.</p>
+        {% endif %}
       </div>
+      {% if items|length >= 2 %}
       <form method="post" action="{{ url_for('interaction_checker') }}" class="med-list-check-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% for item in items %}
           <input type="hidden" name="drugs" value="{{ item.drug.generic_name }}">
         {% endfor %}
-        <button type="submit" class="btn btn-med-list--lg">Check all {{ items|length }} medication{% if items|length != 1 %}s{% endif %} for interactions</button>
+        <button type="submit" class="btn btn-med-list--lg">Check all {{ items|length }} medications for interactions</button>
       </form>
+      {% endif %}
     </div>
 
     <div class="med-list-actions">
