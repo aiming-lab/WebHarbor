@@ -189,11 +189,18 @@ def validate_snapshots(judge: Judge, initial: Snapshot, after: Snapshot, canonic
 
 def load_trajectory(run_dir: Path):
     path = run_dir / "trajectory.json"
-    if not path.is_file():
-        raise ValueError("trajectory.json is missing")
+    if path.is_symlink() or not path.is_file():
+        raise ValueError("trajectory.json is missing or not a regular file")
+    if path.stat().st_size > 4 * 1024 * 1024:
+        raise ValueError("trajectory.json exceeds the 4 MiB limit")
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
         raise ValueError("trajectory must be an object")
+    if not isinstance(value.get("steps"), list) or not 1 <= len(value["steps"]) <= 500:
+        raise ValueError("trajectory must contain 1 to 500 steps")
+    final_answer = value.get("final_answer")
+    if not isinstance(final_answer, str) or len(final_answer.encode("utf-8")) > 64 * 1024:
+        raise ValueError("final_answer must be a string of at most 64 KiB")
     return value
 
 

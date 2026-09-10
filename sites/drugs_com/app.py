@@ -194,11 +194,11 @@ def slugify(text):
     return text.strip("-")
 
 
-def _lookup_drug_exact(value):
-    """Resolve an exact slug, generic name, or complete brand-name element."""
+def _resolve_drug_exact(value):
+    """Return (drug, status) for an exact slug, generic name, or complete brand element."""
     key = (value or "").strip().casefold()
     if not key:
-        return None
+        return None, "unrecognized"
     direct = Drug.query.filter(
         db.or_(
             db.func.lower(Drug.slug) == key,
@@ -206,14 +206,21 @@ def _lookup_drug_exact(value):
         )
     ).all()
     if len(direct) == 1:
-        return direct[0]
+        return direct[0], "resolved"
     if len(direct) > 1:
-        return None
+        return None, "ambiguous"
     brand_hits = [
         candidate for candidate in Drug.query.order_by(Drug.id).all()
         if key in {str(brand).strip().casefold() for brand in candidate.brand_names}
     ]
-    return brand_hits[0] if len(brand_hits) == 1 else None
+    if len(brand_hits) == 1:
+        return brand_hits[0], "resolved"
+    return None, "ambiguous" if brand_hits else "unrecognized"
+
+
+def _lookup_drug_exact(value):
+    """Resolve an unambiguous exact slug, generic name, or complete brand element."""
+    return _resolve_drug_exact(value)[0]
 
 
 def _password_validation_error(password):
@@ -5273,6 +5280,7 @@ def interaction_checker():
     drugs_input = None
     interactions = None
     unrecognized = []
+    ambiguous = []
     unrepresented_pairs = []
     summary = None
     # Pre-populate from URL param (linked from drug detail pages, e.g. ?drug=ibuprofen)
@@ -5310,19 +5318,19 @@ def interaction_checker():
         resolved = []
         seen_ids = set()
         for n in drugs_input:
-            low = n.lower()
-            d = Drug.query.filter(db.func.lower(Drug.generic_name) == low).first()
-            if not d:
-                for cand in drugs:
-                    if low in [b.lower() for b in cand.brand_names]:
-                        d = cand
-                        break
-            if d and d.id not in seen_ids:
+            if n.casefold() == "alcohol":
+                continue
+            d, resolution = _resolve_drug_exact(n)
+            if resolution == "ambiguous":
+                ambiguous.append(n)
+            elif d and d.id not in seen_ids:
                 resolved.append(d)
                 seen_ids.add(d.id)
             elif not d:
                 unrecognized.append(n)
 
+        if ambiguous:
+            abort(400, description=f"Ambiguous brand name; use a generic drug name: {', '.join(ambiguous)}")
         has_alcohol = any(n.lower() == "alcohol" for n in drugs_input or [])
         if len(resolved) + int(has_alcohol) < 2:
             abort(400)
@@ -5389,6 +5397,7 @@ def interaction_checker():
         drugs_input=drugs_input,
         interactions=interactions,
         unrecognized=unrecognized,
+        ambiguous=ambiguous,
         unrepresented_pairs=unrepresented_pairs,
         summary=summary,
         prefill=prefill,
@@ -5517,23 +5526,20 @@ def api_interaction_check():
     matched = []
     matched_ids = set()
     name_to_drug = {}
-    all_drugs = Drug.query.all()
+    ambiguous = []
     for n in names:
-        d = Drug.query.filter(db.func.lower(Drug.generic_name) == n).first()
-        if not d:
-            # try brand match
-            for cand in all_drugs:
-                brands = [b.lower() for b in cand.brand_names]
-                if n in brands:
-                    d = cand
-                    break
-        if d:
+        d, resolution = _resolve_drug_exact(n)
+        if resolution == "ambiguous":
+            ambiguous.append(n)
+        elif d:
             if d.id not in matched_ids:
                 matched.append(d)
                 matched_ids.add(d.id)
             name_to_drug[n] = d
+    if ambiguous:
+        return jsonify({"ok": False, "error": "ambiguous_drug_names", "ambiguous": ambiguous}), 400
     if len(matched) + int(has_alcohol) < 2:
-        return jsonify({"ok": False, "error": "at_least_two_distinct_recognized_items_required"}), 400
+        return jsonify({"ok": False, "error": "at_least_two_distinct_recognized_items_required", "unrecognized": [n for n in names if n not in name_to_drug]}), 400
     interactions = []
     pair_keys = set()
     unrepresented_pairs = []
@@ -5575,6 +5581,7 @@ def api_interaction_check():
         "interactions": interactions,
         "drugs_checked": [d.generic_name for d in matched] + (["alcohol"] if has_alcohol else []),
         "unrecognized": [n for n in names if n not in name_to_drug],
+        "ambiguous": [],
         "unrepresented_pairs": unrepresented_pairs,
         "coverage_complete": False,
     })

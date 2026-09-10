@@ -966,6 +966,18 @@ def test_task10_integer_arrays_reject_equal_floats(snapshots, tmp_path):
     assert_fails(10, make_run(tmp_path, 10, snapshots[0], answer=json.dumps(value)), snapshots)
 
 
+def test_trajectory_and_answer_resource_bounds_fail_closed(snapshots, tmp_path):
+    run = make_run(tmp_path, 0, snapshots[0], answer="x" * (64 * 1024 + 1))
+    assert_fails(0, run, snapshots)
+    run = make_run(tmp_path, 0, snapshots[0])
+    path = run / "trajectory.json"
+    value = json.loads(path.read_text())
+    value["steps"] = value["steps"] * 251
+    path.write_text(json.dumps(value))
+    assert len(value["steps"]) > 500
+    assert_fails(0, run, snapshots)
+
+
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
     run = make_run(tmp_path, 0, snapshots[0], answer="wrong")
     process = execute(0, run, *snapshots)

@@ -534,6 +534,16 @@ def test_interaction_check_requires_two_distinct_resolved_items(client):
     assert unresolved_api.status_code == 400
 
 
+def test_interaction_check_rejects_ambiguous_complete_brand_aliases(client):
+    alias = "Drospirenone/Ethinyl estradiol"
+    browser = client.get("/drug-interactions", query_string=[("drugs", alias), ("drugs", "ibuprofen")])
+    assert browser.status_code == 400
+    assert b"Ambiguous brand name; use a generic drug name" in browser.data
+    api = client.post("/api/interaction-check", json={"drugs": [alias, "ibuprofen"]})
+    assert api.status_code == 400
+    assert api.json == {"ok": False, "error": "ambiguous_drug_names", "ambiguous": [alias.casefold()]}
+
+
 def test_controlled_price_fixture_tier_matches_csa_representation(client, drugs_app):
     with drugs_app.app.app_context():
         controlled = drugs_app.Drug.query.filter_by(slug="oxycodone").one()

@@ -243,6 +243,10 @@ def test_final_provenance_table_and_dynamic_feedback_contracts():
     assert 'aria-describedby="review-body-status"' in review and 'id="review-body-status" role="status" aria-live="polite"' in review
     assert ".btn-primary:hover { background: #8f4000;" in css
     assert ".hc-vitamins     { background: linear-gradient(135deg, #9b4600, #6d2f00); }" in css
+    assert ".related-drug-rating-badge { font-size: 0.72rem; color: #8f4000; }" in css
+    assert ".is-165 {" in css and "color:#006b38;" in css
+    assert ".news-cat-title--health    { color: #8f4000; }" in css
+    assert '"Health": {"color": "#8f4000"' in (templates / "news.html").read_text()
     assert ".news-article .article-body p { margin: 0 0 16px; }" in css
     for template_name in ("base.html", "index.html", "compare_drugs.html", "interaction_checker.html"):
         source = (templates / template_name).read_text()
