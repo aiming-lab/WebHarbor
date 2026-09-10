@@ -1,0 +1,24 @@
+<aside class="sidebar" id="sidebar">
+  {% if not current_user.is_authenticated %}
+    <div class="signup-card"><h2>New to 9GAG?</h2><p>Sign up now to see more content!</p><a href="{{ url_for('register') }}">Sign up</a></div>
+  {% endif %}
+  <nav class="side-nav">
+    <a class="{{ 'active' if active=='home' }}" href="{{ url_for('index') }}">⌂ <span>Home</span></a>
+    <a class="{{ 'active' if active=='top' }}" href="{{ url_for('top') }}">▥ <span>Top</span></a>
+    <a class="{{ 'active' if active=='trending' }}" href="{{ url_for('trending') }}">↗ <span>Trending</span></a>
+    <a class="{{ 'active' if active=='fresh' }}" href="{{ url_for('fresh') }}">◷ <span>Fresh</span></a>
+    <a class="{{ 'active' if active=='news' }}" href="{{ url_for('news') }}">▤ <span>News</span></a>
+    <a href="{{ url_for('interest',section='random') }}">□ <span>Ask 9GAG</span></a>
+  </nav>
+  {% if current_user.is_authenticated %}
+    <nav class="side-nav account-links"><a href="{{ url_for('saved') }}">★ <span>Saved</span></a><a href="{{ url_for('notifications') }}">● <span>Notifications</span></a><a href="{{ url_for('settings') }}">⚙ <span>Settings</span></a></nav>
+  {% endif %}
+  <h3 class="recent-heading">Recents <span>Clear</span></h3>
+  <nav class="interests recents"><a href="{{url_for('interest',section='memes')}}"><b>◈</b><span>Old Meme</span></a><a href="{{url_for('interest',section='animals')}}"><b>✿</b><span>Animals & Pets</span></a></nav>
+  <h3>Interests</h3>
+  <nav class="interests">
+    {% for key,label,icon in [('humor','Humor','😄'),('memes','Memes','💎'),('gaming','Gaming','🎮'),('wtf','WTF','🌴'),('animals','Animals & Pets','🐾'),('science','Science & Tech','🚀'),('wholesome','Wholesome','🙂'),('sports','Sports','⚽'),('movies','Movies & TV','🎞'),('food','Food & Drinks','🍲'),('music','Music','🎵'),('politics','Politics','🏛'),('random','Random','🎲')] %}
+      <a class="{{ 'active' if active==key }}" href="{{ url_for('interest',section=key) }}"><b>{{ icon }}</b><span>{{ label }}</span></a>
+    {% endfor %}
+  </nav>
+</aside>
