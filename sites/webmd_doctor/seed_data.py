@@ -1,9 +1,12 @@
 """Deterministic seed for the WebMD Doctor mirror.
 
 Run directly (`PYTHONHASHSEED=0 python seed_data.py`) to rebuild
-`instance_seed/webmd_doctor.db`, `static/images/avatars/*.png` and
-`static/images/posters/*.png`. Byte-reproducible: one seeded RNG, no
-wall-clock reads, sorted iteration only, hard-coded password hashes.
+`instance_seed/webmd_doctor.db` (this is what the Docker build does).
+`PYTHONHASHSEED=0 python seed_data.py --write-images` additionally regenerates
+`static/images/avatars/*.png` and `static/images/posters/*.png`; those PNGs
+ship through the pinned Hugging Face asset tarball, never from the image
+build. Byte-reproducible: one seeded RNG, no wall-clock reads, sorted
+iteration only, hard-coded password hashes, PNGs without ancillary chunks.
 
 Every doctor, practice, hospital, address, phone, NPI, school and review is
 synthetic. Real city / state / specialty / insurer names are reused only as
@@ -1267,7 +1270,9 @@ def ensure_seed_database() -> None:
 
 
 # --------------------------------------------------------------------------- #
-# Generated images (deterministic PNG bytes, no text chunks)
+# Generated images (deterministic PNG bytes, no text chunks). Local freezer
+# only (`seed_data.py --write-images`): the Docker build never calls this;
+# the PNGs are fetched from the pinned Hugging Face tarball.
 # --------------------------------------------------------------------------- #
 AVATAR_PALETTE = [
     (0, 21, 124), (53, 87, 255), (14, 116, 144), (99, 64, 178), (27, 94, 32), (150, 63, 122),
@@ -1279,6 +1284,11 @@ def _initials_font(size: int):
     from PIL import ImageFont
 
     return ImageFont.load_default(size=size)
+
+
+def _save_png(image, path: Path) -> None:
+    # Fixed compression, no tIME / tEXt / zTXt chunks: the bytes depend only on the pixels.
+    image.save(path, format="PNG", optimize=False, compress_level=9, pnginfo=None)
 
 
 def write_images(doctors: list[Doctor]) -> None:
@@ -1299,7 +1309,7 @@ def write_images(doctors: list[Doctor]) -> None:
         box = draw.textbbox((0, 0), initials, font=font_large)
         width, height = box[2] - box[0], box[3] - box[1]
         draw.text(((150 - width) / 2 - box[0], (150 - height) / 2 - box[1]), initials, fill=(255, 255, 255), font=font_large)
-        image.save(AVATAR_DIR / f"{doctor.slug}.png", format="PNG", optimize=True)
+        _save_png(image, AVATAR_DIR / f"{doctor.slug}.png")
         if doctor.is_enhanced:
             poster = Image.new("RGB", (640, 360), (0, 6, 37))
             pdraw = ImageDraw.Draw(poster)
@@ -1312,10 +1322,10 @@ def write_images(doctors: list[Doctor]) -> None:
             pdraw.text((320 - width / 2 - box[0], 180 - height / 2 - box[1]), initials, fill=(255, 255, 255), font=font_poster)
             pdraw.ellipse((560, 280, 620, 340), fill=(53, 87, 255))
             pdraw.polygon([(582, 296), (582, 324), (606, 310)], fill=(255, 255, 255))
-            poster.save(POSTER_DIR / f"{doctor.slug}.png", format="PNG", optimize=True)
+            _save_png(poster, POSTER_DIR / f"{doctor.slug}.png")
 
 
-def build_seed_database() -> None:
+def build_seed_database(write_images_too: bool = False) -> None:
     INSTANCE_SEED_DIR.mkdir(parents=True, exist_ok=True)
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     destination = INSTANCE_SEED_DIR / "webmd_doctor.db"
@@ -1331,7 +1341,8 @@ def build_seed_database() -> None:
             ensure_seed_database()
             if checks is not None:
                 checks()
-            write_images(Doctor.query.order_by(Doctor.id).all())
+            if write_images_too:
+                write_images(Doctor.query.order_by(Doctor.id).all())
             db.session.remove()
             with db.engine.connect() as connection:
                 connection.execute(text("VACUUM"))
@@ -1347,6 +1358,26 @@ def build_seed_database() -> None:
         print("scripts_dev/assert_distractors.py not present - skipping the build-time task invariants.")
 
 
+def build_images() -> None:
+    """Local freezer entry point: regenerate the avatar / poster PNGs from the seed."""
+    with app.app_context():
+        db.create_all()
+        ensure_seed_database()
+        write_images(Doctor.query.order_by(Doctor.id).all())
+        db.session.remove()
+        db.engine.dispose()
+
+
 if __name__ == "__main__":
-    build_seed_database()
-    print("Seed database, avatars and posters generated for WebMD Doctor.")
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Rebuild the deterministic WebMD Doctor seed.")
+    parser.add_argument("--write-images", action="store_true",
+                        help="also regenerate static/images/{avatars,posters}/ (local freezer only; "
+                             "the Docker build ships them from the Hugging Face tarball)")
+    args = parser.parse_args()
+    build_seed_database(write_images_too=args.write_images)
+    if args.write_images:
+        print("Seed database, avatars and posters generated for WebMD Doctor.")
+    else:
+        print("Seed database generated for WebMD Doctor (images come from the HF asset tarball).")

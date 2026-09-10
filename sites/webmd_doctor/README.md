@@ -7,11 +7,12 @@ Offline Flask mirror of `https://doctor.webmd.com/` (branded "WebMD Care" upstre
 ```bash
 uv venv .venv --python 3.12
 uv pip install --python .venv/bin/python -r sites/webmd_doctor/requirements.txt
-cd sites/webmd_doctor && PYTHONHASHSEED=0 ../../.venv/bin/python seed_data.py   # writes instance_seed/, static/images/{avatars,posters}/
+./scripts/fetch_assets.sh webmd_doctor                                          # static/images/{avatars,posters}/ from the HF tarball
+cd sites/webmd_doctor && PYTHONHASHSEED=0 ../../.venv/bin/python seed_data.py   # writes instance_seed/webmd_doctor.db
 PORT=40024 ../../.venv/bin/python app.py
 ```
 
-The Docker build regenerates `instance_seed/webmd_doctor.db` plus the Pillow avatars (226) and video poster frames (91) from `seed_data.py`; the site ships no Hugging Face assets (`.build-generated-seed`). `seed_metadata` version `webmd-doctor-v1`, `EXPECTED_COUNTS` and a foreign-key check reject partial or incompatible state, and every seed function is gated as a whole so `/reset/webmd_doctor` and `docker restart` leave the DB byte-identical.
+The Docker build regenerates `instance_seed/webmd_doctor.db` from `seed_data.py` (`.build-generated-seed`); the Pillow initials avatars (226) and video poster frames (91) under `static/images/` ship in the pinned Hugging Face tarball (`.requires-images`) and are regenerated locally with `PYTHONHASHSEED=0 python seed_data.py --write-images` (byte-stable PNGs: fixed compression, no ancillary chunks). `seed_metadata` version `webmd-doctor-v1`, `EXPECTED_COUNTS` and a foreign-key check reject partial or incompatible state, and every seed function is gated as a whole so `/reset/webmd_doctor` and `docker restart` leave the DB byte-identical.
 
 ## Seeded rows
 

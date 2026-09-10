@@ -50,8 +50,10 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/walmart_careers && \
 RUN cd /opt/WebSyn/walmart_careers && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
-# WebMD Doctor ships no HF assets: the deterministic SQLite seed, the Pillow
-# initials avatars and the video poster frames are all generated here.
+# WebMD Doctor's generated avatars / posters come from the pinned asset bundle,
+# while its SQLite seed is rebuilt deterministically from tracked source code.
+RUN test -n "$(ls -A /opt/WebSyn/webmd_doctor/static/images/avatars)" && \
+    test -n "$(ls -A /opt/WebSyn/webmd_doctor/static/images/posters)"
 RUN cd /opt/WebSyn/webmd_doctor && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
