@@ -2,15 +2,12 @@
 {% block title %}{{ title }}{% if state_name %} in {{ state_name }}{% endif %}{% endblock %}
 {% block content %}
 <div class="container page">
-  <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span>{% if state_name %}<a href="{{ base_path.rsplit('/', 1)[0] }}">{{ title }}</a><span class="sep">›</span><span>{{ state_code }}</span>{% else %}<span>{{ title }}</span>{% endif %}</div>
-  <h1 class="page-title">{{ title }}{% if state_name %} in {{ state_name }}{% endif %}</h1>
+  <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ base_path.rsplit('/', 1)[0] }}">{{ title }}</a><span class="sep">›</span><span>{{ state_code }}</span></div>
+  <h1 class="page-title">{{ title }} in {{ state_name }}</h1>
   <p class="page-sub">There are <strong>{{ total }}</strong> {{ title }} for you to review across <strong>{{ city_count }}</strong> cities and towns.</p>
-  {% if not state_name %}
-  <div class="chip-row">
-    {% for state in states %}<a href="{{ url_for(kind ~ '_state', state=state.slug) }}">{{ state.name }} ({{ state.count }})</a>{% endfor %}
-  </div>
-  {% endif %}
+  {% if name_filter %}<p class="page-sub">Showing {{ title | lower }} whose name contains “{{ name_filter }}”. <a href="{{ base_path }}">Clear</a></p>{% endif %}
   <form class="filter-form" method="get" action="{{ base_path }}">
+    {% if name_filter %}<input type="hidden" name="name" value="{{ name_filter }}">{% endif %}
     <div class="filter-bar">
       <div class="filter-item">
         <button type="button" class="pill{% if sortby != 'bestmatch' %} active{% endif %}" data-toggle="pop-sort" aria-expanded="false">Sort By <svg class="ic"><use href="#i-chevron"/></svg></button>
@@ -25,7 +22,6 @@
           {% for n in (5, 4, 3, 2, 1) %}<label><input type="radio" name="minrating" value="{{ n }}" {% if minrating == n %}checked{% endif %}> {% with rating=n, small=true %}{% include "_stars.html" %}{% endwith %} {{ n }}{% if n < 5 %} &amp; up{% endif %}</label>{% endfor %}
         </div>
       </div>
-      <div class="filter-item"><button type="submit" class="pill pill-icon" title="Apply" aria-label="Apply filters"><svg class="ic"><use href="#i-sliders"/></svg></button></div>
     </div>
   </form>
   <div class="section-label">All Results</div>

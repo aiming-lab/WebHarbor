@@ -7,6 +7,7 @@
     <a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('specialty_index') }}">Providers</a><span class="sep">›</span><a href="{{ url_for('specialty_index') }}">Specialties</a><span class="sep">›</span><a href="{{ url_for('specialty_landing', spec=doctor.primary_specialty.slug) }}">{{ doctor.primary_specialty.name }}</a><span class="sep">›</span><a href="{{ url_for('specialty_state', spec=doctor.primary_specialty.slug, state=primary.city.state_slug) }}">{{ primary.city.state }}</a><span class="sep">›</span><a href="{{ url_for('specialty_city', spec=doctor.primary_specialty.slug, state=primary.city.state_slug, city=primary.city.slug) }}">{{ primary.city.name }}</a><span class="sep">›</span><span>{{ doctor.display_name }}</span>
   </div>
 
+  <div class="profile-top{% if doctor.is_enhanced %} has-widget{% endif %}">
   <section class="profile-hero" id="overview">
     <div class="hero-main">
       <div class="avatar-col">
@@ -45,8 +46,9 @@
       <svg class="hero-art" viewBox="0 0 520 300" aria-hidden="true"><circle cx="330" cy="200" r="150" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/><circle cx="420" cy="140" r="110" fill="#1d3ba8" opacity=".6"/><path d="M200 300 Q300 120 520 200 L520 300 Z" fill="#2a49c0" opacity=".5"/></svg>
     </div>
     {% if doctor.hospital %}<div class="affiliation">Affiliated<br>with <strong><a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}">{{ doctor.hospital.name }}</a></strong></div>{% endif %}
-    <aside class="hero-side{% if not doctor.is_enhanced %} rail-only{% endif %}">
-      {% if doctor.is_enhanced %}
+  </section>
+    {% if doctor.is_enhanced %}
+    <aside class="hero-side">
         <h3>Book an Appointment</h3>
         <form class="book-widget" method="get" action="{{ url_for('book_appointment', slug=doctor.slug) }}">
           <label class="lbl" for="widget-location">Location:</label>
@@ -58,7 +60,7 @@
             <label class="on"><input type="radio" name="patient_type" value="New Patient" checked> New Patient</label>
             <label><input type="radio" name="patient_type" value="Returning Patient"> Returning Patient</label>
           </div>
-          <div class="month">September 2026</div>
+          <div class="month">September 2026 <svg class="ic"><use href="#i-chevron"/></svg></div>
           <div class="grid-days">
             {% for abbr, short, day, label in booking_days %}
               <div>
@@ -69,31 +71,16 @@
               </div>
             {% endfor %}
           </div>
-          <button class="btn btn-primary btn-wide btn-pill" type="submit" style="margin-top:16px">Request Appointment</button>
+          <div class="grid-more"><svg class="ic"><use href="#i-chevron"/></svg></div>
+          <button class="btn btn-primary btn-wide btn-pill" type="submit" style="margin-top:12px">Request Appointment</button>
         </form>
-      {% else %}
-        <h3>{{ rail_title }}</h3>
-        <div class="rail-list">
-          {% for colleague in colleagues %}
-            <div class="rail-row">
-              <img class="avatar" src="{{ url_for('static', filename=colleague.avatar_path) }}" alt="">
-              <div>
-                <div class="name"><a href="{{ url_for('doctor_profile', slug=colleague.slug) }}">{{ colleague.display_name }}</a></div>
-                <div class="sub">{{ colleague.primary_specialty.name }}<br>{{ colleague.primary_location.city.name }}, {{ colleague.primary_location.city.state }}</div>
-                <div class="rating-line" style="margin:2px 0 0">{% with rating=colleague.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} <a href="{{ url_for('doctor_profile', slug=colleague.slug) }}#reviews">({{ colleague.ratings_count }})</a></div>
-              </div>
-            </div>
-          {% else %}
-            <p class="muted">No other providers listed.</p>
-          {% endfor %}
-        </div>
-      {% endif %}
     </aside>
-  </section>
+    {% endif %}
 
   <nav class="tabs" aria-label="Profile sections">
     <a class="on" href="#overview">OVERVIEW</a><a href="#locations">LOCATIONS</a><a href="#reviews">RATINGS &amp; REVIEWS</a><a href="#insurance">INSURANCE</a>
   </nav>
+  </div>
 
   <div class="profile-grid">
     <div class="stack">
@@ -180,8 +167,9 @@
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <div>
                 <label>Your overall rating</label>
-                <div class="star-pick">
-                  {% for n in (1, 2, 3, 4, 5) %}<label><input type="radio" name="rating" value="{{ n }}" required> {{ n }} star{{ '' if n == 1 else 's' }}</label>{% endfor %}
+                <div class="star-pick" role="radiogroup" aria-label="Overall provider rating">
+                  {% for n in (1, 2, 3, 4, 5) %}<label title="{{ n }} star{{ '' if n == 1 else 's' }}"><input type="radio" name="rating" value="{{ n }}" required><svg class="ic"><use href="#i-star"/></svg><span class="sr-only">{{ n }} star{{ '' if n == 1 else 's' }}</span></label>{% endfor %}
+                  <span class="star-hint">Overall provider rating*</span>
                 </div>
               </div>
               <div>
@@ -204,7 +192,7 @@
             {% endif %}
           </details>
 
-          <div class="review-head"><h3>{{ doctor.text_review_count }} REVIEWS</h3><span class="muted">Most Recent</span></div>
+          <div class="review-head"><h3>{{ doctor.text_review_count }} REVIEWS</h3><div class="review-controls"><span class="fake-select">Most Recent <svg class="ic"><use href="#i-chevron"/></svg></span><span class="fake-btn"><svg class="ic"><use href="#i-sliders"/></svg> Filter</span><span class="fake-search">Search <svg class="ic"><use href="#i-search"/></svg></span></div></div>
           <div class="showing">Showing {{ reviews_page.start }}-{{ reviews_page.end }} of {{ reviews_page.total }} reviews</div>
           {% for review in reviews_page.rows %}
             <div class="review">
@@ -272,7 +260,7 @@
       {% if doctor.ratings_count %}
       <section class="panel">
         <div class="panel-head"><svg class="ic"><use href="#i-thumb"/></svg><h2>Patients' Perspective</h2></div>
-        <div class="panel-body"><ul class="inline-list">{% for label in doctor.perspective_summary() %}<li><svg class="ic ic-blue"><use href="#i-thumb"/></svg> {{ label }}</li>{% endfor %}</ul><p class="muted" style="margin-top:10px">Based on patient feedback. <a href="#reviews">Read the reviews</a></p></div>
+        <div class="panel-body"><ul class="inline-list">{% for label in doctor.perspective_summary() %}<li><svg class="ic ic-blue"><use href="#i-check-circle"/></svg> {{ label }}</li>{% endfor %}</ul><p class="muted" style="margin-top:10px">Based on patient feedback. <a href="#reviews">Read the reviews</a></p></div>
       </section>
       {% endif %}
 
@@ -317,12 +305,9 @@
           {% if residencies %}<h5>RESIDENCY</h5><p>Completed their residency at {% for row in residencies %}{{ row.institution }} in {{ row.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>{% endif %}
           <h5>MEDICAL SCHOOL</h5>
           <p>Graduated from {{ doctor.medical_school }} in {{ doctor.graduation_year }}.</p>
+          <h4 id="npi">NPI Number</h4>
+          <p>{{ doctor.short_name }}'s NPI number is {{ doctor.npi }}.</p>
         </div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head"><svg class="ic"><use href="#i-doc"/></svg><h2>NPI Number</h2></div>
-        <div class="panel-body"><p>{{ doctor.short_name }}'s NPI number is {{ doctor.npi }}.</p></div>
       </section>
 
       <section class="panel">
@@ -358,45 +343,64 @@
         </div>
       </section>
 
+      {% if doctor.is_enhanced %}
       <section class="panel">
-        <div class="panel-head"><svg class="ic"><use href="#i-pin"/></svg><h2>Other {{ doctor.primary_specialty.plural }} Nearby</h2></div>
-        <div class="panel-body"><div class="city-links">{% for city in nearby_cities %}<a href="{{ url_for('specialty_city', spec=doctor.primary_specialty.slug, state=city.state_slug, city=city.slug) }}">{{ city.name }}, {{ city.state }}</a>{% endfor %}</div></div>
-      </section>
-
-      <section class="panel">
-        <div class="panel-head"><svg class="ic"><use href="#i-shield"/></svg><h2>Data Transparency and Trust: Understanding WebMD Doctor Listings and Reviews</h2></div>
+        <div class="panel-head"><svg class="ic"><use href="#i-people"/></svg><h2>{{ rail_title }}</h2></div>
         <div class="panel-body">
-          <p>We know that finding the right doctor or provider is important to your health. That's why we want to ensure you have confidence in the provider profiles and listings you see on WebMD Care. Provider data in this mirror is synthetic benchmark data; on the live site it is sourced from physicians themselves and publicly available databases.</p>
-          <p>All the physician and provider reviews on WebMD Care are provided by users just like you. Providers are not able to remove or modify reviews on their own.</p>
+          <div class="colleague-grid">
+            {% for colleague in colleagues[:6] %}
+              <div class="colleague">
+                <img class="avatar" src="{{ url_for('static', filename=colleague.avatar_path) }}" alt="">
+                <div class="name"><a href="{{ url_for('doctor_profile', slug=colleague.slug) }}">{{ colleague.display_name }}</a></div>
+                <div class="sub">{{ colleague.primary_specialty.name }}</div>
+                <div class="sub">{{ colleague.years_experience }} Years Experience</div>
+                {% with rating=colleague.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %}
+              </div>
+            {% else %}<p class="muted">No other providers listed.</p>{% endfor %}
+          </div>
+          {% if primary.practice %}<p style="margin-top:14px;text-align:center"><a href="{{ url_for('practice_detail', slug=primary.practice.slug) }}">View More Providers ›</a></p>{% endif %}
         </div>
       </section>
+      {% elif doctor.hospital %}
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-hospital"/></svg><h2>Hospital Affiliations for {{ doctor.short_name }}</h2></div>
+        <div class="panel-body"><p><a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}" style="color:var(--text);font-weight:700">{{ doctor.hospital.name }}</a><br><span class="muted">{{ doctor.hospital.street }}, {{ doctor.hospital.city.name }}, {{ doctor.hospital.city.state }} {{ doctor.hospital.zip }}</span></p></div>
+      </section>
+      {% endif %}
     </div>
 
     <aside class="rail">
-      {% if doctor.is_enhanced %}
-      <section class="panel">
-        <h3 style="font-size:16px;margin-bottom:12px">{{ rail_title }}</h3>
+      {% if not doctor.is_enhanced %}
+      <section class="panel rail-panel">
+        <h3>{{ rail_title }}</h3>
         <div class="rail-list">
           {% for colleague in colleagues %}
             <div class="rail-row">
               <img class="avatar" src="{{ url_for('static', filename=colleague.avatar_path) }}" alt="">
               <div>
                 <div class="name"><a href="{{ url_for('doctor_profile', slug=colleague.slug) }}">{{ colleague.display_name }}</a></div>
-                <div class="sub">{{ colleague.primary_specialty.name }} · {{ colleague.years_experience }} Years Experience</div>
+                <div class="sub">{{ colleague.primary_specialty.name }}<br>{{ colleague.primary_location.city.name }}, {{ colleague.primary_location.city.state }}</div>
+                <div class="rating-line" style="margin:2px 0 0">{% with rating=colleague.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} <a href="{{ url_for('doctor_profile', slug=colleague.slug) }}#reviews">({{ colleague.ratings_count }})</a></div>
               </div>
             </div>
-          {% else %}<p class="muted">No other providers listed.</p>{% endfor %}
+          {% else %}
+            <p class="muted">No other providers listed.</p>
+          {% endfor %}
         </div>
-        {% if primary.practice %}<p style="margin-top:12px"><a href="{{ url_for('practice_detail', slug=primary.practice.slug) }}">View More Providers ›</a></p>{% endif %}
-      </section>
-      {% endif %}
-      {% if doctor.hospital %}
-      <section class="panel">
-        <h3 style="font-size:16px;margin-bottom:8px">Hospital Affiliations for {{ doctor.short_name }}</h3>
-        <p><a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}">{{ doctor.hospital.name }}</a><br><span class="muted">{{ doctor.hospital.street }}, {{ doctor.hospital.city.name }}, {{ doctor.hospital.city.state }} {{ doctor.hospital.zip }}</span></p>
+        {% if doctor.hospital %}<p style="margin-top:14px"><a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}">View More Providers ›</a></p>{% elif primary.practice %}<p style="margin-top:14px"><a href="{{ url_for('practice_detail', slug=primary.practice.slug) }}">View More Providers ›</a></p>{% endif %}
       </section>
       {% endif %}
     </aside>
+
+    <section class="wide-panel">
+      <h3>Other {{ doctor.primary_specialty.plural }} Nearby</h3>
+      <div class="city-links">{% for city in nearby_cities %}<a href="{{ url_for('specialty_city', spec=doctor.primary_specialty.slug, state=city.state_slug, city=city.slug) }}">{{ city.name }}, {{ city.state }}</a>{% endfor %}</div>
+    </section>
+    <section class="wide-panel">
+      <h3>Data Transparency and Trust: Understanding WebMD Doctor Listings and Reviews</h3>
+      <p>We know that finding the right doctor or provider is important to your health. That's why we want to ensure you have confidence in the provider profiles and listings you see on WebMD Care. Provider data in this mirror is synthetic benchmark data; on the live site it is sourced from physicians themselves and publicly available databases.</p>
+      <p>All the physician and provider reviews on WebMD Care are provided by users just like you. Providers are not able to remove or modify reviews on their own.</p>
+    </section>
   </div>
 </div>
 {% endblock %}

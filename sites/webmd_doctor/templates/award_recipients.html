@@ -5,12 +5,23 @@
   <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('choice_awards') }}">Choice Awards</a><span class="sep">›</span><a href="{{ url_for('award_recipients', **{'award-class': award_class}) }}">Award Recipients</a><span class="sep">›</span><span>{{ class_title }}</span></div>
   <h1 class="page-title" style="color:var(--text)">{{ class_title }} Award 2025–2026</h1>
   <p class="page-sub">WebMD Choice Awards let you find the providers recognized by patients and health care professionals in the 2025–2026 cycle. Open a provider's profile for their full details.</p>
-  <div class="filters-line">Filters:
+  <form class="filters-line" method="get" action="{{ url_for('award_recipients') }}">Filters:
+    <input type="hidden" name="award-class" value="{{ award_class }}">
+    <select class="tag-select" name="state" onchange="this.form.submit()" aria-label="State">
+      <option value="">All States</option>
+      {% for option in state_options %}<option value="{{ option.slug }}" {% if option.slug == state_filter %}selected{% endif %}>{{ option.name }}</option>{% endfor %}
+    </select>
     {% for key, value in award_classes.items() %}<a class="tag" href="{{ url_for('award_recipients', **{'award-class': key}) }}" {% if key == award_class %}style="background:var(--bg-2)"{% endif %}>{{ value[2] }}{% if key == award_class %} ✕{% endif %}</a>{% endfor %}
-  </div>
-  <div class="section-label">{{ page.total | plural_word('recipient') }}</div>
+  </form>
   <div class="card-list">
-    {% for doctor in page.rows %}{% include "_physician_card.html" %}{% endfor %}
+    {% set ns = namespace(state=None) %}
+    {% for doctor in page.rows %}
+      {% set state_name = doctor.primary_location.city.state_name %}
+      {% if state_name != ns.state %}{% set ns.state = state_name %}<h2 class="state-head">{{ state_name }}</h2>{% endif %}
+      {% include "_physician_card.html" %}
+    {% else %}
+      <div class="panel empty">No recipients match these filters.</div>
+    {% endfor %}
   </div>
   {% include "_pagination.html" %}
 </div>

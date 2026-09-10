@@ -4,9 +4,9 @@
 <div class="container page">
   <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('specialty_index') }}">Specialties</a><span class="sep">›</span><span>{{ specialty.name }}</span></div>
   <h1 class="page-title">Best {{ specialty.plural }} in the United States</h1>
-  <p class="page-sub">There are <strong>{{ total }} {{ specialty.plural }}</strong> for you to review across <strong>{{ states | length }} states</strong>. {{ specialty.description }}</p>
+  <p class="page-sub">There are <strong>{{ total }} {{ specialty.plural }}</strong> for you to review across <strong>{{ states | length }} states and territories</strong></p>
   <div class="chip-row">
-    {% for state in states %}<a href="{{ url_for('specialty_state', spec=specialty.slug, state=state.slug) }}">{{ state.name }} ({{ state.count }})</a>{% endfor %}
+    {% for state in states %}<a href="{{ url_for('specialty_state', spec=specialty.slug, state=state.slug) }}">{{ state.name }}</a>{% endfor %}
   </div>
   <h2 class="h2">Highest Rated {{ specialty.plural }} near {{ anchor.name }}, {{ anchor.state }}</h2>
   <div class="mini-grid six">

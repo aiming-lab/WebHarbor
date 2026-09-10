@@ -1426,8 +1426,11 @@ def specialty_doctor_rows(specialty: Specialty):
     return query.all()
 
 
-def highest_rated_near_anchor(specialty: Specialty, anchor: City, limit: int) -> list[Doctor]:
-    """Top-rated doctors of a specialty inside the default search radius of the anchor."""
+STRIP_RADIUS_MILES = 25.0  # "Highest Rated ... near Newark" strip: the 25-mile ring, not the 40-mile search default
+
+
+def highest_rated_near_anchor(specialty: Specialty, anchor: City, limit: int, radius: float = STRIP_RADIUS_MILES) -> list[Doctor]:
+    """Top-rated doctors of a specialty whose primary office is within `radius` miles of the anchor."""
     rated = (
         Doctor.query.filter(Doctor.primary_specialty_id == specialty.id, Doctor.avg_rating.isnot(None))
         .order_by(Doctor.avg_rating.desc(), Doctor.ratings_count.desc(), Doctor.id)
@@ -1436,7 +1439,7 @@ def highest_rated_near_anchor(specialty: Specialty, anchor: City, limit: int) ->
     nearby = []
     for doctor in rated:
         location = doctor.primary_location
-        if haversine_miles(anchor.lat, anchor.lon, location.lat, location.lon) <= DEFAULT_DISTANCE:
+        if haversine_miles(anchor.lat, anchor.lon, location.lat, location.lon) <= radius:
             nearby.append(doctor)
         if len(nearby) == limit:
             break
@@ -1545,36 +1548,60 @@ def specialty_city(spec: str, state: str, city: str):
     )
 
 
+HUB_CARE_TYPES = (
+    ("Cardiology", "cardiovascular-disease"), ("Gastroenterology", "gastroenterology"), ("Neurology", "neurology"),
+    ("Orthopedics", "orthopedic-surgery"), ("Psychiatry", "psychiatry"),
+)
+
+
+def hub_counts(kind: str, items: list) -> dict:
+    counts = {}
+    for item in items:
+        if kind == "hospitals":
+            doctors = item.doctors
+        else:
+            doctors = list({loc.doctor_id: loc.doctor for loc in item.locations}.values())
+        counts[item.id] = {"physicians": len(doctors), "specialties": len({d.primary_specialty_id for d in doctors})}
+    return counts
+
+
 def hub_page(kind: str, state_slug: str | None):
     model = Hospital if kind == "hospitals" else Practice
     items = model.query.all()
-    state_name = None
-    state_code = None
-    if state_slug is not None:
-        city = City.query.filter_by(state_slug=state_slug).order_by(City.id).first()
-        if city is None:
-            abort(404)
-        state_name, state_code = city.state_name, city.state
-        items = [item for item in items if item.city.state == state_code]
-    states = states_with_counts([(item.city.state, item.city.state_name, item.city.state_slug) for item in model.query.all()])
+    states = states_with_counts([(item.city.state, item.city.state_name, item.city.state_slug) for item in items])
+    if state_slug is None:
+        anchor = anchor_city()
+        in_state = [item for item in items if item.city.state == anchor.state]
+        top_items = hub_sorted(in_state, "avg_rating", 0)[:4]
+        return render_template(
+            "hub_index.html",
+            kind=kind,
+            title="Hospitals" if kind == "hospitals" else "Group Practices",
+            states=states,
+            total=len(items),
+            anchor=anchor,
+            top_items=top_items,
+            counts=hub_counts(kind, top_items),
+            care_types=HUB_CARE_TYPES,
+        )
+    city = City.query.filter_by(state_slug=state_slug).order_by(City.id).first()
+    if city is None:
+        abort(404)
+    state_name, state_code = city.state_name, city.state
+    items = [item for item in items if item.city.state == state_code]
+    name_filter = single_arg("name", "").strip()[:80]
+    if name_filter:
+        items = [item for item in items if name_filter.lower() in item.name.lower()]
     sortby = single_arg("sortby", "bestmatch")
     if sortby not in {key for key, _label in HUB_SORT_OPTIONS}:
         sortby = "bestmatch"
     minrating = int_arg("minrating", 0, 1, 5) if single_arg("minrating", "").isdigit() else 0
     ordered = hub_sorted(items, sortby, minrating)
     page = paginate(ordered, int_arg("page", 1, 1, 10**4))
-    counts = {}
-    for item in page["rows"]:
-        if kind == "hospitals":
-            doctors = item.doctors
-        else:
-            doctors = list({loc.doctor_id: loc.doctor for loc in item.locations}.values())
-        counts[item.id] = {
-            "physicians": len(doctors),
-            "specialties": len({d.primary_specialty_id for d in doctors}),
-        }
+    counts = hub_counts(kind, page["rows"])
     return render_template(
         "hub_list.html",
+        name_filter=name_filter,
         kind=kind,
         title="Hospitals" if kind == "hospitals" else "Group Practices",
         noun="Hospital" if kind == "hospitals" else "Group Practice",
@@ -1588,8 +1615,8 @@ def hub_page(kind: str, state_slug: str | None):
         minrating=minrating,
         city_count=len({item.city_id for item in items}),
         total=len(items),
-        base_path=url_for(f"{kind}_index") if state_slug is None else url_for(f"{kind}_state", state=state_slug),
-        page_qs=lambda n: urlencode({k: v for k, v in (("sortby", sortby if sortby != "bestmatch" else ""), ("minrating", minrating or ""), ("page", n)) if v not in ("", None)}),
+        base_path=url_for(f"{kind}_state", state=state_slug),
+        page_qs=lambda n: urlencode({k: v for k, v in (("name", name_filter), ("sortby", sortby if sortby != "bestmatch" else ""), ("minrating", minrating or ""), ("page", n)) if v not in ("", None)}),
     )
 
 
@@ -1626,18 +1653,25 @@ def hospital_detail(slug: str):
     if hospital is None:
         abort(404)
     doctors = sorted(hospital.doctors, key=lambda d: (d.last_name.lower(), d.first_name.lower(), d.id))
-    page = paginate(doctors, int_arg("pagenumber", 1, 1, 10**4))
+    specialty_filter = single_arg("specialty", "")
+    specialty_options = sorted({d.primary_specialty for d in doctors}, key=lambda s: s.name)
+    if specialty_filter not in {s.slug for s in specialty_options}:
+        specialty_filter = ""
+    listed = [d for d in doctors if not specialty_filter or d.primary_specialty.slug == specialty_filter]
+    page = paginate(listed, int_arg("pagenumber", 1, 1, 10**4))
     return render_template(
         "hospital.html",
         hospital=hospital,
         page=page,
+        specialty_filter=specialty_filter,
+        specialty_options=specialty_options,
         doctors=doctors,
         specialty_rows=specialty_counts(doctors),
         poll_rows=hospital.poll_rows(HOSPITAL_POLL_QUESTIONS),
         top_specialties=[name for name, _count in sorted(specialty_counts(doctors), key=lambda row: (-row[1], row[0]))[:4]],
         award_count=sum(len(d.awards) for d in doctors),
         base_path=url_for("hospital_detail", slug=slug),
-        page_qs=lambda n: urlencode({"pagenumber": n}),
+        page_qs=lambda n: urlencode({k: v for k, v in (("specialty", specialty_filter), ("pagenumber", n)) if v}),
     )
 
 
@@ -1692,6 +1726,13 @@ def award_recipients():
     class_name, line, title = AWARD_CLASSES[award_class]
     awards = Award.query.filter_by(award_class=class_name).all()
     doctors = sorted({award.doctor_id: award.doctor for award in awards}.values(), key=lambda d: (d.last_name.lower(), d.first_name.lower(), d.id))
+    state_options = states_with_counts([(d.primary_location.city.state, d.primary_location.city.state_name, d.primary_location.city.state_slug) for d in doctors])
+    state_filter = single_arg("state", "")
+    if state_filter not in {s["slug"] for s in state_options}:
+        state_filter = ""
+    if state_filter:
+        doctors = [d for d in doctors if d.primary_location.city.state_slug == state_filter]
+    doctors.sort(key=lambda d: (d.primary_location.city.state_name, d.last_name.lower(), d.first_name.lower(), d.id))
     page = paginate(doctors, int_arg("page", 1, 1, 10**4))
     years = {award.doctor_id: award.year for award in awards}
     return render_template(
@@ -1701,9 +1742,11 @@ def award_recipients():
         award_line=line,
         page=page,
         years=years,
+        state_options=state_options,
+        state_filter=state_filter,
         saved_ids=saved_doctor_ids(),
         base_path=url_for("award_recipients"),
-        page_qs=lambda n: urlencode({"award-class": award_class, "page": n}),
+        page_qs=lambda n: urlencode({k: v for k, v in (("award-class", award_class), ("state", state_filter), ("page", n)) if v}),
     )
 
 
@@ -1754,7 +1797,7 @@ def signup():
         dob = None
         if form["dob"]:
             try:
-                dob = date.fromisoformat(form["dob"])
+                dob = datetime.strptime(form["dob"], "%m/%d/%Y").date() if "/" in form["dob"] else date.fromisoformat(form["dob"])
             except ValueError:
                 errors.append("Enter your date of birth as YYYY-MM-DD.")
         if not errors:

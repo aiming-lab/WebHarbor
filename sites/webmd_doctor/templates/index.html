@@ -32,8 +32,8 @@
 <section class="home-section">
   <div class="container">
     <h2>Popular specialties</h2>
-    <div class="spec-grid">
-      {% for specialty in specialties %}<a class="spec-tile" href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.singular }}</a>{% endfor %}
+    <div class="spec-row">
+      {% for specialty in specialties %}<a class="spec-tile" href="{{ url_for('specialty_landing', spec=specialty.slug) }}"><span class="glyph"><svg class="ic"><use href="#i-stethoscope"/></svg></span>{{ specialty.singular }}</a>{% endfor %}
     </div>
   </div>
 </section>
@@ -42,10 +42,10 @@
     <div class="kicker">Top Doctors Near</div>
     <div class="place">Newark, DE</div>
     <div class="mini-grid three">
-      {% for doctor in top_doctors %}{% include "_mini_card.html" %}{% endfor %}
+      {% for doctor in top_doctors %}{% with filled=true %}{% include "_mini_card.html" %}{% endwith %}{% endfor %}
     </div>
-    <p style="margin-top:20px"><a class="btn btn-ghost btn-pill" href="{{ url_for('results') }}">FIND YOUR DOCTOR</a></p>
-    <p class="muted">Physicians: <a href="#">Claim Your Profile ›</a></p>
+    <p style="margin-top:24px"><a class="btn btn-ghost btn-pill" style="padding:12px 40px;letter-spacing:.5px" href="{{ url_for('results') }}">FIND YOUR DOCTOR</a></p>
+    <p style="font-size:17px;color:var(--text-2)">Physicians: <a href="#">Claim Your Profile ›</a></p>
   </div>
 </section>
 <section class="awards-band">

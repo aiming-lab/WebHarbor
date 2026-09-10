@@ -21,18 +21,24 @@
   <div class="container"><h2>Methodology Matters</h2><p>You need information that you can trust when seeking care. The WebMD Choice Awards program is the only healthcare recognition program based solely on the vote of patients and providers within the last year. That's it. No complicated formulas here. Because we believe that finding best-in-class care should be easy.</p></div>
 </section>
 <section class="awards-section" id="specialty">
-  <div class="container">
+  <div class="container grid">
+    <div class="art" aria-hidden="true"></div>
+    <div>
     <h2>Specialty Awards</h2>
     <p>The WebMD Choice Awards recognizes providers who deliver superior care in key specialties. Click the links below to view award recipients by specialty.</p>
     <div class="links">{% for specialty in menu_specialties %}<a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.name }}</a>{% endfor %}</div>
+    </div>
   </div>
 </section>
 <section class="awards-section" id="class">
-  <div class="container">
+  <div class="container grid">
+    <div class="art alt" aria-hidden="true"></div>
+    <div>
     <h2>Awards by Class</h2>
     <p>Providers receive one of three distinct awards based on their WebMD Choice Awards ranking: WebMD Elite Choice for the providers preferred by patients and physicians two-to-one over competitors in their local market, WebMD Patient's Choice for providers in the top 30% of patient preferences, and Medscape Provider Choice for providers in the top 30% of health care provider preferences.</p>
     <div class="links">
-      {% for key, value in award_classes.items() %}<a href="{{ url_for('award_recipients', **{'award-class': key}) }}">{{ value[2] }} ({{ counts[key] }})</a>{% endfor %}
+      {% for key, value in award_classes.items() %}<a href="{{ url_for('award_recipients', **{'award-class': key}) }}">{{ value[2] }}</a>{% endfor %}
+    </div>
     </div>
   </div>
 </section>
