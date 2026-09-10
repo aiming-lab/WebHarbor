@@ -1,9 +1,16 @@
 # IMDb deterministic verification
 
-The current candidate contains ten tasks: `0, 2, 7, 9, 10, 12, 14, 15, 16, 17`
-(seven read-only and three state-changing tasks). Tasks `3, 4, 8` were retired
-after task-quality review; their historical runs remain historical evidence,
-and their site features remain available. They have no current verifier entry.
+The current candidate defines twenty tasks: `0, 2, 7, 9, 10, 12, 14, 15, 16, 17`
+and `18–27` (thirteen read-only and seven state-changing tasks). The first ten
+contracts are unchanged. New tasks cover constrained film pairs, credit-set
+comparisons, displayed financial ratios, account-specific lists, review identity,
+release intervals, and source-derived changes to saved lists and ratings.
+Implementation is separate from acceptance; the [review report](../../../review-reports/PR-33-IMDB.md)
+records execution and independent-review coverage.
+
+Tasks `1, 3, 4, 5, 6, 8, 11, 13` remain retired after task-quality review.
+Historical runs and site features remain available; these IDs have no current
+verifier entry.
 
 Each task row references a `verify_<number>.py` entry point. These use Python's
 standard library and read only the supplied, frozen run artifacts:

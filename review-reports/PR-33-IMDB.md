@@ -1,8 +1,6 @@
 # IMDb reviewer validation
 
-Status: **work in progress; not ready for merge**. Ten task candidates remain after quality review; their evidence is sealed. Independent
-blind review passes all ten recorded executions; owner visual acceptance remains pending. A local unit
-test or an asset hash check does not imply visual or task acceptance.
+Status: **work in progress; not ready for merge**. Twenty distinct task candidates remain after quality review. The original retained ten have sealed deterministic and independent blind-review evidence. Ten additions, IDs 18–27, have complete sealed UI runs and deterministic 10/10 results; their independent blind review remains pending. Owner visual acceptance also remains pending. A local unit test, deterministic verdict or asset hash check does not imply visual or final task acceptance.
 
 This review preserves [@hqhq1025's original IMDb contribution, PR #33](https://github.com/aiming-lab/WebHarbor/pull/33)
 and its commit history. The reviewer branch integrates main at `7269134e9db9d10b1a6ac321797be51c72bb1a36`, including
@@ -61,8 +59,9 @@ also removes tasks 3 and 4 because the first matching title detail exposes every
 requested value, and task 8 because its actor/character/birth-year combination
 has a stable common-knowledge shortcut. An extra same-page anchor click or a
 required profile visit does not remove those design problems. All corresponding
-site features and original frozen executions remain intact. Ten is the resulting
-working set; no replacement questions were added to meet a quota.
+site features and original frozen executions remain intact.
+
+To meet the owner's minimum of twenty without restoring those weak tasks, the candidate adds IDs `18–27`. Six are read-only relations or calculations: constrained pair optimization, role-bound filmography intersection, full-filmography aggregation, cross-account set subtraction, duplicate-review grouping and calendar-interval comparison. Four are stateful: multi-item Watchlist qualification, cross-account recommendation transfer, new-account queue persistence and a review-derived personal-rating reconciliation. They are different capabilities rather than name or number substitutions. No prompt contains its answer.
 
 The revisions add needed detail lookups, specify movie/TV scope, define ties,
 distinguish monetary fields, and replace the two requests for an external
@@ -83,6 +82,8 @@ writes and legitimate alternatives. The repository's native
 `eval_judge.py --verifier True` has also been exercised with a synthetic
 positive and a foreign-origin negative; both produced the expected verdicts.
 These fixtures are not browser trajectories.
+
+For the expansion, the task file and verifier routing remain one-to-one at twenty IDs. The full IMDb suite passes **289 tests** using the browser candidate's pinned Flask dependency versions. Focused expansion tests pass **115/115**, including wrong owner, partial result, extra write, arbitrary credential placeholder, incorrect grouping and field-binding negatives. Safe recorder placeholders `[SUPPLIED PASSWORD]` and `[REDACTED]` are accepted only when the snapshot password hash matches the task-supplied credential and the same-origin login/register transition succeeds.
 
 ## UI and functional review
 
@@ -167,6 +168,11 @@ rows are byte-identical to their executed definitions.
 
 ## Frozen task executions and scoring
 
+The ten added candidates each have one complete canonical run and deterministic PASS, totaling **219 recorded steps** with no action or capture failure in the selected runs. Task 18 also preserves a complete one-step environment failure stopped at an incorrect viewport. Task 21 preserves an incomplete earlier attempt with no final answer or after snapshot; neither attempt is counted as a task or a passing run. Original run files were not rewritten when scoring-format false negatives were fixed.
+
+The added set covers six read-only tasks (18–23) and four exact state transitions (24–27). Every read-only run leaves all business tables unchanged. The stateful runs constrain destination owner, permitted rows, preserved pre-existing state and required confirmation. Deterministic 10/10 is engineering evidence only; the new ten remain pending independent frozen-run review.
+[Public expansion counts and limits](assets/pr33-imdb/task-expansion-summary.json) are recorded without private run contents.
+
 The final native deterministic regrade passes **10/10 retained main runs** and
 **3/3 separately recorded guided alternatives**: a different legal cutoff tie
 (task 9), Watchlist row removal (15), and Most recent review confirmation (17).
@@ -235,6 +241,8 @@ and read-only before/after databases. Ten key screenshots were viewed; the other
 98 PNGs were hash-checked. It reports no access to source, deterministic verdicts,
 hidden answers or earlier review conclusions. The three guided alternatives were
 not part of this blind review.
+
+This result covers only the original retained IDs `0, 2, 7, 9, 10, 12, 14, 15, 16, 17`. A separate neutral packet for IDs `18–27` must be reviewed before any twenty-task blind-review claim is made.
 
 All ten labels agree with the prior deterministic results. Coordinator spot-checks
 of tasks 9, 15, 16 and 17 against original DOM and full-table database differences

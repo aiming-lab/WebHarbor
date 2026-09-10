@@ -63,13 +63,14 @@ class VerifierEntryTests(unittest.TestCase):
                 self.assertFalse(verdict["pass"])
 
     def test_current_tasks_and_numbered_entries_are_one_to_one(self):
-        expected = {0, 2, 7, 9, 10, 12, 14, 15, 16, 17}
+        retained = {0, 2, 7, 9, 10, 12, 14, 15, 16, 17}
+        expected = retained | set(range(18, 28))
         task_numbers = {int(task_id.split("--")[1]) for task_id in fixtures.TASKS}
         entries = {int(path.stem.split("_")[1])
                    for path in (fixtures.SITE / "verify").glob("verify_[0-9]*.py")}
         self.assertEqual(task_numbers, expected)
         self.assertEqual(entries, expected)
-        self.assertEqual(fixtures.read_tasks.READ_TASKS, expected - {15, 16, 17})
+        self.assertEqual(fixtures.read_tasks.READ_TASKS, retained - {15, 16, 17})
 
 
 if __name__ == "__main__":

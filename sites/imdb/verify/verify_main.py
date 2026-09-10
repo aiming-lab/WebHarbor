@@ -25,6 +25,15 @@ def main(number, argv=None):
             elif number in {15, 16, 17}:
                 from state_tasks import check_state_task
                 evidence = check_state_task(number, run)
+            elif number in {18, 19, 20, 23}:
+                from expansion_catalog_reads import check_catalog_read_task
+                evidence = check_catalog_read_task(number, run)
+            elif number in {21, 22}:
+                from expansion_account_reads import check_account_read_task
+                evidence = check_account_read_task(number, run)
+            elif number in {24, 25, 26, 27}:
+                from expansion_state_tasks import check_expansion_state_task
+                evidence = check_expansion_state_task(number, run)
             else:
                 raise VerificationError("Unsupported task number")
         return emit_result(task_id, True, "Task requirements satisfied by the supplied run", evidence)
@@ -33,4 +42,3 @@ def main(number, argv=None):
     except (OSError, ValueError, KeyError, sqlite3.Error) as error:
         # Do not expose database rows, credentials or private filesystem paths.
         return emit_result(task_id, False, f"Cannot validate the supplied artifacts ({type(error).__name__})")
-
