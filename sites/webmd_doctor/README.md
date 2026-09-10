@@ -11,18 +11,18 @@ cd sites/webmd_doctor && PYTHONHASHSEED=0 ../../.venv/bin/python seed_data.py   
 PORT=40024 ../../.venv/bin/python app.py
 ```
 
-The Docker build regenerates `instance_seed/webmd_doctor.db` plus the Pillow avatars (224) and video poster frames (90) from `seed_data.py`; the site ships no Hugging Face assets (`.build-generated-seed`). `seed_metadata` version `webmd-doctor-v1`, `EXPECTED_COUNTS` and a foreign-key check reject partial or incompatible state, and every seed function is gated as a whole so `/reset/webmd_doctor` and `docker restart` leave the DB byte-identical.
+The Docker build regenerates `instance_seed/webmd_doctor.db` plus the Pillow avatars (226) and video poster frames (91) from `seed_data.py`; the site ships no Hugging Face assets (`.build-generated-seed`). `seed_metadata` version `webmd-doctor-v1`, `EXPECTED_COUNTS` and a foreign-key check reject partial or incompatible state, and every seed function is gated as a whole so `/reset/webmd_doctor` and `docker restart` leave the DB byte-identical.
 
 ## Seeded rows
 
 | Model | Rows | Model | Rows |
 |---|---|---|---|
-| doctors | 224 (200 within 40 mi of Newark, DE 19711 + 24 in Baltimore, MD) | locations | 345 |
+| doctors | 226 (202 within 40 mi of Newark, DE 19711 + 24 in Baltimore, MD) | locations | 348 |
 | specialties | 10 | conditions / procedures / expertise_areas | 40 / 30 / 40 |
-| doctor_conditions / doctor_procedures / doctor_expertise | 1619 / 1121 / 674 | insurers / insurance_plans / doctor_insurances | 12 / 28 / 2224 |
+| doctor_conditions / doctor_procedures / doctor_expertise | 1677 / 1252 / 686 | insurers / insurance_plans / doctor_insurances | 12 / 28 / 2274 |
 | cities / city_zips | 8 / 24 | hospitals / practices | 12 / 30 |
-| reviews | 1208 | doctor_perspectives | 1568 |
-| certifications / licenses / education | 286 / 301 / 573 | awards / doctor_languages | 50 / 327 |
+| reviews | 1206 | doctor_perspectives | 1582 |
+| certifications / licenses / education | 296 / 316 / 567 | awards / doctor_languages | 50 / 351 |
 | users | 4 | saved_providers / appointment_requests / user_reviews | 4 / 1 / 1 |
 
 Benchmark accounts: `alice.j`, `bob.c`, `carol.d`, `david.k` `@test.com`, password `TestPass123!`.
