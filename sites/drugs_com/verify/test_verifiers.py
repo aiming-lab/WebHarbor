@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import re
 import shutil
 import sqlite3
 import subprocess
@@ -70,67 +69,66 @@ def interaction_url(names):
 def positive_answer(number, database):
     if number == 0:
         record = drug(database, "ibuprofen")
-        return f"Ibuprofen; class {record['class_name']}; brands {', '.join(brands(record))}."
-    if number == 1:
+        value = {"drug": record["generic_name"], "class": record["class_name"], "brands": brands(record)}
+    elif number == 1:
         record = drug(database, "metformin")
-        return f"Metformin availability: {record['availability']}; CSA schedule: {record['csa_schedule']}."
-    if number == 2:
-        row = query(database, "SELECT i.severity,i.description FROM drug_interaction i JOIN drug a ON a.id=i.drug_a_id JOIN drug b ON b.id=i.drug_b_id WHERE (a.slug='ibuprofen' AND b.slug='warfarin') OR (a.slug='warfarin' AND b.slug='ibuprofen')")[0]
-        return f"Ibuprofen and warfarin have a {row['severity']} interaction with gastrointestinal bleeding risk."
-    if number == 3:
+        value = {"drug": record["generic_name"], "availability": record["availability"], "csa_schedule": record["csa_schedule"]}
+    elif number == 2:
+        severity = query(database, "SELECT i.severity FROM drug_interaction i JOIN drug a ON a.id=i.drug_a_id JOIN drug b ON b.id=i.drug_b_id WHERE (a.slug='ibuprofen' AND b.slug='warfarin') OR (a.slug='warfarin' AND b.slug='ibuprofen')")[0][0]
+        value = {"inputs": ["ibuprofen", "warfarin"], "severity": severity, "risks": ["gastrointestinal bleeding"]}
+    elif number == 3:
         row = query(database, "SELECT d.generic_name,i.shape,i.color FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE i.imprint='I-2'")[0]
-        return f"I-2; drug: {row['generic_name']}; shape: {row['shape']}; color: {row['color']}."
-    if number == 4:
-        values = [row[0] for row in query(database, "SELECT generic_name FROM drug WHERE lower(generic_name) LIKE 'l%' ORDER BY generic_name LIMIT 5")]
-        return ", ".join(values)
-    if number == 5:
+        value = {"imprint": "I-2", "drug": row["generic_name"], "shape": row["shape"], "color": row["color"]}
+    elif number == 4:
+        value = {"letter": "L", "drugs": [row[0] for row in query(database, "SELECT generic_name FROM drug WHERE lower(generic_name) LIKE 'l%' ORDER BY generic_name LIMIT 5")]}
+    elif number == 5:
         record = drug(database, "sertraline")
-        return f"Sertraline brands: {', '.join(brands(record))}; conditions: {', '.join(conditions(database, record['id']))}."
-    if number == 6:
-        return ", ".join(condition_drugs(database, "diabetes")[:4])
-    if number == 7:
+        value = {"drug": record["generic_name"], "brands": brands(record), "conditions": conditions(database, record["id"])}
+    elif number == 6:
+        value = {"condition": "diabetes", "drugs": condition_drugs(database, "diabetes")[:4]}
+    elif number == 7:
         record = drug(database, "semaglutide")
-        return f"Semaglutide brands: {', '.join(brands(record))}; class: {record['class_name']}."
-    if number == 8:
+        value = {"drug": record["generic_name"], "brands": brands(record), "class": record["class_name"]}
+    elif number == 8:
         rows = query(database, "SELECT id,slug FROM drug WHERE slug IN ('alprazolam','oxycodone')")
         ids = {row["slug"]: row["id"] for row in rows}
         severities = [row[0] for row in query(database, "SELECT severity FROM drug_interaction WHERE (drug_a_id=? AND drug_b_id=?) OR (drug_a_id=? AND drug_b_id=?)", (ids["alprazolam"], ids["oxycodone"], ids["oxycodone"], ids["alprazolam"]))]
         severities += [row[0] for row in query(database, "SELECT severity FROM lifestyle_interaction WHERE kind='alcohol' AND drug_id IN (?,?)", (ids["alprazolam"], ids["oxycodone"]))]
         highest = max(severities, key={"minor": 1, "moderate": 2, "major": 3}.get)
-        return f"For alprazolam, oxycodone, and alcohol, there are {len(severities)} interactions; the highest severity is {highest}."
-    if number == 9:
-        return ", ".join(class_drugs(database, "statins")[:3])
-    if number == 10:
-        record = drug(database, "ibuprofen")
-        match = re.search(r"(\d+)-(\d+) mg every (\d+) to (\d+) hours.*?exceed (\d+) mg in (\d+) hours", record["dosage"], re.I)
-        return f"Ibuprofen OTC: {match[1]}-{match[2]} mg every {match[3]}-{match[4]} hours; maximum {match[5]} mg in {match[6]} hours."
-    if number == 11:
-        return query(database, "SELECT title FROM news_article WHERE category='New Drug Approvals' ORDER BY published_at DESC,id DESC LIMIT 1")[0]["title"]
-    if number == 12:
+        value = {"inputs": ["alprazolam", "oxycodone", "alcohol"], "interaction_count": len(severities), "highest_severity": highest}
+    elif number == 9:
+        value = {"class": "statins", "drugs": class_drugs(database, "statins")[:3]}
+    elif number == 10:
+        value = {"drug": "ibuprofen", "otc_dose_mg": [200, 400], "interval_hours": [4, 6], "maximum_mg": 1200, "period_hours": 24}
+    elif number == 11:
+        value = {"title": query(database, "SELECT title FROM news_article WHERE category='New Drug Approvals' ORDER BY published_at DESC,id DESC LIMIT 1")[0]["title"]}
+    elif number == 12:
         record = drug(database, "atorvastatin")
-        return f"Atorvastatin has a rating of {record['avg_rating']}/10 and {record['review_count']} reviews."
-    if number == 13:
+        value = {"drug": record["generic_name"], "rating_out_of_10": record["avg_rating"], "review_count": record["review_count"]}
+    elif number == 13:
         rows = query(database, "SELECT d.generic_name,i.imprint FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE lower(i.shape)='oval' AND lower(i.color)='white' ORDER BY i.id LIMIT 3")
-        return "; ".join(f"{row['generic_name']} — {row['imprint']}" for row in rows)
-    if number == 14:
-        values = [row[0] for row in query(database, "SELECT d.generic_name FROM saved_drug s JOIN drug d ON d.id=s.drug_id JOIN user u ON u.id=s.user_id WHERE u.email='alice.j@test.com' ORDER BY d.generic_name")]
-        return ", ".join(values)
-    if number == 15:
+        value = {"shape": "Oval", "color": "White", "results": [{"drug": row["generic_name"], "imprint": row["imprint"]} for row in rows]}
+    elif number == 14:
+        medications = [row[0] for row in query(database, "SELECT d.generic_name FROM saved_drug s JOIN drug d ON d.id=s.drug_id JOIN user u ON u.id=s.user_id WHERE u.email='alice.j@test.com' ORDER BY d.generic_name")]
+        value = {"medications": medications}
+    elif number == 15:
         record = drug(database, "lisinopril")
-        return f"Lisinopril has a fetal toxicity warning: discontinue when pregnancy is detected. Availability: {record['availability']}."
-    if number == 16:
-        return ", ".join(class_drugs(database, "benzodiazepines")[:3])
-    if number == 17:
+        value = {"drug": record["generic_name"], "pregnancy_warnings": ["fetal harm or death", "discontinue when pregnancy is detected"], "availability": record["availability"]}
+    elif number == 16:
+        value = {"class": "benzodiazepines", "drugs": class_drugs(database, "benzodiazepines")[:3]}
+    elif number == 17:
         record = drug(database, "ciprofloxacin")
-        return f"Ciprofloxacin; brands: {', '.join(brands(record))}; conditions: {', '.join(conditions(database, record['id']))}."
-    if number == 18:
-        return "Amoxicillin standard adult frequency: every 8 hours."
-    if number == 19:
-        row = query(database, "SELECT li.severity,li.description FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")[0]
-        return f"Metformin and alcohol have a {row['severity']} interaction with lactic acidosis and blood sugar risk."
-    if number == 20:
-        return ", ".join(condition_drugs(database, "hypertension")[:5])
-    raise AssertionError(number)
+        value = {"drug": record["generic_name"], "brands": brands(record), "conditions": conditions(database, record["id"])}
+    elif number == 18:
+        value = {"drug": "amoxicillin", "standard_adult_frequency_hours": 8}
+    elif number == 19:
+        severity = query(database, "SELECT li.severity FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")[0][0]
+        value = {"inputs": ["metformin", "alcohol"], "severity": severity, "risks": ["lactic acidosis", "blood sugar changes"]}
+    elif number == 20:
+        value = {"condition": "hypertension", "drugs": condition_drugs(database, "hypertension")[:5]}
+    else:
+        raise AssertionError(number)
+    return json.dumps(value, separators=(",", ":"), sort_keys=True)
 
 
 def _click(url):
@@ -394,23 +392,24 @@ def test_task13_unpaired_or_swapped_pairs_fail(answer_builder, snapshots, tmp_pa
     assert_fails(13, make_run(tmp_path, 13, snapshots[0], answer=answer_builder(rows)), snapshots)
 
 
-def test_task13_verbose_exact_pairs_pass(snapshots, tmp_path):
-    rows = query(snapshots[0], "SELECT d.generic_name,i.imprint FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE lower(i.shape)='oval' AND lower(i.color)='white' ORDER BY i.id LIMIT 3")
-    filler = " with an explicitly local synthetic descriptor diagram and no claim about a real pill " * 3
-    answer = "; ".join(f"{row['generic_name']}{filler}imprint {row['imprint']}" for row in rows)
+def test_task13_pretty_printed_json_passes(snapshots, tmp_path):
+    answer = json.dumps(json.loads(positive_answer(13, snapshots[0])), indent=2)
     process = execute(13, make_run(tmp_path, 13, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
 
-def test_task12_natural_number_before_reviews_passes(snapshots, tmp_path):
-    record = drug(snapshots[0], "atorvastatin")
-    answer = f"Atorvastatin rating: {record['avg_rating']}/10; it has {record['review_count']} reviews."
+def test_task12_numeric_json_values_pass(snapshots, tmp_path):
+    value = json.loads(positive_answer(12, snapshots[0]))
+    value["rating_out_of_10"] = int(value["rating_out_of_10"])
+    answer = json.dumps(value)
     process = execute(12, make_run(tmp_path, 12, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
 
-def test_task2_semantic_paraphrase_passes(snapshots, tmp_path):
-    answer = "Ibuprofen and warfarin have a major interaction because the combination can cause gastrointestinal hemorrhage."
+def test_task2_input_order_is_not_semantic_passes(snapshots, tmp_path):
+    value = json.loads(positive_answer(2, snapshots[0]))
+    value["inputs"].reverse()
+    answer = json.dumps(value)
     process = execute(2, make_run(tmp_path, 2, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -436,9 +435,9 @@ def test_global_answer_retraction_fails(snapshots, tmp_path):
     assert_fails(0, make_run(tmp_path, 0, snapshots[0], answer=answer), snapshots)
 
 
-def test_not_only_is_not_treated_as_negation(snapshots, tmp_path):
-    record = drug(snapshots[0], "ibuprofen")
-    answer = f"Ibuprofen is not only in the {record['class_name']} class; its brands are {', '.join(brands(record))}."
+def test_structured_answer_key_order_is_not_semantic(snapshots, tmp_path):
+    value = json.loads(positive_answer(0, snapshots[0]))
+    answer = json.dumps({"brands": value["brands"], "drug": value["drug"], "class": value["class"]})
     process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -469,8 +468,8 @@ def test_indirect_competing_interaction_total_fails(snapshots, tmp_path):
     assert_fails(8, make_run(tmp_path, 8, snapshots[0], answer=answer), snapshots)
 
 
-def test_do_not_exceed_dosage_wording_passes(snapshots, tmp_path):
-    answer = "Ibuprofen OTC: 200-400 mg every 4-6 hours; do not exceed 1200 mg in 24 hours."
+def test_task10_exact_numeric_schema_passes(snapshots, tmp_path):
+    answer = positive_answer(10, snapshots[0])
     process = execute(10, make_run(tmp_path, 10, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -515,8 +514,8 @@ def test_task8_retracted_count_or_severity_fails(answer, snapshots, tmp_path):
     assert_fails(8, make_run(tmp_path, 8, snapshots[0], answer=answer), snapshots)
 
 
-def test_task8_reverse_natural_severity_relation_passes(snapshots, tmp_path):
-    answer = "For alprazolam, oxycodone, and alcohol, there are 3 interactions; major is the most severe."
+def test_task8_structured_count_and_severity_pass(snapshots, tmp_path):
+    answer = positive_answer(8, snapshots[0])
     process = execute(8, make_run(tmp_path, 8, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -600,9 +599,8 @@ def test_correct_first_then_conflicting_availability_fails(snapshots, tmp_path):
     assert_fails(1, make_run(tmp_path, 1, snapshots[0], answer=answer), snapshots)
 
 
-def test_natural_combined_class_and_brand_sentence_passes(snapshots, tmp_path):
-    record = drug(snapshots[0], "ibuprofen")
-    answer = f"Ibuprofen class {record['class_name']} and brands {', '.join(brands(record))}."
+def test_structured_class_and_brand_fields_pass(snapshots, tmp_path):
+    answer = positive_answer(0, snapshots[0])
     process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -617,8 +615,8 @@ def test_number_word_competing_claims_fail(number, answer, snapshots, tmp_path):
     assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
 
 
-def test_task8_number_word_count_passes(snapshots, tmp_path):
-    answer = "For alprazolam, oxycodone, and alcohol, there are three interactions; major is the most severe."
+def test_task8_integer_count_passes(snapshots, tmp_path):
+    answer = positive_answer(8, snapshots[0])
     process = execute(8, make_run(tmp_path, 8, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -628,14 +626,14 @@ def test_competing_actual_main_risk_fails(snapshots, tmp_path):
     assert_fails(2, make_run(tmp_path, 2, snapshots[0], answer=answer), snapshots)
 
 
-def test_digestive_tract_blood_loss_paraphrase_passes(snapshots, tmp_path):
-    answer = "Ibuprofen and warfarin have a major interaction because they can increase internal digestive-tract blood loss."
+def test_task2_structured_risk_list_passes(snapshots, tmp_path):
+    answer = positive_answer(2, snapshots[0])
     process = execute(2, make_run(tmp_path, 2, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
 
-def test_pregnancy_warning_paraphrase_passes(snapshots, tmp_path):
-    answer = "Lisinopril can harm or kill the unborn baby; stop taking it as soon as pregnancy is recognized. Availability: Rx."
+def test_pregnancy_warning_list_passes(snapshots, tmp_path):
+    answer = positive_answer(15, snapshots[0])
     process = execute(15, make_run(tmp_path, 15, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -684,22 +682,20 @@ def test_nsaid_alias_cannot_negate_expanded_class(snapshots, tmp_path):
 
 
 @pytest.mark.parametrize("number", [4, 6, 9, 14, 16, 20])
-def test_numbered_known_item_lists_pass(number, snapshots, tmp_path):
-    items = [item.strip() for item in positive_answer(number, snapshots[0]).split(",")]
-    answer = "\n".join(f"{index}. {item}" for index, item in enumerate(items, 1))
+def test_pretty_printed_known_item_json_passes(number, snapshots, tmp_path):
+    answer = json.dumps(json.loads(positive_answer(number, snapshots[0])), indent=2)
     process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
 
-def test_numbered_pill_pairs_pass(snapshots, tmp_path):
-    items = positive_answer(13, snapshots[0]).split("; ")
-    answer = "; ".join(f"{index}. {item}" for index, item in enumerate(items, 1))
+def test_pretty_printed_pill_pair_json_passes(snapshots, tmp_path):
+    answer = json.dumps(json.loads(positive_answer(13, snapshots[0])), indent=2)
     process = execute(13, make_run(tmp_path, 13, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
 
-def test_unlabelled_clear_status_sentence_passes(snapshots, tmp_path):
-    answer = "Metformin is prescription-only and is not a controlled drug."
+def test_clear_structured_status_fields_pass(snapshots, tmp_path):
+    answer = positive_answer(1, snapshots[0])
     process = execute(1, make_run(tmp_path, 1, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -738,9 +734,8 @@ def test_unlabelled_availability_competitor_fails(number, answer, snapshots, tmp
     assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
 
 
-def test_natural_according_to_page_field_answer_passes(snapshots, tmp_path):
-    record = drug(snapshots[0], "ibuprofen")
-    answer = f"Ibuprofen is in the {record['class_name']} class. According to the page, the brand names are {', '.join(brands(record))}."
+def test_structured_field_answer_passes(snapshots, tmp_path):
+    answer = positive_answer(0, snapshots[0])
     process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -771,18 +766,15 @@ def test_invented_article_cannot_be_declared_newer(snapshots, tmp_path):
     assert_fails(11, make_run(tmp_path, 11, snapshots[0], answer=answer), snapshots)
 
 
-def test_task12_number_words_pass(snapshots, tmp_path):
-    answer = "Atorvastatin has a rating of seven out of ten and four reviews."
+def test_task12_structured_number_fields_pass(snapshots, tmp_path):
+    answer = positive_answer(12, snapshots[0])
     process = execute(12, make_run(tmp_path, 12, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
 
-@pytest.mark.parametrize("number,answer", [
-    (0, "According to Drugs.com, ibuprofen is in the Nonsteroidal anti-inflammatory drugs class, and its brand names are Advil, Motrin, and Nuprin."),
-    (17, "Ciprofloxacin; class: fluoroquinolone; brands: Cipro; conditions: Bacterial Infections, Pneumonia, Urinary Tract Infection (UTI)."),
-    (13, "The first three white oval pills are: ibuprofen — I-2; ibuprofen — IP 466; metformin — Z 70"),
-])
-def test_additional_natural_answer_formats_pass(number, answer, snapshots, tmp_path):
+@pytest.mark.parametrize("number", [0, 17, 13])
+def test_additional_structured_answer_serializations_pass(number, snapshots, tmp_path):
+    answer = json.dumps(json.loads(positive_answer(number, snapshots[0])), separators=(", ", ": "))
     process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -807,14 +799,9 @@ def test_second_latest_claim_with_invented_title_fails(snapshots, tmp_path):
     assert_fails(11, make_run(tmp_path, 11, snapshots[0], answer=answer), snapshots)
 
 
-@pytest.mark.parametrize("number,answer", [
-    (0, "According to Drugs.com, ibuprofen belongs to the Nonsteroidal anti-inflammatory drugs class and is marketed as Advil, Motrin, and Nuprin."),
-    (10, "Ibuprofen: 200-400 mg every 4-6 hours, up to 1200 mg per day."),
-    (12, "Atorvastatin is rated seven out of ten and has four reviews."),
-    (17, "Ciprofloxacin (Cipro) treats Bacterial Infections, Pneumonia, and Urinary Tract Infection (UTI)."),
-    (18, "For standard infections in adults, amoxicillin is typically taken every 8 hours."),
-])
-def test_more_natural_answer_formats_pass(number, answer, snapshots, tmp_path):
+@pytest.mark.parametrize("number", [0, 10, 12, 17, 18])
+def test_more_structured_answer_serializations_pass(number, snapshots, tmp_path):
+    answer = json.dumps(json.loads(positive_answer(number, snapshots[0])), indent=1)
     process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -847,12 +834,9 @@ def test_task14_credentials_require_distinct_control_indices(snapshots, tmp_path
     assert_fails(14, run, snapshots)
 
 
-@pytest.mark.parametrize("number,answer", [
-    (0, "Ibuprofen is categorized among Nonsteroidal anti-inflammatory drugs and is available under the trade names Advil, Motrin, and Nuprin."),
-    (18, "For mild-to-moderate adult infections, amoxicillin is typically taken every 8 hours."),
-    (2, "Ibuprofen and warfarin have a major interaction with digestive system blood loss risk."),
-])
-def test_entity_bound_natural_paraphrases_pass(number, answer, snapshots, tmp_path):
+@pytest.mark.parametrize("number", [0, 18, 2])
+def test_entity_bound_structured_answers_pass(number, snapshots, tmp_path):
+    answer = positive_answer(number, snapshots[0])
     process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
@@ -898,17 +882,64 @@ def test_list_relation_denials_fail(number, suffix, snapshots, tmp_path):
     assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
 
 
-def test_task0_commonly_natural_language_passes(snapshots, tmp_path):
+def test_task0_prose_outside_documented_json_contract_fails(snapshots, tmp_path):
     record = drug(snapshots[0], "ibuprofen")
     answer = f"According to the page, ibuprofen commonly belongs to the {record['class_name']} class, and its brand names are {', '.join(brands(record))}."
-    process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
-    assert process.returncode == 0, process.stdout + process.stderr
+    assert_fails(0, make_run(tmp_path, 0, snapshots[0], answer=answer), snapshots)
 
 
-def test_task10_number_words_and_milligrams_pass(snapshots, tmp_path):
+def test_task10_prose_outside_documented_json_contract_fails(snapshots, tmp_path):
     answer = "Ibuprofen OTC: two hundred to four hundred milligrams every four to six hours; do not exceed twelve hundred milligrams in twenty-four hours."
-    process = execute(10, make_run(tmp_path, 10, snapshots[0], answer=answer), *snapshots)
-    assert process.returncode == 0, process.stdout + process.stderr
+    assert_fails(10, make_run(tmp_path, 10, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number", range(21))
+def test_structured_answer_rejects_extra_corrective_key(number, snapshots, tmp_path):
+    value = json.loads(positive_answer(number, snapshots[0]))
+    value["corrected_claim"] = "a competing value"
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=json.dumps(value)), snapshots)
+
+
+@pytest.mark.parametrize("number", range(21))
+def test_structured_answer_rejects_missing_and_wrong_fields(number, snapshots, tmp_path):
+    original = json.loads(positive_answer(number, snapshots[0]))
+    missing = dict(original)
+    missing.pop(next(iter(missing)))
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=json.dumps(missing)), snapshots)
+    wrong = dict(original)
+    key = next(iter(wrong))
+    current = wrong[key]
+    if type(current) is bool:
+        wrong[key] = not current
+    elif type(current) in {int, float}:
+        wrong[key] = current + 1
+    elif isinstance(current, str):
+        wrong[key] = "out-of-domain-value"
+    elif isinstance(current, list):
+        wrong[key] = [*current, "out-of-domain-value"]
+    else:
+        raise AssertionError(type(current))
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=json.dumps(wrong)), snapshots)
+
+
+def test_structured_answer_rejects_duplicate_keys_and_trailing_prose(snapshots, tmp_path):
+    value = json.loads(positive_answer(12, snapshots[0]))
+    duplicate = '{"drug":"atorvastatin","drug":"atorvastatin","rating_out_of_10":7,"review_count":4}'
+    assert_fails(12, make_run(tmp_path, 12, snapshots[0], answer=duplicate), snapshots)
+    trailing = json.dumps(value) + " Its true rating is unity and it has nil reviews."
+    assert_fails(12, make_run(tmp_path, 12, snapshots[0], answer=trailing), snapshots)
+
+
+def test_structured_answer_rejects_semantic_overrides_and_wrong_types(snapshots, tmp_path):
+    rating = json.loads(positive_answer(12, snapshots[0]))
+    rating["rating_out_of_10"] = "unity"
+    assert_fails(12, make_run(tmp_path, 12, snapshots[0], answer=json.dumps(rating)), snapshots)
+    dosage = json.loads(positive_answer(10, snapshots[0]))
+    dosage["maximum_mg"] = "a full gram"
+    assert_fails(10, make_run(tmp_path, 10, snapshots[0], answer=json.dumps(dosage)), snapshots)
+    status = json.loads(positive_answer(1, snapshots[0]))
+    status["availability"] = "nonprescription"
+    assert_fails(1, make_run(tmp_path, 1, snapshots[0], answer=json.dumps(status)), snapshots)
 
 
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):

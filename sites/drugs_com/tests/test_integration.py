@@ -62,6 +62,8 @@ def test_task_manifest_uses_port_40024_and_complete_verifiers():
     assert {row["web"] for row in rows} == {"http://localhost:40024/"}
     assert all((ROOT / row["verifier_path"]).is_file() for row in rows)
     assert all("answer" not in row for row in rows)
+    assert all("Return only one JSON object with exactly this schema" in row["ques"] for row in rows)
+    assert all("exact task-specific JSON schema" in row["judge_rubric"] for row in rows)
 
 
 def test_docker_and_docs_use_25_site_range():

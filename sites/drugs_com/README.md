@@ -27,4 +27,4 @@ From the repository root with the site dependencies installed:
 pytest -q sites/drugs_com/tests sites/drugs_com/verify
 ```
 
-The application tests cover routing, validation, authentication, ownership, state mutation, seed integrity and reset behavior. The verifier tests execute every task verifier against positive and adversarial trajectories.
+The application tests cover routing, validation, authentication, ownership, state mutation, seed integrity and reset behavior. The verifier tests execute every task verifier against positive and adversarial trajectories. Each task question declares an exact JSON-only result schema so the deterministic verifier can reject duplicate, extra, missing, mistyped, contradictory, or out-of-domain answer fields without attempting open-ended natural-language interpretation.

@@ -830,11 +830,167 @@ def _pair_segments(answer):
     return [part.strip() for part in re.split(r"[;\n]+|,(?=\s*(?:\d+[.)]\s*)?[A-Za-z])", answer) if part.strip()]
 
 
+def _parse_answer_object(answer):
+    duplicate = False
+
+    def consume_pairs(pairs):
+        nonlocal duplicate
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                duplicate = True
+            result[key] = value
+        return result
+
+    try:
+        value = json.loads(answer, object_pairs_hook=consume_pairs)
+    except (json.JSONDecodeError, TypeError):
+        return None
+    return value if isinstance(value, dict) and not duplicate else None
+
+
+def _text_equal(value, expected) -> bool:
+    return isinstance(value, str) and norm(value) == norm(expected)
+
+
+def _text_list(value):
+    return value if isinstance(value, list) and all(isinstance(item, str) for item in value) else None
+
+
+def _same_text_set(value, expected) -> bool:
+    items = _text_list(value)
+    return items is not None and len(items) == len(expected) and {norm(item) for item in items} == {norm(item) for item in expected}
+
+
+def _subset_text_list(value, domain, minimum, maximum=None) -> bool:
+    items = _text_list(value)
+    if items is None or len(items) != len({norm(item) for item in items}) or len(items) < minimum:
+        return False
+    if maximum is not None and len(items) > maximum:
+        return False
+    return {norm(item) for item in items} <= {norm(item) for item in domain}
+
+
+def structured_answer_contract(number, answer, initial):
+    """Validate a closed, task-specific JSON result and return canonical prose for legacy semantic checks."""
+    value = _parse_answer_object(answer)
+    valid = value is not None
+
+    def exact_keys(*keys):
+        return valid and set(value) == set(keys)
+
+    semantic = answer
+    if number == 0:
+        record = drug(initial, "ibuprofen")
+        expected_brands = brands(record)
+        valid = exact_keys("drug", "class", "brands") and _text_equal(value["drug"], record["generic_name"]) and _text_equal(value["class"], record["class_name"]) and _same_text_set(value["brands"], expected_brands)
+        semantic = f"{record['generic_name']}; class {record['class_name']}; brands {', '.join(expected_brands)}."
+    elif number == 1:
+        record = drug(initial, "metformin")
+        valid = exact_keys("drug", "availability", "csa_schedule") and _text_equal(value["drug"], record["generic_name"]) and _text_equal(value["availability"], record["availability"]) and _text_equal(value["csa_schedule"], record["csa_schedule"])
+        semantic = f"{record['generic_name']} availability: {record['availability']}; CSA schedule: {record['csa_schedule']}."
+    elif number == 2:
+        rows = initial.query("SELECT i.severity FROM drug_interaction i JOIN drug a ON a.id=i.drug_a_id JOIN drug b ON b.id=i.drug_b_id WHERE (a.slug='ibuprofen' AND b.slug='warfarin') OR (a.slug='warfarin' AND b.slug='ibuprofen')")
+        severity = rows[0]["severity"] if len(rows) == 1 else ""
+        valid = exact_keys("inputs", "severity", "risks") and _same_text_set(value["inputs"], ["ibuprofen", "warfarin"]) and _text_equal(value["severity"], severity) and _same_text_set(value["risks"], ["gastrointestinal bleeding"])
+        semantic = f"Ibuprofen and warfarin have a {severity} interaction with gastrointestinal bleeding risk."
+    elif number == 3:
+        rows = initial.query("SELECT d.generic_name,i.shape,i.color FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE i.imprint='I-2' ORDER BY i.id")
+        record = rows[0] if len(rows) == 1 else {"generic_name": "", "shape": "", "color": ""}
+        valid = exact_keys("imprint", "drug", "shape", "color") and _text_equal(value["imprint"], "I-2") and _text_equal(value["drug"], record["generic_name"]) and _text_equal(value["shape"], record["shape"]) and _text_equal(value["color"], record["color"])
+        semantic = f"I-2; drug: {record['generic_name']}; shape: {record['shape']}; color: {record['color']}."
+    elif number == 4:
+        choices = [row[0] for row in initial.query("SELECT generic_name FROM drug WHERE lower(generic_name) LIKE 'l%' ORDER BY generic_name")]
+        valid = exact_keys("letter", "drugs") and _text_equal(value["letter"], "L") and _subset_text_list(value["drugs"], choices, 5, 5)
+        semantic = ", ".join(value["drugs"]) if valid else answer
+    elif number == 5:
+        record = drug(initial, "sertraline")
+        expected_brands = brands(record)
+        expected_conditions = conditions_for_drug(initial, record["id"])
+        valid = exact_keys("drug", "brands", "conditions") and _text_equal(value["drug"], record["generic_name"]) and _same_text_set(value["brands"], expected_brands) and _same_text_set(value["conditions"], expected_conditions)
+        semantic = f"{record['generic_name']} brands: {', '.join(expected_brands)}; conditions: {', '.join(expected_conditions)}."
+    elif number in {6, 20}:
+        slug, minimum = ("diabetes", 4) if number == 6 else ("hypertension", 5)
+        choices = drugs_for_condition(initial, slug)
+        valid = exact_keys("condition", "drugs") and _text_equal(value["condition"], slug) and _subset_text_list(value["drugs"], choices, minimum)
+        semantic = ", ".join(value["drugs"]) if valid else answer
+    elif number == 7:
+        record = drug(initial, "semaglutide")
+        expected_brands = brands(record)
+        valid = exact_keys("drug", "brands", "class") and _text_equal(value["drug"], record["generic_name"]) and _same_text_set(value["brands"], expected_brands) and _text_equal(value["class"], record["class_name"])
+        semantic = f"{record['generic_name']} brands: {', '.join(expected_brands)}; class: {record['class_name']}."
+    elif number == 8:
+        drug_rows = initial.query("SELECT id,slug FROM drug WHERE slug IN ('alprazolam','oxycodone')")
+        by_slug = {row["slug"]: row["id"] for row in drug_rows}
+        severities = []
+        if len(by_slug) == 2:
+            severities += [row[0] for row in initial.query("SELECT severity FROM drug_interaction WHERE (drug_a_id=? AND drug_b_id=?) OR (drug_a_id=? AND drug_b_id=?)", (by_slug["alprazolam"], by_slug["oxycodone"], by_slug["oxycodone"], by_slug["alprazolam"]))]
+            severities += [row[0] for row in initial.query("SELECT severity FROM lifestyle_interaction WHERE kind='alcohol' AND drug_id IN (?,?)", (by_slug["alprazolam"], by_slug["oxycodone"]))]
+        highest = max(severities, key=lambda item: SEVERITY_ORDER[item]) if severities else ""
+        valid = exact_keys("inputs", "interaction_count", "highest_severity") and _same_text_set(value["inputs"], ["alprazolam", "oxycodone", "alcohol"]) and type(value["interaction_count"]) is int and value["interaction_count"] == len(severities) and _text_equal(value["highest_severity"], highest)
+        semantic = f"For alprazolam, oxycodone, and alcohol, there are {len(severities)} interactions; the highest severity is {highest}."
+    elif number in {9, 16}:
+        slug = "statins" if number == 9 else "benzodiazepines"
+        choices = drugs_for_class(initial, slug)
+        valid = exact_keys("class", "drugs") and _text_equal(value["class"], slug) and _subset_text_list(value["drugs"], choices, 3)
+        semantic = ", ".join(value["drugs"]) if valid else answer
+    elif number == 10:
+        valid = exact_keys("drug", "otc_dose_mg", "interval_hours", "maximum_mg", "period_hours") and _text_equal(value["drug"], "ibuprofen") and value["otc_dose_mg"] == [200, 400] and value["interval_hours"] == [4, 6] and type(value["maximum_mg"]) is int and value["maximum_mg"] == 1200 and type(value["period_hours"]) is int and value["period_hours"] == 24
+        semantic = "Ibuprofen OTC: 200-400 mg every 4-6 hours; maximum 1200 mg in 24 hours."
+    elif number == 11:
+        rows = initial.query("SELECT title FROM news_article WHERE category='New Drug Approvals' ORDER BY published_at DESC,id DESC LIMIT 1")
+        title = rows[0]["title"] if rows else ""
+        valid = exact_keys("title") and _text_equal(value["title"], title)
+        semantic = title
+    elif number == 12:
+        record = drug(initial, "atorvastatin")
+        valid = exact_keys("drug", "rating_out_of_10", "review_count") and _text_equal(value["drug"], record["generic_name"]) and type(value["rating_out_of_10"]) in {int, float} and float(value["rating_out_of_10"]) == float(record["avg_rating"]) and type(value["review_count"]) is int and value["review_count"] == record["review_count"]
+        semantic = f"{record['generic_name']} has a rating of {record['avg_rating']}/10 and {record['review_count']} reviews."
+    elif number == 13:
+        rows = initial.query("SELECT d.generic_name,i.imprint FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE lower(i.shape)='oval' AND lower(i.color)='white' ORDER BY i.id LIMIT 3")
+        expected = [{"drug": row["generic_name"], "imprint": row["imprint"]} for row in rows]
+        results = value.get("results") if valid else None
+        results_valid = isinstance(results, list) and len(results) == len(expected) and all(isinstance(item, dict) and set(item) == {"drug", "imprint"} and _text_equal(item["drug"], wanted["drug"]) and _text_equal(item["imprint"], wanted["imprint"]) for item, wanted in zip(results, expected))
+        valid = exact_keys("shape", "color", "results") and _text_equal(value["shape"], "Oval") and _text_equal(value["color"], "White") and results_valid
+        semantic = "; ".join(f"{item['drug']} — {item['imprint']}" for item in expected)
+    elif number == 14:
+        expected = [row[0] for row in initial.query("SELECT d.generic_name FROM saved_drug s JOIN drug d ON d.id=s.drug_id JOIN user u ON u.id=s.user_id WHERE u.email='alice.j@test.com' ORDER BY d.generic_name")]
+        valid = exact_keys("medications") and _same_text_set(value["medications"], expected)
+        semantic = ", ".join(expected)
+    elif number == 15:
+        record = drug(initial, "lisinopril")
+        valid = exact_keys("drug", "pregnancy_warnings", "availability") and _text_equal(value["drug"], record["generic_name"]) and _same_text_set(value["pregnancy_warnings"], ["fetal harm or death", "discontinue when pregnancy is detected"]) and _text_equal(value["availability"], record["availability"])
+        semantic = f"{record['generic_name']} has a fetal toxicity warning: discontinue when pregnancy is detected. Availability: {record['availability']}."
+    elif number == 17:
+        rows = initial.query("SELECT d.id,d.slug,d.generic_name,d.brand_names_json FROM drug d JOIN drug_class c ON c.id=d.drug_class_id WHERE c.slug='fluoroquinolones' ORDER BY d.id")
+        candidates = [dict(row) for row in rows]
+        selected = next((record for record in candidates if valid and _text_equal(value.get("drug"), record["generic_name"])), None)
+        expected_brands = brands(selected) if selected else []
+        expected_conditions = conditions_for_drug(initial, selected["id"]) if selected else []
+        valid = exact_keys("drug", "brands", "conditions") and selected is not None and _same_text_set(value["brands"], expected_brands) and _same_text_set(value["conditions"], expected_conditions)
+        semantic = f"{selected['generic_name']}; brands: {', '.join(expected_brands)}; conditions: {', '.join(expected_conditions)}." if selected else answer
+    elif number == 18:
+        valid = exact_keys("drug", "standard_adult_frequency_hours") and _text_equal(value["drug"], "amoxicillin") and type(value["standard_adult_frequency_hours"]) is int and value["standard_adult_frequency_hours"] == 8
+        semantic = "Amoxicillin standard adult frequency: every 8 hours."
+    elif number == 19:
+        rows = initial.query("SELECT li.severity FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")
+        severity = rows[0]["severity"] if len(rows) == 1 else ""
+        valid = exact_keys("inputs", "severity", "risks") and _same_text_set(value["inputs"], ["metformin", "alcohol"]) and _text_equal(value["severity"], severity) and _same_text_set(value["risks"], ["lactic acidosis", "blood sugar changes"])
+        semantic = f"Metformin and alcohol have a {severity} interaction with lactic acidosis and blood sugar risk."
+    else:
+        valid = False
+    return valid, semantic
+
+
 # ---------- per-task contract ----------
 
 def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Snapshot):
     answer = str(trajectory.get("final_answer") or "").strip()
     judge.initial = initial
+    contract_valid, semantic_answer = structured_answer_contract(number, answer, initial)
+    judge.check("answer_structured_contract", contract_valid)
+    if contract_valid:
+        answer = semantic_answer
 
     detail_paths = lambda slug: (f"/{slug}", f"/{slug}.html")
     checker_paths = ("/drug-interactions", "/interaction-checker", "/drug_interactions.html")
