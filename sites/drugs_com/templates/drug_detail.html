@@ -3,7 +3,7 @@
 {% block title %}{{ drug.generic_name|capitalize }} Uses, Dosage & Side Effects - {{ site_name }}{% endblock %}
 {% block content %}
 <div class="breadcrumb-row">
-  <nav class="breadcrumb">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
     <a href="{{ url_for('index') }}">Home</a> &rsaquo;
     <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
     <span>{{ drug.generic_name|capitalize }}</span>
@@ -67,7 +67,7 @@
         {% for i in range(5 - full_stars - (1 if half_star else 0)) %}<span class="star star-empty">&#9734;</span>{% endfor %}
       </span>
       <span class="rating-num">{{ "%.1f"|format(drug.avg_rating) }}/10</span>
-      <a href="#reviews" class="rating-num-count">({{ drug.review_count }} simulated fixture reviews)</a>
+      <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}" class="rating-num-count">({{ drug.review_count }} simulated fixture reviews)</a>
     </div>
     {% endif %}
     <div class="reviewer-box">
@@ -104,7 +104,7 @@
     <a href="{{ url_for('drug_prices', slug=drug.slug) }}" class="drug-action-link">Generated price fixture</a>
   </div>
 
-  <nav class="section-tabs">
+  <nav class="section-tabs" aria-label="Drug record sections">
     <a href="#uses">Uses</a>
     <a href="#warnings">Warnings</a>
     <a href="#before-taking">Before taking</a>
@@ -327,7 +327,7 @@
         <h3 class="status-box-title">DRUG STATUS</h3>
         <ul class="status-list">
           <li class="status-row">
-            <span class="status-icon rx-otc" aria-hidden="true">Rx</span>
+            <span class="status-icon rx-otc" aria-hidden="true">{% if drug.availability == 'Rx' %}Rx{% elif drug.availability == 'OTC' %}OTC{% elif drug.availability %}Both{% else %}?{% endif %}</span>
             <div class="status-text">
               <span class="status-label">Availability</span>
               <span class="status-value">{% if drug.availability %}Fixture field: {{ drug.availability }}{% else %}<span class="muted">Not stored</span>{% endif %}</span>

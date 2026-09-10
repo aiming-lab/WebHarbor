@@ -333,10 +333,10 @@ function scrollCarousel(dir) {
       <div class="browse-panel-title">Browse by</div>
       <noscript><style>#homeBrowseTabs{display:none}.browse-panel-content{display:block!important}</style><p class="muted">All browse groups are shown because JavaScript is disabled.</p></noscript>
       <div class="browse-panel-tabs" id="homeBrowseTabs" role="tablist" aria-label="Browse fixture groups">
-        <button type="button" id="browse-tab-drugs" class="browse-tab active" role="tab" aria-selected="true" aria-controls="browse-panel-drugs" data-target="browse-panel-drugs">Drugs A-Z</button>
-        <button type="button" id="browse-tab-conditions" class="browse-tab" role="tab" aria-selected="false" aria-controls="browse-panel-conditions" data-target="browse-panel-conditions">Conditions</button>
-        <button type="button" id="browse-tab-classes" class="browse-tab" role="tab" aria-selected="false" aria-controls="browse-panel-classes" data-target="browse-panel-classes">Drug Classes</button>
-        <button type="button" id="browse-tab-symptoms" class="browse-tab" role="tab" aria-selected="false" aria-controls="browse-panel-symptoms" data-target="browse-panel-symptoms">Symptoms</button>
+        <button type="button" id="browse-tab-drugs" class="browse-tab active" role="tab" tabindex="0" aria-selected="true" aria-controls="browse-panel-drugs" data-target="browse-panel-drugs">Drugs A-Z</button>
+        <button type="button" id="browse-tab-conditions" class="browse-tab" role="tab" tabindex="-1" aria-selected="false" aria-controls="browse-panel-conditions" data-target="browse-panel-conditions">Conditions</button>
+        <button type="button" id="browse-tab-classes" class="browse-tab" role="tab" tabindex="-1" aria-selected="false" aria-controls="browse-panel-classes" data-target="browse-panel-classes">Drug Classes</button>
+        <button type="button" id="browse-tab-symptoms" class="browse-tab" role="tab" tabindex="-1" aria-selected="false" aria-controls="browse-panel-symptoms" data-target="browse-panel-symptoms">Symptoms</button>
       </div>
 
       <div class="browse-panel-content" id="browse-panel-drugs" role="tabpanel" aria-labelledby="browse-tab-drugs" tabindex="0">
@@ -393,9 +393,10 @@ function scrollCarousel(dir) {
       tabs.forEach(function (tab) {
         function activate() {
           var target = tab.getAttribute('data-target');
-          tabs.forEach(function (t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+          tabs.forEach(function (t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); t.tabIndex = -1; });
           tab.classList.add('active');
           tab.setAttribute('aria-selected', 'true');
+          tab.tabIndex = 0;
           document.querySelectorAll('.browse-panel-content').forEach(function (p) {
             var selected = p.id === target;
             p.style.display = selected ? '' : 'none';

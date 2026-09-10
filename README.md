@@ -53,7 +53,7 @@ The fetch and build paths verify the immutable HF revision, every archive size a
 
 Then point your agent at `http://localhost:40000` through `http://localhost:40024` to explore 25 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, and Drugs.com`.
 
-For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
+For deterministic reset between rollouts, expose the control plane and call `/reset/<site>`:
 
 ```bash
 curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8101/reset/amazon   # one site

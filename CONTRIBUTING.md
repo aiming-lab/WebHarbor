@@ -188,7 +188,7 @@ The reviewer picks up a contributor's PR (site + `tasks.jsonl` with the basic ke
 
 Build the image from the branch and run it on alt ports (see AGENTS.md "Pre-PR checks" for the exact commands). Then:
 
-1. **Mechanical** — every site returns 200; `/health` all alive; `POST /reset/<site>` wipes runtime writes and restores the DB **byte-identical** to the seed (`md5(instance) == md5(instance_seed)`); `reset-all` completes in ~1s.
+1. **Mechanical** — every site returns 200; `/health` all alive; `POST /reset/<site>` wipes runtime writes and restores the DB **byte-identical** to the seed (`md5(instance) == md5(instance_seed)`); verify reset-all completion from its structured per-site response.
 2. **Functional** — drive the site's routes (auth, search, list/detail, any stateful action) and confirm each renders correct, non-empty content. The contributor's tasks must be genuinely completable on these pages.
 3. **Task feasibility** — for each task in `tasks.jsonl`, confirm it is **solvable by navigating the site** and is **not trivially answerable from an LLM's prior knowledge**. Drive a few tasks end-to-end (manually or with `agent_demo/agent.py`). Reject — and send back to the contributor — tasks that:
    - can be answered without ever opening the site (e.g. a common dictionary definition),

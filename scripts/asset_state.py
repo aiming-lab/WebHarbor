@@ -21,7 +21,18 @@ def sha256(path: Path) -> str:
 
 
 def site_names(sites: Path):
-    return sorted(path.name for path in sites.iterdir() if path.is_dir() and not path.name.startswith("."))
+    names = []
+    for path in sites.iterdir():
+        if path.name in {".cache", ".assets-state.json"}:
+            continue
+        if path.is_symlink():
+            raise ValueError(f"site directory symlink is forbidden: {path}")
+        if not path.is_dir():
+            raise ValueError(f"unexpected top-level sites object: {path}")
+        if path.name.startswith("."):
+            raise ValueError(f"unexpected hidden site directory: {path}")
+        names.append(path.name)
+    return sorted(names)
 
 
 def tree_digest(sites: Path) -> str:
@@ -36,13 +47,17 @@ def tree_digest(sites: Path) -> str:
             if not managed.exists():
                 records.append([f"{site}/{root}", "absent"])
                 continue
-            if not managed.is_dir():
-                raise ValueError(f"managed root is not a directory: {managed}")
+            if managed.is_symlink() or not managed.is_dir():
+                raise ValueError(f"managed root must be a real directory: {managed}")
             for path in sorted(managed.rglob("*")):
                 if path.is_symlink():
                     raise ValueError(f"managed asset symlink is forbidden: {path}")
-                if path.is_file() and not path.name.startswith("._"):
+                if path.name.startswith("._"):
+                    raise ValueError(f"AppleDouble managed asset is forbidden: {path}")
+                if path.is_file():
                     records.append([str(path.relative_to(sites)), path.stat().st_size, sha256(path)])
+                elif not path.is_dir():
+                    raise ValueError(f"managed asset special object is forbidden: {path}")
     encoded = json.dumps(records, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
 
@@ -78,6 +93,20 @@ def write_state(sites: Path, cache: Path, revision_file: Path, output: Path) -> 
     os.replace(candidate_path, output)
 
 
+def verify_archive(state_file: Path, revision_file: Path, cache: Path, site: str) -> None:
+    expected = json.loads(state_file.read_text(encoding="utf-8"))
+    revision = revision_values(revision_file)
+    if expected.get("repo") != revision["repo"] or expected.get("revision") != revision["revision"]:
+        raise ValueError("asset manifest does not match pinned repo/revision")
+    archive = cache / f"{site}.tar.gz"
+    recorded = expected.get("archives", {}).get(archive.name)
+    if recorded is None or not archive.is_file():
+        raise ValueError(f"tracked archive is missing: {archive.name}")
+    if recorded.get("bytes") != archive.stat().st_size or recorded.get("sha256") != sha256(archive):
+        raise ValueError(f"downloaded archive does not match tracked asset manifest: {archive.name}")
+    print(f"[check] archive matches tracked manifest: {archive.name}")
+
+
 def verify_state(sites: Path, revision_file: Path, state_file: Path, cache: Path | None = None) -> None:
     expected = json.loads(state_file.read_text(encoding="utf-8"))
     revision = revision_values(revision_file)
@@ -105,18 +134,23 @@ def verify_state(sites: Path, revision_file: Path, state_file: Path, cache: Path
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("write", "verify"))
+    parser.add_argument("action", choices=("write", "verify", "verify-archive"))
     parser.add_argument("sites", type=Path)
     parser.add_argument("revision_file", type=Path)
     parser.add_argument("state_file", type=Path)
     parser.add_argument("--cache", type=Path)
+    parser.add_argument("--site")
     args = parser.parse_args()
     if args.action == "write":
         if args.cache is None:
             parser.error("write requires --cache")
         write_state(args.sites.resolve(), args.cache.resolve(), args.revision_file.resolve(), args.state_file.resolve())
-    else:
+    elif args.action == "verify":
         verify_state(args.sites.resolve(), args.revision_file.resolve(), args.state_file.resolve(), args.cache.resolve() if args.cache else None)
+    else:
+        if args.cache is None or not args.site:
+            parser.error("verify-archive requires --cache and --site")
+        verify_archive(args.state_file.resolve(), args.revision_file.resolve(), args.cache.resolve(), args.site)
 
 
 if __name__ == "__main__":

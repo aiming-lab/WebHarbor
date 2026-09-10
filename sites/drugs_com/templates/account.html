@@ -23,8 +23,8 @@
 
 <p class="account-welcome">Welcome back, {{ current_user.username }}! Manage your medications, reviews, and preferences below.</p>
 
-<nav class="account-tabs">
-  <a href="{{ url_for('account') }}" class="active">My Account</a>
+<nav class="account-tabs" aria-label="Account sections">
+  <a href="{{ url_for('account') }}" class="active" aria-current="page">My Account</a>
   <a href="{{ url_for('my_med_list') }}">My Med List</a>
   <a href="{{ url_for('my_reviews') }}">My Reviews</a>
   <a href="{{ url_for('account_settings') }}">Settings</a>
@@ -50,7 +50,7 @@
   <a class="btn btn-primary account-action-btn" href="{{ url_for('drug_az') }}">
     <span class="account-action-icon">+</span> Add medications
   </a>
-  <a class="btn btn-primary account-action-btn" href="{{ url_for('drug_az') }}#popular">
+  <a class="btn btn-primary account-action-btn" href="{{ url_for('drug_az') }}">
     <span class="account-action-icon">&#9733;</span> Write a review
   </a>
   <a class="btn btn-outline account-action-btn" href="{{ url_for('account_settings') }}">
@@ -127,7 +127,7 @@
         {% for d in recently_viewed[:5] %}
           <li>
             <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>
-            <span class="badge badge-{{ 'rx' if d.availability and 'rx' in (d.availability|lower) else 'otc' }}">{{ d.availability or 'Rx' }}</span>
+            <span class="badge badge-{{ 'rx' if d.availability and 'rx' in (d.availability|lower) else ('otc' if d.availability else 'unknown') }}">{{ d.availability or 'Not stored' }}</span>
           </li>
         {% endfor %}
       </ul>

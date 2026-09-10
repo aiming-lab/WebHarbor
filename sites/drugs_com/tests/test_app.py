@@ -184,6 +184,8 @@ def test_failed_login_key_storage_is_globally_bounded(drugs_app):
 
 def test_registration_capacity_is_bounded(client, drugs_app, monkeypatch):
     monkeypatch.setattr(drugs_app, "_MAX_RUNTIME_USERS", 12)
+    password_hash_calls = []
+    monkeypatch.setattr(drugs_app.User, "set_password", lambda _self, _password: password_hash_calls.append(True))
     page = client.get("/register")
     response = client.post("/register", data={
         "csrf_token": csrf(page), "username": "capacity_user", "email": "capacity@example.com",
@@ -191,6 +193,43 @@ def test_registration_capacity_is_bounded(client, drugs_app, monkeypatch):
     })
     assert response.status_code == 429
     assert b"reached its capacity" in response.data
+    assert password_hash_calls == []
+
+
+def test_login_performs_password_check_for_missing_and_existing_accounts(client, drugs_app, monkeypatch):
+    calls = []
+    real_check = drugs_app.bcrypt.check_password_hash
+
+    def record_check(password_hash, password):
+        calls.append(password_hash)
+        return real_check(password_hash, password)
+
+    monkeypatch.setattr(drugs_app.bcrypt, "check_password_hash", record_check)
+    for email in ("missing@example.com", "alice.j@test.com"):
+        page = client.get("/login")
+        response = client.post("/login", data={"csrf_token": csrf(page), "email": email, "password": "wrong"})
+        assert response.status_code == 200
+    assert len(calls) == 2
+    assert all(call.startswith("$2b$") for call in calls)
+
+
+def test_registration_attempts_are_source_limited(client, drugs_app, monkeypatch):
+    monkeypatch.setattr(drugs_app, "_MAX_RUNTIME_USERS", 12)
+    for attempt in range(drugs_app._AUTH_FAILURE_LIMIT):
+        page = client.get("/register")
+        response = client.post("/register", data={
+            "csrf_token": csrf(page), "username": f"capacity-{attempt}", "email": f"capacity-{attempt}@example.com",
+            "password": "GoodPass123!", "confirm_password": "GoodPass123!", "agree_terms": "1",
+        })
+        assert response.status_code == 429
+        assert b"reached its capacity" in response.data
+    page = client.get("/register")
+    response = client.post("/register", data={
+        "csrf_token": csrf(page), "username": "capacity-final", "email": "capacity-final@example.com",
+        "password": "GoodPass123!", "confirm_password": "GoodPass123!", "agree_terms": "1",
+    })
+    assert response.status_code == 429
+    assert b"Too many account-creation attempts" in response.data
 
 
 def test_registration_validation_and_duplicate(client):

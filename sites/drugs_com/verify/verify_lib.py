@@ -519,7 +519,7 @@ _LIST_PROSE_WORDS = {
     "availability", "brand", "brands", "class", "condition", "conditions", "csa", "and", "are", "currently", "drug", "drugs", "example", "examples", "first",
     "fixture", "fixtures", "following", "include", "includes", "imprint", "imprints",
     "list", "listed", "local", "medication", "medications", "name", "names", "rating", "ratings", "result", "results", "review", "reviews", "saved", "schedule",
-    "in", "is", "its", "not", "only", "the", "three",
+    "as", "belongs", "called", "five", "four", "has", "have", "here", "in", "is", "its", "known", "not", "only", "shown", "sold", "the", "three", "to", "under", "which", "with",
 }
 
 
@@ -538,20 +538,67 @@ def known_list_items(answer, terms):
     return bool(items) and all(len(item_hits) == 1 for item_hits in hits), items, hits
 
 
+_FIELD_LABEL = r"(?:brand(?:\s+names?)?|brands?|drug\s+class|class|conditions?|shape|color|availability|csa\s+schedule|controlled\s+substance\s+schedule)"
+
+
+def labelled_clauses(answer, labels):
+    labels_pattern = "|".join(re.escape(label) for label in sorted(labels, key=len, reverse=True))
+    clauses = []
+    for match in re.finditer(rf"\b(?:{labels_pattern})\b\s*(?:names?\s*)?(?::|=|is|are)?\s*", answer, re.I):
+        tail = answer[match.end():]
+        boundary = re.search(rf"[;\n.]|(?:,\s*|\band\s+)(?=(?:actual\s+)?{_FIELD_LABEL}\b)", tail, re.I)
+        clause = tail[:boundary.start()] if boundary else tail
+        clauses.append(clause.strip())
+    return clauses
+
+
 def labelled_clause(answer, labels):
-    labels_pattern = "|".join(re.escape(label) for label in labels)
-    match = re.search(rf"\b(?:{labels_pattern})\b\s*(?:names?\s*)?(?::|=)?\s*([^;\n.]+)", answer, re.I)
-    return match.group(1).strip() if match else ""
+    clauses = labelled_clauses(answer, labels)
+    return clauses[0] if clauses else ""
 
 
 def check_labelled_terms(judge, name, answer, labels, expected, domain):
-    clause = labelled_clause(answer, labels)
-    hits = detected_terms(clause, expected, include_contradicted=False)
+    clauses = labelled_clauses(answer, labels)
     expected_norms = {norm(term) for term in expected}
-    unexpected = sorted(term for term in set(detected_terms(clause, domain)) if norm(term) not in expected_norms)
-    contradictions = sorted(term for term in expected if contradicted(clause, term))
-    vocabulary_ok, extras = answer_uses_only_terms(clause, expected)
-    judge.check(name, bool(clause) and len(hits) == len(expected) and not unexpected and not contradictions and vocabulary_ok, f"clause={clause!r} hits={hits!r} unexpected={unexpected!r} contradictions={contradictions!r} extras={extras!r}")
+    valid = bool(clauses)
+    details = []
+    for clause in clauses:
+        hits = detected_terms(clause, expected, include_contradicted=False)
+        unexpected = sorted(term for term in set(detected_terms(clause, domain)) if norm(term) not in expected_norms)
+        contradictions = sorted(term for term in expected if contradicted(clause, term))
+        vocabulary_ok, extras = answer_uses_only_terms(clause, expected)
+        clause_valid = len(hits) == len(expected) and not unexpected and not contradictions and vocabulary_ok
+        valid = valid and clause_valid
+        details.append((clause, hits, unexpected, contradictions, extras))
+    judge.check(name, valid, repr(details))
+
+
+_NUMBER_ONES = {"zero": 0, "one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14, "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19}
+_NUMBER_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60, "seventy": 70, "eighty": 80, "ninety": 90}
+
+
+def word_number_values(text):
+    tokens = norm(text).split()
+    values = []
+    index = 0
+    while index < len(tokens):
+        token = tokens[index]
+        if token not in _NUMBER_ONES and token not in _NUMBER_TENS:
+            index += 1
+            continue
+        value = _NUMBER_ONES.get(token, _NUMBER_TENS.get(token))
+        index += 1
+        if index < len(tokens) and tokens[index] == "hundred":
+            value *= 100
+            index += 1
+            if index < len(tokens) and tokens[index] in _NUMBER_ONES:
+                value += _NUMBER_ONES[tokens[index]]
+                index += 1
+        elif token in _NUMBER_TENS and index < len(tokens) and tokens[index] in _NUMBER_ONES:
+            value += _NUMBER_ONES[tokens[index]]
+            index += 1
+        values.append(value)
+    return values
 
 
 def claim_is_affirmed(text, match):
@@ -560,7 +607,7 @@ def claim_is_affirmed(text, match):
     after_text = " ".join(after[:6])
     preceding = re.search(r"\b(?:not|never|false|incorrect|wrong|retract|retracted)\b(?: \w+){0,3}$", before_text)
     following = re.match(r"^(?:(?:which|that|this) )?(?:is|are|was|were) (?:not |never )?(?:true|correct|false|incorrect|wrong)\b", after_text)
-    referred = re.match(r"^but (?:that|this|the)(?: \w+){0,2} (?:is|was) (?:false|incorrect|wrong)\b", after_text)
+    referred = re.match(r"^(?:(?:but|in fact) )?(?:that|this|the)(?: \w+){0,2} (?:is|was) (?:false|incorrect|wrong)\b", after_text)
     return not (preceding or following or referred)
 
 
@@ -596,24 +643,27 @@ def check_single_drug(judge, answer, record, *, require_brands=False, require_cl
         expected = brands(record)
         check_required_terms(judge, "answer_all_brands", answer, expected)
         check_domain_subset(judge, "answer_no_extra_brands", answer, all_brand_names(judge.initial), expected)
-        check_labelled_terms(judge, "answer_brands_bound_to_field", answer, ("brand", "brands"), expected, all_brand_names(judge.initial) + all_class_names(judge.initial) + all_condition_names(judge.initial))
+        check_labelled_terms(judge, "answer_brands_bound_to_field", answer, ("brand", "brands"), expected, all_brand_names(judge.initial) + all_class_names(judge.initial) + all_condition_names(judge.initial) + all_drug_names(judge.initial))
     if require_class:
         class_name = record["class_name"]
         alternatives = [class_name]
         if "nonsteroidal anti-inflammatory" in norm(class_name):
             alternatives.append("NSAID")
-        class_segments = [segment for segment in re.split(r"[;\n.]+", answer) if mentions(segment, "class")]
-        class_clause = next((segment for segment in class_segments if any(affirmed(segment, term) for term in alternatives)), "")
-        class_ok = any(affirmed(class_clause, term) for term in alternatives)
-        judge.check("answer_class_bound_to_field", bool(class_clause) and class_ok, repr(alternatives))
-        detected = set(detected_terms(class_clause, all_class_names(judge.initial)))
-        wrong_field_terms = detected_terms(class_clause, all_brand_names(judge.initial) + all_condition_names(judge.initial))
-        judge.check("answer_no_extra_classes", not (detected - {class_name}) and not wrong_field_terms, f"classes={sorted(detected)!r} wrong_field={wrong_field_terms!r}")
+        class_clauses = [segment.strip() for segment in re.split(r"[;\n.]+", answer) if mentions(segment, "class")]
+        class_valid = bool(class_clauses)
+        class_details = []
+        for class_clause in class_clauses:
+            class_ok = any(affirmed(class_clause, term) for term in alternatives)
+            detected = set(detected_terms(class_clause, all_class_names(judge.initial)))
+            valid_clause = class_ok and not (detected - {class_name})
+            class_valid = class_valid and valid_clause
+            class_details.append((class_clause, detected))
+        judge.check("answer_class_bound_to_field", class_valid, repr(class_details))
     if require_conditions:
         expected = conditions_for_drug(judge.initial, record["id"])
         check_required_terms(judge, "answer_all_conditions", answer, expected)
         check_domain_subset(judge, "answer_no_extra_conditions", answer, all_condition_names(judge.initial), expected)
-        check_labelled_terms(judge, "answer_conditions_bound_to_field", answer, ("condition", "conditions"), expected, all_condition_names(judge.initial) + all_brand_names(judge.initial) + all_class_names(judge.initial))
+        check_labelled_terms(judge, "answer_conditions_bound_to_field", answer, ("condition", "conditions"), expected, all_condition_names(judge.initial) + all_brand_names(judge.initial) + all_class_names(judge.initial) + all_drug_names(judge.initial))
     if require_brands or require_class or require_conditions:
         allowed_values = [record["generic_name"]]
         if require_brands:
@@ -645,8 +695,11 @@ def _check_interaction_answer(judge, answer, drug_terms, severity, concept_group
     judge.check("answer_main_risk", all(concepts), repr(concepts))
     bound_terms = [*drug_terms, severity, concepts[0]] if concepts and concepts[0] else []
     judge.check("answer_interaction_fact_binding", bool(bound_terms) and _sentence_with_terms(answer, bound_terms) is not None)
-    conflicting = [value for value in SEVERITY_ORDER if value != severity and mentions(answer, value)]
+    conflicting = [value for value in SEVERITY_ORDER if value != severity and affirmed(answer, value)]
     judge.check("answer_no_conflicting_severity", not conflicting)
+    explicit_main_risks = [sentence for sentence in re.split(r"(?<=[.!?;\n])\s*", answer) if re.search(r"\b(?:actual|main|primary)\s+risk\b", sentence, re.I)]
+    expected_risk_terms = [term for alternatives in concept_groups for term in alternatives]
+    judge.check("answer_no_competing_main_risk", not explicit_main_risks or all(any(affirmed(sentence, term) for term in expected_risk_terms) for sentence in explicit_main_risks), repr(explicit_main_risks))
 
 
 def _number_variants(value):
@@ -693,17 +746,25 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         search_pred = lambda visit: path_is(visit, "/search", "/advanced-search") and scalar_query(visit, "q", "metformin")
         search_index = require_click_transition(judge, trajectory, visits, "ui_submit_metformin_search", lambda visit: route_is(visit, "/", "/search", "/advanced-search"), search_pred)
         require_inputs_before(judge, trajectory, "ui_enter_metformin", ["metformin"], search_index - 1 if search_index is not None else None, visits=visits, page_predicate=lambda visit: route_is(visit, "/", "/search", "/advanced-search"))
-        require_click_transition(judge, trajectory, visits, "ui_open_metformin_result", search_pred, lambda visit: route_is(visit, *detail_paths("metformin")))
+        detail_index = require_click_transition(judge, trajectory, visits, "ui_open_metformin_result", search_pred, lambda visit: route_is(visit, *detail_paths("metformin")))
+        judge.check("ui_metformin_workflow_order", search_index is not None and detail_index is not None and search_index < detail_index == len(trajectory.get("steps", [])) - 1)
         record = drug(initial, "metformin")
         check_single_drug(judge, answer, record)
         if record:
-            availability_clause = labelled_clause(answer, ("availability",))
-            availability_ok = affirmed(availability_clause, record["availability"]) or (record["availability"] == "Rx" and affirmed(availability_clause, "prescription"))
-            conflicting_status = any(mentions(availability_clause, item) for item in ("OTC", "both", "over the counter")) if record["availability"] == "Rx" else False
-            judge.check("answer_availability_bound_to_field", bool(availability_clause) and availability_ok and not conflicting_status, record["availability"])
-            csa_clause = labelled_clause(answer, ("CSA schedule", "controlled substance schedule"))
-            csa_ok = affirmed(csa_clause, record["csa_schedule"]) or ("not a controlled" in norm(record["csa_schedule"]) and (affirmed(csa_clause, "not controlled") or affirmed(csa_clause, "not a controlled drug")))
-            judge.check("answer_csa_schedule_bound_to_field", bool(csa_clause) and csa_ok, record["csa_schedule"])
+            availability_clauses = labelled_clauses(answer, ("availability",))
+            availability_ok = bool(availability_clauses) and all(
+                (affirmed(clause, record["availability"]) or (record["availability"] == "Rx" and affirmed(clause, "prescription")))
+                and not (record["availability"] == "Rx" and any(mentions(clause, item) for item in ("OTC", "both", "over the counter")))
+                for clause in availability_clauses
+            )
+            judge.check("answer_availability_bound_to_field", availability_ok, repr(availability_clauses))
+            csa_clauses = labelled_clauses(answer, ("CSA schedule", "controlled substance schedule"))
+            csa_ok = bool(csa_clauses) and all(
+                affirmed(clause, record["csa_schedule"])
+                or ("not a controlled" in norm(record["csa_schedule"]) and (affirmed(clause, "not controlled") or affirmed(clause, "not a controlled drug")))
+                for clause in csa_clauses
+            )
+            judge.check("answer_csa_schedule_bound_to_field", csa_ok, repr(csa_clauses))
 
     elif number in {2, 8, 19}:
         names = {2: ["ibuprofen", "warfarin"], 8: ["alprazolam", "oxycodone", "alcohol"], 19: ["metformin", "alcohol"]}[number]
@@ -714,7 +775,7 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             rows = initial.query("SELECT i.severity,i.description FROM drug_interaction i JOIN drug a ON a.id=i.drug_a_id JOIN drug b ON b.id=i.drug_b_id WHERE (a.slug=? AND b.slug=?) OR (a.slug=? AND b.slug=?)", ("ibuprofen", "warfarin", "warfarin", "ibuprofen"))
             judge.check("unique_interaction_truth", len(rows) == 1, f"rows={len(rows)}")
             if len(rows) == 1:
-                _check_interaction_answer(judge, answer, names, rows[0]["severity"], [("bleeding", "hemorrhage"), ("gastrointestinal", "GI", "stomach", "ulcer", "platelet")])
+                _check_interaction_answer(judge, answer, names, rows[0]["severity"], [("bleeding", "hemorrhage", "blood loss"), ("gastrointestinal", "GI", "stomach", "ulcer", "platelet", "digestive tract")])
         elif number == 8:
             drug_rows = initial.query("SELECT id,slug FROM drug WHERE slug IN ('alprazolam','oxycodone')")
             by_slug = {row["slug"]: row["id"] for row in drug_rows}
@@ -724,16 +785,19 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
                 severities += [row[0] for row in initial.query("SELECT severity FROM lifestyle_interaction WHERE kind='alcohol' AND drug_id IN (?,?)", (by_slug["alprazolam"], by_slug["oxycodone"]))]
             expected_severity = max(severities, key=lambda value: SEVERITY_ORDER[value]) if severities else None
             judge.check("interaction_count_truth", len(severities) > 0, repr(severities))
-            count_matches = list(re.finditer(r"\b(\d+)\s+interactions?\b", answer, re.I))
+            count_word = next(word for word, value in _NUMBER_ONES.items() if value == len(severities))
+            count_matches = list(re.finditer(rf"\b(\d+|{count_word})\s+interactions?\b", answer, re.I))
             all_integers = [int(value) for value in re.findall(r"(?<![\w.])\d+(?![\w.])", answer)]
-            count_ok = len(count_matches) == 1 and int(count_matches[0].group(1)) == len(severities) and claim_is_affirmed(answer, count_matches[0])
-            judge.check("answer_bound_interaction_count", count_ok and set(all_integers) == {len(severities)})
+            all_numbers = all_integers + word_number_values(answer)
+            count_value = len(severities) if count_matches and norm(count_matches[0].group(1)) == count_word else (int(count_matches[0].group(1)) if count_matches else None)
+            count_ok = len(count_matches) == 1 and count_value == len(severities) and claim_is_affirmed(answer, count_matches[0])
+            judge.check("answer_bound_interaction_count", count_ok and set(all_numbers) == {len(severities)})
             severity_patterns = (
                 rf"\b(?:highest|most severe|max(?:imum)?)\s+severity\s*(?:is|:|=)?\s*{re.escape(expected_severity or '')}\b",
                 rf"\b{re.escape(expected_severity or '')}\s+(?:is|as)\s+(?:the\s+)?(?:highest|most severe|max(?:imum)?)(?:\s+severity)?\b",
             )
             severity_matches = [match for pattern in severity_patterns for match in re.finditer(pattern, answer, re.I)]
-            conflicting = [value for value in SEVERITY_ORDER if value != expected_severity and re.search(rf"(?:highest|most severe|max(?:imum)?)[^.;\n]{{0,25}}\b{value}\b|\b{value}\b[^.;\n]{{0,25}}(?:highest|most severe|max(?:imum)?)", answer, re.I)]
+            conflicting = [value for value in SEVERITY_ORDER if value != expected_severity and affirmed(answer, value)]
             judge.check("answer_highest_severity", bool(severity_matches) and all(claim_is_affirmed(answer, match) for match in severity_matches) and not conflicting)
             check_required_terms(judge, "answer_interaction_entities", answer, names)
         else:
@@ -744,7 +808,10 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         check_domain_subset(judge, "answer_no_extra_interaction_drugs", answer, all_drug_names(initial), [item for item in names if item != "alcohol"])
 
     elif number == 3:
-        result_pred = lambda visit: path_is(visit, *pill_paths) and scalar_query(visit, "imprint", "I-2")
+        result_pred = lambda visit: path_is(visit, *pill_paths) and (
+            scalar_query(visit, "imprint", "I-2")
+            or exact_query(visit, [("imprint", "I-2"), ("shape", ""), ("color", "")])
+        )
         result_index = require_click_transition(judge, trajectory, visits, "ui_submit_pill_imprint", lambda visit: route_is(visit, *pill_paths), result_pred)
         require_inputs_before(judge, trajectory, "ui_enter_pill_imprint", ["I-2"], result_index - 1 if result_index is not None else None, visits=visits, page_predicate=lambda visit: route_is(visit, *pill_paths))
         rows = initial.query("SELECT d.generic_name,i.shape,i.color FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE i.imprint=? ORDER BY i.id", ("I-2",))
@@ -819,8 +886,8 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             interval_ok = re.search(rf"\bevery\s+{interval_low}\s*(?:to|[-–])\s*{interval_high}\s+hours?\b", answer, re.I)
             maximum_ok = re.search(rf"\b(?:maximum|max|do not exceed)[^.;\n]{{0,45}}\b{maximum}\s*mg\b[^.;\n]{{0,45}}\b{period}\s+hours?\b", answer, re.I)
             conflict = re.search(r"\b(?<!do )(?:not|incorrect|wrong|false)\b[^.;\n]{0,30}(?:mg|hours?)", answer, re.I)
-            stated_numbers = {value for value in re.findall(r"(?<![\w.])\d+(?![\w.])", answer)}
-            allowed_numbers = {low, high, interval_low, interval_high, maximum, period}
+            stated_numbers = {int(value) for value in re.findall(r"(?<![\w.])\d+(?![\w.])", answer)} | set(word_number_values(answer))
+            allowed_numbers = {int(value) for value in (low, high, interval_low, interval_high, maximum, period)}
             maximum_affirmed = bool(maximum_ok) and (norm(maximum_ok.group(0)).startswith("do not exceed") or claim_is_affirmed(answer, maximum_ok))
             claims_affirmed = all(match and claim_is_affirmed(answer, match) for match in (dose_ok, interval_ok)) and maximum_affirmed
             judge.check("answer_bound_otc_dosage", claims_affirmed and not conflict and stated_numbers <= allowed_numbers, f"dose={bool(dose_ok)} interval={bool(interval_ok)} max={bool(maximum_ok)} affirmed={claims_affirmed} conflict={bool(conflict)} numbers={sorted(stated_numbers)!r}")
@@ -853,8 +920,10 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             review_matches = list(re.finditer(r"\b(\d+)\s+reviews?\b|\breviews?\s*(?:is|:|=)?\s*(\d+)\b", answer, re.I))
             review_numbers = [int(next(group for group in match.groups() if group is not None)) for match in review_matches]
             review_negated = any(re.search(r"\b(?:not|never|incorrect|wrong)\b", " ".join(_nearby_words(answer, match.start(), match.end())[0][-3:] + _nearby_words(answer, match.start(), match.end())[1][:3])) for match in review_matches)
-            judge.check("answer_rating_context", bool(rating_values) and set(rating_values) == {float(record["avg_rating"])} and not rating_negated)
-            judge.check("answer_review_count_context", bool(review_numbers) and set(review_numbers) == {record["review_count"]} and not review_negated)
+            word_numbers = set(word_number_values(answer))
+            allowed_numbers = {int(float(record["avg_rating"])), 10, int(record["review_count"])}
+            judge.check("answer_rating_context", bool(rating_values) and set(rating_values) == {float(record["avg_rating"])} and not rating_negated and word_numbers <= allowed_numbers)
+            judge.check("answer_review_count_context", bool(review_numbers) and set(review_numbers) == {record["review_count"]} and not review_negated and word_numbers <= allowed_numbers)
 
     elif number == 13:
         result_pred = lambda visit: path_is(visit, *pill_paths) and exact_query(visit, [("imprint", ""), ("shape", "Oval"), ("color", "White")])
@@ -895,7 +964,8 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             and min(email_steps) < min(password_steps) < submit_index
         )
         judge.check("ui_enter_exact_alice_credentials", credentials_valid)
-        require_click_transition(judge, trajectory, visits, "ui_open_authenticated_med_list", account_pred, med_pred)
+        med_index = require_click_transition(judge, trajectory, visits, "ui_open_authenticated_med_list", account_pred, med_pred)
+        judge.check("ui_authenticated_med_list_workflow_order", account_index is not None and med_index is not None and account_index < med_index == len(trajectory.get("steps", [])) - 1)
         values = [row[0] for row in initial.query("SELECT d.generic_name FROM saved_drug s JOIN drug d ON d.id=s.drug_id JOIN user u ON u.id=s.user_id WHERE u.email=? ORDER BY d.generic_name", ("alice.j@test.com",))]
         judge.check("unique_seeded_med_list", bool(values) and len(values) == len(set(values)), repr(values))
         check_required_terms(judge, "answer_all_seeded_medications", answer, values)
@@ -911,12 +981,16 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         record = drug(initial, "lisinopril")
         check_single_drug(judge, answer, record)
         if record:
-            fetal = affirmed(answer, "fetal toxicity") or (affirmed(answer, "fetus") and (affirmed(answer, "injury") or affirmed(answer, "death")))
-            discontinue = affirmed(answer, "discontinue") and affirmed(answer, "pregnancy")
+            fetal = affirmed(answer, "fetal toxicity") or (affirmed(answer, "fetus") and (affirmed(answer, "injury") or affirmed(answer, "death"))) or (affirmed(answer, "unborn baby") and (affirmed(answer, "harm") or affirmed(answer, "kill")))
+            discontinue = (affirmed(answer, "discontinue") or affirmed(answer, "stop taking")) and (affirmed(answer, "pregnancy") or affirmed(answer, "pregnant"))
             judge.check("answer_pregnancy_warning", fetal and discontinue, f"pregnancy_field={record['pregnancy_risk']!r}")
-            availability_clause = labelled_clause(answer, ("availability",))
-            availability_ok = affirmed(availability_clause, record["availability"]) or (record["availability"] == "Rx" and affirmed(availability_clause, "prescription"))
-            judge.check("answer_availability_bound_to_field", bool(availability_clause) and availability_ok and not any(mentions(availability_clause, item) for item in ("OTC", "both", "over the counter")), record["availability"])
+            availability_clauses = labelled_clauses(answer, ("availability",))
+            availability_ok = bool(availability_clauses) and all(
+                (affirmed(clause, record["availability"]) or (record["availability"] == "Rx" and affirmed(clause, "prescription")))
+                and not any(mentions(clause, item) for item in ("OTC", "both", "over the counter"))
+                for clause in availability_clauses
+            )
+            judge.check("answer_availability_bound_to_field", availability_ok, repr(availability_clauses))
 
     elif number == 17:
         search_pred = lambda visit: path_is(visit, "/search", "/advanced-search") and scalar_query(visit, "q", "antibiotics")
@@ -928,15 +1002,16 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         judge.check("one_fluoroquinolone_entity", len(mentioned) == 1, repr([record["generic_name"] for record in mentioned]))
         if len(mentioned) == 1:
             record = mentioned[0]
-            require_click_transition(judge, trajectory, visits, "ui_open_selected_fluoroquinolone", search_pred, lambda visit: route_is(visit, *detail_paths(record["slug"])))
+            detail_index = require_click_transition(judge, trajectory, visits, "ui_open_selected_fluoroquinolone", search_pred, lambda visit: route_is(visit, *detail_paths(record["slug"])))
+            judge.check("ui_antibiotics_workflow_order", search_index is not None and detail_index is not None and search_index < detail_index == len(trajectory.get("steps", [])) - 1)
             expected_brands = brands(record)
             expected_conditions = conditions_for_drug(initial, record["id"])
             check_required_terms(judge, "answer_all_selected_brands", answer, expected_brands)
             check_domain_subset(judge, "answer_no_extra_brands", answer, all_brand_names(initial), expected_brands)
-            check_labelled_terms(judge, "answer_selected_brands_bound_to_field", answer, ("brand", "brands"), expected_brands, all_brand_names(initial) + all_condition_names(initial))
+            check_labelled_terms(judge, "answer_selected_brands_bound_to_field", answer, ("brand", "brands"), expected_brands, all_brand_names(initial) + all_condition_names(initial) + all_drug_names(initial))
             check_required_terms(judge, "answer_all_selected_conditions", answer, expected_conditions)
             check_domain_subset(judge, "answer_no_extra_conditions", answer, all_condition_names(initial), expected_conditions)
-            check_labelled_terms(judge, "answer_selected_conditions_bound_to_field", answer, ("condition", "conditions"), expected_conditions, all_condition_names(initial) + all_brand_names(initial))
+            check_labelled_terms(judge, "answer_selected_conditions_bound_to_field", answer, ("condition", "conditions"), expected_conditions, all_condition_names(initial) + all_brand_names(initial) + all_drug_names(initial))
             check_domain_subset(judge, "answer_only_selected_drug", answer, all_drug_names(initial), [record["generic_name"]])
             vocabulary_ok, extras = answer_uses_only_terms(answer, [record["generic_name"], *expected_brands, *expected_conditions])
             judge.check("answer_no_unknown_selected_drug_fields", vocabulary_ok, repr(extras))
@@ -951,10 +1026,13 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         judge.check("standard_adult_frequency_truth", match is not None, match.group(1) if match else "missing")
         if match:
             frequency = match.group(1)
-            frequency_ok = re.search(rf"\bevery\s+{frequency}\s+hours?\b", answer, re.I) or (frequency == "8" and re.search(r"\bthree\s+times\s+(?:a|per)\s+day\b", answer, re.I))
-            conflict = re.search(rf"\b(?:not|never|incorrect|wrong)\b[^.;\n]{{0,35}}(?:every\s+{frequency}\s+hours?|three\s+times)", answer, re.I)
-            stated_frequencies = {value for value in re.findall(r"\bevery\s+(\d+)\s+hours?\b", answer, re.I)}
-            judge.check("answer_standard_adult_frequency", frequency_ok and not conflict and stated_frequencies <= {frequency})
+            frequency_word = next((word for word, value in _NUMBER_ONES.items() if value == int(frequency)), "")
+            frequency_ok = re.search(rf"\bevery\s+(?:{frequency}|{frequency_word})\s+hours?\b", answer, re.I) or (frequency == "8" and re.search(r"\bthree\s+times\s+(?:a|per)\s+day\b", answer, re.I))
+            conflict = re.search(rf"\b(?:not|never|incorrect|wrong|false)\b[^.;\n]{{0,35}}(?:every\s+(?:{frequency}|{frequency_word})\s+hours?|three\s+times)", answer, re.I)
+            stated_frequencies = {int(value) for value in re.findall(r"\bevery\s+(\d+)\s+hours?\b", answer, re.I)}
+            word_numbers = set(word_number_values(answer))
+            allowed_word_numbers = {int(frequency), 3} if frequency == "8" else {int(frequency)}
+            judge.check("answer_standard_adult_frequency", frequency_ok and not conflict and stated_frequencies <= {int(frequency)} and word_numbers <= allowed_word_numbers)
 
     else:
         judge.check("known_task", False, f"number={number}")

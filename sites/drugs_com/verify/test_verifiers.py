@@ -586,6 +586,81 @@ def test_initial_wal_content_is_inside_snapshot_boundary(canonical_seed, snapsho
         connection.close()
 
 
+def test_correct_first_then_swapped_field_claims_fail(snapshots, tmp_path):
+    record = drug(snapshots[0], "ibuprofen")
+    answer = (
+        f"Ibuprofen; brands: {', '.join(brands(record))}; class: {record['class_name']}. "
+        f"Brands: {record['class_name']}; class: {brands(record)[0]}."
+    )
+    assert_fails(0, make_run(tmp_path, 0, snapshots[0], answer=answer), snapshots)
+
+
+def test_correct_first_then_conflicting_availability_fails(snapshots, tmp_path):
+    answer = "Metformin availability: Rx; CSA schedule: Not a controlled drug. Actual availability: OTC; actual CSA schedule: II."
+    assert_fails(1, make_run(tmp_path, 1, snapshots[0], answer=answer), snapshots)
+
+
+def test_natural_combined_class_and_brand_sentence_passes(snapshots, tmp_path):
+    record = drug(snapshots[0], "ibuprofen")
+    answer = f"Ibuprofen class {record['class_name']} and brands {', '.join(brands(record))}."
+    process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+@pytest.mark.parametrize("number,answer", [
+    (8, "For alprazolam, oxycodone, and alcohol, there are 3 interactions; the highest severity is major. In fact there are ninety-nine interactions, and the actual severity is minor."),
+    (10, "Ibuprofen OTC: 200-400 mg every 4-6 hours; maximum 1200 mg in 24 hours. The actual dose is eight hundred mg every two hours."),
+    (12, "Atorvastatin rating: 7.0/10; 4 reviews. Its actual rating is one out of ten and it actually has ninety-nine reviews."),
+    (18, "Amoxicillin standard adult frequency: every 8 hours. The actual standard frequency is every twelve hours."),
+])
+def test_number_word_competing_claims_fail(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_task8_number_word_count_passes(snapshots, tmp_path):
+    answer = "For alprazolam, oxycodone, and alcohol, there are three interactions; major is the most severe."
+    process = execute(8, make_run(tmp_path, 8, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_competing_actual_main_risk_fails(snapshots, tmp_path):
+    answer = "Ibuprofen and warfarin have a major interaction because the combination can cause gastrointestinal hemorrhage. The actual main risk is kidney failure."
+    assert_fails(2, make_run(tmp_path, 2, snapshots[0], answer=answer), snapshots)
+
+
+def test_digestive_tract_blood_loss_paraphrase_passes(snapshots, tmp_path):
+    answer = "Ibuprofen and warfarin have a major interaction because they can increase internal digestive-tract blood loss."
+    process = execute(2, make_run(tmp_path, 2, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_pregnancy_warning_paraphrase_passes(snapshots, tmp_path):
+    answer = "Lisinopril can harm or kill the unborn baby; stop taking it as soon as pregnancy is recognized. Availability: Rx."
+    process = execute(15, make_run(tmp_path, 15, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+@pytest.mark.parametrize("number", [1, 17])
+def test_search_and_detail_workflow_order_is_enforced(number, snapshots, tmp_path):
+    if number == 1:
+        query_url, detail_url, text = ROOT + "/search?q=metformin", ROOT + "/metformin", "metformin"
+    else:
+        query_url, detail_url, text = ROOT + "/search?q=antibiotics", ROOT + "/ciprofloxacin", "antibiotics"
+    steps = [
+        _click(ROOT + "/"), _click(query_url), _click(detail_url),
+        _input(ROOT + "/", text), _click(ROOT + "/"), {"url": query_url, "action": "done"},
+    ]
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], steps=steps), snapshots)
+
+
+def test_login_and_med_list_workflow_order_is_enforced(snapshots, tmp_path):
+    steps = [
+        _click(ROOT + "/"), _click(ROOT + "/account"), _input(ROOT + "/login", "alice.j@test.com"),
+        _input(ROOT + "/login", "TestPass123!"), _click(ROOT + "/login"), {"url": ROOT + "/account", "action": "done"},
+    ]
+    assert_fails(14, make_run(tmp_path, 14, snapshots[0], steps=steps), snapshots)
+
+
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
     run = make_run(tmp_path, 0, snapshots[0], answer="wrong")
     process = execute(0, run, *snapshots)

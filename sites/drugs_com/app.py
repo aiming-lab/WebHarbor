@@ -6138,7 +6138,12 @@ def login():
         try:
             if len(email) <= 120 and len(password.encode("utf-8")) <= 72:
                 user = User.query.filter_by(email=email).first()
-                if user and user.check_password(password):
+                password_hash = user.password_hash if user else SEED_PASSWORD_HASHES["alice.j@test.com"]
+                try:
+                    password_matches = bcrypt.check_password_hash(password_hash, password)
+                except ValueError:
+                    password_matches = False
+                if user and password_matches:
                     authenticated_user = user
         finally:
             _finish_auth_attempt(auth_keys, successful=authenticated_user is not None)
@@ -6185,23 +6190,31 @@ def register():
         elif User.query.filter_by(username=username).first():
             flash("Unable to create an account with the supplied details.", "danger")
         else:
+            registration_keys = (f"registration:{request.remote_addr or 'unknown'}",)
+            if not _begin_auth_attempt(registration_keys):
+                flash("Too many account-creation attempts. Try again later.", "danger")
+                return render_template("register.html"), 429
             user = User(username=username, email=email)
-            user.set_password(password)
-            with _sqlite_write_lock:
-                if User.query.count() >= _MAX_RUNTIME_USERS:
-                    flash("The local account fixture has reached its capacity.", "danger")
-                    return render_template("register.html"), 429
-                db.session.add(user)
-                try:
-                    db.session.flush()
-                    db.session.commit()
-                except IntegrityError:
-                    db.session.rollback()
-                    flash("Unable to create an account with the supplied details.", "danger")
-                    return render_template("register.html")
-                except Exception:
-                    db.session.rollback()
-                    raise
+            try:
+                with _sqlite_write_lock:
+                    if User.query.count() >= _MAX_RUNTIME_USERS:
+                        flash("The local account fixture has reached its capacity.", "danger")
+                        return render_template("register.html"), 429
+                    user.set_password(password)
+                    db.session.add(user)
+                    try:
+                        db.session.flush()
+                        db.session.commit()
+                    except IntegrityError:
+                        db.session.rollback()
+                        flash("Unable to create an account with the supplied details.", "danger")
+                        return render_template("register.html")
+                    except Exception:
+                        db.session.rollback()
+                        raise
+            finally:
+                # Registration work is source-rate-limited even when a request succeeds.
+                _finish_auth_attempt(registration_keys, successful=False)
             login_user(user)
             flash("Account created.", "success")
             return redirect(url_for("account"))

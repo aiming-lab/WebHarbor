@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import importlib.util
 import io
 import json
@@ -356,6 +357,68 @@ def test_tracked_asset_manifest_binds_all_archives_and_current_tree():
         timeout=120,
     )
     assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_single_site_archive_checksum_is_enforced(tmp_path):
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    archive = cache / "fixture.tar.gz"
+    archive.write_bytes(b"tracked archive bytes")
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    revision = tmp_path / ".assets-revision"
+    revision.write_text("repo: fixture/assets\nrevision: " + "a" * 40 + "\n")
+    manifest = tmp_path / "assets-manifest.json"
+    manifest.write_text(json.dumps({
+        "repo": "fixture/assets", "revision": "a" * 40,
+        "archives": {archive.name: {"bytes": archive.stat().st_size, "sha256": digest}},
+    }))
+    command = [
+        sys.executable, str(ROOT / "scripts" / "asset_state.py"), "verify-archive",
+        str(tmp_path), str(revision), str(manifest), "--cache", str(cache), "--site", "fixture",
+    ]
+    assert subprocess.run(command, capture_output=True, text=True, timeout=30).returncode == 0
+    archive.write_bytes(b"structurally plausible but different bytes")
+    process = subprocess.run(command, capture_output=True, text=True, timeout=30)
+    assert process.returncode != 0
+    assert "does not match tracked asset manifest" in process.stderr
+
+
+def test_asset_tree_rejects_symlink_roots_appledouble_and_special_objects(tmp_path):
+    scripts = ROOT / "scripts"
+    spec = importlib.util.spec_from_file_location("pr71_asset_state_strict", scripts / "asset_state.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sites = tmp_path / "sites"
+    site = sites / "fixture"
+    outside = tmp_path / "outside"
+    outside.mkdir()
+    site.mkdir(parents=True)
+    (site / "static").mkdir()
+    (site / "static" / "images").symlink_to(outside, target_is_directory=True)
+    with pytest.raises(ValueError, match="managed root must be a real directory"):
+        module.tree_digest(sites)
+    (site / "static" / "images").unlink()
+    (site / "static" / "images").mkdir()
+    (site / "static" / "images" / "._metadata").write_bytes(b"forbidden")
+    with pytest.raises(ValueError, match="AppleDouble"):
+        module.tree_digest(sites)
+    (site / "static" / "images" / "._metadata").unlink()
+    fifo = site / "static" / "images" / "special"
+    os.mkfifo(fifo)
+    try:
+        with pytest.raises(ValueError, match="special object"):
+            module.tree_digest(sites)
+    finally:
+        fifo.unlink()
+    hidden = sites / ".untracked"
+    hidden.mkdir()
+    with pytest.raises(ValueError, match="unexpected hidden site directory"):
+        module.tree_digest(sites)
+    hidden.rmdir()
+    top_file = sites / "untracked.txt"
+    top_file.write_text("forbidden")
+    with pytest.raises(ValueError, match="unexpected top-level sites object"):
+        module.tree_digest(sites)
 
 
 def test_asset_fetch_rejects_revision_override_and_verifies_manifest_before_commit(tmp_path):

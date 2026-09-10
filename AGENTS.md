@@ -146,10 +146,11 @@ done
 
 # 6. byte-identical reset (the strict invariant)
 curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8201/reset/<your_site>
-docker exec wh-test md5sum \
-  /opt/WebSyn/<your_site>/instance/<your_site>.db \
-  /opt/WebSyn/<your_site>/instance_seed/<your_site>.db
-# the two md5s MUST match — if not, see "Idempotent seeding"
+DB_NAME=$(docker exec wh-test sh -ec 'set -- /opt/WebSyn/<your_site>/instance_seed/*.db; test "$#" -eq 1; basename "$1"')
+docker exec wh-test sha256sum \
+  "/opt/WebSyn/<your_site>/instance/$DB_NAME" \
+  "/opt/WebSyn/<your_site>/instance_seed/$DB_NAME"
+# the two SHA-256 values MUST match — if not, see "Idempotent seeding"
 
 # 7. teardown
 docker stop wh-test

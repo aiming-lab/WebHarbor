@@ -28,7 +28,7 @@
   <h2 class="is-162">Generated quantity tables</h2>
   <p class="is-163">Select a quantity to inspect deterministic generated values.</p>
   <div class="is-164" id="qty-tabs" role="tablist" aria-label="Generated quantity">
-    {% for q in price_data.quantities %}<button type="button" class="qty-tab is-165" role="tab" id="qty-tab-{{ q }}" aria-controls="qty-panel-{{ q }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-qty="{{ q }}">{{ q }} units</button>{% endfor %}
+    {% for q in price_data.quantities %}<button type="button" class="qty-tab is-165" role="tab" id="qty-tab-{{ q }}" aria-controls="qty-panel-{{ q }}" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ '0' if loop.first else '-1' }}" data-qty="{{ q }}">{{ q }} units</button>{% endfor %}
   </div>
   <noscript><style>#qty-tabs{display:none}.price-qty-panel{display:block!important}</style><p class="muted">All quantity tables are shown because JavaScript is disabled.</p></noscript>
 
@@ -62,7 +62,7 @@
   var couponButton=document.getElementById('get-coupon-btn'), couponResult=document.getElementById('coupon-result');
   if(couponButton&&couponResult){couponButton.addEventListener('click',function(){couponResult.hidden=false;couponButton.setAttribute('aria-expanded','true');});}
   var tabs=Array.prototype.slice.call(document.querySelectorAll('#qty-tabs [role="tab"]')), panels=Array.prototype.slice.call(document.querySelectorAll('.price-qty-panel'));
-  function activate(tab){tabs.forEach(function(t){var on=t===tab;t.setAttribute('aria-selected',on?'true':'false');});panels.forEach(function(p){p.hidden=p.id!==tab.getAttribute('aria-controls');});}
+  function activate(tab){tabs.forEach(function(t){var on=t===tab;t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;});panels.forEach(function(p){p.hidden=p.id!==tab.getAttribute('aria-controls');});}
   tabs.forEach(function(tab,index){tab.addEventListener('click',function(){activate(tab);});tab.addEventListener('keydown',function(e){if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;e.preventDefault();var next=(index+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;tabs[next].focus();activate(tabs[next]);});});
 })();
 </script>

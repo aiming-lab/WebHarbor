@@ -35,6 +35,7 @@
     <div class="pill-field-label">Shape
       <span class="pill-field-hint">Tap the closest match (optional)</span>
       <div class="pill-shape-picker" role="radiogroup" aria-label="Pill shape">
+        <label class="pill-shape-chip{% if not shape %} pill-shape-chip--selected{% endif %}"><input type="radio" name="shape" value="" class="pill-shape-chip-input" {% if not shape %}checked{% endif %}><span class="pill-shape-chip-label">Any shape</span></label>
         {% set shape_options = [
           ('Round',      'M14,4 a10,10 0 1,0 0.01,0'),
           ('Oval',       'M2,12 a10,5 0 1,0 24,0 a10,5 0 1,0 -24,0'),
@@ -67,6 +68,7 @@
     <div class="pill-field-label">Color
       <span class="pill-field-hint">Tap the closest match (optional)</span>
       <div class="pill-color-picker" role="radiogroup" aria-label="Pill color">
+        <label class="pill-color-chip{% if not color %} pill-color-chip--selected{% endif %}"><input type="radio" name="color" value="" class="pill-color-chip-input" {% if not color %}checked{% endif %}><span class="pill-color-swatch" aria-hidden="true"></span><span class="pill-color-chip-label">Any color</span></label>
         {% for c in colors %}
           {% set is_sel = (c|lower == (color or '')|lower) %}
           <label class="pill-color-chip{% if is_sel %} pill-color-chip--selected{% endif %}">
@@ -82,9 +84,7 @@
 
   <div class="pill-form-row pill-form-actions">
     <button type="submit" class="btn btn-primary btn-large">Search descriptors</button>
-    {% if results is not none %}
-      <a href="{{ url_for('pill_identifier') }}" class="btn btn-secondary pill-form-reset">Clear / start over</a>
-    {% endif %}
+    <a href="{{ url_for('pill_identifier') }}" class="btn btn-secondary pill-form-reset">Clear / start over</a>
   </div>
 </form>
 

@@ -56,6 +56,10 @@ fi
 hf download "$REPO" --repo-type dataset --revision "$REVISION" \
     --include "$INCLUDE" --local-dir "$CACHE_DIR"
 
+if [[ -n "$ONLY_SITE" ]]; then
+    python3 scripts/asset_state.py verify-archive sites .assets-revision assets-manifest.json --cache "$CACHE_DIR" --site "$ONLY_SITE"
+fi
+
 shopt -s nullglob
 if [[ -n "$ONLY_SITE" ]]; then
     TARBALLS=("$CACHE_DIR/$ONLY_SITE.tar.gz")
@@ -172,6 +176,6 @@ if [[ -n "$ONLY_SITE" && $extracted -ne 1 ]]; then
     exit 1
 fi
 if [[ -n "$ONLY_SITE" ]]; then
-    echo "[fetch] single-site fetch may not match assets-manifest.json; run a full fetch before building"
+    echo "[fetch] single-site archive matched assets-manifest.json; full-tree verification runs during build"
 fi
 echo "[fetch] done — $extracted site(s) extracted into sites/"

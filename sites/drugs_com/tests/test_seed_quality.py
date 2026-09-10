@@ -139,6 +139,8 @@ def test_ui_provenance_and_no_javascript_contracts_are_explicit():
     assert detail.count("action=\"{{ url_for('my_med_list_toggle') }}\"") == 3
     assert "fetch('{{ url_for(\"my_med_list_toggle\") }}'" not in detail
     assert "js-required-control" in detail
+    assert "href=\"#reviews\"" not in detail
+    assert "status-icon rx-otc" in detail and "drug.availability == 'OTC'" in detail
 
 
 def test_responsive_search_and_contrast_contracts_are_source_enforced():
@@ -148,6 +150,28 @@ def test_responsive_search_and_contrast_contracts_are_source_enforced():
     assert ".search-layout { flex-direction: column; }" in css
     assert ".filter-sidebar { width: 100%; }" in css
     assert "color: #888" not in css and "color:#888" not in css
+    assert ".news-search-input:focus-visible, .is-041:focus-visible" in css
+
+
+def test_navigation_tabs_and_optional_pill_filters_are_accessible():
+    templates = SITE / "templates"
+    index = (templates / "index.html").read_text()
+    prices = (templates / "drug_prices.html").read_text()
+    pill = (templates / "pill_identifier.html").read_text()
+    account = (templates / "account.html").read_text()
+    condition = (templates / "condition.html").read_text()
+    drug_class = (templates / "drug_class.html").read_text()
+    conditions = (templates / "conditions.html").read_text()
+    assert index.count('tabindex="-1" aria-selected="false"') == 3
+    assert "t.tabIndex = -1" in index and "tab.tabIndex = 0" in index
+    assert "tabindex=\"{{ '0' if loop.first else '-1' }}\"" in prices and "t.tabIndex=on?0:-1" in prices
+    assert 'value="" class="pill-shape-chip-input"' in pill and "Any shape" in pill
+    assert 'value="" class="pill-color-chip-input"' in pill and "Any color" in pill
+    assert 'aria-current="page"' in account and 'aria-label="Account sections"' in account
+    assert "#reviews" not in condition and "#reviews" not in drug_class
+    assert "url_for('compare_drugs')" in conditions
+    assert "or 'Rx/OTC'" not in condition and "or 'Rx/OTC'" not in drug_class
+    assert "or 'Rx'" not in account
 
 
 def test_normal_text_palette_meets_wcag_contrast_threshold():

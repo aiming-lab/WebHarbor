@@ -76,7 +76,7 @@
             <th>Drug name</th>
             <th>Brand names</th>
             <th>Drug class</th>
-            <th>Rx/OTC</th>
+            <th>Availability fixture</th>
             <th>Rating</th>
             <th>Reviews</th>
           </tr>
@@ -99,12 +99,12 @@
               {% elif d.availability == 'OTC' %}
                 <span class="avail-badge avail-otc">OTC</span>
               {% else %}
-                <span class="avail-badge">{{ d.availability or 'Rx/OTC' }}</span>
+                <span class="avail-badge">{{ d.availability or 'Not stored' }}</span>
               {% endif %}
             </td>
             <td><span class="rating">{{ '%.1f'|format(d.avg_rating) if d.avg_rating else '-' }}</span></td>
             <td>
-              <a href="{{ url_for('drug_detail', slug=d.slug) }}#reviews">{{ d.review_count or 0 }} review{{ '' if (d.review_count or 0) == 1 else 's' }}</a>
+              <a href="{{ url_for('drug_reviews_page', slug=d.slug) }}">{{ d.review_count or 0 }} review{{ '' if (d.review_count or 0) == 1 else 's' }}</a>
             </td>
           </tr>
           {% endfor %}
