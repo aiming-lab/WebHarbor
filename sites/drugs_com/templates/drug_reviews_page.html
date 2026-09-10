@@ -13,7 +13,7 @@
 </nav>
 
 <div class="drug-page-type-tabs">
-  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Consumer</a>
+  <span class="drug-page-type-tab active">Consumer section</span>
   <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
   <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
 </div>
@@ -42,7 +42,7 @@
       {% set half_p = (((drug.avg_rating or 0) / 2) - full_stars_p) >= 0.5 %}
       <div class="reviews-summary-stars" aria-label="{{ '%.1f'|format(drug.avg_rating or 0) }} out of 10">
         {% for i in range(full_stars_p) %}<span class="star star-full">&#9733;</span>{% endfor %}
-        {% if half_p %}<span class="star star-half">&#9733;</span>{% endif %}
+        {% if half_p %}<span class="star star-half-visual" aria-hidden="true">&#9733;</span>{% endif %}
         {% for i in range(5 - full_stars_p - (1 if half_p else 0)) %}<span class="star star-empty">&#9734;</span>{% endfor %}
       </div>
       <div class="muted">{{ drug.review_count }} reviews</div>
@@ -134,8 +134,14 @@
             <span class="review-helpful-label">Your review</span>
             {% elif current_user.is_authenticated %}
             <span class="review-helpful-label">Was this simulated review useful for interface evaluation?</span>
-            <button type="button" class="btn btn-sm btn-outline review-helpful-yes">&#128077; Yes (<span class="review-helpful-count">{{ r.helpful_count or 0 }}</span>)</button>
-            <button type="button" class="btn btn-sm btn-outline review-helpful-no">&#128078; No</button>
+            <form method="post" action="{{ url_for('review_helpful_vote', slug=drug.slug, review_id=r.id) }}" class="inline-form review-helpful-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="vote" value="yes"><input type="hidden" name="form_vote" value="1">
+              <button type="submit" class="btn btn-sm btn-outline review-helpful-yes">&#128077; Yes (<span class="review-helpful-count">{{ r.helpful_count or 0 }}</span>)</button>
+            </form>
+            <form method="post" action="{{ url_for('review_helpful_vote', slug=drug.slug, review_id=r.id) }}" class="inline-form review-helpful-form">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="vote" value="no"><input type="hidden" name="form_vote" value="1">
+              <button type="submit" class="btn btn-sm btn-outline review-helpful-no">&#128078; No</button>
+            </form>
             {% else %}
             <a href="{{ url_for('login', next=url_for('drug_reviews_page', slug=drug.slug)) }}">Sign in to record a bounded local fixture vote</a>
             {% endif %}
@@ -207,20 +213,17 @@
 </div>
 <script>
 document.querySelectorAll('.review-helpful').forEach(box => {
-    const slug = box.dataset.slug;
-    const rid = box.dataset.reviewId;
     const countEl = box.querySelector('.review-helpful-count');
-    function send(vote) {
-        const fd = new FormData(); fd.append('vote', vote); fd.append('csrf_token', '{{ csrf_token() }}');
-        fetch('/' + slug + '/review/' + rid + '/helpful', {method: 'POST', body: fd})
-            .then(r => r.json()).then(data => {
-                if (countEl) countEl.textContent = data.votes;
-            });
-    }
-    const yes = box.querySelector('.review-helpful-yes');
-    const no = box.querySelector('.review-helpful-no');
-    if (yes) yes.addEventListener('click', () => send('yes'));
-    if (no) no.addEventListener('click', () => send('no'));
+    box.querySelectorAll('.review-helpful-form').forEach(form => {
+        form.addEventListener('submit', event => {
+            event.preventDefault();
+            const data = new FormData(form);
+            data.delete('form_vote');
+            fetch(form.action, {method: 'POST', body: data})
+                .then(response => response.json())
+                .then(result => { if (countEl && typeof result.votes === 'number') countEl.textContent = result.votes; });
+        });
+    });
 });
 </script>
 {% endblock %}

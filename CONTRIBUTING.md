@@ -19,7 +19,7 @@ Workflows A and B below are the **contributor's** job. The **Reviewer role** sec
 ## TL;DR
 
 ```bash
-# fork github.com/webharbor/webharbor + huggingface.co/datasets/ChilleD/WebHarbor
+# fork github.com/aiming-lab/WebHarbor + huggingface.co/datasets/ChilleD/WebHarbor
 git clone https://github.com/<you>/webharbor && cd webharbor
 ./scripts/fetch_assets.sh                       # pull current assets
 ./scripts/new_site.py mywebsite                 # OR edit an existing site
@@ -66,7 +66,7 @@ mywebsite/
 ├── requirements.txt    ← only Flask by default
 ├── templates/index.html
 ├── static/{css,js,icons,images,external_cache}/
-├── instance_seed/      ← drop your seed DB here as <name>.db
+├── instance_seed/      ← exactly one valid SQLite DB; new sites should use <name>.db
 ├── instance/           ← gitignored, recreated at boot
 └── scraped_data/       ← gitignored, build-time only
 ```
@@ -79,8 +79,8 @@ A typical seed flow:
 
 1. Define SQLAlchemy models in `app.py` (User, Product, Article, ...)
 2. Write a `seed_data.py` that materializes a dataset into the DB. Make the function **idempotent** — `if Foo.query.count() > 0: return` at the top.
-3. Run once locally to produce `instance/<name>.db`.
-4. Copy it to `instance_seed/<name>.db`. **This is your seed.**
+3. Run once locally to produce the application-defined database filename (new sites should use `instance/<name>.db`).
+4. Copy that single database to `instance_seed/` with the same filename. **This is your seed.**
 
 ### 4. Functional checklist
 
@@ -106,8 +106,8 @@ curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8
 
 # make sure /reset/mywebsite keeps the DB byte-identical to the seed
 docker exec wh-test md5sum \
-  /opt/WebSyn/mywebsite/instance/<name>.db \
-  /opt/WebSyn/mywebsite/instance_seed/<name>.db
+  /opt/WebSyn/mywebsite/instance/<database>.db \
+  /opt/WebSyn/mywebsite/instance_seed/<database>.db
 # both md5s MUST match — see "Idempotent seeding" below
 ```
 
@@ -261,10 +261,10 @@ Per-row gates are not enough: the bare act of opening a SQLAlchemy session and c
 If you have *multiple* seed phases (`seed_database`, `seed_benchmark_users`, `seed_extras`), gate **each** of them. After a fresh seed, re-running the boot path should be a no-op. Test with:
 
 ```bash
-docker exec wh-test md5sum /opt/WebSyn/<site>/instance{,_seed}/<site>.db
+docker exec wh-test sh -c 'db=$(basename /opt/WebSyn/<site>/instance_seed/*.db); md5sum /opt/WebSyn/<site>/instance/$db /opt/WebSyn/<site>/instance_seed/$db'
 # must match
 docker restart wh-test && sleep 5
-docker exec wh-test md5sum /opt/WebSyn/<site>/instance{,_seed}/<site>.db
+docker exec wh-test sh -c 'db=$(basename /opt/WebSyn/<site>/instance_seed/*.db); md5sum /opt/WebSyn/<site>/instance/$db /opt/WebSyn/<site>/instance_seed/$db'
 # must STILL match
 ```
 

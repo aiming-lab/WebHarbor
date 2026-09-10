@@ -47,7 +47,7 @@ class Judge:
 
     def check(self, name: str, condition, evidence="") -> bool:
         passed = bool(condition)
-        self.evidence.append(f"[{'PASS' if passed else 'FAIL'}] {name}: {evidence}")
+        self.evidence.append(f"[{'PASS' if passed else 'FAIL'}] {name}")
         if not passed:
             self.ok = False
             if not self.reason:
@@ -257,6 +257,7 @@ def validate_urls(judge: Judge, trajectory: dict):
         return []
     failures = []
     visits = []
+    start_parts = None
     try:
         start_parts = urlsplit(start)
         start_origin = (start_parts.scheme, start_parts.hostname, start_parts.port)
@@ -274,7 +275,8 @@ def validate_urls(judge: Judge, trajectory: dict):
         except (ValueError, UnicodeError):
             failures.append(raw_url)
     first_matches_start = bool(raw_urls) and raw_urls[0] == start
-    judge.check("exact_trajectory_origin", start_origin == EXPECTED_ORIGIN and first_matches_start and not failures and len(visits) == len(raw_urls), f"expected={EXPECTED_ORIGIN} start={start_origin} first_matches_start={first_matches_start} failures={failures[:3]}")
+    start_is_root = start_parts is not None and start_parts.path == "/" and not start_parts.query and not start_parts.fragment
+    judge.check("exact_trajectory_origin", start_origin == EXPECTED_ORIGIN and start_is_root and first_matches_start and not failures and len(visits) == len(raw_urls), f"expected={EXPECTED_ORIGIN} start={start_origin} first_matches_start={first_matches_start} failures={failures[:3]}")
     return visits
 
 
@@ -283,16 +285,22 @@ def path_is(visit: Visit, *paths):
     return normalized in {(path.rstrip("/") or "/") for path in paths}
 
 
+def exact_query(visit: Visit, expected):
+    return Counter((key, norm(value)) for key, value in visit.query) == Counter(
+        (key, norm(value)) for key, value in expected
+    )
+
+
 def scalar_query(visit: Visit, key: str, expected: str):
-    values = visit.values(key)
-    return len(values) == 1 and norm(values[0]) == norm(expected)
+    return exact_query(visit, [(key, expected)])
 
 
 def interaction_query(visit: Visit, expected):
     if not path_is(visit, "/drug-interactions", "/interaction-checker", "/drug_interactions.html"):
         return False
-    values = visit.values("drugs") + visit.values("drugs[]")
-    return Counter(norm(value) for value in values) == Counter(norm(value) for value in expected)
+    normalized = [("drugs", norm(value)) for value in expected]
+    actual = [("drugs", norm(value)) for key, value in visit.query if key in {"drugs", "drugs[]"}]
+    return Counter(actual) == Counter(normalized) and len(actual) == len(visit.query)
 
 
 def first_visit(visits, predicate):
@@ -330,12 +338,14 @@ def require_click_transition(judge, trajectory, visits, name, source_predicate, 
     return matches[0][1] if matches else None
 
 
-def input_indices(trajectory, expected):
-    target = norm(expected)
+def input_indices(trajectory, expected, *, exact=False):
+    target = str(expected) if exact else norm(expected)
     result = []
     for index, step in enumerate(trajectory.get("steps", [])):
         params = step.get("params", {}) if isinstance(step, dict) else {}
-        if step.get("action") == "input" and norm(params.get("text")) == target and _successful_step(trajectory, index, "input"):
+        actual = params.get("text")
+        matches = isinstance(actual, str) and (actual == target if exact else norm(actual) == target)
+        if step.get("action") == "input" and matches and _successful_step(trajectory, index, "input"):
             result.append(index)
     return result
 
@@ -384,15 +394,31 @@ def contradicted(text: str, term: str) -> bool:
         before_text = " ".join(before)
         after_text = " ".join(after)
         preceding = re.search(r"\b(?:not|never|incorrect|wrong|isn t|isnt|wasn t|wasnt)\b(?: \w+){0,3}$", before_text)
+        if re.search(r"\bnot only(?: \w+){0,3}$", before_text):
+            preceding = None
         following = re.match(r"^(?:(?:is|are|was|were|seems|would be) )?(?:not|never|incorrect|wrong|false)\b", after_text)
+        if re.match(r"^(?:is |are )?not only\b", after_text):
+            following = None
         later_reversal = re.match(r"^(?:is|are|was|were) (?:the )?(?:incorrect|wrong|false)\b", after_text)
         if preceding or following or later_reversal:
             return True
     return False
 
 
+def globally_retracted(text: str) -> bool:
+    normalized = norm(text)
+    patterns = (
+        r"\beverything (?:above|before|previously stated) is (?:false|wrong|incorrect)\b",
+        r"\b(?:the )?(?:answer|statement|response) above is (?:false|wrong|incorrect)\b",
+        r"\bignore (?:everything|the answer|the statement) (?:above|before)\b",
+        r"\bnone of (?:the above|this|that) is (?:true|correct)\b",
+        r"\bI retract (?:everything|the answer|the statement)\b",
+    )
+    return any(re.search(pattern, normalized) for pattern in patterns)
+
+
 def affirmed(text: str, term: str) -> bool:
-    return mentions(text, term) and not contradicted(text, term)
+    return mentions(text, term) and not contradicted(text, term) and not globally_retracted(text)
 
 
 def mentions_all(text: str, terms) -> bool:
@@ -433,7 +459,8 @@ def all_class_names(initial):
 def check_domain_subset(judge, name, answer, domain, allowed):
     found = set(detected_terms(answer, domain))
     unexpected = sorted(found - set(allowed))
-    judge.check(name, not unexpected, f"found={sorted(found)!r} unexpected={unexpected!r}")
+    contradictions = sorted(term for term in found if contradicted(answer, term))
+    judge.check(name, not unexpected and not contradictions, f"found={sorted(found)!r} unexpected={unexpected!r} contradictions={contradictions!r}")
 
 
 def drug(initial: Snapshot, slug: str):
@@ -498,7 +525,10 @@ def _check_interaction_answer(judge, answer, drug_terms, severity, concept_group
         match = next((term for term in alternatives if affirmed(answer, term)), None)
         concepts.append(match)
     judge.check("answer_main_risk", all(concepts), repr(concepts))
-    judge.check("answer_risk_entity_binding", _sentence_with_terms(answer, [*drug_terms, concepts[0]]) is not None if concepts and concepts[0] else False, "entities and primary risk must share a sentence")
+    bound_terms = [*drug_terms, severity, concepts[0]] if concepts and concepts[0] else []
+    judge.check("answer_interaction_fact_binding", bool(bound_terms) and _sentence_with_terms(answer, bound_terms) is not None)
+    conflicting = [value for value in SEVERITY_ORDER if value != severity and mentions(answer, value)]
+    judge.check("answer_no_conflicting_severity", not conflicting)
 
 
 def _number_variants(value):
@@ -575,8 +605,11 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             expected_severity = max(severities, key=lambda value: SEVERITY_ORDER[value]) if severities else None
             judge.check("interaction_count_truth", len(severities) > 0, repr(severities))
             count_patterns = [int(value) for value in re.findall(r"\b(\d+)\s+interactions?\b", answer, re.I)]
-            judge.check("answer_bound_interaction_count", count_patterns == [len(severities)], f"expected={len(severities)} found={count_patterns}")
-            check_required_terms(judge, "answer_highest_severity", answer, [expected_severity] if expected_severity else [])
+            all_integers = [int(value) for value in re.findall(r"(?<![\w.])\d+(?![\w.])", answer)]
+            judge.check("answer_bound_interaction_count", count_patterns == [len(severities)] and set(all_integers) == {len(severities)})
+            severity_relation = re.search(rf"\b(?:highest|most severe|max(?:imum)?)\s+severity\s*(?:is|:|=)?\s*{re.escape(expected_severity or '')}\b", answer, re.I)
+            conflicting = [value for value in SEVERITY_ORDER if value != expected_severity and re.search(rf"\b(?:highest|most severe|max(?:imum)?)\s+severity\s*(?:is|:|=)?\s*{value}\b", answer, re.I)]
+            judge.check("answer_highest_severity", severity_relation and not conflicting)
             check_required_terms(judge, "answer_interaction_entities", answer, names)
         else:
             rows = initial.query("SELECT li.severity,li.description FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")
@@ -645,7 +678,7 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             dose_ok = re.search(rf"\b{low}\s*[-–](?:\s*){high}\s*mg\b", answer, re.I)
             interval_ok = re.search(rf"\bevery\s+{interval_low}\s*(?:to|[-–])\s*{interval_high}\s+hours?\b", answer, re.I)
             maximum_ok = re.search(rf"\b(?:maximum|max|do not exceed)[^.;\n]{{0,45}}\b{maximum}\s*mg\b[^.;\n]{{0,45}}\b{period}\s+hours?\b", answer, re.I)
-            conflict = re.search(r"\b(?:not|incorrect|wrong)\b[^.;\n]{0,30}(?:mg|hours?)", answer, re.I)
+            conflict = re.search(r"\b(?<!do )(?:not|incorrect|wrong)\b[^.;\n]{0,30}(?:mg|hours?)", answer, re.I)
             judge.check("answer_bound_otc_dosage", dose_ok and interval_ok and maximum_ok and not conflict, f"dose={bool(dose_ok)} interval={bool(interval_ok)} max={bool(maximum_ok)} conflict={bool(conflict)}")
 
     elif number == 11:
@@ -664,14 +697,23 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         record = drug(initial, "atorvastatin")
         check_single_drug(judge, answer, record)
         if record:
-            rating_ok = _numeric_relation(answer, record["avg_rating"], ["rating"], ["out of", "/"] ) or any(re.search(rf"(?<!\d){re.escape(item)}\s*/\s*10(?!\d)", answer) for item in _number_variants(record["avg_rating"]))
-            reviews_ok = _numeric_relation(answer, record["review_count"], ["review", "reviews"])
-            review_numbers = [int(item) for item in re.findall(r"\b(\d+)\s+reviews?\b|\breviews?\s*(?:is|:|=)?\s*(\d+)\b", answer, re.I) for item in item if item]
-            judge.check("answer_rating_context", rating_ok, f"rating={record['avg_rating']}")
-            judge.check("answer_review_count_context", reviews_ok and set(review_numbers or [record["review_count"]]) == {record["review_count"]}, f"reviews={record['review_count']} found={review_numbers}")
+            rating_matches = list(re.finditer(r"\brating\s*(?:is|of|:|=)?\s*(\d+(?:\.\d+)?)\s*(?:/\s*10|out of\s*10)?|(?<!\d)(\d+(?:\.\d+)?)\s*/\s*10(?!\d)", answer, re.I))
+            rating_values = []
+            rating_negated = False
+            for match in rating_matches:
+                value = next(group for group in match.groups() if group is not None)
+                rating_values.append(float(value))
+                before, after = _nearby_words(answer, match.start(), match.end())
+                if re.search(r"\b(?:not|never|incorrect|wrong)\b", " ".join(before[-3:] + after[:3])):
+                    rating_negated = True
+            review_matches = list(re.finditer(r"\b(\d+)\s+reviews?\b|\breviews?\s*(?:is|:|=)?\s*(\d+)\b", answer, re.I))
+            review_numbers = [int(next(group for group in match.groups() if group is not None)) for match in review_matches]
+            review_negated = any(re.search(r"\b(?:not|never|incorrect|wrong)\b", " ".join(_nearby_words(answer, match.start(), match.end())[0][-3:] + _nearby_words(answer, match.start(), match.end())[1][:3])) for match in review_matches)
+            judge.check("answer_rating_context", bool(rating_values) and set(rating_values) == {float(record["avg_rating"])} and not rating_negated)
+            judge.check("answer_review_count_context", bool(review_numbers) and set(review_numbers) == {record["review_count"]} and not review_negated)
 
     elif number == 13:
-        result_pred = lambda visit: path_is(visit, *pill_paths) and scalar_query(visit, "shape", "Oval") and scalar_query(visit, "color", "White")
+        result_pred = lambda visit: path_is(visit, *pill_paths) and exact_query(visit, [("imprint", ""), ("shape", "Oval"), ("color", "White")])
         result_index = require_click_transition(judge, trajectory, visits, "ui_submit_white_oval_filters", lambda visit: path_is(visit, *pill_paths), result_pred)
         submit_index = result_index - 1 if result_index is not None else None
         filter_clicks = [index for index, step in enumerate(trajectory.get("steps", [])) if submit_index is not None and index < submit_index and step.get("action") == "click" and path_is(next((visit for visit in visits if visit.index == index), Visit(-1, "", ())), *pill_paths)]
@@ -700,7 +742,13 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         med_pred = lambda visit: path_is(visit, "/my-med-list", "/my-med-list.html")
         account_index = require_click_transition(judge, trajectory, visits, "ui_submit_alice_login", login_pred, account_pred)
         submit_index = account_index - 1 if account_index is not None else None
-        require_inputs_before(judge, trajectory, "ui_enter_alice_credentials", ["alice.j@test.com", "TestPass123!"], submit_index)
+        email_steps = input_indices(trajectory, "alice.j@test.com", exact=True)
+        password_steps = input_indices(trajectory, "TestPass123!", exact=True)
+        credentials_valid = (
+            submit_index is not None and email_steps and password_steps
+            and min(email_steps) < min(password_steps) < submit_index
+        )
+        judge.check("ui_enter_exact_alice_credentials", credentials_valid)
         require_click_transition(judge, trajectory, visits, "ui_open_authenticated_med_list", account_pred, med_pred)
         values = [row[0] for row in initial.query("SELECT d.generic_name FROM saved_drug s JOIN drug d ON d.id=s.drug_id JOIN user u ON u.id=s.user_id WHERE u.email=? ORDER BY d.generic_name", ("alice.j@test.com",))]
         judge.check("unique_seeded_med_list", bool(values) and len(values) == len(set(values)), repr(values))
@@ -751,7 +799,8 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             frequency = match.group(1)
             frequency_ok = re.search(rf"\bevery\s+{frequency}\s+hours?\b", answer, re.I) or (frequency == "8" and re.search(r"\bthree\s+times\s+(?:a|per)\s+day\b", answer, re.I))
             conflict = re.search(rf"\b(?:not|never|incorrect|wrong)\b[^.;\n]{{0,35}}(?:every\s+{frequency}\s+hours?|three\s+times)", answer, re.I)
-            judge.check("answer_standard_adult_frequency", frequency_ok and not conflict, f"hours={frequency}")
+            stated_frequencies = {value for value in re.findall(r"\bevery\s+(\d+)\s+hours?\b", answer, re.I)}
+            judge.check("answer_standard_adult_frequency", frequency_ok and not conflict and stated_frequencies <= {frequency})
 
     else:
         judge.check("known_task", False, f"number={number}")
@@ -770,6 +819,7 @@ def grade(number: int, args: Args):
         judge.check("task_id", trajectory.get("task_id") == task_id, repr(trajectory.get("task_id")))
         judge.check("agent_completed", trajectory.get("terminated") is True and trajectory.get("termination_reason") == "agent_done" and trajectory.get("success_self_report") is True, f"terminated={trajectory.get('terminated')} reason={trajectory.get('termination_reason')!r} success={trajectory.get('success_self_report')!r}")
         judge.check("nonempty_answer", bool(answer), f"characters={len(answer)}")
+        judge.check("answer_no_global_retraction", not globally_retracted(answer))
         validate_browser_evidence(judge, trajectory, args.run_dir)
         visits = validate_urls(judge, trajectory)
 

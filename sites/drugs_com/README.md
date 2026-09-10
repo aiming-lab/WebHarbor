@@ -6,7 +6,7 @@ This directory contains the Drugs.com-style WebHarbor environment. It is registe
 
 `app.py` contains the tracked source fixtures and Flask application. `seed_data.py` builds a candidate database without touching the active instance or known-good seed, validates it without network access, and atomically installs it. The seed is accepted only when the `seed_metadata` version is `drugs-com-source-v2`, canonical static table counts match, SQLite integrity and foreign keys pass, and the catalog/schema digests match `seed_manifest.json`; the builder additionally verifies the canonical database byte count and SHA-256.
 
-The seed contains 246 medication records, 105 drug classes, 69 conditions, 379 drug-condition links, 103 pill-description records, 76 drug-drug interactions, 11 explicitly drug-keyed food/alcohol interaction records, 80 simulated news records, 716 simulated review records, 15 saved-medication records, and 12 fixture users. Pill-description rows are rendered as visibly labeled synthetic diagrams and are not real product images or identification evidence. `content_inventory.json` records the provenance status and runtime treatment of every fixture family.
+The seed contains 246 medication records, 105 drug classes, 69 conditions, 379 drug-condition links, 104 pill-description records, 76 drug-drug interactions, 11 explicitly drug-keyed food/alcohol interaction records, 80 simulated news records, 716 simulated review records, 15 saved-medication records, and 12 fixture users. Pill-description rows are rendered as visibly labeled synthetic diagrams and are not real product images or identification evidence. `content_inventory.json` records the provenance status and runtime treatment of every fixture family.
 
 Run a deterministic rebuild with:
 

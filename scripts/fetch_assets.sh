@@ -71,6 +71,31 @@ else
         exit 1
     fi
 fi
+
+TRANSACTION=""
+rollback_assets() {
+    status=$?
+    trap - ERR INT TERM
+    if [[ -n "$TRANSACTION" && -d "$TRANSACTION" ]]; then
+        echo "fetch_assets: rolling back repository-wide managed-asset transaction" >&2
+        python3 scripts/asset_transaction.py rollback sites "$TRANSACTION"
+    fi
+    exit "$status"
+}
+
+if [[ -z "$ONLY_SITE" ]]; then
+    echo "[fetch] pre-validating complete archive set before changing managed roots"
+    for tarball in "${TARBALLS[@]}"; do
+        site=$(basename "$tarball" .tar.gz)
+        validator_args=()
+        [[ -f "sites/$site/.build-generated-seed" ]] && validator_args+=(--allow-missing-seed)
+        python3 scripts/validate_asset_archive.py "$tarball" "$site" "${validator_args[@]}"
+    done
+    TRANSACTION="sites/.cache/asset-transaction-$$"
+    python3 scripts/asset_transaction.py begin sites "$TRANSACTION"
+    trap rollback_assets ERR INT TERM
+fi
+
 extracted=0
 for tarball in "${TARBALLS[@]}"; do
     site=$(basename "$tarball" .tar.gz)
@@ -81,20 +106,34 @@ for tarball in "${TARBALLS[@]}"; do
     fi
     python3 scripts/validate_asset_archive.py "$tarball" "$site" "${validator_args[@]}"
     echo "[fetch] extracting $site"
-    python3 scripts/extract_asset_archive.py "$tarball" sites "$site"
+    extractor_args=()
     migrator="sites/$site/migrate_seed.py"
-    database="sites/$site/instance_seed/$site.db"
+    if [[ ! -f "sites/$site/.build-generated-seed" && -f "$migrator" ]]; then
+        echo "[fetch] applying tracked $site seed migration in staging"
+        extractor_args+=(--migrator "$migrator")
+    fi
+    python3 scripts/extract_asset_archive.py "$tarball" sites "$site" "${extractor_args[@]}"
     if [[ -f "sites/$site/.build-generated-seed" ]]; then
         rm -rf "sites/$site/instance_seed"
-    elif [[ -f "$migrator" && -f "$database" ]]; then
-        echo "[fetch] applying tracked $site seed migration"
-        PYTHONHASHSEED=0 python3 "$migrator" "$database"
     fi
     extracted=$((extracted + 1))
 done
 
+if [[ -n "$TRANSACTION" ]]; then
+    completed_transaction="$TRANSACTION"
+    TRANSACTION=""
+    trap - ERR INT TERM
+    python3 scripts/asset_transaction.py commit sites "$completed_transaction"
+fi
+
 if [[ -n "$ONLY_SITE" && $extracted -ne 1 ]]; then
     echo "fetch_assets: did not extract requested site $ONLY_SITE" >&2
     exit 1
+fi
+if [[ -n "$ONLY_SITE" ]]; then
+    rm -f sites/.assets-state.json
+    echo "[fetch] single-site fetch invalidated full-tree asset state; run a full fetch before building"
+else
+    python3 scripts/asset_state.py write sites .assets-revision sites/.assets-state.json --cache "$CACHE_DIR"
 fi
 echo "[fetch] done — $extracted site(s) extracted into sites/"

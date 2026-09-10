@@ -64,7 +64,7 @@
     <div class="star-display" aria-label="Average rating {{ '%.1f'|format(drug.avg_rating) }} out of 10">
       <span class="stars">
         {% for i in range(full_stars) %}<span class="star star-full">&#9733;</span>{% endfor %}
-        {% if half_star %}<span class="star star-half">&#189;</span>{% endif %}
+        {% if half_star %}<span class="star star-half-visual" aria-hidden="true">&#9733;</span>{% endif %}
         {% for i in range(5 - full_stars - (1 if half_star else 0)) %}<span class="star star-empty">&#9734;</span>{% endfor %}
       </span>
       <span class="rating-num">{{ "%.1f"|format(drug.avg_rating) }}/10</span>
@@ -120,7 +120,7 @@
       <section id="uses">
         <h2>What is {{ drug.generic_name }}?</h2>
         {% if rt_description %}{{ rt_description | format_drug_text | safe }}{% endif %}
-        {{ rt_uses | format_drug_text | safe }}
+        {% if rt_uses %}{{ rt_uses | format_drug_text | safe }}{% elif not rt_description %}<p class="muted">No drug-specific description or uses text is stored in this local fixture.</p>{% endif %}
       </section>
 
       <section id="warnings">
@@ -149,7 +149,7 @@
         </div>
         {{ _bx.rest | join('\n\n') | format_drug_text | safe }}
         {% else %}
-        {{ rt_warnings | format_drug_text | safe }}
+        {% if rt_warnings %}{{ rt_warnings | format_drug_text | safe }}{% else %}<p class="muted">No drug-specific warning text is stored in this local fixture.</p>{% endif %}
         {% endif %}
         <div class="dosage-info-link"><a href="{{ url_for('drug_warnings', slug=drug.slug) }}">Detailed {{ drug.generic_name|capitalize }} warning information</a></div>
       </section>
@@ -166,7 +166,7 @@
 
       <section id="dosage">
         <h2>How should I take {{ drug.generic_name }}?</h2>
-        {{ rt_dosage | format_drug_text | safe }}
+        {% if rt_dosage %}{{ rt_dosage | format_drug_text | safe }}{% else %}<p class="muted">No drug-specific dosage text is stored in this local fixture.</p>{% endif %}
         {% if rt_dosage %}
         <div class="dosage-info-link">
           <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Detailed {{ drug.generic_name|capitalize }} dosage information</a>
@@ -192,7 +192,7 @@
       <section id="side-effects">
         <h2>{{ drug.generic_name|capitalize }} side effects</h2>
         <p class="muted">The text below is a local fixture field and is not verified medical guidance.</p>
-        {{ rt_side_effects | format_drug_text | safe }}
+        {% if rt_side_effects %}{{ rt_side_effects | format_drug_text | safe }}{% else %}<p class="muted">No drug-specific side-effect text is stored in this local fixture.</p>{% endif %}
         <div class="dosage-info-link">
           <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Detailed {{ drug.generic_name|capitalize }} side effects information</a>
         </div>
@@ -212,6 +212,7 @@
                 <span class="muted">No pill descriptor</span>
               {% endif %}
             </div>
+            <span class="muted">Synthetic descriptor diagram</span>
             <div class="related-drug-card-head">
               <strong class="related-drug-name">{{ r.generic_name|capitalize }}</strong>
               {% if r.avg_rating %}
@@ -261,25 +262,11 @@
           <form action="{{ url_for('interaction_checker') }}" method="post" class="inline-checker-form" id="inline-checker-form">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="drugs" value="{{ drug.slug }}">
-            <input type="hidden" name="drugs" id="inline-checker-drug2" value="">
             <div class="inline-checker-row">
-              <input type="text" id="inline-checker-input" class="inline-checker-input" placeholder="Add another drug..." autocomplete="off" aria-label="Add another drug to interaction checker">
-              <button type="submit" class="btn btn-primary">Check interaction</button>
+              <input type="text" id="inline-checker-input" name="drugs" class="inline-checker-input" placeholder="Add another stored drug name..." autocomplete="off" maxlength="120" required aria-label="Add another drug to interaction checker">
+              <button type="submit" class="btn btn-primary">Check local interaction fixture</button>
             </div>
           </form>
-          <script>
-          (function(){
-            var form = document.getElementById('inline-checker-form');
-            var inp = document.getElementById('inline-checker-input');
-            var hid = document.getElementById('inline-checker-drug2');
-            if(form && inp && hid) {
-              form.addEventListener('submit', function(e){
-                if(inp.value.trim()) { hid.value = inp.value.trim(); }
-                else { e.preventDefault(); inp.focus(); }
-              });
-            }
-          })();
-          </script>
         </div>
       </section>
 

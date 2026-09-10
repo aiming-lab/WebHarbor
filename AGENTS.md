@@ -27,7 +27,7 @@ sites/<site>/
 ├── static/{css,js,icons}/       small UI, in git
 ├── static/images/               heavy, in HF dataset
 ├── static/external_cache/       optional, in HF dataset
-└── instance_seed/<site>.db      seed DB, in HF dataset
+└── instance_seed/<database>.db  exactly one valid SQLite seed (new sites should use <site>.db)
 
 control_server.py                :8101 control plane
 site_runner.py                   per-site supervisor (setsid + killpg)
@@ -206,7 +206,7 @@ Per-row gates aren't enough — even a no-op `db.session.commit()` bumps SQLite 
 
 ### Runtime data lives in `instance_seed/*.db`, not JSON
 
-HTTP handlers must read from SQLAlchemy, not from `scraped_data/*.json`. If you have intermediate scrape JSON, fold it into `instance_seed/<site>.db` at build time via `seed_data.py`. The `scraped_data/` dir is gitignored + dockerignored — never shipped.
+HTTP handlers must read from SQLAlchemy, not from `scraped_data/*.json`. If you have intermediate scrape JSON, fold it into the site's single `instance_seed/*.db` at build time via `seed_data.py`. The `scraped_data/` dir is gitignored + dockerignored — never shipped.
 
 ### Sites are isolated
 

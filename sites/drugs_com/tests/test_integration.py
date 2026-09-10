@@ -4,7 +4,10 @@ import ast
 import importlib.util
 import io
 import json
+import os
 import re
+import sqlite3
+import subprocess
 import sys
 import tarfile
 from pathlib import Path
@@ -36,6 +39,7 @@ def control_sites():
 
 
 def load_control_server():
+    os.environ["WEBSYN_CONTROL_TOKEN"] = "test-control-token-with-at-least-32-characters"
     spec = importlib.util.spec_from_file_location("pr71_control_server", ROOT / "control_server.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
@@ -65,6 +69,8 @@ def test_docker_and_docs_use_25_site_range():
     assert "check_asset_inventory.py /opt/WebSyn/drugs_com" in dockerfile
     assert "cd /opt/WebSyn/drugs_com" in dockerfile
     assert "check_seed_databases.py /opt/WebSyn" in dockerfile
+    assert "asset_state.py verify" in dockerfile
+    assert "FROM python:3.12-slim-bookworm@sha256:" in dockerfile
     for relative in ["README.md", "AGENTS.md", "CONTRIBUTING.md", "CLAUDE.md", "agent_demo/README.md"]:
         assert "40000-40024" in (ROOT / relative).read_text(), relative
 
@@ -84,6 +90,29 @@ def test_asset_path_contracts_are_synchronized():
     assert assetpaths == expected
     assert expected <= gitignore
     assert "SUBPATHS=(instance_seed static/images static/external_cache)" in extract_script
+
+
+def test_asset_state_binds_revision_archive_set_and_managed_tree(tmp_path):
+    scripts = ROOT / "scripts"
+    spec = importlib.util.spec_from_file_location("pr71_asset_state", scripts / "asset_state.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sites = tmp_path / "sites"
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    for name in ("first", "second"):
+        image = sites / name / "static" / "images" / "asset.txt"
+        image.parent.mkdir(parents=True)
+        image.write_text(name)
+        (cache / f"{name}.tar.gz").write_bytes(f"archive-{name}".encode())
+    revision = tmp_path / ".assets-revision"
+    revision.write_text("repo: fixture/repo\nrevision: 0123456789abcdef\n")
+    state = sites / ".assets-state.json"
+    module.write_state(sites, cache, revision, state)
+    module.verify_state(sites, revision, state)
+    (sites / "first" / "static" / "images" / "asset.txt").write_text("tampered")
+    with pytest.raises(ValueError, match="tree digest mismatch"):
+        module.verify_state(sites, revision, state)
 
 
 def test_hf_pin_is_immutable_merged_25_archive_revision():
@@ -123,6 +152,32 @@ def test_reset_db_copy_failure_preserves_old_instance(tmp_path, monkeypatch):
         module.reset_db("drugs_com")
     assert (site / "instance" / "state.txt").read_text() == "old"
     assert not list(site.glob(".instance-reset-*"))
+
+
+def test_control_plane_fails_closed_without_strong_configured_token():
+    environment = os.environ.copy()
+    environment.pop("WEBSYN_CONTROL_TOKEN", None)
+    missing = subprocess.run(
+        [sys.executable, "-c", "import control_server"],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert missing.returncode != 0
+    assert "WEBSYN_CONTROL_TOKEN is required" in missing.stderr
+    environment["WEBSYN_CONTROL_TOKEN"] = "short"
+    short = subprocess.run(
+        [sys.executable, "-c", "import control_server"],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert short.returncode != 0
+    assert "at least 32" in short.stderr
 
 
 def test_control_plane_requires_bearer_token():
@@ -206,16 +261,98 @@ def test_archive_requires_seed_for_ordinary_site(tmp_path):
     assert validate(archive, "ordinary", allow_missing_seed=True) > 0
 
 
-def test_archive_accepts_nonempty_conventional_seed(tmp_path):
+def test_archive_accepts_valid_sqlite_seed_with_application_table(tmp_path):
     scripts = ROOT / "scripts"
     sys.path.insert(0, str(scripts))
     try:
         from validate_asset_archive import validate
     finally:
         sys.path.remove(str(scripts))
+    database = tmp_path / "ordinary.db"
+    connection = sqlite3.connect(database)
+    connection.execute("CREATE TABLE fixture(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
     archive = tmp_path / "ordinary.tar.gz"
-    _archive(archive, "ordinary", [("instance_seed/ordinary.db", b"sqlite fixture")])
+    _archive(archive, "ordinary", [("instance_seed/custom-name.db", database.read_bytes())])
     assert validate(archive, "ordinary") > 0
+
+
+def test_archive_rejects_non_sqlite_seed_and_regular_file_root(tmp_path):
+    scripts = ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        from validate_asset_archive import validate
+    finally:
+        sys.path.remove(str(scripts))
+    invalid_seed = tmp_path / "invalid-seed.tar.gz"
+    _archive(invalid_seed, "ordinary", [("instance_seed/ordinary.db", b"not sqlite")])
+    with pytest.raises((ValueError, sqlite3.DatabaseError)):
+        validate(invalid_seed, "ordinary")
+    root_file = tmp_path / "root-file.tar.gz"
+    _archive(root_file, "ordinary", [("static/images", b"not a directory")])
+    with pytest.raises(ValueError, match="managed roots must be directories"):
+        validate(root_file, "ordinary", allow_missing_seed=True)
+
+
+def test_staged_migration_failure_preserves_old_managed_roots(tmp_path):
+    scripts = ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        spec = importlib.util.spec_from_file_location("pr71_extract_assets_migration", scripts / "extract_asset_archive.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(scripts))
+    sites = tmp_path / "sites"
+    site = sites / "ordinary"
+    old_seed = site / "instance_seed" / "old.db"
+    old_seed.parent.mkdir(parents=True)
+    connection = sqlite3.connect(old_seed)
+    connection.execute("CREATE TABLE old_fixture(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
+    old_image = site / "static" / "images" / "old.txt"
+    old_image.parent.mkdir(parents=True)
+    old_image.write_text("old")
+    new_database = tmp_path / "new.db"
+    connection = sqlite3.connect(new_database)
+    connection.execute("CREATE TABLE new_fixture(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
+    archive = tmp_path / "ordinary.tar.gz"
+    _archive(archive, "ordinary", [
+        ("instance_seed/new.db", new_database.read_bytes()),
+        ("static/images/new.txt", b"new"),
+    ])
+    migrator = tmp_path / "fail_migration.py"
+    migrator.write_text("raise RuntimeError('injected migration failure')\n")
+    with pytest.raises(subprocess.CalledProcessError):
+        module.install(archive, sites, "ordinary", migrator)
+    assert old_seed.is_file()
+    assert old_image.read_text() == "old"
+    assert not (site / "static" / "images" / "new.txt").exists()
+
+
+def test_repository_asset_transaction_rolls_back_all_sites(tmp_path):
+    scripts = ROOT / "scripts"
+    spec = importlib.util.spec_from_file_location("pr71_asset_transaction", scripts / "asset_transaction.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sites = tmp_path / "sites"
+    for site_name in ("first", "second"):
+        old = sites / site_name / "static" / "images" / "state.txt"
+        old.parent.mkdir(parents=True)
+        old.write_text(f"old-{site_name}")
+    transaction = tmp_path / "transaction"
+    module.begin(sites, transaction)
+    for site_name in ("first", "second"):
+        new = sites / site_name / "static" / "images" / "state.txt"
+        new.parent.mkdir(parents=True)
+        new.write_text(f"new-{site_name}")
+    module.rollback(sites, transaction)
+    for site_name in ("first", "second"):
+        assert (sites / site_name / "static" / "images" / "state.txt").read_text() == f"old-{site_name}"
 
 
 def test_asset_backup_cleanup_failure_retains_complete_new_roots(tmp_path, monkeypatch):

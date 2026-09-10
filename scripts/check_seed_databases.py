@@ -11,8 +11,9 @@ def validate_database(path: Path) -> None:
     if not path.is_file() or path.stat().st_size == 0:
         raise ValueError("missing or empty database")
     uri = f"file:{path.resolve()}?mode=ro"
-    connection = sqlite3.connect(uri, uri=True)
+    connection = None
     try:
+        connection = sqlite3.connect(uri, uri=True)
         integrity = connection.execute("PRAGMA integrity_check").fetchone()
         if integrity is None or integrity[0] != "ok":
             raise ValueError(f"integrity_check={integrity!r}")
@@ -24,8 +25,11 @@ def validate_database(path: Path) -> None:
         ).fetchall()
         if not tables:
             raise ValueError("database has no application tables")
+    except sqlite3.DatabaseError as error:
+        raise ValueError(f"invalid SQLite database: {error}") from error
     finally:
-        connection.close()
+        if connection is not None:
+            connection.close()
 
 
 def main() -> None:

@@ -69,6 +69,13 @@
   {% if unrecognized %}
     <p class="muted"><em>Not recognized:</em> {{ unrecognized | join(', ') }}</p>
   {% endif %}
+  {% if unrepresented_pairs %}
+    <div class="disclaimer-box" role="status">
+      <strong>No stored coverage for {{ unrepresented_pairs|length }} recognized pair{{ '' if unrepresented_pairs|length == 1 else 's' }}:</strong>
+      <ul>{% for pair in unrepresented_pairs %}<li>{{ pair[0] }} + {{ pair[1] }}</li>{% endfor %}</ul>
+      <p>These pairs are unrepresented in the local fixture; this is not a “no interaction” result.</p>
+    </div>
+  {% endif %}
 
   {% if summary %}
     <div class="interaction-summary results-summary-header">

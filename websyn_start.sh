@@ -1,7 +1,12 @@
 #!/bin/bash
 # WebSyn startup: launch all mirror sites, then exec the control plane.
-# This preserves the base image's browser env server (port 8100) as PID 1.
+# The control server becomes PID 1 after all per-site supervisors are launched.
 set -e
+
+if [[ ${#WEBSYN_CONTROL_TOKEN} -lt 32 ]]; then
+    echo "[WebSyn] WEBSYN_CONTROL_TOKEN is required and must contain at least 32 characters" >&2
+    exit 1
+fi
 
 SITES=(allrecipes amazon apple arxiv bbc_news booking github
        google_flights google_map google_search huggingface wolfram_alpha

@@ -1,10 +1,10 @@
 """Bearer-authenticated WebSyn control plane on :8101.
 
-Set WEBSYN_CONTROL_TOKEN to a secret of at least 32 characters. If absent, a random token is written with mode 0600 to /tmp/websyn_control_token.
+Set WEBSYN_CONTROL_TOKEN to a secret of at least 32 characters. Startup fails closed when it is absent or too short.
 
 Endpoints:
     GET  /health             -> per-site PID + alive status
-    POST /reset/<site>       -> SIGTERM site, restore instance/ from instance_seed/, respawn
+    POST /reset/<site>       -> SIGKILL site group, restore instance/ from instance_seed/, respawn
     POST /reset-all          -> reset every site in parallel
     POST /restart/<site>     -> just respawn (no DB wipe) -- bonus, useful for code reload
 
@@ -13,7 +13,6 @@ writes the initial PIDs; this server overwrites them on respawn.
 """
 import hmac
 import os
-import secrets
 import shutil
 import signal
 import subprocess
@@ -66,22 +65,11 @@ app = Flask(__name__)
 
 def _load_control_token() -> str:
     configured = os.environ.get('WEBSYN_CONTROL_TOKEN')
-    if configured is not None:
-        if len(configured) < 32:
-            raise RuntimeError('WEBSYN_CONTROL_TOKEN must contain at least 32 characters')
-        return configured
-    token_path = Path(os.environ.get('WEBSYN_CONTROL_TOKEN_FILE', '/tmp/websyn_control_token'))
-    try:
-        value = token_path.read_text(encoding='utf-8').strip()
-        if len(value) >= 32:
-            return value
-    except FileNotFoundError:
-        pass
-    generated = secrets.token_urlsafe(48)
-    descriptor = os.open(token_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(descriptor, 'w', encoding='utf-8') as token_file:
-        token_file.write(generated)
-    return generated
+    if configured is None:
+        raise RuntimeError('WEBSYN_CONTROL_TOKEN is required')
+    if len(configured) < 32:
+        raise RuntimeError('WEBSYN_CONTROL_TOKEN must contain at least 32 characters')
+    return configured
 
 
 CONTROL_TOKEN = _load_control_token()

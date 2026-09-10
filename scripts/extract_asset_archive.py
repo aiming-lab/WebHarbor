@@ -3,15 +3,26 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
+import subprocess
+import sys
 import tarfile
 import tempfile
 from pathlib import Path
 
+from check_seed_databases import validate_database
 from validate_asset_archive import ALLOWED_ROOTS, validate
 
 
-def install(archive: Path, sites: Path, expected_site: str) -> None:
+def _remove_path(path: Path) -> None:
+    if path.is_dir():
+        shutil.rmtree(path)
+    elif path.exists():
+        path.unlink()
+
+
+def install(archive: Path, sites: Path, expected_site: str, migrator: Path | None = None) -> None:
     build_generated = (sites / expected_site / ".build-generated-seed").is_file()
     validate(archive, expected_site, allow_missing_seed=build_generated)
     cache = sites / ".cache" / "extract"
@@ -25,6 +36,19 @@ def install(archive: Path, sites: Path, expected_site: str) -> None:
         staged_site = staging / expected_site
         if not staged_site.is_dir():
             raise ValueError(f"archive did not stage {expected_site}")
+        if migrator is not None:
+            databases = sorted((staged_site / "instance_seed").glob("*.db"))
+            if len(databases) != 1:
+                raise ValueError(f"migration requires exactly one staged seed database for {expected_site}")
+            environment = os.environ.copy()
+            environment["PYTHONHASHSEED"] = "0"
+            subprocess.run(
+                [sys.executable, str(migrator.resolve()), str(databases[0].resolve())],
+                cwd=migrator.resolve().parent,
+                env=environment,
+                check=True,
+            )
+            validate_database(databases[0])
         installed_site = sites / expected_site
         backups = []
         installed = []
@@ -40,12 +64,17 @@ def install(archive: Path, sites: Path, expected_site: str) -> None:
                     destination.rename(backup)
                     backups.append((destination, backup))
                 if source.exists():
+                    if not source.is_dir():
+                        raise ValueError(f"managed root is not a directory: {source}")
                     source.rename(destination)
                     installed.append(destination)
         except Exception:
             for destination in installed:
                 if destination.exists():
-                    shutil.rmtree(destination, ignore_errors=True)
+                    try:
+                        _remove_path(destination)
+                    except OSError:
+                        pass
             for destination, backup in reversed(backups):
                 if backup.exists():
                     backup.rename(destination)
@@ -68,8 +97,9 @@ def main() -> None:
     parser.add_argument("archive", type=Path)
     parser.add_argument("sites", type=Path)
     parser.add_argument("site")
+    parser.add_argument("--migrator", type=Path)
     args = parser.parse_args()
-    install(args.archive.resolve(), args.sites.resolve(), args.site)
+    install(args.archive.resolve(), args.sites.resolve(), args.site, args.migrator)
     print(f"[fetch] installed managed roots for {args.site}")
 
 

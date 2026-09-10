@@ -332,14 +332,14 @@ function scrollCarousel(dir) {
     <div>
       <div class="browse-panel-title">Browse by</div>
       <noscript><style>#homeBrowseTabs{display:none}.browse-panel-content{display:block!important}</style><p class="muted">All browse groups are shown because JavaScript is disabled.</p></noscript>
-      <div class="browse-panel-tabs" id="homeBrowseTabs">
-        <button type="button" class="browse-tab active" data-target="browse-panel-drugs">Drugs A-Z</button>
-        <button type="button" class="browse-tab" data-target="browse-panel-conditions">Conditions</button>
-        <button type="button" class="browse-tab" data-target="browse-panel-classes">Drug Classes</button>
-        <button type="button" class="browse-tab" data-target="browse-panel-symptoms">Symptoms</button>
+      <div class="browse-panel-tabs" id="homeBrowseTabs" role="tablist" aria-label="Browse fixture groups">
+        <button type="button" id="browse-tab-drugs" class="browse-tab active" role="tab" aria-selected="true" aria-controls="browse-panel-drugs" data-target="browse-panel-drugs">Drugs A-Z</button>
+        <button type="button" id="browse-tab-conditions" class="browse-tab" role="tab" aria-selected="false" aria-controls="browse-panel-conditions" data-target="browse-panel-conditions">Conditions</button>
+        <button type="button" id="browse-tab-classes" class="browse-tab" role="tab" aria-selected="false" aria-controls="browse-panel-classes" data-target="browse-panel-classes">Drug Classes</button>
+        <button type="button" id="browse-tab-symptoms" class="browse-tab" role="tab" aria-selected="false" aria-controls="browse-panel-symptoms" data-target="browse-panel-symptoms">Symptoms</button>
       </div>
 
-      <div class="browse-panel-content" id="browse-panel-drugs">
+      <div class="browse-panel-content" id="browse-panel-drugs" role="tabpanel" aria-labelledby="browse-tab-drugs" tabindex="0">
         <div class="letter-grid is-247">
           {% for L in ['A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z','0-9'] %}
             <a class="letter-btn letter-btn-sm" href="{{ url_for('drug_az') }}?letter={{ L }}">{{ L }}</a>
@@ -347,7 +347,7 @@ function scrollCarousel(dir) {
         </div>
       </div>
 
-      <div class="browse-panel-content" id="browse-panel-conditions" style="display:none">
+      <div class="browse-panel-content" id="browse-panel-conditions" role="tabpanel" aria-labelledby="browse-tab-conditions" tabindex="0" style="display:none">
         <div class="topics-grid">
           {% for c in top_conditions %}
             <a href="{{ url_for('condition_page', slug=c.slug) }}" class="topic-card">
@@ -358,7 +358,7 @@ function scrollCarousel(dir) {
         </div>
       </div>
 
-      <div class="browse-panel-content" id="browse-panel-classes" style="display:none">
+      <div class="browse-panel-content" id="browse-panel-classes" role="tabpanel" aria-labelledby="browse-tab-classes" tabindex="0" style="display:none">
         <div class="topics-grid">
           {% for c in top_drug_classes %}
             <a href="{{ url_for('drug_class_page', slug=c.slug) }}" class="topic-card">
@@ -369,7 +369,7 @@ function scrollCarousel(dir) {
         </div>
       </div>
 
-      <div class="browse-panel-content" id="browse-panel-symptoms" style="display:none">
+      <div class="browse-panel-content" id="browse-panel-symptoms" role="tabpanel" aria-labelledby="browse-tab-symptoms" tabindex="0" style="display:none">
         <div class="topics-grid">
           {% for s in top_symptoms %}
             <a href="{{ url_for('symptom_checker') }}?symptom={{ s }}" class="topic-card">
@@ -391,13 +391,24 @@ function scrollCarousel(dir) {
     (function () {
       var tabs = document.querySelectorAll('#homeBrowseTabs .browse-tab');
       tabs.forEach(function (tab) {
-        tab.addEventListener('click', function () {
+        function activate() {
           var target = tab.getAttribute('data-target');
-          tabs.forEach(function (t) { t.classList.remove('active'); });
+          tabs.forEach(function (t) { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
           tab.classList.add('active');
+          tab.setAttribute('aria-selected', 'true');
           document.querySelectorAll('.browse-panel-content').forEach(function (p) {
-            p.style.display = (p.id === target) ? '' : 'none';
+            var selected = p.id === target;
+            p.style.display = selected ? '' : 'none';
           });
+        }
+        tab.addEventListener('click', activate);
+        tab.addEventListener('keydown', function (event) {
+          if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+          event.preventDefault();
+          var list = Array.from(tabs);
+          var next = event.key === 'Home' ? 0 : event.key === 'End' ? list.length - 1 : (list.indexOf(tab) + (event.key === 'ArrowRight' ? 1 : -1) + list.length) % list.length;
+          list[next].focus();
+          list[next].click();
         });
       });
     })();

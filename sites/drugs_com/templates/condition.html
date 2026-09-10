@@ -52,11 +52,12 @@
     </div>
 
     {% if drugs %}
+      <noscript><style>.drug-class-filter,.drug-class-filter-label,#drug-class-filter-count{display:none}</style><p class="muted">All linked medication fixtures are shown because JavaScript filtering is unavailable.</p></noscript>
       <div class="is-073">
         <a class="btn btn-primary" href="{{ url_for('compare_drugs') }}?drugs={{ drugs[:3]|map(attribute='generic_name')|join(',') }}">
           Compare first 3 displayed fixtures
         </a>
-        <label for="drug-class-filter" class="muted is-072">Filter by drug class:</label>
+        <label for="drug-class-filter" class="muted is-072 drug-class-filter-label">Filter by drug class:</label>
         <select id="drug-class-filter" class="drug-class-filter is-074">
           <option value="">All drug classes ({{ drugs|length }})</option>
           {% if drugs_by_class %}

@@ -169,7 +169,7 @@ def positive_steps(number):
     if number == 11:
         return [_click(root), _click(ROOT + "/news"), {"url": ROOT + "/new-drug-approvals", "action": "done"}]
     if number == 13:
-        return [_click(root), _click(ROOT + "/pill-identifier"), _click(ROOT + "/pill-identifier"), _click(ROOT + "/pill-identifier"), {"url": ROOT + "/pill-identifier?shape=Oval&color=White", "action": "done"}]
+        return [_click(root), _click(ROOT + "/pill-identifier"), _click(ROOT + "/pill-identifier"), _click(ROOT + "/pill-identifier"), {"url": ROOT + "/pill-identifier?imprint=&shape=Oval&color=White", "action": "done"}]
     if number == 14:
         return [_click(root), _input(ROOT + "/login", "alice.j@test.com"), _input(ROOT + "/login", "TestPass123!"), _click(ROOT + "/login"), _click(ROOT + "/account"), {"url": ROOT + "/my-med-list", "action": "done"}]
     if number == 15:
@@ -429,3 +429,87 @@ def test_duplicate_query_values_fail(snapshots, tmp_path):
     steps = positive_steps(1)
     steps[2]["url"] = ROOT + "/search?q=wrong&q=metformin"
     assert_fails(1, make_run(tmp_path, 1, snapshots[0], steps=steps), snapshots)
+
+
+def test_global_answer_retraction_fails(snapshots, tmp_path):
+    answer = positive_answer(0, snapshots[0]) + " Everything above is false."
+    assert_fails(0, make_run(tmp_path, 0, snapshots[0], answer=answer), snapshots)
+
+
+def test_not_only_is_not_treated_as_negation(snapshots, tmp_path):
+    record = drug(snapshots[0], "ibuprofen")
+    answer = f"Ibuprofen is not only in the {record['class_name']} class; its brands are {', '.join(brands(record))}."
+    process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+@pytest.mark.parametrize("number,answer", [
+    (2, "Ibuprofen and warfarin can cause gastrointestinal bleeding. Their interaction severity is minor. Major is merely a category label."),
+    (8, "For alprazolam, oxycodone, and alcohol, there are 3 interactions; the highest severity is minor. Major is merely a category label."),
+])
+def test_conflicting_severity_relations_fail(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("answer", [
+    "Atorvastatin has a rating that is not 7.0/10 and 4 reviews.",
+    "Atorvastatin has a rating of 7.0/10, but its actual rating is 1/10; it has 4 reviews.",
+])
+def test_rating_negation_or_competition_fails(answer, snapshots, tmp_path):
+    assert_fails(12, make_run(tmp_path, 12, snapshots[0], answer=answer), snapshots)
+
+
+def test_competing_standard_frequency_fails(snapshots, tmp_path):
+    answer = "Amoxicillin standard adult dosing is every 12 hours, although the page also says every 8 hours."
+    assert_fails(18, make_run(tmp_path, 18, snapshots[0], answer=answer), snapshots)
+
+
+def test_indirect_competing_interaction_total_fails(snapshots, tmp_path):
+    answer = "For alprazolam, oxycodone, and alcohol there are 3 interactions, but the actual total is 99; highest severity is major."
+    assert_fails(8, make_run(tmp_path, 8, snapshots[0], answer=answer), snapshots)
+
+
+def test_do_not_exceed_dosage_wording_passes(snapshots, tmp_path):
+    answer = "Ibuprofen OTC: 200-400 mg every 4-6 hours; do not exceed 1200 mg in 24 hours."
+    process = execute(10, make_run(tmp_path, 10, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_task14_password_requires_exact_case_and_punctuation(snapshots, tmp_path):
+    run = make_run(tmp_path, 14, snapshots[0])
+    path = run / "trajectory.json"
+    value = json.loads(path.read_text())
+    password_step = next(step for step in value["steps"] if step.get("params", {}).get("text") == "TestPass123!")
+    password_step["params"]["text"] = "testpass123"
+    path.write_text(json.dumps(value))
+    assert_fails(14, run, snapshots)
+
+
+@pytest.mark.parametrize("number,step_index,extra", [
+    (1, 2, "&availability=Rx"),
+    (3, 3, "&color=White"),
+    (13, 4, "&imprint=I-2"),
+    (17, 2, "&availability=Rx"),
+])
+def test_unrequested_query_state_fails(number, step_index, extra, snapshots, tmp_path):
+    steps = positive_steps(number)
+    steps[step_index]["url"] += extra
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], steps=steps), snapshots)
+
+
+def test_deep_link_start_url_fails(snapshots, tmp_path):
+    steps = [_click(ROOT + "/ibuprofen"), {"url": ROOT + "/ibuprofen/faq", "action": "done"}]
+    run = make_run(tmp_path, 10, snapshots[0], steps=steps, origin=ROOT)
+    trajectory_path = run / "trajectory.json"
+    trajectory = json.loads(trajectory_path.read_text())
+    trajectory["start_url"] = ROOT + "/ibuprofen"
+    trajectory_path.write_text(json.dumps(trajectory))
+    assert_fails(10, run, snapshots)
+
+
+def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
+    run = make_run(tmp_path, 0, snapshots[0], answer="wrong")
+    process = execute(0, run, *snapshots)
+    assert process.returncode == 1
+    assert "Advil" not in process.stdout
+    assert "Motrin" not in process.stdout

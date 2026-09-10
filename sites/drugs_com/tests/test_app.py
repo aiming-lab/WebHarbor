@@ -135,6 +135,19 @@ def test_login_throttles_repeated_failures(client):
     assert b"Too many failed sign-in attempts" in response.data
 
 
+def test_failed_login_key_storage_is_globally_bounded(drugs_app):
+    now = drugs_app.time.monotonic()
+    with drugs_app._auth_failures_lock:
+        drugs_app._auth_failures.clear()
+        drugs_app._auth_failures.update({
+            f"account:fixture-{index}@example.com": [now]
+            for index in range(drugs_app._AUTH_FAILURE_MAX_KEYS + 500)
+        })
+    drugs_app._record_auth_failure(("account:new@example.com",))
+    with drugs_app._auth_failures_lock:
+        assert len(drugs_app._auth_failures) <= drugs_app._AUTH_FAILURE_MAX_KEYS
+
+
 def test_registration_capacity_is_bounded(client, drugs_app, monkeypatch):
     monkeypatch.setattr(drugs_app, "_MAX_RUNTIME_USERS", 12)
     page = client.get("/register")
@@ -215,6 +228,12 @@ def test_helpful_votes_require_authentication_and_are_idempotent(client, drugs_a
     )
     assert second.status_code == 200
     assert second.json["votes"] == first.json["votes"]
+    form_vote = client.post(
+        f"/ibuprofen/review/{review_id}/helpful",
+        data={"csrf_token": token, "vote": "no", "form_vote": "1"},
+    )
+    assert form_vote.status_code == 302
+    assert "/ibuprofen/reviews" in form_vote.location
 
 
 def test_review_validation_and_upsert(client, drugs_app):
@@ -228,6 +247,17 @@ def test_review_validation_and_upsert(client, drugs_app):
     assert valid.status_code == 302
     rows = database_rows(drugs_app._test_database_path, "SELECT rating,title,body FROM drug_review r JOIN drug d ON d.id=r.drug_id JOIN user u ON u.id=r.user_id WHERE d.slug='metformin' AND u.email='alice.j@test.com'")
     assert rows == [(8, "Fixture title", "Fixture body")]
+
+
+def test_drug_detail_inline_interaction_form_works_without_javascript(client):
+    page = client.get("/metformin")
+    response = client.post(
+        "/drug-interactions",
+        data={"csrf_token": csrf(page), "drugs": ["metformin", "lisinopril"]},
+    )
+    assert response.status_code == 302
+    assert "drugs=metformin" in response.location
+    assert "drugs=lisinopril" in response.location
 
 
 def test_interaction_post_redirects_to_auditable_query(client):
@@ -365,6 +395,11 @@ def test_broad_class_rules_do_not_create_false_lifestyle_rows(client, drugs_app)
     assert unknown.json["unrepresented_pairs"] == [["sildenafil", "nitroglycerin"]]
     assert unknown.json["coverage_complete"] is False
     assert "no_interaction_pairs" not in unknown.json
+    browser = client.get("/drug-interactions?drugs=sildenafil&drugs=nitroglycerin")
+    assert browser.status_code == 200
+    assert b"No stored coverage for 1 recognized pair" in browser.data
+    assert b"sildenafil + nitroglycerin" in browser.data.lower()
+    assert b"not a \xe2\x80\x9cno interaction\xe2\x80\x9d result" in browser.data
 
 
 def test_pregnancy_routes_use_one_stored_value(client, drugs_app):
@@ -462,6 +497,27 @@ def test_client_cookie_omits_browsing_history_and_raw_anonymous_email(client):
         subscription = current_session["newsletter_subscription"]
         assert "email" not in subscription
         assert subscription["email_receipt"]
+
+
+def test_second_process_cannot_share_database_through_hardlink(drugs_app, tmp_path):
+    alias = tmp_path / "database-alias.db"
+    os.link(drugs_app._test_database_path, alias)
+    environment = os.environ.copy()
+    environment.update({
+        "DRUGS_COM_SECRET_KEY": "subprocess-test-key-with-at-least-32-characters",
+        "DRUGS_COM_DATABASE_PATH": str(alias),
+        "PYTHONPATH": str(SITE),
+    })
+    process = subprocess.run(
+        [sys.executable, "-c", "import app"],
+        cwd=SITE,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert process.returncode != 0
+    assert "database is already owned by another process" in process.stderr
 
 
 def test_second_process_cannot_share_runtime_database(drugs_app):

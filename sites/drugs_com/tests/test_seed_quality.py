@@ -18,7 +18,7 @@ EXPECTED_COUNTS = {
     "drug": 246,
     "drug_class": 105,
     "drug_condition": 379,
-    "drug_image": 103,
+    "drug_image": 104,
     "drug_interaction": 76,
     "drug_review": 716,
     "lifestyle_interaction": 11,
@@ -88,6 +88,14 @@ def test_complete_seed_import_does_not_mutate_database(tmp_path):
     process = subprocess.run([sys.executable, "-c", "import app"], cwd=SITE, env=environment, capture_output=True, text=True, timeout=60)
     assert process.returncode == 0, process.stderr
     assert hashlib.sha256(database.read_bytes()).hexdigest() == before
+
+
+def test_every_pill_and_pregnancy_declaration_maps_to_catalog_once(drugs_app):
+    catalog = {entry[0] for entry in drugs_app.DRUGS_DATA}
+    pill_keys = [(entry[0], entry[1]) for entry in drugs_app.PILL_IMAGES_DATA]
+    assert all(generic in catalog for generic, _imprint in pill_keys)
+    assert len(pill_keys) == len(set(pill_keys))
+    assert set(drugs_app._PREGNANCY_RISK) <= catalog
 
 
 def test_reviewed_source_dictionaries_have_no_duplicate_literal_keys():

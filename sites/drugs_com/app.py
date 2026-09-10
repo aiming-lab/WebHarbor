@@ -110,19 +110,25 @@ SEED_EPOCH = datetime(2026, 7, 9, 23, 14, 52)
 
 
 def _acquire_database_process_lock(database_path):
-    """Fail closed when another process already serves the same SQLite file."""
-    lock_path = Path(database_path).with_suffix(Path(database_path).suffix + ".process.lock")
-    lock_path.parent.mkdir(parents=True, exist_ok=True)
-    handle = lock_path.open("a+")
+    """Lock both the canonical path and SQLite inode for this process lifetime."""
+    resolved = Path(database_path).resolve(strict=False)
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    lock_path = resolved.with_suffix(resolved.suffix + ".process.lock")
+    sidecar = lock_path.open("a+")
+    database = None
     try:
-        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        fcntl.flock(sidecar.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        database = resolved.open("a+b")
+        fcntl.flock(database.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except BlockingIOError as error:
-        handle.close()
-        raise RuntimeError(f"database is already owned by another process: {database_path}") from error
-    return handle
+        if database is not None:
+            database.close()
+        sidecar.close()
+        raise RuntimeError(f"database is already owned by another process: {resolved}") from error
+    return sidecar, database
 
 
-_DATABASE_PROCESS_LOCK = _acquire_database_process_lock(DATABASE_PATH)
+_DATABASE_PROCESS_LOCKS = _acquire_database_process_lock(DATABASE_PATH)
 
 
 def _stable_day_offset(value):
@@ -577,6 +583,7 @@ _MAX_SAVED_DRUGS_PER_USER = 20
 _MAX_RUNTIME_USERS = 1_000
 _AUTH_FAILURE_LIMIT = 8
 _AUTH_FAILURE_WINDOW_SECONDS = 60
+_AUTH_FAILURE_MAX_KEYS = 4_096
 _auth_failures = {}
 _auth_failures_lock = threading.Lock()
 
@@ -586,9 +593,23 @@ def _auth_keys(email=""):
     return (f"source:{source}", f"account:{email.casefold()}") if email else (f"source:{source}",)
 
 
+def _prune_auth_failures(now):
+    cutoff = now - _AUTH_FAILURE_WINDOW_SECONDS
+    for key in list(_auth_failures):
+        recent = [timestamp for timestamp in _auth_failures[key] if timestamp >= cutoff]
+        if recent:
+            _auth_failures[key] = recent
+        else:
+            _auth_failures.pop(key, None)
+    while len(_auth_failures) > _AUTH_FAILURE_MAX_KEYS:
+        _auth_failures.pop(next(iter(_auth_failures)))
+
+
 def _auth_is_limited(keys):
-    cutoff = time.monotonic() - _AUTH_FAILURE_WINDOW_SECONDS
+    now = time.monotonic()
+    cutoff = now - _AUTH_FAILURE_WINDOW_SECONDS
     with _auth_failures_lock:
+        _prune_auth_failures(now)
         for key in keys:
             recent = [timestamp for timestamp in _auth_failures.get(key, ()) if timestamp >= cutoff]
             if recent:
@@ -603,9 +624,12 @@ def _auth_is_limited(keys):
 def _record_auth_failure(keys):
     now = time.monotonic()
     with _auth_failures_lock:
+        _prune_auth_failures(now)
         for key in keys:
             _auth_failures.setdefault(key, []).append(now)
             _auth_failures[key] = _auth_failures[key][-_AUTH_FAILURE_LIMIT:]
+        while len(_auth_failures) > _AUTH_FAILURE_MAX_KEYS:
+            _auth_failures.pop(next(iter(_auth_failures)))
 
 
 def _clear_auth_failures(keys):
@@ -1209,7 +1233,6 @@ PILL_IMAGES_DATA = [
     ("cetirizine", "ZYRTEC 10", "oval", "white", "10mg", "UCB"),
     ("loratadine", "CLARITIN 10", "round", "white", "10mg", "Bayer"),
     ("montelukast", "SINGULAIR 10", "round", "beige", "10mg", "Merck"),
-    ("ciprofloxacin", "CIPRO 500", "oval", "white", "500mg", "Bayer"),
     ("doxycycline", "VIBRAMYCIN 100", "capsule", "blue/white", "100mg", "Pfizer"),
     ("fluconazole", "DIFLUCAN 150", "oval", "pink", "150mg", "Pfizer"),
     ("acyclovir", "ZOVIRAX 400", "oval", "blue", "400mg", "GlaxoSmithKline"),
@@ -1219,7 +1242,7 @@ PILL_IMAGES_DATA = [
     ("sildenafil", "VIAGRA 100", "diamond", "blue", "100mg", "Pfizer"),
     ("oxycodone", "OC 10", "round", "white", "10mg", "Purdue Pharma"),
     ("methylphenidate", "RITALIN 10", "round", "white", "10mg", "Novartis"),
-    ("amphetamine", "ADDERALL 20", "round", "orange", "20mg", "Teva"),
+    ("amphetamine-dextroamphetamine", "ADDERALL 20", "round", "orange", "20mg", "Teva"),
     ("lithium", "LITHOBID 300", "capsule", "pink", "300mg", "Noven"),
     ("valproic acid", "DEPAKOTE 250", "oval", "salmon", "250mg", "AbbVie"),
     ("lamotrigine", "LAMICTAL 100", "oval", "white", "100mg", "GlaxoSmithKline"),
@@ -1756,7 +1779,6 @@ _PREGNANCY_RISK: dict[str, str] = {
     "valsartan": "Category D - Fetal toxicity; discontinue when pregnancy detected",
     "warfarin": "Category X - Contraindicated; causes fetal warfarin syndrome",
     "isotretinoin": "Category X - Absolutely contraindicated; causes severe birth defects",
-    "thalidomide": "Category X - Contraindicated; causes severe limb defects",
     "testosterone": "Category X - Contraindicated; causes virilization of female fetus",
     "finasteride": "Category X - Contraindicated in women; causes male fetal genital abnormalities",
     "lithium": "Category D - Cardiac malformations (Ebstein anomaly); risk/benefit discussion required",
@@ -1803,7 +1825,9 @@ _PREGNANCY_RISK: dict[str, str] = {
     "famotidine": "Category B - Generally considered safe",
     "ondansetron": "Category B - Commonly used for nausea/vomiting of pregnancy",
     "levothyroxine": "Category A - Essential for fetal brain development; continue therapy",
-    "insulin": "Category B - Preferred antidiabetic in pregnancy",
+    "insulin glargine": "Category B - Preferred antidiabetic in pregnancy",
+    "insulin aspart": "Category B - Preferred antidiabetic in pregnancy",
+    "insulin lispro": "Category B - Preferred antidiabetic in pregnancy",
     "semaglutide": "Category C - Limited data; discontinue when pregnancy recognized",
     "methotrexate": "Category X - Absolutely contraindicated",
     "prednisone": "Category C - Short-term use generally acceptable; avoid near term",
@@ -4199,7 +4223,7 @@ def _validate_seed_state(require_marker=True, *, canonical=False, verify_manifes
     expected = {
         "drug_class": 105,
         "drug": 246,
-        "drug_image": 103,
+        "drug_image": 104,
         "drug_interaction": 76,
         "condition": 69,
         "drug_condition": 379,
@@ -4968,6 +4992,9 @@ def review_helpful_vote(slug, review_id):
         current_user.set_preferences(preferences)
         db.session.commit()
         current_count = review.helpful_count
+    if request.form.get("form_vote") == "1":
+        flash("Local review-vote preference saved.", "success")
+        return redirect(url_for("drug_reviews_page", slug=slug))
     return jsonify({"votes": current_count, "review_id": review_id})
 
 
@@ -5195,6 +5222,7 @@ def interaction_checker():
     drugs_input = None
     interactions = None
     unrecognized = []
+    unrepresented_pairs = []
     summary = None
     # Pre-populate from URL param (linked from drug detail pages, e.g. ?drug=ibuprofen)
     prefill_slug = _bounded_query_arg(
@@ -5262,6 +5290,8 @@ def interaction_checker():
                     "severity": rec.severity,
                     "description": rec.description,
                 })
+            else:
+                unrepresented_pairs.append([a.generic_name, b.generic_name])
         # Sort major -> moderate -> minor
         order = {"major": 0, "moderate": 1, "minor": 2}
         interactions.sort(key=lambda it: order.get(it["severity"], 99))
@@ -5274,6 +5304,10 @@ def interaction_checker():
         food_interactions, alcohol_interactions = _lifestyle_interactions(resolved)
         # If "alcohol" was explicitly entered, fold its interactions into main results
         if any(n.lower() == "alcohol" for n in drugs_input or []):
+            alcohol_hit_ids = {alc["drug"].id for alc in alcohol_interactions}
+            for drug in resolved:
+                if drug.id not in alcohol_hit_ids:
+                    unrepresented_pairs.append([drug.generic_name, "Alcohol"])
             for alc in alcohol_interactions:
                 interactions.append({
                     "drug_a": alc["drug"],
@@ -5300,6 +5334,7 @@ def interaction_checker():
         drugs_input=drugs_input,
         interactions=interactions,
         unrecognized=unrecognized,
+        unrepresented_pairs=unrepresented_pairs,
         summary=summary,
         prefill=prefill,
         food_interactions=food_interactions,

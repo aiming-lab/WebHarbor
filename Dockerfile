@@ -1,7 +1,7 @@
 # WebHarbor — slim, self-contained image.
 # 25 Flask mirror sites + control plane on :8101.
 
-FROM python:3.12-slim-bookworm
+FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
@@ -21,7 +21,15 @@ RUN pip3 install --no-cache-dir \
     WTForms==3.2.1 \
     email-validator==2.2.0 \
     Pillow==11.0.0 \
-    pysqlite3-binary==0.5.4
+    pysqlite3-binary==0.5.4 \
+    blinker==1.9.0 \
+    click==8.5.0 \
+    dnspython==2.8.0 \
+    greenlet==3.5.5 \
+    idna==3.19 \
+    itsdangerous==2.2.0 \
+    MarkupSafe==3.0.3 \
+    typing-extensions==4.16.0
 
 WORKDIR /opt/WebSyn
 
@@ -29,8 +37,11 @@ WORKDIR /opt/WebSyn
 # static/images/, static/external_cache/) — either commit them locally or
 # run scripts/fetch_assets.sh to pull them from Hugging Face first.
 COPY sites/ /opt/WebSyn/
+COPY .assets-revision /opt/.assets-revision
 COPY scripts/check_asset_inventory.py /opt/check_asset_inventory.py
 COPY scripts/check_seed_databases.py /opt/check_seed_databases.py
+COPY scripts/asset_state.py /opt/asset_state.py
+RUN python3 /opt/asset_state.py verify /opt/WebSyn /opt/.assets-revision /opt/WebSyn/.assets-state.json
 
 # IKEA's seed is reproducibly materialized from the tracked source catalog so code-only content fixes do not require an asset-repository write. Product images still come from the pinned asset bundle.
 RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
