@@ -34,6 +34,7 @@ def client(drugs_app):
     shutil.copy2(SITE / "instance_seed" / "drugs_com.db", drugs_app._test_database_path)
     with drugs_app._auth_failures_lock:
         drugs_app._auth_failures.clear()
+        drugs_app._auth_pending.clear()
     with drugs_app.app.test_client() as test_client:
         yield test_client
     with drugs_app.app.app_context():

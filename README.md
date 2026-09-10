@@ -49,6 +49,8 @@ export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_u
 docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
 ```
 
+The fetch and build paths verify the immutable HF revision, every archive size and SHA-256, and the extracted managed-tree digest against tracked `assets-manifest.json`.
+
 Then point your agent at `http://localhost:40000` through `http://localhost:40024` to explore 25 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, and Drugs.com`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:

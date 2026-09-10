@@ -45,7 +45,7 @@
 
   <section class="se-precautions">
     <h2>Stored side-effect fixture</h2>
-    {{ (rt_side_effects or drug.side_effects) | format_drug_text | safe }}
+    {% if rt_side_effects or drug.side_effects %}{{ (rt_side_effects or drug.side_effects) | format_drug_text | safe }}{% else %}<p class="muted">No drug-specific side-effect text is stored in this local fixture.</p>{% endif %}
   </section>
 
   <section class="se-block se-block--other">

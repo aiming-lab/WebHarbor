@@ -7,6 +7,7 @@ import shutil
 import sqlite3
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
@@ -135,6 +136,39 @@ def test_login_throttles_repeated_failures(client):
     assert b"Too many failed sign-in attempts" in response.data
 
 
+def test_concurrent_auth_reservations_enforce_attempt_limit(drugs_app):
+    keys = ("source:concurrent", "account:concurrent@example.com")
+    with drugs_app._auth_failures_lock:
+        drugs_app._auth_failures.clear()
+        drugs_app._auth_pending.clear()
+    with ThreadPoolExecutor(max_workers=16) as executor:
+        admitted = list(executor.map(lambda _index: drugs_app._begin_auth_attempt(keys), range(16)))
+    assert admitted.count(True) == drugs_app._AUTH_FAILURE_LIMIT
+    assert admitted.count(False) == 16 - drugs_app._AUTH_FAILURE_LIMIT
+    for _ in range(admitted.count(True)):
+        drugs_app._finish_auth_attempt(keys, successful=False)
+    assert drugs_app._auth_is_limited(keys)
+
+
+def test_success_does_not_clear_source_failure_history(drugs_app):
+    keys = ("source:shared", "account:known@example.com")
+    with drugs_app._auth_failures_lock:
+        drugs_app._auth_failures.clear()
+        drugs_app._auth_pending.clear()
+        drugs_app._auth_failures.update({keys[0]: [drugs_app.time.monotonic()], keys[1]: [drugs_app.time.monotonic()]})
+    assert drugs_app._begin_auth_attempt(keys)
+    drugs_app._finish_auth_attempt(keys, successful=True)
+    with drugs_app._auth_failures_lock:
+        assert keys[0] in drugs_app._auth_failures
+        assert keys[1] not in drugs_app._auth_failures
+
+
+def test_configured_runtime_secret_has_minimum_strength(drugs_app, monkeypatch):
+    monkeypatch.setenv("DRUGS_COM_SECRET_KEY", "short")
+    with pytest.raises(RuntimeError, match="at least 32 bytes"):
+        drugs_app._load_runtime_secret_key()
+
+
 def test_failed_login_key_storage_is_globally_bounded(drugs_app):
     now = drugs_app.time.monotonic()
     with drugs_app._auth_failures_lock:
@@ -177,7 +211,7 @@ def test_registration_validation_and_duplicate(client):
 def test_med_list_desired_state_is_idempotent(client, drugs_app):
     assert login(client).status_code == 302
     page = client.get("/acetaminophen")
-    token = re.search(rb"X-CSRFToken': '([^']+)'", page.data).group(1).decode()
+    token = csrf(page)
     for desired in (True, True, False, False):
         response = client.post("/my-med-list/toggle", json={"slug": "acetaminophen", "saved": desired}, headers={"X-CSRFToken": token})
         assert response.status_code == 200
@@ -189,7 +223,7 @@ def test_med_list_desired_state_is_idempotent(client, drugs_app):
 def test_med_list_rejects_malformed_desired_state(client):
     assert login(client).status_code == 302
     page = client.get("/acetaminophen")
-    token = re.search(rb"X-CSRFToken': '([^']+)'", page.data).group(1).decode()
+    token = csrf(page)
     response = client.post("/my-med-list/toggle", json={"slug": "acetaminophen", "saved": "maybe"}, headers={"X-CSRFToken": token})
     assert response.status_code == 400
 
@@ -395,11 +429,22 @@ def test_broad_class_rules_do_not_create_false_lifestyle_rows(client, drugs_app)
     assert unknown.json["unrepresented_pairs"] == [["sildenafil", "nitroglycerin"]]
     assert unknown.json["coverage_complete"] is False
     assert "no_interaction_pairs" not in unknown.json
+    missing_alcohol = client.post("/api/interaction-check", json={"drugs": ["ibuprofen", "alcohol"]})
+    assert missing_alcohol.status_code == 200
+    assert ["ibuprofen", "alcohol"] in missing_alcohol.json["unrepresented_pairs"]
     browser = client.get("/drug-interactions?drugs=sildenafil&drugs=nitroglycerin")
     assert browser.status_code == 200
     assert b"No stored coverage for 1 recognized pair" in browser.data
     assert b"sildenafil + nitroglycerin" in browser.data.lower()
     assert b"not a \xe2\x80\x9cno interaction\xe2\x80\x9d result" in browser.data
+
+
+def test_internal_interaction_instructions_are_consistent(drugs_app):
+    assert "at least 3 days" in drugs_app.DRUG_CONTENT_OVERRIDES["metronidazole"]["before_taking"]
+    assert "at least 3 days" in drugs_app._ALCOHOL_BY_GENERIC["metronidazole"]["description"]
+    simvastatin = drugs_app.DRUG_CONTENT_OVERRIDES["simvastatin"]["dosage"]
+    assert "20 mg/day with amlodipine" in simvastatin
+    assert "10 mg/day with diltiazem" in simvastatin
 
 
 def test_pregnancy_routes_use_one_stored_value(client, drugs_app):

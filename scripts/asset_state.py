@@ -78,7 +78,7 @@ def write_state(sites: Path, cache: Path, revision_file: Path, output: Path) -> 
     os.replace(candidate_path, output)
 
 
-def verify_state(sites: Path, revision_file: Path, state_file: Path) -> None:
+def verify_state(sites: Path, revision_file: Path, state_file: Path, cache: Path | None = None) -> None:
     expected = json.loads(state_file.read_text(encoding="utf-8"))
     revision = revision_values(revision_file)
     names = site_names(sites)
@@ -86,8 +86,17 @@ def verify_state(sites: Path, revision_file: Path, state_file: Path) -> None:
         raise ValueError("unsupported asset state version")
     if expected.get("repo") != revision["repo"] or expected.get("revision") != revision["revision"]:
         raise ValueError("asset state does not match pinned repo/revision")
-    if sorted(name.removesuffix(".tar.gz") for name in expected.get("archives", {})) != names:
+    archive_state = expected.get("archives", {})
+    if sorted(name.removesuffix(".tar.gz") for name in archive_state) != names:
         raise ValueError("asset state archive set does not match site set")
+    if cache is not None:
+        archives = sorted(cache.glob("*.tar.gz"))
+        if [path.name for path in archives] != sorted(archive_state):
+            raise ValueError("downloaded archive set does not match tracked asset manifest")
+        for archive in archives:
+            recorded = archive_state[archive.name]
+            if recorded.get("bytes") != archive.stat().st_size or recorded.get("sha256") != sha256(archive):
+                raise ValueError(f"downloaded archive does not match tracked asset manifest: {archive.name}")
     actual_tree = tree_digest(sites)
     if expected.get("managed_tree_sha256") != actual_tree:
         raise ValueError(f"managed asset tree digest mismatch: expected={expected.get('managed_tree_sha256')} actual={actual_tree}")
@@ -107,7 +116,7 @@ def main() -> None:
             parser.error("write requires --cache")
         write_state(args.sites.resolve(), args.cache.resolve(), args.revision_file.resolve(), args.state_file.resolve())
     else:
-        verify_state(args.sites.resolve(), args.revision_file.resolve(), args.state_file.resolve())
+        verify_state(args.sites.resolve(), args.revision_file.resolve(), args.state_file.resolve(), args.cache.resolve() if args.cache else None)
 
 
 if __name__ == "__main__":

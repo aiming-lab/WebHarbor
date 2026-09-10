@@ -10,7 +10,8 @@
 # Usage:
 #   ./scripts/fetch_assets.sh                 # fetch all sites at pinned rev
 #   ./scripts/fetch_assets.sh google_search   # fetch one site only
-#   ASSETS_REVISION=abc123 ./scripts/fetch_assets.sh   # override pin
+#   ASSETS_REVISION=<pinned-revision> ./scripts/fetch_assets.sh   # optional exact-pin assertion
+#   ./scripts/fetch_assets.sh --refresh-manifest   # maintainer-only after updating the tracked pin
 #
 # Requires:
 #   - hf CLI  (pip install -U "huggingface_hub[cli]")
@@ -19,8 +20,22 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REPO=$(awk '/^repo:/ {print $2}' .assets-revision)
-REVISION="${ASSETS_REVISION:-$(awk '/^revision:/ {print $2}' .assets-revision)}"
+PINNED_REVISION=$(awk '/^revision:/ {print $2}' .assets-revision)
+REVISION="${ASSETS_REVISION:-$PINNED_REVISION}"
+if [[ "$REVISION" != "$PINNED_REVISION" ]]; then
+    echo "fetch_assets: ASSETS_REVISION must equal pinned revision $PINNED_REVISION" >&2
+    exit 1
+fi
+REFRESH_MANIFEST=0
+if [[ "${1:-}" == "--refresh-manifest" ]]; then
+    REFRESH_MANIFEST=1
+    shift
+fi
 ONLY_SITE="${1:-}"
+if [[ "$REFRESH_MANIFEST" -eq 1 && -n "$ONLY_SITE" ]]; then
+    echo "fetch_assets: --refresh-manifest requires a full fetch" >&2
+    exit 1
+fi
 CACHE_DIR="sites/.cache/tarballs/$REVISION"
 
 if ! command -v hf >/dev/null 2>&1; then
@@ -73,13 +88,23 @@ else
 fi
 
 TRANSACTION=""
+MANIFEST_BACKUP=""
+MANIFEST_EXISTED=0
 rollback_assets() {
     status=$?
     trap - ERR INT TERM
     if [[ -n "$TRANSACTION" && -d "$TRANSACTION" ]]; then
         echo "fetch_assets: rolling back repository-wide managed-asset transaction" >&2
         python3 scripts/asset_transaction.py rollback sites "$TRANSACTION"
+        if [[ "$REFRESH_MANIFEST" -eq 1 ]]; then
+            if [[ "$MANIFEST_EXISTED" -eq 1 && -f "$MANIFEST_BACKUP" ]]; then
+                cp -p "$MANIFEST_BACKUP" assets-manifest.json
+            else
+                rm -f assets-manifest.json
+            fi
+        fi
     fi
+    [[ -n "$MANIFEST_BACKUP" ]] && rm -f "$MANIFEST_BACKUP"
     exit "$status"
 }
 
@@ -92,8 +117,15 @@ if [[ -z "$ONLY_SITE" ]]; then
         python3 scripts/validate_asset_archive.py "$tarball" "$site" "${validator_args[@]}"
     done
     TRANSACTION="sites/.cache/asset-transaction-$$"
-    python3 scripts/asset_transaction.py begin sites "$TRANSACTION"
+    if [[ "$REFRESH_MANIFEST" -eq 1 ]]; then
+        MANIFEST_BACKUP="sites/.cache/assets-manifest-backup-$$.json"
+        if [[ -f assets-manifest.json ]]; then
+            cp -p assets-manifest.json "$MANIFEST_BACKUP"
+            MANIFEST_EXISTED=1
+        fi
+    fi
     trap rollback_assets ERR INT TERM
+    python3 scripts/asset_transaction.py begin sites "$TRANSACTION"
 fi
 
 extracted=0
@@ -119,11 +151,20 @@ for tarball in "${TARBALLS[@]}"; do
     extracted=$((extracted + 1))
 done
 
+if [[ -z "$ONLY_SITE" ]]; then
+    if [[ "$REFRESH_MANIFEST" -eq 1 ]]; then
+        python3 scripts/asset_state.py write sites .assets-revision assets-manifest.json --cache "$CACHE_DIR"
+    fi
+    # Verify archive bytes and the extracted tree against the tracked immutable manifest while rollback data is available.
+    python3 scripts/asset_state.py verify sites .assets-revision assets-manifest.json --cache "$CACHE_DIR"
+fi
+
 if [[ -n "$TRANSACTION" ]]; then
     completed_transaction="$TRANSACTION"
     TRANSACTION=""
     trap - ERR INT TERM
     python3 scripts/asset_transaction.py commit sites "$completed_transaction"
+    [[ -n "$MANIFEST_BACKUP" ]] && rm -f "$MANIFEST_BACKUP"
 fi
 
 if [[ -n "$ONLY_SITE" && $extracted -ne 1 ]]; then
@@ -131,9 +172,6 @@ if [[ -n "$ONLY_SITE" && $extracted -ne 1 ]]; then
     exit 1
 fi
 if [[ -n "$ONLY_SITE" ]]; then
-    rm -f sites/.assets-state.json
-    echo "[fetch] single-site fetch invalidated full-tree asset state; run a full fetch before building"
-else
-    python3 scripts/asset_state.py write sites .assets-revision sites/.assets-state.json --cache "$CACHE_DIR"
+    echo "[fetch] single-site fetch may not match assets-manifest.json; run a full fetch before building"
 fi
 echo "[fetch] done — $extracted site(s) extracted into sites/"

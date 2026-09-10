@@ -9,11 +9,10 @@
     <span>{{ drug.generic_name|capitalize }}</span>
   </nav>
   <div class="breadcrumb-actions">
-    <a href="#" onclick="window.print();return false;" class="action-link">Print</a>
-    <span class="action-sep">|</span>
+    <button type="button" onclick="window.print()" class="action-link action-button js-required-control">Print</button>
+    <span class="action-sep js-required-control">|</span>
     {% if current_user.is_authenticated %}
-      <a href="#" id="save-toggle" data-slug="{{ drug.slug }}" data-saved="{{ 'true' if saved else 'false' }}" class="action-link">{{ 'Saved' if saved else 'Save' }}</a>
-      <noscript><form method="post" action="{{ url_for('my_med_list_toggle') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ drug.slug }}"><input type="hidden" name="saved" value="{{ 'false' if saved else 'true' }}"><button type="submit" class="action-link action-button">{{ 'Remove from My Med List' if saved else 'Save to My Med List' }}</button></form></noscript>
+      <form method="post" action="{{ url_for('my_med_list_toggle') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ drug.slug }}"><input type="hidden" name="saved" value="{{ 'false' if saved else 'true' }}"><button type="submit" class="action-link action-button">{{ 'Remove from My Med List' if saved else 'Save to My Med List' }}</button></form>
     {% else %}
       <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="action-link">Save</a>
     {% endif %}
@@ -40,7 +39,7 @@
       {% endif %}
     </div>
     <div class="drug-header-text">
-    <h1 class="drug-title">{{ drug.generic_name|capitalize }} <button type="button" class="drug-pronounce-btn speaker-icon" aria-label="Pronounce {{ drug.generic_name }}" title="Hear pronunciation">&#128264;</button></h1>
+    <h1 class="drug-title">{{ drug.generic_name|capitalize }} <button type="button" class="drug-pronounce-btn speaker-icon js-required-control" aria-label="Pronounce {{ drug.generic_name }}" title="Hear pronunciation">&#128264;</button></h1>
     {% if drug.pronunciation %}<p class="pronunciation">Pronunciation: <em>{{ drug.pronunciation }}</em></p>{% endif %}
     <div class="drug-meta-line">
       <span class="drug-meta-item"><strong>Generic name:</strong> {{ drug.generic_name }}</span>
@@ -68,7 +67,7 @@
         {% for i in range(5 - full_stars - (1 if half_star else 0)) %}<span class="star star-empty">&#9734;</span>{% endfor %}
       </span>
       <span class="rating-num">{{ "%.1f"|format(drug.avg_rating) }}/10</span>
-      <a href="#reviews" class="rating-num-count">({{ drug.review_count }} reviews)</a>
+      <a href="#reviews" class="rating-num-count">({{ drug.review_count }} simulated fixture reviews)</a>
     </div>
     {% endif %}
     <div class="reviewer-box">
@@ -83,10 +82,10 @@
     </div>
     <div class="drug-header-actions">
       {% if current_user.is_authenticated %}
-        <button id="med-list-toggle-top" data-slug="{{ drug.slug }}" data-saved="{{ 'true' if saved else 'false' }}" class="btn-med-list btn-med-list--header">
+        <form method="post" action="{{ url_for('my_med_list_toggle') }}" class="inline-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ drug.slug }}"><input type="hidden" name="saved" value="{{ 'false' if saved else 'true' }}"><button type="submit" class="btn-med-list btn-med-list--header">
           <span class="btn-med-list-icon" aria-hidden="true">{% if saved %}&#10003;{% else %}&#43;{% endif %}</span>
           <span class="btn-med-list-text">{{ 'In My Med List — Remove' if saved else 'Add to My Med List' }}</span>
-        </button>
+        </button></form>
       {% else %}
         <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="btn-med-list btn-med-list--header">
           <span class="btn-med-list-icon" aria-hidden="true">&#43;</span>
@@ -98,8 +97,8 @@
   </header>
 
   <div class="drug-actions-bar">
-    <a href="#" onclick="window.print();return false;" class="drug-action-link">Print</a>
-    <span class="drug-action-sep">|</span>
+    <button type="button" onclick="window.print()" class="drug-action-link action-button js-required-control">Print</button>
+    <span class="drug-action-sep js-required-control">|</span>
     <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="drug-action-link">Synthetic pill diagrams</a>
     <span class="drug-action-sep">|</span>
     <a href="{{ url_for('drug_prices', slug=drug.slug) }}" class="drug-action-link">Generated price fixture</a>
@@ -374,10 +373,10 @@
           </li>
         </ul>
         {% if current_user.is_authenticated %}
-        <button id="med-list-toggle" data-slug="{{ drug.slug }}" data-saved="{{ 'true' if saved else 'false' }}" class="btn-med-list btn-med-list--lg">
+        <form method="post" action="{{ url_for('my_med_list_toggle') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="slug" value="{{ drug.slug }}"><input type="hidden" name="saved" value="{{ 'false' if saved else 'true' }}"><button type="submit" class="btn-med-list btn-med-list--lg">
           <span class="btn-med-list-icon" aria-hidden="true">{% if saved %}&#10003;{% else %}&#43;{% endif %}</span>
           <span class="btn-med-list-text">{{ 'Remove from My Med List' if saved else 'Add to My Med List' }}</span>
-        </button>
+        </button></form>
         {% else %}
         <a href="{{ url_for('login', next=url_for('drug_detail', slug=drug.slug)) }}" class="btn-med-list btn-med-list--lg">
           <span class="btn-med-list-icon" aria-hidden="true">&#43;</span>
@@ -387,7 +386,7 @@
       </div>
 
       <div class="sidebar-box rating-box">
-        <h3>User Reviews &amp; Ratings</h3>
+        <h3>Simulated Reviews &amp; Ratings</h3>
         {% if drug.avg_rating %}
         <div class="rating-score">{{ "%.1f"|format(drug.avg_rating) }}<span class="rating-score-denom"> / 10</span></div>
         <div class="rating-bar-wrap">
@@ -397,7 +396,7 @@
         {% else %}
         <p class="muted">No ratings yet.</p>
         {% endif %}
-        <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}" class="rating-count">{{ drug.review_count }} Reviews</a>
+        <a href="{{ url_for('drug_reviews_page', slug=drug.slug) }}" class="rating-count">{{ drug.review_count }} simulated fixture reviews</a>
         <a href="{{ url_for('drug_review_new', slug=drug.slug) }}" class="sidebar-write-review">Write a review</a>
       </div>
 
@@ -447,60 +446,6 @@
     <p class="further-information-copyright muted">Local WebHarbor benchmark fixture. No third-party authorship or medical review is claimed.</p>
   </section>
 </article>
-
-<script>
-(function(){
-  var btn = document.getElementById('med-list-toggle');
-  var btnTop = document.getElementById('med-list-toggle-top');
-  var saveLink = document.getElementById('save-toggle');
-  var controls = [
-    [btn, 'Remove from My Med List', 'Add to My Med List'],
-    [btnTop, 'In My Med List — Remove', 'Add to My Med List'],
-    [saveLink, 'Saved', 'Save']
-  ];
-  var requestInFlight = false;
-  function render(saved){
-    controls.forEach(function(control){
-      var el = control[0];
-      if(!el) return;
-      el.dataset.saved = saved ? 'true' : 'false';
-      var text = el.querySelector('.btn-med-list-text');
-      var icon = el.querySelector('.btn-med-list-icon');
-      if(text){
-        text.textContent = saved ? control[1] : control[2];
-        if(icon) icon.textContent = saved ? '✓' : '+';
-      } else {
-        el.textContent = saved ? control[1] : control[2];
-      }
-    });
-  }
-  function toggle(el){
-    el.addEventListener('click', function(e){
-      e.preventDefault();
-      if(requestInFlight) return;
-      requestInFlight = true;
-      var desired = el.dataset.saved !== 'true';
-      fetch('{{ url_for("my_med_list_toggle") }}', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json', 'X-CSRFToken': '{{ csrf_token() }}'},
-        body: JSON.stringify({slug: el.dataset.slug, saved: desired})
-      }).then(r=>{
-        if(r.redirected || r.status===400 || r.status===401){
-          window.location='{{ url_for("login", next=url_for("drug_detail", slug=drug.slug)) }}';
-          return;
-        }
-        if(!r.ok) return;
-        return r.json();
-      }).then(data=>{
-        if(data) render(data.saved);
-      }).finally(()=>{ requestInFlight = false; });
-    });
-  }
-  if(btn) toggle(btn);
-  if(btnTop) toggle(btnTop);
-  if(saveLink) toggle(saveLink);
-})();
-</script>
 
 <script>
 (function(){

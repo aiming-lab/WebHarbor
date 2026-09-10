@@ -123,6 +123,56 @@ def test_medical_fixture_disclosure_is_visible_on_every_page():
     assert "must not be used" in about
 
 
+def test_ui_provenance_and_no_javascript_contracts_are_explicit():
+    templates = SITE / "templates"
+    detail = (templates / "drug_detail.html").read_text()
+    reviews = (templates / "drug_reviews_page.html").read_text()
+    search = (templates / "search.html").read_text()
+    med_list = (templates / "my_med_list.html").read_text()
+    account = (templates / "account.html").read_text()
+    assert "simulated fixture reviews" in detail
+    assert "Simulated Reviews &amp; Ratings" in detail
+    assert "Simulated Review Fixtures &amp; Ratings" in reviews
+    assert "Simulated news fixtures" in search and "Simulated fixture" in search
+    assert "This interface provides no instruction to start, stop, schedule, or change medication" in med_list
+    assert "do not send email, alerts, interaction warnings, refill reminders" in account
+    assert detail.count("action=\"{{ url_for('my_med_list_toggle') }}\"") == 3
+    assert "fetch('{{ url_for(\"my_med_list_toggle\") }}'" not in detail
+    assert "js-required-control" in detail
+
+
+def test_responsive_search_and_contrast_contracts_are_source_enforced():
+    css = (SITE / "static" / "css" / "main.css").read_text()
+    assert "--orange: #a64b00" in css
+    assert "linear-gradient(180deg, #a64b00 0%, #8f4000 100%)" in css
+    assert ".search-layout { flex-direction: column; }" in css
+    assert ".filter-sidebar { width: 100%; }" in css
+    assert "color: #888" not in css and "color:#888" not in css
+
+
+def test_normal_text_palette_meets_wcag_contrast_threshold():
+    def luminance(color):
+        values = [int(color[index:index + 2], 16) / 255 for index in (1, 3, 5)]
+        linear = [value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4 for value in values]
+        return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2]
+
+    def contrast(first, second):
+        high, low = sorted((luminance(first), luminance(second)), reverse=True)
+        return (high + 0.05) / (low + 0.05)
+
+    assert contrast("#ffffff", "#a64b00") >= 4.5
+    assert contrast("#ffffff", "#8f4000") >= 4.5
+    assert contrast("#666666", "#ffffff") >= 4.5
+
+
+def test_missing_medical_fields_have_local_empty_states():
+    templates = SITE / "templates"
+    side_effects = (templates / "drug_side_effects.html").read_text()
+    monograph = (templates / "drug_pro_monograph.html").read_text()
+    assert "No drug-specific side-effect text is stored" in side_effects
+    assert monograph.count("Not stored in this fixture.") >= 5
+
+
 def test_seed_builder_preserves_known_good_seed_on_import_failure(tmp_path):
     work = tmp_path / "site"
     work.mkdir()

@@ -28,7 +28,7 @@ for site in sites/*/; do
 done
 
 if (( need_fetch == 0 )); then
-    if [[ ! -f sites/.assets-state.json ]] || ! python3 scripts/asset_state.py verify sites .assets-revision sites/.assets-state.json; then
+    if [[ ! -f assets-manifest.json ]] || ! python3 scripts/asset_state.py verify sites .assets-revision assets-manifest.json; then
         need_fetch=1
     fi
 fi
@@ -39,7 +39,7 @@ if (( need_fetch )); then
 fi
 
 ./scripts/check_assets.sh
-python3 scripts/asset_state.py verify sites .assets-revision sites/.assets-state.json
+python3 scripts/asset_state.py verify sites .assets-revision assets-manifest.json
 
 echo "[build] docker build -t $TAG ."
 docker build -t "$TAG" .

@@ -21,7 +21,13 @@ if [[ "$ARG2" == "--push" ]]; then PUSH="--push"; else ONLY_SITE="$ARG2"; fi
 
 REPO=$(awk '/^repo:/ {print $2}' .assets-revision)
 mkdir -p "$TARGET"
-shopt -s nullglob
+shopt -s nullglob dotglob
+existing_output=("$TARGET"/*)
+if [[ ${#existing_output[@]} -ne 0 ]]; then
+    echo "[pack] target directory must be empty: $TARGET" >&2
+    exit 1
+fi
+shopt -u dotglob
 
 # Subpaths inside each site/<site>/ that the tarball should include.
 # Keep in sync with .assetpaths.
@@ -50,7 +56,8 @@ for site_dir in sites/*/; do
         [[ -e "$site_dir$sub" ]] && members+=("$site/$sub")
     done
     if [[ ${#members[@]} -eq 0 ]]; then
-        echo "  $site: no managed assets, skipping"; continue
+        echo "[pack] $site has no managed roots; refusing an incomplete archive set" >&2
+        exit 1
     fi
 
     out="$TARGET/$site.tar.gz"
@@ -64,6 +71,18 @@ for site_dir in sites/*/; do
     printf "  %-22s -> %-30s %s\n" "$site" "$site.tar.gz" "$sz"
     count=$((count + 1))
 done
+
+expected_count=0
+for site_dir in sites/*/; do
+    [[ -d "$site_dir" ]] || continue
+    [[ -n "$ONLY_SITE" && "$(basename "$site_dir")" != "$ONLY_SITE" ]] && continue
+    expected_count=$((expected_count + 1))
+done
+archives=("$TARGET"/*.tar.gz)
+if [[ $count -ne $expected_count || ${#archives[@]} -ne $expected_count ]]; then
+    echo "[pack] exact archive-set check failed: expected=$expected_count generated=$count present=${#archives[@]}" >&2
+    exit 1
+fi
 
 echo "[pack] done — $count tarballs in $TARGET/"
 

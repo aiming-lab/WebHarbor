@@ -138,6 +138,7 @@
 
   <section class="account-box">
     <h2>Account settings</h2>
+    <p class="muted">These controls save local resettable preferences only. They do not send email, alerts, interaction warnings, refill reminders, or external notifications.</p>
     <form method="post" action="{{ url_for('save_settings') }}" class="account-settings-form">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="settings_form" value="dashboard">
@@ -147,13 +148,13 @@
         <input id="acct-email" type="email" name="email" value="{{ current_user.email }}" required maxlength="120">
       </div>
       <fieldset class="form-fieldset">
-        <legend>Email preferences</legend>
+        <legend>Local email preference fixtures</legend>
         <label class="form-check"><input type="checkbox" name="newsletter" {% if prefs.get('newsletter', true) %}checked{% endif %}> Weekly health newsletter</label>
         <label class="form-check"><input type="checkbox" name="fda_alerts" {% if prefs.get('fda_alerts', true) %}checked{% endif %}> FDA drug alerts &amp; recalls</label>
         <label class="form-check"><input type="checkbox" name="new_approvals" {% if prefs.get('new_approvals', false) %}checked{% endif %}> New drug approvals</label>
       </fieldset>
       <fieldset class="form-fieldset">
-        <legend>Notification settings</legend>
+        <legend>Local notification preference fixtures</legend>
         <label class="form-check"><input type="checkbox" name="interaction_warnings" {% if prefs.get('interaction_warnings', true) %}checked{% endif %}> Interaction warnings for drugs in my list</label>
         <label class="form-check"><input type="checkbox" name="refill_reminders" {% if prefs.get('refill_reminders', false) %}checked{% endif %}> Refill reminders</label>
       </fieldset>

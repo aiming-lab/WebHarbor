@@ -38,10 +38,11 @@ WORKDIR /opt/WebSyn
 # run scripts/fetch_assets.sh to pull them from Hugging Face first.
 COPY sites/ /opt/WebSyn/
 COPY .assets-revision /opt/.assets-revision
+COPY assets-manifest.json /opt/assets-manifest.json
 COPY scripts/check_asset_inventory.py /opt/check_asset_inventory.py
 COPY scripts/check_seed_databases.py /opt/check_seed_databases.py
 COPY scripts/asset_state.py /opt/asset_state.py
-RUN python3 /opt/asset_state.py verify /opt/WebSyn /opt/.assets-revision /opt/WebSyn/.assets-state.json
+RUN python3 /opt/asset_state.py verify /opt/WebSyn /opt/.assets-revision /opt/assets-manifest.json
 
 # IKEA's seed is reproducibly materialized from the tracked source catalog so code-only content fixes do not require an asset-repository write. Product images still come from the pinned asset bundle.
 RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instance

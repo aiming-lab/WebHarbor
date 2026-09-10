@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 {% from "_drug_sidebar.html" import drug_status_sidebar %}
-{% block title %}{{ drug.generic_name|capitalize }} User Reviews & Ratings - {{ site_name }}{% endblock %}
+{% block title %}{{ drug.generic_name|capitalize }} Simulated Review Fixtures & Ratings - {{ site_name }}{% endblock %}
 {% block content %}
 <nav class="breadcrumb" aria-label="Breadcrumb">
   <a href="{{ url_for('index') }}">Home</a>
@@ -31,7 +31,7 @@
 </nav>
 
 <div class="reviews-page-header">
-  <h1>{{ drug.generic_name|capitalize }} User Reviews &amp; Ratings</h1>
+  <h1>{{ drug.generic_name|capitalize }} Simulated Review Fixtures &amp; Ratings</h1>
   <a href="{{ url_for('drug_review_new', slug=drug.slug) }}" class="btn btn-primary btn-write-review-top">&#9998; Write a Review</a>
 </div>
 
@@ -45,7 +45,7 @@
         {% if half_p %}<span class="star star-half-visual" aria-hidden="true">&#9733;</span>{% endif %}
         {% for i in range(5 - full_stars_p - (1 if half_p else 0)) %}<span class="star star-empty">&#9734;</span>{% endfor %}
       </div>
-      <div class="muted">{{ drug.review_count }} reviews</div>
+      <div class="muted">{{ drug.review_count }} local synthetic-evaluation entries, including simulated fixtures</div>
     </div>
     <div class="reviews-distribution">
       {% set total = drug.review_count or 1 %}
@@ -63,7 +63,7 @@
 
   {% if conditions %}
   <section class="reviews-by-condition">
-    <h3>Reviews by condition</h3>
+    <h3>Simulated review fixtures by condition</h3>
     <ul class="reviews-by-condition-list">
       <li>
         <a href="{{ url_for('drug_reviews_page', slug=drug.slug, sort=sort) }}"

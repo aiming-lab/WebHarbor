@@ -6,6 +6,7 @@ import io
 import json
 import os
 import re
+import shutil
 import sqlite3
 import subprocess
 import sys
@@ -332,6 +333,156 @@ def test_staged_migration_failure_preserves_old_managed_roots(tmp_path):
     assert old_seed.is_file()
     assert old_image.read_text() == "old"
     assert not (site / "static" / "images" / "new.txt").exists()
+
+
+def test_tracked_asset_manifest_binds_all_archives_and_current_tree():
+    revision = dict(
+        line.split(":", 1)
+        for line in (ROOT / ".assets-revision").read_text().splitlines()
+        if ":" in line and not line.startswith("#")
+    )
+    revision = {key.strip(): value.strip() for key, value in revision.items()}
+    manifest = json.loads((ROOT / "assets-manifest.json").read_text())
+    assert manifest["repo"] == revision["repo"]
+    assert manifest["revision"] == revision["revision"]
+    assert set(manifest["archives"]) == {f"{site}.tar.gz" for site in EXPECTED}
+    assert all(record["bytes"] > 0 and re.fullmatch(r"[0-9a-f]{64}", record["sha256"]) for record in manifest["archives"].values())
+    assert re.fullmatch(r"[0-9a-f]{64}", manifest["managed_tree_sha256"])
+    process = subprocess.run(
+        [sys.executable, "scripts/asset_state.py", "verify", "sites", ".assets-revision", "assets-manifest.json"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_asset_fetch_rejects_revision_override_and_verifies_manifest_before_commit(tmp_path):
+    environment = os.environ.copy()
+    environment["ASSETS_REVISION"] = "0" * 40
+    process = subprocess.run(
+        ["bash", "scripts/fetch_assets.sh"],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert process.returncode != 0
+    assert "must equal pinned revision" in process.stderr
+    source = (ROOT / "scripts" / "fetch_assets.sh").read_text()
+    state_verify = source.index("asset_state.py verify")
+    transaction_commit = source.index("asset_transaction.py commit")
+    assert state_verify < transaction_commit
+
+
+def test_full_fetch_rolls_back_roots_when_tracked_manifest_verification_fails(tmp_path):
+    repository = tmp_path / "repository"
+    scripts = repository / "scripts"
+    scripts.mkdir(parents=True)
+    for name in (
+        "fetch_assets.sh", "asset_state.py", "asset_transaction.py", "validate_asset_archive.py",
+        "extract_asset_archive.py", "check_seed_databases.py",
+    ):
+        shutil.copy2(ROOT / "scripts" / name, scripts / name)
+    (repository / ".assets-revision").write_text("repo: fixture/assets\nrevision: " + "a" * 40 + "\n")
+    site = repository / "sites" / "fixture"
+    old_database = site / "instance_seed" / "fixture.db"
+    old_database.parent.mkdir(parents=True)
+    connection = sqlite3.connect(old_database)
+    connection.execute("CREATE TABLE old_state(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
+    old_manifest = b"tracked-manifest-sentinel\n"
+    (repository / "assets-manifest.json").write_bytes(old_manifest)
+
+    source_database = tmp_path / "new.db"
+    connection = sqlite3.connect(source_database)
+    connection.execute("CREATE TABLE new_state(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
+    archive = tmp_path / "fixture.tar.gz"
+    _archive(archive, "fixture", [("instance_seed/fixture.db", source_database.read_bytes())])
+
+    commands = tmp_path / "commands"
+    commands.mkdir()
+    real_python = sys.executable
+    (commands / "python3").write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"$*\" == *\"asset_state.py verify\"* ]]; then exit 73; fi\n"
+        f"exec {real_python} \"$@\"\n"
+    )
+    (commands / "hf").write_text(
+        "#!/usr/bin/env bash\n"
+        "while [[ $# -gt 0 ]]; do\n"
+        "  if [[ \"$1\" == \"--local-dir\" ]]; then destination=$2; shift 2; else shift; fi\n"
+        "done\n"
+        "mkdir -p \"$destination\"\n"
+        f"cp {archive} \"$destination/fixture.tar.gz\"\n"
+    )
+    (commands / "python3").chmod(0o755)
+    (commands / "hf").chmod(0o755)
+    environment = os.environ.copy()
+    environment["PATH"] = str(commands) + os.pathsep + environment["PATH"]
+    process = subprocess.run(
+        ["bash", "scripts/fetch_assets.sh", "--refresh-manifest"],
+        cwd=repository,
+        env=environment,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert process.returncode == 73, process.stdout + process.stderr
+    assert "rolling back repository-wide" in process.stderr
+    assert (repository / "assets-manifest.json").read_bytes() == old_manifest
+    connection = sqlite3.connect(old_database)
+    try:
+        assert connection.execute("SELECT name FROM sqlite_master WHERE type='table'").fetchall() == [("old_state",)]
+    finally:
+        connection.close()
+
+
+def test_asset_packer_rejects_nonempty_output_directory(tmp_path):
+    output = tmp_path / "output"
+    output.mkdir()
+    stale = output / "stale.tar.gz"
+    stale.write_bytes(b"stale")
+    process = subprocess.run(
+        ["bash", "scripts/extract_assets.sh", str(output)],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert process.returncode != 0
+    assert "target directory must be empty" in process.stderr
+    assert stale.read_bytes() == b"stale"
+
+
+def test_asset_packer_produces_exact_archive_set_in_clean_output(tmp_path):
+    repository = tmp_path / "pack-repository"
+    scripts = repository / "scripts"
+    scripts.mkdir(parents=True)
+    for name in ("extract_assets.sh", "validate_asset_archive.py", "check_seed_databases.py"):
+        shutil.copy2(ROOT / "scripts" / name, scripts / name)
+    (repository / ".assets-revision").write_text("repo: fixture/assets\nrevision: " + "b" * 40 + "\n")
+    seed = repository / "sites" / "only_site" / "instance_seed" / "only_site.db"
+    seed.parent.mkdir(parents=True)
+    connection = sqlite3.connect(seed)
+    connection.execute("CREATE TABLE fixture(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
+    output = tmp_path / "clean-output"
+    process = subprocess.run(
+        ["bash", "scripts/extract_assets.sh", str(output)],
+        cwd=repository,
+        capture_output=True,
+        text=True,
+        timeout=60,
+    )
+    assert process.returncode == 0, process.stdout + process.stderr
+    assert sorted(path.name for path in output.iterdir()) == ["only_site.tar.gz"]
 
 
 def test_repository_asset_transaction_rolls_back_all_sites(tmp_path):

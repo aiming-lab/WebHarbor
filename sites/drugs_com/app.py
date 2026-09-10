@@ -54,7 +54,9 @@ os.makedirs(os.path.join(BASE_DIR, "instance"), exist_ok=True)
 def _load_runtime_secret_key():
     """Keep sessions stable across restart, but rotate them on a full reset."""
     configured = os.environ.get("DRUGS_COM_SECRET_KEY")
-    if configured:
+    if configured is not None:
+        if len(configured.encode("utf-8")) < 32:
+            raise RuntimeError("DRUGS_COM_SECRET_KEY must be at least 32 bytes")
         return configured
 
     secret_path = os.path.join(BASE_DIR, "instance", ".secret_key")
@@ -585,6 +587,7 @@ _AUTH_FAILURE_LIMIT = 8
 _AUTH_FAILURE_WINDOW_SECONDS = 60
 _AUTH_FAILURE_MAX_KEYS = 4_096
 _auth_failures = {}
+_auth_pending = {}
 _auth_failures_lock = threading.Lock()
 
 
@@ -607,21 +610,58 @@ def _prune_auth_failures(now):
 
 def _auth_is_limited(keys):
     now = time.monotonic()
-    cutoff = now - _AUTH_FAILURE_WINDOW_SECONDS
+    with _auth_failures_lock:
+        _prune_auth_failures(now)
+        return any(
+            len(_auth_failures.get(key, ())) + _auth_pending.get(key, 0) >= _AUTH_FAILURE_LIMIT
+            for key in keys
+        )
+
+
+def _begin_auth_attempt(keys):
+    """Atomically reserve limiter capacity before password verification."""
+    now = time.monotonic()
+    with _auth_failures_lock:
+        _prune_auth_failures(now)
+        known_keys = set(_auth_failures) | set(_auth_pending)
+        if len(known_keys | set(keys)) > _AUTH_FAILURE_MAX_KEYS:
+            return False
+        if any(
+            len(_auth_failures.get(key, ())) + _auth_pending.get(key, 0) >= _AUTH_FAILURE_LIMIT
+            for key in keys
+        ):
+            return False
+        for key in keys:
+            _auth_pending[key] = _auth_pending.get(key, 0) + 1
+        return True
+
+
+def _finish_auth_attempt(keys, *, successful):
+    """Release a reservation and atomically record failures for every limiter key."""
+    now = time.monotonic()
     with _auth_failures_lock:
         _prune_auth_failures(now)
         for key in keys:
-            recent = [timestamp for timestamp in _auth_failures.get(key, ()) if timestamp >= cutoff]
-            if recent:
-                _auth_failures[key] = recent
+            pending = _auth_pending.get(key, 0) - 1
+            if pending > 0:
+                _auth_pending[key] = pending
             else:
-                _auth_failures.pop(key, None)
-            if len(recent) >= _AUTH_FAILURE_LIMIT:
-                return True
-    return False
+                _auth_pending.pop(key, None)
+            if successful:
+                if key.startswith("account:"):
+                    _auth_failures.pop(key, None)
+            else:
+                _auth_failures.setdefault(key, []).append(now)
+                _auth_failures[key] = _auth_failures[key][-_AUTH_FAILURE_LIMIT:]
+        while len(set(_auth_failures) | set(_auth_pending)) > _AUTH_FAILURE_MAX_KEYS:
+            removable = next((key for key in _auth_failures if key not in _auth_pending), None)
+            if removable is None:
+                break
+            _auth_failures.pop(removable, None)
 
 
 def _record_auth_failure(keys):
+    """Compatibility helper for direct limiter tests without an in-flight reservation."""
     now = time.monotonic()
     with _auth_failures_lock:
         _prune_auth_failures(now)
@@ -636,6 +676,7 @@ def _clear_auth_failures(keys):
     with _auth_failures_lock:
         for key in keys:
             _auth_failures.pop(key, None)
+            _auth_pending.pop(key, None)
 
 
 def _saved_drug_lock(user_id, drug_id):
@@ -2200,7 +2241,7 @@ DRUG_CONTENT_OVERRIDES = {
         "uses": "Simvastatin is indicated to reduce the risk of cardiovascular events (MI, stroke, revascularization) in patients with established cardiovascular disease or high risk. It is also indicated to reduce elevated LDL-C, total cholesterol, and triglycerides, and to increase HDL-C in patients with primary hyperlipidemia or mixed dyslipidemia. It is used in children ≥10 years with heterozygous familial hypercholesterolemia.",
         "warnings": "Myopathy and rhabdomyolysis are dose-related — the 80 mg dose is restricted to patients already on it for 12+ months without evidence of myopathy (FDA restriction since 2011). The 80 mg dose should not be prescribed to new patients. Simvastatin has more drug interactions than other statins due to extensive CYP3A4 metabolism — strong CYP3A4 inhibitors (itraconazole, ketoconazole, erythromycin, clarithromycin, HIV protease inhibitors, gemfibrozil, niacin ≥1g/day, cyclosporine, amlodipine ≥10 mg) increase myopathy risk significantly. Simvastatin is contraindicated in pregnancy (Category X). Liver enzyme elevations can occur — evaluate if signs of liver disease develop.",
         "side_effects": "Common: headache, abdominal pain, nausea, constipation, and myalgia (muscle aches). Serious: myopathy and rhabdomyolysis (dose-dependent, more common at 80 mg), liver enzyme elevations, and new-onset diabetes.",
-        "dosage": "Starting dose: 10-20 mg once daily in the evening. High-risk patients: 40 mg once daily. Maximum: 40 mg once daily (80 mg only for established patients). Take in the evening — HMG-CoA reductase activity peaks at night. Drug interaction limits: 10 mg/day with amlodipine or ranolazine; 20 mg/day with amiodarone, verapamil, or diltiazem.",
+        "dosage": "Starting dose: 10-20 mg once daily in the evening. High-risk patients: 40 mg once daily. Maximum: 40 mg once daily (80 mg only for established patients). Take in the evening — HMG-CoA reductase activity peaks at night. Drug interaction limits in this fixture: 20 mg/day with amlodipine; 10 mg/day with diltiazem; 20 mg/day with amiodarone or verapamil.",
         "before_taking": "You should not take simvastatin if you are pregnant, breastfeeding, or planning to become pregnant (use effective contraception), if you have active liver disease, or if you take strong CYP3A4 inhibitors listed above. Tell your doctor if you have kidney disease, thyroid disease, diabetes, or a personal or family history of muscle disease. Tell your doctor about all medications, supplements, and grapefruit juice consumption. Stop simvastatin and contact your doctor immediately if you have unexplained muscle pain, tenderness, or weakness (especially with fever or dark urine). Inform your doctor if you are pregnant.",
     },
     "fluoxetine": {
@@ -5363,7 +5404,7 @@ for _generic in ("simvastatin", "lovastatin", "atorvastatin"):
 
 _ALCOHOL_BY_GENERIC = {
     "metronidazole": {"severity": "major",
-        "description": "Metronidazole with alcohol can produce a disulfiram-like reaction with flushing, nausea, vomiting, tachycardia, and headache. Avoid alcohol during therapy and for at least 48 hours after the last dose."},
+        "description": "Metronidazole with alcohol can produce a disulfiram-like reaction with flushing, nausea, vomiting, tachycardia, and headache. Avoid alcohol during therapy and for at least 3 days after the last dose."},
     "warfarin": {"severity": "major",
         "description": "Acute heavy alcohol intake inhibits warfarin metabolism and raises INR with bleeding risk; chronic use induces metabolism and reduces effect. Either pattern destabilizes anticoagulation."},
     "acetaminophen": {"severity": "moderate",
@@ -5501,6 +5542,7 @@ def api_interaction_check():
             unrepresented_pairs.append([a.generic_name, b.generic_name])
     if has_alcohol:
         _, alcohol_hits = _lifestyle_interactions(matched)
+        represented_alcohol_ids = {hit["drug"].id for hit in alcohol_hits}
         for hit in alcohol_hits:
             interactions.append({
                 "drug_a": hit["drug"].generic_name,
@@ -5508,6 +5550,11 @@ def api_interaction_check():
                 "severity": hit["severity"],
                 "description": hit["description"],
             })
+        unrepresented_pairs.extend(
+            [item.generic_name, "alcohol"]
+            for item in matched
+            if item.id not in represented_alcohol_ids
+        )
     return jsonify({
         "interactions": interactions,
         "drugs_checked": [d.generic_name for d in matched] + (["alcohol"] if has_alcohol else []),
@@ -6084,19 +6131,21 @@ def login():
         email = (request.form.get("email") or "").strip().lower()
         password = request.form.get("password") or ""
         auth_keys = _auth_keys(email)
-        if _auth_is_limited(auth_keys):
+        if not _begin_auth_attempt(auth_keys):
             flash("Too many failed sign-in attempts. Try again later.", "error")
             return render_template("login.html", next_url=next_url), 429
-        if len(email) > 120 or len(password.encode("utf-8")) > 72:
-            user = None
-        else:
-            user = User.query.filter_by(email=email).first()
-        if user and user.check_password(password):
-            _clear_auth_failures(auth_keys)
-            login_user(user, remember=request.form.get("remember_me"))
+        authenticated_user = None
+        try:
+            if len(email) <= 120 and len(password.encode("utf-8")) <= 72:
+                user = User.query.filter_by(email=email).first()
+                if user and user.check_password(password):
+                    authenticated_user = user
+        finally:
+            _finish_auth_attempt(auth_keys, successful=authenticated_user is not None)
+        if authenticated_user is not None:
+            login_user(authenticated_user, remember=request.form.get("remember_me"))
             flash("Welcome back!", "success")
             return redirect(next_url or url_for("account"))
-        _record_auth_failure(auth_keys)
         flash("Invalid email or password.", "error")
     return render_template("login.html", next_url=next_url)
 

@@ -10,6 +10,7 @@ import re
 import sqlite3
 import subprocess
 import tempfile
+import uuid
 from collections import Counter
 from dataclasses import dataclass
 from pathlib import Path
@@ -109,15 +110,42 @@ class Visit:
 
 # ---------- invocation and immutable state ----------
 
+def materialize_db(source: str, *, prefix="snapshot") -> str:
+    """Create a consistent SQLite backup that includes committed WAL content."""
+    source_path = Path(source).resolve()
+    if not source_path.is_file():
+        raise ValueError(f"database does not exist: {source_path}")
+    descriptor, path = tempfile.mkstemp(prefix=f"{SITE}-{prefix}-", suffix=".db")
+    os.close(descriptor)
+    source_connection = sqlite3.connect(f"file:{source_path}?mode=ro", uri=True)
+    target_connection = sqlite3.connect(path)
+    try:
+        source_connection.backup(target_connection)
+    finally:
+        target_connection.close()
+        source_connection.close()
+    return path
+
+
 def fetch_db(container: str, kind: str) -> str:
-    source = f"{container}:/opt/WebSyn/{SITE}/{kind}/{SITE}.db"
+    remote = f"/opt/WebSyn/{SITE}/{kind}/{SITE}.db"
+    remote_snapshot = f"/tmp/{SITE}-{kind}-{uuid.uuid4().hex}.db"
     descriptor, path = tempfile.mkstemp(prefix=f"{SITE}-{kind}-", suffix=".db")
     os.close(descriptor)
-    process = subprocess.run(["docker", "cp", source, path], capture_output=True, text=True, timeout=60)
-    if process.returncode:
+    backup_code = "import sqlite3,sys; source=sqlite3.connect('file:'+sys.argv[1]+'?mode=ro',uri=True); target=sqlite3.connect(sys.argv[2]); source.backup(target); target.close(); source.close()"
+    try:
+        process = subprocess.run(["docker", "exec", container, "python3", "-c", backup_code, remote, remote_snapshot], capture_output=True, text=True, timeout=60)
+        if process.returncode:
+            raise RuntimeError(f"container SQLite backup failed: {process.stderr.strip()}")
+        process = subprocess.run(["docker", "cp", f"{container}:{remote_snapshot}", path], capture_output=True, text=True, timeout=60)
+        if process.returncode:
+            raise RuntimeError(f"docker cp of SQLite backup failed: {process.stderr.strip()}")
+        return path
+    except Exception:
         Path(path).unlink(missing_ok=True)
-        raise RuntimeError(f"docker cp {source} failed: {process.stderr.strip()}")
-    return path
+        raise
+    finally:
+        subprocess.run(["docker", "exec", container, "rm", "-f", remote_snapshot], capture_output=True, timeout=30, check=False)
 
 
 def parse_args() -> Args:
@@ -131,22 +159,26 @@ def parse_args() -> Args:
     return Args(values.run_dir, values.initial_db, values.after_db, values.container)
 
 
-def canonical_seed_hash():
-    manifest_path = Path(__file__).resolve().parents[1] / "seed_manifest.json"
-    if not manifest_path.is_file():
-        return None
-    value = json.loads(manifest_path.read_text(encoding="utf-8"))
-    return value.get("sha256") if isinstance(value, dict) else None
+def canonical_seed_path():
+    return Path(__file__).resolve().parents[1] / "instance_seed" / f"{SITE}.db"
 
 
-def validate_snapshots(judge: Judge, initial: Snapshot, after: Snapshot):
+def validate_snapshots(judge: Judge, initial: Snapshot, after: Snapshot, canonical: Snapshot):
     initial_tables = initial.table_names()
     after_tables = after.table_names()
     judge.check("exact_schema_tables", initial_tables == EXPECTED_TABLES and after_tables == EXPECTED_TABLES, f"initial={sorted(initial_tables)} after={sorted(after_tables)}")
     marker = initial.scalar("SELECT value FROM seed_metadata WHERE key='version'") if "seed_metadata" in initial_tables else None
     judge.check("seed_version", marker == SEED_VERSION, f"version={marker!r}")
-    expected_hash = canonical_seed_hash()
-    judge.check("canonical_initial_seed", expected_hash is not None and initial.sha256 == expected_hash, f"expected={expected_hash} actual={initial.sha256}")
+    manifest_path = Path(__file__).resolve().parents[1] / "seed_manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    canonical_raw_hash = hashlib.sha256(canonical_seed_path().read_bytes()).hexdigest()
+    canonical_matches = (
+        manifest.get("sha256") == canonical_raw_hash
+        and initial.sha256 == canonical.sha256
+        and initial.schema() == canonical.schema()
+        and initial.rows() == canonical.rows()
+    )
+    judge.check("canonical_initial_seed", canonical_matches, f"manifest={manifest.get('sha256')} repository={canonical_raw_hash} initial_snapshot={initial.sha256} canonical_snapshot={canonical.sha256}")
     judge.check("schema_unchanged", initial.schema() == after.schema(), f"objects={len(initial.schema())}/{len(after.schema())}")
     judge.check("rows_unchanged", initial.rows() == after.rows(), "all tables compared")
     judge.check("after_bytes_unchanged", initial.sha256 == after.sha256, f"initial={initial.sha256} after={after.sha256}")
@@ -237,15 +269,16 @@ def validate_browser_evidence(judge: Judge, trajectory: dict, run_dir: Path):
         elif digest:
             digests[name] = digest
     judge.check("decoded_nonblank_png_evidence", not failures and bool(unique_names), f"files={len(unique_names)} failures={failures[:3]}")
-    unchanged = []
-    for index, step in enumerate(steps):
-        if step.get("action") == "done":
+    distinct_frames = set(digests.values())
+    unchanged_navigation = []
+    for index, step in enumerate(steps[:-1]):
+        if step.get("action") not in {"click", "navigate", "go_back"} or step.get("url") == steps[index + 1].get("url"):
             continue
         before = digests.get(step.get("screenshot_before"))
         after = digests.get(step.get("screenshot_after"))
         if before and after and before == after:
-            unchanged.append(index)
-    judge.check("browser_visual_transitions", not unchanged, f"unchanged_non_done_steps={unchanged}")
+            unchanged_navigation.append(index)
+    judge.check("browser_visual_evidence_changes", len(distinct_frames) >= 2 and not unchanged_navigation, f"distinct_frames={len(distinct_frames)} unchanged_navigation={unchanged_navigation}")
 
 
 def validate_urls(judge: Judge, trajectory: dict):
@@ -283,6 +316,10 @@ def validate_urls(judge: Judge, trajectory: dict):
 def path_is(visit: Visit, *paths):
     normalized = visit.path.rstrip("/") or "/"
     return normalized in {(path.rstrip("/") or "/") for path in paths}
+
+
+def route_is(visit: Visit, *paths):
+    return path_is(visit, *paths) and not visit.query
 
 
 def exact_query(visit: Visit, expected):
@@ -338,26 +375,41 @@ def require_click_transition(judge, trajectory, visits, name, source_predicate, 
     return matches[0][1] if matches else None
 
 
-def input_indices(trajectory, expected, *, exact=False):
+def input_indices(trajectory, expected, *, exact=False, visits=(), page_predicate=None):
     target = str(expected) if exact else norm(expected)
+    by_index = {visit.index: visit for visit in visits}
     result = []
     for index, step in enumerate(trajectory.get("steps", [])):
         params = step.get("params", {}) if isinstance(step, dict) else {}
         actual = params.get("text")
         matches = isinstance(actual, str) and (actual == target if exact else norm(actual) == target)
-        if step.get("action") == "input" and matches and _successful_step(trajectory, index, "input"):
+        page_matches = page_predicate is None or (index in by_index and page_predicate(by_index[index]))
+        if step.get("action") == "input" and matches and page_matches and _successful_step(trajectory, index, "input"):
             result.append(index)
     return result
 
 
-def require_inputs_before(judge, trajectory, name, expected, submit_index):
-    groups = {item: input_indices(trajectory, item) for item in expected}
-    valid = submit_index is not None and all(indices and min(indices) < submit_index for indices in groups.values())
+def require_inputs_before(judge, trajectory, name, expected, submit_index, *, visits=(), page_predicate=None):
+    groups = {
+        item: input_indices(trajectory, item, visits=visits, page_predicate=page_predicate)
+        for item in expected
+    }
+    ordered = sorted(min(indices) for indices in groups.values() if indices)
+    valid = (
+        submit_index is not None
+        and len(ordered) == len(expected)
+        and len(set(ordered)) == len(expected)
+        and all(index < submit_index for index in ordered)
+    )
     judge.check(name, valid, repr(groups))
 
 
 def require_root_to_detail(judge, trajectory, visits, name, detail_predicate):
-    return require_click_transition(judge, trajectory, visits, name, lambda visit: path_is(visit, "/", "/search", "/drugs-a-z", "/drug-az"), detail_predicate)
+    source = lambda visit: (
+        route_is(visit, "/", "/drugs-a-z", "/drug-az")
+        or (path_is(visit, "/search") and len(visit.query) == 1 and len(visit.values("q")) == 1 and bool(norm(visit.values("q")[0])))
+    )
+    return require_click_transition(judge, trajectory, visits, name, source, detail_predicate)
 
 
 # ---------- answer semantics ----------
@@ -463,6 +515,55 @@ def check_domain_subset(judge, name, answer, domain, allowed):
     judge.check(name, not unexpected and not contradictions, f"found={sorted(found)!r} unexpected={unexpected!r} contradictions={contradictions!r}")
 
 
+_LIST_PROSE_WORDS = {
+    "availability", "brand", "brands", "class", "condition", "conditions", "csa", "and", "are", "currently", "drug", "drugs", "example", "examples", "first",
+    "fixture", "fixtures", "following", "include", "includes", "imprint", "imprints",
+    "list", "listed", "local", "medication", "medications", "name", "names", "rating", "ratings", "result", "results", "review", "reviews", "saved", "schedule",
+    "in", "is", "its", "not", "only", "the", "three",
+}
+
+
+def answer_uses_only_terms(answer, terms, *, allowed_words=()):
+    remainder = str(answer)
+    for term in sorted(set(terms), key=lambda value: (-len(norm(value)), str(value))):
+        remainder = term_pattern(term).sub(" ", remainder)
+    leftover = set(norm(remainder).split())
+    permitted = _LIST_PROSE_WORDS | {word for value in allowed_words for word in norm(value).split()}
+    return not (leftover - permitted), sorted(leftover - permitted)
+
+
+def known_list_items(answer, terms):
+    items = [item.strip() for item in re.split(r"[,;\n]+|\band\b", answer, flags=re.I) if item.strip()]
+    hits = [set(detected_terms(item, terms, include_contradicted=False)) for item in items]
+    return bool(items) and all(len(item_hits) == 1 for item_hits in hits), items, hits
+
+
+def labelled_clause(answer, labels):
+    labels_pattern = "|".join(re.escape(label) for label in labels)
+    match = re.search(rf"\b(?:{labels_pattern})\b\s*(?:names?\s*)?(?::|=)?\s*([^;\n.]+)", answer, re.I)
+    return match.group(1).strip() if match else ""
+
+
+def check_labelled_terms(judge, name, answer, labels, expected, domain):
+    clause = labelled_clause(answer, labels)
+    hits = detected_terms(clause, expected, include_contradicted=False)
+    expected_norms = {norm(term) for term in expected}
+    unexpected = sorted(term for term in set(detected_terms(clause, domain)) if norm(term) not in expected_norms)
+    contradictions = sorted(term for term in expected if contradicted(clause, term))
+    vocabulary_ok, extras = answer_uses_only_terms(clause, expected)
+    judge.check(name, bool(clause) and len(hits) == len(expected) and not unexpected and not contradictions and vocabulary_ok, f"clause={clause!r} hits={hits!r} unexpected={unexpected!r} contradictions={contradictions!r} extras={extras!r}")
+
+
+def claim_is_affirmed(text, match):
+    before, after = _nearby_words(text, match.start(), match.end())
+    before_text = " ".join(before[-4:])
+    after_text = " ".join(after[:6])
+    preceding = re.search(r"\b(?:not|never|false|incorrect|wrong|retract|retracted)\b(?: \w+){0,3}$", before_text)
+    following = re.match(r"^(?:(?:which|that|this) )?(?:is|are|was|were) (?:not |never )?(?:true|correct|false|incorrect|wrong)\b", after_text)
+    referred = re.match(r"^but (?:that|this|the)(?: \w+){0,2} (?:is|was) (?:false|incorrect|wrong)\b", after_text)
+    return not (preceding or following or referred)
+
+
 def drug(initial: Snapshot, slug: str):
     rows = initial.query("SELECT d.*,dc.name AS class_name,dc.slug AS class_slug FROM drug d LEFT JOIN drug_class dc ON dc.id=d.drug_class_id WHERE d.slug=?", (slug,))
     return dict(rows[0]) if len(rows) == 1 else None
@@ -495,19 +596,36 @@ def check_single_drug(judge, answer, record, *, require_brands=False, require_cl
         expected = brands(record)
         check_required_terms(judge, "answer_all_brands", answer, expected)
         check_domain_subset(judge, "answer_no_extra_brands", answer, all_brand_names(judge.initial), expected)
+        check_labelled_terms(judge, "answer_brands_bound_to_field", answer, ("brand", "brands"), expected, all_brand_names(judge.initial) + all_class_names(judge.initial) + all_condition_names(judge.initial))
     if require_class:
         class_name = record["class_name"]
         alternatives = [class_name]
         if "nonsteroidal anti-inflammatory" in norm(class_name):
             alternatives.append("NSAID")
-        class_ok = any(affirmed(answer, term) for term in alternatives)
-        judge.check("answer_class", class_ok, repr(alternatives))
-        detected = set(detected_terms(answer, all_class_names(judge.initial)))
-        judge.check("answer_no_extra_classes", not (detected - {class_name}), repr(sorted(detected)))
+        class_segments = [segment for segment in re.split(r"[;\n.]+", answer) if mentions(segment, "class")]
+        class_clause = next((segment for segment in class_segments if any(affirmed(segment, term) for term in alternatives)), "")
+        class_ok = any(affirmed(class_clause, term) for term in alternatives)
+        judge.check("answer_class_bound_to_field", bool(class_clause) and class_ok, repr(alternatives))
+        detected = set(detected_terms(class_clause, all_class_names(judge.initial)))
+        wrong_field_terms = detected_terms(class_clause, all_brand_names(judge.initial) + all_condition_names(judge.initial))
+        judge.check("answer_no_extra_classes", not (detected - {class_name}) and not wrong_field_terms, f"classes={sorted(detected)!r} wrong_field={wrong_field_terms!r}")
     if require_conditions:
         expected = conditions_for_drug(judge.initial, record["id"])
         check_required_terms(judge, "answer_all_conditions", answer, expected)
         check_domain_subset(judge, "answer_no_extra_conditions", answer, all_condition_names(judge.initial), expected)
+        check_labelled_terms(judge, "answer_conditions_bound_to_field", answer, ("condition", "conditions"), expected, all_condition_names(judge.initial) + all_brand_names(judge.initial) + all_class_names(judge.initial))
+    if require_brands or require_class or require_conditions:
+        allowed_values = [record["generic_name"]]
+        if require_brands:
+            allowed_values.extend(brands(record))
+        if require_class:
+            allowed_values.append(record["class_name"])
+            if "nonsteroidal anti-inflammatory" in norm(record["class_name"]):
+                allowed_values.append("NSAID")
+        if require_conditions:
+            allowed_values.extend(conditions_for_drug(judge.initial, record["id"]))
+        vocabulary_ok, extras = answer_uses_only_terms(answer, allowed_values)
+        judge.check("answer_no_unknown_drug_fields", vocabulary_ok, repr(extras))
 
 
 def _sentence_with_terms(answer, terms):
@@ -568,28 +686,30 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
     news_index_paths = ("/news", "/medical-news", "/medical-news.html")
 
     if number == 0:
-        require_root_to_detail(judge, trajectory, visits, "ui_navigation_to_ibuprofen", lambda visit: path_is(visit, *detail_paths("ibuprofen")))
+        require_root_to_detail(judge, trajectory, visits, "ui_navigation_to_ibuprofen", lambda visit: route_is(visit, *detail_paths("ibuprofen")))
         check_single_drug(judge, answer, drug(initial, "ibuprofen"), require_brands=True, require_class=True)
 
     elif number == 1:
         search_pred = lambda visit: path_is(visit, "/search", "/advanced-search") and scalar_query(visit, "q", "metformin")
-        search_index = require_click_transition(judge, trajectory, visits, "ui_submit_metformin_search", lambda visit: path_is(visit, "/", "/search", "/advanced-search"), search_pred)
-        require_inputs_before(judge, trajectory, "ui_enter_metformin", ["metformin"], search_index - 1 if search_index is not None else None)
-        require_click_transition(judge, trajectory, visits, "ui_open_metformin_result", search_pred, lambda visit: path_is(visit, *detail_paths("metformin")))
+        search_index = require_click_transition(judge, trajectory, visits, "ui_submit_metformin_search", lambda visit: route_is(visit, "/", "/search", "/advanced-search"), search_pred)
+        require_inputs_before(judge, trajectory, "ui_enter_metformin", ["metformin"], search_index - 1 if search_index is not None else None, visits=visits, page_predicate=lambda visit: route_is(visit, "/", "/search", "/advanced-search"))
+        require_click_transition(judge, trajectory, visits, "ui_open_metformin_result", search_pred, lambda visit: route_is(visit, *detail_paths("metformin")))
         record = drug(initial, "metformin")
         check_single_drug(judge, answer, record)
         if record:
-            availability_ok = affirmed(answer, record["availability"]) or (record["availability"] == "Rx" and affirmed(answer, "prescription"))
-            conflicting_status = any(mentions(answer, item) for item in ("OTC", "both", "over the counter")) if record["availability"] == "Rx" else False
-            judge.check("answer_availability", availability_ok and not conflicting_status, record["availability"])
-            csa_ok = affirmed(answer, record["csa_schedule"]) or ("not a controlled" in norm(record["csa_schedule"]) and (affirmed(answer, "not controlled") or affirmed(answer, "not a controlled drug")))
-            judge.check("answer_csa_schedule", csa_ok, record["csa_schedule"])
+            availability_clause = labelled_clause(answer, ("availability",))
+            availability_ok = affirmed(availability_clause, record["availability"]) or (record["availability"] == "Rx" and affirmed(availability_clause, "prescription"))
+            conflicting_status = any(mentions(availability_clause, item) for item in ("OTC", "both", "over the counter")) if record["availability"] == "Rx" else False
+            judge.check("answer_availability_bound_to_field", bool(availability_clause) and availability_ok and not conflicting_status, record["availability"])
+            csa_clause = labelled_clause(answer, ("CSA schedule", "controlled substance schedule"))
+            csa_ok = affirmed(csa_clause, record["csa_schedule"]) or ("not a controlled" in norm(record["csa_schedule"]) and (affirmed(csa_clause, "not controlled") or affirmed(csa_clause, "not a controlled drug")))
+            judge.check("answer_csa_schedule_bound_to_field", bool(csa_clause) and csa_ok, record["csa_schedule"])
 
     elif number in {2, 8, 19}:
         names = {2: ["ibuprofen", "warfarin"], 8: ["alprazolam", "oxycodone", "alcohol"], 19: ["metformin", "alcohol"]}[number]
         result_pred = lambda visit: interaction_query(visit, names)
-        result_index = require_click_transition(judge, trajectory, visits, "ui_submit_exact_interaction_inputs", lambda visit: path_is(visit, *checker_paths), result_pred)
-        require_inputs_before(judge, trajectory, "ui_enter_each_interaction_input", names, result_index - 1 if result_index is not None else None)
+        result_index = require_click_transition(judge, trajectory, visits, "ui_submit_exact_interaction_inputs", lambda visit: route_is(visit, *checker_paths), result_pred)
+        require_inputs_before(judge, trajectory, "ui_enter_each_interaction_input", names, result_index - 1 if result_index is not None else None, visits=visits, page_predicate=lambda visit: route_is(visit, *checker_paths))
         if number == 2:
             rows = initial.query("SELECT i.severity,i.description FROM drug_interaction i JOIN drug a ON a.id=i.drug_a_id JOIN drug b ON b.id=i.drug_b_id WHERE (a.slug=? AND b.slug=?) OR (a.slug=? AND b.slug=?)", ("ibuprofen", "warfarin", "warfarin", "ibuprofen"))
             judge.check("unique_interaction_truth", len(rows) == 1, f"rows={len(rows)}")
@@ -604,12 +724,17 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
                 severities += [row[0] for row in initial.query("SELECT severity FROM lifestyle_interaction WHERE kind='alcohol' AND drug_id IN (?,?)", (by_slug["alprazolam"], by_slug["oxycodone"]))]
             expected_severity = max(severities, key=lambda value: SEVERITY_ORDER[value]) if severities else None
             judge.check("interaction_count_truth", len(severities) > 0, repr(severities))
-            count_patterns = [int(value) for value in re.findall(r"\b(\d+)\s+interactions?\b", answer, re.I)]
+            count_matches = list(re.finditer(r"\b(\d+)\s+interactions?\b", answer, re.I))
             all_integers = [int(value) for value in re.findall(r"(?<![\w.])\d+(?![\w.])", answer)]
-            judge.check("answer_bound_interaction_count", count_patterns == [len(severities)] and set(all_integers) == {len(severities)})
-            severity_relation = re.search(rf"\b(?:highest|most severe|max(?:imum)?)\s+severity\s*(?:is|:|=)?\s*{re.escape(expected_severity or '')}\b", answer, re.I)
-            conflicting = [value for value in SEVERITY_ORDER if value != expected_severity and re.search(rf"\b(?:highest|most severe|max(?:imum)?)\s+severity\s*(?:is|:|=)?\s*{value}\b", answer, re.I)]
-            judge.check("answer_highest_severity", severity_relation and not conflicting)
+            count_ok = len(count_matches) == 1 and int(count_matches[0].group(1)) == len(severities) and claim_is_affirmed(answer, count_matches[0])
+            judge.check("answer_bound_interaction_count", count_ok and set(all_integers) == {len(severities)})
+            severity_patterns = (
+                rf"\b(?:highest|most severe|max(?:imum)?)\s+severity\s*(?:is|:|=)?\s*{re.escape(expected_severity or '')}\b",
+                rf"\b{re.escape(expected_severity or '')}\s+(?:is|as)\s+(?:the\s+)?(?:highest|most severe|max(?:imum)?)(?:\s+severity)?\b",
+            )
+            severity_matches = [match for pattern in severity_patterns for match in re.finditer(pattern, answer, re.I)]
+            conflicting = [value for value in SEVERITY_ORDER if value != expected_severity and re.search(rf"(?:highest|most severe|max(?:imum)?)[^.;\n]{{0,25}}\b{value}\b|\b{value}\b[^.;\n]{{0,25}}(?:highest|most severe|max(?:imum)?)", answer, re.I)]
+            judge.check("answer_highest_severity", bool(severity_matches) and all(claim_is_affirmed(answer, match) for match in severity_matches) and not conflicting)
             check_required_terms(judge, "answer_interaction_entities", answer, names)
         else:
             rows = initial.query("SELECT li.severity,li.description FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")
@@ -620,53 +745,68 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
 
     elif number == 3:
         result_pred = lambda visit: path_is(visit, *pill_paths) and scalar_query(visit, "imprint", "I-2")
-        result_index = require_click_transition(judge, trajectory, visits, "ui_submit_pill_imprint", lambda visit: path_is(visit, *pill_paths), result_pred)
-        require_inputs_before(judge, trajectory, "ui_enter_pill_imprint", ["I-2"], result_index - 1 if result_index is not None else None)
+        result_index = require_click_transition(judge, trajectory, visits, "ui_submit_pill_imprint", lambda visit: route_is(visit, *pill_paths), result_pred)
+        require_inputs_before(judge, trajectory, "ui_enter_pill_imprint", ["I-2"], result_index - 1 if result_index is not None else None, visits=visits, page_predicate=lambda visit: route_is(visit, *pill_paths))
         rows = initial.query("SELECT d.generic_name,i.shape,i.color FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE i.imprint=? ORDER BY i.id", ("I-2",))
         judge.check("unique_pill_truth", len(rows) == 1, f"rows={len(rows)}")
         if len(rows) == 1:
             expected = list(rows[0])
             check_required_terms(judge, "answer_pill_fields", answer, expected)
             check_domain_subset(judge, "answer_no_extra_pill_drugs", answer, all_drug_names(initial), [expected[0]])
+            shape_domain = [row[0] for row in initial.query("SELECT DISTINCT shape FROM drug_image ORDER BY shape")]
+            color_domain = [row[0] for row in initial.query("SELECT DISTINCT color FROM drug_image ORDER BY color")]
+            check_labelled_terms(judge, "answer_shape_bound_to_field", answer, ("shape",), [expected[1]], shape_domain + color_domain)
+            check_labelled_terms(judge, "answer_color_bound_to_field", answer, ("color",), [expected[2]], color_domain + shape_domain)
+            vocabulary_ok, extras = answer_uses_only_terms(answer, [*expected, "I-2"], allowed_words=("matches", "record", "shape", "color", "oval", "white"))
+            judge.check("answer_no_competing_pill_fields", vocabulary_ok, repr(extras))
 
     elif number == 4:
         result_pred = lambda visit: path_is(visit, *az_paths) and scalar_query(visit, "letter", "L")
-        require_click_transition(judge, trajectory, visits, "ui_select_letter_l", lambda visit: path_is(visit, *az_paths) and not visit.values("letter"), result_pred)
+        require_click_transition(judge, trajectory, visits, "ui_select_letter_l", lambda visit: route_is(visit, *az_paths), result_pred)
         values = [row[0] for row in initial.query("SELECT generic_name FROM drug WHERE lower(generic_name) LIKE 'l%' ORDER BY generic_name")]
         hits = detected_terms(answer, values, include_contradicted=False)
         judge.check("answer_five_distinct_l_drugs", len(set(hits)) >= 5 and not any(contradicted(answer, item) for item in hits), repr(hits))
         check_domain_subset(judge, "answer_only_letter_l_drugs", answer, all_drug_names(initial), values)
+        vocabulary_ok, extras = answer_uses_only_terms(answer, values)
+        list_ok, items, item_hits = known_list_items(answer, values)
+        judge.check("answer_no_unknown_letter_l_drugs", vocabulary_ok and list_ok, f"extras={extras!r} items={items!r} hits={item_hits!r}")
 
     elif number == 5:
-        require_root_to_detail(judge, trajectory, visits, "ui_navigation_to_sertraline", lambda visit: path_is(visit, *detail_paths("sertraline")))
+        require_root_to_detail(judge, trajectory, visits, "ui_navigation_to_sertraline", lambda visit: route_is(visit, *detail_paths("sertraline")))
         check_single_drug(judge, answer, drug(initial, "sertraline"), require_brands=True, require_conditions=True)
 
     elif number in {6, 20}:
         slug = "diabetes" if number == 6 else "hypertension"
         minimum = 4 if number == 6 else 5
         destination_paths = (f"/condition/{slug}", f"/conditions/{slug}", f"/condition/{slug}.html", f"/conditions/{slug}.html")
-        require_click_transition(judge, trajectory, visits, f"ui_open_{slug}_condition", lambda visit: path_is(visit, *condition_index_paths), lambda visit: path_is(visit, *destination_paths))
+        require_click_transition(judge, trajectory, visits, f"ui_open_{slug}_condition", lambda visit: route_is(visit, *condition_index_paths), lambda visit: route_is(visit, *destination_paths))
         values = drugs_for_condition(initial, slug)
         hits = detected_terms(answer, values, include_contradicted=False)
         judge.check(f"answer_{minimum}_distinct_{slug}_drugs", len(set(hits)) >= minimum and not any(contradicted(answer, item) for item in hits), repr(hits))
         check_domain_subset(judge, f"answer_only_{slug}_drugs", answer, all_drug_names(initial), values)
+        vocabulary_ok, extras = answer_uses_only_terms(answer, values)
+        list_ok, items, item_hits = known_list_items(answer, values)
+        judge.check(f"answer_no_unknown_{slug}_drugs", vocabulary_ok and list_ok, f"extras={extras!r} items={items!r} hits={item_hits!r}")
 
     elif number == 7:
-        require_root_to_detail(judge, trajectory, visits, "ui_navigation_to_semaglutide", lambda visit: path_is(visit, *detail_paths("semaglutide")))
+        require_root_to_detail(judge, trajectory, visits, "ui_navigation_to_semaglutide", lambda visit: route_is(visit, *detail_paths("semaglutide")))
         check_single_drug(judge, answer, drug(initial, "semaglutide"), require_brands=True, require_class=True)
 
     elif number in {9, 16}:
         slug = "statins" if number == 9 else "benzodiazepines"
         destination_paths = (f"/drug-class/{slug}", f"/drug-classes/{slug}", f"/drug-class/{slug}.html", f"/drug-classes/{slug}.html")
-        require_click_transition(judge, trajectory, visits, f"ui_open_{slug}_class", lambda visit: path_is(visit, *class_index_paths), lambda visit: path_is(visit, *destination_paths))
+        require_click_transition(judge, trajectory, visits, f"ui_open_{slug}_class", lambda visit: route_is(visit, *class_index_paths), lambda visit: route_is(visit, *destination_paths))
         values = drugs_for_class(initial, slug)
         hits = detected_terms(answer, values, include_contradicted=False)
         judge.check(f"answer_three_distinct_{slug}", len(set(hits)) >= 3 and not any(contradicted(answer, item) for item in hits), repr(hits))
         check_domain_subset(judge, f"answer_only_{slug}_drugs", answer, all_drug_names(initial), values)
+        vocabulary_ok, extras = answer_uses_only_terms(answer, values)
+        list_ok, items, item_hits = known_list_items(answer, values)
+        judge.check(f"answer_no_unknown_{slug}_drugs", vocabulary_ok and list_ok, f"extras={extras!r} items={items!r} hits={item_hits!r}")
 
     elif number == 10:
-        detail_pred = lambda visit: path_is(visit, *detail_paths("ibuprofen"))
-        faq_pred = lambda visit: path_is(visit, "/ibuprofen/faq", "/ibuprofen/faq.html", "/tips/ibuprofen", "/tips/ibuprofen-patient-tips")
+        detail_pred = lambda visit: route_is(visit, *detail_paths("ibuprofen"))
+        faq_pred = lambda visit: route_is(visit, "/ibuprofen/faq", "/ibuprofen/faq.html", "/tips/ibuprofen", "/tips/ibuprofen-patient-tips")
         require_click_transition(judge, trajectory, visits, "ui_open_ibuprofen_faq", detail_pred, faq_pred)
         record = drug(initial, "ibuprofen")
         check_single_drug(judge, answer, record)
@@ -678,12 +818,16 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             dose_ok = re.search(rf"\b{low}\s*[-–](?:\s*){high}\s*mg\b", answer, re.I)
             interval_ok = re.search(rf"\bevery\s+{interval_low}\s*(?:to|[-–])\s*{interval_high}\s+hours?\b", answer, re.I)
             maximum_ok = re.search(rf"\b(?:maximum|max|do not exceed)[^.;\n]{{0,45}}\b{maximum}\s*mg\b[^.;\n]{{0,45}}\b{period}\s+hours?\b", answer, re.I)
-            conflict = re.search(r"\b(?<!do )(?:not|incorrect|wrong)\b[^.;\n]{0,30}(?:mg|hours?)", answer, re.I)
-            judge.check("answer_bound_otc_dosage", dose_ok and interval_ok and maximum_ok and not conflict, f"dose={bool(dose_ok)} interval={bool(interval_ok)} max={bool(maximum_ok)} conflict={bool(conflict)}")
+            conflict = re.search(r"\b(?<!do )(?:not|incorrect|wrong|false)\b[^.;\n]{0,30}(?:mg|hours?)", answer, re.I)
+            stated_numbers = {value for value in re.findall(r"(?<![\w.])\d+(?![\w.])", answer)}
+            allowed_numbers = {low, high, interval_low, interval_high, maximum, period}
+            maximum_affirmed = bool(maximum_ok) and (norm(maximum_ok.group(0)).startswith("do not exceed") or claim_is_affirmed(answer, maximum_ok))
+            claims_affirmed = all(match and claim_is_affirmed(answer, match) for match in (dose_ok, interval_ok)) and maximum_affirmed
+            judge.check("answer_bound_otc_dosage", claims_affirmed and not conflict and stated_numbers <= allowed_numbers, f"dose={bool(dose_ok)} interval={bool(interval_ok)} max={bool(maximum_ok)} affirmed={claims_affirmed} conflict={bool(conflict)} numbers={sorted(stated_numbers)!r}")
 
     elif number == 11:
-        destination_pred = lambda visit: path_is(visit, "/new-drug-approvals", "/news/new-drug-approvals", "/news/category/new-drug-approvals", "/newdrugs.html")
-        require_click_transition(judge, trajectory, visits, "ui_open_new_approvals_category", lambda visit: path_is(visit, *news_index_paths), destination_pred)
+        destination_pred = lambda visit: route_is(visit, "/new-drug-approvals", "/news/new-drug-approvals", "/news/category/new-drug-approvals", "/newdrugs.html")
+        require_click_transition(judge, trajectory, visits, "ui_open_new_approvals_category", lambda visit: route_is(visit, *news_index_paths), destination_pred)
         rows = initial.query("SELECT title,published_at FROM news_article WHERE category='New Drug Approvals' ORDER BY published_at DESC,id DESC LIMIT 20")
         unique = len(rows) >= 1 and (len(rows) == 1 or rows[0]["published_at"] != rows[1]["published_at"])
         judge.check("unique_latest_article_truth", unique, repr([tuple(row) for row in rows[:2]]))
@@ -693,7 +837,7 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             judge.check("answer_no_conflicting_latest_title", not detected_terms(answer, other_titles), repr(detected_terms(answer, other_titles)))
 
     elif number == 12:
-        require_root_to_detail(judge, trajectory, visits, "ui_navigation_to_atorvastatin", lambda visit: path_is(visit, *detail_paths("atorvastatin")))
+        require_root_to_detail(judge, trajectory, visits, "ui_navigation_to_atorvastatin", lambda visit: route_is(visit, *detail_paths("atorvastatin")))
         record = drug(initial, "atorvastatin")
         check_single_drug(judge, answer, record)
         if record:
@@ -714,9 +858,9 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
 
     elif number == 13:
         result_pred = lambda visit: path_is(visit, *pill_paths) and exact_query(visit, [("imprint", ""), ("shape", "Oval"), ("color", "White")])
-        result_index = require_click_transition(judge, trajectory, visits, "ui_submit_white_oval_filters", lambda visit: path_is(visit, *pill_paths), result_pred)
+        result_index = require_click_transition(judge, trajectory, visits, "ui_submit_white_oval_filters", lambda visit: route_is(visit, *pill_paths), result_pred)
         submit_index = result_index - 1 if result_index is not None else None
-        filter_clicks = [index for index, step in enumerate(trajectory.get("steps", [])) if submit_index is not None and index < submit_index and step.get("action") == "click" and path_is(next((visit for visit in visits if visit.index == index), Visit(-1, "", ())), *pill_paths)]
+        filter_clicks = [index for index, step in enumerate(trajectory.get("steps", [])) if submit_index is not None and index < submit_index and step.get("action") == "click" and route_is(next((visit for visit in visits if visit.index == index), Visit(-1, "", ())), *pill_paths)]
         judge.check("ui_choose_shape_and_color", len(filter_clicks) >= 2, repr(filter_clicks))
         rows = initial.query("SELECT d.generic_name,i.imprint FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE lower(i.shape)='oval' AND lower(i.color)='white' ORDER BY i.id LIMIT 3")
         expected = [(row["generic_name"], row["imprint"]) for row in rows]
@@ -733,17 +877,19 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             else:
                 pair_segment_indices.append(matching[0])
         judge.check("answer_first_three_exact_pairs", pair_valid, f"segments={segments!r} indices={pair_segment_indices}")
-        judge.check("answer_first_three_order", pair_valid and pair_segment_indices == sorted(pair_segment_indices) and len(set(pair_segment_indices)) == 3, repr(pair_segment_indices))
+        judge.check("answer_first_three_order", pair_valid and pair_segment_indices == [0, 1, 2] and len(segments) == 3, f"indices={pair_segment_indices!r} segment_count={len(segments)}")
         check_domain_subset(judge, "answer_no_extra_pill_drugs", answer, all_drug_names(initial), all_names)
+        vocabulary_ok, extras = answer_uses_only_terms(answer, [value for pair in expected for value in pair], allowed_words=("with an explicitly local synthetic descriptor diagram and no claim about a real pill",))
+        judge.check("answer_no_unknown_pill_results", vocabulary_ok, repr(extras))
 
     elif number == 14:
-        login_pred = lambda visit: path_is(visit, "/login", "/account/login")
-        account_pred = lambda visit: path_is(visit, "/account", "/my-account.html")
-        med_pred = lambda visit: path_is(visit, "/my-med-list", "/my-med-list.html")
+        login_pred = lambda visit: route_is(visit, "/login", "/account/login")
+        account_pred = lambda visit: route_is(visit, "/account", "/my-account.html")
+        med_pred = lambda visit: route_is(visit, "/my-med-list", "/my-med-list.html")
         account_index = require_click_transition(judge, trajectory, visits, "ui_submit_alice_login", login_pred, account_pred)
         submit_index = account_index - 1 if account_index is not None else None
-        email_steps = input_indices(trajectory, "alice.j@test.com", exact=True)
-        password_steps = input_indices(trajectory, "TestPass123!", exact=True)
+        email_steps = input_indices(trajectory, "alice.j@test.com", exact=True, visits=visits, page_predicate=login_pred)
+        password_steps = input_indices(trajectory, "TestPass123!", exact=True, visits=visits, page_predicate=login_pred)
         credentials_valid = (
             submit_index is not None and email_steps and password_steps
             and min(email_steps) < min(password_steps) < submit_index
@@ -754,10 +900,13 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         judge.check("unique_seeded_med_list", bool(values) and len(values) == len(set(values)), repr(values))
         check_required_terms(judge, "answer_all_seeded_medications", answer, values)
         check_domain_subset(judge, "answer_exact_seeded_medication_set", answer, all_drug_names(initial), values)
+        vocabulary_ok, extras = answer_uses_only_terms(answer, values)
+        list_ok, items, item_hits = known_list_items(answer, values)
+        judge.check("answer_no_unknown_saved_medications", vocabulary_ok and list_ok, f"extras={extras!r} items={items!r} hits={item_hits!r}")
 
     elif number == 15:
-        detail_pred = lambda visit: path_is(visit, *detail_paths("lisinopril"))
-        warnings_pred = lambda visit: path_is(visit, "/lisinopril/warnings", "/lisinopril/warnings.html")
+        detail_pred = lambda visit: route_is(visit, *detail_paths("lisinopril"))
+        warnings_pred = lambda visit: route_is(visit, "/lisinopril/warnings", "/lisinopril/warnings.html")
         require_click_transition(judge, trajectory, visits, "ui_open_lisinopril_warnings", detail_pred, warnings_pred)
         record = drug(initial, "lisinopril")
         check_single_drug(judge, answer, record)
@@ -765,31 +914,36 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             fetal = affirmed(answer, "fetal toxicity") or (affirmed(answer, "fetus") and (affirmed(answer, "injury") or affirmed(answer, "death")))
             discontinue = affirmed(answer, "discontinue") and affirmed(answer, "pregnancy")
             judge.check("answer_pregnancy_warning", fetal and discontinue, f"pregnancy_field={record['pregnancy_risk']!r}")
-            availability_ok = affirmed(answer, record["availability"]) or (record["availability"] == "Rx" and affirmed(answer, "prescription"))
-            judge.check("answer_availability", availability_ok and not any(mentions(answer, item) for item in ("OTC", "both", "over the counter")), record["availability"])
+            availability_clause = labelled_clause(answer, ("availability",))
+            availability_ok = affirmed(availability_clause, record["availability"]) or (record["availability"] == "Rx" and affirmed(availability_clause, "prescription"))
+            judge.check("answer_availability_bound_to_field", bool(availability_clause) and availability_ok and not any(mentions(availability_clause, item) for item in ("OTC", "both", "over the counter")), record["availability"])
 
     elif number == 17:
         search_pred = lambda visit: path_is(visit, "/search", "/advanced-search") and scalar_query(visit, "q", "antibiotics")
-        search_index = require_click_transition(judge, trajectory, visits, "ui_submit_antibiotics_search", lambda visit: path_is(visit, "/", "/search", "/advanced-search"), search_pred)
-        require_inputs_before(judge, trajectory, "ui_enter_antibiotics", ["antibiotics"], search_index - 1 if search_index is not None else None)
+        search_index = require_click_transition(judge, trajectory, visits, "ui_submit_antibiotics_search", lambda visit: route_is(visit, "/", "/search", "/advanced-search"), search_pred)
+        require_inputs_before(judge, trajectory, "ui_enter_antibiotics", ["antibiotics"], search_index - 1 if search_index is not None else None, visits=visits, page_predicate=lambda visit: route_is(visit, "/", "/search", "/advanced-search"))
         rows = initial.query("SELECT d.id,d.slug,d.generic_name,d.brand_names_json FROM drug d JOIN drug_class c ON c.id=d.drug_class_id WHERE c.slug='fluoroquinolones' ORDER BY d.id")
         candidates = [dict(row) for row in rows]
         mentioned = [record for record in candidates if affirmed(answer, record["generic_name"])]
         judge.check("one_fluoroquinolone_entity", len(mentioned) == 1, repr([record["generic_name"] for record in mentioned]))
         if len(mentioned) == 1:
             record = mentioned[0]
-            require_click_transition(judge, trajectory, visits, "ui_open_selected_fluoroquinolone", search_pred, lambda visit: path_is(visit, *detail_paths(record["slug"])))
+            require_click_transition(judge, trajectory, visits, "ui_open_selected_fluoroquinolone", search_pred, lambda visit: route_is(visit, *detail_paths(record["slug"])))
             expected_brands = brands(record)
             expected_conditions = conditions_for_drug(initial, record["id"])
             check_required_terms(judge, "answer_all_selected_brands", answer, expected_brands)
             check_domain_subset(judge, "answer_no_extra_brands", answer, all_brand_names(initial), expected_brands)
+            check_labelled_terms(judge, "answer_selected_brands_bound_to_field", answer, ("brand", "brands"), expected_brands, all_brand_names(initial) + all_condition_names(initial))
             check_required_terms(judge, "answer_all_selected_conditions", answer, expected_conditions)
             check_domain_subset(judge, "answer_no_extra_conditions", answer, all_condition_names(initial), expected_conditions)
+            check_labelled_terms(judge, "answer_selected_conditions_bound_to_field", answer, ("condition", "conditions"), expected_conditions, all_condition_names(initial) + all_brand_names(initial))
             check_domain_subset(judge, "answer_only_selected_drug", answer, all_drug_names(initial), [record["generic_name"]])
+            vocabulary_ok, extras = answer_uses_only_terms(answer, [record["generic_name"], *expected_brands, *expected_conditions])
+            judge.check("answer_no_unknown_selected_drug_fields", vocabulary_ok, repr(extras))
 
     elif number == 18:
-        detail_pred = lambda visit: path_is(visit, *detail_paths("amoxicillin"))
-        dosage_pred = lambda visit: path_is(visit, "/amoxicillin/dosage", "/amoxicillin/dosage.html", "/dosage/amoxicillin", "/dosage/amoxicillin.html")
+        detail_pred = lambda visit: route_is(visit, *detail_paths("amoxicillin"))
+        dosage_pred = lambda visit: route_is(visit, "/amoxicillin/dosage", "/amoxicillin/dosage.html", "/dosage/amoxicillin", "/dosage/amoxicillin.html")
         require_click_transition(judge, trajectory, visits, "ui_open_amoxicillin_dosage", detail_pred, dosage_pred)
         record = drug(initial, "amoxicillin")
         check_single_drug(judge, answer, record)
@@ -812,7 +966,7 @@ def grade(number: int, args: Args):
     task_id = f"Drugs.com--{number}"
     judge = Judge(task_id)
     temporary_paths = []
-    initial = after = None
+    initial = after = canonical = None
     try:
         trajectory = load_trajectory(args.run_dir)
         answer = str(trajectory.get("final_answer") or "").strip()
@@ -823,17 +977,22 @@ def grade(number: int, args: Args):
         validate_browser_evidence(judge, trajectory, args.run_dir)
         visits = validate_urls(judge, trajectory)
 
-        initial_path = args.initial_db
-        after_path = args.after_db
-        if not initial_path:
-            initial_path = fetch_db(args.container, "instance_seed")
-            temporary_paths.append(initial_path)
-        if not after_path:
-            after_path = fetch_db(args.container, "instance")
-            temporary_paths.append(after_path)
+        initial_source = args.initial_db
+        after_source = args.after_db
+        if not initial_source:
+            initial_source = fetch_db(args.container, "instance_seed")
+            temporary_paths.append(initial_source)
+        if not after_source:
+            after_source = fetch_db(args.container, "instance")
+            temporary_paths.append(after_source)
+        initial_path = materialize_db(initial_source, prefix="initial")
+        after_path = materialize_db(after_source, prefix="after")
+        canonical_path = materialize_db(str(canonical_seed_path()), prefix="canonical")
+        temporary_paths.extend((initial_path, after_path, canonical_path))
         initial = Snapshot(initial_path)
         after = Snapshot(after_path)
-        validate_snapshots(judge, initial, after)
+        canonical = Snapshot(canonical_path)
+        validate_snapshots(judge, initial, after, canonical)
         verify_task(number, judge, trajectory, visits, initial)
     except Exception as error:
         judge.check("verifier_exception", False, f"{type(error).__name__}: {error}")
@@ -842,6 +1001,8 @@ def grade(number: int, args: Args):
             initial.close()
         if after is not None:
             after.close()
+        if canonical is not None:
+            canonical.close()
         for path in temporary_paths:
             Path(path).unlink(missing_ok=True)
     return judge.result()

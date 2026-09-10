@@ -35,6 +35,8 @@ hf upload-large-folder <your-fork>/WebHarbor . --repo-type dataset
 # open PR on HF first → grab the merge sha
 cd ../webharbor
 sed -i "s/^revision:.*/revision: <hf-merge-sha>/" .assets-revision
+./scripts/fetch_assets.sh --refresh-manifest  # full fetch; rewrites tracked archive/tree digests
+git add .assets-revision assets-manifest.json
 git commit -am "feat(mywebsite): add site + bump assets to <sha>"
 gh pr create
 ```
@@ -143,9 +145,10 @@ hf upload mywebsite.tar.gz <your-fork>/WebHarbor mywebsite.tar.gz --repo-type da
 # After it's merged, copy the merge commit sha.
 
 cd ../webharbor
-# bump the pin
+# bump the pin and bind every downloaded archive plus the extracted tree
 sed -i "s/^revision:.*/revision: <hf-merge-sha>/" .assets-revision
-git add .
+./scripts/fetch_assets.sh --refresh-manifest
+git add .assets-revision assets-manifest.json .
 git commit -m "feat(mywebsite): add new site
 
 Adds Flask app, templates, and seed DB for <real-site-name>.
@@ -175,7 +178,7 @@ hf upload amazon.tar.gz <your-fork>/WebHarbor amazon.tar.gz --repo-type dataset
 # (single-file upload keeps the PR scoped to one site)
 ```
 
-Open the HF PR; once merged, bump `.assets-revision` in this repo and open the GitHub PR. CI on the GitHub PR will fail-closed if the pinned revision isn't reachable.
+Open the HF PR; once merged, bump `.assets-revision`, run `./scripts/fetch_assets.sh --refresh-manifest`, commit `assets-manifest.json`, and open the GitHub PR. CI on the GitHub PR will fail-closed if the pinned revision isn't reachable.
 
 ## Reviewer role — validate the site and grade the tasks
 

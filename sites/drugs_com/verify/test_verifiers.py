@@ -79,7 +79,7 @@ def positive_answer(number, database):
         return f"Ibuprofen and warfarin have a {row['severity']} interaction: {row['description']}"
     if number == 3:
         row = query(database, "SELECT d.generic_name,i.shape,i.color FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE i.imprint='I-2'")[0]
-        return f"I-2 matches the local {row['generic_name']} record; shape {row['shape']}; color {row['color']}."
+        return f"I-2; drug: {row['generic_name']}; shape: {row['shape']}; color: {row['color']}."
     if number == 4:
         values = [row[0] for row in query(database, "SELECT generic_name FROM drug WHERE lower(generic_name) LIKE 'l%' ORDER BY generic_name LIMIT 5")]
         return ", ".join(values)
@@ -505,6 +505,85 @@ def test_deep_link_start_url_fails(snapshots, tmp_path):
     trajectory["start_url"] = ROOT + "/ibuprofen"
     trajectory_path.write_text(json.dumps(trajectory))
     assert_fails(10, run, snapshots)
+
+
+@pytest.mark.parametrize("answer", [
+    "For alprazolam, oxycodone, and alcohol, there are 3 interactions, but that count is false; the highest severity is major.",
+    "For alprazolam, oxycodone, and alcohol, there are 3 interactions; the highest severity is major, which is false.",
+])
+def test_task8_retracted_count_or_severity_fails(answer, snapshots, tmp_path):
+    assert_fails(8, make_run(tmp_path, 8, snapshots[0], answer=answer), snapshots)
+
+
+def test_task8_reverse_natural_severity_relation_passes(snapshots, tmp_path):
+    answer = "For alprazolam, oxycodone, and alcohol, there are 3 interactions; major is the most severe."
+    process = execute(8, make_run(tmp_path, 8, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+@pytest.mark.parametrize("number,answer", [
+    (0, "Ibuprofen; brands: Nonsteroidal anti-inflammatory drugs; class: Advil, Motrin, Nuprin."),
+    (5, "Sertraline; brands: Anxiety, Depression, Obsessive-Compulsive Disorder (OCD), Panic Disorder, Post-Traumatic Stress Disorder (PTSD), Premenstrual Dysphoric Disorder (PMDD), Social Anxiety Disorder; conditions: Zoloft."),
+    (17, "Ciprofloxacin; brands: Bacterial Infections, Pneumonia, Urinary Tract Infection (UTI); conditions: Cipro."),
+])
+def test_values_swapped_between_requested_fields_fail(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number,suffix", [
+    (4, ", inventedazole"),
+    (13, "; inventedazole — XX 999"),
+    (14, ", inventedazole"),
+])
+def test_invented_closed_world_results_fail(number, suffix, snapshots, tmp_path):
+    answer = positive_answer(number, snapshots[0]) + suffix
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_competing_dosage_claims_fail(snapshots, tmp_path):
+    answer = "Ibuprofen OTC: 200-400 mg every 4-6 hours; maximum 1200 mg in 24 hours. The actual dose is 800 mg every 2 hours, maximum 5000 mg in 24 hours."
+    assert_fails(10, make_run(tmp_path, 10, snapshots[0], answer=answer), snapshots)
+
+
+def test_competing_pill_shape_or_color_fails(snapshots, tmp_path):
+    answer = positive_answer(3, snapshots[0]) + " It is also square, triangular, blue, and neon green."
+    assert_fails(3, make_run(tmp_path, 3, snapshots[0], answer=answer), snapshots)
+
+
+def test_input_on_unrelated_page_fails(snapshots, tmp_path):
+    steps = positive_steps(1)
+    steps[0]["url"] = ROOT + "/pill-identifier"
+    assert_fails(1, make_run(tmp_path, 1, snapshots[0], steps=steps), snapshots)
+
+
+def test_unrequested_query_on_path_only_destination_fails(snapshots, tmp_path):
+    steps = positive_steps(10)
+    steps[-1]["url"] += "?unexpected=1"
+    assert_fails(10, make_run(tmp_path, 10, snapshots[0], steps=steps), snapshots)
+
+
+def test_same_pixels_for_successful_same_page_input_are_allowed(snapshots, tmp_path):
+    run = make_run(tmp_path, 2, snapshots[0])
+    shutil.copy2(run / "screenshots" / "step_001.png", run / "screenshots" / "step_002.png")
+    process = execute(2, run, *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_initial_wal_content_is_inside_snapshot_boundary(canonical_seed, snapshots, tmp_path):
+    wal_database = tmp_path / "wal-initial.db"
+    shutil.copy2(canonical_seed, wal_database)
+    connection = sqlite3.connect(wal_database)
+    try:
+        assert connection.execute("PRAGMA journal_mode=WAL").fetchone()[0].lower() == "wal"
+        connection.execute("UPDATE user SET username='wal-mutated' WHERE id=1")
+        connection.commit()
+        assert Path(str(wal_database) + "-wal").is_file()
+        run = make_run(tmp_path, 0, snapshots[0])
+        process = execute(0, run, wal_database, snapshots[1])
+        assert process.returncode == 1, process.stdout + process.stderr
+        assert json.loads(process.stdout)["pass"] is False
+    finally:
+        connection.close()
 
 
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
