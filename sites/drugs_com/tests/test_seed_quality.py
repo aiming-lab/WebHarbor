@@ -213,6 +213,11 @@ def test_remaining_navigation_and_layout_contracts_are_explicit():
     assert ".drug-sources-grid-2col" in css[css.index("@media (max-width: 640px)"):]
     assert ".is-391 { columns: 1; }" in css
     assert "not a complete map of the external service" in sitemap
+    assert ".pill-icon-wrap" in css and "flex-direction: column" in css[css.index(".pill-icon-wrap {"):css.index(".pill-icon-wrap .pill-svg")]
+    assert ".feature-carousel-wrap > .carousel-btn { display: none; }" in css
+    assert 'name="confirm_delete" value="1" required' in (templates / "account.html").read_text()
+    assert 'name="confirm_delete" value="1" required' in (templates / "my_reviews.html").read_text()
+    assert "onsubmit=\"return confirm" not in (templates / "account.html").read_text()
     for template in templates.glob("*.html"):
         assert '<nav class="breadcrumb">' not in template.read_text(), template.name
 

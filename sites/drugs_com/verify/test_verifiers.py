@@ -787,6 +787,38 @@ def test_additional_natural_answer_formats_pass(number, answer, snapshots, tmp_p
     assert process.returncode == 0, process.stdout + process.stderr
 
 
+@pytest.mark.parametrize("number,answer", [
+    (1, "Metformin is prescription-only and is not a controlled drug. In reality, it requires no prescription."),
+    (2, "Ibuprofen and warfarin have a major interaction causing gastrointestinal bleeding. The actual main risk is kidney failure rather than gastrointestinal bleeding."),
+    (19, "Metformin and alcohol have a moderate interaction with lactic acidosis and blood sugar risk. The actual main risk is liver failure rather than lactic acidosis or blood-sugar effects."),
+    (8, "For alprazolam, oxycodone, and alcohol, there are 3 interactions; the highest severity is major. Catastrophic outranks major."),
+    (10, "Ibuprofen OTC: 200-400 mg every 4-6 hours; maximum 1200 mg in 24 hours. In reality, unlimited amounts are safe."),
+    (12, "Atorvastatin has a rating of 7.0/10 and 4 reviews. Its actual review total is a hundred."),
+    (15, "Lisinopril can harm or kill the unborn baby; stop taking it as soon as pregnancy is recognized. Availability: Rx. Nevertheless, continuing lisinopril during pregnancy is safe."),
+    (18, "Amoxicillin standard adult frequency: every 8 hours. The actual adult schedule is twice daily."),
+])
+def test_additional_overriding_claims_fail(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_second_latest_claim_with_invented_title_fails(snapshots, tmp_path):
+    expected = positive_answer(11, snapshots[0])
+    answer = f'The most recent article is "{expected}". "Completely Invented Approval" is actually the latest article.'
+    assert_fails(11, make_run(tmp_path, 11, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number,answer", [
+    (0, "According to Drugs.com, ibuprofen belongs to the Nonsteroidal anti-inflammatory drugs class and is marketed as Advil, Motrin, and Nuprin."),
+    (10, "Ibuprofen: 200-400 mg every 4-6 hours, up to 1200 mg per day."),
+    (12, "Atorvastatin is rated seven out of ten and has four reviews."),
+    (17, "Ciprofloxacin (Cipro) treats Bacterial Infections, Pneumonia, and Urinary Tract Infection (UTI)."),
+    (18, "For standard infections in adults, amoxicillin is typically taken every 8 hours."),
+])
+def test_more_natural_answer_formats_pass(number, answer, snapshots, tmp_path):
+    process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
     run = make_run(tmp_path, 0, snapshots[0], answer="wrong")
     process = execute(0, run, *snapshots)

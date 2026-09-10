@@ -6412,6 +6412,8 @@ def delete_review(review_id):
             id=review_id,
             user_id=current_user.id,
         ).first_or_404()
+        if request.form.get("confirm_delete") != "1":
+            abort(400)
         drug = review.drug
         db.session.delete(review)
         db.session.flush()

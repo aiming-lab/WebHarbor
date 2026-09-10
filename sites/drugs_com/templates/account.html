@@ -100,8 +100,9 @@
         <p>{{ r.body }}</p>
         <div class="review-actions">
           <a class="btn btn-outline btn-sm" href="{{ url_for('drug_review_new', slug=r.drug.slug) }}">Edit</a>
-          <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" class="review-delete" onsubmit="return confirm('Delete this review?');">
+          <form method="post" action="{{ url_for('delete_review', review_id=r.id) }}" class="review-delete">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <label class="review-delete-confirm"><input type="checkbox" name="confirm_delete" value="1" required> Confirm delete</label>
             <button type="submit" class="btn btn-outline btn-sm">Delete</button>
           </form>
         </div>

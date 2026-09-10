@@ -301,6 +301,17 @@ def test_review_delete_is_owner_scoped(client, drugs_app):
     assert response.status_code == 404
 
 
+def test_review_deletion_requires_explicit_native_confirmation(client, drugs_app):
+    assert login(client).status_code == 302
+    review_id = database_rows(drugs_app._test_database_path, "SELECT r.id FROM drug_review r JOIN user u ON u.id=r.user_id WHERE u.email='alice.j@test.com' LIMIT 1")[0][0]
+    page = client.get("/account/reviews")
+    assert client.post(f"/account/reviews/{review_id}/delete", data={"csrf_token": csrf(page)}).status_code == 400
+    page = client.get("/account/reviews")
+    response = client.post(f"/account/reviews/{review_id}/delete", data={"csrf_token": csrf(page), "confirm_delete": "1"})
+    assert response.status_code == 302
+    assert database_rows(drugs_app._test_database_path, "SELECT COUNT(*) FROM drug_review WHERE id=?", (review_id,)) == [(0,)]
+
+
 def test_helpful_votes_require_authentication_and_are_idempotent(client, drugs_app):
     review_id = database_rows(
         drugs_app._test_database_path,
