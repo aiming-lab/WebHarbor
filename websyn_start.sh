@@ -32,8 +32,7 @@ for i in "${!SITES[@]}"; do
     # See site_runner.py for the rationale (Werkzeug ignores SIGTERM).
     exec env -u WEBSYN_CONTROL_TOKEN python3 /opt/site_runner.py "$site" "$port" \
         > "/tmp/websyn_${site}.log" 2>&1 &
-    echo "$!" > "$PID_DIR/${site}.pid"
-    echo "  $site -> port $port (PID $!)"
+    echo "  $site -> port $port (PID $!; identity record written by supervisor)"
 done
 
 
@@ -86,11 +85,7 @@ done
 
 if [ "$failed" -ne 0 ]; then
     echo "[WebSyn] Startup failed; stopping site supervisors." >&2
-    for pid_file in "$PID_DIR"/*.pid; do
-        [ -f "$pid_file" ] || continue
-        pid=$(cat "$pid_file")
-        kill -KILL -- "-$pid" 2>/dev/null || true
-    done
+    python3 /opt/control_server.py --stop-sites || true
     exit 1
 fi
 

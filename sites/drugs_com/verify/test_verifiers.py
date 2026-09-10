@@ -857,6 +857,60 @@ def test_entity_bound_natural_paraphrases_pass(number, answer, snapshots, tmp_pa
     assert process.returncode == 0, process.stdout + process.stderr
 
 
+@pytest.mark.parametrize("number,answer", [
+    (1, "Metformin information is unavailable, while another medicine is prescription-only and is not a controlled drug."),
+    (2, "Ibuprofen, warfarin, a major interaction, and gastrointestinal bleeding are unrelated."),
+    (8, "For alprazolam, oxycodone, and alcohol, there are 3 interactions and the highest severity is major, but these facts are unrelated."),
+    (10, "Ibuprofen information is unavailable, while another medicine uses 200-400 mg every 4-6 hours with a maximum of 1200 mg in 24 hours."),
+    (12, "Atorvastatin's rating and reviews are unavailable, while another medicine has a rating of 7.0/10 and 4 reviews."),
+    (15, "Lisinopril information is unavailable, while another medicine can harm or kill the unborn baby and should be stopped when pregnancy is recognized. Availability: Rx."),
+    (18, "Amoxicillin information is unavailable, while for standard infections in adults another medicine is taken every 8 hours."),
+    (19, "Metformin, alcohol, a moderate interaction, lactic acidosis, and blood sugar risk are unrelated."),
+])
+def test_relation_denials_and_fact_reassignment_fail(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number,answer", [
+    (2, "Ibuprofen, warfarin, major interaction, gastrointestinal bleeding."),
+    (8, "Alprazolam, oxycodone, alcohol, 3 interactions, highest severity major."),
+    (19, "Metformin, alcohol, moderate interaction, lactic acidosis, blood sugar risk."),
+])
+def test_interaction_token_cooccurrence_without_positive_relation_fails(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_task13_whole_list_denial_fails(snapshots, tmp_path):
+    answer = positive_answer(13, snapshots[0]) + ". The list is not results."
+    assert_fails(13, make_run(tmp_path, 13, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number,suffix", [
+    (4, ". The drugs are not listed."),
+    (6, ". The drugs are not listed."),
+    (9, ". The drugs are not listed."),
+    (14, ". The medications are not saved."),
+    (16, ". The drugs are not listed."),
+    (20, ". The drugs are not listed."),
+])
+def test_list_relation_denials_fail(number, suffix, snapshots, tmp_path):
+    answer = positive_answer(number, snapshots[0]) + suffix
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_task0_commonly_natural_language_passes(snapshots, tmp_path):
+    record = drug(snapshots[0], "ibuprofen")
+    answer = f"According to the page, ibuprofen commonly belongs to the {record['class_name']} class, and its brand names are {', '.join(brands(record))}."
+    process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_task10_number_words_and_milligrams_pass(snapshots, tmp_path):
+    answer = "Ibuprofen OTC: two hundred to four hundred milligrams every four to six hours; do not exceed twelve hundred milligrams in twenty-four hours."
+    process = execute(10, make_run(tmp_path, 10, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
     run = make_run(tmp_path, 0, snapshots[0], answer="wrong")
     process = execute(0, run, *snapshots)

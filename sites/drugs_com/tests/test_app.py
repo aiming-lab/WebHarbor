@@ -589,6 +589,30 @@ def test_composite_pill_colors_match_component_filter(client, drugs_app):
     assert row[0][0].lower().encode() in response.data.lower()
 
 
+def test_incomplete_related_and_sidebar_pill_descriptors_do_not_render_fallback_facts(client, drugs_app):
+    with drugs_app.app.app_context():
+        drug = drugs_app.Drug.query.filter_by(slug="ibuprofen").one()
+        related = (
+            drugs_app.Drug.query.filter(
+                drugs_app.Drug.drug_class_id == drug.drug_class_id,
+                drugs_app.Drug.id != drug.id,
+                drugs_app.Drug.images.any(),
+            )
+            .order_by(drugs_app.Drug.generic_name, drugs_app.Drug.id)
+            .first()
+        )
+        assert drug.images and related is not None
+        for image in (drug.images[0], related.images[0]):
+            image.shape = None
+            image.color = None
+            image.imprint = None
+        drugs_app.db.session.commit()
+    response = client.get("/ibuprofen")
+    assert response.status_code == 200
+    assert response.data.count(b"Incomplete pill descriptor; no diagram rendered") == 2
+    assert b"IBUP" not in response.data
+
+
 def test_every_declared_drug_interaction_is_persisted_once(drugs_app):
     source = {
         tuple(sorted((first, second))): severity

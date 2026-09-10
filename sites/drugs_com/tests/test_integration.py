@@ -73,6 +73,8 @@ def test_docker_and_docs_use_25_site_range():
     assert "check_seed_databases.py /opt/WebSyn" in dockerfile
     assert "asset_state.py verify" in dockerfile
     assert "FROM python:3.12-slim-bookworm@sha256:" in dockerfile
+    dockerignore = set((ROOT / ".dockerignore").read_text().splitlines())
+    assert {"**/.env", "**/.env.*", "**/secrets.json", "**/*.pem", "**/*.key"} <= dockerignore
     for relative in ["README.md", "AGENTS.md", "CONTRIBUTING.md", "CLAUDE.md", "agent_demo/README.md"]:
         assert "40000-40024" in (ROOT / relative).read_text(), relative
 
@@ -139,10 +141,28 @@ def test_control_token_is_removed_from_all_site_process_environments(tmp_path, m
         return Process()
 
     monkeypatch.setattr(module.subprocess, "Popen", fake_popen)
+    monkeypatch.setattr(module, "wait_for_pid_record", lambda site, pid: {"site": site, "pid": pid})
     module.start_site("drugs_com")
     assert "WEBSYN_CONTROL_TOKEN" not in captured["env"]
     startup = (ROOT / "websyn_start.sh").read_text()
     assert "exec env -u WEBSYN_CONTROL_TOKEN python3 /opt/site_runner.py" in startup
+
+
+def test_control_refuses_to_signal_a_reused_pid_identity(tmp_path, monkeypatch):
+    module = load_control_server()
+    module.PID_DIR = tmp_path / "pids"
+    module.PID_DIR.mkdir()
+    site = "drugs_com"
+    record = {"pid": 424242, "start_time": 100, "site": site, "port": module.site_port(site)}
+    module.pid_path(site).write_text(json.dumps(record))
+    signaled = []
+    monkeypatch.setattr(module, "is_alive", lambda pid: pid == record["pid"])
+    monkeypatch.setattr(module, "process_matches_site", lambda checked_site, checked_record: False)
+    monkeypatch.setattr(module.os, "killpg", lambda *args: signaled.append(args))
+    with pytest.raises(RuntimeError, match="identity mismatch"):
+        module.kill_site(site)
+    assert signaled == []
+    assert module.read_pid_record(site) == record
 
 
 def test_reset_db_replaces_instance_from_complete_staging(tmp_path):
@@ -428,6 +448,10 @@ def test_asset_tree_rejects_symlink_roots_appledouble_and_special_objects(tmp_pa
     with pytest.raises(ValueError, match="managed root must be a real directory"):
         module.tree_digest(sites)
     (site / "static" / "images").unlink()
+    (site / "static" / "images").symlink_to(tmp_path / "missing-target", target_is_directory=True)
+    with pytest.raises(ValueError, match="managed root must be a real directory"):
+        module.tree_digest(sites)
+    (site / "static" / "images").unlink()
     (site / "static" / "images").mkdir()
     (site / "static" / "images" / "._metadata").write_bytes(b"forbidden")
     with pytest.raises(ValueError, match="AppleDouble"):
@@ -665,6 +689,33 @@ def test_repository_asset_transaction_rolls_back_all_sites(tmp_path):
     module.rollback(sites, transaction)
     for site_name in ("first", "second"):
         assert (sites / site_name / "static" / "images" / "state.txt").read_text() == f"old-{site_name}"
+
+
+def test_repository_asset_transaction_partial_begin_failure_preserves_unmoved_roots(tmp_path, monkeypatch):
+    scripts = ROOT / "scripts"
+    spec = importlib.util.spec_from_file_location("pr71_asset_transaction_partial", scripts / "asset_transaction.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    sites = tmp_path / "sites"
+    first = sites / "first" / "static" / "images"
+    second = sites / "second" / "static" / "images"
+    for path, text in ((first, "old-first"), (second, "old-second")):
+        path.mkdir(parents=True)
+        (path / "state.txt").write_text(text)
+    transaction = tmp_path / "transaction"
+    original_rename = Path.rename
+
+    def injected_rename(path, target):
+        if path == second:
+            raise OSError("injected partial begin failure")
+        return original_rename(path, target)
+
+    monkeypatch.setattr(Path, "rename", injected_rename)
+    with pytest.raises(OSError, match="partial begin"):
+        module.begin(sites, transaction)
+    assert (first / "state.txt").read_text() == "old-first"
+    assert (second / "state.txt").read_text() == "old-second"
+    assert not transaction.exists()
 
 
 def test_asset_backup_cleanup_failure_retains_complete_new_roots(tmp_path, monkeypatch):

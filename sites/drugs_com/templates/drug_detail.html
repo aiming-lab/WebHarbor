@@ -206,12 +206,16 @@
             <div class="related-drug-card-pill">
               {% if r.images and r.images|length > 0 %}
                 {% set ri0 = r.images[0] %}
-                {{ render_pill('rel-' + r.slug, ri0.shape or 'round', ri0.color or 'white', ri0.imprint or r.slug[:4].upper()) }}
+                {% if ri0.shape and ri0.color and ri0.imprint %}
+                  {{ render_pill('rel-' + r.slug, ri0.shape, ri0.color, ri0.imprint) }}
+                  <span class="muted">Synthetic descriptor diagram</span>
+                {% else %}
+                  <span class="muted">Incomplete pill descriptor; no diagram rendered</span>
+                {% endif %}
               {% else %}
                 <span class="muted">No pill descriptor</span>
               {% endif %}
             </div>
-            <span class="muted">Synthetic descriptor diagram</span>
             <div class="related-drug-card-head">
               <strong class="related-drug-name">{{ r.generic_name|capitalize }}</strong>
               {% if r.avg_rating %}
@@ -416,9 +420,13 @@
         <div class="sidebar-images-row">
           {% if drug.images %}
             {% for img in drug.images[:3] %}
-            <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-pill-thumb" aria-label="Synthetic {{ drug.generic_name|capitalize }} pill descriptor diagram">
-              {{ render_pill('sb-' + drug.slug + '-' + loop.index|string, img.shape or 'round', img.color or 'white', img.imprint or drug.slug[:4].upper()) }}
-            </a>
+              {% if img.shape and img.color and img.imprint %}
+              <a href="{{ url_for('drug_images', slug=drug.slug) }}" class="sidebar-pill-thumb" aria-label="Synthetic {{ drug.generic_name|capitalize }} pill descriptor diagram">
+                {{ render_pill('sb-' + drug.slug + '-' + loop.index|string, img.shape, img.color, img.imprint) }}
+              </a>
+              {% else %}
+              <span class="muted">Incomplete pill descriptor; no diagram rendered</span>
+              {% endif %}
             {% endfor %}
           {% else %}
             <span class="muted">No pill descriptor stored</span>

@@ -231,6 +231,10 @@ def test_final_provenance_table_and_dynamic_feedback_contracts():
     inventory = json.loads((SITE / "content_inventory.json").read_text())
     css = (SITE / "static" / "css" / "main.css").read_text()
     assert "startswith('WARNING:')" not in detail
+    assert "ri0.shape or 'round'" not in detail and "img.shape or 'round'" not in detail
+    assert "ri0.color or 'white'" not in detail and "img.color or 'white'" not in detail
+    assert "ri0.imprint or r.slug[:4].upper()" not in detail and "img.imprint or drug.slug[:4].upper()" not in detail
+    assert detail.count("Incomplete pill descriptor; no diagram rendered") == 2
     assert inventory["external_runtime_network_fetches"] == 0
     assert "runtime_network_fetches" not in inventory
     assert any(item["name"] == "template-defined navigation taxonomy and comparison suggestions" for item in inventory["content_families"])

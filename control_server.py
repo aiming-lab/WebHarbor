@@ -8,10 +8,10 @@ Endpoints:
     POST /reset-all          -> reset every site in parallel
     POST /restart/<site>     -> just respawn (no DB wipe) -- bonus, useful for code reload
 
-PID tracking: each site's PID lives at /tmp/websyn_pids/<site>.pid. websyn_start.sh
-writes the initial PIDs; this server overwrites them on respawn.
+PID tracking: each site supervisor atomically writes a JSON identity record containing its PID, Linux process start time, site, and port at /tmp/websyn_pids/<site>.pid. Reset validates the complete identity before signaling its process group.
 """
 import hmac
+import json
 import os
 import shutil
 import signal
@@ -91,29 +91,75 @@ def pid_path(site: str) -> Path:
     return PID_DIR / f'{site}.pid'
 
 
-def read_pid(site: str):
+def read_pid_record(site: str):
+    identity_path = pid_path(site)
+    if identity_path.is_symlink() or (identity_path.exists() and not identity_path.is_file()):
+        return None
     try:
-        return int(pid_path(site).read_text().strip())
-    except (FileNotFoundError, ValueError):
+        record = json.loads(identity_path.read_text())
+    except (FileNotFoundError, json.JSONDecodeError, OSError):
+        return None
+    if not isinstance(record, dict) or set(record) != {'pid', 'start_time', 'site', 'port'}:
+        return None
+    if record.get('site') != site or record.get('port') != site_port(site):
+        return None
+    if not isinstance(record.get('pid'), int) or record['pid'] <= 1:
+        return None
+    if not isinstance(record.get('start_time'), int) or record['start_time'] <= 0:
+        return None
+    return record
+
+
+def read_pid(site: str):
+    record = read_pid_record(site)
+    return record['pid'] if record else None
+
+
+def _process_stat(pid: int):
+    try:
+        data = Path(f'/proc/{pid}/stat').read_bytes()
+        # /proc/<pid>/stat: "<pid> (<comm>) <state> ...". The command may
+        # contain spaces or parentheses, so parse fields after the final ')'.
+        fields = data[data.rindex(b')') + 2:].split()
+        return fields[0], int(fields[19])
+    except (FileNotFoundError, ProcessLookupError, PermissionError, ValueError, IndexError):
         return None
 
 
 def is_alive(pid) -> bool:
-    """True iff a runnable / sleeping process with this PID exists.
-    Returns False for zombies and missing PIDs — that is what the poll
-    loops in kill_site need."""
+    """True iff a non-zombie process with this PID exists."""
     if not pid:
         return False
-    try:
-        with open(f'/proc/{pid}/stat', 'rb') as f:
-            data = f.read()
-        # /proc/<pid>/stat: "<pid> (<comm>) <state> ..."  comm may contain
-        # spaces or parens, so split on the LAST ')'.
-        rparen = data.rindex(b')')
-        state = data[rparen + 2:rparen + 3]
-        return state not in (b'Z', b'X')
-    except (FileNotFoundError, ProcessLookupError, ValueError):
+    status = _process_stat(pid)
+    return status is not None and status[0] not in (b'Z', b'X')
+
+
+def process_matches_site(site: str, record: dict) -> bool:
+    """Bind a PID record to the expected live supervisor identity."""
+    pid = record['pid']
+    status = _process_stat(pid)
+    if status is None or status[0] in (b'Z', b'X') or status[1] != record['start_time']:
         return False
+    try:
+        if os.getpgid(pid) != pid:
+            return False
+        arguments = Path(f'/proc/{pid}/cmdline').read_bytes().rstrip(b'\0').split(b'\0')
+    except (FileNotFoundError, ProcessLookupError, PermissionError, OSError):
+        return False
+    expected_tail = [b'/opt/site_runner.py', site.encode(), str(site_port(site)).encode()]
+    return len(arguments) >= 4 and arguments[-3:] == expected_tail
+
+
+def wait_for_pid_record(site: str, expected_pid: int, timeout: float = 5.0) -> dict:
+    deadline = time.monotonic() + timeout
+    while time.monotonic() < deadline:
+        record = read_pid_record(site)
+        if record and record['pid'] == expected_pid and process_matches_site(site, record):
+            return record
+        if not is_alive(expected_pid):
+            break
+        time.sleep(0.01)
+    raise RuntimeError(f'{site} supervisor {expected_pid} did not publish a valid identity record')
 
 
 def reap_exited_children() -> None:
@@ -129,10 +175,23 @@ def reap_exited_children() -> None:
 
 
 def kill_site(site: str, reap_grace: float = REAP_GRACE_SECS):
-    pid = read_pid(site)
-    if not pid:
+    record = read_pid_record(site)
+    with _site_procs_lock:
+        tracked_proc = _site_procs.get(site)
+    if record is None:
+        if pid_path(site).exists() or pid_path(site).is_symlink():
+            raise RuntimeError(f'invalid PID identity record for {site}; refusing to reset')
+        if tracked_proc is not None and tracked_proc.poll() is None:
+            raise RuntimeError(f'missing PID identity record for live {site} supervisor')
         return
-    # SIGKILL the whole process group (supervisor + Flask child). Without
+    pid = record['pid']
+    if not is_alive(pid):
+        pid_path(site).unlink(missing_ok=True)
+        reap_exited_children()
+        return
+    if not process_matches_site(site, record):
+        raise RuntimeError(f'PID identity mismatch for {site} supervisor {pid}; refusing to signal')
+    # SIGKILL the validated process group (supervisor + Flask child). Without
     # killpg the Flask child would re-parent to init and keep the port.
     try:
         os.killpg(pid, signal.SIGKILL)
@@ -148,12 +207,10 @@ def kill_site(site: str, reap_grace: float = REAP_GRACE_SECS):
         except subprocess.TimeoutExpired:
             pass
     reap_exited_children()
-    # Belt-and-suspenders: confirm the supervisor is actually dead before
-    # returning, even when we don't own the Popen. is_alive() looks at
-    # /proc state and returns False for zombies, so this loop exits in ms.
-    deadline = time.time() + reap_grace
-    while time.time() < deadline:
+    deadline = time.monotonic() + reap_grace
+    while time.monotonic() < deadline:
         if not is_alive(pid):
+            pid_path(site).unlink(missing_ok=True)
             for _ in range(10):
                 reap_exited_children()
                 time.sleep(0.01)
@@ -207,6 +264,7 @@ def start_site(site: str) -> int:
     # first instant.
     site_environment = os.environ.copy()
     site_environment.pop('WEBSYN_CONTROL_TOKEN', None)
+    pid_path(site).unlink(missing_ok=True)
     try:
         proc = subprocess.Popen(
             ['python3', '/opt/site_runner.py', site, str(port)],
@@ -218,7 +276,17 @@ def start_site(site: str) -> int:
         log.close()
     with _site_procs_lock:
         _site_procs[site] = proc
-    pid_path(site).write_text(str(proc.pid))
+    try:
+        wait_for_pid_record(site, proc.pid)
+    except Exception:
+        try:
+            os.killpg(proc.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+        proc.wait(timeout=REAP_GRACE_SECS)
+        with _site_procs_lock:
+            _site_procs.pop(site, None)
+        raise
     return proc.pid
 
 
@@ -266,8 +334,9 @@ def health():
     reap_exited_children()
 
     def status(site):
-        pid = read_pid(site)
-        alive = is_alive(pid)
+        record = read_pid_record(site)
+        pid = record['pid'] if record else None
+        alive = bool(record and process_matches_site(site, record))
         ready = False
         if alive:
             try:
@@ -328,6 +397,16 @@ def restart_site(site):
 
 
 if __name__ == '__main__':
+    if '--stop-sites' in sys.argv:
+        failures = []
+        for configured_site in SITES:
+            try:
+                kill_site(configured_site)
+            except Exception as error:
+                failures.append(f'{configured_site}: {type(error).__name__}: {error}')
+        if failures:
+            raise SystemExit('failed to stop validated site supervisors: ' + '; '.join(failures))
+        raise SystemExit(0)
     port = int(os.environ.get('CONTROL_PORT', 8101))
     if '--port' in sys.argv:
         port = int(sys.argv[sys.argv.index('--port') + 1])

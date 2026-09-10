@@ -464,7 +464,18 @@ def globally_retracted(text: str) -> bool:
         r"\b(?:the )?(?:answer|statement|response) above is (?:false|wrong|incorrect)\b",
         r"\bignore (?:everything|the answer|the statement) (?:above|before)\b",
         r"\bnone of (?:the above|this|that) is (?:true|correct)\b",
-        r"\bI retract (?:everything|the answer|the statement)\b",
+        r"\bi retract (?:everything|the answer|the statement)\b",
+        r"\b(?:are|is|remain|remains) unrelated\b",
+        r"\b(?:facts?|claims?|figures?|values?|terms?|entities?) (?:do not|does not) (?:relate|belong|apply)\b",
+        r"\b(?:information|figures?|rating|reviews?|data) (?:is |are )?(?:unavailable|unknown|missing)\b",
+        r"\banother (?:medicine|medication|drug|item|record|entity)\b",
+        r"\b(?:list|results?|drugs?|medications?|items?) (?:is|are) not (?:results?|listed|saved|the answer)\b",
+        r"\b(?:list|results?|drugs?|medications?|items?) (?:does|do) not (?:represent|constitute|form|show)\b",
+        r"\b(?:no|without) (?:direct )?(?:relation|relationship|connection|association)\b",
+        r"\b(?:facts?|claims?|figures?|values?|terms?) (?:refer|pertain|belong|apply)(?: to)? (?:elsewhere|different|other)\b",
+        r"\b(?:these|those|they) (?:are|do) not (?:the )?(?:results?|listed|saved|related|applicable)\b",
+        r"\bnone of (?:these|those|them) (?:are|is) (?:the )?(?:results?|listed|saved|related|applicable)\b",
+        r"\b(?:list|results?|facts?|claims?) (?:is|are) (?:false|wrong|incorrect)\b",
     )
     return any(re.search(pattern, normalized) for pattern in patterns)
 
@@ -519,7 +530,7 @@ _LIST_PROSE_WORDS = {
     "availability", "brand", "brands", "class", "condition", "conditions", "csa", "and", "are", "currently", "drug", "drugs", "example", "examples", "first",
     "fixture", "fixtures", "following", "include", "includes", "imprint", "imprints",
     "list", "listed", "local", "medication", "medications", "name", "names", "rating", "ratings", "result", "results", "review", "reviews", "saved", "schedule",
-    "according", "among", "are", "as", "available", "belongs", "called", "categorized", "com", "five", "four", "has", "have", "here", "in", "is", "its", "known", "marketed", "not", "only", "oval", "page", "pill", "pills", "shown", "sold", "the", "three", "to", "trade", "treats", "under", "which", "white", "with", "fluoroquinolone", "fluoroquinolones",
+    "according", "among", "are", "as", "available", "belongs", "called", "categorized", "com", "commonly", "five", "four", "has", "have", "here", "in", "is", "its", "known", "marketed", "not", "only", "oval", "page", "pill", "pills", "shown", "sold", "the", "three", "to", "trade", "treats", "under", "which", "white", "with", "fluoroquinolone", "fluoroquinolones",
 }
 
 
@@ -582,28 +593,68 @@ def word_number_values(text):
     tokens = norm(text).split()
     values = []
     index = 0
+    number_words = set(_NUMBER_ONES) | set(_NUMBER_TENS) | {"hundred", "thousand"}
     while index < len(tokens):
-        token = tokens[index]
-        if token == "a" and index + 1 < len(tokens) and tokens[index + 1] == "hundred":
-            values.append(100)
-            index += 2
-            continue
-        if token not in _NUMBER_ONES and token not in _NUMBER_TENS:
+        if tokens[index] not in number_words and not (tokens[index] == "a" and index + 1 < len(tokens) and tokens[index + 1] == "hundred"):
             index += 1
             continue
-        value = _NUMBER_ONES.get(token, _NUMBER_TENS.get(token))
-        index += 1
-        if index < len(tokens) and tokens[index] == "hundred":
-            value *= 100
-            index += 1
-            if index < len(tokens) and tokens[index] in _NUMBER_ONES:
-                value += _NUMBER_ONES[tokens[index]]
+        current = 0
+        total = 0
+        consumed = False
+        while index < len(tokens):
+            token = tokens[index]
+            if token in _NUMBER_ONES:
+                current += _NUMBER_ONES[token]
+            elif token in _NUMBER_TENS:
+                current += _NUMBER_TENS[token]
+            elif token == "a" and index + 1 < len(tokens) and tokens[index + 1] == "hundred" and not consumed:
+                current = 1
+            elif token == "hundred" and current:
+                current *= 100
+            elif token == "thousand" and current:
+                total += current * 1000
+                current = 0
+            elif token == "and" and consumed and (total or current >= 100) and index + 1 < len(tokens) and tokens[index + 1] in number_words:
                 index += 1
-        elif token in _NUMBER_TENS and index < len(tokens) and tokens[index] in _NUMBER_ONES:
-            value += _NUMBER_ONES[tokens[index]]
+                continue
+            else:
+                break
+            consumed = True
             index += 1
-        values.append(value)
+        if consumed:
+            values.append(total + current)
+        else:
+            index += 1
     return values
+
+
+def _integer_words(value: int) -> str:
+    if value < 20:
+        return next(word for word, number in _NUMBER_ONES.items() if number == value and word != "dozen")
+    if value < 100:
+        tens, ones = divmod(value, 10)
+        tens_word = next(word for word, number in _NUMBER_TENS.items() if number == tens * 10)
+        return tens_word if not ones else f"{tens_word} { _integer_words(ones) }"
+    if value < 1000:
+        hundreds, rest = divmod(value, 100)
+        prefix = f"{_integer_words(hundreds)} hundred"
+        return prefix if not rest else f"{prefix} {_integer_words(rest)}"
+    if value < 10000:
+        thousands, rest = divmod(value, 1000)
+        prefix = f"{_integer_words(thousands)} thousand"
+        return prefix if not rest else f"{prefix} {_integer_words(rest)}"
+    raise ValueError(f"unsupported number-word value: {value}")
+
+
+def _number_expression(value) -> str:
+    integer = int(value)
+    representations = {str(integer), _integer_words(integer)}
+    if integer >= 100 and integer % 100 == 0 and integer // 100 < 20:
+        representations.add(f"{_integer_words(integer // 100)} hundred")
+    encoded = []
+    for representation in sorted(representations, key=len, reverse=True):
+        encoded.append(r"[-\s]+".join(re.escape(part) for part in representation.split()))
+    return rf"(?:{'|'.join(encoded)})"
 
 
 def conflicting_rx_status(text):
@@ -704,6 +755,27 @@ def _sentence_with_terms(answer, terms):
     return None
 
 
+def _has_direct_interaction_relation(sentence, drug_terms):
+    if globally_retracted(sentence) or not all(affirmed(sentence, term) for term in drug_terms):
+        return False
+    positive_patterns = (
+        r"\b(?:have|has|show|shows|form|forms|create|creates|cause|causes|produce|produces|present|presents|pose|poses|involve|involves)\b(?:\W+\w+){0,7}\W+interactions?\b",
+        r"\binteractions?\b(?:\W+\w+){0,4}\W+(?:between|among|involving|with)\b",
+        r"\bcombination\b(?:\W+\w+){0,7}\W+(?:interacts?|interaction|risk|cause|causes|increase|increases)\b",
+    )
+    return any(re.search(pattern, sentence, re.I) for pattern in positive_patterns)
+
+
+def _has_interaction_count_relation(sentence, names, count, count_word):
+    if globally_retracted(sentence) or not all(affirmed(sentence, name) for name in names):
+        return False
+    count_expression = rf"(?:{count}|{re.escape(count_word)})"
+    return bool(
+        re.search(rf"\bthere\s+(?:are|were)\s+{count_expression}\s+interactions?\b", sentence, re.I)
+        or re.search(rf"\b(?:have|has|show|shows|produce|produces|return|returns)\b[^.;\n]{{0,35}}\b{count_expression}\s+interactions?\b", sentence, re.I)
+    )
+
+
 def _check_interaction_answer(judge, answer, drug_terms, severity, concept_groups):
     check_required_terms(judge, "answer_interaction_entities", answer, drug_terms)
     check_required_terms(judge, "answer_severity", answer, [severity])
@@ -726,6 +798,7 @@ def _check_interaction_answer(judge, answer, drug_terms, severity, concept_group
         sentence for sentence in sentences
         if all(affirmed(sentence, term) for term in [*drug_terms, severity])
         and all(any(affirmed(sentence, term) for term in alternatives) for alternatives in concept_groups)
+        and _has_direct_interaction_relation(sentence, drug_terms)
     ), None)
     judge.check("answer_interaction_fact_binding", joint_risk_sentence is not None)
     conflicting = [value for value in SEVERITY_ORDER if value != severity and affirmed(answer, value)]
@@ -822,6 +895,7 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
                 _check_interaction_answer(judge, answer, names, rows[0]["severity"], [("bleeding", "hemorrhage", "blood loss"), ("gastrointestinal", "GI", "stomach", "ulcer", "platelet", "digestive tract", "digestive system")])
                 combined_gi_risk = any(
                     all(affirmed(sentence, term) for term in [*names, rows[0]["severity"]])
+                    and _has_direct_interaction_relation(sentence, names)
                     and re.search(r"\b(?:gastrointestinal|GI|stomach)\s+(?:bleeding|hemorrhage|blood\s+loss)\b|\bdigestive\W+(?:tract|system)\b[^.;\n]{0,25}\b(?:bleeding|hemorrhage|blood\s+loss)\b", sentence, re.I)
                     for sentence in re.split(r"(?<=[.!?;\n])\s*", answer)
                 )
@@ -856,7 +930,7 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             judge.check("answer_highest_severity", bool(severity_matches) and all(claim_is_affirmed(answer, match) for match in severity_matches) and not conflicting and severity_clauses_valid and comparative_claims_valid)
             combined_summary = any(
                 all(affirmed(sentence, name) for name in names)
-                and re.search(rf"\b(?:{len(severities)}|{count_word})\s+interactions?\b", sentence, re.I)
+                and _has_interaction_count_relation(sentence, names, len(severities), count_word)
                 and affirmed(sentence, expected_severity)
                 and re.search(r"\b(?:highest|most severe|max(?:imum)?)\b", sentence, re.I)
                 for sentence in re.split(r"(?<=[.!?\n])\s*", answer)
@@ -945,19 +1019,30 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
         judge.check("unique_otc_dosage_truth", match is not None, match.groups() if match else "missing")
         if match:
             low, high, interval_low, interval_high, maximum, period = match.groups()
-            dose_ok = re.search(rf"\b{low}\s*[-–](?:\s*){high}\s*mg\b", answer, re.I)
-            interval_ok = re.search(rf"\bevery\s+{interval_low}\s*(?:to|[-–])\s*{interval_high}\s+hours?\b", answer, re.I)
-            maximum_ok = re.search(rf"\b(?:maximum|max|do not exceed|up to)[^.;\n]{{0,45}}\b{maximum}\s*mg\b[^.;\n]{{0,45}}(?:\b{period}\s+hours?\b|\bper\s+day\b|\bdaily\b)", answer, re.I)
-            conflict = re.search(r"\b(?<!do )(?:no|not|incorrect|wrong|false)\b[^.;\n]{0,30}(?:maximum|mg|hours?)|\bunlimited\s+(?:amounts?|doses?|use)\b", answer, re.I)
+            low_expression = _number_expression(low)
+            high_expression = _number_expression(high)
+            interval_low_expression = _number_expression(interval_low)
+            interval_high_expression = _number_expression(interval_high)
+            maximum_expression = _number_expression(maximum)
+            period_expression = _number_expression(period)
+            milligram_unit = r"(?:mg|milligrams?)"
+            dose_pattern = rf"\b{low_expression}\s*(?:to|[-–])\s*{high_expression}\s*{milligram_unit}\b"
+            interval_pattern = rf"\bevery\s+{interval_low_expression}\s*(?:to|[-–])\s*{interval_high_expression}\s+hours?\b"
+            maximum_pattern = rf"\b(?:maximum|max|do not exceed|up to)[^.;\n]{{0,45}}\b{maximum_expression}\s*{milligram_unit}\b[^.;\n]{{0,45}}(?:\b{period_expression}\s+hours?\b|\bper\s+day\b|\bdaily\b)"
+            dose_ok = re.search(dose_pattern, answer, re.I)
+            interval_ok = re.search(interval_pattern, answer, re.I)
+            maximum_ok = re.search(maximum_pattern, answer, re.I)
+            conflict = re.search(r"\b(?<!do )(?:no|not|incorrect|wrong|false)\b[^.;\n]{0,30}(?:maximum|mg|milligrams?|hours?)|\bunlimited\s+(?:amounts?|doses?|use)\b", answer, re.I)
             stated_numbers = {float(value) for value in re.findall(r"(?<![a-z0-9.])\d+(?:\.\d+)?(?![a-z0-9])", answer, re.I)} | set(word_number_values(answer))
             allowed_numbers = {float(value) for value in (low, high, interval_low, interval_high, maximum, period)}
             maximum_affirmed = bool(maximum_ok) and (norm(maximum_ok.group(0)).startswith("do not exceed") or claim_is_affirmed(answer, maximum_ok))
-            claims_affirmed = all(match and claim_is_affirmed(answer, match) for match in (dose_ok, interval_ok)) and maximum_affirmed
+            claims_affirmed = all(found and claim_is_affirmed(answer, found) for found in (dose_ok, interval_ok)) and maximum_affirmed
             dosage_relation = any(
                 affirmed(sentence, "ibuprofen")
-                and re.search(rf"\b{low}\s*[-–]\s*{high}\s*mg\b", sentence, re.I)
-                and re.search(rf"\bevery\s+{interval_low}\s*(?:to|[-–])\s*{interval_high}\s+hours?\b", sentence, re.I)
-                and re.search(rf"\b{maximum}\s*mg\b", sentence, re.I)
+                and re.search(dose_pattern, sentence, re.I)
+                and re.search(interval_pattern, sentence, re.I)
+                and re.search(rf"\b{maximum_expression}\s*{milligram_unit}\b", sentence, re.I)
+                and not globally_retracted(sentence)
                 for sentence in re.split(r"(?<=[.!?\n])\s*", answer)
             )
             judge.check("answer_bound_otc_dosage", claims_affirmed and dosage_relation and not conflict and stated_numbers <= allowed_numbers, f"dose={bool(dose_ok)} interval={bool(interval_ok)} max={bool(maximum_ok)} affirmed={claims_affirmed} conflict={bool(conflict)} numbers={sorted(stated_numbers)!r}")
@@ -1011,10 +1096,21 @@ def verify_task(number: int, judge: Judge, trajectory: dict, visits, initial: Sn
             digit_reviews_ok = bool(review_numbers) and set(review_numbers) == {record["review_count"]}
             judge.check("answer_rating_context", (digit_rating_ok or rating_word_relation) and not rating_negated and word_numbers <= allowed_numbers and not verbal_rating_conflict)
             judge.check("answer_review_count_context", (digit_reviews_ok or review_word_relation) and not review_negated and word_numbers <= allowed_numbers and not no_reviews)
+            rating_variants = "|".join(re.escape(value) for value in sorted(_number_variants(record["avg_rating"]), key=len, reverse=True))
+            rating_value_pattern = rf"(?:{rating_variants})"
+            review_value_pattern = _number_expression(record["review_count"])
             rating_review_relation = any(
                 affirmed(sentence, record["generic_name"])
-                and (re.search(r"\brat(?:ing|ed)\b", sentence, re.I))
-                and re.search(r"\breviews?\b", sentence, re.I)
+                and (
+                    re.search(rf"\brat(?:ing|ed)\b[^.;\n]{{0,30}}\b{rating_value_pattern}\b(?:\s*/\s*10|\s+out\s+of\s+(?:10|ten))?", sentence, re.I)
+                    or re.search(rf"\b{rating_value_pattern}\s*/\s*10\b", sentence, re.I)
+                    or (rating_word_relation and rating_word_relation.group(0) in sentence)
+                )
+                and (
+                    re.search(rf"\b{review_value_pattern}\s+reviews?\b", sentence, re.I)
+                    or re.search(rf"\breviews?\b[^.;\n]{{0,20}}\b{review_value_pattern}\b", sentence, re.I)
+                )
+                and not globally_retracted(sentence)
                 for sentence in re.split(r"(?<!\d)\.(?!\d)\s*|[!?\n]+\s*", answer)
             )
             judge.check("answer_rating_reviews_bound_to_atorvastatin", rating_review_relation)

@@ -30,6 +30,13 @@ sites/*/*.pyc
 # extracted content. Shipping both doubles the COPY layer.
 sites/*.tar.gz
 
+# Never admit Git-ignored local configuration or secret-key material into a layer.
+**/.env
+**/.env.*
+**/secrets.json
+**/*.pem
+**/*.key
+
 # Build / CI workspace not part of the image.
 build/
 .assets/

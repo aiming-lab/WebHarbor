@@ -47,10 +47,12 @@ def tree_digest(sites: Path) -> str:
                 records.append([f"{site}/{root}", "build-generated"])
                 continue
             managed = site_dir / root
+            if managed.is_symlink():
+                raise ValueError(f"managed root must be a real directory: {managed}")
             if not managed.exists():
                 records.append([f"{site}/{root}", "absent"])
                 continue
-            if managed.is_symlink() or not managed.is_dir():
+            if not managed.is_dir():
                 raise ValueError(f"managed root must be a real directory: {managed}")
             for path in sorted(managed.rglob("*")):
                 if path.is_symlink():
