@@ -31,9 +31,24 @@
   });
 
   // Filter bar: submit as soon as a choice changes (checkbox pills, popover radios, selects).
+  // Empty / default fields are disabled right before submit so they stay out of the URL.
+  function pruneEmptyFields(form) {
+    Array.prototype.forEach.call(form.elements, function (field) {
+      if (!field.name || field.type === "submit" || field.type === "button") { return; }
+      if (field.type === "checkbox" || field.type === "radio") {
+        var isDefault = (field.name === "sortby" && field.value === "bestmatch") || (field.name === "gender" && field.value === "all");
+        if (!field.checked || field.value === "" || isDefault) { field.disabled = true; }
+        return;
+      }
+      if (field.value === "") { field.disabled = true; }
+    });
+  }
   document.querySelectorAll("form.filter-form").forEach(function (form) {
+    form.addEventListener("submit", function () { pruneEmptyFields(form); });
     form.querySelectorAll("input[type=checkbox], input[type=radio], select").forEach(function (input) {
-      input.addEventListener("change", function () { form.submit(); });
+      input.addEventListener("change", function () {
+        if (typeof form.requestSubmit === "function") { form.requestSubmit(); } else { pruneEmptyFields(form); form.submit(); }
+      });
     });
   });
 
@@ -72,7 +87,11 @@
           hits.forEach(function (item) {
             var link = document.createElement("a");
             link.href = item.href;
-            link.textContent = item.label;
+            if (section[0] === "SPECIALTY") { link.className = "ta-specialty"; }
+            var hit = document.createElement("b");
+            hit.textContent = item.label.slice(0, term.length);
+            link.appendChild(hit);
+            link.appendChild(document.createTextNode(item.label.slice(term.length)));
             box.appendChild(link);
             total += 1;
           });

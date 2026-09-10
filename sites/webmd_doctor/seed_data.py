@@ -95,19 +95,19 @@ EXPECTED_COUNTS = {
     "city_zips": 24,
     "hospitals": 12,
     "practices": 30,
-    "doctors": 224,
-    "locations": 345,
-    "doctor_conditions": 1667,
-    "doctor_procedures": 1241,
-    "doctor_expertise": 681,
-    "doctor_insurances": 2244,
-    "reviews": 1195,
-    "doctor_perspectives": 1568,
-    "certifications": 293,
-    "licenses": 314,
-    "education": 562,
+    "doctors": 226,
+    "locations": 348,
+    "doctor_conditions": 1677,
+    "doctor_procedures": 1252,
+    "doctor_expertise": 686,
+    "doctor_insurances": 2274,
+    "reviews": 1206,
+    "doctor_perspectives": 1582,
+    "certifications": 296,
+    "licenses": 316,
+    "education": 567,
     "awards": 50,
-    "doctor_languages": 310,
+    "doctor_languages": 351,
     "users": 4,
     "saved_providers": 4,
     "appointment_requests": 1,
@@ -246,6 +246,14 @@ BALTIMORE_PER_SPECIALTY = {
     "Dermatology": 3, "Cardiovascular Disease": 2, "Family Medicine": 3, "Neurology": 2, "Orthopedic Surgery": 2,
     "Gastroenterology": 2, "Psychiatry": 3, "Obstetrics & Gynecology": 2, "Pediatrics": 3, "Internal Medicine": 2,
 }
+# Cells that need a deeper bench of highly rated physicians than the 20-per-specialty grid gives
+# them (appended after the grid so the grid's own slot order is untouched).
+CLUSTER_EXTRAS = [
+    {"specialty": "Cardiovascular Disease", "city": "West Chester", "gender": "f", "tier": "Basic",
+     "rating": 4.2, "years": 17, "new_patients": True, "virtual": False, "medicare": True, "medicaid": False},
+    {"specialty": "Cardiovascular Disease", "city": "West Chester", "gender": "n", "tier": "Enhanced",
+     "rating": 4.1, "years": 9, "new_patients": True, "virtual": True, "medicare": True, "medicaid": True},
+]
 # name, city, street, zip, phone suffix, website slug
 HOSPITALS = [
     ("Christina Creek Medical Center", "Newark", "1200 Ogletown Stanton Rd", "19713", "555-0140", "christinacreekmed"),
@@ -607,7 +615,7 @@ def _build_practices(cities: dict[str, City], used_phones: set[str]) -> dict[str
 
 
 def _doctor_slots() -> list[dict]:
-    """Deterministic list of (specialty, city, gender, tier) slots — 200 in radius + 24 Baltimore."""
+    """Deterministic list of (specialty, city, gender, tier) slots — 200 in radius + 24 Baltimore + cluster extras."""
     slots: list[dict] = []
     for spec_name, *_rest in SPECIALTIES:
         cells = CLUSTERS[spec_name]
@@ -626,13 +634,15 @@ def _doctor_slots() -> list[dict]:
         for _ in range(BALTIMORE_PER_SPECIALTY[spec_name]):
             slots.append({"specialty": spec_name, "city": "Baltimore", "gender": baltimore_genders[cursor], "tier": baltimore_tiers[cursor]})
             cursor += 1
-    assert len(slots) == 224
+    for extra in CLUSTER_EXTRAS:
+        slots.append(dict(extra))
+    assert len(slots) == 224 + len(CLUSTER_EXTRAS)
     return slots
 
 
 def _assign_quotas(slots: list[dict]) -> None:
     """Attach the quota-controlled attributes to each slot (in-radius multisets first)."""
-    in_radius = [slot for slot in slots if slot["city"] != "Baltimore"]
+    in_radius = [slot for slot in slots if slot["city"] != "Baltimore" and "rating" not in slot]
     baltimore = [slot for slot in slots if slot["city"] == "Baltimore"]
     ratings = multiset([(5.0, 24)] + [(None, 6)])
     ratings += multiset([(round(4.0 + 0.1 * i, 1), 9) for i in range(10)])
@@ -1101,6 +1111,24 @@ def _finish_hubs(hospital_rows: list[Hospital], practice_rows: list[Practice]) -
 # --------------------------------------------------------------------------- #
 # Seed entry points (whole-function gates)
 # --------------------------------------------------------------------------- #
+def _topup_languages(doctors: list[Doctor]) -> None:
+    """Physicians who cover three offices are seeded as multilingual (English + two more).
+    Deterministic in the doctor id — consumes no RNG, so it can run after every other builder."""
+    for doctor in doctors:
+        if len(doctor.locations) < 3:
+            continue
+        spoken = {row.language for row in doctor.languages}
+        position = len(doctor.languages) + 1
+        for offset in (7, 11):
+            language = LANGUAGES[(doctor.id * offset + offset) % len(LANGUAGES)]
+            if language in spoken or position > 3:
+                continue
+            db.session.add(DoctorLanguage(doctor_id=doctor.id, language=language, position=position))
+            spoken.add(language)
+            position += 1
+    db.session.flush()
+
+
 def seed_database(force: bool = False) -> None:
     if Doctor.query.count() > 0 and not force:
         return
@@ -1114,6 +1142,7 @@ def seed_database(force: bool = False) -> None:
     _ensure_similar_tiers()
     _build_awards(doctors, vocab)
     _finish_hubs(Hospital.query.order_by(Hospital.id).all(), Practice.query.order_by(Practice.id).all())
+    _topup_languages(doctors)
     for doctor in doctors:
         del doctor._slot
         del doctor._practice
