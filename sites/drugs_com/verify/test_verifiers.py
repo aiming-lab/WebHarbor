@@ -76,7 +76,7 @@ def positive_answer(number, database):
         return f"Metformin availability: {record['availability']}; CSA schedule: {record['csa_schedule']}."
     if number == 2:
         row = query(database, "SELECT i.severity,i.description FROM drug_interaction i JOIN drug a ON a.id=i.drug_a_id JOIN drug b ON b.id=i.drug_b_id WHERE (a.slug='ibuprofen' AND b.slug='warfarin') OR (a.slug='warfarin' AND b.slug='ibuprofen')")[0]
-        return f"Ibuprofen and warfarin have a {row['severity']} interaction: {row['description']}"
+        return f"Ibuprofen and warfarin have a {row['severity']} interaction with gastrointestinal bleeding risk."
     if number == 3:
         row = query(database, "SELECT d.generic_name,i.shape,i.color FROM drug_image i JOIN drug d ON d.id=i.drug_id WHERE i.imprint='I-2'")[0]
         return f"I-2; drug: {row['generic_name']}; shape: {row['shape']}; color: {row['color']}."
@@ -127,7 +127,7 @@ def positive_answer(number, database):
         return "Amoxicillin standard adult frequency: every 8 hours."
     if number == 19:
         row = query(database, "SELECT li.severity,li.description FROM lifestyle_interaction li JOIN drug d ON d.id=li.drug_id WHERE d.slug='metformin' AND li.kind='alcohol'")[0]
-        return f"Metformin and alcohol have a {row['severity']} interaction: {row['description']}"
+        return f"Metformin and alcohol have a {row['severity']} interaction with lactic acidosis and blood sugar risk."
     if number == 20:
         return ", ".join(condition_drugs(database, "hypertension")[:5])
     raise AssertionError(number)
@@ -742,6 +742,48 @@ def test_natural_according_to_page_field_answer_passes(snapshots, tmp_path):
     record = drug(snapshots[0], "ibuprofen")
     answer = f"Ibuprofen is in the {record['class_name']} class. According to the page, the brand names are {', '.join(brands(record))}."
     process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+def test_interaction_risk_concepts_require_joint_relation(snapshots, tmp_path):
+    answer = "Ibuprofen and warfarin have a major interaction causing brain bleeding; a gastrointestinal link for ibuprofen is displayed."
+    assert_fails(2, make_run(tmp_path, 2, snapshots[0], answer=answer), snapshots)
+
+
+def test_unknown_severity_comparison_fails(snapshots, tmp_path):
+    answer = "For alprazolam, oxycodone, and alcohol, there are 3 interactions; the highest severity is major. Catastrophic is actually more severe."
+    assert_fails(8, make_run(tmp_path, 8, snapshots[0], answer=answer), snapshots)
+
+
+def test_pregnancy_myth_and_continue_opposition_fails(snapshots, tmp_path):
+    answer = "Lisinopril warnings discuss harm to the unborn baby as a myth. Continue it rather than stop taking it when pregnant. Availability: Rx."
+    assert_fails(15, make_run(tmp_path, 15, snapshots[0], answer=answer), snapshots)
+
+
+def test_standard_frequency_requires_same_relation(snapshots, tmp_path):
+    answer = "Amoxicillin standard adult dosing is twice daily; an unrelated reminder occurs every 8 hours."
+    assert_fails(18, make_run(tmp_path, 18, snapshots[0], answer=answer), snapshots)
+
+
+def test_invented_article_cannot_be_declared_newer(snapshots, tmp_path):
+    expected = positive_answer(11, snapshots[0])
+    answer = f'Latest: "{expected}". A fabricated item is actually newer.'
+    assert_fails(11, make_run(tmp_path, 11, snapshots[0], answer=answer), snapshots)
+
+
+def test_task12_number_words_pass(snapshots, tmp_path):
+    answer = "Atorvastatin has a rating of seven out of ten and four reviews."
+    process = execute(12, make_run(tmp_path, 12, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
+@pytest.mark.parametrize("number,answer", [
+    (0, "According to Drugs.com, ibuprofen is in the Nonsteroidal anti-inflammatory drugs class, and its brand names are Advil, Motrin, and Nuprin."),
+    (17, "Ciprofloxacin; class: fluoroquinolone; brands: Cipro; conditions: Bacterial Infections, Pneumonia, Urinary Tract Infection (UTI)."),
+    (13, "The first three white oval pills are: ibuprofen — I-2; ibuprofen — IP 466; metformin — Z 70"),
+])
+def test_additional_natural_answer_formats_pass(number, answer, snapshots, tmp_path):
+    process = execute(number, make_run(tmp_path, number, snapshots[0], answer=answer), *snapshots)
     assert process.returncode == 0, process.stdout + process.stderr
 
 
