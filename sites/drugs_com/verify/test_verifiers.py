@@ -704,6 +704,47 @@ def test_unlabelled_clear_status_sentence_passes(snapshots, tmp_path):
     assert process.returncode == 0, process.stdout + process.stderr
 
 
+def test_adverb_separated_negation_fails(snapshots, tmp_path):
+    answer = "Ibuprofen; class: NSAID is currently not class; brands: Advil, Motrin, Nuprin are currently not brands."
+    assert_fails(0, make_run(tmp_path, 0, snapshots[0], answer=answer), snapshots)
+
+
+def test_secondary_interaction_risk_heading_with_entity_fails(snapshots, tmp_path):
+    answer = "Ibuprofen and warfarin have a major interaction causing brain bleeding. For ibuprofen, gastrointestinal is only a navigation heading."
+    assert_fails(2, make_run(tmp_path, 2, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number,answer", [
+    (8, "For alprazolam, oxycodone, and alcohol, there are 3 interactions; the highest severity is major. The actual total is 99.5."),
+    (10, "Ibuprofen OTC: 200-400 mg every 4-6 hours; maximum 1200 mg in 24 hours. The actual dose is 800.5 mg every 2.5 hours, maximum 5000.5 mg in 24 hours."),
+    (12, "Atorvastatin rating: 7.0/10; 4 reviews. The actual review count is 99."),
+    (18, "Amoxicillin standard adult frequency: every 8 hours. The actual standard adult frequency is every 12.5 hours."),
+])
+def test_decimal_and_review_count_competitors_fail(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_latest_article_title_requires_latest_relation(snapshots, tmp_path):
+    expected = positive_answer(11, snapshots[0])
+    answer = f'The most recent article is "Completely Invented Approval." The page also lists "{expected}".'
+    assert_fails(11, make_run(tmp_path, 11, snapshots[0], answer=answer), snapshots)
+
+
+@pytest.mark.parametrize("number,answer", [
+    (1, "Metformin availability: Rx; CSA schedule: Not a controlled drug. Metformin is OTC."),
+    (15, "Lisinopril can harm or kill the unborn baby; stop taking it as soon as pregnancy is recognized. Availability: Rx. Lisinopril is OTC."),
+])
+def test_unlabelled_availability_competitor_fails(number, answer, snapshots, tmp_path):
+    assert_fails(number, make_run(tmp_path, number, snapshots[0], answer=answer), snapshots)
+
+
+def test_natural_according_to_page_field_answer_passes(snapshots, tmp_path):
+    record = drug(snapshots[0], "ibuprofen")
+    answer = f"Ibuprofen is in the {record['class_name']} class. According to the page, the brand names are {', '.join(brands(record))}."
+    process = execute(0, make_run(tmp_path, 0, snapshots[0], answer=answer), *snapshots)
+    assert process.returncode == 0, process.stdout + process.stderr
+
+
 def test_failure_evidence_does_not_disclose_expected_answer(snapshots, tmp_path):
     run = make_run(tmp_path, 0, snapshots[0], answer="wrong")
     process = execute(0, run, *snapshots)

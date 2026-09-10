@@ -36,6 +36,12 @@ def install(archive: Path, sites: Path, expected_site: str, migrator: Path | Non
         staged_site = staging / expected_site
         if not staged_site.is_dir():
             raise ValueError(f"archive did not stage {expected_site}")
+        if not build_generated:
+            seed_dir = staged_site / "instance_seed"
+            for entry in seed_dir.iterdir():
+                if entry.is_file() and entry.suffix == ".db":
+                    continue
+                _remove_path(entry)
         if migrator is not None:
             databases = sorted((staged_site / "instance_seed").glob("*.db"))
             if len(databases) != 1:

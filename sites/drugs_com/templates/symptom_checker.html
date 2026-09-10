@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Local Symptom-Label Matcher | {{ site_name }}{% endblock %}
 {% block content %}
-<nav class="breadcrumb">
+<nav class="breadcrumb" aria-label="Breadcrumb">
   <a href="{{ url_for('index') }}">Home</a> &rsaquo;
   <span>Symptom Checker</span>
 </nav>
@@ -19,7 +19,7 @@
             {% for sym in symptoms %}
               {% set is_on = sym in selected %}
               <label class="symptom-chip{% if is_on %} is-selected{% endif %}">
-                <input class="is-395" type="checkbox" name="symptom" value="{{ sym }}" {% if is_on %}checked{% endif %} onchange="document.getElementById('symptom-form').submit()">
+                <input class="is-395" type="checkbox" name="symptom" value="{{ sym }}" {% if is_on %}checked{% endif %}>
                 {{ sym }}
               </label>
             {% endfor %}

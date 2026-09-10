@@ -200,6 +200,23 @@ def test_normal_text_palette_meets_wcag_contrast_threshold():
     assert contrast("#666666", "#ffffff") >= 4.5
 
 
+def test_remaining_navigation_and_layout_contracts_are_explicit():
+    templates = SITE / "templates"
+    css = (SITE / "static" / "css" / "main.css").read_text()
+    prices = (templates / "drug_prices.html").read_text()
+    symptom = (templates / "symptom_checker.html").read_text()
+    sitemap = (templates / "sitemap.html").read_text()
+    assert ".is-160[hidden] { display: none; }" in css and "display:block" in css[css.index(".is-160 {"):css.index(".is-161 {")]
+    assert "couponResult.hidden=false" in prices
+    assert "onchange=\"document.getElementById('symptom-form').submit()\"" not in symptom
+    assert ".pro-resource-grid" in css and "grid-template-columns: repeat(3" in css
+    assert ".drug-sources-grid-2col" in css[css.index("@media (max-width: 640px)"):]
+    assert ".is-391 { columns: 1; }" in css
+    assert "not a complete map of the external service" in sitemap
+    for template in templates.glob("*.html"):
+        assert '<nav class="breadcrumb">' not in template.read_text(), template.name
+
+
 def test_missing_medical_fields_have_local_empty_states():
     templates = SITE / "templates"
     side_effects = (templates / "drug_side_effects.html").read_text()

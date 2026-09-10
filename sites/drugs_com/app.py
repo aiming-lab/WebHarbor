@@ -317,7 +317,7 @@ def _normalize_interaction_names(raw_names):
 # ---------------------------------------------------------------------------
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(80), unique=True, nullable=False)
+    username = db.Column(db.String(80, collation="NOCASE"), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
     first_name = db.Column(db.String(80), default="")
@@ -677,6 +677,16 @@ def _clear_auth_failures(keys):
         for key in keys:
             _auth_failures.pop(key, None)
             _auth_pending.pop(key, None)
+
+
+def _verify_sensitive_password(user, password):
+    """Rate-limit current-password checks used by sensitive settings changes."""
+    auth_keys = _auth_keys(user.email)
+    if not _begin_auth_attempt(auth_keys):
+        return None
+    valid = user.check_password(password)
+    _finish_auth_attempt(auth_keys, successful=valid)
+    return valid
 
 
 def _saved_drug_lock(user_id, drug_id):
@@ -6193,7 +6203,7 @@ def register():
             flash("You must agree to the Terms of Use and Privacy Policy.", "danger")
         elif User.query.filter_by(email=email).first():
             flash("Unable to create an account with the supplied details.", "danger")
-        elif User.query.filter_by(username=username).first():
+        elif User.query.filter(db.func.lower(User.username) == username.casefold()).first():
             flash("Unable to create an account with the supplied details.", "danger")
         else:
             registration_keys = (f"registration:{request.remote_addr or 'unknown'}",)
@@ -6452,9 +6462,15 @@ def save_settings():
     if len(email) > 120:
         flash("Email address must be 120 characters or fewer.", "danger")
         return redirect(url_for(return_to))
-    if email != current_user.email and not current_user.check_password(request.form.get("current_password") or ""):
-        flash("Current password is required to change the email address.", "danger")
-        return redirect(url_for(return_to))
+    new_password = request.form.get("new_password") or "" if request.form.get("settings_form") == "settings" else ""
+    if email != current_user.email or new_password:
+        reauthentication = _verify_sensitive_password(current_user, request.form.get("current_password") or "")
+        if reauthentication is None:
+            flash("Too many password verification attempts. Try again later.", "danger")
+            return redirect(url_for(return_to)), 429
+        if not reauthentication:
+            flash("Current password verification failed.", "danger")
+            return redirect(url_for(return_to))
     duplicate = User.query.filter(User.email == email, User.id != current_user.id).first()
     if duplicate:
         flash("Email already registered.", "danger")
@@ -6470,11 +6486,7 @@ def save_settings():
             current_user.first_name = (request.form.get("first_name") or "").strip()[:80]
             current_user.last_name = (request.form.get("last_name") or "").strip()[:80]
 
-            new_password = request.form.get("new_password") or ""
             if new_password:
-                if not current_user.check_password(request.form.get("current_password") or ""):
-                    flash("Current password is incorrect.", "danger")
-                    return redirect(url_for("account_settings"))
                 password_error = _password_validation_error(new_password)
                 if password_error:
                     flash(password_error.replace("Password", "New password", 1), "danger")

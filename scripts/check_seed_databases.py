@@ -45,7 +45,12 @@ def main() -> None:
             skipped += 1
             continue
         seed_dir = site_dir / "instance_seed"
-        databases = sorted(seed_dir.glob("*.db")) if seed_dir.is_dir() else []
+        entries = sorted(seed_dir.iterdir()) if seed_dir.is_dir() else []
+        invalid_entries = [entry.name for entry in entries if entry.is_symlink() or not entry.is_file() or entry.suffix != ".db"]
+        if invalid_entries:
+            failures.append(f"{seed_dir}: unexpected seed entries {invalid_entries}")
+            continue
+        databases = [entry for entry in entries if entry.suffix == ".db"]
         if len(databases) != 1:
             failures.append(f"{seed_dir}: expected exactly one *.db seed, found {[path.name for path in databases]}")
             continue

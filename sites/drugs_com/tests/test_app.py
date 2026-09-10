@@ -372,6 +372,35 @@ def test_settings_form_and_email_validation(client, drugs_app):
     assert client.get("/_health").status_code == 200
 
 
+def test_sensitive_settings_password_checks_are_rate_limited(client):
+    assert login(client).status_code == 302
+    for _ in range(8):
+        page = client.get("/account/settings")
+        response = client.post("/account/settings/save", data={
+            "csrf_token": csrf(page), "settings_form": "settings", "email": "alice.j@test.com",
+            "new_password": "OtherPass123!", "confirm_password": "MismatchPass123!", "current_password": "wrong",
+        })
+        assert response.status_code == 302
+        assert b"Current password verification failed" in client.get(response.location).data
+    page = client.get("/account/settings")
+    response = client.post("/account/settings/save", data={
+        "csrf_token": csrf(page), "settings_form": "settings", "email": "alice.j@test.com",
+        "new_password": "OtherPass123!", "confirm_password": "MismatchPass123!", "current_password": "wrong",
+    })
+    assert response.status_code == 429
+
+
+def test_usernames_are_unique_without_case_distinction(client, drugs_app):
+    page = client.get("/register")
+    response = client.post("/register", data={
+        "csrf_token": csrf(page), "username": "ALICE_J", "email": "case-only@example.com",
+        "password": "GoodPass123!", "confirm_password": "GoodPass123!", "agree_terms": "1",
+    }, follow_redirects=True)
+    assert b"Unable to create an account with the supplied details" in response.data
+    rows = database_rows(drugs_app._test_database_path, "SELECT COUNT(*) FROM user WHERE lower(username)='alice_j'")
+    assert rows == [(1,)]
+
+
 def test_newsletter_and_contact_are_bounded_session_flows(client):
     page = client.get("/newsletter")
     response = client.post("/newsletter/subscribe", data={"csrf_token": csrf(page), "email": "fixture@example.com", "lists": "daily_mednews"}, follow_redirects=True)

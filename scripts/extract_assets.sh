@@ -20,6 +20,10 @@ ONLY_SITE=""
 if [[ "$ARG2" == "--push" ]]; then PUSH="--push"; else ONLY_SITE="$ARG2"; fi
 
 REPO=$(awk '/^repo:/ {print $2}' .assets-revision)
+if [[ -n "$ONLY_SITE" && ! -d "sites/$ONLY_SITE" ]]; then
+    echo "[pack] unknown site: $ONLY_SITE" >&2
+    exit 1
+fi
 mkdir -p "$TARGET"
 shopt -s nullglob dotglob
 existing_output=("$TARGET"/*)

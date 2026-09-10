@@ -555,6 +555,20 @@ def test_asset_packer_rejects_nonempty_output_directory(tmp_path):
     assert stale.read_bytes() == b"stale"
 
 
+def test_asset_packer_rejects_unknown_single_site(tmp_path):
+    output = tmp_path / "unknown-output"
+    process = subprocess.run(
+        ["bash", "scripts/extract_assets.sh", str(output), "misspelled_site"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert process.returncode != 0
+    assert "unknown site" in process.stderr
+    assert not output.exists()
+
+
 def test_asset_packer_produces_exact_archive_set_in_clean_output(tmp_path):
     repository = tmp_path / "pack-repository"
     scripts = repository / "scripts"
@@ -578,6 +592,52 @@ def test_asset_packer_produces_exact_archive_set_in_clean_output(tmp_path):
     )
     assert process.returncode == 0, process.stdout + process.stderr
     assert sorted(path.name for path in output.iterdir()) == ["only_site.tar.gz"]
+
+
+def test_ordinary_asset_install_strips_non_database_seed_entries(tmp_path):
+    scripts = ROOT / "scripts"
+    sys.path.insert(0, str(scripts))
+    try:
+        spec = importlib.util.spec_from_file_location("pr71_extract_seed_sanitizer", scripts / "extract_asset_archive.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    finally:
+        sys.path.remove(str(scripts))
+    sites = tmp_path / "sites"
+    (sites / "ordinary").mkdir(parents=True)
+    database = tmp_path / "ordinary.db"
+    connection = sqlite3.connect(database)
+    connection.execute("CREATE TABLE fixture(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
+    archive = tmp_path / "ordinary.tar.gz"
+    _archive(archive, "ordinary", [
+        ("instance_seed/ordinary.db", database.read_bytes()),
+        ("instance_seed/ordinary.db-wal", b"untrusted-sidecar"),
+        ("instance_seed/nested/other.db", database.read_bytes()),
+    ])
+    module.install(archive, sites, "ordinary")
+    assert sorted(path.name for path in (sites / "ordinary" / "instance_seed").iterdir()) == ["ordinary.db"]
+
+
+def test_seed_gate_rejects_every_non_database_entry(tmp_path):
+    sites = tmp_path / "sites"
+    seed = sites / "fixture" / "instance_seed"
+    seed.mkdir(parents=True)
+    database = seed / "fixture.db"
+    connection = sqlite3.connect(database)
+    connection.execute("CREATE TABLE fixture(id INTEGER PRIMARY KEY)")
+    connection.commit()
+    connection.close()
+    (seed / "fixture.db-wal").write_bytes(b"sidecar")
+    process = subprocess.run(
+        [sys.executable, str(ROOT / "scripts" / "check_seed_databases.py"), str(sites)],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert process.returncode != 0
+    assert "unexpected seed entries" in process.stderr
 
 
 def test_repository_asset_transaction_rolls_back_all_sites(tmp_path):
