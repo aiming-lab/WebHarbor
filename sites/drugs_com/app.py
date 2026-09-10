@@ -6144,7 +6144,8 @@ def login():
         _bounded_query_arg("next", max_length=2_048)
     )
     if request.method == "POST":
-        email = (request.form.get("email") or "").strip().lower()
+        submitted_email = (request.form.get("email") or "").strip().lower()
+        email = submitted_email if len(submitted_email) <= 120 else ""
         password = request.form.get("password") or ""
         auth_keys = _auth_keys(email)
         if not _begin_auth_attempt(auth_keys):
@@ -6180,21 +6181,23 @@ def register():
     if request.method == "POST":
         username = (request.form.get("username") or "").strip()
         email = (request.form.get("email") or "").strip().lower()
+        email_too_long = len(email) > 120
         password = request.form.get("password") or ""
         confirm = request.form.get("confirm_password") or ""
-        try:
-            email = validate_email(email, check_deliverability=False).normalized
-        except EmailNotValidError:
-            email = ""
+        if not email_too_long:
+            try:
+                email = validate_email(email, check_deliverability=False).normalized
+            except EmailNotValidError:
+                email = ""
         password_error = _password_validation_error(password) if password else None
-        if not username or not email or not password:
+        if email_too_long:
+            flash("Email address must be 120 characters or fewer.", "danger")
+        elif not username or not email or not password:
             flash("Enter a username, valid email address, and password.", "danger")
         elif len(username) > 80:
             flash("Username must be 80 characters or fewer.", "danger")
         elif not re.fullmatch(r"[A-Za-z0-9_.-]+", username):
             flash("Username may contain letters, numbers, periods, underscores, and hyphens.", "danger")
-        elif len(email) > 120:
-            flash("Email address must be 120 characters or fewer.", "danger")
         elif password != confirm:
             flash("Passwords do not match.", "danger")
         elif password_error:
@@ -6454,13 +6457,13 @@ def save_settings():
     return_to = "account" if settings_form == "dashboard" else "account_settings"
     password_changed = False
     email = (request.form.get("email") or current_user.email).strip().lower()
+    if len(email) > 120:
+        flash("Email address must be 120 characters or fewer.", "danger")
+        return redirect(url_for(return_to))
     try:
         email = validate_email(email, check_deliverability=False).normalized
     except EmailNotValidError:
         flash("Enter a valid email address.", "danger")
-        return redirect(url_for(return_to))
-    if len(email) > 120:
-        flash("Email address must be 120 characters or fewer.", "danger")
         return redirect(url_for(return_to))
     new_password = request.form.get("new_password") or "" if request.form.get("settings_form") == "settings" else ""
     if email != current_user.email or new_password:
@@ -6712,13 +6715,13 @@ def newsletter():
 @app.route("/newsletter/subscribe", methods=["POST"])
 def newsletter_subscribe():
     email = (request.form.get("email") or "").strip().lower()
+    if len(email) > 254:
+        flash("Email address must be 254 characters or fewer.", "danger")
+        return redirect(url_for("newsletter"))
     try:
         email = validate_email(email, check_deliverability=False).normalized
     except EmailNotValidError:
         flash("Enter a valid email address.", "danger")
-        return redirect(url_for("newsletter"))
-    if len(email) > 254:
-        flash("Email address must be 254 characters or fewer.", "danger")
         return redirect(url_for("newsletter"))
     requested_lists = request.form.getlist("lists") + request.form.getlist("subs")
     if len(requested_lists) > 20 or any(

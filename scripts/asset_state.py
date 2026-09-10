@@ -39,6 +39,9 @@ def tree_digest(sites: Path) -> str:
     records = []
     for site in site_names(sites):
         site_dir = sites / site
+        backup_residue = sorted(site_dir.rglob("*.asset-backup"))
+        if backup_residue:
+            raise ValueError(f"managed asset backup residue is forbidden: {backup_residue[0]}")
         for root in ROOTS:
             if root == "instance_seed" and (site_dir / ".build-generated-seed").is_file():
                 records.append([f"{site}/{root}", "build-generated"])

@@ -116,13 +116,39 @@ def test_login_and_safe_next(client):
     assert "evil.example" not in response.location
 
 
-def test_wrong_and_oversized_login_fail(client):
+def test_wrong_and_oversized_login_fail(client, drugs_app):
     page = client.get("/login")
     response = client.post("/login", data={"csrf_token": csrf(page), "email": "alice.j@test.com", "password": "wrong"}, follow_redirects=True)
     assert b"Invalid email or password" in response.data
     page = client.get("/login")
     response = client.post("/login", data={"csrf_token": csrf(page), "email": "x" * 121, "password": "x" * 73}, follow_redirects=True)
     assert b"Invalid email or password" in response.data
+    with drugs_app._auth_failures_lock:
+        assert all(len(key) < 200 for key in drugs_app._auth_failures)
+        assert not any(key.startswith("account:") and len(key) > len("account:") for key in drugs_app._auth_failures if "x" * 50 in key)
+
+
+def test_oversized_email_fields_fail_before_email_validation(client, drugs_app, monkeypatch):
+    calls = []
+    monkeypatch.setattr(drugs_app, "validate_email", lambda *_args, **_kwargs: calls.append(True))
+    page = client.get("/register")
+    response = client.post("/register", data={
+        "csrf_token": csrf(page), "username": "oversized", "email": "x" * 121,
+        "password": "GoodPass123!", "confirm_password": "GoodPass123!", "agree_terms": "1",
+    })
+    assert response.status_code == 200
+    assert calls == []
+    page = client.get("/newsletter")
+    response = client.post("/newsletter/subscribe", data={"csrf_token": csrf(page), "email": "x" * 255})
+    assert response.status_code == 302
+    assert calls == []
+    assert login(client).status_code == 302
+    page = client.get("/account/settings")
+    response = client.post("/account/settings/save", data={
+        "csrf_token": csrf(page), "settings_form": "settings", "email": "x" * 121,
+    })
+    assert response.status_code == 302
+    assert calls == []
 
 
 def test_login_throttles_repeated_failures(client):

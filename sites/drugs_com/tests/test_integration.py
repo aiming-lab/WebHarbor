@@ -440,6 +440,12 @@ def test_asset_tree_rejects_symlink_roots_appledouble_and_special_objects(tmp_pa
             module.tree_digest(sites)
     finally:
         fifo.unlink()
+    backup_residue = site / "static" / "images.asset-backup"
+    backup_residue.mkdir()
+    with pytest.raises(ValueError, match="backup residue"):
+        module.tree_digest(sites)
+    backup_residue.rmdir()
+    assert "sites/**/*.asset-backup" in (ROOT / ".dockerignore").read_text()
     hidden = sites / ".untracked"
     hidden.mkdir()
     with pytest.raises(ValueError, match="unexpected hidden site directory"):
