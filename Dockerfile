@@ -8,28 +8,8 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     LANG=C.UTF-8
 
-RUN pip3 install --no-cache-dir \
-    Flask==3.1.0 \
-    Flask-SQLAlchemy==3.1.1 \
-    Flask-Login==0.6.3 \
-    Flask-WTF==1.2.2 \
-    Flask-Bcrypt==1.0.1 \
-    bcrypt==5.0.0 \
-    Werkzeug==3.1.3 \
-    Jinja2==3.1.4 \
-    SQLAlchemy==2.0.36 \
-    WTForms==3.2.1 \
-    email-validator==2.2.0 \
-    Pillow==11.0.0 \
-    pysqlite3-binary==0.5.4 \
-    blinker==1.9.0 \
-    click==8.5.0 \
-    dnspython==2.8.0 \
-    greenlet==3.5.5 \
-    idna==3.19 \
-    itsdangerous==2.2.0 \
-    MarkupSafe==3.0.3 \
-    typing-extensions==4.16.0
+COPY requirements.lock /opt/requirements.lock
+RUN pip3 install --no-cache-dir --require-hashes -r /opt/requirements.lock
 
 WORKDIR /opt/WebSyn
 

@@ -139,6 +139,10 @@ def test_ui_provenance_and_no_javascript_contracts_are_explicit():
     assert detail.count("action=\"{{ url_for('my_med_list_toggle') }}\"") == 3
     assert "fetch('{{ url_for(\"my_med_list_toggle\") }}'" not in detail
     assert "js-required-control" in detail
+    assert "only have a pill on hand" not in search
+    assert "cannot identify or verify a real pill" in search
+    assert "checker-input checker-ac-wrap js-required-control" in (templates / "interaction_checker.html").read_text()
+    assert "is-159 js-required-control" in (templates / "drug_prices.html").read_text()
     assert "href=\"#reviews\"" not in detail
     assert "status-icon rx-otc" in detail and "drug.availability == 'OTC'" in detail
 
@@ -150,6 +154,9 @@ def test_responsive_search_and_contrast_contracts_are_source_enforced():
     assert ".search-layout { flex-direction: column; }" in css
     assert ".filter-sidebar { width: 100%; }" in css
     assert "color: #888" not in css and "color:#888" not in css
+    assert ".news-cat-badge--health    { background: #9b4600; }" in css
+    assert ".sev-badge.sev-moderate { background: #9b4600;" in css
+    assert ".severity-group-head--moderate { background: #9b4600; }" in css
     assert ".news-search-input:focus-visible, .is-041:focus-visible" in css
 
 
@@ -170,6 +177,9 @@ def test_navigation_tabs_and_optional_pill_filters_are_accessible():
     assert 'aria-current="page"' in account and 'aria-label="Account sections"' in account
     assert "#reviews" not in condition and "#reviews" not in drug_class
     assert "url_for('compare_drugs')" in conditions
+    assert 'id="conditions-filter-hint" role="status" aria-live="polite"' in conditions
+    assert '<span class="letter-btn letter-empty" aria-disabled="true">' in conditions
+    assert 'id="drug-class-filter-count" class="muted is-072" role="status" aria-live="polite"' in condition
     assert "or 'Rx/OTC'" not in condition and "or 'Rx/OTC'" not in drug_class
     assert "or 'Rx'" not in account
 
@@ -186,6 +196,7 @@ def test_normal_text_palette_meets_wcag_contrast_threshold():
 
     assert contrast("#ffffff", "#a64b00") >= 4.5
     assert contrast("#ffffff", "#8f4000") >= 4.5
+    assert contrast("#ffffff", "#9b4600") >= 4.5
     assert contrast("#666666", "#ffffff") >= 4.5
 
 

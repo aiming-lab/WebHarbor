@@ -219,7 +219,7 @@ def start_site(site: str) -> int:
     return proc.pid
 
 
-def wait_ready(site: str, timeout: float = 30.0) -> bool:
+def wait_ready(site: str, timeout: float = 60.0) -> bool:
     port = site_port(site)
     deadline = time.time() + timeout
     while time.time() < deadline:

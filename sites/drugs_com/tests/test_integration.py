@@ -336,6 +336,15 @@ def test_staged_migration_failure_preserves_old_managed_roots(tmp_path):
     assert not (site / "static" / "images" / "new.txt").exists()
 
 
+def test_docker_dependencies_are_version_and_hash_locked():
+    dockerfile = (ROOT / "Dockerfile").read_text()
+    lock_lines = [line.strip() for line in (ROOT / "requirements.lock").read_text().splitlines() if line.strip() and not line.startswith("#")]
+    assert "pip3 install --no-cache-dir --require-hashes -r /opt/requirements.lock" in dockerfile
+    assert "COPY requirements.lock /opt/requirements.lock" in dockerfile
+    assert len(lock_lines) == 21
+    assert all(re.fullmatch(r"[A-Za-z0-9_.-]+==[^ ]+ --hash=sha256:[0-9a-f]{64}", line) for line in lock_lines)
+
+
 def test_tracked_asset_manifest_binds_all_archives_and_current_tree():
     revision = dict(
         line.split(":", 1)
@@ -438,6 +447,8 @@ def test_asset_fetch_rejects_revision_override_and_verifies_manifest_before_comm
     state_verify = source.index("asset_state.py verify")
     transaction_commit = source.index("asset_transaction.py commit")
     assert state_verify < transaction_commit
+    full_fetch = source.split("pre-validating complete archive set", 1)[1]
+    assert full_fetch.index("asset_state.py verify-archive") < full_fetch.index("validate_asset_archive.py")
 
 
 def test_full_fetch_rolls_back_roots_when_tracked_manifest_verification_fails(tmp_path):
@@ -473,7 +484,7 @@ def test_full_fetch_rolls_back_roots_when_tracked_manifest_verification_fails(tm
     real_python = sys.executable
     (commands / "python3").write_text(
         "#!/usr/bin/env bash\n"
-        "if [[ \"$*\" == *\"asset_state.py verify\"* ]]; then exit 73; fi\n"
+        "if [[ \"$*\" == *\"asset_state.py verify sites\"* ]]; then exit 73; fi\n"
         f"exec {real_python} \"$@\"\n"
     )
     (commands / "hf").write_text(

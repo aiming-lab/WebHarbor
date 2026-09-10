@@ -116,6 +116,9 @@ if [[ -z "$ONLY_SITE" ]]; then
     echo "[fetch] pre-validating complete archive set before changing managed roots"
     for tarball in "${TARBALLS[@]}"; do
         site=$(basename "$tarball" .tar.gz)
+        if [[ "$REFRESH_MANIFEST" -eq 0 ]]; then
+            python3 scripts/asset_state.py verify-archive sites .assets-revision assets-manifest.json --cache "$CACHE_DIR" --site "$site"
+        fi
         validator_args=()
         [[ -f "sites/$site/.build-generated-seed" ]] && validator_args+=(--allow-missing-seed)
         python3 scripts/validate_asset_archive.py "$tarball" "$site" "${validator_args[@]}"

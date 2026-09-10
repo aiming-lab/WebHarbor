@@ -35,7 +35,7 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Stable & reproducible** — no network noise, no content drift, no geo-blocks
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
-- **RL-ready** — sub-second database resets between rollouts
+- **RL-ready** — deterministic database resets between rollouts
 - **Community-driven** — 25 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
@@ -49,7 +49,7 @@ export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_u
 docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
 ```
 
-The fetch and build paths verify the immutable HF revision, every archive size and SHA-256, and the extracted managed-tree digest against tracked `assets-manifest.json`.
+The fetch and build paths verify the immutable HF revision, every archive size and SHA-256, and the extracted managed-tree digest against tracked `assets-manifest.json`; Docker dependencies are installed from exact versions and wheel SHA-256 values in `requirements.lock`.
 
 Then point your agent at `http://localhost:40000` through `http://localhost:40024` to explore 25 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, and Drugs.com`.
 

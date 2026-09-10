@@ -33,6 +33,7 @@ control_server.py                :8101 control plane
 site_runner.py                   per-site supervisor (setsid + killpg)
 websyn_start.sh                  container entrypoint
 Dockerfile
+requirements.lock                exact Docker dependency versions and wheel SHA-256 values
 .assetpaths                      paths managed via HF
 .assets-revision                 pins HF dataset repo + revision
 assets-manifest.json              tracked SHA-256/size map for all HF archives plus extracted-tree digest

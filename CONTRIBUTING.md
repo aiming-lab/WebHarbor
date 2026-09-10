@@ -106,11 +106,12 @@ docker run -d --rm --name wh-test -e WEBSYN_CONTROL_TOKEN \
 curl -so /dev/null -w "%{http_code}\n" http://localhost:400NN/
 curl -X POST -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8101/reset/mywebsite
 
-# make sure /reset/mywebsite keeps the DB byte-identical to the seed
-docker exec wh-test md5sum \
-  /opt/WebSyn/mywebsite/instance/<database>.db \
-  /opt/WebSyn/mywebsite/instance_seed/<database>.db
-# both md5s MUST match — see "Idempotent seeding" below
+# make sure /reset/mywebsite keeps the one application-defined DB byte-identical to the seed
+DB_NAME=$(docker exec wh-test sh -ec 'set -- /opt/WebSyn/mywebsite/instance_seed/*.db; test "$#" -eq 1; basename "$1"')
+docker exec wh-test sha256sum \
+  "/opt/WebSyn/mywebsite/instance/$DB_NAME" \
+  "/opt/WebSyn/mywebsite/instance_seed/$DB_NAME"
+# both SHA-256 values MUST match — see "Idempotent seeding" below
 ```
 
 ### 6. Write the tasks (`tasks.jsonl`)
@@ -188,7 +189,7 @@ The reviewer picks up a contributor's PR (site + `tasks.jsonl` with the basic ke
 
 Build the image from the branch and run it on alt ports (see AGENTS.md "Pre-PR checks" for the exact commands). Then:
 
-1. **Mechanical** — every site returns 200; `/health` all alive; `POST /reset/<site>` wipes runtime writes and restores the DB **byte-identical** to the seed (`md5(instance) == md5(instance_seed)`); verify reset-all completion from its structured per-site response.
+1. **Mechanical** — every site returns 200; `/health` all alive; `POST /reset/<site>` wipes runtime writes and restores the DB **byte-identical** to the seed (`sha256(instance) == sha256(instance_seed)`); verify reset-all completion from its structured per-site response.
 2. **Functional** — drive the site's routes (auth, search, list/detail, any stateful action) and confirm each renders correct, non-empty content. The contributor's tasks must be genuinely completable on these pages.
 3. **Task feasibility** — for each task in `tasks.jsonl`, confirm it is **solvable by navigating the site** and is **not trivially answerable from an LLM's prior knowledge**. Drive a few tasks end-to-end (manually or with `agent_demo/agent.py`). Reject — and send back to the contributor — tasks that:
    - can be answered without ever opening the site (e.g. a common dictionary definition),
@@ -264,10 +265,10 @@ Per-row gates are not enough: the bare act of opening a SQLAlchemy session and c
 If you have *multiple* seed phases (`seed_database`, `seed_benchmark_users`, `seed_extras`), gate **each** of them. After a fresh seed, re-running the boot path should be a no-op. Test with:
 
 ```bash
-docker exec wh-test sh -c 'db=$(basename /opt/WebSyn/<site>/instance_seed/*.db); md5sum /opt/WebSyn/<site>/instance/$db /opt/WebSyn/<site>/instance_seed/$db'
+docker exec wh-test sh -ec 'set -- /opt/WebSyn/<site>/instance_seed/*.db; test "$#" -eq 1; db=$(basename "$1"); sha256sum "/opt/WebSyn/<site>/instance/$db" "/opt/WebSyn/<site>/instance_seed/$db"'
 # must match
 docker restart wh-test && sleep 5
-docker exec wh-test sh -c 'db=$(basename /opt/WebSyn/<site>/instance_seed/*.db); md5sum /opt/WebSyn/<site>/instance/$db /opt/WebSyn/<site>/instance_seed/$db'
+docker exec wh-test sh -ec 'set -- /opt/WebSyn/<site>/instance_seed/*.db; test "$#" -eq 1; db=$(basename "$1"); sha256sum "/opt/WebSyn/<site>/instance/$db" "/opt/WebSyn/<site>/instance_seed/$db"'
 # must STILL match
 ```
 

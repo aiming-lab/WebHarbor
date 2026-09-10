@@ -11,7 +11,7 @@
 
 <div class="conditions-search-box">
   <input type="text" id="conditions-filter-input" placeholder="Filter conditions by name..." oninput="filterConditions(this.value)" aria-label="Filter conditions by name">
-  <span class="muted conditions-filter-hint" id="conditions-filter-hint"></span>
+  <span class="muted conditions-filter-hint" id="conditions-filter-hint" role="status" aria-live="polite"></span>
 </div>
 <noscript><style>.conditions-search-box{display:none}</style><p class="muted">All condition fixtures are shown because JavaScript filtering is unavailable.</p></noscript>
 
@@ -72,8 +72,10 @@
         {% set has = (grouped_conditions and grouped_conditions.get(letter)) %}
         {% if not active_letter and has %}
           <a class="letter-btn" href="#letter-{{ letter }}">{{ letter }} <span class="letter-count">({{ grouped_conditions[letter]|length }})</span></a>
+        {% elif not active_letter and not has %}
+          <span class="letter-btn letter-empty" aria-disabled="true">{{ letter }}</span>
         {% else %}
-          <a class="letter-btn {% if active_letter == letter %}active{% endif %} {% if not has and not active_letter %}letter-empty{% endif %}"
+          <a class="letter-btn {% if active_letter == letter %}active{% endif %}"
              href="{{ url_for('conditions_list') }}?letter={{ letter }}">{{ letter }}</a>
         {% endif %}
       {% endfor %}
