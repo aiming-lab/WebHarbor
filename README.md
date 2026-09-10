@@ -101,11 +101,12 @@ Any other improvement — bug fixes, UI polish, data enrichment, task suggestion
 
 ## Validate Tasks
 
-Use the repository task validator to check task JSONL files and localhost metadata before opening a review or PR:
+Use the repository task validator to check task JSONL files, site registration, localhost ports, and optional reviewer grading metadata before opening a review or PR. Ground-truth fields in agent-facing task rows are rejected; unrecognized metadata is reported as a warning and fails under `--strict`.
 
 ```bash
 python scripts/validate_tasks.py
 python scripts/validate_tasks.py --site amazon
+python scripts/validate_tasks.py --tasks sites/amazon/tasks.jsonl
 python scripts/validate_tasks.py --strict
 python scripts/validate_tasks.py --json
 ```
