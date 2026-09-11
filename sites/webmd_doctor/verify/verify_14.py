@@ -12,6 +12,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
+    comparison_answer,
     check_paths_in_order,
     check_read_only,
     check_trajectory_identity,
@@ -49,6 +50,11 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
         check_paths_in_order(judge, trajectory, f"{label}_workflow_in_order", [(HOSPITALS_STATE_PATH, {}), (HOSPITAL_PATH, {}), (profile_path_pattern(slug), {})])
     judge.check("answer_names_more_recent_certification", contains_doctor_name(answer, WINNER_FIRST, WINNER_LAST), f"expected={WINNER_FIRST + ' ' + WINNER_LAST!r}, answer={answer!r}")
     judge.check("answer_has_certification_year", contains_year(answer, CERT_YEAR), f"expected={CERT_YEAR!r}, answer={answer!r}")
+    judge.check(
+        "answer_binds_winner_to_year",
+        comparison_answer(answer, WINNER_FIRST + " " + WINNER_LAST, OTHER_SLUG.rsplit("-", 1)[0].replace("-", " "), CERT_YEAR),
+        f"winner full name must carry the year; the year must not be attributed to the other doctor; answer={answer!r}",
+    )
     check_read_only(judge, initial_db, after_db)
 
 

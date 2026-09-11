@@ -19,7 +19,7 @@ GENUINE_STEPS = [
     step(RESULTS),
     step(profile(SLUG), "done"),
 ]
-ANSWER = "NPI 1472790926; residency at Elk Neck Medical Center."
+ANSWER = "NPI 1056532702; residency at Elk Neck Medical Center."
 
 
 def genuine_after() -> State:
@@ -51,11 +51,11 @@ class VerifyTask11Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(steps, ANSWER), "visited_profile_" + SLUG)
 
     def test_wrong_answer_0_fails(self) -> None:
-        verdict = self.verdict(GENUINE_STEPS, 'NPI 1472790925; Elk Neck Medical Center', after=genuine_after())
+        verdict = self.verdict(GENUINE_STEPS, 'NPI 1056532701; Elk Neck Medical Center', after=genuine_after())
         self.assertFailsOn(verdict, 'answer_has_npi')
 
     def test_wrong_answer_1_fails(self) -> None:
-        verdict = self.verdict(GENUINE_STEPS, 'NPI 1472790926; Schuylkill Medical Center', after=genuine_after())
+        verdict = self.verdict(GENUINE_STEPS, 'NPI 1056532702; Schuylkill Medical Center', after=genuine_after())
         self.assertFailsOn(verdict, 'answer_has_residency')
 
     def test_read_only_write_fails(self) -> None:

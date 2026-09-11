@@ -13,17 +13,20 @@
     <div class="steps"><span class="on">1</span><i></i><span>2</span><i></i><span>3</span></div>
     <form class="book-form" method="post" action="{{ url_for('book_appointment', slug=doctor.slug) }}">
       <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-      {% if errors %}<ul class="errors">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
-      <h3>This appointment is for:</h3>
-      <div class="seg">
-        {% for kind in patient_types %}<label><input type="radio" name="patient_type" value="{{ kind }}" {% if form.patient_type == kind or (not form.patient_type and request.args.get('patient_type') == kind) %}checked{% endif %}> {{ kind }}</label>{% endfor %}
-      </div>
-      <h3>Location:</h3>
+      {% if errors %}<ul class="errors" role="alert">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+      <fieldset>
+        <legend>This appointment is for:</legend>
+        <div class="seg">
+          {% for kind in patient_types %}<label><input type="radio" name="patient_type" value="{{ kind }}" {% if form.patient_type == kind or (not form.patient_type and request.args.get('patient_type') == kind) %}checked{% endif %}> {{ kind }}</label>{% endfor %}
+        </div>
+      </fieldset>
+      <h2>Location:</h2>
       <select name="location_id" aria-label="Location">
         {% set chosen = form.location_id or request.args.get('location_id', '') %}
         {% for location in doctor.locations %}<option value="{{ location.id }}" {% if chosen == location.id | string %}selected{% endif %}>{{ location.name }} — {{ location.short_address }}</option>{% endfor %}
       </select>
-      <h3>Choose a time:</h3>
+      <fieldset>
+      <legend>Choose a time:</legend>
       <div class="month">September 2026</div>
       {% set chosen_slot = form.slot or request.args.get('slot', '') %}
       <div class="grid-days">
@@ -37,6 +40,7 @@
           </div>
         {% endfor %}
       </div>
+      </fieldset>
       <div class="submit"><button class="btn btn-primary btn-pill" type="submit">Request Appointment</button></div>
     </form>
   </div>

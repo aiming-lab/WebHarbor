@@ -110,8 +110,62 @@ class NumberMatcherTests(unittest.TestCase):
 
     def test_review_text_matches(self) -> None:
         expected = "Short wait and a clear explanation of my treatment options."
-        self.assertTrue(lib.review_text_matches("short  wait and a clear explanation of my treatment options", expected))
+        # Whitespace normalization only; case and punctuation are verbatim.
+        self.assertTrue(lib.review_text_matches("Short  wait and a clear explanation of my treatment options.", expected))
+        self.assertFalse(lib.review_text_matches("Short wait and a clear explanation of my treatment options", expected))
+        self.assertFalse(lib.review_text_matches("short wait and a clear explanation of my treatment options.", expected))
         self.assertFalse(lib.review_text_matches("Short wait and a clear explanation of treatment options.", expected))
+
+    def test_contains_url_rejects_hostname_extension(self) -> None:
+        site = "https://www.rosetreeorthopedicssportsmedicine.example"
+        self.assertFalse(lib.contains_url("rosetreeorthopedicssportsmedicine.example.evil", site))
+        self.assertFalse(lib.contains_url("rosetreeorthopedicssportsmedicine.example-impersonator", site))
+        self.assertTrue(lib.contains_url("rosetreeorthopedicssportsmedicine.example/", site))
+
+    def test_saturday_hours_context(self) -> None:
+        self.assertTrue(lib.contains_saturday_hours("Phone (302) 555-1542; Saturday hours 8:00 am - 1:00 pm.", "8:00 am", "1:00 pm"))
+        self.assertTrue(lib.contains_saturday_hours("Sat 8:00 am - 1:00 pm", "8:00 am", "1:00 pm"))
+        # Role swap: the endpoints exist but only in a weekday clause.
+        self.assertFalse(lib.contains_saturday_hours("The office is closed Saturday. Weekday hours are 8:00 am to 1:00 pm.", "8:00 am", "1:00 pm"))
+        # Reversed order inside the Saturday clause.
+        self.assertFalse(lib.contains_saturday_hours("Saturday 1:00 pm - 8:00 am", "8:00 am", "1:00 pm"))
+
+    def test_comparison_answer_binding(self) -> None:
+        winner, loser = "Emerson Huang", "Gregory Greenwood"
+        self.assertTrue(lib.comparison_answer("Dr. Emerson Huang graduated earlier, in 1992 (Dr. Greenwood graduated in 1997).", winner, loser, 1992))
+        self.assertTrue(lib.comparison_answer("Emerson Huang (1992) graduated before Gregory Greenwood (1997).", winner, loser, 1992))
+        # Split first/last tokens across different people.
+        self.assertFalse(lib.comparison_answer("Emerson Jones was compared; Tariq Huang graduated in 1992.", winner, loser, 1992))
+        # Year attributed to the loser.
+        self.assertFalse(lib.comparison_answer("Huang was compared; Greenwood graduated earlier in 1992; Emerson Huang in 1997.", winner, loser, 1992))
+        # Winner named but the winner year absent.
+        self.assertFalse(lib.comparison_answer("Emerson Huang graduated earlier than Gregory Greenwood.", winner, loser, 1992))
+
+    def test_role_value_binding(self) -> None:
+        self.assertTrue(lib.contains_role_value("More Than Most: Acid Reflux (GERD). First under View Top 20: Anemia.", r"more than most[\s:]*(?:is)?", "Acid Reflux (GERD)"))
+        # Swapped roles must not pass.
+        self.assertFalse(lib.contains_role_value("More Than Most: Anemia. First under View Top 20: GERD.", r"more than most[\s:]*(?:is)?", "Acid Reflux (GERD)"))
+
+    def test_paired_review_fact(self) -> None:
+        import datetime as dt
+        date = dt.date(2022, 11, 2)
+        self.assertTrue(lib.contains_paired_review_fact("The oldest review is dated November 2, 2022 and gave 4 stars.", date, 4))
+        self.assertFalse(lib.contains_paired_review_fact("The oldest review was November 2, 2022 and had 5 stars. Another review had 4 stars.", date, 4))
+
+    def test_expected_booking_reference(self) -> None:
+        # Mirrors app.confirmation_reference for the task-17 grid values.
+        reference = lib.expected_booking_reference(2, 22, 1, "2026-09-14", "10:30 AM")
+        self.assertRegex(reference, r"^WMD-[A-Z2-7]{8}$")
+        # Deterministic and sensitive to every field.
+        self.assertEqual(reference, lib.expected_booking_reference(2, 22, 1, "2026-09-14", "10:30 AM"))
+        self.assertNotEqual(reference, lib.expected_booking_reference(2, 22, 0, "2026-09-14", "10:30 AM"))
+        self.assertNotEqual(reference, lib.expected_booking_reference(2, 23, 1, "2026-09-14", "10:30 AM"))
+        self.assertNotEqual(reference, lib.expected_booking_reference(3, 22, 1, "2026-09-14", "10:30 AM"))
+        self.assertNotEqual(reference, lib.expected_booking_reference(2, 22, 1, "2026-09-15", "10:30 AM"))
+        with self.assertRaises(ValueError):
+            lib.expected_booking_reference(2, 22, 1, "2026-09-13", "10:30 AM")
+        with self.assertRaises(ValueError):
+            lib.expected_booking_reference(2**23, 22, 1, "2026-09-14", "10:30 AM")
 
 
 class GateTests(unittest.TestCase):

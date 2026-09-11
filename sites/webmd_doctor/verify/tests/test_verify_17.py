@@ -12,7 +12,7 @@ from _support import (  # noqa: E402,F401
 
 SLUG = "sarah-keller-f85bed81"
 BOOKING = "/doctor/" + SLUG + "/bookappointment"
-REFERENCE = "WMD-AB2CD3EF"
+REFERENCE = "WMD-3HNFLLXI"  # the value the app derives for this exact row (verify_lib.expected_booking_reference)
 GENUINE_STEPS = [
     step("/"),
     *login_steps("carol.d@test.com"),
@@ -22,7 +22,7 @@ GENUINE_STEPS = [
     step(BOOKING + "?location_id=32&patient_type=New+Patient&slot=2026-09-14%7C10%3A30+AM", "click"),
     step(BOOKING, "done"),
 ]
-ANSWER = "Appointment requested. Confirmation reference: WMD-AB2CD3EF"
+ANSWER = "Appointment requested. Confirmation reference: WMD-3HNFLLXI"
 
 
 def genuine_after() -> State:
@@ -79,15 +79,30 @@ class VerifyTask17Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(verdict, "answer_has_matching_reference")
 
     def test_extra_reference_in_answer_fails(self) -> None:
-        verdict = self.verdict(GENUINE_STEPS, "References: WMD-AB2CD3EF and WMD-JASDV25V", after=genuine_after())
+        verdict = self.verdict(GENUINE_STEPS, "References: WMD-3HNFLLXI and WMD-JASDV25V", after=genuine_after())
         self.assertFailsOn(verdict, "answer_has_no_other_reference")
 
     def test_dash_variant_reference_passes(self) -> None:
-        self.assertPasses(self.verdict(GENUINE_STEPS, "Reference: wmd–ab2cd3ef", after=genuine_after()))
+        self.assertPasses(self.verdict(GENUINE_STEPS, "Reference: wmd–3hnfllxi", after=genuine_after()))
 
     def test_wrong_answer_0_fails(self) -> None:
-        verdict = self.verdict(GENUINE_STEPS, 'Appointment requested. Confirmation reference: WMD-AB2CD3EG', after=genuine_after())
+        verdict = self.verdict(GENUINE_STEPS, 'Appointment requested. Confirmation reference: WMD-3HNFLLXG', after=genuine_after())
         self.assertFailsOn(verdict, 'answer_has_matching_reference')
+
+
+    def test_fabricated_row_reference_fails(self) -> None:
+        after = State()
+        after.add_appointment(3, 22, 32, reference="WMD-AAAAAAA2")
+        self.assertFailsOn(
+            self.verdict(GENUINE_STEPS, "Appointment requested. Confirmation reference: WMD-AAAAAAA2", after=after),
+            "reference_matches_app_derivation",
+        )
+
+    def test_not_ending_on_confirmation_fails(self) -> None:
+        steps = [step("/"), *login_steps("carol.d@test.com"), step(profile(SLUG), "click"),
+                 step(BOOKING + "?location_id=32&patient_type=New+Patient&slot=2026-09-14%7C10%3A30+AM", "click"),
+                 step(BOOKING, "click"), step("/account/appointments", "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "ended_on_booking_confirmation")
 
 
 if __name__ == "__main__":

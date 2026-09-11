@@ -12,6 +12,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
+    contains_paired_review_fact,
     check_read_only,
     check_trajectory_identity,
     check_visited_profile,
@@ -42,6 +43,11 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     judge.check("visited_reviews_page_2", profile_visited_with(trajectory, SLUG, rpage="2"), f"required=/doctor/{SLUG}-overview?rpage=2")
     judge.check("answer_has_oldest_review_date", contains_review_date(answer, OLDEST_DATE), f"expected={OLDEST_DATE.isoformat()!r}, answer={answer!r}")
     judge.check("answer_has_oldest_review_rating", contains_star_rating(answer, OLDEST_RATING), f"expected={OLDEST_RATING!r} stars, answer={answer!r}")
+    judge.check(
+        "answer_pairs_oldest_date_and_rating",
+        contains_paired_review_fact(answer, OLDEST_DATE, OLDEST_RATING),
+        f"date and rating must appear in one clause (same review); answer={answer!r}",
+    )
     check_read_only(judge, initial_db, after_db)
 
 

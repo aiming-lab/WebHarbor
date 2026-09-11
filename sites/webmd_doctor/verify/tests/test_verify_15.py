@@ -66,5 +66,19 @@ class VerifyTask15Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_first_page_only_then_profile_fails(self) -> None:
+        steps = [step("/"), step("/choice-awards"), step("/choice-awards/awardrecipients?award-class=patient"),
+                 step(profile(SLUG)), step(PRACTICE, "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER), "visited_recipients_view_showing_target")
+
+    def test_weekday_hours_role_swap_fails(self) -> None:
+        bad = "Website: https://www.rosetreeorthopedicssportsmedicine.example - weekday hours 9:00 am - 2:00 pm. Closed Saturday."
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, bad), "answer_has_saturday_hours_context")
+
+    def test_extended_hostname_fails(self) -> None:
+        bad = "Website: https://www.rosetreeorthopedicssportsmedicine.example.evil - Saturday 9:00 am - 2:00 pm."
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, bad), "answer_has_practice_website")
+
+
 if __name__ == "__main__":
     unittest.main()

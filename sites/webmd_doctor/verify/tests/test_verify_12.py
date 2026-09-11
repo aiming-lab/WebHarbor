@@ -66,5 +66,11 @@ class VerifyTask12Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_filtered_city_page_after_profile_fails(self) -> None:
+        steps = [step("/"), step("/providers/specialty/cardiovascular-disease"), step("/providers/specialty/cardiovascular-disease/pennsylvania"),
+                 step(CITY), step(profile(SLUG), "click"), step(CITY + "?minrating=4", "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER), "filtered_city_precedes_profile")
+
+
 if __name__ == "__main__":
     unittest.main()

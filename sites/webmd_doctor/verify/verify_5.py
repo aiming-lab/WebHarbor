@@ -12,6 +12,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
+    profile_path_pattern,
+    contains_condition_in_role,
+    check_visited_before,
     check_read_only,
     check_results_visited,
     check_trajectory_identity,
@@ -40,6 +43,19 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_visited_profile(judge, trajectory, SLUG)
     judge.check("answer_has_more_than_most_condition", contains_condition(answer, MORE_THAN_MOST), f"expected={MORE_THAN_MOST!r}, answer={answer!r}")
     judge.check("answer_has_first_top20_condition", contains_condition(answer, FIRST_TOP20), f"expected={FIRST_TOP20!r}, answer={answer!r}")
+    # Swap guard (robust to phrasing): fail only when the roles are demonstrably
+    # reversed - the Top-20 value presented directly under a "More Than Most"
+    # label, or the More-Than-Most value directly under a "Top 20" label.
+    judge.check(
+        "answer_does_not_swap_condition_roles",
+        not contains_condition_in_role(answer, FIRST_TOP20, r"more than most")
+        and not contains_condition_in_role(answer, MORE_THAN_MOST, r"(?:view\s*)?top\s*20"),
+        f"a condition must not be presented under the other tier's label; answer={answer!r}",
+    )
+    check_visited_before(
+        judge, trajectory, "results_precede_profile", "/results", profile_path_pattern(SLUG),
+        before_params=[{"q": r"gastroenterolog", "loc": NEWARK}, {"sids": "6", "loc": NEWARK}],
+    )
     check_read_only(judge, initial_db, after_db)
 
 

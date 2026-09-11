@@ -76,5 +76,12 @@ class VerifyTask16Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(verdict, 'answer_confirms_saved')
 
 
+    def test_qualifying_results_after_profile_fails(self) -> None:
+        steps = [step("/"), *login_steps("bob.c@test.com"), step("/results"),
+                 step(profile(SLUG), "click"), step("/account/saved"),
+                 step("/results?q=Pediatrician&loc=Newark%2C+DE+19711", "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "qualifying_results_precede_profile")
+
+
 if __name__ == "__main__":
     unittest.main()

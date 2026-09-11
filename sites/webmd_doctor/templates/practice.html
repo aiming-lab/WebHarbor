@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container page">
   <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('grouppractices_index') }}">Group Practices</a><span class="sep">›</span><a href="{{ url_for('grouppractices_state', state=practice.city.state_slug) }}">{{ practice.city.state }}</a><span class="sep">›</span><span>{{ practice.name }}</span></div>
-  <div class="hub-hero"><h1>{{ practice.name }} <a href="#" style="font-size:16px;font-weight:400;margin-left:12px">Claim your practice</a></h1></div>
+  <div class="hub-hero"><h1>{{ practice.name }} <a href="#" style="font-size:16px;font-weight:400;margin-left:12px" title="Not available in this mirror" aria-disabled="true">Claim your practice</a></h1></div>
   <div class="hub-meta">
     <div class="stats"><span>{{ specialty_rows | length | plural_word('Specialty', 'Specialties') }}</span><span>{{ doctors | length | plural_word('Practicing Physician') }}</span></div>
     <div class="rating-line" id="ratings">{% with rating=practice.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} ({{ practice.ratings_count }}) | <a href="#ratings"><svg class="ic"><use href="#i-edit"/></svg> Write A Review</a></div>
@@ -40,9 +40,9 @@
       <section class="panel" id="locations"><div class="panel-head"><svg class="ic"><use href="#i-pin"/></svg><h2>Locations</h2></div><div class="panel-body">
         <div class="loc stacked"><div class="map">Map unavailable in mirror</div><div>
           <div class="loc-name"><svg class="ic ic-blue"><use href="#i-pin"/></svg> {{ practice.name }}</div>
-          <div style="margin-left:22px">{{ practice.street }}<br>{{ practice.city.name }}, {{ practice.city.state }} {{ practice.zip }}<br><a href="#">Get Directions</a></div>
+          <div style="margin-left:22px">{{ practice.street }}<br>{{ practice.city.name }}, {{ practice.city.state }} {{ practice.zip }}<br><a href="#" title="Not available in this mirror" aria-disabled="true">Get Directions</a></div>
           <div style="margin:12px 0 0 22px">Tel: <a href="#locations">{{ practice.phone }}</a></div>
-          <div style="margin-left:22px"><a href="{{ practice.website }}" rel="nofollow">{{ practice.website }}</a></div>
+          <div style="margin-left:22px"><a href="{{ practice.website }}" rel="nofollow noopener noreferrer" title="External synthetic domain (.example) — not reachable offline">{{ practice.website }}</a></div>
           <div class="flag-lines">
             <div>Accepting New Patients: {{ 'Yes' if flags.new_patients else 'No' }}</div>
             <div>Medicare Accepted: {{ 'Yes' if flags.medicare else 'No' }}</div>

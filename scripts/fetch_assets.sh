@@ -32,32 +32,43 @@ mkdir -p "$CACHE_DIR"
 echo "[fetch] huggingface.co/datasets/$REPO @ $REVISION -> sites/"
 
 if [[ -n "$ONLY_SITE" ]]; then
-    INCLUDE="$ONLY_SITE.tar.gz"
     echo "[fetch] scope: $ONLY_SITE only"
+    SITES_TO_FETCH=("$ONLY_SITE")
 else
-    INCLUDE="*.tar.gz"
+    # Derive the fetch list from the LOCAL site directories, not from the HF
+    # tree. The dataset can legitimately hold extra tarballs for sites that are
+    # not (yet) on this branch (e.g. drugs_com, fedex); globbing *.tar.gz and
+    # requiring an exact count made all-sites fetch fail on every such revision.
+    SITES_TO_FETCH=()
+    for site_dir in sites/*/; do
+        [[ -d "$site_dir" ]] || continue
+        SITES_TO_FETCH+=("$(basename "$site_dir")")
+    done
 fi
 
+# One explicit --include per local site; unrelated HF tarballs are never pulled.
+INCLUDE_ARGS=()
+for name in "${SITES_TO_FETCH[@]}"; do
+    INCLUDE_ARGS+=(--include "$name.tar.gz")
+done
+
 hf download "$REPO" --repo-type dataset --revision "$REVISION" \
-    --include "$INCLUDE" --local-dir "$CACHE_DIR"
+    "${INCLUDE_ARGS[@]}" --local-dir "$CACHE_DIR"
 
 shopt -s nullglob
-if [[ -n "$ONLY_SITE" ]]; then
-    TARBALLS=("$CACHE_DIR/$ONLY_SITE.tar.gz")
-    if [[ ! -f "${TARBALLS[0]}" ]]; then
-        echo "fetch_assets: expected archive for $ONLY_SITE" >&2
-        exit 1
+TARBALLS=()
+missing=0
+for name in "${SITES_TO_FETCH[@]}"; do
+    tarball="$CACHE_DIR/$name.tar.gz"
+    if [[ -f "$tarball" ]]; then
+        TARBALLS+=("$tarball")
+    else
+        echo "fetch_assets: missing archive for site '$name' at revision $REVISION" >&2
+        missing=1
     fi
-else
-    TARBALLS=("$CACHE_DIR"/*.tar.gz)
-    expected=0
-    for site_dir in sites/*/; do
-        [[ -d "$site_dir" ]] && expected=$((expected + 1))
-    done
-    if [[ ${#TARBALLS[@]} -ne $expected ]]; then
-        echo "fetch_assets: expected $expected site archives at revision $REVISION, found ${#TARBALLS[@]}" >&2
-        exit 1
-    fi
+done
+if [[ "$missing" -ne 0 ]]; then
+    exit 1
 fi
 extracted=0
 for tarball in "${TARBALLS[@]}"; do

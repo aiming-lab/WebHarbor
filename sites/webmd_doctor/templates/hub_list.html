@@ -10,18 +10,19 @@
     {% if name_filter %}<input type="hidden" name="name" value="{{ name_filter }}">{% endif %}
     <div class="filter-bar">
       <div class="filter-item">
-        <button type="button" class="pill pill-primary{% if sortby != 'bestmatch' %} active{% endif %}" data-toggle="pop-sort" aria-expanded="false">Sort By <svg class="ic"><use href="#i-chevron"/></svg></button>
+        <button type="button" class="pill pill-primary{% if sortby != 'bestmatch' %} active{% endif %}" data-toggle="pop-sort" aria-expanded="false" aria-controls="pop-sort">Sort By <svg class="ic"><use href="#i-chevron"/></svg></button>
         <div class="popover" id="pop-sort">
           {% for key, label in hub_sort_options %}<label><input type="radio" name="sortby" value="{{ key }}" {% if sortby == key %}checked{% endif %}> {{ label }}</label>{% endfor %}
         </div>
       </div>
       <div class="filter-item">
-        <button type="button" class="pill{% if minrating %} active{% endif %}" data-toggle="pop-rating" aria-expanded="false">Ratings <svg class="ic"><use href="#i-chevron"/></svg></button>
+        <button type="button" class="pill{% if minrating %} active{% endif %}" data-toggle="pop-rating" aria-expanded="false" aria-controls="pop-rating">Ratings <svg class="ic"><use href="#i-chevron"/></svg></button>
         <div class="popover" id="pop-rating">
           <label><input type="radio" name="minrating" value="" {% if not minrating %}checked{% endif %}> Any rating</label>
           {% for n in (5, 4, 3, 2, 1) %}<label><input type="radio" name="minrating" value="{{ n }}" {% if minrating == n %}checked{% endif %}> {% with rating=n, small=true %}{% include "_stars.html" %}{% endwith %} {{ n }}{% if n < 5 %} &amp; up{% endif %}</label>{% endfor %}
         </div>
       </div>
+      <div class="filter-item"><button type="submit" class="pill pill-icon" title="Apply filters" aria-label="Apply filters"><svg class="ic"><use href="#i-sliders"/></svg></button></div>
     </div>
   </form>
   <div class="section-label">All Results</div>

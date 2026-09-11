@@ -64,5 +64,10 @@ class VerifyTask6Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_date_and_rating_from_different_reviews_fail(self) -> None:
+        bad = "The oldest review was November 2, 2022 and had 5 stars. Another review had 4 stars."
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, bad), "answer_pairs_oldest_date_and_rating")
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -14,7 +14,7 @@
       <a href="{{ url_for('doctor_profile', slug=doctor.slug) }}#reviews">({{ doctor.ratings_count | plural_word('Rating') }})</a>
     </div>
     <ul class="facts">
-      {% for line in doctor.award_lines %}<li><svg class="ic"><use href="#i-award"/></svg> {{ line }}</li>{% endfor %}
+      {% for line in doctor.award_lines %}<li><svg class="ic"><use href="#i-award"/></svg> {{ line }}{% if award_year is defined and award_year %} ({{ award_year }}){% endif %}</li>{% endfor %}
       {% if doctor.is_enhanced and doctor.callout_label %}<li><svg class="ic"><use href="#i-thumb"/></svg> {{ doctor.callout_label }}</li>{% endif %}
       <li><svg class="ic"><use href="#i-briefcase"/></svg> {{ doctor.years_experience | plural_word('Year') }} Experience</li>
       {% if doctor.is_enhanced %}<li><svg class="ic {{ '' if doctor.accepting_new_patients else 'gray' }}"><use href="#i-check-circle"/></svg> {{ 'Accepting New Patients' if doctor.accepting_new_patients else 'Not Accepting New Patients' }}</li>{% endif %}

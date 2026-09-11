@@ -1,14 +1,15 @@
 {% extends "base.html" %}
 {% set hide_search_row = true %}
 {% block title %}Sign Up{% endblock %}
+{% block meta_description %}Create an account on the WebMD Care mirror to save providers and request appointments.{% endblock %}
 {% block content %}
 <div class="auth-backdrop">
   <div class="auth-modal">
     <a class="auth-close" href="{{ url_for('index') }}" aria-label="Close">×</a>
-    <div class="auth-art"><h2>Join WebMD Care</h2><p>Create a free account to save providers and request appointments.</p></div>
+    <div class="auth-art"><p class="art-title">Join WebMD Care</p><p>Create a free account to save providers and request appointments.</p></div>
     <div class="auth-form">
       <div class="top">Already have an account? <a href="{{ url_for('login', next=next_url) }}"><strong>Log In</strong></a><h1>Sign Up</h1></div>
-      {% if errors %}<ul class="errors">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+      {% if errors %}<ul class="errors" role="alert">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
       <form method="post" action="{{ url_for('signup') }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         {% if next_url %}<input type="hidden" name="next" value="{{ next_url }}">{% endif %}
@@ -19,7 +20,7 @@
         <label class="sr-only" for="dob">Date of birth</label>
         <input type="text" id="dob" name="dob" value="{{ form.dob }}" placeholder="Date of birth mm/dd/yyyy" pattern="\d{2}/\d{2}/\d{4}" title="mm/dd/yyyy" autocomplete="bday">
         <button class="btn btn-primary" type="submit">Sign Up</button>
-        <p class="fine-print">By signing up, I agree to WebMD <a href="#">Terms of Use</a> &amp; <a href="#">Privacy Policy</a>. I understand that I may opt out of WebMD subscriptions at any time.</p>
+        <p class="fine-print">By signing up, I agree to WebMD <a href="#" title="Not available in this mirror" aria-disabled="true">Terms of Use</a> &amp; <a href="#" title="Not available in this mirror" aria-disabled="true">Privacy Policy</a>. I understand that I may opt out of WebMD subscriptions at any time.</p>
       </form>
     </div>
   </div>

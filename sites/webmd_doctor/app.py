@@ -8,6 +8,7 @@ from __future__ import annotations
 import math
 import os
 import re
+import secrets
 import sys
 from datetime import date, datetime, timedelta
 from pathlib import Path
@@ -46,13 +47,20 @@ INSTANCE_DIR.mkdir(parents=True, exist_ok=True)
 
 app = Flask(__name__, instance_path=str(INSTANCE_DIR))
 app.config.update(
-    SECRET_KEY=os.environ.get("WEBMD_DOCTOR_SECRET_KEY", "webharbor-webmd-doctor-dev-key"),
+    # Repo convention (compass/walmart_careers/rotten_tomatoes): env-provided secret
+    # or a per-process random key. Never a committed constant.
+    SECRET_KEY=os.environ.get("WEBMD_DOCTOR_SECRET_KEY") or secrets.token_hex(32),
     SQLALCHEMY_DATABASE_URI=f"sqlite:///{DB_PATH}",
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
     WTF_CSRF_TIME_LIMIT=7200,
     MAX_CONTENT_LENGTH=256 * 1024,
     SESSION_COOKIE_HTTPONLY=True,
     SESSION_COOKIE_SAMESITE="Lax",
+    # The mirror serves plain HTTP on loopback by design, so SESSION_COOKIE_SECURE
+    # and REMEMBER_COOKIE_SECURE stay off; enabling them would drop every cookie.
+    REMEMBER_COOKIE_HTTPONLY=True,
+    REMEMBER_COOKIE_SAMESITE="Lax",
+    REMEMBER_COOKIE_DURATION=timedelta(hours=12),
     PERMANENT_SESSION_LIFETIME=timedelta(hours=12),
 )
 
@@ -708,13 +716,17 @@ def confirmation_reference(row_id: int, doctor_id: int, office_index: int, slot_
 
     40 bits: row id (23) | doctor id (10) | office index within the doctor's Locations list (2) |
     booking-grid day and time slot (5), then one odd-multiplier affine step, which is a bijection
-    on 40 bits.  The packing is injective for row ids below 2**23 and doctor ids below 2**10, so
-    two rows in one database never share a reference and the same row id booked for another
-    doctor, office or slot yields a different string.
+    on 40 bits.  The packing is injective while row ids stay below 2**23, doctor ids below 2**10
+    and office indices below 4; inputs beyond those documented ranges are rejected instead of
+    silently wrapping, so two stored rows can never share a reference.
     """
-    day_index = next((i for i, (_a, _s, day, _l) in enumerate(BOOKING_DAYS) if day == slot_date), 0)
-    slot_index = BOOKING_SLOTS.index(slot_time) if slot_time in BOOKING_SLOTS else 0
-    packed = ((row_id % 2**23) << 17) | ((doctor_id % 2**10) << 7) | ((office_index % 4) << 5) | (day_index * len(BOOKING_SLOTS) + slot_index)
+    day_index = next((i for i, (_a, _s, day, _l) in enumerate(BOOKING_DAYS) if day == slot_date), None)
+    if day_index is None or slot_time not in BOOKING_SLOTS:
+        raise ValueError("confirmation_reference requires a slot from the fixed booking grid")
+    slot_index = BOOKING_SLOTS.index(slot_time)
+    if not (0 <= row_id < 2**23 and 0 <= doctor_id < 2**10 and 0 <= office_index < 4):
+        raise ValueError("confirmation_reference input outside the documented injective range")
+    packed = (row_id << 17) | (doctor_id << 7) | (office_index << 5) | (day_index * len(BOOKING_SLOTS) + slot_index)
     value = (packed * 0x5A7B3A2B7E15 + 0x2C9F19E37) % (2**40)
     chars = []
     for _ in range(8):
@@ -740,6 +752,8 @@ def safe_next(raw: str | None) -> str | None:
         decoded = expanded
     if decoded != decoded.strip() or decoded.startswith("//") or "\\" in decoded:
         return None
+    if any(ord(char) < 32 or ord(char) == 127 for char in decoded):
+        return None  # control characters reintroduced by percent-decoding
     decoded = decoded.split("#", 1)[0]  # fragments never travel in a redirect target
     parsed = urlsplit(decoded)
     if parsed.scheme or parsed.netloc or not parsed.path.startswith("/") or parsed.path.startswith("//"):
@@ -749,14 +763,24 @@ def safe_next(raw: str | None) -> str | None:
 
 def single_arg(name: str, default: str = "") -> str:
     values = request.args.getlist(name)
-    return values[0].strip() if values else default
+    return values[0].strip()[:240] if values else default
+
+
+def bounded_int(raw: str, maximum_digits: int = 9) -> int | None:
+    """int() for all-digit strings within a fixed length; None otherwise.
+
+    Prevents unbounded-digit conversions (huge int parsing) from query/form input.
+    """
+    if not raw.isdigit() or len(raw) > maximum_digits:
+        return None
+    return int(raw)
 
 
 def int_arg(name: str, default: int, minimum: int = 1, maximum: int = 10**6) -> int:
-    raw = single_arg(name, "")
-    if not raw.isdigit():
+    value = bounded_int(single_arg(name, ""))
+    if value is None:
         return default
-    return min(max(int(raw), minimum), maximum)
+    return min(max(value, minimum), maximum)
 
 
 def bool_arg(name: str) -> bool:
@@ -897,10 +921,11 @@ def read_search_params(fixed: dict | None = None) -> dict:
     q = single_arg("q", "")[:160]
     resolved = resolve_query(q)
     sids_raw = single_arg("sids", "")
-    sids = int(sids_raw) if sids_raw.isdigit() else resolved["sids"]
-    cid_raw = single_arg("cid", "")
-    pid_raw = single_arg("pid", "")
-    insurer_raw = single_arg("insuranceid", "")
+    sids_value = bounded_int(sids_raw)
+    sids = sids_value if sids_value is not None else resolved["sids"]
+    cid_value = bounded_int(single_arg("cid", ""))
+    pid_value = bounded_int(single_arg("pid", ""))
+    insurer_value = bounded_int(single_arg("insuranceid", ""))
     gender = single_arg("gender", "").lower()
     if gender not in ("m", "f", "n"):
         gender = resolved["gender"] or "all"
@@ -917,9 +942,9 @@ def read_search_params(fixed: dict | None = None) -> dict:
         "q": q,
         "resolved": resolved,
         "sids": fixed.get("sids", sids),
-        "cid": int(cid_raw) if cid_raw.isdigit() else resolved["cid"],
-        "pid": int(pid_raw) if pid_raw.isdigit() else resolved["pid"],
-        "insuranceid": int(insurer_raw) if insurer_raw.isdigit() else resolved["insuranceid"],
+        "cid": cid_value if cid_value is not None else resolved["cid"],
+        "pid": pid_value if pid_value is not None else resolved["pid"],
+        "insuranceid": insurer_value if insurer_value is not None else resolved["insuranceid"],
         "gender": gender,
         "isvirtualvisit": bool_arg("isvirtualvisit") or resolved["isvirtualvisit"],
         "newpatient": bool_arg("newpatient"),
@@ -1126,11 +1151,19 @@ def specialties_for_menu():
 
 @app.context_processor
 def inject_globals():
+    # The 404/500 handlers render base.html too; a failing database must not turn
+    # an error page into a secondary exception, so global context degrades safely.
+    try:
+        menu_specialties = specialties_for_menu()
+        loc_choices = location_choices()
+    except Exception:  # noqa: BLE001 - defensive: keep error pages renderable
+        db.session.rollback()
+        menu_specialties, loc_choices = [], []
     return {
         "site_name": SITE_NAME,
-        "menu_specialties": specialties_for_menu(),
+        "menu_specialties": menu_specialties,
         "anchor_label": ANCHOR_LABEL,
-        "location_choices": location_choices(),
+        "location_choices": loc_choices,
         "sort_options": SORT_OPTIONS,
         "hub_sort_options": HUB_SORT_OPTIONS,
         "perspective_criteria": PERSPECTIVE_CRITERIA,
@@ -1317,21 +1350,27 @@ def book_appointment(slug: str):
     if not doctor.is_enhanced:
         abort(404)
     if not current_user.is_authenticated:
-        return redirect(url_for("login", next=url_for("book_appointment", slug=slug)))
+        target = url_for("book_appointment", slug=slug)
+        if request.query_string:
+            target = safe_next(target + "?" + request.query_string.decode()) or target
+        return redirect(url_for("login", next=target))
     errors: list[str] = []
     form = {
-        "patient_type": request.form.get("patient_type", "").strip(),
-        "location_id": request.form.get("location_id", "").strip(),
-        "slot": request.form.get("slot", "").strip(),
+        "patient_type": request.form.get("patient_type", "").strip()[:40],
+        "location_id": request.form.get("location_id", "").strip()[:12],
+        "slot": request.form.get("slot", "").strip()[:60],
     }
     if request.method == "POST":
         location = None
-        if form["location_id"].isdigit():
-            location = next((row for row in doctor.locations if row.id == int(form["location_id"])), None)
+        location_id = bounded_int(form["location_id"])
+        if location_id is not None:
+            location = next((row for row in doctor.locations if row.id == location_id), None)
         if location is None:
             errors.append("Choose one of the provider's locations.")
         if form["patient_type"] not in PATIENT_TYPES:
             errors.append("Tell us whether this appointment is for a new or returning patient.")
+        elif form["patient_type"] == "New Patient" and location is not None and not location.new_patients:
+            errors.append("That office is not accepting new patients. Choose another office or request a returning-patient visit.")
         slot_date = slot_time = None
         if "|" in form["slot"]:
             raw_date, raw_time = form["slot"].split("|", 1)
@@ -1340,6 +1379,13 @@ def book_appointment(slug: str):
                     slot_date, slot_time = day, raw_time
         if slot_date is None:
             errors.append("Pick an appointment time from the calendar.")
+        if not errors:
+            duplicate = AppointmentRequest.query.filter_by(
+                user_id=current_user.id, doctor_id=doctor.id, location_id=location.id,
+                slot_date=slot_date, slot_time=slot_time,
+            ).first()
+            if duplicate is not None:
+                errors.append("You have already requested this exact appointment. Find it under My Account \u203a Appointments.")
         if not errors:
             booking = AppointmentRequest(
                 user_id=current_user.id,
@@ -1380,8 +1426,15 @@ def save_provider(slug: str):
         flash(f"{doctor.full_name} was removed from your saved providers.", "info")
     else:
         db.session.add(SavedProvider(user_id=current_user.id, doctor_id=doctor.id, saved_at=datetime.now()))
-        db.session.commit()
-        flash(f"{doctor.full_name} was saved to your providers.", "success")
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # Concurrent save of the same provider: the unique (user_id, doctor_id)
+            # constraint already recorded it; report the deterministic saved state.
+            db.session.rollback()
+            flash(f"{doctor.full_name} was saved to your providers.", "success")
+        else:
+            flash(f"{doctor.full_name} was saved to your providers.", "success")
     return redirect(target)
 
 
@@ -1410,6 +1463,12 @@ def submit_review(slug: str):
     if errors:
         for error in errors:
             flash(error, "error")
+        return redirect(url_for("doctor_profile", slug=slug) + "#reviews")
+    duplicate_pending = UserReview.query.filter_by(
+        user_id=current_user.id, doctor_id=doctor.id, status="Pending review"
+    ).first()
+    if duplicate_pending is not None:
+        flash("You already have a review pending for this provider.", "error")
         return redirect(url_for("doctor_profile", slug=slug) + "#reviews")
     review = UserReview(
         user_id=current_user.id,
@@ -1445,12 +1504,15 @@ def specialty_or_404(spec: str) -> Specialty:
 
 
 def specialty_doctor_rows(specialty: Specialty):
+    # Match the results-search population (primary OR secondary specialty) so hub
+    # counts and chips describe exactly the doctors the state/city pages list.
     query = (
         db.session.query(City.state, City.state_name, City.state_slug, City.name, City.slug, City.id)
         .select_from(Doctor)
         .join(Location, db.and_(Location.doctor_id == Doctor.id, Location.is_primary.is_(True)))
         .join(City, Location.city_id == City.id)
-        .filter(Doctor.primary_specialty_id == specialty.id)
+        .filter(db.or_(Doctor.primary_specialty_id == specialty.id,
+                       Doctor.secondary_specialty_id == specialty.id))
     )
     return query.all()
 
@@ -1461,7 +1523,9 @@ STRIP_RADIUS_MILES = 25.0  # "Highest Rated ... near Newark" strip: the 25-mile 
 def highest_rated_near_anchor(specialty: Specialty, anchor: City, limit: int, radius: float = STRIP_RADIUS_MILES) -> list[Doctor]:
     """Top-rated doctors of a specialty whose primary office is within `radius` miles of the anchor."""
     rated = (
-        Doctor.query.filter(Doctor.primary_specialty_id == specialty.id, Doctor.avg_rating.isnot(None))
+        Doctor.query.filter(db.or_(Doctor.primary_specialty_id == specialty.id,
+                                   Doctor.secondary_specialty_id == specialty.id),
+                            Doctor.avg_rating.isnot(None))
         .order_by(Doctor.avg_rating.desc(), Doctor.ratings_count.desc(), Doctor.id)
         .all()
     )
@@ -1487,7 +1551,9 @@ def specialty_landing(spec: str):
     city_chips = sorted(cities.values(), key=lambda entry: entry["name"])
     anchor = anchor_city()
     highest_rated = highest_rated_near_anchor(specialty, anchor, limit=5)
-    rated = [d for d in Doctor.query.filter(Doctor.primary_specialty_id == specialty.id, Doctor.avg_rating.isnot(None)).all()]
+    rated = [d for d in Doctor.query.filter(db.or_(Doctor.primary_specialty_id == specialty.id,
+                                                   Doctor.secondary_specialty_id == specialty.id),
+                                            Doctor.avg_rating.isnot(None)).all()]
     average_rating = round(sum(d.avg_rating for d in rated) / len(rated), 1) if rated else None
     total_ratings = sum(d.ratings_count for d in rated)
     conditions = Condition.query.filter_by(specialty_id=specialty.id).order_by(Condition.id).all()
@@ -1521,6 +1587,10 @@ def specialty_state(spec: str, state: str):
         entry = cities.setdefault(city_name, {"name": city_name, "slug": city_slug, "count": 0})
         entry["count"] += 1
     params = read_search_params({"sids": specialty.id, "state": city.state, "use_distance": False})
+    if params["sortby"] == "distance":
+        # Distance sorting is hidden on state pages and would silently use the
+        # Newark anchor for other states; normalize it away.
+        params["sortby"] = "bestmatch"
     params["loc_label"] = ""
     ranked = search_doctors(params, anchor_city())
     page = paginate(ranked, params["page"])
@@ -1629,6 +1699,8 @@ def hub_page(kind: str, state_slug: str | None):
         sortby = "bestmatch"
     minrating = int_arg("minrating", 0, 1, 5) if single_arg("minrating", "").isdigit() else 0
     ordered = hub_sorted(items, sortby, minrating)
+    # Header totals describe the filtered population actually shown below.
+    filtered_items = [item for item in items if not minrating or (item.avg_rating is not None and item.avg_rating >= minrating)]
     page = paginate(ordered, int_arg("page", 1, 1, 10**4))
     counts = hub_counts(kind, page["rows"])
     return render_template(
@@ -1645,8 +1717,8 @@ def hub_page(kind: str, state_slug: str | None):
         counts=counts,
         sortby=sortby,
         minrating=minrating,
-        city_count=len({item.city_id for item in items}),
-        total=len(items),
+        city_count=len({item.city_id for item in filtered_items}),
+        total=len(filtered_items),
         base_path=url_for(f"{kind}_state", state=state_slug),
         page_qs=lambda n: urlencode({k: v for k, v in (("name", name_filter), ("sortby", sortby if sortby != "bestmatch" else ""), ("minrating", minrating or ""), ("page", n)) if v not in ("", None)}),
     )
@@ -1790,6 +1862,13 @@ def reviews_guidelines():
 # --------------------------------------------------------------------------- #
 # Auth + account
 # --------------------------------------------------------------------------- #
+# Timing-equalizing dummy: a real scrypt hash of an unguessable random string,
+# generated once at import. Unknown emails run the same hashing work as known
+# accounts, and the resulting True/False can never log anyone in because the
+# user lookup already failed.
+_DUMMY_PASSWORD_HASH = generate_password_hash(secrets.token_hex(32), method="scrypt")
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     next_url = safe_next(request.args.get("next"))
@@ -1801,10 +1880,20 @@ def login():
         next_url = safe_next(request.form.get("next")) or next_url
         email = request.form.get("email", "").strip().lower()[:160]
         password = request.form.get("password", "")
+        if len(password) > 256:
+            # Reject before hashing; the request-size cap alone would still allow
+            # repeated multi-hundred-KB scrypt work.
+            errors.append("The email or password you entered is incorrect.")
+            password = ""
         user = User.query.filter_by(email=email).first() if email else None
-        if user is None or not check_password_hash(user.password_hash, password):
+        password_ok = check_password_hash(
+            user.password_hash if user is not None else _DUMMY_PASSWORD_HASH, password
+        )
+        if user is None or not password_ok:
             errors.append("The email or password you entered is incorrect.")
         else:
+            session.clear()  # drop pre-authentication session state before login
+            session.permanent = True
             login_user(user, remember=request.form.get("remember") == "on")
             return redirect(next_url or url_for("index"))
     return render_template("login.html", errors=errors, email=email, next_url=next_url)
@@ -1818,7 +1907,7 @@ def signup():
     if request.method == "POST":
         next_url = safe_next(request.form.get("next")) or next_url
         form["email"] = request.form.get("email", "").strip().lower()[:160]
-        form["dob"] = request.form.get("dob", "").strip()
+        form["dob"] = request.form.get("dob", "").strip()[:20]
         password = request.form.get("password", "")
         if not EMAIL_PATTERN.match(form["email"]):
             errors.append("Enter a valid email address.")
@@ -1832,10 +1921,13 @@ def signup():
                 dob = datetime.strptime(form["dob"], "%m/%d/%Y").date() if "/" in form["dob"] else date.fromisoformat(form["dob"])
             except ValueError:
                 errors.append("Enter your date of birth as YYYY-MM-DD.")
+            else:
+                if dob > date.today():
+                    errors.append("Enter your date of birth as YYYY-MM-DD.")
         if not errors:
             user = User(
                 email=form["email"],
-                password_hash=generate_password_hash(password),
+                password_hash=generate_password_hash(password, method="scrypt"),
                 dob=dob,
                 display_name=form["email"].split("@", 1)[0],
                 created_at=datetime.now(),
@@ -1847,6 +1939,8 @@ def signup():
                 db.session.rollback()
                 errors.append("An account with that email already exists. Log in instead.")
             else:
+                session.clear()
+                session.permanent = True
                 login_user(user)
                 return redirect(next_url or url_for("index"))
     return render_template("signup.html", errors=errors, form=form, next_url=next_url)
@@ -1894,7 +1988,8 @@ def account_appointments():
     return render_template("account_appointments.html", rows=rows)
 
 
-@app.route("/health")
+@app.route("/_health")
+@app.route("/health")  # legacy alias kept for the site README's original contract
 def health():
     marker = db.session.get(SeedMetadata, "version")
     counts = {

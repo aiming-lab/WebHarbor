@@ -15,6 +15,7 @@ from verify_lib import (  # noqa: E402
     check_exact_delta,
     check_paths_in_order,
     check_results_visited,
+    check_visited_before,
     check_tables_unchanged,
     check_trajectory_identity,
     check_visited_path,
@@ -39,7 +40,7 @@ from verify_lib import (  # noqa: E402
 TASK_ID = "WebMD Doctor--19"
 SLUG = "monica-carrington-62f5d8a2"
 DOCTOR_ID = 68
-NPI = "1279956602"
+NPI = "1074536057"
 
 
 def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -> None:
@@ -54,6 +55,14 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     )
     check_visited_profile(judge, trajectory, SLUG)
     check_paths_in_order(judge, trajectory, "workflow_in_order", [("/signup", {}), ("/results", {}), (profile_path_pattern(SLUG), {})])
+    check_visited_before(
+        judge, trajectory, "qualifying_results_precede_profile", "/results", profile_path_pattern(SLUG),
+        before_params=[
+            {"q": r"neurolog", "isvirtualvisit": True, "loc": NEWARK},
+            {"sids": "4", "isvirtualvisit": True, "loc": NEWARK},
+            {"q": r"(?=.*neurolog)(?=.*(?:virtual|telehealth|video visit))", "loc": NEWARK},
+        ],
+    )
     typed_email = signup_email(trajectory)
     check_exact_delta(judge, initial_db, after_db, "users", added=1)
     new_users = new_user_rows(initial_db, after_db)

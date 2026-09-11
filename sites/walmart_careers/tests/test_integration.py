@@ -59,7 +59,7 @@ def test_tasks_and_verifiers_are_complete_and_use_site_24():
 def test_assets_pin_is_immutable_merged_revision():
     text = (ROOT / ".assets-revision").read_text()
     revision = re.search(r"^revision:\s*([0-9a-f]+)$", text, re.M).group(1)
-    assert revision == "65c479f894763f64c6073e0d180ebf542d1d2c02"
+    assert revision == "ad6f424f72cada9e6f5c09a58093d0ceeab9c52b"
     assert (SITE / ".build-generated-seed").is_file()
     assert (SITE / ".requires-images").is_file()
     assert (SITE / "asset_inventory.json").is_file()

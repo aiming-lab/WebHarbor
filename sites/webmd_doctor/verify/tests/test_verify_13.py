@@ -66,5 +66,17 @@ class VerifyTask13Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_year_attributed_to_loser_fails(self) -> None:
+        bad = "Dr. Gregory Greenwood graduated earlier, in 1992 (Dr. Emerson Huang in 1997)."
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, bad), "answer_binds_winner_to_year")
+
+    def test_split_name_tokens_fail(self) -> None:
+        # Both name tokens exist but never as the contiguous winner full name;
+        # the old order-free contains_doctor_name check passes this, so the
+        # comparison binding is the check that must reject it.
+        bad = "Emerson Jones was compared; Tariq Huang graduated in 1992."
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, bad), "answer_binds_winner_to_year")
+
+
 if __name__ == "__main__":
     unittest.main()

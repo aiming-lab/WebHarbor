@@ -52,8 +52,9 @@ RUN cd /opt/WebSyn/walmart_careers && rm -rf instance instance_seed && \
 
 # WebMD Doctor's generated avatars / posters come from the pinned asset bundle,
 # while its SQLite seed is rebuilt deterministically from tracked source code.
-RUN test -n "$(ls -A /opt/WebSyn/webmd_doctor/static/images/avatars)" && \
-    test -n "$(ls -A /opt/WebSyn/webmd_doctor/static/images/posters)"
+# The inventory gate enforces exact coverage + per-file SHA-256 + PNG decode of
+# all 317 generated images (same contract as the compass / walmart inventories).
+RUN python3 /opt/WebSyn/webmd_doctor/check_generated_assets.py
 RUN cd /opt/WebSyn/webmd_doctor && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
 

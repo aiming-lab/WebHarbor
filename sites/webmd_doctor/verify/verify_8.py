@@ -12,6 +12,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
+    contains_any,
     check_exact_delta,
     check_paths_in_order,
     check_signed_in_as,
@@ -22,13 +23,16 @@ from verify_lib import (  # noqa: E402
     contains_institution,
     fail_closed,
     final_answer,
+    final_url_is_path,
     Judge,
     load_run,
+    normalized_url_path,
     parse_args,
     profile_path_pattern,
     resolve_snapshots,
     saved_delta,
     saved_doctor_ids,
+    site_urls,
 )
 
 
@@ -53,6 +57,28 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_exact_delta(judge, initial_db, after_db, "saved_providers", removed=1)
     added, removed = saved_delta(initial_db, after_db, USER_ID)
     judge.check("removed_target_only", removed == {DOCTOR_ID} and not added, f"expected removed={{{DOCTOR_ID}}} added=set(); observed removed={sorted(removed)!r} added={sorted(added)!r}")
+    # Rubric: the removal must be evidenced by the saved list WITHOUT the
+    # provider, or by the provider's un-saved state on a profile the run stays
+    # on after the toggle. The exact DB delta is the authoritative evidence;
+    # this gate requires at least one of the two recorded UI states.
+    urls = site_urls(trajectory)
+    profile_re = profile_path_pattern(SLUG)
+    profile_positions = [
+        index for index, url in enumerate(urls)
+        if profile_re.fullmatch(normalized_url_path(url))
+    ]
+    saved_after_profile = any(
+        normalized_url_path(url) == SAVED_PATH
+        for index, url in enumerate(urls)
+        if profile_positions and index > profile_positions[0]
+    )
+    toggle_dwell = len(profile_positions) >= 2 and final_url_is_path(trajectory, profile_re)
+    judge.check(
+        "post_removal_ui_evidence",
+        saved_after_profile or toggle_dwell,
+        f"requires a Saved Providers visit after the profile, or a post-toggle profile the run ends on; observed={urls!r}",
+    )
+    judge.check("answer_confirms_removal", contains_any(answer, ("removed", "no longer saved", "unsaved")), f"answer={answer!r}")
     check_tables_unchanged(judge, initial_db, after_db, ("users", "appointment_requests", "user_reviews"))
 
 

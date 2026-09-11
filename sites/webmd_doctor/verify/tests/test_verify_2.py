@@ -60,5 +60,10 @@ class VerifyTask2Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_weekday_hours_role_swap_fails(self) -> None:
+        bad = "Phone (302) 555-1542. The office is closed Saturday; weekday hours are 8:00 am - 1:00 pm."
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, bad), "answer_has_saturday_hours_context")
+
+
 if __name__ == "__main__":
     unittest.main()

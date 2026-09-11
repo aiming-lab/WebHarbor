@@ -15,6 +15,7 @@ from verify_lib import (  # noqa: E402
     check_exact_delta,
     check_paths_in_order,
     check_results_visited,
+    check_visited_before,
     check_signed_in_as,
     check_tables_unchanged,
     check_trajectory_identity,
@@ -49,6 +50,10 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_visited_profile(judge, trajectory, SLUG)
     check_visited_path(judge, trajectory, "visited_saved_providers_page", SAVED_PATH)
     check_paths_in_order(judge, trajectory, "workflow_in_order", [("/login", {}), ("/results", {}), (profile_path_pattern(SLUG), {}), (SAVED_PATH, {})])
+    check_visited_before(
+        judge, trajectory, "qualifying_results_precede_profile", "/results", profile_path_pattern(SLUG),
+        before_params=[{"q": r"pediatric", "loc": NEWARK}, {"sids": "9", "loc": NEWARK}],
+    )
     judge.check("answer_confirms_saved", contains_any(answer, ("Castellano", "saved", "appears", "listed")), f"answer={answer!r}")
     check_exact_delta(judge, initial_db, after_db, "saved_providers", added=1)
     added, removed = saved_delta(initial_db, after_db, USER_ID)

@@ -12,6 +12,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
+    profile_path_pattern,
+    check_visited_before,
     check_read_only,
     check_results_visited,
     check_trajectory_identity,
@@ -47,6 +49,14 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_visited_profile(judge, trajectory, SLUG)
     judge.check("answer_has_medical_school", contains_institution(answer, SCHOOL), f"expected={SCHOOL!r}, answer={answer!r}")
     judge.check("answer_has_certification_year", contains_year(answer, CERT_YEAR), f"expected={CERT_YEAR!r}, answer={answer!r}")
+    check_visited_before(
+        judge, trajectory, "filtered_results_precede_profile", "/results", profile_path_pattern(SLUG),
+        before_params=[
+            {"q": r"dermatolog", "insuranceid": "4", **FILTERS},
+            {"sids": "1", "insuranceid": "4", **FILTERS},
+            {"q": r"(?=.*dermatolog)(?=.*blue cross)", **FILTERS},
+        ],
+    )
     check_read_only(judge, initial_db, after_db)
 
 

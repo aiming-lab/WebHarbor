@@ -5,8 +5,13 @@ Run directly (`PYTHONHASHSEED=0 python seed_data.py`) to rebuild
 `PYTHONHASHSEED=0 python seed_data.py --write-images` additionally regenerates
 `static/images/avatars/*.png` and `static/images/posters/*.png`; those PNGs
 ship through the pinned Hugging Face asset tarball, never from the image
-build. Byte-reproducible: one seeded RNG, no wall-clock reads, sorted
-iteration only, hard-coded password hashes, PNGs without ancillary chunks.
+build. Byte-reproducible within the pinned toolchain (Python 3.12,
+Pillow==11.0.0, and the SQLite build in python:3.12-slim): one seeded RNG, no
+wall-clock reads, deterministic iteration, hard-coded password hashes, PNGs
+without ancillary chunks. SQLite file bytes can differ across SQLite library
+versions even when every logical row is identical; the runtime reset contract
+(instance/ == instance_seed/ byte-for-byte) holds in every environment because
+reset copies the frozen file.
 
 Every doctor, practice, hospital, address, phone, NPI, school and review is
 synthetic. Real city / state / specialty / insurer names are reused only as
@@ -88,6 +93,46 @@ BENCHMARK_USERS = [
 USER_CREATED_AT = datetime(2026, 6, 12, 9, 30, 0)
 
 # Filled in from the frozen seed; ensure_seed_database refuses partial DBs.
+# Synthetic NPIs for the 226 seeded doctors, in doctor-creation order.
+#
+# Policy: every value is a 10-digit individual-range NPI (leading 1) whose check
+# digit satisfies the CMS rule (Luhn mod 10 over "80840" + the first nine
+# digits), and none of them was assigned in the NPPES full dissemination file of
+# 2026-08-09, the weekly files through 2026-09-06, or the deactivated-NPI report
+# of 2026-08-10 (9,786,956 unique values checked). They belong to no real
+# provider as of that snapshot; like every other identifier here they are
+# benchmark data, and the site says so on every page.
+#
+# Regenerating or extending this list: see the reviewer tooling that produced it
+# (dedicated RNG seed 20260910, rejection sampling against the registry). The
+# site seed RNG stream is deliberately untouched by this list, so slugs, images
+# and every other generated value are unchanged from the reviewed PR head.
+VERIFIED_NPIS = [
+    "1000054118", "1000684088", "1001493653", "1004139360", "1005042126", "1005204973", "1006030922", "1006348365", "1007657558", "1007769064",
+    "1008780789", "1009453030", "1010901399", "1010911661", "1011366147", "1012226852", "1012920793", "1014502367", "1015126182", "1015213113",
+    "1016005690", "1017412952", "1019587181", "1019613342", "1021676410", "1021740646", "1024041687", "1025647698", "1026044689", "1026932032",
+    "1028844805", "1029382482", "1030659035", "1032152617", "1035062284", "1035572282", "1035792336", "1035967425", "1036044430", "1036890592",
+    "1038013821", "1040081071", "1040987129", "1042287023", "1042426126", "1042472419", "1047205129", "1047413798", "1050175482", "1052481649",
+    "1052972407", "1054403880", "1056532702", "1056558814", "1058019583", "1059555791", "1061725929", "1062491067", "1062619568", "1064632718",
+    "1064962354", "1066265590", "1066987516", "1068804941", "1069304057", "1070894724", "1072465754", "1074536057", "1074713235", "1075115828",
+    "1075826861", "1076172992", "1078897281", "1079810200", "1085189136", "1085726960", "1088888106", "1089573467", "1090785639", "1091120802",
+    "1091797211", "1092268659", "1094107467", "1098006855", "1100197049", "1100286180", "1101064339", "1101088510", "1102737107", "1103397497",
+    "1103443531", "1103761759", "1105164382", "1105835098", "1106726452", "1106749025", "1107294492", "1107803987", "1110528498", "1111173914",
+    "1111987859", "1115841664", "1118497613", "1118808280", "1120517663", "1121455558", "1122475969", "1126030935", "1127702938", "1128996976",
+    "1131087201", "1132845110", "1133944565", "1135085524", "1136776477", "1137892653", "1141255947", "1142551153", "1142576564", "1143152324",
+    "1143700023", "1145240986", "1145751248", "1146751494", "1147399061", "1147456770", "1147646263", "1147737492", "1147984250", "1149513297",
+    "1153177807", "1153527092", "1156217899", "1157839626", "1158438493", "1159107378", "1159113723", "1161140078", "1161742931", "1162100220",
+    "1162409654", "1162503845", "1162816544", "1163884848", "1163885365", "1166628762", "1167892326", "1169172537", "1169811282", "1172344164",
+    "1173140611", "1173995337", "1175742281", "1177301375", "1177954496", "1178577395", "1178755272", "1179797273", "1179887595", "1180216446",
+    "1181662200", "1182839492", "1183212251", "1186007302", "1186193656", "1187408764", "1188003440", "1190018071", "1195343227", "1197430832",
+    "1197795085", "1198202594", "1198317152", "1198433322", "1198653036", "1199924659", "1200994113", "1202674457", "1202693770", "1207748488",
+    "1209554876", "1210760579", "1212628139", "1213775749", "1216351787", "1216969463", "1218075103", "1218724841", "1220020766", "1223152442",
+    "1223263330", "1224274419", "1227175399", "1227833906", "1228227058", "1230355863", "1231747480", "1232955702", "1233652688", "1233904287",
+    "1233982622", "1234354128", "1237216910", "1237380385", "1238000909", "1240332803", "1240910699", "1242123366", "1243385493", "1244827600",
+    "1246350833", "1246745263", "1246847101", "1247051349", "1247421971", "1248392296", "1249732953", "1250448887", "1250661745", "1250775719",
+    "1251616789", "1251770305", "1252785807", "1256009287", "1256017090", "1257201198",
+]
+
 EXPECTED_COUNTS = {
     "specialties": 10,
     "conditions": 82,
@@ -113,11 +158,15 @@ EXPECTED_COUNTS = {
     "awards": 50,
     "doctor_languages": 363,
     "users": 4,
-    "saved_providers": 4,
+    "saved_providers": 7,
     "appointment_requests": 1,
     "user_reviews": 1,
 }
-CORE_COUNT_KEYS = ("specialties", "cities", "hospitals", "practices", "doctors", "doctor_perspectives")
+# Runtime-mutable tables legitimately change while agents use the site (signup,
+# saves, bookings, reviews). Every other seeded table is immutable benchmark
+# data and must keep its exact count at startup; see _seed_is_complete().
+MUTABLE_TABLES = frozenset({"users", "saved_providers", "appointment_requests", "user_reviews"})
+IMMUTABLE_COUNT_KEYS = tuple(key for key in EXPECTED_COUNTS if key not in MUTABLE_TABLES)
 
 # --------------------------------------------------------------------------- #
 # Vocabularies (real specialties / insurers / cities as vocabulary only)
@@ -506,7 +555,7 @@ REVIEW_WAIT = ["under five minutes", "about ten minutes", "close to twenty minut
 REVIEW_VISIT = ["first visit", "follow-up", "annual checkup", "consultation", "second opinion", "new-patient appointment"]
 REVIEW_TAILS = [" Recommended to my neighbors.", " Booked my next visit before leaving.", " My spouse now sees the same office.", " Worth the drive.", " Sharing so others know what to expect.", " Updated after my second visit.", " Still the same opinion a year later.", " Posting at my family's request."]
 HOSPITAL_OVERVIEW = "{name} is a Hospital with 1 Location. Currently {name}'s {n} physicians cover {s} specialty areas of medicine."
-PRACTICE_OVERVIEW = "{name} is a Group Practice with 1 Location. Currently {name}'s {n} physicians cover {s} specialty areas of medicine."
+PRACTICE_OVERVIEW = "{name} is a Group Practice with {offices}. Currently {name}'s {n} physicians cover {s} specialty areas of medicine."
 
 
 # --------------------------------------------------------------------------- #
@@ -822,11 +871,17 @@ def _build_doctors(vocab: dict, hospitals: dict[str, list[Hospital]], practices:
         if RNG.random() < 0.75:
             hospital = min(hospitals[city_name], key=lambda h: (hospital_load.get(h.id, 0), h.id))
             hospital_load[hospital.id] = hospital_load.get(hospital.id, 0) + 1
+        # Draw the historical nine random digits so the shared RNG stream (and
+        # therefore every slug and downstream value) is byte-identical to the
+        # reviewed head; the stored NPI is the registry-verified value for this
+        # creation index, and the optional-fellowship coin stays the parity of
+        # the drawn last digit.
         while True:
-            npi = "1" + "".join(str(RNG.randint(0, 9)) for _ in range(9))
-            if npi not in used_npis:
-                used_npis.add(npi)
+            drawn_npi = "1" + "".join(str(RNG.randint(0, 9)) for _ in range(9))
+            if drawn_npi not in used_npis:
+                used_npis.add(drawn_npi)
                 break
+        npi = VERIFIED_NPIS[len(doctors)]
         while True:
             slug = f"{slugify(slot['first'])}-{slugify(slot['last'])}-{RNG.getrandbits(32):08x}"
             if slug not in used_slugs:
@@ -932,9 +987,9 @@ def _build_doctors(vocab: dict, hospitals: dict[str, list[Hospital]], practices:
             )
             apply_hours(location, RNG.choice(HOURS_PATTERNS))
             db.session.add(location)
-        # training timeline (audit D): consumes no RNG (the optional-fellowship coin is the parity
-        # of the already-random NPI) so the name / slug / NPI / office stream is unchanged
-        plan = training_plan(spec_name, years, cert_delay, int(npi[-1]) % 2 == 0)
+        # training timeline (audit D): consumes no RNG (the optional-fellowship coin is the
+        # parity of the drawn NPI digits) so the name / slug / office stream is unchanged
+        plan = training_plan(spec_name, years, cert_delay, int(drawn_npi[-1]) % 2 == 0)
         slot["plan"] = plan
         doctor.graduation_year = plan["graduation_year"]
         doctors.append(doctor)
@@ -1213,7 +1268,11 @@ def _finish_hubs(hospital_rows: list[Hospital], practice_rows: list[Practice]) -
         doctor_ids = sorted({loc.doctor_id for loc in practice.locations})
         doctors = [db.session.get(Doctor, doctor_id) for doctor_id in doctor_ids]
         specialties = {d.primary_specialty_id for d in doctors}
-        practice.overview_text = PRACTICE_OVERVIEW.format(name=practice.name, n=len(doctors), s=len(specialties))
+        # Count the practice's distinct physical offices (satellite locations have
+        # their own generated streets) so the overview never contradicts the data.
+        office_count = len({(loc.street, loc.zip) for loc in practice.locations})
+        offices = "1 Location" if office_count == 1 else f"{office_count} Locations"
+        practice.overview_text = PRACTICE_OVERVIEW.format(name=practice.name, offices=offices, n=len(doctors), s=len(specialties))
         rated = [d.avg_rating for d in doctors if d.avg_rating is not None]
         if rated and RNG.random() < 0.6:
             practice.avg_rating = round(sum(rated) / len(rated), 1)
@@ -1372,8 +1431,12 @@ def seed_benchmark_users(force: bool = False) -> None:
         return rows[n]
 
     alice = users["alice.j@test.com"]
-    # exactly one Dermatologist among Alice's three saved providers
+    # Exactly one Dermatologist among Alice's six saved providers, and the
+    # dermatologist is not first in the saved-page (saved_at DESC) order.
     alice_saved = [
+        (nth_doctor("Pediatrics", -1), datetime(2026, 6, 14, 9, 15, 0)),
+        (nth_doctor("Internal Medicine", -1), datetime(2026, 6, 21, 13, 40, 0)),
+        (nth_doctor("Internal Medicine", -2), datetime(2026, 6, 28, 17, 2, 0)),
         (nth_doctor("Dermatology", 4), datetime(2026, 7, 2, 18, 5, 0)),
         (nth_doctor("Family Medicine", 6), datetime(2026, 7, 19, 8, 41, 0)),
         (nth_doctor("Neurology", 3), datetime(2026, 8, 6, 12, 27, 0)),
@@ -1437,16 +1500,49 @@ def _current_counts() -> dict[str, int]:
 
 
 def _seed_is_complete() -> bool:
+    """Fail-closed startup validation of an already-committed database.
+
+    Every immutable benchmark table must match its exact expected count, the
+    seed-version marker must be present and current, the four benchmark accounts
+    must exist, and no foreign-key violation may remain. The four runtime tables
+    (users, saved_providers, appointment_requests, user_reviews) are allowed to
+    grow or shrink while agents use the site; only the benchmark-user subset is
+    required.
+    """
     marker = db.session.get(SeedMetadata, "version")
+    if marker is None or marker.value != SEED_VERSION:
+        return False
     counts = _current_counts()
-    core_match = all(counts[key] == EXPECTED_COUNTS[key] for key in CORE_COUNT_KEYS)
+    if any(counts[key] != EXPECTED_COUNTS[key] for key in IMMUTABLE_COUNT_KEYS):
+        return False
     benchmark_emails = {email for email, _d, _b in BENCHMARK_USERS}
     present = {row.email for row in User.query.filter(User.email.in_(benchmark_emails)).all()}
-    return marker is not None and marker.value == SEED_VERSION and core_match and present == benchmark_emails
+    if present != benchmark_emails:
+        return False
+    if db.session.execute(text("PRAGMA foreign_key_check")).all():
+        return False
+    return True
 
 
 def _database_has_seed_rows() -> bool:
     return any(_current_counts().values()) or SeedMetadata.query.count() > 0
+
+
+def npi_checksum_valid(npi: str) -> bool:
+    """CMS NPI rule: Luhn mod 10 over "80840" + the first nine digits."""
+    if len(npi) != 10 or not npi.isdigit() or npi[0] not in "12":
+        return False
+    digits = "80840" + npi[:9]
+    total = 0
+    n = len(digits)
+    for index, char in enumerate(digits):
+        value = int(char)
+        if (n - 1 - index) % 2 == 0:
+            value *= 2
+            if value > 9:
+                value -= 9
+        total += value
+    return (10 - total % 10) % 10 == int(npi[9])
 
 
 def _validate_seed() -> None:
@@ -1456,6 +1552,11 @@ def _validate_seed() -> None:
     violations = db.session.execute(text("PRAGMA foreign_key_check")).all()
     if violations:
         raise RuntimeError(f"seed foreign-key violations: {violations[:5]}")
+    seeded_npis = [row[0] for row in db.session.execute(text("SELECT npi FROM doctors ORDER BY id")).all()]
+    if seeded_npis != list(VERIFIED_NPIS):
+        raise RuntimeError("seeded NPIs do not match the registry-verified list in creation order")
+    if not all(npi_checksum_valid(npi) for npi in seeded_npis):
+        raise RuntimeError("seeded NPI failed the CMS check-digit rule")
 
 
 def ensure_seed_database() -> None:

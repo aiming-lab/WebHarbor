@@ -48,6 +48,98 @@ EXPECTED_SLUGS: dict[int, str | tuple[str, str]] = {
     19: "monica-carrington-62f5d8a2",
 }
 
+# Every answer fact and stateful id each verifier hardcodes. ``_expect_facts``
+# re-derives all of them from the supplied snapshot and fails closed on any
+# disagreement, so a re-frozen seed cannot silently invalidate a hardcoded
+# school, year, NPI, phone, hours, institution, criterion, date, rating,
+# website, user/doctor/location id or reference input. Keeping the table here
+# (next to EXPECTED_SLUGS) means the contract covers facts, not only targets.
+EXPECTED_FACTS: dict[int, dict[str, Any]] = {
+    0: {"school": "Chesapeake Bay School of Medicine", "graduation_year": 2004},
+    1: {"npi": "1025647698", "languages": ["English", "Tagalog", "Portuguese"]},
+    2: {"phone": "(302) 555-1542", "saturday": ["8:00 am", "1:00 pm"]},
+    3: {"office_name": "Providence Road Medical Group - Professional Plaza",
+        "street": "3543 Baltimore Pike Bldg B"},
+    4: {"board": "American Board of Orthopaedic Surgery", "cert_year": 2014,
+        "residency": "Blue Ridge Regional Medical Center"},
+    5: {"more_than_most": "Acid Reflux (GERD)", "first_top20": "Anemia"},
+    6: {"oldest_date": "2022-11-02", "oldest_rating": 4, "review_count": 7},
+    7: {"criterion": 6, "wait_minutes": 15},  # criterion 6 == "Staff was courteous"
+    8: {"residency": "Piedmont Atlantic Hospital"},
+    9: {"school": "Tuckahoe College of Osteopathic Medicine", "cert_year": 2024},
+    10: {"wait_minutes": 25, "residency": "Rappahannock University Hospital"},
+    11: {"npi": "1056532702", "residency": "Elk Neck Medical Center"},
+    12: {"fellowship": "Allegheny Ridge Medical Center", "fellowship_year": 1987},
+    13: {"earlier": "emerson-huang-f6afead5", "graduation_year": 1992},
+    14: {"more_recent": "arjun-bouchard-f3c85053", "cert_year": 2004},
+    15: {"website": "https://www.rosetreeorthopedicssportsmedicine.example",
+         "saturday": ["9:00 am", "2:00 pm"]},
+    16: {},
+    17: {"location_id": 32},
+    18: {},
+    19: {"npi": "1074536057"},
+}
+
+
+def _observed_facts(n: int, fact: dict[str, Any]) -> dict[str, Any]:
+    """Project a derived task fact onto the EXPECTED_FACTS keys for comparison."""
+    out: dict[str, Any] = {}
+    get = fact.get
+    if n == 0:
+        out = {"school": get("school"), "graduation_year": get("graduation_year")}
+    elif n == 1:
+        out = {"npi": get("npi"), "languages": list(get("languages") or [])}
+    elif n == 2:
+        out = {"phone": get("phone"), "saturday": list(get("saturday") or [])}
+    elif n == 3:
+        office = get("other_office") or {}
+        out = {"office_name": office.get("name"), "street": office.get("street")}
+    elif n == 4:
+        out = {"board": get("board"), "cert_year": get("cert_year"), "residency": get("residency")}
+    elif n == 5:
+        out = {"more_than_most": get("more_than_most"), "first_top20": get("first_top20")}
+    elif n == 6:
+        out = {"oldest_date": str(get("oldest_date")), "oldest_rating": get("oldest_rating"),
+               "review_count": get("review_count")}
+    elif n == 7:
+        out = {"criterion": get("criterion"), "wait_minutes": get("wait_minutes")}
+    elif n == 8:
+        out = {"residency": get("residency")}
+    elif n == 9:
+        out = {"school": get("school"), "cert_year": get("cert_year")}
+    elif n == 10:
+        out = {"wait_minutes": get("wait_minutes"), "residency": get("residency")}
+    elif n == 11:
+        out = {"npi": get("npi"), "residency": get("residency")}
+    elif n == 12:
+        fellowship = get("fellowship") or {}
+        out = {"fellowship": fellowship.get("institution"), "fellowship_year": fellowship.get("year")}
+    elif n == 13:
+        earlier = get("earlier") or {}
+        out = {"earlier": earlier.get("slug"), "graduation_year": get("graduation_year")}
+    elif n == 14:
+        recent = get("more_recent") or {}
+        out = {"more_recent": recent.get("slug"), "cert_year": get("cert_year")}
+    elif n == 15:
+        out = {"website": get("website"), "saturday": list(get("saturday") or [])}
+    elif n == 17:
+        out = {"location_id": get("location_id")}
+    elif n == 19:
+        out = {"npi": get("npi")}
+    return out
+
+
+def _expect_facts(n: int, fact: dict[str, Any]) -> None:
+    expected = EXPECTED_FACTS.get(n, {})
+    observed = _observed_facts(n, fact)
+    for key, want in expected.items():
+        got = observed.get(key)
+        if isinstance(want, list):
+            if sorted(str(item) for item in want) != sorted(str(item) for item in (got or [])):
+                raise ValueError(f"task {n} fact {key!r} drifted: expected={want!r}, derived={got!r}")
+        elif str(got) != str(want):
+            raise ValueError(f"task {n} fact {key!r} drifted: expected={want!r}, derived={got!r}")
+
 
 def haversine_miles(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     radius = 3958.7613
@@ -306,6 +398,7 @@ def _derive(c: sqlite3.Connection, n: int) -> dict[str, Any]:
         _expect([row["slug"] for row in fact["targets"]], n)
     else:
         _expect(fact["target"]["slug"], n)
+    _expect_facts(n, fact)
     return fact
 
 

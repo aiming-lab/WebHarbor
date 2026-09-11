@@ -8,7 +8,7 @@
   {% if p.pid %}<input type="hidden" name="pid" value="{{ p.pid }}">{% endif %}
   <div class="filter-bar">
     <div class="filter-item">
-      <button type="button" class="pill{% if p.sortby != 'bestmatch' %} active{% endif %}" data-toggle="pop-sort" aria-expanded="false">Sort By <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <button type="button" class="pill{% if p.sortby != 'bestmatch' %} active{% endif %}" data-toggle="pop-sort" aria-expanded="false" aria-controls="pop-sort">Sort By <svg class="ic"><use href="#i-chevron"/></svg></button>
       <div class="popover" id="pop-sort">
         {% for key, label in filter_bar.sort_options %}
           {% if key != 'distance' or filter_bar.show_distance %}
@@ -19,7 +19,7 @@
     </div>
     <div class="filter-item"><button type="submit" class="pill pill-icon" title="Apply filters" aria-label="Apply filters"><svg class="ic"><use href="#i-sliders"/></svg></button></div>
     <div class="filter-item">
-      <button type="button" class="pill{% if p.minrating %} active{% endif %}" data-toggle="pop-rating" aria-expanded="false">Ratings <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <button type="button" class="pill{% if p.minrating %} active{% endif %}" data-toggle="pop-rating" aria-expanded="false" aria-controls="pop-rating">Ratings <svg class="ic"><use href="#i-chevron"/></svg></button>
       <div class="popover" id="pop-rating">
         <label><input type="radio" name="minrating" value="" {% if not p.minrating %}checked{% endif %}> Any rating</label>
         {% for n in (5, 4, 3, 2, 1) %}
@@ -31,7 +31,7 @@
       <label class="pill{% if p.newpatient %} active{% endif %}"><input type="checkbox" name="newpatient" value="true" {% if p.newpatient %}checked{% endif %}> Accepts New Patients</label>
     </div>
     <div class="filter-item">
-      <button type="button" class="pill{% if p.insuranceid or p.medicare or p.medicaid %} active{% endif %}" data-toggle="pop-insurance" aria-expanded="false">Insurance <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <button type="button" class="pill{% if p.insuranceid or p.medicare or p.medicaid %} active{% endif %}" data-toggle="pop-insurance" aria-expanded="false" aria-controls="pop-insurance">Insurance <svg class="ic"><use href="#i-chevron"/></svg></button>
       <div class="popover" id="pop-insurance">
         <label for="insuranceid">Insurance carrier</label>
         <select name="insuranceid" id="insuranceid">
@@ -44,7 +44,7 @@
     </div>
     {% if filter_bar.show_distance %}
     <div class="filter-item">
-      <button type="button" class="pill{% if p.d != 40 %} active{% endif %}" data-toggle="pop-distance" aria-expanded="false">Distance <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <button type="button" class="pill{% if p.d != 40 %} active{% endif %}" data-toggle="pop-distance" aria-expanded="false" aria-controls="pop-distance">Distance <svg class="ic"><use href="#i-chevron"/></svg></button>
       <div class="popover" id="pop-distance">
         <label><input type="radio" name="d" value="" {% if p.d == 40 %}checked{% endif %}> Default (40 miles)</label>
         {% for miles in filter_bar.distance_options %}<label><input type="radio" name="d" value="{{ miles }}" {% if p.d == miles %}checked{% endif %}> {{ miles }} miles</label>{% endfor %}
@@ -52,7 +52,7 @@
     </div>
     {% endif %}
     <div class="filter-item">
-      <button type="button" class="pill{% if p.exp %} active{% endif %}" data-toggle="pop-exp" aria-expanded="false">Years Exp <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <button type="button" class="pill{% if p.exp %} active{% endif %}" data-toggle="pop-exp" aria-expanded="false" aria-controls="pop-exp">Years Exp <svg class="ic"><use href="#i-chevron"/></svg></button>
       <div class="popover" id="pop-exp">
         <label><input type="radio" name="exp" value="" {% if not p.exp %}checked{% endif %}> Any experience</label>
         {% for low in ('5', '15', '20', '25', '30') %}
@@ -66,7 +66,7 @@
       </div>
     </div>
     <div class="filter-item">
-      <button type="button" class="pill{% if p.gender != 'all' %} active{% endif %}" data-toggle="pop-gender" aria-expanded="false">Provider Gender <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <button type="button" class="pill{% if p.gender != 'all' %} active{% endif %}" data-toggle="pop-gender" aria-expanded="false" aria-controls="pop-gender">Provider Gender <svg class="ic"><use href="#i-chevron"/></svg></button>
       <div class="popover" id="pop-gender">
         <label><input type="radio" name="gender" value="all" {% if p.gender == 'all' %}checked{% endif %}> All</label>
         <label><input type="radio" name="gender" value="m" {% if p.gender == 'm' %}checked{% endif %}> Male</label>

@@ -66,5 +66,10 @@ class VerifyTask0Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_profile_before_results_fails(self) -> None:
+        steps = [step("/"), step(profile(SLUG)), step("/results?q=Dermatologist&loc=Newark%2C+DE+19711", "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER), "results_precede_profile")
+
+
 if __name__ == "__main__":
     unittest.main()

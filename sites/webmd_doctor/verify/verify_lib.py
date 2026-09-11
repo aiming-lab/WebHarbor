@@ -39,6 +39,19 @@ READ_ONLY_TABLES = ("users", "saved_providers", "appointment_requests", "user_re
 # Sentinel for the "near Newark, DE 19711" location rule (see ``_loc_is_newark``).
 NEWARK = "__newark__"
 
+# Public benchmark password (documented in the site README and tasks.jsonl).
+BENCHMARK_PASSWORD = "TestPass123!"
+
+# Screenshots must be plausible viewport captures, not replayed 1x1 stubs.
+MIN_SCREENSHOT_WIDTH = 320
+MIN_SCREENSHOT_HEIGHT = 240
+
+# Fixed booking grid (mirrors app.py BOOKING_DAYS/BOOKING_SLOTS; duplicated here
+# so verifiers never import the Flask app) and the reference-packing constants.
+BOOKING_DAY_DATES = ("2026-09-10", "2026-09-11", "2026-09-14", "2026-09-15")
+BOOKING_SLOT_TIMES = ("9:00 AM", "9:30 AM", "10:00 AM", "10:30 AM", "11:00 AM")
+_BOOKING_BASE32 = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567"
+
 
 # --------------------------------------------------------------------------- #
 # CLI / run loading
@@ -229,13 +242,20 @@ def _loc_is_newark(value: str) -> bool:
 def _param_matches(query: dict[str, list[str]], key: str, expected: Any) -> bool:
     if isinstance(expected, (tuple, list, set, frozenset)):
         return any(_param_matches(query, key, alt) for alt in expected)
-    values = [value for value in (query.get(key) or []) if str(value).strip()]
+    # The app reads only the FIRST value of every query parameter (single_arg);
+    # the verifier must apply the same semantics so duplicate-parameter tricks
+    # cannot satisfy a gate while the rendered page used another value.
+    raw_values = query.get(key) or []
+    first = raw_values[0] if raw_values else None
+    values = [str(first)] if first is not None and str(first).strip() else []
     if key == "loc":
         if expected == NEWARK:
             # The site defaults to Newark, DE 19711 when no location is given; an explicit
             # other city (or a typed city= parameter) must resolve to Newark to count.
-            typed = values + [value for value in (query.get("city") or []) if str(value).strip()]
-            zips = [value for value in (query.get("zc") or []) if str(value).strip()]
+            raw_city = (query.get("city") or [None])[0]
+            typed = values + ([str(raw_city)] if raw_city and str(raw_city).strip() else [])
+            raw_zip = (query.get("zc") or [None])[0]
+            zips = [str(raw_zip)] if raw_zip and str(raw_zip).strip() else []
             if zips and not any("19711" in value for value in zips):
                 return False
             return not typed or all(_loc_is_newark(value) for value in typed)
@@ -295,12 +315,30 @@ def normalize_text(value: Any) -> str:
     return re.sub(r"\s+", " ", text).strip().casefold()
 
 
+_NEGATION_RE = re.compile(
+    r"\b(?:not|no|never|without|wrong|incorrect|false|failed|nor|neither"
+    r"|isn'?t|wasn'?t|aren'?t|weren'?t|didn'?t|doesn'?t|don'?t|cannot|can'?t)\b",
+    re.I,
+)
+_CLAUSE_SPLIT_RE = re.compile(r"[.!?;:\n]+|\b(?:but|however|instead)\b", re.I)
+
+
 def _match_is_affirmative(text: str, match: re.Match[str]) -> bool:
-    before = re.split(r"[.!?;:\n]+|\b(?:but|however|instead)\b", text[:match.start()], flags=re.I)[-1]
-    after = text[match.end():]
-    return not re.search(r"\b(?:not|no|never|without|wrong|incorrect|isn't|wasn't|isnt|wasnt)\b", before, re.I) and not re.match(
-        r"\s*(?:is|was|are|were)?\s*(?:not|wrong|incorrect)\b", after, re.I
-    )
+    """Reject a match when ANY negation token sits in the same clause.
+
+    The clause is the segment around the match delimited by sentence/clause
+    punctuation or contrast conjunctions. Both the text before and after the
+    match inside that clause are scanned, so "Pending review did not appear."
+    and "X is false" are rejected, not only pre-match negations.
+    """
+    starts = [m.end() for m in _CLAUSE_SPLIT_RE.finditer(text[:match.start()])]
+    clause_start = starts[-1] if starts else 0
+    end_match = _CLAUSE_SPLIT_RE.search(text, match.end())
+    clause_end = end_match.start() if end_match else len(text)
+    clause = text[clause_start:clause_end]
+    before = text[clause_start:match.start()]
+    after = text[match.end():clause_end]
+    return not _NEGATION_RE.search(before) and not _NEGATION_RE.search(after) and not _NEGATION_RE.search(clause)
 
 
 def _affirmative_search(pattern: str, text: str, flags: int = 0) -> bool:
@@ -331,13 +369,22 @@ contains_institution = contains_phrase
 contains_criterion = contains_phrase
 
 
-def contains_condition(text: Any, label: str) -> bool:
-    """A condition label; a parenthesised abbreviation (``Acid Reflux (GERD)``) may stand alone."""
+def _condition_alternatives(label: str) -> list[str]:
     alternatives = [label]
     match = re.fullmatch(r"\s*(.+?)\s*\((.+?)\)\s*", label)
     if match:
         alternatives.extend([match.group(1), match.group(2)])
-    return contains_any(text, alternatives)
+    return alternatives
+
+
+def contains_condition(text: Any, label: str) -> bool:
+    """A condition label; a parenthesised abbreviation (``Acid Reflux (GERD)``) may stand alone."""
+    return contains_any(text, _condition_alternatives(label))
+
+
+def contains_condition_in_role(text: Any, label: str, role_pattern: str) -> bool:
+    """The condition (or its abbreviation) directly following a labelled role."""
+    return any(contains_role_value(text, role_pattern, alt) for alt in _condition_alternatives(label))
 
 
 def contains_doctor_name(text: Any, first_name: str, last_name: str) -> bool:
@@ -411,6 +458,89 @@ def contains_clock_time(text: Any, value: str) -> bool:
 def contains_hours_window(text: Any, opens: str, closes: str) -> bool:
     """Both endpoints appear; ``8 am`` / ``8:00 AM`` / ``8:00 a.m.`` / ``08:00`` all count."""
     return contains_clock_time(text, opens) and contains_clock_time(text, closes)
+
+
+def contains_saturday_hours(text: Any, opens: str, closes: str) -> bool:
+    """Both endpoints inside one Saturday-labelled clause, opening before closing.
+
+    Blocks the "closed Saturday; weekday hours are 8 AM to 1 PM" role swap: the
+    endpoints must sit in the same sentence as a Saturday mention, in order.
+    """
+    normalized = normalize_text(text)
+    open_pattern, close_pattern = _clock_pattern(opens), _clock_pattern(closes)
+    for clause in re.split(r"[.!?;\n]+", normalized):
+        if not re.search(r"\bsat(?:urday)?\b", clause):
+            continue
+        open_match = re.search(open_pattern, clause)
+        close_match = re.search(close_pattern, clause)
+        if open_match and close_match and open_match.start() < close_match.start():
+            return True
+    return False
+
+
+def contains_paired_review_fact(text: Any, value: _dt.date, stars: int) -> bool:
+    """The review date and its star rating inside one clause (same review)."""
+    for clause in re.split(r"[.!?\n]+", str(text or "")):
+        if contains_review_date(clause, value) and contains_star_rating(clause, stars):
+            return True
+    return False
+
+
+def contains_role_value(text: Any, role_pattern: str, value: str) -> bool:
+    """``value`` must directly follow a labelled role, e.g. "More Than Most: X"."""
+    normalized = normalize_text(text)
+    for match in re.finditer(role_pattern, normalized, re.I):
+        segment = normalized[match.end():match.end() + 80]
+        if re.match(r"[\s\-\u2013\u2014:]*" + _phrase_pattern(value), segment):
+            return True
+    return False
+
+
+def contains_near(text: Any, anchor_phrase: str, value_pattern: str, window: int = 100) -> bool:
+    """``value_pattern`` must occur within ``window`` chars of ``anchor_phrase``."""
+    normalized = normalize_text(text)
+    for match in re.finditer(_phrase_pattern(anchor_phrase), normalized):
+        segment = normalized[max(0, match.start() - window):match.end() + window]
+        if re.search(value_pattern, segment):
+            return True
+    return False
+
+
+def comparison_answer(text: Any, winner_full: str, loser_full: str, year: int) -> bool:
+    """Comparison tasks: the winner's FULL name must carry the winner's year.
+
+    - the winner name must appear as one contiguous phrase (split first/last
+      tokens across different people do not count);
+    - the winner's year must appear AFTER the winner name (within 140 chars),
+      matching "<Winner> graduated earlier, in <year>";
+    - the winner's year must NOT appear after the loser's surname, blocking
+      "<Loser> graduated earlier in <winner-year>; <Winner> in <other-year>".
+    """
+    normalized = normalize_text(text)
+    if not contains_phrase(normalized, winner_full):
+        return False
+    year_pattern = rf"(?<!\d){int(year)}(?!\d)"
+    loser_last = normalize_text(loser_full).split()[-1] if loser_full else ""
+
+    def year_after(name: str, window: int) -> bool:
+        for name_match in re.finditer(_phrase_pattern(name), normalized):
+            segment = normalized[name_match.end():name_match.end() + window]
+            if re.search(year_pattern, segment):
+                return True
+        return False
+
+    def year_before(name: str, window: int) -> bool:
+        for name_match in re.finditer(_phrase_pattern(name), normalized):
+            segment = normalized[max(0, name_match.start() - window):name_match.start()]
+            if re.search(year_pattern, segment):
+                return True
+        return False
+
+    if not (year_after(winner_full, 140) or year_before(winner_full, 60)):
+        return False
+    if loser_last and year_after(loser_last, 80):
+        return False
+    return True
 
 
 _CLOCK_MASKS = (
@@ -536,7 +666,7 @@ def contains_url(text: Any, url: str) -> bool:
     if not expected:
         return False
     normalized = normalize_text(text)
-    pattern = r"(?<![a-z0-9-])(?:www\.)?" + re.escape(expected) + r"/?(?![a-z0-9])"
+    pattern = r"(?<![a-z0-9-])(?:www\.)?" + re.escape(expected) + r"/?(?![a-z0-9-])(?!\.[a-z0-9-])"
     return _affirmative_search(pattern, normalized)
 
 
@@ -628,6 +758,11 @@ def _screenshots_decode(trajectory: dict[str, Any]) -> tuple[bool, str]:
                     image.load()
                     if image.format != "PNG" or image.width < 1 or image.height < 1:
                         return False, f"step {index} {key} is not a nonempty PNG"
+                    if image.width < MIN_SCREENSHOT_WIDTH or image.height < MIN_SCREENSHOT_HEIGHT:
+                        return False, (
+                            f"step {index} {key} is {image.width}x{image.height}; a real viewport "
+                            f"capture must be at least {MIN_SCREENSHOT_WIDTH}x{MIN_SCREENSHOT_HEIGHT}"
+                        )
             except Exception as exc:
                 return False, f"step {index} {key} cannot decode: {type(exc).__name__}"
             checked += 1
@@ -664,10 +799,22 @@ def check_trajectory_identity(judge: Judge, trajectory: dict[str, Any], task_id:
 
 def check_signed_in_as(judge: Judge, trajectory: dict[str, Any], email: str) -> None:
     judge.check("visited_login_page", navigated_to_path(trajectory, "/login"), "required_path=/login")
+    # The email must have been typed ON /login (not anywhere else in the run),
+    # and the public benchmark password must appear among the /login inputs.
+    login_inputs = trajectory_input_texts(trajectory, on_path="/login")
+    typed_email = ""
+    for value in login_inputs:
+        if _EMAIL_RE.fullmatch(normalize_text(value).strip()):
+            typed_email = normalize_text(value)
     judge.check(
         "entered_expected_account_email",
-        trajectory_last_email(trajectory) == normalize_text(email),
-        f"expected_email={email!r}, last_entered_email={trajectory_last_email(trajectory)!r}",
+        typed_email == normalize_text(email),
+        f"expected_email={email!r}, last_email_typed_on_login={typed_email!r}",
+    )
+    judge.check(
+        "entered_account_password_on_login",
+        any(normalize_text(value) == normalize_text(BENCHMARK_PASSWORD) for value in login_inputs),
+        "the benchmark password must be typed on /login",
     )
 
 
@@ -716,6 +863,96 @@ def check_paths_in_order(
         else:
             return judge.check(name, False, f"requirements={described!r}, observed={urls!r}")
     return judge.check(name, True, f"requirements={described!r}")
+
+
+def check_visited_before(
+    judge: Judge,
+    trajectory: dict[str, Any],
+    name: str,
+    before_path: str | re.Pattern[str],
+    after_path: str | re.Pattern[str],
+    before_params: Sequence[dict[str, Any]] = (),
+) -> bool:
+    """Require a qualifying ``before_path`` visit strictly earlier than ``after_path``.
+
+    ``before_params`` lists alternative parameter sets (any one qualifies). An
+    unparameterized visit matches when the list is empty.
+    """
+    urls = site_urls(trajectory)
+    matches = [
+        (index, url) for index, url in enumerate(urls)
+    ]
+    before_index = None
+    for index, url in matches:
+        if not _path_matches(url, before_path):
+            continue
+        query = parse_qs(urlparse(url).query, keep_blank_values=True)
+        if not before_params or any(
+            all(_param_matches(query, key, value) for key, value in params.items())
+            for params in before_params
+        ):
+            before_index = index
+            break
+    # A qualifying "after" visit may occur anywhere strictly later than the
+    # chosen "before" visit (the same path can legitimately appear on both
+    # sides, e.g. Saved Providers before and after a profile visit).
+    after_index = next(
+        (index for index, url in matches
+         if _path_matches(url, after_path)
+         and (before_index is None or index > before_index)),
+        None,
+    )
+    ok = (
+        before_index is not None
+        and after_index is not None
+        and before_index < after_index
+    )
+    return judge.check(
+        name,
+        ok,
+        f"before_path={before_path!r} params={before_params!r} at {before_index}; "
+        f"after_path={after_path!r} at {after_index}; observed={urls!r}",
+    )
+
+
+def expected_booking_reference(row_id: int, doctor_id: int, office_index: int,
+                               slot_date: Any, slot_time: str) -> str:
+    """Recompute the app's deterministic confirmation reference for a booking row.
+
+    Mirrors app.confirmation_reference (bit packing + odd-multiplier affine step)
+    without importing the Flask app. Raises ValueError on out-of-range inputs so
+    callers fail closed instead of comparing against a wrapped value.
+    """
+    date_text = str(slot_date)[:10]
+    time_text = str(slot_time).strip()
+    if date_text not in BOOKING_DAY_DATES or time_text not in BOOKING_SLOT_TIMES:
+        raise ValueError(f"booking slot outside the fixed grid: {slot_date!r} {slot_time!r}")
+    if not (0 <= int(row_id) < 2**23 and 0 <= int(doctor_id) < 2**10 and 0 <= int(office_index) < 4):
+        raise ValueError(f"booking ids outside the injective range: {row_id!r} {doctor_id!r} {office_index!r}")
+    day_index = BOOKING_DAY_DATES.index(date_text)
+    slot_index = BOOKING_SLOT_TIMES.index(time_text)
+    packed = (int(row_id) << 17) | (int(doctor_id) << 7) | (int(office_index) << 5) | (
+        day_index * len(BOOKING_SLOT_TIMES) + slot_index
+    )
+    value = (packed * 0x5A7B3A2B7E15 + 0x2C9F19E37) % (2**40)
+    chars = []
+    for _ in range(8):
+        chars.append(_BOOKING_BASE32[value % 32])
+        value //= 32
+    return "WMD-" + "".join(reversed(chars))
+
+
+def doctor_office_index(db_path: str, doctor_id: int, location_id: int) -> int:
+    """Position of ``location_id`` in the doctor's locations ordered by id."""
+    rows = db_query(
+        db_path,
+        "SELECT id FROM locations WHERE doctor_id = ? ORDER BY id",
+        (doctor_id,),
+    )
+    ids = [int(row["id"]) for row in rows]
+    if int(location_id) not in ids:
+        raise ValueError(f"location {location_id} does not belong to doctor {doctor_id}")
+    return ids.index(int(location_id))
 
 
 def check_results_visited(
@@ -780,7 +1017,7 @@ SCHEMA_HASH = "36413248f495b17db136370aa3316dcf1535c858c5dbda1ad349304c925b58a2"
 SEED_VERSION = "webmd-doctor-v1"
 EXPECTED_COUNTS = {
     "specialties": 10, "cities": 8, "hospitals": 12, "practices": 30, "doctors": 226,
-    "locations": 348, "users": 4, "saved_providers": 4, "appointment_requests": 1, "user_reviews": 1,
+    "locations": 348, "users": 4, "saved_providers": 7, "appointment_requests": 1, "user_reviews": 1,
 }
 
 
@@ -933,8 +1170,13 @@ def doctor_id_for_slug(db_path: str, slug: str) -> int | None:
 
 
 def review_text_matches(stored: Any, expected: str) -> bool:
-    """Whitespace/quote/case-insensitive equality; a trailing period may be dropped or added."""
+    """Whitespace-normalized equality; case and punctuation must match verbatim.
+
+    The task quotes the review text verbatim and the app stores exactly what was
+    submitted (after whitespace normalization), so the deterministic check
+    mirrors the app and nothing more.
+    """
     def canonical(value: Any) -> str:
-        return re.sub(r"[.!]+$", "", normalize_text(value)).strip()
+        return re.sub(r"\s+", " ", str(value or "")).strip()
 
     return canonical(stored) == canonical(expected)

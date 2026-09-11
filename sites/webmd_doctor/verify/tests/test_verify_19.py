@@ -20,7 +20,7 @@ GENUINE_STEPS = [
     step(profile(SLUG), "click"),
     step(profile(SLUG), "done"),
 ]
-ANSWER = "Registered and saved the provider. NPI: 1279956602"
+ANSWER = "Registered and saved the provider. NPI: 1074536057"
 
 
 def genuine_after() -> State:
@@ -86,6 +86,13 @@ class VerifyTask19Tests(SharedVerifierTests, VerifierTestCase):
     def test_wrong_answer_0_fails(self) -> None:
         verdict = self.verdict(GENUINE_STEPS, 'Registered and saved the provider. NPI: 1279956603', after=genuine_after())
         self.assertFailsOn(verdict, 'answer_has_npi')
+
+
+    def test_qualifying_results_after_profile_fails(self) -> None:
+        steps = [step("/"), *signup_steps(EMAIL), step("/results"),
+                 step(profile(SLUG), "click"), step(profile(SLUG), "click"),
+                 step("/results?q=Neurologist&loc=Newark%2C+DE+19711&isvirtualvisit=true", "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "qualifying_results_precede_profile")
 
 
 if __name__ == "__main__":

@@ -2,9 +2,19 @@
 (function () {
   "use strict";
 
+  var lastToggle = null;
+
+  function syncTrigger(el, open) {
+    var trigger = document.querySelector('[data-toggle="' + el.id + '"]');
+    if (trigger) { trigger.setAttribute("aria-expanded", open ? "true" : "false"); }
+  }
+
   function closeAll(except) {
     document.querySelectorAll(".menu.open, .popover.open, .typeahead.open").forEach(function (el) {
-      if (el !== except) { el.classList.remove("open"); }
+      if (el !== except) {
+        el.classList.remove("open");
+        syncTrigger(el, false);
+      }
     });
   }
 
@@ -18,6 +28,7 @@
         closeAll(target);
         target.classList.toggle("open", willOpen);
         toggle.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        lastToggle = willOpen ? toggle : null;
       }
       return;
     }
@@ -27,7 +38,10 @@
   });
 
   document.addEventListener("keydown", function (event) {
-    if (event.key === "Escape") { closeAll(null); }
+    if (event.key === "Escape") {
+      closeAll(null);
+      if (lastToggle) { lastToggle.focus(); lastToggle = null; }
+    }
   });
 
   // Filter bar: submit as soon as a choice changes (checkbox pills, popover radios, selects).
@@ -71,9 +85,21 @@
     document.querySelectorAll("input[data-typeahead]").forEach(function (input) {
       var box = document.getElementById(input.getAttribute("data-typeahead"));
       if (!box) { return; }
+      input.setAttribute("aria-controls", box.id);
+      input.setAttribute("aria-expanded", "false");
+      input.addEventListener("keydown", function (event) {
+        if (event.key === "ArrowDown" && box.classList.contains("open")) {
+          var first = box.querySelector("a");
+          if (first) { event.preventDefault(); first.focus(); }
+        } else if (event.key === "Escape" && box.classList.contains("open")) {
+          box.classList.remove("open");
+          input.setAttribute("aria-expanded", "false");
+        }
+      });
       input.addEventListener("input", function () {
         var term = input.value.trim().toLowerCase();
         box.innerHTML = "";
+        input.setAttribute("aria-expanded", "false");
         if (term.length < 2) { box.classList.remove("open"); return; }
         var sections = [["SPECIALTY", vocab.specialty], ["CONDITION", vocab.condition], ["PRACTICE", vocab.practice]];
         var total = 0;
@@ -97,6 +123,7 @@
           });
         });
         box.classList.toggle("open", total > 0);
+        input.setAttribute("aria-expanded", total > 0 ? "true" : "false");
       });
     });
   }
@@ -130,11 +157,19 @@
     });
   }
 
-  // Patients' Choice banner dismiss.
+  // Patients' Choice banner dismiss (persisted for the browser session).
+  var BANNER_KEY = "webmd-mirror-banner-dismissed";
+  function bannersDismissed() {
+    try { return window.sessionStorage.getItem(BANNER_KEY) === "1"; } catch (e) { return false; }
+  }
+  if (bannersDismissed()) {
+    document.querySelectorAll(".info-banner").forEach(function (banner) { banner.hidden = true; });
+  }
   document.querySelectorAll("[data-dismiss]").forEach(function (button) {
     button.addEventListener("click", function () {
       var banner = button.closest(".info-banner");
       if (banner) { banner.hidden = true; }
+      try { window.sessionStorage.setItem(BANNER_KEY, "1"); } catch (e) { /* storage unavailable */ }
     });
   });
 

@@ -18,7 +18,7 @@ GENUINE_STEPS = [
     step("/providers/specialty/cardiovascular-disease/delaware/wilmington"),
     step(profile(SLUG), "done"),
 ]
-ANSWER = "NPI 1438496704; languages: English, Tagalog and Portuguese."
+ANSWER = "NPI 1025647698; languages: English, Tagalog and Portuguese."
 
 
 def genuine_after() -> State:
@@ -43,18 +43,18 @@ class VerifyTask1Tests(SharedVerifierTests, VerifierTestCase):
 
     def test_grouped_npi_passes(self) -> None:
         steps = [step("/"), step("/results?q=Cardiologist&loc=Wilmington%2C+DE"), step(profile(SLUG), "done")]
-        self.assertPasses(self.verdict(steps, "NPI: 1438 496 704. Speaks English, Tagalog, Portuguese."))
+        self.assertPasses(self.verdict(steps, "NPI: 1025 647 698. Speaks English, Tagalog, Portuguese."))
 
     def test_wrong_answer_0_fails(self) -> None:
-        verdict = self.verdict(GENUINE_STEPS, 'NPI 1438496705; English, Tagalog, Portuguese', after=genuine_after())
+        verdict = self.verdict(GENUINE_STEPS, 'NPI 1025647699; English, Tagalog, Portuguese', after=genuine_after())
         self.assertFailsOn(verdict, 'answer_has_npi')
 
     def test_wrong_answer_1_fails(self) -> None:
-        verdict = self.verdict(GENUINE_STEPS, 'NPI 1438496704; English and Tagalog', after=genuine_after())
+        verdict = self.verdict(GENUINE_STEPS, 'NPI 1025647698; English and Tagalog', after=genuine_after())
         self.assertFailsOn(verdict, 'answer_lists_languages')
 
     def test_wrong_answer_2_fails(self) -> None:
-        verdict = self.verdict(GENUINE_STEPS, 'NPI 1438496704; English, Tagalog, not Portuguese', after=genuine_after())
+        verdict = self.verdict(GENUINE_STEPS, 'NPI 1025647698; English, Tagalog, not Portuguese', after=genuine_after())
         self.assertFailsOn(verdict, 'answer_lists_languages')
 
     def test_read_only_write_fails(self) -> None:

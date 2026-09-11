@@ -12,6 +12,8 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
+    profile_path_pattern,
+    check_visited_before,
     check_read_only,
     check_results_visited,
     check_trajectory_identity,
@@ -30,7 +32,7 @@ from verify_lib import (  # noqa: E402
 
 TASK_ID = "WebMD Doctor--11"
 SLUG = "sean-blackwood-45e84c50"
-NPI = "1472790926"
+NPI = "1056532702"
 RESIDENCY = "Elk Neck Medical Center"
 
 
@@ -41,6 +43,13 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_visited_profile(judge, trajectory, SLUG)
     judge.check("answer_has_npi", contains_npi(answer, NPI), f"expected={NPI!r}, answer={answer!r}")
     judge.check("answer_has_residency", contains_institution(answer, RESIDENCY), f"expected={RESIDENCY!r}, answer={answer!r}")
+    check_visited_before(
+        judge, trajectory, "filtered_results_precede_profile", "/results", profile_path_pattern(SLUG),
+        before_params=[
+            {"q": r"family", "d": "10", "sortby": "num_rating", "loc": NEWARK},
+            {"sids": "3", "d": "10", "sortby": "num_rating", "loc": NEWARK},
+        ],
+    )
     check_read_only(judge, initial_db, after_db)
 
 

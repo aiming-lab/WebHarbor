@@ -59,5 +59,14 @@ class VerifyTask5Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_swapped_condition_roles_fail(self) -> None:
+        bad = "More Than Most: Anemia. First under View Top 20: GERD."
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, bad), "answer_does_not_swap_condition_roles")
+
+    def test_profile_before_results_fails(self) -> None:
+        steps = [step("/"), step(profile(SLUG)), step("/results?q=Gastroenterologist&loc=Newark%2C+DE+19711", "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER), "results_precede_profile")
+
+
 if __name__ == "__main__":
     unittest.main()

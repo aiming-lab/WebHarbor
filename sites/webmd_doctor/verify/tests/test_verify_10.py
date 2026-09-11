@@ -64,5 +64,16 @@ class VerifyTask10Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_insurer_filter_route_no_longer_passes(self) -> None:
+        # insuranceid=7 (insurer acceptance) is a different predicate than the
+        # location-Medicaid facet used by the ground-truth derivation.
+        steps = [step("/"), step("/results?q=Psychiatrist&loc=Newark%2C+DE+19711&insuranceid=7&minrating=4"), step(profile(SLUG), "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER), "visited_medicaid_rated_results")
+
+    def test_results_after_profile_fails(self) -> None:
+        steps = [step("/"), step(profile(SLUG)), step(RESULTS, "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER), "filtered_results_precede_profile")
+
+
 if __name__ == "__main__":
     unittest.main()

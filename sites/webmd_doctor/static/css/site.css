@@ -415,7 +415,7 @@ details.review-form > summary::-webkit-details-marker { display: none; }
 .steps span.on { background: var(--card-navy); }
 .steps i { flex: 1; height: 2px; background: #d9dcea; }
 .book-form { max-width: 620px; margin: 0 auto; }
-.book-form h3 { font-size: 16px; margin: 20px 0 10px; }
+.book-form h2, .book-form h3 { font-size: 16px; font-weight: 700; margin: 20px 0 10px; }
 .book-form .seg label { padding: 14px 16px; font-size: 16px; }
 .book-form select { width: 100%; padding: 14px 44px 14px 16px; border: 1px solid var(--border-2); border-radius: 3px; font-size: 16px; font-weight: 600; background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6l4 4 4-4' fill='none' stroke='%233557ff' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 14px center / 16px; appearance: none; -webkit-appearance: none; }
 .book-form .grid-days { max-width: 620px; }
@@ -631,4 +631,109 @@ details.review-form > summary::-webkit-details-marker { display: none; }
   .loc .map { width: auto; max-width: 100%; }
   .tabs { overflow-x: auto; }
   .loc > div { min-width: 0; overflow-wrap: anywhere; }
+}
+
+/* ==========================================================================
+   Review-round fixes: progressive enhancement, accessibility, responsive.
+   Appended last so these rules win over the base cascade at equal specificity.
+   ========================================================================== */
+
+/* Disclosures are hidden ONLY when JavaScript is available (html.js is set by
+   an inline head script). Without JS, menus and filter popovers render as
+   static expanded lists so every destination and filter stays reachable. */
+html:not(.js) .menu { position: static; display: block; box-shadow: none; min-width: 0; }
+html:not(.js) .menu.menu-wide { column-count: 1; }
+html:not(.js) .popover { position: static; display: block; box-shadow: none; min-width: 0; margin: 6px 0 0; padding: 8px 10px; border-style: dashed; }
+html:not(.js) .filter-item { flex: 1 1 100%; }
+html:not(.js) .header-bar { height: auto; flex-wrap: wrap; }
+html:not(.js) .typeahead { display: none; }
+
+/* Skip link */
+.skip-link { position: absolute; left: -9999px; top: 0; z-index: 200; background: #fff; color: var(--card-navy); padding: 10px 16px; font-weight: 700; border-radius: 0 0 4px 0; }
+.skip-link:focus { left: 0; }
+
+/* Sitewide mirror notice (sits above the footer on every page, including
+   pages that override the footer block) */
+.mirror-notice { background: var(--bg-2); color: var(--text-2); text-align: center; font-size: 13px; padding: 8px 16px; border-top: 1px solid var(--border); }
+
+/* Auth art title demoted from h2 so the form h1 is the first heading */
+.auth-art .art-title { font-size: 34px; font-weight: 400; margin-bottom: 10px; }
+
+/* Compact hero heading demoted to h2 (index has one h1) */
+.hero.compact .compact-h1 { font-size: 30px; font-weight: 400; margin-bottom: 20px; }
+
+/* Visible keyboard focus everywhere, including hidden-input custom controls */
+a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible,
+textarea:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
+  outline: 3px solid #2f6bff; outline-offset: 2px;
+}
+.site-header a:focus-visible, .site-header button:focus-visible { outline-color: #fff; }
+.search-bar .field:focus-within { box-shadow: inset 0 0 0 2px var(--blue); }
+.slot:has(input:focus-visible) { outline: 3px solid #2f6bff; outline-offset: 2px; }
+.star-pick label:has(input:focus-visible) { outline: 3px solid #2f6bff; outline-offset: 2px; }
+
+/* Contrast fixes (WCAG AA for normal text): muted token, inactive booking
+   step numbers, map placeholder. --red darkened so white button text passes. */
+:root { --muted: #64696f; --red: #c92f34; }
+.steps span { color: #2f3a75; }
+.loc .map { color: #555a61; }
+
+/* fieldset resets for grouped radio controls */
+.seg-field { border: 0; padding: 0; margin: 0 0 10px; }
+.seg-field legend { padding: 0; font-weight: 700; }
+
+/* Tables scroll instead of breaking the layout */
+.table-wrap { overflow-x: auto; max-width: 100%; }
+
+@media (max-width: 720px) {
+  /* Header: grow vertically and scroll the nav row instead of overflowing */
+  .header-bar { height: auto; flex-wrap: wrap; padding: 8px 0; row-gap: 2px; }
+  .header-nav { width: 100%; flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; scrollbar-width: none; }
+  .header-nav::-webkit-scrollbar { display: none; }
+  .header-nav > li { flex: 0 0 auto; }
+  /* Sticky provider bar wraps instead of overflowing */
+  .sticky-doc .inner { flex-wrap: wrap; gap: 8px; }
+  .sticky-doc .who { min-width: 0; }
+  /* Review criteria and polls stack */
+  .crit-row { grid-template-columns: 1fr; gap: 4px; }
+  .poll { grid-template-columns: 1fr; }
+  .poll .counts { flex-wrap: wrap; }
+  /* Guidelines drop the 170px side padding */
+  .guidelines { padding: 32px 16px 40px; }
+  /* Awards seals and nav wrap */
+  .awards-hero .seals { flex-wrap: wrap; justify-content: center; }
+  .awards-nav ul { flex-wrap: wrap; gap: 10px; justify-content: center; }
+  /* Hospital specialty select fits the panel */
+  .spec-select-form select { min-width: 0; width: 100%; }
+  /* Pagination and popovers stay inside the viewport */
+  .pagination { flex-wrap: wrap; }
+  .popover { max-width: min(320px, calc(100vw - 32px)); }
+  .menu, .menu.menu-wide, .menu-account { min-width: 0; max-width: calc(100vw - 24px); }
+  /* Auth + confirmation layouts */
+  .auth-form { padding: 48px 24px 32px; }
+  .confirm-box dl { grid-template-columns: 1fr; }
+  .confirm-box .ref { font-size: 24px; overflow-wrap: anywhere; }
+}
+
+/* fieldset/legend grouping (radio groups announce their question) */
+.book-form fieldset, .book-widget fieldset, .review-form fieldset { border: 0; padding: 0; margin: 0; min-inline-size: auto; }
+.book-form legend { font-size: 16px; font-weight: 700; margin: 20px 0 10px; padding: 0; }
+.book-widget legend.lbl { display: block; font-weight: 700; font-size: 15px; margin: 10px 0 6px; padding: 0; }
+.review-form fieldset.crit-field { margin-bottom: 4px; }
+.review-form .crit-field legend { font-size: 14px; font-weight: 600; padding: 0; }
+
+/* Overflow probe fixes (320px): .mini-grid.three was not in the single-column
+   media list (its 3 fixed tracks + card min-content pushed the index to 400px),
+   and the footer badge box sized to max-content because .site-footer .badges
+   carries flex:none, so it overflowed every page by 10px. */
+@media (max-width: 720px) {
+  .mini-grid.three { grid-template-columns: 1fr; max-width: 100%; }
+  .site-footer .badges { flex: 0 1 auto; max-width: 100%; min-width: 0; }
+  .site-footer .badges img { max-width: 100%; height: auto; }
+}
+
+/* 320px: the review summary's auto button column pushed the page to 353px;
+   stack the rating block and the Leave-A-Review button on narrow screens. */
+@media (max-width: 720px) {
+  .review-summary { grid-template-columns: 1fr; }
 }

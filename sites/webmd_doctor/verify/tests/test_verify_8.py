@@ -75,5 +75,26 @@ class VerifyTask8Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(verdict, 'answer_has_residency')
 
 
+    def test_no_post_removal_ui_evidence_fails(self) -> None:
+        steps = [step("/"), *login_steps("alice.j@test.com"), step("/account/saved"), step(profile(SLUG), "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "post_removal_ui_evidence")
+
+    def test_email_typed_outside_login_fails(self) -> None:
+        steps = [step("/"), step("/login"), step("/", "input", "alice.j@test.com"),
+                 step("/login", "input", "TestPass123!"), step("/login", "click"),
+                 step("/account/saved"), step(profile(SLUG)),
+                 step("/account/saved", "click"), step("/account/saved", "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "entered_expected_account_email")
+
+    def test_password_not_typed_on_login_fails(self) -> None:
+        steps = [step("/"), step("/login", "input", "alice.j@test.com"), step("/login", "click"),
+                 step("/account/saved"), step(profile(SLUG)),
+                 step("/account/saved", "click"), step("/account/saved", "done")]
+        self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "entered_account_password_on_login")
+
+    def test_answer_without_removal_confirmation_fails(self) -> None:
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, "Residency: Piedmont Atlantic Hospital.", after=genuine_after()), "answer_confirms_removal")
+
+
 if __name__ == "__main__":
     unittest.main()

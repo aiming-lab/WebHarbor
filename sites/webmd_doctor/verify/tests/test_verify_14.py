@@ -72,5 +72,10 @@ class VerifyTask14Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "read_only_saved_providers_unchanged")
 
 
+    def test_year_attributed_to_loser_fails(self) -> None:
+        bad = "Dr. Arjun Bouchard and Dr. Colin Ellery were compared; Ellery was certified more recently in 2004, while Arjun Bouchard was certified in 2000."
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, bad), "answer_binds_winner_to_year")
+
+
 if __name__ == "__main__":
     unittest.main()

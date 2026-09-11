@@ -4,11 +4,11 @@ Synthetic snapshots are copies of the frozen seed (``instance_seed/webmd_doctor.
 with the four runtime tables rewritten from a small in-memory ``State``; hand-written
 trajectories follow the agent_demo/agent.py shape. No docker, no LLM.
 """
-from __future__ import annotations
-
 import base64
 import copy
+import io
 import json
+import os
 import shutil
 import sqlite3
 import subprocess
@@ -27,7 +27,17 @@ STAMP = "2026-08-01 00:00:00.000000"
 FIXTURE_HASH = "scrypt:32768:8:1$fixture$invalid"
 
 if not SEED_DB.exists():  # pragma: no cover - environment guard
-    raise unittest.SkipTest(f"frozen seed missing: {SEED_DB} (run ./scripts/fetch_assets.sh webmd_doctor)")
+    # Build the deterministic seed instead of silently skipping the whole suite:
+    # an all-skipped run must never look like a green verifier result.
+    try:
+        subprocess.run([sys.executable, str(SITE_DIR / "seed_data.py")], cwd=SITE_DIR,
+                       env={**os.environ, "PYTHONHASHSEED": "0"}, check=True,
+                       capture_output=True, text=True, timeout=300)
+    except Exception as exc:  # noqa: BLE001
+        raise RuntimeError(
+            f"frozen seed missing at {SEED_DB} and could not be built automatically: {exc}. "
+            f"Build it with: cd {SITE_DIR} && PYTHONHASHSEED=0 python seed_data.py"
+        ) from exc
 
 # Same ids / e-mails / relations as the frozen seed (all synthetic).
 SEED_USERS = [
@@ -36,7 +46,9 @@ SEED_USERS = [
     dict(id=3, email="carol.d@test.com", display_name="Carol Davis", dob="1993-07-21"),
     dict(id=4, email="david.k@test.com", display_name="David Kim", dob="1984-02-09"),
 ]
-SEED_SAVED = [(1, 1, 5), (2, 1, 47), (3, 1, 64), (4, 2, 23)]
+# Alice has six saved providers (exactly one Dermatologist, doctor 5, not first
+# in saved_at order); Bob has one. Ids/relations match the frozen seed (synthetic).
+SEED_SAVED = [(1, 1, 222), (2, 1, 224), (3, 1, 223), (4, 1, 5), (5, 1, 47), (6, 1, 64), (7, 2, 23)]
 SEED_APPOINTMENTS = [
     dict(id=1, user_id=1, doctor_id=106, location_id=166, patient_type="Returning Patient",
          slot_date="2026-09-11", slot_time="9:30 AM", reference="WMD-JASDV25V"),
@@ -149,11 +161,26 @@ def only_paths(steps: list[dict[str, Any]], *allowed: str) -> list[dict[str, Any
     return [item for item in steps if path_of(item) in allowed]
 
 
-def write_run(run_dir: Path, task_id: str, steps: list[dict[str, Any]], answer: str) -> None:
+def _fixture_png() -> bytes:
+    """A real 640x480 PNG (not a 1x1 stub) so screenshot-size gates are exercised."""
+    from PIL import Image
+
+    buffer = io.BytesIO()
+    Image.new("RGB", (640, 480), (245, 246, 250)).save(buffer, format="PNG")
+    return buffer.getvalue()
+
+
+FIXTURE_PNG = _fixture_png()
+
+
+SMALL_PNG = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
+
+
+def write_run(run_dir: Path, task_id: str, steps: list[dict[str, Any]], answer: str, small_screenshot: bool = False) -> None:
     run_dir.mkdir(parents=True, exist_ok=True)
     shots = run_dir / "screenshots"
     shots.mkdir(exist_ok=True)
-    png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
+    png = SMALL_PNG if small_screenshot else FIXTURE_PNG
     numbered = []
     for index, item in enumerate(steps):
         before = f"step_{index:03d}.png"
@@ -194,13 +221,14 @@ class VerifierTestCase(unittest.TestCase):
         snapshots_in_run_dir: bool = False,
         trajectory_updates: dict[str, Any] | None = None,
         corrupt_screenshot: bool = False,
+        small_screenshot: bool = False,
     ) -> dict[str, Any]:
         initial = initial or State()
         after = after or State()
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             run_dir = root / "run"
-            write_run(run_dir, task_id or self.task_id, steps, answer)
+            write_run(run_dir, task_id or self.task_id, steps, answer, small_screenshot=small_screenshot)
             if trajectory_updates:
                 trajectory_path = run_dir / "trajectory.json"
                 trajectory = json.loads(trajectory_path.read_text())
@@ -263,6 +291,10 @@ class SharedVerifierTests:
 
     def test_corrupt_screenshot_fails(self) -> None:
         self.assertFailsOn(self.verdict(self.GENUINE_STEPS, self.ANSWER, after=self.genuine_after(), corrupt_screenshot=True), "screenshots_decode")
+
+    def test_tiny_stub_screenshot_fails(self) -> None:
+        # A replayed 1x1 stub is not a viewport capture; the minimum-size gate rejects it.
+        self.assertFailsOn(self.verdict(self.GENUINE_STEPS, self.ANSWER, after=self.genuine_after(), small_screenshot=True), "screenshots_decode")
 
     def test_schema_change_fails_closed(self) -> None:
         after = self.genuine_after()

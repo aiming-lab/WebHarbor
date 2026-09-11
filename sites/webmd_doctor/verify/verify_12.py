@@ -50,6 +50,12 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_paths_in_order(judge, trajectory, "workflow_in_order", [(LANDING, {}), (STATE_PAGE, {}), (CITY_PAGE, {}), (profile_path_pattern(SLUG), {})])
     judge.check("answer_has_fellowship", contains_institution(answer, FELLOWSHIP), f"expected={FELLOWSHIP!r}, answer={answer!r}")
     judge.check("answer_has_fellowship_year", contains_year(answer, FELLOWSHIP_YEAR), f"expected={FELLOWSHIP_YEAR!r}, answer={answer!r}")
+    # The FILTERED city page (minrating=4) must precede the profile visit; the
+    # task says the list "must then be filtered" before the profile is opened.
+    check_paths_in_order(
+        judge, trajectory, "filtered_city_precedes_profile",
+        [(CITY_PAGE, {"minrating": "4"}), (profile_path_pattern(SLUG), {})],
+    )
     check_read_only(judge, initial_db, after_db)
 
 

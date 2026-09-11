@@ -7,20 +7,23 @@
   <meta name="description" content="{% block meta_description %}Find doctors near you on {{ site_name }}: ratings, reviews, locations and appointment requests.{% endblock %}">
   <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+  <script>document.documentElement.classList.add("js");</script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
+<a class="skip-link" href="#main">Skip to main content</a>
 {% include "_icons.html" %}
 {% include "_header.html" %}
 <main id="main">
   {% with messages = get_flashed_messages(with_categories=true) %}
     {% if messages %}
-      <div class="container" style="padding-top:16px">
+      <div class="container" style="padding-top:16px" role="alert">
         {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
       </div>
     {% endif %}
   {% endwith %}
   {% block content %}{% endblock %}
 </main>
+<div class="mirror-notice" role="note">Unofficial offline benchmark mirror of doctor.webmd.com with synthetic data. Not affiliated with or endorsed by WebMD LLC.</div>
 {% block footer %}{% include "_footer.html" %}{% endblock %}
 <script id="location-data" type="application/json">{{ location_choices | tojson }}</script>
 {% block scripts %}{% endblock %}

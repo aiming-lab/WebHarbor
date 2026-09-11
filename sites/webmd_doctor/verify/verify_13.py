@@ -12,6 +12,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
+    comparison_answer,
     check_read_only,
     check_trajectory_identity,
     check_visited_profile,
@@ -40,6 +41,11 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_visited_profile(judge, trajectory, OTHER_SLUG)
     judge.check("answer_names_earlier_graduate", contains_doctor_name(answer, WINNER_FIRST, WINNER_LAST), f"expected={WINNER_FIRST + ' ' + WINNER_LAST!r}, answer={answer!r}")
     judge.check("answer_has_graduation_year", contains_year(answer, GRADUATION_YEAR), f"expected={GRADUATION_YEAR!r}, answer={answer!r}")
+    judge.check(
+        "answer_binds_winner_to_year",
+        comparison_answer(answer, WINNER_FIRST + " " + WINNER_LAST, OTHER_SLUG.rsplit("-", 1)[0].replace("-", " "), GRADUATION_YEAR),
+        f"winner full name must carry the year; the year must not be attributed to the other doctor; answer={answer!r}",
+    )
     check_read_only(judge, initial_db, after_db)
 
 

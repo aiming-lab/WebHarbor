@@ -12,6 +12,10 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from verify_lib import (  # noqa: E402
+    final_url,
+    final_url_is_path,
+    doctor_office_index,
+    expected_booking_reference,
     check_exact_delta,
     check_paths_in_order,
     check_signed_in_as,
@@ -68,6 +72,18 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     reference = str(row.get("reference") or "")
     judge.check("answer_has_matching_reference", bool(reference) and contains_reference(answer, reference), f"row_reference={reference!r}, answer={answer!r}")
     judge.check("answer_has_no_other_reference", extract_references(answer) <= ({reference} if reference else set()), f"answer_references={sorted(extract_references(answer))!r}")
+    # The stored reference must equal the value the app's deterministic packing
+    # would produce for this exact row, and the run must end on the confirmation
+    # response (rendered at the booking path after the POST).
+    try:
+        office_index = doctor_office_index(initial_db, DOCTOR_ID, LOCATION_ID)
+        derived = expected_booking_reference(row.get("id"), DOCTOR_ID, office_index, SLOT_DATE, SLOT_TIME)
+    except (ValueError, TypeError) as exc:
+        derived = None
+        judge.check("reference_matches_app_derivation", False, f"could not derive the reference: {exc}")
+    if derived is not None:
+        judge.check("reference_matches_app_derivation", reference == derived, f"row_reference={reference!r}, app_derived={derived!r}")
+    judge.check("ended_on_booking_confirmation", final_url_is_path(trajectory, BOOKING_PATH), f"final_url={final_url(trajectory)!r}")
     check_tables_unchanged(judge, initial_db, after_db, ("users", "saved_providers", "user_reviews"))
 
 

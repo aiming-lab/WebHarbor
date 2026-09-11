@@ -28,7 +28,7 @@ from verify_lib import (  # noqa: E402
 
 TASK_ID = "WebMD Doctor--1"
 SLUG = "julian-zamora-d412b77d"
-NPI = "1438496704"
+NPI = "1025647698"
 LANGUAGES = ("English", "Tagalog", "Portuguese")
 
 

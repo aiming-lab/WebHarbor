@@ -33,7 +33,7 @@
           <li style="align-items:flex-start"><svg class="ic" style="margin-top:3px"><use href="#i-pin"/></svg> <span><strong>{{ primary.name }}</strong><br>{{ primary.address_line }}{% if doctor.other_location_count %} <a href="#locations">{{ doctor.other_location_count | plural_word('other location') }}</a>{% endif %}</span></li>
           {% if doctor.hospital %}<li><svg class="ic"><use href="#i-hospital"/></svg> <a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}">{{ doctor.hospital.name }}</a></li>{% endif %}
           {% for line in doctor.award_lines %}<li><svg class="ic"><use href="#i-award"/></svg> <a href="#awards">{{ line }}</a></li>{% endfor %}
-          {% if doctor.website_url %}<li><svg class="ic"><use href="#i-globe"/></svg> <a href="{{ doctor.website_url }}" rel="nofollow">Visit Website</a></li>{% endif %}
+          {% if doctor.website_url %}<li><svg class="ic"><use href="#i-globe"/></svg> <a href="{{ doctor.website_url }}" rel="nofollow noopener noreferrer" title="External synthetic domain (.example) — not reachable offline">Visit Website <span class="sr-only">(external, unavailable in mirror)</span></a></li>{% endif %}
           <li>
             <form class="save-form" method="post" action="{{ url_for('save_provider', slug=doctor.slug) }}">
               <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -49,17 +49,21 @@
   </section>
     {% if doctor.is_enhanced %}
     <aside class="hero-side">
-        <h3>Book an Appointment</h3>
+        <h2>Book an Appointment</h2>
         <form class="book-widget" method="get" action="{{ url_for('book_appointment', slug=doctor.slug) }}">
           <label class="lbl" for="widget-location">Location:</label>
           <select id="widget-location" name="location_id">
             {% for location in doctor.locations %}<option value="{{ location.id }}">{{ location.name }} — {{ location.short_address }}</option>{% endfor %}
           </select>
-          <span class="lbl">This appointment is for:</span>
-          <div class="seg">
-            <label class="on"><input type="radio" name="patient_type" value="New Patient" checked> New Patient</label>
-            <label><input type="radio" name="patient_type" value="Returning Patient"> Returning Patient</label>
-          </div>
+          <fieldset class="seg-field">
+            <legend class="lbl">This appointment is for:</legend>
+            <div class="seg">
+              <label class="on"><input type="radio" name="patient_type" value="New Patient" checked> New Patient</label>
+              <label><input type="radio" name="patient_type" value="Returning Patient"> Returning Patient</label>
+            </div>
+          </fieldset>
+          <fieldset class="slot-field">
+          <legend class="lbl">Choose a time:</legend>
           <div class="month">September 2026 <svg class="ic"><use href="#i-chevron"/></svg></div>
           <div class="grid-days">
             {% for abbr, short, day, label in booking_days %}
@@ -72,6 +76,7 @@
             {% endfor %}
           </div>
           <div class="grid-more"><svg class="ic"><use href="#i-chevron"/></svg></div>
+          </fieldset>
           <button class="btn btn-primary btn-wide btn-pill" type="submit" style="margin-top:12px">Request Appointment</button>
         </form>
     </aside>
@@ -130,7 +135,7 @@
                 <div class="loc-name">{{ location.name }}</div>
                 <div>{{ location.street }}<br>{{ location.city.name }}, {{ location.city.state }}, {{ location.zip }}</div>
                 <a class="btn btn-red btn-sm" style="margin:10px 0" href="#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ location.phone }}</a>
-                <div><a href="#">Get Directions</a></div>
+                <div><a href="#" title="Not available in this mirror" aria-disabled="true">Get Directions</a></div>
                 <dl class="hours">{% for row in location.hours_rows() %}<dt>{{ row.day }}</dt><dd>{{ row.text }}</dd>{% endfor %}</dl>
               </div>
               <div class="map">Map unavailable in mirror</div>
@@ -181,15 +186,15 @@
                   <span class="star-hint">Overall provider rating*</span>
                 </div>
               </div>
-              <div>
-                <label>How did {{ doctor.short_name }} do?</label>
+              <fieldset class="crit-field">
+                <legend>How did {{ doctor.short_name }} do?</legend>
                 <div class="crit-rows">
                   {% for label in perspective_criteria %}
                     {% set index = loop.index %}
                     <div class="crit-row"><span>{{ label }}</span><label><input type="radio" name="c{{ index }}" value="1" required> Did well</label><label><input type="radio" name="c{{ index }}" value="0"> Needs improvement</label></div>
                   {% endfor %}
                 </div>
-              </div>
+              </fieldset>
               <div>
                 <label for="review-text">Your review (at least 20 characters)</label>
                 <textarea id="review-text" name="text" minlength="20" maxlength="2000" required placeholder="Tell other patients about your experience with {{ doctor.short_name }}."></textarea>
@@ -201,7 +206,7 @@
             {% endif %}
           </details>
 
-          <div class="review-head"><h3>{{ doctor.text_review_count }} REVIEWS</h3><div class="review-controls"><span class="fake-select">Most Recent <svg class="ic"><use href="#i-chevron"/></svg></span><span class="fake-btn"><svg class="ic"><use href="#i-sliders"/></svg> Filter</span><span class="fake-search">Search <svg class="ic"><use href="#i-search"/></svg></span></div></div>
+          <div class="review-head"><h3>{{ doctor.text_review_count }} REVIEWS</h3><div class="review-controls" title="Sorting, filtering and search are not available in this mirror"><span class="fake-select" aria-hidden="true">Most Recent <svg class="ic"><use href="#i-chevron"/></svg></span><span class="fake-btn" aria-hidden="true"><svg class="ic"><use href="#i-sliders"/></svg> Filter</span><span class="fake-search" aria-hidden="true">Search <svg class="ic"><use href="#i-search"/></svg></span></div></div>
           <div class="showing">Showing {{ reviews_page.start }}-{{ reviews_page.end }} of {{ reviews_page.total }} reviews</div>
           {% for review in reviews_page.rows %}
             <div class="review">
@@ -212,7 +217,7 @@
                 <div class="muted" style="font-size:13px">Wait time: {{ review.wait_bucket }}</div>
               </details>
               <div class="date">{{ review.date_label }}</div>
-              <div class="actions"><span class="btn btn-outline btn-sm btn-pill">Helpful{% if review.helpful_count %} ({{ review.helpful_count }}){% endif %}</span><a href="#">Flag</a></div>
+              <div class="actions"><span class="btn btn-outline btn-sm btn-pill" title="Not available in this mirror">Helpful{% if review.helpful_count %} ({{ review.helpful_count }}){% endif %}</span><a href="#" title="Not available in this mirror" aria-disabled="true">Flag</a></div>
             </div>
           {% else %}
             <p class="muted">No written reviews yet.</p>
@@ -305,16 +310,16 @@
         <div class="panel-head"><svg class="ic"><use href="#i-doc"/></svg><h2>Certifications, License, &amp; Education</h2></div>
         <div class="panel-body">
           <p>{{ doctor.full_name }} holds an active medical license in the state of {{ doctor.licenses[0].state }}. They are board certified in {{ doctor.certifications | map(attribute='cert_type') | join(' and ') }} by the {{ doctor.certifications[0].issuer }}.</p>
-          <h4>Board Certifications</h4>
+          <h3>Board Certifications</h3>
           {% for cert in doctor.certifications %}<p>Board certified in {{ cert.cert_type }} by the {{ cert.issuer }} in {{ cert.year }}.</p>{% endfor %}
-          <h4>Medical License</h4>
+          <h3>Medical License</h3>
           <p>{% for lic in doctor.licenses %}{{ lic.license_type }} with an {{ lic.status | lower }} medical license in the state of {{ lic.state }} that expires on {{ lic.expiry_date.strftime('%B') }} {{ lic.expiry_date.day }}, {{ lic.expiry_date.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>
-          <h4>Education &amp; Training</h4>
-          {% if fellowships %}<h5>FELLOWSHIP</h5><p>Completed their fellowship at {% for row in fellowships %}{{ row.institution }} in {{ row.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>{% endif %}
-          {% if residencies %}<h5>RESIDENCY</h5><p>Completed their residency at {% for row in residencies %}{{ row.institution }} in {{ row.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>{% endif %}
-          <h5>MEDICAL SCHOOL</h5>
+          <h3>Education &amp; Training</h3>
+          {% if fellowships %}<h4>FELLOWSHIP</h4><p>Completed their fellowship at {% for row in fellowships %}{{ row.institution }} in {{ row.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>{% endif %}
+          {% if residencies %}<h4>RESIDENCY</h4><p>Completed their residency at {% for row in residencies %}{{ row.institution }} in {{ row.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>{% endif %}
+          <h4>MEDICAL SCHOOL</h4>
           <p>Graduated from {{ doctor.medical_school }} in {{ doctor.graduation_year }}.</p>
-          <h4 id="npi">NPI Number</h4>
+          <h3 id="npi">NPI Number</h3>
           <p>{{ doctor.short_name }}'s NPI number is {{ doctor.npi }}.</p>
         </div>
       </section>

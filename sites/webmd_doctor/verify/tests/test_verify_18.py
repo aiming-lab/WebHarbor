@@ -61,10 +61,18 @@ class VerifyTask18Tests(SharedVerifierTests, VerifierTestCase):
         after.add_review(4, 18, 4, "Short wait and a clear explanation of treatment options.")
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "new_review_text_matches")
 
-    def test_trailing_period_dropped_passes(self) -> None:
+    def test_missing_trailing_period_fails(self) -> None:
+        # The task quotes the review text verbatim; the app stores exactly what
+        # was submitted, so the deterministic check is whitespace-normalized
+        # equality with case and punctuation preserved.
         after = State()
         after.add_review(4, 18, 4, "Short wait and a clear explanation of my treatment options")
-        self.assertPasses(self.verdict(GENUINE_STEPS, ANSWER, after=after))
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "new_review_text_matches")
+
+    def test_case_changed_text_fails(self) -> None:
+        after = State()
+        after.add_review(4, 18, 4, TEXT.upper())
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "new_review_text_matches")
 
     def test_review_on_same_surname_doctor_fails(self) -> None:
         after = State()
@@ -84,6 +92,10 @@ class VerifyTask18Tests(SharedVerifierTests, VerifierTestCase):
     def test_wrong_answer_0_fails(self) -> None:
         verdict = self.verdict(GENUINE_STEPS, 'Review submitted successfully.', after=genuine_after())
         self.assertFailsOn(verdict, 'answer_confirms_pending')
+
+
+    def test_pending_negation_fails(self) -> None:
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, "Pending review did not appear.", after=genuine_after()), "answer_confirms_pending")
 
 
 if __name__ == "__main__":
