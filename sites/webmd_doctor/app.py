@@ -702,14 +702,29 @@ def haversine_miles(lat1: float, lon1: float, lat2: float, lon2: float) -> float
     return 2 * radius * math.asin(math.sqrt(a))
 
 
-def confirmation_reference(row_id: int) -> str:
-    """Fixed affine permutation of the row id rendered as six base-32 characters."""
-    value = (row_id * 0x5A7B3 + 0x2C9F1) % (32**6)
+def confirmation_reference(row_id: int, doctor_id: int, office_index: int, slot_date: date, slot_time: str) -> str:
+    """Eight base-32 characters packed from the whole booking row with fixed constants (no randomness).
+
+    40 bits: row id (23) | doctor id (10) | office index within the doctor's Locations list (2) |
+    booking-grid day and time slot (5), then one odd-multiplier affine step, which is a bijection
+    on 40 bits.  The packing is injective for row ids below 2**23 and doctor ids below 2**10, so
+    two rows in one database never share a reference and the same row id booked for another
+    doctor, office or slot yields a different string.
+    """
+    day_index = next((i for i, (_a, _s, day, _l) in enumerate(BOOKING_DAYS) if day == slot_date), 0)
+    slot_index = BOOKING_SLOTS.index(slot_time) if slot_time in BOOKING_SLOTS else 0
+    packed = ((row_id % 2**23) << 17) | ((doctor_id % 2**10) << 7) | ((office_index % 4) << 5) | (day_index * len(BOOKING_SLOTS) + slot_index)
+    value = (packed * 0x5A7B3A2B7E15 + 0x2C9F19E37) % (2**40)
     chars = []
-    for _ in range(6):
+    for _ in range(8):
         chars.append(BASE32_ALPHABET[value % 32])
         value //= 32
     return "WMD-" + "".join(reversed(chars))
+
+
+def office_index(doctor: Doctor, location: Location) -> int:
+    """Position of `location` in the doctor's Locations list (primary office first)."""
+    return [row.id for row in doctor.locations].index(location.id)
 
 
 def safe_next(raw: str | None) -> str | None:
@@ -1336,7 +1351,7 @@ def book_appointment(slug: str):
             )
             db.session.add(booking)
             db.session.flush()
-            booking.reference = confirmation_reference(booking.id)
+            booking.reference = confirmation_reference(booking.id, doctor.id, office_index(doctor, location), slot_date, slot_time)
             db.session.commit()
             return render_template("book_confirm.html", doctor=doctor, booking=booking)
     return render_template(

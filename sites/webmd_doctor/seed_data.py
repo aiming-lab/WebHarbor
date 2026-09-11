@@ -58,6 +58,7 @@ from app import (  # noqa: E402
     UserReview,
     app,
     confirmation_reference,
+    office_index,
     db,
 )
 
@@ -100,17 +101,17 @@ EXPECTED_COUNTS = {
     "practices": 30,
     "doctors": 226,
     "locations": 348,
-    "doctor_conditions": 1677,
-    "doctor_procedures": 1252,
-    "doctor_expertise": 686,
-    "doctor_insurances": 2208,
-    "reviews": 1206,
+    "doctor_conditions": 1587,
+    "doctor_procedures": 1105,
+    "doctor_expertise": 667,
+    "doctor_insurances": 2233,
+    "reviews": 1202,
     "doctor_perspectives": 1582,
-    "certifications": 296,
-    "licenses": 316,
-    "education": 567,
+    "certifications": 294,
+    "licenses": 309,
+    "education": 560,
     "awards": 50,
-    "doctor_languages": 351,
+    "doctor_languages": 366,
     "users": 4,
     "saved_providers": 4,
     "appointment_requests": 1,
@@ -144,19 +145,7 @@ SPECIALTIES = [
     ("Internal Medicine", "internal-medicine", "Internist", "Internists", "American Board of Internal Medicine", "Internal Medicine", "Geriatric Medicine",
      "Internists are primary care physicians for adults, focusing on prevention and the diagnosis and management of chronic conditions."),
 ]
-# Specialties whose conditions / procedures a doctor may also list (cross-field consistency).
-RELATED_SPECIALTIES = {
-    "Dermatology": ["Internal Medicine", "Family Medicine"],
-    "Cardiovascular Disease": ["Internal Medicine", "Family Medicine"],
-    "Family Medicine": ["Internal Medicine", "Pediatrics", "Dermatology", "Cardiovascular Disease", "Gastroenterology", "Psychiatry", "Obstetrics & Gynecology"],
-    "Neurology": ["Psychiatry", "Internal Medicine"],
-    "Orthopedic Surgery": ["Family Medicine", "Internal Medicine"],
-    "Gastroenterology": ["Internal Medicine", "Family Medicine"],
-    "Psychiatry": ["Neurology", "Family Medicine", "Internal Medicine"],
-    "Obstetrics & Gynecology": ["Family Medicine", "Internal Medicine"],
-    "Pediatrics": ["Family Medicine", "Internal Medicine"],
-    "Internal Medicine": ["Family Medicine", "Cardiovascular Disease", "Gastroenterology", "Dermatology", "Neurology", "Psychiatry"],
-}
+# Secondary specialties: the only other pool a doctor's conditions / procedures may draw from.
 SECONDARY_CHOICES = {
     "Dermatology": ["Internal Medicine"],
     "Cardiovascular Disease": ["Internal Medicine"],
@@ -363,12 +352,12 @@ MEDICAL_SCHOOLS = [
     "Laurel Highlands Medical College", "Tuckahoe College of Osteopathic Medicine",
 ]
 TRAINING_HOSPITALS = [
-    "Brandywine Valley Hospital", "Patapsco Harbor Medical Center", "Chester Valley Medical Center",
+    "Tuscarora Valley Hospital", "Elk Neck Medical Center", "Cumberland Ridge Hospital",
     "Allegheny Ridge Medical Center", "Harbor Point University Hospital", "Susquehanna General Hospital",
     "Lenape Valley Medical Center", "Great Falls University Hospital", "Tidewater Regional Medical Center",
     "Monocacy General Hospital", "Schuylkill Medical Center", "Piedmont Atlantic Hospital",
     "Cape Henlopen Medical Center", "Severn River Hospital", "Blue Ridge Regional Medical Center",
-    "Christina Creek Medical Center", "Riverfront General Hospital", "Shenandoah Memorial Hospital",
+    "Delmarva Bay Medical Center", "Pocono Summit Hospital", "Shenandoah Memorial Hospital",
     "Wyoming Valley Medical Center", "Kittatinny Regional Hospital", "Conestoga General Hospital",
     "Nanticoke Memorial Medical Center", "Laurel Highlands Hospital", "Rappahannock University Hospital",
 ]
@@ -655,7 +644,7 @@ def _assign_quotas(slots: list[dict]) -> None:
     ratings += multiset([(round(1.0 + 0.4 * i, 1), 5) for i in range(2)])
     ratings = ratings[:24] + ratings[24:30] + ratings[30:]
     RNG.shuffle(ratings)
-    years = multiset([(RNG.randint(1, 4), 1) for _ in range(22)] + [(RNG.randint(5, 14), 1) for _ in range(50)]
+    years = multiset([(max(2, RNG.randint(1, 4)), 1) for _ in range(22)] + [(RNG.randint(5, 14), 1) for _ in range(50)]
                      + [(RNG.randint(15, 19), 1) for _ in range(36)] + [(RNG.randint(20, 24), 1) for _ in range(34)]
                      + [(RNG.randint(25, 29), 1) for _ in range(30)] + [(RNG.randint(30, 42), 1) for _ in range(28)])
     new_patients = multiset([(True, 150), (False, 50)])
@@ -854,7 +843,7 @@ def _build_doctor_children(doctors: list[Doctor], vocab: dict) -> None:
     procedures = vocab["procedures"]
     areas = vocab["areas"]
     insurers = vocab["insurers"]
-    other_specs = {name: list(RELATED_SPECIALTIES[name]) for name, *_rest in SPECIALTIES}
+    secondary_specs = {name: list(SECONDARY_CHOICES[name]) for name, *_rest in SPECIALTIES}
     tiers = ["Similar", "More Often", "More Than Most"]
     used_review_texts: set[str] = set()
     for doctor in doctors:
@@ -862,18 +851,19 @@ def _build_doctor_children(doctors: list[Doctor], vocab: dict) -> None:
         slot = doctor._slot
         practice = doctor._practice
         city_name = slot["city"]
-        # conditions: 2 own + 4-8 from other specialties
-        own = RNG.sample(conditions[spec_name], 2)
-        related_pool = [c for other in other_specs[spec_name] for c in conditions[other]]
-        extras = RNG.sample(related_pool, RNG.randint(4, min(7, len(related_pool))))
+        # conditions: every condition of the doctor's own specialty first, then 2-4 from the
+        # specialty's secondary pool (SECONDARY_CHOICES) - never another specialty's list
+        own = RNG.sample(conditions[spec_name], len(conditions[spec_name]))
+        secondary_pool = [c for other in secondary_specs[spec_name] for c in conditions[other]]
+        extras = RNG.sample(secondary_pool, RNG.randint(2, min(4, len(secondary_pool))))
         ordered = own + extras
         for position, condition in enumerate(ordered, start=1):
             tier = RNG.choices(tiers, weights=[35, 35, 30])[0]
             db.session.add(DoctorCondition(doctor_id=doctor.id, condition_id=condition.id, tier=tier, position=position))
-        # procedures: 1-2 own + 3-5 other
-        own_procs = RNG.sample(procedures[spec_name], RNG.randint(1, 2))
-        related_procs = [q for other in other_specs[spec_name] for q in procedures[other]]
-        other_procs = RNG.sample(related_procs, RNG.randint(3, min(5, len(related_procs))))
+        # procedures: every own procedure + 1-3 from the secondary pool
+        own_procs = RNG.sample(procedures[spec_name], len(procedures[spec_name]))
+        secondary_procs = [q for other in secondary_specs[spec_name] for q in procedures[other]]
+        other_procs = RNG.sample(secondary_procs, RNG.randint(1, min(3, len(secondary_procs))))
         for position, procedure in enumerate(own_procs + other_procs, start=1):
             tier = RNG.choices(tiers, weights=[35, 35, 30])[0]
             db.session.add(DoctorProcedure(doctor_id=doctor.id, procedure_id=procedure.id, tier=tier, position=position))
@@ -1281,7 +1271,7 @@ def seed_benchmark_users(force: bool = False) -> None:
     )
     db.session.add(booking)
     db.session.flush()
-    booking.reference = confirmation_reference(booking.id)
+    booking.reference = confirmation_reference(booking.id, enhanced.id, office_index(enhanced, enhanced.primary_location), booking.slot_date, booking.slot_time)
     reviewed = nth_doctor("Family Medicine", 6)
     db.session.add(UserReview(
         user_id=alice.id,

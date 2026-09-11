@@ -7,6 +7,6 @@
     {% with rating=doctor.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %}
     <a href="{{ url_for('doctor_profile', slug=doctor.slug) }}#reviews">({{ doctor.ratings_count | plural_word('Rating') }})</a>
   </div>
-  <div class="meta"><span><svg class="ic ic-blue"><use href="#i-briefcase"/></svg> {{ doctor.years_experience }} Years Exp</span>{% if doctor.awards %}<span><svg class="ic ic-blue"><use href="#i-award"/></svg> {{ doctor.awards | length | plural_word('Award') }}</span>{% endif %}</div>
+  <div class="meta"><span><svg class="ic ic-blue"><use href="#i-briefcase"/></svg> {{ doctor.years_experience | plural_word('Year') }} Exp</span>{% if doctor.awards %}<span><svg class="ic ic-blue"><use href="#i-award"/></svg> {{ doctor.awards | length | plural_word('Award') }}</span>{% endif %}</div>
   {% if filled %}<a class="btn btn-primary btn-wide btn-sm btn-pill upper" href="{{ url_for('doctor_profile', slug=doctor.slug) }}">View Profile</a>{% else %}<a class="btn btn-ghost btn-wide btn-sm btn-pill" href="{{ url_for('doctor_profile', slug=doctor.slug) }}">View Profile</a>{% endif %}
 </div>

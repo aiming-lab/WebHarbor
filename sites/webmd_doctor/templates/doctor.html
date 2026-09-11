@@ -29,7 +29,7 @@
         {% endif %}
         <a class="btn btn-red hero-phone" href="#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ primary.phone }}</a>
         <ul class="facts">
-          <li><svg class="ic"><use href="#i-briefcase"/></svg> {{ doctor.years_experience }} Years Experience</li>
+          <li><svg class="ic"><use href="#i-briefcase"/></svg> {{ doctor.years_experience | plural_word('Year') }} Experience</li>
           <li style="align-items:flex-start"><svg class="ic" style="margin-top:3px"><use href="#i-pin"/></svg> <span><strong>{{ primary.name }}</strong><br>{{ primary.address_line }}{% if doctor.other_location_count %} <a href="#locations">{{ doctor.other_location_count | plural_word('other location') }}</a>{% endif %}</span></li>
           {% if doctor.hospital %}<li><svg class="ic"><use href="#i-hospital"/></svg> <a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}">{{ doctor.hospital.name }}</a></li>{% endif %}
           {% for line in doctor.award_lines %}<li><svg class="ic"><use href="#i-award"/></svg> <a href="#awards">{{ line }}</a></li>{% endfor %}
@@ -362,7 +362,7 @@
                 <img class="avatar" src="{{ url_for('static', filename=colleague.avatar_path) }}" alt="">
                 <div class="name"><a href="{{ url_for('doctor_profile', slug=colleague.slug) }}">{{ colleague.display_name }}</a></div>
                 <div class="sub">{{ colleague.primary_specialty.name }}</div>
-                <div class="sub">{{ colleague.years_experience }} Years Experience</div>
+                <div class="sub">{{ colleague.years_experience | plural_word('Year') }} Experience</div>
                 {% with rating=colleague.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %}
               </div>
             {% else %}<p class="muted">No other providers listed.</p>{% endfor %}

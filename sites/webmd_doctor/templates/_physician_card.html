@@ -16,7 +16,7 @@
     <ul class="facts">
       {% for line in doctor.award_lines %}<li><svg class="ic"><use href="#i-award"/></svg> {{ line }}</li>{% endfor %}
       {% if doctor.is_enhanced and doctor.callout_label %}<li><svg class="ic"><use href="#i-thumb"/></svg> {{ doctor.callout_label }}</li>{% endif %}
-      <li><svg class="ic"><use href="#i-briefcase"/></svg> {{ doctor.years_experience }} Years Experience</li>
+      <li><svg class="ic"><use href="#i-briefcase"/></svg> {{ doctor.years_experience | plural_word('Year') }} Experience</li>
       {% if doctor.is_enhanced %}<li><svg class="ic {{ '' if doctor.accepting_new_patients else 'gray' }}"><use href="#i-check-circle"/></svg> {{ 'Accepting New Patients' if doctor.accepting_new_patients else 'Not Accepting New Patients' }}</li>{% endif %}
     </ul>
     {% if doctor.is_enhanced and doctor.virtual_visit %}<span class="tele-pill">Telehealth Available</span>{% endif %}
