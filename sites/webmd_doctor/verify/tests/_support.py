@@ -33,6 +33,13 @@ if not SEED_DB.exists():  # pragma: no cover - environment guard
         subprocess.run([sys.executable, str(SITE_DIR / "seed_data.py")], cwd=SITE_DIR,
                        env={**os.environ, "PYTHONHASHSEED": "0"}, check=True,
                        capture_output=True, text=True, timeout=300)
+    except subprocess.CalledProcessError as exc:
+        raise RuntimeError(
+            f"frozen seed missing at {SEED_DB} and the automatic build failed "
+            f"(rc={exc.returncode}).\nstdout: {(exc.stdout or '')[-2000:]}\n"
+            f"stderr: {(exc.stderr or '')[-2000:]}\n"
+            f"Build it manually with: cd {SITE_DIR} && PYTHONHASHSEED=0 python seed_data.py"
+        ) from exc
     except Exception as exc:  # noqa: BLE001
         raise RuntimeError(
             f"frozen seed missing at {SEED_DB} and could not be built automatically: {exc}. "

@@ -66,11 +66,22 @@ def test_assets_pin_is_immutable_merged_revision():
     assert (SITE / "tracked_asset_inventory.json").is_file()
 
 
-def test_shared_documentation_uses_25_site_range():
+def test_shared_documentation_uses_registry_site_range():
+    # Derive the expected port range from the control_server SITES registry so
+    # this test tracks future site additions instead of hardcoding a count.
+    import ast as _ast
+    tree = _ast.parse((ROOT / "control_server.py").read_text())
+    sites = None
+    for node in _ast.walk(tree):
+        if isinstance(node, _ast.Assign) and any(getattr(target, "id", "") == "SITES" for target in node.targets):
+            sites = _ast.literal_eval(node.value)
+    assert sites and isinstance(sites, list), "SITES registry not found in control_server.py"
+    current = f"40000-{40000 + len(sites) - 1}"
+    stale = f"40000-{40000 + len(sites) - 2}"
     for relative in ["README.md", "AGENTS.md", "CONTRIBUTING.md", "CLAUDE.md", "agent_demo/README.md"]:
         text = (ROOT / relative).read_text()
-        assert "40000-40023" not in text, relative
-        assert "40000-40024" in text, relative
+        assert stale not in text, relative
+        assert current in text, relative
 
 
 def test_no_merge_conflict_markers_in_release_files():

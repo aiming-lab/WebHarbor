@@ -737,3 +737,15 @@ textarea:focus-visible, summary:focus-visible, [tabindex]:focus-visible {
 @media (max-width: 720px) {
   .review-summary { grid-template-columns: 1fr; }
 }
+
+
+/* Review round 2: the enhanced-profile sidebar layout forced horizontal
+   overflow below 1181px (absolute 384px sidebar + 424px tabs/hero offsets;
+   measured 791px document width at a 390px viewport). The original
+   narrower-viewport overrides lost the specificity/order interaction, so
+   this appended block overrides with matching selector families. */
+@media (max-width: 1180px) {
+  .has-widget .hero-side, .hero-side { position: static !important; top: auto !important; right: auto !important; width: auto !important; max-width: none !important; margin: 16px 0 !important; }
+  .has-widget .tabs, .container > .tabs, .tabs { margin-right: 0 !important; }
+  .has-widget .profile-hero, .profile-hero.has-widget, .profile-hero { padding-right: 0 !important; min-height: 0 !important; }
+}

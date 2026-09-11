@@ -20,9 +20,11 @@ SEED = SITE / "instance_seed" / "webmd_doctor.db"
 def _ensure_seed() -> None:
     if SEED.exists():
         return
-    subprocess.run([sys.executable, str(SITE / "seed_data.py")], cwd=SITE,
-                   env={**os.environ, "PYTHONHASHSEED": "0"}, check=True,
-                   capture_output=True, text=True, timeout=600)
+    proc = subprocess.run([sys.executable, str(SITE / "seed_data.py")], cwd=SITE,
+                          env={**os.environ, "PYTHONHASHSEED": "0"},
+                          capture_output=True, text=True, timeout=600)
+    assert proc.returncode == 0, (
+        f"seed build failed rc={proc.returncode}\nstdout: {proc.stdout[-2000:]}\nstderr: {proc.stderr[-2000:]}")
 
 
 def _query(sql: str, params: tuple = ()) -> list:
@@ -97,8 +99,9 @@ def test_seed_rebuild_is_deterministic():
     environment = {**os.environ, "PYTHONHASHSEED": "0"}
     hashes = []
     for _ in range(2):
-        subprocess.run([sys.executable, str(SITE / "seed_data.py")], cwd=SITE,
-                       env=environment, check=True, capture_output=True, text=True,
-                       timeout=600)
+        proc = subprocess.run([sys.executable, str(SITE / "seed_data.py")], cwd=SITE,
+                              env=environment, capture_output=True, text=True, timeout=600)
+        assert proc.returncode == 0, (
+            f"seed rebuild failed rc={proc.returncode}\nstdout: {proc.stdout[-2000:]}\nstderr: {proc.stderr[-2000:]}")
         hashes.append(hashlib.sha256(SEED.read_bytes()).hexdigest())
     assert len(set(hashes)) == 1, f"non-deterministic seed builds: {hashes}"
