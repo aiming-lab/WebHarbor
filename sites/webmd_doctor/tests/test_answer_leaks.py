@@ -18,8 +18,9 @@ Value classes and rules (per the review checklist):
   Patients' Perspective criterion labels (seed_data reuses them as callout
   chips on 89 enhanced doctor cards), and condition names (the index renders
   browse-taxonomy cond-tiles and specialty landings list their specialty's
-  conditions as navigation chips; physician cards render no conditions at
-  all). Scoring is not weakened: every affected verifier binds the answer to
+  conditions as navigation chips; physician cards render no condition data
+  fields — a patient-quote snippet may mention a condition in prose, which is
+  non-discriminative because the answer binding is checked per entity below). Scoring is not weakened: every affected verifier binds the answer to
   a required visit of the target profile and matches values derived from the
   target entity, and two ENTITY-BOUND tests below assert that the T5 and T7
   targets' own cards never display their answer values.
@@ -187,19 +188,19 @@ def test_card_template_renders_no_conditions():
     assert "condition" not in source, "physician card template must not render condition data"
 
 
-def test_task5_conditions_not_bound_to_target_on_lists(client):
+def test_task5_answer_facts_not_bound_to_target_on_lists(client):
     """Entity-bound: the T5 target's cards on pre-profile surfaces must not
-    display her condition names or the 'more than most' tier wording."""
+    display her answer facts (the More-Than-Most condition, the first Top-20
+    condition) or the 'more than most' tier wording. Non-answer condition
+    names may legitimately appear inside patient-quote snippets on enhanced
+    cards; they do not identify the answer because the tier data that
+    discriminates the target lives only on the profile."""
     facts = _facts()
     slug = facts[5]["target"]["slug"]
-    profile = client.get(f"/doctor/{slug}-overview").get_data(as_text=True)
-    panel = re.search(r"Conditions Treated.*?</section>", profile, re.S)
-    assert panel, "conditions panel missing on the target profile"
-    names = {m.replace("&#39;", "'") for m in re.findall(r"treats\s+<strong>([^<]+)</strong>", panel.group(0))}
-    assert len(names) == 5, f"expected five most-treated conditions, got {names}"
-    top20 = re.search(r"View Top 20 Conditions.*?<ol>(.*?)</ol>", profile, re.S)
-    assert top20, "top-20 list missing on the target profile"
-    names |= set(re.findall(r"<li>([^<]+)</li>", top20.group(1)))
+    answers = {str(facts[5]["more_than_most"]).lower(), str(facts[5]["first_top20"]).lower()}
+    # Fail closed against silent ground-truth drift (EXPECTED_FACTS pin in
+    # verify/ground_truth.py uses the same convention).
+    assert answers == {"acid reflux (gerd)", "anemia"}, f"unexpected T5 answer facts: {answers}"
     checked = 0
     for path in ("/results?q=Gastroenterologist", "/results?q=Gastroenterologist&page=2",
                  "/providers/specialty/gastroenterology",
@@ -211,8 +212,8 @@ def test_task5_conditions_not_bound_to_target_on_lists(client):
         html = response.get_data(as_text=True)
         for block in _card_blocks(html, slug):
             lowered = _unescape(block).lower()
-            for name in names:
-                assert name.lower() not in lowered, f"{path}: target card renders condition {name!r}"
+            for answer in sorted(answers):
+                assert answer not in lowered, f"{path}: target card renders answer fact {answer!r}"
             assert "more than most" not in lowered, f"{path}: target card renders tier wording"
             checked += 1
     assert checked >= 1, "target card not found on any pre-profile surface"
@@ -241,3 +242,33 @@ def test_confirmation_reference_absent_from_chrome(client):
                  "/choice-awards", "/hospitals", "/grouppractices"):
         html = client.get(path).get_data(as_text=True)
         assert not re.search(r"WMD-[A-Z2-7]{8}", html), f"booking reference pattern on {path}"
+
+
+def test_tarball_contains_only_declared_generated_images():
+    """The published asset tarball must carry exactly the 317 declared
+    generated images: no seed database, no task/ground-truth data, and no
+    undeclared members in either direction."""
+    import json
+    import tarfile
+
+    root = SITE.parent.parent
+    revision = None
+    revision_file = root / ".assets-revision"
+    if revision_file.exists():
+        for line in revision_file.read_text().splitlines():
+            if line.startswith("revision:"):
+                revision = line.split()[1]
+    if not revision:
+        pytest.skip("pinned assets revision unavailable")
+    tarball = root / "sites" / ".cache" / "tarballs" / revision / "webmd_doctor.tar.gz"
+    if not tarball.exists():
+        pytest.skip("asset tarball not fetched in this environment")
+    declared = {e["path"] for e in json.loads((SITE / "generated_asset_inventory.json").read_text())["assets"]}
+    with tarfile.open(tarball) as tf:
+        files = [m.name for m in tf.getmembers() if m.isfile()]
+    norm = {name.split("webmd_doctor/", 1)[-1] for name in files}
+    banned = sorted(n for n in norm if not n.startswith("static/images/") or not n.endswith(".png"))
+    assert not banned, f"non-image or misplaced members in tarball: {banned[:10]}"
+    assert norm == declared, (
+        "tarball members != generated inventory; "
+        f"extra={sorted(norm - declared)[:5]} missing={sorted(declared - norm)[:5]}")
