@@ -1477,10 +1477,17 @@ def standings():
         view = "conference"
     if section not in {"overall", "streaks", "ahead", "margins", "calendar"}:
         section = "overall"
-    east = attach_standing_fields(Team.query.filter_by(conference="East").all())
-    west = attach_standing_fields(Team.query.filter_by(conference="West").all())
-    divisions = {division: attach_standing_fields(rows) for division, rows in grouped_teams_by_division().items()}
-    all_teams = attach_standing_fields(Team.query.all())
+    east_teams = Team.query.filter_by(conference="East").all()
+    west_teams = Team.query.filter_by(conference="West").all()
+    if view == "division":
+        east = attach_standing_fields(east_teams)
+        west = attach_standing_fields(west_teams)
+        divisions = {division: attach_standing_fields(rows) for division, rows in grouped_teams_by_division().items()}
+    else:
+        divisions = {division: attach_standing_fields(rows) for division, rows in grouped_teams_by_division().items()}
+        east = attach_standing_fields(east_teams)
+        west = attach_standing_fields(west_teams)
+    all_teams = Team.query.all()
     teams_by_slug = {team.slug: team for team in Team.query.all()}
     return render_template("standings.html", east=east, west=west, divisions=divisions, all_teams=all_teams, teams_by_slug=teams_by_slug, view=view, section=section)
 

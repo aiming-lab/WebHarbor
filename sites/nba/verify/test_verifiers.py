@@ -219,6 +219,11 @@ class ContractTests(unittest.TestCase):
                 (57, 25),
             )
 
+        sys.path.insert(0, str(SITE_DIR))
+        import app as nba_app
+        html = nba_app.app.test_client().get("/standings").get_data(as_text=True)
+        self.assertRegex(html, r"<span>1</span><img[^>]+> Oklahoma City Thunder")
+
     def test_homepage_hero_text_matches_its_media(self):
         with sqlite3.connect(SITE_DIR / "instance_seed" / "nba.db") as connection:
             title, image = connection.execute(
