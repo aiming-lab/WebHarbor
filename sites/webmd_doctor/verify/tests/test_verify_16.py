@@ -45,7 +45,7 @@ class VerifyTask16Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "workflow_in_order")
 
     def test_state_unchanged_fails(self) -> None:
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=State()), "new_saved_row_belongs_to_bob")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=State()), "saved_providers_exact_delta")
 
     def test_saved_under_other_account_fails(self) -> None:
         after = State()
@@ -60,7 +60,7 @@ class VerifyTask16Tests(SharedVerifierTests, VerifierTestCase):
     def test_extra_save_fails(self) -> None:
         after = genuine_after()
         after.add_saved(2, 5)
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "new_saved_row_belongs_to_bob")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "saved_providers_exact_delta")
 
     def test_wrong_account_fails(self) -> None:
         steps = [step("/"), *login_steps("alice.j@test.com"), *GENUINE_STEPS[4:]]

@@ -50,9 +50,9 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_visited_path(judge, trajectory, "visited_saved_providers_page", SAVED_PATH)
     check_paths_in_order(judge, trajectory, "workflow_in_order", [("/login", {}), ("/results", {}), (profile_path_pattern(SLUG), {}), (SAVED_PATH, {})])
     judge.check("answer_confirms_saved", contains_any(answer, ("Castellano", "saved", "appears", "listed")), f"answer={answer!r}")
+    check_exact_delta(judge, initial_db, after_db, "saved_providers", added=1)
     added, removed = saved_delta(initial_db, after_db, USER_ID)
     judge.check("new_saved_row_belongs_to_bob", added == {DOCTOR_ID} and not removed, f"expected added=[{DOCTOR_ID}] removed=[]; observed added={sorted(added)!r} removed={sorted(removed)!r}")
-    check_exact_delta(judge, initial_db, after_db, "saved_providers", added=1)
     check_tables_unchanged(judge, initial_db, after_db, ("users", "appointment_requests", "user_reviews"))
 
 

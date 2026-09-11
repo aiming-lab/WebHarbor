@@ -49,7 +49,7 @@ class VerifyTask18Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "ended_on_profile")
 
     def test_state_unchanged_fails(self) -> None:
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=State()), "exactly_one_new_review")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=State()), "user_reviews_exact_delta")
 
     def test_wrong_rating_fails(self) -> None:
         after = State()
@@ -79,7 +79,7 @@ class VerifyTask18Tests(SharedVerifierTests, VerifierTestCase):
     def test_two_reviews_fail(self) -> None:
         after = genuine_after()
         after.add_review(4, 18, 4, TEXT)
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "exactly_one_new_review")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "user_reviews_exact_delta")
 
     def test_wrong_answer_0_fails(self) -> None:
         verdict = self.verdict(GENUINE_STEPS, 'Review submitted successfully.', after=genuine_after())

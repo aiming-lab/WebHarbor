@@ -53,8 +53,8 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_visited_path(judge, trajectory, "visited_booking_page", BOOKING_PATH)
     check_paths_in_order(judge, trajectory, "workflow_in_order", [("/login", {}), (profile_path_pattern(SLUG), {}), (BOOKING_PATH, {})])
     judge.check("initial_has_no_carol_request_for_target", not rows_where(initial_db, "appointment_requests", user_id=USER_ID, doctor_id=DOCTOR_ID), f"user_id={USER_ID}, doctor_id={DOCTOR_ID}")
+    check_exact_delta(judge, initial_db, after_db, "appointment_requests", added=1)
     new_rows = new_table_rows(initial_db, after_db, "appointment_requests")
-    judge.check("exactly_one_new_request", len(new_rows) == 1, f"new_rows={new_rows!r}")
     row = new_rows[0] if len(new_rows) == 1 else {}
     judge.check("new_request_belongs_to_carol", row.get("user_id") == USER_ID, f"expected_user_id={USER_ID}, row={row!r}")
     judge.check("new_request_is_for_target", row.get("doctor_id") == DOCTOR_ID, f"expected_doctor_id={DOCTOR_ID}, row={row!r}")
@@ -68,7 +68,6 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     reference = str(row.get("reference") or "")
     judge.check("answer_has_matching_reference", bool(reference) and contains_reference(answer, reference), f"row_reference={reference!r}, answer={answer!r}")
     judge.check("answer_has_no_other_reference", extract_references(answer) <= ({reference} if reference else set()), f"answer_references={sorted(extract_references(answer))!r}")
-    check_exact_delta(judge, initial_db, after_db, "appointment_requests", added=1)
     check_tables_unchanged(judge, initial_db, after_db, ("users", "saved_providers", "user_reviews"))
 
 

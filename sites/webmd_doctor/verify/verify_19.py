@@ -55,18 +55,16 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_visited_profile(judge, trajectory, SLUG)
     check_paths_in_order(judge, trajectory, "workflow_in_order", [("/signup", {}), ("/results", {}), (profile_path_pattern(SLUG), {})])
     typed_email = signup_email(trajectory)
+    check_exact_delta(judge, initial_db, after_db, "users", added=1)
     new_users = new_user_rows(initial_db, after_db)
-    judge.check("exactly_one_new_user", len(new_users) == 1, f"new_users={[row.get('email') for row in new_users]!r}")
     user = new_users[0] if len(new_users) == 1 else {}
     judge.check("new_user_email_matches_signup_input", bool(typed_email) and normalize_text(user.get("email")) == typed_email, f"typed_on_signup={typed_email!r}, new_user_email={user.get('email')!r}")
     judge.check("new_user_is_not_a_seed_account", bool(user) and normalize_text(user.get("email")) not in user_emails(initial_db), f"new_user_email={user.get('email')!r}")
-    check_exact_delta(judge, initial_db, after_db, "users", added=1)
+    check_exact_delta(judge, initial_db, after_db, "saved_providers", added=1)
     new_saved = new_table_rows(initial_db, after_db, "saved_providers")
-    judge.check("exactly_one_new_saved_row", len(new_saved) == 1, f"new_saved={new_saved!r}")
     saved = new_saved[0] if len(new_saved) == 1 else {}
     judge.check("new_saved_row_belongs_to_new_user", bool(user) and saved.get("user_id") == user.get("id"), f"new_user_id={user.get('id')!r}, row={saved!r}")
     judge.check("new_saved_row_is_for_target", saved.get("doctor_id") == DOCTOR_ID, f"expected_doctor_id={DOCTOR_ID}, row={saved!r}")
-    check_exact_delta(judge, initial_db, after_db, "saved_providers", added=1)
     judge.check("answer_has_npi", contains_npi(answer, NPI), f"expected={NPI!r}, answer={answer!r}")
     check_tables_unchanged(judge, initial_db, after_db, ("appointment_requests", "user_reviews"))
 

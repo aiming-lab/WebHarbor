@@ -44,12 +44,12 @@ class VerifyTask17Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "visited_booking_page")
 
     def test_state_unchanged_fails(self) -> None:
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=State()), "exactly_one_new_request")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=State()), "appointment_requests_exact_delta")
 
     def test_two_requests_fail(self) -> None:
         after = genuine_after()
         after.add_appointment(3, 22, 32, reference="WMD-ZZ2ZZ3ZZ")
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "exactly_one_new_request")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "appointment_requests_exact_delta")
 
     def test_primary_office_fails(self) -> None:
         after = State()

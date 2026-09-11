@@ -50,9 +50,9 @@ def run_checks(judge: Judge, trajectory: dict, initial_db: str, after_db: str) -
     check_paths_in_order(judge, trajectory, "workflow_in_order", [("/login", {}), (SAVED_PATH, {}), (profile_path_pattern(SLUG), {})])
     judge.check("initial_alice_has_target_saved", DOCTOR_ID in saved_doctor_ids(initial_db, USER_ID), f"initial_saved={sorted(saved_doctor_ids(initial_db, USER_ID))!r}")
     judge.check("answer_has_residency", contains_institution(answer, RESIDENCY), f"expected={RESIDENCY!r}, answer={answer!r}")
+    check_exact_delta(judge, initial_db, after_db, "saved_providers", removed=1)
     added, removed = saved_delta(initial_db, after_db, USER_ID)
     judge.check("removed_target_only", removed == {DOCTOR_ID} and not added, f"expected removed={{{DOCTOR_ID}}} added=set(); observed removed={sorted(removed)!r} added={sorted(added)!r}")
-    check_exact_delta(judge, initial_db, after_db, "saved_providers", removed=1)
     check_tables_unchanged(judge, initial_db, after_db, ("users", "appointment_requests", "user_reviews"))
 
 

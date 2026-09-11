@@ -49,7 +49,7 @@ class VerifyTask8Tests(SharedVerifierTests, VerifierTestCase):
         self.assertFailsOn(self.verdict(steps, ANSWER, after=genuine_after()), "entered_expected_account_email")
 
     def test_state_unchanged_fails(self) -> None:
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=State()), "removed_target_only")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=State()), "saved_providers_exact_delta")
 
     def test_wrong_row_removed_fails(self) -> None:
         after = State()
@@ -59,7 +59,7 @@ class VerifyTask8Tests(SharedVerifierTests, VerifierTestCase):
     def test_two_rows_removed_fails(self) -> None:
         after = genuine_after()
         after.remove_saved(1, 47)
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "removed_target_only")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "saved_providers_exact_delta")
 
     def test_collateral_write_fails(self) -> None:
         after = genuine_after()

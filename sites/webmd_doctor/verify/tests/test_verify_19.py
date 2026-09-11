@@ -53,7 +53,7 @@ class VerifyTask19Tests(SharedVerifierTests, VerifierTestCase):
     def test_no_registration_fails(self) -> None:
         after = State()
         after.add_saved(1, 68)
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "exactly_one_new_user")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "users_exact_delta")
 
     def test_registered_with_other_email_fails(self) -> None:
         after = State()
@@ -64,7 +64,7 @@ class VerifyTask19Tests(SharedVerifierTests, VerifierTestCase):
     def test_registered_but_not_saved_fails(self) -> None:
         after = State()
         after.add_user(EMAIL)
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "exactly_one_new_saved_row")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "saved_providers_exact_delta")
 
     def test_saved_under_seed_account_fails(self) -> None:
         after = State()
@@ -81,7 +81,7 @@ class VerifyTask19Tests(SharedVerifierTests, VerifierTestCase):
     def test_two_accounts_fail(self) -> None:
         after = genuine_after()
         after.add_user("second@example.com")
-        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "exactly_one_new_user")
+        self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, after=after), "users_exact_delta")
 
     def test_wrong_answer_0_fails(self) -> None:
         verdict = self.verdict(GENUINE_STEPS, 'Registered and saved the provider. NPI: 1279956603', after=genuine_after())
