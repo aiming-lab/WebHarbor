@@ -21,6 +21,7 @@ from flask import (
     redirect,
     render_template,
     request,
+    session,
     url_for,
 )
 from flask_login import (
@@ -729,7 +730,7 @@ def office_index(doctor: Doctor, location: Location) -> int:
 
 def safe_next(raw: str | None) -> str | None:
     """Return a same-origin relative path (with query) or ``None``."""
-    if not raw or len(raw) > 2048 or any(ord(char) < 32 for char in raw):
+    if not raw or len(raw) > 2048 or raw != raw.strip() or any(ord(char) < 32 for char in raw):
         return None
     decoded = raw
     for _ in range(3):
@@ -737,8 +738,9 @@ def safe_next(raw: str | None) -> str | None:
         if expanded == decoded:
             break
         decoded = expanded
-    if decoded.startswith("//") or "\\" in decoded:
+    if decoded != decoded.strip() or decoded.startswith("//") or "\\" in decoded:
         return None
+    decoded = decoded.split("#", 1)[0]  # fragments never travel in a redirect target
     parsed = urlsplit(decoded)
     if parsed.scheme or parsed.netloc or not parsed.path.startswith("/") or parsed.path.startswith("//"):
         return None
@@ -1853,6 +1855,7 @@ def signup():
 @app.route("/logout", methods=["POST"])
 @login_required
 def logout():
+    session.clear()   # drop every session key first; logout_user() then flags the remember cookie for removal
     logout_user()
     return redirect(url_for("index"))
 

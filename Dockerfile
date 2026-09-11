@@ -55,7 +55,7 @@ RUN cd /opt/WebSyn/walmart_careers && rm -rf instance instance_seed && \
 RUN test -n "$(ls -A /opt/WebSyn/webmd_doctor/static/images/avatars)" && \
     test -n "$(ls -A /opt/WebSyn/webmd_doctor/static/images/posters)"
 RUN cd /opt/WebSyn/webmd_doctor && rm -rf instance instance_seed && \
-    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
 
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
