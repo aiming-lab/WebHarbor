@@ -326,7 +326,21 @@ def attach_standing_fields(teams):
     if not teams:
         return []
     leader_net = max(team.wins - team.losses for team in teams)
-    for rank, team in enumerate(sorted(teams, key=lambda t: (-t.wins, t.losses, t.city)), 1):
+    official_order = {
+        slug: rank for rank, slug in enumerate([
+            "celtics", "knicks", "bucks", "cavaliers", "magic", "pacers",
+            "seventysixers", "heat", "bulls", "hawks", "nets", "raptors",
+            "hornets", "wizards", "pistons", "thunder", "nuggets",
+            "timberwolves", "clippers", "mavericks", "suns", "pelicans",
+            "lakers", "kings", "warriors", "rockets", "jazz", "grizzlies",
+            "spurs", "trail-blazers",
+        ])
+    }
+    ordered = sorted(
+        teams,
+        key=lambda team: (-team.wins, team.losses, official_order.get(team.slug, 99), team.city),
+    )
+    for rank, team in enumerate(ordered, 1):
         team.rank = rank
         team.games_back = round((leader_net - (team.wins - team.losses)) / 2, 1)
         team.last_ten = team_last_ten(team)
@@ -1863,7 +1877,7 @@ TEAM_SEED = [
     ("Dallas", "Mavericks", "DAL", "West", "Southwest", 50, 32, "25-16", "25-16", "W2", 117.9, 115.6, "American Airlines Center", "Jason Kidd", "#00538C", "mavericks"),
     ("Denver", "Nuggets", "DEN", "West", "Northwest", 57, 25, "33-8", "24-17", "W1", 114.9, 109.6, "Ball Arena", "Michael Malone", "#0E2240", "nuggets"),
     ("Minnesota", "Timberwolves", "MIN", "West", "Northwest", 56, 26, "30-11", "26-15", "W1", 113.0, 106.5, "Target Center", "Chris Finch", "#0C2340", "timberwolves"),
-    ("Oklahoma City", "Thunder", "OKC", "West", "Northwest", 58, 24, "34-7", "24-17", "W5", 120.1, 112.7, "Paycom Center", "Mark Daigneault", "#007AC1", "thunder"),
+    ("Oklahoma City", "Thunder", "OKC", "West", "Northwest", 57, 25, "33-8", "24-17", "W5", 120.1, 112.7, "Paycom Center", "Mark Daigneault", "#007AC1", "thunder"),
     ("Phoenix", "Suns", "PHX", "West", "Pacific", 49, 33, "25-16", "24-17", "W3", 116.2, 113.2, "Footprint Center", "Mike Budenholzer", "#1D1160", "suns"),
     ("Los Angeles", "Lakers", "LAL", "West", "Pacific", 47, 35, "28-14", "19-21", "W2", 118.0, 117.4, "Crypto.com Arena", "JJ Redick", "#552583", "lakers"),
     ("LA", "Clippers", "LAC", "West", "Pacific", 51, 31, "25-16", "26-15", "L3", 115.6, 112.3, "Intuit Dome", "Tyronn Lue", "#C8102E", "clippers"),
@@ -1959,7 +1973,7 @@ def seed_database():
         ))
 
     articles = [
-        ("Celtics defense sets tone in latest home win", "Top Stories", "Boston's switching defense forced tough looks late.", "The Celtics leaned on perimeter pressure, balanced scoring and a deep bench to protect the lead at TD Garden.", "celtics", "jayson-tatum", "articles/harris-levert-051426-scaled.jpg"),
+        ("Harris and LeVert steady Detroit's latest home effort", "Top Stories", "Detroit's veteran wings supplied composure on both ends.", "Tobias Harris and Caris LeVert gave Detroit a reliable two-way presence while the young core handled the closing possessions.", "pistons", "", "articles/harris-levert-051426-scaled.jpg"),
         ("Doncic and Thunder guards prepare for pace test", "Preview", "Dallas and Oklahoma City bring two of the league's most efficient creators.", "The matchup will hinge on transition defense, corner threes and late-clock shot quality.", "mavericks", "luka-doncic", "articles/edwards-spurs-gm5-051426-scaled.jpg"),
         ("Wembanyama's rim protection changes Spurs math", "Analysis", "San Antonio's rookie center is altering shot charts around the basket.", "Opponents are taking fewer attempts at the rim when the Spurs keep their young center near the paint.", "spurs", "victor-wembanyama", "articles/wembanyama-gm5.jpg"),
         ("Edwards headlines West guard watch list", "Features", "Minnesota's lead guard continues to pair downhill scoring with tougher defense.", "The Timberwolves have asked Edwards to defend stars while keeping his late-clock usage high.", "timberwolves", "anthony-edwards", "articles/edwards-game5-051426-scaled.jpg"),
@@ -2040,9 +2054,6 @@ def seed_benchmark_users():
     db.session.flush()
 
     for user in created:
-        products = Product.query.filter((Product.team_slug == user.favorite_team_slug) | (Product.category == "T-Shirts")).limit(3).all()
-        for idx, product in enumerate(products[:2]):
-            db.session.add(CartItem(user_id=user.id, product_id=product.id, quantity=idx + 1, size="L"))
         team = Team.query.filter_by(slug=user.favorite_team_slug).first()
         if team:
             db.session.add(Favorite(user_id=user.id, item_type="team", item_id=team.id, note="My default team"))

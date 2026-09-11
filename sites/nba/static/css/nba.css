@@ -43,6 +43,17 @@ input, select {
   padding: 10px 11px;
 }
 label { display: grid; gap: 6px; font-size: 12px; font-weight: 800; color: #3d424e; }
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
 h1, h2, h3, p { margin-top: 0; }
 .kicker {
   color: var(--nba-red);
@@ -95,7 +106,7 @@ h1, h2, h3, p { margin-top: 0; }
   text-decoration: none;
 }
 .global-search { display: flex; gap: 8px; }
-.global-search input { background: #fff; }
+.global-search input { min-width: 260px; background: #fff; }
 
 .site-main { min-height: 70vh; }
 .flash-wrap, .portal-shell, .content-block, .page-hero, .article-layout, .game-detail-hero, .team-header, .player-hero-pro, .auth-layout {
@@ -103,6 +114,7 @@ h1, h2, h3, p { margin-top: 0; }
   margin-left: auto;
   margin-right: auto;
 }
+.content-block { overflow-x: auto; }
 .flash-wrap { padding: 18px 24px 0; }
 .flash { background: #e9f0ff; border-left: 4px solid var(--nba-blue); padding: 12px 14px; margin-bottom: 8px; }
 .flash.error { background: #ffe9ed; border-color: var(--nba-red); }
@@ -1119,10 +1131,14 @@ h1, h2, h3, p { margin-top: 0; }
 
 .standings-page-official {
   max-width: 1240px;
+  min-width: 0;
   margin: 0 auto;
   padding: 96px 24px 42px;
+  overflow-x: hidden;
 }
 .standings-bracket {
+  width: 100%;
+  max-width: 100%;
   min-height: 660px;
   position: relative;
   display: grid;
@@ -1208,6 +1224,7 @@ h1, h2, h3, p { margin-top: 0; }
   padding: 18px;
   margin-bottom: 22px;
 }
+.standings-table-panel { min-width: 0; max-width: 100%; overflow-x: auto; }
 .standings-controls h1 {
   text-transform: uppercase;
   font-size: 18px;
@@ -2464,7 +2481,14 @@ h1, h2, h3, p { margin-top: 0; }
 @media (max-width: 1080px) {
   :root { --nba-gutter: 32px; }
   .primary-nav { flex-wrap: wrap; padding: 8px 0; gap: 14px; }
-  .primary-nav nav { order: 3; flex-basis: 100%; }
+  .primary-nav nav {
+    order: 3;
+    flex-basis: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding-bottom: 6px;
+  }
   .nav-actions { margin-left: auto; justify-content: flex-start; flex-wrap: wrap; }
   .portal-shell, .portal-shell.narrow, .split-layout, .article-layout, .auth-layout, .split, .product-detail, .home-layout, .section-layout, .section-hero-panel, .games-page-shell, .official-game-card, .official-article-shell, .stats-page-official, .beyond, .assist-tracker, .draft-hero-panel, .draft-lottery, .fantasy-feature-grid { grid-template-columns: 1fr; }
   .games-date-bar { grid-template-columns: 1fr; justify-items: stretch; }
@@ -2489,6 +2513,9 @@ h1, h2, h3, p { margin-top: 0; }
   :root { --nba-gutter: 14px; }
   .primary-nav { padding: 12px 0; }
   .primary-nav nav, .nav-actions { gap: 12px; }
+  .nav-actions { flex: 1 1 calc(100% - 70px); min-width: 0; }
+  .global-search { width: 100%; flex-wrap: wrap; }
+  .global-search input { min-width: 0; flex: 1 1 180px; }
   .portal-shell, .content-block, .article-layout, .home-shell { padding: 16px; }
   .story-grid, .story-grid.compact, .card-grid.two, .team-grid, .team-grid.small, .leader-grid, .stat-tile-grid, .stat-tile-grid.six, .account-grid, .filter-form, .schedule-filter, .schedule-filters-official, .official-schedule-row, .ticket-filter, .meta-grid, .footer-grid, .cards-4, .form-grid.two, .official-story-row, .trend-strip, .postseason-grid, .recap-strip, .feature-tabs, .official-grid, .league-pass-grid, .affiliate-grid, .playoff-news-grid, .history-row, .leader-matrix, .player-news-grid, .shotchart-grid, .standings-selects, .standings-legend, .official-video-row, .draft-two-column-list, .fantasy-news-grid, .fantasy-side-list a { grid-template-columns: 1fr; }
   .official-article-shell, .official-latest { padding: 20px 16px; margin-top: 26px; }
