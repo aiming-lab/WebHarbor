@@ -90,8 +90,8 @@ USER_CREATED_AT = datetime(2026, 6, 12, 9, 30, 0)
 # Filled in from the frozen seed; ensure_seed_database refuses partial DBs.
 EXPECTED_COUNTS = {
     "specialties": 10,
-    "conditions": 40,
-    "procedures": 30,
+    "conditions": 82,
+    "procedures": 62,
     "expertise_areas": 40,
     "insurers": 12,
     "insurance_plans": 28,
@@ -101,17 +101,17 @@ EXPECTED_COUNTS = {
     "practices": 30,
     "doctors": 226,
     "locations": 348,
-    "doctor_conditions": 1587,
-    "doctor_procedures": 1105,
-    "doctor_expertise": 667,
-    "doctor_insurances": 2233,
-    "reviews": 1202,
+    "doctor_conditions": 1800,
+    "doctor_procedures": 1316,
+    "doctor_expertise": 674,
+    "doctor_insurances": 2258,
+    "reviews": 1227,
     "doctor_perspectives": 1582,
-    "certifications": 294,
-    "licenses": 309,
-    "education": 560,
+    "certifications": 307,
+    "licenses": 295,
+    "education": 595,
     "awards": 50,
-    "doctor_languages": 366,
+    "doctor_languages": 363,
     "users": 4,
     "saved_providers": 4,
     "appointment_requests": 1,
@@ -146,6 +146,7 @@ SPECIALTIES = [
      "Internists are primary care physicians for adults, focusing on prevention and the diagnosis and management of chronic conditions."),
 ]
 # Secondary specialties: the only other pool a doctor's conditions / procedures may draw from.
+# Secondary specialty a doctor may additionally list (profile "secondary specialty" only).
 SECONDARY_CHOICES = {
     "Dermatology": ["Internal Medicine"],
     "Cardiovascular Disease": ["Internal Medicine"],
@@ -157,6 +158,52 @@ SECONDARY_CHOICES = {
     "Obstetrics & Gynecology": ["Family Medicine"],
     "Pediatrics": ["Family Medicine", "Internal Medicine"],
     "Internal Medicine": ["Family Medicine", "Cardiovascular Disease", "Gastroenterology"],
+}
+# Curated per-specialty secondary pools (audit D): conditions / procedures a practitioner of
+# that specialty plausibly treats besides the CONDITIONS / PROCEDURES primaries. A doctor's
+# Top-20 lists draw ONLY from the primaries + this pool of the doctor's own specialty. A name
+# that is another specialty's primary reuses that row; a secondary-only name becomes a row
+# owned by the first specialty (SPECIALTIES order) that lists it.
+SECONDARY_CONDITIONS = {
+    "Dermatology": ["Skin Cancer", "Warts", "Hair Loss (Alopecia)", "Hives (Urticaria)", "Contact Dermatitis"],
+    "Cardiovascular Disease": ["High Cholesterol", "Heart Valve Disease", "Peripheral Artery Disease", "Cardiomyopathy", "Chest Pain (Angina)"],
+    "Family Medicine": ["Hypertension", "Hypothyroidism", "Urinary Tract Infection", "Allergic Rhinitis", "Upper Respiratory Infection", "Obesity"],
+    "Neurology": ["Stroke", "Peripheral Neuropathy", "Alzheimer's Disease and Dementia", "Essential Tremor", "Carpal Tunnel Syndrome"],
+    "Orthopedic Surgery": ["Back Pain", "Carpal Tunnel Syndrome", "Meniscus Tear", "Tennis Elbow", "Plantar Fasciitis", "Herniated Disc"],
+    "Gastroenterology": ["Anemia", "Ulcerative Colitis", "Gallstones", "Hepatitis C", "Peptic Ulcer Disease", "Hemorrhoids"],
+    "Psychiatry": ["Post-Traumatic Stress Disorder", "Obsessive-Compulsive Disorder", "Insomnia", "Schizophrenia", "Panic Disorder", "Substance Use Disorder"],
+    "Obstetrics & Gynecology": ["Pregnancy", "Abnormal Uterine Bleeding", "Infertility", "Ovarian Cysts", "Pelvic Inflammatory Disease", "Urinary Tract Infection"],
+    "Pediatrics": ["ADHD", "Allergic Rhinitis", "Bronchiolitis", "Eczema", "Upper Respiratory Infection", "Developmental Delay"],
+    "Internal Medicine": ["Type 2 Diabetes", "High Cholesterol", "Hypertension", "Obesity", "COPD", "Gout"],
+}
+SECONDARY_PROCEDURES = {
+    "Dermatology": ["Laser Skin Treatment", "Chemical Peel", "Botox Cosmetic Injection"],
+    "Cardiovascular Disease": ["Holter Monitoring", "Coronary Angioplasty and Stent", "Cardioversion", "Pacemaker Implantation"],
+    "Family Medicine": ["Blood Pressure Screening", "Diabetes Management", "Skin Lesion Removal", "Sports Physical", "Ear Wax Removal"],
+    "Neurology": ["Nerve Conduction Study", "Botulinum Toxin Injection for Migraine", "Sleep Study Interpretation"],
+    "Orthopedic Surgery": ["Total Knee Replacement", "Fracture Repair", "Rotator Cuff Repair", "Joint Injection"],
+    "Gastroenterology": ["Polypectomy", "Hemorrhoid Banding", "Liver Biopsy", "Esophageal Dilation"],
+    "Psychiatry": ["Psychiatric Evaluation", "Cognitive Behavioral Therapy", "Electroconvulsive Therapy"],
+    "Obstetrics & Gynecology": ["Colposcopy", "Hysterectomy", "Cesarean Section", "Endometrial Biopsy", "Tubal Ligation"],
+    "Pediatrics": ["Hearing Screening", "Newborn Care Visit", "Sports Physical", "Flu Vaccination"],
+    "Internal Medicine": ["Annual Physical Exam", "Flu Vaccination", "Preventive Health Screening", "Lung Function Test (Spirometry)"],
+}
+# Training timeline per specialty (audit D): residency length in years after the MD year
+# (residency starts the year after graduation), fellowship length and whether every
+# practitioner completes one. Board certification = end of training + 0/1 year; years of
+# experience = 2026 - certification year.
+TRAINING = {
+    # specialty: (residency years, fellowship years, fellowship required)
+    "Dermatology": (4, 1, False),
+    "Cardiovascular Disease": (3, 3, True),
+    "Family Medicine": (3, 1, False),
+    "Neurology": (4, 2, False),
+    "Orthopedic Surgery": (5, 1, False),
+    "Gastroenterology": (3, 3, True),
+    "Psychiatry": (4, 2, False),
+    "Obstetrics & Gynecology": (4, 3, False),
+    "Pediatrics": (3, 3, False),
+    "Internal Medicine": (3, 1, False),
 }
 CONDITIONS = {
     "Dermatology": ["Acne", "Eczema", "Psoriasis", "Rosacea"],
@@ -281,7 +328,7 @@ PRACTICES = {
         ("White Clay", "Cardiovascular Disease", "620 Churchmans Rd Ste 110", "19702"),
         ("Iron Hill", "Family Medicine", "2600 Glasgow Ave Ste 116", "19702"),
         ("Glasgow Pike", "Neurology", "500 Peoples Plz Ste 230", "19702"),
-        ("Deer Park", "Gastroenterology", "255 E Main St Ste 200", "19711"),
+        ("Deer Park", "Gastroenterology", "255 Library Ave Ste 200", "19711"),
         ("Pike Creek", "Pediatrics", "3401 Papermill Rd Ste 5", "19711"),
         ("Main Street", None, "112 S Main St Fl 3", "19711"),
         ("Ogletown", None, "4051 Ogletown Rd Ste 101", "19713"),
@@ -324,7 +371,17 @@ PRACTICES = {
     ],
 }
 SECONDARY_OFFICE_TAGS = ["North Office", "Medical Arts Building", "Outpatient Center", "Professional Plaza", "Annex", "Satellite Office", "Pavilion", "Wellness Center"]
-SECONDARY_STREETS = ["Concord Pike", "Kirkwood Hwy", "Limestone Rd", "Marsh Rd", "Naamans Rd", "Elkton Rd", "Pulaski Hwy", "Lancaster Pike", "Baltimore Pike", "Paoli Pike", "Salem Quinton Rd", "Route 40", "Silverside Rd", "Chestnut Hill Rd", "Old Baltimore Pike", "Eastern Ave", "Falls Rd", "Harford Rd"]
+# Secondary-office street pools per city (audit D): a street name belongs to exactly one city.
+SECONDARY_STREETS = {
+    "Newark": ["Kirkwood Hwy", "Elkton Rd", "Marrows Rd", "Chapel St", "Old Baltimore Pike"],
+    "Bear": ["Wrangle Hill Rd", "Red Lion Rd", "Porter Rd", "Route 72", "Bear Corbit Rd"],
+    "Wilmington": ["Concord Pike", "Silverside Rd", "Naamans Rd", "Marsh Rd", "Lancaster Pike"],
+    "Elkton": ["Route 40", "Bridge St", "Blue Ball Rd", "Singerly Rd", "Whitehall Rd"],
+    "Salem": ["Salem Quinton Rd", "Route 45", "Hancocks Bridge Rd", "Front St", "Fort Mott Rd"],
+    "West Chester": ["Paoli Pike", "Boot Rd", "Westtown Rd", "Phoenixville Pike", "Gay St"],
+    "Media": ["Baltimore Pike", "Providence Rd", "Middletown Rd", "Sandy Bank Rd", "Orange St"],
+    "Baltimore": ["Eastern Ave", "Falls Rd", "Harford Rd", "York Rd", "Charles St"],
+}
 STREET_TYPES = ["Ste 100", "Ste 210", "Ste 305", "Bldg B", "Fl 2", "Ste 12", "Ste 400"]
 DAY_KEYS = ("mon", "tue", "wed", "thu", "fri", "sat", "sun")
 HOURS_PATTERNS = [
@@ -536,6 +593,26 @@ def _build_vocabulary() -> dict:
         areas[name] = [ExpertiseArea(name=a, specialty_id=specialties[name].id) for a in EXPERTISE[name]]
         db.session.add_all(conditions[name] + procedures[name] + areas[name])
     db.session.flush()
+    # secondary-only names (not any specialty's primary) become rows owned by the first
+    # specialty that lists them; rows are created in SPECIALTIES order, then pool order
+    condition_by_name = {row.name: row for rows in conditions.values() for row in rows}
+    procedure_by_name = {row.name: row for rows in procedures.values() for row in rows}
+    secondary_conditions: dict[str, list[Condition]] = {}
+    secondary_procedures: dict[str, list[Procedure]] = {}
+    for name, *_rest in SPECIALTIES:
+        secondary_conditions[name] = []
+        for label in SECONDARY_CONDITIONS[name]:
+            if label not in condition_by_name:
+                condition_by_name[label] = Condition(name=label, slug=slugify(label), specialty_id=specialties[name].id)
+                db.session.add(condition_by_name[label])
+            secondary_conditions[name].append(condition_by_name[label])
+        secondary_procedures[name] = []
+        for label in SECONDARY_PROCEDURES[name]:
+            if label not in procedure_by_name:
+                procedure_by_name[label] = Procedure(name=label, slug=slugify(label), specialty_id=specialties[name].id)
+                db.session.add(procedure_by_name[label])
+            secondary_procedures[name].append(procedure_by_name[label])
+    db.session.flush()
     insurers: list[tuple[Insurer, int, list[InsurancePlan]]] = []
     for name, slug, weight, plan_types in INSURERS:
         insurer = Insurer(name=name, slug=slug)
@@ -553,7 +630,28 @@ def _build_vocabulary() -> dict:
         db.session.add_all([CityZip(city_id=city.id, zip=zip_code) for zip_code in zips])
         cities[name] = city
     db.session.flush()
-    return {"specialties": specialties, "conditions": conditions, "procedures": procedures, "areas": areas, "insurers": insurers, "cities": cities}
+    return {"specialties": specialties, "conditions": conditions, "procedures": procedures, "areas": areas, "insurers": insurers, "cities": cities,
+            "secondary_conditions": secondary_conditions, "secondary_procedures": secondary_procedures}
+
+
+def training_plan(spec_name: str, years: int, cert_delay: int, wants_fellowship: bool) -> dict:
+    """Backdate a doctor's training from the years-of-experience quota (pure function).
+
+    certification = 2026 - years; end of training = certification - cert_delay (0/1);
+    fellowship (required for the specialty or chosen) ends the training; residency ends
+    fellowship_years earlier; the MD year is residency_years before the residency ends
+    (residency starts the year after the MD)."""
+    residency_years, fellowship_years, required = TRAINING[spec_name]
+    fellowship = required or wants_fellowship
+    cert_year = MIRROR_REFERENCE_DATE.year - years
+    end_of_training = cert_year - cert_delay
+    residency_year = end_of_training - (fellowship_years if fellowship else 0)
+    return {
+        "graduation_year": residency_year - residency_years,
+        "residency_year": residency_year,
+        "fellowship_year": end_of_training if fellowship else None,
+        "cert_year": cert_year,
+    }
 
 
 def _build_hospitals(cities: dict[str, City], used_phones: set[str]) -> dict[str, list[Hospital]]:
@@ -714,7 +812,8 @@ def _build_doctors(vocab: dict, hospitals: dict[str, list[Hospital]], practices:
         city_name = slot["city"]
         specialty = specialties[spec_name]
         years = slot["years"]
-        graduation_year = MIRROR_REFERENCE_DATE.year - years - RNG.randint(0, 1)
+        cert_delay = RNG.randint(0, 1)  # board certification 0/1 years after the end of training
+        graduation_year = MIRROR_REFERENCE_DATE.year - years  # placeholder, backdated by training_plan below
         degree = "DO" if RNG.random() < 0.2 else "MD"
         secondary = None
         if RNG.random() < 0.3:
@@ -814,11 +913,13 @@ def _build_doctors(vocab: dict, hospitals: dict[str, list[Hospital]], practices:
             other_practice = min(candidates, key=lambda p: (secondary_load.get(p.id, 0), p.id))
             secondary_load[other_practice.id] = secondary_load.get(other_practice.id, 0) + 1
             o_lat, o_lon = jitter(other_city.lat, other_city.lon)
+            # street: an 18-way draw (the size of the former shared pool, kept so the RNG stream
+            # is unchanged) folded onto the city's own pool
             location = Location(
                 doctor_id=doctor.id,
                 practice_id=other_practice.id,
                 name=f"{other_practice.name} - {RNG.choice(SECONDARY_OFFICE_TAGS)}",
-                street=f"{RNG.randint(100, 4999)} {RNG.choice(SECONDARY_STREETS)} {RNG.choice(STREET_TYPES)}",
+                street=f"{RNG.randint(100, 4999)} {SECONDARY_STREETS[other_name][RNG.randrange(18) % len(SECONDARY_STREETS[other_name])]} {RNG.choice(STREET_TYPES)}",
                 city_id=other_city.id,
                 zip=RNG.choice([z.zip for z in other_city.zips]),
                 lat=o_lat,
@@ -831,6 +932,11 @@ def _build_doctors(vocab: dict, hospitals: dict[str, list[Hospital]], practices:
             )
             apply_hours(location, RNG.choice(HOURS_PATTERNS))
             db.session.add(location)
+        # training timeline (audit D): consumes no RNG (the optional-fellowship coin is the parity
+        # of the already-random NPI) so the name / slug / NPI / office stream is unchanged
+        plan = training_plan(spec_name, years, cert_delay, int(npi[-1]) % 2 == 0)
+        slot["plan"] = plan
+        doctor.graduation_year = plan["graduation_year"]
         doctors.append(doctor)
     db.session.flush()
     return doctors
@@ -843,7 +949,8 @@ def _build_doctor_children(doctors: list[Doctor], vocab: dict) -> None:
     procedures = vocab["procedures"]
     areas = vocab["areas"]
     insurers = vocab["insurers"]
-    secondary_specs = {name: list(SECONDARY_CHOICES[name]) for name, *_rest in SPECIALTIES}
+    secondary_conditions = vocab["secondary_conditions"]
+    secondary_procedures = vocab["secondary_procedures"]
     tiers = ["Similar", "More Often", "More Than Most"]
     used_review_texts: set[str] = set()
     for doctor in doctors:
@@ -851,19 +958,19 @@ def _build_doctor_children(doctors: list[Doctor], vocab: dict) -> None:
         slot = doctor._slot
         practice = doctor._practice
         city_name = slot["city"]
-        # conditions: every condition of the doctor's own specialty first, then 2-4 from the
-        # specialty's secondary pool (SECONDARY_CHOICES) - never another specialty's list
+        # conditions: every primary condition of the doctor's own specialty (shuffled) + 3-5 from
+        # the specialty's curated secondary pool (SECONDARY_CONDITIONS) - never any other list
         own = RNG.sample(conditions[spec_name], len(conditions[spec_name]))
-        secondary_pool = [c for other in secondary_specs[spec_name] for c in conditions[other]]
-        extras = RNG.sample(secondary_pool, RNG.randint(2, min(4, len(secondary_pool))))
+        secondary_pool = secondary_conditions[spec_name]
+        extras = RNG.sample(secondary_pool, RNG.randint(3, min(5, len(secondary_pool))))
         ordered = own + extras
         for position, condition in enumerate(ordered, start=1):
             tier = RNG.choices(tiers, weights=[35, 35, 30])[0]
             db.session.add(DoctorCondition(doctor_id=doctor.id, condition_id=condition.id, tier=tier, position=position))
-        # procedures: every own procedure + 1-3 from the secondary pool
+        # procedures: every primary procedure + 2-4 from the curated secondary pool
         own_procs = RNG.sample(procedures[spec_name], len(procedures[spec_name]))
-        secondary_procs = [q for other in secondary_specs[spec_name] for q in procedures[other]]
-        other_procs = RNG.sample(secondary_procs, RNG.randint(1, min(3, len(secondary_procs))))
+        secondary_procs = secondary_procedures[spec_name]
+        other_procs = RNG.sample(secondary_procs, RNG.randint(2, min(4, len(secondary_procs))))
         for position, procedure in enumerate(own_procs + other_procs, start=1):
             tier = RNG.choices(tiers, weights=[35, 35, 30])[0]
             db.session.add(DoctorProcedure(doctor_id=doctor.id, procedure_id=procedure.id, tier=tier, position=position))
@@ -928,11 +1035,13 @@ def _build_doctor_children(doctors: list[Doctor], vocab: dict) -> None:
         doctor.callout_label = best_label if doctor.is_enhanced and doctor.ratings_count else None
         # certifications, licenses, education, languages
         spec_row = next(row for row in SPECIALTIES if row[0] == spec_name)
-        residency_year = min(doctor.graduation_year + RNG.randint(3, 5), MIRROR_REFERENCE_DATE.year)
-        cert_year = min(residency_year + RNG.randint(0, 2), MIRROR_REFERENCE_DATE.year)
+        plan = slot["plan"]  # training timeline fixed in _build_doctors (training_plan)
+        residency_year = plan["residency_year"]
+        cert_year = plan["cert_year"]
         db.session.add(Certification(doctor_id=doctor.id, issuer=spec_row[4], cert_type=spec_row[5], year=cert_year))
-        if RNG.random() < 0.3:
-            db.session.add(Certification(doctor_id=doctor.id, issuer=spec_row[4], cert_type=spec_row[6], year=min(cert_year + RNG.randint(1, 6), MIRROR_REFERENCE_DATE.year)))
+        # subspecialty certification only after a fellowship, 1-3 years after the primary board
+        if plan["fellowship_year"] is not None and RNG.random() < 0.5:
+            db.session.add(Certification(doctor_id=doctor.id, issuer=spec_row[4], cert_type=spec_row[6], year=min(cert_year + RNG.randint(1, 3), MIRROR_REFERENCE_DATE.year)))
         state_name = doctor.primary_location.city.state_name
         license_type = "Doctor of Osteopathic Medicine" if doctor.degree == "DO" else "Doctor of Medicine"
         db.session.add(License(doctor_id=doctor.id, license_type=license_type, state=state_name, expiry_date=random_date(date(2026, 10, 1), date(2031, 12, 31)), status="Active"))
@@ -941,8 +1050,8 @@ def _build_doctor_children(doctors: list[Doctor], vocab: dict) -> None:
             db.session.add(License(doctor_id=doctor.id, license_type=license_type, state=other_state, expiry_date=random_date(date(2026, 10, 1), date(2031, 12, 31)), status="Active"))
         db.session.add(Education(doctor_id=doctor.id, kind="Medical School", institution=doctor.medical_school, year=doctor.graduation_year))
         db.session.add(Education(doctor_id=doctor.id, kind="Residency", institution=RNG.choice(TRAINING_HOSPITALS), year=residency_year))
-        if RNG.random() < 0.5:
-            db.session.add(Education(doctor_id=doctor.id, kind="Fellowship", institution=RNG.choice(TRAINING_HOSPITALS), year=min(residency_year + RNG.randint(1, 3), MIRROR_REFERENCE_DATE.year)))
+        if plan["fellowship_year"] is not None:
+            db.session.add(Education(doctor_id=doctor.id, kind="Fellowship", institution=RNG.choice(TRAINING_HOSPITALS), year=plan["fellowship_year"]))
         db.session.add(DoctorLanguage(doctor_id=doctor.id, language="English", position=1))
         if RNG.random() < 0.45:
             db.session.add(DoctorLanguage(doctor_id=doctor.id, language=RNG.choice(LANGUAGES), position=2))
@@ -1016,6 +1125,20 @@ def _bio_html(doctor: Doctor, spec_name: str, practice: Practice, city_name: str
         ) + "</p>",
     ]
     return "\n".join(paragraphs)
+
+
+def _bound_review_stars(doctors: list[Doctor]) -> None:
+    """Keep the mean of a doctor's visible review stars within 1.0 of the profile average:
+    while it drifts further, nudge the review (lowest id first) farthest from the average one
+    star toward it. No RNG."""
+    for doctor in doctors:
+        if doctor.avg_rating is None or not doctor.reviews:
+            continue
+        reviews = sorted(doctor.reviews, key=lambda r: r.id)
+        while abs(sum(r.rating for r in reviews) / len(reviews) - doctor.avg_rating) > 1.0:
+            farthest = max(reviews, key=lambda r: (abs(r.rating - doctor.avg_rating), -r.id))
+            farthest.rating += 1 if farthest.rating < doctor.avg_rating else -1
+    db.session.flush()
 
 
 def _ensure_similar_tiers() -> None:
@@ -1219,6 +1342,7 @@ def seed_database(force: bool = False) -> None:
     practices = _build_practices(vocab["cities"], used_phones)
     doctors = _build_doctors(vocab, hospitals, practices, used_phones)
     _build_doctor_children(doctors, vocab)
+    _bound_review_stars(doctors)
     _ensure_similar_tiers()
     _build_awards(doctors, vocab)
     _finish_hubs(Hospital.query.order_by(Hospital.id).all(), Practice.query.order_by(Practice.id).all())
