@@ -204,6 +204,20 @@ class ContractTests(unittest.TestCase):
         self.assertNotIn("Antetokounmpo rim pressure", html)
         self.assertNotIn("Lillard range", html)
 
+    def test_homepage_teaser_does_not_leak_article_answer(self):
+        sys.path.insert(0, str(SITE_DIR))
+        import app as nba_app
+
+        home = nba_app.app.test_client().get("/").get_data(as_text=True)
+        detail = nba_app.app.test_client().get(
+            "/news/bucks-focus-on-half-court-spacing"
+        ).get_data(as_text=True)
+
+        self.assertNotIn("Antetokounmpo rim pressure", home)
+        self.assertNotIn("Lillard range", home)
+        self.assertIn("Antetokounmpo rim pressure", detail)
+        self.assertIn("Lillard range", detail)
+
     def test_seeded_benchmark_carts_are_empty(self):
         with sqlite3.connect(SITE_DIR / "instance_seed" / "nba.db") as connection:
             self.assertEqual(connection.execute("SELECT COUNT(*) FROM cart_items").fetchone()[0], 0)

@@ -1134,6 +1134,11 @@ def index():
     groups = article_groups(articles)
     around_items = groups.get("Around the NBA", [])
     around_items = (around_items + [article for article in articles if article not in around_items])[:10]
+    around_teasers = {
+        "bucks-focus-on-half-court-spacing": (
+            "Milwaukee is refining its half-court shape around its star duo."
+        ),
+    }
     recap_images = {
         recaps[0].id: "/static/images/articles/cle-det-recap.jpg",
         recaps[1].id: "/static/images/articles/okc-lal-recap.jpg",
@@ -1146,6 +1151,7 @@ def index():
         trending=articles[3:11],
         around=groups,
         around_items=around_items,
+        around_teasers=around_teasers,
         games=scoreboard_games(),
         recaps=recaps,
         recap_images=recap_images,
