@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Edit Account - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container auth-shell">
+    <form class="auth-card wide" method="post">
+        <h1>Edit profile</h1>
+        <div class="form-grid">
+            <label>Display name
+                <input type="text" name="display_name" value="{{ current_user.display_name }}">
+            </label>
+            <label>City
+                <input type="text" name="city" value="{{ current_user.city }}">
+            </label>
+            <label>Country
+                <input type="text" name="country" value="{{ current_user.country }}">
+            </label>
+            <label>Postal code
+                <input type="text" name="postal_code" value="{{ current_user.postal_code }}">
+            </label>
+            <label>Address line
+                <input type="text" name="address_line1" value="{{ current_user.address_line1 }}">
+            </label>
+            <label>Favorite format
+                <select name="favorite_format">
+                    {% for fmt_slug, fmt_name in format_nav %}
+                        {% if fmt_slug != 'all' %}
+                            <option value="{{ fmt_slug }}" {% if current_user.favorite_format == fmt_slug %}selected{% endif %}>{{ fmt_name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Favorite scene
+                <select name="favorite_scene">
+                    <option value="">No scene selected</option>
+                    {% for scene in scenes %}
+                        <option value="{{ scene.slug }}" {% if current_user.favorite_scene and current_user.favorite_scene.slug == scene.slug %}selected{% endif %}>{{ scene.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="span-2">Bio
+                <textarea name="bio" rows="5">{{ current_user.bio }}</textarea>
+            </label>
+        </div>
+        <button class="button-primary" type="submit">Save changes</button>
+    </form>
+</section>
+{% endblock %}

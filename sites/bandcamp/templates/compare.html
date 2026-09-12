@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Compare Releases - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <h1>Compare releases</h1>
+            <p>Useful for format and decision tasks that need a side-by-side view.</p>
+        </div>
+    </div>
+    <form class="filters-form compare-form" method="get">
+        <label>Left release
+            <select name="left">
+                {% for album in featured %}
+                    <option value="{{ album.slug }}" {% if left and left.slug == album.slug %}selected{% endif %}>{{ album.title }} - {{ album.artist.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <label>Right release
+            <select name="right">
+                {% for album in featured %}
+                    <option value="{{ album.slug }}" {% if right and right.slug == album.slug %}selected{% endif %}>{{ album.title }} - {{ album.artist.name }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button class="button-primary" type="submit">Compare</button>
+    </form>
+
+    {% if left and right %}
+        <div class="compare-grid">
+            {% for album in [left, right] %}
+                <article class="compare-card">
+                    <img src="{{ url_for('static', filename=album.cover_image) }}" alt="{{ album.title }}">
+                    <h2>{{ album.title }}</h2>
+                    <p>{{ album.artist.name }}</p>
+                    <div class="compare-metric"><span>Genre</span><strong>{{ album.primary_genre.name }}</strong></div>
+                    <div class="compare-metric"><span>Scene</span><strong>{{ album.scene.name.split(',')[0] }}</strong></div>
+                    <div class="compare-metric"><span>Tracks</span><strong>{{ album.track_count }}</strong></div>
+                    <div class="compare-metric"><span>Runtime</span><strong>{{ album.duration_seconds|duration }}</strong></div>
+                    <div class="compare-metric"><span>Starting price</span><strong>{{ album.price_from()|money }}</strong></div>
+                    <div class="compare-metric"><span>Formats</span><strong>{{ album.format_kinds()|join(' / ') }}</strong></div>
+                    <div class="compare-metric"><span>Release date</span><strong>{{ album.release_date|compactdate }}</strong></div>
+                </article>
+            {% endfor %}
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

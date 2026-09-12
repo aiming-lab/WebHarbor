@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ track.title }} - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block track-detail">
+    <div class="track-card">
+        <p class="eyebrow">Track detail</p>
+        <h1>{{ track.title }}</h1>
+        <p>Track {{ track.track_number }} on <a href="{{ url_for('album_page', slug=album.slug) }}">{{ album.title }}</a> by <a href="{{ url_for('artist_page', slug=album.artist.slug) }}">{{ album.artist.name }}</a>.</p>
+        <div class="album-stats">
+            <span>{{ track.duration_seconds|duration }}</span>
+            <span>{{ album.primary_genre.name }}</span>
+            <span>{{ album.release_date|longdate }}</span>
+        </div>
+        <div class="preview-panel static-open">
+            <div class="wave">
+                <span></span><span></span><span></span><span></span><span></span>
+            </div>
+            <p>{{ track.preview_hook }}</p>
+        </div>
+        <blockquote class="lyrics-quote">{{ track.lyrics_excerpt }}</blockquote>
+    </div>
+    <div class="track-card">
+        <img src="{{ url_for('static', filename=album.cover_image) }}" alt="{{ album.title }} cover">
+        <h2>Album context</h2>
+        <p>{{ album.description }}</p>
+        <a class="button-primary" href="{{ url_for('album_page', slug=album.slug) }}">Back to album</a>
+    </div>
+</section>
+{% endblock %}
