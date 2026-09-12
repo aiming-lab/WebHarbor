@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
-"""Check WebHarbor control-plane reset behavior, homepage smoke, and DB MD5s."""
+"""Check WebHarbor control-plane reset behavior, homepage smoke, and DB MD5s.
+
+The DB parity check hashes whichever DB source is configured and always reports
+which one it read (``md5_source``). The control plane resets
+``/opt/WebSyn/<site>/instance`` inside the deployment, which is not the repository
+checkout when the environment runs in Docker, so a parity verdict is only reported
+against a source the caller actually pointed at.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +15,8 @@ import ast
 import hashlib
 import json
 import re
+import shlex
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -46,6 +55,7 @@ class SiteCheck:
     home_http_status: int | None
     home_detail: str
     md5_status: str
+    md5_source: str
     md5_runtime_db: str | None
     md5_seed_db: str | None
     md5_runtime_hash: str | None
@@ -141,20 +151,24 @@ class Collector:
         self.warnings.append(Message("WARN", message, site=site, url=url, file=file))
 
 
+class RegistryError(Exception):
+    """A site registry could not be read or the two registries disagree."""
+
+
 def parse_site_array(text: str, file_label: str) -> tuple[list[str], int]:
     match = re.search(r"\bSITES\s*=\s*(\(.+?\)|\[.+?\])", text, re.DOTALL)
     if not match:
-        raise ValueError(f"Could not parse SITES from {file_label}")
+        raise RegistryError(f"Could not parse SITES from {file_label}")
     block = match.group(1)
     if block.startswith("("):
         sites = re.findall(r"[A-Za-z0-9_]+", block)
     else:
         sites = ast.literal_eval(block)
         if not isinstance(sites, list):
-            raise ValueError(f"SITES is not a list in {file_label}")
+            raise RegistryError(f"SITES is not a list in {file_label}")
     base_match = re.search(r"\bBASE_PORT\s*=\s*(\d+)", text)
     if not base_match:
-        raise ValueError(f"Could not parse BASE_PORT from {file_label}")
+        raise RegistryError(f"Could not parse BASE_PORT from {file_label}")
     return sites, int(base_match.group(1))
 
 
@@ -162,14 +176,43 @@ def build_port_map(sites: list[str], base_port: int) -> dict[str, int]:
     return {site: base_port + index for index, site in enumerate(sites)}
 
 
+def _read_registry(root: Path, name: str) -> str:
+    try:
+        return (root / name).read_text(encoding="utf-8", errors="replace")
+    except FileNotFoundError:
+        raise RegistryError(f"{name} is missing from {root}") from None
+    except OSError as exc:
+        raise RegistryError(f"{name} could not be read: {exc}") from None
+
+
 def discover_sites(root: Path) -> dict[str, int]:
-    websyn_text = (root / "websyn_start.sh").read_text(encoding="utf-8", errors="replace")
-    control_text = (root / "control_server.py").read_text(encoding="utf-8", errors="replace")
+    """Return the registered site -> port map, or raise RegistryError.
+
+    Registry drift is a finding this checker is meant to report, so every failure
+    here is raised as RegistryError and rendered as a structured error by main().
+    """
+    websyn_text = _read_registry(root, "websyn_start.sh")
+    control_text = _read_registry(root, "control_server.py")
     websyn_sites, websyn_base = parse_site_array(websyn_text, "websyn_start.sh")
     control_sites, control_base = parse_site_array(control_text, "control_server.py")
-    if websyn_sites != control_sites or websyn_base != control_base:
-        raise ValueError(
-            "websyn_start.sh and control_server.py registration lists are out of sync"
+    if websyn_sites != control_sites:
+        only_websyn = [s for s in websyn_sites if s not in control_sites]
+        only_control = [s for s in control_sites if s not in websyn_sites]
+        detail = []
+        if only_websyn:
+            detail.append(f"only in websyn_start.sh: {', '.join(only_websyn)}")
+        if only_control:
+            detail.append(f"only in control_server.py: {', '.join(only_control)}")
+        if not detail:
+            detail.append("same sites in a different order")
+        raise RegistryError(
+            "websyn_start.sh and control_server.py registration lists are "
+            f"out of sync ({'; '.join(detail)})"
+        )
+    if websyn_base != control_base:
+        raise RegistryError(
+            f"BASE_PORT differs between the registries: websyn_start.sh={websyn_base}, "
+            f"control_server.py={control_base}"
         )
     return build_port_map(websyn_sites, websyn_base)
 
@@ -206,6 +249,137 @@ def resolve_db_pair(site_root: Path, site: str) -> tuple[Path | None, Path | Non
         name = shared_names[0]
         return runtime_by_name[name], seed_by_name[name], None
     return None, None, "could not infer a unique runtime/seed DB pair"
+
+
+DOCKER_SITE_ROOT = "/opt/WebSyn"
+
+
+@dataclass
+class DbCheck:
+    status: str
+    source: str
+    runtime_db: str | None
+    seed_db: str | None
+    runtime_hash: str | None
+    seed_hash: str | None
+    detail: str
+
+
+def _pick_db(names: list[str], site: str) -> tuple[str | None, str | None]:
+    """Choose the one DB that represents a site, mirroring resolve_db_pair()."""
+    if len(names) == 1:
+        return names[0], None
+    preferred = f"{site}.db"
+    if preferred in names:
+        return preferred, None
+    return None, "could not infer a unique runtime/seed DB pair"
+
+
+def docker_md5(container: str, dirs: list[str]) -> dict[str, str]:
+    """Hash the single *.db in each directory inside a running container."""
+    hashes: dict[str, str] = {}
+    for directory in dirs:
+        cmd = ["docker", "exec", container, "sh", "-c",
+               f"md5sum {shlex.quote(directory)}/*.db"]
+        try:
+            proc = subprocess.run(cmd, capture_output=True, text=True, timeout=60)
+        except (OSError, subprocess.SubprocessError) as exc:
+            raise RuntimeError(f"docker exec failed: {exc}") from None
+        if proc.returncode != 0:
+            raise RuntimeError(
+                f"docker exec failed for {directory}: "
+                f"{proc.stderr.strip() or f'exit {proc.returncode}'}"
+            )
+        entries: dict[str, str] = {}
+        for line in proc.stdout.splitlines():
+            parts = line.split(None, 1)
+            if len(parts) == 2:
+                entries[Path(parts[1].strip()).name] = parts[0]
+        name, problem = _pick_db(sorted(entries), Path(directory).parent.name)
+        if problem or name is None:
+            raise RuntimeError(problem or "no *.db found")
+        hashes[directory] = entries[name]
+    return hashes
+
+
+def check_db_parity(
+    site: str,
+    *,
+    repo_root: Path,
+    db_root: str | None,
+    docker_container: str | None,
+    container_hasher: Any,
+    collector: Collector,
+    reset_succeeded: bool,
+) -> DbCheck:
+    """Compare a site's runtime DB against its seed in the configured source.
+
+    The control plane resets DOCKER_SITE_ROOT/<site>/instance inside the deployment.
+    Only a source the caller pointed at is hashed, and the source is always reported,
+    so a PASS can never be read as a statement about an environment that was not read.
+    """
+    if docker_container:
+        base = f"{DOCKER_SITE_ROOT}/{site}"
+        source = f"docker:{docker_container}:{base}"
+        runtime_dir, seed_dir = f"{base}/instance", f"{base}/instance_seed"
+        hasher = container_hasher or docker_md5
+        try:
+            hashes = hasher(docker_container, [runtime_dir, seed_dir])
+        except Exception as exc:  # noqa: BLE001 - reported, never raised to the user
+            collector.error(f"could not hash DBs in container: {exc}", site=site)
+            return DbCheck("FAIL", source, runtime_dir, seed_dir, None, None, str(exc))
+        runtime_hash, seed_hash = hashes.get(runtime_dir), hashes.get(seed_dir)
+        if runtime_hash and runtime_hash == seed_hash:
+            return DbCheck("PASS", source, runtime_dir, seed_dir, runtime_hash,
+                           seed_hash, "runtime DB matches seed DB")
+        detail = (
+            "runtime DB MD5 differs from seed DB after reset" if reset_succeeded
+            else "runtime DB MD5 differs from seed DB (no successful reset this run)"
+        )
+        collector.error(detail, site=site, file=runtime_dir)
+        return DbCheck("FAIL", source, runtime_dir, seed_dir, runtime_hash, seed_hash,
+                       detail)
+
+    explicit = db_root is not None
+    base_dir = Path(db_root) if explicit else repo_root / "sites"
+    site_root = base_dir / site
+    runtime_db, seed_db, problem = resolve_db_pair(site_root, site)
+    if problem:
+        source = f"local:{site_root}"
+        if explicit:
+            detail = f"{problem} under --db-root {base_dir}"
+            collector.error(detail, site=site, file=str(site_root))
+            return DbCheck("FAIL", source, None, None, None, None, detail)
+        if "missing locally" in problem:
+            # The documented docker workflow keeps instance/ inside the container, so
+            # its absence here is an expected configuration rather than a fault.
+            return DbCheck(
+                "SKIP", "none", None, None, None, None,
+                "no DB source configured; the control plane resets "
+                f"{DOCKER_SITE_ROOT}/{site}/instance inside the deployment. "
+                "Pass --docker-container or --db-root to check DB parity.",
+            )
+        collector.warn(problem, site=site, file=str(site_root))
+        return DbCheck("SKIP", source, None, None, None, None, problem)
+
+    assert runtime_db is not None and seed_db is not None
+    source = f"local:{site_root}"
+    if not reset_succeeded:
+        # There is no reset to attribute a parity verdict to, and this checkout is not
+        # necessarily the reset target, so reporting PASS here would assert something
+        # that was never observed.
+        return DbCheck(
+            "SKIP", source, str(runtime_db), str(seed_db), None, None,
+            "no successful reset to verify; DB parity not evaluated",
+        )
+    runtime_hash, seed_hash = md5_file(runtime_db), md5_file(seed_db)
+    if runtime_hash == seed_hash:
+        return DbCheck("PASS", source, str(runtime_db), str(seed_db), runtime_hash,
+                       seed_hash, "runtime DB matches seed DB")
+    detail = "local runtime DB differs from local seed DB"
+    collector.error(detail, site=site, file=str(runtime_db))
+    return DbCheck("FAIL", source, str(runtime_db), str(seed_db), runtime_hash,
+                   seed_hash, detail)
 
 
 def http_request(
@@ -277,9 +451,11 @@ def check_site(
     collector: Collector,
     use_reset_all: bool,
     reset_all_ok: bool,
+    db_root: str | None = None,
+    docker_container: str | None = None,
+    container_hasher: Any = None,
 ) -> SiteCheck:
     homepage_url = build_homepage_url(base_host, port)
-    site_root = root / "sites" / site
 
     if use_reset_all:
         if reset_all_ok:
@@ -289,8 +465,9 @@ def check_site(
         else:
             reset_status = "FAIL"
             reset_code = None
+            # The failure is already recorded once against /reset-all itself; do not
+            # repeat it for every registered site.
             reset_detail = "reset-all failed; per-site reset was not attempted"
-            collector.error("reset-all failed; site reset considered failed", site=site, url=f"{control_url}/reset-all")
     else:
         reset_url = f"{control_url}/reset/{site}"
         ok, status_code, detail = http_request(reset_url, method="POST", timeout=timeout)
@@ -311,28 +488,15 @@ def check_site(
         home_status = "FAIL"
         collector.error("homepage smoke check failed", site=site, url=homepage_url)
 
-    runtime_db, seed_db, md5_skip_reason = resolve_db_pair(site_root, site)
-    if md5_skip_reason:
-        md5_status = "SKIP"
-        collector.warn(md5_skip_reason, site=site, file=str(site_root))
-        runtime_path = None
-        seed_path = None
-        runtime_hash = None
-        seed_hash = None
-        md5_detail = md5_skip_reason
-    else:
-        assert runtime_db is not None and seed_db is not None
-        runtime_hash = md5_file(runtime_db)
-        seed_hash = md5_file(seed_db)
-        runtime_path = str(runtime_db)
-        seed_path = str(seed_db)
-        if runtime_hash == seed_hash:
-            md5_status = "PASS"
-            md5_detail = "runtime DB matches seed DB"
-        else:
-            md5_status = "FAIL"
-            md5_detail = "runtime DB MD5 differs from seed DB after reset"
-            collector.error(md5_detail, site=site, file=runtime_path)
+    db = check_db_parity(
+        site,
+        repo_root=root,
+        db_root=db_root,
+        docker_container=docker_container,
+        container_hasher=container_hasher,
+        collector=collector,
+        reset_succeeded=reset_status == "PASS",
+    )
 
     return SiteCheck(
         site=site,
@@ -344,12 +508,13 @@ def check_site(
         home_status=home_status,
         home_http_status=home_status_code,
         home_detail=home_detail,
-        md5_status=md5_status,
-        md5_runtime_db=runtime_path,
-        md5_seed_db=seed_path,
-        md5_runtime_hash=runtime_hash,
-        md5_seed_hash=seed_hash,
-        md5_detail=md5_detail,
+        md5_status=db.status,
+        md5_source=db.source,
+        md5_runtime_db=db.runtime_db,
+        md5_seed_db=db.seed_db,
+        md5_runtime_hash=db.runtime_hash,
+        md5_seed_hash=db.seed_hash,
+        md5_detail=db.detail,
     )
 
 
@@ -362,10 +527,40 @@ def run_checks(
     timeout: float = 10.0,
     strict: bool = False,
     reset_all: bool = False,
+    db_root: str | None = None,
+    docker_container: str | None = None,
+    container_hasher: Any = None,
 ) -> SmokeResult:
     collector = Collector()
     control_url = normalize_control_url(control_url)
-    site_map = discover_sites(root)
+
+    def empty(detail: str) -> SmokeResult:
+        return SmokeResult(
+            root=str(root),
+            control_url=control_url,
+            base_host=base_host,
+            timeout=timeout,
+            strict=strict,
+            reset_all=reset_all,
+            control_server=ControlCheck(
+                url=f"{control_url}/health",
+                status="SKIP",
+                http_status=None,
+                detail=detail,
+            ),
+            sites_discovered=0,
+            sites_checked=0,
+            site_checks=[],
+            errors=collector.errors,
+            warnings=collector.warnings,
+        )
+
+    try:
+        site_map = discover_sites(root)
+    except RegistryError as exc:
+        # Registry drift and unreadable registries are findings, not crashes.
+        collector.error(str(exc), file=str(root))
+        return empty("site registry could not be resolved")
     if site is not None:
         if site not in site_map:
             collector.error(f"unknown site '{site}'")
@@ -415,6 +610,9 @@ def run_checks(
             collector=collector,
             use_reset_all=reset_all,
             reset_all_ok=reset_all_ok,
+            db_root=db_root,
+            docker_container=docker_container,
+            container_hasher=container_hasher,
         )
         for site_slug, port in filtered_sites.items()
     ]
@@ -473,7 +671,7 @@ def render_human(result: SmokeResult) -> str:
         )
         lines.append(f"  reset: {site.reset_detail}")
         lines.append(f"  home: {site.home_detail}")
-        lines.append(f"  md5: {site.md5_detail}")
+        lines.append(f"  md5: [{site.md5_source}] {site.md5_detail}")
 
     findings = [*result.errors, *result.warnings]
     if findings:
@@ -511,6 +709,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=10.0,
         help="HTTP timeout in seconds for control and homepage checks",
     )
+    parser.add_argument(
+        "--db-root",
+        help=(
+            "Deployment root holding <site>/instance and <site>/instance_seed. "
+            "Defaults to this checkout's sites/ directory, which is NOT what the "
+            "control plane resets when the environment runs in Docker."
+        ),
+    )
+    parser.add_argument(
+        "--docker-container",
+        help=(
+            "Hash each site's DBs inside this running container under "
+            f"{DOCKER_SITE_ROOT}/<site>, i.e. where the control plane actually resets them."
+        ),
+    )
     parser.add_argument("--strict", action="store_true", help="Treat warnings as failures")
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON only")
     parser.add_argument(
@@ -537,6 +750,8 @@ def main(
         timeout=args.timeout,
         strict=args.strict,
         reset_all=args.reset_all,
+        db_root=args.db_root,
+        docker_container=args.docker_container,
     )
     stream = stdout if stdout is not None else sys.stdout
     if args.json:
