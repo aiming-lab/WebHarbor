@@ -87,11 +87,120 @@ class BoundaryTests(unittest.TestCase):
         with self.client.session_transaction(base_url=base_url) as session:
             return session.get('_user_id')
 
+    def test_home_and_news_sort_by_publication_date_and_filter_category(self):
+        m = self.module
+        with m.app.app_context():
+            m.db.session.add_all([
+                m.NewsItem(id=1, headline='Newest film news', published_at='2025-02-14', category='Movies'),
+                m.NewsItem(id=9, headline='Old television news', published_at='2024-01-01', category='TV'),
+            ])
+            m.db.session.commit()
+        for path in ('/', '/news'):
+            body = self.client.get(path).get_data(as_text=True)
+            self.assertLess(body.index('Newest film news'), body.index('Old television news'))
+        response = self.client.get('/news?category=Movies')
+        self.assertIn(b'Newest film news', response.data)
+        self.assertNotIn(b'Old television news', response.data)
+        self.assertEqual(self.client.get('/news/1').status_code, 200)
+        self.assertEqual(self.client.get('/news/999').status_code, 404)
+
+    def test_recently_viewed_is_session_local_and_clear_requires_csrf(self):
+        self.assertEqual(self.client.get('/title/ttsynthetic').status_code, 200)
+        with self.client.session_transaction() as state:
+            self.assertEqual(state['recent_titles'], ['ttsynthetic'])
+        self.client.get('/title/ttsynthetic')
+        with self.client.session_transaction() as state:
+            self.assertEqual(state['recent_titles'], ['ttsynthetic'])
+        other = self.module.app.test_client()
+        self.assertIn(b'You have no recently viewed pages', other.get('/').data)
+        self.assertEqual(self.client.post('/recently-viewed/clear').status_code, 400)
+        self.assertEqual(self.client.get('/recently-viewed/clear').status_code, 405)
+        response = self.client.post('/recently-viewed/clear', data={'csrf_token': self.token('/')})
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(b'You have no recently viewed pages', self.client.get('/').data)
+
+    def test_home_cards_use_authenticated_watchlist_state(self):
+        m = self.module
+        with m.app.app_context():
+            title = m.db.session.get(m.Title, 1)
+            title.top_rank = 1
+            m.db.session.commit()
+        self.assertIn(b'Sign in to add Synthetic title', self.client.get('/').data)
+        self.login()
+        body = self.client.get('/').data
+        self.assertIn(b'Remove Synthetic title from Watchlist', body)
+        self.assertIn(b'In Watchlist', body)
+        response = self.client.post('/title/ttsynthetic/watchlist', data={'csrf_token': self.token('/')},
+                                    headers={'Referer': 'http://localhost/'})
+        self.assertEqual(response.location, '/')
+        self.assertIn(b'Add Synthetic title to Watchlist', self.client.get('/').data)
+
+    def test_home_feature_escapes_source_text_and_unknown_features_404(self):
+        m = self.module
+        with m.app.app_context():
+            m.db.session.add(m.HomeFeature(id='synthetic', kind='topic', position=1,
+                heading='<script>alert(1)</script>', subtitle='Source description',
+                source_url='https://www.imdb.com/example/', captured_at='2026-09-10',
+                payload={}))
+            m.db.session.commit()
+        for path in ('/', '/feature/synthetic'):
+            body = self.client.get(path).data
+            self.assertIn(b'&lt;script&gt;alert(1)&lt;/script&gt;', body)
+            self.assertNotIn(b'<script>alert(1)</script>', body)
+        self.assertEqual(self.client.get('/feature/missing').status_code, 404)
+
     def snapshot(self):
         # Rows, including password hashes, are compared in memory, never logged.
         with self.module.app.app_context():
             return {table.name: Counter(tuple(row) for row in self.module.db.session.execute(table.select()))
                     for table in self.module.db.metadata.sorted_tables}
+
+    def test_snapshot_collections_are_dated_local_and_do_not_invent_missing_facts(self):
+        m = self.module
+        with m.app.app_context():
+            for kind, payload in [('streaming', {'source_id': 'ttsynthetic', 'service': 'PRIME VIDEO', 'rating': '8.0'}),
+                                  ('starmeter', {'source_id': 'nm1', 'rank': 7, 'known_for': ['Source film']}),
+                                  ('birthday', {'source_id': 'nm1'}),
+                                  ('tv_schedule', {'source_id': 'tt2', 'episode': 'New: Season 1', 'air_date': 'Wed, Sep 16'})]:
+                m.db.session.add(m.HomeFeature(id=kind + '-test', kind=kind, position=1,
+                    heading='Source ' + kind, subtitle='Source data', image_path='images/test.jpg',
+                    poster_path='images/test.jpg', source_url='https://www.imdb.com/',
+                    captured_at='2026-09-10', payload=payload))
+            m.db.session.commit()
+        for kind in ('streaming', 'birthday', 'tv_schedule', 'starmeter'):
+            for path in ('/discover/' + kind, '/feature/' + kind + '-test'):
+                response = self.client.get(path)
+                self.assertEqual(response.status_code, 200)
+                self.assertIn(b'2026-09-10', response.data)
+                self.assertIn(('Source ' + kind).encode(), response.data)
+        detail = self.client.get('/feature/streaming-test').data
+        self.assertIn(b'/title/ttsynthetic', detail)
+        self.assertIn(b'not available in this offline mirror', detail)
+        self.assertNotIn(b'Age at capture', self.client.get('/feature/birthday-test').data)
+        chart_detail = self.client.get('/feature/starmeter-test').data
+        self.assertIn(b'STARmeter rank at capture</dt><dd>7</dd>', chart_detail)
+        self.assertIn(b'Source film', chart_detail)
+        self.assertNotIn(b'Add to favorite', chart_detail)
+        self.assertIn(b'person-rank">7</span>', self.client.get('/').data)
+        self.assertNotIn(b'IMDb rating at capture', self.client.get('/feature/tv_schedule-test').data)
+        self.assertEqual(self.client.get('/discover/unknown').status_code, 404)
+
+    def test_home_release_and_favorite_ordering_use_real_fields(self):
+        m = self.module
+        with m.app.app_context():
+            title = m.db.session.get(m.Title, 1)
+            title.release_date = '2025-02-01'
+            m.db.session.add(m.Title(id=2, tt_id='ttsecond', primary_title='Second release',
+                release_date='2025-01-01', num_votes=1000, rating_avg=9.0))
+            m.db.session.add(m.Title(id=3, tt_id='ttinvalid', primary_title='Unparsed release',
+                release_date='Release date | 2027', num_votes=1, rating_avg=8.0))
+            m.db.session.commit()
+        body = self.client.get('/').get_data(as_text=True)
+        releases = body.split('Latest catalog releases', 1)[1].split('</section>', 1)[0]
+        self.assertLess(releases.index('Synthetic title'), releases.index('Second release'))
+        self.assertNotIn('Unparsed release', releases)
+        favorites = body.split('Fan favorites', 1)[1].split('</section>', 1)[0]
+        self.assertLess(favorites.index('Second release'), favorites.index('Synthetic title'))
 
     def assert_unchanged(self, before):
         after = self.snapshot()

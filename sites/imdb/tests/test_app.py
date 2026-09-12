@@ -4,12 +4,14 @@ Run with the Dockerfile dependencies: python sites/imdb/tests/test_app.py
 These tests do not replace browser task execution or visual acceptance.
 """
 import importlib.util
+from html import unescape
 from pathlib import Path
 import re
 import shutil
 import sys
 import tempfile
 import unittest
+from urllib.parse import urlsplit
 
 
 class ReviewInputTests(unittest.TestCase):
@@ -21,6 +23,7 @@ class ReviewInputTests(unittest.TestCase):
         for filename in ('app.py', 'seed_data.py'):
             shutil.copyfile(site / filename, root / filename)
         (root / 'templates').symlink_to(site / 'templates', target_is_directory=True)
+        (root / 'static').symlink_to(site / 'static', target_is_directory=True)
         (root / 'instance').mkdir()
         shutil.copyfile(site / 'instance_seed/imdb.db', root / 'instance/imdb.db')
         sys.path.insert(0, str(root))
@@ -57,6 +60,56 @@ class ReviewInputTests(unittest.TestCase):
     def review_count(self):
         with self.module.app.app_context():
             return self.module.Review.query.count()
+
+    def test_homepage_links_and_media_are_local_and_resolve(self):
+        response = self.client.get('/')
+        self.assertEqual(response.status_code, 200)
+        body = response.get_data(as_text=True)
+        targets = set(unescape(value) for value in re.findall(r'(?:href|src)="([^"]+)"', body))
+        for target in sorted(targets):
+            with self.subTest(target=target):
+                self.assertFalse(urlsplit(target).netloc, 'Homepage must not hotlink external assets or routes')
+                if target.startswith('/'):
+                    with self.client.get(target, follow_redirects=True) as result:
+                        self.assertEqual(result.status_code, 200)
+
+    def test_featured_today_recreates_the_full_sourced_editorial_path(self):
+        response = self.client.get('/feature/featured-today-1')
+        self.assertEqual(response.status_code, 200)
+        body = unescape(response.get_data(as_text=True))
+        self.assertIn('Here\'s what to watch in September', body)
+        self.assertIn('17 titles', body)
+        self.assertEqual(body.count('data-anticipated-item'), 17)
+        for expected in ('Hopeu', 'Practical Magic 2', 'Lanterns', 'MobLand',
+                         'Victorian Psycho'):
+            self.assertIn(expected, body)
+        targets = set(unescape(value) for value in re.findall(r'(?:href|src)="([^"]+)"', body))
+        for target in sorted(targets):
+            with self.subTest(target=target):
+                self.assertFalse(urlsplit(target).netloc,
+                                 'The editorial page must not hotlink external assets or routes')
+
+    def test_featured_today_items_have_local_detail_routes(self):
+        response = self.client.get('/feature/featured-today-1')
+        item_paths = sorted(set(re.findall(
+            r'href="(/feature/featured-today-1/title/tt\d+)"',
+            response.get_data(as_text=True))))
+        self.assertEqual(len(item_paths), 17)
+        for path in item_paths:
+            with self.subTest(path=path):
+                detail = self.client.get(path)
+                self.assertEqual(detail.status_code, 200)
+                self.assertIn(b'Back to all 17 titles', detail.data)
+        self.assertEqual(
+            self.client.get('/feature/featured-today-1/title/tt0000000').status_code,
+            404,
+        )
+
+    def test_bootstrap_on_populated_seed_preserves_database_bytes(self):
+        database = Path(self.temp.name) / 'instance/imdb.db'
+        before = database.read_bytes()
+        self.module._bootstrap()
+        self.assertEqual(database.read_bytes(), before)
 
     def test_invalid_review_ratings_do_not_write(self):
         for rating in ('nonsense', '0', '11', '2.5'):

@@ -15,7 +15,7 @@ from datetime import datetime
 from urllib.parse import unquote, urlsplit, urlunsplit
 
 from flask import (Flask, render_template, request, redirect, url_for,
-                   flash, abort, jsonify)
+                   flash, abort, jsonify, session)
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from email_validator import EmailNotValidError, validate_email
@@ -222,6 +222,21 @@ class NewsItem(db.Model):
     related_tt = db.Column(db.String(20), default='')
 
 
+class HomeFeature(db.Model):
+    """Sourced homepage snapshot, separate from the benchmark catalog."""
+    __tablename__ = 'home_features'
+    id = db.Column(db.String(80), primary_key=True)
+    kind = db.Column(db.String(30), nullable=False)
+    position = db.Column(db.Integer, nullable=False)
+    heading = db.Column(db.Text, nullable=False)
+    subtitle = db.Column(db.Text, default='')
+    image_path = db.Column(db.Text, default='')
+    poster_path = db.Column(db.Text, default='')
+    source_url = db.Column(db.Text, nullable=False)
+    captured_at = db.Column(db.String(40), nullable=False)
+    payload = db.Column(db.JSON, nullable=False)
+
+
 @login_manager.user_loader
 def load_user(uid):
     return db.session.get(User, int(uid))
@@ -359,22 +374,110 @@ def index():
     trending = (Title.query
                 .filter(Title.popularity_rank.isnot(None))
                 .order_by(Title.popularity_rank.asc())
-                .limit(8).all())
+                .limit(10).all())
     in_theaters = (Title.query
-                   .filter(Title.year.in_([2024, 2025, 2026]))
-                   .order_by(desc(Title.year), desc(Title.rating_avg))
+                   .filter(func.date(Title.release_date).isnot(None))
+                   .order_by(desc(func.date(Title.release_date)), Title.id)
                    .limit(8).all())
-    latest_news = NewsItem.query.order_by(desc(NewsItem.id)).limit(5).all()
+    fan_favorites = (Title.query.filter(Title.num_votes > 0)
+                     .order_by(desc(Title.num_votes), Title.id).limit(12).all())
+    box_office = (Title.query.filter(Title.box_office_us.isnot(None))
+                  .order_by(desc(Title.box_office_us), Title.id).limit(6).all())
+    latest_news = NewsItem.query.order_by(desc(NewsItem.published_at), desc(NewsItem.id)).limit(5).all()
+    features = {}
+    for feature in HomeFeature.query.order_by(HomeFeature.position, HomeFeature.id):
+        features.setdefault(feature.kind, []).append(feature)
+    watchlist = []
+    if current_user.is_authenticated:
+        watchlist = (Title.query.join(WatchlistItem).filter(
+            WatchlistItem.user_id == current_user.id).order_by(
+            desc(WatchlistItem.added_at), WatchlistItem.id).limit(12).all())
+    people = (Person.query.join(Credit).filter(Person.photo_path != '')
+              .group_by(Person.id).order_by(desc(func.count(Credit.id)), Person.id).limit(12).all())
+    interests = Genre.query.order_by(Genre.name).all()
+    recent_ids = session.get('recent_titles', [])[:12]
+    recent_map = {t.tt_id: t for t in Title.query.filter(Title.tt_id.in_(recent_ids)).all()}
     return render_template('index.html',
                            top_picks=top_picks,
                            trending=trending,
-                           in_theaters=in_theaters,
-                           latest_news=latest_news)
+                           in_theaters=in_theaters, fan_favorites=fan_favorites,
+                           box_office=box_office,
+                           latest_news=latest_news, features=features, watchlist=watchlist,
+                           people=people, interests=interests,
+                           recent_titles=[recent_map[key] for key in recent_ids if key in recent_map])
+
+
+@app.route('/feature/<feature_id>')
+def home_feature(feature_id):
+    feature = db.get_or_404(HomeFeature, feature_id)
+    source_id = feature.payload.get('source_id', feature.payload.get('title_id', ''))
+    title = Title.query.filter_by(tt_id=source_id).first() if source_id.startswith('tt') else None
+    person = Person.query.filter_by(nm_id=source_id).first() if source_id.startswith('nm') else None
+    feature_items = feature.payload.get('items', [])
+    item_ids = [item.get('source_id') for item in feature_items if item.get('source_id')]
+    catalog_ids = {row.tt_id for row in Title.query.filter(Title.tt_id.in_(item_ids)).all()} if item_ids else set()
+    related = (HomeFeature.query.filter(HomeFeature.kind == feature.kind,
+                HomeFeature.id != feature.id).order_by(HomeFeature.position, HomeFeature.id).limit(6).all())
+    return render_template('home_feature.html', feature=feature, catalog_title=title,
+                           catalog_person=person, related=related,
+                           feature_items=feature_items, catalog_ids=catalog_ids)
+
+
+@app.route('/feature/<feature_id>/title/<source_id>')
+def home_feature_title(feature_id, source_id):
+    feature = db.get_or_404(HomeFeature, feature_id)
+    item = next((candidate for candidate in feature.payload.get('items', [])
+                 if candidate.get('source_id') == source_id), None)
+    if item is None:
+        abort(404)
+    catalog_title = Title.query.filter_by(tt_id=source_id).first()
+    return render_template('home_feature_title.html', feature=feature, item=item,
+                           catalog_title=catalog_title)
+
+
+HOME_COLLECTIONS = {
+    'starmeter': ('Trending people', 'STARmeter ranking captured from IMDb; not a live popularity chart.'),
+    'streaming': ('Explore what’s streaming', 'Service availability captured from IMDb; playback is not bundled.'),
+    'tv_schedule': ('Current & upcoming TV shows', 'Episode and season dates displayed in the captured homepage.'),
+    'birthday': ('Born today', 'People born on the snapshot date, not the current system date.'),
+}
+
+
+@app.route('/discover/<collection>')
+def home_collection(collection):
+    if collection not in HOME_COLLECTIONS:
+        abort(404)
+    heading, description = HOME_COLLECTIONS[collection]
+    items = HomeFeature.query.filter_by(kind=collection).order_by(
+        HomeFeature.position, HomeFeature.id).all()
+    return render_template('home_collection.html', heading=heading, description=description,
+                           collection=collection, items=items)
+
+
+@app.route('/recently-viewed/clear', methods=['POST'])
+def clear_recently_viewed():
+    session.pop('recent_titles', None)
+    return redirect(url_for('index'))
+
+
+@app.route('/offline/<service>')
+def offline_service(service):
+    services = {
+        'pro': 'IMDbPro', 'app': 'Get the IMDb app', 'streaming': 'Watch options',
+        'help': 'Help', 'social': 'Follow IMDb on social', 'legal': 'Conditions and privacy',
+        'awards': 'Awards & events', 'calendar': 'Current & upcoming TV shows',
+        'birthdays': 'Born today', 'industry': 'IMDb industry services',
+    }
+    if service not in services:
+        abort(404)
+    return render_template('offline_service.html', heading=services[service], service=service)
 
 
 @app.route('/title/<tt_id>')
 def title_detail(tt_id):
     t = _get_title_or_404(tt_id)
+    recent = session.get('recent_titles', [])
+    session['recent_titles'] = [tt_id] + [key for key in recent if key != tt_id][:11]
     cast = t.cast[:15]
     featured_reviews = (Review.query
                         .filter_by(title_id=t.id)
@@ -677,8 +780,19 @@ def my_ratings():
 
 @app.route('/news')
 def news_list():
-    items = NewsItem.query.order_by(desc(NewsItem.id)).all()
-    return render_template('news.html', items=items)
+    category = request.args.get('category', '')
+    query = NewsItem.query
+    if category:
+        query = query.filter_by(category=category)
+    items = query.order_by(desc(NewsItem.published_at), desc(NewsItem.id)).all()
+    categories = [row[0] for row in db.session.query(NewsItem.category).distinct().order_by(NewsItem.category)]
+    return render_template('news.html', items=items, categories=categories, category=category)
+
+
+@app.route('/news/<int:news_id>')
+def news_detail(news_id):
+    item = db.get_or_404(NewsItem, news_id)
+    return render_template('news_detail.html', item=item)
 
 
 @app.route('/register', methods=['GET', 'POST'])

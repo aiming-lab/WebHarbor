@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block content %}
+<a class="crumb" href="{{ url_for('index') }}">‹ IMDb home</a>
+<h1>{{ heading }}</h1>
+{% if service == 'birthdays' %}<p>The catalog records birth years, but does not contain verified birth dates. A “born today” list cannot be generated reliably from those records.</p>
+{% elif service == 'calendar' %}<p>Live showtimes, episode schedules and upcoming release calendars are not included in this catalog snapshot.</p>
+{% else %}<p>This service requires the live IMDb site and is not available in the offline benchmark. No external account, subscription or payment is required to use this mirror.</p>{% endif %}
+<p>You can still search titles and people, browse charts, rate titles, write reviews and manage your Watchlist locally.</p>
+<a class="btn" href="{{ url_for('advanced_title_search') }}">Browse titles</a>
+<a class="btn" href="{{ url_for('my_watchlist') }}">Your Watchlist</a>
+{% endblock %}

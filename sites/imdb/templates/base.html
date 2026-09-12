@@ -4,74 +4,83 @@
   <meta charset="utf-8">
   <title>{% block title %}{{ site_name }}{% endblock %}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="icon" href="{{ url_for('static', filename='icons/imdb.svg') }}" type="image/svg+xml">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+  <script src="{{ url_for('static', filename='js/home.js') }}" defer></script>
 </head>
 <body class="{% block body_class %}{% endblock %}">
+<a class="skip-link" href="#main">Skip to main content</a>
 <header class="topbar">
   <div class="container nav">
-    <a class="brand" href="{{ url_for('index') }}">IMDb</a>
-    <nav class="primary-nav">
-      <details class="menu">
-        <summary><span aria-hidden="true">☰</span> Menu</summary>
-        <div class="dropdown">
-          <a href="{{ url_for('chart_top') }}">Top 250 Movies</a>
-          <a href="{{ url_for('chart_toptv') }}">Top 250 TV Shows</a>
-          <a href="{{ url_for('chart_moviemeter') }}">Most Popular</a>
-          <a href="{{ url_for('chart_boxoffice') }}">Domestic box office</a>
-          <a href="{{ url_for('news_list') }}">News</a>
-          <a href="{{ url_for('advanced_title_search') }}">Advanced Search</a>
-        </div>
-      </details>
-    </nav>
-    <form class="search" action="{{ url_for('search') }}" method="get">
+    <a class="brand" href="{{ url_for('index') }}" aria-label="IMDb home"><img src="{{ url_for('static', filename='icons/imdb.svg') }}" alt="IMDb" width="64" height="32"></a>
+    <button class="menu-toggle" type="button" data-open-dialog="nav-drawer" aria-label="Open navigation menu"><span aria-hidden="true">☰</span><span class="menu-label">Menu</span></button>
+    <form class="search" id="site-search" action="{{ url_for('search') }}" method="get">
       <select name="s" aria-label="Search type">
-        <option value="all">All</option>
-        <option value="tt">Titles</option>
-        <option value="nm">Names</option>
+        <option value="all" {% if request.args.get('s') == 'all' %}selected{% endif %}>All</option>
+        <option value="tt" {% if request.args.get('s') == 'tt' %}selected{% endif %}>Titles</option>
+        <option value="nm" {% if request.args.get('s') == 'nm' %}selected{% endif %}>Names</option>
       </select>
-      <input type="search" name="q" value="{{ request.args.get('q','') }}"
-             placeholder="Search IMDb" aria-label="Search IMDb">
+      <input type="search" name="q" value="{{ request.args.get('q','') }}" placeholder="Search IMDb" aria-label="Search IMDb">
       <button type="submit" aria-label="Search"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 6 6" stroke="currentColor" stroke-width="2"/></svg></button>
     </form>
+    <a class="imdb-pro" href="{{ url_for('offline_service', service='pro') }}">IMDb<span>Pro</span></a>
+    <button class="mobile-search" type="button" aria-label="Open search" aria-controls="site-search" aria-expanded="false"><svg aria-hidden="true" viewBox="0 0 24 24" width="24" height="24"><circle cx="10" cy="10" r="6" fill="none" stroke="currentColor" stroke-width="2"/><path d="m15 15 6 6" stroke="currentColor" stroke-width="2"/></svg></button>
     <div class="user-area">
-      <a class="nav-watchlist" href="{{ url_for('my_watchlist') }}"><span aria-hidden="true">＋</span> Watchlist</a>
+      <a class="nav-watchlist" href="{{ url_for('my_watchlist') }}">▣ Watchlist</a>
       {% if current_user.is_authenticated %}
-        <a href="{{ url_for('account') }}">{{ current_user.name }}</a>
-        <form method="post" action="{{ url_for('logout') }}" class="logout-form">
-          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-          <button type="submit">Sign Out</button>
-        </form>
+      <a class="account-link" href="{{ url_for('account') }}">{{ current_user.name }}</a>
+      <form method="post" action="{{ url_for('logout') }}" class="logout-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign Out</button></form>
       {% else %}
-        <a href="{{ url_for('login') }}">Sign In</a>
+      <a href="{{ url_for('login') }}">Sign In</a>
       {% endif %}
     </div>
+    <details class="language-menu"><summary>EN ⌄</summary><p>English is the available language in this offline catalog.</p></details>
+    <a class="use-app" href="{{ url_for('offline_service', service='app') }}">Use app</a>
   </div>
 </header>
-
-<main class="container">
+<dialog id="nav-drawer" aria-label="IMDb navigation">
+  <div class="drawer-inner">
+    <div class="drawer-head"><a class="brand" href="{{ url_for('index') }}"><img src="{{ url_for('static', filename='icons/imdb.svg') }}" alt="IMDb" width="96" height="48"></a><form method="dialog"><button class="close-dialog" aria-label="Close navigation">×</button></form></div>
+    <nav class="menu-columns" aria-label="Main navigation">
+      <section><h2>▣ Movies</h2><a href="{{ url_for('chart_top') }}">Top 250 Movies</a><a href="{{ url_for('chart_moviemeter') }}">Most Popular Movies</a><a href="{{ url_for('chart_boxoffice') }}">Domestic box office</a><a href="{{ url_for('advanced_title_search') }}">Browse Movies by Genre</a></section>
+      <section><h2>▤ TV Shows</h2><a href="{{ url_for('chart_toptv') }}">Top 250 TV Shows</a><a href="{{ url_for('advanced_title_search', title_type='tvSeries') }}">Browse TV Shows</a><a href="{{ url_for('home_collection', collection='tv_schedule') }}">TV Schedule</a></section>
+      <section><h2>▷ Watch</h2><a href="{{ url_for('index') }}#trailers">Trailers</a><a href="{{ url_for('index') }}#what-to-watch">What to Watch</a><a href="{{ url_for('my_watchlist') }}">Your Watchlist</a><a href="{{ url_for('home_collection', collection='streaming') }}">Streaming services</a></section>
+      <section><h2>☆ Awards & events</h2><a href="{{ url_for('index') }}#featured">Featured today</a><a href="{{ url_for('offline_service', service='awards') }}">Awards Central</a><a href="{{ url_for('news_list') }}">Festival news</a></section>
+      <section><h2>♙ Celebs</h2><a href="{{ url_for('home_collection', collection='starmeter') }}">Trending people</a><a href="{{ url_for('home_collection', collection='birthday') }}">Born Today</a><a href="{{ url_for('search', s='nm') }}">Search names</a></section>
+      <section><h2>☷ Community</h2><a href="{{ url_for('news_list') }}">News</a><a href="{{ url_for('my_ratings') }}">Your Ratings</a><a href="{{ url_for('advanced_title_search') }}">Advanced Search</a><a href="{{ url_for('offline_service', service='help') }}">Help Center</a></section>
+    </nav>
+  </div>
+</dialog>
+<main class="container" id="main">
   {% with msgs = get_flashed_messages(with_categories=true) %}
-    {% if msgs %}
-      <div class="flashes">
-        {% for cat, msg in msgs %}
-          <div class="flash flash-{{ cat }}">{{ msg }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
+    {% if msgs %}<div class="flashes">{% for cat, msg in msgs %}<div class="flash flash-{{ cat }}">{{ msg }}</div>{% endfor %}</div>{% endif %}
   {% endwith %}
   {% block content %}{% endblock %}
 </main>
-
 <footer class="footer">
   <div class="container">
+    {% if not current_user.is_authenticated %}<a class="sign-in-button" href="{{ url_for('login') }}">Sign in for more access</a>{% endif %}
+    <div class="footer-panels">
+      <section><h3>Follow IMDb on social</h3><div class="social-links">{% for name in ['TikTok', 'Instagram', 'X', 'YouTube', 'Facebook'] %}<a href="{{ url_for('offline_service', service='social') }}">{{ name }}</a>{% endfor %}</div></section>
+      <section><h3>Get the IMDb app</h3><p>For Android and iOS</p><a href="{{ url_for('offline_service', service='app') }}">App availability ↗</a></section>
+    </div>
     <nav class="footer-links" aria-label="Footer">
-      <a href="{{ url_for('chart_top') }}">Top 250 Movies</a>
-      <a href="{{ url_for('chart_toptv') }}">Top 250 TV Shows</a>
-      <a href="{{ url_for('advanced_title_search') }}">Advanced Search</a>
+      <a href="{{ url_for('offline_service', service='help') }}">Help</a>
+      <a href="{{ url_for('advanced_title_search') }}">Site Index</a>
+      <a href="{{ url_for('offline_service', service='pro') }}">IMDbPro</a>
+      <a href="{{ url_for('chart_boxoffice') }}">Box Office</a>
+      <a href="{{ url_for('offline_service', service='industry') }}">License IMDb Data</a>
       <a href="{{ url_for('news_list') }}">News</a>
-      <a href="{{ url_for('my_watchlist') }}">Watchlist</a>
+      <a href="{{ url_for('offline_service', service='industry') }}">Press Room</a>
+      <a href="{{ url_for('offline_service', service='industry') }}">Advertising</a>
+      <a href="{{ url_for('offline_service', service='industry') }}">Jobs</a>
+      <a href="{{ url_for('offline_service', service='legal') }}">Conditions of Use</a>
+      <a href="{{ url_for('offline_service', service='legal') }}">Privacy Policy</a>
     </nav>
-    <p>IMDb mirror &mdash; offline replica for web-agent benchmarks. Data is illustrative only.</p>
-    <p>&copy; 1990&ndash;{{ now_year }} IMDb mirror (WebHarbor)</p>
+    <p class="footer-brand">an <strong>amazon</strong> company</p>
+    <p class="offline-note">IMDb mirror · WebHarbor offline benchmark. Homepage media is a dated source snapshot; external video, apps and commercial services are not bundled.</p>
+    <p>© 1990–{{ now_year }} IMDb mirror (WebHarbor)</p>
   </div>
 </footer>
 </body>

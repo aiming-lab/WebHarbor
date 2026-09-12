@@ -2,10 +2,14 @@
 {% block title %}IMDb News{% endblock %}
 {% block content %}
 <h1>IMDb News</h1>
+<nav class="topic-chips" aria-label="News categories">
+  <a href="{{ url_for('news_list') }}">All news</a>
+  {% for name in categories %}<a href="{{ url_for('news_list', category=name) }}" {% if category == name %}aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+</nav>
 <ul class="news-list">
   {% for n in items %}
   <li>
-    <strong>{{ n.headline }}</strong>
+    <a href="{{ url_for('news_detail', news_id=n.id) }}"><strong>{{ n.headline }}</strong></a>
     <span class="news-meta">&mdash; {{ n.source }} &middot; {{ n.published_at }} &middot; {{ n.category }}</span>
     <p>{{ n.summary }}</p>
     {% if n.related_tt and n.related_tt.startswith('tt') %}
