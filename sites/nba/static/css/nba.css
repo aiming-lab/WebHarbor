@@ -1,15 +1,28 @@
 :root {
   --nba-blue: #17408b;
   --nba-red: #c9082a;
-  --ink: #15171c;
+  --nba-link: #0268d6;
+  --nba-gold: #fbcd44;
+  --ink: #000;
   --muted: #626875;
   --line: #dfe3ea;
-  --soft: #f5f6f8;
+  --rule: #ebe9e7;
+  --hairline: #e5e7eb;
+  --soft: #f6f6f6;
   --panel: #fff;
   --night: #05070d;
   --shadow: 0 12px 26px rgba(15, 23, 42, .08);
-  --nba-page: 1368px;
-  --nba-gutter: 56px;
+  /* Measured from nba.com: content column 1280px, 28px gutters, 55px nav. */
+  --nba-page: 1280px;
+  --nba-gutter: 28px;
+  --nav-h: 55px;
+  --card-radius: 4px;
+  --font-sans: Roboto, "Helvetica Neue", Arial, Helvetica, sans-serif;
+  /* Upstream sets display type in Knockout Wide, a licensed face we cannot
+     redistribute. This is the closest condensed fallback chain available from
+     local/system fonts; it degrades to plain sans where none are installed. */
+  --font-display: "Helvetica Neue", "Arial Narrow", "Roboto Condensed",
+    "Liberation Sans Narrow", "DejaVu Sans Condensed", Arial, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -17,7 +30,17 @@ body {
   margin: 0;
   background: var(--soft);
   color: var(--ink);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+h1, h2, h3, h4,
+.display-type {
+  font-family: var(--font-display);
+  font-stretch: condensed;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0;
 }
 a { color: inherit; text-decoration: none; }
 img { display: block; max-width: 100%; }
@@ -63,43 +86,136 @@ h1, h2, h3, p { margin-top: 0; }
   text-transform: uppercase;
 }
 
-.nba-global { background: #000; color: #f6f7fb; position: sticky; top: 0; z-index: 10; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+/* Global header — measured from nba.com: one 55px black bar at every width,
+   32px gutters >=1024, 16px 768-1023, flush <768, with a hamburger below
+   1280px. The inline menu scrolls horizontally so no link is ever unreachable. */
+.nba-global {
+  background: #000;
+  color: #f6f6f6;
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
 .primary-nav {
-  width: min(var(--nba-page), calc(100% - var(--nba-gutter) * 2));
+  max-width: 1440px;
   margin: 0 auto;
+  height: var(--nav-h);
   display: flex;
   align-items: center;
-  min-height: 50px;
-  padding: 0;
+  padding: 0 32px;
   background: #000;
-  gap: 20px;
 }
-.brand { display: flex; align-items: center; gap: 0; font-size: 22px; font-weight: 900; }
-.brand img { width: 50px; height: 34px; object-fit: contain; }
-.primary-nav nav, .nav-actions { display: flex; gap: 14px; align-items: center; white-space: nowrap; }
+.nav-drawer { display: none; flex: 0 0 auto; }
+.nav-drawer > summary {
+  width: 46px;
+  height: var(--nav-h);
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  cursor: pointer;
+  list-style: none;
+}
+.nav-drawer > summary::-webkit-details-marker { display: none; }
+.nav-drawer > summary::marker { content: ""; }
+.nav-drawer > summary:focus-visible { outline: 2px solid #fff; outline-offset: -2px; }
+.hamburger-box {
+  position: relative;
+  display: block;
+  width: 22px;
+  height: 3px;
+  background: #fff;
+}
+.hamburger-box::before,
+.hamburger-box::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  width: 22px;
+  height: 3px;
+  background: #fff;
+}
+.hamburger-box::before { top: -7px; }
+.hamburger-box::after { top: 7px; }
+.nav-drawer-panel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--nav-h);
+  max-height: calc(100vh - var(--nav-h));
+  overflow-y: auto;
+  background: #000;
+  border-top: 1px solid #545454;
+  padding: 8px 0 16px;
+  z-index: 30;
+}
+.nav-drawer-panel a {
+  display: block;
+  padding: 12px 32px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #f6f6f6;
+  border-bottom: 1px solid #1d1d1d;
+}
+.nav-drawer-panel a:hover,
+.nav-drawer-panel a.active { color: #fff; background: #141414; }
+.brand {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+  margin-right: 16px;
+}
+.brand img { width: 51px; height: 30px; object-fit: contain; }
 .primary-nav nav {
   flex: 1 1 auto;
   min-width: 0;
-  overflow: visible;
-  font-size: 12px;
-  font-weight: 900;
+  display: flex;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
-.primary-nav nav a, .nav-actions a { color: inherit; }
-.primary-nav nav a.active, .primary-nav nav a:hover, .nav-actions a:hover { color: #fff; text-decoration: underline; text-decoration-color: var(--nba-red); text-underline-offset: 6px; }
+.primary-nav nav::-webkit-scrollbar { display: none; }
+.primary-nav nav a,
+.nav-actions a {
+  display: flex;
+  align-items: center;
+  padding: 0 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 21px;
+  color: #fff;
+  white-space: nowrap;
+  text-transform: none;
+}
+.primary-nav nav a.active,
+.primary-nav nav a:hover,
+.nav-actions a:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-decoration-color: var(--nba-red);
+  text-underline-offset: 6px;
+}
 .nav-actions {
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
-  font-size: 12px;
-  font-weight: 900;
 }
-.league-pass-cta {
-  background: #ffd429;
-  color: #080b12;
-  padding: 9px 15px;
-  border-radius: 2px;
-  text-decoration: none;
+.nav-actions .sign-in { font-weight: 400; }
+.nav-spacer { flex: 1 1 auto; min-width: 0; }
+.primary-nav nav .league-pass-cta {
+  flex: 0 0 auto;
+  align-self: center;
+  height: 32px;
+  background: var(--nba-gold);
+  color: #000;
+  border-radius: 4px;
+  margin-right: 8px;
 }
-.league-pass-cta:hover { color: #080b12; text-decoration: none; }
+.primary-nav nav > a { flex: 0 0 auto; }
+.league-pass-cta:hover { color: #000; text-decoration: none; }
 .app-grid {
   font-size: 19px;
   line-height: 1;
@@ -110,7 +226,7 @@ h1, h2, h3, p { margin-top: 0; }
 
 .site-main { min-height: 70vh; }
 .flash-wrap, .portal-shell, .content-block, .page-hero, .article-layout, .game-detail-hero, .team-header, .player-hero-pro, .auth-layout {
-  max-width: 1240px;
+  max-width: var(--nba-page);
   margin-left: auto;
   margin-right: auto;
 }
@@ -824,7 +940,7 @@ h1, h2, h3, p { margin-top: 0; }
 .stats-subnav a.active, .standings-subnav a.active, .schedule-subnav a.active, .draft-subnav a.active, .fantasy-subnav a.active { border-bottom: 3px solid #111; color: #111; }
 
 .official-article-shell {
-  max-width: 1240px;
+  max-width: var(--nba-page);
   margin: 72px auto 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -917,7 +1033,7 @@ h1, h2, h3, p { margin-top: 0; }
   line-height: 1.25;
 }
 .official-latest {
-  max-width: 1240px;
+  max-width: var(--nba-page);
   margin: 28px auto 0;
   background: #fff;
   padding: 20px 46px;
@@ -948,7 +1064,7 @@ h1, h2, h3, p { margin-top: 0; }
 .stats-hero-official span { font-size: 22px; font-weight: 900; }
 .stats-hero-official strong { font-size: 12px; }
 .stats-page-official {
-  max-width: 1240px;
+  max-width: var(--nba-page);
   margin: 96px auto 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
@@ -1130,7 +1246,7 @@ h1, h2, h3, p { margin-top: 0; }
 }
 
 .standings-page-official {
-  max-width: 1240px;
+  max-width: var(--nba-page);
   min-width: 0;
   margin: 0 auto;
   padding: 96px 24px 42px;
@@ -1301,15 +1417,21 @@ h1, h2, h3, p { margin-top: 0; }
 .home-shell {
   max-width: var(--nba-page);
   margin: 0 auto;
-  padding: 72px 24px 38px;
+  padding: 24px var(--nba-gutter) 28px;
 }
 .home-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 296px;
+  grid-template-columns: minmax(0, 1fr) 308px;
   gap: 24px;
   align-items: start;
 }
-.home-main, .home-rail { display: grid; gap: 24px; align-content: start; }
+.home-main, .home-rail {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+  align-content: start;
+  min-width: 0;
+}
 .section-landing {
   max-width: 1360px;
   margin: 0 auto;
@@ -1385,137 +1507,274 @@ h1, h2, h3, p { margin-top: 0; }
 }
 .section-main { display: grid; gap: 24px; }
 .official-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+/* Media-led hero, measured from nba.com: 948x680 at 1440 with the media on the
+   right under a 90deg black gradient, the copy column 474px wide, and the slide
+   controls (progress bar + kicker + condensed title) pinned to the bottom. */
 .home-feature {
-  background: #070910;
+  position: relative;
+  height: 680px;
+  background: #000;
   color: #fff;
-  box-shadow: var(--shadow);
-}
-.feature-hero {
-  min-height: 520px;
-  display: grid;
-  grid-template-columns: minmax(0, 1.22fr) minmax(320px, .78fr);
-  background:
-    radial-gradient(circle at 28% 30%, rgba(23, 64, 139, .32), transparent 35%),
-    linear-gradient(90deg, #05070d 0%, #05070d 45%, #111826 100%);
+  border-radius: var(--card-radius);
   overflow: hidden;
 }
-.feature-image {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 430px;
-}
-.feature-image:after {
-  content: "";
+.feature-hero {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, rgba(5,7,13,.22), rgba(5,7,13,.88));
+  display: block;
+}
+.feature-image {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 70%;
+  height: 544px;
+  display: block;
 }
 .feature-image img {
   width: 100%;
   height: 100%;
-  max-height: 520px;
   object-fit: cover;
-  padding: 0;
-  filter: drop-shadow(0 24px 42px rgba(0,0,0,.38));
+}
+.feature-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, #000 30%, rgba(0, 0, 0, 0));
 }
 .feature-copy {
-  position: relative;
-  z-index: 1;
-  padding: 52px 40px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 474px;
+  max-width: 100%;
+  z-index: 2;
+  padding: 64px 40px 0;
   display: grid;
-  gap: 15px;
-  align-content: center;
+  align-content: start;
+  gap: 0;
 }
-.feature-copy span, .league-pass-panel span {
+.feature-copy > span,
+.league-pass-panel span {
+  display: block;
+  min-height: 32px;
+  padding: 6px 0;
   color: #fff;
-  font-size: 11px;
+  font-family: var(--font-sans);
+  font-size: 12px;
   font-weight: 900;
-  letter-spacing: .08em;
+  letter-spacing: .04em;
   text-transform: uppercase;
 }
 .feature-copy h1 {
-  margin: 0;
-  font-size: clamp(40px, 5vw, 72px);
-  line-height: .94;
-  letter-spacing: 0;
+  margin: 0 0 20px;
+  font-size: 36px;
+  line-height: 1.05;
+  color: #fff;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
-.feature-copy p { color: #d8deea; font-size: 18px; line-height: 1.45; }
+.feature-copy p {
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: 14px;
+  line-height: 16.8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .read-button {
   width: max-content;
-  border: 2px solid #fff;
-  border-radius: 999px;
-  padding: 10px 24px;
+  border: 2px solid var(--hairline);
+  border-radius: 9999px;
+  padding: 12px 32px;
+  margin-bottom: 28px;
+  font-family: var(--font-sans);
   font-weight: 900;
+  font-size: 14px;
+  line-height: 16.8px;
   text-transform: uppercase;
-  font-size: 12px;
+  color: #fff;
 }
+.feature-related h2 {
+  margin: 0 0 8px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 16.8px;
+  font-weight: 900;
+  font-stretch: normal;
+  text-transform: uppercase;
+  color: #fff;
+}
+.feature-related a {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 16px;
+  line-height: 19px;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.feature-related a:hover { text-decoration: underline; }
 .feature-tabs {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  z-index: 2;
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
-  border-top: 1px solid rgba(255,255,255,.22);
+  padding: 0 16px;
 }
 .feature-tabs a {
-  min-height: 86px;
   display: grid;
-  align-content: center;
-  gap: 7px;
-  padding: 14px 16px;
-  border-right: 1px solid rgba(255,255,255,.16);
+  align-content: start;
+  padding: 0 8px;
 }
+.feature-tabs a::before {
+  content: "";
+  display: block;
+  height: 4px;
+  border-radius: 2px;
+  margin-bottom: 12px;
+  background: #545454;
+}
+.feature-tabs a:first-child::before,
+.feature-tabs a:hover::before { background: #fff; }
 .feature-tabs span {
-  color: #cdd3df;
-  font-size: 10px;
+  margin-bottom: 12px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 14.4px;
   font-weight: 900;
   text-transform: uppercase;
+  color: #8e9196;
 }
 .feature-tabs b {
-  font-size: 13px;
-  line-height: 1.15;
+  font-family: var(--font-display);
+  font-stretch: condensed;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 13px;
   text-transform: uppercase;
+  color: #545454;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
+.feature-tabs a:first-child span,
+.feature-tabs a:hover span { color: #fff; }
+.feature-tabs a:first-child b,
+.feature-tabs a:hover b { color: #fff; }
 .nba-home-section {
   background: #fff;
-  border: 1px solid var(--line);
-  padding: 18px;
-  box-shadow: var(--shadow);
+  border-radius: var(--card-radius);
+  padding: 20px;
 }
-.official-story-row, .trend-strip, .postseason-grid, .recap-strip {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 14px;
+/* Stories: upstream renders portrait 188x282 tiles in a horizontal rail with a
+   bottom gradient and a yellow NEW chip, identical at 1440 / 768 / 390. */
+.official-story-row {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
 }
-.trend-strip, .postseason-grid, .recap-strip { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-.official-story-card, .trend-card, .postseason-card, .recap-card {
+.official-story-card {
   position: relative;
-  display: grid;
-  gap: 9px;
-  min-width: 0;
+  flex: 0 0 188px;
+  width: 188px;
+  height: 282px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 8px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #0b0e14;
+  color: #fff;
 }
-.official-story-card img, .trend-card img, .postseason-card img {
+.official-story-card img {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  aspect-ratio: 16 / 10;
+  height: 100%;
   object-fit: cover;
-  background: #eef1f6;
+}
+.official-story-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 130px;
+  background: linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, .85));
 }
 .official-story-card small {
   position: absolute;
   top: 8px;
   left: 8px;
-  background: #ffd429;
-  color: #111;
-  border-radius: 999px;
-  padding: 2px 7px;
-  font-size: 9px;
-  font-weight: 900;
+  z-index: 2;
+  background: var(--nba-gold);
+  color: #000;
+  border-radius: 8px;
+  padding: 1px 5px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 600;
   text-transform: uppercase;
 }
-.official-story-card h3, .trend-card h3, .postseason-card h3, .recap-card h3 {
+.official-story-card h3 {
+  position: relative;
+  z-index: 2;
   margin: 0;
-  font-size: 13px;
-  line-height: 1.18;
-  text-transform: uppercase;
+  font-size: 15px;
+  line-height: 15px;
+  color: #fff;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+/* Content rails: upstream keeps fixed 240px slides in a horizontal scroller at
+   every width instead of reflowing them into a grid. */
+.trend-strip, .postseason-grid, .recap-strip {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 8px 0;
+  scroll-snap-type: x proximity;
+}
+.trend-card, .postseason-card, .recap-card {
+  position: relative;
+  flex: 0 0 240px;
+  width: 240px;
+  min-width: 0;
+  display: block;
+  background: #fff;
+  border-radius: var(--card-radius);
+  scroll-snap-align: start;
+}
+.trend-card img, .postseason-card img {
+  width: 240px;
+  height: 136px;
+  object-fit: cover;
+  background: #eef1f6;
+}
+.trend-card h3, .postseason-card h3, .recap-card h3 {
+  margin: 0;
+  padding: 16px 0 4px;
+  font-size: 18px;
+  line-height: 18px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 .league-pass-panel {
   min-height: 166px;
@@ -1542,13 +1801,9 @@ h1, h2, h3, p { margin-top: 0; }
   text-transform: uppercase;
   font-size: 12px;
 }
-.recap-card {
-  border: 1px solid var(--line);
-  padding: 12px;
-}
 .recap-image {
-  width: 100%;
-  aspect-ratio: 16 / 9;
+  width: 240px;
+  height: 136px;
   object-fit: cover;
   background: #08111f;
 }
@@ -1566,34 +1821,53 @@ h1, h2, h3, p { margin-top: 0; }
   font-weight: 900;
   text-transform: uppercase;
 }
-.around-list { display: grid; gap: 13px; }
+/* Around the NBA: upstream keeps an image-left row tile (192x117 thumbnail) at
+   every width, including 390px, instead of stacking it. */
+.around-list { display: grid; gap: 16px; }
 .around-row {
   display: grid;
-  grid-template-columns: 150px 1fr;
-  gap: 16px;
-  align-items: center;
-  border-bottom: 1px solid var(--line);
-  padding-bottom: 13px;
+  grid-template-columns: 192px minmax(0, 1fr);
+  align-items: stretch;
+  background: #fff;
+  border-radius: var(--card-radius);
+  overflow: hidden;
 }
-.around-row:last-child { border-bottom: 0; padding-bottom: 0; }
 .around-row img {
-  width: 150px;
-  height: 92px;
+  width: 192px;
+  height: 117px;
   object-fit: cover;
   background: #eef1f6;
 }
-.around-row h3 { margin: 0 0 5px; text-transform: uppercase; font-size: 15px; }
-.around-row p { color: #3f4652; margin: 0 0 5px; line-height: 1.35; }
-.around-row span { color: var(--muted); font-size: 12px; }
+.around-row > div {
+  min-width: 0;
+  padding: 8px 12px;
+  display: grid;
+  align-content: space-between;
+}
+.around-row h3 { margin: 0 0 4px; font-size: 18px; line-height: 18px; }
+.around-row p {
+  color: #000;
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 16.8px;
+}
+.around-row span { color: var(--muted); font-size: 12px; line-height: 18px; }
 .home-rail .rail-card, .nba-app-card {
-  border-radius: 0;
+  border-radius: var(--card-radius);
   box-shadow: none;
 }
+.home-headlines { gap: 0; }
 .home-headlines .headline {
-  color: #222834;
-  font-size: 13px;
-  padding: 10px 0;
+  color: #000;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 16.8px;
+  font-weight: 400;
+  padding: 8px 0;
+  border-top: 0;
+  border-bottom: 1px solid var(--hairline);
 }
+.home-headlines .headline:last-child { border-bottom: 0; }
 .nba-app-card {
   background:
     linear-gradient(135deg, rgba(18,43,98,.88), rgba(7,17,31,.82)),
@@ -1641,20 +1915,29 @@ h1, h2, h3, p { margin-top: 0; }
 }
 .social-grid a {
   display: grid;
-  place-items: center;
+  justify-items: start;
+  align-content: start;
+  gap: 6px;
   min-height: 34px;
+  padding-top: 16px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 16.8px;
+  color: #000;
 }
 .social-grid img {
   width: 28px;
   height: 28px;
   object-fit: contain;
 }
+.link-stack { gap: 0; }
 .link-stack a {
-  border-bottom: 1px solid var(--line);
   padding: 8px 0;
-  color: var(--nba-blue);
-  font-size: 13px;
-  font-weight: 800;
+  color: var(--nba-link);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 16.8px;
+  font-weight: 400;
 }
 .impact-card {
   display: grid;
@@ -1666,10 +1949,10 @@ h1, h2, h3, p { margin-top: 0; }
   grid-template-columns: 42px minmax(0, 1fr) auto;
   align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--line);
-  color: #006bb6;
+  color: var(--nba-link);
+  font-family: var(--font-sans);
   font-size: 14px;
-  line-height: 1.15;
+  line-height: 16.8px;
 }
 .impact-card a:last-child { border-bottom: 0; }
 .impact-card img {
@@ -1690,13 +1973,23 @@ h1, h2, h3, p { margin-top: 0; }
 .section-title {
   display: flex;
   justify-content: space-between;
-  align-items: end;
+  align-items: baseline;
   gap: 14px;
-  margin-bottom: 14px;
-  border-bottom: 2px solid var(--ink);
+  padding-bottom: 12px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
 }
-.section-title h2 { margin-bottom: 8px; font-size: 24px; letter-spacing: 0; }
-.section-title a, .text-link { color: var(--nba-blue); font-weight: 900; font-size: 13px; }
+.section-title h2 { margin: 0; font-size: 24px; line-height: 19.2px; letter-spacing: 0; }
+.section-title a {
+  color: var(--nba-link);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  font-size: 12px;
+  line-height: 20px;
+  text-transform: none;
+  white-space: nowrap;
+}
+.text-link { color: var(--nba-link); font-weight: 400; font-size: 13px; }
 .section-title.compact { border-bottom-width: 1px; }
 
 .hero-story {
@@ -1740,8 +2033,8 @@ h1, h2, h3, p { margin-top: 0; }
 .article-card { display: grid; grid-template-columns: 145px 1fr; gap: 14px; padding: 12px; }
 .article-card img { width: 145px; height: 96px; object-fit: cover; background: #eef1f6; border-radius: 4px; }
 
-.rail-card { padding: 18px; display: grid; gap: 12px; }
-.rail-card h2 { margin-bottom: 0; font-size: 20px; }
+.rail-card { padding: 20px; display: grid; gap: 12px; background: #fff; }
+.rail-card h2 { margin-bottom: 0; font-size: 24px; line-height: 19.2px; }
 .tune-in { background: linear-gradient(135deg, #101827, #17408b); color: #fff; }
 .tune-in span { color: #cdd7ff; font-weight: 900; text-transform: uppercase; font-size: 11px; }
 .tune-in a { border-top: 1px solid rgba(255,255,255,.18); padding-top: 10px; }
@@ -1992,28 +2285,97 @@ h1, h2, h3, p { margin-top: 0; }
 .ticket-row label, .buy-box label { display: grid; gap: 5px; font-weight: 900; color: var(--muted); font-size: 12px; }
 .order + .order { margin-top: 12px; }
 
-.site-footer { background: #05070d; color: #d9deea; padding: 34px 24px; margin-top: 34px; }
-.footer-grid {
-  max-width: 1240px;
-  margin: 0 auto;
-  display: grid;
-  grid-template-columns: 1.4fr repeat(3, 1fr);
-  gap: 28px;
+/* Footer, measured from nba.com: five link columns >=1024 that become a
+   full-width accordion below it, then a rule, a social row and a legal block. */
+.site-footer {
+  background: #000;
+  color: #f6f6f6;
+  margin-top: 24px;
 }
-.footer-grid section { display: grid; align-content: start; gap: 9px; }
-.footer-grid h2, .footer-grid h3 { color: #fff; margin-bottom: 4px; }
-.footer-grid a { color: #d9deea; }
-.footer-bottom {
-  max-width: 1240px;
-  margin: 24px auto 0;
-  padding-top: 18px;
-  border-top: 1px solid rgba(255,255,255,.16);
+.footer-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px;
+}
+.footer-grid {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  flex-wrap: wrap;
+  gap: 24px;
 }
-.footer-bottom div { display: flex; gap: 10px; flex-wrap: wrap; font-weight: 900; }
+.footer-list { min-width: 0; }
+.footer-list-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 12px;
+  cursor: default;
+  font-family: var(--font-sans);
+  font-size: 10px;
+  line-height: 12px;
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #f6f6f6;
+}
+.footer-chevron { display: none; flex: 0 0 auto; }
+.footer-list > ul {
+  display: block;
+  list-style: none;
+  margin: 0;
+  padding: 0 12px;
+}
+.footer-list li { line-height: 32px; }
+.footer-list a {
+  color: #f6f6f6;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 16.8px;
+}
+.footer-list a:hover { text-decoration: underline; }
+.footer-rule {
+  border: 0;
+  border-top: 1px solid #f3f4f5;
+  margin: 32px 0;
+}
+.footer-bottom {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.footer-legal { padding: 0 16px; }
+.footer-legal p {
+  margin: 0 0 8px;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 19.5px;
+  font-weight: 700;
+  color: #f6f6f6;
+}
+.footer-legal ul {
+  display: flex;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.footer-legal li {
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 12px;
+  line-height: 19.5px;
+  padding-right: 12px;
+  margin-right: 7px;
+  border-right: 1px solid #545454;
+}
+.footer-legal li:last-child { border-right: 0; }
+.footer-social {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex: 0 0 auto;
+}
+.footer-social img { width: 22px; height: 22px; object-fit: contain; }
 
 .official-page-title {
   display: flex;
@@ -2037,7 +2399,7 @@ h1, h2, h3, p { margin-top: 0; }
 .schedule-page-official,
 .draft-page,
 .fantasy-page {
-  max-width: 1240px;
+  max-width: var(--nba-page);
   margin: 0 auto;
   padding: 108px 24px 42px;
 }
@@ -2478,46 +2840,95 @@ h1, h2, h3, p { margin-top: 0; }
   font-weight: 800;
 }
 
-@media (max-width: 1080px) {
-  :root { --nba-gutter: 32px; }
-  .primary-nav { flex-wrap: wrap; padding: 8px 0; gap: 14px; }
-  .primary-nav nav {
-    order: 3;
-    flex-basis: 100%;
-    max-width: 100%;
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 6px;
-  }
-  .nav-actions { margin-left: auto; justify-content: flex-start; flex-wrap: wrap; }
-  .portal-shell, .portal-shell.narrow, .split-layout, .article-layout, .auth-layout, .split, .product-detail, .home-layout, .section-layout, .section-hero-panel, .games-page-shell, .official-game-card, .official-article-shell, .stats-page-official, .beyond, .assist-tracker, .draft-hero-panel, .draft-lottery, .fantasy-feature-grid { grid-template-columns: 1fr; }
+/* Responsive breakpoints measured on nba.com:
+   <1280 hamburger, <1024 single column + 16px nav gutter + footer accordion,
+   <768 flush gutters + the mobile hero composition. */
+@media (max-width: 1279px) {
+  .nav-drawer { display: block; }
+}
+
+@media (max-width: 1023px) {
+  :root { --nba-gutter: 28px; }
+  .primary-nav { padding: 0 16px; }
+  .home-layout { grid-template-columns: minmax(0, 1fr); }
+  .portal-shell, .portal-shell.narrow, .split-layout, .article-layout, .auth-layout, .split, .product-detail, .section-layout, .section-hero-panel, .games-page-shell, .official-game-card, .official-article-shell, .stats-page-official, .beyond, .assist-tracker, .draft-hero-panel, .draft-lottery, .fantasy-feature-grid { grid-template-columns: 1fr; }
   .games-date-bar { grid-template-columns: 1fr; justify-items: stretch; }
   .games-page-shell { padding-top: 36px; }
   .official-matchup, .season-leaders-box, .broadcast-box { border-right: 0; border-bottom: 1px solid var(--line); }
-  .story-grid, .team-grid, .leader-grid, .cards-4, .official-story-row, .official-grid, .league-pass-grid, .affiliate-grid, .playoff-news-grid, .history-row, .leader-matrix, .player-news-grid, .official-video-row, .draft-two-column-list, .fantasy-news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .story-grid, .team-grid, .leader-grid, .cards-4, .official-grid, .league-pass-grid, .affiliate-grid, .playoff-news-grid, .history-row, .leader-matrix, .player-news-grid, .official-video-row, .draft-two-column-list, .fantasy-news-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .official-article-rail { padding-top: 0; }
   .standings-bracket { grid-template-columns: repeat(7, 120px); overflow-x: auto; }
   .bracket-stage { grid-template-columns: repeat(7, minmax(112px, 1fr)); overflow-x: auto; padding-bottom: 12px; }
   .playoffs-page { padding-top: 58px; }
-  .trend-strip, .postseason-grid, .recap-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .team-grid.small { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .hero-story, .game-detail-hero, .team-header, .player-hero-pro, .feature-hero { grid-template-columns: 1fr; }
+  .hero-story, .game-detail-hero, .team-header, .player-hero-pro { grid-template-columns: 1fr; }
   .team-header, .player-hero-pro { text-align: left; }
   .filter-form, .schedule-filter { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .schedule-filters-official, .official-schedule-row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ticket-row, .game-row { grid-template-columns: 1fr; }
-  .feature-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* Seeded scoreboard: scroll the strip instead of crushing the tiles. */
+  .game-strip { grid-template-columns: minmax(0, 1fr); }
+  .strip-scroller { overflow-x: auto; }
+  .scoreboard-item { flex: 0 0 auto; }
+  .strip-game { min-width: 208px; }
+  .scoreboard-all { min-height: 42px; border-left: 0; border-top: 1px solid var(--line); }
+  /* Hero media narrows and the gradient starts later, as measured at 768. */
+  .feature-image { width: 65%; }
+  .feature-hero::after { background: linear-gradient(90deg, #000 200px, rgba(0, 0, 0, 0)); }
+  /* Footer becomes the measured full-width accordion. */
+  .footer-inner { padding: 0 0 32px; }
+  .footer-grid { flex-direction: column; gap: 0; }
+  .footer-list { border-bottom: 1px solid #545454; }
+  .footer-list-title {
+    min-height: 49px;
+    padding: 16px 32px;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 16.8px;
+  }
+  .footer-chevron { display: block; }
+  .footer-toggle:checked ~ .footer-list-title .footer-chevron { transform: rotate(180deg); }
+  .footer-list > ul { display: none; padding: 0 32px 12px; }
+  .footer-toggle:checked ~ ul { display: block; }
+  .footer-toggle:focus-visible ~ .footer-list-title { outline: 2px solid #fff; outline-offset: -2px; }
+  .footer-rule { margin: 24px 16px; }
+  .footer-bottom { flex-direction: column-reverse; align-items: flex-start; padding: 0 16px; gap: 24px; }
+  .footer-legal { padding: 0; }
 }
 
-@media (max-width: 680px) {
-  :root { --nba-gutter: 14px; }
-  .primary-nav { padding: 12px 0; }
-  .primary-nav nav, .nav-actions { gap: 12px; }
-  .nav-actions { flex: 1 1 calc(100% - 70px); min-width: 0; }
-  .global-search { width: 100%; flex-wrap: wrap; }
-  .global-search input { min-width: 0; flex: 1 1 180px; }
-  .portal-shell, .content-block, .article-layout, .home-shell { padding: 16px; }
-  .story-grid, .story-grid.compact, .card-grid.two, .team-grid, .team-grid.small, .leader-grid, .stat-tile-grid, .stat-tile-grid.six, .account-grid, .filter-form, .schedule-filter, .schedule-filters-official, .official-schedule-row, .ticket-filter, .meta-grid, .footer-grid, .cards-4, .form-grid.two, .official-story-row, .trend-strip, .postseason-grid, .recap-strip, .feature-tabs, .official-grid, .league-pass-grid, .affiliate-grid, .playoff-news-grid, .history-row, .leader-matrix, .player-news-grid, .shotchart-grid, .standings-selects, .standings-legend, .official-video-row, .draft-two-column-list, .fantasy-news-grid, .fantasy-side-list a { grid-template-columns: 1fr; }
+@media (max-width: 767px) {
+  :root { --nba-gutter: 0px; }
+  .primary-nav { padding: 0; }
+  .nav-drawer-panel a { padding: 12px 16px; }
+  .home-shell { padding: 16px 0 28px; }
+  .nba-home-section, .league-pass-panel { border-radius: 0; padding: 16px; }
+  .home-layout, .home-main, .home-rail { gap: 16px; }
+  /* Mobile hero: media on top, copy pinned to the bottom over a 0deg gradient. */
+  .home-feature { height: 485px; border-radius: 0; }
+  .feature-image { width: 100%; height: 291px; }
+  .feature-hero::after { background: linear-gradient(0deg, #000 205px, rgba(0, 0, 0, 0)); }
+  .feature-copy {
+    top: auto;
+    bottom: 96px;
+    width: 100%;
+    padding: 0 16px;
+  }
+  .feature-copy > span { min-height: 0; padding: 0 0 6px; }
+  .feature-copy h1 { font-size: 18px; line-height: 1.02; margin-bottom: 14px; }
+  .feature-copy p, .feature-related { display: none; }
+  .read-button { margin-bottom: 0; padding: 10px 24px; }
+  .feature-tabs {
+    display: flex;
+    overflow-x: auto;
+    padding: 0 16px;
+    bottom: 12px;
+    gap: 8px;
+  }
+  .feature-tabs a { flex: 0 0 140px; padding: 0; }
+  .around-row { grid-template-columns: 120px minmax(0, 1fr); }
+  .around-row img { width: 120px; height: 100%; min-height: 96px; }
+  .portal-shell, .content-block, .article-layout { padding: 16px; }
+  .story-grid, .story-grid.compact, .card-grid.two, .team-grid, .team-grid.small, .leader-grid, .stat-tile-grid, .stat-tile-grid.six, .account-grid, .filter-form, .schedule-filter, .schedule-filters-official, .official-schedule-row, .ticket-filter, .meta-grid, .cards-4, .form-grid.two, .official-grid, .league-pass-grid, .affiliate-grid, .playoff-news-grid, .history-row, .leader-matrix, .player-news-grid, .shotchart-grid, .standings-selects, .standings-legend, .official-video-row, .draft-two-column-list, .fantasy-news-grid, .fantasy-side-list a { grid-template-columns: 1fr; }
   .official-article-shell, .official-latest { padding: 20px 16px; margin-top: 26px; }
   .official-article h1 { font-size: 25px; }
   .stats-page-official, .standings-page-official { padding: 28px 16px; margin-top: 0; }
@@ -2541,20 +2952,11 @@ h1, h2, h3, p { margin-top: 0; }
   .matchup-teams { grid-template-columns: 1fr; }
   .matchup-time { order: -1; }
   .leader-line { grid-template-columns: 28px minmax(0, 1fr) 34px 34px 34px; }
-  .game-strip { grid-template-columns: 1fr; }
-  .strip-scroller { overflow: hidden; }
-  .scoreboard-item { flex: 1 1 0; }
   .date-rail { flex-basis: 38px; }
-  .score-tile { min-width: 0; padding: 7px 8px; }
-  .scoreboard-all { min-height: 42px; border-left: 0; border-top: 1px solid var(--line); }
+  .score-tile { padding: 7px 8px; }
   .article-card { grid-template-columns: 1fr; }
   .article-card img { width: 100%; height: 150px; }
   .page-hero { display: grid; }
   .page-hero.compact h1, .team-header h1, .player-hero-pro h1 { font-size: 34px; }
-  .feature-copy { padding: 28px 22px; }
-  .feature-copy h1 { font-size: 38px; }
   .league-pass-panel { display: grid; }
-  .around-row { grid-template-columns: 1fr; }
-  .around-row img { width: 100%; height: 150px; }
-  .footer-bottom { display: grid; }
 }

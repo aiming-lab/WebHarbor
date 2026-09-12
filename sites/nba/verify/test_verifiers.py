@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import shutil
+import re
 import sqlite3
 import sys
 import tempfile
@@ -258,9 +259,60 @@ class ContractTests(unittest.TestCase):
         )
 
     def test_narrow_navigation_contains_overflow(self):
+        """No primary destination may become unreachable on a narrow screen.
+
+        The header is one 55px bar at every width (measured on nba.com), so the
+        inline menu scrolls horizontally and a hamburger panel repeats every
+        destination. Both routes are asserted here rather than a literal
+        breakpoint, which changes whenever the measured breakpoints do.
+        """
         css = (SITE_DIR / "static" / "css" / "nba.css").read_text()
-        responsive = css[css.index("@media (max-width: 1080px)"):]
-        self.assertRegex(responsive, r"\.primary-nav nav\s*\{[^}]*overflow-x:\s*auto")
+        self.assertRegex(css, r"\.primary-nav nav\s*\{[^}]*overflow-x:\s*auto")
+
+        sys.path.insert(0, str(SITE_DIR))
+        import app as nba_app
+
+        html = nba_app.app.test_client().get("/").get_data(as_text=True)
+        drawer = html.split('class="nav-drawer-panel"', 1)[1].split("</div>", 1)[0]
+        inline = html.split('<nav aria-label="Primary">', 1)[1].split("</nav>", 1)[0]
+        for href in re.findall(r'href="([^"]+)"', inline):
+            self.assertIn(href, drawer, f"{href} is missing from the narrow menu")
+
+    def test_home_rails_scroll_horizontally(self):
+        """Card rails must stay compact rails, not reflow into stacked blocks.
+
+        Upstream keeps 188x282 story tiles and 240px content slides in
+        horizontal scrollers at 1440, 768 and 390 alike.
+        """
+        css = (SITE_DIR / "static" / "css" / "nba.css").read_text()
+        for selector in (r"\.official-story-row", r"\.trend-strip, \.postseason-grid, \.recap-strip"):
+            self.assertRegex(css, selector + r"\s*\{[^}]*overflow-x:\s*auto")
+        self.assertRegex(css, r"\.official-story-card\s*\{[^}]*flex:\s*0 0 188px")
+        self.assertRegex(
+            css,
+            r"\.trend-card, \.postseason-card, \.recap-card\s*\{[^}]*flex:\s*0 0 240px",
+        )
+
+    def test_footer_link_columns_are_present_in_markup(self):
+        """Every footer link stays in the document at all widths.
+
+        Below 1024px the columns collapse into the measured accordion, but the
+        markup must still carry each link so nothing is lost to the collapse.
+        """
+        sys.path.insert(0, str(SITE_DIR))
+        import app as nba_app
+
+        html = nba_app.app.test_client().get("/").get_data(as_text=True)
+        footer = html.split('<footer class="site-footer">', 1)[1]
+        for title in (
+            "NBA Organization",
+            "NBA Social Impact",
+            "Across The League",
+            "Shop",
+            "Subscriptions",
+        ):
+            self.assertIn(title, footer)
+        self.assertGreaterEqual(len(re.findall(r'<li><a href="[^"]+">', footer)), 18)
 
 
 if __name__ == "__main__":

@@ -1,29 +1,50 @@
+{% set nav_links = [
+  ('games', ['games', 'game_detail'], 'Games'),
+  ('schedule', ['schedule'], 'Schedule'),
+  ('watch', ['watch'], 'Watch'),
+  ('playoffs', ['playoffs', 'playoff_series'], 'Playoffs'),
+  ('news', ['news', 'article_detail'], 'News'),
+  ('draft', ['draft'], 'Draft'),
+  ('stats', ['stats', 'player_stats', 'team_stats'], 'Stats'),
+  ('standings', ['standings'], 'Standings'),
+  ('teams', ['teams', 'team_detail', 'team_roster', 'team_schedule', 'team_stats_detail'], 'Teams'),
+  ('players', ['players', 'player_detail'], 'Players'),
+  ('nba_play', ['nba_play'], 'NBA Play'),
+  ('fantasy', ['fantasy'], 'Fantasy'),
+  ('bal_2026', ['bal_2026'], 'BAL 2026')
+] %}
+{% set nav_action_links = [
+  ('league_pass', ['league_pass'], 'League Pass'),
+  ('shop', ['shop', 'product_detail', 'cart', 'checkout', 'orders'], 'Store'),
+  ('tickets', ['tickets'], 'Tickets'),
+  ('affiliates', ['affiliates'], 'NBA Affiliates'),
+  ('login', ['login'], 'Sign In')
+] %}
 <header class="nba-global">
   <div class="primary-nav">
+    <details class="nav-drawer">
+      <summary aria-label="Open navigation menu"><span class="hamburger-box"></span></summary>
+      <div class="nav-drawer-panel">
+        {% for endpoint, active_for, label in nav_links + nav_action_links %}
+          <a class="{% if active_endpoint in active_for %}active{% endif %}" href="{{ url_for(endpoint) }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </details>
     <a class="brand" href="{{ url_for('index') }}">
       <img src="{{ url_for('static', filename='images/league/nba-logo.svg') }}" alt="NBA">
     </a>
     <nav aria-label="Primary">
-      <a class="{% if active_endpoint == 'games' or active_endpoint == 'game_detail' %}active{% endif %}" href="{{ url_for('games') }}">Games</a>
-      <a class="{% if active_endpoint == 'schedule' %}active{% endif %}" href="{{ url_for('schedule') }}">Schedule</a>
-      <a class="{% if active_endpoint == 'watch' %}active{% endif %}" href="{{ url_for('watch') }}">Watch</a>
-      <a class="{% if active_endpoint in ['playoffs','playoff_series'] %}active{% endif %}" href="{{ url_for('playoffs') }}">Playoffs</a>
-      <a class="{% if active_endpoint in ['news','article_detail'] %}active{% endif %}" href="{{ url_for('news') }}">News</a>
-      <a class="{% if active_endpoint == 'draft' %}active{% endif %}" href="{{ url_for('draft') }}">Draft</a>
-      <a class="{% if active_endpoint in ['stats','player_stats','team_stats'] %}active{% endif %}" href="{{ url_for('stats') }}">Stats</a>
-      <a class="{% if active_endpoint == 'standings' %}active{% endif %}" href="{{ url_for('standings') }}">Standings</a>
-      <a class="{% if active_endpoint in ['teams','team_detail','team_roster','team_schedule','team_stats_detail'] %}active{% endif %}" href="{{ url_for('teams') }}">Teams</a>
-      <a class="{% if active_endpoint in ['players','player_detail'] %}active{% endif %}" href="{{ url_for('players') }}">Players</a>
-      <a class="{% if active_endpoint == 'nba_play' %}active{% endif %}" href="{{ url_for('nba_play') }}">NBA Play</a>
-      <a class="{% if active_endpoint == 'fantasy' %}active{% endif %}" href="{{ url_for('fantasy') }}">Fantasy</a>
-      <a class="{% if active_endpoint == 'bal_2026' %}active{% endif %}" href="{{ url_for('bal_2026') }}">BAL 2026</a>
-    </nav>
-    <div class="nav-actions">
+      {% for endpoint, active_for, label in nav_links %}
+        <a class="{% if active_endpoint in active_for %}active{% endif %}" href="{{ url_for(endpoint) }}">{{ label }}</a>
+      {% endfor %}
+      <span class="nav-spacer" aria-hidden="true"></span>
       <a class="league-pass-cta {% if active_endpoint == 'league_pass' %}active{% endif %}" href="{{ url_for('league_pass') }}">League Pass</a>
       <a class="{% if active_endpoint in ['shop','product_detail','cart','checkout','orders'] %}active{% endif %}" href="{{ url_for('shop') }}">Store</a>
       <a href="{{ url_for('tickets') }}">Tickets</a>
       <a class="app-grid {% if active_endpoint == 'affiliates' %}active{% endif %}" href="{{ url_for('affiliates') }}" aria-label="NBA apps">▦</a>
-      <a href="{{ url_for('login') }}">Sign In</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="sign-in" href="{{ url_for('login') }}">Sign In</a>
     </div>
   </div>
 </header>

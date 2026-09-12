@@ -17,6 +17,14 @@
             <h1><a href="{{ url_for('article_detail', slug=hero.slug) }}">{{ hero.title }}</a></h1>
             <p>{{ hero.dek }}</p>
             <a class="read-button" href="{{ url_for('article_detail', slug=hero.slug) }}">Read</a>
+            {% if stories %}
+            <div class="feature-related">
+              <h2>Related Content</h2>
+              {% for item in stories[:3] %}
+                <a href="{{ url_for('article_detail', slug=item.slug) }}">{{ item.title }}</a>
+              {% endfor %}
+            </div>
+            {% endif %}
           </div>
         </article>
         <div class="feature-tabs" aria-label="Featured stories">
@@ -124,13 +132,17 @@
       <section class="rail-card social-card">
         <h2>Follow the NBA</h2>
         <div class="social-grid" aria-label="Social links">
-          <a href="{{ url_for('news') }}" aria-label="Facebook"><img src="{{ url_for('static', filename='icons/social-facebook.svg') }}" alt=""></a>
-          <a href="{{ url_for('news') }}" aria-label="Instagram"><img src="{{ url_for('static', filename='icons/social-instagram.svg') }}" alt=""></a>
-          <a href="{{ url_for('news') }}" aria-label="Snapchat"><img src="{{ url_for('static', filename='icons/social-snapchat.svg') }}" alt=""></a>
-          <a href="{{ url_for('news') }}" aria-label="TikTok"><img src="{{ url_for('static', filename='icons/social-tiktok.svg') }}" alt=""></a>
-          <a href="{{ url_for('news') }}" aria-label="X"><img src="{{ url_for('static', filename='icons/social-x.svg') }}" alt=""></a>
-          <a href="{{ url_for('watch') }}" aria-label="YouTube"><img src="{{ url_for('static', filename='icons/social-youtube.svg') }}" alt=""></a>
-          <a href="{{ url_for('watch') }}" aria-label="Twitch"><img src="{{ url_for('static', filename='icons/social-twitch.svg') }}" alt=""></a>
+          {% for label, icon, target in [
+            ('Facebook', 'icons/social-facebook.svg', url_for('news')),
+            ('Instagram', 'icons/social-instagram.svg', url_for('news')),
+            ('Snapchat', 'icons/social-snapchat.svg', url_for('news')),
+            ('TikTok', 'icons/social-tiktok.svg', url_for('news')),
+            ('X', 'icons/social-x.svg', url_for('news')),
+            ('YouTube', 'icons/social-youtube.svg', url_for('watch')),
+            ('Twitch', 'icons/social-twitch.svg', url_for('watch'))
+          ] %}
+            <a href="{{ target }}"><img src="{{ url_for('static', filename=icon) }}" alt="">{{ label }}</a>
+          {% endfor %}
         </div>
       </section>
 
