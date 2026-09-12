@@ -63,6 +63,15 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 ./scripts/build.sh                                 # docker build -t webharbor:dev .
 ```
 
+This source branch also includes IMDb at port `40024` (25 mirrors total). After fetching the pinned assets and building locally, run it with:
+
+```bash
+docker run -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
+```
+
+The published image above is released separately; use the local build to review the IMDb contribution.
+
+
 ## 🤝 Contribute
 
 We have built 23 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.

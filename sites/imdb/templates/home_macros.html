@@ -1,0 +1,52 @@
+{% macro title_card(t, ranked=false, rank=0) %}
+<li class="title-card">
+  <div class="title-card-poster"><a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{% if t.poster_path %}<img src="{{ url_for('static', filename='images/' ~ t.poster_path) }}" alt="{{ t.primary_title }}" loading="lazy">{% else %}<span class="poster-unavailable">Poster unavailable</span>{% endif %}</a>
+    {% if current_user.is_authenticated %}
+    <form method="post" action="{{ url_for('title_watchlist_toggle', tt_id=t.tt_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="watchlist-ribbon" type="submit" aria-label="{{ 'Remove ' if t.id in in_watchlist else 'Add ' }}{{ t.primary_title }}{{ ' from' if t.id in in_watchlist else ' to' }} Watchlist">{{ '✓' if t.id in in_watchlist else '+' }}</button></form>
+    {% else %}<a class="watchlist-ribbon" href="{{ url_for('login') }}" aria-label="Sign in to add {{ t.primary_title }} to Watchlist">+</a>{% endif %}
+  </div>
+  <div class="title-card-content">
+    <div class="title-card-rating"><span><span class="star">★</span> {{ '%.1f'|format(t.rating_avg) }}</span><a href="{{ url_for('title_detail', tt_id=t.tt_id) }}#user-actions" aria-label="Rate {{ t.primary_title }}">☆</a></div>
+    <a class="title-card-name" href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{% if ranked %}{{ rank }}. {% endif %}{{ t.primary_title }}</a>
+    {% if current_user.is_authenticated %}<form method="post" action="{{ url_for('title_watchlist_toggle', tt_id=t.tt_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="card-watchlist" type="submit">{{ '✓ In Watchlist' if t.id in in_watchlist else '+ Watchlist' }}</button></form>{% else %}<a class="card-watchlist" href="{{ url_for('login') }}">+ Watchlist</a>{% endif %}
+    <div class="card-bottom"><a href="{{ url_for('offline_service', service='streaming') }}">Watch options</a><a href="{{ url_for('title_detail', tt_id=t.tt_id) }}" aria-label="Details for {{ t.primary_title }}">ⓘ</a></div>
+  </div>
+</li>
+{% endmacro %}
+
+{% macro snapshot_card(feature) %}
+<li class="title-card snapshot-card">
+  <a class="snapshot-poster" href="{{ url_for('home_feature', feature_id=feature.id) }}"><img src="{{ url_for('static', filename=feature.poster_path) }}" alt="{{ feature.heading }}" loading="lazy"></a>
+  <div class="title-card-content">
+    <div class="title-card-rating">{% if feature.payload.rating %}<span><span class="star">★</span> {{ feature.payload.rating }}</span>{% else %}<span>Not yet rated</span>{% endif %}</div>
+    <a class="title-card-name" href="{{ url_for('home_feature', feature_id=feature.id) }}">{{ feature.heading }}</a>
+    {% if feature.kind == 'tv_schedule' %}<div class="schedule-meta"><span>{{ feature.payload.episode }}</span><span>{{ feature.payload.air_date }}</span></div>{% endif %}
+    <a class="card-watchlist" href="{{ url_for('home_feature', feature_id=feature.id) }}{% if feature.kind == 'streaming' %}#watch-options{% endif %}">{{ 'Watch options' if feature.kind == 'streaming' else 'Episode details' }}</a>
+  </div>
+</li>
+{% endmacro %}
+
+{% macro snapshot_row(items, label) %}
+<div class="rail-wrap"><ul class="title-rail" data-rail>{% for feature in items %}{{ snapshot_card(feature) }}{% endfor %}</ul><button type="button" class="rail-next" data-scroll-rail aria-label="More {{ label }}">›</button></div>
+{% endmacro %}
+
+{% macro birthday_row(items) %}
+<div class="rail-wrap"><div class="people-rail" data-rail>{% for feature in items %}<a href="{{ url_for('home_feature', feature_id=feature.id) }}"><img src="{{ url_for('static', filename=feature.image_path) }}" alt="" loading="lazy"><h3>{{ feature.heading }}</h3>{% if feature.payload.age %}<span class="person-age">{{ feature.payload.age }}</span>{% endif %}</a>{% endfor %}</div><button type="button" class="rail-next" data-scroll-rail aria-label="More birthdays">›</button></div>
+{% endmacro %}
+
+{% macro ranked_person(feature) %}
+<a class="ranked-person" href="{{ url_for('home_feature', feature_id=feature.id) }}">
+  {% if feature.image_path %}<img src="{{ url_for('static', filename=feature.image_path) }}" alt="" loading="lazy">{% else %}<span class="portrait-unavailable">Photo unavailable</span>{% endif %}
+  <span class="person-rank">{{ feature.payload.rank }}</span><h3>{{ feature.heading }}</h3>
+</a>
+{% endmacro %}
+
+{% macro starmeter_row(items) %}
+<div class="rail-wrap"><div class="people-rail" data-rail>{% for feature in items %}{{ ranked_person(feature) }}{% endfor %}</div><button type="button" class="rail-next" data-scroll-rail aria-label="More trending people">›</button></div>
+{% endmacro %}
+
+{% macro title_row(heading, titles, href, caption, ranked=false) %}
+{% if heading %}<h2><a href="{{ href }}">{{ heading }} ›</a></h2>{% endif %}
+{% if caption %}<p class="section-caption">{{ caption }}</p>{% endif %}
+<div class="rail-wrap"><ul class="title-rail" data-rail>{% for t in titles %}{{ title_card(t, ranked, loop.index) }}{% endfor %}</ul><button type="button" class="rail-next" data-scroll-rail aria-label="More {{ heading or 'Watchlist titles' }}">›</button></div>
+{% endmacro %}

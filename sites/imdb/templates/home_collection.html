@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% from 'home_macros.html' import snapshot_card, birthday_row, ranked_person with context %}
+{% block title %}{{ heading }} - IMDb{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+<section class="home-section">
+  <a class="crumb" href="{{ url_for('index') }}">‹ IMDb home</a>
+  <h1>{{ heading }}</h1><p class="section-caption">{{ description }}</p>
+  {% if items %}
+  <p class="snapshot-date">IMDb snapshot · {{ items[0].captured_at[:10] }}</p>
+  {% if collection == 'birthday' %}{{ birthday_row(items) }}
+  {% elif collection == 'starmeter' %}<div class="people-grid">{% for item in items %}{{ ranked_person(item) }}{% endfor %}</div>
+  {% else %}<ul class="snapshot-grid">{% for item in items %}{{ snapshot_card(item) }}{% endfor %}</ul>{% endif %}
+  {% else %}<p>This collection has not been captured in this seed.</p>{% endif %}
+</section>
+{% endblock %}

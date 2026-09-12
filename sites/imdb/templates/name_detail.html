@@ -1,0 +1,63 @@
+{% extends 'base.html' %}
+{% block title %}{{ person.name }} - IMDb{% endblock %}
+{% block content %}
+<article class="person-detail">
+  <header class="person-head">
+    <div class="person-head-left">
+      <h1>{{ person.name }}</h1>
+      <div class="person-sub">
+        {% if person.primary_profession %}{{ person.primary_profession.replace(',', ' &middot; ')|safe }}{% endif %}
+      </div>
+      <div class="person-life">
+        Born {{ person.birth_year or '—' }}{% if person.birth_place %}, {{ person.birth_place }}{% endif %}
+        {% if person.death_year %} &middot; Died {{ person.death_year }}{% endif %}
+      </div>
+    </div>
+    {% if person.photo_path %}
+    <img class="person-photo" src="{{ url_for('static', filename='images/' ~ person.photo_path) }}" alt="">
+    {% endif %}
+  </header>
+
+  {% if person.bio %}
+  <section class="bio">
+    <h2>Mini bio</h2>
+    <p>{{ person.bio }}</p>
+  </section>
+  {% endif %}
+
+  {% if known_for %}
+  <section class="row">
+    <div class="row-head"><h2>Known for</h2></div>
+    <ul class="card-grid">
+      {% for t in known_for %}
+      <li class="card">
+        <a class="card-title" href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+        <div class="card-meta">{{ t.year }} &middot; <span class="star">&#9733;</span> {{ '%.1f'|format(t.rating_avg) }}</div>
+      </li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% set role_labels = {'actor':'Actor', 'director':'Director', 'writer':'Writer',
+                         'producer':'Producer', 'composer':'Composer'} %}
+  {% for role, items in grouped.items() %}
+    {% if items %}
+    <section class="filmography">
+      <h2>{{ role_labels[role] }} &mdash; {{ items|length }} credit{{ 's' if items|length != 1 }}</h2>
+      <table class="credits-table">
+        <tbody>
+        {% for c in items %}
+        <tr>
+          <td class="year">{{ c.title.year or '' }}</td>
+          <td><a href="{{ url_for('title_detail', tt_id=c.title.tt_id) }}">{{ c.title.primary_title }}</a></td>
+          <td class="char">{% if c.character %}as {{ c.character }}{% endif %}</td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+  {% endfor %}
+</article>
+{% endblock %}

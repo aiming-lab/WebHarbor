@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Full cast &amp; crew &mdash; {{ title.primary_title }}{% endblock %}
+{% block content %}
+<a class="crumb" href="{{ url_for('title_detail', tt_id=title.tt_id) }}">&lsaquo; {{ title.primary_title }}</a>
+<h1>{{ title.primary_title }} &mdash; Full cast &amp; crew</h1>
+
+{% set roles = [('director', 'Directed by'), ('writer', 'Written by'),
+                 ('producer', 'Produced by'), ('actor', 'Cast'),
+                 ('composer', 'Music by')] %}
+{% for role, label in roles %}
+  {% set members = title.credits|selectattr('role', 'equalto', role)|list %}
+  {% if members %}
+  <section class="credits-block">
+    <h2>{{ label }}</h2>
+    <table class="credits-table">
+      <tbody>
+      {% for c in members %}
+      <tr>
+        <td><a href="{{ url_for('name_detail', nm_id=c.person.nm_id) }}">{{ c.person.name }}</a></td>
+        <td class="char">{% if c.character %}as {{ c.character }}{% endif %}</td>
+      </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endif %}
+{% endfor %}
+{% endblock %}

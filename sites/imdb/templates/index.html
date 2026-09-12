@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+{% from 'home_macros.html' import title_row, snapshot_row, birthday_row, starmeter_row with context %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+{% set heroes = features.get('hero', []) %}
+{% if heroes %}
+<section class="home-hero" id="trailers" aria-label="Featured trailers">
+  <div class="hero-stage">
+    {% for feature in heroes %}
+    <article class="hero-slide" {% if not loop.first %}hidden{% endif %} data-slide="{{ loop.index0 }}">
+      <a class="hero-media" href="{{ url_for('home_feature', feature_id=feature.id) }}"><img src="{{ url_for('static', filename=feature.image_path) }}" alt="{{ feature.heading }}" {% if not loop.first %}loading="lazy"{% endif %}></a>
+      <div class="hero-caption">
+        <a class="hero-poster" href="{{ url_for('home_feature', feature_id=feature.id) }}"><img src="{{ url_for('static', filename=feature.poster_path) }}" alt="{{ feature.payload.title }} poster"></a>
+        <a class="hero-description" href="{{ url_for('home_feature', feature_id=feature.id) }}"><span class="play-circle" aria-hidden="true">▷</span><div><h1>{{ feature.heading }} <small>{{ feature.payload.duration }}</small></h1><p>{{ feature.subtitle }}</p><span class="media-availability">Artwork snapshot · video not bundled</span></div></a>
+      </div>
+    </article>
+    {% endfor %}
+    <button class="hero-arrow previous" type="button" aria-label="Previous featured trailer" data-hero-step="-1">‹</button>
+    <button class="hero-arrow next" type="button" aria-label="Next featured trailer" data-hero-step="1">›</button>
+    <span class="sr-only" id="hero-status" aria-live="polite">1 of {{ heroes|length }}</span>
+  </div>
+  <aside class="up-next"><h2>Up next</h2><div class="up-next-list">
+    {% for feature in heroes %}
+    <a data-up-next="{{ loop.index0 }}" {% if loop.index0 not in [1, 2, 3] %}hidden{% endif %} href="{{ url_for('home_feature', feature_id=feature.id) }}"><img src="{{ url_for('static', filename=feature.poster_path) }}" alt=""><div><span class="up-next-runtime">▷ {{ feature.payload.duration }}</span><h3>{{ feature.heading }}</h3><p>{{ feature.subtitle }}</p></div></a>
+    {% endfor %}
+  </div><a class="browse-trailers" href="#all-trailers">Browse trailers ›</a></aside>
+</section>
+{% endif %}
+<nav class="topic-chips home-topics" aria-label="Featured topics">{% for feature in features.get('topic', []) %}<a href="{{ url_for('home_feature', feature_id=feature.id) }}">{{ feature.heading }} ›</a>{% endfor %}</nav>
+
+{% if features.get('editorial') %}
+<section class="home-section" id="featured"><h2 class="section-yellow">Featured today</h2>
+  <div class="rail-wrap"><div class="editorial-rail" data-rail>
+    {% for feature in features.editorial %}<article><a href="{{ url_for('home_feature', feature_id=feature.id) }}"><div class="editorial-image"><img loading="lazy" src="{{ url_for('static', filename=feature.image_path) }}" alt=""><span>☷ {{ feature.payload.type|title }}</span></div><h3>{{ feature.heading }}</h3></a><a class="text-link" href="{{ url_for('home_feature', feature_id=feature.id) }}">Explore feature</a></article>{% endfor %}
+  </div><button type="button" class="rail-next" data-scroll-rail aria-label="More featured stories">›</button></div>
+</section>
+{% endif %}
+{% for feature in features.get('spotlight', []) %}
+<section class="home-section spotlight" data-episode-spotlight>
+  <div class="spotlight-series"><h2><a href="{{ url_for('home_feature', feature_id=feature.id) }}">{{ feature.heading }} ›</a></h2><p class="section-caption">{{ feature.subtitle }}</p>
+    <div class="spotlight-body"><img src="{{ url_for('static', filename=feature.poster_path) }}" loading="lazy" alt="{{ feature.payload.title }}"><div><h3>{{ feature.payload.title }}</h3>{% for credit in feature.payload.credits %}<p><strong>{{ credit.role }}</strong> {{ credit.names|join(' · ') }}</p>{% endfor %}<a class="text-link" href="{{ url_for('home_feature', feature_id=feature.id) }}">All captured episodes ›</a></div></div>
+  </div>
+  {% if feature.payload.episodes %}<div class="spotlight-episodes"><p class="season-label">Season {{ feature.payload.season }} · Episode ratings</p><div class="episode-bars" aria-label="Choose an episode">{% for episode in feature.payload.episodes %}<button type="button" data-episode-select="{{ episode.number }}" aria-pressed="{{ 'true' if loop.first else 'false' }}" aria-controls="spotlight-{{ feature.id }}-{{ episode.number }}" aria-label="Episode {{ episode.number }}: {{ episode.title }}, rated {{ episode.rating }}"><span class="episode-score">{{ episode.rating }}</span><span class="episode-bar" style="height: {{ episode.rating|float * 6 }}px"></span><span>E{{ episode.number }}</span></button>{% endfor %}</div>
+    {% for episode in feature.payload.episodes %}<article class="episode-preview" id="spotlight-{{ feature.id }}-{{ episode.number }}" data-episode-panel="{{ episode.number }}" {% if not loop.first %}hidden{% endif %}>
+      {% if episode.image_path %}<img src="{{ url_for('static', filename=episode.image_path) }}" loading="lazy" alt="{{ episode.title }}">{% endif %}
+      <div><p class="episode-info">{{ episode.info }}</p><h3><a href="{{ url_for('home_feature', feature_id=feature.id) }}#episode-{{ episode.number }}">{{ episode.title }} ›</a></h3><p><span class="star">★</span> {{ episode.rating }}/10</p>{% if episode.plot %}<p class="episode-plot">{{ episode.plot }}</p>{% endif %}</div>
+    </article>{% endfor %}
+  </div>{% endif %}
+</section>
+{% endfor %}
+{% if features.get('starmeter') %}
+<section class="home-section" id="people"><h2><a href="{{ url_for('home_collection', collection='starmeter') }}">Trending people ›</a></h2><p class="section-caption">STARmeter · IMDb snapshot {{ features.starmeter[0].captured_at[:10] }}</p>{{ starmeter_row(features.starmeter[:12]) }}</section>
+{% else %}<section class="home-section" id="people"><h2>Explore people ›</h2><p class="section-caption">People from the local film and TV catalog</p>
+  <div class="rail-wrap"><div class="people-rail" data-rail>{% for person in people %}<a href="{{ url_for('name_detail', nm_id=person.nm_id) }}"><img loading="lazy" src="{{ url_for('static', filename='images/' ~ person.photo_path) }}" alt=""><h3>{{ person.name }}</h3></a>{% endfor %}</div><button type="button" class="rail-next" data-scroll-rail aria-label="More people">›</button></div>
+</section>{% endif %}
+<section id="what-to-watch" class="home-section"><h2 class="section-yellow">What to watch</h2>
+  {{ title_row('Top picks for you', top_picks, url_for('chart_top'), 'Top-rated titles from this catalog') }}
+</section>
+<section class="home-section"><h2><a href="{{ url_for('my_watchlist') }}">From your Watchlist ›</a></h2>
+  {% if watchlist %}{{ title_row('', watchlist, '', '') }}
+  {% else %}<div class="watchlist-empty"><span class="bookmark-large" aria-hidden="true">＋</span><h3>{{ 'Your Watchlist is empty' if current_user.is_authenticated else 'Sign in to access your Watchlist' }}</h3><p>Save shows and movies to keep track of what you want to watch.</p><a class="sign-in-button" href="{{ url_for('my_watchlist') if current_user.is_authenticated else url_for('login') }}">{{ 'Explore your Watchlist' if current_user.is_authenticated else 'Sign in to IMDb' }}</a></div>{% endif %}
+</section>
+<section class="home-section">{{ title_row('Top 10 on IMDb', trending, url_for('chart_moviemeter'), 'Most popular in the catalog snapshot', true) }}</section>
+<section class="home-section">{{ title_row('Fan favorites', fan_favorites, url_for('advanced_title_search', sort='votes'), 'Most-voted titles in the catalog snapshot') }}</section>
+<section class="home-section"><h2>Popular interests ›</h2><div class="interest-grid">{% for genre in interests %}<a href="{{ url_for('genre_browse', slug=genre.slug) }}">{{ genre.name }} <span>›</span></a>{% endfor %}</div></section>
+<section class="home-section" id="streaming"><h2 class="section-yellow">Explore what’s streaming</h2>
+  {% if features.get('streaming') %}<div class="service-tabs"><a href="{{ url_for('home_collection', collection='streaming') }}">{{ features.streaming[0].payload.service }}</a></div><p class="section-caption">Included with Prime · IMDb snapshot {{ features.streaming[0].captured_at[:10] }} · playback not bundled</p>{{ snapshot_row(features.streaming, 'streaming titles') }}
+  {% else %}<p class="section-caption">Streaming availability has not been captured in this seed.</p>{% endif %}
+</section>
+<section class="home-section"><h2 class="section-yellow">Explore movies & TV shows</h2>
+  {{ title_row('Latest catalog releases', in_theaters, url_for('advanced_title_search'), 'Sorted by recorded release date; not live cinema listings') }}
+</section>
+<section class="home-section"><h2><a href="{{ url_for('chart_boxoffice') }}">Domestic box office ›</a></h2><p class="section-caption">Cumulative US & Canada gross · catalog snapshot</p>
+  <ol class="box-office-grid">{% for t in box_office %}<li><span class="box-rank">{{ loop.index }}</span><a class="box-poster" href="{{ url_for('title_detail', tt_id=t.tt_id) }}"><img src="{{ url_for('static', filename='images/' ~ t.poster_path) }}" alt="" loading="lazy"></a><div><a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a><span>{{ t.box_office_us|money }}</span></div></li>{% endfor %}</ol>
+</section>
+{% if features.get('tv_schedule') %}<section class="home-section" id="tv-schedule"><h2><a href="{{ url_for('home_collection', collection='tv_schedule') }}">Current & upcoming TV shows ›</a></h2><p class="section-caption">Episode & season dates · IMDb snapshot {{ features.tv_schedule[0].captured_at[:10] }}</p>{{ snapshot_row(features.tv_schedule, 'TV shows') }}</section>{% endif %}
+{% if heroes %}
+<section class="home-section" id="all-trailers"><h2>Featured trailer previews ›</h2><div class="rail-wrap"><div class="editorial-rail" data-rail>{% for feature in heroes %}<article><a href="{{ url_for('home_feature', feature_id=feature.id) }}"><div class="editorial-image"><img loading="lazy" src="{{ url_for('static', filename=feature.image_path) }}" alt=""><span>▷ {{ feature.payload.duration }}</span></div><h3>{{ feature.heading }}</h3></a></article>{% endfor %}</div><button type="button" class="rail-next" data-scroll-rail aria-label="More trailer previews">›</button></div></section>
+{% endif %}
+<section class="home-section" id="birthdays"><h2 class="section-yellow">More to explore</h2><h2><a href="{{ url_for('home_collection', collection='birthday') }}">Born today ›</a></h2>
+  {% if features.get('birthday') %}<p class="section-caption">People born on {{ features.birthday[0].captured_at[5:10] }} · ages at {{ features.birthday[0].captured_at[:10] }}</p>{{ birthday_row(features.birthday) }}{% else %}<p class="section-caption">Birthdays have not been captured in this seed.</p>{% endif %}
+</section>
+<section class="home-section news-strip"><h2><a href="{{ url_for('news_list') }}">Latest IMDb news ›</a></h2>
+  <div class="home-news-layout">{% if features.get('news') %}<div class="home-news-grid">{% for feature in features.news %}<article><a href="{{ url_for('home_feature', feature_id=feature.id) }}">{% if feature.image_path %}<img src="{{ url_for('static', filename=feature.image_path) }}" alt="" loading="lazy">{% endif %}<div><h3>{{ feature.heading }}</h3>{% if loop.first %}<p class="news-excerpt">{{ feature.subtitle }}</p>{% endif %}<p class="section-caption">{{ feature.payload.date[:10] }} · {{ feature.payload.source }}</p></div></a></article>{% endfor %}</div>{% endif %}
+    <aside><nav class="topic-chips" aria-label="More news"><a href="{{ url_for('news_list') }}">Catalog news archive ›</a></nav><ul class="news-list">{% for n in latest_news %}<li><a href="{{ url_for('news_detail', news_id=n.id) }}">{{ n.headline }}</a><span class="news-meta"> · {{ n.source }} · {{ n.published_at }}</span></li>{% endfor %}</ul></aside>
+  </div>
+</section>
+<section class="home-section recently-viewed"><div class="row-head"><h2>Recently viewed</h2>{% if recent_titles %}<form method="post" action="{{ url_for('clear_recently_viewed') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="text-button">Clear all</button></form>{% endif %}</div>
+{% if recent_titles %}<div class="recent-rail">{% for t in recent_titles %}<a href="{{ url_for('title_detail', tt_id=t.tt_id) }}"><img src="{{ url_for('static', filename='images/' ~ t.poster_path) }}" alt="{{ t.primary_title }}" loading="lazy"></a>{% endfor %}</div>{% else %}<p class="section-caption">You have no recently viewed pages</p>{% endif %}</section>
+{% endblock %}
