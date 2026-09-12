@@ -115,8 +115,8 @@
     </section>
     <section class="rail-card more-stats">
       <h2>More Stats</h2>
-      {% for label, rows in stats_home.more_stats %}
-        <div><a href="{{ url_for('player_stats') }}">{{ label }}</a>{% for player in rows %}<span>{{ player.name }} <b>{{ "%.0f"|format(stat_value(player, 'ppg')) }}</b></span>{% endfor %}</div>
+      {% for label, stat, rows in stats_home.more_stats %}
+        <div><a href="{{ url_for('player_stats') }}">{{ label }}</a>{% for player in rows %}<span>{{ player.name }} <b>{{ "%.0f"|format(stat_value(player, stat)) }}</b></span>{% endfor %}</div>
       {% endfor %}
     </section>
   </aside>

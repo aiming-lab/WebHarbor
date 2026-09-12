@@ -245,6 +245,18 @@ class ContractTests(unittest.TestCase):
             ).fetchone()
         self.assertNotIn("Celtics", title if "harris-levert" in image else "")
 
+    def test_more_stats_displays_the_metric_used_for_each_ranking(self):
+        sys.path.insert(0, str(SITE_DIR))
+        import app as nba_app
+
+        html = nba_app.app.test_client().get("/stats").get_data(as_text=True)
+        more_stats = html.split('<section class="rail-card more-stats">', 1)[1].split("</section>", 1)[0]
+
+        self.assertRegex(
+            more_stats,
+            r"(?s)Total Assists.*?Tyrese Haliburton\s*<b>11</b>.*?Luka Doncic\s*<b>10</b>",
+        )
+
     def test_narrow_navigation_contains_overflow(self):
         css = (SITE_DIR / "static" / "css" / "nba.css").read_text()
         responsive = css[css.index("@media (max-width: 1080px)"):]

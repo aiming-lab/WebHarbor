@@ -901,12 +901,12 @@ def stats_home_context():
             "Fantasy Points": top_players("ppg"),
         },
         "more_stats": [
-            ("Total Points", top_players("ppg", 3)),
-            ("Total Rebounds", top_players("rpg", 3)),
-            ("Total Assists", top_players("apg", 3)),
-            ("Total Blocks", top_players("bpg", 3)),
-            ("Total Steals", top_players("spg", 3)),
-            ("Catch and Shoot FGA", top_players("fg_pct", 3)),
+            ("Total Points", "ppg", top_players("ppg", 3)),
+            ("Total Rebounds", "rpg", top_players("rpg", 3)),
+            ("Total Assists", "apg", top_players("apg", 3)),
+            ("Total Blocks", "bpg", top_players("bpg", 3)),
+            ("Total Steals", "spg", top_players("spg", 3)),
+            ("Catch and Shoot FGA", "fg_pct", top_players("fg_pct", 3)),
         ],
         "team_daily": {
             "Points": [cavs, pistons],
