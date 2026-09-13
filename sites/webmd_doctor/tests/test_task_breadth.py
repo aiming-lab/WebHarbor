@@ -7,7 +7,27 @@ import sys
 from pathlib import Path
 
 SITE = Path(__file__).resolve().parents[1]
+ROOT = SITE.parent.parent
 TASKS = SITE / "tasks.jsonl"
+
+
+def _registry_sites() -> list[str]:
+    """Derive the registry both launchers must agree on (no frozen site count)."""
+    import ast
+    import re
+
+    shell = re.search(r"SITES=\((.*?)\)", (ROOT / "websyn_start.sh").read_text(), re.S).group(1).split()
+    module = ast.parse((ROOT / "control_server.py").read_text())
+    control = None
+    for node in module.body:
+        if isinstance(node, ast.Assign) and any(getattr(target, "id", "") == "SITES" for target in node.targets):
+            control = ast.literal_eval(node.value)
+    assert control == shell, "websyn_start.sh and control_server.py disagree on the registry"
+    return shell
+
+
+def _site_url() -> str:
+    return f"http://localhost:{40000 + _registry_sites().index('webmd_doctor')}/"
 
 
 def _load_tasks() -> list[dict]:
@@ -22,7 +42,7 @@ def test_twenty_unique_tasks_with_required_fields():
     assert ids == [f"WebMD Doctor--{index}" for index in range(20)], ids
     for task in tasks:
         assert task["web_name"] == "WebMD Doctor"
-        assert task["web"] == "http://localhost:40024/"
+        assert task["web"] == _site_url(), task["id"]
         assert task["upstream_url"].startswith("https://doctor.webmd.com/"), task["id"]
         assert len(task["ques"]) >= 40, f"task question too thin: {task['id']}"
         assert len(task["judge_rubric"]) >= 80, f"rubric too thin: {task['id']}"

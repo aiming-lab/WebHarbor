@@ -1,6 +1,6 @@
 # WebMD Doctor mirror
 
-Offline Flask mirror of `https://doctor.webmd.com/` (branded "WebMD Care" upstream). In the 25-site registry it is site index 24 and runs on container port `40024`. Every doctor, practice, hospital, address, phone number, NPI, review and user account is deterministic synthetic benchmark data; only the site chrome mirrors upstream.
+Offline Flask mirror of `https://doctor.webmd.com/` (branded "WebMD Care" upstream). In the 26-site registry it is site index 25 and runs on container port `40025`. Every doctor, practice, hospital, address, phone number, NPI, review and user account is deterministic synthetic benchmark data; only the site chrome mirrors upstream.
 
 ## Runtime
 
@@ -9,7 +9,7 @@ uv venv .venv --python 3.12
 uv pip install --python .venv/bin/python -r sites/webmd_doctor/requirements.txt
 ./scripts/fetch_assets.sh webmd_doctor                                          # static/images/{avatars,posters}/ from the HF tarball
 cd sites/webmd_doctor && PYTHONHASHSEED=0 ../../.venv/bin/python seed_data.py   # writes instance_seed/webmd_doctor.db
-PORT=40024 ../../.venv/bin/python app.py
+PORT=40025 ../../.venv/bin/python app.py
 ```
 
 The Docker build regenerates `instance_seed/webmd_doctor.db` from `seed_data.py` (`.build-generated-seed`); the Pillow initials avatars (226) and video poster frames (91) under `static/images/` ship in the pinned Hugging Face tarball (`.requires-images`) and are regenerated locally with `PYTHONHASHSEED=0 python seed_data.py --write-images` (byte-stable PNGs: fixed compression, no ancillary chunks). `seed_metadata` version `webmd-doctor-v1`, `EXPECTED_COUNTS` and a foreign-key check reject partial or incompatible state, and every seed function is gated as a whole so `/reset/webmd_doctor` and `docker restart` leave the DB byte-identical.

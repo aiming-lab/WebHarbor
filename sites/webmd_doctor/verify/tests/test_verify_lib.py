@@ -213,7 +213,7 @@ class GateTests(unittest.TestCase):
         self.assertEqual(lib.signup_email(traj(step("/login", "input", "alice.j@test.com"))), "")
 
     def test_site_urls_accept_any_loopback_port(self) -> None:
-        self.assertTrue(lib.is_site_url("http://localhost:40024/results"))
+        self.assertTrue(lib.is_site_url("http://localhost:41025/results"))
         self.assertTrue(lib.is_site_url("http://127.0.0.1:41024/"))
         self.assertFalse(lib.is_site_url("https://doctor.webmd.com/results"))
 

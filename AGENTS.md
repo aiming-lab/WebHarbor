@@ -48,17 +48,17 @@ Inside the image, sites live at `/opt/WebSyn/<site>/`. The path predates the ren
 # fresh clone
 ./scripts/fetch_assets.sh                     # pulls assets from HF
 ./scripts/build.sh                            # docker build -t webharbor:dev .
-docker run -d -p 8101:8101 -p 40000-40024:40000-40024 webharbor:dev
+docker run -d -p 8101:8101 -p 40000-40025:40000-40025 webharbor:dev
 ```
 
 Or use the published image directly:
 
 ```bash
-docker run -d -p 8101:8101 -p 40000-40024:40000-40024 \
+docker run -d -p 8101:8101 -p 40000-40025:40000-40025 \
   battalion7244/webharbor:latest
 ```
 
-Sites are on `40000`-`40024` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
+Sites are on `40000`-`40025` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
 
 | Method | Path                | Purpose                                   |
 |--------|---------------------|-------------------------------------------|
@@ -136,13 +136,13 @@ python3 -m py_compile sites/<site>/app.py
 
 # 3. run on alt ports (don't collide with anything you already have running)
 docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41024:40000-40024 webharbor:dev
+  -p 8201:8101 -p 41000-41025:40000-40025 webharbor:dev
 
 # 4. control plane healthy, all sites alive
 curl -s http://localhost:8201/health | python3 -m json.tool | head
 
 # 5. every site renders 200
-for p in $(seq 41000 41024); do
+for p in $(seq 41000 41025); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
