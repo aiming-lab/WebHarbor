@@ -2,6 +2,7 @@
 """Positive and adversarial regression tests for every NBA verifier."""
 from __future__ import annotations
 
+import ast
 import json
 import shutil
 import re
@@ -277,6 +278,41 @@ class ContractTests(unittest.TestCase):
         inline = html.split('<nav aria-label="Primary">', 1)[1].split("</nav>", 1)[0]
         for href in re.findall(r'href="([^"]+)"', inline):
             self.assertIn(href, drawer, f"{href} is missing from the narrow menu")
+
+    def test_tasks_use_the_registered_nba_port(self):
+        """Task URLs must follow the registry, not a remembered port.
+
+        Both launchers assign port 40000 + index, so a registry reorder silently
+        remaps every later site. NBA moved from 40024 to 40025 when FedEx merged
+        upstream; this derives the port instead of freezing it so the next
+        reorder fails loudly here rather than in a benchmark run.
+        """
+        root = SITE_DIR.parents[1]
+        if not (root / "websyn_start.sh").is_file():
+            self.skipTest("registry lives in the repository checkout, not the runtime image")
+        shell = re.search(r"SITES=\((.*?)\)", (root / "websyn_start.sh").read_text(), re.S).group(1).split()
+
+        module = ast.parse((root / "control_server.py").read_text())
+        control = None
+        for node in module.body:
+            if isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == "SITES" for target in node.targets
+            ):
+                control = ast.literal_eval(node.value)
+        self.assertIsNotNone(control, "control_server SITES not found")
+        self.assertEqual(shell, control, "websyn_start.sh and control_server.py disagree")
+        self.assertIn("nba", shell)
+
+        expected = f"http://localhost:{40000 + shell.index('nba')}/"
+        rows = [
+            json.loads(line)
+            for line in (SITE_DIR / "tasks.jsonl").read_text(encoding="utf-8").splitlines()
+            if line.strip()
+        ]
+        self.assertEqual([row["id"] for row in rows], [f"NBA--{n}" for n in range(20)])
+        self.assertEqual({row["web"] for row in rows}, {expected})
+        for row in rows:
+            self.assertTrue((root / row["verifier_path"]).is_file(), row["verifier_path"])
 
     def test_header_reflects_signed_in_account(self):
         """The header must show who is signed in, as upstream and the review
