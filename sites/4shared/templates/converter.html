@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}{{ source_format|upper }} to PDF converter — 4shared{% endblock %}
+{% block content %}
+<section class="page"><div class="container"><div class="auth-shell" style="max-width:620px"><div class="panel converter-panel">
+  <p class="eyebrow">FILE CONVERTER</p>
+  <h1>{{ source_format|upper }} to PDF</h1>
+  <p class="page-lede">Create a simulated PDF result without uploading file bytes or contacting an external service.</p>
+  {% if converted_name %}<div class="converter-result" role="status"><strong>{{ converted_name }}</strong><span>Conversion ready</span></div>{% endif %}
+  <form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-group"><label for="filename">{{ source_format|upper }} filename</label><input id="filename" name="filename" placeholder="document.{{ source_format }}" required></div>
+    <button class="primary-button wide">Convert to PDF</button>
+  </form>
+</div></div></div></section>
+{% endblock %}

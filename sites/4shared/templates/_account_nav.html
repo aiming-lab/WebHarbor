@@ -1,0 +1,12 @@
+<nav class="account-nav" aria-label="My 4shared">
+  <a class="account-add {% if request.endpoint == 'upload' %}current{% endif %}" href="{{ url_for('upload') }}">＋ &nbsp; Add</a>
+  <a class="{% if request.endpoint == 'my_files' %}current{% endif %}" href="{{ url_for('my_files') }}">⌂ &nbsp; My 4shared</a>
+  <a class="{% if request.endpoint == 'trash' %}current{% endif %}" href="{{ url_for('trash') }}">♲ &nbsp; Recycle Bin</a>
+  <a class="{% if request.endpoint == 'saved' %}current{% endif %}" href="{{ url_for('saved') }}">⌯ &nbsp; Saved files</a>
+  <span class="account-nav-separator"></span>
+  <a class="{% if request.endpoint == 'favorites' %}current{% endif %}" href="{{ url_for('favorites') }}">♡ &nbsp; Favorites</a>
+  <a class="{% if request.endpoint == 'activity' %}current{% endif %}" href="{{ url_for('activity') }}">◷ &nbsp; Activity</a>
+  <a class="{% if request.endpoint == 'account' %}current{% endif %}" href="{{ url_for('account') }}">● &nbsp; Account</a>
+  <a class="{% if request.endpoint == 'account_edit' %}current{% endif %}" href="{{ url_for('account_edit') }}">⚙ &nbsp; Settings</a>
+  <form class="account-nav-logout" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">↪ &nbsp; Log out</button></form>
+</nav>
