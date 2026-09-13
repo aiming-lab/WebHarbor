@@ -484,7 +484,7 @@ def seed_database():
         ("Cleo Tuxedo Cat", "Cat", "Domestic Shorthair", "Young", "Small", "Female", "Seattle, WA", "Seattle Humane", 6, 140, "Short", "Black / White", True, True, True, "A playful tuxedo cat who carries toy mice around the house.", "Cleo is outgoing, food motivated, and comfortable with friendly cats and dogs after gradual introductions.", 9),
         ("Poppy Tabby", "Cat", "Domestic Shorthair", "Adult", "Small", "Female", "New York, NY", "Bideawee", 12, 135, "Short", "Brown Tabby", False, False, True, "A thoughtful tabby who likes puzzle feeders and covered beds.", "Poppy takes time to trust, then becomes a loyal companion. She would prefer a home without young children.", 10),
         ("Willow Maine Coon", "Cat", "Maine Coon Mix", "Senior", "Large", "Female", "Boston, MA", "Animal Rescue League of Boston", 11, 100, "Long", "Gray", True, False, True, "A gentle long-haired cat who enjoys brushing and afternoon naps.", "Willow is easygoing and affectionate. Regular grooming keeps her coat comfortable and shiny.", 11),
-        ("Ollie Poodle Mix", "Dog", "Poodle Mix", "Senior", "Medium", "Male", "Chicago, IL", "Wright-Way Rescue", 5, 225, "Curly", "Apricot", True, True, True, "A cheerful senior who still enjoys neighborhood walks and fetch.", "Ollie is adaptable, friendly with visitors, and happiest when included in everyday family life.", 4),
+        ("Ollie Poodle Mix", "Dog", "Poodle Mix", "Senior", "Medium", "Male", "Chicago, IL", "Wright-Way Rescue", 5, 225, "Curly", "Apricot", True, True, True, "A cheerful senior who still enjoys neighborhood walks and fetch.", "Ollie is adaptable, friendly with visitors, and happiest when included in everyday family life.", 7),
     ]
     additional_listings = [
         ("Nova Siberian Husky", "Dog", "Siberian Husky", "Young", "Large", "Female", "New York, NY", "ASPCA Adoption Center", 8, 350, "Medium", "Gray / White", True, True, False, 0),
@@ -542,19 +542,19 @@ def seed_database():
         "Guinea Pig": (3,),
     }
     image_index_overrides = {
-        "Pepper Great Dane": 0, "Leo Vizsla Mix": 4, "Benny Boston Terrier": 4,
-        "Ace Whippet": 5, "Maisie Corgi Mix": 7, "Phoebe Samoyed": 0,
-        "Nova Siberian Husky": 6, "Winnie Greyhound": 7, "Koda Shiba Inu": 4,
-        "Theo Boxer Mix": 6, "Rudy Pit Bull Mix": 0, "Bruno Mastiff Mix": 5,
-        "Freya Golden Retriever": 7, "Rosie English Setter": 6, "Daisy Cocker Spaniel": 0,
-        "Tilly Papillon": 7, "Pearl Great Pyrenees": 0, "Gus English Bulldog": 7,
-        "Remy Terrier Mix": 5, "Archie Dachshund": 0, "Finn Schnauzer": 4,
-        "Ziggy Cattle Dog": 6, "Hank Hound Mix": 5, "Sage Shepherd Mix": 7,
-        "Mochi Siamese Mix": 8, "Saffron Abyssinian": 10, "Zola Bengal Mix": 8,
-        "Jasper Russian Blue": 1, "Mabel Persian": 10, "Beans Norwegian Forest Cat": 9,
-        "Pearl Snowshoe": 10, "Theo Siamese": 1, "Nora Turkish Angora": 8,
-        "Olive Ragdoll Mix": 9, "Otis American Shorthair": 10,
-        "Felix American Shorthair": 11, "Wren Bombay": 1,
+        "Pepper Great Dane": 0, "Leo Vizsla Mix": 6, "Benny Boston Terrier": 7,
+        "Ace Whippet": 0, "Maisie Corgi Mix": 6, "Phoebe Samoyed": 0,
+        "Nova Siberian Husky": 5, "Winnie Greyhound": 0, "Koda Shiba Inu": 7,
+        "Theo Boxer Mix": 4, "Rudy Pit Bull Mix": 0, "Bruno Mastiff Mix": 5,
+        "Freya Golden Retriever": 0, "Rosie English Setter": 6, "Daisy Cocker Spaniel": 4,
+        "Tilly Papillon": 7, "Pearl Great Pyrenees": 5, "Gus English Bulldog": 4,
+        "Remy Terrier Mix": 7, "Archie Dachshund": 4, "Finn Schnauzer": 7,
+        "Ziggy Cattle Dog": 6, "Hank Hound Mix": 4, "Sage Shepherd Mix": 5,
+        "Mochi Siamese Mix": 8, "Saffron Abyssinian": 1, "Zola Bengal Mix": 10,
+        "Jasper Russian Blue": 9, "Mabel Persian": 11, "Beans Norwegian Forest Cat": 11,
+        "Pearl Snowshoe": 9, "Theo Siamese": 9, "Nora Turkish Angora": 11,
+        "Olive Ragdoll Mix": 8, "Otis American Shorthair": 10,
+        "Felix American Shorthair": 9, "Wren Bombay": 10,
     }
     for values in additional_listings:
         name, species, breed, age, size, gender, location, shelter = values[:8]

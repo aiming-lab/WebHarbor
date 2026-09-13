@@ -193,6 +193,13 @@ class AppTests(unittest.TestCase):
             self.assertGreaterEqual(count(species="Rabbit", location="Seattle, WA"), 3)
             self.assertEqual(count(species="Dog", location="Chicago, IL", age="Senior"), 2)
             self.assertGreaterEqual(count(species="Dog", location="Chicago, IL"), 6)
+            senior_chicago_images = {
+                row.image_index
+                for row in Listing.query.filter_by(
+                    species="Dog", location="Chicago, IL", age="Senior"
+                ).all()
+            }
+            self.assertEqual(len(senior_chicago_images), 2)
 
     def test_combined_filters_have_one_intended_match(self):
         response = self.client.get(
