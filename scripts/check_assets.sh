@@ -37,6 +37,9 @@ for site in sites/*/; do
     if [[ -f "sites/$s/asset_inventory.json" ]]; then
         python3 scripts/check_asset_inventory.py "sites/$s"
     fi
+    if [[ -f "sites/$s/generated_asset_inventory.json" && -f "sites/$s/check_generated_assets.py" ]]; then
+        python3 "sites/$s/check_generated_assets.py"
+    fi
 done
 
 if (( missing > 0 )); then

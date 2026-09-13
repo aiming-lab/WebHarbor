@@ -1,6 +1,6 @@
 # FedEx
 
-An offline FedEx mirror contributed in [WebHarbor #50](https://github.com/aiming-lab/WebHarbor/pull/50) and revised in [WebHarbor #82](https://github.com/aiming-lab/WebHarbor/pull/82), with package tracking, rate estimates, a shipping flow, pickup scheduling, a location directory, local support articles, accounts, shipment history, invoices and claims. FedEx uses port **40024** in the current 25-site registry.
+An offline FedEx mirror contributed in [WebHarbor #50](https://github.com/aiming-lab/WebHarbor/pull/50) and revised in [WebHarbor #82](https://github.com/aiming-lab/WebHarbor/pull/82), with package tracking, rate estimates, a shipping flow, pickup scheduling, a location directory, local support articles, accounts, shipment history, invoices and claims. FedEx uses port **40024** in the current 26-site registry.
 
 ## Data and assets
 

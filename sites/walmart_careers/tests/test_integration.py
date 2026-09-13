@@ -16,7 +16,7 @@ PREFIX_SITES = [
     "cambridge_dictionary", "coursera", "espn", "merriam_webster", "ikea", "phys_org",
     "target", "ted", "osu", "rotten_tomatoes", "compass",
 ]
-FIXED_PORTS = {"rotten_tomatoes": 40021, "compass": 40022, "walmart_careers": 40023, "fedex": 40024}
+FIXED_PORTS = {"rotten_tomatoes": 40021, "compass": 40022, "walmart_careers": 40023, "fedex": 40024, "webmd_doctor": 40025}
 
 
 def registered_sites() -> list[str]:
@@ -54,7 +54,7 @@ def control_sites():
 def test_registry_is_consistent_and_preserves_assigned_ports():
     sites = registered_sites()
     assert sites[:len(PREFIX_SITES)] == PREFIX_SITES
-    assert "walmart_careers" in sites and "fedex" in sites
+    assert "walmart_careers" in sites and "fedex" in sites and "webmd_doctor" in sites
     assert len(sites) == len(set(sites)), "duplicate site in the registry"
     for site, port in FIXED_PORTS.items():
         assert site_port(site) == port, f"{site} moved to {site_port(site)}, expected {port}"
@@ -68,6 +68,9 @@ def test_docker_preserves_build_gates_for_every_inventoried_site():
     for site in ("compass", "walmart_careers", "fedex"):
         assert f"check_asset_inventory.py /opt/WebSyn/{site}" in text, site
         assert f"cd /opt/WebSyn/{site}" in text, site
+    # WebMD Doctor ships its own generated-asset gate plus a source-built seed.
+    assert "/opt/WebSyn/webmd_doctor/check_generated_assets.py" in text
+    assert "cd /opt/WebSyn/webmd_doctor" in text
     assert "walmart_careers/check_tracked_assets.py" in text
     for site in ("osu", "rotten_tomatoes"):
         assert f"cd /opt/WebSyn/{site}" in text, site
@@ -85,7 +88,7 @@ def test_tasks_and_verifiers_are_complete_and_use_site_24():
 def test_assets_pin_is_immutable_merged_revision():
     text = (ROOT / ".assets-revision").read_text()
     revision = re.search(r"^revision:\s*([0-9a-f]+)$", text, re.M).group(1)
-    assert revision == "68dcbf2cbd0cbc2fbf97dcb71da13ace67c11bf6"
+    assert revision == "ad6f424f72cada9e6f5c09a58093d0ceeab9c52b"
     assert (SITE / ".build-generated-seed").is_file()
     assert (SITE / ".requires-images").is_file()
     assert (SITE / "asset_inventory.json").is_file()
@@ -94,7 +97,7 @@ def test_assets_pin_is_immutable_merged_revision():
 
 def test_shared_documentation_uses_the_current_site_range():
     current = port_range()
-    stale = {f"40000-400{end}" for end in range(20, 24)} - {current}
+    stale = {f"40000-400{end}" for end in range(20, 25)} - {current}
     for relative in ["README.md", "AGENTS.md", "CONTRIBUTING.md", "CLAUDE.md", "agent_demo/README.md"]:
         text = (ROOT / relative).read_text()
         for old in stale:

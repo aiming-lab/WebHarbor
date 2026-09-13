@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 25 Flask mirror sites + control plane on :8101.
+# 26 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -56,6 +56,14 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/fedex
 RUN cd /opt/WebSyn/fedex && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
+# WebMD Doctor's generated avatars / posters come from the pinned asset bundle,
+# while its SQLite seed is rebuilt deterministically from tracked source code.
+# The inventory gate enforces exact coverage + per-file SHA-256 + PNG decode of
+# all 317 generated images (same contract as the compass / walmart inventories).
+RUN python3 /opt/WebSyn/webmd_doctor/check_generated_assets.py
+RUN cd /opt/WebSyn/webmd_doctor && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
@@ -78,6 +86,6 @@ os.makedirs('instance_seed', exist_ok=True); \
 shutil.copy2('instance/rotten_tomatoes.db', 'instance_seed/rotten_tomatoes.db'); \
 print('Rotten Tomatoes seed DB generated at build time.')" && rm -rf /opt/WebSyn/rotten_tomatoes/instance
 
-EXPOSE 8101 40000-40024
+EXPOSE 8101 40000-40025
 
 CMD ["/opt/websyn_start.sh"]
