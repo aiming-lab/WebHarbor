@@ -1,0 +1,421 @@
+{% extends "base.html" %}
+{% block title %}{{ doctor.display_name }} - {{ doctor.primary_specialty.name }} - {{ primary.city.name }}, {{ primary.city.state }}{% endblock %}
+{% block meta_description %}{{ doctor.display_name }} is a {{ doctor.primary_specialty.name }} provider in {{ primary.city.name }}, {{ primary.city.state }} with {{ doctor.years_experience }} years of experience.{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb">
+    <a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('specialty_index') }}">Providers</a><span class="sep">›</span><a href="{{ url_for('specialty_index') }}">Specialties</a><span class="sep">›</span><a href="{{ url_for('specialty_landing', spec=doctor.primary_specialty.slug) }}">{{ doctor.primary_specialty.name }}</a><span class="sep">›</span><a href="{{ url_for('specialty_state', spec=doctor.primary_specialty.slug, state=primary.city.state_slug) }}">{{ primary.city.state }}</a><span class="sep">›</span><a href="{{ url_for('specialty_city', spec=doctor.primary_specialty.slug, state=primary.city.state_slug, city=primary.city.slug) }}">{{ primary.city.name }}</a><span class="sep">›</span><span>{{ doctor.display_name }}</span>
+  </div>
+
+  <div class="profile-top{% if doctor.is_enhanced %} has-widget{% endif %}">
+  <section class="profile-hero" id="overview">
+    <div class="hero-main">
+      <div class="avatar-col">
+        <img class="avatar" src="{{ url_for('static', filename=doctor.avatar_path) }}" alt="{{ doctor.display_name }}">
+        {% if doctor.is_enhanced %}<span class="verified"><svg class="ic"><use href="#i-verified"/></svg> VERIFIED</span>{% endif %}
+      </div>
+      <div>
+        <h1>{{ doctor.display_name }}</h1>
+        <div class="spec">{{ doctor.primary_specialty.name }}</div>
+        <div class="rating-line">
+          <span class="num">{{ doctor.avg_rating | rating1 }}</span>
+          {% with rating=doctor.avg_rating %}{% include "_stars.html" %}{% endwith %}
+          <span>({{ doctor.ratings_count | plural_word('Rating') }})</span>
+          <a href="#leave-review" style="margin-left:10px"><svg class="ic"><use href="#i-edit"/></svg> Leave a review</a>
+        </div>
+        {% if doctor.accepting_new_patients %}<span class="accept-pill">Accepting New Patients</span>{% endif %}
+        {% if doctor.is_enhanced %}
+          <div style="font-size:15px;margin:4px 0 8px"><svg class="ic"><use href="#i-calendar"/></svg> Next Available: <strong>{{ doctor.next_available_label }}</strong> <a href="{{ url_for('book_appointment', slug=doctor.slug) }}">See full list of appointments</a></div>
+        {% endif %}
+        <a class="btn btn-red hero-phone" href="#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ primary.phone }}</a>
+        <ul class="facts">
+          <li><svg class="ic"><use href="#i-briefcase"/></svg> {{ doctor.years_experience | plural_word('Year') }} Experience</li>
+          <li style="align-items:flex-start"><svg class="ic" style="margin-top:3px"><use href="#i-pin"/></svg> <span><strong>{{ primary.name }}</strong><br>{{ primary.address_line }}{% if doctor.other_location_count %} <a href="#locations">{{ doctor.other_location_count | plural_word('other location') }}</a>{% endif %}</span></li>
+          {% if doctor.hospital %}<li><svg class="ic"><use href="#i-hospital"/></svg> <a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}">{{ doctor.hospital.name }}</a></li>{% endif %}
+          {% for line in doctor.award_lines %}<li><svg class="ic"><use href="#i-award"/></svg> <a href="#awards">{{ line }}</a></li>{% endfor %}
+          {% if doctor.website_url %}<li><svg class="ic"><use href="#i-globe"/></svg> <a href="{{ doctor.website_url }}" rel="nofollow noopener noreferrer" title="External synthetic domain (.example) — not reachable offline">Visit Website <span class="sr-only">(external, unavailable in mirror)</span></a></li>{% endif %}
+          <li>
+            <form class="save-form" method="post" action="{{ url_for('save_provider', slug=doctor.slug) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="next" value="{{ url_for('doctor_profile', slug=doctor.slug) }}">
+              <button class="save-btn" type="submit"><svg class="ic"><use href="#{{ 'i-heart-fill' if is_saved else 'i-heart' }}"/></svg> {{ 'Saved Provider' if is_saved else 'Save Provider' }}</button>
+            </form>
+          </li>
+        </ul>
+      </div>
+      <svg class="hero-art" viewBox="0 0 520 300" aria-hidden="true"><circle cx="330" cy="200" r="150" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/><circle cx="420" cy="140" r="110" fill="#1d3ba8" opacity=".6"/><path d="M200 300 Q300 120 520 200 L520 300 Z" fill="#2a49c0" opacity=".5"/></svg>
+    </div>
+    {% if doctor.hospital %}<div class="affiliation">Affiliated<br>with <strong><a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}">{{ doctor.hospital.name }}</a></strong></div>{% endif %}
+  </section>
+    {% if doctor.is_enhanced %}
+    <aside class="hero-side">
+        <h2>Book an Appointment</h2>
+        <form class="book-widget" method="get" action="{{ url_for('book_appointment', slug=doctor.slug) }}">
+          <label class="lbl" for="widget-location">Location:</label>
+          <select id="widget-location" name="location_id">
+            {% for location in doctor.locations %}<option value="{{ location.id }}">{{ location.name }} — {{ location.short_address }}</option>{% endfor %}
+          </select>
+          <fieldset class="seg-field">
+            <legend class="lbl">This appointment is for:</legend>
+            <div class="seg">
+              <label><input type="radio" name="patient_type" value="New Patient"> New Patient</label>
+              <label><input type="radio" name="patient_type" value="Returning Patient"> Returning Patient</label>
+            </div>
+          </fieldset>
+          <fieldset class="slot-field">
+          <legend class="lbl">Choose a time:</legend>
+          <div class="month">September 2026 <svg class="ic"><use href="#i-chevron"/></svg></div>
+          <div class="grid-days">
+            {% for abbr, short, day, label in booking_days %}
+              <div>
+                <div class="day-head">{{ abbr }}<span>{{ short }}</span></div>
+                {% for slot in booking_slots %}
+                  <label class="slot"><input type="radio" name="slot" value="{{ day.isoformat() }}|{{ slot }}">{{ slot }}</label>
+                {% endfor %}
+              </div>
+            {% endfor %}
+          </div>
+          <div class="grid-more"><svg class="ic"><use href="#i-chevron"/></svg></div>
+          </fieldset>
+          <button class="btn btn-primary btn-wide btn-pill" type="submit" style="margin-top:12px">Request Appointment</button>
+        </form>
+    </aside>
+    {% endif %}
+
+  <nav class="tabs" id="profile-tabs" aria-label="Profile sections">
+    <a class="on" href="#overview">OVERVIEW</a><a href="#locations">LOCATIONS</a><a href="#reviews">RATINGS &amp; REVIEWS</a><a href="#insurance">INSURANCE</a>
+  </nav>
+  </div>
+  <div class="sticky-doc" id="sticky-doc" hidden>
+    <div class="container"><div class="inner">
+      <img class="avatar" src="{{ url_for('static', filename=doctor.avatar_path) }}" alt="">
+      <div class="who"><strong>{{ doctor.display_name }}</strong><span class="rating-line">{% with rating=doctor.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} ({{ doctor.ratings_count }})</span></div>
+      {% if doctor.accepting_new_patients %}<span class="accept-pill">Accepting New Patients</span>{% endif %}
+      <a class="btn btn-red btn-pill btn-sm" href="#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ primary.phone }}</a>
+      {% if doctor.is_enhanced %}<a class="btn btn-primary btn-pill btn-sm" href="{{ url_for('book_appointment', slug=doctor.slug) }}">Request Now</a>{% endif %}
+    </div></div>
+  </div>
+
+  <div class="profile-grid">
+    <div class="stack">
+      {% if doctor.is_enhanced %}
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-video"/></svg><h2>Provider Video</h2></div>
+        <div class="panel-body"><span class="video-poster"><img src="{{ url_for('static', filename=doctor.video_poster_file) }}" alt="Provider video for {{ doctor.display_name }}"></span></div>
+      </section>
+      {% endif %}
+
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-doc"/></svg><h2>Overview</h2></div>
+        <div class="panel-body">
+          {% if doctor.bio_html %}
+            <div class="bio bio-clip" id="bio-clip">{{ doctor.bio_html | safe }}</div>
+            <a href="#" class="btn-link" data-expand="bio-clip">View more</a>
+          {% else %}
+            <p>{{ doctor.overview_text }}</p>
+            <p><em>Overview based on verified provider data</em></p>
+          {% endif %}
+        </div>
+      </section>
+
+      {% if doctor.featured_review %}
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-quote"/></svg><h2>Featured Review</h2></div>
+        <div class="panel-body"><p class="quote">"{{ doctor.featured_review.text }}"</p><a href="#reviews">Read all reviews</a></div>
+      </section>
+      {% endif %}
+
+      <section class="panel" id="locations">
+        <div class="panel-head"><svg class="ic"><use href="#i-pin"/></svg><h2>Locations</h2></div>
+        <div class="panel-body">
+          {% for location in doctor.locations %}
+            <div class="loc">
+              <div>
+                <a class="practice-link" href="{{ url_for('practice_detail', slug=location.practice.slug) }}">{{ location.practice.name }}</a>
+                <div class="loc-name">{{ location.name }}</div>
+                <div>{{ location.street }}<br>{{ location.city.name }}, {{ location.city.state }}, {{ location.zip }}</div>
+                <a class="btn btn-red btn-sm" style="margin:10px 0" href="#locations"><svg class="ic"><use href="#i-phone"/></svg> {{ location.phone }}</a>
+                <div><a href="#" title="Not available in this mirror" aria-disabled="true">Get Directions</a></div>
+                <dl class="hours">{% for row in location.hours_rows() %}<dt>{{ row.day }}</dt><dd>{{ row.text }}</dd>{% endfor %}</dl>
+              </div>
+              <div class="map">Map unavailable in mirror</div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel" id="reviews">
+        <div class="panel-head"><svg class="ic"><use href="#i-star"/></svg><h2>Ratings &amp; Reviews for {{ doctor.short_name }}</h2></div>
+        <div class="panel-body">
+          <div class="review-summary">
+            <div>
+              <h3 style="font-size:15px">{{ doctor.short_name }}'s Rating</h3>
+              <div class="big">{{ doctor.avg_rating | rating1 }} {% with rating=doctor.avg_rating %}{% include "_stars.html" %}{% endwith %}</div>
+              <div><a href="#reviews">{{ doctor.ratings_count | plural_word('Rating') }} with {{ doctor.text_review_count | plural_word('Review') }}</a></div>
+              {% if doctor.avg_wait_minutes %}<div style="margin-top:6px">Average Wait Time <strong>{{ doctor.avg_wait_minutes }} Minutes</strong></div>{% endif %}
+            </div>
+            <div><a class="btn btn-primary btn-pill" href="#leave-review"><svg class="ic"><use href="#i-edit"/></svg> Leave A Review</a></div>
+          </div>
+          {% if doctor.ratings_count %}
+          <h3 style="font-size:15px;margin-top:18px">Patients' Perspective</h3>
+          <div class="criteria-grid">
+            {% for row in doctor.perspectives %}
+              <div class="criterion">
+                <div>{{ row.label }}</div>
+                <div class="bar"><span style="width:{{ row.did_well_percent }}%"></span></div>
+                <div class="counts"><span>Did Well ({{ row.did_well }})</span><span>Needs Improvement ({{ row.needs_improvement }})</span></div>
+              </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          <div class="trust"><svg class="ic ic-lg"><use href="#i-shield"/></svg> Why you can trust the reviews on WebMD Care? <a href="{{ url_for('reviews_guidelines') }}" style="margin-left:auto;font-weight:400">Reviews guidelines</a></div>
+
+          {% if user_review %}
+            <div class="pending"><strong>Your review</strong> <span class="tag">{{ user_review.status }}</span><div style="margin-top:6px">{% with rating=user_review.rating, small=true %}{% include "_stars.html" %}{% endwith %} "{{ user_review.text }}"</div></div>
+          {% endif %}
+
+          <details class="review-form" id="leave-review"{% if request.args.get('review') %} open{% endif %}>
+            <summary class="btn btn-ghost btn-pill" style="display:inline-flex"><svg class="ic"><use href="#i-edit"/></svg> Leave A Review</summary>
+            {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('submit_review', slug=doctor.slug) }}" class="form-grid">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <div>
+                <label>Your overall rating</label>
+                <div class="star-pick" role="radiogroup" aria-label="Overall provider rating">
+                  {% for n in (1, 2, 3, 4, 5) %}<label title="{{ n }} star{{ '' if n == 1 else 's' }}"><input type="radio" name="rating" value="{{ n }}" required><svg class="ic"><use href="#i-star"/></svg><span class="sr-only">{{ n }} star{{ '' if n == 1 else 's' }}</span></label>{% endfor %}
+                  <span class="star-hint">Overall provider rating*</span>
+                </div>
+              </div>
+              <fieldset class="crit-field">
+                <legend>How did {{ doctor.short_name }} do?</legend>
+                <div class="crit-rows">
+                  {% for label in perspective_criteria %}
+                    {% set index = loop.index %}
+                    <div class="crit-row"><span>{{ label }}</span><label><input type="radio" name="c{{ index }}" value="1" required> Did well</label><label><input type="radio" name="c{{ index }}" value="0"> Needs improvement</label></div>
+                  {% endfor %}
+                </div>
+              </fieldset>
+              <div>
+                <label for="review-text">Your review (at least 20 characters)</label>
+                <textarea id="review-text" name="text" minlength="20" maxlength="2000" required placeholder="Tell other patients about your experience with {{ doctor.short_name }}."></textarea>
+              </div>
+              <div><button class="btn btn-primary" type="submit">Submit Review</button></div>
+            </form>
+            {% else %}
+              <p style="margin-top:12px">Please <a href="{{ url_for('login', next=url_for('doctor_profile', slug=doctor.slug) ~ '?review=1#leave-review') }}">log in</a> to leave a review for {{ doctor.short_name }}.</p>
+            {% endif %}
+          </details>
+
+          <div class="review-head"><h3>{{ doctor.text_review_count }} REVIEWS</h3><div class="review-controls" title="Sorting, filtering and search are not available in this mirror"><span class="fake-select" aria-hidden="true">Most Recent <svg class="ic"><use href="#i-chevron"/></svg></span><span class="fake-btn" aria-hidden="true"><svg class="ic"><use href="#i-sliders"/></svg> Filter</span><span class="fake-search" aria-hidden="true">Search <svg class="ic"><use href="#i-search"/></svg></span></div></div>
+          <div class="showing">Showing {{ reviews_page.start }}-{{ reviews_page.end }} of {{ reviews_page.total }} reviews</div>
+          {% for review in reviews_page.rows %}
+            <div class="review">
+              {% with rating=review.rating %}{% include "_stars.html" %}{% endwith %}
+              <p class="text">"{{ review.text }}"</p>
+              <details><summary>More Review Details</summary>
+                <div class="crit-list">{% for label, ok in review.criteria_rows() %}<span>{{ '✓' if ok else '✗' }} {{ label }}</span>{% endfor %}</div>
+                <div class="muted" style="font-size:13px">Wait time: {{ review.wait_bucket }}</div>
+              </details>
+              <div class="date">{{ review.date_label }}</div>
+              <div class="actions"><span class="btn btn-outline btn-sm btn-pill" title="Not available in this mirror">Helpful{% if review.helpful_count %} ({{ review.helpful_count }}){% endif %}</span><a href="#" title="Not available in this mirror" aria-disabled="true">Flag</a></div>
+            </div>
+          {% else %}
+            <p class="muted">No written reviews yet.</p>
+          {% endfor %}
+          {% with page=reviews_page %}{% include "_pagination.html" %}{% endwith %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-list"/></svg><h2>Conditions Treated by {{ doctor.full_name }}</h2></div>
+        <div class="panel-body">
+          <p class="muted" style="font-size:13px">We verify which condition {{ doctor.display_name }} treats and which conditions they treat most often.</p>
+          {% if doctor.is_enhanced %}
+            <p><strong>{{ doctor.display_name }}'s Most-Treated Conditions:</strong><br><span class="muted" style="font-size:13px">Rankings are compared to the national average for similar providers.</span></p>
+            {% for row in top_conditions %}
+              <div class="cond">
+                <div>{{ doctor.display_name }} treats <strong>{{ row.condition.name }}</strong> {{ {'Similar': 'as often as other providers', 'More Often': 'more often than other providers', 'More Than Most': 'more than most providers'}[row.tier] }}</div>
+                <div class="tier-bar"><span class="{{ 'on similar' if row.tier == 'Similar' else '' }}"></span><span class="{{ 'on' if row.tier == 'More Often' else '' }}"></span><span class="{{ 'on' if row.tier == 'More Than Most' else '' }}"></span></div>
+                <div class="tier-labels"><span class="{{ 'on' if row.tier == 'Similar' else '' }}">Similar</span><span class="{{ 'on' if row.tier == 'More Often' else '' }}">More Often</span><span class="{{ 'on' if row.tier == 'More Than Most' else '' }}">More Than Most</span></div>
+              </div>
+            {% endfor %}
+          {% endif %}
+          <details class="top20"><summary data-open-text="View Less">View Top 20 Conditions treated by {{ doctor.display_name }}</summary>
+            <ol>{% for row in (more_conditions if doctor.is_enhanced else doctor.conditions) %}<li>{{ row.condition.name }}</li>{% endfor %}</ol>
+          </details>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-list"/></svg><h2>Procedures Performed by {{ doctor.full_name }}</h2></div>
+        <div class="panel-body">
+          <p class="muted" style="font-size:13px">We verify which procedures {{ doctor.display_name }} performs and which procedures they perform most often.</p>
+          {% if doctor.is_enhanced %}
+            <p><strong>{{ doctor.display_name }}'s Most-Performed Procedures:</strong></p>
+            {% for row in top_procedures %}
+              <div class="cond">
+                <div>{{ doctor.display_name }} performs <strong>{{ row.procedure.name }}</strong> {{ {'Similar': 'as often as other providers', 'More Often': 'more often than other providers', 'More Than Most': 'more than most providers'}[row.tier] }}</div>
+                <div class="tier-bar"><span class="{{ 'on similar' if row.tier == 'Similar' else '' }}"></span><span class="{{ 'on' if row.tier == 'More Often' else '' }}"></span><span class="{{ 'on' if row.tier == 'More Than Most' else '' }}"></span></div>
+                <div class="tier-labels"><span class="{{ 'on' if row.tier == 'Similar' else '' }}">Similar</span><span class="{{ 'on' if row.tier == 'More Often' else '' }}">More Often</span><span class="{{ 'on' if row.tier == 'More Than Most' else '' }}">More Than Most</span></div>
+              </div>
+            {% endfor %}
+          {% endif %}
+          <details class="top20"><summary data-open-text="View Less">View Top 20 Procedures performed by {{ doctor.display_name }}</summary>
+            <ol>{% for row in (more_procedures if doctor.is_enhanced else doctor.procedures) %}<li>{{ row.procedure.name }}</li>{% endfor %}</ol>
+          </details>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-stethoscope"/></svg><h2>Areas of Expertise</h2></div>
+        <div class="panel-body"><ul class="inline-list">{% for row in doctor.expertise %}<li>{{ row.area.name }}</li>{% endfor %}</ul></div>
+      </section>
+
+      {% if doctor.ratings_count %}
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-thumb"/></svg><h2>Patients' Perspective</h2></div>
+        <div class="panel-body"><ul class="inline-list">{% for label in doctor.perspective_summary() %}<li><svg class="ic ic-blue"><use href="#i-check-circle"/></svg> {{ label }}</li>{% endfor %}</ul><p class="muted" style="margin-top:10px">Based on patient feedback. <a href="#reviews">Read the reviews</a></p></div>
+      </section>
+      {% endif %}
+
+      {% if doctor.awards %}
+      <section class="panel" id="awards">
+        <div class="panel-head"><svg class="ic"><use href="#i-award"/></svg><h2>Awards</h2></div>
+        <div class="panel-body">
+          {% for award in doctor.awards %}
+            <div class="award-box" style="margin-bottom:12px">
+              <div class="seal">WebMD {{ award.award_class | upper }} CHOICE</div>
+              <div><h4>{{ award_classes[award.award_class | lower][2] | upper }}</h4><p>Recognizes providers committed to transparency, responsiveness and great service to patients who have earned a high patient satisfaction rating. Awarded in the {{ award.year }} cycle.</p><a href="{{ url_for('choice_awards') }}">Click for our Methodology</a></div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-list"/></svg><h2>Patient Satisfaction Poll</h2></div>
+        <div class="panel-body">
+          {% for row in poll_rows %}
+            <div class="poll"><div><div class="q">{{ row.question }}</div><div class="yn"><span>Yes</span><span>No</span></div></div><div class="counts"><span>Yes ({{ row.yes }})</span><span class="bar"></span><span>No ({{ row.no }})</span></div></div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-stethoscope"/></svg><h2>Specialties</h2></div>
+        <div class="panel-body"><ul>{% for name in doctor.specialty_names %}<li>{{ name }}</li>{% endfor %}</ul></div>
+      </section>
+
+      <section class="panel kv" id="education">
+        <div class="panel-head"><svg class="ic"><use href="#i-doc"/></svg><h2>Certifications, License, &amp; Education</h2></div>
+        <div class="panel-body">
+          <p>{{ doctor.full_name }} holds an active medical license in the state of {{ doctor.licenses[0].state }}. They are board certified in {{ doctor.certifications | map(attribute='cert_type') | join(' and ') }} by the {{ doctor.certifications[0].issuer }}.</p>
+          <h3>Board Certifications</h3>
+          {% for cert in doctor.certifications %}<p>Board certified in {{ cert.cert_type }} by the {{ cert.issuer }} in {{ cert.year }}.</p>{% endfor %}
+          <h3>Medical License</h3>
+          <p>{% for lic in doctor.licenses %}{{ lic.license_type }} with an {{ lic.status | lower }} medical license in the state of {{ lic.state }} that expires on {{ lic.expiry_date.strftime('%B') }} {{ lic.expiry_date.day }}, {{ lic.expiry_date.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>
+          <h3>Education &amp; Training</h3>
+          {% if fellowships %}<h4>FELLOWSHIP</h4><p>Completed their fellowship at {% for row in fellowships %}{{ row.institution }} in {{ row.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>{% endif %}
+          {% if residencies %}<h4>RESIDENCY</h4><p>Completed their residency at {% for row in residencies %}{{ row.institution }} in {{ row.year }}{{ ' and ' if not loop.last else '.' }}{% endfor %}</p>{% endif %}
+          <h4>MEDICAL SCHOOL</h4>
+          <p>Graduated from {{ doctor.medical_school }} in {{ doctor.graduation_year }}.</p>
+          <h3 id="npi">NPI Number</h3>
+          <p>{{ doctor.short_name }}'s NPI number is {{ doctor.npi }}.</p>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-people"/></svg><h2>Languages Spoken</h2></div>
+        <div class="panel-body"><ul>{% for language in doctor.language_names %}<li>{{ language }}</li>{% endfor %}</ul></div>
+      </section>
+
+      <section class="panel" id="insurance">
+        <div class="panel-head"><svg class="ic"><use href="#i-shield"/></svg><h2>Does {{ doctor.full_name }} Accept Your Insurance?</h2></div>
+        <div class="panel-body">
+          <p class="muted" style="font-size:13px">Please verify insurance information with the provider's office as it may change frequently.</p>
+          <ul class="inline-list">{% for row in doctor.insurances %}<li>{{ row.plan.label }}{% if not row.is_verified %} <span class="muted">(unverified)</span>{% endif %}</li>{% endfor %}</ul>
+        </div>
+      </section>
+
+      <section class="panel faq">
+        <div class="panel-head"><svg class="ic"><use href="#i-question"/></svg><h2>Frequently Asked Questions</h2></div>
+        <div class="panel-body">
+          <dl>
+            <dt>What conditions does {{ doctor.full_name }} treat?</dt>
+            <dd>{{ doctor.full_name }} most often treats {{ doctor.conditions[:3] | map(attribute='condition') | map(attribute='name') | join(', ') }}.</dd>
+            <dt>What treatments does {{ doctor.full_name }} specialize in?</dt>
+            <dd>{{ doctor.full_name }} performs the following procedures most often: {{ doctor.procedures[:3] | map(attribute='procedure') | map(attribute='name') | join(', ') }}.</dd>
+            <dt>What insurance plans does {{ doctor.full_name }} accept?</dt>
+            <dd>{{ doctor.full_name }} accepts a range of insurance plans, including {{ insurer_names[:4] | join(', ') }}. Check the Insurance section above to verify your plan.</dd>
+            <dt>Is {{ doctor.full_name }} accepting new patients?</dt>
+            <dd>{% if doctor.accepting_new_patients %}Yes, {{ doctor.full_name }} is currently accepting new patients.{% else %}No, {{ doctor.full_name }} is not currently listed as accepting new patients.{% endif %} Contact the provider via this profile to book an appointment.</dd>
+            <dt>Where did {{ doctor.full_name }} go to medical school?</dt>
+            <dd>{{ doctor.full_name }} earned {{ doctor.possessive }} medical degree ({{ doctor.degree }}) from {{ doctor.medical_school }} in {{ doctor.graduation_year }}.</dd>
+            <dt>What languages does {{ doctor.full_name }} speak?</dt>
+            <dd>{{ doctor.full_name }} speaks {{ doctor.language_names | join(' and ') }}.</dd>
+          </dl>
+        </div>
+      </section>
+
+      {% if doctor.is_enhanced %}
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-people"/></svg><h2>{{ rail_title }}</h2></div>
+        <div class="panel-body">
+          <div class="colleague-grid">
+            {% for colleague in colleagues[:6] %}
+              <div class="colleague">
+                <img class="avatar" src="{{ url_for('static', filename=colleague.avatar_path) }}" alt="">
+                <div class="name"><a href="{{ url_for('doctor_profile', slug=colleague.slug) }}">{{ colleague.display_name }}</a></div>
+                <div class="sub">{{ colleague.primary_specialty.name }}</div>
+                <div class="sub">{{ colleague.years_experience | plural_word('Year') }} Experience</div>
+                {% with rating=colleague.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %}
+              </div>
+            {% else %}<p class="muted">No other providers listed.</p>{% endfor %}
+          </div>
+          {% if primary.practice %}<p style="margin-top:14px;text-align:center"><a href="{{ url_for('practice_detail', slug=primary.practice.slug) }}">View More Providers ›</a></p>{% endif %}
+        </div>
+      </section>
+      {% elif doctor.hospital %}
+      <section class="panel">
+        <div class="panel-head"><svg class="ic"><use href="#i-hospital"/></svg><h2>Hospital Affiliations for {{ doctor.short_name }}</h2></div>
+        <div class="panel-body"><p><a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}" style="color:var(--text);font-weight:700">{{ doctor.hospital.name }}</a><br><span class="muted">{{ doctor.hospital.street }}, {{ doctor.hospital.city.name }}, {{ doctor.hospital.city.state }} {{ doctor.hospital.zip }}</span></p></div>
+      </section>
+      {% endif %}
+    </div>
+
+    <aside class="rail">
+      {% if not doctor.is_enhanced %}
+      <section class="panel rail-panel">
+        <h3>{{ rail_title }}</h3>
+        <div class="rail-list">
+          {% for colleague in colleagues %}
+            <div class="rail-row">
+              <img class="avatar" src="{{ url_for('static', filename=colleague.avatar_path) }}" alt="">
+              <div>
+                <div class="name"><a href="{{ url_for('doctor_profile', slug=colleague.slug) }}">{{ colleague.display_name }}</a></div>
+                <div class="sub">{{ colleague.primary_specialty.name }}<br>{{ colleague.primary_location.city.name }}, {{ colleague.primary_location.city.state }}</div>
+                <div class="rating-line" style="margin:2px 0 0">{% with rating=colleague.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} <a href="{{ url_for('doctor_profile', slug=colleague.slug) }}#reviews">({{ colleague.ratings_count }})</a></div>
+              </div>
+            </div>
+          {% else %}
+            <p class="muted">No other providers listed.</p>
+          {% endfor %}
+        </div>
+        {% if doctor.hospital %}<p style="margin-top:14px"><a href="{{ url_for('hospital_detail', slug=doctor.hospital.slug) }}">View More Providers ›</a></p>{% elif primary.practice %}<p style="margin-top:14px"><a href="{{ url_for('practice_detail', slug=primary.practice.slug) }}">View More Providers ›</a></p>{% endif %}
+      </section>
+      {% endif %}
+    </aside>
+
+    <section class="wide-panel grey">
+      <h3>Other {{ doctor.primary_specialty.plural }} Nearby</h3>
+      <div class="city-links">{% for city in nearby_cities %}<a href="{{ url_for('specialty_city', spec=doctor.primary_specialty.slug, state=city.state_slug, city=city.slug) }}">{{ city.name }}, {{ city.state }}</a>{% endfor %}</div>
+    </section>
+    <section class="wide-panel grey">
+      <h3>Data Transparency and Trust: Understanding WebMD Doctor Listings and Reviews</h3>
+      <p>We know that finding the right doctor or provider is important to your health. That's why we want to ensure you have confidence in the provider profiles and listings you see on WebMD Care. Provider data in this mirror is synthetic benchmark data; on the live site it is sourced from physicians themselves and publicly available databases.</p>
+      <p>All the physician and provider reviews on WebMD Care are provided by users just like you. Providers are not able to remove or modify reviews on their own.</p>
+      <p>Every review is checked against the <a href="{{ url_for('reviews_guidelines') }}">Reviews Guidelines</a> before it is published. Newly submitted reviews appear to their author as "Pending review" until moderation is complete, so the ratings you see reflect verified patient feedback.</p>
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -42,7 +42,7 @@ from playwright.sync_api import sync_playwright
 HERE = Path(__file__).resolve().parent
 VERIFY_DIR = HERE.parent
 SITE_DIR = VERIFY_DIR.parent
-BASE = os.environ.get("AMTRAK_BASE", "http://127.0.0.1:40024").rstrip("/")
+BASE = os.environ.get("AMTRAK_BASE", "http://127.0.0.1:40026").rstrip("/")
 SEED_DB = Path(os.environ.get("AMTRAK_SEED_DB", SITE_DIR / "instance_seed" / "amtrak.db"))
 INSTANCE_DB = Path(os.environ.get("AMTRAK_INSTANCE_DB", SITE_DIR / "instance" / "amtrak.db"))
 RESET_CMD = os.environ.get("AMTRAK_RESET_CMD", "")

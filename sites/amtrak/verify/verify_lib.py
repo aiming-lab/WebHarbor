@@ -179,7 +179,7 @@ def normalized_url_path(url: str) -> str:
 
 
 def is_site_url(url: str) -> bool:
-    """HTTP(S) URL on a loopback host, any port (runs use alt ports; tasks.jsonl says 40024)."""
+    """HTTP(S) URL on a loopback host, any port (runs use alt ports; tasks.jsonl says 40026)."""
     parsed = urlparse(str(url or ""))
     if parsed.scheme not in {"http", "https"} or not parsed.hostname:
         return False

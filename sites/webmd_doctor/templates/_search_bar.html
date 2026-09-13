@@ -1,0 +1,13 @@
+<form class="search-bar" method="get" action="{{ url_for('results') }}" role="search">
+  <div class="field">
+    <svg class="ic"><use href="#i-stethoscope"/></svg>
+    <input type="text" name="q" value="{{ search_q | default(params.q if params is defined else '', true) }}" placeholder="Search Doctors, Conditions or Procedures" autocomplete="off" aria-label="Search doctors, conditions or procedures" data-typeahead="ta-{{ search_bar_id | default('main') }}">
+    <div class="typeahead" id="ta-{{ search_bar_id | default('main') }}"></div>
+  </div>
+  <div class="field">
+    <svg class="ic"><use href="#i-pin"/></svg>
+    <input type="text" name="loc" value="{{ search_loc | default((loc.label if loc is defined else anchor_label), true) }}" placeholder="Zipcode Or City, State" autocomplete="off" aria-label="Zipcode or city, state" data-location="loc-{{ search_bar_id | default('main') }}">
+    <div class="typeahead" id="loc-{{ search_bar_id | default('main') }}"></div>
+  </div>
+  <button type="submit"><svg class="ic"><use href="#i-search"/></svg> SEARCH</button>
+</form>
