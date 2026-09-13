@@ -110,6 +110,11 @@ class AppTests(unittest.TestCase):
         self.assertNotIn("Atlas German Shepherd", body)
         self.assertEqual(body.count('class="pet-card"'), 1)
 
+    def test_filter_controls_have_stable_accessible_names(self):
+        body = self.client.get("/pets").get_data(as_text=True)
+        for label in ("ANIMAL", "LOCATION", "AGE", "SIZE", "GENDER"):
+            self.assertIn(f'aria-label="{label}"', body)
+
     def test_search_finds_name_and_not_filter_labels(self):
         body = self.client.get("/search?q=Nori").get_data(as_text=True)
         self.assertIn("Nori Rabbit", body)
