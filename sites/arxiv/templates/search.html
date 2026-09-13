@@ -59,10 +59,10 @@
             <a href="{{ url_for('html_view', arxiv_id=p.arxiv_id) }}">html</a>,
             <a href="{{ url_for('format_view', arxiv_id=p.arxiv_id) }}">other</a>]
         </div>
-        <div class="rtitle"><a href="{{ url_for('paper_detail', arxiv_id=p.arxiv_id) }}">{{ p.title }}</a></div>
+        <div class="rtitle"><a href="{{ url_for('paper_detail', arxiv_id=p.arxiv_id) }}">{{ p.display_title }}</a></div>
         <div class="rauthors">Authors: {{ p.authors_display }}</div>
         <div class="rsnippet">{{ p.short_abstract }}</div>
-        <div class="muted" style="font-size:11px;">{{ p.primary_subject }}{% if p.journal_ref %} &middot; {{ p.journal_ref }}{% endif %}{% if p.comments %} &middot; {{ p.comments }}{% endif %}</div>
+        <div class="muted" style="font-size:11px;">{{ p.primary_subject }}{% if p.display_journal_ref %} &middot; {{ p.display_journal_ref }}{% endif %}{% if p.display_comments %} &middot; {{ p.display_comments }}{% endif %}</div>
     </div>
     {% endfor %}
 

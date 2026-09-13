@@ -38,7 +38,7 @@
     {% for item in items %}
     <li class="library-item" data-lib-item="{{ item.id }}">
         <div class="lib-title">
-            <a href="{{ url_for('paper_detail', arxiv_id=item.paper.arxiv_id) }}">{{ item.paper.title }}</a>
+            <a href="{{ url_for('paper_detail', arxiv_id=item.paper.arxiv_id) }}">{{ item.paper.display_title }}</a>
         </div>
         <div class="lib-meta">{{ item.paper.authors_display }}</div>
         <div class="lib-meta muted">
@@ -54,7 +54,7 @@
                 <button type="submit" class="btn" style="font-size:11px;padding:1px 6px;">Save</button>
             </form>
         </div>
-        {% if item.paper.abstract %}
+        {% if item.paper.display_abstract %}
         <div class="lib-meta" style="margin-top:4px;">{{ item.paper.short_abstract }}</div>
         {% endif %}
         <div class="lib-actions">
