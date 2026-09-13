@@ -5,8 +5,24 @@
 document.addEventListener('DOMContentLoaded', () => {
     initNavbar();
     initFlashMessages();
+    initPathSearchForms();
     initScrollAnimations();
 });
+
+function initPathSearchForms() {
+    document.querySelectorAll('form[data-path-search="apple"]').forEach(form => {
+        form.addEventListener('submit', event => {
+            const input = form.querySelector('input[name="q"]');
+            const query = input ? input.value.trim() : '';
+            if (!query) return;
+            event.preventDefault();
+            const params = new URLSearchParams(new FormData(form));
+            params.delete('q');
+            const suffix = params.toString();
+            window.location.href = '/search/' + encodeURIComponent(query) + (suffix ? '?' + suffix : '');
+        });
+    });
+}
 
 /* --- Navbar scroll effect --- */
 function initNavbar() {

@@ -21,6 +21,19 @@
         });
     });
 
+    document.querySelectorAll('form[data-path-search="maps"]').forEach(function (form) {
+        form.addEventListener('submit', function (event) {
+            var input = form.querySelector('input[name="q"]');
+            var query = input ? input.value.trim() : '';
+            if (!query) return;
+            event.preventDefault();
+            var params = new URLSearchParams(new FormData(form));
+            params.delete('q');
+            var suffix = params.toString();
+            window.location.href = '/maps/search/' + encodeURIComponent(query) + (suffix ? '?' + suffix : '');
+        });
+    });
+
     // Save place toggle
     window.toggleSave = function (placeId, btn) {
         fetch('/api/save', {
