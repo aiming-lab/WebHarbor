@@ -99,6 +99,35 @@ Any other improvement — bug fixes, UI polish, data enrichment, task suggestion
 | 📊 Contribution Track Sheet | [Google Sheet](https://docs.google.com/spreadsheets/d/1vZsrQjy9nJKze58fx4kbQtFi85NjVXIWCFyu3ShD7gk/edit?gid=0#gid=0) |
 | 📝 Contribution Request Form | [Google Form](https://forms.gle/ngcD1rzAfUEphNmRA) |
 
+## Reset And Smoke Checks
+
+Use the repository reset/smoke checker to verify control-plane resets, homepage
+reachability, and runtime/seed DB parity:
+
+```bash
+python scripts/check_reset_smoke.py --site amazon
+python scripts/check_reset_smoke.py --control-url http://localhost:8101
+python scripts/check_reset_smoke.py --json
+python scripts/check_reset_smoke.py --strict
+```
+
+Reset and homepage checks go over HTTP, so they work from anywhere that can reach the
+control plane. The DB parity check has to read the files the control plane actually
+resets — `/opt/WebSyn/<site>/instance` **inside the deployment**, which is not this
+checkout when the environment runs in Docker. Point the checker at that source:
+
+```bash
+# environment in a container (the usual case)
+python scripts/check_reset_smoke.py --docker-container <container-name>
+
+# sites deployed on this host
+python scripts/check_reset_smoke.py --db-root /opt/WebSyn
+```
+
+Without one of those flags the DB check reports `SKIP` with source `none` rather than
+comparing this checkout's files, and every result names the source it hashed
+(`md5_source`), so a `PASS` always says which DBs it read.
+
 ## Citation
 
 WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`. 
