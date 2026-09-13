@@ -3,54 +3,72 @@
 
 {% block content %}
 
-<!-- Hero Banner -->
-<section class="hero-banner" style="background:linear-gradient(135deg,#232f3e 0%,#37475a 50%,#485769 100%);padding:40px 20px;text-align:center;color:#fff;position:relative;overflow:hidden">
-    <div style="max-width:900px;margin:0 auto;position:relative;z-index:1">
-        <h2 style="font-size:28px;margin:0 0 8px;font-weight:400">Welcome to <strong>Amazon</strong></h2>
-        <p style="font-size:16px;margin:0 0 15px;opacity:0.9">Shop deals, top brands, and everyday essentials</p>
-        <a href="{{ url_for('deals') }}" style="display:inline-block;background:#febd69;color:#0f1111;padding:10px 24px;border-radius:4px;font-weight:700;text-decoration:none;font-size:14px">Shop Today's Deals</a>
-    </div>
+<!-- Amazon's current gateway opens with a horizontally browsable deck. -->
+<section class="home-feature-rail" aria-label="Featured promotions">
+    <a class="feature-card feature-card-firetv" href="{{ url_for('prime') }}">
+        <img class="feature-full-bleed" src="{{ url_for('static', filename='images/homepage/amazon-firetv-reacher.avif') }}" alt="Fire TV showing Reacher in a warm living room">
+        <div class="feature-copy">
+            <span>Smarter search</span>
+            <small>Try Alexa+ on Fire TV</small>
+        </div>
+    </a>
+    <a class="feature-card feature-card-fitness" href="{{ url_for('category', slug='fashion') }}">
+        <div class="feature-copy">
+            <small>Great prices every day</small>
+            <span>Campus-worthy styles under $25</span>
+        </div>
+        <div class="feature-product-collage">
+            <img src="{{ url_for('static', filename='images/homepage/26Flips_Fitness_Spring_V6_26Flips_Fitness_Spring_17226_Muse_Prod_melody_homepage_372x232_1X._SY116_CB787503409_.jpg') }}" alt="Running shoes">
+            <img src="{{ url_for('static', filename='images/homepage/mp_20260224_ingress_desktop_Tops_04_1x._SY116_CB785711395_.jpg') }}" alt="Campus fashion">
+        </div>
+    </a>
+    <a class="feature-card feature-card-everyday" href="{{ url_for('gift_cards') }}">
+        <div class="feature-copy feature-copy-light">
+            <span>Save the everyday</span>
+            <small>Shop everyday essentials</small>
+        </div>
+        <img src="{{ url_for('static', filename='images/homepage/08e3d8fe-9b34-4e09-9959-a3819eabe2d9.jpg') }}" alt="Amazon everyday savings">
+    </a>
+    <a class="feature-card feature-card-home" href="{{ url_for('category', slug='home') }}">
+        <div class="feature-copy">
+            <span>Refresh your space</span>
+            <small>Find fresh picks for every room</small>
+        </div>
+        <img src="{{ url_for('static', filename='images/homepage/OWFhYjJmNGIt-NzIwODU5ZmIt-w379._SY304_CB405958196_.jpg') }}" alt="Bright modern living room">
+    </a>
 </section>
 
 <!-- Primary card grid -->
-<section class="card-grid" style="margin-top: 20px;">
+<section class="card-grid home-card-grid-section">
 
     <!-- Electronics tile card -->
     <div class="home-card">
         <h2>Get into electronics</h2>
-        <div class="home-card-grid">
-            {% for p in electronics[:4] %}
-            <a class="tile" href="{{ url_for('product_detail', slug=p.slug) }}">
-                <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.style.display='none'">
-                <span>{{ p.subcategory or p.brand }}</span>
-            </a>
-            {% endfor %}
-        </div>
+        <a class="home-card-image-link" href="{{ url_for('category', slug='electronics') }}"><img class="home-card-feature-image home-card-feature-image-contain" src="{{ url_for('static', filename='images/homepage/51QXqomzfdL._AC_SY200_.jpg') }}" alt="Charging and smart home technology"></a>
         <a class="cta-link" href="{{ url_for('category', slug='electronics') }}">Shop electronics</a>
     </div>
 
     <!-- Home & Kitchen tile card -->
     <div class="home-card">
         <h2>Refresh your space</h2>
-        <div class="home-card-grid">
-            {% for p in home_goods[:4] %}
-            <a class="tile" href="{{ url_for('product_detail', slug=p.slug) }}">
-                <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.style.display='none'">
-                <span>{{ p.subcategory or p.brand }}</span>
-            </a>
-            {% endfor %}
-        </div>
+        <a class="home-card-image-link" href="{{ url_for('category', slug='home') }}"><img class="home-card-feature-image" src="{{ url_for('static', filename='images/homepage/OWFhYjJmNGIt-NzIwODU5ZmIt-w379._SY304_CB405958196_.jpg') }}" alt="Modern living room"></a>
         <a class="cta-link" href="{{ url_for('category', slug='home') }}">Shop home & kitchen</a>
     </div>
 
     <!-- Fashion tile card -->
     <div class="home-card">
         <h2>Find top fashion picks</h2>
-        <div class="home-card-grid">
-            {% for p in fashion[:4] %}
-            <a class="tile" href="{{ url_for('product_detail', slug=p.slug) }}">
-                <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.style.display='none'">
-                <span>{{ p.subcategory }}</span>
+        <div class="home-card-grid home-card-grid-static">
+            {% set fashion_assets = [
+                ('mp_20260224_ingress_desktop_QUAD_Dresses_01_1x._SY116_CB785712983_.jpg', 'Dresses'),
+                ('mp_20260224_ingress_desktop_Tops_04_1x._SY116_CB785711395_.jpg', 'Tops'),
+                ('mp_20260224_ingress_desktop_Tops_03_1x._SY116_CB785712808_.jpg', 'Sandals'),
+                ('mp_20260224_ingress_Jeans_QUAD_02_1x._SY116_CB786051333_.jpg', 'Sneakers')
+            ] %}
+            {% for asset, label in fashion_assets %}
+            <a class="tile" href="{{ url_for('category', slug='fashion') }}">
+                <img src="{{ url_for('static', filename='images/homepage/' ~ asset) }}" alt="{{ label }}">
+                <span>{{ label }}</span>
             </a>
             {% endfor %}
         </div>
@@ -60,64 +78,39 @@
     <!-- Computer tile card -->
     <div class="home-card">
         <h2>Computers & accessories</h2>
-        <div class="home-card-grid">
-            {% for p in computers[:4] %}
-            <a class="tile" href="{{ url_for('product_detail', slug=p.slug) }}">
-                <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.style.display='none'">
-                <span>{{ p.subcategory }}</span>
-            </a>
-            {% endfor %}
-        </div>
+        <a class="home-card-image-link" href="{{ url_for('category', slug='computers') }}"><img class="home-card-feature-image home-card-feature-image-contain" src="{{ url_for('static', filename='images/homepage/619PNoEsnSL._AC_SY200_.jpg') }}" alt="Laptop computers"></a>
         <a class="cta-link" href="{{ url_for('category', slug='computers') }}">Shop all computers</a>
     </div>
 
     <!-- Featured deals card (single large image) -->
     <div class="home-card">
         <h2>Today's deals</h2>
-        {% if deals %}
-        <a href="{{ url_for('product_detail', slug=deals[0].slug) }}">
-            <img class="home-card-single" src="{{ deals[0].image }}" alt="{{ deals[0].name }}" onerror="this.style.display='none'">
+        <a href="{{ url_for('deals') }}">
+            <img class="home-card-single" src="{{ url_for('static', filename='images/homepage/08e3d8fe-9b34-4e09-9959-a3819eabe2d9.jpg') }}" alt="Save on everyday essentials">
         </a>
-        {% endif %}
         <a class="cta-link" href="{{ url_for('deals') }}">See all deals</a>
     </div>
 
     <!-- Books card -->
     <div class="home-card">
         <h2>Best sellers in Books</h2>
-        <div class="home-card-grid">
-            {% for p in books[:4] %}
-            <a class="tile" href="{{ url_for('product_detail', slug=p.slug) }}">
-                <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.style.display='none'">
-                <span>{{ p.subcategory }}</span>
-            </a>
-            {% endfor %}
-        </div>
+        {% if books %}<a class="home-card-image-link" href="{{ url_for('product_detail', slug=books[0].slug) }}"><img class="home-card-feature-image home-card-feature-image-contain" src="{{ books[0].image }}" alt="{{ books[0].name }}" onerror="this.style.display='none'"></a>{% endif %}
         <a class="cta-link" href="{{ url_for('category', slug='books') }}">Shop books</a>
     </div>
 
     <!-- Beauty card  -->
     <div class="home-card">
         <h2>Best sellers in Beauty</h2>
-        <div class="home-card-grid">
-            {% for p in beauty %}
-            <a class="tile" href="{{ url_for('product_detail', slug=p.slug) }}">
-                <img src="{{ p.image }}" alt="{{ p.name }}" onerror="this.style.display='none'">
-                <span>{{ p.brand }}</span>
-            </a>
-            {% endfor %}
-        </div>
+        <a class="home-card-image-link" href="{{ url_for('category', slug='beauty') }}"><img class="home-card-feature-image home-card-feature-image-contain" src="{{ url_for('static', filename='images/homepage/26_MDAY_18089_DT_Beauty_2_1x._SY116_CB772764036_.jpg') }}" alt="Beauty favorites"></a>
         <a class="cta-link" href="{{ url_for('category', slug='beauty') }}">Shop beauty</a>
     </div>
 
     <!-- Prime promotional card -->
     <div class="home-card">
         <h2>Join Prime for exclusive deals</h2>
-        {% if bestsellers %}
-        <a href="{{ url_for('product_detail', slug=bestsellers[0].slug) }}">
-            <img class="home-card-single" src="{{ bestsellers[0].image }}" alt="Prime" onerror="this.style.display='none'">
+        <a href="{{ url_for('prime') }}">
+            <img class="home-card-single home-card-single-wide" src="{{ url_for('static', filename='images/homepage/61jFrDLtfOL._SR3000_600_.jpg') }}" alt="Prime benefits">
         </a>
-        {% endif %}
         <a class="cta-link" href="{{ url_for('prime') }}">Learn about Prime</a>
     </div>
 
