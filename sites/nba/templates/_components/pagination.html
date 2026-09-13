@@ -1,0 +1,9 @@
+{% if pagination and pagination.pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+  {% for page_num in range(1, pagination.pages + 1) %}
+    {% set args = pagination.args.copy() %}
+    {% set _ = args.update({'page': page_num}) %}
+    <a class="{% if pagination.page == page_num %}active{% endif %}" href="{{ url_for(pagination.endpoint, **args) }}">{{ page_num }}</a>
+  {% endfor %}
+</nav>
+{% endif %}

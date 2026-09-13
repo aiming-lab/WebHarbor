@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} - NBA{% endblock %}
+{% block content %}
+<section class="section-landing">
+  <div class="section-hero-panel">
+    <div>
+      <span class="kicker">{{ eyebrow }}</span>
+      <h1>{{ page_title }}</h1>
+      <p>{{ intro }}</p>
+    </div>
+    {% if hero %}
+      <a class="section-feature" href="{{ url_for('article_detail', slug=hero.slug) }}">
+        <img src="{{ hero.image }}" alt="">
+        <span>{{ hero.category }}</span>
+        <h2>{{ hero.title }}</h2>
+      </a>
+    {% endif %}
+  </div>
+  <div class="section-layout">
+    <main class="section-main">
+      <section class="nba-home-section">
+        <div class="section-title"><h2>{{ primary_label }}</h2><a href="{{ url_for('news') }}">All News</a></div>
+        <div class="story-grid official-grid">
+          {% for article in articles %}
+            {% include "_components/story_card.html" %}
+          {% endfor %}
+        </div>
+      </section>
+      {% if section_games %}
+        <section class="nba-home-section">
+          <div class="section-title"><h2>Games to Watch</h2><a href="{{ url_for('schedule') }}">Schedule</a></div>
+          <div class="card-grid two">
+            {% for game in section_games %}
+              {% include "_components/game_card.html" %}
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+      {% if leaders %}
+        <section class="nba-home-section">
+          <div class="section-title"><h2>Featured Leaders</h2><a href="{{ url_for('stats') }}">Stats</a></div>
+          <div class="leader-grid">
+            {% for leader in leaders[:3] %}
+              {% set player = leader %}
+              <a class="player-card" href="{{ url_for('player_detail', slug=player.slug) }}">
+                <img src="{{ player.image }}" alt="">
+                <strong>{{ player.name }}</strong>
+                <span>{{ player.team.abbreviation }} · {{ "%.1f"|format(player.ppg) }} PPG</span>
+              </a>
+            {% endfor %}
+          </div>
+        </section>
+      {% endif %}
+    </main>
+    <aside class="home-rail">
+      <section class="rail-card home-headlines">
+        <div class="section-title compact"><h2>Headlines</h2><a href="{{ url_for('news') }}">See more</a></div>
+        {% for item in headlines %}
+          <a class="headline" href="{{ url_for('article_detail', slug=item.slug) }}">{{ item.title }}</a>
+        {% endfor %}
+      </section>
+      <section class="nba-app-card">
+        <span>NBA App</span>
+        <h2>Every game. Every round.</h2>
+        <p>Follow the latest stories, stats and schedules from this NBA mirror.</p>
+        <a href="{{ url_for('watch') }}">Watch</a>
+      </section>
+    </aside>
+  </div>
+</section>
+{% endblock %}

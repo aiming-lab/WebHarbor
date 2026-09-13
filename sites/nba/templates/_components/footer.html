@@ -1,0 +1,74 @@
+{% set footer_columns = [
+  ('NBA Organization', [
+    ('NBA Affiliates', url_for('affiliates')),
+    ('Teams', url_for('teams')),
+    ('Players', url_for('players')),
+    ('Draft', url_for('draft'))
+  ]),
+  ('NBA Social Impact', [
+    ('Community', url_for('news', category='Around the NBA')),
+    ('History', url_for('news', category='History')),
+    ('Awards', url_for('news', category='Awards'))
+  ]),
+  ('Across The League', [
+    ('News', url_for('news')),
+    ('Watch', url_for('watch')),
+    ('Stats', url_for('stats')),
+    ('Standings', url_for('standings')),
+    ('Schedule', url_for('schedule'))
+  ]),
+  ('Shop', [
+    ('NBA Store', url_for('shop')),
+    ('Tickets', url_for('tickets')),
+    ('Cart', url_for('cart')),
+    ('Orders', url_for('orders'))
+  ]),
+  ('Subscriptions', [
+    ('League Pass', url_for('league_pass')),
+    ('NBA Play', url_for('nba_play'))
+  ])
+] %}
+{% set footer_social = [
+  ('Facebook', 'icons/social-facebook.svg', url_for('news')),
+  ('Instagram', 'icons/social-instagram.svg', url_for('news')),
+  ('Snapchat', 'icons/social-snapchat.svg', url_for('news')),
+  ('TikTok', 'icons/social-tiktok.svg', url_for('news')),
+  ('X', 'icons/social-x.svg', url_for('news')),
+  ('YouTube', 'icons/social-youtube.svg', url_for('watch')),
+  ('Twitch', 'icons/social-twitch.svg', url_for('watch'))
+] %}
+<footer class="site-footer">
+  <div class="footer-inner">
+    <section class="footer-grid">
+      {% for title, links in footer_columns %}
+        <section class="footer-list">
+          <input class="footer-toggle sr-only" type="checkbox" id="footer-col-{{ loop.index }}">
+          <label class="footer-list-title" for="footer-col-{{ loop.index }}">
+            <span>{{ title }}</span>
+            <svg class="footer-chevron" width="17" height="6" viewBox="0 0 17 6" aria-hidden="true"><path d="M1 1l7.5 4L16 1" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+          </label>
+          <ul>
+            {% for label, href in links %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}
+          </ul>
+        </section>
+      {% endfor %}
+    </section>
+    <hr class="footer-rule">
+    <div class="footer-bottom">
+      <section class="footer-legal">
+        <p>&copy; 2026 WebHarbor NBA mirror. Offline benchmark environment.</p>
+        <ul>
+          <li>No live streaming</li>
+          <li>No payment processing</li>
+          <li>No external authentication</li>
+          <li>Local accounts and data only</li>
+        </ul>
+      </section>
+      <div class="footer-social" aria-label="Follow the NBA">
+        {% for label, icon, href in footer_social %}
+          <a href="{{ href }}" aria-label="{{ label }}"><img src="{{ url_for('static', filename=icon) }}" alt=""></a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</footer>

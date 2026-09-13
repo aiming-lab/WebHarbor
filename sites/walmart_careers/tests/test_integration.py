@@ -85,7 +85,12 @@ def test_tasks_and_verifiers_are_complete_and_use_site_24():
 def test_assets_pin_is_immutable_merged_revision():
     text = (ROOT / ".assets-revision").read_text()
     revision = re.search(r"^revision:\s*([0-9a-f]+)$", text, re.M).group(1)
-    assert revision == "68dcbf2cbd0cbc2fbf97dcb71da13ace67c11bf6"
+    # NBA review candidate: a superset of the merged FedEx bundle
+    # (68dcbf2cbd0cbc2fbf97dcb71da13ace67c11bf6) that also carries nba.tar.gz.
+    # It is an immutable commit but still an open Hugging Face PR
+    # (ChilleD/WebHarbor discussion #71), so it must be re-pinned to the HF
+    # merge commit before this branch is released.
+    assert revision == "0cfa54bf8e18558f32c44d128fa6ab1f384b5da9"
     assert (SITE / ".build-generated-seed").is_file()
     assert (SITE / ".requires-images").is_file()
     assert (SITE / "asset_inventory.json").is_file()

@@ -1,0 +1,171 @@
+{#
+  Global header. Measured on nba.com: one 55px black bar at every width, a
+  hamburger below 1280px, and a white flyout panel under each primary item on
+  hover or keyboard focus. Every flyout target is a real local route.
+#}
+{% set nav_links = [
+  ('games', ['games', 'game_detail'], 'Games', [
+    ('Home', url_for('games')),
+    ('Final Scores', url_for('games', status='Final')),
+    ('Tickets', url_for('tickets'))
+  ]),
+  ('schedule', ['schedule'], 'Schedule', [
+    ('2026 Playoffs Schedule', url_for('schedule')),
+    ('Key Dates', url_for('draft')),
+    ('League Pass Schedule', url_for('league_pass'))
+  ]),
+  ('watch', ['watch'], 'Watch', [
+    ('Featured', url_for('watch')),
+    ('League Pass', url_for('league_pass')),
+    ('Highlights', url_for('news', category='Highlights'))
+  ]),
+  ('playoffs', ['playoffs', 'playoff_series'], 'Playoffs', [
+    ('Playoffs Home', url_for('playoffs')),
+    ('Game Recaps', url_for('games', status='Final')),
+    ('Playoff News', url_for('news', category='Playoffs'))
+  ]),
+  ('news', ['news', 'article_detail'], 'News', [
+    ('Home', url_for('news')),
+    ('Top Stories', url_for('news', category='Top Stories')),
+    ('Trending Now', url_for('trending')),
+    ('Around the NBA', url_for('around_the_nba')),
+    ('Features', url_for('news', category='Features')),
+    ('Transactions', url_for('news', category='Transactions')),
+    ('History', url_for('news', category='History'))
+  ]),
+  ('draft', ['draft'], 'Draft', [
+    ('Draft Home', url_for('draft')),
+    ('Draft News', url_for('news', category='Draft'))
+  ]),
+  ('stats', ['stats', 'player_stats', 'team_stats'], 'Stats', [
+    ('Overview', url_for('stats')),
+    ('Players', url_for('player_stats')),
+    ('Teams', url_for('team_stats')),
+    ('Leaders', url_for('stats'))
+  ]),
+  ('standings', ['standings'], 'Standings', [
+    ('Conference', url_for('standings', view='conference')),
+    ('Division', url_for('standings', view='division'))
+  ]),
+  ('teams', ['teams', 'team_detail', 'team_roster', 'team_schedule', 'team_stats_detail'], 'Teams', 'teams-grid'),
+  ('players', ['players', 'player_detail'], 'Players', [
+    ('League Roster', url_for('players')),
+    ('Player Stats', url_for('player_stats')),
+    ('Awards', url_for('news', category='Awards'))
+  ]),
+  ('nba_play', ['nba_play'], 'NBA Play', none),
+  ('fantasy', ['fantasy'], 'Fantasy', [
+    ('Fantasy Home', url_for('fantasy')),
+    ('Player Stats', url_for('player_stats'))
+  ]),
+  ('bal_2026', ['bal_2026'], 'BAL 2026', none)
+] %}
+{% set store_links = [
+  ('Shop All', url_for('shop')),
+  ('Jerseys', url_for('shop', category='Jerseys')),
+  ('T-Shirts', url_for('shop', category='T-Shirts')),
+  ('Hoodies', url_for('shop', category='Hoodies')),
+  ('Hats', url_for('shop', category='Hats')),
+  ('Shorts', url_for('shop', category='Shorts')),
+  ('Outerwear', url_for('shop', category='Outerwear'))
+] %}
+{% macro flyout(items) %}
+  <div class="nav-flyout">
+    {% for label, href in items %}<a href="{{ href }}">{{ label }}</a>{% endfor %}
+  </div>
+{% endmacro %}
+<header class="nba-global">
+  <div class="primary-nav">
+    <details class="nav-drawer">
+      <summary aria-label="Open navigation menu"><span class="hamburger-box"></span></summary>
+      {#
+        The drawer is the only menu below 1280px, where the hover flyouts are
+        switched off, so it repeats every flyout destination as well as the
+        primary items. Nothing reachable on a desktop may be unreachable here.
+      #}
+      <div class="nav-drawer-panel">
+        {% for endpoint, active_for, label, menu in nav_links %}
+          <a class="{% if active_endpoint in active_for %}active{% endif %}" href="{{ url_for(endpoint) }}">{{ label }}</a>
+          {% if menu == 'teams-grid' %}
+            {% for division, teams in teams_by_division.items() %}
+              {% for team in teams %}<a class="sub" href="{{ url_for('team_detail', slug=team.slug) }}">{{ team.full_name }}</a>{% endfor %}
+            {% endfor %}
+          {% elif menu %}
+            {% for sub_label, sub_href in menu %}<a class="sub" href="{{ sub_href }}">{{ sub_label }}</a>{% endfor %}
+          {% endif %}
+        {% endfor %}
+        <a class="{% if active_endpoint == 'league_pass' %}active{% endif %}" href="{{ url_for('league_pass') }}">League Pass</a>
+        <a class="{% if active_endpoint in ['shop','product_detail','cart','checkout','orders'] %}active{% endif %}" href="{{ url_for('shop') }}">Store</a>
+        {% for sub_label, sub_href in store_links %}<a class="sub" href="{{ sub_href }}">{{ sub_label }}</a>{% endfor %}
+        <a href="{{ url_for('tickets') }}">Tickets</a>
+        <a class="{% if active_endpoint == 'affiliates' %}active{% endif %}" href="{{ url_for('affiliates') }}">NBA Affiliates</a>
+        {% if current_user.is_authenticated %}
+          <a class="{% if active_endpoint == 'account' %}active{% endif %}" href="{{ url_for('account') }}">My Account</a>
+          <a class="sub" href="{{ url_for('account_edit') }}">Edit Profile</a>
+          <a class="sub" href="{{ url_for('orders') }}">Orders</a>
+          <a class="sub" href="{{ url_for('cart') }}">Bag ({{ cart_count }})</a>
+          <a class="sub" href="{{ url_for('logout') }}">Sign Out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Sign In</a>
+          <a class="sub" href="{{ url_for('register') }}">Create Account</a>
+        {% endif %}
+      </div>
+    </details>
+    <a class="brand" href="{{ url_for('index') }}">
+      <img src="{{ url_for('static', filename='images/league/nba-logo.svg') }}" alt="NBA">
+    </a>
+    <nav aria-label="Primary">
+      {% for endpoint, active_for, label, menu in nav_links %}
+        <div class="nav-item">
+          <a class="{% if active_endpoint in active_for %}active{% endif %}" href="{{ url_for(endpoint) }}">{{ label }}</a>
+          {% if menu == 'teams-grid' %}
+            <div class="nav-flyout nav-flyout-wide">
+              {% for division, teams in teams_by_division.items() %}
+                <section>
+                  <h2>{{ division }}</h2>
+                  {% for team in teams %}
+                    <a href="{{ url_for('team_detail', slug=team.slug) }}"><img src="{{ team.logo }}" alt="">{{ team.full_name }}</a>
+                  {% endfor %}
+                </section>
+              {% endfor %}
+            </div>
+          {% elif menu %}{{ flyout(menu) }}{% endif %}
+        </div>
+      {% endfor %}
+      <span class="nav-spacer" aria-hidden="true"></span>
+      <div class="nav-item">
+        <a class="league-pass-cta {% if active_endpoint == 'league_pass' %}active{% endif %}" href="{{ url_for('league_pass') }}">League Pass</a>
+      </div>
+      <div class="nav-item">
+        <a class="{% if active_endpoint in ['shop','product_detail','cart','checkout','orders'] %}active{% endif %}" href="{{ url_for('shop') }}">Store</a>
+        {{ flyout(store_links) }}
+      </div>
+      <div class="nav-item">
+        <a href="{{ url_for('tickets') }}">Tickets</a>
+      </div>
+      <div class="nav-item">
+        <a class="app-grid {% if active_endpoint == 'affiliates' %}active{% endif %}" href="{{ url_for('affiliates') }}" aria-label="NBA apps">▦</a>
+      </div>
+    </nav>
+    <div class="nav-actions">
+      <div class="nav-item">
+        {% if current_user.is_authenticated %}
+          <a class="sign-in account-link {% if active_endpoint in ['account','account_edit'] %}active{% endif %}" href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+          {{ flyout([
+            ('My Account', url_for('account')),
+            ('Edit Profile', url_for('account_edit')),
+            ('Orders', url_for('orders')),
+            ('Bag (' ~ cart_count ~ ')', url_for('cart')),
+            ('Sign Out', url_for('logout'))
+          ]) }}
+        {% else %}
+          <a class="sign-in" href="{{ url_for('login') }}">Sign In</a>
+          {{ flyout([
+            ('Sign in with NBA ID', url_for('login')),
+            ('Create Account', url_for('register'))
+          ]) }}
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</header>
