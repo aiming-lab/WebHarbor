@@ -278,6 +278,55 @@ class ContractTests(unittest.TestCase):
         for href in re.findall(r'href="([^"]+)"', inline):
             self.assertIn(href, drawer, f"{href} is missing from the narrow menu")
 
+    def test_header_reflects_signed_in_account(self):
+        """The header must show who is signed in, as upstream and the review
+        checklist both require. Before this was fixed the bar showed a static
+        Sign In link on every page even while authenticated, and the cart count
+        the app computes on every request was never rendered anywhere."""
+        sys.path.insert(0, str(SITE_DIR))
+        import app as nba_app
+
+        client = nba_app.app.test_client()
+        signed_out = client.get("/").get_data(as_text=True)
+        header_out = signed_out.split("</header>", 1)[0]
+        self.assertIn(">Sign In<", header_out)
+        self.assertNotIn("Alice Johnson", header_out)
+
+        response = client.post(
+            "/login",
+            data={"email": "alice.j@test.com", "password": "TestPass123!"},
+            follow_redirects=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        header_in = client.get("/").get_data(as_text=True).split("</header>", 1)[0]
+        self.assertIn("Alice Johnson", header_in)
+        for href in ('href="/account"', 'href="/orders"', 'href="/logout"', 'href="/cart"'):
+            self.assertIn(href, header_in)
+        self.assertNotIn(">Sign In<", header_in)
+
+    def test_primary_nav_has_hover_flyouts(self):
+        """Upstream opens a white flyout under each primary item on hover.
+
+        The panels must default to display:none so their links stay out of the
+        accessibility tree while closed, which is what keeps existing
+        by-name locators resolving to the visible bar.
+        """
+        css = (SITE_DIR / "static" / "css" / "nba.css").read_text()
+        self.assertRegex(css, r"\.nav-flyout\s*\{[^}]*display:\s*none")
+        self.assertRegex(css, r"\.nav-item:hover\s*>\s*\.nav-flyout\s*,[^{]*\{[^}]*display:\s*block")
+        self.assertRegex(css, r"\.nav-item:focus-within\s*>\s*\.nav-flyout-wide\s*\{[^}]*display:\s*grid")
+
+        sys.path.insert(0, str(SITE_DIR))
+        import app as nba_app
+
+        header = nba_app.app.test_client().get("/").get_data(as_text=True).split("</header>", 1)[0]
+        self.assertIn("nav-flyout-wide", header)
+        teams_panel = header.split("nav-flyout-wide", 1)[1].split("</div>", 1)[0]
+        self.assertEqual(len(re.findall(r'<a href="/teams/', teams_panel)), 30)
+        for division in ("Atlantic", "Central", "Southeast", "Northwest", "Pacific", "Southwest"):
+            self.assertIn(f"<h2>{division}</h2>", teams_panel)
+        self.assertGreaterEqual(header.count('class="nav-flyout"'), 8)
+
     def test_home_rails_scroll_horizontally(self):
         """Card rails must stay compact rails, not reflow into stacked blocks.
 

@@ -158,6 +158,12 @@ h1, h2, h3, p { margin-top: 0; }
 }
 .nav-drawer-panel a:hover,
 .nav-drawer-panel a.active { color: #fff; background: #141414; }
+.nav-drawer-panel a.sub {
+  padding-left: 52px;
+  font-weight: 400;
+  color: #c9ccd2;
+  border-bottom-color: #141414;
+}
 .brand {
   display: flex;
   align-items: center;
@@ -168,10 +174,12 @@ h1, h2, h3, p { margin-top: 0; }
 .primary-nav nav {
   flex: 1 1 auto;
   min-width: 0;
+  align-self: stretch;
   display: flex;
   align-items: stretch;
-  overflow-x: auto;
-  overflow-y: hidden;
+  /* Visible at desktop widths so the hover flyouts are not clipped by a scroll
+     container; below 1280px the flyouts are off and the menu scrolls instead. */
+  overflow: visible;
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -199,12 +207,15 @@ h1, h2, h3, p { margin-top: 0; }
 }
 .nav-actions {
   flex: 0 0 auto;
+  align-self: stretch;
   display: flex;
   align-items: center;
   justify-content: flex-end;
 }
 .nav-actions .sign-in { font-weight: 400; }
 .nav-spacer { flex: 1 1 auto; min-width: 0; }
+.primary-nav nav > .nav-item { flex: 0 0 auto; }
+.nav-item { position: relative; display: flex; align-items: center; align-self: stretch; }
 .primary-nav nav .league-pass-cta {
   flex: 0 0 auto;
   align-self: center;
@@ -214,7 +225,91 @@ h1, h2, h3, p { margin-top: 0; }
   border-radius: 4px;
   margin-right: 8px;
 }
-.primary-nav nav > a { flex: 0 0 auto; }
+/* Hover / focus flyouts, measured on nba.com: white panel directly under the
+   55px bar, 4px padding, links Roboto 600 14px/21px with 12px 16px padding,
+   and a small caret pointing at the owning item. Kept out of the accessibility
+   tree with display:none until opened, and disabled below 1280px where the
+   hamburger panel takes over. */
+.nav-flyout {
+  display: none;
+  position: absolute;
+  top: var(--nav-h);
+  left: 0;
+  z-index: 40;
+  min-width: 168px;
+  padding: 4px;
+  background: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .22);
+  text-align: left;
+}
+.nav-flyout::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 18px;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid #fff;
+}
+.primary-nav .nav-flyout a {
+  display: block;
+  padding: 12px 16px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 21px;
+  color: #000;
+  white-space: nowrap;
+  text-transform: none;
+}
+.primary-nav .nav-flyout a:hover {
+  background: #f1f2f4;
+  color: #000;
+  text-decoration: none;
+}
+.nav-flyout-wide {
+  left: 50%;
+  transform: translateX(-50%);
+  width: 720px;
+  max-width: calc(100vw - 32px);
+  display: none;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px 0;
+  padding: 16px 4px;
+}
+.nav-flyout-wide::before { left: calc(50% - 8px); }
+.primary-nav .nav-flyout-wide h2 {
+  margin: 0 0 4px;
+  padding: 8px 16px 4px;
+  font-size: 11px;
+  line-height: 14px;
+  font-weight: 700;
+  color: #55585f;
+}
+.primary-nav .nav-flyout-wide a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 16px;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 20px;
+}
+.primary-nav .nav-flyout-wide a img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+  flex: 0 0 20px;
+}
+.nav-item:hover > .nav-flyout,
+.nav-item:focus-within > .nav-flyout { display: block; }
+.nav-item:hover > .nav-flyout-wide,
+.nav-item:focus-within > .nav-flyout-wide { display: grid; }
+.nav-actions .nav-flyout,
+.primary-nav nav > .nav-item:nth-last-child(-n+3) > .nav-flyout:not(.nav-flyout-wide) { left: auto; right: 0; }
+.nav-actions .nav-flyout::before,
+.primary-nav nav > .nav-item:nth-last-child(-n+3) > .nav-flyout:not(.nav-flyout-wide)::before { left: auto; right: 18px; }
+.account-link { max-width: 168px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .league-pass-cta:hover { color: #000; text-decoration: none; }
 .app-grid {
   font-size: 19px;
@@ -2843,8 +2938,21 @@ h1, h2, h3, p { margin-top: 0; }
 /* Responsive breakpoints measured on nba.com:
    <1280 hamburger, <1024 single column + 16px nav gutter + footer accordion,
    <768 flush gutters + the mobile hero composition. */
+/* 1280-1365: the full menu needs 1108px, so tighten item padding rather than
+   reintroduce a scroll container that would clip the flyouts. */
+@media (max-width: 1365px) and (min-width: 1280px) {
+  .primary-nav nav a { padding: 0 6px; }
+}
+
 @media (max-width: 1279px) {
   .nav-drawer { display: block; }
+  .primary-nav nav { overflow-x: auto; overflow-y: hidden; }
+  /* Below the hamburger breakpoint the drawer is the menu; hover panels would
+     be unreachable by touch, so they are switched off entirely. */
+  .nav-item:hover > .nav-flyout,
+  .nav-item:focus-within > .nav-flyout,
+  .nav-item:hover > .nav-flyout-wide,
+  .nav-item:focus-within > .nav-flyout-wide { display: none; }
 }
 
 @media (max-width: 1023px) {

@@ -277,6 +277,7 @@ def inject_globals():
     return {
         "cart_count": cart_count,
         "teams_nav": Team.query.order_by(Team.city).limit(10).all(),
+        "teams_by_division": grouped_teams_by_division(),
         "mirror_date": MIRROR_REFERENCE_DATE,
         "division_order": DIVISION_ORDER,
         "news_categories": NEWS_CATEGORIES,
