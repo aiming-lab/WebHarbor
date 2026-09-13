@@ -160,6 +160,11 @@ class AppTests(unittest.TestCase):
         self.assertIn('action="/pets/luna-domestic-shorthair/save"', signed_in)
         self.assertIn('aria-label="Favorite Luna Domestic Shorthair"', signed_in)
 
+    def test_account_sort_has_a_stable_accessible_name(self):
+        self.login()
+        body = self.client.get("/account").get_data(as_text=True)
+        self.assertIn('aria-label="Default sort"', body)
+
     def test_save_preferences_and_inquiry_persist(self):
         self.login()
         detail = self.client.get("/pets/luna-domestic-shorthair")
