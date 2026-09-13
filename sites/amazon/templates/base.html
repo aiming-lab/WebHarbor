@@ -13,12 +13,12 @@
     <nav class="nav-top">
         <div class="nav-top-inner">
             <a href="{{ url_for('index') }}" class="nav-logo" aria-label="Amazon.com">
-                amazon<span class="nav-logo-smile">.</span>
+                <span class="nav-logo-word">amazon</span><span class="nav-logo-smile" aria-hidden="true"></span>
             </a>
 
-            <a href="{{ url_for('index') }}" class="nav-item nav-item-small-hide" aria-label="Deliver to">
-                <span class="nav-deliver-icon">📍</span>
-                <div style="margin-left:4px">
+            <a href="{{ url_for('index') }}" class="nav-item nav-delivery" aria-label="Deliver to">
+                <svg class="nav-deliver-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5a7 7 0 0 0-7 7c0 5.2 7 12 7 12s7-6.8 7-12a7 7 0 0 0-7-7Zm0 9.6a2.7 2.7 0 1 1 0-5.4 2.7 2.7 0 0 1 0 5.4Z"/></svg>
+                <div class="nav-item-copy">
                     <small>Deliver to</small>
                     <strong>United States</strong>
                 </div>
@@ -34,17 +34,17 @@
                     <option>Beauty</option>
                 </select>
                 <input type="text" class="nav-search-input" name="q" placeholder="Search Amazon" value="{{ request.args.get('q', '') }}" autocomplete="off">
-                <button type="submit" class="nav-search-btn" aria-label="Search">🔍</button>
+                <button type="submit" class="nav-search-btn" aria-label="Search">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21.4 19.9-5-5a8 8 0 1 0-1.5 1.5l5 5a1 1 0 0 0 1.5 0 1 1 0 0 0 0-1.5ZM4 10a6 6 0 1 1 12 0 6 6 0 0 1-12 0Z"/></svg>
+                </button>
             </form>
 
-            <a href="{{ url_for('index') }}" class="nav-item nav-item-small-hide">
-                <div>
-                    <small>EN</small>
-                </div>
-                <span>🌐</span>
+            <a href="{{ url_for('index') }}" class="nav-item nav-language nav-item-small-hide" aria-label="Choose language">
+                <span class="nav-flag" aria-hidden="true"></span>
+                <strong>EN</strong><span class="nav-caret">▾</span>
             </a>
 
-            <a href="{% if current_user.is_authenticated %}{{ url_for('account') }}{% else %}{{ url_for('login') }}{% endif %}" class="nav-item">
+            <a href="{% if current_user.is_authenticated %}{{ url_for('account') }}{% else %}{{ url_for('login') }}{% endif %}" class="nav-item nav-account">
                 <div>
                     <small>Hello, {% if current_user.is_authenticated %}{{ current_user.name.split()[0] }}{% else %}sign in{% endif %}</small>
                     <strong>Account &amp; Lists ▾</strong>
@@ -58,24 +58,27 @@
                 </div>
             </a>
 
-            <a href="{{ url_for('bag') }}" class="nav-item">
-                <div style="position:relative">
-                    <span style="font-size:28px;">🛒</span>
-                    <span class="cart-count" style="position:absolute;top:-5px;right:-10px;background:var(--amz-orange);color:#111;border-radius:50%;padding:0 5px;font-weight:700;font-size:13px;min-width:18px;text-align:center;">{{ cart_count }}</span>
+            <a href="{{ url_for('bag') }}" class="nav-item nav-cart">
+                <div class="nav-cart-icon">
+                    <svg viewBox="0 0 32 28" aria-hidden="true"><path d="M2 2h4l3.2 16.2h15.4l3-11.2H8.2M12 24a2 2 0 1 1-4 0 2 2 0 0 1 4 0Zm14 0a2 2 0 1 1-4 0 2 2 0 0 1 4 0Z"/></svg>
+                    <span class="cart-count">{{ cart_count }}</span>
                 </div>
-                <strong style="margin-left:6px;">Cart</strong>
+                <strong class="nav-cart-label">Cart</strong>
             </a>
         </div>
 
         <!-- Sub Nav -->
         <div class="nav-sub">
             <div class="nav-sub-inner">
-                <a class="nav-sub-item nav-sub-item-bold" href="{{ url_for('index') }}">☰ All</a>
+                <a class="nav-sub-item nav-sub-item-bold" href="{{ url_for('index') }}"><span class="hamburger" aria-hidden="true"></span>All</a>
                 <a class="nav-sub-item" href="{{ url_for('todays_deals') }}">Today's Deals</a>
-                <a class="nav-sub-item" href="{{ url_for('customer_service') }}">Customer Service</a>
+                <a class="nav-sub-item" href="{{ url_for('deals') }}">Coupons</a>
+                <a class="nav-sub-item" href="{{ url_for('category', slug='home') }}">Amazon Home</a>
                 <a class="nav-sub-item" href="{{ url_for('index') }}">Registry</a>
+                <a class="nav-sub-item" href="{{ url_for('prime') }}">Prime</a>
                 <a class="nav-sub-item" href="{{ url_for('gift_cards') }}">Gift Cards</a>
                 <a class="nav-sub-item" href="{{ url_for('index') }}">Sell</a>
+                <a class="nav-sub-item nav-sub-cart" href="{{ url_for('bag') }}">Cart ({{ cart_count }})</a>
                 {% for c in nav_categories %}
                 <a class="nav-sub-item" href="{{ url_for('category', slug=c.slug) }}">{{ c.name }}</a>
                 {% endfor %}
@@ -149,7 +152,10 @@
                 </div>
             </div>
             <div class="footer-logo-sep">
-                <a href="{{ url_for('index') }}" class="brand">amazon<span class="smile">.</span></a>
+                <a href="{{ url_for('index') }}" class="brand"><span class="footer-logo-word">amazon</span><span class="footer-logo-smile" aria-hidden="true"></span></a>
+                <span class="footer-locale">◎ English</span>
+                <span class="footer-locale">$ USD - U.S. Dollar</span>
+                <span class="footer-locale">🇺🇸 United States</span>
             </div>
         </div>
         <div class="footer-bottom">
