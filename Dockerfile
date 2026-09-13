@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 28 Flask mirror sites + control plane on :8101.
+# 29 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -92,6 +92,15 @@ os.makedirs('instance_seed', exist_ok=True); \
 shutil.copy2('instance/rotten_tomatoes.db', 'instance_seed/rotten_tomatoes.db'); \
 print('Rotten Tomatoes seed DB generated at build time.')" && rm -rf /opt/WebSyn/rotten_tomatoes/instance
 
-EXPOSE 8101 40000-40027
+# Adopt-a-Pet freezes its relational catalog and captured real-site media.
+RUN test -n "$(ls -A /opt/WebSyn/adopt_a_pet/static/images)" && \
+    cd /opt/WebSyn/adopt_a_pet && rm -rf instance instance_seed && python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/adopt_a_pet.db', 'instance_seed/adopt_a_pet.db'); \
+print('Adopt-a-Pet seed DB generated at build time.')" && rm -rf /opt/WebSyn/adopt_a_pet/instance
+
+EXPOSE 8101 40000-40028
 
 CMD ["/opt/websyn_start.sh"]
