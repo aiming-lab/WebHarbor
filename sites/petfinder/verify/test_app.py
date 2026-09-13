@@ -4,6 +4,7 @@ from __future__ import annotations
 import importlib
 import os
 import re
+import shutil
 import sqlite3
 import sys
 import tempfile
@@ -31,6 +32,11 @@ class AppTests(unittest.TestCase):
         cls.module = importlib.import_module("app")
         cls.app = cls.module.app
         cls.app.config.update(TESTING=True)
+        cls.pristine_database = Path(cls.tempdir.name) / "pristine.db"
+        with cls.app.app_context():
+            cls.module.db.session.remove()
+            cls.module.db.engine.dispose()
+        shutil.copyfile(cls.database, cls.pristine_database)
 
     @classmethod
     def tearDownClass(cls):
@@ -41,6 +47,10 @@ class AppTests(unittest.TestCase):
         cls.tempdir.cleanup()
 
     def setUp(self):
+        with self.app.app_context():
+            self.module.db.session.remove()
+            self.module.db.engine.dispose()
+        shutil.copyfile(self.pristine_database, self.database)
         self.client = self.app.test_client()
 
     def login(self, next_url: str | None = None):
@@ -197,6 +207,52 @@ class AppTests(unittest.TestCase):
             follow_redirects=True,
         )
         self.assertIn("Inquiry submitted for Nori Rabbit", inquiry.get_data(as_text=True))
+
+    def test_duplicate_save_is_idempotent_and_accounts_are_isolated(self):
+        self.login()
+        detail = self.client.get("/pets/luna-domestic-shorthair")
+        token = csrf_token(detail)
+        for _ in range(2):
+            self.client.post(
+                "/pets/luna-domestic-shorthair/save",
+                data={"csrf_token": token},
+                follow_redirects=True,
+            )
+        with self.app.app_context():
+            alice = self.module.User.query.filter_by(email="alice.j@test.com").one()
+            luna = self.module.Listing.query.filter_by(slug="luna-domestic-shorthair").one()
+            self.assertEqual(
+                self.module.SavedItem.query.filter_by(user_id=alice.id, listing_id=luna.id).count(),
+                1,
+            )
+
+        logout_page = self.client.get("/account")
+        logout_token = csrf_token(logout_page)
+        self.client.post("/logout", data={"csrf_token": logout_token})
+        login_page = self.client.get("/login")
+        self.client.post(
+            "/login",
+            data={
+                "csrf_token": csrf_token(login_page),
+                "email": "bob.c@test.com",
+                "password": "TestPass123!",
+            },
+        )
+        bob_account = self.client.get("/account").get_data(as_text=True)
+        self.assertIn("Favorite pets (0)", bob_account)
+        self.assertNotIn("Luna Domestic Shorthair", bob_account)
+
+    def test_short_inquiry_is_rejected_without_database_change(self):
+        self.login()
+        detail = self.client.get("/pets/nori-rabbit")
+        response = self.client.post(
+            "/pets/nori-rabbit/inquire",
+            data={"csrf_token": csrf_token(detail), "message": "Too short"},
+            follow_redirects=True,
+        )
+        self.assertIn("Add a short message for the shelter", response.get_data(as_text=True))
+        with self.app.app_context():
+            self.assertEqual(self.module.Inquiry.query.count(), 0)
 
     def test_get_routes_leave_database_unchanged(self):
         before = self.snapshot()
