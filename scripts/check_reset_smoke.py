@@ -442,7 +442,6 @@ def check_control_health(control_url: str, timeout: float, collector: Collector)
 
 
 def check_site(
-    root: Path,
     site: str,
     port: int,
     *,
@@ -601,7 +600,6 @@ def run_checks(
 
     site_checks = [
         check_site(
-            root,
             site_slug,
             port,
             control_url=control_url,
@@ -712,9 +710,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--db-root",
         help=(
-            "Deployment root holding <site>/instance and <site>/instance_seed. "
-            "Defaults to this checkout's sites/ directory, which is NOT what the "
-            "control plane resets when the environment runs in Docker."
+            "Deployment root holding <site>/instance and <site>/instance_seed, for "
+            "sites deployed on this host. There is no default: without this or "
+            "--docker-container the DB check is skipped, because this checkout is not "
+            "what the control plane resets when the environment runs in Docker."
         ),
     )
     parser.add_argument(
