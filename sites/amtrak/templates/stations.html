@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Stations · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Stations</div>
+      <h2>Find station amenities, baggage notes, and departure boards.</h2>
+      <p>The station directory supports region filtering and free-text search across codes, city names, and seeded station blurbs.</p>
+      <form class="form-panel" action="{{ url_for('stations_page') }}" method="get" style="margin-top: 18px;">
+        <div class="form-grid">
+          <div class="field-wide">
+            <label for="station-query">Search stations</label>
+            <input id="station-query" type="search" name="q" value="{{ query }}" placeholder="Try Chicago, NYP, baggage, or Seattle">
+          </div>
+          <div class="field">
+            <label for="region">Region</label>
+            <select id="region" name="region">
+              <option value="">All regions</option>
+              {% for item in regions %}
+                <option value="{{ item }}" {% if region == item %}selected{% endif %}>{{ item }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="button" type="submit">Apply filters</button>
+          <a class="button-ghost" href="{{ url_for('stations_page') }}">Reset</a>
+        </div>
+      </form>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=stations[0].hero_image if stations else 'images/stations/NYP.svg') }}" alt="Station art">
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="grid auto">
+      {% for station in stations %}
+        <a class="card media-card" href="{{ url_for('station_detail', station_code=station.code) }}">
+          <div class="media-top">
+            <img src="{{ url_for('static', filename=station.hero_image) }}" alt="{{ station.name }}">
+          </div>
+          <div class="media-body">
+            <div class="badge-row">
+              <span class="badge">{{ station.code }}</span>
+              <span class="badge">{{ station.region }}</span>
+              {% if station.has_checked_baggage %}<span class="badge">Checked baggage</span>{% endif %}
+            </div>
+            <h3 class="card-title" style="margin-top: 14px;">{{ station.city_name }} · {{ station.name }}</h3>
+            <p class="muted">{{ station.map_blurb }}</p>
+            <div class="meta-row">
+              <span class="tag">{{ station.hours_text }}</span>
+            </div>
+          </div>
+        </a>
+      {% else %}
+        <div class="empty-state">No stations matched that combination of filters.</div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

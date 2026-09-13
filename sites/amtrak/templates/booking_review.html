@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% from "_macros.html" import summary_card %}
+{% block title %}Review Trip · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Review and confirm</div>
+      <h2>Check passenger details, fare selection, and trip totals.</h2>
+      <p>The next step is a mock checkout that records a local synthetic booking and reward activity.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('booking_checkout') }}">Continue to checkout</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/routes/california-zephyr-map.svg') }}" alt="Review">
+    </div>
+  </section>
+
+  <section class="section sidebar-layout">
+    <div class="detail-list">
+      {% for passenger in summary.passengers %}
+        <div class="card">
+          <strong>{{ passenger.first_name }} {{ passenger.last_name }}</strong>
+          <div class="muted">{{ passenger.passenger_type }} · {{ passenger.age_band }} · {{ passenger.seat_preference }}</div>
+          {% if passenger.accessibility_need %}
+            <div class="subtle">{{ passenger.accessibility_need }}</div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+    <aside>
+      {{ summary_card(summary) }}
+    </aside>
+  </section>
+{% endblock %}

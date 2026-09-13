@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Edit Account · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="auth-card card">
+    <div class="eyebrow">Profile preferences</div>
+    <h2>Update synthetic traveler details and preferred station.</h2>
+    <form class="detail-list" action="{{ url_for('account_edit') }}" method="post">
+      <div class="form-grid">
+        <div class="field-wide">
+          <label for="display_name">Display name</label>
+          <input id="display_name" name="display_name" value="{{ current_user.display_name }}">
+        </div>
+        <div class="field-wide">
+          <label for="first_name">First name</label>
+          <input id="first_name" name="first_name" value="{{ current_user.first_name }}">
+        </div>
+        <div class="field-wide">
+          <label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" value="{{ current_user.last_name }}">
+        </div>
+        <div class="field-wide">
+          <label for="phone">Phone</label>
+          <input id="phone" name="phone" value="{{ current_user.phone }}">
+        </div>
+        <div class="field-wide">
+          <label for="city">City</label>
+          <input id="city" name="city" value="{{ current_user.city }}">
+        </div>
+        <div class="field-wide">
+          <label for="state">State</label>
+          <input id="state" name="state" value="{{ current_user.state }}">
+        </div>
+        <div class="field-wide">
+          <label for="preferred_station_code">Preferred station</label>
+          <input id="preferred_station_code" list="station-directory" name="preferred_station_code" value="{{ current_user.preferred_station_code or '' }}">
+        </div>
+      </div>
+      <button class="button button-block" type="submit">Save preferences</button>
+    </form>
+  </section>
+{% endblock %}

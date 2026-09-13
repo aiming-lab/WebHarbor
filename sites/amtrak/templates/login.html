@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign In · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="auth-card card">
+    <div class="eyebrow">Demo sign in</div>
+    <h2>Use a benchmark account or your locally registered mirror account.</h2>
+    <form class="detail-list" action="{{ url_for('login', next=request.args.get('next')) }}" method="post">
+      <div class="field-wide">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" placeholder="alice.j@test.com">
+      </div>
+      <div class="field-wide">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" placeholder="{{ benchmark_password }}">
+      </div>
+      <button class="button button-block" type="submit">Sign in</button>
+    </form>
+    <div class="section">
+      <div class="detail-list">
+        <div class="detail-item"><strong>Benchmark accounts</strong><div class="muted">alice.j@test.com, bob.c@test.com, carol.d@test.com, david.k@test.com</div></div>
+        <div class="detail-item"><strong>Password</strong><div class="muted">{{ benchmark_password }}</div></div>
+      </div>
+    </div>
+  </section>
+{% endblock %}

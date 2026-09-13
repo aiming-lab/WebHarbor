@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}My Trips · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Trip history</div>
+      <h2>Upcoming and past synthetic bookings.</h2>
+      <p>Each booking has tickets, fare details, mock payment data, and optional change or cancel notes.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/routes/texas-eagle-hero.svg') }}" alt="Trips hero">
+    </div>
+  </section>
+
+  <section class="section grid two">
+    <div class="card">
+      <div class="eyebrow">Upcoming</div>
+      <h2>{{ upcoming|length }} active trips</h2>
+      <div class="detail-list">
+        {% for booking in upcoming %}
+          <a class="detail-item" href="{{ url_for('trip_detail', booking_code=booking.booking_code) }}">
+            <strong>{{ booking.booking_code }} · {{ booking.origin_code }} → {{ booking.destination_code }}</strong>
+            <div class="muted">{{ booking.departure_date|date_label }} · {{ booking.status }}</div>
+          </a>
+        {% else %}
+          <div class="empty-state">No upcoming bookings are seeded right now.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Past and cancelled</div>
+      <h2>{{ past|length }} archived trips</h2>
+      <div class="detail-list">
+        {% for booking in past %}
+          <a class="detail-item" href="{{ url_for('trip_detail', booking_code=booking.booking_code) }}">
+            <strong>{{ booking.booking_code }} · {{ booking.origin_code }} → {{ booking.destination_code }}</strong>
+            <div class="muted">{{ booking.departure_date|date_label }} · {{ booking.status }}</div>
+          </a>
+        {% else %}
+          <div class="empty-state">No past trips were found for this account.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

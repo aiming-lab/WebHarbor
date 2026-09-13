@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Select Sleeper Rooms · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Sleeper rooms</div>
+      <h2>Choose coach or sleeper accommodations for overnight legs.</h2>
+      <p>Room choices add a fixed seeded room delta to the fare summary and switch the leg to flexible-style pricing.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/rooms/roomette.svg') }}" alt="Sleeper room">
+    </div>
+  </section>
+
+  <section class="section">
+    <form class="detail-list" method="post" action="{{ url_for('booking_rooms') }}">
+      {% for room_set in room_sets %}
+        <div class="option-card">
+          <div class="eyebrow">{{ room_set.route_name }}</div>
+          <h3 class="card-title">{{ room_set.train_label }}</h3>
+          <div class="grid auto">
+            <label class="card">
+              <div class="choice-chip">
+                <input type="radio" name="room_{{ room_set.trip_id }}" value="coach" {% if flow.room_choices.get(room_set.trip_id|string, 'coach') == 'coach' %}checked{% endif %}>
+                <span>Coach Seat</span>
+              </div>
+              <p class="muted">Keep this leg in standard seating with the selected fare family.</p>
+            </label>
+            {% for room in room_set.rooms %}
+              <label class="card">
+                <div class="choice-chip">
+                  <input type="radio" name="room_{{ room_set.trip_id }}" value="{{ room.room_type }}" {% if flow.room_choices.get(room_set.trip_id|string) == room.room_type %}checked{% endif %}>
+                  <span>{{ room.name }}</span>
+                </div>
+                <p class="muted">{{ room.description }}</p>
+                <div class="meta-row">
+                  <span class="tag">+{{ room.price_delta|currency }}</span>
+                  <span class="tag">Sleeps {{ room.occupancy }}</span>
+                  <span class="tag">{{ room.availability }} left</span>
+                </div>
+              </label>
+            {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+      <button class="button" type="submit">Continue to passengers</button>
+    </form>
+  </section>
+{% endblock %}

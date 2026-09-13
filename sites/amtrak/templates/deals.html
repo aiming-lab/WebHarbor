@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Deals · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Deals</div>
+      <h2>Compare seeded travel offers by route and destination.</h2>
+      <p>The deals page is fully local and task-friendly: each offer exposes a route, a destination, a deterministic price floor, and fixed booking windows.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=deals[0].hero_image if deals else 'images/deals/acela-express.svg') }}" alt="Deals art">
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="grid auto">
+      {% for deal in deals %}
+        <article class="card media-card">
+          <div class="media-top">
+            <img src="{{ url_for('static', filename=deal.hero_image) }}" alt="{{ deal.title }}">
+          </div>
+          <div class="media-body">
+            <div class="badge-row">
+              <span class="badge">From {{ deal.price_from|currency }}</span>
+              {% if deal.featured %}<span class="badge">Featured</span>{% endif %}
+            </div>
+            <h3 class="card-title" style="margin-top: 14px;">{{ deal.title }}</h3>
+            <p class="muted">{{ deal.description }}</p>
+            <div class="detail-list" style="margin-top: 12px;">
+              <div class="detail-item"><strong>Booking window</strong><div class="muted">{{ deal.booking_window }}</div></div>
+              <div class="detail-item"><strong>Travel window</strong><div class="muted">{{ deal.travel_window }}</div></div>
+              <div class="detail-item"><strong>Terms</strong><div class="muted">{{ deal.terms }}</div></div>
+            </div>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

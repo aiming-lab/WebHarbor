@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% from "_macros.html" import booking_search_form %}
+{% block title %}Book Travel · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Trip search</div>
+      <h2>Start with a one-way, round-trip, or multi-city search.</h2>
+      <p>Search results are assembled from seeded station-to-station trip segments. Use direct-only, departure-window, and sorting controls to refine them.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/routes/acela-express-hero.svg') }}" alt="Booking hero">
+    </div>
+  </section>
+
+  <section class="section split-layout">
+    <div>
+      {{ booking_search_form(booking_defaults, url_for('booking_results')) }}
+    </div>
+    <aside class="card">
+      <div class="eyebrow">What works here</div>
+      <h3 class="card-title">Interactive booking flow</h3>
+      <div class="detail-list">
+        <div class="detail-item"><strong>One-way and round-trip</strong><div class="muted">Select an outbound option first, then choose a return when needed.</div></div>
+        <div class="detail-item"><strong>Multi-city</strong><div class="muted">Build up to three legs and choose one option for each.</div></div>
+        <div class="detail-item"><strong>Sleeper rooms</strong><div class="muted">Overnight routes surface roomette, bedroom, and family-bedroom inventory.</div></div>
+        <div class="detail-item"><strong>Mock checkout</strong><div class="muted">Nothing leaves this local environment and no real payment is processed.</div></div>
+      </div>
+    </aside>
+  </section>
+{% endblock %}
