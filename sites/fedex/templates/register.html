@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Create Account{% endblock %}
+{% block content %}
+  <section class="card">
+    <div class="kicker">Register</div>
+    <h1>Create an account</h1>
+    <form method="post" class="stack" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-grid two">
+        <div class="field"><label for="first_name">First name</label><input id="first_name" name="first_name" value="{{ form.first_name if form else '' }}" required></div>
+        <div class="field"><label for="last_name">Last name</label><input id="last_name" name="last_name" value="{{ form.last_name if form else '' }}" required></div>
+      </div>
+      <div class="form-grid two">
+        <div class="field"><label for="email">Email</label><input id="email" name="email" type="email" value="{{ form.email if form else '' }}" required></div>
+        <div class="field"><label for="password">Password</label><input id="password" type="password" name="password" required minlength="8" autocomplete="new-password" aria-describedby="password_hint"><p class="field-hint" id="password_hint">At least 8 characters. This local demo account is not connected to any real FedEx credential.</p></div>
+      </div>
+      <div class="form-grid three">
+        <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" value="{{ form.phone if form else '' }}" aria-describedby="phone_hint"><p class="field-hint" id="phone_hint">Digits, spaces and + ( ) - . only.</p></div>
+        <div class="field"><label for="company">Company</label><input id="company" name="company" value="{{ form.company if form else '' }}"></div>
+        <div class="field"><label for="zip_code">ZIP code</label><input id="zip_code" name="zip_code" value="{{ form.zip_code if form else '' }}" aria-describedby="zip_hint"><p class="field-hint" id="zip_hint">5 digits, optionally followed by -4 digits.</p></div>
+      </div>
+      <div class="form-grid two">
+        <div class="field"><label for="city">City</label><input id="city" name="city" value="{{ form.city if form else '' }}"></div>
+        <div class="field">
+          <label for="state">State</label>
+          <select id="state" name="state">
+            <option value="">No state selected</option>
+            {% for label in state_labels %}
+              <option value="{{ label }}" {% if form and form.state == label %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="preferred_location_slug">Preferred location</label>
+        <select id="preferred_location_slug" name="preferred_location_slug">
+          <option value="">No preferred location</option>
+          {% for location in all_locations %}
+            <option value="{{ location.slug }}" {% if form and form.preferred_location_slug == location.slug %}selected{% endif %}>{{ location.name }} — {{ location.city }}, {{ location.state }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <input type="submit" value="Create local account">
+    </form>
+  </section>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Page Not Found | FedEx{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">404</div>
+      <h1>That page is not part of this local demonstration</h1>
+    </div>
+  </section>
+  <div class="split">
+    <section class="card stack">
+      <p class="muted">{{ message | default("The address you requested does not match any page in the offline FedEx mirror. Tracking, rates, shipping, pickups, locations, support and account history remain available from the main navigation.") }}</p>
+      <div class="button-row">
+        <a class="button button-primary" href="{{ url_for('index') }}">Return to the home page</a>
+        <a class="button button-secondary" href="{{ url_for('track') }}">Track a shipment</a>
+        <a class="button button-secondary" href="{{ url_for('support') }}">Browse local support</a>
+      </div>
+    </section>
+    <aside class="card stack">
+      <div class="kicker">Offline notice</div>
+      <p class="muted">Destinations that would reach a live FedEx service show an offline notice instead of an error. This page means the local address itself does not exist.</p>
+    </aside>
+  </div>
+{% endblock %}
