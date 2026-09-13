@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% set hide_search_row = true %}
+{% block title %}Appointment Requested{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="book-page">
+    <div class="book-band"><h1>Appointment Requested</h1><p>Your request has been sent to {{ doctor.display_name }}</p></div>
+    <div class="steps"><span class="on">1</span><i></i><span class="on">2</span><i></i><span class="on">3</span></div>
+    <div class="confirm-box">
+      <div>Confirmation reference</div>
+      <div class="ref" id="confirmation-reference">{{ booking.reference }}</div>
+      <dl>
+        <dt>Provider</dt><dd><a href="{{ url_for('doctor_profile', slug=doctor.slug) }}">{{ doctor.display_name }}</a></dd>
+        <dt>Location</dt><dd>{{ booking.location.name }}<br>{{ booking.location.short_address }}</dd>
+        <dt>Patient</dt><dd>{{ booking.patient_type }}</dd>
+        <dt>Requested time</dt><dd>{{ booking.slot_label }}</dd>
+      </dl>
+      <p>The office will confirm your request by phone. You can review it any time under <a href="{{ url_for('account_appointments') }}">My Account › Appointments</a>.</p>
+      <a class="btn btn-primary btn-pill" href="{{ url_for('account_appointments') }}">View My Appointments</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

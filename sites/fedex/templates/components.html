@@ -1,0 +1,13 @@
+{% macro icon(name) -%}
+<svg class="icon" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+{% if name == 'search' %}<circle cx="20" cy="20" r="13"/><path d="m30 30 13 13"/>
+{% elif name == 'account' %}<circle cx="24" cy="24" r="19"/><circle cx="24" cy="18" r="7"/><path d="M12 39v-7c0-7 24-7 24 0v7"/>
+{% elif name == 'location' %}<path d="M24 44S9 26 9 17a15 15 0 0 1 30 0c0 9-15 27-15 27Z"/><circle cx="24" cy="17" r="5"/>
+{% elif name == 'menu' %}<path d="M6 12h36M6 24h36M6 36h36"/>
+{% elif name == 'track' %}<path d="m7 13 15-8 16 8-16 9-15-9v19l14 8V22m-7-13 15 8M38 13v12"/><circle cx="33" cy="32" r="8"/><path d="m39 38 7 7"/>
+{% else %}<path d="m15 10 15-7 15 7-15 8-15-8v15m15-7v18l15-8V10M23 6l15 8"/><rect x="3" y="24" width="20" height="22" rx="1"/><path d="M6 28h14M7 34h3m4 0h3M7 39h3m4 0h3"/>{% endif %}
+</svg>
+{%- endmacro %}
+{% macro notice_link(label, description='This section connects to a live FedEx service and is not available in this offline demonstration. Tracking, rates, shipping, pickups and account history are available through the main navigation.') -%}
+<a href="#offline-notice" data-notice-title="{{ label }}" data-notice-description="{{ description }}">{{ label }}</a>
+{%- endmacro %}

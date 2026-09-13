@@ -32,16 +32,30 @@ mkdir -p "$CACHE_DIR"
 echo "[fetch] huggingface.co/datasets/$REPO @ $REVISION -> sites/"
 
 if [[ -n "$ONLY_SITE" ]]; then
-    INCLUDE="$ONLY_SITE.tar.gz"
+    INCLUDES=("$ONLY_SITE.tar.gz")
     echo "[fetch] scope: $ONLY_SITE only"
 else
-    INCLUDE="*.tar.gz"
+    # Request exactly the archives this checkout registers. The dataset may also
+    # hold archives for sites whose code has not merged yet; downloading them
+    # would waste bandwidth and make the inventory below ambiguous.
+    INCLUDES=()
+    for site_dir in sites/*/; do
+        [[ -d "$site_dir" ]] || continue
+        INCLUDES+=("$(basename "$site_dir").tar.gz")
+    done
+    echo "[fetch] scope: ${#INCLUDES[@]} registered site(s)"
 fi
 
+INCLUDE_ARGS=()
+for pattern in "${INCLUDES[@]}"; do
+    INCLUDE_ARGS+=(--include "$pattern")
+done
+
 hf download "$REPO" --repo-type dataset --revision "$REVISION" \
-    --include "$INCLUDE" --local-dir "$CACHE_DIR"
+    "${INCLUDE_ARGS[@]}" --local-dir "$CACHE_DIR"
 
 shopt -s nullglob
+missing=()
 if [[ -n "$ONLY_SITE" ]]; then
     TARBALLS=("$CACHE_DIR/$ONLY_SITE.tar.gz")
     if [[ ! -f "${TARBALLS[0]}" ]]; then
@@ -49,14 +63,31 @@ if [[ -n "$ONLY_SITE" ]]; then
         exit 1
     fi
 else
-    TARBALLS=("$CACHE_DIR"/*.tar.gz)
-    expected=0
+    # Every site in this checkout must have an archive at the pinned revision.
+    # Archives for sites that are not in this checkout are ignored: the dataset
+    # can legitimately carry assets that were merged ahead of their code PR, and
+    # rejecting them would make an otherwise complete pin unusable.
+    TARBALLS=()
     for site_dir in sites/*/; do
-        [[ -d "$site_dir" ]] && expected=$((expected + 1))
+        [[ -d "$site_dir" ]] || continue
+        site=$(basename "$site_dir")
+        if [[ -f "$CACHE_DIR/$site.tar.gz" ]]; then
+            TARBALLS+=("$CACHE_DIR/$site.tar.gz")
+        else
+            missing+=("$site")
+        fi
     done
-    if [[ ${#TARBALLS[@]} -ne $expected ]]; then
-        echo "fetch_assets: expected $expected site archives at revision $REVISION, found ${#TARBALLS[@]}" >&2
+    if (( ${#missing[@]} > 0 )); then
+        echo "fetch_assets: revision $REVISION has no archive for: ${missing[*]}" >&2
         exit 1
+    fi
+    unregistered=0
+    for tarball in "$CACHE_DIR"/*.tar.gz; do
+        site=$(basename "$tarball" .tar.gz)
+        [[ -d "sites/$site" ]] || unregistered=$((unregistered + 1))
+    done
+    if (( unregistered > 0 )); then
+        echo "[fetch] ignoring $unregistered archive(s) for sites not present in this checkout"
     fi
 fi
 extracted=0
@@ -66,6 +97,12 @@ for tarball in "${TARBALLS[@]}"; do
     python3 scripts/validate_asset_archive.py "$tarball" "$site"
     echo "[fetch] extracting $site"
     python3 scripts/extract_asset_archive.py "$tarball" sites "$site"
+    # An archive can outlive the code that used it: a site may stop shipping a
+    # managed root, or stop generating per-record art. asset_inventory.json is
+    # the declared contract for what the site actually serves, and the build
+    # validates it, so prune managed files the contract does not declare instead
+    # of leaving stale members to fail the inventory gate.
+    python3 scripts/sync_assets_to_inventory.py "sites/$site"
     migrator="sites/$site/migrate_seed.py"
     database="sites/$site/instance_seed/$site.db"
     if [[ -f "sites/$site/.build-generated-seed" ]]; then
