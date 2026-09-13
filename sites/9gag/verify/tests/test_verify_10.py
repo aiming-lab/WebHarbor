@@ -76,7 +76,7 @@ class VerifyTask10Tests(VerifierTestCase):
         self.assertFailsOn(self.verdict(GENUINE_STEPS, ANSWER, initial=initial, after=initial), "initial_state_requires_action")
 
     def test_mixed_origin_run_fails(self) -> None:
-        verdict = self.verdict(GENUINE_STEPS, ANSWER, after=genuine_after(), trajectory_updates={"start_url": "http://localhost:40024/"})
+        verdict = self.verdict(GENUINE_STEPS, ANSWER, after=genuine_after(), trajectory_updates={"start_url": "http://localhost:40026/"})
         self.assertFailsOn(verdict, "all_urls_match_local_origin")
 
 

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Shipment Confirmation{% endblock %}
+{% block content %}
+  <section class="card stack">
+    <div class="kicker">Shipment created</div>
+    <h1>{{ shipment.shipment_code }}</h1>
+    <div class="badge-row">
+      <span class="badge">{{ shipment.tracking_number }}</span>
+      <span class="badge orange">{{ shipment.status }}</span>
+    </div>
+    <p class="muted">This confirmation exists only in the local FedEx demo mirror.</p>
+    <div class="stats-grid">
+      <div class="stat"><strong>{{ shipment.total_cost|money }}</strong><span>Mock billed total</span></div>
+      <div class="stat"><strong>{{ shipment.invoice_number }}</strong><span>Invoice reference</span></div>
+      <div class="stat"><strong>{{ shipment.destination_city }}</strong><span>Destination city</span></div>
+    </div>
+    <div class="hero-actions">
+      <a class="button button-primary" href="{{ url_for('tracking_detail', tracking_number=shipment.tracking_number) }}">Open tracking detail</a>
+      <a class="button button-secondary" href="{{ url_for('account_shipments') }}">View account shipments</a>
+    </div>
+  </section>
+{% endblock %}

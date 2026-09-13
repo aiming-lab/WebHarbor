@@ -64,7 +64,7 @@ class MatcherTests(unittest.TestCase):
         self.assertFalse(lib.paths_in_order(traj, [("/settings", {}), ("/login", {})]))
 
     def test_site_url_accepts_loopback_only(self) -> None:
-        self.assertTrue(lib.is_site_url("http://localhost:40024/"))
+        self.assertTrue(lib.is_site_url("http://localhost:40026/"))
         self.assertTrue(lib.is_site_url("http://127.0.0.1:45001/x"))
         self.assertFalse(lib.is_site_url("https://9gag.com/"))
         self.assertFalse(lib.is_site_url("file:///tmp/x"))

@@ -5,8 +5,12 @@ set -e
 
 SITES=(allrecipes amazon apple arxiv bbc_news booking github
        google_flights google_map google_search huggingface wolfram_alpha
-       cambridge_dictionary coursera espn merriam_webster ikea phys_org target ted osu rotten_tomatoes compass walmart_careers 9gag)
+       cambridge_dictionary coursera espn merriam_webster ikea phys_org target
+       ted osu rotten_tomatoes compass walmart_careers fedex
+       webmd_doctor
+       9gag)
 BASE_PORT=40000
+SITE_COUNT=${#SITES[@]}
 PID_DIR=/tmp/websyn_pids
 mkdir -p "$PID_DIR"
 rm -f "$PID_DIR"/*.pid
@@ -17,7 +21,6 @@ for d in "${SITES[@]}"; do
     cp -a "/opt/WebSyn/$d/instance_seed" "/opt/WebSyn/$d/instance"
 done
 
-SITE_COUNT=${#SITES[@]}
 END_PORT=$((BASE_PORT + SITE_COUNT - 1))
 echo "[WebSyn] Starting ${SITE_COUNT} sites on ports ${BASE_PORT}-${END_PORT}..."
 for i in "${!SITES[@]}"; do
