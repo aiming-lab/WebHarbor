@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ launch.title }} | Launch YC{% endblock %}
+
+{% block content %}
+<article class="shell detail">
+    <div class="detail-header">
+        {% if launch.logo %}<img src="{{ url_for('static', filename='images/' + launch.logo) }}" alt="{{ launch.company_name }} logo">{% endif %}
+        <div>
+            <h1>{{ launch.title }}</h1>
+            <p class="lede">{{ launch.tagline }}</p>
+        </div>
+    </div>
+    <dl class="fact-grid">
+        {% if launch.company_batch %}<div class="fact"><dt>Batch</dt><dd>{{ launch.company_batch }}</dd></div>{% endif %}
+        {% if launch.company_industry %}<div class="fact"><dt>Industry</dt><dd>{{ launch.company_industry }}</dd></div>{% endif %}
+        {% if launch.created_at %}<div class="fact"><dt>Launched</dt><dd>{{ launch.created_at[:10] }}</dd></div>{% endif %}
+        <div class="fact"><dt>Upvotes</dt><dd id="vote-count">{{ launch.vote_count }}</dd></div>
+    </dl>
+    {% if launch.tag_list %}<p>{% for tag in launch.tag_list %}<span class="pill">{{ tag }}</span>{% endfor %}</p>{% endif %}
+    {% if company %}<p>By <a href="{{ url_for('company_detail', slug=company.slug) }}">{{ company.name }}</a>{% if company.one_liner %} — {{ company.one_liner }}{% endif %}</p>
+    {% elif launch.company_url %}<p>By <a href="{{ launch.company_url }}">{{ launch.company_name }}</a></p>{% endif %}
+
+    <form class="inline" method="POST" action="{{ url_for('vote_launch', slug=launch.slug) }}">
+        <button class="button" type="submit">{{ 'Remove upvote' if voted else 'Upvote this launch' }}</button>
+    </form>
+    <p><a href="{{ url_for('launches') }}">← All launches</a></p>
+</article>
+{% endblock %}

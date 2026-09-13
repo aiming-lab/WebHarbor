@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ company.name }}{% if company.one_liner %}: {{ company.one_liner }}{% endif %} | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell detail">
+    <div class="detail-header">
+        {% if company.logo %}<img src="{{ url_for('static', filename='images/' + company.logo) }}" alt="{{ company.name }} logo">{% endif %}
+        <div>
+            <h1>{{ company.name }}</h1>
+            <p class="lede">{{ company.one_liner }}</p>
+            <div>
+                {% if company.batch %}<span class="pill batch">{{ company.batch }}</span>{% endif %}
+                {% if company.status %}<span class="pill">{{ company.status }}</span>{% endif %}
+                {% if company.is_hiring %}<span class="pill hiring">Hiring</span>{% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if company.website %}<p><a href="{{ company.website }}">{{ company.website }}</a></p>{% endif %}
+
+    <dl class="fact-grid">
+        {% if company.year_founded %}<div class="fact"><dt>Founded</dt><dd>{{ company.year_founded }}</dd></div>{% endif %}
+        {% if company.team_size %}<div class="fact"><dt>Team size</dt><dd>{{ company.team_size }}</dd></div>{% endif %}
+        {% if company.location %}<div class="fact"><dt>Location</dt><dd>{{ company.location }}</dd></div>{% endif %}
+        {% if company.industry %}<div class="fact"><dt>Industry</dt><dd>{{ company.industry }}</dd></div>{% endif %}
+        {% if company.stage %}<div class="fact"><dt>Stage</dt><dd>{{ company.stage }}</dd></div>{% endif %}
+        {% if company.group_partner %}<div class="fact"><dt>Group partner</dt><dd>{{ company.group_partner }}</dd></div>{% endif %}
+    </dl>
+
+    {% if company.tag_list %}
+    <p>{% for tag in company.tag_list %}<a class="pill" href="{{ url_for('companies', tag=tag) }}">{{ tag }}</a>{% endfor %}</p>
+    {% endif %}
+
+    {% if company.long_description %}
+    <h2>About</h2>
+    <p class="prose">{{ company.long_description }}</p>
+    {% endif %}
+
+    {% if company.founders %}
+    <h2>Active founders</h2>
+    {% for founder in company.founders %}
+    <div class="founder-card">
+        {% if founder.avatar %}<img src="{{ url_for('static', filename='images/' + founder.avatar) }}" alt="{{ founder.name }}">{% endif %}
+        <div>
+            <h3>{{ founder.name }}</h3>
+            <p class="muted">{{ founder.title }}</p>
+            {% if founder.bio %}<p>{{ founder.bio }}</p>{% endif %}
+        </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if launches %}
+    <h2>Launches</h2>
+    <div class="card-list">
+        {% for launch in launches %}
+        <article class="card">
+            <div>
+                <h3><a href="{{ url_for('launch_detail', slug=launch.slug) }}">{{ launch.title }}</a></h3>
+                <p>{{ launch.tagline }}</p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if company.news %}
+    <h2>In the news</h2>
+    <ul>
+        {% for item in company.news %}
+        <li><a href="{{ item.url }}">{{ item.title }}</a>{% if item.date %} <span class="muted">— {{ item.date }}</span>{% endif %}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+
+    {% if company.linkedin_url or company.twitter_url or company.github_url or company.crunchbase_url %}
+    <h2>Links</h2>
+    <p>
+        {% if company.linkedin_url %}<a class="pill" href="{{ company.linkedin_url }}">LinkedIn</a>{% endif %}
+        {% if company.twitter_url %}<a class="pill" href="{{ company.twitter_url }}">Twitter</a>{% endif %}
+        {% if company.github_url %}<a class="pill" href="{{ company.github_url }}">GitHub</a>{% endif %}
+        {% if company.crunchbase_url %}<a class="pill" href="{{ company.crunchbase_url }}">Crunchbase</a>{% endif %}
+    </p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}People | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell page-head">
+    <h1>People</h1>
+    <p class="lede">YC is run by a team of partners and staff who work with founders through the batch
+        and long after it.</p>
+</div>
+<div class="shell">
+    {% for section in sections %}
+    <section class="people-section">
+        <h2>{{ section.title }}</h2>
+        <div class="people-grid">
+            {% for person in section.people %}
+            <article class="person-card">
+                {% if person.photo %}<img src="{{ url_for('static', filename='images/' + person.photo) }}" alt="{{ person.name }}">{% endif %}
+                <h3><a href="{{ url_for('person_detail', slug=person.slug) }}">{{ person.name }}</a></h3>
+                <p class="muted">{{ person.title }}</p>
+            </article>
+            {% endfor %}
+        </div>
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

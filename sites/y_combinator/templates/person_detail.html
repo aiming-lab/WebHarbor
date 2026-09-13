@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ person.name }}: YC {{ person.title }} | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell detail">
+    <div class="detail-header">
+        {% if person.photo %}<img class="round" style="border-radius:50%" src="{{ url_for('static', filename='images/' + person.photo) }}" alt="{{ person.name }}">{% endif %}
+        <div>
+            <h1>{{ person.name }}</h1>
+            <p class="lede">{{ person.title }}</p>
+            <span class="pill">{{ person.group }}</span>
+        </div>
+    </div>
+    {% if person.bio %}<p class="prose">{{ person.bio }}</p>{% endif %}
+    <p><a href="{{ url_for('people') }}">← All people</a></p>
+</div>
+{% endblock %}
