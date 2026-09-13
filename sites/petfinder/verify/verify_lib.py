@@ -7,6 +7,7 @@ import ipaddress
 import json
 import os
 import re
+import shutil
 import sqlite3
 import subprocess
 import tempfile
@@ -245,6 +246,28 @@ def changed_tables(initial_db: str, after_db: str) -> set[str]:
     if initial_tables != database_tables(after_db):
         return {"<schema>"}
     return {table for table in initial_tables if table_snapshot(initial_db, table) != table_snapshot(after_db, table)}
+
+
+def matches_expected_mutation(initial_db: str, after_db: str, sql: str, params: Sequence[Any]) -> bool:
+    """Compare after.db with a copy of initial.db containing exactly one allowed mutation."""
+    handle, expected_path = tempfile.mkstemp(prefix="petfinder_expected_", suffix=".db")
+    os.close(handle)
+    try:
+        shutil.copyfile(initial_db, expected_path)
+        connection = sqlite3.connect(expected_path)
+        try:
+            cursor = connection.execute(sql, params)
+            connection.commit()
+            if cursor.rowcount != 1:
+                return False
+        finally:
+            connection.close()
+        expected_tables = database_tables(expected_path)
+        if expected_tables != database_tables(after_db):
+            return False
+        return all(table_snapshot(expected_path, table) == table_snapshot(after_db, table) for table in expected_tables)
+    finally:
+        Path(expected_path).unlink(missing_ok=True)
 
 
 def favorite_names(path: str, email: str = "alice.j@test.com") -> list[str]:

@@ -130,11 +130,28 @@ class VerifierMatrixTests(unittest.TestCase):
                 connection.close()
         return initial, after
 
-    def verify(self, index: int, observed: dict, mutate: bool = False) -> tuple[subprocess.CompletedProcess[str], dict]:
+    def verify(
+        self,
+        index: int,
+        observed: dict | str,
+        mutate: bool = False,
+        extra_sql: tuple[str, tuple] | None = None,
+        remove_after: bool = False,
+    ) -> tuple[subprocess.CompletedProcess[str], dict]:
         run_dir = self.root / f"run-{index}-{len(list(self.root.glob('run-*')))}"
         run_dir.mkdir()
-        (run_dir / "trajectory.json").write_text(json.dumps(observed), encoding="utf-8")
+        encoded = observed if isinstance(observed, str) else json.dumps(observed)
+        (run_dir / "trajectory.json").write_text(encoded, encoding="utf-8")
         initial, after = self.databases(index, mutate)
+        if extra_sql:
+            connection = sqlite3.connect(after)
+            try:
+                connection.execute(*extra_sql)
+                connection.commit()
+            finally:
+                connection.close()
+        if remove_after:
+            after.unlink()
         result = subprocess.run(
             [
                 sys.executable,
@@ -199,6 +216,50 @@ class VerifierMatrixTests(unittest.TestCase):
             url("/account"),
         ]
         self.assert_passes(8, trajectory(8, paths=alternate_paths), mutate=True)
+
+    def test_legal_paraphrase_passes(self):
+        answer = "With only 5 days, Ollie Poodle Mix has been listed for fewer days than Maple, which has 18 days."
+        self.assert_passes(7, trajectory(7, answer=answer))
+
+    def test_negated_ground_truth_fails(self):
+        answer = "Milo Labrador Mix is not at Hudson Valley Animal Rescue and has not been listed for 3 days."
+        self.assert_fails(0, trajectory(0, answer=answer))
+
+    def test_state_tasks_reject_same_table_side_effects(self):
+        extras = {
+            5: (
+                "UPDATE user SET home_location=? WHERE lower(email)=lower(?)",
+                ("Boston, MA", "bob.c@test.com"),
+            ),
+            8: (
+                "INSERT INTO saved_item(user_id, listing_id) "
+                "SELECT u.id,l.id FROM user u,listing l WHERE lower(u.email)=lower(?) AND l.slug=?",
+                ("bob.c@test.com", "poppy-tabby"),
+            ),
+            9: (
+                "INSERT INTO inquiry(user_id, listing_id, message, status) "
+                "SELECT u.id,l.id,?,? FROM user u,listing l WHERE lower(u.email)=lower(?) AND l.slug=?",
+                ("Unrequested inquiry", "Submitted", "bob.c@test.com", "luna-domestic-shorthair"),
+            ),
+        }
+        for index, statement in extras.items():
+            with self.subTest(index=index):
+                result, payload = self.verify(index, trajectory(index), mutate=True, extra_sql=statement)
+                self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+                self.assertFalse(payload["pass"], payload)
+
+    def test_missing_after_snapshot_fails_without_traceback(self):
+        result, payload = self.verify(8, trajectory(8), mutate=True, remove_after=True)
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(payload["pass"], payload)
+        self.assertNotIn("Traceback", result.stderr)
+
+    def test_malformed_trajectory_fails_as_structured_json(self):
+        result, payload = self.verify(0, "{not-json")
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(payload["pass"], payload)
+        self.assertEqual(payload["reason"], "verifier_input_valid")
+        self.assertNotIn("Traceback", result.stderr)
 
 
 if __name__ == "__main__":

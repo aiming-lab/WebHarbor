@@ -27,6 +27,7 @@ from verify_lib import (
     visited_path,
     visited_query,
     load_run,
+    matches_expected_mutation,
 )
 
 
@@ -51,7 +52,7 @@ def state_databases(judge: Judge, args):
     return initial, after
 
 
-def main(index: int):
+def _main(index: int):
     args = parse_args()
     task_id = f"Petfinder--{index}"
     judge = Judge(task_id)
@@ -87,7 +88,20 @@ def main(index: int):
         judge.check("login_and_account_opened", visited_path(trajectory, "/login") and visited_path(trajectory, "/account"), "login + account")
         judge.check("initial_preferences_differ", bool(initial and user_preferences(initial) == ("New York, NY", "Nearest first")), str(user_preferences(initial) if initial else None))
         judge.check("preferences_persisted", bool(after and user_preferences(after) == ("Chicago, IL", "Newest pets first")), str(user_preferences(after) if after else None))
-        judge.check("only_user_changed", bool(initial and after and changed_tables(initial, after) == {"user"}), str(changed_tables(initial, after) if initial and after else None))
+        judge.check(
+            "exact_preference_change",
+            bool(
+                initial
+                and after
+                and matches_expected_mutation(
+                    initial,
+                    after,
+                    "UPDATE user SET home_location=?, sort_preference=? WHERE lower(email)=lower(?)",
+                    ("Chicago, IL", "Newest pets first", "alice.j@test.com"),
+                )
+            ),
+            "only Alice's two requested preference fields may change",
+        )
         judge.check("answer_complete", contains_all(answer, ["Chicago, IL", "Newest pets first"]), repr(answer))
     elif index == 6:
         judge.check("guide_opened", visited_path(trajectory, "/guides/pet-adoption-checklist"), "guide detail")
@@ -105,7 +119,22 @@ def main(index: int):
         after_names = favorite_names(after) if after else []
         judge.check("luna_newly_saved", "Luna Domestic Shorthair" not in initial_names and "Luna Domestic Shorthair" in after_names, f"before={initial_names} after={after_names}")
         judge.check("favorite_count", len(after_names) == 3, str(after_names))
-        judge.check("only_favorites_changed", bool(initial and after and changed_tables(initial, after) == {"saved_item"}), str(changed_tables(initial, after) if initial and after else None))
+        judge.check(
+            "exact_favorite_change",
+            bool(
+                initial
+                and after
+                and matches_expected_mutation(
+                    initial,
+                    after,
+                    "INSERT INTO saved_item(user_id, listing_id) "
+                    "SELECT u.id,l.id FROM user u,listing l "
+                    "WHERE lower(u.email)=lower(?) AND l.slug=?",
+                    ("alice.j@test.com", "luna-domestic-shorthair"),
+                )
+            ),
+            "only Alice's Luna favorite may be added",
+        )
         judge.check("answer_count", number_bound_to(answer, 3, ["favorite", "saved", "pet"]), repr(answer))
     elif index == 9:
         initial, after = state_databases(judge, args)
@@ -115,9 +144,39 @@ def main(index: int):
         after_rows = inquiry_rows(after) if after else []
         expected = {"slug": "nori-rabbit", "message": INQUIRY_MESSAGE, "status": "Submitted"}
         judge.check("inquiry_newly_persisted", expected not in before_rows and expected in after_rows, f"before={before_rows} after={after_rows}")
-        judge.check("only_inquiry_changed", bool(initial and after and changed_tables(initial, after) == {"inquiry"}), str(changed_tables(initial, after) if initial and after else None))
+        judge.check(
+            "exact_inquiry_change",
+            bool(
+                initial
+                and after
+                and matches_expected_mutation(
+                    initial,
+                    after,
+                    "INSERT INTO inquiry(user_id, listing_id, message, status) "
+                    "SELECT u.id,l.id,?,? FROM user u,listing l "
+                    "WHERE lower(u.email)=lower(?) AND l.slug=?",
+                    (INQUIRY_MESSAGE, "Submitted", "alice.j@test.com", "nori-rabbit"),
+                )
+            ),
+            "only Alice's requested Nori inquiry may be added",
+        )
         judge.check("answer_status", contains_all(answer, ["Submitted"]), repr(answer))
     else:
         judge.check("known_task", False, f"unsupported task index {index}")
 
     judge.emit()
+
+
+def main(index: int):
+    try:
+        _main(index)
+    except SystemExit:
+        raise
+    except Exception as exception:
+        judge = Judge(f"Petfinder--{index}")
+        judge.check(
+            "verifier_input_valid",
+            False,
+            f"{type(exception).__name__}: {exception}",
+        )
+        judge.emit()
