@@ -1,0 +1,2 @@
+{% macro icon(code,alt) %}<img class="weather-icon" src="{{url_for('static',filename='images/weather-'~code~'.svg')}}" alt="{{alt}}">{% endmacro %}
+{% macro tabs(loc) %}<nav class="tabs">{% for endpoint,label in [('weather','Current Weather'),('hourly','Hourly'),('daily','Daily'),('radar','Radar'),('air_quality','Air Quality')] %}<a{% if request.endpoint==endpoint %} class="active" aria-current="page"{% endif %} href="{{url_for(endpoint,slug=loc.slug)}}">{{label}}</a>{% endfor %}</nav>{% endmacro %}
