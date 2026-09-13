@@ -16,6 +16,7 @@ from verify_lib import (
     final_answer,
     has_number,
     inquiry_rows,
+    input_values,
     is_site_url,
     normalize_text,
     normalized_path,
@@ -32,6 +33,13 @@ from verify_lib import (
 
 
 READ_ONLY_TASKS = {0, 1, 2, 3, 4, 6, 7}
+LOGIN_TASKS = {4, 5, 8, 9}
+
+
+def credentials_entered(trajectory) -> bool:
+    values = [normalize_text(value) for value in input_values(trajectory, "/login")]
+    email = normalize_text("alice.j@test.com")
+    return email in values and any(value and value != email for value in values)
 
 
 def search_used(trajectory, term: str) -> bool:
@@ -62,6 +70,9 @@ def _main(index: int):
 
     if index in READ_ONLY_TASKS:
         check_read_only(judge, args)
+
+    if index in LOGIN_TASKS:
+        judge.check("login_credentials_entered", credentials_entered(trajectory), "test email and a non-empty password input on /login")
 
     if index in (0, 1, 2):
         judge.check("requested_filters_used", visited_query(trajectory, "/pets", FILTERS[index]), str(FILTERS[index]))

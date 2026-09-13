@@ -67,6 +67,16 @@ PATHS = {
 def trajectory(index: int, answer: str | None = None, paths: list[str] | None = None) -> dict:
     observed_paths = PATHS[index] if paths is None else paths
     steps = [{"url": path, "action": "navigate", "params": {}} for path in observed_paths]
+    if index in {4, 5, 8, 9} and observed_paths:
+        login_index = next(
+            (position for position, path in enumerate(observed_paths) if path.startswith(url("/login"))),
+            None,
+        )
+        if login_index is not None:
+            steps[login_index + 1:login_index + 1] = [
+                {"url": observed_paths[login_index], "action": "input", "params": {"text": "alice.j@test.com"}},
+                {"url": observed_paths[login_index], "action": "input", "params": {"text": "[TEST_PASSWORD_FROM_TASK]"}},
+            ]
     if index == 9 and observed_paths:
         detail_index = next(
             (position for position, path in enumerate(observed_paths) if path.startswith(url("/pets/nori-rabbit"))),
@@ -260,6 +270,39 @@ class VerifierMatrixTests(unittest.TestCase):
         self.assertFalse(payload["pass"], payload)
         self.assertEqual(payload["reason"], "verifier_input_valid")
         self.assertNotIn("Traceback", result.stderr)
+
+    def test_wrong_task_replay_and_foreign_origin_fail(self):
+        replay = trajectory(0)
+        replay["task_id"] = "Petfinder--1"
+        self.assert_fails(0, replay)
+
+        foreign = trajectory(3)
+        for step in foreign["steps"]:
+            step["url"] = step["url"].replace(BASE_URL, "https://example.invalid")
+        foreign["final_url"] = foreign["final_url"].replace(BASE_URL, "https://example.invalid")
+        self.assert_fails(3, foreign)
+
+    def test_truncated_navigation_and_wrong_numeric_binding_fail(self):
+        self.assert_fails(3, trajectory(3, paths=[url("/search", {"q": "Nori"})]))
+        wrong_numbers = "Ollie Poodle Mix has fewer days: Ollie has 15 days and Maple has 180 days."
+        self.assert_fails(7, trajectory(7, answer=wrong_numbers))
+
+    def test_login_tasks_require_credential_inputs(self):
+        for index in (4, 5, 8, 9):
+            observed = trajectory(index)
+            observed["steps"] = [
+                step for step in observed["steps"]
+                if not (step["url"].startswith(url("/login")) and step["action"] == "input")
+            ]
+            with self.subTest(index=index):
+                self.assert_fails(index, observed, mutate=index in {5, 8, 9})
+
+    def test_inquiry_requires_exact_entered_message(self):
+        observed = trajectory(9)
+        for step in observed["steps"]:
+            if step["action"] == "input" and step["url"] == url("/pets/nori-rabbit"):
+                step["params"]["text"] = "I would like to meet Nori."
+        self.assert_fails(9, observed, mutate=True)
 
 
 if __name__ == "__main__":
