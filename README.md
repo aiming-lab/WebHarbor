@@ -99,6 +99,17 @@ Any other improvement — bug fixes, UI polish, data enrichment, task suggestion
 | 📊 Contribution Track Sheet | [Google Sheet](https://docs.google.com/spreadsheets/d/1vZsrQjy9nJKze58fx4kbQtFi85NjVXIWCFyu3ShD7gk/edit?gid=0#gid=0) |
 | 📝 Contribution Request Form | [Google Form](https://forms.gle/ngcD1rzAfUEphNmRA) |
 
+## Site Registry Audit
+
+Use the repository registry audit to check site registration consistency, port mappings, and task integration before opening a review or PR:
+
+```bash
+python scripts/audit_site_registry.py
+python scripts/audit_site_registry.py --site amazon
+python scripts/audit_site_registry.py --strict
+python scripts/audit_site_registry.py --json
+```
+
 ## Citation
 
 WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`. 
