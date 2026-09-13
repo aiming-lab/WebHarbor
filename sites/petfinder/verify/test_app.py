@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import importlib
+import html
 import os
 import re
 import shutil
@@ -139,6 +140,42 @@ class AppTests(unittest.TestCase):
         self.assertIn("Nori Rabbit", matching)
         wrong_location = self.client.get("/search?q=Nori&location=Chicago%2C+IL").get_data(as_text=True)
         self.assertIn("No pets found", wrong_location)
+
+    def test_homepage_covers_source_section_sequence(self):
+        body = self.client.get("/").get_data(as_text=True)
+        self.assertIn("Build your bond in the myPurina App", body)
+        self.assertEqual(body.count("Pets Available for Adoption Nearby"), 2)
+        self.assertIn("30 YEARS OF IMPACT AND JOY", body)
+        self.assertIn("30 years of happy tails", body)
+        self.assertIn("Dog Adoption Articles", body)
+        self.assertIn("Cat Adoption Articles", body)
+        for heading in (
+            "RESOURCES",
+            "ADOPT OR GET INVOLVED",
+            "ABOUT DOGS &amp; PUPPIES",
+            "ABOUT CATS &amp; KITTENS",
+        ):
+            self.assertIn(heading, body)
+
+    def test_navigation_menus_are_controls_with_live_local_destinations(self):
+        body = self.client.get("/").get_data(as_text=True)
+        self.assertEqual(body.count('class="nav-menu'), 2)
+        self.assertIn("<summary>Find a Pet", body)
+        self.assertIn("<summary>All About Pets", body)
+        self.assertIn("Find Other Pets", body)
+        self.assertIn("OTHER TYPES OF PETS", body)
+        self.assertIn('src="/static/js/main.js"', body)
+
+        local_links = {
+            html.unescape(target)
+            for target in re.findall(r'href="([^"]+)"', body)
+            if target.startswith("/") and not target.startswith("/static/")
+        }
+        self.assertGreaterEqual(len(local_links), 20)
+        for target in local_links:
+            with self.subTest(target=target):
+                response = self.client.get(target, follow_redirects=True)
+                self.assertEqual(response.status_code, 200)
 
     def test_login_is_not_prefilled_and_redirects_post_actions_safely(self):
         body = self.client.get("/login").get_data(as_text=True)

@@ -25,25 +25,59 @@
   <a href="{{ url_for('listings', species='Dog') }}"><img src="{{ url_for('static', filename='icons/other-pets.svg') }}" alt=""><span>Dogs</span></a>
   <a href="{{ url_for('listings', species='Cat') }}"><img src="{{ url_for('static', filename='icons/shelter.svg') }}" alt=""><span>Cats</span></a>
   <a href="{{ url_for('listings') }}"><img src="{{ url_for('static', filename='icons/dog.svg') }}" alt=""><span>Other Animals</span></a>
-  <a href="{{ url_for('listings') }}"><img src="{{ url_for('static', filename='icons/cat.svg') }}" alt=""><span>Shelters &amp; Rescues</span></a>
+  <a href="{{ url_for('info_page', slug='shelters-rescues') }}"><img src="{{ url_for('static', filename='icons/cat.svg') }}" alt=""><span>Shelters &amp; Rescues</span></a>
 </section>
 
 <section class="section pets-near-you">
   <div class="section-heading">
-    <div><p class="eyebrow">ADOPT LOVE</p><h2>Pets waiting to meet you</h2></div>
-    <a href="{{ url_for('listings') }}">VIEW ALL PETS</a>
+    <div><p class="eyebrow">ADOPT LOVE</p><h2>Pets Available for Adoption Nearby</h2></div>
+    <a href="{{ url_for('listings') }}">{{ total_listings - nearby_primary|length }} MORE PETS →</a>
   </div>
-  <div class="pet-grid">{% for item in featured %}{% include "_card.html" %}{% endfor %}</div>
+  <div class="pet-grid">{% for item in nearby_primary %}{% include "_card.html" %}{% endfor %}</div>
 </section>
 
 <section class="impact-section">
-  <h2>30 YEARS OF IMPACT AND JOY</h2>
+  <div class="impact-heading">
+    <p class="eyebrow">PETFINDER STORIES</p>
+    <h2>30 YEARS OF IMPACT AND JOY</h2>
+    <p>Three decades of helping adopters and animal-welfare groups create new beginnings.</p>
+  </div>
   <div class="impact-grid">
     {% for guide in guides %}
-      <a href="{{ url_for('guide_detail', slug=guide.slug) }}">
-        <span>{{ guide.category|upper }}</span><h3>{{ guide.title }}</h3><p>{{ guide.summary }}</p><strong>LEARN MORE</strong>
+      <a class="impact-card" href="{{ url_for('guide_detail', slug=guide.slug) }}">
+        <span class="impact-art sprite sprite-{{ loop.index + 7 }}" role="img" aria-label="Adoptable pet"></span>
+        <span class="impact-copy"><small>{{ guide.category|upper }}</small><h3>{{ guide.title }}</h3><p>{{ guide.summary }}</p><strong>LEARN MORE →</strong></span>
       </a>
     {% endfor %}
   </div>
+</section>
+
+<section class="anniversary-band">
+  <div class="anniversary-art sprite sprite-5" role="img" aria-label="Happy adopted dog"></div>
+  <div>
+    <p class="eyebrow">A MILESTONE WORTH CELEBRATING</p>
+    <h2>30 years of happy tails</h2>
+    <p>Celebrate the people, shelters, rescues, and pets who turned a search into a family.</p>
+    <a class="light-button" href="{{ url_for('info_page', slug='petfinder') }}">OUR STORY →</a>
+  </div>
+</section>
+
+<section class="section pets-near-you second-pet-band">
+  <div class="section-heading">
+    <div><p class="eyebrow">MORE FRIENDS TO MEET</p><h2>Pets Available for Adoption Nearby</h2></div>
+    <a href="{{ url_for('listings') }}">VIEW ALL PETS →</a>
+  </div>
+  <div class="pet-grid">{% for item in nearby_secondary %}{% include "_card.html" %}{% endfor %}</div>
+</section>
+
+<section class="article-features">
+  <a class="article-feature article-feature--dog" href="{{ url_for('guides') }}">
+    <span class="feature-photo sprite sprite-6" role="img" aria-label="Dog adoption"></span>
+    <span class="feature-copy"><small>ALL ABOUT DOGS</small><h2>Dog Adoption Articles</h2><p>Guidance for finding, welcoming, and caring for your next canine companion.</p><strong>READ DOG ARTICLES →</strong></span>
+  </a>
+  <a class="article-feature article-feature--cat" href="{{ url_for('guides') }}">
+    <span class="feature-photo sprite sprite-9" role="img" aria-label="Cat adoption"></span>
+    <span class="feature-copy"><small>ALL ABOUT CATS</small><h2>Cat Adoption Articles</h2><p>Helpful ideas for choosing a cat and making their first weeks feel safe.</p><strong>READ CAT ARTICLES →</strong></span>
+  </a>
 </section>
 {% endblock %}

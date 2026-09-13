@@ -19,6 +19,31 @@ CONFIG = {
     "slug": "petfinder",
 }
 
+INFO_PAGES = {
+    "petfinder": ("About Petfinder", "Petfinder connects adopters with shelters and rescues so more pets can find lasting homes."),
+    "shelters-rescues": ("Animal Shelters & Rescues", "Learn how shelters and rescue groups care for pets and help adopters make a thoughtful match."),
+    "foundation": ("Petfinder Foundation", "Supporting shelters and rescue organizations with resources that help pets in their care."),
+    "faqs": ("Frequently Asked Questions", "Answers to common questions about searching for pets, adoption, accounts, and contacting shelters."),
+    "mobile-app": ("Petfinder Mobile App", "Keep your pet search close at hand and revisit the pets that caught your eye."),
+    "news": ("News Center", "Stories and updates from the pet adoption community."),
+    "widgets": ("Put Petfinder on Your Site", "Help more people discover adoptable pets by sharing Petfinder resources."),
+    "contact": ("Contact Us", "Find the right place to get help with Petfinder, a pet profile, or an adoption question."),
+    "dog-breeds": ("Dog Breeds", "Explore dog breed traits while remembering that every individual pet has a unique history and personality."),
+    "feeding-dogs": ("Feeding Your Dog", "Build a consistent feeding routine with guidance from your veterinarian."),
+    "dog-behavior": ("Dog Behavior", "Understand everyday dog communication and support calm, positive habits."),
+    "dog-health": ("Dog Health & Wellness", "Plan preventive care, exercise, grooming, and regular veterinary visits."),
+    "dog-training": ("Dog Training", "Use patient, reward-based training to help your dog learn and feel secure."),
+    "cat-breeds": ("Cat Breeds", "Learn about common cat traits while choosing a companion by individual fit."),
+    "feeding-cats": ("Feeding Your Cat", "Choose an age-appropriate diet and discuss nutrition questions with your veterinarian."),
+    "cat-behavior": ("Cat Behavior", "Read feline body language and create spaces where cats can play, rest, and retreat."),
+    "cat-health": ("Cat Health & Wellness", "Support your cat with preventive care, enrichment, grooming, and regular checkups."),
+    "cat-training": ("Cat Training", "Positive reinforcement can help cats learn routines and enjoy cooperative care."),
+    "terms": ("Terms of Service", "Terms for using this local Petfinder experience."),
+    "privacy": ("Privacy Policy", "How this local Petfinder experience handles account and session information."),
+    "accessibility": ("Accessibility", "Petfinder is committed to an experience people can navigate with different devices and abilities."),
+    "sitemap": ("Sitemap", "Browse the main areas of this Petfinder experience."),
+}
+
 app = Flask(__name__, instance_path=os.path.join(BASE_DIR, "instance"))
 app.config.update(
     SECRET_KEY="webharbor-petfinder-dev-key",
@@ -202,9 +227,15 @@ def scored_search(query: str, rows, fields: list[str]):
 
 @app.route("/")
 def index():
-    featured = Listing.query.order_by(Listing.days_on_petfinder.asc(), Listing.id.asc()).limit(4).all()
+    ordered = Listing.query.order_by(Listing.days_on_petfinder.asc(), Listing.id.asc()).all()
     guides = Guide.query.order_by(Guide.id.asc()).limit(3).all()
-    return render_template("index.html", featured=featured, guides=guides)
+    return render_template(
+        "index.html",
+        nearby_primary=ordered[:4],
+        nearby_secondary=ordered[4:8],
+        total_listings=len(ordered),
+        guides=guides,
+    )
 
 
 @app.route("/listings")
@@ -298,13 +329,24 @@ def inquire(slug):
 @app.route("/guides")
 def guides():
     rows = Guide.query.order_by(Guide.id.asc()).all()
-    return render_template("guides.html", rows=rows)
+    category = request.args.get("category", "").strip()
+    if category:
+        rows = [row for row in rows if row.category.casefold() == category.casefold()]
+    return render_template("guides.html", rows=rows, category=category)
 
 
 @app.route("/guides/<slug>")
 def guide_detail(slug):
     guide = Guide.query.filter_by(slug=slug).first_or_404()
     return render_template("guide_detail.html", guide=guide)
+
+
+@app.route("/about/<slug>")
+def info_page(slug):
+    page = INFO_PAGES.get(slug)
+    if not page:
+        abort(404)
+    return render_template("info.html", title=page[0], summary=page[1], slug=slug)
 
 
 @app.route("/search")
