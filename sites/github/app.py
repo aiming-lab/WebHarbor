@@ -448,7 +448,7 @@ def _redirect_external_github():
     if 'github.com' in host and 'localhost' not in host and '127.0.0.1' not in host:
         target = request.full_path.rstrip('?') or '/'
         # Strip leading /https:/github.com/ or similar, keep the path portion.
-        return redirect(f"http://localhost:40006{target}", code=302)
+        return redirect(target, code=302)
     # Some agents also type URLs like /https://github.com/foo/bar into the bar.
     path = request.path or ''
     m = re.match(r'^/(https?:)?/*github\.com/(.*)$', path)

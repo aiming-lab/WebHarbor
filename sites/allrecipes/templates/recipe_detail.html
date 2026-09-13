@@ -32,7 +32,7 @@
         {% if not is_in_recipe_box(recipe.id) %}
         <form method="POST" action="{{ url_for('save_to_recipe_box', recipe_id=recipe.id) }}" style="display:inline">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-            <input type="hidden" name="next" value="{{ request.url }}">
+            <input type="hidden" name="next" value="{{ current_relative_url() }}">
             <button type="submit" class="recipe-action-btn" style="margin-left:4px">+ Save to Box</button>
         </form>
         {% endif %}

@@ -24,6 +24,7 @@ import string
 import secrets
 from datetime import datetime, timedelta
 from pathlib import Path
+from urllib.parse import quote_plus
 
 from flask import (Flask, render_template, request, redirect, url_for,
                    flash, jsonify, abort, session, send_from_directory)
@@ -412,6 +413,20 @@ def ensure_default_lists(user):
     db.session.commit()
 
 
+def google_maps_place_url(place):
+    """Return a real Google Maps place URL for a local mirror Place row."""
+    query = f"{place.name} {place.city.display_name if place.city else ''}".strip()
+    return f"https://www.google.com/maps/place/{quote_plus(query)}/"
+
+
+def display_place_website(place):
+    """Use the stored website unless it is a synthetic placeholder."""
+    website = (place.website or "").strip()
+    if website and "example.com" not in website:
+        return website
+    return google_maps_place_url(place)
+
+
 @app.context_processor
 def inject_globals():
     categories = Category.query.order_by(Category.id).all()
@@ -422,6 +437,8 @@ def inject_globals():
         "global_categories": categories,
         "global_saved_count": saved_count,
         "current_year": datetime.utcnow().year,
+        "display_place_website": display_place_website,
+        "google_maps_place_url": google_maps_place_url,
     }
 
 

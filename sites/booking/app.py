@@ -511,11 +511,23 @@ def inject_global():
         'saved_count': saved_count,
         'current_year': datetime.now().year,
         'csrf_token_value': generate_csrf(),
+        'current_relative_url': current_relative_url,
         'currency_code': currency_code,
         'currency_rate': CURRENCY_RATES[currency_code],
         'currency_symbol': CURRENCY_SYMBOLS[currency_code],
         'currency_rates': CURRENCY_RATES,
     }
+
+
+def current_relative_url():
+    path = request.full_path.rstrip('?')
+    return path or url_for('index')
+
+
+def safe_redirect_target(target, default_endpoint='index'):
+    if target and target.startswith('/') and not target.startswith('//'):
+        return target
+    return url_for(default_endpoint)
 
 
 @app.route('/set-currency', methods=['GET', 'POST'])
@@ -1274,7 +1286,7 @@ def login():
             login_user(user, remember=True)
             flash('Welcome back!', 'success')
             next_url = request.args.get('next')
-            return redirect(next_url or url_for('index'))
+            return redirect(safe_redirect_target(next_url))
         flash('Invalid email or password.', 'danger')
     return render_template('login.html', form=form)
 
@@ -1511,8 +1523,8 @@ def cart_add_form(property_id):
     db.session.add(item)
     db.session.commit()
     flash(f'{prop.name} added to your bag.', 'success')
-    redirect_to = request.form.get('next') or url_for('bag')
-    return redirect(redirect_to)
+    redirect_to = request.form.get('next')
+    return redirect(safe_redirect_target(redirect_to, 'bag'))
 
 
 @app.route('/cart/remove/<int:item_id>', methods=['POST'])
@@ -1573,8 +1585,8 @@ def saved_add_form(property_id):
         flash(f'{prop.name} saved to your wishlist.', 'success')
     else:
         flash(f'{prop.name} is already in your saved list.', 'info')
-    redirect_to = request.form.get('next') or url_for('saved')
-    return redirect(redirect_to)
+    redirect_to = request.form.get('next')
+    return redirect(safe_redirect_target(redirect_to, 'saved'))
 
 
 @app.route('/saved/toggle/<int:property_id>', methods=['POST'])
@@ -1594,7 +1606,7 @@ def saved_toggle_form(property_id):
             db.session.add(SavedProperty(user_id=current_user.id, property_id=property_id))
             db.session.commit()
             flash(f'{prop.name} saved.', 'success')
-    return redirect(request.form.get('next') or url_for('saved'))
+    return redirect(safe_redirect_target(request.form.get('next'), 'saved'))
 
 
 # =====================================================================
