@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_macros.html" import summary_card %}
+{% block title %}Select Fare · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Fare comparison</div>
+      <h2>Choose a fare family for the selected itinerary.</h2>
+      <p>Each card summarizes refund and change language, seat type, availability, and reward points earned in this local mirror.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/routes/amtrak-cascades-hero.svg') }}" alt="Fare hero">
+    </div>
+  </section>
+
+  <section class="section sidebar-layout">
+    <form class="detail-list" action="{{ url_for('booking_select_fare') }}" method="post">
+      {% for quote in quotes %}
+        <label class="option-card">
+          <div class="option-head">
+            <div>
+              <div class="choice-chip" style="display: inline-flex;">
+                <input type="radio" name="fare_slug" value="{{ quote.slug }}" {% if flow.fare_slug == quote.slug %}checked{% endif %}>
+                <span>{{ quote.name }}</span>
+              </div>
+              <h3 class="card-title" style="margin-top: 14px;">{{ quote.name }}</h3>
+              <p class="muted">{{ quote.description }}</p>
+            </div>
+            <div class="card">
+              <div class="stat-grid">
+                <div class="stat-card">
+                  <span class="kicker">Per traveler</span>
+                  <strong>{{ quote.per_traveler|currency }}</strong>
+                </div>
+                <div class="stat-card">
+                  <span class="kicker">Availability</span>
+                  <strong>{{ quote.availability }}</strong>
+                </div>
+                <div class="stat-card">
+                  <span class="kicker">Points</span>
+                  <strong>{{ quote.points_earned }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="meta-row" style="margin-top: 12px;">
+            <span class="tag">{{ quote.seat_type }}</span>
+            <span class="tag">{{ quote.rules_change }}</span>
+            <span class="tag">{{ quote.rules_refund }}</span>
+          </div>
+        </label>
+      {% endfor %}
+      <button class="button" type="submit">{% if flow.room_choices %}Update fare{% else %}Continue{% endif %}</button>
+    </form>
+
+    <aside>
+      {{ summary_card({
+        'options': options,
+        'trip_type': flow.trip_type,
+        'passenger_count': flow.passengers|int,
+        'traveler_subtotal': quotes[0].per_traveler * (flow.passengers|int) if quotes else 0,
+        'room_total': 0,
+        'service_fee': 0,
+        'total': quotes[0].per_traveler * (flow.passengers|int) if quotes else 0,
+        'reward_points': quotes[0].points_earned if quotes else 0,
+        'passengers': flow.passenger_entries
+      }) }}
+    </aside>
+  </section>
+{% endblock %}
