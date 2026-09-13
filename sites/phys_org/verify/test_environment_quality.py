@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ast
 import hashlib
 import importlib.util
 import json
@@ -20,6 +21,16 @@ from pathlib import Path, PurePosixPath
 SITE_DIR = Path(__file__).resolve().parents[1]
 REPO_ROOT = SITE_DIR.parents[1]
 SEED_DB = SITE_DIR / "instance_seed" / "phys_org.db"
+
+
+def _registered_sites() -> list[str]:
+    """Read the site registry from control_server.py without importing it."""
+    tree = ast.parse((REPO_ROOT / "control_server.py").read_text(encoding="utf-8"))
+    for node in tree.body:
+        if isinstance(node, ast.Assign) and any(
+                isinstance(target, ast.Name) and target.id == "SITES" for target in node.targets):
+            return [element.value for element in node.value.elts]
+    raise AssertionError("control_server.py declares no SITES registry")
 
 
 def _load_seed_data():
@@ -66,6 +77,12 @@ def _search_rank(connection: sqlite3.Connection, query: str, target_slug: str,
 
 class EnvironmentQualityTests(unittest.TestCase):
     def test_agent_pre_pr_sweep_covers_every_registered_site(self) -> None:
+        """The documented sweep must cover exactly the registered sites.
+
+        The expected count is derived from the control-plane registry rather than
+        hardcoded, so adding a site cannot leave this check asserting a stale
+        number while still catching a sweep that misses a site.
+        """
         agent_guide = (REPO_ROOT / "AGENTS.md").read_text(encoding="utf-8")
         startup = (REPO_ROOT / "websyn_start.sh").read_text(encoding="utf-8")
         site_match = re.search(r"SITES=\((.*?)\)", startup, re.DOTALL)
@@ -74,8 +91,12 @@ class EnvironmentQualityTests(unittest.TestCase):
         self.assertIsNotNone(sweep_match)
         sites = site_match.group(1).split()
         sweep_start, sweep_end = map(int, sweep_match.groups())
-        self.assertEqual(18, len(sites))
-        self.assertEqual((41000, 41000 + len(sites) - 1), (sweep_start, sweep_end))
+
+        registry = _registered_sites()
+        self.assertEqual(registry, sites,
+                         "websyn_start.sh must launch exactly the registered sites")
+        self.assertEqual((41000, 41000 + len(registry) - 1), (sweep_start, sweep_end),
+                         "the documented sweep must cover one port per registered site")
 
     def test_task_ids_urls_and_verifier_paths_are_consistent(self) -> None:
         rows = [json.loads(line) for line in (SITE_DIR / "tasks.jsonl").read_text(encoding="utf-8").splitlines()]

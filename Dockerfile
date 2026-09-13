@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 25 Flask mirror sites + control plane on :8101.
+# 27 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -50,10 +50,24 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/walmart_careers && \
 RUN cd /opt/WebSyn/walmart_careers && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
+# FedEx validates its downloaded homepage media against the tracked inventory and
+# rebuilds its deterministic, version-marked SQLite seed from tracked source data.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/fedex
+RUN cd /opt/WebSyn/fedex && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
+# WebMD Doctor's generated avatars / posters come from the pinned asset bundle,
+# while its SQLite seed is rebuilt deterministically from tracked source code.
+# The inventory gate enforces exact coverage + per-file SHA-256 + PNG decode of
+# all 317 generated images (same contract as the compass / walmart inventories).
+RUN python3 /opt/WebSyn/webmd_doctor/check_generated_assets.py
+RUN cd /opt/WebSyn/webmd_doctor && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
-RUN chmod +x /opt/websyn_start.sh
+RUN sed -i 's/\r$//' /opt/websyn_start.sh && chmod +x /opt/websyn_start.sh
 
 # OSU's real-site image bundle is required, while its database is generated
 # deterministically from tracked source data.
@@ -72,15 +86,6 @@ os.makedirs('instance_seed', exist_ok=True); \
 shutil.copy2('instance/rotten_tomatoes.db', 'instance_seed/rotten_tomatoes.db'); \
 print('Rotten Tomatoes seed DB generated at build time.')" && rm -rf /opt/WebSyn/rotten_tomatoes/instance
 
-# AccuWeather uses genuine captured UI assets and freezes its deterministic seed.
-RUN test -n "$(ls -A /opt/WebSyn/accuweather/static/images)" && \
-    cd /opt/WebSyn/accuweather && rm -rf instance instance_seed && python3 -c "\
-import app; \
-import os, shutil; \
-os.makedirs('instance_seed', exist_ok=True); \
-shutil.copy2('instance/accuweather.db', 'instance_seed/accuweather.db'); \
-print('AccuWeather seed DB generated at build time.')" && rm -rf /opt/WebSyn/accuweather/instance
-
-EXPOSE 8101 40000-40024
+EXPOSE 8101 40000-40026
 
 CMD ["/opt/websyn_start.sh"]

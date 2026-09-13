@@ -26,7 +26,10 @@ SITES = [
     'allrecipes', 'amazon', 'apple', 'arxiv', 'bbc_news', 'booking',
     'github', 'google_flights', 'google_map', 'google_search',
     'huggingface', 'wolfram_alpha', 'cambridge_dictionary',
-    'coursera', 'espn', 'merriam_webster', 'ikea', 'phys_org', 'target', 'ted', 'osu', 'rotten_tomatoes', 'compass', 'walmart_careers', 'accuweather',
+    'coursera', 'espn', 'merriam_webster', 'ikea', 'phys_org', 'target',
+    'ted', 'osu', 'rotten_tomatoes', 'compass', 'walmart_careers', 'fedex',
+    'webmd_doctor',
+    'accuweather',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'
