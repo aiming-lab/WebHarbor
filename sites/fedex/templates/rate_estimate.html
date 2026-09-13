@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Rate Estimate{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Rate estimate</div>
+      <h1>Calculate shipping rates</h1>
+    </div>
+  </section>
+  <div class="split">
+    <section class="card">
+      <form method="post" class="stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="form-grid two">
+          <div class="field">
+            <label for="origin_state">Origin state</label>
+            <select id="origin_state" name="origin_state">
+              <option value="" {% if not form_state.origin_state %}selected{% endif %}>Select a state</option>
+              {% for label in state_labels %}
+                <option value="{{ label }}" {% if form_state.origin_state == label %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="destination_state">Destination state</label>
+            <select id="destination_state" name="destination_state">
+              <option value="" {% if not form_state.destination_state %}selected{% endif %}>Select a state</option>
+              {% for label in state_labels %}
+                <option value="{{ label }}" {% if form_state.destination_state == label %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <div class="form-grid two">
+          <div class="field">
+            <label for="weight_lb">Weight (lb)</label>
+            <input id="weight_lb" name="weight_lb" value="{{ form_state.weight_lb }}">
+          </div>
+          <div class="field">
+            <label for="package_type">Package type</label>
+            <select id="package_type" name="package_type">
+              <option value="" {% if not form_state.package_type %}selected{% endif %}>Select a package type</option>
+              {% for option in package_types %}
+                <option value="{{ option }}" {% if form_state.package_type == option %}selected{% endif %}>{{ option }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+        <input type="submit" value="Get rates">
+      </form>
+    </section>
+    <aside class="card">
+      <div class="kicker">What this uses</div>
+      <p class="muted">These totals come from deterministic base rates, state-zone surcharges, and package-type fees. No real carrier rating API is called.</p>
+    </aside>
+  </div>
+
+  {% if quotes %}
+    <section class="section-title">
+      <div><h2>Estimated options</h2></div>
+    </section>
+    <section class="grid three">
+      {% for quote in quotes %}
+        <article class="card stack">
+          <img src="{{ url_for('static', filename='external_cache/fedex-home/icon_delivery_purple_lg_2143296207.png') }}" alt="" width="48" height="48">
+          <div class="badge-row">
+            <span class="badge">Zone {{ quote.zone }}</span>
+            <span class="badge orange">{{ quote.commitment }}</span>
+          </div>
+          <h3>{{ quote.service.name }}</h3>
+          <p class="muted">{{ quote.service.summary }}</p>
+          <p><strong>{{ quote.price|money }}</strong></p>
+        </article>
+      {% endfor %}
+    </section>
+  {% endif %}
+{% endblock %}

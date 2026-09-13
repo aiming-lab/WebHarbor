@@ -100,7 +100,7 @@ class MatcherTests(unittest.TestCase):
 
     def test_paths_and_origin(self):
         self.assertTrue(V.is_site_url("http://127.0.0.1:45003/pet/waymo"))
-        self.assertTrue(V.is_site_url("http://localhost:40024/"))
+        self.assertTrue(V.is_site_url("http://localhost:40026/"))
         self.assertFalse(V.is_site_url("https://www.adoptapet.com/"))
         self.assertTrue(V._same_local_origin("http://localhost:41024/account", "http://localhost:41024/"))
         self.assertFalse(V._same_local_origin("http://localhost:41023/account", "http://localhost:41024/"))
