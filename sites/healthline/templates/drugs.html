@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Drugs A–Z — Healthline{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Drugs &amp; Medications A–Z</h1>
+  <p>Drug information including uses, dosage, side effects, interactions, and warnings.</p>
+</div>
+
+<div class="filters">
+  <a class="chip {{ 'active' if not cat }}" href="{{ url_for('drugs_index') }}">All categories</a>
+  {% for c in categories %}
+    <a class="chip {{ 'active' if cat|lower == c|lower }}"
+       href="{{ url_for('drugs_index', category=c) }}">{{ c }}</a>
+  {% endfor %}
+</div>
+
+<div class="filters">
+  <span class="muted">Browse A–Z:</span>
+  <a class="chip {{ 'active' if not letter }}" href="{{ url_for('drugs_index', category=cat) }}">All</a>
+  {% for l in letters %}
+    <a class="chip {{ 'active' if letter == l }}"
+       href="{{ url_for('drugs_index', category=cat, letter=l) }}">{{ l }}</a>
+  {% endfor %}
+</div>
+
+<p class="count-note">{{ drugs|length }} medications{% if cat %} in {{ cat }}{% endif %}{% if letter %} starting with {{ letter }}{% endif %}.</p>
+
+<div class="grid">
+  {% for d in drugs %}
+  <article class="card">
+    <a href="{{ url_for('drug_detail', slug=d.slug) }}">
+      <img src="{{ url_for('static', filename='images/' ~ d.image) }}" alt="{{ d.name }}">
+    </a>
+    <div class="card-body">
+      <div class="cat">{{ d.drug_class }}</div>
+      <h3><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.name }}</a></h3>
+      <p>Generic: {{ d.generic_name }}</p>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Create account — Healthline{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Create your account</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <label for="full_name">Full name</label>
+      <input type="text" id="full_name" name="full_name" required>
+    </div>
+    <div class="form-row">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required>
+    </div>
+    <div class="form-row">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div class="form-row">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <div class="form-row">
+      <label for="confirm_password">Confirm password</label>
+      <input type="password" id="confirm_password" name="confirm_password" required>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary" style="width:100%">Create account</button>
+    </div>
+  </form>
+  <p class="muted" style="margin-top:18px">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+</div>
+{% endblock %}

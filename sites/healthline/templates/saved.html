@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Saved articles — Healthline{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Saved articles</h1>
+  <p class="muted">Articles you've bookmarked to read later.</p>
+</div>
+
+{% for s in items %}
+<div class="list-row">
+  <img src="{{ url_for('static', filename='images/' ~ s.article.image) }}" alt="">
+  <div class="info" style="flex:1">
+    <h4><a href="{{ url_for('article_detail', slug=s.article.slug) }}">{{ s.article.title }}</a></h4>
+    <span>{{ s.article.subcategory }} · saved {{ s.saved_at.strftime('%b %d, %Y') }}</span>
+  </div>
+  <form method="post" action="{{ url_for('toggle_save', article_id=s.article.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit" class="btn btn-outline">Remove</button>
+  </form>
+</div>
+{% else %}
+<p>You haven't saved any articles yet. Browse the <a href="{{ url_for('index') }}">home page</a> to get started.</p>
+{% endfor %}
+
+{% endblock %}

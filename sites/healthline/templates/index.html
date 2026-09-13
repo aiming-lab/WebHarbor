@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% from "_macros.html" import article_card %}
+{% block content %}
+
+{% if top %}
+<section class="hero-grid">
+  <div class="hero-main">
+    <a href="{{ url_for('article_detail', slug=top.slug) }}">
+      <img src="{{ url_for('static', filename='images/' ~ top.image) }}" alt="{{ top.title }}">
+    </a>
+    <div class="section-label">{{ top.subcategory }}</div>
+    <h1><a href="{{ url_for('article_detail', slug=top.slug) }}" style="color:inherit">{{ top.title }}</a></h1>
+    <p>{{ top.summary }}</p>
+  </div>
+  <div class="hero-side">
+    {% for a in rest %}
+    <div class="mini-card">
+      <a href="{{ url_for('article_detail', slug=a.slug) }}">
+        <img src="{{ url_for('static', filename='images/' ~ a.image) }}" alt="{{ a.title }}">
+      </a>
+      <div>
+        <div class="section-label">{{ a.subcategory }}</div>
+        <h3><a href="{{ url_for('article_detail', slug=a.slug) }}" style="color:inherit">{{ a.title }}</a></h3>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% for section, items in section_strips %}
+<section class="strip">
+  <div class="strip-head">
+    <h2>{{ section.name }}</h2>
+    <a href="{{ url_for('section_page', slug=section.slug) }}">View all &rarr;</a>
+  </div>
+  <div class="grid">
+    {% for a in items %}{{ article_card(a) }}{% endfor %}
+  </div>
+</section>
+{% endfor %}
+
+{% endblock %}

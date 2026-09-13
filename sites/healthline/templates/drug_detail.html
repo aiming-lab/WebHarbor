@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}{{ drug.name }}: Uses, Dosage & Side Effects — Healthline{% endblock %}
+{% block content %}
+
+<div class="detail-head">
+  <img src="{{ url_for('static', filename='images/' ~ drug.image) }}" alt="{{ drug.name }}">
+  <div>
+    <div class="section-label">Drugs &amp; Medications · {{ drug.category }}</div>
+    <h1>{{ drug.name }}</h1>
+    <p class="muted">Generic name: {{ drug.generic_name }} · Drug class: {{ drug.drug_class }}</p>
+    {% if drug.reviewer %}
+    <p class="muted">Medically reviewed by
+      <a href="{{ url_for('author_detail', key=drug.reviewer.key) }}">{{ drug.reviewer.display }}</a></p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="detail-block">
+  <h2>What is {{ drug.name }}?</h2>
+  <p>{{ drug.uses }}</p>
+</div>
+
+<div class="detail-block">
+  <h2>Dosage</h2>
+  <p>{{ drug.dosage }}</p>
+</div>
+
+<div class="detail-block">
+  <h2>Side effects</h2>
+  <table class="spec-table">
+    <tr><th>Common side effects</th><td>
+      <ul style="margin:0">{% for s in drug.common_se_list() %}<li>{{ s }}</li>{% endfor %}</ul>
+    </td></tr>
+    <tr><th>Serious side effects</th><td>
+      <ul style="margin:0">{% for s in drug.serious_se_list() %}<li>{{ s }}</li>{% endfor %}</ul>
+    </td></tr>
+  </table>
+</div>
+
+<div class="detail-block">
+  <h2>Interactions</h2>
+  <ul>{% for i in drug.interaction_list() %}<li>{{ i }}</li>{% endfor %}</ul>
+</div>
+
+<div class="detail-block">
+  <div class="callout">
+    <h3>Warnings</h3>
+    <p>{{ drug.warnings }}</p>
+  </div>
+</div>
+
+{% if related %}
+<div class="detail-block">
+  <h2>Other {{ drug.category }}</h2>
+  <ul>
+    {% for d in related %}
+    <li><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.name }}</a> — {{ d.drug_class }}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% from "_macros.html" import article_card %}
+{% block title %}{{ author.name }} — Healthline{% endblock %}
+{% block content %}
+
+<div class="detail-head">
+  {% if author.headshot %}
+  <img src="{{ url_for('static', filename='images/' ~ author.headshot) }}" alt="{{ author.name }}"
+       style="width:160px;height:160px;border-radius:50%;object-fit:cover">
+  {% endif %}
+  <div>
+    <div class="section-label">{{ 'Medical Reviewer' if author.role == 'reviewer' else 'Writer' }}</div>
+    <h1>{{ author.display }}</h1>
+    <p>{{ author.bio }}</p>
+  </div>
+</div>
+
+{% if written %}
+<section class="strip">
+  <div class="strip-head"><h2>Articles written</h2></div>
+  <div class="grid">{% for a in written %}{{ article_card(a) }}{% endfor %}</div>
+</section>
+{% endif %}
+
+{% if reviewed %}
+<section class="strip">
+  <div class="strip-head"><h2>Articles medically reviewed</h2></div>
+  <div class="grid">{% for a in reviewed %}{{ article_card(a) }}{% endfor %}</div>
+</section>
+{% endif %}
+
+{% endblock %}

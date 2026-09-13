@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% from "_macros.html" import article_card %}
+{% block title %}Search{% if query %}: {{ query }}{% endif %} — Healthline{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <h1>Search</h1>
+  {% if query %}
+    <p class="muted">{{ total }} result{{ '' if total == 1 else 's' }} for "<strong>{{ query }}</strong>"</p>
+  {% else %}
+    <p class="muted">Enter a term above to search articles, conditions, and drugs.</p>
+  {% endif %}
+</div>
+
+{% if query %}
+<div class="filters">
+  <a class="chip {{ 'active' if scope=='all' }}" href="{{ url_for('search', q=query) }}">All</a>
+  <a class="chip {{ 'active' if scope=='articles' }}" href="{{ url_for('search', q=query, type='articles') }}">Articles</a>
+  <a class="chip {{ 'active' if scope=='conditions' }}" href="{{ url_for('search', q=query, type='conditions') }}">Conditions</a>
+  <a class="chip {{ 'active' if scope=='drugs' }}" href="{{ url_for('search', q=query, type='drugs') }}">Drugs</a>
+</div>
+
+{% if condition_results %}
+<section class="strip">
+  <div class="strip-head"><h2>Conditions</h2></div>
+  <div class="grid">
+    {% for c in condition_results %}
+    <article class="card">
+      <a href="{{ url_for('condition_detail', slug=c.slug) }}">
+        <img src="{{ url_for('static', filename='images/' ~ c.image) }}" alt="{{ c.name }}"></a>
+      <div class="card-body">
+        <div class="cat">{{ c.category }}</div>
+        <h3><a href="{{ url_for('condition_detail', slug=c.slug) }}">{{ c.name }}</a></h3>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if drug_results %}
+<section class="strip">
+  <div class="strip-head"><h2>Drugs &amp; medications</h2></div>
+  <div class="grid">
+    {% for d in drug_results %}
+    <article class="card">
+      <a href="{{ url_for('drug_detail', slug=d.slug) }}">
+        <img src="{{ url_for('static', filename='images/' ~ d.image) }}" alt="{{ d.name }}"></a>
+      <div class="card-body">
+        <div class="cat">{{ d.category }}</div>
+        <h3><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.name }}</a></h3>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if article_results %}
+<section class="strip">
+  <div class="strip-head"><h2>Articles</h2></div>
+  <div class="grid">
+    {% for a in article_results %}{{ article_card(a) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if total == 0 %}
+<p>No results found. Try a different term.</p>
+{% endif %}
+{% endif %}
+
+{% endblock %}

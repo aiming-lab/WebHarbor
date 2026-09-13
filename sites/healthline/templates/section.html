@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import article_card %}
+{% block title %}{{ section.name }} — Healthline{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="section-label">Healthline</div>
+  <h1>{{ section.name }}</h1>
+  <p>{{ section.tagline }}</p>
+</div>
+
+<div class="filters">
+  <a class="chip {{ 'active' if not sub }}" href="{{ url_for('section_page', slug=section.slug, sort=sort) }}">All</a>
+  {% for sc in section.subcategories %}
+    <a class="chip {{ 'active' if sub|lower == sc|lower }}"
+       href="{{ url_for('section_page', slug=section.slug, sub=sc, sort=sort) }}">{{ sc }}</a>
+  {% endfor %}
+  <span style="margin-left:auto"></span>
+  <form method="get" style="display:inline">
+    {% if sub %}<input type="hidden" name="sub" value="{{ sub }}">{% endif %}
+    <select name="sort" class="select-sort" onchange="this.form.submit()">
+      <option value="latest" {{ 'selected' if sort=='latest' }}>Most recent</option>
+      <option value="popular" {{ 'selected' if sort=='popular' }}>Most popular</option>
+      <option value="az" {{ 'selected' if sort=='az' }}>A–Z</option>
+    </select>
+  </form>
+</div>
+
+<p class="count-note">Showing {{ articles|length }} of {{ total }} articles{% if sub %} in {{ sub }}{% endif %}.</p>
+
+<div class="grid">
+  {% for a in articles %}{{ article_card(a) }}{% else %}
+  <p>No articles found.</p>
+  {% endfor %}
+</div>
+
+{% set pages = (total // per_page) + (1 if total % per_page else 0) %}
+{% if pages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}<a href="{{ url_for('section_page', slug=section.slug, sub=sub, sort=sort, page=page-1) }}">Prev</a>{% endif %}
+  {% for p in range(1, pages+1) %}
+    {% if p == page %}<span class="current">{{ p }}</span>
+    {% else %}<a href="{{ url_for('section_page', slug=section.slug, sub=sub, sort=sort, page=p) }}">{{ p }}</a>{% endif %}
+  {% endfor %}
+  {% if page < pages %}<a href="{{ url_for('section_page', slug=section.slug, sub=sub, sort=sort, page=page+1) }}">Next</a>{% endif %}
+</div>
+{% endif %}
+
+{% endblock %}
