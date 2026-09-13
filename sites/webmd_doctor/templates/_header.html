@@ -1,0 +1,48 @@
+<header class="site-header">
+  <div class="container">
+    <div class="header-bar">
+      <a class="brand" href="{{ url_for('index') }}" aria-label="{{ site_name }} home">
+        <svg viewBox="0 0 250 40" width="162" height="26" role="img" aria-label="WebMD Care"><text x="0" y="30" font-family="'Source Sans 3','Source Sans Pro',Calibri,Arial,sans-serif" font-size="32" fill="#ffffff"><tspan font-style="italic" font-weight="700">Web</tspan><tspan font-weight="700">MD</tspan><tspan font-weight="300" dx="8">Care</tspan><tspan font-size="12" dy="-14" dx="1">®</tspan></text></svg>
+      </a>
+      <ul class="header-nav">
+        <li>
+          <button class="nav-btn" type="button" data-toggle="menu-specialty" aria-expanded="false" aria-controls="menu-specialty">Find Providers by Specialty</button>
+          <div class="menu menu-wide" id="menu-specialty">
+            <div class="menu-title">Find Providers by Specialty</div>
+            {% for specialty in menu_specialties %}
+              <a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.name }}</a>
+            {% endfor %}
+            <a href="{{ url_for('specialty_index') }}"><strong>View All Specialties</strong></a>
+          </div>
+        </li>
+        <li>
+          <button class="nav-btn" type="button" data-toggle="menu-facility" aria-expanded="false" aria-controls="menu-facility">Find a Facility</button>
+          <div class="menu" id="menu-facility">
+            <a href="{{ url_for('hospitals_index') }}">Hospitals</a>
+            <a href="{{ url_for('grouppractices_index') }}">Group Practices</a>
+            <a href="{{ url_for('choice_awards') }}">Award Winning Hospitals</a>
+          </div>
+        </li>
+        <li><a href="#" aria-disabled="true" title="Not available in this mirror"><svg class="ic"><use href="#i-plus-box"/></svg> LIST YOUR PRACTICE</a></li>
+        {% if current_user.is_authenticated %}
+          <li>
+            <button class="nav-btn" type="button" data-toggle="menu-account" aria-expanded="false" aria-controls="menu-account">My Account <svg class="ic"><use href="#i-chevron"/></svg></button>
+            <div class="menu menu-account" id="menu-account">
+              <div class="menu-title">{{ current_user.display_name }}</div>
+              <a href="{{ url_for('account_saved') }}">Saved Providers</a>
+              <a href="{{ url_for('account_appointments') }}">Appointments</a>
+              <form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Log Out</button></form>
+            </div>
+          </li>
+        {% else %}
+          <li><a href="{{ url_for('login', next=request.full_path.rstrip('?') if request.endpoint not in ('login', 'signup') else None) }}">Log In</a></li>
+        {% endif %}
+      </ul>
+    </div>
+    {% if not hide_search_row %}
+    <div class="search-row">
+      {% include "_search_bar.html" %}
+    </div>
+    {% endif %}
+  </div>
+</header>

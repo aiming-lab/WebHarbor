@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% set hide_search_row = true %}
+{% block title %}Request an Appointment with {{ doctor.display_name }}{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="book-page">
+    <a href="{{ url_for('doctor_profile', slug=doctor.slug) }}"><svg class="ic"><use href="#i-chevron-left"/></svg> Return to profile</a>
+    <div class="book-doc">
+      <img src="{{ url_for('static', filename=doctor.avatar_path) }}" alt="">
+      <div><div class="n">{{ doctor.display_name }}</div><div>{{ doctor.specialty_names | join(', ') }}</div></div>
+    </div>
+    <div class="book-band"><h1>Request An Appointment</h1><p>How can we help you?</p></div>
+    <div class="steps"><span class="on">1</span><i></i><span>2</span><i></i><span>3</span></div>
+    <form class="book-form" method="post" action="{{ url_for('book_appointment', slug=doctor.slug) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if errors %}<ul class="errors" role="alert">{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul>{% endif %}
+      <fieldset>
+        <legend>This appointment is for:</legend>
+        <div class="seg">
+          {% for kind in patient_types %}<label><input type="radio" name="patient_type" value="{{ kind }}" {% if form.patient_type == kind or (not form.patient_type and request.args.get('patient_type') == kind) %}checked{% endif %}> {{ kind }}</label>{% endfor %}
+        </div>
+      </fieldset>
+      <h2>Location:</h2>
+      <select name="location_id" aria-label="Location">
+        {% set chosen = form.location_id or request.args.get('location_id', '') %}
+        {% for location in doctor.locations %}<option value="{{ location.id }}" {% if chosen == location.id | string %}selected{% endif %}>{{ location.name }} — {{ location.short_address }}</option>{% endfor %}
+      </select>
+      <fieldset>
+      <legend>Choose a time:</legend>
+      <div class="month">September 2026</div>
+      {% set chosen_slot = form.slot or request.args.get('slot', '') %}
+      <div class="grid-days">
+        {% for abbr, short, day, label in booking_days %}
+          <div>
+            <div class="day-head">{{ abbr }}<span>{{ short }}</span></div>
+            {% for slot in booking_slots %}
+              {% set value = day.isoformat() ~ '|' ~ slot %}
+              <label class="slot{% if chosen_slot == value %} on{% endif %}"><input type="radio" name="slot" value="{{ value }}" {% if chosen_slot == value %}checked{% endif %}>{{ slot }}</label>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+      </fieldset>
+      <div class="submit"><button class="btn btn-primary btn-pill" type="submit">Request Appointment</button></div>
+    </form>
+  </div>
+  <div class="breadcrumb" style="margin-top:16px"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ url_for('specialty_index') }}">Providers</a><span class="sep">›</span><a href="{{ url_for('specialty_landing', spec=doctor.primary_specialty.slug) }}">{{ doctor.primary_specialty.name }}</a><span class="sep">›</span><a href="{{ url_for('doctor_profile', slug=doctor.slug) }}">{{ doctor.display_name }}</a></div>
+</div>
+{% endblock %}

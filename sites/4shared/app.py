@@ -21,7 +21,7 @@ from sqlalchemy.exc import IntegrityError
 
 SITE_SLUG = "4shared"
 SITE_NAME = "4shared"
-SITE_PORT = 40024
+SITE_PORT = 40026
 BENCHMARK_PASSWORD = "TestPass123!"
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"

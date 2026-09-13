@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Log In | FedEx{% endblock %}
+{% block content %}
+  <section class="auth-page">
+    <h1>Log in to your account</h1>
+    <form method="post" class="card stack">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field"><label for="email">User ID (email)</label><input id="email" name="email" type="email" autocomplete="username" required></div>
+      <div class="field"><label for="password">Password</label><input id="password" type="password" name="password" autocomplete="current-password" required></div>
+      <input type="submit" value="Log in">
+      <p>New to FedEx? <a class="text-link" href="{{ url_for('register') }}">Create an account</a></p>
+    </form>
+  </section>
+{% endblock %}

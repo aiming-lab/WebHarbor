@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Find The Best {{ title }} Near You{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><span>{{ title }}</span></div>
+  <h1 class="page-title">Find The Best {{ title }} Near You</h1>
+  <p class="page-sub">There are <strong>{{ total }}</strong> {{ title }} for you to review across <strong>{{ states | length }}</strong> states and territories.</p>
+  <div class="chip-row">
+    {% for state in states %}<a href="{{ url_for(kind ~ '_state', state=state.slug) }}">{{ state.name }} ({{ state.count }})</a>{% endfor %}
+  </div>
+  <form class="name-search" method="get" action="{{ url_for(kind ~ '_state', state=anchor.state_slug) }}">
+    <input type="text" name="name" placeholder="Search {{ title }} by Name" aria-label="Search {{ title | lower }} by name">
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+  <hr class="rule">
+  <h2 class="h2">Top {{ title }} {{ 'in' if kind == 'hospitals' else 'near' }} {{ anchor.state_name }}</h2>
+  <div class="hub-mini-grid">
+    {% for item in top_items %}
+      {% set detail = url_for('hospital_detail', slug=item.slug) if kind == 'hospitals' else url_for('practice_detail', slug=item.slug) %}
+      <div class="hub-mini">
+        <h3><a href="{{ detail }}">{{ item.name }}</a></h3>
+        <div class="sub">{{ counts[item.id].specialties | plural_word('Specialty', 'Specialties') }}, {{ counts[item.id].physicians | plural_word('Practicing Physician') }}</div>
+        <div class="rating-line">{% with rating=item.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} <a href="{{ detail }}#ratings">({{ item.ratings_count | plural_word('Rating') }})</a></div>
+        <a class="btn btn-ghost btn-wide btn-sm btn-pill" href="{{ detail }}">View Profile</a>
+      </div>
+    {% endfor %}
+  </div>
+  <p style="margin:20px 0 34px"><a class="btn btn-primary btn-pill" style="padding:10px 60px" href="{{ url_for(kind ~ '_state', state=anchor.state_slug) }}">Search All {{ title }} in {{ anchor.state_name }}</a></p>
+  {% if kind == 'hospitals' %}
+  <h2 class="h2">Find Award-Winning Hospitals by Type of Care</h2>
+  <div class="chip-row">
+    {% for label, spec_slug in care_types %}<a href="{{ url_for('specialty_landing', spec=spec_slug) }}">{{ label }}</a>{% endfor %}
+  </div>
+  {% else %}
+  <div class="find-doctors-strip">
+    <a href="{{ url_for('specialty_index') }}">Find Doctors <svg class="ic"><use href="#i-chevron"/></svg></a>
+    <div class="links">{% for specialty in menu_specialties %}<a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.plural }}</a>{% endfor %}</div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

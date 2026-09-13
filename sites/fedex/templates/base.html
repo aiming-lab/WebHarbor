@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}FedEx{% endblock %}</title>
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='external_cache/fedex-home/logo.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  {% from 'components.html' import icon, notice_link %}
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <div class="site-shell">
+    <header class="site-header">
+      <div class="inner header-row">
+        <a class="brand" href="{{ url_for('index') }}" aria-label="FedEx home"><img src="{{ url_for('static', filename='external_cache/fedex-home/logo.png') }}" width="88" height="25" alt="FedEx"></a>
+        <button class="mobile-menu icon-button" type="button" aria-label="Open navigation" aria-expanded="false" aria-controls="primary-nav">{{ icon('menu') }}</button>
+        <nav id="primary-nav" class="primary-nav" aria-label="Main navigation">
+          <details class="nav-menu"><summary>Shipping</summary><div class="nav-panel">
+            <a href="{{ url_for('ship') }}">Create a shipment</a><a href="{{ url_for('rate_estimate') }}">Shipping rates &amp; delivery times</a><a href="{{ url_for('pickup') }}">Schedule &amp; manage pickups</a><a href="{{ url_for('account_shipments') }}">Manage shipments</a>
+          </div></details>
+          <details class="nav-menu"><summary>Tracking</summary><div class="nav-panel">
+            <a href="{{ url_for('track') }}">Track a shipment</a><a href="{{ url_for('track') }}">Track multiple shipments</a><a href="{{ url_for('account_shipments') }}">Manage deliveries</a>
+          </div></details>
+          <details class="nav-menu"><summary>Design &amp; Print</summary><div class="nav-panel">
+            <a href="{{ url_for('locations', q='Office Print') }}">Find a printing location</a>{{ notice_link('Explore print products', 'Online printing orders are not available in this offline mirror. You can browse local print and ship locations.') }}
+          </div></details>
+          <details class="nav-menu"><summary>Locations</summary><div class="nav-panel">
+            <a href="{{ url_for('locations') }}">Find a location</a><a href="{{ url_for('locations', q='Ship Center') }}">Drop off a package</a><a href="{{ url_for('pickup') }}">Schedule a pickup</a>
+          </div></details>
+          <details class="nav-menu"><summary>Support</summary><div class="nav-panel">
+            <a href="{{ url_for('support') }}">Customer support</a><a href="{{ url_for('claims') }}">File &amp; manage claims</a><a href="{{ url_for('invoices') }}">View &amp; manage invoices</a><a href="{{ url_for('support', q='delay') }}">Service alerts</a>
+          </div></details>
+        </nav>
+        <div class="header-utility">
+          <details class="nav-menu account-menu"><summary aria-label="{% if current_user.is_authenticated %}Account menu{% else %}Sign Up or Log In{% endif %}"><span>{% if current_user.is_authenticated %}{{ current_user.first_name }}{% else %}Sign Up or Log In{% endif %}</span>{{ icon('account') }}</summary><div class="nav-panel">
+            {% if current_user.is_authenticated %}<a href="{{ url_for('account') }}">My profile</a><a href="{{ url_for('account_shipments') }}">My shipments</a><form method="post" action="{{ url_for('logout') }}" class="nav-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="nav-link-button">Log out</button></form>
+            {% else %}<a class="button button-primary" href="{{ url_for('login') }}">Log in</a><a href="{{ url_for('register') }}">Create an account</a>{% endif %}
+          </div></details>
+          <details class="nav-menu search-menu"><summary aria-label="Search">{{ icon('search') }}</summary><form action="{{ url_for('search') }}" method="get" class="nav-panel header-search"><label class="sr-only" for="header-query">Search fedex.com</label><input id="header-query" name="q" placeholder="Search fedex.com" required><button type="submit" aria-label="Submit search">{{ icon('search') }}</button></form></details>
+        </div>
+      </div>
+    </header>
+    <main id="main-content" class="page {% block page_class %}{% endblock %}">
+      <div class="inner content-inner">
+        {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<ul class="flash-list" role="status">{% for category, message in messages %}<li class="flash-{{ category }}">{{ message }}</li>{% endfor %}</ul>{% endif %}{% endwith %}
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+    <footer class="footer">
+      <div class="inner footer-columns">
+        <div class="company-links"><h2>Our company</h2><div class="company-grid">{% for label in ['About FedEx', 'Our Portfolio', 'Investor Relations', 'Careers', 'Transportation Contracting Opportunities', 'FedEx Blog', 'Corporate Responsibility', 'Newsroom'] %}{{ notice_link(label) }}{% endfor %}<a href="{{ url_for('support') }}">Contact Us</a></div></div>
+        <div><h2>More from FedEx</h2>{% for label in ['FedEx Compatible', 'FedEx Developer Portal', 'FedEx Logistics'] %}{{ notice_link(label) }}{% endfor %}</div>
+        <div><h2>Policy center</h2>{% for label in ['Terms of Use', 'Privacy & Security', 'Ad Choices', 'Your Privacy Choices'] %}{{ notice_link(label) }}{% endfor %}</div>
+        <div><h2>Language</h2><p>◉ &nbsp; United States</p><label class="sr-only" for="footer-language">Language</label><select id="footer-language"><option>English</option></select></div>
+      </div>
+      <div class="inner social-links"><span>Follow FedEx</span>{% for label in ['Newsletter', 'Facebook', 'X', 'Instagram', 'LinkedIn', 'YouTube', 'Pinterest'] %}{{ notice_link(label) }}{% endfor %}</div>
+      <div class="mirror-notice inner">Offline demonstration. Shipments, accounts, locations and rates are simulated; no orders, payments or pickups are sent to FedEx. Website imagery: FedEx, captured September 10, 2026. This mirror is a WebHarbor benchmark environment built by its contributors; it is not affiliated with, endorsed by, or operated by Federal Express Corporation. FEDEX, the FedEx wordmark and the related trade dress are trademarks of Federal Express Corporation and are used here only to identify the mirrored subject.</div>
+      <div class="footer-bottom"><div class="inner"><span>© FedEx 1995–2026</span><div>{{ notice_link('Site Map') }}<span> | </span>{{ notice_link('Cookie Consent', 'This offline mirror uses only a local session cookie for sign-in. It does not load advertising or analytics services.') }}</div></div></div>
+    </footer>
+  </div>
+  <dialog id="offline-notice" aria-labelledby="offline-title"><form method="dialog"><button class="dialog-close" aria-label="Close">×</button></form><h2 id="offline-title"></h2><p id="offline-description"></p><p><a href="{{ url_for('support') }}">Browse local customer support</a></p></dialog>
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
