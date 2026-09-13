@@ -144,15 +144,21 @@ class AppTests(unittest.TestCase):
             for listing in Listing.query.all():
                 self.assertIn(listing.image_index, allowed_images[listing.species], listing.name)
             for species in ("Dog", "Cat"):
-                ordered = Listing.query.filter_by(species=species).order_by(
-                    Listing.days_on_petfinder.asc(), Listing.id.asc()
-                ).all()
-                for previous, current in zip(ordered, ordered[1:]):
-                    self.assertNotEqual(
-                        previous.image_index,
-                        current.image_index,
-                        f"adjacent repeated image: {previous.name} / {current.name}",
+                for direction in ("newest", "longest"):
+                    days_order = (
+                        Listing.days_on_petfinder.asc()
+                        if direction == "newest"
+                        else Listing.days_on_petfinder.desc()
                     )
+                    ordered = Listing.query.filter_by(species=species).order_by(
+                        days_order, Listing.id.asc()
+                    ).all()
+                    for previous, current in zip(ordered, ordered[1:]):
+                        self.assertNotEqual(
+                            previous.image_index,
+                            current.image_index,
+                            f"{direction} repeated image: {previous.name} / {current.name}",
+                        )
 
             def count(**filters):
                 return Listing.query.filter_by(**filters).count()
