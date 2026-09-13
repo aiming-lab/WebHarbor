@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }} | Kaggle Learn{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="detail-head">
+    <div class="detail-thumb thumb-fallback" style="font-size:48px;">{{ course.icon }}</div>
+    <div style="flex:1;">
+      <h1 class="detail-title">{{ course.title }}</h1>
+      <div class="detail-sub">{{ course.level }} · {{ course.lessons }} lessons · {{ course.hours }} hours</div>
+      <div class="chips">{% for t in course.tags %}<span class="chip">{{ t }}</span>{% endfor %}</div>
+    </div>
+    <div><a class="btn btn-primary" href="#lessons">Start Course</a></div>
+  </div>
+  <div class="detail-cols">
+    <div>
+      <h2>About this course</h2>
+      <p class="prose">{{ course.description }}</p>
+      <h3 id="lessons" style="margin-top:24px;">Lessons</h3>
+      <div class="row-list">
+        {% for lt in course.lesson_titles %}
+        <div class="row"><div class="row-main">
+          <div class="row-title">{{ loop.index }}. {{ lt }}</div>
+        </div><div class="row-right muted">Tutorial + Exercise</div></div>
+        {% endfor %}
+      </div>
+    </div>
+    <aside>
+      <div class="side-box">
+        <h4>Course details</h4>
+        <p><span class="stat-label">Level:</span> <b>{{ course.level }}</b></p>
+        <p><span class="stat-label">Lessons:</span> {{ course.lessons }}</p>
+        <p><span class="stat-label">Estimated time:</span> {{ course.hours }} hours</p>
+        <p><span class="stat-label">Cost:</span> Free</p>
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

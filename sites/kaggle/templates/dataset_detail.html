@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import thumb, tier_badge %}
+{% block title %}{{ d.title }} | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="detail-head">
+    {{ thumb('datasets', d.thumbnail, d.title, 'detail-thumb') }}
+    <div style="flex:1;">
+      <h1 class="detail-title">{{ d.title }}</h1>
+      <div class="detail-sub">{{ d.subtitle }}</div>
+      <div class="card-meta" style="font-size:14px;">
+        <span>{{ d.owner_username }}</span>
+        <span>Updated {{ d.last_updated|reltime }}</span>
+        <span>Usability <b>{{ '%.1f'|format(d.usability) }}</b></span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;flex-direction:column;">
+      <button class="vote-btn {{ 'voted' if has_voted('dataset', d.id) }}" data-vote data-type="dataset" data-id="{{ d.id }}">
+        <span data-label>{{ 'Voted' if has_voted('dataset', d.id) else 'Upvote' }}</span> · <span data-count>{{ d.upvotes }}</span>
+      </button>
+      <button class="vote-btn {{ 'voted' if has_bookmarked('dataset', d.id) }}" data-bookmark data-type="dataset" data-id="{{ d.id }}">
+        <span data-label>{{ 'Saved' if has_bookmarked('dataset', d.id) else 'Save' }}</span>
+      </button>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('dataset_download', slug=d.slug) }}">⬇ Download ({{ d.size }})</a>
+    </div>
+  </div>
+
+  <div class="detail-cols">
+    <div>
+      <h2>About this Dataset</h2>
+      <div class="prose">{% for para in d.description.split('\n') %}<p>{{ para }}</p>{% endfor %}</div>
+      {% if d.tags %}<div class="chips" style="margin-top:16px;">{% for t in d.tags %}<a class="chip chip-link" href="{{ url_for('datasets_list', tag=t) }}">{{ t }}</a>{% endfor %}</div>{% endif %}
+
+      <h3 style="margin-top:28px;">Notebooks using this dataset</h3>
+      {% if notebooks %}
+      <div class="row-list">
+        {% for n in notebooks %}
+        <div class="row"><div class="row-main">
+          <div class="row-title"><a href="{{ url_for('notebook_detail', slug=n.slug) }}">{{ n.medal_emoji }} {{ n.title }}</a></div>
+          <div class="row-sub">{{ n.author_username }} · {{ n.language }}</div>
+        </div><div class="row-right">👍 {{ n.votes|commafy }}</div></div>
+        {% endfor %}
+      </div>
+      {% else %}<p class="muted">No public notebooks yet — be the first!</p>{% endif %}
+    </div>
+
+    <aside>
+      <div class="side-box">
+        <h4>Data</h4>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-num">{{ d.size }}</div><div class="stat-label">Size</div></div>
+          <div class="stat"><div class="stat-num">{{ d.file_count|commafy }}</div><div class="stat-label">Files</div></div>
+          <div class="stat"><div class="stat-num">{{ d.downloads|commafy }}</div><div class="stat-label">Downloads</div></div>
+          <div class="stat"><div class="stat-num">{{ d.views|commafy }}</div><div class="stat-label">Views</div></div>
+        </div>
+        <p style="margin-top:14px;"><span class="stat-label">File types:</span> {{ d.file_types }}</p>
+        <p><span class="stat-label">License:</span> {{ d.license }}</p>
+      </div>
+      <div class="side-box">
+        <h4>Owner</h4>
+        {% set owner = user_by_name(d.owner_username) %}
+        {% if owner %}
+        <a href="{{ url_for('user_profile', username=owner.username) }}" style="display:flex;align-items:center;gap:10px;color:inherit;">
+          <img src="{{ owner.avatar_url }}" onerror="this.src='/static/images/avatars/default.png'" style="width:40px;height:40px;border-radius:50%;">
+          <div><b>{{ owner.display_name }}</b><br>{{ tier_badge(owner) }}</div>
+        </a>
+        {% else %}<p>{{ d.owner_username }}</p>{% endif %}
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

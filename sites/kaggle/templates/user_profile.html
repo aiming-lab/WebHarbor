@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tier_badge, medals, dataset_card, notebook_card, model_card, competition_card %}
+{% block title %}{{ u.display_name }} | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="profile-head">
+    <img class="profile-avatar" src="{{ u.avatar_url }}" onerror="this.src='/static/images/avatars/default.png'" alt="{{ u.username }}">
+    <div style="flex:1;">
+      <h1 class="profile-name">{{ u.display_name }} {{ tier_badge(u) }}</h1>
+      <div class="profile-handle">@{{ u.username }}{% if u.comp_rank %} · Competitions rank #{{ u.comp_rank }}{% endif %}</div>
+      {% if u.occupation or u.organization %}<p class="muted">{{ u.occupation }}{% if u.organization %} at {{ u.organization }}{% endif %}</p>{% endif %}
+      {% if u.location %}<p class="muted">📍 {{ u.location }}</p>{% endif %}
+      {% if u.bio %}<p>{{ u.bio }}</p>{% endif %}
+      <div style="margin-top:8px;">{{ medals(u.gold, u.silver, u.bronze) }} · <b>{{ u.points|commafy }}</b> points · {{ follower_count }} followers</div>
+    </div>
+    <div>
+      {% if current_user.is_authenticated and current_user.username != u.username %}
+      <button class="btn {{ 'btn-ghost' if is_following(u.username) else 'btn-primary' }} {{ 'voted' if is_following(u.username) }}" data-follow data-username="{{ u.username }}">
+        {{ 'Following' if is_following(u.username) else 'Follow' }}
+      </button>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="tabs">
+    <span class="muted" style="padding:10px 0;">Tiers — {% for cat, t in u.category_tiers.items() %}{{ cat|capitalize }}: {{ t }}{% if not loop.last %} · {% endif %}{% endfor %}</span>
+  </div>
+
+  {% if hosted %}
+  <div class="section"><div class="section-head"><h2>Hosted Competitions</h2></div>
+    <div class="grid grid-3">{% for c in hosted %}{{ competition_card(c) }}{% endfor %}</div></div>
+  {% endif %}
+  {% if datasets %}
+  <div class="section"><div class="section-head"><h2>Datasets ({{ datasets|length }})</h2></div>
+    <div class="grid grid-3">{% for d in datasets %}{{ dataset_card(d) }}{% endfor %}</div></div>
+  {% endif %}
+  {% if notebooks %}
+  <div class="section"><div class="section-head"><h2>Notebooks ({{ notebooks|length }})</h2></div>
+    <div class="grid grid-4">{% for n in notebooks %}{{ notebook_card(n) }}{% endfor %}</div></div>
+  {% endif %}
+  {% if models %}
+  <div class="section"><div class="section-head"><h2>Models ({{ models|length }})</h2></div>
+    <div class="grid grid-3">{% for m in models %}{{ model_card(m) }}{% endfor %}</div></div>
+  {% endif %}
+  {% if discussions %}
+  <div class="section"><div class="section-head"><h2>Discussions ({{ discussions|length }})</h2></div>
+    <div class="row-list">{% for d in discussions %}
+      <div class="row"><div class="row-main"><div class="row-title"><a href="{{ url_for('discussion_detail', slug=d.slug) }}">{{ d.title }}</a></div>
+      <div class="row-sub"><span class="chip">{{ d.forum }}</span></div></div><div class="row-right">👍 {{ d.votes }}</div></div>
+    {% endfor %}</div></div>
+  {% endif %}
+  {% if not (hosted or datasets or notebooks or models or discussions) %}
+  <div class="empty">{{ u.display_name }} hasn't published any public work yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

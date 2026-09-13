@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tier_badge, medals %}
+{% block title %}Your Account | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="profile-head">
+    <img class="profile-avatar" src="{{ current_user.avatar_url }}" onerror="this.src='/static/images/avatars/default.png'">
+    <div style="flex:1;">
+      <h1 class="profile-name">{{ current_user.display_name or current_user.username }} {{ tier_badge(current_user) }}</h1>
+      <div class="profile-handle">@{{ current_user.username }} · {{ current_user.email }}</div>
+      <div style="margin-top:8px;">{{ medals(current_user.gold, current_user.silver, current_user.bronze) }} · <b>{{ current_user.points|commafy }}</b> points</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('account_edit') }}">Edit Profile</a>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('change_password') }}">Password</a>
+      <a class="btn btn-ghost btn-sm" href="{{ url_for('user_profile', username=current_user.username) }}">Public Profile</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>My Competitions ({{ entries|length }})</h2></div>
+    {% if entries %}
+    <div class="row-list">{% for e in entries %}
+      <div class="row"><div class="row-main">
+        <div class="row-title"><a href="{{ url_for('competition_detail', slug=e.competition.slug) }}">{{ e.competition.title }}</a></div>
+        <div class="row-sub">Team: <b>{{ e.team_name }}</b> · joined {{ e.joined_at|reltime }}</div>
+      </div><div class="row-right">{{ e.competition.reward }}</div></div>
+    {% endfor %}</div>
+    {% else %}<div class="empty">You haven't joined any competitions yet. <a href="{{ url_for('competitions_list') }}">Browse competitions</a></div>{% endif %}
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Saved ({{ bookmarks|length }})</h2></div>
+    {% if bookmarks %}
+    <div class="row-list">{% for ent, b in bookmarks %}
+      <div class="row"><div class="row-main">
+        <div class="row-title">{{ ent.title }}</div>
+        <div class="row-sub"><span class="chip">{{ b.entity_type }}</span></div>
+      </div></div>
+    {% endfor %}</div>
+    {% else %}<div class="empty">No saved items yet.</div>{% endif %}
+  </div>
+
+  <div class="section">
+    <div class="section-head"><h2>Following ({{ follows|length }})</h2></div>
+    {% if follows %}
+    <div class="chips">{% for f in follows %}<a class="chip chip-link" href="{{ url_for('user_profile', username=f.target_username) }}">@{{ f.target_username }}</a>{% endfor %}</div>
+    {% else %}<div class="empty">You're not following anyone yet.</div>{% endif %}
+  </div>
+
+  <div class="section">
+    <form method="post" action="{{ url_for('account_delete') }}" onsubmit="return confirm('Delete your account? This cannot be undone.');">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-ghost btn-sm" type="submit" style="color:#c5221f;">Delete Account</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

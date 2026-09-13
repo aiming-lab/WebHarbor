@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Learn | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <h1 class="page-title">Kaggle Learn</h1>
+  <p class="page-sub">Gain the skills you need to do independent data science projects. Free, hands-on, and bite-sized.</p>
+  <div class="grid grid-4">
+    {% for course in courses %}
+    <div class="card"><a href="{{ url_for('course_detail', slug=course.slug) }}"><div class="card-body">
+      <div style="font-size:40px;">{{ course.icon }}</div>
+      <div class="card-title">{{ course.title }}</div>
+      <div class="card-sub">{{ course.level }}</div>
+      <div class="card-meta"><span>{{ course.hours }} hrs</span></div>
+    </div></a></div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

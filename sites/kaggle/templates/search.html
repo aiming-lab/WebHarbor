@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% from "_macros.html" import competition_card, dataset_card, notebook_card, model_card, tier_badge %}
+{% block title %}Search: {{ q }} | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <h1 class="page-title">Search</h1>
+  {% if q %}<p class="page-sub">{{ total }} result{{ 's' if total != 1 }} for "<b>{{ q }}</b>"</p>{% else %}<p class="page-sub">Enter a query to search across Kaggle.</p>{% endif %}
+
+  <div class="tabs">
+    {% for s, label in [('all','All'),('competitions','Competitions'),('datasets','Datasets'),('code','Code'),('models','Models'),('discussions','Discussions'),('users','Users')] %}
+    <a class="{{ 'active' if scope==s }}" href="{{ url_for('search', q=q, type=s) }}">{{ label }}</a>
+    {% endfor %}
+  </div>
+
+  {% if comps %}
+  <div class="section"><div class="section-head"><h2>Competitions</h2></div>
+    <div class="grid grid-3">{% for c in comps %}{{ competition_card(c) }}{% endfor %}</div></div>
+  {% endif %}
+  {% if datasets %}
+  <div class="section"><div class="section-head"><h2>Datasets</h2></div>
+    <div class="grid grid-3">{% for d in datasets %}{{ dataset_card(d) }}{% endfor %}</div></div>
+  {% endif %}
+  {% if notebooks %}
+  <div class="section"><div class="section-head"><h2>Code</h2></div>
+    <div class="grid grid-4">{% for n in notebooks %}{{ notebook_card(n) }}{% endfor %}</div></div>
+  {% endif %}
+  {% if models %}
+  <div class="section"><div class="section-head"><h2>Models</h2></div>
+    <div class="grid grid-3">{% for m in models %}{{ model_card(m) }}{% endfor %}</div></div>
+  {% endif %}
+  {% if discussions %}
+  <div class="section"><div class="section-head"><h2>Discussions</h2></div>
+    <div class="row-list">{% for d in discussions %}
+      <div class="row"><div class="row-main"><div class="row-title"><a href="{{ url_for('discussion_detail', slug=d.slug) }}">{{ d.title }}</a></div>
+      <div class="row-sub">{{ d.author_username }} · <span class="chip">{{ d.forum }}</span></div></div><div class="row-right">👍 {{ d.votes }}</div></div>
+    {% endfor %}</div></div>
+  {% endif %}
+  {% if users %}
+  <div class="section"><div class="section-head"><h2>Users</h2></div>
+    <div class="row-list">{% for u in users %}
+      <div class="row"><img class="row-thumb" style="border-radius:50%;" src="{{ u.avatar_url }}" onerror="this.src='/static/images/avatars/default.png'">
+      <div class="row-main"><div class="row-title"><a href="{{ url_for('user_profile', username=u.username) }}">{{ u.display_name }}</a> {{ tier_badge(u) }}</div>
+      <div class="row-sub">@{{ u.username }} · {{ u.occupation }}</div></div><div class="row-right">{{ u.points|commafy }} pts</div></div>
+    {% endfor %}</div></div>
+  {% endif %}
+
+  {% if q and total == 0 %}<div class="empty">No results found. Try different keywords.</div>{% endif %}
+</div>
+{% endblock %}

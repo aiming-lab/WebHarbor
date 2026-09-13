@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+{% from "_macros.html" import thumb, tier_badge %}
+{% block title %}{{ c.title }} | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide">
+  <div class="detail-head">
+    {{ thumb('competitions', c.thumbnail, c.title, 'detail-thumb') }}
+    <div style="flex:1;">
+      <div class="chips" style="margin-bottom:8px;"><span class="chip">{{ c.category }}</span>
+        {% if c.is_active %}<span class="chip" style="background:#e6f8ee;color:#137333;">Active</span>
+        {% else %}<span class="chip" style="background:#fce8e6;color:#c5221f;">Closed</span>{% endif %}</div>
+      <h1 class="detail-title">{{ c.title }}</h1>
+      <div class="detail-sub">{{ c.subtitle }}</div>
+      <div class="card-meta" style="font-size:14px;">
+        <span>Hosted by <b>{{ c.host }}</b></span>
+        <span><b>{{ c.reward }}</b> prize</span>
+        <span>{{ c.num_teams|commafy }} teams</span>
+      </div>
+    </div>
+    <div>
+      {% if joined %}
+        <span class="btn btn-ghost" style="cursor:default;">✓ Joined as {{ entry.team_name }}</span>
+      {% elif c.is_active %}
+        <a class="btn btn-primary" href="{{ url_for('competition_detail', slug=c.slug, tab='join') }}">Join Competition</a>
+      {% else %}
+        <span class="btn btn-ghost" style="cursor:default;">Competition closed</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="tabs">
+    <a class="{{ 'active' if tab=='overview' }}" href="{{ url_for('competition_detail', slug=c.slug, tab='overview') }}">Overview</a>
+    <a class="{{ 'active' if tab=='leaderboard' }}" href="{{ url_for('competition_detail', slug=c.slug, tab='leaderboard') }}">Leaderboard</a>
+    <a class="{{ 'active' if tab=='code' }}" href="{{ url_for('competition_detail', slug=c.slug, tab='code') }}">Code</a>
+    {% if c.is_active %}<a class="{{ 'active' if tab=='join' }}" href="{{ url_for('competition_detail', slug=c.slug, tab='join') }}">Join</a>{% endif %}
+  </div>
+
+  <div class="detail-cols">
+    <div>
+      {% if tab == 'leaderboard' %}
+        <h2>Leaderboard</h2>
+        {% if leaderboard %}
+        <table class="lb">
+          <thead><tr><th>#</th><th>Team</th><th>Members</th><th>Score</th><th>Submitted</th></tr></thead>
+          <tbody>
+          {% for s in leaderboard %}
+          <tr>
+            <td class="rank-medal">{% if s.rank==1 %}🥇{% elif s.rank==2 %}🥈{% elif s.rank==3 %}🥉{% else %}{{ s.rank }}{% endif %}</td>
+            <td><b>{{ s.team_name }}</b></td>
+            <td>{% if user_by_name(s.team_name) %}<a href="{{ url_for('user_profile', username=s.team_name) }}">{{ s.team_name }}</a>{% else %}<span class="muted">team</span>{% endif %}</td>
+            <td>{{ '%.5f'|format(s.score) }}</td>
+            <td class="muted">{{ s.submitted_at|reltime }}</td>
+          </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+        {% else %}<div class="empty">No public submissions yet.</div>{% endif %}
+
+      {% elif tab == 'code' %}
+        <h2>Notebooks</h2>
+        {% if notebooks %}
+        <div class="row-list">
+          {% for n in notebooks %}
+          <div class="row">
+            <div class="row-main">
+              <div class="row-title"><a href="{{ url_for('notebook_detail', slug=n.slug) }}">{{ n.medal_emoji }} {{ n.title }}</a></div>
+              <div class="row-sub">{{ n.author_username }} · {{ n.language }}{% if n.best_score %} · score {{ n.best_score }}{% endif %}</div>
+            </div>
+            <div class="row-right">👍 {{ n.votes|commafy }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}<div class="empty">No public notebooks for this competition yet.</div>{% endif %}
+
+      {% elif tab == 'join' and c.is_active %}
+        <h2>Join {{ c.title }}</h2>
+        {% if current_user.is_authenticated %}
+          {% if joined %}
+            <p>You've already joined as team <b>{{ entry.team_name }}</b>. Good luck!</p>
+          {% else %}
+          <form method="post" action="{{ url_for('competition_join', slug=c.slug) }}" class="form-card" style="margin:0;">
+            {{ join_form.csrf_token }}
+            <div class="field">
+              <label>Team name</label>
+              {{ join_form.team_name(placeholder="Your team name") }}
+            </div>
+            <div class="field">
+              <label><input type="checkbox" name="accept_rules" value="1" required style="width:auto;"> I accept the competition rules</label>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Join Competition</button>
+          </form>
+          {% endif %}
+        {% else %}
+          <p>You must <a href="{{ url_for('login') }}">sign in</a> to join this competition.</p>
+        {% endif %}
+
+      {% else %}
+        <h2>Overview</h2>
+        <div class="prose">
+          {% for para in c.description.split('\n') %}<p>{{ para }}</p>{% endfor %}
+        </div>
+        <h3 style="margin-top:24px;">Evaluation</h3>
+        <p class="prose">Submissions are scored using <b>{{ c.metric }}</b>.</p>
+        {% if c.tags %}<div class="chips" style="margin-top:16px;">{% for t in c.tags %}<a class="chip chip-link" href="{{ url_for('competitions_list', q=t) }}">{{ t }}</a>{% endfor %}</div>{% endif %}
+      {% endif %}
+    </div>
+
+    <aside>
+      <div class="side-box">
+        <h4>Competition details</h4>
+        <div class="stat-grid">
+          <div class="stat"><div class="stat-num">{{ c.reward }}</div><div class="stat-label">Prize</div></div>
+          <div class="stat"><div class="stat-num">{{ c.num_teams|commafy }}</div><div class="stat-label">Teams</div></div>
+          <div class="stat"><div class="stat-num">{% if c.days_left is not none and c.days_left >= 0 %}{{ c.days_left }}d{% else %}—{% endif %}</div><div class="stat-label">{{ 'Days left' if c.is_active else 'Status' }}</div></div>
+          <div class="stat"><div class="stat-num" style="font-size:14px;">{{ c.deadline }}</div><div class="stat-label">Deadline</div></div>
+        </div>
+        <p style="margin-top:14px;"><span class="stat-label">Metric:</span> <b>{{ c.metric }}</b></p>
+      </div>
+      <div class="side-box">
+        <h4>Host</h4>
+        {% if host_user %}
+        <a href="{{ url_for('user_profile', username=host_user.username) }}" style="display:flex;align-items:center;gap:10px;color:inherit;">
+          <img src="{{ host_user.avatar_url }}" onerror="this.src='/static/images/avatars/default.png'" style="width:40px;height:40px;border-radius:50%;">
+          <div><b>{{ host_user.display_name }}</b><br>{{ tier_badge(host_user) }}</div>
+        </a>
+        {% else %}<p>{{ c.host }}</p>{% endif %}
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}
