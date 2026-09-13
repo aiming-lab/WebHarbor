@@ -128,32 +128,35 @@ The verifier prints JSON `{task_id, pass, reason, evidence[]}` and exits 0/1; th
 Run all of these before opening a PR.
 
 ```bash
-# 1. syntax
+# 1. registry consistency (no Docker required)
+python3 scripts/audit_site_registry.py --strict
+
+# 2. syntax
 python3 -m py_compile sites/<site>/app.py
 
-# 2. build
+# 3. build
 ./scripts/build.sh webharbor:dev
 
-# 3. run on alt ports (don't collide with anything you already have running)
+# 4. run on alt ports (don't collide with anything you already have running)
 docker run -d --rm --name wh-test \
   -p 8201:8101 -p 41000-41025:40000-40025 webharbor:dev
 
-# 4. control plane healthy, all sites alive
+# 5. control plane healthy, all sites alive
 curl -s http://localhost:8201/health | python3 -m json.tool | head
 
-# 5. every site renders 200
+# 6. every site renders 200
 for p in $(seq 41000 41025); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
-# 6. byte-identical reset (the strict invariant)
+# 7. byte-identical reset (the strict invariant)
 curl -X POST http://localhost:8201/reset/<your_site>
 docker exec wh-test md5sum \
   /opt/WebSyn/<your_site>/instance/<your_site>.db \
   /opt/WebSyn/<your_site>/instance_seed/<your_site>.db
 # the two md5s MUST match — if not, see "Idempotent seeding"
 
-# 7. teardown
+# 8. teardown
 docker stop wh-test
 ```
 
