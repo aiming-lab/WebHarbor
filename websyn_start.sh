@@ -3,11 +3,11 @@
 # This preserves the base image's browser env server (port 8100) as PID 1.
 set -e
 
-SITES=(allrecipes amazon apple arxiv bbc_news booking github
-       google_flights google_map google_search huggingface wolfram_alpha
-       cambridge_dictionary coursera espn merriam_webster ikea phys_org target
-       ted osu rotten_tomatoes compass walmart_careers fedex
-       webmd_doctor petfinder)
+SITES=(allrecipes amazon apple arxiv bbc_news booking
+       github google_flights google_map google_search huggingface wolfram_alpha
+       cambridge_dictionary coursera espn merriam_webster ikea phys_org
+       target ted osu rotten_tomatoes compass walmart_careers
+       fedex webmd_doctor healthline kaggle petfinder)
 BASE_PORT=40000
 SITE_COUNT=${#SITES[@]}
 PID_DIR=/tmp/websyn_pids

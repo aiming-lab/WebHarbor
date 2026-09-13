@@ -26,14 +26,14 @@ class EnvironmentQualityTests(unittest.TestCase):
         )
         self.assertEqual(sites, control_sites)
         self.assertEqual(len(sites), len(set(sites)))
-        self.assertEqual(sites.index("petfinder"), 26)
+        self.assertEqual(sites.index("petfinder"), 28)
         self.assertIn(f"EXPOSE 8101 40000-{40000 + len(sites) - 1}", docker)
 
         rows = [json.loads(line) for line in (SITE_DIR / "tasks.jsonl").read_text().splitlines() if line.strip()]
         self.assertEqual(len(rows), 10)
         for index, row in enumerate(rows):
             self.assertEqual(row["id"], f"Petfinder--{index}")
-            self.assertEqual(row["web"], "http://localhost:40026/")
+            self.assertEqual(row["web"], "http://localhost:40028/")
             self.assertEqual(row["verifier_path"], f"sites/petfinder/verify/verify_{index}.py")
             self.assertTrue(row["judge_rubric"].startswith("FACT CHECKPOINTS"))
             self.assertNotIn("answer", row)

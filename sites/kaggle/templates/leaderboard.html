@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ c.title }} — Leaderboard | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <p><a href="{{ url_for('competition_detail', slug=c.slug) }}">← {{ c.title }}</a></p>
+  <h1 class="page-title">Leaderboard</h1>
+  <p class="page-sub">{{ c.title }} · scored by {{ c.metric }}</p>
+  {% if leaderboard %}
+  <table class="lb">
+    <thead><tr><th>#</th><th>Team</th><th>Members</th><th>Score</th><th>Submitted</th></tr></thead>
+    <tbody>
+    {% for s in leaderboard %}
+    <tr>
+      <td class="rank-medal">{% if s.rank==1 %}🥇{% elif s.rank==2 %}🥈{% elif s.rank==3 %}🥉{% else %}{{ s.rank }}{% endif %}</td>
+      <td><b>{{ s.team_name }}</b></td>
+      <td>{% if user_by_name(s.team_name) %}<a href="{{ url_for('user_profile', username=s.team_name) }}">{{ s.team_name }}</a>{% else %}<span class="muted">team</span>{% endif %}</td>
+      <td>{{ '%.5f'|format(s.score) }}</td>
+      <td class="muted">{{ s.submitted_at|reltime }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  {% else %}<div class="empty">No public submissions yet.</div>{% endif %}
+</div>
+{% endblock %}

@@ -15,6 +15,7 @@ OPTIONAL=(static/images static/external_cache)
 
 missing=0
 warnings=0
+python3 scripts/check_site_registry.py
 for site in sites/*/; do
     s=$(basename "$site")
     for sub in "${REQUIRED[@]}"; do
