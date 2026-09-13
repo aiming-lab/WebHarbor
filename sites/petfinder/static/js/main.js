@@ -26,4 +26,15 @@
   dismissPromo?.addEventListener("click", () => {
     document.querySelector("[data-promo]")?.remove();
   });
+
+  const filterPanel = document.querySelector(".filter-panel");
+  if (filterPanel) {
+    const compactLayout = window.matchMedia("(max-width: 820px)");
+    const syncFilterPanel = () => {
+      if (compactLayout.matches) filterPanel.removeAttribute("open");
+      else filterPanel.setAttribute("open", "");
+    };
+    syncFilterPanel();
+    compactLayout.addEventListener("change", syncFilterPanel);
+  }
 })();

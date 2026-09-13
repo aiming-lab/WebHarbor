@@ -249,28 +249,78 @@ def listings():
     filters = {
         "species": request.args.get("species", ""),
         "location": request.args.get("location", ""),
+        "breed": request.args.get("breed", ""),
         "age": request.args.get("age", ""),
         "size": request.args.get("size", ""),
         "gender": request.args.get("gender", ""),
+        "coat": request.args.get("coat", ""),
+        "color": request.args.get("color", ""),
+        "days": request.args.get("days", ""),
+        "shelter": request.args.get("shelter", ""),
         "good_with_children": request.args.get("good_with_children", ""),
         "good_with_dogs": request.args.get("good_with_dogs", ""),
         "good_with_cats": request.args.get("good_with_cats", ""),
     }
-    rows = Listing.query.order_by(Listing.days_on_petfinder.asc(), Listing.id.asc()).all()
-    for field in ("species", "location", "age", "size", "gender"):
+    rows = Listing.query.all()
+    for field in ("species", "location", "breed", "age", "size", "gender", "coat", "color", "shelter"):
         if filters[field]:
             rows = [row for row in rows if getattr(row, field) == filters[field]]
     for field in ("good_with_children", "good_with_dogs", "good_with_cats"):
         if filters[field] == "1":
             rows = [row for row in rows if getattr(row, field)]
+    if filters["days"].isdigit():
+        rows = [row for row in rows if row.days_on_petfinder <= int(filters["days"])]
+
+    sort_key = request.args.get("sort", "newest")
+    if sort_key == "longest":
+        rows.sort(key=lambda row: (-row.days_on_petfinder, row.id))
+    elif sort_key == "name":
+        rows.sort(key=lambda row: (row.name.casefold(), row.id))
+    else:
+        sort_key = "newest"
+        rows.sort(key=lambda row: (row.days_on_petfinder, row.id))
+
+    total = len(rows)
+    per_page = 12
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(max(request.args.get("page", default=1, type=int) or 1, 1), total_pages)
+    start = (page - 1) * per_page
+    page_rows = rows[start:start + per_page]
+
+    distinct = lambda field: [
+        value[0]
+        for value in db.session.query(field).distinct().order_by(field).all()
+    ]
     options = {
-        "species": [value[0] for value in db.session.query(Listing.species).distinct().order_by(Listing.species)],
-        "locations": [value[0] for value in db.session.query(Listing.location).distinct().order_by(Listing.location)],
+        "species": distinct(Listing.species),
+        "locations": distinct(Listing.location),
+        "breeds": distinct(Listing.breed),
         "ages": ["Baby", "Young", "Adult", "Senior"],
         "sizes": ["Small", "Medium", "Large"],
         "genders": ["Female", "Male"],
+        "coats": distinct(Listing.coat),
+        "colors": distinct(Listing.color),
+        "shelters": distinct(Listing.shelter),
     }
-    return render_template("listings.html", rows=rows, filters=filters, options=options)
+    query_args = {key: value for key, value in filters.items() if value}
+    query_args["sort"] = sort_key
+    page_links = [
+        (number, url_for("listings", **query_args, page=number))
+        for number in range(1, total_pages + 1)
+    ]
+    return render_template(
+        "listings.html",
+        rows=page_rows,
+        filters=filters,
+        options=options,
+        sort_key=sort_key,
+        total=total,
+        page=page,
+        total_pages=total_pages,
+        page_links=page_links,
+        previous_url=url_for("listings", **query_args, page=page - 1) if page > 1 else None,
+        next_url=url_for("listings", **query_args, page=page + 1) if page < total_pages else None,
+    )
 
 
 @app.route("/listings/<slug>")
@@ -436,6 +486,90 @@ def seed_database():
         ("Willow Maine Coon", "Cat", "Maine Coon Mix", "Senior", "Large", "Female", "Boston, MA", "Animal Rescue League of Boston", 11, 100, "Long", "Gray", True, False, True, "A gentle long-haired cat who enjoys brushing and afternoon naps.", "Willow is easygoing and affectionate. Regular grooming keeps her coat comfortable and shiny.", 11),
         ("Ollie Poodle Mix", "Dog", "Poodle Mix", "Senior", "Medium", "Male", "Chicago, IL", "Wright-Way Rescue", 5, 225, "Curly", "Apricot", True, True, True, "A cheerful senior who still enjoys neighborhood walks and fetch.", "Ollie is adaptable, friendly with visitors, and happiest when included in everyday family life.", 4),
     ]
+    additional_listings = [
+        ("Nova Siberian Husky", "Dog", "Siberian Husky", "Young", "Large", "Female", "New York, NY", "ASPCA Adoption Center", 8, 350, "Medium", "Gray / White", True, True, False, 0),
+        ("Bruno Mastiff Mix", "Dog", "Mastiff Mix", "Adult", "Large", "Male", "New York, NY", "Urban Resource Institute", 13, 300, "Short", "Fawn", False, True, False, 5),
+        ("Daisy Cocker Spaniel", "Dog", "Cocker Spaniel", "Adult", "Medium", "Female", "New York, NY", "Bideawee", 16, 275, "Medium", "Golden", True, True, True, 7),
+        ("Remy Terrier Mix", "Dog", "Terrier Mix", "Senior", "Small", "Male", "New York, NY", "Animal Haven", 21, 225, "Wire", "Black / Tan", True, False, True, 9),
+        ("Pepper Great Dane", "Dog", "Great Dane", "Baby", "Large", "Female", "New York, NY", "Animal Care Centers of NYC", 1, 400, "Short", "Black", True, True, False, 2),
+        ("Winnie Greyhound", "Dog", "Greyhound", "Adult", "Large", "Female", "Chicago, IL", "Chicago Canine Rescue", 9, 300, "Short", "Brindle", True, True, True, 6),
+        ("Theo Boxer Mix", "Dog", "Boxer Mix", "Young", "Medium", "Male", "Chicago, IL", "PAWS Chicago", 11, 285, "Short", "Brown / White", True, True, False, 8),
+        ("Archie Dachshund", "Dog", "Dachshund", "Adult", "Small", "Male", "Chicago, IL", "One Tail at a Time", 23, 250, "Short", "Red", True, False, True, 10),
+        ("Sage Shepherd Mix", "Dog", "Shepherd Mix", "Adult", "Large", "Female", "Chicago, IL", "Chicago Animal Care and Control", 45, 200, "Medium", "Sable", False, True, False, 11),
+        ("Koda Shiba Inu", "Dog", "Shiba Inu", "Young", "Medium", "Male", "Seattle, WA", "Seattle Humane", 10, 325, "Short", "Red / Cream", False, True, True, 3),
+        ("Freya Golden Retriever", "Dog", "Golden Retriever", "Adult", "Large", "Female", "Seattle, WA", "Homeward Pet Adoption Center", 14, 375, "Long", "Golden", True, True, True, 4),
+        ("Ziggy Cattle Dog", "Dog", "Australian Cattle Dog", "Adult", "Medium", "Male", "Seattle, WA", "Seattle Animal Shelter", 27, 280, "Short", "Blue Merle", False, True, False, 5),
+        ("Pearl Great Pyrenees", "Dog", "Great Pyrenees", "Senior", "Large", "Female", "Seattle, WA", "Pasado's Safe Haven", 19, 240, "Long", "White", True, True, True, 6),
+        ("Benny Boston Terrier", "Dog", "Boston Terrier", "Baby", "Small", "Male", "Seattle, WA", "Emerald City Pet Rescue", 3, 390, "Short", "Black / White", True, True, True, 7),
+        ("Rudy Pit Bull Mix", "Dog", "Pit Bull Terrier Mix", "Adult", "Large", "Male", "Austin, TX", "Austin Pets Alive!", 12, 225, "Short", "Blue / White", True, True, False, 8),
+        ("Maisie Corgi Mix", "Dog", "Pembroke Welsh Corgi Mix", "Young", "Medium", "Female", "Austin, TX", "Austin Humane Society", 6, 310, "Medium", "Tan / White", True, True, True, 9),
+        ("Hank Hound Mix", "Dog", "Hound Mix", "Senior", "Large", "Male", "Austin, TX", "Texas Humane Heroes", 31, 190, "Short", "Tricolor", True, True, True, 10),
+        ("Tilly Papillon", "Dog", "Papillon", "Adult", "Small", "Female", "Austin, TX", "Central Texas SPCA", 17, 260, "Long", "White / Brown", False, False, True, 11),
+        ("Leo Vizsla Mix", "Dog", "Vizsla Mix", "Baby", "Medium", "Male", "Austin, TX", "Love-A-Bull", 2, 360, "Short", "Rust", True, True, False, 0),
+        ("Gus English Bulldog", "Dog", "English Bulldog", "Adult", "Medium", "Male", "Boston, MA", "Animal Rescue League of Boston", 20, 350, "Short", "White / Fawn", True, False, True, 1),
+        ("Phoebe Samoyed", "Dog", "Samoyed", "Young", "Large", "Female", "Boston, MA", "MSPCA-Angell", 7, 410, "Long", "White", True, True, True, 2),
+        ("Finn Schnauzer", "Dog", "Miniature Schnauzer", "Senior", "Small", "Male", "Boston, MA", "Last Hope K9 Rescue", 25, 230, "Wire", "Salt / Pepper", False, True, True, 3),
+        ("Rosie English Setter", "Dog", "English Setter", "Adult", "Large", "Female", "Boston, MA", "Great Dog Rescue New England", 15, 320, "Long", "White / Orange", True, True, False, 4),
+        ("Ace Whippet", "Dog", "Whippet", "Young", "Medium", "Male", "Boston, MA", "Northeast Animal Shelter", 4, 335, "Short", "Brindle / White", True, True, True, 5),
+        ("Mabel Persian", "Cat", "Persian", "Adult", "Small", "Female", "Chicago, IL", "Tree House Humane Society", 8, 175, "Long", "Cream", True, False, True, 6),
+        ("Theo Siamese", "Cat", "Siamese", "Young", "Medium", "Male", "Chicago, IL", "Felines & Canines", 12, 160, "Short", "Seal Point", False, False, True, 7),
+        ("Saffron Abyssinian", "Cat", "Abyssinian", "Young", "Small", "Female", "Chicago, IL", "Harmony House for Cats", 5, 170, "Short", "Ruddy", True, False, False, 8),
+        ("Jasper Russian Blue", "Cat", "Russian Blue", "Young", "Medium", "Male", "New York, NY", "ASPCA Adoption Center", 7, 155, "Short", "Gray", True, False, True, 9),
+        ("Olive Ragdoll Mix", "Cat", "Ragdoll Mix", "Adult", "Large", "Female", "New York, NY", "Animal Haven", 18, 145, "Long", "Cream / Brown", True, True, True, 10),
+        ("Wren Bombay", "Cat", "Bombay", "Senior", "Small", "Female", "New York, NY", "Bideawee", 28, 95, "Short", "Black", False, False, True, 11),
+        ("Mochi Siamese Mix", "Cat", "Siamese Mix", "Baby", "Small", "Female", "Seattle, WA", "Seattle Humane", 3, 185, "Short", "Lynx Point", True, True, True, 0),
+        ("Felix American Shorthair", "Cat", "American Shorthair", "Senior", "Medium", "Male", "Seattle, WA", "Seattle Animal Shelter", 24, 90, "Short", "Silver Tabby", True, False, True, 1),
+        ("Zola Bengal Mix", "Cat", "Bengal Mix", "Young", "Medium", "Female", "Austin, TX", "Austin Pets Alive!", 6, 180, "Short", "Brown Spotted", False, True, False, 2),
+        ("Otis American Shorthair", "Cat", "American Shorthair", "Senior", "Medium", "Male", "Austin, TX", "Austin Humane Society", 22, 100, "Short", "Orange Tabby", True, False, True, 3),
+        ("Pearl Snowshoe", "Cat", "Snowshoe", "Adult", "Small", "Female", "Austin, TX", "Texas Humane Heroes", 10, 135, "Short", "Seal Point / White", True, True, True, 4),
+        ("Beans Norwegian Forest Cat", "Cat", "Norwegian Forest Cat", "Young", "Large", "Male", "Boston, MA", "Animal Rescue League of Boston", 9, 165, "Long", "Brown Tabby / White", True, False, True, 5),
+        ("Nora Turkish Angora", "Cat", "Turkish Angora", "Adult", "Medium", "Female", "Boston, MA", "Northeast Animal Shelter", 14, 150, "Long", "White", False, False, True, 6),
+        ("Fern Mini Rex", "Rabbit", "Mini Rex", "Young", "Small", "Female", "Seattle, WA", "Seattle Animal Shelter", 4, 70, "Short", "Chocolate", True, False, False, 7),
+        ("Juniper Flemish Giant", "Rabbit", "Flemish Giant", "Adult", "Medium", "Female", "Seattle, WA", "Seattle Humane", 15, 85, "Short", "Sandy", True, False, False, 8),
+        ("Pepper Lionhead", "Rabbit", "Lionhead", "Adult", "Small", "Male", "Seattle, WA", "Emerald City Pet Rescue", 20, 65, "Long", "Black", False, False, False, 9),
+        ("Clover Dutch Rabbit", "Rabbit", "Dutch", "Young", "Small", "Female", "New York, NY", "Animal Care Centers of NYC", 8, 80, "Short", "Black / White", True, False, False, 10),
+        ("Biscuit English Spot", "Rabbit", "English Spot", "Adult", "Medium", "Male", "Chicago, IL", "Red Door Animal Shelter", 17, 75, "Short", "White / Brown", True, False, False, 11),
+        ("Thumper Rex Rabbit", "Rabbit", "Rex", "Senior", "Medium", "Male", "Austin, TX", "House Rabbit Resource Network", 26, 60, "Short", "Castor", False, False, False, 0),
+        ("Pippa Angora Rabbit", "Rabbit", "English Angora", "Baby", "Small", "Female", "Boston, MA", "House Rabbit Network", 5, 90, "Long", "White", True, False, False, 1),
+        ("Pecan Abyssinian Guinea Pig", "Guinea Pig", "Abyssinian", "Adult", "Small", "Female", "Chicago, IL", "Red Door Animal Shelter", 13, 45, "Rough", "Brown / White", True, False, False, 2),
+        ("Marbles Teddy Guinea Pig", "Guinea Pig", "Teddy", "Young", "Small", "Male", "Seattle, WA", "Seattle Animal Shelter", 7, 50, "Plush", "Tricolor", True, False, False, 3),
+        ("Tofu Peruvian Guinea Pig", "Guinea Pig", "Peruvian", "Adult", "Small", "Male", "Boston, MA", "MSPCA-Angell", 16, 55, "Long", "White / Tan", False, False, False, 4),
+    ]
+    species_image_indices = {
+        "Dog": (0, 4, 5, 6, 7),
+        "Cat": (1, 8, 9, 10, 11),
+        "Rabbit": (2,),
+        "Guinea Pig": (3,),
+    }
+    image_index_overrides = {
+        "Pepper Great Dane": 0, "Leo Vizsla Mix": 4, "Benny Boston Terrier": 4,
+        "Ace Whippet": 5, "Maisie Corgi Mix": 7, "Phoebe Samoyed": 0,
+        "Nova Siberian Husky": 6, "Winnie Greyhound": 7, "Koda Shiba Inu": 4,
+        "Theo Boxer Mix": 6, "Rudy Pit Bull Mix": 0, "Bruno Mastiff Mix": 5,
+        "Freya Golden Retriever": 7, "Rosie English Setter": 6, "Daisy Cocker Spaniel": 0,
+        "Tilly Papillon": 7, "Pearl Great Pyrenees": 0, "Gus English Bulldog": 7,
+        "Remy Terrier Mix": 5, "Archie Dachshund": 0, "Finn Schnauzer": 4,
+        "Ziggy Cattle Dog": 6, "Hank Hound Mix": 5, "Sage Shepherd Mix": 7,
+        "Mochi Siamese Mix": 8, "Saffron Abyssinian": 10, "Zola Bengal Mix": 8,
+        "Jasper Russian Blue": 1, "Mabel Persian": 10, "Beans Norwegian Forest Cat": 9,
+        "Pearl Snowshoe": 10, "Theo Siamese": 1, "Nora Turkish Angora": 8,
+        "Olive Ragdoll Mix": 9, "Otis American Shorthair": 10,
+        "Felix American Shorthair": 11, "Wren Bombay": 1,
+    }
+    for values in additional_listings:
+        name, species, breed, age, size, gender, location, shelter = values[:8]
+        first_name = name.split()[0]
+        summary = f"{first_name} is a {age.lower()} {breed.lower()} ready for a patient, caring home."
+        story = (
+            f"The team at {shelter} describes {first_name} as an engaging companion. "
+            f"Ask the adoption team about routines, introductions, and the best fit for this {size.lower()} {species.lower()}."
+        )
+        image_choices = species_image_indices[species]
+        image_index = image_index_overrides.get(
+            name,
+            image_choices[sum(ord(character) for character in name) % len(image_choices)],
+        )
+        listings.append(values[:-1] + (summary, story, image_index))
     columns = (
         "name", "species", "breed", "age", "size", "gender", "location", "shelter",
         "days_on_petfinder", "adoption_fee", "coat", "color", "good_with_children",
@@ -452,6 +586,13 @@ def seed_database():
         ("Questions to ask an animal shelter", "Finding a pet", 5, "Learn about a pet's routine, health, and behavior before making a match.", "Shelter staff and foster families can share details that are not obvious from a profile. Ask how the pet behaves at home, around visitors, and during handling.\n\nConfirm which medical records, supplies, and follow-up support come with the adoption.", "Questions worth bringing", "What does a typical day look like for this pet?|Has the pet lived with children, dogs, or cats?|What medical care or training should continue after adoption?"),
         ("Introducing a rescue pet", "Pet care", 6, "Help a new pet meet people and resident animals at a comfortable pace.", "Start with scent and distance rather than face-to-face contact. Short, successful sessions are better than a long introduction.\n\nWatch body language and separate the animals before either becomes overwhelmed.", "Keep introductions low pressure", "Exchange bedding before the first meeting|Reward calm behavior on both sides of a gate|Give every pet separate food, water, and resting areas"),
         ("Understanding adoption fees", "Adopting pets", 4, "See what an adoption fee may cover and what to budget for after adoption.", "Adoption fees often help shelters provide vaccinations, microchips, spay or neuter surgery, and daily care. Included services vary by organization.\n\nAsk for an itemized explanation and plan separately for food, licensing, grooming, and future veterinary care.", "Budget beyond adoption day", "Confirm which vaccinations are current|Ask whether a microchip transfer is included|Plan an emergency veterinary fund"),
+        ("Choosing the right dog for your routine", "Finding a pet", 7, "Match a dog's energy, size, and support needs to everyday life.", "Think about your weekday schedule, activity level, visitors, and the space available at home. Breed labels are only one clue; ask about the individual dog's behavior and recovery needs.\n\nA realistic match gives both adopter and dog room to settle in successfully.", "Look beyond first impressions", "Ask about daily exercise needs|Discuss behavior in a foster home|Plan care for workdays and travel"),
+        ("Helping a shy cat feel safe", "Pet care", 6, "Use choice, routine, and quiet spaces to help a reserved cat decompress.", "Start with one calm room and let the cat decide when to approach. Predictable meals and gentle play can make a new environment feel safer.\n\nAvoid pulling a hiding cat into the open; small signs of curiosity are meaningful progress.", "Build trust at the cat's pace", "Provide covered hiding places|Sit nearby without reaching|Reward voluntary approaches"),
+        ("Rabbit housing essentials", "Pet care", 5, "Create an indoor rabbit space with room to move, hide, and forage.", "Rabbits need more than a small cage. Use an exercise pen or rabbit-proofed room with traction, litter, hay, water, and safe chew materials.\n\nDaily movement and social time support physical and emotional health.", "Set up a rabbit-friendly space", "Offer unlimited grass hay|Cover cords and unsafe baseboards|Include a hide box and non-slip flooring"),
+        ("Meeting a pet in foster care", "Finding a pet", 4, "Prepare useful questions before meeting a foster-based pet.", "Foster caregivers can often describe how a pet behaves during ordinary household routines. Share an honest picture of your home so the rescue can help assess fit.\n\nPay attention to recovery after excitement as well as the initial greeting.", "Make the meeting informative", "Describe your household schedule|Ask about triggers and comforts|Discuss a gradual transition plan"),
+        ("Your new pet's first veterinary visit", "Pet health", 6, "Organize records and questions for an early wellness appointment.", "Bring the shelter's medical paperwork, current medications, and feeding details. Your veterinarian can review preventive care and help set priorities for the first months.\n\nCall ahead if your pet is fearful or needs a quieter arrival plan.", "Prepare for the appointment", "Bring adoption medical records|List food and medications|Write down behavior or health questions"),
+        ("Safe travel home after adoption", "Adopting pets", 4, "Plan a secure, low-stress trip from the shelter to your home.", "Use an appropriate carrier or vehicle restraint before leaving the adoption center. Keep the trip direct and calm, with doors and windows secured.\n\nHave the pet's quiet settling area ready before arrival.", "Before leaving the shelter", "Fit a secure collar or carrier|Confirm your direct route home|Keep a towel and cleanup supplies nearby"),
+        ("Building a predictable feeding routine", "Pet care", 5, "Use consistent meals and measured portions while your pet settles in.", "Ask what and when the pet has been eating, then make dietary changes gradually. Regular meal times also help with training and observation.\n\nContact a veterinarian if appetite changes suddenly or digestive signs persist.", "Support healthy eating habits", "Measure each meal|Change foods gradually|Track appetite during the first week"),
     ]
     for title, category, read_minutes, summary, body, section_heading, checklist in guides:
         db.session.add(Guide(slug=slugify(title), title=title, category=category, read_minutes=read_minutes, summary=summary, body=body, section_heading=section_heading, checklist=checklist))

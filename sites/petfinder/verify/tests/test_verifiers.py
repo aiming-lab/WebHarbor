@@ -36,7 +36,7 @@ ANSWERS = {
     0: "Milo Labrador Mix is at Hudson Valley Animal Rescue and has been on Petfinder for 3 days.",
     1: "Luna Domestic Shorthair is Female and is at PAWS Chicago.",
     2: "Nori Rabbit is at Seattle Animal Shelter. The adoption fee is $75.",
-    3: "Nori is a Holland Lop Mix, Adult, in Seattle, WA.",
+    3: "Nori's adoption fee is $75, her coat is Short, and her shelter is Seattle Animal Shelter.",
     4: "There are 2 favorite pets: Milo Labrador Mix and Nori Rabbit.",
     5: "Saved preferences: Chicago, IL and Newest pets first.",
     6: (
@@ -286,6 +286,10 @@ class VerifierMatrixTests(unittest.TestCase):
         self.assert_fails(3, trajectory(3, paths=[url("/search", {"q": "Nori"})]))
         wrong_numbers = "Ollie Poodle Mix has fewer days: Ollie has 15 days and Maple has 180 days."
         self.assert_fails(7, trajectory(7, answer=wrong_numbers))
+
+    def test_task_three_rejects_facts_visible_on_search_card_only(self):
+        leaked_card_answer = "Nori is a Holland Lop Mix, Adult, in Seattle, WA."
+        self.assert_fails(3, trajectory(3, answer=leaked_card_answer))
 
     def test_login_tasks_require_credential_inputs(self):
         for index in (4, 5, 8, 9):

@@ -89,7 +89,8 @@ def _main(index: int):
     elif index == 3:
         judge.check("site_search_used", search_used(trajectory, "Nori"), "search q contains Nori")
         judge.check("nori_detail_opened", visited_path(trajectory, "/pets/nori-rabbit"), "detail URL")
-        judge.check("answer_complete", contains_all(answer, ["Holland Lop Mix", "Adult", "Seattle, WA"]), repr(answer))
+        judge.check("answer_detail_facts", contains_all(answer, ["Short", "Seattle Animal Shelter"]), repr(answer))
+        judge.check("answer_fee", has_number(answer, 75), repr(answer))
     elif index == 4:
         judge.check("login_and_account_opened", visited_path(trajectory, "/login") and visited_path(trajectory, "/account"), "login + account")
         judge.check("answer_names", contains_all(answer, ["Milo Labrador Mix", "Nori Rabbit"]), repr(answer))

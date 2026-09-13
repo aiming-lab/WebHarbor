@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import importlib
 import html
+import json
 import os
 import re
 import shutil
@@ -102,8 +103,8 @@ class AppTests(unittest.TestCase):
 
     def test_seed_has_domain_correct_taxonomy_and_facts(self):
         with self.app.app_context():
-            self.assertEqual(self.module.Listing.query.count(), 13)
-            self.assertEqual(self.module.Guide.query.count(), 5)
+            self.assertEqual(self.module.Listing.query.count(), 60)
+            self.assertEqual(self.module.Guide.query.count(), 12)
             self.assertEqual(self.module.User.query.count(), 4)
             ivy = self.module.Listing.query.filter_by(slug="ivy-calico").one()
             scout = self.module.Listing.query.filter_by(slug="scout-border-collie").one()
@@ -111,6 +112,87 @@ class AppTests(unittest.TestCase):
             self.assertEqual(scout.species, "Dog")
             self.assertFalse(hasattr(ivy, "score"))
             self.assertFalse(hasattr(ivy, "price"))
+
+    def test_seed_preserves_catalog_and_task_scope_complexity(self):
+        with self.app.app_context():
+            Listing = self.module.Listing
+            species_counts = {
+                species: count
+                for species, count in self.module.db.session.query(
+                    Listing.species,
+                    self.module.db.func.count(Listing.id),
+                ).group_by(Listing.species)
+            }
+            self.assertEqual(
+                species_counts,
+                {"Dog": 30, "Cat": 18, "Rabbit": 8, "Guinea Pig": 4},
+            )
+            self.assertGreaterEqual(
+                self.module.db.session.query(Listing.breed).distinct().count(),
+                30,
+            )
+            self.assertGreaterEqual(
+                self.module.db.session.query(Listing.shelter).distinct().count(),
+                15,
+            )
+            allowed_images = {
+                "Dog": {0, 4, 5, 6, 7},
+                "Cat": {1, 8, 9, 10, 11},
+                "Rabbit": {2},
+                "Guinea Pig": {3},
+            }
+            for listing in Listing.query.all():
+                self.assertIn(listing.image_index, allowed_images[listing.species], listing.name)
+            for species in ("Dog", "Cat"):
+                ordered = Listing.query.filter_by(species=species).order_by(
+                    Listing.days_on_petfinder.asc(), Listing.id.asc()
+                ).all()
+                for previous, current in zip(ordered, ordered[1:]):
+                    self.assertNotEqual(
+                        previous.image_index,
+                        current.image_index,
+                        f"adjacent repeated image: {previous.name} / {current.name}",
+                    )
+
+            def count(**filters):
+                return Listing.query.filter_by(**filters).count()
+
+            self.assertEqual(
+                count(
+                    species="Dog",
+                    location="New York, NY",
+                    age="Adult",
+                    size="Large",
+                    good_with_children=True,
+                ),
+                1,
+            )
+            self.assertGreaterEqual(count(species="Dog", location="New York, NY"), 6)
+            self.assertEqual(
+                count(
+                    species="Cat",
+                    location="Chicago, IL",
+                    age="Young",
+                    size="Small",
+                    good_with_cats=True,
+                ),
+                1,
+            )
+            self.assertGreaterEqual(count(species="Cat", location="Chicago, IL"), 3)
+            self.assertEqual(
+                count(
+                    species="Rabbit",
+                    location="Seattle, WA",
+                    age="Adult",
+                    size="Small",
+                    good_with_children=True,
+                ),
+                1,
+            )
+            self.assertGreaterEqual(count(species="Rabbit"), 8)
+            self.assertGreaterEqual(count(species="Rabbit", location="Seattle, WA"), 3)
+            self.assertEqual(count(species="Dog", location="Chicago, IL", age="Senior"), 2)
+            self.assertGreaterEqual(count(species="Dog", location="Chicago, IL"), 6)
 
     def test_combined_filters_have_one_intended_match(self):
         response = self.client.get(
@@ -123,8 +205,63 @@ class AppTests(unittest.TestCase):
 
     def test_filter_controls_have_stable_accessible_names(self):
         body = self.client.get("/pets").get_data(as_text=True)
-        for label in ("ANIMAL", "LOCATION", "AGE", "SIZE", "GENDER"):
+        for label in (
+            "ANIMAL",
+            "LOCATION",
+            "BREED",
+            "AGE",
+            "SIZE",
+            "GENDER",
+            "COAT LENGTH",
+            "COLOR",
+            "DAYS ON PETFINDER",
+            "SHELTER OR RESCUE",
+            "SORT RESULTS",
+        ):
             self.assertIn(f'aria-label="{label}"', body)
+
+    def test_pet_results_are_paginated_sorted_and_keep_query_state(self):
+        first = self.client.get("/pets").get_data(as_text=True)
+        self.assertIn("60 pets found", first)
+        self.assertIn("Page 1 of 5", first)
+        self.assertEqual(first.count('class="pet-card"'), 12)
+        self.assertIn("page=2", first)
+
+        second = self.client.get("/pets?page=2").get_data(as_text=True)
+        self.assertIn("Page 2 of 5", second)
+        self.assertEqual(second.count('class="pet-card"'), 12)
+        self.assertNotEqual(
+            re.findall(r'<h3><a[^>]*>(.*?)</a></h3>', first),
+            re.findall(r'<h3><a[^>]*>(.*?)</a></h3>', second),
+        )
+
+        longest = self.client.get("/pets?sort=longest").get_data(as_text=True)
+        names = re.findall(r'<h3><a[^>]*>(.*?)</a></h3>', longest)
+        self.assertTrue(names)
+        self.assertEqual(names[0], "Sage Shepherd Mix")
+        self.assertIn('option value="longest" selected', longest)
+
+        filtered = self.client.get("/pets?species=Dog&sort=name&page=1").get_data(as_text=True)
+        self.assertIn("species=Dog", filtered)
+        self.assertIn("sort=name", filtered)
+
+    def test_source_like_additional_filters_are_functional(self):
+        response = self.client.get(
+            "/pets?species=Cat&breed=Calico&coat=Short&color=Calico&days=14&shelter=Austin+Pets+Alive%21"
+        )
+        body = response.get_data(as_text=True)
+        self.assertEqual(body.count('class="pet-card"'), 1)
+        self.assertIn("Ivy Calico", body)
+
+    def test_task_three_requires_detail_only_facts(self):
+        rows = [json.loads(line) for line in (SITE_DIR / "tasks.jsonl").read_text().splitlines() if line.strip()]
+        task = rows[3]
+        self.assertIn("adoption fee", task["ques"])
+        self.assertIn("coat", task["ques"])
+        self.assertIn("shelter", task["ques"])
+        search_body = self.client.get("/search?q=Nori").get_data(as_text=True)
+        self.assertNotIn("$75", search_body)
+        self.assertNotIn("Seattle Animal Shelter", search_body)
 
     def test_search_finds_name_and_not_filter_labels(self):
         body = self.client.get("/search?q=Nori").get_data(as_text=True)
