@@ -33,18 +33,18 @@ gh pr checkout <pr-number>
 ./scripts/fetch_assets.sh             # pull the pinned HF revision
 ./scripts/build.sh webharbor:dev
 docker run -d --rm --name wh-review \
-  -p 8201:8101 -p 41000-41027:40000-40027 webharbor:dev
+  -p 8201:8101 -p 41000-41028:40000-40028 webharbor:dev
 ```
 
-Confirm the new/changed site is on the expected port (40000 + index). Note: the image now runs 28 sites (40000-40027).
+Confirm the new/changed site is on the expected port (40000 + index). Note: the image now runs 29 sites (40000-40028).
 
 ### Step 2: The mechanical checks (5 minutes)
 
 Run the same Pre-PR checks the contributor was supposed to run.
 
 ```bash
-# 1. all 28 sites return 200
-for p in $(seq 41000 41027); do
+# 1. all 29 sites return 200
+for p in $(seq 41000 41028); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
@@ -231,7 +231,7 @@ Leave a structured comment on the PR:
 ## Review: <site_name>
 
 ### Mechanical checks: PASS / FAIL
-- [x] All 28 sites return 200
+- [x] All 29 sites return 200
 - [x] Control plane healthy
 - [x] Byte-identical reset (md5 match)
 - [x] Parallel reset <10s

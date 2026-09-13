@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}My BabyCenter{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">My BabyCenter</div><h1>{{ user.display_name }}</h1><p>{{ user.parenting_stage }} · {{ user.email }}</p></div></section>
+<section class="account-layout">
+  <form class="side-form" method="post" action="{{ url_for('update_tracker') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Tracker</h2>
+    <label>Stage
+      <select name="parenting_stage">
+        {% for stage in ["Pregnancy", "Planning for birth", "New baby", "Baby"] %}
+          <option value="{{ stage }}" {% if stage == user.parenting_stage %}selected{% endif %}>{{ stage }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Due date <input type="date" name="due_date" value="{{ user.due_date }}"></label>
+    <label>Baby birthdate <input type="date" name="baby_birthdate" value="{{ user.baby_birthdate or '' }}"></label>
+    <button type="submit">Update tracker</button>
+  </form>
+  <div>
+    <form class="profile-form" method="post" action="{{ url_for('update_profile') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Display name <input name="display_name" maxlength="120" value="{{ user.display_name }}" required></label>
+      <button type="submit">Update profile</button>
+    </form>
+    <div class="tracker-card"><span>Pregnancy week</span><strong>Week {{ week.week }}</strong><a href="{{ url_for('week_detail', week=week.week) }}">{{ week.headline }}</a></div>
+    {% if month %}<div class="tracker-card"><span>Baby age</span><strong>Month {{ month.month }}</strong><a href="{{ url_for('month_detail', month=month.month) }}">{{ month.headline }}</a></div>{% endif %}
+    <h2>Saved items</h2>
+    <div class="list-panel">
+      {% for item in saved %}<div class="list-row saved-row"><span><strong>{{ item.item_type|title }}: {{ item.display_title }}</strong><small>{{ item.note }}</small></span><form method="post" action="{{ url_for('remove_saved_item', item_id=item.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="link-button danger" type="submit" aria-label="Remove {{ item.item_type }} {{ item.display_title }}">Remove</button></form></div>{% else %}<p class="empty-state">No saved items yet.</p>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

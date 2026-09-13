@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}BabyCenter — Pregnancy and parenting{% endblock %}
+{% block content %}
+<section class="journey-strip">
+  <div class="shell journey-inner">
+    <strong>Where are you in your journey?</strong>
+    <a href="{{ url_for('due_date_calculator') }}"><span>♡</span><b>Trying to conceive</b><small>Start with your dates</small></a>
+    <a href="{{ url_for('week_index') }}"><span>◌</span><b>I'm pregnant</b><small>Follow every stage</small></a>
+    <a href="{{ url_for('month_index') }}"><span>☀</span><b>I have a baby</b><small>Explore age checkpoints</small></a>
+  </div>
+</section>
+
+<section class="home-hero shell">
+  <img src="{{ url_for('static', filename='images/hero-pregnancy.jpg') }}" alt="Expectant parent resting a hand on their belly">
+  <div class="hero-copy">
+    <div class="eyebrow">Your pregnancy, your way</div>
+    <h1>Guidance for every little moment</h1>
+    <p>Use sourced week-by-week guides, practical tools, and a parent community as your family grows.</p>
+    <div class="button-row"><a class="button primary" href="{{ url_for('week_index') }}">Explore pregnancy</a><a class="text-link" href="{{ url_for('register') }}">Personalize my journey →</a></div>
+  </div>
+</section>
+
+<section class="week-progress shell">
+  <div class="section-head"><div><div class="eyebrow">Pregnancy tracker</div><h2>My pregnancy week by week</h2></div><a class="text-link" href="{{ url_for('week_index') }}">See all weeks →</a></div>
+  <div class="week-rail">
+    {% for item in week_nav %}<a class="{{ 'active' if item.week == week.week }}" href="{{ url_for('week_detail', week=item.week) }}"><span>Week</span><strong>{{ item.week }}</strong></a>{% endfor %}
+  </div>
+  <div class="week-feature">
+    <img src="{{ url_for('static', filename='images/ultrasound.jpg') }}" alt="Prenatal ultrasound">
+    <div><small>{{ week.stage }}</small><h3>Week {{ week.week }}: a closer look</h3><p>Open this checkpoint for sourced development, pregnancy context, and a care reminder.</p><a class="button" href="{{ url_for('week_detail', week=week.week) }}">Go to week {{ week.week }}</a></div>
+  </div>
+</section>
+
+<section class="app-promo">
+  <div class="shell app-inner">
+    <div><div class="eyebrow light">A calmer way to keep track</div><h2>Your journey, all in one place</h2><p>Create a profile to save useful pages, update your stage, and return to the checkpoint that matters now.</p><a class="button pale" href="{{ url_for('register') }}">Create your profile</a></div>
+    <div class="phone" aria-hidden="true"><div class="phone-notch"></div><strong>Today</strong><div class="phone-orbit">{{ week.week }}</div><b>weeks</b><small>{{ week.stage }}</small></div>
+  </div>
+</section>
+
+<section class="section tool-section">
+  <div class="section-head"><div><div class="eyebrow">Made for real life</div><h2>Popular tools</h2></div></div>
+  <div class="tool-grid">
+    <a href="{{ url_for('due_date_calculator') }}"><span>◷</span><strong>Due date calculator</strong><small>Estimate your date</small></a>
+    <a href="{{ url_for('week_index') }}"><span>◉</span><strong>Pregnancy tracker</strong><small>Browse every stage</small></a>
+    <a href="{{ url_for('month_index') }}"><span>☆</span><strong>Baby age guide</strong><small>Development checkpoints</small></a>
+    <a href="{{ url_for('articles') }}"><span>✚</span><strong>Health library</strong><small>Open-source explainers</small></a>
+    <a href="{{ url_for('articles', trimester='First trimester') }}"><span>≈</span><strong>Trimester guides</strong><small>Advice by stage</small></a>
+    <a href="{{ url_for('search', q='sleep') }}"><span>☾</span><strong>Sleep topics</strong><small>Search the library</small></a>
+    <a href="{{ url_for('community') }}"><span>⌁</span><strong>Birth clubs</strong><small>Hear from parents</small></a>
+    <a href="{{ url_for('account') if current_user else url_for('login') }}"><span>♡</span><strong>Saved advice</strong><small>Keep pages close</small></a>
+  </div>
+</section>
+
+<section class="feature-band">
+  <div class="shell feature-pair">
+    <article><img src="{{ url_for('static', filename='images/expecting-baby.jpg') }}" alt="Pregnant parent outdoors"><div><span class="eyebrow">Pregnancy</span><h2>Know what to expect next</h2><p>Browse sourced checkpoints from early pregnancy through the final weeks.</p><a class="text-link" href="{{ url_for('week_index') }}">Pregnancy week by week →</a></div></article>
+    <article><img src="{{ url_for('static', filename='images/baby-six-months.jpg') }}" alt="Baby sitting with support"><div><span class="eyebrow">Baby</span><h2>Watch new skills unfold</h2><p>Explore physical, motor, communication, and social development by age.</p><a class="text-link" href="{{ url_for('month_index') }}">Baby month by month →</a></div></article>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head"><div><div class="eyebrow">Read and learn</div><h2>Latest articles</h2></div><a class="text-link" href="{{ url_for('articles') }}">View all →</a></div>
+  <div class="article-grid">
+    {% for article in articles %}<article class="article-card"><a class="card-image" href="{{ url_for('article_detail', slug=article.slug) }}"><img src="{{ url_for('static', filename='images/' ~ article_image(article.slug)) }}" alt=""></a><div><span class="eyebrow">{{ article.category }}</span><h3><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h3><small>{{ article.read_minutes }} min read</small></div></article>{% endfor %}
+  </div>
+</section>
+
+<section class="community-band">
+  <div class="shell community-home"><div><div class="eyebrow light">From the community</div><h2>Parents helping parents</h2><p>Browse conversations by birth club, then open a thread for its full details.</p><a class="button pale" href="{{ url_for('community') }}">Visit the community</a></div><div class="community-stack">{% for post in posts %}<a href="{{ url_for('community_detail', slug=post.slug) }}"><small>{{ post.club }}</small><strong>{{ post.title }}</strong><span>Active {{ post.last_active }} →</span></a>{% endfor %}</div></div>
+</section>
+{% endblock %}
