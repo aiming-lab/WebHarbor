@@ -1,1 +1,11 @@
-{% extends "base.html" %}{% block title %}{{ guide.title }}{% endblock %}{% block content %}<article class="article-detail"><div class="eyebrow">{{ guide.topic }} · {{ guide.read_minutes }} min read</div><h1>{{ guide.title }}</h1><p class="lede">{{ guide.summary }}</p><p>{{ guide.body }}</p></article>{% endblock %}
+{% extends "base.html" %}
+{% block title %}{{ guide.title }} | Petfinder{% endblock %}
+{% block content %}
+<article class="article-detail">
+  <p class="eyebrow">{{ guide.category|upper }} · {{ guide.read_minutes }} MIN READ</p>
+  <h1>{{ guide.title }}</h1><p class="lede">{{ guide.summary }}</p>
+  {% for paragraph in guide.paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
+  <section class="checklist"><h2>{{ guide.section_heading }}</h2><ul>{% for item in guide.checklist_items %}<li>{{ item }}</li>{% endfor %}</ul></section>
+  <a class="back-link" href="{{ url_for('guides') }}">← All pet care articles</a>
+</article>
+{% endblock %}

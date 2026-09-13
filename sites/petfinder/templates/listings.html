@@ -1,5 +1,43 @@
-{% extends "base.html" %}{% block title %}{{ config.entity }}s{% endblock %}{% block content %}
-<section class="page-heading"><div><div class="eyebrow">Browse</div><h1>{{ config.entity }}s</h1><p>{{ config.tagline }}</p></div></section>
-<form class="filter-bar" action="{{ url_for('listings') }}"><select name="category"><option value="">All categories</option>{% for x in categories %}<option value="{{ x }}" {% if x == category %}selected{% endif %}>{{ x }}</option>{% endfor %}</select><select name="region"><option value="">All regions</option>{% for x in regions %}<option value="{{ x }}" {% if x == region %}selected{% endif %}>{{ x }}</option>{% endfor %}</select><input type="number" name="max_price" placeholder="Max price" value="{{ max_price or '' }}"><button type="submit">Apply</button></form>
-<section class="card-grid section">{% for item in rows %}{% include "_card.html" %}{% endfor %}</section>
+{% extends "base.html" %}
+{% block title %}Pets for Adoption | Petfinder{% endblock %}
+{% block content %}
+<section class="search-page-head">
+  <p class="eyebrow">FIND A PET</p>
+  <h1>Pets for Adoption</h1>
+  <p>Refine your search to find a companion who fits your home.</p>
+</section>
+<div class="listing-layout">
+  <aside class="filters">
+    <form method="get" action="{{ url_for('listings') }}">
+      <h2>Filters</h2>
+      <label>ANIMAL
+        <select name="species"><option value="">All animals</option>{% for value in options.species %}<option {% if filters.species == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select>
+      </label>
+      <label>LOCATION
+        <select name="location"><option value="">Anywhere</option>{% for value in options.locations %}<option {% if filters.location == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select>
+      </label>
+      <label>AGE
+        <select name="age"><option value="">Any age</option>{% for value in options.ages %}<option {% if filters.age == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select>
+      </label>
+      <label>SIZE
+        <select name="size"><option value="">Any size</option>{% for value in options.sizes %}<option {% if filters.size == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select>
+      </label>
+      <label>GENDER
+        <select name="gender"><option value="">Any gender</option>{% for value in options.genders %}<option {% if filters.gender == value %}selected{% endif %}>{{ value }}</option>{% endfor %}</select>
+      </label>
+      <fieldset>
+        <legend>GOOD WITH</legend>
+        <label class="check"><input type="checkbox" name="good_with_children" value="1" {% if filters.good_with_children == '1' %}checked{% endif %}> Children</label>
+        <label class="check"><input type="checkbox" name="good_with_dogs" value="1" {% if filters.good_with_dogs == '1' %}checked{% endif %}> Dogs</label>
+        <label class="check"><input type="checkbox" name="good_with_cats" value="1" {% if filters.good_with_cats == '1' %}checked{% endif %}> Cats</label>
+      </fieldset>
+      <button type="submit">Apply filters</button>
+      <a class="clear-link" href="{{ url_for('listings') }}">Clear all</a>
+    </form>
+  </aside>
+  <section class="results">
+    <div class="results-heading"><h2>{{ rows|length }} pet{% if rows|length != 1 %}s{% endif %} found</h2><span>Sort: Newest arrivals</span></div>
+    {% if rows %}<div class="pet-grid">{% for item in rows %}{% include "_card.html" %}{% endfor %}</div>{% else %}<div class="empty-state"><h2>No pets found</h2><p>Try removing one or more filters.</p></div>{% endif %}
+  </section>
+</div>
 {% endblock %}

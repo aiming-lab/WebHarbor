@@ -3,26 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ config.name }}{% endblock %}</title>
+  <title>{% block title %}Petfinder{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/paw.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
 <body>
-  <header class="site-header" role="banner">
-    <a class="brand" href="{{ url_for('index') }}"><span>{{ config.name[:2] }}</span>{{ config.name }}</a>
-    <nav class="top-nav" role="navigation" aria-label="Main">
-      <a href="{{ url_for('listings') }}">{{ config.entity }}s</a>
-      <a href="{{ url_for('tools') }}">Tools</a>
-      <a href="{{ url_for('guides') }}">Guides</a>
-      <a href="{{ url_for('account') }}">Account</a>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}" aria-label="Petfinder Home">
+      <img src="{{ url_for('static', filename='icons/petfinder-logo.svg') }}" alt="Petfinder">
+    </a>
+    <nav class="primary-nav" aria-label="Main navigation">
+      <a href="{{ url_for('listings') }}">Find a Pet <span aria-hidden="true">⌄</span></a>
+      <a href="{{ url_for('guides') }}">All About Pets <span aria-hidden="true">⌄</span></a>
     </nav>
-    <form class="header-search" action="{{ url_for('search') }}">
-      <input name="q" placeholder="Search {{ config.name }}" value="{{ request.args.get('q', '') }}">
-      <button type="submit">Search</button>
-    </form>
-    <div class="account-links">{% if current_user %}<a href="{{ url_for('account') }}">{{ current_user.display_name }}</a><a href="{{ url_for('logout') }}">Sign out</a>{% else %}<a href="{{ url_for('login') }}">Sign in</a>{% endif %}</div>
+    <div class="account-nav">
+      <a class="heart-link" href="{{ url_for('account') }}" aria-label="Favorites">♥</a>
+      {% if current_user %}
+        <a class="account-name" href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+        <form method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="text-button" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a class="sign-in-link" href="{{ url_for('login') }}">Sign in</a>
+      {% endif %}
+    </div>
   </header>
-  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
-  <main>{% block content %}{% endblock %}</main>
-  <footer class="site-footer"><strong>{{ config.name }} Mirror</strong><nav><a href="{{ url_for('listings') }}">Browse</a><a href="{{ url_for('tools') }}">Tools</a><a href="{{ url_for('guides') }}">Guides</a><a href="{{ url_for('search') }}">Search</a></nav></footer>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap" role="status">
+        {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main id="main-content">{% block content %}{% endblock %}</main>
+
+  <footer class="site-footer">
+    <div class="footer-logo"><img src="{{ url_for('static', filename='icons/petfinder-logo.svg') }}" alt="Petfinder"></div>
+    <div>
+      <strong>RESOURCES</strong>
+      <a href="{{ url_for('guides') }}">Pet adoption checklist</a>
+      <a href="{{ url_for('guides') }}">Pet care articles</a>
+      <a href="{{ url_for('listings') }}">Browse adoptable pets</a>
+    </div>
+    <div>
+      <strong>ADOPT OR GET INVOLVED</strong>
+      <a href="{{ url_for('listings', species='Dog') }}">Find a dog</a>
+      <a href="{{ url_for('listings', species='Cat') }}">Find a cat</a>
+      <a href="{{ url_for('listings') }}">Other types of pets</a>
+    </div>
+    <p>Petfinder helps people discover adoptable pets from shelters and rescues.</p>
+  </footer>
 </body>
 </html>
