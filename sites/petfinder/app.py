@@ -535,49 +535,31 @@ def seed_database():
         ("Marbles Teddy Guinea Pig", "Guinea Pig", "Teddy", "Young", "Small", "Male", "Seattle, WA", "Seattle Animal Shelter", 7, 50, "Plush", "Tricolor", True, False, False, 3),
         ("Tofu Peruvian Guinea Pig", "Guinea Pig", "Peruvian", "Adult", "Small", "Male", "Boston, MA", "MSPCA-Angell", 16, 55, "Long", "White / Tan", False, False, False, 4),
     ]
-    species_image_indices = {
-        "Dog": (0, 4, 5, 6, 7),
-        "Cat": (1, 8, 9, 10, 11),
-        "Rabbit": (2,),
-        "Guinea Pig": (3,),
-    }
-    image_index_overrides = {
-        "Pepper Great Dane": 0, "Leo Vizsla Mix": 6, "Benny Boston Terrier": 4,
-        "Ace Whippet": 5, "Maisie Corgi Mix": 6, "Phoebe Samoyed": 0,
-        "Nova Siberian Husky": 6, "Winnie Greyhound": 0, "Koda Shiba Inu": 7,
-        "Theo Boxer Mix": 4, "Rudy Pit Bull Mix": 0, "Bruno Mastiff Mix": 5,
-        "Freya Golden Retriever": 0, "Rosie English Setter": 6, "Daisy Cocker Spaniel": 4,
-        "Tilly Papillon": 7, "Pearl Great Pyrenees": 5, "Gus English Bulldog": 4,
-        "Remy Terrier Mix": 7, "Archie Dachshund": 4, "Finn Schnauzer": 7,
-        "Ziggy Cattle Dog": 6, "Hank Hound Mix": 4, "Sage Shepherd Mix": 5,
-        "Mochi Siamese Mix": 8, "Saffron Abyssinian": 1, "Zola Bengal Mix": 10,
-        "Jasper Russian Blue": 8, "Mabel Persian": 10, "Beans Norwegian Forest Cat": 11,
-        "Pearl Snowshoe": 9, "Theo Siamese": 9, "Nora Turkish Angora": 11,
-        "Olive Ragdoll Mix": 8, "Otis American Shorthair": 10,
-        "Felix American Shorthair": 9, "Wren Bombay": 10,
-    }
     for values in additional_listings:
-        name, species, breed, age, size, gender, location, shelter = values[:8]
+        name, species, breed, age, size, _gender, _location, shelter = values[:8]
         first_name = name.split()[0]
         summary = f"{first_name} is a {age.lower()} {breed.lower()} ready for a patient, caring home."
         story = (
             f"The team at {shelter} describes {first_name} as an engaging companion. "
             f"Ask the adoption team about routines, introductions, and the best fit for this {size.lower()} {species.lower()}."
         )
-        image_choices = species_image_indices[species]
-        image_index = image_index_overrides.get(
-            name,
-            image_choices[sum(ord(character) for character in name) % len(image_choices)],
-        )
-        listings.append(values[:-1] + (summary, story, image_index))
+        listings.append(values[:-1] + (summary, story, 0))
     columns = (
         "name", "species", "breed", "age", "size", "gender", "location", "shelter",
         "days_on_petfinder", "adoption_fee", "coat", "color", "good_with_children",
         "good_with_dogs", "good_with_cats", "summary", "story", "image_index",
     )
+    next_image_index = {"Dog": 0, "Cat": 36, "Rabbit": 60, "Guinea Pig": 68}
+    image_index_stop = {"Dog": 36, "Cat": 60, "Rabbit": 68, "Guinea Pig": 72}
     for values in listings:
         data = dict(zip(columns, values))
         data["slug"] = slugify(data["name"])
+        species = data["species"]
+        image_index = next_image_index[species]
+        if image_index >= image_index_stop[species]:
+            raise RuntimeError(f"No unique catalog image remains for {data['name']}")
+        data["image_index"] = image_index
+        next_image_index[species] += 1
         db.session.add(Listing(**data))
 
     guides = [

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import ast
+import hashlib
 import json
 import re
 import unittest
@@ -44,10 +45,16 @@ class EnvironmentQualityTests(unittest.TestCase):
     def test_assets_and_provenance_are_declared(self):
         metadata = json.loads((SITE_DIR / "source_metadata.json").read_text())
         self.assertEqual(metadata["upstream_url"], "https://www.petfinder.com/")
-        self.assertEqual(metadata["generated_assets"]["pet_atlas"]["cells"], 12)
+        atlases = metadata["generated_assets"]["pet_atlases"]
+        self.assertEqual(len(atlases), 6)
+        self.assertEqual(sum(atlas["cells"] for atlas in atlases), 72)
+        self.assertEqual(sum(atlas["catalog_cells"] for atlas in atlases), 60)
+        for atlas in atlases:
+            path = SITE_DIR / atlas["local_path"]
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), atlas["sha256"])
         for path in (
             SITE_DIR / "static/images/home-hero.png",
-            SITE_DIR / "static/images/pet-atlas.png",
+            *(SITE_DIR / atlas["local_path"] for atlas in atlases),
             SITE_DIR / "static/icons/petfinder-logo.svg",
             SITE_DIR / "static/icons/dog.svg",
             SITE_DIR / "static/icons/cat.svg",

@@ -136,29 +136,42 @@ class AppTests(unittest.TestCase):
                 15,
             )
             allowed_images = {
-                "Dog": {0, 4, 5, 6, 7},
-                "Cat": {1, 8, 9, 10, 11},
-                "Rabbit": {2},
-                "Guinea Pig": {3},
+                "Dog": set(range(0, 30)),
+                "Cat": set(range(36, 54)),
+                "Rabbit": set(range(60, 68)),
+                "Guinea Pig": set(range(68, 72)),
             }
+            assigned_images = set()
             for listing in Listing.query.all():
                 self.assertIn(listing.image_index, allowed_images[listing.species], listing.name)
-            for species in ("Dog", "Cat"):
-                for direction in ("newest", "longest"):
-                    days_order = (
-                        Listing.days_on_petfinder.asc()
-                        if direction == "newest"
-                        else Listing.days_on_petfinder.desc()
-                    )
-                    ordered = Listing.query.filter_by(species=species).order_by(
-                        days_order, Listing.id.asc()
-                    ).all()
-                    for previous, current in zip(ordered, ordered[1:]):
-                        self.assertNotEqual(
-                            previous.image_index,
-                            current.image_index,
-                            f"{direction} repeated image: {previous.name} / {current.name}",
-                        )
+                self.assertNotIn(
+                    listing.image_index,
+                    assigned_images,
+                    f"cross-identity image reuse: {listing.name}",
+                )
+                assigned_images.add(listing.image_index)
+            self.assertEqual(len(assigned_images), 60)
+            expected_atlas_anchors = {
+                "Milo Labrador Mix": 0,
+                "Winnie Greyhound": 11,
+                "Theo Boxer Mix": 12,
+                "Tilly Papillon": 23,
+                "Leo Vizsla Mix": 24,
+                "Ace Whippet": 29,
+                "Luna Domestic Shorthair": 36,
+                "Mochi Siamese Mix": 47,
+                "Felix American Shorthair": 48,
+                "Nora Turkish Angora": 53,
+                "Nori Rabbit": 60,
+                "Pippa Angora Rabbit": 67,
+                "Sunny Guinea Pig": 68,
+                "Tofu Peruvian Guinea Pig": 71,
+            }
+            for name, image_index in expected_atlas_anchors.items():
+                self.assertEqual(
+                    Listing.query.filter_by(name=name).one().image_index,
+                    image_index,
+                )
 
             def count(**filters):
                 return Listing.query.filter_by(**filters).count()
