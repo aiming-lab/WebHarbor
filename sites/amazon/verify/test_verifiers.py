@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from typing import Any
 
 VERIFY_DIR = Path(__file__).resolve().parent
 SEED_DB = VERIFY_DIR.parent / "instance_seed" / "amazon_store.db"
@@ -58,7 +59,7 @@ class VerifierTests(unittest.TestCase):
     def run_verifier(
         self,
         task: int,
-        steps: list[dict],
+        steps: Any,
         answer: str,
         mutate=None,
         baseline_mutate=None,
@@ -88,11 +89,14 @@ class VerifierTests(unittest.TestCase):
                     connection.commit()
                 finally:
                     connection.close()
+            final_url = url("/")
+            if isinstance(steps, list) and steps and isinstance(steps[-1], dict):
+                final_url = steps[-1].get("url_after", steps[-1].get("url", final_url))
             trajectory = {
                 "task_id": task_id or f"Amazon--{task}",
                 "start_url": url("/"),
                 "steps": steps,
-                "final_url": steps[-1].get("url_after", steps[-1].get("url")) if steps else url("/"),
+                "final_url": final_url,
                 "final_answer": answer,
             }
             trajectory_path = run_dir / "trajectory.json"
@@ -319,6 +323,271 @@ class VerifierTests(unittest.TestCase):
                 code, verdict = self.run_verifier(task, steps, answer, mutate)
                 self.assertEqual(0, code, verdict)
                 self.assertTrue(verdict["pass"], verdict)
+
+    def test_task_wording_and_compact_storage_searches_pass(self) -> None:
+        cases = {
+            5: login_steps()
+            + open_result(
+                "/search?q=iPhone+12+Pro+128+GB&color=blue",
+                "apple-iphone-12-pro-128gb",
+            )
+            + [click("/product/apple-iphone-12-pro-128gb", "/bag"), navigate("/bag")],
+            8: open_result(
+                "/search?q=Samsung+tablets&brand=Samsung&sort=price_asc",
+                "samsung-galaxy-tab-a7-10-4-32gb",
+            ),
+            9: open_result(
+                "/search?q=dog+beds&feature=washable",
+                "amazon-basics-pet-dog-bed-large-34-washable",
+            ),
+            30: [navigate("/search?q=fiction+books+released+in+2024&sort=rating")],
+        }
+        for task, steps in cases.items():
+            with self.subTest(task=task):
+                _, answer, mutate = self.positive_case(task)
+                code, verdict = self.run_verifier(task, steps, answer, mutate)
+                self.assertEqual(0, code, verdict)
+                self.assertTrue(verdict["pass"], verdict)
+
+    def test_mirror_sort_aliases_pass(self) -> None:
+        cases = {
+            1: login_steps()
+            + open_result(
+                "/search?q=golf+polos&size=M&min_price=50&max_price=75&sort=low_to_high",
+                "women-s-izod-swingflex-golf-polo",
+            )
+            + [
+                click(
+                    "/product/women-s-izod-swingflex-golf-polo",
+                    "/product/women-s-izod-swingflex-golf-polo",
+                ),
+                navigate("/wishlist"),
+            ],
+            3: [navigate("/search?q=climbing&sort=high_to_low")],
+            27: open_result(
+                "/search?q=USB-C+hubs&max_price=50&sort=popular",
+                "anker-5-in-1-usb-c-hub-with-hdmi-and-sd-card",
+            ),
+            30: [navigate("/search?q=fiction+books+2024&sort=customer_review")],
+        }
+        for task, steps in cases.items():
+            with self.subTest(task=task):
+                _, answer, mutate = self.positive_case(task)
+                code, verdict = self.run_verifier(task, steps, answer, mutate)
+                self.assertEqual(0, code, verdict)
+                self.assertTrue(verdict["pass"], verdict)
+
+    def test_equivalent_storage_answer_spelling_passes(self) -> None:
+        steps, _, _ = self.positive_case(2)
+        answer = "HP OMEN 25L Gaming Desktop — Windows 11 Home, 1 TB SSD."
+        code, verdict = self.run_verifier(2, steps, answer)
+        self.assertEqual(0, code, verdict)
+        self.assertTrue(verdict["pass"], verdict)
+
+    def test_negated_oven_safe_answer_is_rejected(self) -> None:
+        steps, _, _ = self.positive_case(22)
+        answer = "T-fal Ultimate Hard Anodized Cookware Set — 12 pieces, nonstick. Oven safe: No. $139.99."
+        code, verdict = self.run_verifier(22, steps, answer)
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+
+    def test_about_blank_before_target_navigation_passes(self) -> None:
+        steps, answer, _ = self.positive_case(0)
+        steps = [{"url": "about:blank", "action": "navigate", "params": {}}] + steps
+        code, verdict = self.run_verifier(0, steps, answer)
+        self.assertEqual(0, code, verdict)
+        self.assertTrue(verdict["pass"], verdict)
+
+    def test_malformed_steps_type_emits_structured_fail(self) -> None:
+        code, verdict = self.run_verifier(0, "not-a-step-array", "answer")
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+        self.assertEqual("verifier_exception", verdict["reason"])
+
+    def test_search_filters_remain_fail_closed(self) -> None:
+        cases = (
+            "/search?q=strollers&color=black&min_price=100&max_price=200&min_rating=3",
+            "/search?q=strollers&color=black&min_price=100&max_price=200&min_rating=four",
+            "/search?q=strollers&min_price=100&max_price=200&min_rating=4",
+        )
+        _, answer, _ = self.positive_case(6)
+        for search_path in cases:
+            with self.subTest(search_path=search_path):
+                steps = open_result(search_path, "chicco-bravo-trio-travel-system-poetic-black")
+                code, verdict = self.run_verifier(6, steps, answer)
+                self.assertNotEqual(0, code)
+                self.assertFalse(verdict["pass"])
+
+    def test_noneligible_or_unclicked_result_is_rejected(self) -> None:
+        search_path = "/search?q=Samsung+tablets&brand=Samsung&sort=price_asc"
+        cases = (
+            open_result(search_path, "samsung-galaxy-tab-s7-11-128gb"),
+            [navigate(search_path), navigate("/product/samsung-galaxy-tab-a7-10-4-32gb")],
+        )
+        _, answer, _ = self.positive_case(8)
+        for steps in cases:
+            with self.subTest(steps=steps):
+                code, verdict = self.run_verifier(8, steps, answer)
+                self.assertNotEqual(0, code)
+                self.assertFalse(verdict["pass"])
+
+    def test_cart_increment_path_passes_and_exact_delta_is_enforced(self) -> None:
+        steps, _, _ = self.positive_case(5)
+
+        def increment_target(connection: sqlite3.Connection, amount: int = 1) -> None:
+            connection.execute(
+                "UPDATE cart_items SET quantity=quantity+? WHERE product_id=(SELECT id FROM products WHERE slug=?)",
+                (amount, "apple-iphone-12-pro-128gb"),
+            )
+
+        code, verdict = self.run_verifier(
+            5,
+            steps,
+            "Added Apple iPhone 12 Pro 128GB. Cart subtotal: $1398.00.",
+            increment_target,
+            baseline_mutate=self.mutate_cart,
+        )
+        self.assertEqual(0, code, verdict)
+        self.assertTrue(verdict["pass"], verdict)
+
+        code, verdict = self.run_verifier(
+            5,
+            steps,
+            "Added Apple iPhone 12 Pro 128GB. Cart subtotal: $2097.00.",
+            lambda connection: increment_target(connection, 2),
+            baseline_mutate=self.mutate_cart,
+        )
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+
+        def add_two(connection: sqlite3.Connection) -> None:
+            self.mutate_cart(connection)
+            connection.execute(
+                "UPDATE cart_items SET quantity=2 WHERE product_id=(SELECT id FROM products WHERE slug=?)",
+                ("apple-iphone-12-pro-128gb",),
+            )
+
+        code, verdict = self.run_verifier(
+            5,
+            steps,
+            "Added Apple iPhone 12 Pro 128GB. Cart subtotal: $1398.00.",
+            add_two,
+        )
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+
+    def test_state_tasks_preserve_preexisting_demo_rows(self) -> None:
+        def seed_prior_wishlist(connection: sqlite3.Connection) -> None:
+            self.mutate_wishlist(connection, "women-s-classic-pique-golf-polo")
+
+        steps, answer, _ = self.positive_case(1)
+        code, verdict = self.run_verifier(
+            1,
+            steps,
+            answer,
+            self.mutate_wishlist,
+            baseline_mutate=seed_prior_wishlist,
+        )
+        self.assertEqual(0, code, verdict)
+        self.assertTrue(verdict["pass"], verdict)
+
+        def seed_prior_cart(connection: sqlite3.Connection) -> None:
+            user_id = connection.execute(
+                "SELECT id FROM users WHERE email='demo@amazon.com'"
+            ).fetchone()[0]
+            product_id = connection.execute(
+                "SELECT id FROM products WHERE slug='echo-dot-5th-gen-smart-speaker-with-alexa'"
+            ).fetchone()[0]
+            connection.execute(
+                "INSERT INTO cart_items(id,user_id,product_id,quantity,variant,added_at) VALUES(?,?,?,?,?,?)",
+                (next_id(connection, "cart_items"), user_id, product_id, 2, "", "2026-09-13 09:00:00"),
+            )
+
+        steps, _, _ = self.positive_case(5)
+        code, verdict = self.run_verifier(
+            5,
+            steps,
+            "Added Apple iPhone 12 Pro 128GB. Cart subtotal: $798.98.",
+            self.mutate_cart,
+            baseline_mutate=seed_prior_cart,
+        )
+        self.assertEqual(0, code, verdict)
+        self.assertTrue(verdict["pass"], verdict)
+
+        def add_target_and_delete_prior(connection: sqlite3.Connection) -> None:
+            self.mutate_cart(connection)
+            connection.execute(
+                "DELETE FROM cart_items WHERE product_id=(SELECT id FROM products WHERE slug='echo-dot-5th-gen-smart-speaker-with-alexa')"
+            )
+
+        code, verdict = self.run_verifier(
+            5,
+            steps,
+            "Added Apple iPhone 12 Pro 128GB. Cart subtotal: $699.00.",
+            add_target_and_delete_prior,
+            baseline_mutate=seed_prior_cart,
+        )
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+
+    def test_state_change_on_another_account_is_rejected(self) -> None:
+        def add_to_alice_cart(connection: sqlite3.Connection) -> None:
+            user_id = connection.execute(
+                "SELECT id FROM users WHERE email='alice.j@test.com'"
+            ).fetchone()[0]
+            product_id = connection.execute(
+                "SELECT id FROM products WHERE slug='apple-iphone-12-pro-128gb'"
+            ).fetchone()[0]
+            connection.execute(
+                "INSERT INTO cart_items(id,user_id,product_id,quantity,variant,added_at) VALUES(?,?,?,?,?,?)",
+                (next_id(connection, "cart_items"), user_id, product_id, 1, "", "2026-09-13 10:00:00"),
+            )
+
+        steps, answer, _ = self.positive_case(5)
+        code, verdict = self.run_verifier(5, steps, answer, add_to_alice_cart)
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+
+    def test_lower_ranked_products_are_rejected(self) -> None:
+        cases = {
+            8: (
+                open_result(
+                    "/search?q=Samsung+tablets&brand=Samsung&sort=price_asc",
+                    "samsung-galaxy-tab-s6-lite-10-4-64gb",
+                ),
+                "Samsung Galaxy Tab S6 Lite — 10.4-inch screen, $349.99.",
+            ),
+            27: (
+                open_result(
+                    "/search?q=USB-C+hubs&max_price=50&sort=bestseller",
+                    "anker-7-in-1-usb-c-hub-for-macbook-pro",
+                ),
+                "Anker 7-in-1 USB-C Hub for MacBook Pro — 7 ports, $34.99.",
+            ),
+            30: (
+                [navigate("/search?q=fiction+books+2024&sort=rating")],
+                "Fourth Wing (The Empyrean) — 4.8 stars from 285,000 reviews.",
+            ),
+        }
+        for task, (steps, answer) in cases.items():
+            with self.subTest(task=task):
+                code, verdict = self.run_verifier(task, steps, answer)
+                self.assertNotEqual(0, code)
+                self.assertFalse(verdict["pass"])
+
+    def test_general_purple_yoga_mat_is_a_legal_alternative(self) -> None:
+        steps = open_result(
+            "/search?q=yoga+mats&color=purple&max_price=30&min_rating=4",
+            "gaiam-essentials-thick-yoga-mat-2-5-inch-10mm",
+        )
+        answer = (
+            "Gaiam Essentials Yoga Mat has 5 colors. "
+            "Return policy: 30-day return policy. Eligible for free returns. "
+            "Delivery: FREE delivery in 2 days."
+        )
+        code, verdict = self.run_verifier(40, steps, answer)
+        self.assertEqual(0, code, verdict)
+        self.assertTrue(verdict["pass"], verdict)
 
     def test_non_waterproof_boot_is_rejected(self) -> None:
         slug = "ahnu-women-s-montara-iii-hiking-boot-non-waterproof"

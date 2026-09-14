@@ -37,6 +37,16 @@ from verify_lib import (
 
 DEMO_EMAIL = "demo@amazon.com"
 DEMO_PASSWORD = "demo1234"
+PRICE_ASC_SORTS = (
+    "price_asc", "price_low", "price-low", "low_to_high",
+    "price-low-to-high", "lowtohigh", "low", "priceasc",
+)
+PRICE_DESC_SORTS = (
+    "price_desc", "price_high", "price-high", "high_to_low",
+    "price-high-to-low", "hightolow", "high", "pricedesc",
+)
+RATING_SORTS = ("rating", "avg_rating", "avg-rating", "customer_review", "review_rating")
+BESTSELLER_SORTS = ("bestseller", "best_sellers", "best-sellers", "popular")
 
 
 def _text(product: dict[str, Any]) -> str:
@@ -80,6 +90,39 @@ def _prior_rows_preserved(
 ) -> bool:
     after_by_id = {row["id"]: row for row in after}
     return all(after_by_id.get(row["id"]) == row for row in before)
+
+
+def _cart_has_exact_target_delta(
+    before: Sequence[dict[str, Any]],
+    after: Sequence[dict[str, Any]],
+    target_slug: str,
+) -> bool:
+    before_by_id = {row["id"]: row for row in before}
+    after_by_id = {row["id"]: row for row in after}
+    if not set(before_by_id) <= set(after_by_id):
+        return False
+
+    created_ids = set(after_by_id) - set(before_by_id)
+    changed_ids = {
+        row_id for row_id in before_by_id
+        if before_by_id[row_id] != after_by_id[row_id]
+    }
+    if len(created_ids) == 1 and not changed_ids:
+        created = after_by_id[created_ids.pop()]
+        return created["slug"] == target_slug and created["quantity"] == 1
+    if created_ids or len(changed_ids) != 1:
+        return False
+
+    row_id = changed_ids.pop()
+    previous = before_by_id[row_id]
+    current = after_by_id[row_id]
+    previous_static = {key: value for key, value in previous.items() if key != "quantity"}
+    current_static = {key: value for key, value in current.items() if key != "quantity"}
+    return (
+        previous["slug"] == target_slug
+        and current["quantity"] == previous["quantity"] + 1
+        and current_static == previous_static
+    )
 
 
 def _other_account_rows(path: str, table: str) -> list[dict[str, Any]]:
@@ -207,7 +250,7 @@ def verify_1() -> None:
     judge = Judge(task_id)
     check_common(judge, trajectory, task_id)
     judge.check("login_as_demo", login_submitted_as(trajectory, DEMO_EMAIL, DEMO_PASSWORD), DEMO_EMAIL)
-    judge.check("searched_and_sorted_golf_polos", search_used(trajectory, terms=("golf", "polo"), params={"size": "M", "min_price": ("50", "50.0"), "max_price": ("75", "75.0"), "sort": ("price_asc", "price-low-to-high")}), "size=M, $50-$75, price ascending")
+    judge.check("searched_and_sorted_golf_polos", search_used(trajectory, terms=("golf", "polo"), params={"size": "M", "min_price": ("50", "50.0"), "max_price": ("75", "75.0"), "sort": PRICE_ASC_SORTS}), "size=M, $50-$75, price ascending")
     initial = resolve_db(args.initial_db, args.container, "instance_seed")
     after = resolve_db(args.after_db, args.container, "instance")
     judge.check("databases_readable", bool(initial and after), f"initial={initial} after={after}")
@@ -239,7 +282,7 @@ def verify_2() -> None:
     judge.check("searched_gaming_desktop", search_used(trajectory, terms=("gaming", "desktop")), "q includes gaming desktop")
     product = _selected(judge, trajectory, candidates, "opened_eligible_gaming_desktop")
     if product:
-        judge.check("answer_name_os_storage", _exact_name(answer, product) and contains_all(answer, ("Windows 11 Home", "1TB")), repr(answer))
+        judge.check("answer_name_os_storage", _exact_name(answer, product) and contains_all(answer, ("Windows 11 Home",)) and contains_any(answer, ("1TB", "1 TB")), repr(answer))
     _finish(judge)
 
 
@@ -248,7 +291,7 @@ def verify_3() -> None:
     answer = final_answer(trajectory)
     candidates = sorted([p for p in catalog if normalize_text(p.get("subcategory")) == "climbing"], key=lambda p: (-p["price"], p["id"]))
     expected = candidates[:3]
-    judge.check("searched_climbing_sorted_high_to_low", search_used(trajectory, terms=("climbing",), params={"sort": ("price_desc", "price-high-to-low")}), "sort=price_desc")
+    judge.check("searched_climbing_sorted_high_to_low", search_used(trajectory, terms=("climbing",), params={"sort": PRICE_DESC_SORTS}), "sort=price_desc")
     judge.check("seed_has_three_ranked_results", len(expected) == 3, repr([(p["name"], p["price"]) for p in expected]))
     judge.check(
         "answer_exact_top_three_with_prices",
@@ -266,7 +309,7 @@ def verify_4() -> None:
     answer = final_answer(trajectory)
     candidates = sorted([p for p in catalog if "nintendo switch lite" in normalize_text(p["name"]) and normalize_text(p["condition"]) == "used - good"], key=lambda p: (p["price"], p["id"]))
     target = candidates[0] if candidates else None
-    judge.check("searched_used_good_switch_sorted_low_to_high", search_used(trajectory, terms=("nintendo", "switch", "lite"), params={"condition": "Used - Good", "sort": ("price_asc", "price-low-to-high")}), "Used - Good, sort=price_asc")
+    judge.check("searched_used_good_switch_sorted_low_to_high", search_used(trajectory, terms=("nintendo", "switch", "lite"), params={"condition": "Used - Good", "sort": PRICE_ASC_SORTS}), "Used - Good, sort=price_asc")
     judge.check("seed_has_unique_cheapest_used_good_switch", bool(target) and (len(candidates) == 1 or target["price"] < candidates[1]["price"]), repr([(p["slug"], p["price"]) for p in candidates]))
     if target:
         judge.check("answer_cheapest_product_condition_price", _exact_name(answer, target) and contains_all(answer, ("Used - Good",)) and has_money(answer, target["price"]), repr(answer))
@@ -296,10 +339,11 @@ def verify_5() -> None:
             judge.check("submitted_add_to_cart", clicked_transition(trajectory, path, "/bag"), f"{path} -> /bag")
             before = row_dicts(initial, "SELECT c.id,c.user_id,c.product_id,c.quantity,c.variant,c.added_at,p.slug FROM cart_items c JOIN users u ON u.id=c.user_id JOIN products p ON p.id=c.product_id WHERE lower(u.email)=lower(?) ORDER BY c.id", (DEMO_EMAIL,))
             now = row_dicts(after, "SELECT c.id,c.user_id,c.product_id,c.quantity,c.variant,c.added_at,p.slug FROM cart_items c JOIN users u ON u.id=c.user_id JOIN products p ON p.id=c.product_id WHERE lower(u.email)=lower(?) ORDER BY c.id", (DEMO_EMAIL,))
-            before_ids = {row["id"] for row in before}
-            created = [row for row in now if row["id"] not in before_ids]
-            judge.check("demo_cart_rows_preserved", _prior_rows_preserved(before, now), f"before={before} after={now}")
-            judge.check("exactly_one_target_iphone_added", len(created) == 1 and created[0]["slug"] == target["slug"] and created[0]["quantity"] == 1 and len(now) == len(before) + 1, f"before={before} after={now}")
+            judge.check(
+                "demo_cart_has_exact_target_delta",
+                _cart_has_exact_target_delta(before, now, target["slug"]),
+                f"before={before} after={now}",
+            )
             judge.check("other_accounts_cart_unchanged", _other_account_rows(initial, "cart_items") == _other_account_rows(after, "cart_items"), "non-demo rows are byte-equivalent")
             subtotal = sum(row["quantity"] * next(p["price"] for p in catalog if p["slug"] == row["slug"]) for row in now)
             judge.check("answer_cart_name_and_subtotal", _exact_name(answer, target) and has_money(answer, subtotal), f"subtotal={subtotal:.2f} answer={answer!r}")
@@ -351,7 +395,7 @@ def verify_8() -> None:
     answer = final_answer(trajectory)
     candidates = sorted([p for p in catalog if normalize_text(p["brand"]) == "samsung" and "tablet" in _text(p) and normalize_text(spec_value(p, "OS")) == "android" and 10 <= _tablet_screen(p) <= 10.9], key=lambda p: (p["price"], p["id"]))
     target = candidates[0] if candidates else None
-    judge.check("searched_samsung_tablet_sorted_low_to_high", search_used(trajectory, terms=("samsung", "tablet"), params={"brand": "Samsung", "sort": ("price_asc", "price-low-to-high")}), "brand=Samsung, sort=price_asc")
+    judge.check("searched_samsung_tablet_sorted_low_to_high", search_used(trajectory, terms=("samsung", "tablet"), params={"brand": "Samsung", "sort": PRICE_ASC_SORTS}), "brand=Samsung, sort=price_asc")
     judge.check("seed_has_unique_cheapest_tablet", bool(target) and (len(candidates) == 1 or target["price"] < candidates[1]["price"]), repr([(p["slug"], p["price"]) for p in candidates]))
     if target:
         judge.check("opened_cheapest_tablet", clicked_transition(trajectory, "/search", product_path(target)), product_path(target))
@@ -442,7 +486,7 @@ def verify_22() -> None:
         "Amazon--22",
         lambda p: "cookware" in _text(p) and p["price"] < 150 and _piece_count(p) >= 10 and _has_words(p, "nonstick") and _oven_safe(p),
         lambda t: search_used(t, terms=("cookware",), params={"max_price": ("150", "150.0")}),
-        lambda a, p: _exact_name(a, p) and has_money(a, p["price"]) and has_number(a, _piece_count(p)) and contains_any(a, ("nonstick", "non-stick")) and contains_all(a, ("oven",)),
+        lambda a, p: _exact_name(a, p) and has_money(a, p["price"]) and has_number(a, _piece_count(p)) and contains_any(a, ("nonstick", "non-stick")) and contains_any(a, ("oven safe", "oven-safe")),
     )
 
 
@@ -452,7 +496,7 @@ def verify_27() -> None:
     candidates = [p for p in catalog if normalize_text(p.get("subcategory")) == "usb-c hubs" and p["price"] < 50 and numeric_value(spec_value(p, "Ports")) >= 4 and normalize_text(spec_value(p, "SD Card")) == "yes" and _supports_hdmi(p) and "macbook pro" in normalize_text(spec_value(p, "Compatible"))]
     candidates.sort(key=lambda p: (-int(bool(p["is_bestseller"])), -p["review_count"], p["id"]))
     target = candidates[0] if candidates else None
-    judge.check("searched_hub_sorted_best_sellers", search_used(trajectory, terms=("usb", "hub"), params={"max_price": ("50", "50.0"), "sort": ("bestseller", "best-sellers")}), "max_price=50, sort=bestseller")
+    judge.check("searched_hub_sorted_best_sellers", search_used(trajectory, terms=("usb", "hub"), params={"max_price": ("50", "50.0"), "sort": BESTSELLER_SORTS}), "max_price=50, sort=bestseller")
     judge.check("seed_has_ranked_matching_hub", target is not None, repr([(p["slug"], p["is_bestseller"], p["review_count"]) for p in candidates]))
     if target:
         judge.check("opened_first_matching_hub", clicked_transition(trajectory, "/search", product_path(target)), product_path(target))
@@ -466,7 +510,7 @@ def verify_30() -> None:
     candidates = [p for p in catalog if normalize_text(p.get("subcategory")) == "fiction" and str(p.get("release_date") or "").startswith("2024-") and p["review_count"] >= 50]
     candidates.sort(key=lambda p: (-p["rating"], -p["review_count"], p["id"]))
     target = candidates[0] if candidates else None
-    judge.check("searched_2024_fiction_sorted_rating", search_used(trajectory, terms=("fiction", "book", "2024"), params={"sort": ("rating", "avg_rating")}), "q includes fiction book 2024, sort=rating")
+    judge.check("searched_2024_fiction_sorted_rating", search_used(trajectory, terms=("fiction", "book", "2024"), params={"sort": RATING_SORTS}), "q includes fiction book 2024, sort=rating")
     judge.check("seed_has_ranked_fiction_winner", target is not None, repr([(p["name"], p["rating"], p["review_count"]) for p in candidates]))
     if target:
         judge.check("answer_highest_rated_book", _exact_name(answer, target) and has_number(answer, target["rating"]) and has_number(answer, target["review_count"], 0.5), repr(answer))
@@ -493,7 +537,7 @@ def verify_40() -> None:
 
     _generic_product_task(
         "Amazon--40",
-        lambda p: "yoga mat" in _text(p) and "women" in _text(p) and _variant_contains(p, "color", "purple") and numeric_value(spec_value(p, "Thickness")) >= 5 and p["rating"] >= 4 and p["price"] < 30,
+        lambda p: "yoga mat" in _text(p) and _variant_contains(p, "color", "purple") and numeric_value(spec_value(p, "Thickness")) >= 5 and p["rating"] >= 4 and p["price"] < 30,
         lambda t: search_used(t, terms=("yoga", "mat"), params={"color": "purple", "max_price": ("30", "30.0"), "min_rating": ("4", "4.0")}),
         answer_ok,
     )

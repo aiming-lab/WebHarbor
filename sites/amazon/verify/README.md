@@ -25,6 +25,17 @@ python3 sites/amazon/verify/verify_0.py \
   --after_db <after.db>
 ```
 
+The preferred snapshot contract is `<run-dir>/initial.db` and
+`<run-dir>/after.db`; explicit `--initial_db` and `--after_db` arguments
+override those paths. `agent_demo/eval_judge.py --verifier True` supplies only
+the run directory, so a runner should save both snapshots there.
+
+For compatibility, if either snapshot is absent, the verifier attempts to copy
+the seed and live databases from `$WH_CONTAINER` (default `wh-review`). This
+fallback is valid only when the site was reset immediately before the run and
+the live instance still represents its final state. If no valid snapshots can
+be resolved, verification fails closed.
+
 Every verifier prints one JSON object and exits `0` for PASS or `1` for FAIL.
 Malformed inputs fail closed with structured JSON. The test matrix covers real
 positive fixtures, no-op and answer-only shortcuts, wrong-task replay, foreign

@@ -199,6 +199,35 @@ def _value_matches(observed: str, expected: Any) -> bool:
     return normalize_text(observed) == normalize_text(expected)
 
 
+def _query_token_matches_term(query_token: str, term_token: str) -> bool:
+    if query_token == term_token:
+        return True
+    if len(query_token) <= 3:
+        return False
+    return (
+        (query_token.endswith("es") and query_token[:-2] == term_token)
+        or (query_token.endswith("s") and query_token[:-1] == term_token)
+        or query_token + "s" == term_token
+        or query_token + "es" == term_token
+    )
+
+
+def _search_term_matches(query_text: str, query_tokens: set[str], term: str) -> bool:
+    term_tokens = compact_tokens(term)
+    if all(
+        any(_query_token_matches_term(query_token, term_token) for query_token in query_tokens)
+        for term_token in term_tokens
+    ):
+        return True
+    compact_term = "".join(re.findall(r"[a-z0-9]+", normalize_text(term)))
+    compact_query = "".join(re.findall(r"[a-z0-9]+", normalize_text(query_text)))
+    return bool(
+        re.search(r"[a-z]", compact_term)
+        and re.search(r"[0-9]", compact_term)
+        and compact_term in compact_query
+    )
+
+
 def search_used(
     trajectory: dict[str, Any],
     *,
@@ -207,8 +236,9 @@ def search_used(
 ) -> bool:
     for url in search_visits(trajectory):
         query = query_values(url)
-        query_tokens = compact_tokens(query.get("q", ""))
-        if not all(compact_tokens(term) <= query_tokens for term in terms):
+        query_text = query.get("q", "")
+        query_tokens = compact_tokens(query_text)
+        if not all(_search_term_matches(query_text, query_tokens, term) for term in terms):
             continue
         if params and not all(_value_matches(query.get(key, ""), value) for key, value in params.items()):
             continue
@@ -481,7 +511,15 @@ def check_common(judge: Judge, trajectory: dict[str, Any], task_id: str) -> None
     judge.check("task_id_matches", str(trajectory.get("task_id") or "") == task_id, repr(trajectory.get("task_id")))
     judge.check("final_answer_nonempty", bool(final_answer(trajectory)), repr(final_answer(trajectory)))
     judge.check("start_url_is_target", is_target_url(str(trajectory.get("start_url") or ""), trajectory), repr(trajectory.get("start_url")))
-    judge.check("all_urls_stay_on_target", bool(urls) and all(is_target_url(url, trajectory) for url in urls), repr(urls))
+    judge.check(
+        "all_urls_stay_on_target",
+        bool(urls)
+        and all(
+            is_target_url(url, trajectory) or normalize_text(url) == "about:blank"
+            for url in urls
+        ),
+        repr(urls),
+    )
     judge.check("recorded_ui_steps", bool(trajectory.get("steps")), f"steps={len(trajectory.get('steps') or [])}")
 
 
