@@ -36,14 +36,14 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 29 sites today, scaling to 100+ together
+- **Community-driven** — 30 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
 One command to run all web environments:
 
 ```bash
-docker run -p 8101:8101 -p 40000-40028:40000-40028 battalion7244/webharbor:latest
+docker run -p 8101:8101 -p 40000-40029:40000-40029 battalion7244/webharbor:latest
 ```
 
 Then point your agent at `http://localhost:40000` through `http://localhost:40028` to explore 29 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, and NVIDIA`.
@@ -65,7 +65,7 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 
 ### Local NVIDIA review candidate
 
-This branch registers **29 sites**, the 29 entries listed above; NVIDIA is the last
+This branch registers **30 sites**, the 29 entries listed above; NVIDIA is the last
 entry, registry index 28, container port 40028 (local review host port 48028). The
 published-image quickstart above is not a claim that this review candidate has been
 published or accepted.
@@ -75,7 +75,7 @@ published or accepted.
 | NVIDIA | 28 | 40028 | 48028 |
 
 `websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 29 sites and `40000-40028`;
+site's `tasks.jsonl` `web` URL agree on 30 sites and `40000-40029`;
 `scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
 drift.
 
@@ -83,7 +83,7 @@ After preparing the candidate assets and building `webharbor:dev`, the local
 review deployment uses:
 
 ```bash
-docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48028:40000-40028 webharbor:dev
+docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48028:40000-40029 webharbor:dev
 ```
 
 NVIDIA inherits the site contribution from @KaKituken

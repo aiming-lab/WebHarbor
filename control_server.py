@@ -31,6 +31,7 @@ SITES = [
     'osu', 'rotten_tomatoes', 'compass', 'walmart_careers',
     'fedex', 'webmd_doctor', 'healthline', 'kaggle',
     'nvidia',
+    'phet_simulations',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'
