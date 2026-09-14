@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ listing.name }} | Petfinder{% endblock %}
+{% block content %}
+<section class="pet-detail">
+  <div class="detail-photo sprite sprite-{{ listing.image_index }}" role="img" aria-label="Photo of {{ listing.name }}"></div>
+  <div class="detail-copy">
+    <p class="eyebrow">{{ listing.species|upper }} FOR ADOPTION</p>
+    <h1>{{ listing.name }}</h1>
+    <p class="detail-meta">{{ listing.breed }} · {{ listing.age }} · {{ listing.size }} · {{ listing.gender }}</p>
+    <p class="detail-location">⌖ {{ listing.location }}</p>
+    <div class="detail-actions">
+      <form method="post" action="{{ url_for('save_listing', slug=listing.slug) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit">♡ Save this pet</button>
+      </form>
+    </div>
+    <dl class="pet-facts">
+      <div><dt>Adoption fee</dt><dd>${{ listing.adoption_fee }}</dd></div>
+      <div><dt>Coat</dt><dd>{{ listing.coat }}</dd></div>
+      <div><dt>Color</dt><dd>{{ listing.color }}</dd></div>
+      <div><dt>Days on Petfinder</dt><dd>{{ listing.days_on_petfinder }}</dd></div>
+    </dl>
+    <h2>About {{ listing.name.split()[0] }}</h2>
+    <p>{{ listing.summary }}</p><p>{{ listing.story }}</p>
+    <div class="compatibility">
+      <span class="{{ 'yes' if listing.good_with_children else 'no' }}">{{ '✓' if listing.good_with_children else '–' }} Good with children</span>
+      <span class="{{ 'yes' if listing.good_with_dogs else 'no' }}">{{ '✓' if listing.good_with_dogs else '–' }} Good with dogs</span>
+      <span class="{{ 'yes' if listing.good_with_cats else 'no' }}">{{ '✓' if listing.good_with_cats else '–' }} Good with cats</span>
+    </div>
+  </div>
+</section>
+
+<section class="inquiry-panel">
+  <div><p class="eyebrow">MEET {{ listing.name.split()[0]|upper }}</p><h2>Ask {{ listing.shelter }}</h2><p>Send a note to the shelter about meeting this pet.</p></div>
+  <form method="post" action="{{ url_for('inquire', slug=listing.slug) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Your message<textarea name="message" rows="4" placeholder="Tell the shelter a little about your home."></textarea></label>
+    <button type="submit">Start adoption inquiry</button>
+  </form>
+</section>
+
+<section class="section">
+  <div class="section-heading"><h2>More {{ listing.species|lower }}s nearby</h2></div>
+  <div class="pet-grid">{% for item in related %}{% include "_card.html" %}{% endfor %}</div>
+</section>
+{% endblock %}
