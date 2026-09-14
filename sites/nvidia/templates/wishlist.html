@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% from "_product_image.html" import product_image %}
+{% block title %}My Wishlist — NVIDIA{% endblock %}
+{% block content %}
+
+<div class="page-head">
+  <div class="container"><h1>My Local Wishlist</h1><p>Mirror-only saved selections for {{ current_user.name }}. Not an official NVIDIA feature or a stock reservation.</p></div>
+</div>
+
+<section class="section">
+  <div class="container">
+    {% include "_price_note.html" %}
+    {% if items %}
+    <div class="grid">
+      {% for item in items %}
+      {% set p = item.product %}
+      <div class="card">
+        <a href="{{ url_for('product_detail', slug=p.slug) }}">
+          {{ product_image(p) }}
+        </a>
+        <div class="body">
+          {% if p.series %}<div class="series">{{ p.series }}</div>{% endif %}
+          <a class="name" href="{{ url_for('product_detail', slug=p.slug) }}">{{ p.name }}</a>
+          <div class="price">{{ p.price_display }}</div>
+          <a class="text-link" href="{{ url_for('where_to_buy', slug=p.slug) }}">Buying Options →</a>
+          <form method="post" action="{{ url_for('wishlist_remove', product_id=p.id) }}" style="margin-top:8px">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-dark btn-block" type="submit">Remove</button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="muted">Your wishlist is empty. <a class="green" href="{{ url_for('products') }}">Browse products</a>.</p>
+    {% endif %}
+  </div>
+</section>
+
+{% endblock %}

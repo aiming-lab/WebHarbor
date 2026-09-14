@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile — NVIDIA{% endblock %}
+{% block content %}
+
+<section class="section">
+  <div class="container">
+    <div class="form">
+      <h2 style="text-align:center">Edit Profile</h2>
+      <form method="post" action="{{ url_for('account_edit') }}">
+        {{ form.hidden_tag() }}
+        <div class="field">
+          {{ form.name.label }}
+          {{ form.name() }}
+          {% for e in form.name.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.company.label }}
+          {{ form.company() }}
+          {% for e in form.company.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field">
+          {{ form.country.label }}
+          {{ form.country() }}
+          {% for e in form.country.errors %}<div class="err">{{ e }}</div>{% endfor %}
+        </div>
+        <div class="field check">
+          {{ form.newsletter_opt_in() }}
+          {{ form.newsletter_opt_in.label }}
+        </div>
+        <button class="btn btn-block" type="submit">Save Changes</button>
+      </form>
+      <p style="text-align:center;margin-top:16px"><a class="green" href="{{ url_for('account') }}">Back to account</a></p>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
