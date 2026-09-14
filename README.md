@@ -36,17 +36,17 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 29 sites today, scaling to 100+ together
+- **Community-driven** — 30 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
 One command to run all web environments:
 
 ```bash
-docker run -p 8101:8101 -p 40000-40028:40000-40028 battalion7244/webharbor:latest
+docker run -p 8101:8101 -p 40000-40029:40000-40029 battalion7244/webharbor:latest
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40028` to explore 29 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, and NVIDIA`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40029` to explore 30 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, and Discogs`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -63,19 +63,20 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 ./scripts/build.sh                                 # docker build -t webharbor:dev .
 ```
 
-### Local NVIDIA review candidate
+### Local NVIDIA and Discogs review candidates
 
-This branch registers **29 sites**, the 29 entries listed above; NVIDIA is the last
-entry, registry index 28, container port 40028 (local review host port 48028). The
-published-image quickstart above is not a claim that this review candidate has been
-published or accepted.
+This branch registers **30 sites**, the 30 entries listed above. NVIDIA remains at
+registry index 28 and Discogs is appended at index 29. The published-image
+quickstart above is not a claim that either review candidate has been published or
+accepted.
 
 | Site | Registry position | Container port | Local review host port |
 | --- | --- | --- | --- |
 | NVIDIA | 28 | 40028 | 48028 |
+| Discogs | 29 | 40029 | 48029 |
 
 `websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 29 sites and `40000-40028`;
+site's `tasks.jsonl` `web` URL agree on 30 sites and `40000-40029`;
 `scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
 drift.
 
@@ -83,7 +84,7 @@ After preparing the candidate assets and building `webharbor:dev`, the local
 review deployment uses:
 
 ```bash
-docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48028:40000-40028 webharbor:dev
+docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48029:40000-40029 webharbor:dev
 ```
 
 NVIDIA inherits the site contribution from @KaKituken
@@ -105,14 +106,15 @@ added the first reviewed NVIDIA bundle. Those PRs are merged, the pinned commit 
 on `main`, and the earlier "PR not merged" and "archive rejected by the
 validator" blockers are cleared:
 
-- the pinned revision carries 31 `*.tar.gz` (one per registered site plus
-  `bandcamp.tar.gz` and `drugs_com.tar.gz`, which `fetch_assets.sh` ignores for
-  sites this checkout does not register);
+- the pinned revision carries 31 `*.tar.gz` (one per upstream NVIDIA candidate
+  site plus `bandcamp.tar.gz` and `drugs_com.tar.gz`); Discogs remains in open HF
+  PR #76 and therefore requires its immutable revision override until that PR is
+  merged;
 - `nvidia.tar.gz` at that revision has 37 file members and no directory members,
   so `scripts/validate_asset_archive.py nvidia.tar.gz nvidia` prints
   `[fetch] validated 37 managed members for nvidia` and exits 0;
-- `./scripts/fetch_assets.sh` at this pin extracts all 29 registered sites
-  (`[fetch] done — 29 site(s) extracted into sites/`).
+- `./scripts/fetch_assets.sh` at this pin extracts the 29 upstream sites. It does
+  not yet prepare Discogs from a clean checkout.
 
 | Artifact | Members | Bytes | SHA-256 |
 | --- | --- | --- | --- |
@@ -204,7 +206,7 @@ itself cannot be edited from this repository.
 
 ## 🤝 Contribute
 
-We have built 29 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
+We have built 30 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
 
 There are two ways to join the author list:
 

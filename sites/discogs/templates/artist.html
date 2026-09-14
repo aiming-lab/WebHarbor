@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ a.name }} | Discogs{% endblock %}
+
+{% block content %}
+<div class="profile-head">
+  {% if a.image_path %}
+    <img src="{{ url_for('static', filename=a.image_path) }}" alt="{{ a.name }}"
+         style="width: 120px; height: 120px; object-fit: cover; border-radius: 4px;">
+  {% else %}
+    <div class="avatar avatar-md" style="background: hsl({{ a.id * 13 % 360 }}, 50%, 45%);">
+      {{ a.name[0]|upper }}
+    </div>
+  {% endif %}
+  <div style="flex: 1;">
+    <h1>{{ a.name }}</h1>
+    {% if a.real_name %}<p class="muted">Real Name: {{ a.real_name }}</p>{% endif %}
+    {% if a.profile %}<p>{{ a.profile }}</p>{% endif %}
+    <p class="muted">{{ a.releases.count() }} releases · {{ a.in_collection }} in collections</p>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-main">
+    <div class="card">
+      <div class="section-header">
+        <h2>Releases</h2>
+        <select onchange="window.location.href=this.value" style="width: auto;">
+          {% for v, label in [('year_desc','Year ↓'), ('year_asc','Year ↑'), ('title','Title'), ('have','Most Collected')] %}
+            <option value="{{ url_for('artist_detail', aid=a.id, slug=a.slug, sort=v) }}" {% if sort == v %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="release-grid">
+        {% for r in pag.items %}{{ m.release_card(r) }}{% endfor %}
+      </div>
+      {% if not pag.items %}<p class="empty">No releases.</p>{% endif %}
+      {{ m.pagination(pag, 'artist_detail', params={'aid': a.id, 'slug': a.slug, 'sort': sort}) }}
+    </div>
+  </div>
+  <div class="col-side">
+    {% if a.members %}
+      <div class="card">
+        <h3>Members</h3>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          {% for member in a.members.split('\n') if member %}
+            <li style="padding: 4px 0;">{{ member }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+    {% if a.sites %}
+      <div class="card">
+        <h3>Links</h3>
+        <ul style="list-style: none; padding: 0; margin: 0;">
+          {% for s in a.sites.split('\n') if s %}<li><a href="{{ s }}">{{ s }}</a></li>{% endfor %}
+        </ul>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

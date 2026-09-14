@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Digs | Discogs{% endblock %}
+{% block content %}
+<h1>Digs</h1>
+<p class="muted">Discogs’ editorial hub. In this offline mirror, each section is built from the snapshot’s own catalog and benchmark community activity rather than from live articles.</p>
+
+<div class="tabs digs-tabs">
+  <a href="#essentials">Essentials</a>
+  <a href="#features">Features</a>
+  <a href="#most-valuable">Most Valuable</a>
+  <a href="#collecting">Collecting</a>
+  <a href="#audio-gear">Audio Gear</a>
+</div>
+
+<section id="essentials" class="card">
+  <h2>Essentials</h2>
+  <p class="muted">Highest-rated releases among benchmark users.</p>
+  <div class="release-grid">{% for r in essentials %}{{ m.release_card(r) }}{% endfor %}</div>
+</section>
+
+<section id="features" class="card">
+  <h2>Features</h2>
+  <div class="home-community">
+    <div class="community-item"><a href="{{ url_for('explore') }}"><strong>Discover Jazz, Deep Cuts &amp; More From This Snapshot</strong></a><div class="muted">Browse the verified catalog by genre, style and format.</div></div>
+    <div class="community-item"><a href="{{ url_for('marketplace', sort='price_desc', currency='USD') }}"><strong>Most Valuable Marketplace Listings</strong></a><div class="muted">The highest-priced copies currently offered by benchmark sellers.</div></div>
+    <div class="community-item"><a href="{{ url_for('search', sort='newest') }}"><strong>Explore Newly Verified Releases</strong></a><div class="muted">Releases ordered by the date they were added to the source database.</div></div>
+  </div>
+</section>
+
+<section id="most-valuable" class="card">
+  <h2>Most Valuable</h2>
+  <p class="muted">Releases with the highest current USD asking prices in the benchmark marketplace.</p>
+  <div class="release-grid">{% for r in most_valuable %}{{ m.release_card(r) }}{% endfor %}</div>
+</section>
+
+<section id="collecting" class="card">
+  <h2>Collecting</h2>
+  <p class="muted">Most collected releases among benchmark users.</p>
+  <div class="release-grid">{% for r in collecting %}{{ m.release_card(r) }}{% endfor %}</div>
+</section>
+
+<section id="audio-gear" class="card">
+  <h2>Audio Gear</h2>
+  <p>Gear guides are not part of this snapshot. Turntable, cartridge and phono-stage discussions live in the <a href="{{ url_for('forum_view', slug='vinyl') }}">Vinyl Collectors</a> forum.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{% if q %}Search results for {{ q }}{% else %}Explore{% endif %} | Discogs{% endblock %}
+{% block main_class %}page search-page{% endblock %}
+
+{% macro facet(title, key, values, current) %}
+  <details class="sr-facet" {% if values or current %}open{% endif %}>
+    <summary>{{ title }}</summary>
+    <ul>
+      {% for v in values %}
+        {% set active = current == v.slug %}
+        <li class="{% if active %}active{% endif %}">
+          <a href="{{ search_url(**{key: (None if active else v.slug)}) }}">
+            <span class="sr-check" aria-hidden="true">{% if active %}✓{% endif %}</span>
+            <span class="sr-facet-name">{{ v.name }}</span>
+            <span class="sr-facet-count">{{ '{:,}'.format(v.count) }}</span>
+          </a>
+        </li>
+      {% else %}
+        <li class="muted tiny">No values in these results.</li>
+      {% endfor %}
+    </ul>
+  </details>
+{% endmacro %}
+
+{% block content %}
+<h1 class="sr-h1">{% if q %}Search results for {{ q }}{% else %}Explore all releases{% endif %}</h1>
+
+<div class="sr-tabs" role="tablist">
+  <a href="{{ url_for('search', q=q, type='release') }}" class="{% if type_ == 'release' %}active{% endif %}">All</a>
+  <a href="{{ url_for('search', q=q, type='release') }}" class="{% if type_ == 'release' %}active{% endif %}">Release ({{ '{:,}'.format(counts.release) }})</a>
+  <a href="{{ url_for('search', q=q, type='artist') }}" class="{% if type_ == 'artist' %}active{% endif %}">Artist ({{ '{:,}'.format(counts.artist) }})</a>
+  <a href="{{ url_for('search', q=q, type='label') }}" class="{% if type_ == 'label' %}active{% endif %}">Label ({{ '{:,}'.format(counts.label) }})</a>
+</div>
+
+<div class="sr-layout">
+  <aside class="sr-sidebar">
+    {% if type_ == 'release' %}
+      {{ facet('Genre', 'genre', facets.genre, filters.genre) }}
+      {{ facet('Style', 'style', facets.style, filters.style) }}
+      {{ facet('Format Name', 'format', facets.format, filters.format_) }}
+      {{ facet('Country', 'country', facets.country, filters.country) }}
+      {{ facet('Year', 'year', facets.year, filters.year) }}
+    {% endif %}
+    <div class="sr-side-links">
+      <a href="/help">Help on Searching</a>
+      <a href="{{ url_for('search_advanced') }}">Advanced Search</a>
+    </div>
+  </aside>
+
+  <section class="sr-main">
+    {% if type_ == 'artist' %}
+      <div class="sr-toolbar"><span class="sr-count">{{ '{:,}'.format(entity_pagination.total) }} artists</span></div>
+      {% if artists %}
+        <ul class="sr-entity-list">
+          {% for a in artists %}
+            <li>
+              <a href="{{ url_for('artist_detail', aid=a.id, slug=a.slug) }}"><strong>{{ a.name }}</strong></a>
+              {% if a.real_name %}<span class="muted">— {{ a.real_name }}</span>{% endif %}
+              <div class="muted">{{ a.releases.count() }} releases</div>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">No artists found.</p>
+      {% endif %}
+      {{ m.pagination(entity_pagination, 'search', params={'q': q, 'type': type_}) }}
+    {% elif type_ == 'label' %}
+      <div class="sr-toolbar"><span class="sr-count">{{ '{:,}'.format(entity_pagination.total) }} labels</span></div>
+      {% if labels %}
+        <ul class="sr-entity-list">
+          {% for l in labels %}
+            <li><a href="{{ url_for('label_detail', lid=l.id, slug=l.slug) }}"><strong>{{ l.name }}</strong></a></li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p class="empty">No labels found.</p>
+      {% endif %}
+      {{ m.pagination(entity_pagination, 'search', params={'q': q, 'type': type_}) }}
+    {% else %}
+      {% set first = (results.page - 1) * results.per_page + 1 if results.total else 0 %}
+      {% set last = [results.page * results.per_page, results.total]|min %}
+      <div class="sr-toolbar">
+        <span class="sr-filters-btn">‹ Filters</span>
+        <label class="sr-sort">Sort:
+          <select onchange="window.location.href=this.value">
+            {% for v, label in [('relevance','Relevance'), ('newest','Newest'), ('have','Most Collected'), ('want','Most Wanted'),
+                                 ('rating','Highest Rated'), ('year_desc','Year ↓'), ('year_asc','Year ↑'), ('title','Title A–Z')] %}
+              <option value="{{ search_url(sort=v) }}" {% if sort == v %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div class="sr-toolbar sr-toolbar-count">
+        <span class="sr-count">{{ first }} - {{ last }} of {{ '{:,}'.format(results.total) }}</span>
+        <span class="sr-pager">
+          {% if results.page > 1 %}<a href="{{ url_for('search', page=results.page-1, **request.args.to_dict()) }}" aria-label="Previous page">‹</a>{% else %}<span class="disabled">‹</span>{% endif %}
+          {% if results.page < results.pages %}<a href="{{ url_for('search', page=results.page+1, **request.args.to_dict()) }}" aria-label="Next page">›</a>{% else %}<span class="disabled">›</span>{% endif %}
+        </span>
+        <a class="sr-marketplace" href="{{ url_for('marketplace', q=q) }}">Search Marketplace</a>
+      </div>
+
+      <div class="sr-grid">
+        {% for r in results.items %}
+          {% set parts = (r.format_description or r.primary_format or '').split(', ') %}
+          <a class="sr-card" href="{{ url_for('release_detail', rid=r.discogs_id or r.id) }}">
+            <span class="sr-thumb"><img src="{{ r.cover_url }}" alt="{{ r.title }}" loading="lazy"></span>
+            <span class="sr-format">{{ parts[0]|upper }}{% if 'Limited Edition' in parts %} • LTD EDITION{% endif %}</span>
+            <span class="sr-title">{{ r.title }}</span>
+            <span class="sr-artist">{{ r.display_artist }}</span>
+            <span class="sr-details">{{ parts[1:]|join(', ') if parts|length > 1 else parts[0] }}</span>
+            <span class="sr-year">{% if r.year %}{{ r.year }}{% endif %}{% if 'Reissue' in parts %} Reissue{% endif %}{% if r.country %} • {{ r.country }}{% endif %}</span>
+          </a>
+        {% endfor %}
+      </div>
+      {% if not results.items %}<p class="empty">No releases match your search.</p>{% endif %}
+
+      <div class="sr-toolbar sr-toolbar-bottom">
+        <span class="sr-count">{{ first }} - {{ last }} of {{ '{:,}'.format(results.total) }}</span>
+        {{ m.pagination(results, 'search', params={'q': q, 'type': type_, 'sort': sort,
+                         'genre': filters.genre, 'style': filters.style,
+                         'format': filters.format_, 'year': filters.year, 'country': filters.country,
+                         'label': filters.label, 'catno': filters.catno, 'barcode': filters.barcode}) }}
+        <span class="sr-show">Show: {{ results.per_page }}</span>
+      </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
