@@ -274,8 +274,17 @@ img { max-width: 100%; height: auto; display: block; }
 .search-row {
   display: flex;
   gap: 0;
-  position: relative;
   margin-bottom: 24px;
+  align-items: stretch;
+}
+/* Origin + destination only. Swap is positioned on this group's seam,
+   not the full search row (which also includes dates). */
+.search-route-fields {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  flex: 1 1 0;
+  min-width: 0;
 }
 .search-field {
   flex: 1;
@@ -288,15 +297,21 @@ img { max-width: 100%; height: auto; display: block; }
   outline: none;
   transition: border-color 0.2s;
 }
+.search-route-fields .search-field {
+  width: 100%;
+  min-width: 0;
+}
 .search-field:focus { border-color: var(--g-blue); border-width: 2px; }
 .search-field-from {
   border-top-left-radius: 4px;
   border-bottom-left-radius: 4px;
+  padding-right: 24px;
 }
 .search-field-to {
   border-top-right-radius: 4px;
   border-bottom-right-radius: 4px;
   border-left: none;
+  padding-left: 24px;
 }
 .search-swap {
   position: absolute;
@@ -315,7 +330,8 @@ img { max-width: 100%; height: auto; display: block; }
 .search-dates {
   display: flex;
   gap: 0;
-  flex: 1;
+  flex: 1 1 0;
+  min-width: 0;
   margin-left: 16px;
 }
 .search-dates .search-field {
@@ -1987,7 +2003,10 @@ img { max-width: 100%; height: auto; display: block; }
 @media (max-width: 768px) {
   .hero h1 { font-size: 32px; }
   .search-row { flex-direction: column; }
+  .search-route-fields { display: flex; flex-direction: column; }
   .search-field, .search-dates { border-radius: 4px !important; margin-left: 0; }
+  .search-field-from { padding-right: 16px; }
+  .search-field-to { border-left: 1px solid var(--g-grey-400); padding-left: 16px; }
   .search-swap { display: none; }
   .search-dates .search-field { border-left: 1px solid var(--g-grey-400); border-top: none; }
   .footer-top { grid-template-columns: 1fr; }
