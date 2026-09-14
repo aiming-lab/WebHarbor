@@ -29,17 +29,6 @@
       <h3 class="card-title"><a href="{{ url_for('research_center', slug=center.slug) }}">{{ center.name }}</a></h3>
       {% if center.college %}<div class="card-meta" style="margin-bottom:8px">{{ center.college.name }}</div>{% endif %}
       <p class="card-text">{{ center.description[:160] }}{% if center.description|length > 160 %}...{% endif %}</p>
-      {% if center.focus_areas %}
-      <div style="margin-top:10px">
-        {% for area in center.focus_areas.split(',')[:3] %}
-        <span class="tag">{{ area.strip() }}</span>
-        {% endfor %}
-      </div>
-      {% endif %}
-      <div class="card-meta" style="margin-top:10px">
-        {% if center.director %}Director: {{ center.director }}<br>{% endif %}
-        Founded {{ center.founded_year }}
-      </div>
       <div style="margin-top:12px">
         <a href="{{ url_for('research_center', slug=center.slug) }}" class="btn btn-sm btn-outline">Learn More</a>
       </div>
