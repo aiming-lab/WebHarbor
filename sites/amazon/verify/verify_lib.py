@@ -13,8 +13,9 @@ import subprocess
 import tempfile
 import unicodedata
 from dataclasses import dataclass
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any, Callable, Iterable, Sequence
+from typing import Any, Callable, Iterable, NoReturn, Sequence
 from urllib.parse import parse_qs, urlparse
 
 SITE = "amazon"
@@ -27,7 +28,6 @@ class VerifyArgs:
     initial_db: str | None
     after_db: str | None
     container: str
-    no_llm: bool
 
 
 class Judge:
@@ -75,17 +75,17 @@ def run_safely(task_id: str, callback: Callable[[], None]) -> None:
         fail_closed(task_id, "verifier_exception", f"{type(error).__name__}: {error}")
 
 
-def _bool_value(value: str) -> bool:
-    return str(value).casefold() in {"1", "true", "yes", "on"}
+class VerifierArgumentParser(argparse.ArgumentParser):
+    def error(self, message: str) -> NoReturn:
+        raise ValueError(f"argument error: {message}")
 
 
 def parse_args() -> VerifyArgs:
-    parser = argparse.ArgumentParser()
+    parser = VerifierArgumentParser()
     parser.add_argument("--run_dir", required=True)
     parser.add_argument("--initial_db")
     parser.add_argument("--after_db")
     parser.add_argument("--container", default=DEFAULT_CONTAINER)
-    parser.add_argument("--no_llm", nargs="?", const=True, default=False, type=_bool_value)
     args = parser.parse_args()
     run_dir = Path(args.run_dir)
     initial_snapshot = run_dir / "initial.db"
@@ -95,7 +95,6 @@ def parse_args() -> VerifyArgs:
         initial_db=args.initial_db or (str(initial_snapshot) if initial_snapshot.is_file() else None),
         after_db=args.after_db or (str(after_snapshot) if after_snapshot.is_file() else None),
         container=args.container,
-        no_llm=bool(args.no_llm),
     )
 
 
@@ -190,6 +189,13 @@ def search_visits(trajectory: dict[str, Any]) -> list[str]:
 def _value_matches(observed: str, expected: Any) -> bool:
     if isinstance(expected, (tuple, list, set)):
         return any(_value_matches(observed, option) for option in expected)
+    try:
+        observed_number = Decimal(normalize_text(observed))
+        expected_number = Decimal(normalize_text(expected))
+        if observed_number.is_finite() and expected_number.is_finite():
+            return observed_number == expected_number
+    except InvalidOperation:
+        pass
     return normalize_text(observed) == normalize_text(expected)
 
 

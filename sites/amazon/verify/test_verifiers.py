@@ -61,6 +61,7 @@ class VerifierTests(unittest.TestCase):
         steps: list[dict],
         answer: str,
         mutate=None,
+        baseline_mutate=None,
         task_id: str | None = None,
         malformed: bool = False,
     ) -> tuple[int, dict]:
@@ -72,6 +73,14 @@ class VerifierTests(unittest.TestCase):
             run_dir.mkdir()
             shutil.copy2(SEED_DB, initial)
             shutil.copy2(SEED_DB, after)
+            if baseline_mutate:
+                for snapshot in (initial, after):
+                    connection = sqlite3.connect(snapshot)
+                    try:
+                        baseline_mutate(connection)
+                        connection.commit()
+                    finally:
+                        connection.close()
             if mutate:
                 connection = sqlite3.connect(after)
                 try:
@@ -95,7 +104,6 @@ class VerifierTests(unittest.TestCase):
                     "--run_dir", str(run_dir),
                     "--initial_db", str(initial),
                     "--after_db", str(after),
-                    "--no_llm", "true",
                 ],
                 capture_output=True,
                 text=True,
@@ -125,6 +133,13 @@ class VerifierTests(unittest.TestCase):
             "INSERT INTO cart_items(id,user_id,product_id,quantity,variant,added_at) VALUES(?,?,?,?,?,?)",
             (next_id(connection, "cart_items"), user_id, product_id, 1, "Color: Pacific Blue, Storage: 128GB", "2026-09-13 10:00:00"),
         )
+
+    @staticmethod
+    def set_product_spec(connection: sqlite3.Connection, slug: str, key: str, value: str) -> None:
+        row = connection.execute("SELECT specs FROM products WHERE slug=?", (slug,)).fetchone()
+        specs = json.loads(row[0])
+        specs[key] = value
+        connection.execute("UPDATE products SET specs=? WHERE slug=?", (json.dumps(specs), slug))
 
     def positive_case(self, task: int):
         cases = {
@@ -236,6 +251,110 @@ class VerifierTests(unittest.TestCase):
                 self.assertNotEqual(0, code)
                 self.assertFalse(verdict["pass"])
 
+    def test_state_tasks_preserve_other_accounts_rows(self) -> None:
+        def seed_other_wishlist(connection: sqlite3.Connection) -> None:
+            user_id = connection.execute("SELECT id FROM users WHERE email='alice.j@test.com'").fetchone()[0]
+            product_id = connection.execute("SELECT id FROM products ORDER BY id LIMIT 1").fetchone()[0]
+            connection.execute(
+                "INSERT INTO wishlist_items(id,user_id,product_id,added_at) VALUES(?,?,?,?)",
+                (next_id(connection, "wishlist_items"), user_id, product_id, "2026-09-13 09:00:00"),
+            )
+
+        steps, answer, _ = self.positive_case(1)
+
+        def mutate_wishlist_and_delete_other(connection: sqlite3.Connection) -> None:
+            self.mutate_wishlist(connection)
+            connection.execute(
+                "DELETE FROM wishlist_items WHERE user_id=(SELECT id FROM users WHERE email='alice.j@test.com')"
+            )
+
+        code, verdict = self.run_verifier(
+            1,
+            steps,
+            answer,
+            mutate_wishlist_and_delete_other,
+            baseline_mutate=seed_other_wishlist,
+        )
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+
+        steps, answer, _ = self.positive_case(5)
+
+        def mutate_cart_and_delete_other(connection: sqlite3.Connection) -> None:
+            self.mutate_cart(connection)
+            connection.execute(
+                "DELETE FROM cart_items WHERE user_id<>(SELECT id FROM users WHERE email='demo@amazon.com')"
+            )
+
+        code, verdict = self.run_verifier(5, steps, answer, mutate_cart_and_delete_other)
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+
+    def test_numeric_filter_spellings_pass(self) -> None:
+        cases = {
+            0: open_result(
+                "/search?q=Xbox+controller&color=green&min_rating=4.00",
+                "xbox-wireless-controller-velocity-green",
+            ),
+            1: login_steps()
+            + open_result(
+                "/search?q=golf+polo&size=M&min_price=50.00&max_price=75.00&sort=price_asc",
+                "women-s-izod-swingflex-golf-polo",
+            )
+            + [
+                click(
+                    "/product/women-s-izod-swingflex-golf-polo",
+                    "/product/women-s-izod-swingflex-golf-polo",
+                ),
+                navigate("/wishlist"),
+            ],
+            14: open_result(
+                "/search?q=surge+protector&condition=New&max_price=25.00&min_rating=4.00",
+                "belkin-8-outlet-surge-protector-with-6ft-cord",
+            ),
+        }
+        for task, steps in cases.items():
+            with self.subTest(task=task):
+                _, answer, mutate = self.positive_case(task)
+                code, verdict = self.run_verifier(task, steps, answer, mutate)
+                self.assertEqual(0, code, verdict)
+                self.assertTrue(verdict["pass"], verdict)
+
+    def test_non_waterproof_boot_is_rejected(self) -> None:
+        slug = "ahnu-women-s-montara-iii-hiking-boot-non-waterproof"
+        steps = open_result(
+            "/search?q=hiking+boots&feature=waterproof&min_rating=4&size=6",
+            slug,
+        )
+        answer = "Ahnu Women's Montara III Leather Hiking Boot is waterproof, rated 4.3, and size 6 is available."
+        code, verdict = self.run_verifier(7, steps, answer)
+        self.assertNotEqual(0, code)
+        self.assertFalse(verdict["pass"])
+
+    def test_explicit_negative_specs_are_rejected(self) -> None:
+        cases = {
+            22: (
+                "t-fal-ultimate-hard-anodized-nonstick-12-piece-cookware-set",
+                "Oven Safe",
+            ),
+            27: ("anker-5-in-1-usb-c-hub-with-hdmi-and-sd-card", "HDMI"),
+        }
+        for task, (slug, key) in cases.items():
+            with self.subTest(task=task):
+                steps, answer, _ = self.positive_case(task)
+
+                def set_negative(connection: sqlite3.Connection, slug=slug, key=key) -> None:
+                    self.set_product_spec(connection, slug, key, "No")
+
+                code, verdict = self.run_verifier(
+                    task,
+                    steps,
+                    answer,
+                    baseline_mutate=set_negative,
+                )
+                self.assertNotEqual(0, code)
+                self.assertFalse(verdict["pass"])
+
     def test_legal_alternative_products_pass(self) -> None:
         alternatives = {
             6: (open_result("/search?q=stroller&color=black&min_price=100&max_price=200&min_rating=4", "joovy-scooter-x2-double-stroller-black"), "Joovy Scooter X2 Double Stroller - Black — 4.7 stars and 25,400 reviews."),
@@ -291,6 +410,19 @@ class VerifierTests(unittest.TestCase):
                 self.assertNotEqual(0, code)
                 self.assertFalse(verdict["pass"])
                 self.assertEqual("verifier_exception", verdict["reason"])
+
+    def test_malformed_invocation_emits_structured_fail(self) -> None:
+        result = subprocess.run(
+            [sys.executable, str(VERIFY_DIR / "verify_0.py")],
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+        self.assertEqual(1, result.returncode)
+        verdict = json.loads(result.stdout)
+        self.assertFalse(verdict["pass"])
+        self.assertEqual("verifier_exception", verdict["reason"])
 
 
 if __name__ == "__main__":

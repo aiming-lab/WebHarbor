@@ -22,8 +22,7 @@ Run one verifier directly:
 python3 sites/amazon/verify/verify_0.py \
   --run_dir <run-dir> \
   --initial_db <initial.db> \
-  --after_db <after.db> \
-  --no_llm true
+  --after_db <after.db>
 ```
 
 Every verifier prints one JSON object and exits `0` for PASS or `1` for FAIL.

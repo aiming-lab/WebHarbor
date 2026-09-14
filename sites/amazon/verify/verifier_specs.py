@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import re
 from typing import Any, Callable, Sequence
 
 from verify_lib import (
@@ -71,6 +72,48 @@ def _variant_contains(product: dict[str, Any], key: str, value: str) -> bool:
 
 def _exact_name(answer: str, product: dict[str, Any]) -> bool:
     return contains_all(answer, (product["name"],))
+
+
+def _prior_rows_preserved(
+    before: Sequence[dict[str, Any]],
+    after: Sequence[dict[str, Any]],
+) -> bool:
+    after_by_id = {row["id"]: row for row in after}
+    return all(after_by_id.get(row["id"]) == row for row in before)
+
+
+def _other_account_rows(path: str, table: str) -> list[dict[str, Any]]:
+    if table not in {"wishlist_items", "cart_items"}:
+        raise ValueError(f"unsupported account table: {table}")
+    return row_dicts(
+        path,
+        f'''SELECT item.*
+            FROM "{table}" AS item
+            LEFT JOIN users AS owner ON owner.id=item.user_id
+            WHERE owner.id IS NULL OR lower(owner.email)<>lower(?)
+            ORDER BY item.id''',
+        (DEMO_EMAIL,),
+    )
+
+
+def _waterproof_filter_match(product: dict[str, Any]) -> bool:
+    tags = product.get("tags") or []
+    return (
+        normalize_text(spec_value(product, "Waterproof")) == "yes"
+        and any("waterproof" in normalize_text(tag) for tag in tags)
+    )
+
+
+def _oven_safe(product: dict[str, Any]) -> bool:
+    value = normalize_text(spec_value(product, "Oven Safe"))
+    return value in {"yes", "true"} or numeric_value(value) > 0
+
+
+def _supports_hdmi(product: dict[str, Any]) -> bool:
+    value = normalize_text(spec_value(product, "HDMI"))
+    return value in {"yes", "true", "supported"} or bool(
+        re.search(r"\b(?:720p|1080p|4k|8k)\b", value)
+    )
 
 
 def _paired_names_and_prices(
@@ -177,11 +220,13 @@ def verify_1() -> None:
             judge.check("opened_lowest_eligible_polo", clicked_transition(trajectory, "/search", path), path)
             judge.check("wishlist_action_on_product", clicked_on_path(trajectory, path), path)
             judge.check("wishlist_opened_for_confirmation", visited_path(trajectory, "/wishlist"), "/wishlist")
-            before = row_dicts(initial, "SELECT w.id,p.slug FROM wishlist_items w JOIN users u ON u.id=w.user_id JOIN products p ON p.id=w.product_id WHERE lower(u.email)=lower(?) ORDER BY w.id", (DEMO_EMAIL,))
-            now = row_dicts(after, "SELECT w.id,p.slug FROM wishlist_items w JOIN users u ON u.id=w.user_id JOIN products p ON p.id=w.product_id WHERE lower(u.email)=lower(?) ORDER BY w.id", (DEMO_EMAIL,))
+            before = row_dicts(initial, "SELECT w.id,w.user_id,w.product_id,w.added_at,p.slug FROM wishlist_items w JOIN users u ON u.id=w.user_id JOIN products p ON p.id=w.product_id WHERE lower(u.email)=lower(?) ORDER BY w.id", (DEMO_EMAIL,))
+            now = row_dicts(after, "SELECT w.id,w.user_id,w.product_id,w.added_at,p.slug FROM wishlist_items w JOIN users u ON u.id=w.user_id JOIN products p ON p.id=w.product_id WHERE lower(u.email)=lower(?) ORDER BY w.id", (DEMO_EMAIL,))
             before_ids = {row["id"] for row in before}
             created = [row for row in now if row["id"] not in before_ids]
+            judge.check("demo_wishlist_rows_preserved", _prior_rows_preserved(before, now), f"before={before} after={now}")
             judge.check("exact_target_added_to_demo_wishlist", len(created) == 1 and created[0]["slug"] == target["slug"] and len(now) == len(before) + 1, f"before={before} after={now}")
+            judge.check("other_accounts_wishlist_unchanged", _other_account_rows(initial, "wishlist_items") == _other_account_rows(after, "wishlist_items"), "non-demo rows are byte-equivalent")
             judge.check("answer_saved_name_and_price", _exact_name(answer, target) and has_money(answer, target["price"]), repr(answer))
         judge.check("only_wishlist_changed", changed_tables(initial, after) == {"wishlist_items"}, repr(changed_tables(initial, after)))
     _finish(judge)
@@ -249,11 +294,13 @@ def verify_5() -> None:
             path = product_path(target)
             judge.check("opened_target_iphone", clicked_transition(trajectory, "/search", path), path)
             judge.check("submitted_add_to_cart", clicked_transition(trajectory, path, "/bag"), f"{path} -> /bag")
-            before = row_dicts(initial, "SELECT c.id,p.slug,c.quantity,c.variant FROM cart_items c JOIN users u ON u.id=c.user_id JOIN products p ON p.id=c.product_id WHERE lower(u.email)=lower(?) ORDER BY c.id", (DEMO_EMAIL,))
-            now = row_dicts(after, "SELECT c.id,p.slug,c.quantity,c.variant FROM cart_items c JOIN users u ON u.id=c.user_id JOIN products p ON p.id=c.product_id WHERE lower(u.email)=lower(?) ORDER BY c.id", (DEMO_EMAIL,))
+            before = row_dicts(initial, "SELECT c.id,c.user_id,c.product_id,c.quantity,c.variant,c.added_at,p.slug FROM cart_items c JOIN users u ON u.id=c.user_id JOIN products p ON p.id=c.product_id WHERE lower(u.email)=lower(?) ORDER BY c.id", (DEMO_EMAIL,))
+            now = row_dicts(after, "SELECT c.id,c.user_id,c.product_id,c.quantity,c.variant,c.added_at,p.slug FROM cart_items c JOIN users u ON u.id=c.user_id JOIN products p ON p.id=c.product_id WHERE lower(u.email)=lower(?) ORDER BY c.id", (DEMO_EMAIL,))
             before_ids = {row["id"] for row in before}
             created = [row for row in now if row["id"] not in before_ids]
+            judge.check("demo_cart_rows_preserved", _prior_rows_preserved(before, now), f"before={before} after={now}")
             judge.check("exactly_one_target_iphone_added", len(created) == 1 and created[0]["slug"] == target["slug"] and created[0]["quantity"] == 1 and len(now) == len(before) + 1, f"before={before} after={now}")
+            judge.check("other_accounts_cart_unchanged", _other_account_rows(initial, "cart_items") == _other_account_rows(after, "cart_items"), "non-demo rows are byte-equivalent")
             subtotal = sum(row["quantity"] * next(p["price"] for p in catalog if p["slug"] == row["slug"]) for row in now)
             judge.check("answer_cart_name_and_subtotal", _exact_name(answer, target) and has_money(answer, subtotal), f"subtotal={subtotal:.2f} answer={answer!r}")
         judge.check("only_cart_changed", changed_tables(initial, after) == {"cart_items"}, repr(changed_tables(initial, after)))
@@ -288,7 +335,7 @@ def verify_6() -> None:
 def verify_7() -> None:
     _generic_product_task(
         "Amazon--7",
-        lambda p: "hiking boot" in normalize_text(p["name"]) and _has_words(p, "waterproof") and p["rating"] >= 4 and _variant_contains(p, "size", "6") and ("women" in _text(p) or "womens" in _text(p)),
+        lambda p: "hiking boot" in normalize_text(p["name"]) and _waterproof_filter_match(p) and p["rating"] >= 4 and _variant_contains(p, "size", "6") and ("women" in _text(p) or "womens" in _text(p)),
         lambda t: search_used(t, terms=("hiking", "boots"), params={"feature": "waterproof", "min_rating": ("4", "4.0"), "size": "6"}),
         lambda a, p: _exact_name(a, p) and has_number(a, p["rating"]) and contains_all(a, ("waterproof",)) and has_number(a, 6),
     )
@@ -393,7 +440,7 @@ def _piece_count(product: dict[str, Any]) -> float:
 def verify_22() -> None:
     _generic_product_task(
         "Amazon--22",
-        lambda p: "cookware" in _text(p) and p["price"] < 150 and _piece_count(p) >= 10 and _has_words(p, "nonstick") and "stovetop only" not in normalize_text(spec_value(p, "Oven Safe")) and bool(spec_value(p, "Oven Safe")),
+        lambda p: "cookware" in _text(p) and p["price"] < 150 and _piece_count(p) >= 10 and _has_words(p, "nonstick") and _oven_safe(p),
         lambda t: search_used(t, terms=("cookware",), params={"max_price": ("150", "150.0")}),
         lambda a, p: _exact_name(a, p) and has_money(a, p["price"]) and has_number(a, _piece_count(p)) and contains_any(a, ("nonstick", "non-stick")) and contains_all(a, ("oven",)),
     )
@@ -402,7 +449,7 @@ def verify_22() -> None:
 def verify_27() -> None:
     _, trajectory, judge, catalog = _readonly_context("Amazon--27")
     answer = final_answer(trajectory)
-    candidates = [p for p in catalog if normalize_text(p.get("subcategory")) == "usb-c hubs" and p["price"] < 50 and numeric_value(spec_value(p, "Ports")) >= 4 and normalize_text(spec_value(p, "SD Card")) == "yes" and bool(spec_value(p, "HDMI")) and "macbook pro" in normalize_text(spec_value(p, "Compatible"))]
+    candidates = [p for p in catalog if normalize_text(p.get("subcategory")) == "usb-c hubs" and p["price"] < 50 and numeric_value(spec_value(p, "Ports")) >= 4 and normalize_text(spec_value(p, "SD Card")) == "yes" and _supports_hdmi(p) and "macbook pro" in normalize_text(spec_value(p, "Compatible"))]
     candidates.sort(key=lambda p: (-int(bool(p["is_bestseller"])), -p["review_count"], p["id"]))
     target = candidates[0] if candidates else None
     judge.check("searched_hub_sorted_best_sellers", search_used(trajectory, terms=("usb", "hub"), params={"max_price": ("50", "50.0"), "sort": ("bestseller", "best-sellers")}), "max_price=50, sort=bestseller")
