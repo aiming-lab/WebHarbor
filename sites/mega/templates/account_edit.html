@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Edit Account{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Edit account</h1></section>
+<form class="form-grid" method="post">
+  {% for field, label in [('display_name','Name'),('phone','Phone'),('company','Company'),('role','Role'),('address_line1','Address line 1'),('address_line2','Address line 2'),('city','City'),('state','State'),('postal_code','Postal code'),('country','Country'),('language','Language'),('timezone','Timezone')] %}
+    <label>{{ label }} <input name="{{ field }}" value="{{ current_user|attr(field) }}"></label>
+  {% endfor %}
+  <label class="check-row"><input type="checkbox" name="two_factor_enabled" {% if current_user.two_factor_enabled %}checked{% endif %}> Two-factor authentication enabled</label>
+  <label class="check-row"><input type="checkbox" name="recovery_key_saved" {% if current_user.recovery_key_saved %}checked{% endif %}> Recovery key saved offline</label>
+  <button type="submit">Save changes</button>
+</form>
+{% endblock %}

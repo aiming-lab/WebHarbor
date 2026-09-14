@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }}{% endblock %}
+{% block content %}
+<section class="hero product">
+  <div class="hero-copy">
+    <p class="eyebrow">{{ page.section }}</p>
+    <h1>{{ page.title }}</h1>
+    <p>{{ page.summary }}</p>
+    <div class="hero-actions">
+      <a class="button" href="{{ url_for('pricing') }}">View pricing</a>
+      <a class="button ghost" href="{{ url_for('downloads') }}">Downloads</a>
+    </div>
+  </div>
+  <div class="hero-media"><img src="{{ image_url(page.hero_image) }}" alt="{{ page.title }}"></div>
+</section>
+<section class="section split">
+  <div>
+    <h2>What you can do</h2>
+    <p>{{ page.body }}</p>
+    <ul class="check-list">{% for item in page.get_highlights() %}<li>{{ item }}</li>{% endfor %}</ul>
+  </div>
+  <div class="faq-list">
+    {% for row in page.get_faq() %}
+      <article><h3>{{ row.q }}</h3><p>{{ row.a }}</p></article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
