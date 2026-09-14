@@ -5,6 +5,8 @@ FILTERS = {
     1: {"species": "Cat", "location": "Chicago, IL", "age": "Young", "size": "Small", "good_with_cats": "1"},
     2: {"species": "Rabbit", "location": "Seattle, WA", "age": "Adult", "size": "Small", "good_with_children": "1"},
     7: {"species": "Dog", "location": "Chicago, IL", "age": "Senior"},
+    10: {"species": "Dog", "location": "Boston, MA", "age": "Young", "good_with_dogs": "1"},
+    11: {"species": "Dog", "sort": "name", "page": "2"},
 }
 
 DETAILS = {

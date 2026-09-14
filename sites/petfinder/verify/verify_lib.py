@@ -156,6 +156,23 @@ def entered_text(trajectory: dict[str, Any], expected: str, path: str | None = N
     return any(normalize_text(value) == normalize_text(expected) for value in input_values(trajectory, path))
 
 
+def action_locator_contains(trajectory: dict[str, Any], expected: str, path: str | None = None) -> bool:
+    needle = normalize_text(expected)
+    for step in trajectory.get("steps") or []:
+        if not isinstance(step, dict) or normalize_text(step.get("action")) not in {"click", "press", "tap"}:
+            continue
+        url = str(step.get("url") or step.get("url_before") or "")
+        if not is_site_url(url, trajectory) or (path and normalized_path(url) != normalized_path(path)):
+            continue
+        params = step.get("params") or {}
+        if not isinstance(params, dict):
+            continue
+        locator_text = " ".join(str(params.get(key) or "") for key in ("locator", "text", "name", "label"))
+        if needle and needle in normalize_text(locator_text):
+            return True
+    return False
+
+
 NEGATIONS = {"not", "no", "never", "without", "isn't", "isnt", "wasn't", "wasnt", "doesn't", "doesnt", "didn't", "didnt"}
 
 

@@ -29,6 +29,8 @@ FILTERS = {
     1: {"species": "Cat", "location": "Chicago, IL", "age": "Young", "size": "Small", "good_with_cats": "1"},
     2: {"species": "Rabbit", "location": "Seattle, WA", "age": "Adult", "size": "Small", "good_with_children": "1"},
     7: {"species": "Dog", "location": "Chicago, IL", "age": "Senior"},
+    10: {"species": "Dog", "location": "Boston, MA", "age": "Young", "good_with_dogs": "1"},
+    11: {"species": "Dog", "sort": "name", "page": "2"},
 }
 
 
@@ -47,6 +49,14 @@ ANSWERS = {
     7: "Ollie Poodle Mix has fewer days: Ollie has 5 days and Maple has 18 days.",
     8: "Alice now has 3 favorite pets.",
     9: "The inquiry status is Submitted.",
+    10: "Scout Border Collie has the lowest fee at $300; Ace Whippet is $335 and Phoebe Samoyed is $410.",
+    11: "The first pet on page 2 is Leo Vizsla Mix, a Vizsla Mix at Love-A-Bull.",
+    12: "Mochi Siamese Mix has a $185 adoption fee, a Short coat, and Lynx Point coloring.",
+    13: (
+        "Set up a rabbit-friendly space: Offer unlimited grass hay; "
+        "Cover cords and unsafe baseboards; Include a hide box and non-slip flooring."
+    ),
+    14: "Milo Labrador Mix was already in favorites, so the total remains 2 favorite pets.",
 }
 
 
@@ -61,13 +71,26 @@ PATHS = {
     7: [url("/pets", FILTERS[7]), url("/pets/maple-senior-beagle"), url("/pets/ollie-poodle-mix")],
     8: [url("/login"), url("/search", {"q": "Luna"}), url("/pets/luna-domestic-shorthair"), url("/account")],
     9: [url("/login"), url("/search", {"q": "Nori"}), url("/pets/nori-rabbit"), url("/account")],
+    10: [
+        url("/pets", FILTERS[10]),
+        url("/pets/scout-border-collie"),
+        url("/pets/ace-whippet"),
+        url("/pets/phoebe-samoyed"),
+    ],
+    11: [url("/pets", FILTERS[11]), url("/pets/leo-vizsla-mix")],
+    12: [
+        url("/search", {"q": "Seattle Humane", "location": "Seattle, WA"}),
+        url("/pets/mochi-siamese-mix"),
+    ],
+    13: [url("/search", {"q": "rabbit housing"}), url("/guides/rabbit-housing-essentials")],
+    14: [url("/login"), url("/search", {"q": "Milo"}), url("/pets/milo-labrador-mix"), url("/account")],
 }
 
 
 def trajectory(index: int, answer: str | None = None, paths: list[str] | None = None) -> dict:
     observed_paths = PATHS[index] if paths is None else paths
     steps = [{"url": path, "action": "navigate", "params": {}} for path in observed_paths]
-    if index in {4, 5, 8, 9} and observed_paths:
+    if index in {4, 5, 8, 9, 14} and observed_paths:
         login_index = next(
             (position for position, path in enumerate(observed_paths) if path.startswith(url("/login"))),
             None,
@@ -89,6 +112,20 @@ def trajectory(index: int, answer: str | None = None, paths: list[str] | None = 
                     "url": url("/pets/nori-rabbit"),
                     "action": "input",
                     "params": {"text": INQUIRY_MESSAGE},
+                },
+            )
+    if index == 14 and observed_paths:
+        detail_index = next(
+            (position for position, path in enumerate(observed_paths) if path.startswith(url("/pets/milo-labrador-mix"))),
+            None,
+        )
+        if detail_index is not None:
+            steps.insert(
+                detail_index + 1,
+                {
+                    "url": url("/pets/milo-labrador-mix"),
+                    "action": "click",
+                    "params": {"locator": "role=button name~=Save this pet"},
                 },
             )
     return {
@@ -146,6 +183,7 @@ class VerifierMatrixTests(unittest.TestCase):
         observed: dict | str,
         mutate: bool = False,
         extra_sql: tuple[str, tuple] | None = None,
+        baseline_sql: tuple[str, tuple] | None = None,
         remove_after: bool = False,
     ) -> tuple[subprocess.CompletedProcess[str], dict]:
         run_dir = self.root / f"run-{index}-{len(list(self.root.glob('run-*')))}"
@@ -153,6 +191,14 @@ class VerifierMatrixTests(unittest.TestCase):
         encoded = observed if isinstance(observed, str) else json.dumps(observed)
         (run_dir / "trajectory.json").write_text(encoded, encoding="utf-8")
         initial, after = self.databases(index, mutate)
+        if baseline_sql:
+            for database in (initial, after):
+                connection = sqlite3.connect(database)
+                try:
+                    connection.execute(*baseline_sql)
+                    connection.commit()
+                finally:
+                    connection.close()
         if extra_sql:
             connection = sqlite3.connect(after)
             try:
@@ -193,22 +239,22 @@ class VerifierMatrixTests(unittest.TestCase):
         self.assertFalse(payload["pass"], payload)
 
     def test_positive_examples_pass(self):
-        for index in range(10):
+        for index in range(15):
             with self.subTest(index=index):
                 self.assert_passes(index, trajectory(index), mutate=index in {5, 8, 9})
 
     def test_noop_examples_fail(self):
-        for index in range(10):
+        for index in range(15):
             with self.subTest(index=index):
                 self.assert_fails(index, trajectory(index, answer="No action taken.", paths=[]))
 
     def test_right_answer_without_required_navigation_fails(self):
-        for index in range(10):
+        for index in range(15):
             with self.subTest(index=index):
                 self.assert_fails(index, trajectory(index, paths=[]), mutate=index in {5, 8, 9})
 
     def test_wrong_answer_after_valid_path_fails(self):
-        for index in range(10):
+        for index in range(15):
             with self.subTest(index=index):
                 self.assert_fails(index, trajectory(index, answer="The requested facts were not found."), mutate=index in {5, 8, 9})
 
@@ -292,7 +338,7 @@ class VerifierMatrixTests(unittest.TestCase):
         self.assert_fails(3, trajectory(3, answer=leaked_card_answer))
 
     def test_login_tasks_require_credential_inputs(self):
-        for index in (4, 5, 8, 9):
+        for index in (4, 5, 8, 9, 14):
             observed = trajectory(index)
             observed["steps"] = [
                 step for step in observed["steps"]
@@ -307,6 +353,96 @@ class VerifierMatrixTests(unittest.TestCase):
             if step["action"] == "input" and step["url"] == url("/pets/nori-rabbit"):
                 step["params"]["text"] = "I would like to meet Nori."
         self.assert_fails(9, observed, mutate=True)
+
+    def test_task_ten_requires_every_matching_detail(self):
+        missing_phoebe = [path for path in PATHS[10] if not path.endswith("/pets/phoebe-samoyed")]
+        self.assert_fails(10, trajectory(10, paths=missing_phoebe))
+
+    def test_task_ten_accepts_any_detail_order(self):
+        alternate = [PATHS[10][0], PATHS[10][3], PATHS[10][1], PATHS[10][2]]
+        self.assert_passes(10, trajectory(10, paths=alternate))
+
+    def test_task_eleven_requires_sorted_second_page(self):
+        wrong_page = [url("/pets", {"species": "Dog", "sort": "name", "page": "1"}), url("/pets/leo-vizsla-mix")]
+        self.assert_fails(11, trajectory(11, paths=wrong_page))
+
+    def test_task_twelve_requires_location_bound_search(self):
+        no_location = [url("/search", {"q": "Seattle Humane"}), url("/pets/mochi-siamese-mix")]
+        self.assert_fails(12, trajectory(12, paths=no_location))
+
+    def test_task_thirteen_requires_the_guide_detail(self):
+        self.assert_fails(13, trajectory(13, paths=[PATHS[13][0]]))
+
+    def test_task_fourteen_requires_the_save_attempt(self):
+        observed = trajectory(14)
+        observed["steps"] = [
+            step for step in observed["steps"]
+            if "Save this pet" not in str(step.get("params", {}).get("locator", ""))
+        ]
+        self.assert_fails(14, observed)
+
+    def test_task_fourteen_rejects_any_database_change(self):
+        result, payload = self.verify(
+            14,
+            trajectory(14),
+            extra_sql=(
+                "INSERT INTO saved_item(user_id, listing_id) "
+                "SELECT u.id,l.id FROM user u,listing l WHERE lower(u.email)=lower(?) AND l.slug=?",
+                ("alice.j@test.com", "luna-domestic-shorthair"),
+            ),
+        )
+        self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertFalse(payload["pass"], payload)
+
+    def test_new_verifiers_derive_facts_from_each_initial_snapshot(self):
+        result, payload = self.verify(
+            10,
+            trajectory(
+                10,
+                answer="Scout Border Collie has the lowest fee at $295; Ace Whippet is $335 and Phoebe Samoyed is $410.",
+            ),
+            baseline_sql=("UPDATE listing SET adoption_fee=? WHERE slug=?", (295, "scout-border-collie")),
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(payload["pass"], payload)
+
+        result, payload = self.verify(
+            12,
+            trajectory(
+                12,
+                answer="Mochi Siamese Mix has a $190 adoption fee, a Short coat, and Lynx Point coloring.",
+            ),
+            baseline_sql=("UPDATE listing SET adoption_fee=? WHERE slug=?", (190, "mochi-siamese-mix")),
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(payload["pass"], payload)
+
+        result, payload = self.verify(
+            14,
+            trajectory(
+                14,
+                answer="Milo Labrador Mix was already in favorites, so the total remains 3 favorite pets.",
+            ),
+            baseline_sql=(
+                "INSERT INTO saved_item(user_id, listing_id) "
+                "SELECT u.id,l.id FROM user u,listing l WHERE lower(u.email)=lower(?) AND l.slug=?",
+                ("alice.j@test.com", "luna-domestic-shorthair"),
+            ),
+        )
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertTrue(payload["pass"], payload)
+
+    def test_new_read_tasks_reject_partial_answers(self):
+        partials = {
+            10: "Scout Border Collie has the lowest fee at $300; Ace Whippet is $335.",
+            11: "The first pet on page 2 is Leo Vizsla Mix, a Vizsla Mix.",
+            12: "The Baby Cat is Mochi Siamese Mix, a Siamese Mix in Seattle, WA.",
+            13: "Set up a rabbit-friendly space: Offer unlimited grass hay; Cover cords and unsafe baseboards.",
+            14: "Milo Labrador Mix was already in favorites, so the total remains 3 favorite pets.",
+        }
+        for index, answer in partials.items():
+            with self.subTest(index=index):
+                self.assert_fails(index, trajectory(index, answer=answer))
 
 
 if __name__ == "__main__":

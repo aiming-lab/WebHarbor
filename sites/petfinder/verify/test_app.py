@@ -304,6 +304,39 @@ class AppTests(unittest.TestCase):
         wrong_location = self.client.get("/search?q=Nori&location=Chicago%2C+IL").get_data(as_text=True)
         self.assertIn("No pets found", wrong_location)
 
+    def test_added_task_paths_keep_real_choices_and_detail_only_facts(self):
+        comparison = self.client.get(
+            "/pets?species=Dog&location=Boston%2C+MA&age=Young&good_with_dogs=1"
+        ).get_data(as_text=True)
+        self.assertEqual(comparison.count('class="pet-card"'), 3)
+        for name in ("Scout Border Collie", "Ace Whippet", "Phoebe Samoyed"):
+            self.assertIn(name, comparison)
+        for fee in ("$300", "$335", "$410"):
+            self.assertNotIn(fee, comparison)
+
+        second_page = self.client.get(
+            "/pets?species=Dog&sort=name&page=2"
+        ).get_data(as_text=True)
+        page_names = re.findall(r'<h3><a[^>]*>(.*?)</a></h3>', second_page)
+        self.assertTrue(page_names)
+        self.assertEqual(page_names[0], "Leo Vizsla Mix")
+
+        search = self.client.get(
+            "/search?q=Seattle+Humane&location=Seattle%2C+WA"
+        ).get_data(as_text=True)
+        self.assertIn("Mochi Siamese Mix", search)
+        self.assertGreater(search.count('class="search-result"'), 1)
+        self.assertNotIn("$185", search)
+
+        advice = self.client.get("/search?q=rabbit+housing").get_data(as_text=True)
+        self.assertIn("Rabbit housing essentials", advice)
+        self.assertNotIn("Offer unlimited grass hay", advice)
+
+        with self.app.app_context():
+            alice = self.module.User.query.filter_by(email="alice.j@test.com").one()
+            favorites = self.module.SavedItem.query.filter_by(user_id=alice.id).all()
+            self.assertEqual([item.listing.name for item in favorites], ["Milo Labrador Mix", "Nori Rabbit"])
+
     def test_homepage_covers_source_section_sequence(self):
         body = self.client.get("/").get_data(as_text=True)
         self.assertIn("Build your bond in the myPurina App", body)

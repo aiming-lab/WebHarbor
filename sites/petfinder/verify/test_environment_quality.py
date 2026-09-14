@@ -31,14 +31,14 @@ class EnvironmentQualityTests(unittest.TestCase):
         self.assertIn(f"EXPOSE 8101 40000-{40000 + len(sites) - 1}", docker)
 
         rows = [json.loads(line) for line in (SITE_DIR / "tasks.jsonl").read_text().splitlines() if line.strip()]
-        self.assertEqual(len(rows), 10)
+        self.assertEqual(len(rows), 15)
         for index, row in enumerate(rows):
             self.assertEqual(row["id"], f"Petfinder--{index}")
             self.assertEqual(row["web"], "http://localhost:40029/")
             self.assertEqual(row["verifier_path"], f"sites/petfinder/verify/verify_{index}.py")
             self.assertTrue(row["judge_rubric"].startswith("FACT CHECKPOINTS"))
             self.assertNotIn("answer", row)
-        for index in (4, 5, 8, 9):
+        for index in (4, 5, 8, 9, 14):
             self.assertIn("alice.j@test.com", rows[index]["ques"])
             self.assertIn("TestPass123!", rows[index]["ques"])
 
@@ -70,7 +70,7 @@ class EnvironmentQualityTests(unittest.TestCase):
         self.assertNotIn("url_for('art'", templates)
 
     def test_every_task_has_a_verifier(self):
-        for index in range(10):
+        for index in range(15):
             self.assertTrue((SITE_DIR / f"verify/verify_{index}.py").is_file())
 
 
