@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 29 Flask mirror sites + control plane on :8101.
+# 30 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -70,6 +70,18 @@ RUN cd /opt/WebSyn/healthline && test -f instance_seed/healthline.db && \
     PYTHONHASHSEED=0 python3 migrate_seed.py && \
     python3 prune_unreferenced_images.py --apply && rm -rf instance
 
+# Versus ships source-backed entity imagery from the pinned asset bundle.
+# The generic gate enforces exact coverage, hashes, source URLs and WebP headers.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/versus
+# The seed remains code-generated; the benchmark password hash is frozen so the
+# SQLite output is byte-identical on every build.
+RUN cd /opt/WebSyn/versus && \
+    rm -rf instance instance_seed && \
+    mkdir -p instance_seed && \
+    python3 -c "from app import app" && \
+    cp instance/versus.db instance_seed/versus.db && \
+    rm -rf instance __pycache__
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
@@ -92,6 +104,6 @@ os.makedirs('instance_seed', exist_ok=True); \
 shutil.copy2('instance/rotten_tomatoes.db', 'instance_seed/rotten_tomatoes.db'); \
 print('Rotten Tomatoes seed DB generated at build time.')" && rm -rf /opt/WebSyn/rotten_tomatoes/instance
 
-EXPOSE 8101 40000-40028
+EXPOSE 8101 40000-40029
 
 CMD ["/opt/websyn_start.sh"]

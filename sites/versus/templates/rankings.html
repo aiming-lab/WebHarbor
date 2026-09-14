@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Rankings{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Ranked by Versus Score</div><h1>Rankings</h1></div></section>
+<div class="category-pills">
+  <a class="{{ 'active' if not category_slug }}" href="{{ url_for('rankings') }}">All</a>
+  {% for category in categories %}
+    <a class="{{ 'active' if category.slug == category_slug }}" href="{{ url_for('rankings', category=category.slug) }}">{{ category.name }}</a>
+  {% endfor %}
+</div>
+<section class="ranking-list">
+  {% for rank, product in ranked %}
+    <a class="ranking-row" href="{{ url_for('product_detail', slug=product.slug) }}">
+      <span class="rank">{{ rank }}</span>
+      <strong>{{ product.name }}</strong>
+      <small>{{ product.category.name }}{% if product.price is not none %} · ${{ product.price }}{% endif %}</small>
+      <span class="score">{{ product.score }}</span>
+    </a>
+  {% endfor %}
+</section>
+
+{% if paging.pages > 1 %}
+<nav class="pager" aria-label="Pagination">
+  {% if paging.has_prev %}<a rel="prev" href="{{ url_for(request.endpoint, **dict(request.view_args, **dict(request.args, page=paging.page - 1))) }}">Previous</a>{% endif %}
+  <span>{{ paging.start }}–{{ paging.end }} of {{ paging.total }} · page {{ paging.page }} of {{ paging.pages }}</span>
+  {% if paging.has_next %}<a rel="next" href="{{ url_for(request.endpoint, **dict(request.view_args, **dict(request.args, page=paging.page + 1))) }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}

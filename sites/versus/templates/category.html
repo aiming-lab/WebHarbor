@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }}{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow">Category</div><h1>{{ category.name }}</h1><p>{{ category.tagline }}</p></div>
+</section>
+<form class="filter-bar" action="{{ url_for('category_detail', slug=category.slug) }}">
+  <select name="brand">
+    <option value="">Any {{ category.brand_label|lower }}</option>
+    {% for item in brands %}<option value="{{ item }}" {% if item == brand %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+  {% if has_prices %}<input name="max_price" type="number" placeholder="Max price" value="{{ max_price or '' }}">{% endif %}
+  <input name="min_score" type="number" placeholder="Min score" value="{{ min_score or '' }}">
+  <button type="submit">Apply</button>
+</form>
+<section class="card-grid section">
+  {% for product in products %}
+    {% include "_product_card.html" %}
+  {% endfor %}
+</section>
+
+{% if paging.pages > 1 %}
+<nav class="pager" aria-label="Pagination">
+  {% if paging.has_prev %}<a rel="prev" href="{{ url_for(request.endpoint, **dict(request.view_args, **dict(request.args, page=paging.page - 1))) }}">Previous</a>{% endif %}
+  <span>{{ paging.start }}–{{ paging.end }} of {{ paging.total }} · page {{ paging.page }} of {{ paging.pages }}</span>
+  {% if paging.has_next %}<a rel="next" href="{{ url_for(request.endpoint, **dict(request.view_args, **dict(request.args, page=paging.page + 1))) }}">Next</a>{% endif %}
+</nav>
+{% endif %}
+{% endblock %}
