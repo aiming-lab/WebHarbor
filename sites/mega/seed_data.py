@@ -69,7 +69,7 @@ def seed_database():
          "Encrypted collaboration for larger teams with advanced support and account governance.",
          ["10 users included", "25 TB pooled storage", "Advanced account recovery", "Audit-ready exports", "Dedicated onboarding"], []),
         ("S4 Fixed Storage", "s4-fixed-storage", "business", "objectstorage", 19.99, 199.99, 3.00, 15.00, 1, 0, 0, 3, False,
-         "Predictable S3-compatible storage",
+         "Predictable object storage",
          "Object storage for backups and media libraries with zero surprise egress on typical workloads.",
          ["3 TB base object storage", "S3-compatible API", "5x included egress guide", "Lifecycle-friendly archive use"], []),
         ("Pro Flexi", "pro-flexi", "business", "objectstorage", 16.00, 160.00, 3.00, 3.00, 1, 10, 1, 3, False,

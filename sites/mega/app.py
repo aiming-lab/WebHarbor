@@ -253,6 +253,30 @@ def slugify(value):
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")
 
 
+def form_int(name, default=1, minimum=1):
+    raw = request.form.get(name, default)
+    try:
+        value = int(raw if raw not in (None, "") else default)
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, value)
+
+
+def form_float(name, default=0.0):
+    raw = request.form.get(name, default)
+    try:
+        return float(raw if raw not in (None, "") else default)
+    except (TypeError, ValueError):
+        return float(default)
+
+
+def normalize_folder(value):
+    folder = (value or "").strip() or "/"
+    if not folder.startswith("/"):
+        folder = "/" + folder
+    return folder.rstrip("/") or "/"
+
+
 def tokenize(query):
     return [
         token for token in re.split(r"\W+", (query or "").lower())
@@ -372,8 +396,8 @@ def plan_detail(slug):
 def add_to_cart(slug):
     plan = Plan.query.filter_by(slug=slug, active=True).first_or_404()
     session["checkout_plan"] = plan.slug
-    session["billing_cycle"] = request.form.get("billing_cycle", "monthly")
-    session["seats"] = max(1, int(request.form.get("seats", 1) or 1))
+    session["billing_cycle"] = request.form.get("billing_cycle", "monthly") or "monthly"
+    session["seats"] = form_int("seats", 1)
     flash(f"{plan.name} is ready for checkout.", "success")
     return redirect(url_for("checkout"))
 
@@ -392,7 +416,15 @@ def checkout():
         flash("Choose a plan before checkout.", "info")
         return redirect(url_for("pricing"))
     billing = request.form.get("billing_cycle") or session.get("billing_cycle", "monthly")
-    seats = max(1, int(request.form.get("seats") or session.get("seats", 1) or 1))
+    if request.method == "POST":
+        seats = form_int("seats", session.get("seats", 1) or 1)
+        session["billing_cycle"] = billing
+        session["seats"] = seats
+    else:
+        try:
+            seats = max(1, int(session.get("seats", 1) or 1))
+        except (TypeError, ValueError):
+            seats = 1
     payment_id = request.form.get("payment_id", type=int)
     methods = PaymentMethod.query.filter_by(user_id=current_user.id).all()
     subtotal, tax, total = order_total(plan, billing, seats)
@@ -458,11 +490,15 @@ def register():
                 display_name=request.form.get("display_name", "MEGA User"),
                 recovery_key_saved=False,
             )
-            user.set_password(request.form.get("password", ""))
-            db.session.add(user)
-            db.session.commit()
-            login_user(user)
-            return redirect(url_for("account"))
+            password = request.form.get("password", "")
+            if len(password) < 6:
+                flash("Password must be at least 6 characters.", "error")
+            else:
+                user.set_password(password)
+                db.session.add(user)
+                db.session.commit()
+                login_user(user)
+                return redirect(url_for("account"))
     return render_template("register.html")
 
 
@@ -511,8 +547,8 @@ def payment_methods():
                 label=request.form.get("label", "New card"),
                 card_type=request.form.get("card_type", "Visa"),
                 last4=last4,
-                exp_month=int(request.form.get("exp_month", 12)),
-                exp_year=int(request.form.get("exp_year", 2029)),
+                exp_month=form_int("exp_month", 12, minimum=1),
+                exp_year=form_int("exp_year", 2029, minimum=2026),
                 billing_country=request.form.get("billing_country", "United States"),
                 is_default=bool(request.form.get("is_default")),
             )
@@ -545,11 +581,19 @@ def cloud_drive():
 @login_required
 def new_folder():
     name = request.form.get("name", "").strip()
-    parent = request.form.get("folder", "/")
+    parent = normalize_folder(request.form.get("folder", "/"))
     if not name:
         flash("Folder name is required.", "error")
     else:
-        item = CloudItem(user_id=current_user.id, name=name, slug=slugify(f"{parent}-{name}-{current_user.id}"), item_type="folder", folder=parent, modified_at=datetime.utcnow().strftime("%Y-%m-%d"), content_summary="User-created folder")
+        item = CloudItem(
+            user_id=current_user.id,
+            name=name,
+            slug=slugify(f"{parent}-{name}-{current_user.id}-{datetime.utcnow().timestamp()}"),
+            item_type="folder",
+            folder=parent,
+            modified_at=datetime.utcnow().strftime("%Y-%m-%d"),
+            content_summary="User-created folder",
+        )
         db.session.add(item)
         db.session.commit()
         flash("Folder created.", "success")
@@ -560,7 +604,7 @@ def new_folder():
 @login_required
 def upload_file():
     name = request.form.get("name", "").strip()
-    folder = request.form.get("folder", "/")
+    folder = normalize_folder(request.form.get("folder", "/"))
     if not name:
         flash("File name is required.", "error")
     else:
@@ -572,7 +616,7 @@ def upload_file():
             item_type="file",
             folder=folder,
             extension=ext,
-            size_mb=float(request.form.get("size_mb", 12) or 12),
+            size_mb=form_float("size_mb", 12),
             modified_at=datetime.utcnow().strftime("%Y-%m-%d"),
             sync_status="Synced",
             content_summary=request.form.get("content_summary", "Uploaded through the MEGA web client."),
