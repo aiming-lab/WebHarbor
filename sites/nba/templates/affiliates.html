@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Affiliates - NBA{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <div>
+    <span class="kicker">NBA Apps</span>
+    <h1>NBA Affiliates</h1>
+    <p>Local mirror hub for the app-grid menu: teams, NBA Store, tickets, social impact, and league coverage.</p>
+  </div>
+</section>
+<section class="content-block">
+  <div class="affiliate-grid">
+    <a class="affiliate-card" href="{{ url_for('league_pass') }}"><strong>League Pass</strong><span>Games, tune-in cards, and replays</span></a>
+    <a class="affiliate-card" href="{{ url_for('shop') }}"><strong>NBA Store</strong><span>Jerseys, hats, tees, and team gear</span></a>
+    <a class="affiliate-card" href="{{ url_for('tickets') }}"><strong>Tickets</strong><span>Local ticket request workflow</span></a>
+    <a class="affiliate-card" href="{{ url_for('nba_play') }}"><strong>NBA Play</strong><span>Video-style stories and highlights</span></a>
+    <a class="affiliate-card" href="{{ url_for('fantasy') }}"><strong>Fantasy</strong><span>Player trends and stat leaders</span></a>
+    <a class="affiliate-card" href="{{ url_for('news', category='History') }}"><strong>NBA History</strong><span>Historical features and league context</span></a>
+  </div>
+  <div class="section-title"><h2>Teams</h2><a href="{{ url_for('teams') }}">All Teams</a></div>
+  <div class="team-grid small">
+    {% for team in teams[:12] %}
+      {% include "_components/team_card.html" %}
+    {% endfor %}
+  </div>
+  <div class="section-title affiliate-title"><h2>Social Impact</h2><a href="{{ url_for('around_the_nba') }}">Around the NBA</a></div>
+  <div class="story-grid official-grid">
+    {% for article in articles %}
+      {% include "_components/story_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

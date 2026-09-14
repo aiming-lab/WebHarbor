@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Schedule - NBA{% endblock %}
+{% block content %}
+<nav class="schedule-subnav" aria-label="Schedule navigation">
+  <strong>Schedule</strong>
+  <a href="{{ url_for('schedule') }}">Key Dates</a>
+  <a href="{{ url_for('watch') }}">Tap To Watch</a>
+  <a class="active" href="{{ url_for('schedule', season_type='Playoffs') }}">2026 Playoffs Schedule</a>
+  <a href="{{ url_for('games', view='all') }}">National TV Games</a>
+  <a href="{{ url_for('league_pass') }}">League Pass Schedule</a>
+</nav>
+
+<section class="schedule-page-official">
+  <div class="schedule-panel">
+    <div class="official-page-title">
+      <h1>NBA Schedule</h1>
+      <a href="{{ url_for('account') }}">Add Games to Calendar</a>
+    </div>
+
+    <form class="schedule-filters-official" method="get">
+      <label>Season Type
+        <select name="season_type">
+          <option {% if season_type == 'All Games' %}selected{% endif %}>All Games</option>
+          <option {% if season_type == 'Playoffs' %}selected{% endif %}>Playoffs</option>
+          <option {% if season_type == 'Regular Season' %}selected{% endif %}>Regular Season</option>
+        </select>
+      </label>
+      <label>Calendar
+        <select name="month">
+          <option value="">May</option>
+          {% for item in months %}
+            <option value="{{ item }}" {% if month|string == item|string %}selected{% endif %}>{{ "%02d"|format(item) }}/2026</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Team
+        <select name="team">
+          <option value="">All Teams</option>
+          {% for team in teams %}
+            <option value="{{ team.slug }}" {% if team.slug == team_slug %}selected{% endif %}>{{ team.full_name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Broadcaster
+        <select name="status">
+          <option value="">All Broadcasters</option>
+          <option value="Scheduled" {% if status == 'Scheduled' %}selected{% endif %}>League Pass</option>
+          <option value="Final" {% if status == 'Final' %}selected{% endif %}>Completed Games</option>
+        </select>
+      </label>
+      <label>Broadcaster Region
+        <select>
+          <option>Hong Kong</option>
+          <option>United States</option>
+        </select>
+      </label>
+      <button class="toggle-pill" type="submit" aria-label="Hide previous dates"><span>Hide Previous Dates</span><i></i></button>
+    </form>
+
+    {% for week in official_schedule %}
+      <section class="official-week">
+        <h2>{{ week.label }}</h2>
+        {% for day in week.days %}
+          <div class="official-day">
+            <div class="official-day-head">
+              <h3>{{ day.label }}</h3>
+              <span>{{ day.count }}</span>
+            </div>
+            {% for row in day.rows %}
+              <article class="official-schedule-row">
+                <div class="schedule-time">
+                  <strong>{{ row.status }}</strong>
+                  {% if row.time %}<span>{{ row.time }}</span>{% endif %}
+                  {% if row.broadcast %}<em>{{ row.broadcast }}</em>{% endif %}
+                  {% if row.broadcast == 'League Pass' or row.broadcast == 'Viu TV' %}
+                    <b class="lp-wordmark">League Pass</b>
+                  {% endif %}
+                </div>
+                <div class="schedule-matchup">
+                  <strong>{{ row.round }}</strong>
+                  <a href="{{ url_for('team_detail', slug=row.away_slug) }}">{{ row.away_name }}</a>
+                  <a href="{{ url_for('team_detail', slug=row.home_slug) }}">{{ row.home_name }}</a>
+                  <span>{{ row.series }}</span>
+                </div>
+                <div class="schedule-score">
+                  {% if row.away_score %}
+                    <b>+ {{ row.away_score }}</b>
+                    <b>{{ row.home_score }}</b>
+                  {% endif %}
+                </div>
+                <div class="schedule-arena">
+                  <strong>{{ row.arena }}</strong>
+                  <span>{{ row.city }}</span>
+                </div>
+                <div class="schedule-actions-official">
+                  {% for action in row.actions %}
+                    {% if action == 'Watch' %}
+                      <a href="{{ url_for('watch') }}">{{ action }}</a>
+                    {% elif action == 'Box Score' %}
+                      <a href="{{ url_for('games', view='all') }}">{{ action }}</a>
+                    {% else %}
+                      <a href="{{ url_for('playoffs') }}">{{ action }}</a>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </section>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

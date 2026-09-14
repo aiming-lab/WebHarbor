@@ -36,17 +36,17 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 29 sites today, scaling to 100+ together
+- **Community-driven** — 30 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
 One command to run all web environments:
 
 ```bash
-docker run -p 8101:8101 -p 40000-40028:40000-40028 battalion7244/webharbor:latest
+docker run -p 8101:8101 -p 40000-40029:40000-40029 battalion7244/webharbor:latest
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40028` to explore 29 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, and NVIDIA`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40029` to explore 30 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, and NBA`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -63,19 +63,20 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 ./scripts/build.sh                                 # docker build -t webharbor:dev .
 ```
 
-### Local NVIDIA review candidate
+### Local review candidate registry
 
-This branch registers **29 sites**, the 29 entries listed above; NVIDIA is the last
-entry, registry index 28, container port 40028 (local review host port 48028). The
-published-image quickstart above is not a claim that this review candidate has been
-published or accepted.
+This branch registers **30 sites**. NVIDIA remains at registry index 28 and NBA is
+appended at index 29, container port 40029 (local review host port 48029), so no
+existing site is remapped. The published-image quickstart above is not a claim that
+this review candidate has been published or accepted.
 
 | Site | Registry position | Container port | Local review host port |
 | --- | --- | --- | --- |
 | NVIDIA | 28 | 40028 | 48028 |
+| NBA | 29 | 40029 | 48029 |
 
 `websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 29 sites and `40000-40028`;
+site's `tasks.jsonl` `web` URL agree on 30 sites and `40000-40029`;
 `scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
 drift.
 
@@ -83,7 +84,7 @@ After preparing the candidate assets and building `webharbor:dev`, the local
 review deployment uses:
 
 ```bash
-docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48028:40000-40028 webharbor:dev
+docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48029:40000-40029 webharbor:dev
 ```
 
 NVIDIA inherits the site contribution from @KaKituken
@@ -95,28 +96,28 @@ passed.
 
 ### Asset delivery status
 
-`.assets-revision` is pinned to `b7e605c0ec5fc47de85b09e7427162cc50e38980`, the
-squash-merge commit of HF dataset PR
-[#85](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/85) on the
-dataset's `main`. It sits on top of PR
-[#84](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/84) and PR
-[#75](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/75), which
-added the first reviewed NVIDIA bundle. Those PRs are merged, the pinned commit is
-on `main`, and the earlier "PR not merged" and "archive rejected by the
-validator" blockers are cleared:
+`.assets-revision` is pinned to the immutable candidate commit
+`65a85a1494688f3b9e82217e50a1dd3a5c6f1a8a` in open HF dataset PR
+[#88](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/88). It is cut
+from dataset `main` at `b7e605c0ec5fc47de85b09e7427162cc50e38980` (the merged
+HF PR #85 NVIDIA revision) and adds the reviewed `nba.tar.gz` without changing
+the other archives. A maintainer must merge HF PR #88 and re-pin this file to its
+merge commit before release:
 
-- the pinned revision carries 31 `*.tar.gz` (one per registered site plus
+- the pinned revision carries 32 `*.tar.gz` (one per registered site plus
   `bandcamp.tar.gz` and `drugs_com.tar.gz`, which `fetch_assets.sh` ignores for
   sites this checkout does not register);
+- `nba.tar.gz` is 26,495,947 bytes with SHA-256
+  `4ade0429edc12ffbfa1ee42a8f0192fc3009647912ff57a8d232d52abe7b349d`;
 - `nvidia.tar.gz` at that revision has 37 file members and no directory members,
   so `scripts/validate_asset_archive.py nvidia.tar.gz nvidia` prints
   `[fetch] validated 37 managed members for nvidia` and exits 0;
-- `./scripts/fetch_assets.sh` at this pin extracts all 29 registered sites
-  (`[fetch] done — 29 site(s) extracted into sites/`).
+- `./scripts/fetch_assets.sh` at this pin extracts all 30 registered sites.
 
 | Artifact | Members | Bytes | SHA-256 |
 | --- | --- | --- | --- |
-| `nvidia.tar.gz` at the current pin (HF PR #85) | 37 | 16,340,955 | `617a3e3740ba6706bcab786c8a5c3f9a22ecbb39eff5728ad2c12e4992cb098b` |
+| `nba.tar.gz` at the current HF PR #88 pin | — | 26,495,947 | `4ade0429edc12ffbfa1ee42a8f0192fc3009647912ff57a8d232d52abe7b349d` |
+| `nvidia.tar.gz` carried forward from merged HF PR #85 | 37 | 16,340,955 | `617a3e3740ba6706bcab786c8a5c3f9a22ecbb39eff5728ad2c12e4992cb098b` |
 | previous pin's `nvidia.tar.gz` (HF PR #84, superseded) | 34 | 9,927,312 | `ee8c6ba966e7a8f7fb5ad2d7ff0134ab98e7b80d6cc77f3328217405b8b34e2f` |
 
 PR #85 replaces five product images and adds three dedicated hero images (see
@@ -204,7 +205,7 @@ itself cannot be edited from this repository.
 
 ## 🤝 Contribute
 
-We have built 29 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
+We have built 30 high-quality mirrors covering the [WebVoyager](https://github.com/MinorJerry/WebVoyager) benchmark. The next goal is **100+ sites**, covering everything in [Online-Mind2Web](https://huggingface.co/datasets/osunlp/Online-Mind2Web). We are inviting the community to build this together.
 
 There are two ways to join the author list:
 
