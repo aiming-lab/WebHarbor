@@ -965,8 +965,9 @@ def article(slug):
 # ─── Routes: Search ───────────────────────────────────────────────────────────
 
 @app.route('/search')
-def search():
-    q = request.args.get('q', '').strip()
+@app.route('/search/_/q/<path:espn_query>')
+def search(espn_query=''):
+    q = (espn_query or request.args.get('q', '')).strip()
     sport_filter = request.args.get('sport', '')
     type_filter = request.args.get('type', '')  # teams, players, articles
 

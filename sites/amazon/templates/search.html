@@ -5,8 +5,8 @@
 {% set qs = request.args %}
 <div class="results-layout">
     <aside class="results-sidebar">
-        <form method="GET" action="{{ url_for('search') }}" id="filter-form">
-            <input type="hidden" name="q" value="{{ query }}">
+        <form method="GET" action="/s" id="filter-form">
+            <input type="hidden" name="k" value="{{ query }}">
             {# Preserve the currently-selected sort across filter-form submits #}
             <input type="hidden" name="sort" value="{{ current_sort or '' }}">
 
@@ -32,7 +32,7 @@
                     </label>
                 </li>
                 {% endfor %}
-                <li><a href="{{ url_for('search', q=query) }}">Clear rating filter</a></li>
+                <li><a href="{{ url_for('search', k=query) }}">Clear rating filter</a></li>
             </ul>
 
             <h3 style="margin-top:20px">Price</h3>
@@ -122,7 +122,7 @@
                 </a>
                 <div>
                     <h2 class="result-card-title"><a href="{{ url_for('product_detail', slug=p.slug) }}">{{ p.name }}</a></h2>
-                    <div class="result-card-brand">by <a href="{{ url_for('search', q=p.brand) }}">{{ p.brand }}</a></div>
+                    <div class="result-card-brand">by <a href="{{ url_for('search', k=p.brand) }}">{{ p.brand }}</a></div>
                     <div class="result-card-rating rating">
                         <span class="stars">{% for i in range(p.rating|int) %}★{% endfor %}{% for i in range(5 - p.rating|int) %}☆{% endfor %}</span>
                         <span>{{ p.rating }} ({{ '{:,}'.format(p.review_count) }})</span>
