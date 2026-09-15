@@ -29,6 +29,8 @@ from flask_bcrypt import Bcrypt
 from flask_wtf import CSRFProtect
 from sqlalchemy import or_, and_, func
 
+from metadata_cleaning import clean_arxiv_metadata_text, format_arxiv_display_text
+
 BASE_DIR = Path(__file__).parent
 DB_DIR = BASE_DIR / "instance"
 DB_DIR.mkdir(exist_ok=True)
@@ -197,11 +199,28 @@ class Paper(db.Model):
 
     @property
     def short_abstract(self):
-        if not self.abstract:
+        abstract = self.display_abstract
+        if not abstract:
             return "Abstract not available."
-        if len(self.abstract) > 280:
-            return self.abstract[:280] + "…"
-        return self.abstract
+        if len(abstract) > 280:
+            return abstract[:280] + "…"
+        return abstract
+
+    @property
+    def display_title(self):
+        return format_arxiv_display_text(self.title or "")
+
+    @property
+    def display_abstract(self):
+        return format_arxiv_display_text(self.abstract or "")
+
+    @property
+    def display_comments(self):
+        return format_arxiv_display_text(self.comments or "")
+
+    @property
+    def display_journal_ref(self):
+        return format_arxiv_display_text(self.journal_ref or "")
 
     @property
     def subject_list(self):
@@ -443,6 +462,10 @@ def _synthesize_abstract(title: str, subject_code: str,
             f"experiments.")
 
 
+def _clean_arxiv_metadata_text(text):
+    return clean_arxiv_metadata_text(text)
+
+
 def seed_database():
     """Populate the DB from categories.json + papers.json."""
     if Category.query.first() is not None:
@@ -521,7 +544,7 @@ def seed_database():
         if primary_category not in primary_cats and subject_code in primary_cats:
             primary_category = subject_code
         # Titles
-        title = rp.get("title", "").strip()
+        title = _clean_arxiv_metadata_text(rp.get("title", "").strip())
         if not title:
             continue
         # Parse date, falling back to arxiv-id-encoded yymm (e.g. 2604.08525 -> 2026-04)
@@ -547,7 +570,7 @@ def seed_database():
         if not authors:
             authors = _synthesize_authors(arxiv_id)
         # Parse figures, tables, formulas counts from comments
-        cmt = rp.get("comments", "")
+        cmt = _clean_arxiv_metadata_text(rp.get("comments", ""))
         figs = 0
         tbls = 0
         frms = 0
@@ -564,7 +587,7 @@ def seed_database():
         versions = rp.get("versions", [])
         # Loss function from abstract
         loss_fn = ""
-        abs_text = rp.get("abstract", "") or ""
+        abs_text = _clean_arxiv_metadata_text(rp.get("abstract", "") or "")
         # Backfill empty abstracts for high-traffic categories so the /abs
         # and listing pages always surface something meaningful.
         if not abs_text:
@@ -2444,6 +2467,25 @@ def backfill_paper_gaps():
         print(f"  ! backfill_paper_gaps failed: {e}")
 
 
+def normalize_paper_metadata():
+    """Normalize known duplicated LaTeX/text fragments in existing DB rows."""
+    try:
+        changed = 0
+        for paper in Paper.query.all():
+            for field in ("title", "abstract", "comments"):
+                current = getattr(paper, field) or ""
+                cleaned = _clean_arxiv_metadata_text(current)
+                if cleaned != current:
+                    setattr(paper, field, cleaned)
+                    changed += 1
+        if changed:
+            db.session.commit()
+            print(f"  [+] Normalized {changed} arXiv metadata fields")
+    except Exception as e:
+        db.session.rollback()
+        print(f"  ! normalize_paper_metadata failed: {e}")
+
+
 def ensure_affiliation_column():
     """Ensure the author_affiliations_json column exists on older DBs."""
     try:
@@ -2495,6 +2537,7 @@ with app.app_context():
     seed_database()
     seed_benchmark_users()
     backfill_paper_gaps()
+    normalize_paper_metadata()
     backfill_affiliations()
 
 

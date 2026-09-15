@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{{ paper.title }} — arXiv:{{ paper.arxiv_id }}{% endblock %}
+{% block title %}{{ paper.display_title }} — arXiv:{{ paper.arxiv_id }}{% endblock %}
 {% block breadcrumbs %}
     {% if paper.primary_category_code %}
     <span class="sep">&gt;</span>
@@ -29,7 +29,7 @@
         <div class="paper-label">
             {% if paper.submitted_date %}[Submitted on {{ paper.submitted_date }}]{% endif %}
         </div>
-        <h1 class="paper-title">{{ paper.title }}</h1>
+        <h1 class="paper-title">{{ paper.display_title }}</h1>
 
         <div class="paper-authors">
             {% for entry in paper.get_authors_with_affiliations() %}<a href="{{ url_for('author_papers', name=entry.name) }}">{{ entry.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
@@ -37,16 +37,16 @@
 
         <div class="paper-abstract">
             <span class="label">Abstract:</span>
-            {% if paper.abstract %}
-                {{ paper.abstract }}
+            {% if paper.display_abstract %}
+                {{ paper.display_abstract }}
             {% else %}
                 <i class="muted">Abstract not currently available for this paper.</i>
             {% endif %}
         </div>
 
         <div class="paper-meta">
-            {% if paper.comments %}
-            <div class="row"><span class="lab">Comments:</span> {{ paper.comments }}</div>
+            {% if paper.display_comments %}
+            <div class="row"><span class="lab">Comments:</span> {{ paper.display_comments }}</div>
             {% endif %}
             <div class="row"><span class="lab">Subjects:</span> {{ paper.subjects }}</div>
             {% set _versions = paper.get_versions() %}
