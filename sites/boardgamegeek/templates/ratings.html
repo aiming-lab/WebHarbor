@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Ratings & Reviews — {{ g.name }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      <a href="{{ url_for('browse') }}">Browse</a> ›
+      <a href="{{ g.detail_url }}">{{ g.name }}</a> › Ratings & Reviews
+    </div>
+
+    <h1>{{ g.name }} — Ratings & Reviews</h1>
+
+    <div style="display:grid; grid-template-columns: 220px 1fr; gap: 20px; align-items:start;">
+      <div class="stats-box">
+        <div class="stat-row">
+          <span class="stat-label">Average</span>
+          <span class="stat-value">{{ g.avg_rating | two_decimal }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Voters</span>
+          <span class="stat-value">{{ g.num_ratings | thousands }}</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-label">Comments</span>
+          <span class="stat-value">{{ g.num_comments | thousands }}</span>
+        </div>
+        <h3 style="margin-top:14px;">Distribution</h3>
+        <table class="hist-table">
+          {% set max_count = histogram.values() | max %}
+          {% for bucket in range(10, 0, -1) %}
+          <tr>
+            <td>{{ bucket }}</td>
+            <td class="bar-cell">
+              {% if max_count and histogram[bucket] %}
+                <div class="hist-bar" style="width: {{ (histogram[bucket] / max_count) * 100 }}%;"></div>
+              {% endif %}
+            </td>
+            <td style="text-align:right; color: var(--bgg-muted);">{{ histogram[bucket] }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      <div>
+        <p>
+          Sort:
+          <a href="?sort=rating">Highest</a> ·
+          <a href="?sort=lowest">Lowest</a> ·
+          <a href="?sort=recent">Most Recent</a> ·
+          <a href="?sort=thumbs">Most Helpful</a>
+        </p>
+
+        <table class="collection_table">
+          <thead><tr>
+            <th>Rating</th><th>User</th><th>Review / Comment</th><th>Date</th><th>👍</th>
+          </tr></thead>
+          <tbody>
+            {% for r in ratings %}
+            <tr>
+              <td style="text-align:center;">
+                <span class="rating-chip" style="background: {{ r.value | rating_color }}">{{ r.value | one_decimal }}</span>
+              </td>
+              <td>
+                <a href="{{ url_for('user_profile', username=r.user.username) }}">{{ r.user.username }}</a>
+                {% if r.user.country %}<div class="muted">{{ r.user.country }}</div>{% endif %}
+              </td>
+              <td>
+                {% if r.review_html %}{{ r.review_html | safe_html }}
+                {% else %}<span class="muted">no comment</span>{% endif %}
+              </td>
+              <td class="muted">{{ r.created_at.strftime('%Y-%m-%d') }}</td>
+              <td style="text-align:center;">{{ r.num_thumbs }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+
+        <div class="pagination">
+          {% if has_prev %}
+            <a href="?p={{ page-1 }}&sort={{ sort }}">‹ Prev</a>
+          {% endif %}
+          <span class="current">Page {{ page }}</span>
+          {% if has_next %}
+            <a href="?p={{ page+1 }}&sort={{ sort }}">Next ›</a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

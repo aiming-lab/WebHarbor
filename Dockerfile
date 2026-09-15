@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 30 Flask mirror sites + control plane on :8101.
+# 31 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -103,6 +103,6 @@ os.makedirs('instance_seed', exist_ok=True); \
 shutil.copy2('instance/rotten_tomatoes.db', 'instance_seed/rotten_tomatoes.db'); \
 print('Rotten Tomatoes seed DB generated at build time.')" && rm -rf /opt/WebSyn/rotten_tomatoes/instance
 
-EXPOSE 8101 40000-40029
+EXPOSE 8101 40000-40030
 
 CMD ["/opt/websyn_start.sh"]
