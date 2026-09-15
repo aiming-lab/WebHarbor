@@ -27,7 +27,7 @@
                 {% if current_user.is_authenticated %}
                 <form method="POST" action="{{ url_for('saved_toggle_form', property_id=property.id) }}" style="display:inline;">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
-                    <input type="hidden" name="next" value="{{ request.url }}">
+                    <input type="hidden" name="next" value="{{ current_relative_url() }}">
                     <button type="submit" class="btn-secondary {% if is_saved %}saved{% endif %}" id="saveBtn">
                         {% if is_saved %}&#9829; Saved{% else %}&#9825; Save{% endif %}
                     </button>

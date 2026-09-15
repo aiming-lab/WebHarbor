@@ -6,6 +6,7 @@ Enriches each place with address, phone, hours, rating, etc.
 import json
 import random
 from pathlib import Path
+from urllib.parse import quote_plus
 from scrape_wiki import PLACES as RAW_PLACES, CITIES as RAW_CITIES
 
 BASE = Path(__file__).parent
@@ -197,6 +198,12 @@ OPEN_HOURS_TEMPLATES = [
     "Tue–Sat: 11:30 AM – 2:30 PM, 6:00 PM – 10:30 PM",
     "Mon–Fri: 10:00 AM – 5:00 PM, Weekends: 10:00 AM – 6:00 PM",
 ]
+
+
+def google_maps_search_url(name, city_display=""):
+    """Real Google Maps URL for seeded place/share fields."""
+    query = f"{name} {city_display}".strip()
+    return f"https://www.google.com/maps/place/{quote_plus(query)}/"
 
 
 def coord_jitter(base, amount=0.01):
@@ -554,7 +561,7 @@ def build_places(db, Place, Category, City):
             rating=rating,
             review_count=review_count,
             price_level=price,
-            website=f"https://example.com/{slug}",
+            website=google_maps_search_url(name, city.display_name),
             hero_image=hero,
             photos_json=json.dumps(gallery),
             lat=lat,
@@ -628,7 +635,7 @@ def build_places(db, Place, Category, City):
                     rating=round(random.uniform(4.0, 4.8), 1),
                     review_count=random.randint(80, 3500),
                     price_level=price,
-                    website=f"https://example.com/{syn_slug}",
+                    website=google_maps_search_url(name, display),
                     hero_image=hero,
                     photos_json=json.dumps(gallery),
                     lat=lat,
@@ -830,7 +837,7 @@ def seed_task_data(db, Place, Category, City, Route):
             rating=kwargs.pop("rating", 4.5),
             review_count=kwargs.pop("review_count", 500),
             price_level=kwargs.pop("price_level", "$$"),
-            website=kwargs.pop("website", f"https://example.com/{slug}"),
+            website=kwargs.pop("website", google_maps_search_url(name, city.display_name)),
             hero_image=_hero(), photos_json=_gallery(),
             lat=kwargs.pop("lat", city.lat + random.uniform(-0.02, 0.02)),
             lng=kwargs.pop("lng", city.lng + random.uniform(-0.02, 0.02)),
