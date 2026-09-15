@@ -92,6 +92,6 @@ os.makedirs('instance_seed', exist_ok=True); \
 shutil.copy2('instance/rotten_tomatoes.db', 'instance_seed/rotten_tomatoes.db'); \
 print('Rotten Tomatoes seed DB generated at build time.')" && rm -rf /opt/WebSyn/rotten_tomatoes/instance
 
-EXPOSE 8101 40000-40028
+EXPOSE 8101 40000-40029
 
 CMD ["/opt/websyn_start.sh"]
