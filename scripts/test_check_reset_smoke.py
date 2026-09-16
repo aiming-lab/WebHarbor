@@ -12,6 +12,8 @@ import threading
 import unittest
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_reset_smoke as smoke  # noqa: E402
@@ -125,9 +127,36 @@ class _SmokeHandler(BaseHTTPRequestHandler):
         return
 
 
+class _RedirectLoopHandler(_SmokeHandler):
+    def do_GET(self) -> None:  # noqa: N802
+        if self.path == "/":
+            self.send_response(302)
+            self.send_header("Location", "/")
+            self.end_headers()
+            return
+        super().do_GET()
+
+
+class _RedirectToSuccessHandler(_SmokeHandler):
+    def do_GET(self) -> None:  # noqa: N802
+        if self.path == "/":
+            self.send_response(302)
+            self.send_header("Location", "/landing")
+            self.end_headers()
+            return
+        if self.path == "/landing":
+            body = b"<html>landed</html>"
+            self.send_response(200)
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+            return
+        super().do_GET()
+
+
 class SmokeServer:
-    def __init__(self) -> None:
-        self.server = ThreadingHTTPServer(("127.0.0.1", 0), _SmokeHandler)
+    def __init__(self, handler: type[BaseHTTPRequestHandler] = _SmokeHandler) -> None:
+        self.server = ThreadingHTTPServer(("127.0.0.1", 0), handler)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
 
     @property
@@ -290,6 +319,42 @@ class CheckResetSmokeTests(unittest.TestCase):
                 self.assertEqual(result.site_checks[0].home_status, "PASS")
                 self.assertEqual(result.site_checks[0].md5_status, "PASS")
 
+    def test_redirect_loop_fails_the_homepage_check(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with SmokeServer(_RedirectLoopHandler) as server:
+                root = Path(tmpdir)
+                build_repo(root, base_port=server.port)
+                result = smoke.run_checks(
+                    root,
+                    site="amazon",
+                    control_url=f"http://127.0.0.1:{server.port}",
+                    base_host="127.0.0.1",
+                    timeout=2.0,
+                    db_root=str(root / "sites"),
+                )
+                check = result.site_checks[0]
+                self.assertEqual(check.reset_status, "PASS")
+                self.assertEqual(check.home_status, "FAIL")
+                self.assertIn("redirect", check.home_detail.lower())
+                self.assertEqual(result.exit_code, 1)
+
+    def test_redirect_that_reaches_a_page_passes_the_homepage_check(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with SmokeServer(_RedirectToSuccessHandler) as server:
+                root = Path(tmpdir)
+                build_repo(root, base_port=server.port)
+                result = smoke.run_checks(
+                    root,
+                    site="amazon",
+                    control_url=f"http://127.0.0.1:{server.port}",
+                    base_host="127.0.0.1",
+                    timeout=2.0,
+                )
+                check = result.site_checks[0]
+                self.assertEqual(check.home_status, "PASS")
+                self.assertEqual(check.home_http_status, 200)
+                self.assertEqual(result.exit_code, 0)
+
 
 class DbSourceTests(unittest.TestCase):
     """The DB parity check must name what it hashed and never imply it observed
@@ -406,18 +471,109 @@ class DbSourceTests(unittest.TestCase):
             return {path: "deadbeef" for path in paths}
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            root = Path(tmpdir)
-            build_repo(root, runtime_content=b"stale", seed_content=b"different")
-            result = smoke.run_checks(
-                root, site="amazon", control_url="http://127.0.0.1:9",
-                base_host="127.0.0.1", timeout=0.1,
-                docker_container="webharbor", container_hasher=fake_exec,
-            )
-            check = result.site_checks[0]
-            self.assertEqual(check.md5_status, "PASS")
-            self.assertEqual(check.md5_source, "docker:webharbor:/opt/WebSyn/amazon")
-            self.assertEqual(calls[0][0], "webharbor")
+            with SmokeServer() as server:
+                root = Path(tmpdir)
+                build_repo(root, base_port=server.port,
+                           runtime_content=b"stale", seed_content=b"different")
+                result = smoke.run_checks(
+                    root, site="amazon",
+                    control_url=f"http://127.0.0.1:{server.port}",
+                    base_host="127.0.0.1", timeout=2.0,
+                    docker_container="webharbor", container_hasher=fake_exec,
+                )
+                check = result.site_checks[0]
+                self.assertEqual(check.md5_status, "PASS")
+                self.assertEqual(check.md5_source, "docker:webharbor:/opt/WebSyn/amazon")
+                self.assertEqual(calls[0][0], "webharbor")
 
+    def test_docker_parity_is_not_reported_without_a_successful_reset(self) -> None:
+        calls = []
+
+        def fake_exec(container: str, paths: list[str]) -> dict[str, str]:
+            calls.append((container, paths))
+            raise AssertionError("container hasher must not run after a failed reset")
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            build_repo(root)
+            for reset_all in (False, True):
+                with self.subTest(reset_all=reset_all):
+                    result = smoke.run_checks(
+                        root, site="amazon", control_url="http://127.0.0.1:9",
+                        base_host="127.0.0.1", timeout=0.1,
+                        reset_all=reset_all,
+                        docker_container="webharbor", container_hasher=fake_exec,
+                    )
+                    check = result.site_checks[0]
+                    self.assertEqual(check.reset_status, "FAIL")
+                    self.assertEqual(check.md5_status, "SKIP")
+                    self.assertIsNone(check.md5_runtime_hash)
+                    self.assertIn("no successful reset", check.md5_detail)
+            self.assertEqual(calls, [])
+
+    def test_docker_and_local_sources_choose_the_same_unique_shared_db(self) -> None:
+        runtime_dir = "/opt/WebSyn/amazon/instance"
+        seed_dir = "/opt/WebSyn/amazon/instance_seed"
+
+        def fake_run(cmd, **kwargs):
+            directory = seed_dir if seed_dir in cmd[-1] else runtime_dir
+            extra = "runtime_extra.db" if directory == runtime_dir else "seed_extra.db"
+            stdout = (
+                f"deadbeef  {directory}/shared.db\n"
+                f"cafebabe  {directory}/{extra}\n"
+            )
+            return SimpleNamespace(returncode=0, stdout=stdout, stderr="")
+
+        with patch.object(smoke.subprocess, "run", side_effect=fake_run):
+            hashes = smoke.docker_md5("webharbor", [runtime_dir, seed_dir])
+
+        self.assertEqual(hashes, {runtime_dir: "deadbeef", seed_dir: "deadbeef"})
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            site_root = Path(tmpdir) / "amazon"
+            for subdir, extra in (
+                ("instance", "runtime_extra.db"),
+                ("instance_seed", "seed_extra.db"),
+            ):
+                directory = site_root / subdir
+                directory.mkdir(parents=True)
+                (directory / "shared.db").write_bytes(b"shared")
+                (directory / extra).write_bytes(b"extra")
+            runtime_db, seed_db, problem = smoke.resolve_db_pair(site_root, "amazon")
+
+        self.assertIsNone(problem)
+        self.assertEqual(runtime_db.name, "shared.db")
+        self.assertEqual(seed_db.name, "shared.db")
+
+    def test_local_db_read_failure_is_structured(self) -> None:
+        for subdir in ("instance", "instance_seed"):
+            with self.subTest(subdir=subdir):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    with SmokeServer() as server:
+                        root = Path(tmpdir)
+                        build_repo(root, base_port=server.port)
+                        unreadable = root / "sites" / "amazon" / subdir / "amazon.db"
+                        unreadable.unlink()
+                        unreadable.mkdir()
+                        buffer = io.StringIO()
+                        code = smoke.main(
+                            [
+                                "--json", "--site", "amazon",
+                                "--control-url", f"http://127.0.0.1:{server.port}",
+                                "--base-host", "127.0.0.1", "--timeout", "2",
+                                "--db-root", str(root / "sites"),
+                            ],
+                            root=root,
+                            stdout=buffer,
+                        )
+                        payload = json.loads(buffer.getvalue())
+                        self.assertEqual(code, 1)
+                        self.assertEqual(payload["sites"][0]["md5_status"], "FAIL")
+                        self.assertIn(
+                            "could not read local DB",
+                            payload["sites"][0]["md5_detail"],
+                        )
+                        self.assertEqual(payload["errors"][0]["file"], str(unreadable))
 
     def test_local_parity_is_not_reported_without_a_successful_reset(self) -> None:
         """SC-04: with no environment running, a self-consistent local pair must not
@@ -482,6 +638,31 @@ class RegistryFailureTests(unittest.TestCase):
             code, out = self._run(root)
             self.assertEqual(code, 1)
             self.assertIn("Could not parse SITES", out)
+
+    def test_malformed_python_sites_are_structured_json(self) -> None:
+        declarations = (
+            "SITES = ['amazon', unresolved]\nBASE_PORT = 40000\n",
+            "SITES = ['amazon', *]\nBASE_PORT = 40000\n",
+            "SITES = ['amazon', 123]\nBASE_PORT = 40000\n",
+        )
+        for declaration in declarations:
+            with self.subTest(declaration=declaration):
+                with tempfile.TemporaryDirectory() as tmpdir:
+                    root = Path(tmpdir)
+                    build_repo(root)
+                    write(root / "control_server.py", declaration)
+                    buffer = io.StringIO()
+                    with patch.object(smoke, "http_request") as request:
+                        code = smoke.main(
+                            ["--json", "--timeout", "0.1"],
+                            root=root,
+                            stdout=buffer,
+                        )
+                    payload = json.loads(buffer.getvalue())
+                    self.assertEqual(code, 1)
+                    self.assertEqual(payload["summary"]["sites_checked"], 0)
+                    self.assertIn("control_server.py", payload["errors"][0]["message"])
+                    request.assert_not_called()
 
     def test_base_port_mismatch_names_the_base_port(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

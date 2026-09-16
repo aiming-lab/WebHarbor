@@ -163,9 +163,14 @@ def parse_site_array(text: str, file_label: str) -> tuple[list[str], int]:
     if block.startswith("("):
         sites = re.findall(r"[A-Za-z0-9_]+", block)
     else:
-        sites = ast.literal_eval(block)
+        try:
+            sites = ast.literal_eval(block)
+        except (SyntaxError, ValueError) as exc:
+            raise RegistryError(f"Could not parse SITES from {file_label}: {exc}") from None
         if not isinstance(sites, list):
             raise RegistryError(f"SITES is not a list in {file_label}")
+    if not all(isinstance(site, str) for site in sites):
+        raise RegistryError(f"SITES contains a non-string entry in {file_label}")
     base_match = re.search(r"\bBASE_PORT\s*=\s*(\d+)", text)
     if not base_match:
         raise RegistryError(f"Could not parse BASE_PORT from {file_label}")
@@ -225,6 +230,29 @@ def md5_file(path: Path) -> str:
     return hasher.hexdigest()
 
 
+def select_db_pair_names(
+    runtime_names: list[str],
+    seed_names: list[str],
+    site: str,
+) -> tuple[str | None, str | None, str | None]:
+    """Select one runtime/seed pair using the same rule for every DB source."""
+    if not runtime_names or not seed_names:
+        return None, None, "runtime or seed DB files are missing"
+    if len(runtime_names) == 1 and len(seed_names) == 1:
+        return runtime_names[0], seed_names[0], None
+
+    runtime_set = set(runtime_names)
+    seed_set = set(seed_names)
+    preferred_name = f"{site}.db"
+    if preferred_name in runtime_set and preferred_name in seed_set:
+        return preferred_name, preferred_name, None
+
+    shared_names = sorted(runtime_set & seed_set)
+    if len(shared_names) == 1:
+        return shared_names[0], shared_names[0], None
+    return None, None, "could not infer a unique runtime/seed DB pair"
+
+
 def resolve_db_pair(site_root: Path, site: str) -> tuple[Path | None, Path | None, str | None]:
     runtime_dir = site_root / "instance"
     seed_dir = site_root / "instance_seed"
@@ -233,22 +261,16 @@ def resolve_db_pair(site_root: Path, site: str) -> tuple[Path | None, Path | Non
 
     runtime_files = sorted(runtime_dir.glob("*.db"))
     seed_files = sorted(seed_dir.glob("*.db"))
-    if not runtime_files or not seed_files:
-        return None, None, "runtime or seed DB files are missing locally"
-
-    if len(runtime_files) == 1 and len(seed_files) == 1:
-        return runtime_files[0], seed_files[0], None
-
     runtime_by_name = {path.name: path for path in runtime_files}
     seed_by_name = {path.name: path for path in seed_files}
-    shared_names = sorted(set(runtime_by_name) & set(seed_by_name))
-    preferred_name = f"{site}.db"
-    if preferred_name in runtime_by_name and preferred_name in seed_by_name:
-        return runtime_by_name[preferred_name], seed_by_name[preferred_name], None
-    if len(shared_names) == 1:
-        name = shared_names[0]
-        return runtime_by_name[name], seed_by_name[name], None
-    return None, None, "could not infer a unique runtime/seed DB pair"
+    runtime_name, seed_name, problem = select_db_pair_names(
+        sorted(runtime_by_name), sorted(seed_by_name), site
+    )
+    if problem or runtime_name is None or seed_name is None:
+        if problem and "missing" in problem:
+            problem += " locally"
+        return None, None, problem
+    return runtime_by_name[runtime_name], seed_by_name[seed_name], None
 
 
 DOCKER_SITE_ROOT = "/opt/WebSyn"
@@ -265,19 +287,12 @@ class DbCheck:
     detail: str
 
 
-def _pick_db(names: list[str], site: str) -> tuple[str | None, str | None]:
-    """Choose the one DB that represents a site, mirroring resolve_db_pair()."""
-    if len(names) == 1:
-        return names[0], None
-    preferred = f"{site}.db"
-    if preferred in names:
-        return preferred, None
-    return None, "could not infer a unique runtime/seed DB pair"
-
-
 def docker_md5(container: str, dirs: list[str]) -> dict[str, str]:
-    """Hash the single *.db in each directory inside a running container."""
-    hashes: dict[str, str] = {}
+    """Hash the selected runtime/seed DB pair inside a running container."""
+    if len(dirs) != 2:
+        raise RuntimeError("docker DB hashing requires runtime and seed directories")
+
+    entries_by_dir: dict[str, dict[str, str]] = {}
     for directory in dirs:
         cmd = ["docker", "exec", container, "sh", "-c",
                f"md5sum {shlex.quote(directory)}/*.db"]
@@ -295,11 +310,18 @@ def docker_md5(container: str, dirs: list[str]) -> dict[str, str]:
             parts = line.split(None, 1)
             if len(parts) == 2:
                 entries[Path(parts[1].strip()).name] = parts[0]
-        name, problem = _pick_db(sorted(entries), Path(directory).parent.name)
-        if problem or name is None:
-            raise RuntimeError(problem or "no *.db found")
-        hashes[directory] = entries[name]
-    return hashes
+        entries_by_dir[directory] = entries
+
+    site = Path(dirs[0]).parent.name
+    runtime_name, seed_name, problem = select_db_pair_names(
+        sorted(entries_by_dir[dirs[0]]), sorted(entries_by_dir[dirs[1]]), site
+    )
+    if problem or runtime_name is None or seed_name is None:
+        raise RuntimeError(problem or "no *.db found")
+    return {
+        dirs[0]: entries_by_dir[dirs[0]][runtime_name],
+        dirs[1]: entries_by_dir[dirs[1]][seed_name],
+    }
 
 
 def check_db_parity(
@@ -321,6 +343,11 @@ def check_db_parity(
         base = f"{DOCKER_SITE_ROOT}/{site}"
         source = f"docker:{docker_container}:{base}"
         runtime_dir, seed_dir = f"{base}/instance", f"{base}/instance_seed"
+        if not reset_succeeded:
+            return DbCheck(
+                "SKIP", source, runtime_dir, seed_dir, None, None,
+                "no successful reset to verify; DB parity not evaluated",
+            )
         hasher = container_hasher or docker_md5
         try:
             hashes = hasher(docker_container, [runtime_dir, seed_dir])
@@ -373,7 +400,17 @@ def check_db_parity(
             "SKIP", source, str(runtime_db), str(seed_db), None, None,
             "no successful reset to verify; DB parity not evaluated",
         )
-    runtime_hash, seed_hash = md5_file(runtime_db), md5_file(seed_db)
+    hashes: list[str] = []
+    for db_path in (runtime_db, seed_db):
+        try:
+            hashes.append(md5_file(db_path))
+        except OSError as exc:
+            detail = f"could not read local DB: {exc}"
+            collector.error(detail, site=site, file=str(db_path))
+            return DbCheck(
+                "FAIL", source, str(runtime_db), str(seed_db), None, None, detail
+            )
+    runtime_hash, seed_hash = hashes
     if runtime_hash == seed_hash:
         return DbCheck("PASS", source, str(runtime_db), str(seed_db), runtime_hash,
                        seed_hash, "runtime DB matches seed DB")
@@ -482,7 +519,7 @@ def check_site(
             collector.error("site reset request failed", site=site, url=reset_url)
 
     home_ok, home_status_code, home_detail = http_request(homepage_url, timeout=timeout)
-    if home_ok or (home_status_code is not None and 300 <= home_status_code < 400):
+    if home_ok:
         home_status = "PASS"
     else:
         home_status = "FAIL"
