@@ -59,6 +59,13 @@ missing=()
 if [[ -n "$ONLY_SITE" ]]; then
     TARBALLS=("$CACHE_DIR/$ONLY_SITE.tar.gz")
     if [[ ! -f "${TARBALLS[0]}" ]]; then
+        # A build-generated site may legitimately carry no archive at all (its
+        # seed is produced by the Dockerfile), so there is nothing to download
+        # and nothing to extract — same exemption check_assets.sh/build.sh use.
+        if [[ -f "sites/$ONLY_SITE/.build-generated-seed" ]]; then
+            echo "[fetch] $ONLY_SITE: build-generated seed, no archive at this revision — nothing to fetch"
+            exit 0
+        fi
         echo "fetch_assets: expected archive for $ONLY_SITE" >&2
         exit 1
     fi
@@ -73,6 +80,9 @@ else
         site=$(basename "$site_dir")
         if [[ -f "$CACHE_DIR/$site.tar.gz" ]]; then
             TARBALLS+=("$CACHE_DIR/$site.tar.gz")
+        elif [[ -f "sites/$site/.build-generated-seed" ]]; then
+            # Seed comes from the Dockerfile, so no archive is expected.
+            echo "[fetch] $site: build-generated seed, no archive at this revision — skipping"
         else
             missing+=("$site")
         fi

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}Checkout | B&H{% endblock %}
+{% block content %}
+<section class="shell page-hero simple checkout-hero">
+    <p class="kicker">Secure local checkout</p>
+    <h1>Checkout</h1>
+    <p>Complete shipping, payment and review before placing the order. No payment is processed and nothing ships.</p>
+</section>
+
+<nav class="shell checkout-progress" aria-label="Checkout progress">
+    {% set steps = [('shipping', '1', 'Shipping'), ('payment', '2', 'Payment'), ('review', '3', 'Review')] %}
+    {% for key, number, label in steps %}
+        <div class="checkout-progress-step {{ 'active' if checkout_step == key else '' }} {{ 'complete' if (key == 'shipping' and checkout_draft.shipping_complete) or (key == 'payment' and checkout_draft.payment_complete) else '' }}">
+            <span>{{ number }}</span>
+            <strong>{{ label }}</strong>
+        </div>
+    {% endfor %}
+    <div class="checkout-progress-step">
+        <span>4</span>
+        <strong>Confirmation</strong>
+    </div>
+</nav>
+
+<section class="shell checkout-layout">
+    <div class="checkout-stage-card">
+        {% if checkout_step == 'shipping' %}
+            <form method="post" class="card-form">
+                <input type="hidden" name="step" value="shipping">
+                <p class="kicker">Step 1 of 3</p>
+                <h2>Shipping and fulfillment</h2>
+                <label>Fulfillment
+                    <select name="fulfillment">
+                        <option value="Ship to address">Ship to address</option>
+                        <option value="Store pickup">Store pickup</option>
+                    </select>
+                </label>
+                <fieldset class="checkout-addresses">
+                    <legend>Saved shipping address</legend>
+                    {% for address in addresses %}
+                        <label class="checkout-address-option">
+                            <input type="radio" name="address_id" value="{{ address.id }}" {% if address.is_default or loop.first %}checked{% endif %}>
+                            <span>
+                                <strong>{{ address.label }} · {{ address.recipient }}</strong>
+                                <small>{{ address.line1 }}{% if address.line2 %}, {{ address.line2 }}{% endif %}<br>{{ address.city }}, {{ address.state }} {{ address.zip_code }}</small>
+                            </span>
+                        </label>
+                    {% endfor %}
+                </fieldset>
+                <button type="submit" class="cta">Continue to payment</button>
+            </form>
+        {% elif checkout_step == 'payment' %}
+            <form method="post" class="card-form">
+                <input type="hidden" name="step" value="payment">
+                <p class="kicker">Step 2 of 3</p>
+                <h2>Payment</h2>
+                <p class="checkout-safe-note">These are deterministic demo methods. No financial information is collected or transmitted.</p>
+                <fieldset class="checkout-addresses">
+                    <legend>Choose a payment method</legend>
+                    {% for method in ['Demo Visa ending in 4242', 'Demo Mastercard ending in 1881', 'PayPal demo account'] %}
+                        <label class="checkout-address-option">
+                            <input type="radio" name="payment_label" value="{{ method }}" {% if loop.first %}checked{% endif %}>
+                            <span><strong>{{ method }}</strong><small>Available for this offline benchmark order</small></span>
+                        </label>
+                    {% endfor %}
+                </fieldset>
+                <div class="checkout-actions">
+                    <a class="quiet-btn" href="{{ url_for('checkout') }}">Back to shipping</a>
+                    <button type="submit" class="cta">Review your order</button>
+                </div>
+            </form>
+        {% else %}
+            <form method="post" class="card-form">
+                <input type="hidden" name="step" value="review">
+                <p class="kicker">Step 3 of 3</p>
+                <h2>Review and place order</h2>
+                <div class="checkout-review-grid">
+                    <section>
+                        <h3>{{ checkout_draft.fulfillment }}</h3>
+                        {% if selected_address %}
+                            <p>{{ selected_address.recipient }}<br>{{ selected_address.line1 }}{% if selected_address.line2 %}, {{ selected_address.line2 }}{% endif %}<br>{{ selected_address.city }}, {{ selected_address.state }} {{ selected_address.zip_code }}</p>
+                        {% else %}
+                            <p>Pickup details will be confirmed with the order.</p>
+                        {% endif %}
+                        <a href="{{ url_for('checkout') }}">Change shipping</a>
+                    </section>
+                    <section>
+                        <h3>Payment</h3>
+                        <p>{{ checkout_draft.payment_label }}</p>
+                        <a href="{{ url_for('checkout', step='payment') }}">Change payment</a>
+                    </section>
+                </div>
+                <label>Order note
+                    <textarea name="note" rows="3" placeholder="Optional local-only note for the order summary."></textarea>
+                </label>
+                <label class="checkout-confirmation">
+                    <input type="checkbox" name="confirmed" value="yes" required>
+                    <span>I reviewed the items, fulfillment and demo payment method.</span>
+                </label>
+                <button type="submit" class="cta">Place order</button>
+            </form>
+        {% endif %}
+    </div>
+
+    <aside class="purchase-card checkout-summary">
+        <h2>Order summary</h2>
+        <div class="mini-list stacked">
+            {% for item in items %}
+                <div class="mini-row checkout-summary-row">
+                    <img src="{{ url_for('static', filename=item.product.main_image) }}" alt="{{ item.product.name }}">
+                    <span>
+                        <strong>{{ item.product.name }}</strong>
+                        <small>{{ item.quantity }} × {{ item.unit_price|currency }}</small>
+                    </span>
+                </div>
+            {% endfor %}
+        </div>
+        <dl class="summary-list">
+            <div><dt>Subtotal</dt><dd>{{ totals.subtotal|currency }}</dd></div>
+            <div><dt>Shipping</dt><dd>{{ totals.shipping|currency }}</dd></div>
+            <div><dt>Tax</dt><dd>{{ totals.tax|currency }}</dd></div>
+            <div class="total"><dt>Total</dt><dd>{{ totals.total|currency }}</dd></div>
+        </dl>
+    </aside>
+</section>
+{% endblock %}

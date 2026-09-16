@@ -36,17 +36,17 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 30 sites today, scaling to 100+ together
+- **Community-driven** — 32 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
 One command to run all web environments:
 
 ```bash
-docker run -p 8101:8101 -p 40000-40029:40000-40029 battalion7244/webharbor:latest
+docker run -p 8101:8101 -p 40000-40031:40000-40031 battalion7244/webharbor:latest
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40029` to explore 30 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, and Petfinder`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40031` to explore 32 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, and Petfinder`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -63,21 +63,22 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 ./scripts/build.sh                                 # docker build -t webharbor:dev .
 ```
 
-### Local NVIDIA and Petfinder review candidate
+### Site registry
 
-This branch registers **30 sites**, the 30 entries listed above. NVIDIA keeps
-registry index 28 / container port 40028, and Petfinder is appended at index 29 /
-container port 40029 (local review host ports 48028 and 48029). The
-published-image quickstart above is not a claim that this review candidate has been
-published or accepted.
+This checkout registers **32 sites**. NVIDIA remains at index 28, UC Berkeley at
+index 29, B&H Photo at index 30, and Petfinder is appended at index 31. Build the
+image from this checkout to use this registry; publishing source does not update
+the published Docker image automatically.
 
-| Site | Registry position | Container port | Local review host port |
+| Site | Registry position | Container port | Example local review host port |
 | --- | --- | --- | --- |
 | NVIDIA | 28 | 40028 | 48028 |
-| Petfinder | 29 | 40029 | 48029 |
+| UC Berkeley | 29 | 40029 | 48029 |
+| B&H Photo | 30 | 40030 | 48030 |
+| Petfinder | 31 | 40031 | 48031 |
 
 `websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 30 sites and `40000-40029`;
+site's `tasks.jsonl` `web` URL agree on 32 sites and `40000-40031`;
 `scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
 drift.
 
@@ -85,7 +86,7 @@ After preparing the candidate assets and building `webharbor:dev`, the local
 review deployment uses:
 
 ```bash
-docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48029:40000-40029 webharbor:dev
+docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48031:40000-40031 webharbor:dev
 ```
 
 NVIDIA inherits the site contribution from @KaKituken
@@ -99,30 +100,35 @@ passed.
 
 `.assets-revision` is pinned to open Petfinder asset PR
 [#80](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/80) head
-`a4be82d6e5cae39fb2d1d9bb4781c491d4026e06`. Compared with current dataset
-`main` at `b7e605c0ec5fc47de85b09e7427162cc50e38980`, all 31 common tar archives
-have identical size and SHA-256; the candidate adds only `petfinder.tar.gz`.
-The NVIDIA archive therefore remains the exact squash-merged output of HF PR
-[#85](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/85), which
-sits on top of PR
+`8b15c351406e65ef56404a25aab4deab69874809`. It merges current dataset `main`
+at `fa1e8a5b9e8e5d0e42764cd658825f4dea088d8f` and, compared with that commit,
+adds only `petfinder.tar.gz`. The candidate therefore retains the already merged
+Berkeley PR [#91](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/91)
+and B&H Photo PR [#92](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/92)
+without changing their archive bytes. Petfinder PR #80 remains open and its exact
+candidate must be replaced by the immutable merge revision after maintainer
+coordination.
+
+The candidate carries 34 archives for 32 registered sites plus the unregistered
+Bandcamp and Drugs.com archives, which `fetch_assets.sh` ignores.
+
+B&H's archive contains images and external cache. The Docker build validates
+its 508 declared assets and generates `instance_seed/bh_photo.db` from the tracked
+catalog. No manually prepared B&H database is required for a fresh build.
+
+The earlier pin `b7e605c0ec5fc47de85b09e7427162cc50e38980` is the squash-merge
+commit of HF dataset PR
+[#85](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/85) on the
+dataset's `main`. It sits on top of PR
 [#84](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/84) and PR
 [#75](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/75), which
-added the first reviewed NVIDIA bundle. Those NVIDIA PRs are merged; Petfinder
-PR #80 remains open and must be replaced by its immutable merge revision after
-maintainer coordination:
-
-- the pinned revision carries 32 `*.tar.gz` (one per registered site plus
-  `bandcamp.tar.gz` and `drugs_com.tar.gz`, which `fetch_assets.sh` ignores for
-  sites this checkout does not register);
-- `nvidia.tar.gz` at that revision has 37 file members and no directory members,
-  so `scripts/validate_asset_archive.py nvidia.tar.gz nvidia` prints
-  `[fetch] validated 37 managed members for nvidia` and exits 0;
-- `./scripts/fetch_assets.sh` at this pin extracts all 30 registered sites
-  (`[fetch] done — 30 site(s) extracted into sites/`).
+added the first reviewed NVIDIA bundle.
 
 | Artifact | Members | Bytes | SHA-256 |
 | --- | --- | --- | --- |
-| `nvidia.tar.gz` at the current pin (from merged HF PR #85) | 37 | 16,340,955 | `617a3e3740ba6706bcab786c8a5c3f9a22ecbb39eff5728ad2c12e4992cb098b` |
+| `nvidia.tar.gz` at the current pin | 37 | 16,340,955 | `617a3e3740ba6706bcab786c8a5c3f9a22ecbb39eff5728ad2c12e4992cb098b` |
+| `berkeley.tar.gz` at the current pin (HF PR #91) | 171 | 6,951,483 | `ab9d2716ae8d06540a181b5e60c37f613d87b103864b467511da546b1b173789` |
+| `bh_photo.tar.gz` at the current pin (HF PR #92) | 511 | 79,658,793 | `867363d5484eb114d647e236991017992d5ac91ae3415996ad43bf654d99bd9a` |
 | `petfinder.tar.gz` at the current pin (open HF PR #80) | 10 | 15,797,041 | `10def9d5b20b56a1ec75c292ffee3695ce67409acb63e801d56e5364437438ba` |
 | previous pin's `nvidia.tar.gz` (HF PR #84, superseded) | 34 | 9,927,312 | `ee8c6ba966e7a8f7fb5ad2d7ff0134ab98e7b80d6cc77f3328217405b8b34e2f` |
 

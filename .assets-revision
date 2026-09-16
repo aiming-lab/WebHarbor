@@ -1,42 +1,21 @@
-# Hugging Face dataset holding webharbor's heavy static assets
-# (instance_seed/*.db, static/images/, static/external_cache/).
+# Hugging Face dataset holding WebHarbor's heavy static assets.
+# Pin an immutable commit SHA; never a moving branch or refs/pr/<n>.
 #
-# fetch_assets.sh uses the `hf download` CLI. The pin below
-# is a git revision (branch name like `main`, a tag, or a specific commit
-# sha). Override at runtime with the ASSETS_REVISION env var.
+# Current pin = the open Petfinder asset PR #80 head after merging current
+# dataset main at fa1e8a5b9e8e5d0e42764cd658825f4dea088d8f. Compared with
+# that main commit, every existing file is unchanged and this candidate adds
+# only petfinder.tar.gz.
 #
-# The revision is a commit sha, never a moving branch name.
+# The main-side assets include the merged Berkeley PR #91 and B&H Photo PR #92.
+# Petfinder PR #80 remains open; replace this provisional exact commit with its
+# immutable merged revision after maintainer coordination.
 #
-# Current pin = the open Petfinder asset PR #80 head, refreshed after upstream
-# merged the final NVIDIA image follow-up. Compared with HF dataset `main` at
-# b7e605c0ec5fc47de85b09e7427162cc50e38980, all 31 common tar archives have
-# identical size and SHA-256; this revision adds only the reviewed
-# petfinder.tar.gz. Replace this provisional PR-head pin with the immutable
-# merged revision after PR #80 is merged.
+# petfinder.tar.gz: 15,797,041 bytes
+# SHA-256: 10def9d5b20b56a1ec75c292ffee3695ce67409acb63e801d56e5364437438ba
 #
-# Its nvidia.tar.gz is byte-identical to current dataset main (sha256
-# 617a3e3740ba6706bcab786c8a5c3f9a22ecbb39eff5728ad2c12e4992cb098b,
-# 16340955 bytes, 37 file members and no directory entries). Its
-# petfinder.tar.gz is sha256
-# 10def9d5b20b56a1ec75c292ffee3695ce67409acb63e801d56e5364437438ba,
-# 15797041 bytes.
-#
-# Why this sha and not the other candidate (refs/pr/37, resolved
-# 600a3e1de158ae56dc82a5fab56c2ca25acb1e27):
-#   * the PR head carries an archive for every registered site (30 of 30), and
-#     the kaggle seed DB it ships was found identical to the seed the site's own
-#     code generates (13/13 tables, row by row) in the PR #106 audit;
-#   * refs/pr/37 ships an older kaggle seed (models table has 10 rows instead of
-#     11: densenet121-chestxray is absent) and its archives cover only 17 of the
-#     30 registered sites, so pinning there would break fetch_assets.sh.
-#   * this revision's kaggle.tar.gz (sha256
-#     dd6f1ab34f99989b300e3366225a8f8b0932d49d033b48f141938d16f1c0607d,
-#     11278106 bytes) passes the repository's own
-#     scripts/validate_asset_archive.py:
-#         [fetch] validated 73 managed members for kaggle
-#     That 73-member pack has no directory entries, so the earlier
-#     `ValueError: unexpected managed path: 'kaggle/static'` rejection (from the
-#     superseded 11278264-byte pack, sha256 c533c283...) no longer applies and
-#     `scripts/fetch_assets.sh` installs sites/kaggle's assets from this pin.
+# bh_photo.tar.gz: 79,658,793 bytes, 511 managed archive members
+# SHA-256: 867363d5484eb114d647e236991017992d5ac91ae3415996ad43bf654d99bd9a
+# B&H's bundle contains images and external cache; Docker generates its seed
+# from tracked catalog data (sites/bh_photo/.build-generated-seed).
 repo: ChilleD/WebHarbor
-revision: a4be82d6e5cae39fb2d1d9bb4781c491d4026e06
+revision: 8b15c351406e65ef56404a25aab4deab69874809

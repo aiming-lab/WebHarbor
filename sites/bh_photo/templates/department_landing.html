@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} | B&H{% endblock %}
+{% block content %}
+{% if category.slug == "photography" %}
+<section class="department-photo-hero" style="background-image: url('{{ url_for('static', filename='images/department/photography-hero.jpg') }}')">
+    <div class="shell department-photo-hero-inner">
+        <div class="department-photo-breadcrumb">
+            <a href="{{ url_for('index') }}">Home</a><span>›</span><span>{{ category.name }}</span>
+        </div>
+        <h1>{{ category.name }}</h1>
+        <a class="department-photo-promo" href="{{ url_for('deals') }}" aria-label="Explore featured photography offers">
+            <img src="{{ url_for('static', filename='images/department/photography-promo-logo.webp') }}" alt="OM System — Learn More">
+        </a>
+        <div class="department-expert-bar">
+            <span class="department-expert-icon" aria-hidden="true"><i></i></span>
+            <span><strong>Video Chat</strong> with a Photography Expert - <strong>Live</strong></span>
+            <a href="{{ url_for('contact') }}">Chat Now</a>
+        </div>
+    </div>
+</section>
+
+<div class="shell department-photo-layout">
+    <div class="department-photo-main">
+        <span class="visually-hidden">Shop Photography</span>
+        {% for section in department_sections %}
+            <section class="department-media-section department-media-section--{{ section.kind }}">
+                <h2>{{ section.title }}</h2>
+                <div class="department-media-grid department-media-grid--{{ section.kind }}">
+                    {% for item in section["items"] %}
+                        <a class="department-media-card" href="{{ item.href }}">
+                            <span class="department-media-frame">
+                                <img src="{{ url_for('static', filename=item.image) }}" alt="{{ item.label }}" loading="eager">
+                            </span>
+                            <strong>{{ item.label }}</strong>
+                            {% if item.description %}<small>{{ item.description }}</small>{% endif %}
+                        </a>
+                    {% endfor %}
+                </div>
+            </section>
+        {% endfor %}
+        <a class="department-shop-all" href="{{ url_for('category_view', slug=category.slug, view='list') }}">
+            Browse all {{ product_count }} photography products <span aria-hidden="true">›</span>
+        </a>
+    </div>
+
+    <aside class="department-story-panel" aria-label="Photography guides">
+        {% for story in department_stories %}
+            <a class="department-story" href="{{ story.href }}">
+                <img src="{{ url_for('static', filename=story.image) }}" alt="" loading="eager">
+                <span>
+                    {% if story.eyebrow %}<small>{{ story.eyebrow }}</small>{% endif %}
+                    <strong>{{ story.title }}</strong>
+                </span>
+            </a>
+        {% endfor %}
+    </aside>
+</div>
+
+<section class="shell department-editorial department-photo-editorial">
+    <h2>Photography</h2>
+    <p>B&amp;H has served photographers for more than 50 years, with cameras, lenses and accessories for beginners, enthusiasts and working professionals. Explore gear by format, shooting style and workflow, then compare the specifications that matter for your production.</p>
+    <h3>Find the right tools for the way you shoot</h3>
+    <p>Landscape, portrait, street, travel, wedding, sports, wildlife and macro photography all reward different combinations of camera, lens, support and storage. Start with a department above, then narrow the catalog by price, availability and technical details.</p>
+</section>
+{% else %}
+<section class="shell breadcrumb-row">
+    <a href="{{ url_for('index') }}">Home</a>
+    <span>/</span>
+    <span>{{ category.name }}</span>
+</section>
+
+<section class="department-hero">
+    <div class="shell department-hero-grid">
+        <div>
+            <p class="kicker">B&amp;H {{ category.name }}</p>
+            <h1>{{ category.name }}</h1>
+            <p>{{ category.hero_copy or category.description }}</p>
+            <a class="cta" href="{{ url_for('category_view', slug=category.slug, view='list') }}">
+                Shop all {{ product_count }} products
+            </a>
+        </div>
+        {% if hero_product %}
+            <a class="department-hero-product" href="{{ url_for('product_detail', product_slug=hero_product.slug) }}">
+                <img src="{{ url_for('static', filename=hero_product.main_image) }}" alt="{{ hero_product.name }}">
+                <span>{{ hero_product.name }}</span>
+            </a>
+        {% endif %}
+    </div>
+</section>
+
+<section class="shell department-section">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Cameras, lenses and essentials</p>
+            <h2>Shop {{ category.name }}</h2>
+        </div>
+    </div>
+    <div class="department-category-grid">
+        {% for tile in subcategories %}
+            <a class="department-category-card" href="{{ url_for('category_view', slug=tile.category.slug) }}">
+                <span class="department-category-media">
+                    <img src="{{ url_for('static', filename=tile.image) }}" alt="{{ tile.category.name }}" loading="lazy">
+                </span>
+                <strong>{{ tile.category.name }}</strong>
+                <small>Explore {{ tile.count }} products</small>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+
+{% for section in guide_sections %}
+    <section class="shell department-section">
+        <div class="section-head"><div><h2>{{ section.title }}</h2></div></div>
+        <div class="department-link-grid">
+            {% for label, href in section.links %}
+                <a href="{{ href }}">
+                    <strong>{{ label }}</strong>
+                    <span>Shop now <span aria-hidden="true">→</span></span>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+{% endfor %}
+{% endif %}
+{% endblock %}
