@@ -158,6 +158,7 @@ class CheckResetSmokeTests(unittest.TestCase):
                     control_url=f"http://127.0.0.1:{server.port}",
                     base_host="127.0.0.1",
                     timeout=2.0,
+                    db_root=str(root / "sites"),
                 )
                 self.assertEqual(result.site_checks[0].md5_status, "PASS")
 
@@ -173,6 +174,7 @@ class CheckResetSmokeTests(unittest.TestCase):
                     control_url=f"http://127.0.0.1:{server.port}",
                     base_host="127.0.0.1",
                     timeout=2.0,
+                    db_root=str(root / "sites"),
                 )
                 self.assertEqual(result.site_checks[0].md5_status, "FAIL")
                 self.assertNotEqual(result.exit_code, 0)
@@ -254,6 +256,7 @@ class CheckResetSmokeTests(unittest.TestCase):
                     base_host="127.0.0.1",
                     timeout=2.0,
                     strict=False,
+                    db_root=str(root / "sites"),
                 )
                 strict = smoke.run_checks(
                     root,
@@ -262,6 +265,7 @@ class CheckResetSmokeTests(unittest.TestCase):
                     base_host="127.0.0.1",
                     timeout=2.0,
                     strict=True,
+                    db_root=str(root / "sites"),
                 )
                 self.assertEqual(normal.strict, False)
                 self.assertEqual(normal.exit_code, 0)
@@ -279,6 +283,7 @@ class CheckResetSmokeTests(unittest.TestCase):
                     control_url=f"http://127.0.0.1:{server.port}",
                     base_host="127.0.0.1",
                     timeout=2.0,
+                    db_root=str(root / "sites"),
                 )
                 self.assertEqual(result.control_server.status, "PASS")
                 self.assertEqual(result.site_checks[0].reset_status, "PASS")
@@ -299,6 +304,7 @@ class DbSourceTests(unittest.TestCase):
                     root, site="amazon",
                     control_url=f"http://127.0.0.1:{server.port}",
                     base_host="127.0.0.1", timeout=2.0,
+                    db_root=str(root / "sites"),
                 )
                 check = result.site_checks[0]
                 self.assertEqual(check.md5_status, "PASS")
@@ -322,6 +328,41 @@ class DbSourceTests(unittest.TestCase):
                 self.assertEqual(check.md5_status, "SKIP")
                 self.assertEqual(check.md5_source, "none")
                 self.assertEqual(result.warnings, [])
+                self.assertEqual(result.exit_code, 0)
+
+    def test_flagless_run_skips_even_when_the_checkout_has_an_instance_dir(self) -> None:
+        """A checkout that happens to carry sites/<site>/instance must not turn a
+        flagless run into a parity verdict. The DB source has to be asked for, or the
+        utility produces a green result without reading what the control plane resets."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with SmokeServer() as server:
+                root = Path(tmpdir)
+                build_repo(root, base_port=server.port)  # instance/ present and matching
+                result = smoke.run_checks(
+                    root, site="amazon",
+                    control_url=f"http://127.0.0.1:{server.port}",
+                    base_host="127.0.0.1", timeout=2.0,
+                )
+                check = result.site_checks[0]
+                self.assertEqual(check.reset_status, "PASS")
+                self.assertEqual(check.md5_status, "SKIP")
+                self.assertEqual(check.md5_source, "none")
+                self.assertIsNone(check.md5_runtime_hash)
+                self.assertEqual(result.exit_code, 0)
+
+    def test_flagless_run_does_not_fail_on_a_stale_checkout(self) -> None:
+        """RS-C04: a stale local DB must not fail a healthy deployment."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            with SmokeServer() as server:
+                root = Path(tmpdir)
+                build_repo(root, base_port=server.port,
+                           runtime_content=b"stale", seed_content=b"seed")
+                result = smoke.run_checks(
+                    root, site="amazon",
+                    control_url=f"http://127.0.0.1:{server.port}",
+                    base_host="127.0.0.1", timeout=2.0,
+                )
+                self.assertEqual(result.site_checks[0].md5_status, "SKIP")
                 self.assertEqual(result.exit_code, 0)
 
     def test_explicit_db_root_with_missing_dirs_is_an_error(self) -> None:
@@ -387,6 +428,7 @@ class DbSourceTests(unittest.TestCase):
             result = smoke.run_checks(
                 root, site="amazon", control_url="http://127.0.0.1:9",
                 base_host="127.0.0.1", timeout=0.1,
+                db_root=str(root / "sites"),
             )
             check = result.site_checks[0]
             self.assertEqual(check.reset_status, "FAIL")

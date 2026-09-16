@@ -305,7 +305,6 @@ def docker_md5(container: str, dirs: list[str]) -> dict[str, str]:
 def check_db_parity(
     site: str,
     *,
-    repo_root: Path,
     db_root: str | None,
     docker_container: str | None,
     container_hasher: Any,
@@ -340,34 +339,36 @@ def check_db_parity(
         return DbCheck("FAIL", source, runtime_dir, seed_dir, runtime_hash, seed_hash,
                        detail)
 
-    explicit = db_root is not None
-    base_dir = Path(db_root) if explicit else repo_root / "sites"
+    if db_root is None:
+        # The DB source has to be asked for. Falling back to this checkout whenever it
+        # happens to carry an instance/ directory would produce a parity verdict --
+        # green or red -- without ever reading the DBs the control plane resets.
+        return DbCheck(
+            "SKIP", "none", None, None, None, None,
+            "no DB source configured; the control plane resets "
+            f"{DOCKER_SITE_ROOT}/{site}/instance inside the deployment. "
+            "Pass --docker-container or --db-root to check DB parity.",
+        )
+
+    base_dir = Path(db_root)
     site_root = base_dir / site
+    source = f"local:{site_root}"
     runtime_db, seed_db, problem = resolve_db_pair(site_root, site)
     if problem:
-        source = f"local:{site_root}"
-        if explicit:
-            detail = f"{problem} under --db-root {base_dir}"
+        detail = f"{problem} under --db-root {base_dir}"
+        if "missing" in problem:
+            # The caller pointed at a root that does not hold this site's DBs, so the
+            # check they asked for cannot run at all.
             collector.error(detail, site=site, file=str(site_root))
             return DbCheck("FAIL", source, None, None, None, None, detail)
-        if "missing locally" in problem:
-            # The documented docker workflow keeps instance/ inside the container, so
-            # its absence here is an expected configuration rather than a fault.
-            return DbCheck(
-                "SKIP", "none", None, None, None, None,
-                "no DB source configured; the control plane resets "
-                f"{DOCKER_SITE_ROOT}/{site}/instance inside the deployment. "
-                "Pass --docker-container or --db-root to check DB parity.",
-            )
-        collector.warn(problem, site=site, file=str(site_root))
-        return DbCheck("SKIP", source, None, None, None, None, problem)
+        # The root is plausible but this site's DB pair is undecidable; report it
+        # rather than guessing which file to compare.
+        collector.warn(detail, site=site, file=str(site_root))
+        return DbCheck("SKIP", source, None, None, None, None, detail)
 
     assert runtime_db is not None and seed_db is not None
-    source = f"local:{site_root}"
     if not reset_succeeded:
-        # There is no reset to attribute a parity verdict to, and this checkout is not
-        # necessarily the reset target, so reporting PASS here would assert something
-        # that was never observed.
+        # Nothing to attribute a parity verdict to.
         return DbCheck(
             "SKIP", source, str(runtime_db), str(seed_db), None, None,
             "no successful reset to verify; DB parity not evaluated",
@@ -490,7 +491,6 @@ def check_site(
 
     db = check_db_parity(
         site,
-        repo_root=root,
         db_root=db_root,
         docker_container=docker_container,
         container_hasher=container_hasher,
@@ -595,7 +595,7 @@ def run_checks(
         if ok:
             reset_all_ok = True
         else:
-            collector.error("reset-all request failed", url=reset_all_url)
+            collector.error(f"reset-all request failed: {detail}", url=reset_all_url)
             if status_code == 404:
                 collector.warn("control server does not expose /reset-all", url=reset_all_url)
 
