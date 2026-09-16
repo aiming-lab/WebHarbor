@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Compare Products | B&H{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Side-by-side workflow</p>
+    <h1>Compare products</h1>
+    <p>Review pricing, stock, and detailed technical rows across up to four products at once.</p>
+</section>
+
+<section class="shell">
+    {% if products %}
+        <div class="compare-top">
+            {% for product in products %}
+                <article class="compare-product">
+                    <img src="{{ url_for('static', filename=product.main_image) }}" alt="{{ product.name }}">
+                    <h3>{{ product.name }}</h3>
+                    <p>{{ product.display_price|currency }} · {{ product.availability }}</p>
+                    <form action="{{ url_for('remove_compare', product_slug=product.slug) }}" method="post">
+                        <button type="submit" class="quiet-btn">Remove</button>
+                    </form>
+                </article>
+            {% endfor %}
+        </div>
+        <div class="compare-table-wrap" role="region" aria-label="Product specifications comparison" tabindex="0">
+            <table class="compare-table">
+                <thead><tr><th scope="col">Specification</th>{% for product in products %}<th scope="col"><a href="{{ url_for('product_detail', product_slug=product.slug) }}">{{ product.name }}</a></th>{% endfor %}</tr></thead>
+            {% for group_name, rows in compare_rows.items() %}
+                        <tbody>
+                            <tr class="compare-group-heading"><th colspan="{{ products|length + 1 }}">{{ group_name }}</th></tr>
+                            {% for row in rows %}
+                                <tr class="{{ 'different' if row.different else '' }}">
+                                    <th scope="row">{{ row.name }}</th>
+                                    {% for product in products %}
+                                        <td>{{ row['cells'].get(product.id, '--') }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+            {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <h3>No products in compare yet</h3>
+            <p>Add products from listings or product pages to build a side-by-side comparison.</p>
+        </div>
+    {% endif %}
+</section>
+{% endblock %}

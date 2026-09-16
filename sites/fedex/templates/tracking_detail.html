@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ record.tracking_number }}{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Tracking detail</div>
+      <h1>{{ record.tracking_number }}</h1>
+    </div>
+    <a href="{{ url_for('track_results', numbers=record.tracking_number) }}">Back to results</a>
+  </section>
+
+  <section class="split">
+    <article class="card stack">
+      <div class="badge-row">
+        <span class="badge">{{ record.status_stage }}</span>
+        {% if service %}<span class="badge orange">{{ service.name }}</span>{% endif %}
+      </div>
+      <h2>{{ record.status_summary }}</h2>
+      <div class="stats-grid">
+        <div class="stat"><strong>{{ record.origin_city }}</strong><span>{{ record.origin_state }} origin</span></div>
+        <div class="stat"><strong>{{ record.destination_city }}</strong><span>{{ record.destination_state }} destination</span></div>
+        <div class="stat"><strong>{{ record.estimated_delivery }}</strong><span>Current ETA</span></div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <tbody>
+            <tr><th>Sender</th><td>{{ record.sender_name }}</td></tr>
+            <tr><th>Recipient</th><td>{{ record.recipient_name }}</td></tr>
+            <tr><th>Package type</th><td>{{ record.package_type }}</td></tr>
+            <tr><th>Weight</th><td>{{ record.weight_lb }} lb</td></tr>
+            <tr><th>Package count</th><td>{{ record.package_count }}</td></tr>
+            <tr><th>Signature</th><td>{{ "Required" if record.signature_required else "Not required" }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <aside class="card stack">
+      <div class="kicker">Timeline</div>
+      <div class="timeline">
+        {% for event in events %}
+          <div class="timeline-item">
+            <strong>{{ event.status_label }}</strong>
+            <span>{{ event.event_time }} · {{ event.location_label }}</span>
+            <p class="muted">{{ event.details }}</p>
+          </div>
+        {% endfor %}
+      </div>
+    </aside>
+  </section>
+{% endblock %}

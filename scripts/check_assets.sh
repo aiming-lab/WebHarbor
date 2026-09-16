@@ -15,6 +15,7 @@ OPTIONAL=(static/images static/external_cache)
 
 missing=0
 warnings=0
+python3 scripts/check_site_registry.py
 for site in sites/*/; do
     s=$(basename "$site")
     for sub in "${REQUIRED[@]}"; do
@@ -36,6 +37,9 @@ for site in sites/*/; do
     done
     if [[ -f "sites/$s/asset_inventory.json" ]]; then
         python3 scripts/check_asset_inventory.py "sites/$s"
+    fi
+    if [[ -f "sites/$s/generated_asset_inventory.json" && -f "sites/$s/check_generated_assets.py" ]]; then
+        python3 "sites/$s/check_generated_assets.py"
     fi
 done
 

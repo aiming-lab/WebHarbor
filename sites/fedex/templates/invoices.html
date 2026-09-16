@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Invoices{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Billing</div>
+      <h1>Invoice history</h1>
+    </div>
+  </section>
+  <section class="table-wrap card">
+    <table>
+      <thead>
+        <tr>
+          <th>Invoice</th>
+          <th>Shipment</th>
+          <th>Billed</th>
+          <th>Due</th>
+          <th>Status</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for invoice in invoices %}
+          <tr>
+            <td>{{ invoice.invoice_number }}</td>
+            <td>{{ invoice.shipment.shipment_code if invoice.shipment else "—" }}</td>
+            <td>{{ invoice.billed_on }}</td>
+            <td>{{ invoice.due_date }}</td>
+            <td>{{ invoice.status }}</td>
+            <td>{{ invoice.amount|money }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+{% endblock %}

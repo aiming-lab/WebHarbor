@@ -1,8 +1,18 @@
-# Hugging Face dataset holding webharbor's heavy static assets
-# (instance_seed/*.db, static/images/, static/external_cache/).
+# Hugging Face dataset holding WebHarbor's heavy static assets.
+# Pin an immutable commit SHA; never a moving branch or refs/pr/<n>.
 #
-# fetch_assets.sh uses the `hf download` CLI. The pin below
-# is a git revision (branch name like `main`, a tag, or a specific commit
-# sha). Override at runtime with the ASSETS_REVISION env var.
+# Merged dataset-main commit from HF asset PR #92.
+# https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/92
+# Its complete asset tree matches the tested candidate commit
+# f09e586eec8bf1bca0bc0881e08b77f3c2a5508e.
+#
+# Adds bh_photo.tar.gz: 79,658,793 bytes, 511 managed archive members.
+# SHA-256: 867363d5484eb114d647e236991017992d5ac91ae3415996ad43bf654d99bd9a
+# All 32 pre-existing archives are unchanged from the previous main pin
+# c32018ca3b3d67e7b858b1b85fb101aea5090cd7 (Berkeley, HF PR #91).
+# This revision has archives for all 31 registered sites. The two additional
+# archives (bandcamp and drugs_com) are ignored by fetch_assets.sh.
+# B&H's bundle contains images and external cache; Docker generates its seed
+# from tracked catalog data (sites/bh_photo/.build-generated-seed).
 repo: ChilleD/WebHarbor
-revision: 65c479f894763f64c6073e0d180ebf542d1d2c02
+revision: fa1e8a5b9e8e5d0e42764cd658825f4dea088d8f

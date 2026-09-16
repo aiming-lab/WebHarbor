@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Something Went Wrong | FedEx{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">500</div>
+      <h1>This local demonstration could not complete that request</h1>
+    </div>
+  </section>
+  <div class="split">
+    <section class="card stack">
+      <p class="muted">The request could not be processed. No partial shipment, pickup, invoice or profile change was saved. Return to the previous step and submit the form again.</p>
+      <div class="button-row">
+        <a class="button button-primary" href="{{ url_for('index') }}">Return to the home page</a>
+        <a class="button button-secondary" href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}">
+          {{ 'Go to my account' if current_user.is_authenticated else 'Sign in' }}
+        </a>
+      </div>
+    </section>
+    <aside class="card stack">
+      <div class="kicker">Environment note</div>
+      <p class="muted">This mirror runs offline against a seeded local database. Resetting the site restores the original seeded state.</p>
+    </aside>
+  </div>
+{% endblock %}

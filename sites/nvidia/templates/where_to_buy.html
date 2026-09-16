@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} — Where to Buy{% endblock %}
+{% block content %}
+<div class="page-head"><div class="container"><h1>{{ p.name }}</h1><p>{{ 'Contact Sales' if p.price_usd is none else 'Where to Buy' }} · Local buying information</p></div></div>
+<section class="section"><div class="container">
+  <div class="pills"><a class="pill" href="{{ url_for('product_detail', slug=p.slug) }}">Product Details</a><a class="pill" href="{{ url_for('buying_options') }}">All Buying Options</a></div>
+  <article class="feature-panel buying-info">
+    {% if p.slug == 'geforce-rtx-5080' %}
+    <h2>GeForce RTX 5080 Buying Information</h2>
+    <dl><dt>Official buying destination</dt><dd>NVIDIA Marketplace</dd><dt>Region</dt><dd>United States / en-us</dd><dt>Product filter</dt><dd>RTX 5080</dd></dl>
+    <p>The official RTX 50 Series page links to NVIDIA Marketplace for this model. This local page records that destination and region; it does not list verified retailers, stock, or checkout options.</p>
+    {% elif p.price_usd is none %}
+    <h2>Contact Sales Information</h2>
+    <p>For {{ p.name }}, prepare the model, intended workload, required memory, deployment size, power/cooling constraints, and country before contacting sales. This is local preparation guidance; no inquiry is submitted here.</p>
+    <p>NVIDIA's general sales contact entry is linked from its official RTX 6000 page. It is provided below as a general contact source, not a verified {{ p.name }} quote, stock listing, or product-specific sales form.</p>
+    {% elif p.category == 'Embedded' %}
+    <h2>Jetson Buying Information</h2><p>The official Jetson Orin page separates developer kits from production modules and links to the NVIDIA Jetson store. Check the required kit or module identity before selecting hardware.</p><p>{{ p.description }}</p>
+    {% elif p.category == 'Studio / Professional' %}
+    <h2>Workstation Buying Information</h2><p>The official RTX 6000 Ada page links to Find a Partner and the NVIDIA professional store. These are category-level references; specific suppliers, prices, and availability for {{ p.name }} have not been verified.</p>
+    {% elif p.category == 'GeForce Gaming' %}
+    <h2>GeForce Buying Information</h2><p>The official GeForce navigation links to the NVIDIA GeForce store. The reference below is a general store entry, not a verified {{ p.name }} offer. Consult the local model details and series technology page to compare hardware.</p>
+    {% else %}
+    <h2>Product Buying Information</h2><p>A product-specific buying destination has not been verified for this catalog entry. You can review its local specifications or save it for comparison.</p>
+    {% endif %}
+    <p class="source-note">Official reference snapshot: September 10, 2026. Downstream store/contact flows have not been verified. No real order, reservation, payment, or sales message is created by this mirror.</p>
+  </article>
+  <section class="section"><h2>Local Saved Selection</h2><p>Save this model to your mirror account for later comparison.</p><div class="row">{% include "_wishlist_action.html" %}</div></section>
+  <section class="section source-section"><h2>Official Sources — External References</h2><p>These links leave the local mirror. Saving to Local Wishlist above stays local.</p>
+    <ul class="source-list">
+    {% if p.slug == 'geforce-rtx-5080' %}
+      <li><a href="https://www.nvidia.com/en-us/geforce/graphics-cards/50-series/" rel="noreferrer">Official RTX 50 Series source ↗</a></li>
+      <li><a href="https://marketplace.nvidia.com/en-us/consumer/graphics-cards/?locale=en-us&amp;page=1&amp;limit=12&amp;gpu=RTX%205080&amp;gpu_filter=RTX%205090~8,RTX%205080~4,RTX%204070%20Ti%20SUPER~6,RTX%204070%20Ti~4,RTX%204060%20Ti~3,RTX%204070%20SUPER~4,RTX%204070~4,RTX%204060~22,RTX%203080~1,RTX%203070%20Ti~1,RTX%203060%20Ti~1,RTX%203060~6,GTX%201650~1" rel="noreferrer">NVIDIA Marketplace — United States / en-us, RTX 5080 ↗</a></li>
+    {% elif p.price_usd is none %}
+      <li><a href="https://www.nvidia.com/en-us/products/workstations/rtx-6000/" rel="noreferrer">Source page for the general sales contact link ↗</a></li>
+      <li><a href="https://www.nvidia.com/en-us/contact/sales/" rel="noreferrer">NVIDIA general sales contact — external ↗</a></li>
+    {% elif p.category == 'Embedded' %}
+      <li><a href="https://www.nvidia.com/en-us/autonomous-machines/embedded-systems/jetson-orin/" rel="noreferrer">Official Jetson Orin source ↗</a></li><li><a href="https://store.nvidia.com/jetson/store/" rel="noreferrer">NVIDIA Jetson store — external ↗</a></li>
+    {% elif p.category == 'Studio / Professional' %}
+      <li><a href="https://www.nvidia.com/en-us/products/workstations/rtx-6000/" rel="noreferrer">Official workstation source ↗</a></li><li><a href="https://www.nvidia.com/en-us/products/workstations/where-to-buy/" rel="noreferrer">Find a Partner — external ↗</a></li><li><a href="https://store.nvidia.com/en-us/nvidia-rtx/store/?page=1&amp;limit=9&amp;locale=en-us&amp;category=GPU" rel="noreferrer">NVIDIA professional store — external ↗</a></li>
+    {% elif p.category == 'GeForce Gaming' %}
+      <li><a href="https://www.nvidia.com/en-us/geforce/graphics-cards/{{ '50' if p.series == 'RTX 50 Series' else '40' }}-series/" rel="noreferrer">Official GeForce series source ↗</a></li><li><a href="https://store.nvidia.com/en-us/geforce/store/?page=1&amp;limit=9&amp;locale=en-us" rel="noreferrer">NVIDIA GeForce store — external ↗</a></li>
+    {% else %}<li>No verified product-specific external buying link in this snapshot.</li>{% endif %}
+    </ul>
+  </section>
+</div></section>
+{% endblock %}
