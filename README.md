@@ -246,6 +246,25 @@ Any other improvement — bug fixes, UI polish, data enrichment, task suggestion
 | 📊 Contribution Track Sheet | [Google Sheet](https://docs.google.com/spreadsheets/d/1vZsrQjy9nJKze58fx4kbQtFi85NjVXIWCFyu3ShD7gk/edit?gid=0#gid=0) |
 | 📝 Contribution Request Form | [Google Form](https://forms.gle/ngcD1rzAfUEphNmRA) |
 
+## Site Registry Audit
+
+Use the repository registry audit to check site registration consistency, port mappings, and task integration before opening a review or PR:
+
+```bash
+python3 scripts/audit_site_registry.py
+python3 scripts/audit_site_registry.py --site amazon
+python3 scripts/audit_site_registry.py --strict
+python3 scripts/audit_site_registry.py --json
+```
+
+Warnings are informational by default. Use `--strict` in pre-PR checks or CI to make warnings fail the command.
+
+This audit complements `scripts/check_site_registry.py`, which runs through
+`scripts/check_assets.sh` during the build and checks exact task URLs and
+referenced verifier files. Keep that build check enabled. The audit adds
+structured JSON diagnostics, per-site selection, asset-path coverage, and
+runtime-file checks.
+
 ## Citation
 
 WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`. 
