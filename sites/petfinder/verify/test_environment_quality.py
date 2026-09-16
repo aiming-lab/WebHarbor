@@ -52,9 +52,23 @@ class EnvironmentQualityTests(unittest.TestCase):
         for atlas in atlases:
             path = SITE_DIR / atlas["local_path"]
             self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), atlas["sha256"])
+
+        replacements = metadata["openly_licensed_replacements"]
+        self.assertEqual({item["image_index"] for item in replacements}, {10, 62, 66})
+        self.assertEqual({item["listing"] for item in replacements}, {"Pepper", "Juniper", "Thumper"})
+        self.assertEqual({item["license"] for item in replacements}, {"CC BY 2.0", "CC BY-SA 4.0"})
+        css = (SITE_DIR / "static/css/main.css").read_text()
+        for item in replacements:
+            path = SITE_DIR / item["local_path"]
+            self.assertEqual(hashlib.sha1(path.read_bytes()).hexdigest(), item["source_sha1"])
+            self.assertEqual(hashlib.sha256(path.read_bytes()).hexdigest(), item["sha256"])
+            self.assertIn(Path(item["local_path"]).name, css)
+            self.assertTrue(item["source_page_url"].startswith("https://commons.wikimedia.org/wiki/File:"))
+            self.assertTrue(item["license_url"].startswith("https://creativecommons.org/licenses/"))
         for path in (
             SITE_DIR / "static/images/home-hero.png",
             *(SITE_DIR / atlas["local_path"] for atlas in atlases),
+            *(SITE_DIR / item["local_path"] for item in replacements),
             SITE_DIR / "static/icons/petfinder-logo.svg",
             SITE_DIR / "static/icons/dog.svg",
             SITE_DIR / "static/icons/cat.svg",
