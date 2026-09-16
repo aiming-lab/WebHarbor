@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import competition_card, dataset_card, notebook_card %}
+{% block content %}
+<section class="hero">
+  <div class="container-wide">
+    <h1>Level up with the largest data science community</h1>
+    <p>Kaggle is where data scientists and machine learners come together to compete, collaborate, learn, and share. Join thousands of competitions, datasets, and notebooks.</p>
+    {% if not current_user.is_authenticated %}
+    <a class="btn btn-primary" href="{{ url_for('register') }}">Register with Email</a>
+    {% else %}
+    <a class="btn btn-primary" href="{{ url_for('competitions_list') }}">Browse Competitions</a>
+    {% endif %}
+  </div>
+</section>
+
+<div class="container-wide">
+  <section class="section">
+    <div class="section-head"><h2>Featured Competitions</h2><a href="{{ url_for('competitions_list') }}">View all →</a></div>
+    <div class="grid grid-4">
+      {% for c in featured %}{{ competition_card(c) }}{% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Popular Datasets</h2><a href="{{ url_for('datasets_list') }}">View all →</a></div>
+    <div class="grid grid-3">
+      {% for d in hot_datasets %}{{ dataset_card(d) }}{% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Trending Notebooks</h2><a href="{{ url_for('notebooks_list') }}">View all →</a></div>
+    <div class="grid grid-4">
+      {% for n in trending_notebooks %}{{ notebook_card(n) }}{% endfor %}
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="section-head"><h2>Learn Data Science</h2><a href="{{ url_for('learn') }}">All courses →</a></div>
+    <div class="grid grid-4">
+      {% for course in courses %}
+      <div class="card"><a href="{{ url_for('course_detail', slug=course.slug) }}"><div class="card-body">
+        <div style="font-size:32px;">{{ course.icon }}</div>
+        <div class="card-title">{{ course.title }}</div>
+        <div class="card-meta"><span>{{ course.level }}</span><span>{{ course.hours }} hrs</span></div>
+      </div></a></div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Buying Options — NVIDIA mirror{% endblock %}
+{% block content %}
+<div class="page-head"><div class="container"><h1>Buying Options</h1><p>Local product and region information. No local checkout or payment.</p></div></div>
+<section class="section"><div class="container">
+  <p>Select a model to read its buying information and official source references. Availability, retailers, and live prices are not verified here.</p>
+  {% include "_price_note.html" %}
+  <div class="grid">{% for p in items %}
+    <a class="feature-panel" href="{{ url_for('where_to_buy', slug=p.slug) }}"><span class="muted">{{ p.category }}</span><h2 class="buying-model-name">{{ p.name }}</h2><p>{{ p.price_display }}</p><strong>{{ 'Contact Sales information' if p.price_usd is none else 'Local buying information' }} →</strong></a>
+  {% endfor %}</div>
+</div></section>
+{% endblock %}
