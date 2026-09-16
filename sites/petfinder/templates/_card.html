@@ -1,0 +1,17 @@
+<article class="pet-card">
+  <a class="pet-photo sprite sprite-{{ item.image_index }}" href="{{ url_for('listing_detail', slug=item.slug) }}" role="img" aria-label="Photo of {{ item.name }}"></a>
+  <div class="pet-card-body">
+    <p class="pet-kicker">{{ item.age }} · {{ item.breed }}</p>
+    <h3><a href="{{ url_for('listing_detail', slug=item.slug) }}">{{ item.name }}</a></h3>
+    <p class="pet-location">{{ item.location }}</p>
+    <p class="pet-shelter">{{ item.shelter }}</p>
+    {% if current_user %}
+      <form class="favorite-form" method="post" action="{{ url_for('save_listing', slug=item.slug) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="favorite-dot" type="submit" aria-label="Favorite {{ item.name }}">♡</button>
+      </form>
+    {% else %}
+      <a class="favorite-dot" href="{{ url_for('login', next=url_for('listing_detail', slug=item.slug)) }}" aria-label="Sign in to favorite {{ item.name }}">♡</a>
+    {% endif %}
+  </div>
+</article>
