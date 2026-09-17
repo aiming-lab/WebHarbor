@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} | B&H{% endblock %}
+{% block content %}
+<section class="shell breadcrumb-row">
+    <a href="{{ url_for('index') }}">Home</a>
+    {% if category and category.parent %}
+        <span>/</span>
+        <a href="{{ url_for('category_view', slug=category.parent.slug) }}">{{ category.parent.name }}</a>
+    {% elif brand %}
+        <span>/</span>
+        <a href="{{ url_for('categories') }}">Brands</a>
+    {% endif %}
+    <span>/</span>
+    <span>{{ page_heading }}</span>
+</section>
+
+<section class="shell listing-title">
+    <h1>{{ page_heading }}</h1>
+    <p class="result-count">{{ pagination.total if pagination else products|length }} Items</p>
+</section>
+
+{% if subcategories %}
+    <section class="shell subcategory-strip">
+        <h2>Shop {{ page_heading }}</h2>
+        <div class="subcategory-row">
+            {% for tile in subcategories %}
+                <a class="subcategory-tile" href="{{ url_for('category_view', slug=tile.category.slug) }}">
+                    <span class="subcategory-thumb">
+                        <img src="{{ url_for('static', filename=tile.image) }}" alt="{{ tile.category.name }}" loading="lazy">
+                    </span>
+                    <strong>{{ tile.category.name }}</strong>
+                    <small>{{ tile.count }} items</small>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+{% endif %}
+
+<section class="shell listing-layout">
+    <aside class="filters">
+        <form method="get">
+            {% if search_query %}<input type="hidden" name="q" value="{{ search_query }}">{% endif %}
+            <details class="facet-group" open>
+                <summary>Search Within Results</summary>
+                <label>Keywords
+                    <input type="search" name="within" value="{{ request.args.get('within', '') }}" placeholder="Type Keywords">
+                </label>
+            </details>
+            <details class="facet-group">
+                <summary>Brand</summary>
+            <label>Brand
+                <select name="brand">
+                    <option value="">All brands</option>
+                    {% for slug, name in filters.brands %}
+                        <option value="{{ slug }}" {% if request.args.get('brand') == slug %}selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            </details>
+            <details class="facet-group">
+                <summary>Price</summary>
+            <div class="range-row">
+                <label>Min price
+                    <input type="number" step="1" name="min_price" value="{{ request.args.get('min_price', '') }}">
+                </label>
+                <label>Max price
+                    <input type="number" step="1" name="max_price" value="{{ request.args.get('max_price', '') }}">
+                </label>
+            </div>
+            </details>
+            <details class="facet-group">
+                <summary>Customer Rating</summary>
+            <label>Rating
+                <select name="rating">
+                    <option value="">Any rating</option>
+                    <option value="4.0" {% if request.args.get('rating') == '4.0' %}selected{% endif %}>4.0 and up</option>
+                    <option value="4.5" {% if request.args.get('rating') == '4.5' %}selected{% endif %}>4.5 and up</option>
+                    <option value="4.8" {% if request.args.get('rating') == '4.8' %}selected{% endif %}>4.8 and up</option>
+                </select>
+            </label>
+            </details>
+            <details class="facet-group">
+                <summary>Savings &amp; Stock</summary>
+            <label>Availability
+                <select name="availability">
+                    <option value="">Any</option>
+                    <option value="in-stock" {% if request.args.get('availability') == 'in-stock' %}selected{% endif %}>In stock</option>
+                    <option value="pickup" {% if request.args.get('availability') == 'pickup' %}selected{% endif %}>Pickup available</option>
+                    <option value="preorder" {% if request.args.get('availability') == 'preorder' %}selected{% endif %}>Pre-order</option>
+                </select>
+            </label>
+            <label>Condition
+                <select name="condition">
+                    <option value="">Any condition</option>
+                    <option value="New" {% if request.args.get('condition') == 'New' %}selected{% endif %}>New</option>
+                    <option value="Used" {% if request.args.get('condition') == 'Used' %}selected{% endif %}>Used</option>
+                    <option value="Open-Box" {% if request.args.get('condition') == 'Open-Box' %}selected{% endif %}>Open-box</option>
+                </select>
+            </label>
+            </details>
+            <details class="facet-group">
+                <summary>Product Features</summary>
+            <label>Sensor size
+                <select name="sensor_size">
+                    <option value="">Any sensor</option>
+                    {% for option in filters.sensor_sizes %}
+                        <option value="{{ option }}" {% if request.args.get('sensor_size') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Lens mount
+                <select name="mount">
+                    <option value="">Any mount</option>
+                    {% for option in filters.mounts %}
+                        <option value="{{ option }}" {% if request.args.get('mount') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Focal length
+                <select name="focal_length">
+                    <option value="">Any range</option>
+                    {% for option in filters.focal_lengths %}
+                        <option value="{{ option }}" {% if request.args.get('focal_length') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Megapixels
+                <select name="megapixels">
+                    <option value="">Any</option>
+                    <option value="24" {% if request.args.get('megapixels') == '24' %}selected{% endif %}>24 MP+</option>
+                    <option value="33" {% if request.args.get('megapixels') == '33' %}selected{% endif %}>33 MP+</option>
+                    <option value="45" {% if request.args.get('megapixels') == '45' %}selected{% endif %}>45 MP+</option>
+                </select>
+            </label>
+            <label>Memory capacity
+                <select name="capacity">
+                    <option value="">Any</option>
+                    <option value="256gb" {% if request.args.get('capacity') == '256gb' %}selected{% endif %}>256 GB+</option>
+                    <option value="1tb" {% if request.args.get('capacity') == '1tb' %}selected{% endif %}>1 TB+</option>
+                </select>
+            </label>
+            <label>Connectivity
+                <select name="connectivity">
+                    <option value="">Any</option>
+                    {% for option in filters.connectivity %}
+                        <option value="{{ option }}" {% if request.args.get('connectivity') == option %}selected{% endif %}>{{ option }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label>Pickup
+                <select name="pickup">
+                    <option value="">Either</option>
+                    <option value="yes" {% if request.args.get('pickup') == 'yes' %}selected{% endif %}>Pickup available</option>
+                </select>
+            </label>
+            </details>
+            {# sort lives in the toolbar above the rows, as it does upstream; a second
+               control in the rail duplicated it and made the page ambiguous #}
+            <button type="submit" class="cta block">Apply filters</button>
+        </form>
+    </aside>
+
+    <div class="listing-content">
+        <div class="listing-toolbar">
+            <span class="toolbar-label">Sort by</span>
+            <form method="get" class="inline-sort">
+                {% for key, value in request.args.items() %}
+                    {% if key not in ('sort', 'page') %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}
+                {% endfor %}
+                <select name="sort" onchange="this.form.submit()">
+                    <option value="relevance" {% if request.args.get('sort', 'relevance') == 'relevance' %}selected{% endif %}>Featured</option>
+                    <option value="price_asc" {% if request.args.get('sort') == 'price_asc' %}selected{% endif %}>Price low to high</option>
+                    <option value="price_desc" {% if request.args.get('sort') == 'price_desc' %}selected{% endif %}>Price high to low</option>
+                    <option value="newest" {% if request.args.get('sort') == 'newest' %}selected{% endif %}>Newest</option>
+                    <option value="rating" {% if request.args.get('sort') == 'rating' %}selected{% endif %}>Top rated</option>
+                    <option value="bestsellers" {% if request.args.get('sort') == 'bestsellers' %}selected{% endif %}>Best sellers</option>
+                </select>
+                <noscript><button type="submit" class="quiet-btn">Apply</button></noscript>
+            </form>
+            <span class="toolbar-label">View</span>
+            <a class="view-toggle {{ 'active' if view_mode == 'list' else '' }}" href="{{ view_url('list') }}" aria-label="List view">&#9776;</a>
+            <a class="view-toggle {{ 'active' if view_mode == 'grid' else '' }}" href="{{ view_url('grid') }}" aria-label="Grid view">&#9635;</a>
+        </div>
+        <div class="listing-head">
+            <div>
+                {% if pagination and pagination.total %}
+                    <strong>Showing {{ pagination.first_index }}&ndash;{{ pagination.last_index }} of {{ pagination.total }}</strong>
+                {% else %}
+                    <strong>{{ products|length }} results</strong>
+                {% endif %}
+                {% if search_query %}
+                    <p>Search query: {{ search_query }}</p>
+                {% endif %}
+            </div>
+            <div class="chip-row">
+                {% if request.args.get('brand') %}<span class="filter-chip">Brand: {{ request.args.get('brand') }}</span>{% endif %}
+                {% if request.args.get('condition') %}<span class="filter-chip">{{ request.args.get('condition') }}</span>{% endif %}
+                {% if request.args.get('availability') %}<span class="filter-chip">{{ request.args.get('availability') }}</span>{% endif %}
+            </div>
+        </div>
+        <div class="product-grid dense {{ 'list-view' if view_mode == 'list' else '' }}">
+            {% for product in products %}
+                {% include "_product_card.html" %}
+            {% else %}
+                <div class="empty-state">
+                    <h3>No matching demo products</h3>
+                    <p>Try widening the price range or clearing one of the filter constraints.</p>
+                </div>
+            {% endfor %}
+        </div>
+        {% if pagination and pagination.pages > 1 %}
+            <nav class="pagination" aria-label="Pagination">
+                {% if pagination.page > 1 %}
+                    <a href="{{ page_url(pagination.page - 1) }}">Previous</a>
+                {% endif %}
+                {% for number in range(1, pagination.pages + 1) %}
+                    {% if number == pagination.page %}
+                        <span class="current" aria-current="page">{{ number }}</span>
+                    {% else %}
+                        <a href="{{ page_url(number) }}">{{ number }}</a>
+                    {% endif %}
+                {% endfor %}
+                {% if pagination.page < pagination.pages %}
+                    <a href="{{ page_url(pagination.page + 1) }}">Next</a>
+                {% endif %}
+                <span class="page-of">Page {{ pagination.page }} of {{ pagination.pages }}</span>
+            </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

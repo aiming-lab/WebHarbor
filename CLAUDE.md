@@ -16,8 +16,4 @@ The full agent guide is loaded above via `@AGENTS.md`. The notes below apply onl
 
 ## Existing containers
 
-<<<<<<< HEAD
-If a container is already running on `:8101` / `:40000-40029`, treat it as the user's working environment — don't `docker stop` or `docker rm` it without explicit confirmation. Spin up your test container under a different name on alt ports (`:8201`, `:41000-41028`).
-=======
-If a container is already running on `:8101` / `:40000-40029`, treat it as the user's working environment — don't `docker stop` or `docker rm` it without explicit confirmation. Spin up your test container under a different name on alt ports (`:8201`, `:41000-41027`).
->>>>>>> c7b5a41 (chore(phet_simulations): register as site 25 and sweep port range to 40024)
+If a container is already running on `:8101` / `:40000-40035`, treat it as the user's working environment — don't `docker stop` or `docker rm` it without explicit confirmation. Spin up your test container under a different name on alt ports (`:8201`, `:41000-41035`).

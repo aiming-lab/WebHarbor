@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ player.name }} - NBA{% endblock %}
+{% block content %}
+<section class="player-hero-pro" style="--team: {{ player.team.color }}">
+  <div class="player-photo"><img src="{{ player.image }}" alt=""></div>
+  <div>
+    <span class="kicker">{{ player.team.full_name }} · #{{ player.jersey }} · {{ player.position }}</span>
+    <h1>{{ player.name }}</h1>
+    <p>{{ player.bio }}</p>
+    <form method="post" action="{{ url_for('favorite', item_type='player', item_id=player.id) }}"><button class="button">Save Player</button></form>
+  </div>
+</section>
+<section class="content-block">
+  <div class="stat-tile-grid six">
+    {% for key, label in [('ppg','PPG'),('rpg','RPG'),('apg','APG'),('spg','SPG'),('bpg','BPG'),('topg','TO')] %}
+      <div class="stat-tile"><span>{{ label }}</span><strong>{{ "%.1f"|format(stat_value(player, key)) }}</strong></div>
+    {% endfor %}
+  </div>
+  <div class="split-layout">
+    <article class="article-body">
+      <h2>Bio</h2>
+      <dl class="meta-grid">
+        <div><dt>Height</dt><dd>{{ player.height }}</dd></div>
+        <div><dt>Weight</dt><dd>{{ player.weight }}</dd></div>
+        <div><dt>Age</dt><dd>{{ player.age }}</dd></div>
+        <div><dt>Last Attended</dt><dd>{{ player.college }}</dd></div>
+        <div><dt>Country</dt><dd>{{ player.country }}</dd></div>
+        <div><dt>3P%</dt><dd>{{ "%.1f"|format(player.three_pct) }}</dd></div>
+      </dl>
+    </article>
+    <aside class="portal-rail">
+      <section class="rail-card"><h2>Related</h2>{% for article in articles %}<a class="headline" href="{{ url_for('article_detail', slug=article.slug) }}"><span>{{ article.category }}</span>{{ article.title }}</a>{% else %}<p>No current stories.</p>{% endfor %}</section>
+    </aside>
+  </div>
+</section>
+{% endblock %}

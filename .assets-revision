@@ -1,51 +1,27 @@
-# Hugging Face dataset holding webharbor's heavy static assets
-# (instance_seed/*.db, static/images/, static/external_cache/).
+# Hugging Face dataset holding WebHarbor's heavy static assets.
+# Pin an immutable commit SHA; never a moving branch or refs/pr/<n>.
 #
-# fetch_assets.sh uses the `hf download` CLI. The pin below
-# is a git revision (branch name like `main`, a tag, or a specific commit
-# sha). Override at runtime with the ASSETS_REVISION env var.
+# Merged dataset-main commit from HF asset PR #88 (NBA review, #30).
+# https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/88
 #
-# The revision is a commit sha, never a moving branch name.
-#
-# Current pin = the commit that HF dataset `main` points at (verified
-# 2026-09-13): the squash-merge commit of HF dataset PR #85 ("Upload nvidia.tar.gz
-# with distinct official product and hero images (#107 follow-up)"), which sits on
-# top of the merged PR #84 ("Upload repacked nvidia.tar.gz with de-duplicated
-# official product images (#107)"), PR #75 ("Add reviewed NVIDIA asset bundle") and
-# PR #74 ("Upload kaggle.tar.gz with huggingface_hub"), so this sha is on HF `main`.
-#
-# Its nvidia.tar.gz is the repacked bundle (sha256
-# 617a3e3740ba6706bcab786c8a5c3f9a22ecbb39eff5728ad2c12e4992cb098b, 16340955 bytes,
-# 37 file members and no directory entries), which carries the official NVIDIA
-# renders for 33 product/news images plus three dedicated hero images under
-# static/images/heroes/: 36 images with 36 distinct sha256, so
-# sites/nvidia/static/images/ has no byte-identical duplicate and no page reuses
-# one file twice. It supersedes the 9927312-byte PR #84 archive (sha256
-# ee8c6ba966e7a8f7fb5ad2d7ff0134ab98e7b80d6cc77f3328217405b8b34e2f) and the
-# original 6706395-byte bundle (blob 0f1d8068af602748d0dec19ef04b52c7559fef28),
-# which carried duplicates.
-#
-# Why this sha and not the other candidate (refs/pr/37, resolved
-# 600a3e1de158ae56dc82a5fab56c2ca25acb1e27):
-#   * this revision carries an archive for every registered site (29 of 29), and
-#     the kaggle seed DB it ships was found identical to the seed the site's own
-#     code generates (13/13 tables, row by row) in the PR #106 audit;
-#   * refs/pr/37 ships an older kaggle seed (models table has 10 rows instead of
-#     11: densenet121-chestxray is absent) and its archives cover only 17 of the
-#     29 registered sites, so pinning there would break fetch_assets.sh.
-#   * this revision's kaggle.tar.gz (sha256
-#     dd6f1ab34f99989b300e3366225a8f8b0932d49d033b48f141938d16f1c0607d,
-#     11278106 bytes) passes the repository's own
-#     scripts/validate_asset_archive.py:
-#         [fetch] validated 73 managed members for kaggle
-#     That 73-member pack has no directory entries, so the earlier
-#     `ValueError: unexpected managed path: 'kaggle/static'` rejection (from the
-#     superseded 11278264-byte pack, sha256 c533c283...) no longer applies and
-#     `scripts/fetch_assets.sh` installs sites/kaggle's assets from this pin.
+# Adds nba.tar.gz: 26,495,947 bytes, LFS oid
+# 4ade0429edc12ffbfa1ee42a8f0192fc3009647912ff57a8d232d52abe7b349d.
+# The 35 archives present at the previous main pin
+# e8f59470b76b95d607f288958186cb9b73681d9e (IMDb, HF PR #57) are byte-for-byte unchanged,
+# including imdb, gov_uk, berkeley and bh_photo.
+# This revision carries an archive for 34 of the 35 registered sites; accuweather has
+# no archive in the dataset and is pinned per-site below.
+# The two further archives (bandcamp and drugs_com) are ignored by fetch_assets.sh.
+# B&H's bundle contains images and external cache; Docker generates its seed
+# from tracked catalog data (sites/bh_photo/.build-generated-seed).
 repo: ChilleD/WebHarbor
-# TEMPORARY pin to the reviewer asset PR so this branch builds standalone:
-# ChilleD/WebHarbor discussions/86. That commit is upstream's current pin
-# (b7e605c) plus phet_simulations.tar.gz; every other archive is byte-
-# identical, verified by comparing file OIDs of both trees.
-# Repin to the merge commit once #86 lands.
-revision: 9c6ab2169d64f52cdee44a12921efc1e9061a1ee
+revision: 2aaf9d598f3e71cddd17a4efcdfee7dd7c073337
+
+# AccuWeather HF PR #66; immutable archive validated in the task review.
+# Other sites retain their merged and validated asset revision above.
+site.accuweather: 0a73c1c1ac2e47513389a8a1a67601f75c8c4150
+
+# PhET HF PR #86; scope the reviewed archive to PhET so other sites retain
+# their current upstream assets. Archive sha256:
+# 7ed4831ed1218bf95456a6156f82dbd769b909fb630434e042f6e6cd1987a65f
+site.phet_simulations: 9c6ab2169d64f52cdee44a12921efc1e9061a1ee

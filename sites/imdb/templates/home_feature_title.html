@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{ item.title }} — {{ feature.heading }} - IMDb{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+<article class="anticipated-title-page">
+  <a class="anticipated-back" href="{{ url_for('home_feature', feature_id=feature.id) }}#title-{{ item.source_id }}">‹ Back to all {{ feature.payload.item_count }} titles</a>
+  <div class="anticipated-title-layout">
+    <img src="{{ url_for('static', filename=item.poster_path) }}" alt="{{ item.poster_alt }}">
+    <div>
+      <p class="anticipated-kicker">IMDb Most Anticipated · September</p>
+      <h1>{{ item.title }}</h1>
+      <p class="anticipated-meta">
+        {% if item.rating %}<span class="anticipated-rating">★ {{ item.rating }}{% if item.votes %} <small>({{ item.votes }})</small>{% endif %}</span>{% endif %}
+        {% if item.popularity %}<span>{{ item.popularity }}</span>{% endif %}
+        {% for value in item.metadata %}<span>{{ value }}</span>{% endfor %}
+      </p>
+      <p class="anticipated-release">{{ item.release_context }}</p>
+      <p class="anticipated-description">{{ item.description }}</p>
+      {% if catalog_title %}<a class="sign-in-button" href="{{ url_for('title_detail', tt_id=catalog_title.tt_id) }}">Open catalog details &amp; Watchlist</a>{% endif %}
+    </div>
+  </div>
+  <section class="anticipated-detail-cast">
+    <h2>Featuring</h2>
+    <div class="anticipated-cast">{% for name in item.featuring %}<a href="{{ url_for('search', s='nm', q=name) }}">{{ name }}</a>{% endfor %}</div>
+  </section>
+  <details class="anticipated-source"><summary>Snapshot source</summary><p>Observed {{ feature.payload.observed_at[:10] }} on IMDb.</p><p>{{ item.source_url }}</p></details>
+</article>
+{% endblock %}

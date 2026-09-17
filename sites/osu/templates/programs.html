@@ -58,15 +58,10 @@
               <div style="margin-bottom:6px">
                 <span class="badge badge-scarlet">{{ prog.degree_type }}</span>
                 {% if prog.is_online %}<span class="badge" style="background:#27ae60;color:#fff;margin-left:4px">Online</span>{% endif %}
-                {% if prog.gre_required %}<span class="badge badge-gray" style="margin-left:4px">GRE Required</span>{% endif %}
               </div>
               <h3 class="card-title"><a href="{{ url_for('program_detail', slug=prog.slug) }}">{{ prog.name }}</a></h3>
               {% if prog.college %}<div class="card-meta">{{ prog.college.name }}</div>{% endif %}
               <p class="card-text" style="margin-top:6px">{{ prog.description[:160] }}{% if prog.description|length > 160 %}...{% endif %}</p>
-              <div class="card-meta" style="margin-top:8px">
-                {{ prog.units }} credits &bull; {{ prog.duration_years }} years
-                {% if prog.application_deadline %} &bull; Deadline: {{ prog.application_deadline }}{% endif %}
-              </div>
             </div>
             <div style="white-space:nowrap;margin-left:16px">
               <a href="{{ url_for('program_detail', slug=prog.slug) }}" class="btn btn-sm btn-outline">Details</a>

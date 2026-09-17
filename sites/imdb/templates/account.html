@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}{{ current_user.name }} - Account{% endblock %}
+{% block content %}
+<h1>Your account</h1>
+<p>{{ current_user.name }} &middot; {{ current_user.email }}</p>
+<ul class="account-stats">
+  <li><a href="{{ url_for('my_watchlist') }}">Watchlist</a> &mdash; {{ watch_count }} title{{ 's' if watch_count != 1 }}</li>
+  <li><a href="{{ url_for('my_ratings') }}">Your ratings</a> &mdash; {{ rating_count }} rating{{ 's' if rating_count != 1 }}</li>
+  <li>Reviews you have written: {{ review_count }}</li>
+</ul>
+<form method="post" action="{{ url_for('logout') }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button type="submit" class="btn">Sign out</button>
+</form>
+{% endblock %}

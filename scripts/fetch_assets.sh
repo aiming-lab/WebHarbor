@@ -10,7 +10,8 @@
 # Usage:
 #   ./scripts/fetch_assets.sh                 # fetch all sites at pinned rev
 #   ./scripts/fetch_assets.sh google_search   # fetch one site only
-#   ASSETS_REVISION=abc123 ./scripts/fetch_assets.sh   # override pin
+#   ASSETS_REVISION=abc123 ./scripts/fetch_assets.sh   # override all pins
+# .assets-revision may also contain site.<name>: <immutable SHA> entries.
 #
 # Requires:
 #   - hf CLI  (pip install -U "huggingface_hub[cli]")
@@ -46,50 +47,64 @@ else
     echo "[fetch] scope: ${#INCLUDES[@]} registered site(s)"
 fi
 
-INCLUDE_ARGS=()
-for pattern in "${INCLUDES[@]}"; do
-    INCLUDE_ARGS+=(--include "$pattern")
-done
-
-hf download "$REPO" --repo-type dataset --revision "$REVISION" \
-    "${INCLUDE_ARGS[@]}" --local-dir "$CACHE_DIR"
-
-shopt -s nullglob
-missing=()
-if [[ -n "$ONLY_SITE" ]]; then
-    TARBALLS=("$CACHE_DIR/$ONLY_SITE.tar.gz")
-    if [[ ! -f "${TARBALLS[0]}" ]]; then
-        echo "fetch_assets: expected archive for $ONLY_SITE" >&2
+# A site may pin an immutable bundle independently while its HF PR awaits
+# integration. An explicit ASSETS_REVISION override deliberately replaces all
+# pins, which is useful when validating a proposed consolidated release.
+declare -A SITE_REVISIONS
+TARBALLS=()
+BASE_INCLUDES=()
+for archive in "${INCLUDES[@]}"; do
+    site=${archive%.tar.gz}
+    if [[ ! -d "sites/$site" || ! "$site" =~ ^[a-z0-9_]+$ ]]; then
+        echo "fetch_assets: unknown site: $site" >&2
         exit 1
     fi
-else
-    # Every site in this checkout must have an archive at the pinned revision.
-    # Archives for sites that are not in this checkout are ignored: the dataset
-    # can legitimately carry assets that were merged ahead of their code PR, and
-    # rejecting them would make an otherwise complete pin unusable.
-    TARBALLS=()
-    for site_dir in sites/*/; do
-        [[ -d "$site_dir" ]] || continue
-        site=$(basename "$site_dir")
-        if [[ -f "$CACHE_DIR/$site.tar.gz" ]]; then
-            TARBALLS+=("$CACHE_DIR/$site.tar.gz")
-        else
-            missing+=("$site")
+    revision="$REVISION"
+    if [[ -z "${ASSETS_REVISION:-}" ]]; then
+        scoped=$(awk -v key="site.$site:" '$1 == key {print $2}' .assets-revision)
+        if [[ -n "$scoped" ]]; then
+            [[ "$scoped" =~ ^[0-9a-f]{40}$ ]] || { echo "Invalid immutable pin for $site" >&2; exit 1; }
+            revision="$scoped"
         fi
-    done
-    if (( ${#missing[@]} > 0 )); then
-        echo "fetch_assets: revision $REVISION has no archive for: ${missing[*]}" >&2
+    fi
+    SITE_REVISIONS[$site]="$revision"
+    TARBALLS+=("sites/.cache/tarballs/$revision/$archive")
+    if [[ "$revision" == "$REVISION" ]]; then
+        BASE_INCLUDES+=(--include "$archive")
+    fi
+done
+if (( ${#BASE_INCLUDES[@]} )); then
+    hf download "$REPO" --repo-type dataset --revision "$REVISION" \
+        "${BASE_INCLUDES[@]}" --local-dir "$CACHE_DIR"
+fi
+for archive in "${INCLUDES[@]}"; do
+    site=${archive%.tar.gz}
+    revision=${SITE_REVISIONS[$site]}
+    if [[ "$revision" != "$REVISION" ]]; then
+        echo "[fetch] $site scoped pin: $revision"
+        hf download "$REPO" --include "$archive" --repo-type dataset --revision "$revision" \
+            --local-dir "sites/.cache/tarballs/$revision"
+    fi
+done
+AVAILABLE_TARBALLS=()
+for tarball in "${TARBALLS[@]}"; do
+    if [[ ! -f "$tarball" ]]; then
+        site=$(basename "$tarball" .tar.gz)
+        # Build-generated sites need no archive only when they also need no
+        # downloaded images or external cache. Required assets still fail closed.
+        if [[ -f "sites/$site/.build-generated-seed" &&
+              ! -f "sites/$site/.requires-images" &&
+              ! -f "sites/$site/.requires-external-cache" ]]; then
+            echo "[fetch] $site: build-generated seed, no archive — skipping"
+            if [[ -n "$ONLY_SITE" ]]; then exit 0; fi
+            continue
+        fi
+        echo "fetch_assets: expected archive: $tarball" >&2
         exit 1
     fi
-    unregistered=0
-    for tarball in "$CACHE_DIR"/*.tar.gz; do
-        site=$(basename "$tarball" .tar.gz)
-        [[ -d "sites/$site" ]] || unregistered=$((unregistered + 1))
-    done
-    if (( unregistered > 0 )); then
-        echo "[fetch] ignoring $unregistered archive(s) for sites not present in this checkout"
-    fi
-fi
+    AVAILABLE_TARBALLS+=("$tarball")
+done
+TARBALLS=("${AVAILABLE_TARBALLS[@]}")
 extracted=0
 for tarball in "${TARBALLS[@]}"; do
     site=$(basename "$tarball" .tar.gz)
