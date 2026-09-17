@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ order.order_number }} - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Synthetic order detail</p>
+  <h1>{{ order.order_number }}</h1>
+  <p>{{ order.status }} · {{ order.fulfillment_method|capitalize }}</p>
+</section>
+<section class="checkout-layout">
+  <article class="summary-card">
+    <h2>Items</h2>
+    {% for item in order.items %}
+      <p>{{ item.quantity }} × {{ item.product.name }} <strong>{{ (item.unit_price * item.quantity)|money }}</strong></p>
+    {% endfor %}
+  </article>
+  <article class="summary-card">
+    <h2>Summary</h2>
+    <p><span>Placed on</span><strong>{{ order.placed_on }}</strong></p>
+    <p><span>Subtotal</span><strong>{{ order.subtotal|money }}</strong></p>
+    <p><span>Shipping</span><strong>{{ order.shipping_fee|money }}</strong></p>
+    <p><span>Tax</span><strong>{{ order.tax|money }}</strong></p>
+    <p class="grand-total"><span>Total</span><strong>{{ order.total|money }}</strong></p>
+    <p><strong>Payment</strong> · {{ order.payment_summary }}</p>
+  </article>
+</section>
+{% endblock %}

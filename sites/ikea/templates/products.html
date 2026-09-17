@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Product search + filters</p>
+  <h1>{{ title }}</h1>
+  <p>{{ description }}</p>
+</section>
+
+<section class="listing-layout">
+  <aside class="filter-panel">
+    <form action="{{ request.path }}" method="get" class="filter-form">
+      <label>Search
+        <input type="search" name="q" value="{{ request.args.get('q', '') }}">
+      </label>
+      <label>Room
+        <select name="room">
+          <option value="">All rooms</option>
+          {% for room_slug, room_label in room_labels.items() %}
+            <option value="{{ room_slug }}" {% if request.args.get('room') == room_slug %}selected{% endif %}>{{ room_label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Series
+        <select name="series">
+          <option value="">All series</option>
+          {% for series in series_options %}
+            <option value="{{ series }}" {% if request.args.get('series') == series %}selected{% endif %}>{{ series }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <div class="price-fields">
+        <label>Min price
+          <input type="number" name="min_price" value="{{ request.args.get('min_price', '') }}" min="0">
+        </label>
+        <label>Max price
+          <input type="number" name="max_price" value="{{ request.args.get('max_price', '') }}" min="0">
+        </label>
+      </div>
+      <label>Minimum rating
+        <select name="min_rating">
+          <option value="">Any rating</option>
+          {% for value in ['4.0', '4.3', '4.5', '4.7'] %}
+            <option value="{{ value }}" {% if request.args.get('min_rating') == value %}selected{% endif %}>{{ value }}+ stars</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Availability
+        <select name="availability">
+          <option value="">Any availability</option>
+          <option value="Ready" {% if request.args.get('availability') == 'Ready' %}selected{% endif %}>Ready for pickup</option>
+          <option value="Low stock" {% if request.args.get('availability') == 'Low stock' %}selected{% endif %}>Low stock</option>
+          <option value="Delivery" {% if request.args.get('availability') == 'Delivery' %}selected{% endif %}>Delivery only</option>
+        </select>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" name="pickup" value="1" {% if request.args.get('pickup') == '1' %}checked{% endif %}>
+        Pickup available at preferred store
+      </label>
+      <label>Sort by
+        <select name="sort">
+          {% for value, label in [('featured', 'Featured'), ('price-asc', 'Price low to high'), ('price-desc', 'Price high to low'), ('rating', 'Top rated'), ('popular', 'Most reviewed'), ('newest', 'Newest arrivals')] %}
+            <option value="{{ value }}" {% if request.args.get('sort', 'featured') == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button type="submit">Apply filters</button>
+    </form>
+  </aside>
+
+  <div>
+    <p class="result-count">{{ products|length }} products found</p>
+    {% if related_results_added %}
+      <p class="search-note">Showing the closest matches first, followed by similar products you may want to compare.</p>
+    {% endif %}
+    <div class="product-grid">
+      {% for product in products %}
+        {% include "partials_product_card.html" %}
+      {% else %}
+        <div class="empty-card">
+          <h3>No products matched these filters.</h3>
+          <p>Try removing one filter or browse another room.</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

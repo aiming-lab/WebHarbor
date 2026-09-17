@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Search GOV.UK{% endblock %}
+{% block content %}
+<nav class="govuk-breadcrumbs" aria-label="Breadcrumb"><a class="govuk-breadcrumbs__link" href="/">Home</a></nav>
+<h1 class="govuk-heading-xl">Search GOV.UK</h1>
+<form action="{{ url_for('search') }}" method="get" role="search">
+  <label class="govuk-label" for="search-q">Search</label>
+  <div class="search-bar"><input class="govuk-input" id="search-q" name="q" type="search" value="{{ q }}"><button class="govuk-button" type="submit">Search</button></div>
+  <div class="govuk-grid-row">
+    <aside class="govuk-grid-column-one-third search-filters" aria-label="Search filters">
+      <h2 class="govuk-heading-m">Filter results</h2>
+      <fieldset class="govuk-fieldset"><legend class="govuk-fieldset__legend govuk-fieldset__legend--s">Type</legend>
+        <div class="govuk-radios govuk-radios--small">
+          {% for value, label in [('', 'All types')] + kinds.items()|list %}
+          <div class="govuk-radios__item"><input class="govuk-radios__input" id="type-{{ loop.index }}" name="type" type="radio" value="{{ value }}" {% if kind == value %}checked{% endif %}><label class="govuk-label govuk-radios__label" for="type-{{ loop.index }}">{{ label }}{% if value %} ({{ counts[value] }}){% endif %}</label></div>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <div class="govuk-form-group govuk-!-margin-top-5"><label class="govuk-label govuk-label--s" for="department">Organisation</label><select class="govuk-select" id="department" name="department"><option value="">All organisations</option>{% for d in departments %}<option value="{{ d.slug }}" {% if department == d.slug %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select></div>
+      <button class="govuk-button govuk-button--secondary" type="submit">Apply filters</button>
+      {% if kind or department %}<p class="govuk-body"><a class="govuk-link" href="{{ url_for('search', q=q) }}">Clear filters</a></p>{% endif %}
+    </aside>
+    <div class="govuk-grid-column-two-thirds">
+      <div class="search-results-heading"><h2 class="govuk-heading-m">{{ total }} result{{ '' if total == 1 else 's' }}{% if q %} for “{{ q }}”{% endif %}</h2>
+        <label class="govuk-label" for="order">Sort by</label><select class="govuk-select" id="order" name="order"><option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Relevance</option><option value="updated" {% if sort == 'updated' %}selected{% endif %}>Most recently updated</option></select><button class="govuk-button govuk-button--secondary" type="submit">Update results</button>
+      </div>
+      <ol class="govuk-list search-results">
+        {% for r in results %}<li><h3 class="govuk-heading-m"><a class="govuk-link" href="{{ r.url }}">{{ r.title }}</a></h3><p class="govuk-body">{{ r.summary }}</p><p class="govuk-body-s govuk-hint">{{ kinds[r.kind] }} · {{ r.publisher }}<br>Updated {{ r.updated.strftime('%-d %B %Y') }}</p></li>{% endfor %}
+      </ol>
+      {% if not results %}<p class="govuk-body">No matching results.</p><ul class="govuk-list govuk-list--bullet"><li>Check the spelling of your search.</li><li>Try fewer or more general words.</li><li>Remove a filter to widen your search.</li></ul>{% endif %}
+      {% if pages > 1 %}<nav class="result-pagination" aria-label="Pagination">{% if page > 1 %}<a class="govuk-link" rel="prev" href="{{ page_url(page-1) }}">Previous</a>{% endif %}{% for n in range(1, pages+1) %}{% if n == page %}<strong aria-current="page">{{ n }}</strong>{% else %}<a class="govuk-link" aria-label="Page {{ n }}" href="{{ page_url(n) }}">{{ n }}</a>{% endif %}{% endfor %}{% if page < pages %}<a class="govuk-link" rel="next" href="{{ page_url(page+1) }}">Next</a>{% endif %}</nav>{% endif %}
+    </div>
+  </div>
+</form>
+{% endblock %}

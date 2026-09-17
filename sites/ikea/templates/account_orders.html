@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Orders - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead"><h1>Your orders</h1></section>
+<div class="order-list">
+  {% for order in orders %}
+    <a class="order-card" href="{{ url_for('order_detail', order_number=order.order_number) }}">
+      <div>
+        <strong>{{ order.order_number }}</strong>
+        <p>{{ order.placed_on }} · {{ order.fulfillment_method|capitalize }}</p>
+      </div>
+      <div>
+        <p>{{ order.status }}</p>
+        <strong>{{ order.total|money }}</strong>
+      </div>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

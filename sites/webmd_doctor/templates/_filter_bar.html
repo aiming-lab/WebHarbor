@@ -1,0 +1,81 @@
+{# results-style filter bar; expects `filter_bar` (params, insurers, options, qs()) and `base_path` #}
+{% set p = filter_bar.params %}
+<form class="filter-form" method="get" action="{{ base_path }}">
+  <input type="hidden" name="q" value="{{ p.q }}">
+  {% if p.loc_label %}<input type="hidden" name="loc" value="{{ p.loc_label }}">{% endif %}
+  {% if p.sids_explicit %}<input type="hidden" name="sids" value="{{ p.sids }}">{% endif %}
+  {% if p.cid %}<input type="hidden" name="cid" value="{{ p.cid }}">{% endif %}
+  {% if p.pid %}<input type="hidden" name="pid" value="{{ p.pid }}">{% endif %}
+  <div class="filter-bar">
+    <div class="filter-item">
+      <button type="button" class="pill{% if p.sortby != 'bestmatch' %} active{% endif %}" data-toggle="pop-sort" aria-expanded="false" aria-controls="pop-sort">Sort By <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <div class="popover" id="pop-sort">
+        {% for key, label in filter_bar.sort_options %}
+          {% if key != 'distance' or filter_bar.show_distance %}
+          <label><input type="radio" name="sortby" value="{{ key }}" {% if p.sortby == key %}checked{% endif %}> {{ label }}</label>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+    <div class="filter-item"><button type="submit" class="pill pill-icon" title="Apply filters" aria-label="Apply filters"><svg class="ic"><use href="#i-sliders"/></svg></button></div>
+    <div class="filter-item">
+      <button type="button" class="pill{% if p.minrating %} active{% endif %}" data-toggle="pop-rating" aria-expanded="false" aria-controls="pop-rating">Ratings <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <div class="popover" id="pop-rating">
+        <label><input type="radio" name="minrating" value="" {% if not p.minrating %}checked{% endif %}> Any rating</label>
+        {% for n in (5, 4, 3, 2, 1) %}
+          <label><input type="radio" name="minrating" value="{{ n }}" {% if p.minrating == n %}checked{% endif %}> {% with rating=n, small=true %}{% include "_stars.html" %}{% endwith %} {{ n }}{% if n < 5 %} &amp; up{% endif %}</label>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="filter-item">
+      <label class="pill{% if p.newpatient %} active{% endif %}"><input type="checkbox" name="newpatient" value="true" {% if p.newpatient %}checked{% endif %}> Accepts New Patients</label>
+    </div>
+    <div class="filter-item">
+      <button type="button" class="pill{% if p.insuranceid or p.medicare or p.medicaid %} active{% endif %}" data-toggle="pop-insurance" aria-expanded="false" aria-controls="pop-insurance">Insurance <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <div class="popover" id="pop-insurance">
+        <label for="insuranceid">Insurance carrier</label>
+        <select name="insuranceid" id="insuranceid">
+          <option value="">Any carrier</option>
+          {% for insurer in filter_bar.insurers %}<option value="{{ insurer.id }}" {% if p.insuranceid == insurer.id %}selected{% endif %}>{{ insurer.name }}</option>{% endfor %}
+        </select>
+        <label><input type="checkbox" name="medicare" value="true" {% if p.medicare %}checked{% endif %}> Accepts Medicare</label>
+        <label><input type="checkbox" name="medicaid" value="true" {% if p.medicaid %}checked{% endif %}> Accepts Medicaid</label>
+      </div>
+    </div>
+    {% if filter_bar.show_distance %}
+    <div class="filter-item">
+      <button type="button" class="pill{% if p.d != 40 %} active{% endif %}" data-toggle="pop-distance" aria-expanded="false" aria-controls="pop-distance">Distance <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <div class="popover" id="pop-distance">
+        <label><input type="radio" name="d" value="" {% if p.d == 40 %}checked{% endif %}> Default (40 miles)</label>
+        {% for miles in filter_bar.distance_options %}<label><input type="radio" name="d" value="{{ miles }}" {% if p.d == miles %}checked{% endif %}> {{ miles }} miles</label>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <div class="filter-item">
+      <button type="button" class="pill{% if p.exp %} active{% endif %}" data-toggle="pop-exp" aria-expanded="false" aria-controls="pop-exp">Years Exp <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <div class="popover" id="pop-exp">
+        <label><input type="radio" name="exp" value="" {% if not p.exp %}checked{% endif %}> Any experience</label>
+        {% for low in ('5', '15', '20', '25', '30') %}
+          <label><input type="radio" name="exp" value="{{ low }}_max" {% if p.exp == low ~ '_max' %}checked{% endif %}> {{ low }}+ years</label>
+        {% endfor %}
+        <label><input type="radio" name="exp" value="min_5" {% if p.exp == 'min_5' %}checked{% endif %}> Under 5 years</label>
+        <label><input type="radio" name="exp" value="5_15" {% if p.exp == '5_15' %}checked{% endif %}> 5 to 15 years</label>
+        <label><input type="radio" name="exp" value="15_20" {% if p.exp == '15_20' %}checked{% endif %}> 15 to 20 years</label>
+        <label><input type="radio" name="exp" value="20_25" {% if p.exp == '20_25' %}checked{% endif %}> 20 to 25 years</label>
+        <label><input type="radio" name="exp" value="25_30" {% if p.exp == '25_30' %}checked{% endif %}> 25 to 30 years</label>
+      </div>
+    </div>
+    <div class="filter-item">
+      <button type="button" class="pill{% if p.gender != 'all' %} active{% endif %}" data-toggle="pop-gender" aria-expanded="false" aria-controls="pop-gender">Provider Gender <svg class="ic"><use href="#i-chevron"/></svg></button>
+      <div class="popover" id="pop-gender">
+        <label><input type="radio" name="gender" value="all" {% if p.gender == 'all' %}checked{% endif %}> All</label>
+        <label><input type="radio" name="gender" value="m" {% if p.gender == 'm' %}checked{% endif %}> Male</label>
+        <label><input type="radio" name="gender" value="f" {% if p.gender == 'f' %}checked{% endif %}> Female</label>
+        <label><input type="radio" name="gender" value="n" {% if p.gender == 'n' %}checked{% endif %}> Non-binary</label>
+      </div>
+    </div>
+    <div class="filter-item">
+      <label class="pill{% if p.isvirtualvisit %} active{% endif %}"><input type="checkbox" name="isvirtualvisit" value="true" {% if p.isvirtualvisit %}checked{% endif %}> <svg class="ic"><use href="#i-chat"/></svg> Virtual Visit</label>
+    </div>
+  </div>
+</form>

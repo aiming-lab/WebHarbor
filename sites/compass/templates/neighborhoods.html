@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Neighborhood Guides | Compass{% endblock %}
+{% block content %}
+<section class="neighborhood-directory" aria-label="Neighborhood guides">
+  <header class="guide-masthead"><h1>Neighborhood Guides - Compass</h1></header>
+  <div class="guide-intro"><div><h2>Explore the country’s most dynamic communities.</h2></div><div><img src="{{ url_for('static',filename='external_cache/guide-cityscape.svg') }}" alt="" aria-hidden="true"></div></div>
+  <ul class="guide-mosaic">
+  {% for item in directory %}
+    <li class="guide-tile" style="--tile-size:{{ item.size }}">
+      <a href="{{ url_for('neighborhoods',region=item.slug) }}">
+        <h3>{{ item.name }}</h3>
+        {% if item.coordinates %}<div class="guide-coordinates">{% for coordinate in item.coordinates %}<span>{{ coordinate }}</span>{% endfor %}</div>{% endif %}
+      </a>
+      <img src="{{ url_for('static',filename=item.image) }}" alt="" loading="lazy">
+    </li>
+  {% endfor %}
+  </ul>
+  <nav class="guide-breadcrumbs" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Compass</a><span aria-hidden="true">›</span><span>All Neighborhood Guides</span></nav>
+</section>
+{% endblock %}

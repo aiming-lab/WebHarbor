@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}IMDb News{% endblock %}
+{% block content %}
+<h1>IMDb News</h1>
+<nav class="topic-chips" aria-label="News categories">
+  <a href="{{ url_for('news_list') }}">All news</a>
+  {% for name in categories %}<a href="{{ url_for('news_list', category=name) }}" {% if category == name %}aria-current="page"{% endif %}>{{ name }}</a>{% endfor %}
+</nav>
+<ul class="news-list">
+  {% for n in items %}
+  <li>
+    <a href="{{ url_for('news_detail', news_id=n.id) }}"><strong>{{ n.headline }}</strong></a>
+    <span class="news-meta">&mdash; {{ n.source }} &middot; {{ n.published_at }} &middot; {{ n.category }}</span>
+    <p>{{ n.summary }}</p>
+    {% if n.related_tt and n.related_tt.startswith('tt') %}
+      <a href="{{ url_for('title_detail', tt_id=n.related_tt) }}">View related title &rsaquo;</a>
+    {% elif n.related_tt and n.related_tt.startswith('nm') %}
+      <a href="{{ url_for('name_detail', nm_id=n.related_tt) }}">View related person &rsaquo;</a>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

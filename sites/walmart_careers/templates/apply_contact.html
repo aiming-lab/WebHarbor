@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Apply to {{ job.title }} | Walmart Careers{% endblock %}
+{% block content %}
+<div class="apply-page">
+  <div class="apply-band"></div>
+  <div class="apply-card">
+    <h1>{{ content.APPLY_HEADING }}</h1>
+    <p class="apply-sub">Apply: <b>{{ job.title }}</b> &mdash; {{ job.store.banner }} #{{ job.store.store_number }},
+       {{ job.store.city }}, {{ job.store.state }} &mdash; Step 1 of 2: contact details</p>
+    {% if errors %}
+      <div class="errors" role="alert" tabindex="-1"><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    <form method="post" action="{{ url_for('apply_contact', job_id=job.job_id) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" value="{{ form.email }}" maxlength="160" required autocomplete="email">
+        <p class="apply-hint">{{ content.APPLY_EMAIL_HINT }}</p>
+      </div>
+      <div class="field-pair">
+        <div class="field">
+          <label for="first_name">First name</label>
+          <input type="text" id="first_name" name="first_name" value="{{ form.first_name }}" maxlength="80" required autocomplete="given-name">
+        </div>
+        <div class="field">
+          <label for="last_name">Last name</label>
+          <input type="text" id="last_name" name="last_name" value="{{ form.last_name }}" maxlength="80" required autocomplete="family-name">
+        </div>
+      </div>
+      <div class="field">
+        <label for="phone">Phone number</label>
+        <input type="tel" id="phone" name="phone" value="{{ form.phone }}" maxlength="32" required autocomplete="tel">
+      </div>
+      <div class="field">
+        <label class="check">
+          <input type="checkbox" name="terms" required>
+          <span>I understand and accept the Website Terms &amp; Conditions and Privacy Policy available on our
+            website as well as the Terms and Conditions.
+            <a href="{{ url_for('resources_terms') }}">Read more</a></span>
+        </label>
+      </div>
+      <div class="apply-actions">
+        <a class="apply-back" href="{{ url_for('job_detail', job_id=job.job_id) }}">Back to the role</a>
+        <button class="btn" type="submit">Continue</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Appointments{% endblock %}
+{% block meta_description %}Your appointment requests on the WebMD Care mirror.{% endblock %}
+{% block content %}
+<div class="container page">
+  <h1 class="page-title">Appointments</h1>
+  <p class="page-sub">Appointment requests submitted from your account, {{ current_user.display_name }}.</p>
+  <div class="panel">
+    {% if rows %}
+    <div class="table-wrap" tabindex="0" role="group" aria-label="Appointment requests"><table class="table">
+      <thead><tr><th>Reference</th><th>Provider</th><th>Location</th><th>Patient</th><th>Requested time</th></tr></thead>
+      <tbody>
+        {% for row in rows %}
+          <tr><td><strong>{{ row.reference }}</strong></td><td><a href="{{ url_for('doctor_profile', slug=row.doctor.slug) }}">{{ row.doctor.display_name }}</a></td><td>{{ row.location.name }}<br><span class="muted">{{ row.location.short_address }}</span></td><td>{{ row.patient_type }}</td><td>{{ row.slot_label }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <div class="empty">You have no appointment requests yet.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

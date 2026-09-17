@@ -1,9 +1,26 @@
-# Hugging Face dataset holding webharbor's heavy static assets
-# (instance_seed/*.db, static/images/, static/external_cache/).
+# Hugging Face dataset holding WebHarbor's heavy static assets.
+# Pin an immutable commit SHA; never a moving branch or refs/pr/<n>.
 #
-# fetch_assets.sh uses the `hf download` CLI. The pin below
-# is a git revision (branch name like `main`, a tag, or a specific commit
-# sha). Override at runtime with the ASSETS_REVISION env var.
-
+# Merged dataset-main commit from HF asset PR #88 (NBA review, #30).
+# https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/88
+#
+# Adds nba.tar.gz: 26,495,947 bytes, LFS oid
+# 4ade0429edc12ffbfa1ee42a8f0192fc3009647912ff57a8d232d52abe7b349d.
+# The 35 archives present at the previous main pin
+# e8f59470b76b95d607f288958186cb9b73681d9e (IMDb, HF PR #57) are byte-for-byte unchanged,
+# including imdb, gov_uk, berkeley and bh_photo.
+# This revision carries an archive for 34 of the 36 registered sites; accuweather and
+# bestbuy are pinned per-site below.
+# The two further archives (bandcamp and drugs_com) are ignored by fetch_assets.sh.
+# B&H's bundle contains images and external cache; Docker generates its seed
+# from tracked catalog data (sites/bh_photo/.build-generated-seed).
 repo: ChilleD/WebHarbor
-revision: main
+revision: 2aaf9d598f3e71cddd17a4efcdfee7dd7c073337
+
+# AccuWeather HF PR #66; immutable archive validated in the task review.
+# Other sites retain their merged and validated asset revision above.
+site.accuweather: 0a73c1c1ac2e47513389a8a1a67601f75c8c4150
+
+# Best Buy contributor asset candidate from HF PR #31. This immutable baseline
+# is retained for review; reviewer repairs will be published as a separate HF PR.
+site.bestbuy: 93a89f25bf391ee408d05b925bbed6a23032ea87

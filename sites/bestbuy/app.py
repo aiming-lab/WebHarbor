@@ -35,7 +35,7 @@ from sqlalchemy import or_
 
 SITE_SLUG = "bestbuy"
 SITE_NAME = "Best Buy"
-SITE_PORT = 40015
+SITE_PORT = 40035
 BENCHMARK_PASSWORD = "TestPass123!"
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"

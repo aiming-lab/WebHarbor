@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ guide.name }} Neighborhood Guides | Compass{% endblock %}
+{% block content %}
+<div class="regional-guide">
+  <header class="region-masthead">
+    <div class="region-width">
+      <nav aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Compass</a><span aria-hidden="true">›</span><a href="{{ url_for('neighborhoods') }}">All Neighborhood Guides</a><span aria-hidden="true">›</span><span>{{ guide.name }}</span></nav>
+      <h1>{{ guide.name }}</h1>
+    </div>
+  </header>
+  <section class="region-hero"{% if guide.hero %} style="background-image:url('{{ guide.hero }}')"{% endif %}>
+    <div class="region-width"><div class="region-description"><h2>{{ guide.headline }}</h2>{% if guide.description %}<p>{{ guide.description }}</p>{% endif %}</div></div>
+  </section>
+  <ul class="region-cards region-width">
+    {% for card in guide.cards %}
+    <li><a href="{{ card.source_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ card.name }} — full guide on Compass (opens new tab)"><div class="region-card-image" style="background-image:url('{{ card.image }}')"></div><h3>{{ card.name }}</h3></a></li>
+    {% endfor %}
+  </ul>
+  {% if guide.nearby %}
+  <section class="region-nearby region-width">
+    <h2>Explore Nearby Homes</h2>
+    <div class="region-link-groups">
+      {% for group in guide.nearby %}<details open><summary>{{ group.title }}</summary><div class="region-link-list" data-region-links><ul>{% for link in group.links %}<li><a href="{{ link.source_url }}" target="_blank" rel="noopener noreferrer" aria-label="{{ link.name }} on Compass (opens new tab)">{{ link.name }}</a></li>{% endfor %}</ul>{% if group.links|length > 5 %}<div class="region-more"><button type="button" aria-expanded="false" data-region-more>Show more</button></div>{% endif %}</div></details>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+  <p class="guide-boundary">Full neighborhood articles and nearby home searches open on Compass ↗.</p>
+</div>
+{% endblock %}

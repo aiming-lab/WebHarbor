@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}B&H Photo Video Digital Cameras, Photography, Computers{% endblock %}</title>
+    <link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}" type="image/svg+xml">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+    <div class="promo-strip">
+        <div class="shell promo-inner">
+            <span class="utility-links">
+                <a href="{{ url_for('categories') }}">B2B, Gov, Students &amp; More</a>
+                <a href="{{ url_for('help_page') }}">News, Tips &amp; Reviews</a>
+                <a href="{{ url_for('deals') }}">B&amp;H Gift Cards</a>
+            </span>
+            <span class="professional-source">The Professional's Source Since 1973</span>
+            <span class="utility-links utility-links--right">
+                <a href="{{ url_for('store_pickup') }}">NYC SuperStore</a>
+                <a href="{{ url_for('contact') }}">About Us</a>
+                <a href="{{ url_for('help_page') }}">Help</a>
+                <a href="{{ url_for('compare') }}">Compare</a>
+            </span>
+        </div>
+    </div>
+    <header class="site-header">
+        <div class="shell header-top">
+            <a class="brand-lockup" href="{{ url_for('index') }}">
+                <span class="brand-mark">B&amp;H<span>PHOTO&middot;VIDEO&middot;AUDIO</span></span>
+            </a>
+            <a class="expert-phone" href="{{ url_for('contact') }}">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                    <path d="M4 13V11a8 8 0 0 1 16 0v2M4 12H3v6h4v-6H4ZM20 12h1v6h-4v-6h3ZM20 18a4 4 0 0 1-4 4h-3"/>
+                </svg>
+                <span><small>Ask Our Experts</small><strong>212-444-6615</strong></span>
+            </a>
+            <form class="search-bar" action="{{ url_for('search') }}" method="get">
+                <input type="search" name="q" aria-label="Search products" value="{{ request.args.get('q', '') if request.endpoint == 'search' else '' }}" placeholder="Search cameras, lenses, audio, lighting, storage...">
+                <button type="submit" aria-label="Search">⌕</button>
+            </form>
+            <div class="header-actions">
+                {% if current_user.is_authenticated %}
+                    <a class="header-account" href="{{ url_for('account') }}">
+                {% else %}
+                    <a class="header-account" href="{{ url_for('login') }}" aria-label="Sign in">
+                {% endif %}
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <circle cx="12" cy="7" r="4"/><path d="M4 21v-2a8 8 0 0 1 16 0v2Z"/>
+                    </svg>
+                    <small>Hello, {{ current_user.display_name.split(' ')[0] if current_user.is_authenticated else 'Log In' }}<br><strong>Account &amp; Orders</strong></small>
+                </a>
+                <a class="header-cart" href="{{ url_for('cart') if current_user.is_authenticated else url_for('login') }}">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false">
+                        <path d="M2 3h3l3 12h11l3-9H6M8 15l-1 3h12"/><circle cx="9" cy="21" r="1"/><circle cx="18" cy="21" r="1"/>
+                    </svg>
+                    <small>My Cart{% if cart_count %} ({{ cart_count }}){% endif %}</small>
+                </a>
+            </div>
+        </div>
+        <nav class="primary-nav">
+            <div class="shell nav-row">
+                {% for category in top_categories %}
+                    <a href="{{ url_for('category_view', slug=category.slug) }}">{{ category.name }}</a>
+                {% endfor %}
+                <a href="{{ url_for('search', q='camcorder') }}">Camcorders</a>
+                <a href="{{ url_for('search', q='television') }}">TVs &amp; Entertainment</a>
+                <a href="{{ url_for('search', q='audio visual') }}">Audio-Visual</a>
+                <a href="{{ url_for('search', q='optics') }}">Optics</a>
+                <a href="{{ url_for('search', q='mobile') }}">Mobile</a>
+                <a href="{{ url_for('search', q='surveillance') }}">Surveillance</a>
+                <a href="{{ url_for('categories') }}">More...</a>
+                <a href="{{ url_for('used') }}">Used</a>
+                <a href="{{ url_for('deals') }}">Specials</a>
+            </div>
+        </nav>
+        <div class="service-notice">
+            <div class="shell"><strong>OFFLINE RESEARCH MIRROR</strong> — Catalog facts come from archived B&amp;H pages; accounts, reviews, orders and inventory are generated test data. No live payment or fulfilment.</div>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="shell flash-stack">
+                {% for category, message in messages %}
+                    <div class="flash {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <main class="page-wrap">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="shell footer-grid">
+            <div>
+                <h4>B&amp;H Photo Video</h4>
+                <p>{{ demo_notice }}</p>
+            </div>
+            <div>
+                <h4>Popular Areas</h4>
+                <ul>
+                    <li><a href="{{ url_for('category_view', slug='photography') }}">Photography</a></li>
+                    <li><a href="{{ url_for('category_view', slug='video') }}">Video</a></li>
+                    <li><a href="{{ url_for('category_view', slug='audio') }}">Audio</a></li>
+                    <li><a href="{{ url_for('category_view', slug='computers') }}">Computers</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Account</h4>
+                <ul>
+                    <li><a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}">My Account</a></li>
+                    <li><a href="{{ url_for('account_orders') if current_user.is_authenticated else url_for('login') }}">Order History</a></li>
+                    <li><a href="{{ url_for('account_wishlist') if current_user.is_authenticated else url_for('login') }}">Wishlist</a></li>
+                    <li><a href="{{ url_for('account_compare') if current_user.is_authenticated else url_for('compare') }}">Compare</a></li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

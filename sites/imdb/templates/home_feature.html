@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% from 'home_macros.html' import snapshot_row, birthday_row, starmeter_row with context %}
+{% block title %}{{ feature.heading }} - IMDb{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+{% if feature.kind == 'editorial' and feature_items %}
+<article class="anticipated-feature">
+  <div class="anticipated-shell">
+    <a class="anticipated-back" href="{{ url_for('index') }}#featured">‹ Featured today</a>
+    <header class="anticipated-header">
+      <p class="anticipated-brand"><span>IMDb</span> MOST<br><small>ANTICIPATED</small></p>
+      <h1>{{ feature.payload.page_title }}</h1>
+      <p>{{ feature.payload.page_subtitle }}</p>
+      <img class="anticipated-hero" src="{{ url_for('static', filename=feature.payload.hero_image_path) }}" alt="Hwang Jung-min and Hoyeon in Hopeu (2026)">
+      <p class="anticipated-count">{{ feature_items|length }} titles · movies and series arriving this month</p>
+    </header>
+    <div class="anticipated-list">
+      {% for item in feature_items %}
+      <section class="anticipated-item" id="title-{{ item.source_id }}" data-anticipated-item="{{ item.source_id }}">
+        <a class="anticipated-poster" href="{{ url_for('home_feature_title', feature_id=feature.id, source_id=item.source_id) }}">
+          <img src="{{ url_for('static', filename=item.poster_path) }}" alt="{{ item.poster_alt }}" {% if not loop.first %}loading="lazy"{% endif %}>
+        </a>
+        <div class="anticipated-copy">
+          <h2><a href="{{ url_for('home_feature_title', feature_id=feature.id, source_id=item.source_id) }}">{{ item.title }} <span aria-hidden="true">›</span></a></h2>
+          <p class="anticipated-meta">
+            {% if item.rating %}<span class="anticipated-rating">★ {{ item.rating }}{% if item.votes %} <small>({{ item.votes }})</small>{% endif %}</span>{% endif %}
+            {% if item.popularity %}<span>{{ item.popularity }}</span>{% endif %}
+            {% for value in item.metadata %}<span>{{ value }}</span>{% endfor %}
+          </p>
+          <p class="anticipated-release">{{ item.release_context }}</p>
+          <p class="anticipated-description">{{ item.description }}</p>
+          <div class="anticipated-actions">
+            <a href="{{ url_for('home_feature_title', feature_id=feature.id, source_id=item.source_id) }}">Title details</a>
+            {% if item.source_id in catalog_ids %}<a href="{{ url_for('title_detail', tt_id=item.source_id) }}">Catalog &amp; Watchlist</a>{% endif %}
+          </div>
+          <div class="anticipated-cast"><strong>Featuring</strong>{% for name in item.featuring %}<a href="{{ url_for('search', s='nm', q=name) }}">{{ name }}</a>{% endfor %}</div>
+        </div>
+      </section>
+      {% endfor %}
+    </div>
+    <details class="anticipated-source"><summary>Snapshot source</summary><p>Observed {{ feature.payload.observed_at[:10] }} on IMDb. Ratings, popularity and availability are a dated source snapshot.</p><p>{{ feature.source_url }}</p></details>
+    <a class="anticipated-back anticipated-back-bottom" href="{{ url_for('index') }}#featured">‹ Back to IMDb home</a>
+  </div>
+</article>
+{% else %}
+<a class="crumb" href="{{ url_for('index') }}">‹ IMDb home</a>
+<article class="feature-detail"><h1>{{ feature.heading }}</h1>
+  {% if feature.image_path %}<img class="{{ 'feature-portrait' if feature.kind in ['birthday', 'starmeter'] else 'feature-news-image' if feature.kind == 'news' else 'feature-wide' }}" src="{{ url_for('static', filename=feature.image_path) }}" alt="{{ feature.heading }}">{% endif %}
+  {% if feature.poster_path %}<img class="feature-poster" src="{{ url_for('static', filename=feature.poster_path) }}" alt="Poster">{% endif %}
+  {% if feature.kind == 'hero' %}<p>{{ feature.payload.title }} · {{ feature.payload.duration }}</p><p>This is the official trailer artwork. Video playback is not bundled with this offline mirror.</p>
+  {% else %}<p>{{ feature.subtitle }}</p>{% endif %}
+  {% if feature.kind == 'news' %}<p>{{ feature.payload.source }} · {{ feature.payload.date[:10] }}</p>{% endif %}
+  {% if feature.kind in ['birthday', 'streaming', 'tv_schedule', 'starmeter'] %}
+  <p class="snapshot-date">IMDb snapshot · {{ feature.captured_at[:10] }}</p>
+  <dl class="snapshot-facts">
+    {% if feature.kind == 'starmeter' %}<dt>STARmeter rank at capture</dt><dd>{{ feature.payload.rank }}</dd>{% if feature.payload.known_for %}<dt>Known for</dt><dd>{{ feature.payload.known_for|join(' · ') }}</dd>{% endif %}{% endif %}
+    {% if feature.payload.rating %}<dt>IMDb rating at capture</dt><dd>★ {{ feature.payload.rating }}/10</dd>{% endif %}
+    {% if feature.payload.age %}<dt>{{ 'Years' if '-' in feature.payload.age else 'Age at capture' }}</dt><dd>{{ feature.payload.age }}</dd>{% endif %}
+    {% if feature.payload.episode %}<dt>Episode / season</dt><dd>{{ feature.payload.episode }}</dd><dt>Air date shown by IMDb</dt><dd>{{ feature.payload.air_date }}</dd>{% endif %}
+    {% if feature.payload.service %}<dt>Streaming service at capture</dt><dd>{{ feature.payload.service }}</dd>{% endif %}
+  </dl>
+  {% if feature.kind == 'streaming' %}<section id="watch-options"><h2>Watch options</h2><p>Listed with {{ feature.payload.service }} in the captured IMDb homepage. Availability is region- and date-dependent. Streaming playback and subscriptions are not available in this offline mirror.</p></section>{% endif %}
+  {% if catalog_title %}<a class="sign-in-button" href="{{ url_for('title_detail', tt_id=catalog_title.tt_id) }}">Open catalog details & Watchlist</a><p class="section-caption">The benchmark catalog is an earlier, separately preserved snapshot.</p>{% endif %}
+  {% if catalog_person %}<a class="sign-in-button" href="{{ url_for('name_detail', nm_id=catalog_person.nm_id) }}">Explore biography & credits</a>{% endif %}
+  <p><a class="text-link" href="{{ url_for('home_collection', collection=feature.kind) }}">Explore this collection ›</a></p>
+  {% endif %}
+  {% if feature.payload.episodes %}<h2>Season {{ feature.payload.season }} episodes</h2>{% for episode in feature.payload.episodes %}<section class="episode-detail" id="episode-{{ episode.number }}"><h3>E{{ episode.number }} · {{ episode.title }}</h3>{% if episode.image_path %}<img src="{{ url_for('static', filename=episode.image_path) }}" alt="{{ episode.title }}" loading="lazy">{% endif %}<p>{{ episode.info }}</p><p><span class="star">★</span> {{ episode.rating }}/10</p><p>{{ episode.plot }}</p></section>{% endfor %}{% endif %}
+  {% if feature.kind in ['editorial', 'topic', 'spotlight'] %}<p class="section-caption">This is a homepage feature preview. The full editorial page is not included in this snapshot.</p>{% endif %}
+  <details class="source-provenance"><summary>Snapshot source</summary><p>Captured {{ feature.captured_at[:10] }} from IMDb.</p><p>{{ feature.source_url }}</p></details>
+  <a class="text-link" href="{{ url_for('advanced_title_search') }}">Browse the offline catalog ›</a>
+</article>
+{% if related and feature.kind in ['streaming', 'tv_schedule', 'birthday', 'starmeter'] %}<section class="home-section"><h2>More to explore</h2>{% if feature.kind == 'birthday' %}{{ birthday_row(related) }}{% elif feature.kind == 'starmeter' %}{{ starmeter_row(related) }}{% else %}{{ snapshot_row(related, 'titles') }}{% endif %}</section>{% endif %}
+{% endif %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Compare - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <h1>Compare products</h1>
+  <p>Up to four products can be compared side by side in this demo.</p>
+</section>
+{% if products %}
+  <div class="compare-table-shell">
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Spec</th>
+          {% for product in products %}
+            <th>
+              <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+              <strong>{{ product.name }}</strong>
+              <p>{{ product.price|money }}</p>
+              <form action="{{ url_for('compare_toggle', sku=product.sku) }}" method="post">
+                <button type="submit" class="secondary">Remove from compare</button>
+              </form>
+            </th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Series</td>
+          {% for product in products %}<td>{{ product.series }}</td>{% endfor %}
+        </tr>
+        <tr>
+          <td>Rating</td>
+          {% for product in products %}<td>{{ product.rating|stars }} ★</td>{% endfor %}
+        </tr>
+        <tr>
+          <td>Availability</td>
+          {% for product in products %}<td>{{ product.availability_bucket }}</td>{% endfor %}
+        </tr>
+        {% for key in shared_keys %}
+          <tr>
+            <td>{{ key }}</td>
+            {% for product in products %}
+              <td>{{ product.specs.get(key, '—') }}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+{% else %}
+  <div class="empty-card">
+    <h3>No products selected for compare yet.</h3>
+    <p>Add products from a detail page or listing card.</p>
+  </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% import "home/_cards.html" as cards %}
+{% block title %}{{ show.title }} | Rotten Tomatoes{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/content.css">{% endblock %}
+{% block content %}
+<div class="content-page tv-page">
+    <p class="content-breadcrumb"><a href="/browse/tv/">TV Shows</a></p>
+    {% if show.banner_image %}<div class="tv-banner"><img src="{{ show.banner_image }}" alt=""></div>{% endif %}
+    <h1>{{ show.display_title or show.title }}</h1>
+    <div class="tv-overview">
+        {% if show.image %}<img class="tv-poster" src="{{ show.image }}" alt="{{ show.title }} poster">{% endif %}
+        <div>
+            <div class="tv-scores"><div>{{ cards.tomato(show) }}<p>Tomatometer</p></div><div>{{ cards.audience(show) }}<p>Popcornmeter</p></div></div>
+            {% if show.synopsis %}<p class="tv-synopsis">{{ show.synopsis }}</p>{% endif %}
+            {% if show.status_text %}<p>{{ show.status_text }}</p>{% endif %}
+        </div>
+    </div>
+    {% if show.where_to_watch.description %}<section><h2>Where to Watch</h2><p>{{ show.where_to_watch.description }}</p></section>{% endif %}
+    {% if show.metadata %}<section><h2>Series Info</h2><dl class="content-facts">{% for row in show.metadata %}{% if row.value %}<dt>{{ row.label }}</dt><dd>{{ row.value }}</dd>{% endif %}{% endfor %}</dl></section>{% endif %}
+    {% if show.cast %}<section><h2>Cast &amp; Crew</h2><ul class="tv-cast">{% for person in show.cast %}<li>{% if person.image %}<img src="{{ person.image }}" alt="" loading="lazy" width="100" height="120">{% endif %}<strong>{{ person.name }}</strong>{% if person.role %}<span>{{ person.role }}</span>{% endif %}</li>{% endfor %}</ul></section>{% endif %}
+    <p class="content-caption">Movie ratings and watchlists are available through your local account. TV information is read-only in this edition.</p>
+</div>
+{% endblock %}

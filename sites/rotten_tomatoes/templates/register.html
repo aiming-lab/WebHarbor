@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Register | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-card">
+        <h1>Create Account</h1>
+        <form method="POST">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-group">
+                <label for="name">Name</label>
+                <input type="text" id="name" name="name" required minlength="2" maxlength="120" placeholder="Your Name" value="{{ form.name.data or '' }}">
+                {% for error in form.name.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="form-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" name="email" required placeholder="you@example.com" value="{{ form.email.data or '' }}">
+                {% for error in form.email.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required minlength="6">
+                {% for error in form.password.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" required>
+                {% for error in form.confirm_password.errors %}<p class="field-error" role="alert">{{ error }}</p>{% endfor %}
+            </div>
+            <button type="submit" class="btn btn-primary btn-full">Register</button>
+        </form>
+        <p class="auth-switch">Already have an account? <a href="/login">Sign In</a></p>
+    </div>
+</div>
+{% endblock %}

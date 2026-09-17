@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Rewards - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <h1>IKEA Family rewards</h1>
+  <p>{{ current_user.rewards_points }} demo points available.</p>
+</section>
+<div class="summary-card">
+  {% for activity in activities %}
+    <div class="reward-row">
+      <div>
+        <strong>{{ activity.label }}</strong>
+        <p>{{ activity.activity_type|capitalize }} · {{ activity.occurred_on }}</p>
+      </div>
+      <strong>{{ activity.points_delta }} pts</strong>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}
