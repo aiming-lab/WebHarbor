@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Application submitted | Walmart Careers{% endblock %}
+{% block content %}
+<div class="apply-page">
+  <div class="apply-band"></div>
+  <div class="apply-card">
+    <h1>Application submitted</h1>
+    <p>Thanks, {{ application.first_name }}. Your application for <b>{{ job.title }}</b> at
+       {{ job.store.banner }} #{{ job.store.store_number }} in {{ job.store.city }}, {{ job.store.state }}
+       has been received.</p>
+    <div class="confirmation">Confirmation number: {{ application.confirmation_no }}</div>
+    <ul class="review-list">
+      <li><b>Status</b><span>{{ application.status }}</span></li>
+      <li><b>Email</b><span>{{ application.email }}</span></li>
+      <li><b>Phone</b><span>{{ application.phone }}</span></li>
+    </ul>
+    <div class="apply-actions apply-actions-start">
+      <a class="btn" href="{{ url_for('results') }}">Keep browsing roles</a>
+      {% if current_user.is_authenticated %}
+        <a class="btn btn-secondary" href="{{ url_for('applications') }}">My applications</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

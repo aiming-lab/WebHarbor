@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Search{% if q %}: {{ q }}{% endif %} | Compass{% endblock %}
+{% block content %}
+<div class="container section browse-page">
+  <h1>{% if q %}Results for "{{ q }}"{% else %}All listings{% endif %}</h1>
+
+  {% include "_filters.html" %}
+
+  <div class="result-summary">{{ result_count }} result{{ '' if result_count == 1 else 's' }}.</div>
+
+  {% if listings %}
+    <div class="grid-cards">
+      {% for L in listings %}
+        {% include "_card.html" %}
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty"><h3>No results</h3><p>Try a different keyword or relax your filters.</p></div>
+  {% endif %}
+
+  {% if current_user.is_authenticated %}
+    <form method="post" action="{{ url_for('saved_searches') }}" style="margin-top:32px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% for key,value in active_filters.items() %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+      <label>Save this search as: <input type="text" name="name" placeholder="e.g. NYC 2BR under $1.5M" required></label>
+      <button class="btn tiny" type="submit">Save search</button>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}{{ dept.name }} - GOV.UK{% endblock %}
+
+{% block content %}
+<nav class="govuk-breadcrumbs" aria-label="Breadcrumb">
+  <ol class="govuk-breadcrumbs__list">
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('index') }}">Home</a></li>
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('organisations') }}">Departments</a></li>
+    <li class="govuk-breadcrumbs__list-item" aria-current="page">{{ dept.name }}</li>
+  </ol>
+</nav>
+
+<div class="govuk-grid-row">
+  <div class="govuk-grid-column-two-thirds">
+    <span class="govuk-caption-l">{{ dept.kind }}</span>
+    <h1 class="govuk-heading-xl">{{ dept.name }}</h1>
+    <p class="govuk-body-l">{{ dept.description }}</p>
+
+    <h2 class="govuk-heading-l">Latest from {{ dept.abbreviation or dept.name }}</h2>
+    {% if announcements %}
+    <ul class="govuk-list">
+      {% for a in announcements %}
+      <li class="govuk-!-margin-bottom-4">
+        <h3 class="govuk-heading-s govuk-!-margin-bottom-1">
+          <a class="govuk-link" href="{{ url_for('announcement_detail', slug=a.slug) }}">{{ a.title }}</a>
+        </h3>
+        <p class="govuk-body-s">{{ a.summary }}</p>
+        <p class="govuk-body-s govuk-hint">
+          <strong class="govuk-tag govuk-tag--grey">{{ a.kind.replace('_', ' ').title() }}</strong>
+          {{ a.published_at.strftime('%-d %B %Y') }}
+        </p>
+      </li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="govuk-body">No recent announcements.</p>
+    {% endif %}
+
+    <h2 class="govuk-heading-l" id="services">Our services and information</h2>
+    {% if articles %}
+    <ul class="govuk-list govuk-list--bullet">
+      {% for a in articles %}
+      <li><a class="govuk-link" href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></li>
+      {% endfor %}
+    </ul>
+    {% else %}
+    <p class="govuk-body">No published guidance yet.</p>
+    {% endif %}
+  </div>
+
+  <div class="govuk-grid-column-one-third">
+    <aside class="govuk-related-navigation" role="complementary">
+      <h2 class="govuk-heading-m">About us</h2>
+      <p class="govuk-body">Read about our responsibilities, leadership and organisation.</p>
+      <p class="govuk-body"><a class="govuk-link" href="{{ url_for('organisation_about', slug=dept.slug) }}">About {{ dept.abbreviation or dept.name }}</a></p>
+      <h2 class="govuk-heading-m">Find our publications</h2>
+      <p class="govuk-body"><a class="govuk-link" href="{{ url_for('search', department=dept.slug, type='guidance') }}">Guidance and services</a></p>
+      <p class="govuk-body"><a class="govuk-link" href="{{ url_for('search', department=dept.slug, type='news', order='updated') }}">News and communications</a></p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

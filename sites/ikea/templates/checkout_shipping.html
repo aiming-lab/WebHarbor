@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Delivery - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Checkout step 2 of 4</p>
+  <h1>Select delivery</h1>
+</section>
+<form class="form-panel wide" method="post">
+  <label>Delivery contact name
+    <input type="text" name="delivery_name" value="{{ state.get('delivery_name', current_user.full_name) }}">
+  </label>
+  <label>ZIP code
+    <input type="text" name="delivery_zip" value="{{ state.get('delivery_zip', current_user.zip_code) }}">
+  </label>
+  <div class="option-grid">
+    {% for option in delivery_options %}
+      <label class="choice-card">
+        <input type="radio" name="delivery_option" value="{{ option.slug }}" {% if state.get('delivery_option', 'parcel') == option.slug %}checked{% endif %}>
+        <div>
+          <strong>{{ option.name }} · {{ option.fee|money }}</strong>
+          <p>{{ option.window_label }}</p>
+          <p>{{ option.description }}</p>
+        </div>
+      </label>
+    {% endfor %}
+  </div>
+  <button type="submit">Continue to payment</button>
+</form>
+{% endblock %}

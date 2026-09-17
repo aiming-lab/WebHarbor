@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Account - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Account dashboard</p>
+  <h1>Welcome back, {{ current_user.first_name }}</h1>
+  <p>{{ current_user.family_tier }} · {{ current_user.rewards_points }} points</p>
+</section>
+<section class="dashboard-grid">
+  <article class="summary-card">
+    <h2>Shortcuts</h2>
+    <div class="link-list">
+      <a href="{{ url_for('account_orders') }}">Orders</a>
+      <a href="{{ url_for('account_rewards') }}">Rewards</a>
+      <a href="{{ url_for('account_wishlist') }}">Wishlist</a>
+      <a href="{{ url_for('account_edit') }}">Edit profile</a>
+    </div>
+  </article>
+  <article class="summary-card">
+    <h2>Latest orders</h2>
+    {% for order in open_orders %}
+      <a class="order-row" href="{{ url_for('order_detail', order_number=order.order_number) }}">
+        <span>{{ order.order_number }}</span>
+        <span>{{ order.status }}</span>
+        <strong>{{ order.total|money }}</strong>
+      </a>
+    {% endfor %}
+  </article>
+  <article class="summary-card">
+    <h2>Support tickets</h2>
+    {% for ticket in tickets %}
+      <div class="ticket-row">
+        <strong>{{ ticket.ticket_number }}</strong>
+        <p>{{ ticket.subject }}</p>
+        <p>{{ ticket.status }}</p>
+      </div>
+    {% endfor %}
+  </article>
+</section>
+{% endblock %}

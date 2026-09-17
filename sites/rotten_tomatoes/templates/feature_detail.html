@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ feature.title }} | Rotten Tomatoes{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/content.css">{% endblock %}
+{% block content %}
+<article class="content-page feature-page">
+    <p class="content-breadcrumb"><a href="/news/">News &amp; Features</a></p>
+    {% if feature.badge %}<p class="feature-category">{{ feature.badge }}</p>{% endif %}
+    <h1>{{ feature.title }}</h1>
+    {% if feature.author or feature.published_at %}<p class="content-caption">{{ feature.author or '' }}{% if feature.published_at %} · {{ feature.published_at }}{% endif %}</p>{% endif %}
+    {% if feature.image %}<img class="feature-image" src="{{ feature.image }}" alt="">{% endif %}
+    {% if feature.description %}<p class="feature-intro">{{ feature.description }}</p>{% endif %}
+    {% if feature.summary and feature.summary != feature.description %}<p>{{ feature.summary }}</p>{% endif %}
+    {% if feature.related_items %}<h2>Explore</h2><ul>{% for item in feature.related_items %}<li><a href="{{ item.href }}">{{ item.title }}</a></li>{% endfor %}</ul>{% endif %}
+    <div class="content-source-note"><p>This edition includes the feature summary. Full articles, video playback and commercial services are available on the original site.</p><a href="{{ feature.source_url }}" target="_blank" rel="noopener noreferrer">Open original source ↗</a></div>
+</article>
+{% endblock %}

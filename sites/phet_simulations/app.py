@@ -10,6 +10,7 @@ import os
 import re
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from flask import (
     Flask, abort, flash, jsonify, redirect, render_template, request,
@@ -24,6 +25,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 from sqlalchemy import or_
 
+import catalog_data
 from _health import health as _health_payload
 
 
@@ -108,10 +110,17 @@ class Simulation(db.Model):
     is_featured = db.Column(db.Boolean, default=False)
     is_new = db.Column(db.Boolean, default=False)
     thumbnail = db.Column(db.String(120))
-    runtime_minutes = db.Column(db.Integer, default=20)
     release_date = db.Column(db.Date)
-    download_count = db.Column(db.Integer, default=0)
-    play_count = db.Column(db.Integer, default=0)
+    updated_date = db.Column(db.Date)
+    # PhET publishes no play or download counter and no per-sim runtime, so
+    # none is stored. Translation coverage is a real, published figure.
+    locale_count = db.Column(db.Integer, default=1)
+    related_json = db.Column(db.Text, default="[]")
+    learning_goals = db.Column(db.Text, default="")
+    design_team = db.Column(db.String(400), default="")
+    has_teachers_guide = db.Column(db.Boolean, default=False)
+    is_phet_studio = db.Column(db.Boolean, default=False)
+    upstream_url = db.Column(db.String(240), default="")
     activities = db.relationship(
         "Activity", backref="simulation", lazy="dynamic",
         cascade="all, delete-orphan",
@@ -133,6 +142,9 @@ class Simulation(db.Model):
     def languages(self):
         return json.loads(self.languages_json or '["en"]')
 
+    def related(self):
+        return json.loads(self.related_json or "[]")
+
 
 class Activity(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -145,7 +157,6 @@ class Activity(db.Model):
     duration_min = db.Column(db.Integer)
     description = db.Column(db.Text, nullable=False)
     file_type = db.Column(db.String(20), default="PDF")
-    download_count = db.Column(db.Integer, default=0)
     published_date = db.Column(db.Date)
 
 
@@ -232,8 +243,10 @@ def index():
         .limit(6)
         .all()
     )
+    # Upstream publishes no popularity counter, so the third homepage rail is
+    # "recently updated", which is a real published date.
     most_played = (
-        Simulation.query.order_by(Simulation.play_count.desc())
+        Simulation.query.order_by(Simulation.updated_date.desc())
         .limit(6)
         .all()
     )
@@ -254,17 +267,20 @@ def index():
 @app.route("/simulations")
 def simulations():
     subject = request.args.get("subject", "").strip()
+    topic = request.args.get("topic", "").strip()
     grade = request.args.get("grade", "").strip()
     language = request.args.get("language", "").strip()
     release = request.args.get("release", "").strip()
     sort = request.args.get("sort", "title")
     view = request.args.get("view", "filter").strip()
-    page = max(int(request.args.get("page", 1)), 1)
+    page = max(request.args.get("page", 1, type=int), 1)
     per_page = 24
 
     query = Simulation.query
     if subject:
         query = query.filter(Simulation.subjects_json.like(f'%"{subject}"%'))
+    if topic:
+        query = query.filter(Simulation.topics_json.like(f'%"{topic}"%'))
     if grade:
         query = query.filter(Simulation.grades_json.like(f'%"{grade}"%'))
     if language:
@@ -272,13 +288,15 @@ def simulations():
     if release == "new":
         query = query.filter_by(is_new=True)
     elif release == "updated":
-        # "Recently updated" in this snapshot = released in 2024 or later.
-        query = query.filter(Simulation.release_date >= date(2024, 1, 1))
+        # Use the published update date, not the original release date.
+        query = query.filter(Simulation.updated_date >= date(2024, 1, 1))
 
     if sort == "newest":
         query = query.order_by(Simulation.release_date.desc())
-    elif sort == "popular":
-        query = query.order_by(Simulation.play_count.desc())
+    elif sort == "translations":
+        query = query.order_by(Simulation.locale_count.desc(), Simulation.title)
+    elif sort == "updated":
+        query = query.order_by(Simulation.updated_date.desc(), Simulation.title)
     else:
         query = query.order_by(Simulation.title)
 
@@ -287,9 +305,17 @@ def simulations():
     total_pages = max((total + per_page - 1) // per_page, 1)
 
     any_filter_active = bool(
-        subject or grade or language or release or sort != "title"
+        subject or topic or grade or language or release or sort != "title"
     )
     view_tab = view if view in ("browse", "filter", "customize") else "filter"
+
+    customizable = []
+    if view_tab == "customize":
+        customizable = (
+            Simulation.query.filter_by(is_phet_studio=True)
+            .order_by(Simulation.title)
+            .all()
+        )
 
     sims_by_subject = {}
     if view_tab == "browse":
@@ -310,6 +336,9 @@ def simulations():
         page=page,
         total_pages=total_pages,
         subject=subject,
+        topic=topic,
+        topics=TOPICS_SEED,
+        customizable=customizable,
         grade=grade,
         language=language,
         release=release,
@@ -336,8 +365,7 @@ def simulations_by_subject(slug):
 
 @app.route("/simulation/<slug>")
 def simulation_detail(slug):
-    # Read-only: GET must never mutate the DB, or task answers that
-    # reference play counts drift between visits.
+    # Read-only: GET must never mutate the DB.
     sim = Simulation.query.filter_by(slug=slug).first_or_404()
 
     subjects_full = [
@@ -350,26 +378,37 @@ def simulation_detail(slug):
         l for l in Language.query.filter(Language.code.in_(sim.languages())).all()
     ]
 
-    related = (
-        Simulation.query.filter(Simulation.id != sim.id)
-        .filter(
-            or_(*[
-                Simulation.subjects_json.like(f'%"{s}"%') for s in sim.subjects()
-            ])
+    # Upstream publishes an explicit relatedSimulations list per sim; use it and
+    # keep its order. Fall back to same-subject titles only when it is empty.
+    related_slugs = sim.related()
+    related = []
+    if related_slugs:
+        found = {
+            s.slug: s for s in
+            Simulation.query.filter(Simulation.slug.in_(related_slugs)).all()
+        }
+        related = [found[s] for s in related_slugs if s in found]
+    if not related:
+        related = (
+            Simulation.query.filter(Simulation.id != sim.id)
+            .filter(
+                or_(*[
+                    Simulation.subjects_json.like(f'%"{s}"%') for s in sim.subjects()
+                ])
+            )
+            .order_by(Simulation.title)
+            .limit(6)
+            .all()
         )
-        .order_by(Simulation.title)
-        .limit(6)
-        .all()
-    )
     activities = sim.activities.order_by(Activity.published_date.desc()).all()
 
-    is_saved = (
-        current_user.is_authenticated
-        and SavedSimulation.query.filter_by(
-            user_id=current_user.id, sim_id=sim.id,
-        ).first()
-        is not None
+    saved_row = (
+        SavedSimulation.query.filter_by(user_id=current_user.id, sim_id=sim.id).first()
+        if current_user.is_authenticated
+        else None
     )
+    is_saved = saved_row is not None
+    saved_note = saved_row.notes if saved_row else ""
 
     return render_template(
         "simulation_detail.html",
@@ -380,6 +419,7 @@ def simulation_detail(slug):
         related=related,
         activities=activities,
         is_saved=is_saved,
+        saved_note=saved_note,
     )
 
 
@@ -388,18 +428,21 @@ def search():
     q = request.args.get("q", "").strip()
     sims = []
     if q:
-        pattern = f"%{q}%"
-        sims = (
-            Simulation.query.filter(
+        # Match every whitespace-separated token independently so multi-word
+        # queries such as "build atom" still reach "Build an Atom".
+        tokens = [tok for tok in re.split(r"\W+", q) if tok]
+        query = Simulation.query
+        for tok in tokens or [q]:
+            pattern = f"%{tok}%"
+            query = query.filter(
                 or_(
                     Simulation.title.ilike(pattern),
                     Simulation.short_description.ilike(pattern),
+                    Simulation.overview.ilike(pattern),
                     Simulation.topics_json.ilike(pattern),
                 )
             )
-            .order_by(Simulation.title)
-            .all()
-        )
+        sims = query.order_by(Simulation.title).all()
     return render_template("search.html", query=q, sims=sims, total=len(sims))
 
 
@@ -428,7 +471,7 @@ def translation_detail(code):
 @app.route("/teachers")
 def teachers():
     featured = (
-        Activity.query.order_by(Activity.download_count.desc())
+        Activity.query.order_by(Activity.published_date.desc(), Activity.title)
         .limit(6)
         .all()
     )
@@ -447,7 +490,6 @@ def activities():
 
 @app.route("/teachers/activity/<int:activity_id>")
 def activity_detail(activity_id):
-    # Read-only: download counts are fixed seed data (see ACTIVITIES_SEED).
     activity = Activity.query.get_or_404(activity_id)
     return render_template("activity_detail.html", activity=activity)
 
@@ -521,7 +563,11 @@ def login():
         if user and bcrypt.check_password_hash(user.password_hash, password):
             login_user(user)
             flash(f"Welcome back, {user.name}!", "success")
-            return redirect(request.args.get("next") or url_for("account"))
+            target = request.args.get("next", "")
+            parsed = urlsplit(target)
+            if not target.startswith("/") or target.startswith("//") or parsed.netloc or parsed.scheme or "\\" in target:
+                target = url_for("account")
+            return redirect(target)
         flash("Invalid email or password.", "error")
     return render_template("login.html")
 
@@ -549,11 +595,14 @@ def account():
 @login_required
 def api_save_sim():
     data = request.get_json(silent=True) or request.form
+    if not hasattr(data, "get"):
+        return jsonify({"ok": False, "error": "invalid request"}), 400
     sim_id = data.get("sim_id")
-    notes = (data.get("notes") or "").strip()
-    if not sim_id:
-        return jsonify({"ok": False, "error": "missing sim_id"}), 400
-    sim = Simulation.query.get(int(sim_id))
+    notes = data.get("notes") or ""
+    if not isinstance(notes, str) or not str(sim_id).isdigit():
+        return jsonify({"ok": False, "error": "invalid sim_id or notes"}), 400
+    notes = notes.strip()
+    sim = db.session.get(Simulation, int(sim_id))
     if not sim:
         return jsonify({"ok": False, "error": "unknown simulation"}), 404
     existing = SavedSimulation.query.filter_by(
@@ -575,9 +624,11 @@ def api_save_sim():
 @login_required
 def api_unsave_sim():
     data = request.get_json(silent=True) or request.form
+    if not hasattr(data, "get"):
+        return jsonify({"ok": False, "error": "invalid request"}), 400
     sim_id = data.get("sim_id")
-    if not sim_id:
-        return jsonify({"ok": False, "error": "missing sim_id"}), 400
+    if not str(sim_id).isdigit():
+        return jsonify({"ok": False, "error": "invalid sim_id"}), 400
     row = SavedSimulation.query.filter_by(
         user_id=current_user.id, sim_id=int(sim_id),
     ).first()
@@ -600,536 +651,67 @@ def not_found(_):
 # Seed data
 # ---------------------------------------------------------------------------
 
-SUBJECTS_SEED = [
-    ("physics", "Physics", "atom", "#0079bf",
-     "Explore motion, forces, energy, waves, and electromagnetism."),
-    ("chemistry", "Chemistry", "flask", "#f5862e",
-     "Build molecules, balance equations, and probe matter."),
-    ("math", "Math", "function", "#6cba5c",
-     "Visualize numbers, fractions, functions, and geometry."),
-    ("biology", "Biology", "leaf", "#7a3e9d",
-     "Study cells, genetics, evolution, and the human body."),
-    ("earth-science", "Earth Science", "globe", "#c0392b",
-     "Investigate Earth's systems, climate, and the solar system."),
-]
+# Catalogue constants now come from catalog_data.py, which is harvested from
+# phet.colorado.edu rather than generated. See that module's docstring.
+SUBJECTS_SEED = catalog_data.SUBJECTS
+TOPICS_SEED = catalog_data.TOPICS
+GRADES_SEED = catalog_data.GRADES
+LANGUAGES_SEED = catalog_data.LANGUAGES
+SIMULATIONS_SEED = catalog_data.SIMULATIONS
 
-GRADES_SEED = [
-    ("elementary", "Elementary School", "Ages 5-10", 1),
-    ("middle", "Middle School", "Ages 11-13", 2),
-    ("high", "High School", "Ages 14-18", 3),
-    ("university", "University", "Ages 18+", 4),
-]
-
-LANGUAGES_SEED = [
-    ("en", "English", "English", False),
-    ("es", "Spanish", "Espanol", False),
-    ("zh-cn", "Chinese (Simplified)", "Zhongwen", False),
-    ("zh-tw", "Chinese (Traditional)", "Zhongwen", False),
-    ("fr", "French", "Francais", False),
-    ("de", "German", "Deutsch", False),
-    ("pt-br", "Portuguese (Brazilian)", "Portugues", False),
-    ("ru", "Russian", "Russkiy", False),
-    ("ar", "Arabic", "Al-Arabiyyah", True),
-    ("ja", "Japanese", "Nihongo", False),
-    ("ko", "Korean", "Hangugeo", False),
-    ("it", "Italian", "Italiano", False),
-    ("nl", "Dutch", "Nederlands", False),
-    ("pl", "Polish", "Polski", False),
-    ("sv", "Swedish", "Svenska", False),
-    ("tr", "Turkish", "Turkce", False),
-    ("vi", "Vietnamese", "Tieng Viet", False),
-    ("hi", "Hindi", "Hindi", False),
-    ("he", "Hebrew", "Ivrit", True),
-    ("el", "Greek", "Ellinika", False),
-    ("cs", "Czech", "Cestina", False),
-    ("hu", "Hungarian", "Magyar", False),
-    ("fi", "Finnish", "Suomi", False),
-    ("da", "Danish", "Dansk", False),
-    ("ro", "Romanian", "Romana", False),
-    ("uk", "Ukrainian", "Ukrayinska", False),
-    ("fa", "Persian", "Farsi", True),
-    ("id", "Indonesian", "Bahasa Indonesia", False),
-]
-
-
-def _slug(title):
-    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
-
-
-SIMULATIONS_SEED = [
-    # (title, subjects, grades, topics, languages_extra, featured, is_new, runtime, year, month, day, play_count)
-    ("Gravity and Orbits", ["physics", "earth-science"], ["middle", "high"],
-     ["gravity", "orbits", "circular motion", "satellites"],
-     ["es", "fr", "de", "zh-cn", "ja", "ar", "pt-br", "ru"],
-     True, False, 25, 2024, 3, 12, 482103),
-    ("Forces and Motion: Basics", ["physics"], ["elementary", "middle", "high"],
-     ["newton's laws", "friction", "acceleration"],
-     ["es", "fr", "de", "zh-cn", "pt-br", "ru", "ja", "ko", "it", "nl"],
-     True, False, 20, 2023, 9, 5, 1204567),
-    ("Energy Skate Park", ["physics"], ["middle", "high", "university"],
-     ["kinetic energy", "potential energy", "conservation"],
-     ["es", "fr", "de", "pt-br", "ru", "zh-cn", "ja"],
-     True, False, 30, 2024, 1, 18, 768922),
-    ("Wave Interference", ["physics"], ["high", "university"],
-     ["waves", "interference", "diffraction", "light"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 25, 2023, 11, 2, 312045),
-    ("Faraday's Law", ["physics"], ["high", "university"],
-     ["electromagnetism", "induction", "magnetic flux"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 20, 2023, 7, 14, 198320),
-    ("Charges and Fields", ["physics"], ["high", "university"],
-     ["electrostatics", "electric field", "voltage"],
-     ["es", "fr", "de", "pt-br"],
-     False, False, 25, 2023, 6, 22, 234110),
-    ("Pendulum Lab", ["physics", "math"], ["middle", "high"],
-     ["pendulum", "period", "gravity", "harmonic motion"],
-     ["es", "fr", "de", "zh-cn", "ja", "ko"],
-     True, False, 20, 2024, 2, 9, 521987),
-    ("Projectile Motion", ["physics"], ["high", "university"],
-     ["kinematics", "trajectory", "air resistance"],
-     ["es", "fr", "de", "zh-cn", "pt-br", "ja"],
-     False, False, 25, 2023, 10, 28, 645321),
-    ("Circuit Construction Kit: DC", ["physics"], ["middle", "high", "university"],
-     ["circuits", "ohm's law", "resistance", "current"],
-     ["es", "fr", "de", "pt-br", "zh-cn", "ja", "ko", "ru", "it"],
-     True, False, 30, 2024, 4, 1, 892341),
-    ("Bending Light", ["physics"], ["middle", "high"],
-     ["refraction", "snell's law", "optics"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 20, 2023, 8, 15, 167823),
-    ("Color Vision", ["physics", "biology"], ["elementary", "middle"],
-     ["light", "color", "vision", "wavelength"],
-     ["es", "fr", "de", "ja"],
-     False, False, 15, 2023, 5, 19, 198765),
-    ("Coulomb's Law", ["physics"], ["high", "university"],
-     ["electrostatics", "force", "charge"],
-     ["es", "fr", "de"],
-     False, True, 20, 2025, 1, 14, 89234),
-    ("Hooke's Law", ["physics"], ["middle", "high"],
-     ["springs", "elasticity", "force"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 15, 2023, 4, 7, 154322),
-    ("Magnet and Compass", ["physics", "earth-science"], ["elementary", "middle"],
-     ["magnetism", "compass", "field lines"],
-     ["es", "fr", "de", "zh-cn", "ja", "ar"],
-     False, False, 15, 2023, 3, 21, 232109),
-    ("Resistance in a Wire", ["physics"], ["high"],
-     ["resistance", "resistivity", "circuits"],
-     ["es", "fr", "de"],
-     False, False, 15, 2023, 2, 4, 87654),
-    ("Quantum Wave Interference", ["physics"], ["university"],
-     ["quantum mechanics", "wave-particle duality"],
-     ["es", "fr", "de"],
-     False, True, 35, 2025, 2, 28, 45120),
-
-    ("Build a Molecule", ["chemistry"], ["middle", "high"],
-     ["molecules", "atoms", "bonding"],
-     ["es", "fr", "de", "zh-cn", "ja", "pt-br", "ru"],
-     True, False, 25, 2024, 1, 22, 678901),
-    ("Balancing Chemical Equations", ["chemistry"], ["middle", "high"],
-     ["stoichiometry", "equations", "reactions"],
-     ["es", "fr", "de", "zh-cn", "pt-br", "ko"],
-     True, False, 20, 2023, 12, 6, 543210),
-    ("States of Matter", ["chemistry", "physics"], ["elementary", "middle", "high"],
-     ["solid", "liquid", "gas", "phase change"],
-     ["es", "fr", "de", "zh-cn", "ja", "ar", "pt-br", "ru", "it"],
-     True, False, 25, 2024, 2, 14, 891234),
-    ("Concentration", ["chemistry"], ["high", "university"],
-     ["solutions", "molarity", "dilution"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 20, 2023, 11, 9, 234567),
-    ("pH Scale", ["chemistry"], ["middle", "high"],
-     ["acids", "bases", "ph", "hydrogen ions"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 15, 2023, 9, 17, 312456),
-    ("Beer's Law Lab", ["chemistry"], ["high", "university"],
-     ["absorbance", "spectroscopy", "concentration"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 8, 3, 167890),
-    ("Acid-Base Solutions", ["chemistry"], ["high", "university"],
-     ["acids", "bases", "equilibrium"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 25, 2023, 7, 25, 198432),
-    ("Reactions and Rates", ["chemistry"], ["high", "university"],
-     ["kinetics", "reactions", "activation energy"],
-     ["es", "fr", "de"],
-     False, False, 30, 2023, 6, 11, 145678),
-    ("Molecule Polarity", ["chemistry"], ["high"],
-     ["polarity", "electronegativity", "dipole"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 20, 2023, 5, 8, 123456),
-    ("Isotopes and Atomic Mass", ["chemistry"], ["high", "university"],
-     ["isotopes", "atomic mass", "elements"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 4, 16, 98765),
-    ("Build an Atom", ["chemistry", "physics"], ["middle", "high"],
-     ["atoms", "protons", "neutrons", "electrons"],
-     ["es", "fr", "de", "zh-cn", "ja", "ko", "ar", "ru", "pt-br"],
-     True, False, 20, 2024, 3, 7, 712345),
-    ("Salts and Solubility", ["chemistry"], ["high"],
-     ["solubility", "salts", "saturation"],
-     ["es", "fr", "de"],
-     False, True, 25, 2025, 3, 4, 56789),
-
-    ("Graphing Lines", ["math"], ["middle", "high"],
-     ["linear equations", "slope", "intercept"],
-     ["es", "fr", "de", "zh-cn", "ja", "ko", "ar"],
-     True, False, 20, 2024, 1, 11, 567890),
-    ("Area Builder", ["math"], ["elementary", "middle"],
-     ["area", "perimeter", "shapes"],
-     ["es", "fr", "de", "zh-cn", "ja", "pt-br"],
-     False, False, 15, 2023, 10, 14, 234567),
-    ("Fractions: Intro", ["math"], ["elementary", "middle"],
-     ["fractions", "numerators", "denominators"],
-     ["es", "fr", "de", "zh-cn", "ja", "ar", "pt-br", "ru"],
-     True, False, 15, 2024, 2, 19, 689012),
-    ("Function Builder", ["math"], ["middle", "high"],
-     ["functions", "input output", "composition"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 25, 2023, 9, 21, 178901),
-    ("Plinko Probability", ["math"], ["middle", "high", "university"],
-     ["probability", "distributions", "statistics"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 8, 6, 145678),
-    ("Trig Tour", ["math"], ["high", "university"],
-     ["trigonometry", "sine", "cosine", "unit circle"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 25, 2023, 7, 30, 123890),
-    ("Vector Addition", ["math", "physics"], ["high", "university"],
-     ["vectors", "components", "magnitude"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 6, 8, 156789),
-    ("Calculus Grapher", ["math"], ["high", "university"],
-     ["derivatives", "integrals", "calculus"],
-     ["es", "fr", "de"],
-     False, True, 30, 2025, 1, 22, 67890),
-    ("Equality Explorer", ["math"], ["elementary", "middle"],
-     ["equations", "balance", "variables"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 20, 2023, 5, 12, 134567),
-    ("Number Line: Integers", ["math"], ["elementary", "middle"],
-     ["integers", "negative numbers", "number line"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 15, 2023, 4, 19, 98765),
-    ("Make a Ten", ["math"], ["elementary"],
-     ["addition", "place value", "counting"],
-     ["es", "fr", "zh-cn", "ja"],
-     False, False, 10, 2023, 3, 25, 78901),
-    ("Estimation", ["math"], ["elementary", "middle"],
-     ["estimation", "measurement", "comparison"],
-     ["es", "fr", "de"],
-     False, False, 15, 2023, 2, 16, 65432),
-
-    ("Natural Selection", ["biology"], ["middle", "high", "university"],
-     ["evolution", "adaptation", "selection"],
-     ["es", "fr", "de", "zh-cn", "ja", "pt-br"],
-     True, False, 30, 2024, 1, 27, 412567),
-    ("Gene Expression Essentials", ["biology"], ["high", "university"],
-     ["dna", "transcription", "translation", "proteins"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 25, 2023, 11, 23, 234890),
-    ("Neuron", ["biology"], ["high", "university"],
-     ["neurons", "action potential", "ion channels"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 10, 5, 187654),
-    ("Membrane Channels", ["biology"], ["high", "university"],
-     ["membranes", "diffusion", "transport"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 9, 12, 145623),
-    ("Stretching DNA", ["biology", "physics"], ["high", "university"],
-     ["dna", "forces", "molecular biology"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 8, 28, 112345),
-    ("Eating and Exercise", ["biology"], ["middle", "high"],
-     ["nutrition", "metabolism", "calories"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 20, 2023, 7, 17, 167890),
-
-    ("Plate Tectonics", ["earth-science"], ["middle", "high"],
-     ["plates", "continents", "earthquakes"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     True, False, 25, 2024, 2, 5, 389012),
-    ("Greenhouse Effect", ["earth-science", "physics"], ["middle", "high"],
-     ["climate", "atmosphere", "radiation"],
-     ["es", "fr", "de", "zh-cn", "pt-br"],
-     True, False, 25, 2024, 3, 18, 456789),
-    ("Glaciers", ["earth-science"], ["middle", "high"],
-     ["glaciers", "climate", "ice"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 11, 14, 123456),
-    ("Density", ["earth-science", "physics"], ["elementary", "middle", "high"],
-     ["density", "mass", "volume", "buoyancy"],
-     ["es", "fr", "de", "zh-cn", "ja", "ar"],
-     True, False, 20, 2024, 1, 30, 567823),
-    ("My Solar System", ["earth-science", "physics"], ["middle", "high", "university"],
-     ["gravity", "orbits", "solar system"],
-     ["es", "fr", "de", "zh-cn", "ja", "ar", "pt-br"],
-     True, False, 30, 2024, 4, 11, 678901),
-    ("Radioactive Dating Game", ["earth-science", "physics"], ["high"],
-     ["radioactivity", "half-life", "dating"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 6, 23, 134567),
-    ("Lunar Lander", ["earth-science", "physics"], ["middle", "high"],
-     ["gravity", "thrust", "motion"],
-     ["es", "fr", "de", "ja"],
-     False, True, 20, 2025, 2, 17, 78901),
-
-    # Additional biology sims
-    ("Mendelian Genetics", ["biology"], ["middle", "high", "university"],
-     ["genetics", "heredity", "alleles", "punnett squares"],
-     ["es", "fr", "de", "zh-cn", "ja", "pt-br"],
-     True, False, 30, 2024, 2, 22, 287654),
-    ("DNA Replication", ["biology"], ["high", "university"],
-     ["dna", "replication", "polymerase"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 25, 2023, 12, 17, 178923),
-    ("Photosynthesis", ["biology"], ["elementary", "middle", "high"],
-     ["photosynthesis", "chlorophyll", "plants", "light"],
-     ["es", "fr", "de", "zh-cn", "ja", "ko", "pt-br"],
-     True, False, 25, 2024, 3, 9, 421890),
-    ("Predator-Prey Dynamics", ["biology"], ["middle", "high"],
-     ["ecology", "population", "food chain"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 30, 2023, 11, 26, 198765),
-    ("Cellular Respiration", ["biology", "chemistry"], ["high", "university"],
-     ["respiration", "atp", "mitochondria", "energy"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 10, 13, 156789),
-    ("Punnett Squares", ["biology"], ["middle", "high"],
-     ["genetics", "heredity", "punnett squares"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 20, 2023, 9, 8, 234156),
-    ("Population Dynamics", ["biology", "math"], ["high", "university"],
-     ["population", "exponential growth", "carrying capacity"],
-     ["es", "fr", "de"],
-     False, True, 30, 2025, 1, 8, 67890),
-    ("Cell Diffusion", ["biology"], ["middle", "high"],
-     ["diffusion", "membranes", "concentration"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 20, 2023, 8, 19, 132465),
-    ("Enzyme Kinetics", ["biology", "chemistry"], ["high", "university"],
-     ["enzymes", "catalysis", "kinetics"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 7, 11, 98432),
-    ("Food Web Builder", ["biology"], ["elementary", "middle"],
-     ["ecology", "food web", "trophic levels"],
-     ["es", "fr", "de", "zh-cn", "ja", "ar"],
-     False, False, 25, 2023, 6, 4, 187234),
-    ("Mitosis and Meiosis", ["biology"], ["high", "university"],
-     ["cell division", "chromosomes", "mitosis", "meiosis"],
-     ["es", "fr", "de"],
-     False, False, 30, 2023, 5, 17, 145678),
-    ("Blood Pressure Basics", ["biology"], ["middle", "high"],
-     ["circulation", "heart", "blood pressure"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 20, 2023, 4, 22, 87654),
-    ("Lac Operon Regulation", ["biology"], ["university"],
-     ["gene regulation", "operon", "molecular biology"],
-     ["es", "fr", "de"],
-     False, False, 30, 2023, 3, 12, 54321),
-    ("Bee Hive Activity", ["biology"], ["elementary", "middle"],
-     ["pollination", "bees", "ecosystems"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 15, 2023, 2, 28, 76543),
-
-    # Additional earth-science sims
-    ("Seasons", ["earth-science"], ["elementary", "middle"],
-     ["seasons", "earth tilt", "sun"],
-     ["es", "fr", "de", "zh-cn", "ja", "ar"],
-     True, False, 20, 2024, 1, 19, 312456),
-    ("Water Cycle", ["earth-science"], ["elementary", "middle", "high"],
-     ["evaporation", "condensation", "precipitation", "water cycle"],
-     ["es", "fr", "de", "zh-cn", "ja", "ko", "pt-br"],
-     True, False, 20, 2024, 2, 26, 398765),
-    ("Volcanic Eruption", ["earth-science"], ["elementary", "middle", "high"],
-     ["volcanoes", "magma", "lava", "geology"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 25, 2023, 12, 10, 234567),
-    ("Earthquake Simulator", ["earth-science"], ["middle", "high"],
-     ["earthquakes", "seismic waves", "magnitude"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 25, 2023, 11, 18, 198432),
-    ("Tides", ["earth-science", "physics"], ["middle", "high"],
-     ["tides", "gravity", "moon", "ocean"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 10, 27, 167890),
-    ("Climate Change Model", ["earth-science"], ["high", "university"],
-     ["climate", "greenhouse gases", "temperature"],
-     ["es", "fr", "de", "zh-cn", "pt-br"],
-     True, True, 35, 2025, 2, 8, 89012),
-    ("Ozone Layer", ["earth-science", "chemistry"], ["middle", "high"],
-     ["ozone", "atmosphere", "uv radiation"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 9, 14, 123456),
-    ("Solar Wind", ["earth-science", "physics"], ["high", "university"],
-     ["solar wind", "magnetosphere", "auroras"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 8, 22, 87432),
-    ("Rock Cycle", ["earth-science"], ["elementary", "middle", "high"],
-     ["rocks", "minerals", "igneous", "sedimentary", "metamorphic"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 25, 2023, 7, 6, 156789),
-    ("Ocean Currents", ["earth-science"], ["middle", "high"],
-     ["ocean", "currents", "thermohaline"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 6, 18, 112345),
-    ("Mineral Hardness", ["earth-science"], ["elementary", "middle"],
-     ["minerals", "mohs scale", "geology"],
-     ["es", "fr", "de"],
-     False, False, 15, 2023, 5, 30, 76543),
-    ("Mountain Building", ["earth-science"], ["middle", "high"],
-     ["tectonics", "mountains", "erosion"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 4, 11, 98765),
-
-    # More elementary-friendly sims
-    ("Shapes and Patterns", ["math"], ["elementary"],
-     ["shapes", "patterns", "geometry"],
-     ["es", "fr", "de", "zh-cn", "ja", "ko"],
-     False, False, 15, 2023, 3, 18, 134567),
-    ("Counting Coins", ["math"], ["elementary"],
-     ["counting", "money", "addition"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 12, 2023, 2, 23, 87654),
-    ("Simple Machines", ["physics"], ["elementary", "middle"],
-     ["levers", "pulleys", "wheels", "force"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 20, 2023, 4, 27, 165432),
-    ("Magnet Toy", ["physics"], ["elementary"],
-     ["magnets", "attraction", "repulsion"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 12, 2023, 5, 9, 98432),
-    ("Weather Watcher", ["earth-science"], ["elementary"],
-     ["weather", "clouds", "temperature"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 15, 2023, 6, 13, 76543),
-    ("Plant Growth", ["biology"], ["elementary"],
-     ["plants", "growth", "seeds"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 15, 2023, 7, 21, 54321),
-    ("Animal Classification", ["biology"], ["elementary"],
-     ["animals", "classification", "vertebrates"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 15, 2023, 8, 9, 87654),
-
-    # More chemistry sims (to clear 20+ threshold)
-    ("Atomic Interactions", ["chemistry", "physics"], ["high", "university"],
-     ["atoms", "forces", "lennard-jones"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 3, 14, 123890),
-    ("Sugar and Salt Solutions", ["chemistry"], ["middle", "high"],
-     ["solutions", "dissolving", "concentration"],
-     ["es", "fr", "de", "zh-cn", "ja", "pt-br"],
-     False, False, 20, 2023, 11, 6, 198765),
-    ("Gas Properties", ["chemistry", "physics"], ["high", "university"],
-     ["gases", "pressure", "temperature", "kinetic theory"],
-     ["es", "fr", "de", "zh-cn"],
-     True, False, 25, 2024, 1, 25, 287654),
-    ("Diffusion in Gases", ["chemistry", "physics"], ["middle", "high"],
-     ["diffusion", "gases", "concentration"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 10, 19, 134567),
-    ("Bonding Explorer", ["chemistry"], ["high"],
-     ["bonding", "ionic", "covalent", "metallic"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 25, 2023, 9, 28, 156789),
-    ("Reaction Quizzer", ["chemistry"], ["high", "university"],
-     ["reactions", "products", "balancing"],
-     ["es", "fr", "de"],
-     False, False, 20, 2023, 8, 11, 87654),
-
-    # More math sims (to clear 20+ threshold)
-    ("Probability Experiments", ["math"], ["middle", "high"],
-     ["probability", "experiments", "statistics"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 20, 2023, 11, 21, 167890),
-    ("Coordinate Plane", ["math"], ["middle", "high"],
-     ["coordinates", "graphs", "plotting"],
-     ["es", "fr", "de", "zh-cn"],
-     False, False, 15, 2023, 9, 30, 145678),
-    ("Algebra Tiles", ["math"], ["middle", "high"],
-     ["algebra", "polynomials", "factoring"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 8, 17, 123456),
-    ("Percent Word Problems", ["math"], ["middle"],
-     ["percentages", "ratios", "word problems"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 20, 2023, 7, 9, 98432),
-    ("Geometric Constructions", ["math"], ["middle", "high"],
-     ["geometry", "compass", "straightedge"],
-     ["es", "fr", "de"],
-     False, False, 25, 2023, 6, 5, 87654),
-    ("Decimal Models", ["math"], ["elementary", "middle"],
-     ["decimals", "place value", "comparison"],
-     ["es", "fr", "de", "zh-cn", "ja"],
-     False, False, 15, 2023, 5, 14, 134567),
-]
-
-
-# Download counts are explicit and pairwise-distinct so "most downloaded"
-# has exactly one answer (Net Force Investigation, 8742).
+# Teacher lesson plans on the real site are submitted by named educators. This
+# mirror does not reproduce them: the rows below are benchmark fixtures with
+# synthetic authors, deliberately not attributed to real PhET contributors, and
+# each one points at a simulation that genuinely exists upstream.
 ACTIVITIES_SEED = [
-    # (sim_title, title, author, grade, duration_min, downloads, description)
-    ("Forces and Motion: Basics", "Net Force Investigation",
-     "Dr. Trish Loeblein", "high", 50, 8742,
-     "Students predict, observe, and explain the motion of objects with "
-     "balanced and unbalanced forces using friction and applied force."),
-    ("Build an Atom", "Atomic Structure Lab",
-     "Emily Moore", "middle", 45, 7310,
-     "Build atoms of the first 10 elements, identify subatomic particles, "
-     "and explore how protons determine the element."),
-    ("Balancing Chemical Equations", "Coefficient Practice",
-     "Yuen-Ying Carpenter", "high", 60, 6485,
-     "Practice balancing combustion, synthesis, and decomposition reactions "
-     "using the conservation of mass."),
-    ("States of Matter", "Phase Change Inquiry",
-     "Sam McKagan", "middle", 40, 5121,
-     "Investigate the relationship between temperature, kinetic energy, "
-     "and phase transitions for water, neon, oxygen, and argon."),
-    ("Natural Selection", "Evolution of Bunnies",
-     "Wendy Adams", "high", 55, 6893,
-     "Model how variation, environment, and selection pressure together "
-     "drive allele frequency change across generations."),
-    ("Gravity and Orbits", "Modeling the Solar System",
-     "Noah Finkelstein", "middle", 50, 5764,
-     "Manipulate masses and distances to explore how gravitational force "
-     "shapes planetary orbits in our solar system."),
-    ("pH Scale", "Acids and Bases in the Kitchen",
-     "Kelly Lancaster", "middle", 40, 4937,
-     "Predict, measure, and rank common household solutions by pH and "
-     "categorize each as acid, base, or neutral."),
-    ("Plate Tectonics", "Boundary Identification",
-     "Karina Hensberry", "high", 45, 3608,
-     "Use animations to classify convergent, divergent, and transform "
-     "boundaries and connect each to real-world geologic features."),
-    ("Greenhouse Effect", "Climate Modeling Lab",
-     "Trish Loeblein", "high", 60, 5342,
-     "Model how atmospheric composition affects equilibrium temperature "
-     "with and without greenhouse gases."),
-    ("Circuit Construction Kit: DC", "Series and Parallel",
-     "John De La Cruz", "high", 50, 6178,
-     "Compare current and voltage in series vs parallel arrangements "
-     "and verify Kirchhoff's laws empirically."),
-    ("Fractions: Intro", "Equivalent Fractions Game",
-     "Amanda McGarry", "elementary", 30, 4215,
-     "Use bar models, number lines, and circle models to identify "
-     "equivalent fractions and develop fluency."),
-    ("Energy Skate Park", "Conservation of Energy",
-     "Karina Hensberry", "high", 55, 7026,
-     "Track potential, kinetic, thermal, and total energy as a skater "
-     "moves through changing terrain."),
-    ("Density", "Identify the Mystery Block",
-     "Emily Moore", "middle", 35, 3891,
-     "Use mass and volume measurements to identify the material of "
-     "unknown solid blocks and explain buoyancy in water."),
-    ("Graphing Lines", "Slope-Intercept Form",
-     "Dr. Karina Hensberry", "middle", 40, 4560,
-     "Investigate how m and b transform the line y = mx + b and apply "
-     "this to real-world rate problems."),
+    # (sim_slug, title, author, grade, duration_min, description)
+    ("forces-and-motion-basics", "Net Force Investigation", "R. Alvarez (benchmark fixture)",
+     "high", 40, "Students predict, observe and explain motion under balanced and "
+     "unbalanced forces using applied force and friction."),
+    ("build-an-atom", "Atomic Structure Lab", "M. Okafor (benchmark fixture)",
+     "middle", 60, "Build atoms of the first ten elements, identify subatomic "
+     "particles and explore how proton count determines the element."),
+    ("balancing-chemical-equations", "Coefficient Practice", "S. Lindqvist (benchmark fixture)",
+     "high", 60, "Balance equations of increasing difficulty and connect coefficients "
+     "to conservation of mass."),
+    ("natural-selection", "Selection Pressure Lab", "D. Ferreira (benchmark fixture)",
+     "high", 35, "Vary selection agents and mutations, then describe which traits "
+     "change survivability in each environment."),
+    ("energy-skate-park", "Conservation of Energy", "H. Nakamura (benchmark fixture)",
+     "high", 35, "Track kinetic, potential and thermal energy around a track and "
+     "explain conservation of mechanical energy."),
+    ("circuit-construction-kit-dc", "Series and Parallel", "T. Bagchi (benchmark fixture)",
+     "high", 55, "Build series and parallel circuits, measure current and voltage, "
+     "and compare the two topologies."),
+    ("gravity-and-orbits", "Modeling the Solar System", "L. Moreau (benchmark fixture)",
+     "middle", 50, "Relate the Sun, Earth, Moon and space station through gravity, "
+     "orbits and relative distance."),
+    ("states-of-matter", "Phase Change Inquiry", "P. Novak (benchmark fixture)",
+     "middle", 60, "Heat and cool substances and connect molecular motion to solid, "
+     "liquid and gas phases."),
+    ("ph-scale", "Acids and Bases in the Kitchen", "A. Haddad (benchmark fixture)",
+     "middle", 40, "Measure the pH of household liquids and relate the scale to "
+     "acid and base strength."),
+    ("graphing-lines", "Slope-Intercept Form", "C. Villanueva (benchmark fixture)",
+     "middle", 60, "Move between slope-intercept and point-slope form and predict "
+     "how each parameter moves the line."),
+    ("fractions-intro", "Equivalent Fractions Game", "J. Whitfield (benchmark fixture)",
+     "elementary", 50, "Build equivalent fractions with shapes and number lines, "
+     "then compare the results."),
+    ("density", "Identify the Mystery Block", "K. Solberg (benchmark fixture)",
+     "middle", 55, "Use mass and volume measurements to identify unknown blocks by "
+     "their density."),
+    ("wave-interference", "Boundary Identification", "N. Erdmann (benchmark fixture)",
+     "high", 40, "Compare reflection and transmission at boundaries for water, sound "
+     "and light waves."),
+    ("projectile-motion", "Launch Angle Study", "F. Castellano (benchmark fixture)",
+     "high", 50, "Vary launch angle, speed and drag, then predict range and flight "
+     "time for each configuration."),
 ]
 
 
+# Benchmark-only accounts on a .test domain. These are fixtures for the
+# environment, not mirrored upstream data.
 BENCHMARK_USERS = [
     ("teacher@phet.test", "Ada Lovelace", "phet-teacher-pass",
      "teacher", "Cherry Creek High School", "United States"),
@@ -1146,9 +728,8 @@ def seed_subjects():
     if Subject.query.count() > 0:
         return
     for slug, name, icon, color, desc in SUBJECTS_SEED:
-        db.session.add(Subject(
-            slug=slug, name=name, icon=icon, color=color, description=desc,
-        ))
+        db.session.add(Subject(slug=slug, name=name, icon=icon,
+                               color=color, description=desc))
     db.session.commit()
 
 
@@ -1156,18 +737,19 @@ def seed_grades():
     if GradeLevel.query.count() > 0:
         return
     for slug, name, age_range, sort_order in GRADES_SEED:
-        db.session.add(GradeLevel(
-            slug=slug, name=name, age_range=age_range, sort_order=sort_order,
-        ))
+        db.session.add(GradeLevel(slug=slug, name=name, age_range=age_range,
+                                  sort_order=sort_order))
     db.session.commit()
 
 
 def seed_languages():
     if Language.query.count() > 0:
         return
-    for code, name, native, rtl in LANGUAGES_SEED:
+    for row in LANGUAGES_SEED:
         db.session.add(Language(
-            code=code, name=name, native_name=native, is_rtl=rtl, sim_count=0,
+            code=row["code"], name=row["name"],
+            native_name=row["native_name"], is_rtl=row["is_rtl"],
+            sim_count=0,
         ))
     db.session.commit()
 
@@ -1176,65 +758,56 @@ def seed_simulations():
     if Simulation.query.count() > 0:
         return
     for row in SIMULATIONS_SEED:
-        (title, subjects, grades, topics, extra_langs,
-         featured, is_new, runtime, year, month, day, plays) = row
-        slug = _slug(title)
-        languages = ["en"] + list(extra_langs)
-        # Version derived deterministically from stable seed constants so
-        # sims carry distinct, reproducible version strings (task --28).
-        version = f"{1 + plays % 3}.{runtime % 10}.{day % 10}"
-        sim = Simulation(
-            slug=slug,
-            title=title,
-            short_description=_make_short_desc(title, topics),
-            overview=_make_overview(title, topics, subjects),
-            subjects_json=json.dumps(subjects),
-            grades_json=json.dumps(grades),
-            topics_json=json.dumps(topics),
-            languages_json=json.dumps(languages),
-            version=version,
+        db.session.add(Simulation(
+            slug=row["slug"],
+            title=row["title"],
+            short_description=row["description"][:300],
+            overview=row["description"],
+            learning_goals=row["learning_goals"],
+            subjects_json=json.dumps(row["subjects"]),
+            grades_json=json.dumps(row["grades"]),
+            # the filter facet ids plus the topic strip shown upstream
+            topics_json=json.dumps(row["topics"] + row["detail_topics"]),
+            languages_json=json.dumps(row["locales"]),
+            related_json=json.dumps(row["related"]),
+            version=row["version"],
             is_html5=True,
-            is_featured=featured,
-            is_new=is_new,
-            thumbnail=f"{slug}.svg",
-            runtime_minutes=runtime,
-            release_date=date(year, month, day),
-            play_count=plays,
-            download_count=max(plays // 8, 1000),
-        )
-        db.session.add(sim)
+            # upstream has no editorial "featured" rail; the mirror marks the
+            # twelve simulations upstream flags as new so the homepage has a
+            # deterministic, source-backed selection.
+            is_featured=row["is_new"],
+            is_new=row["is_new"],
+            thumbnail=f"{row['slug']}.png",
+            release_date=date.fromisoformat(row["released"]),
+            updated_date=date.fromisoformat(row["updated"]),
+            locale_count=len(row["locales"]),
+            design_team=row["design_team"][:400],
+            has_teachers_guide=row["teachers_guide"],
+            is_phet_studio=row["is_phet_studio"],
+            upstream_url=row["upstream_page"],
+        ))
     db.session.commit()
 
-    # update per-language sim counts
-    lang_counts = {l.code: 0 for l in Language.query.all()}
+    counts = {}
     for sim in Simulation.query.all():
         for code in sim.languages():
-            if code in lang_counts:
-                lang_counts[code] += 1
-    for code, count in lang_counts.items():
-        lang = Language.query.filter_by(code=code).first()
-        if lang:
-            lang.sim_count = count
+            counts[code] = counts.get(code, 0) + 1
+    for lang in Language.query.all():
+        lang.sim_count = counts.get(lang.code, 0)
     db.session.commit()
 
 
 def seed_activities():
     if Activity.query.count() > 0:
         return
-    for sim_title, title, author, grade, duration, downloads, desc in ACTIVITIES_SEED:
-        sim = Simulation.query.filter_by(slug=_slug(sim_title)).first()
-        if not sim:
+    for sim_slug, title, author, grade, duration, description in ACTIVITIES_SEED:
+        sim = Simulation.query.filter_by(slug=sim_slug).first()
+        if sim is None:
             continue
         db.session.add(Activity(
-            sim_id=sim.id,
-            title=title,
-            author=author,
-            grade_level=grade,
-            duration_min=duration,
-            description=desc,
-            file_type="PDF",
-            download_count=downloads,
-            published_date=date(2024, ((duration % 12) + 1), 15),
+            sim_id=sim.id, title=title, author=author,
+            grade_level=grade, duration_min=duration, description=description,
+            file_type="PDF", published_date=sim.updated_date,
         ))
     db.session.commit()
 
@@ -1268,26 +841,6 @@ def seed_benchmark_users():
         db.session.commit()
 
 
-def _make_short_desc(title, topics):
-    if not topics:
-        return f"Interactive simulation: {title}."
-    topic_str = ", ".join(topics[:3])
-    return f"Explore {topic_str} with the interactive {title} simulation."
-
-
-def _make_overview(title, topics, subjects):
-    subject_names = ", ".join(s.replace("-", " ").title() for s in subjects)
-    topic_list = ", ".join(topics) if topics else "core concepts"
-    return (
-        f"{title} is an interactive HTML5 simulation in the PhET "
-        f"{subject_names} collection. Learners investigate {topic_list} "
-        f"by directly manipulating model parameters and observing "
-        f"real-time visual feedback. The simulation supports inquiry-"
-        f"based instruction, formative assessment, and at-home practice, "
-        f"and is freely available under a Creative Commons license."
-    )
-
-
 def seed_all():
     seed_subjects()
     seed_grades()
@@ -1303,5 +856,5 @@ with app.app_context():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 40015))
+    port = int(os.environ.get("PORT", 40035))
     app.run(host="0.0.0.0", port=port, debug=False)

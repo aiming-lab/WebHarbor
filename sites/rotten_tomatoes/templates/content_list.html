@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "home/_cards.html" as cards %}
+{% block title %}{{ section.title }} | Rotten Tomatoes{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/content.css">{% endblock %}
+{% block content %}
+<div class="content-page">
+    <h1>{{ section.title }}</h1>
+    {% if section.description %}<p>{{ section.description }}</p>{% endif %}
+    {% if captured_at %}<p class="content-caption">Selection captured {{ captured_at[:10] }}.</p>{% endif %}
+    <div class="content-grid {% if section.kind in ['videos', 'promos'] %}content-editorial-grid{% endif %}">
+    {% for item in section['items'] %}
+        {% if section.kind in ['videos', 'promos'] %}{{ cards.editorial(item) }}
+        {% else %}{{ cards.poster(item, user_watchlist_ids, current_user, csrf_token) }}{% endif %}
+    {% endfor %}
+    </div>
+</div>
+{% endblock %}

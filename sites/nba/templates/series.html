@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ team_a.full_name }} vs {{ team_b.full_name }} - NBA Playoffs{% endblock %}
+{% block content %}
+<section class="game-detail-hero series-hero">
+  <div class="game-team"><img src="{{ team_a.logo }}" alt=""><h2>{{ team_a.full_name }}</h2><span>{{ team_seed(team_a) }} seed · {{ team_a.conference }}</span></div>
+  <div class="game-status">
+    <span class="kicker">Playoff Series</span>
+    <h1>{{ game_series_label(games[0]) }}</h1>
+    <p>{{ game_round_label(games[0]) }}</p>
+    <div class="tab-row"><a href="{{ url_for('playoffs') }}">Playoffs</a><a href="{{ url_for('schedule') }}">Schedule</a><a href="{{ url_for('tickets') }}">Tickets</a></div>
+  </div>
+  <div class="game-team"><img src="{{ team_b.logo }}" alt=""><h2>{{ team_b.full_name }}</h2><span>{{ team_seed(team_b) }} seed · {{ team_b.conference }}</span></div>
+</section>
+<section class="portal-shell">
+  <main class="portal-main">
+    <section class="nba-home-section">
+      <div class="section-title"><h2>Series Schedule</h2><a href="{{ url_for('games', view='all') }}">All Games</a></div>
+      <div class="card-grid two">
+        {% for game in games %}
+          {% include "_components/game_card.html" %}
+        {% endfor %}
+      </div>
+    </section>
+    <section class="nba-home-section">
+      <div class="section-title"><h2>Series Coverage</h2><a href="{{ url_for('news', category='Playoffs') }}">More Playoffs</a></div>
+      <div class="story-grid compact">
+        {% for article in articles[:6] %}
+          {% include "_components/story_card.html" %}
+        {% endfor %}
+      </div>
+    </section>
+  </main>
+  <aside class="portal-rail">
+    <section class="rail-card"><h2>Team Links</h2><a href="{{ url_for('team_detail', slug=team_a.slug) }}">{{ team_a.full_name }}</a><a href="{{ url_for('team_detail', slug=team_b.slug) }}">{{ team_b.full_name }}</a><a href="{{ url_for('team_stats_detail', slug=team_a.slug) }}">{{ team_a.abbreviation }} Stats</a><a href="{{ url_for('team_stats_detail', slug=team_b.slug) }}">{{ team_b.abbreviation }} Stats</a></section>
+  </aside>
+</section>
+{% endblock %}

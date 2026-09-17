@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% from 'components.html' import icon, notice_link %}
+{% set media = 'external_cache/fedex-home/' %}
+{% block title %}Track & Ship Online or Find Nearby Locations | FedEx{% endblock %}
+{% block page_class %}homepage{% endblock %}
+{% block content %}
+  <section class="home-hero" aria-labelledby="home-title">
+    <h1 id="home-title">Ship, manage, track, deliver</h1>
+    <div class="home-tabs" role="tablist" aria-label="Shipping tools">
+      <button type="button" id="rates-tab" role="tab" aria-selected="false" aria-controls="rates-panel" tabindex="-1">{{ icon('rates') }}<span>Rate &amp; ship</span></button>
+      <button type="button" id="track-tab" role="tab" aria-selected="true" aria-controls="track-panel">{{ icon('track') }}<span>Track</span></button>
+      <button type="button" id="locations-tab" role="tab" aria-selected="false" aria-controls="locations-panel" tabindex="-1">{{ icon('location') }}<span>Locations</span></button>
+    </div>
+    <div class="home-tool" id="track-panel" role="tabpanel" aria-labelledby="track-tab">
+      <form action="{{ url_for('track') }}" method="post" class="home-track-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label class="sr-only" for="home-tracking">Tracking ID</label><input id="home-tracking" name="tracking_numbers" placeholder="TRACKING ID" required><button type="submit">Track <span aria-hidden="true">→</span></button></form>
+      <a class="multi-track" href="{{ url_for('track') }}">Track multiple shipments</a>
+    </div>
+    <div class="home-tool" id="rates-panel" role="tabpanel" aria-labelledby="rates-tab" hidden><a class="button button-primary" href="{{ url_for('rate_estimate') }}">Get rates</a><a class="button button-primary" href="{{ url_for('ship') }}">Ship now</a></div>
+    <div class="home-tool" id="locations-panel" role="tabpanel" aria-labelledby="locations-tab" hidden><form action="{{ url_for('locations') }}" method="get" class="home-track-form"><label class="sr-only" for="home-location">City, state or location type</label><input id="home-location" name="q" placeholder="CITY, STATE OR LOCATION TYPE" required><button type="submit">Find <span aria-hidden="true">→</span></button></form></div>
+  </section>
+  <section class="campaign"><div><strong>Enter the FedExCup<sup>®</sup> Getaway Sweepstakes</strong><p>Take your swing at a luxury golf trip! If you win, you get to choose a PGA TOUR<sup>®</sup> destination: Scotland, California, Florida, or Arizona. {{ notice_link('Register now.', 'This campaign is shown as part of the September 10, 2026 homepage snapshot. Sweepstakes entry is not available in the offline mirror.') }}</p></div></section>
+  <div class="home-sections inner">
+    <div class="service-notice"><span aria-hidden="true">ⓘ</span><p>Looking for IEEPA tariff refund updates? {{ notice_link('Access our customer portal.', 'The tariff refund portal is a live service. Refund submissions are not available in this offline mirror.') }}</p></div>
+    <nav class="quick-links" aria-label="Popular services">
+      {% for title, image, endpoint, query in [('Drop off a package', 'icon_courier_purple_lg_1637809911.png', 'locations', ''), ('Hold at location', 'icon_delivery_purple_lg_2143296207.png', 'support', 'hold'), ('Store hours and services', 'icon_retail_services_purple_med.png', 'locations', ''), ('Service alerts', 'icon_alert_purple_lg.png', 'support', 'delay'), ('Return a package', 'icon_returns_purple_lg_1184917500.png', 'support', 'return')] %}
+      <a href="{{ url_for(endpoint, q=query) }}"><img src="{{ url_for('static', filename=media ~ image) }}" alt="" width="64" height="64"><span>{{ title }}</span></a>
+      {% endfor %}
+    </nav>
+    <section class="why-ship">
+      <div class="why-copy"><h2>Why ship with FedEx?</h2><div class="benefits">
+        <div><h3>Innovative solutions for reliability &amp; speed</h3><p>Whether it’s across states or worldwide, we prioritize the secure and swift arrival of your shipments.</p></div>
+        <div><h3>Premium shipping at professional rates</h3><p>When you need reliable delivery and careful handling, trust FedEx to get your items where they need to go on time.</p></div>
+        <div><h3>We ship everywhere*</h3><p>From major cities to remote destinations, our global network helps you reach customers around the world.</p></div>
+        <div><h3>New overnight flat rates that may beat the post office</h3><p>{{ notice_link('FedEx One Rate®') }}** now offers predictable overnight flat rates. They're available anywhere in the U.S., so you can plan and ship with confidence.</p></div>
+      </div><p class="fine-print">*FedEx doesn’t ship anywhere sanctioned by the U.S.<br>**Visit the {{ notice_link('FedEx One Rate') }} page for details.</p></div>
+      <img class="why-image" src="{{ url_for('static', filename=media ~ 'USHP_Why_Ship_With_FedEx_Aug_2026.jpg') }}" alt="FedEx team member holding shipping boxes" width="450" height="414">
+      <div class="why-action"><a class="button button-outline" href="{{ url_for('ship') }}">Start shipping now</a></div>
+    </section>
+    <section class="editorial-section"><h2>Delivery that works around you</h2><div class="editorial-grid">
+      <article><img src="{{ url_for('static', filename=media ~ 'V4_20171207_SW_0968_188950484.jpg') }}" alt="Customer dropping a package into a FedEx drop box"><h3>Drop off your package. Done.</h3><p>With thousands of convenient FedEx locations, it's easy to fit shipping into your day. Find a nearby location, drop off your package, and get back to what matters.</p><a class="text-link" href="{{ url_for('locations') }}">Drop off near you</a></article>
+      <article><img src="{{ url_for('static', filename=media ~ 'FY22_Memphis_220429_MK-FedEx_Memphis-1865_46.jpg') }}" alt="Shop owner preparing a shipment"><h3>Know your next move</h3><p>Whether you're shipping clothes, gifts, or products, we've got you covered. Get packing tips, compare services, and watch step-by-step tutorials to ship with confidence.</p><a class="text-link" href="{{ url_for('support') }}">Get shipping guidance</a></article>
+      <article><img src="{{ url_for('static', filename=media ~ '231011-MK-FEDEX-49472.jpg') }}" alt="Customer viewing delivery information on a phone"><h3>Swipe and ship</h3><p>Track shipments, receive delivery updates, and view estimated delivery windows from wherever you are — all with the FedEx<sup>®</sup> Mobile app.</p><span class="text-link">{{ notice_link('Download the app') }}</span></article>
+    </div></section>
+    <section class="protection-banner"><div><h2>Added protection for what matters most</h2><p>FedEx Authenticated Delivery uses a secure QR code to help ensure a package is released to a verified recipient, adding an extra layer of security and helping to prevent fraud at delivery.</p><span class="text-link">{{ notice_link('Secure your deliveries') }}</span></div><img src="{{ url_for('static', filename=media ~ 'USHP_Authenticated Delivery_Aug_2026.jpg') }}" alt="Delivery recipient checking a package"></section>
+    <section class="editorial-section business-section"><h2>Smarter shipping for growing businesses</h2><div class="editorial-grid">
+      <article><img src="{{ url_for('static', filename=media ~ 'FedEx-1593-1.jpg') }}" alt="Business shipping with FedEx"><h3>Less admin. More moving.</h3><p>Create labels, manage shipments and simplify day-to-day shipping with tools designed to save your business time.</p><a class="text-link" href="{{ url_for('account_shipments') }}">Manage your shipping</a></article>
+      <article><img src="{{ url_for('static', filename=media ~ '2019_Memphis_Hub_09452.jpg') }}" alt="FedEx air freight aircraft"><h3>Take your business further</h3><p>Reach customers in Mexico with reliable international air freight from JFK, offering available capacity, competitive rates and trusted FedEx expertise.</p><span class="text-link">{{ notice_link('Ship air freight') }}</span></article>
+      <article><img src="{{ url_for('static', filename=media ~ 'USHP_Rewards_Aug_2026.jpg') }}" alt="Business owner preparing a FedEx package"><h3>Shipping that gives back</h3><p>Open a free FedEx account and earn rewards on eligible shipments, helping your business get even more every time you ship.</p><span class="text-link">{{ notice_link('Join FedEx Rewards') }}</span></article>
+    </div></section>
+    <section class="home-legal"><h3>FedEx rate and surcharge changes</h3><p>Learn more about {{ notice_link('rate and surcharge changes') }}.</p><h3>FedEx money-back guarantee</h3><p>We offer a money-back guarantee for select services. This guarantee may be suspended, modified, or revoked. Please check {{ notice_link('money-back guarantee') }} for the latest status of our money-back guarantee.</p><p>*For details, please see {{ notice_link('FedEx Rewards Terms and Conditions') }}.</p></section>
+  </div>
+{% endblock %}

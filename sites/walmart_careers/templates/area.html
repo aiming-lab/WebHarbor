@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% from "_benefits.html" import benefits_block %}
+{% block body_class %}l1{% endblock %}
+{% block title %}{{ area.name }} careers | Walmart Careers{% endblock %}
+{% block content %}
+{% set page = content.AREA_PAGE.get(area.slug, content.AREA_PAGE_DEFAULT) %}
+{% set hero_image = 'military-banner.png' if area.slug == 'Military' else area.hero_image %}
+{% set roles_url = url_for('results', area=area.slug) if area.is_filterable else url_for('results') %}
+{% set office_area = area.slug in ('technology', 'corporate') %}
+{% set military = area.slug == 'Military' %}
+
+<div class="area-hero">
+  <img src="{{ url_for('static', filename='images/' ~ hero_image) }}" alt="">
+  <div class="area-card">
+    <h1>{{ area.name }}</h1>
+    <p>{{ area.blurb }}</p>
+    <a class="btn" href="{{ roles_url }}">{{ 'Browse all open roles' if military else 'See all open roles' }}</a>
+  </div>
+</div>
+
+{% if categories %}
+<section>
+  <div class="wrap">
+    <h2>Join our team</h2>
+    <div class="join-grid">
+      <div class="stack-card">
+        <span class="stack-band band-navy"></span>
+        <span class="stack-band band-sky"></span>
+        <img src="{{ url_for('static', filename='images/' ~ page.photos[0]) }}" alt="{{ area.name }} associates">
+      </div>
+      <ul class="category-list">
+        {% for category in categories %}
+          <li><a href="{{ url_for('results', area=area.slug, category=category.slug) }}">{{ category.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</section>
+{% elif military %}
+{# The live Military page opens with two feature rows and three program tiles. #}
+<section class="feature-section">
+  <div class="wrap">
+    {% for heading, blurb, cta, photo in content.MILITARY_FEATURES %}
+      <div class="feature-row">
+        <img src="{{ url_for('static', filename='images/' ~ photo) }}" alt="">
+        <div class="feature-text">
+          <h3>{{ heading }}</h3>
+          <p>{{ blurb }}</p>
+          <a class="btn" href="{{ roles_url }}">{{ 'Browse all open roles' if military else cta }}</a>
+        </div>
+      </div>
+    {% endfor %}
+    <div class="program-tiles">
+      {% for heading, blurb, photo in content.MILITARY_PROGRAMS %}
+        {% set target = url_for('register') if loop.last else (url_for('results', area='students', type='Intern') if loop.index == 2 else roles_url) %}
+        <a class="program-tile" href="{{ target }}">
+          <img src="{{ url_for('static', filename='images/' ~ photo) }}" alt="">
+          <b>{{ heading }}</b>
+          <p>{{ blurb }}</p>
+          <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+            <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% else %}
+<section>
+  <div class="wrap">
+    <div class="empty-panel">
+      <h2>Programs, not a job family</h2>
+      <p>{{ area.name }} hiring runs through every career area on this site. Browse open roles and filter
+         by the career area, brand, shift or location that fits you.</p>
+      <a class="btn" href="{{ url_for('results') }}">Browse all open roles</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% set benefits_html %}
+<div class="wrap">
+  {{ benefits_block('Explore our benefits',
+                    content.benefit_tiles_for('Walmart', 'salaried' if office_area else 'hourly'),
+                    content.JOB_BENEFIT_ROWS, 'Learn more about benefits', url_for('about_us')) }}
+</div>
+{% endset %}
+
+{# Field areas show the benefits right after "Join our team"; Military after its stories strip. #}
+{% if not military %}{{ benefits_html }}{% endif %}
+
+{% if office_area %}
+<section class="quote-section">
+  <div class="wrap"><p class="quote-band-text">{{ page.quote }}</p></div>
+</section>
+{% endif %}
+
+<section class="bento-section">
+  <div class="wrap-bleed">
+    <div class="bento-layout">
+      <div class="bento area-bento">
+        <a class="tile tile-blue tile-sq" href="{{ roles_url }}">
+          <span class="tile-label">{{ page.tiles[0] }}</span><span class="circle-arrow">&#8250;</span>
+        </a>
+        <div class="tile tile-photo tile-wide">
+          <img src="{{ url_for('static', filename='images/' ~ page.photos[1]) }}" alt="">
+        </div>
+        {% if page.tiles|length > 2 %}
+        <div class="tile tile-photo tile-wide">
+          <img src="{{ url_for('static', filename='images/' ~ page.photos[0]) }}" alt="">
+        </div>
+        <a class="tile tile-navy tile-sq" href="{{ roles_url }}">
+          <span class="tile-label">{{ page.tiles[1] }}</span><span class="circle-arrow circle-arrow-back">&#8249;</span>
+        </a>
+        <a class="tile tile-pale tile-sq" href="{{ roles_url }}">
+          <span class="tile-label">{{ page.tiles[2] }}</span><span class="circle-arrow">&#8250;</span>
+        </a>
+        {% else %}
+        <span class="tile-gap"></span>
+        <a class="tile tile-navy tile-sq" href="{{ roles_url }}">
+          <span class="tile-label">{{ page.tiles[1] }}</span><span class="circle-arrow circle-arrow-back">&#8249;</span>
+        </a>
+        {% endif %}
+      </div>
+      <div class="bento-aside">
+        <h2>{{ page.headline }}</h2>
+        <a class="btn btn-secondary" href="{{ roles_url }}">{{ page.cta }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if area.slug == 'stores-and-clubs' %}
+{% set meet = content.MEET_STORE_COACH %}
+<section class="meet-section">
+  <div class="wrap">
+    <div class="meet-layout">
+      <div class="video-tile meet-tile">
+        <img class="v-spark" src="{{ url_for('static', filename='icons/spark-yellow.svg') }}" alt="">
+        <div class="v-cap"><em>{{ meet.kicker }}</em><b>{{ meet.role }}</b></div>
+      </div>
+      <div class="meet-text">
+        <h2>Meet {{ meet.name }}</h2>
+        <p>{{ meet.blurb }}</p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if not office_area %}
+<section class="quote-section">
+  <div class="wrap"><p class="quote-band-text">{{ page.quote }}</p></div>
+</section>
+{% endif %}
+
+{% if office_area %}
+<section>
+  <div class="wrap">
+    <h2 class="tight">{{ page.hubs_heading }}</h2>
+    <p class="section-blurb">{{ page.hubs_blurb }}</p>
+    <div class="hub-links">
+      {% for hub in hubs %}
+        {% if hub.hub_name %}
+          <a href="{{ url_for('results', loc=hub.city ~ ', ' ~ hub.state, radius=25) }}">{{ hub.hub_name }}
+            <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+              <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg></a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <p style="margin-top:28px"><a class="btn btn-secondary btn-sm" href="{{ url_for('resources_location') }}">See all hubs</a></p>
+  </div>
+</section>
+{% else %}
+<section>
+  <div class="wrap">
+    <h2 class="tight">{{ content.ASSOCIATES_HEADING }}</h2>
+    <p class="section-blurb">{{ content.ASSOCIATES_BLURB }}</p>
+    <div class="video-strip dark">
+      {% for name, role, _quote in page.testimonials %}
+        <div class="video-tile{% if loop.index == 2 %} wide{% endif %}">
+          <img class="v-photo" src="{{ url_for('static', filename='images/' ~ page.photos[loop.index0 % 2]) }}" alt="">
+          <div class="v-cap"><em>Meet {{ name }}</em><b>{{ role }}</b></div>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if military %}{{ benefits_html }}{% endif %}
+
+{% if page.testimonials %}
+<section>
+  <div class="wrap">
+    <h2>{{ content.INSPIRATION_HEADING }}</h2>
+    <div class="quote-cards">
+      {% for name, role, quote in page.testimonials %}
+        <div class="quote-card{% if loop.index == 2 %} on{% endif %}">
+          <b>{{ name }}, {{ role }}</b>
+          <p>&ldquo;{{ quote }}&rdquo;</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="find-role">
+  <div class="wrap">
+    <h2>Find the role that's a perfect fit.</h2>
+    <form class="find-search" action="{{ url_for('results') }}" method="get" role="search">
+      <input type="text" name="q" placeholder="{{ content.SEARCH_PLACEHOLDER }}" aria-label="Search open roles">
+      <button type="submit" aria-label="Search">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M15.2 15.2 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18.4 3.2l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z" fill="currentColor"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+</section>
+{% endblock %}

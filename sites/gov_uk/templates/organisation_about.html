@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}About us - {{ dept.name }} - GOV.UK{% endblock %}
+{% block content %}
+<nav class="govuk-breadcrumbs" aria-label="Breadcrumb"><a class="govuk-breadcrumbs__link" href="/">Home</a> / <a class="govuk-breadcrumbs__link" href="{{ url_for('organisation_detail', slug=dept.slug) }}">{{ dept.name }}</a></nav>
+<span class="govuk-caption-l">{{ dept.name }}</span><h1 class="govuk-heading-xl">About us</h1>
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+<nav class="guide-contents" aria-label="Contents"><h2 class="govuk-heading-s">Contents</h2><ul class="govuk-list"><li><a class="govuk-link" href="#responsibilities">Responsibilities</a></li><li><a class="govuk-link" href="#organisation">Our organisation</a></li><li><a class="govuk-link" href="#services">Services and information</a></li></ul></nav>
+<section id="responsibilities"><h2 class="govuk-heading-l">Responsibilities</h2><p class="govuk-body-l">{{ dept.description }}</p></section>
+<section id="organisation">      <h2 class="govuk-heading-m">About this organisation</h2>
+      <dl class="govuk-summary-list govuk-summary-list--no-actions organisation-facts">
+        {% if dept.minister %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Lead minister</dt>
+          <dd class="govuk-summary-list__value">{{ dept.minister }}</dd>
+        </div>{% endif %}
+        {% if dept.permanent_secretary %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Permanent secretary</dt>
+          <dd class="govuk-summary-list__value">{{ dept.permanent_secretary }}</dd>
+        </div>{% endif %}
+        {% if dept.employees %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Employees</dt>
+          <dd class="govuk-summary-list__value">{{ "{:,}".format(dept.employees) }}</dd>
+        </div>{% endif %}
+        {% if dept.established %}
+        <div class="govuk-summary-list__row">
+          <dt class="govuk-summary-list__key">Established</dt>
+          <dd class="govuk-summary-list__value">{{ dept.established }}</dd>
+        </div>{% endif %}
+      </dl>
+</section>
+<section id="services"><h2 class="govuk-heading-l">Services and information</h2><p class="govuk-body">Find guidance published by {{ dept.name }}, including eligibility, how to apply and what to prepare.</p><p class="govuk-body"><a class="govuk-link" href="{{ url_for('organisation_detail', slug=dept.slug) }}#services">Browse our services and information</a></p><p class="govuk-body"><a class="govuk-link" href="{{ url_for('search', department=dept.slug, type='news', order='updated') }}">Read our latest news and communications</a></p></section>
+</div></div>{% endblock %}

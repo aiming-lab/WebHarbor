@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}{{ topic.name }} - GOV.UK{% endblock %}
+
+{% block content %}
+<nav class="govuk-breadcrumbs" aria-label="Breadcrumb">
+  <ol class="govuk-breadcrumbs__list">
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('index') }}">Home</a></li>
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('browse') }}">Browse</a></li>
+    <li class="govuk-breadcrumbs__list-item" aria-current="page">{{ topic.name }}</li>
+  </ol>
+</nav>
+
+<h1 class="govuk-heading-xl">{{ topic.name }}</h1>
+<p class="govuk-body-l">{{ topic.description }}</p>
+
+{% if topic.subtopics %}
+<ul class="govuk-list">
+  {% for sub in topic.subtopics %}
+  <li>
+    <h2 class="govuk-heading-m govuk-!-margin-bottom-2">
+      <a class="govuk-link" href="{{ url_for('subtopic_page', topic_slug=topic.slug, subtopic_slug=sub.slug) }}">{{ sub.name }}</a>
+    </h2>
+    <p class="govuk-body">{{ sub.description }}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="govuk-body">No subtopics in this section yet.</p>
+{% endif %}
+{% endblock %}

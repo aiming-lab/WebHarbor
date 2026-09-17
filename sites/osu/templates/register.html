@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Register — Ohio State{% endblock %}
+{% block content %}
+<div style="max-width:480px;margin:0 auto">
+  <div style="text-align:center;margin-bottom:30px">
+    <div style="font-size:48px;color:var(--scarlet)">&#9400;</div>
+    <h1 style="font-size:26px;color:var(--scarlet)">Create Account</h1>
+    <p style="color:var(--gray);font-family:sans-serif;font-size:14px">Join The Ohio State University community</p>
+  </div>
+
+  <div class="card">
+    <div class="card-body" style="padding:30px">
+      <form method="post" action="{{ url_for('register') }}">
+        {{ form.hidden_tag() }}
+
+        <div class="form-group">
+          {{ form.username.label }}
+          {{ form.username(placeholder='buckeyefan', autocomplete='username') }}
+          {% for error in form.username.errors %}
+          <div class="form-errors">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          {{ form.full_name.label }}
+          {{ form.full_name(placeholder='Jane Doe', autocomplete='name') }}
+          {% for error in form.full_name.errors %}
+          <div class="form-errors">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          {{ form.email.label }}
+          {{ form.email(placeholder='your.name@osu.edu', autocomplete='email') }}
+          {% for error in form.email.errors %}
+          <div class="form-errors">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          {{ form.password.label }}
+          {{ form.password(placeholder='At least 8 characters', autocomplete='new-password') }}
+          {% for error in form.password.errors %}
+          <div class="form-errors">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <div class="form-group">
+          {{ form.confirm.label }}
+          {{ form.confirm(placeholder='Repeat password', autocomplete='new-password') }}
+          {% for error in form.confirm.errors %}
+          <div class="form-errors">{{ error }}</div>
+          {% endfor %}
+        </div>
+
+        <button type="submit" class="btn btn-primary" style="width:100%;font-size:16px;padding:12px">Create Account</button>
+      </form>
+
+      <div style="text-align:center;margin-top:20px;font-family:sans-serif;font-size:14px;color:var(--gray)">
+        Already have an account? <a href="{{ url_for('login') }}">Sign in</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

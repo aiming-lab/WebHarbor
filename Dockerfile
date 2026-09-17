@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 15 Flask mirror sites + control plane on :8101.
+# 36 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -14,6 +14,7 @@ RUN pip3 install --no-cache-dir \
     Flask-Login==0.6.3 \
     Flask-WTF==1.2.2 \
     Flask-Bcrypt==1.0.1 \
+    bcrypt==5.0.0 \
     Werkzeug==3.1.3 \
     Jinja2==3.1.4 \
     SQLAlchemy==2.0.36 \
@@ -27,12 +28,100 @@ WORKDIR /opt/WebSyn
 # static/images/, static/external_cache/) — either commit them locally or
 # run scripts/fetch_assets.sh to pull them from Hugging Face first.
 COPY sites/ /opt/WebSyn/
+COPY scripts/check_asset_inventory.py /opt/check_asset_inventory.py
+
+# IKEA's seed is reproducibly materialized from the tracked source catalog so code-only content fixes do not require an asset-repository write. Product images still come from the pinned asset bundle.
+RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
+# Apply tracked, idempotent data corrections to downloaded seed assets.
+RUN cd /opt/WebSyn/phys_org && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
+RUN cd /opt/WebSyn/target && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
+RUN cd /opt/WebSyn/ted && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
+
+# Compass keeps source-backed media in the pinned asset bundle and rebuilds
+# its versioned deterministic SQLite seed from tracked source documents.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/compass
+RUN cd /opt/WebSyn/compass && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
+
+# Walmart Careers validates source-backed media and rebuilds its deterministic SQLite seed from tracked source data.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/walmart_careers && \
+    python3 /opt/WebSyn/walmart_careers/check_tracked_assets.py
+RUN cd /opt/WebSyn/walmart_careers && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
+# FedEx validates its downloaded homepage media against the tracked inventory and
+# rebuilds its deterministic, version-marked SQLite seed from tracked source data.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/fedex
+RUN cd /opt/WebSyn/fedex && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
+# WebMD Doctor's generated avatars / posters come from the pinned asset bundle,
+# while its SQLite seed is rebuilt deterministically from tracked source code.
+# The inventory gate enforces exact coverage + per-file SHA-256 + PNG decode of
+# all 317 generated images (same contract as the compass / walmart inventories).
+RUN python3 /opt/WebSyn/webmd_doctor/check_generated_assets.py
+RUN cd /opt/WebSyn/webmd_doctor && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+# Healthline's downloaded seed carries tracked corrections (image reassignment) and the
+# pinned archive bundles unreferenced images; apply the deterministic migration and prune
+# the unreferenced files before they are shipped.
+RUN cd /opt/WebSyn/healthline && test -f instance_seed/healthline.db && \
+    PYTHONHASHSEED=0 python3 migrate_seed.py && \
+    python3 prune_unreferenced_images.py --apply && rm -rf instance
+
+# Berkeley's generated imagery ships in the pinned asset bundle while its SQLite
+# seed stays build-generated from tracked source — see .build-generated-seed. The
+# inventory gate enforces exact coverage + per-file SHA-256 + decode at the planned
+# dimensions of all 164 generated images (82 FLUX scenes + 82 Pillow avatars), the
+# same contract as the webmd_doctor / compass / walmart_careers inventories.
+RUN python3 /opt/WebSyn/berkeley/check_generated_assets.py
+# No wall clock and no random salt reaches a row, so the artifact is
+# byte-reproducible; websyn_start.sh copies it into instance/ at boot.
+RUN cd /opt/WebSyn/berkeley && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
-RUN chmod +x /opt/websyn_start.sh
+RUN sed -i 's/\r$//' /opt/websyn_start.sh && chmod +x /opt/websyn_start.sh
 
-EXPOSE 8101 40000-40015
+# OSU's real-site image bundle is required, while its database is generated
+# deterministically from tracked source data.
+RUN test -n "$(ls -A /opt/WebSyn/osu/static/images)"
+RUN cd /opt/WebSyn/osu && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 migrate_seed.py && rm -rf instance
+
+# Rotten Tomatoes keeps source-backed media in the asset bundle and rebuilds
+# its deterministic SQLite seed from tracked, validated source documents.
+RUN test -n "$(ls -A /opt/WebSyn/rotten_tomatoes/static/images)" && \
+    test -n "$(ls -A /opt/WebSyn/rotten_tomatoes/static/external_cache)"
+RUN cd /opt/WebSyn/rotten_tomatoes && rm -rf instance instance_seed && python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/rotten_tomatoes.db', 'instance_seed/rotten_tomatoes.db'); \
+print('Rotten Tomatoes seed DB generated at build time.')" && rm -rf /opt/WebSyn/rotten_tomatoes/instance
+
+# B&H's asset bundle contains images; generate the reset seed from its tracked
+# catalog in the image so a fresh checkout needs no locally prepared database.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/bh_photo
+RUN cd /opt/WebSyn/bh_photo && rm -rf instance instance_seed && PYTHONHASHSEED=0 python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/bh_photo.db', 'instance_seed/bh_photo.db'); \
+print('B&H Photo seed DB generated at build time.')" && rm -rf instance
+
+# AccuWeather uses genuine captured UI assets and freezes its deterministic seed.
+RUN test -n "$(ls -A /opt/WebSyn/accuweather/static/images)" && \
+    cd /opt/WebSyn/accuweather && rm -rf instance instance_seed && python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/accuweather.db', 'instance_seed/accuweather.db'); \
+print('AccuWeather seed DB generated at build time.')" && rm -rf /opt/WebSyn/accuweather/instance
+
+EXPOSE 8101 40000-40035
 
 CMD ["/opt/websyn_start.sh"]

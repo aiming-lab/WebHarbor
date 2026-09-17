@@ -1,0 +1,46 @@
+{#
+  Result card. The lines mirror the live site: a salaried posting shows only its
+  title, "City, ST" and the annual pay range; an hourly posting adds the
+  "banner #store" line, the ZIP and the shift label. Everything else (street,
+  requisition ID, open positions, shift window, qualifications) is detail-only.
+
+  The whole card is clickable (stretched title link) and carries one outlined
+  "Select +" pill, exactly like upstream. `compact` drops the pill (trending
+  strips); `unsave` adds the "Saved" toggle used on the saved-roles page.
+#}
+{% macro job_card(job, saved_ids, compact=False, unsave=False) -%}
+<article class="job-card{% if compact %} job-card-compact{% endif %}">
+  <img class="spark"
+       src="{{ url_for('static', filename='icons/' ~ ('sams-spark.svg' if job.brand == "Sam's Club" else 'spark-yellow-card.svg')) }}"
+       alt="{{ job.brand }}">
+  <div class="body">
+    <h3><a class="card-link" href="{{ url_for('job_detail', job_id=job.job_id) }}">{{ job.title }}</a></h3>
+    <div class="meta">
+      {% if job.is_salaried %}
+        <div>{{ job.store.city }}, {{ job.store.state }}</div>
+      {% else %}
+        {% if not job.store.is_office %}
+          <div>{{ job.store.banner }} #{{ job.store.store_number }}</div>
+        {% endif %}
+        <div>{{ job.store.city }}, {{ job.store.state }}&nbsp; {{ job.store.zip }}</div>
+      {% endif %}
+    </div>
+    <div class="pay">
+      {%- if not job.is_salaried %}{{ job.shift_label }} &bull; {% endif -%}
+      {{ job.pay_range }}
+    </div>
+    {% if not compact %}
+    <div class="actions">
+      <a class="pill" href="{{ url_for('job_detail', job_id=job.job_id) }}">Select <span>+</span></a>
+      {% if unsave %}
+        <form method="post" action="{{ url_for('unsave_job', job_id=job.job_id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ request.full_path }}">
+          <button type="submit" class="pill pill-on">Saved <span>&check;</span></button>
+        </form>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+</article>
+{%- endmacro %}

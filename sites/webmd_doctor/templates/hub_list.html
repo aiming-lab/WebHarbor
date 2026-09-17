@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% if state_name %} in {{ state_name }}{% endif %}{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb"><a href="{{ url_for('index') }}">WebMD Care</a><span class="sep">›</span><a href="{{ base_path.rsplit('/', 1)[0] }}">{{ title }}</a><span class="sep">›</span><span>{{ state_code }}</span></div>
+  <h1 class="page-title">{{ title }} in {{ state_name }}</h1>
+  <p class="page-sub">There are <strong>{{ total }}</strong> {{ title }} for you to review across <strong>{{ city_count }}</strong> cities and towns.</p>
+  {% if name_filter %}<p class="page-sub">Showing {{ title | lower }} whose name contains “{{ name_filter }}”. <a href="{{ base_path }}">Clear</a></p>{% endif %}
+  <form class="filter-form" method="get" action="{{ base_path }}">
+    {% if name_filter %}<input type="hidden" name="name" value="{{ name_filter }}">{% endif %}
+    <div class="filter-bar">
+      <div class="filter-item">
+        <button type="button" class="pill pill-primary{% if sortby != 'bestmatch' %} active{% endif %}" data-toggle="pop-sort" aria-expanded="false" aria-controls="pop-sort">Sort By <svg class="ic"><use href="#i-chevron"/></svg></button>
+        <div class="popover" id="pop-sort">
+          {% for key, label in hub_sort_options %}<label><input type="radio" name="sortby" value="{{ key }}" {% if sortby == key %}checked{% endif %}> {{ label }}</label>{% endfor %}
+        </div>
+      </div>
+      <div class="filter-item">
+        <button type="button" class="pill{% if minrating %} active{% endif %}" data-toggle="pop-rating" aria-expanded="false" aria-controls="pop-rating">Ratings <svg class="ic"><use href="#i-chevron"/></svg></button>
+        <div class="popover" id="pop-rating">
+          <label><input type="radio" name="minrating" value="" {% if not minrating %}checked{% endif %}> Any rating</label>
+          {% for n in (5, 4, 3, 2, 1) %}<label><input type="radio" name="minrating" value="{{ n }}" {% if minrating == n %}checked{% endif %}> {% with rating=n, small=true %}{% include "_stars.html" %}{% endwith %} {{ n }}{% if n < 5 %} &amp; up{% endif %}</label>{% endfor %}
+        </div>
+      </div>
+      <div class="filter-item"><button type="submit" class="pill pill-icon" title="Apply filters" aria-label="Apply filters"><svg class="ic"><use href="#i-sliders"/></svg></button></div>
+    </div>
+  </form>
+  <div class="section-label">All Results</div>
+  <div class="card-list">
+    {% for item in page.rows %}
+      {% set detail = url_for('hospital_detail', slug=item.slug) if kind == 'hospitals' else url_for('practice_detail', slug=item.slug) %}
+      <article class="hub-card">
+        <div>
+          <h3><a href="{{ detail }}">{{ item.name }}</a></h3>
+          <div class="sub">{{ counts[item.id].specialties | plural_word('Specialty', 'Specialties') }}, {{ counts[item.id].physicians | plural_word('Practicing Physician') }}</div>
+          <div class="rating-line">{% with rating=item.avg_rating, small=true %}{% include "_stars.html" %}{% endwith %} <a href="{{ detail }}#ratings">({{ item.ratings_count | plural_word('Rating') }})</a></div>
+          <div class="sub">{{ item.street }}, {{ item.city.name }}, {{ item.city.state }} {{ item.zip }}</div>
+          <div class="desc">{{ item.overview_text }}</div>
+        </div>
+        <div><a class="btn btn-ghost btn-pill btn-wide" href="{{ detail }}">View Profile</a></div>
+      </article>
+    {% else %}
+      <div class="panel empty">No {{ title | lower }} matched these filters.</div>
+    {% endfor %}
+  </div>
+  {% include "_pagination.html" %}
+</div>
+{% endblock %}

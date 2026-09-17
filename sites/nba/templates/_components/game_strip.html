@@ -1,0 +1,41 @@
+<section class="scoreboard-band">
+  <div class="game-strip nba-scoreboard">
+    <div class="strip-scroller">
+      {% for game in games[:6] %}
+        <div class="scoreboard-item">
+          {% if loop.index in [1, 3, 5, 6] %}
+            <a class="date-rail" href="{{ url_for('games', date=game_date_slug(game)) }}">
+              <strong>{{ game.game_date.strftime('%a') }}</strong>
+              <span>{{ game.game_date.strftime('%b') }}</span>
+              <b>{{ game.game_date.strftime('%d') }}</b>
+              <em>◎</em>
+            </a>
+          {% endif %}
+          <a class="strip-game score-tile" href="{{ url_for('game_detail', game_id=game.id) }}">
+            <div class="game-time">{{ 'Final' if game.status == 'Final' else game_time_label(game) }}</div>
+            <div class="series-note">{{ game_number_label(game) }}: {{ game_series_label(game) }}</div>
+            {% if game.arena == 'TBD' %}
+              <div class="score-row muted-team"><i></i><span>TBD</span></div>
+              <div class="score-row muted-team"><i></i><span>TBD</span></div>
+            {% else %}
+              <div class="score-row">
+                <span>{{ team_seed(game.away_team) }}</span>
+                <img src="{{ game.away_team.logo }}" alt="">
+                <strong>{{ game.away_team.name }}</strong>
+                {% if game.status == 'Final' %}<b>{{ game.away_score }}</b>{% endif %}
+              </div>
+              <div class="score-row">
+                <span>{{ team_seed(game.home_team) }}</span>
+                <img src="{{ game.home_team.logo }}" alt="">
+                <strong>{{ game.home_team.name }}</strong>
+                {% if game.status == 'Final' %}<b>{{ game.home_score }}</b>{% endif %}
+              </div>
+            {% endif %}
+            <em><span>▶</span> League Pass{% if game.broadcast %}<small>{{ game.broadcast }}</small>{% endif %}</em>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+    <a class="scoreboard-all" href="{{ url_for('games', view='all') }}">See All Games</a>
+  </div>
+</section>

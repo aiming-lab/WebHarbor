@@ -374,7 +374,10 @@ h1, h2, h3, h4 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
   gap: 1rem;
   margin: 2rem 0;
 }
-@media (max-width: 760px) { .subjects-pastel { grid-template-columns: repeat(2, 1fr); } }
+/* reviewer fix: the five-column grid did not reflow between 761px and the
+   desktop width, so the last card overhung the viewport at 768px */
+@media (max-width: 1000px) { .subjects-pastel { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 760px)  { .subjects-pastel { grid-template-columns: repeat(2, 1fr); } }
 .subject-pastel {
   aspect-ratio: 1;
   border-radius: 14px;
@@ -719,9 +722,10 @@ h1, h2, h3, h4 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
 }
 .filter-clear:hover { border-color: var(--phet-magenta); color: var(--phet-magenta); text-decoration: none; }
 
-.browse-results {}
+.browse-results { min-width: 0; }
 .browse-results-head {
   display: flex; align-items: center; gap: 0.75rem;
+  flex-wrap: wrap;
   margin-bottom: 1rem;
   border-bottom: 1px solid var(--c-border);
   padding-bottom: 0.75rem;
@@ -744,6 +748,8 @@ h1, h2, h3, h4 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
   text-transform: uppercase;
   letter-spacing: 0.04em;
   font-weight: 700;
+  overflow-wrap: anywhere;
+  min-width: 0;
 }
 .results-chip a {
   color: #fff; opacity: 0.85;
@@ -1000,7 +1006,13 @@ h1, h2, h3, h4 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
   text-decoration: none;
 }
 .language-card a:hover { background: var(--c-bg-alt); }
-.language-card.rtl a { direction: rtl; text-align: right; }
+/* Right-to-left languages: the native name is RTL, but the English language name
+   and the English "N simulations" line must stay left-to-right. Applying
+   direction:rtl to the whole card reversed those too, rendering "simulations 103". */
+.language-card.rtl a { text-align: right; }
+.language-card.rtl .language-native { direction: rtl; unicode-bidi: isolate; }
+.language-card.rtl .language-name,
+.language-card.rtl .language-count { direction: ltr; unicode-bidi: isolate; }
 .language-name { font-weight: 700; font-size: 0.95rem; color: var(--phet-blue); }
 .language-native { color: var(--c-muted); font-size: 0.85rem; }
 .language-count { font-size: 0.78rem; color: var(--phet-magenta); margin-top: 0.25rem; font-weight: 700; }
@@ -1207,3 +1219,136 @@ h1, h2, h3, h4 { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif; }
   font-size: 0.72rem;
   text-align: center;
 }
+
+/* ---------------------------------------------------------------------------
+   Responsive header (reviewer fix)
+   The desktop nav, search form and user menu previously stayed on one row at
+   every width, which on its own forced the document to ~837px and produced a
+   horizontal overflow on every page below that. Below 900px the nav collapses
+   behind a toggle, mirroring the upstream site's mobile behaviour.
+   --------------------------------------------------------------------------- */
+
+.nav-toggle {
+  display: none;
+  margin-left: auto;
+  background: transparent;
+  border: 0;
+  color: var(--c-text);
+  padding: 0.4rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+  line-height: 0;
+}
+.nav-toggle:hover { color: var(--phet-magenta); }
+.nav-toggle:focus-visible { outline: 2px solid var(--phet-magenta); outline-offset: 2px; }
+.nav-toggle .nav-toggle-x { display: none; }
+.nav-toggle[aria-expanded="true"] .nav-toggle-bars { display: none; }
+.nav-toggle[aria-expanded="true"] .nav-toggle-x { display: inline; }
+
+@media (max-width: 900px) {
+  .topbar-inner {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    padding: 0.5rem 1rem;
+  }
+  .brand { margin-right: auto; }
+  .brand-phet { height: 34px; }
+  .brand-cu { height: 30px; }
+  .brand-divider { height: 28px; }
+
+  .nav-toggle { display: inline-flex; order: 3; margin-left: 0; }
+  .search-form { order: 2; margin-left: 0; }
+  .user-menu { order: 1; }
+
+  /* the nav becomes a stacked panel on its own row, hidden until toggled */
+  .primary-nav {
+    order: 4;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    margin-left: 0;
+    border-top: 1px solid var(--c-border);
+    padding-bottom: 0.4rem;
+  }
+  .primary-nav.is-open { display: flex; }
+
+  .nav-item { display: block; }
+  .nav-item > a {
+    display: block;
+    padding: 0.7rem 0.25rem 0.35rem;
+    font-size: 0.82rem;
+  }
+
+  /* sub-links are always visible inside the open panel: hover menus do not
+     work on touch, and the benchmark agent must be able to reach them */
+  .nav-dropdown {
+    display: block;
+    position: static;
+    border: 0;
+    box-shadow: none;
+    min-width: 0;
+    padding: 0 0 0.35rem 0.9rem;
+    background: transparent;
+  }
+  .nav-dropdown a { padding: 0.4rem 0.25rem; font-size: 0.86rem; }
+  .nav-dropdown hr { margin: 0.3rem 0; }
+
+  /* the search field is absolutely positioned to the left of its button on
+     desktop, which pushes it off-screen in a narrow bar; inline it instead */
+  .search-form { position: static; flex: 1 1 auto; max-width: 260px; }
+  .search-form input[type=search] {
+    position: static;
+    transform: none;
+    visibility: visible;
+    width: 100%;
+    padding-left: 0.55rem;
+    padding-right: 0.55rem;
+    border-right: 1px solid var(--c-border-strong);
+    border-radius: var(--radius);
+  }
+  .search-form:hover input[type=search],
+  .search-form:focus-within input[type=search] { width: 100%; }
+}
+
+@media (max-width: 520px) {
+  .search-form { order: 4; max-width: none; flex-basis: 100%; }
+  .primary-nav { order: 5; }
+  .brand-cu, .brand-divider { display: none; }
+}
+
+/* reviewer fix: grid children default to min-width:auto, so a wide child kept
+   the simulation detail column from shrinking below ~456px on a phone. */
+.sim-detail-body > * { min-width: 0; }
+.sim-detail-main, .sim-detail-side { min-width: 0; }
+img { max-width: 100%; }
+
+/* reviewer fix: the detail tab strip did not wrap or scroll, so the last tab
+   overhung a phone viewport. Contain the overflow inside the strip itself. */
+.detail-tabs { overflow-x: auto; scrollbar-width: thin; -webkit-overflow-scrolling: touch; }
+.detail-tab { white-space: nowrap; flex: 0 0 auto; }
+@media (max-width: 520px) { .detail-tabs { gap: 1.25rem; } }
+
+/* Save-note field on the simulation detail side card (reviewer fix: the task
+   asks for a note and the API stores one, but the form had no way to enter it). */
+.save-note-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--c-text-muted);
+  margin-bottom: 0.3rem;
+}
+.save-note {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  margin-bottom: 0.6rem;
+  border: 1px solid var(--c-border-strong);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.88rem;
+  background: #fff;
+  color: var(--c-text);
+}
+.save-note:focus-visible { outline: 2px solid var(--phet-magenta); outline-offset: 1px; }

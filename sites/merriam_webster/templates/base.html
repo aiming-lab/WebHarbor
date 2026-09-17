@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Merriam-Webster | Dictionary{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-top">
+      <a class="brand" href="{{ url_for('index') }}">
+        <span class="brand-merriam">Merriam-</span><span class="brand-webster">Webster</span>
+        <span class="brand-tag">Since 1828</span>
+      </a>
+      <form class="search-form" action="{{ url_for('search') }}" method="get" autocomplete="off">
+        <input type="text" name="q" id="searchInput" placeholder="Search the dictionary"
+               value="{{ q if q is defined else '' }}" aria-label="Search">
+        <button type="submit">Search</button>
+        <ul class="autocomplete-list" id="acList" hidden></ul>
+      </form>
+    </div>
+    <nav class="header-nav">
+      <div class="container">
+        <ul>
+          <li><a href="{{ url_for('index') }}">Dictionary</a></li>
+          <li><a href="{{ url_for('thesaurus_detail', slug='happy') }}">Thesaurus</a></li>
+          <li><a href="{{ url_for('word_of_the_day') }}">Word of the Day</a></li>
+          <li><a href="{{ url_for('games_quizzes') }}">Games &amp; Quizzes</a></li>
+          {% if current_user.is_authenticated %}
+          <li class="nav-account"><a href="{{ url_for('account') }}">My Words</a></li>
+          <li><a href="{{ url_for('logout') }}">Log Out</a></li>
+          {% else %}
+          <li class="nav-account"><a href="{{ url_for('login') }}">Log In</a></li>
+          <li><a href="{{ url_for('register') }}">Sign Up</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <div class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-cols">
+      <div>
+        <strong>Merriam-Webster</strong><br>
+        <a href="{{ url_for('index') }}">Dictionary</a> ·
+        <a href="{{ url_for('thesaurus_detail', slug='happy') }}">Thesaurus</a> ·
+        <a href="{{ url_for('word_of_the_day') }}">Word of the Day</a>
+      </div>
+      <div>
+        <strong>Games</strong><br>
+        <a href="{{ url_for('games_quizzes') }}">All Games &amp; Quizzes</a>
+      </div>
+      <div>
+        <strong>Account</strong><br>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}">My Words</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Log In</a> · <a href="{{ url_for('register') }}">Sign Up</a>
+        {% endif %}
+      </div>
+    </div>
+    <div class="container" style="margin-top:18px; color:#8a99a3;">
+      &copy; {{ current_year }} Merriam-Webster mirror — offline benchmark environment.
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      var input = document.getElementById('searchInput');
+      var list = document.getElementById('acList');
+      if (!input || !list) return;
+      var timer = null;
+      input.addEventListener('input', function () {
+        var q = input.value.trim();
+        clearTimeout(timer);
+        if (q.length < 2) { list.hidden = true; list.innerHTML = ''; return; }
+        timer = setTimeout(function () {
+          fetch('{{ url_for("autocomplete") }}?q=' + encodeURIComponent(q))
+            .then(function (r) { return r.json(); })
+            .then(function (words) {
+              if (!words.length) { list.hidden = true; return; }
+              list.innerHTML = '';
+              words.forEach(function (w) {
+                var li = document.createElement('li');
+                li.textContent = w;
+                li.addEventListener('mousedown', function () {
+                  input.value = w;
+                  input.form.submit();
+                });
+                list.appendChild(li);
+              });
+              list.hidden = false;
+            });
+        }, 150);
+      });
+      document.addEventListener('click', function (e) {
+        if (!list.contains(e.target) && e.target !== input) list.hidden = true;
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Best {{ specialty.plural }} in {{ state_name }}{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb"><a href="{{ url_for('specialty_index') }}">Specialties</a><span class="sep">›</span><a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.name }}</a><span class="sep">›</span><span>{{ state_code }}</span></div>
+  <h1 class="page-title">Best {{ specialty.plural }} in {{ state_name }}</h1>
+  <p class="page-sub">There are <strong>{{ total }} {{ specialty.plural }}</strong> for you to review across <strong>{{ cities | length }} cities and towns</strong></p>
+  <div class="chip-row">
+    {% for city in cities %}<a href="{{ url_for('specialty_city', spec=specialty.slug, state=state_slug, city=city.slug) }}">{{ city.name }} ({{ city.count }})</a>{% endfor %}
+  </div>
+  {% include "_filter_bar.html" %}
+  <div class="section-label">All Results</div>
+  <div class="card-list">
+    {% for row in page.rows %}{% with doctor=row.doctor %}{% include "_physician_card.html" %}{% endwith %}{% endfor %}
+  </div>
+  {% include "_pagination.html" %}
+</div>
+{% endblock %}

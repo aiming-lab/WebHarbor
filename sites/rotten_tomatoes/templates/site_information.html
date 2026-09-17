@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ page|capitalize }} | Rotten Tomatoes{% endblock %}
+{% block extra_head %}<link rel="stylesheet" href="/static/css/content.css">{% endblock %}
+{% block content %}
+<article class="content-page feature-page">
+{% if page == 'scores' %}
+    <h1>About the Scores</h1>
+    <h2>Tomatometer</h2><p>The Tomatometer reports the share of critic reviews that are positive. A score of 60% or more is Fresh; a lower score is Rotten.</p>
+    <h2>Popcornmeter</h2><p>The audience score reports the share of positive audience ratings. Verified ratings and all-audience ratings are different groups.</p>
+    <h2>Certified Fresh</h2><p>This is a separate designation with review-count and critic-coverage requirements. A high percentage alone does not grant it. Missing scores are shown as unavailable, never as zero.</p>
+    <p><a href="https://www.rottentomatoes.com/about" target="_blank" rel="noopener noreferrer">Scoring definitions from Rotten Tomatoes ↗</a></p>
+{% elif page == 'help' %}
+    <h1>Help</h1>
+    <h2>Find something to watch</h2><p>Browse the homepage collections, use Movies to filter the movie catalog, or search for a title or person. TV Shows opens the television guide.</p>
+    <h2>Your movie watchlist and ratings</h2><p>Sign in or register for a local account. Open a movie to save it, leave a rating, or write a review. Your account contains your watchlist, ratings and profile settings.</p>
+    <h2>Features and video</h2><p>News contains feature summaries. Full editorial articles, video streams and ticket purchases use the original services and require an internet connection.</p>
+{% else %}
+    <h1>About this edition</h1><p>Explore movies and television, critic and audience scores, curated lists and entertainment features.</p>
+    <p>This is the WebHarbor edition of Rotten Tomatoes, with a fixed catalog and local demo accounts. Homepage selections and rankings follow the saved source snapshot. They are not a live chart.</p>
+    <p><a href="/scores">Learn about the scores</a> · <a href="/help">Help using this edition</a></p>
+{% endif %}
+</article>
+{% endblock %}

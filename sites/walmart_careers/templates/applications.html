@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}My applications | Walmart Careers{% endblock %}
+{% block content %}
+<section>
+  <div class="wrap">
+    <h1 style="font-size:40px;font-weight:400">My applications ({{ rows|length }})</h1>
+    {% if rows %}
+      <div class="table-scroll" role="region" aria-label="Submitted applications" tabindex="0">
+      <table class="data">
+        <caption>Submitted applications</caption>
+        <thead>
+          <tr><th>Role</th><th>Location</th><th>Confirmation number</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for row in rows %}
+            <tr>
+              <td><a href="{{ url_for('job_detail', job_id=row.job_id) }}">{{ row.job.title }}</a></td>
+              <td>{{ row.job.store.city }}, {{ row.job.store.state }}</td>
+              <td>{{ row.confirmation_no }}</td>
+              <td>{{ row.status }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      </div>
+    {% else %}
+      <div class="empty-panel" style="margin-top:24px">
+        <h2>No applications yet</h2>
+        <p>Once you submit an application it shows up here with its confirmation number.</p>
+        <a class="btn" href="{{ url_for('results') }}">Browse open roles</a>
+      </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

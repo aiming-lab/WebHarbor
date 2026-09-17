@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Rotten Tomatoes{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="/static/css/home.css">
+    <script src="/static/js/home.js" defer></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <a class="skip-link" href="#main-content">Skip to Main Content</a>
+    {% set extra_links = header_links|default([]) %}
+    {% if home is defined and home.header_links is defined %}{% set extra_links = home.header_links %}{% endif %}
+    <header class="site-header rt-chrome">
+        <nav class="navbar" aria-label="Main">
+            <div class="nav-container">
+                <details class="mobile-menu" data-nav-menu>
+                    <summary><span aria-hidden="true">☰</span><span class="home-sr-only">Navigation menu</span></summary>
+                    <div class="mobile-menu-panel">
+                        <div class="mobile-nav-group"><strong>Movies</strong><a href="/browse/movies_in_theaters/">In Theaters</a><a href="/browse/movies_at_home/">Streaming</a><a href="/browse/movies/">All Movies</a></div>
+                        <div class="mobile-nav-group"><a href="/browse/tv/">TV Shows</a><a href="/news/">News</a>{% for link in extra_links %}<a href="{{ link.href }}">{{ link.title }}</a>{% endfor %}<a href="/about">About Rotten Tomatoes</a><a href="/scores">About the Scores</a><a href="/help">Help</a></div>
+                        <div class="mobile-nav-group">
+                            {% if current_user.is_authenticated %}
+                            <a href="/account" class="account-identity" title="{{ current_user.name }}">My Account: {{ current_user.name }}</a><a href="/user/watchlist">My Watchlist</a>
+                            <form action="/logout" method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Logout</button></form>
+                            {% else %}<a href="/login">Sign In</a><a href="/register">Register</a>{% endif %}
+                        </div>
+                    </div>
+                </details>
+                <a href="/" class="nav-logo"><img src="/static/external_cache/rt_brand/logo.png" alt="Rotten Tomatoes" width="156" height="47"></a>
+                <form action="/search" method="GET" class="search-form" role="search">
+                    <button type="submit" aria-label="Submit search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5"/><path d="m15 15 6 6"/></svg></button>
+                    <input type="search" name="search" aria-label="Search movies and people" placeholder="Search" value="{{ request.args.get('search', '') }}">
+                </form>
+                <div class="nav-account">
+                    {% if current_user.is_authenticated %}
+                    <a href="/account" class="account-identity" title="{{ current_user.name }}">My Account: {{ current_user.name }}</a>
+                    <a href="/user/watchlist">My Watchlist</a>
+                    <form action="/logout" method="POST"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Logout</button></form>
+                    {% else %}
+                    <a href="/about">About Rotten Tomatoes</a><a href="/scores">About the Scores</a><a href="/login">Sign In</a><a href="/register">Register</a>
+                    {% endif %}
+                </div>
+                <div class="nav-links">
+                    <details class="desktop-movies-menu" data-nav-menu>
+                        <summary>Movies</summary>
+                        <div class="desktop-nav-panel"><a href="/browse/movies_in_theaters/">In Theaters</a><a href="/browse/movies_at_home/">Streaming</a><a href="/browse/movies/">All Movies</a><a href="/browse/movies/?certified_fresh=true">Certified Fresh Movies</a></div>
+                    </details>
+                    <a href="/browse/tv/">TV Shows</a>
+                    {% for link in extra_links %}<a href="{{ link.href }}">{{ link.title }}{% if link.badge|default('') %}<span class="nav-link-badge">{{ link.badge }}</span>{% endif %}</a>{% endfor %}
+                    <a href="/news/">News</a>
+                    <a href="/browse/movies_in_theaters/">In Theaters</a>
+                </div>
+            </div>
+        </nav>
+        {% set trending_items = home.trending if home is defined and home.trending else trending|default([]) %}
+        <div class="trending-bar"><strong>Trending on RT</strong>{% if trending_items %}{% for item in trending_items %}<a href="{{ item.href }}">{{ item.title }}</a>{% endfor %}{% else %}<a href="/browse/movies/?certified_fresh=true">Certified Fresh Movies</a><a href="/browse/movies_at_home/">What to Watch at Home</a><a href="/news/">Movie &amp; TV News</a>{% endif %}</div>
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-messages" role="status">
+        {% for category, message in messages %}<div class="flash flash-{{ category }}">{{ message }}</div>{% endfor %}
+    </div>
+    {% endif %}
+    {% endwith %}
+    <main class="main-content" id="main-content">{% block content %}{% endblock %}</main>
+    <footer class="footer rt-footer">
+        <div class="footer-container">
+            <div class="rt-footer-columns">
+                <nav aria-label="About and help"><a href="/help">Help</a><a href="/about">About Rotten Tomatoes</a><a href="/scores">About the Scores</a></nav>
+                <nav aria-label="Browse movies and television"><a href="/browse/movies_in_theaters/">Movies in Theaters</a><a href="/browse/movies_at_home/">Movies at Home</a><a href="/browse/movies/">All Movies</a><a href="/browse/tv/">TV Shows</a></nav>
+                <div class="rt-footer-news"><h2>Movie &amp; TV News</h2><p>Find movie and TV stories, guides, and recommendations.</p><a href="/news/" class="rt-footer-button">Explore the News</a></div>
+                <nav aria-label="Your account"><h2>Your Account</h2>{% if current_user.is_authenticated %}<a href="/account">My Account</a><a href="/user/watchlist">My Watchlist</a>{% else %}<a href="/login">Sign In</a><a href="/register">Register</a>{% endif %}</nav>
+            </div>
+            <p class="footer-copy">Rotten Tomatoes Mirror — WebHarbor. A fixed catalog with local demo accounts. <a href="/about">About this mirror</a></p>
+        </div>
+    </footer>
+</body>
+</html>

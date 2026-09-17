@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}My Ratings | Rotten Tomatoes{% endblock %}
+{% block content %}
+<div class="profile-page">
+    <h1>My Ratings</h1>
+
+    {% set active_tab = 'ratings' %}
+    {% include 'profile_tabs.html' %}
+
+    {% if ratings %}
+    <div class="movie-grid">
+        {% for rating in ratings %}
+        {% set movie = rating.movie %}
+        <div class="movie-card-rated">
+            <a href="/m/{{ movie.slug }}" class="movie-card">
+                <div class="card-poster">
+                    <img src="{{ movie.poster_image }}" alt="{{ movie.title }}" onerror="this.onerror=null;this.src='/static/icons/placeholder.png'">
+                </div>
+                <div class="card-title">{{ movie.title }}</div>
+            </a>
+            <div class="user-star-rating">
+                {% for i in range(1, 6) %}
+                    {% if i <= rating.score|int %}★{% else %}☆{% endif %}
+                {% endfor %}
+                <span class="rating-value">{{ rating.score }}/5</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="empty-state">You haven't rated any movies yet.</p>
+    <a href="/browse/movies/" class="btn btn-primary">Browse Movies</a>
+    {% endif %}
+</div>
+{% endblock %}

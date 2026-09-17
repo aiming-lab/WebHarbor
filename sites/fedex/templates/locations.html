@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Locations{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Drop-off locations</div>
+      <h1>Find nearby staffed counters and pickup points</h1>
+    </div>
+  </section>
+  <section class="card">
+    <form method="get" class="form-grid two">
+      <div class="field">
+        <label for="q">Search city, state, or location type</label>
+        <input id="q" name="q" value="{{ query }}" placeholder="City, state or location type" maxlength="180">
+      </div>
+      <div class="field" style="align-self:end">
+        <input type="submit" value="Search locations">
+      </div>
+    </form>
+  </section>
+  {% if query_rejected %}
+    <div class="empty-state" role="status">That location search is longer than this local demo accepts. Enter 180 characters or fewer.</div>
+  {% endif %}
+  <section class="location-list" style="margin-top:1rem">
+    {% for location in locations %}
+      <article class="card media">
+        <img src="{{ url_for('static', filename='external_cache/fedex-home/icon_retail_services_purple_med.png') }}" alt="" width="64" height="65">
+        <div class="stack">
+          <div class="badge-row">
+            <span class="badge">{{ location.location_type }}</span>
+            <span class="badge orange">{{ location.hours }}</span>
+          </div>
+          <h2><a href="{{ url_for('location_detail', location_slug=location.slug) }}">{{ location.name }}</a></h2>
+          <p class="muted">{{ location.address }} · {{ location.city }}, {{ location.state }}</p>
+          <div class="chip-row">
+            {% for service in location.services %}
+              <span class="chip badge">{{ service }}</span>
+            {% endfor %}
+          </div>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

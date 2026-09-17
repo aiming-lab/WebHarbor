@@ -1,0 +1,923 @@
+{
+  "schema": "imdb-public-task-excerpts/v1",
+  "scope": "Ten retained task executions selected from thirteen sealed main runs. Retired tasks3/4/8 and all guided runs are excluded from this table.",
+  "evidence_limitations": [
+    "One final screenshot per task is an excerpt, not evidence of the entire execution. Complete original events, step captures, DOM and database snapshots are retained privately.",
+    "Final answers are recorded runner claims. Both deterministic scoring and independent Claude review pass these ten frozen main executions; neither result certifies source fidelity or visual acceptance.",
+    "The retained task17 r1 pilot retains its actual executed version; it is not relabeled as r2 or as an execution at a later code head.",
+    "Only successful non-observe, non-scroll recorded actions are counted as substantive; failed attempts, bootstrap activity and preparation/bookkeeping operations are excluded.",
+    "The runner was isolated from implementation, hidden answer keys and scoring outputs, but retained its own preceding UI context, including retired tasks. These are not ten fresh-model-context trials and do not establish a model success rate."
+  ],
+  "task_quality_assessment": {
+    "at_least_3_tasks_with_5_actions": {
+      "status": "OBSERVED_PATH_THRESHOLD_MET",
+      "qualifying_task_ids": [
+        "IMDb--9",
+        "IMDb--10",
+        "IMDb--12",
+        "IMDb--14",
+        "IMDb--15",
+        "IMDb--16",
+        "IMDb--17"
+      ],
+      "observed_count": 7,
+      "limitation": "These are successful actions on the recorded paths. They do not prove that every legal solution requires at least five actions; shorter legal routes were not exhaustively bounded."
+    },
+    "at_least_2_multistep_reasoning_or_comparisons": {
+      "status": "SUPPORTED_BY_TASKS_AND_RECORDED_UI_PATHS",
+      "examples": [
+        {
+          "task_id": "IMDb--0",
+          "evidence": "Two title information pages were opened; the final answer compares the two runtimes."
+        },
+        {
+          "task_id": "IMDb--14",
+          "evidence": "Two title detail pages were opened; the final answer compares both ratings and worldwide grosses."
+        },
+        {
+          "task_id": "IMDb--12",
+          "evidence": "Separate Crime movie and TV-series result sets were inspected; the final answer compares their top ratings."
+        }
+      ],
+      "limitation": "This supports the performed comparison/reasoning structure, not final grading correctness or uniform task difficulty."
+    },
+    "frontier_model_challenge": {
+      "status": "NOT_VERIFIED",
+      "design_candidates": [
+        "IMDb--10",
+        "IMDb--15",
+        "IMDb--16"
+      ],
+      "design_reason": "Multi-condition selection, tied leaders or account-specific state changes can introduce reasoning and precision demands.",
+      "limitation": "No empirical frontier difficulty conclusion is established here. A single recovered selector error is not evidence of task-level reasoning difficulty."
+    },
+    "low_depth_observation": "Tasks3/4 were retired because the first title detail provided all requested values; task8 was retired for a stable common-knowledge shortcut. Original runs remain historical evidence."
+  },
+  "tasks": [
+    {
+      "task_id": "IMDb--0",
+      "source_run": "task-0/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "00c6abd29f835347b297ed4043461f5c29aa0d0c77ff82dba83d6dc2eae8ceac",
+      "original_manifest_size": 8856,
+      "recorded_step_count": 5,
+      "successful_substantive_action_count": 4,
+      "successful_substantive_step_indices": [
+        0,
+        1,
+        2,
+        3
+      ],
+      "excluded_steps": {
+        "observe": [
+          4
+        ],
+        "scroll": [],
+        "failed": []
+      },
+      "recorded_failures": [],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "ui_path_summary": "Home → Top 250 Movies → The Shawshank Redemption → chart → The Dark Knight.",
+      "visited_relative_routes": [
+        "/",
+        "/chart/top",
+        "/title/tt0111161",
+        "/chart/top",
+        "/title/tt0468569"
+      ],
+      "final_answer": "#1: The Shawshank Redemption — 142 minutes, MPAA R. #3: The Dark Knight — 152 minutes, MPAA PG-13. The Dark Knight has the longer runtime, by 10 minutes.",
+      "representative_image": {
+        "path": "IMDb--0-final.jpg",
+        "sha256": "a0c108d08490c7c2b261a635c36c59b25be62143251a8f31eee8f7fdb299059e",
+        "size": 77141,
+        "original_jpeg_path": "screenshots/step_005.source.jpg",
+        "original_png_path": "screenshots/step_005.png",
+        "original_png_sha256": "dc117bde2ac98ee737d132ab159e60e9872902f2429a6589d0fbd1f606cee318",
+        "original_png_size": 363681,
+        "width": 1470,
+        "height": 836,
+        "trajectory_step": 4,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known."
+      },
+      "scorer_evidence": [
+        "Movie chart and both title pages visited; runtime, MPAA and comparison match",
+        "All business tables are unchanged"
+      ],
+      "native_result_sha256": "567d06b82c4605d7911c7da21ffab4ba2d085a62efbc72c71c65f562afbe0907"
+    },
+    {
+      "task_id": "IMDb--2",
+      "source_run": "task-2/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "24172de46845e45f4b648c3a5829a8ccc820e50f3bc5f7ed71e5d24a5757be81",
+      "original_manifest_size": 9684,
+      "recorded_step_count": 6,
+      "successful_substantive_action_count": 4,
+      "successful_substantive_step_indices": [
+        0,
+        2,
+        3,
+        4
+      ],
+      "excluded_steps": {
+        "observe": [
+          1,
+          5
+        ],
+        "scroll": [],
+        "failed": []
+      },
+      "recorded_failures": [
+        {
+          "kind": "BOOKKEEPING",
+          "summary": "The runner recorded that manifest creation first targeted an already-existing task-0 manifest and was rejected with EEXIST; the helper was then called with explicit task-2 parameters. This disclosure was appended at sealing."
+        }
+      ],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "ui_path_summary": "Home/menu → Domestic box office → Avengers: Endgame → title details.",
+      "visited_relative_routes": [
+        "/",
+        "/chart/boxoffice",
+        "/title/tt4154796",
+        "/title/tt4154796#title-details"
+      ],
+      "final_answer": "The first-ranked movie on Domestic box office is Avengers: Endgame (2019). Its displayed production budget is $356.0M.",
+      "representative_image": {
+        "path": "IMDb--2-final.jpg",
+        "sha256": "85747a6e090c616889b333d12bfb8c05db76f1d5bf8e5d806ccc27ed5326034a",
+        "size": 39573,
+        "original_jpeg_path": "screenshots/step_006.source.jpg",
+        "original_png_path": "screenshots/step_006.png",
+        "original_png_sha256": "b53a82c31194c09949d084b9beba810f19f20ecb3cbe0d70b506aa47cb0b44ca",
+        "original_png_size": 110324,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 5,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known.",
+        "prior_own_ui_runs": [
+          "IMDb--3",
+          "IMDb--17",
+          "IMDb--0"
+        ]
+      },
+      "scorer_evidence": [
+        "Catalog cumulative-domestic chart winner and title-page budget match",
+        "All business tables are unchanged"
+      ],
+      "native_result_sha256": "2d41bf497e69db20cfe0b8794fbef0eab6b0d943342716cfe6d2c6450d34c2bf"
+    },
+    {
+      "task_id": "IMDb--7",
+      "source_run": "task-7/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "1d76438601213b64f14fdb48ffafaa02cbb3ced1c7547ac977b5853a0161d0ef",
+      "original_manifest_size": 9315,
+      "recorded_step_count": 5,
+      "successful_substantive_action_count": 3,
+      "successful_substantive_step_indices": [
+        0,
+        1,
+        2
+      ],
+      "excluded_steps": {
+        "observe": [
+          4
+        ],
+        "scroll": [
+          3
+        ],
+        "failed": []
+      },
+      "recorded_failures": [],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "ui_path_summary": "Home search → Christopher Nolan search results → Nolan profile and Director filmography.",
+      "visited_relative_routes": [
+        "/",
+        "/search?s=all&q=Christopher+Nolan",
+        "/name/nm0634240"
+      ],
+      "final_answer": "Among movies in Christopher Nolan’s Director filmography on this mirror, The Dark Knight (2008) has the highest IMDb rating: 9.1/10. No other listed Director movie ties that rating.",
+      "representative_image": {
+        "path": "IMDb--7-final.jpg",
+        "sha256": "78beb4229bc00192e1aadaf9c42dcc78967e67a57411331298a1f970159cd8da",
+        "size": 140962,
+        "original_jpeg_path": "screenshots/step_005.source.jpg",
+        "original_png_path": "screenshots/step_005.png",
+        "original_png_sha256": "a27f66156ba45c74cf8f087459388b5f4a8dcf46d827e2b6f82a0d50a0dc6bb0",
+        "original_png_size": 345165,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 4,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known.",
+        "prior_own_ui_runs": [
+          "IMDb--3",
+          "IMDb--17",
+          "IMDb--0",
+          "IMDb--2",
+          "IMDb--4"
+        ]
+      },
+      "scorer_evidence": [
+        "Director filmography used; all highest-rated movie ties include title, year and rating",
+        "All business tables are unchanged"
+      ],
+      "native_result_sha256": "786927e5c6e4ead9db90ebcacfc5a447827cb2e7532064e51d5b2e364ea03703"
+    },
+    {
+      "task_id": "IMDb--9",
+      "source_run": "task-9/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "fcb4c98f9399d21029cd83d941552d6f2efe5bc03e92192ab796d7bfe6e47ce5",
+      "original_manifest_size": 12921,
+      "recorded_step_count": 10,
+      "successful_substantive_action_count": 6,
+      "successful_substantive_step_indices": [
+        0,
+        3,
+        4,
+        5,
+        6,
+        7
+      ],
+      "excluded_steps": {
+        "observe": [
+          2,
+          9
+        ],
+        "scroll": [
+          8
+        ],
+        "failed": [
+          1
+        ]
+      },
+      "recorded_failures": [
+        {
+          "kind": "UI_ACTION",
+          "step": 1,
+          "action": "select_option",
+          "summary": "The Type label selector matched no element and timed out. A later select action at step 3 succeeded."
+        }
+      ],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "ui_path_summary": "Home → Advanced title search → filtered Drama movie results.",
+      "visited_relative_routes": [
+        "/",
+        "/search/title",
+        "/search/title?title_type=movie&year_from=&year_to=&rating_min=8.5&genre=drama&sort=rating"
+      ],
+      "final_answer": "Three highest-rated matching titles, in descending rating order: The Shawshank Redemption — 9.3/10; The Godfather — 9.2/10; 12 Angry Men — 9.0/10.",
+      "representative_image": {
+        "path": "IMDb--9-final.jpg",
+        "sha256": "b3beac383d00e1e869ae2ccdc486117498c233fb1d2cd695848b72b54d1cd9c7",
+        "size": 107070,
+        "original_jpeg_path": "screenshots/step_010.source.jpg",
+        "original_png_path": "screenshots/step_010.png",
+        "original_png_sha256": "8232261d1f44f7fcaf0d5a2fd9f2693e22ccc8e8e0dd2449e446d099b6fc7bf1",
+        "original_png_size": 340598,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 9,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known.",
+        "prior_own_ui_runs": [
+          "IMDb--3",
+          "IMDb--17",
+          "IMDb--0",
+          "IMDb--2",
+          "IMDb--4",
+          "IMDb--7",
+          "IMDb--8"
+        ]
+      },
+      "scorer_evidence": [
+        "Specified Advanced search submitted; three titles satisfy rank order and cutoff-tie policy",
+        "All business tables are unchanged"
+      ],
+      "native_result_sha256": "e75329d632a0997716bc42acc43f59e74e8c8f17606b5e72206fbb392350d922"
+    },
+    {
+      "task_id": "IMDb--10",
+      "source_run": "task-10/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "d121b83d67ac70191e770c18220e17a9d2bbd8ff9fa0368ecc07fcc2008aaa3a",
+      "original_manifest_size": 14205,
+      "recorded_step_count": 15,
+      "successful_substantive_action_count": 14,
+      "successful_substantive_step_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13
+      ],
+      "excluded_steps": {
+        "observe": [
+          14
+        ],
+        "scroll": [],
+        "failed": []
+      },
+      "recorded_failures": [],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "ui_path_summary": "Home → Advanced title search → filtered 1990s Crime results → Fight Club details → results → Pulp Fiction details.",
+      "visited_relative_routes": [
+        "/",
+        "/search/title",
+        "/search/title?title_type=movie&year_from=1990&year_to=1999&rating_min=8.5&genre=crime&sort=rating",
+        "/title/tt0137523",
+        "/title/tt0137523#title-details",
+        "/title/tt0137523",
+        "/search/title?title_type=movie&year_from=1990&year_to=1999&rating_min=8.5&genre=crime&sort=rating",
+        "/title/tt0110912",
+        "/title/tt0110912#title-details"
+      ],
+      "final_answer": "The highest-rated results are tied at 8.8/10: Fight Club (1999) — director David Fincher; displayed worldwide gross $102.4M. Pulp Fiction (1994) — director Quentin Tarantino; displayed worldwide gross $213.9M.",
+      "representative_image": {
+        "path": "IMDb--10-final.jpg",
+        "sha256": "17876a0661e1566310f0c4c0dde13f20eb899e1086cf422727ad6e50f73efb16",
+        "size": 53156,
+        "original_jpeg_path": "screenshots/step_015.source.jpg",
+        "original_png_path": "screenshots/step_015.png",
+        "original_png_sha256": "269bb3d14eba0394282f9346d4fa57deeface87502100d562ef215da2c0c180e",
+        "original_png_size": 133859,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 14,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known.",
+        "prior_own_ui_runs": [
+          "IMDb--3",
+          "IMDb--17",
+          "IMDb--0",
+          "IMDb--2",
+          "IMDb--4",
+          "IMDb--7",
+          "IMDb--8",
+          "IMDb--9"
+        ]
+      },
+      "scorer_evidence": [
+        "All Advanced search constraints observed; all highest-rating ties bind directors and worldwide gross",
+        "All business tables are unchanged"
+      ],
+      "native_result_sha256": "bd7a5845eff9f0d37012a15bb1db4eb4e4e61b628d3335786eff0f8bc4ddf60a"
+    },
+    {
+      "task_id": "IMDb--12",
+      "source_run": "task-12/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "c43841e16035533b97bcadc019e84e68316b1fc893eb2b426fa26d36c9310bec",
+      "original_manifest_size": 12436,
+      "recorded_step_count": 11,
+      "successful_substantive_action_count": 9,
+      "successful_substantive_step_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8
+      ],
+      "excluded_steps": {
+        "observe": [
+          10
+        ],
+        "scroll": [
+          9
+        ],
+        "failed": []
+      },
+      "recorded_failures": [],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "ui_path_summary": "Home → The Godfather → Crime genre → Advanced title search → Crime movie results → Crime TV-series results.",
+      "visited_relative_routes": [
+        "/",
+        "/title/tt0068646",
+        "/genre/crime",
+        "/search/title",
+        "/search/title?title_type=movie&year_from=&year_to=&rating_min=&genre=crime&sort=rating",
+        "/search/title?title_type=tvSeries&year_from=&year_to=&rating_min=&genre=crime&sort=rating"
+      ],
+      "final_answer": "Highest-rated Crime movie: The Godfather (1972), 9.2/10. Highest-rated Crime TV series: Breaking Bad (2008), 9.5/10. Neither group has a tie at its highest rating. The TV-series group has the higher top rating, by 0.3 points.",
+      "representative_image": {
+        "path": "IMDb--12-final.jpg",
+        "sha256": "7d725f7fac13510983aa18169804611d44d9afe73724f3ae2a18b4ba953f98a8",
+        "size": 100369,
+        "original_jpeg_path": "screenshots/step_011.source.jpg",
+        "original_png_path": "screenshots/step_011.png",
+        "original_png_sha256": "a54dbc5f00cb9554dc638ec843dc3bd6436997ea90f0a2d7d7432c22b6029c7e",
+        "original_png_size": 312178,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 10,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known.",
+        "prior_own_ui_runs": [
+          "IMDb--3",
+          "IMDb--17",
+          "IMDb--0",
+          "IMDb--2",
+          "IMDb--4",
+          "IMDb--7",
+          "IMDb--8",
+          "IMDb--9",
+          "IMDb--10"
+        ]
+      },
+      "scorer_evidence": [
+        "Crime genre visited; both type groups, complete top ties, years, ratings and group comparison match",
+        "All business tables are unchanged"
+      ],
+      "native_result_sha256": "adc1bd71eda68563dae2daac083e4bf516a0f27272ab7a7f8797d945559c74c3"
+    },
+    {
+      "task_id": "IMDb--14",
+      "source_run": "task-14/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "310b61ee13ce68d2374961ea21c00b460cdb3df3b913d38396309b3aabf1751f",
+      "original_manifest_size": 10174,
+      "recorded_step_count": 7,
+      "successful_substantive_action_count": 6,
+      "successful_substantive_step_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5
+      ],
+      "excluded_steps": {
+        "observe": [
+          6
+        ],
+        "scroll": [],
+        "failed": []
+      },
+      "recorded_failures": [],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "ui_path_summary": "Home → The Dark Knight details → Inception search → Inception details.",
+      "visited_relative_routes": [
+        "/",
+        "/title/tt0468569",
+        "/title/tt0468569#title-details",
+        "/search?s=all&q=Inception",
+        "/title/tt1375666",
+        "/title/tt1375666#title-details"
+      ],
+      "final_answer": "The Dark Knight (2008): IMDb rating 9.1/10; displayed worldwide gross $1.0B. Inception (2010): IMDb rating 8.8/10; displayed worldwide gross $839.8M. The Dark Knight has both the higher rating and the larger worldwide gross; neither comparison is tied.",
+      "representative_image": {
+        "path": "IMDb--14-final.jpg",
+        "sha256": "1b0570d0246c9787b7b73538b4cdf3fb456afadba830b2581d128f258dcf7cef",
+        "size": 53914,
+        "original_jpeg_path": "screenshots/step_007.source.jpg",
+        "original_png_path": "screenshots/step_007.png",
+        "original_png_sha256": "3572395d0b104d25438d8796ef68edbc79522b6c66aebf1990185651f658d698",
+        "original_png_size": 136556,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 6,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known.",
+        "prior_own_ui_runs": [
+          "IMDb--3",
+          "IMDb--17",
+          "IMDb--0",
+          "IMDb--2",
+          "IMDb--4",
+          "IMDb--7",
+          "IMDb--8",
+          "IMDb--9",
+          "IMDb--10",
+          "IMDb--12"
+        ]
+      },
+      "scorer_evidence": [
+        "Both movie pages visited; ratings and worldwide grosses bind correctly and both comparisons match",
+        "All business tables are unchanged"
+      ],
+      "native_result_sha256": "8a137f66480359994357bcf5f4dd26b9d27471f4ed1330d1c769a9965517ec30"
+    },
+    {
+      "task_id": "IMDb--15",
+      "source_run": "task-15/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "9017c2ea6d65e8dddf57f7b12015cd294d468fd89b648034ecf8af7a6d15d5ca",
+      "original_manifest_size": 14022,
+      "recorded_step_count": 14,
+      "successful_substantive_action_count": 12,
+      "successful_substantive_step_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        11,
+        12
+      ],
+      "excluded_steps": {
+        "observe": [
+          10,
+          13
+        ],
+        "scroll": [],
+        "failed": []
+      },
+      "recorded_failures": [],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "7e46417c886d4ee6ba63bcb7bfbc898863cdbabacac3e186b092c0e534e33404",
+      "ui_path_summary": "Sign in → Bob’s Watchlist → candidate title details → Watchlist removal → remaining Watchlist.",
+      "visited_relative_routes": [
+        "/",
+        "/login",
+        "/",
+        "/list/watchlist",
+        "/title/tt0386676",
+        "/list/watchlist",
+        "/title/tt0903747",
+        "/list/watchlist",
+        "/title/tt0944947",
+        "/list/watchlist"
+      ],
+      "final_answer": "Removed Game of Thrones (2011), a TV series with the qualifying genre Fantasy. It was the earliest qualifying series in Bob’s initial Watchlist. Confirmed it is no longer in Bob Chen’s Watchlist; Breaking Bad, Stranger Things, and The Office remain.",
+      "representative_image": {
+        "path": "IMDb--15-final.jpg",
+        "sha256": "d19d0ab97dcc7b2489b5b9035812bf7aa3ffadc12ae091b479fbb825a64e746c",
+        "size": 45337,
+        "original_jpeg_path": "screenshots/step_014.source.jpg",
+        "original_png_path": "screenshots/step_014.png",
+        "original_png_sha256": "43c3db57b58d37f97f3f1d26969e5bee5d819ca0305bb6f2c409ee5970bf4ff5",
+        "original_png_size": 129013,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 13,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known.",
+        "prior_own_ui_runs": [
+          "IMDb--3",
+          "IMDb--17",
+          "IMDb--0",
+          "IMDb--2",
+          "IMDb--4",
+          "IMDb--7",
+          "IMDb--8",
+          "IMDb--9",
+          "IMDb--10",
+          "IMDb--12",
+          "IMDb--14"
+        ]
+      },
+      "scorer_evidence": [
+        "Bob's initial Watchlist rule selects the deleted series; exactly that entry was removed",
+        "Local removal and subsequent confirmation observed; title, year and qualifying genres match"
+      ],
+      "native_result_sha256": "d396eb9e2228319bef5d8fc562b60932dbeffddd1e97466b201f564881133764"
+    },
+    {
+      "task_id": "IMDb--16",
+      "source_run": "task-16/run-01",
+      "execution": {
+        "version": "r2",
+        "recorded_code_head": "50bcce503637522d15bdafa533381204750f415f",
+        "code_identity": "recorded code commit plus frozen image inputs",
+        "image": "sha256:74aec29b73596a5a11ba43a4a1d0b22b82a473b4d36fcb232c2235d83d4258e9",
+        "asset_revision": "e70f49d8b6d0f32c940688e8e53e7c558f57a788",
+        "asset_archive_sha256": "5199d6d2601d070e09b235a149855435f8bb121c768ee5ab36fd6118bf830b74",
+        "seed_sha256": "69f849b9c61fb71349958fdbedc301162881e3a171eb65098c2e5f6623b82471",
+        "source_inputs_manifest_sha256": "f8c80d0265456e664e15c174f15523b52b5dff0070dcf90365041946ebdee4eb",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "3e6fafc3831abdade50369aee405d87e68c21580b33835564b2a28ffa331368d",
+      "original_manifest_size": 12617,
+      "recorded_step_count": 11,
+      "successful_substantive_action_count": 10,
+      "successful_substantive_step_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9
+      ],
+      "excluded_steps": {
+        "observe": [
+          10
+        ],
+        "scroll": [],
+        "failed": []
+      },
+      "recorded_failures": [],
+      "before_db_sha256": "055663a1f0992fbf26da98b47e820707cbfad21bacd3f27fb996698c79b2e105",
+      "after_db_sha256": "4a8de27d3f6f4d07aaf023cadc3e97c49e3604dd371af406468341e15dd80228",
+      "ui_path_summary": "Sign in → Carol’s Watchlist → Fight Club → personal rating selection → account → My ratings.",
+      "visited_relative_routes": [
+        "/",
+        "/login",
+        "/",
+        "/list/watchlist",
+        "/title/tt0137523",
+        "/account",
+        "/list/ratings"
+      ],
+      "final_answer": "Selected Fight Club (1999), the most recently released Crime movie in Carol’s initial Watchlist with a personal rating other than 8/10 (it was 9/10). Set Carol’s personal rating for Fight Club to 8/10 and confirmed the Fight Club 1999 row shows 8/10 on My ratings.",
+      "representative_image": {
+        "path": "IMDb--16-final.jpg",
+        "sha256": "8467262bdeb9e7f40a45b4683bbe68931d2aac60c70e9ee5450afd8d2993649c",
+        "size": 53344,
+        "original_jpeg_path": "screenshots/step_011.source.jpg",
+        "original_png_path": "screenshots/step_011.png",
+        "original_png_sha256": "3fe0e3960e85fc2346bb949a6502fabf1c56bb8cfd3fd165943612e08a50c9fd",
+        "original_png_size": 151096,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 10,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": "No hidden answers, implementation, evaluator or prior review accessed; own preceding pilot UI runs IMDb--3 and IMDb--17 are known.",
+        "prior_own_ui_runs": [
+          "IMDb--3",
+          "IMDb--17",
+          "IMDb--0",
+          "IMDb--2",
+          "IMDb--4",
+          "IMDb--7",
+          "IMDb--8",
+          "IMDb--9",
+          "IMDb--10",
+          "IMDb--12",
+          "IMDb--14",
+          "IMDb--15"
+        ]
+      },
+      "scorer_evidence": [
+        "Carol's initial eligible Watchlist selects the rated movie; only its personal rating changed to 8",
+        "Local rating action followed by My ratings observed; reported title and year match"
+      ],
+      "native_result_sha256": "97eccdc9a7ef25e58263ccdf7d4ca26613f7e54f3d4f3ce3662bcfde0aeb5a4f"
+    },
+    {
+      "task_id": "IMDb--17",
+      "source_run": "task-17/pilot-01",
+      "execution": {
+        "version": "r1",
+        "recorded_code_head": "ebe92f0888c5cf888fa40bd46f5b535ad01faa57",
+        "code_identity": "base commit plus frozen working inputs",
+        "image": "sha256:ee00ec866b5379fe6176c01e91e425ee527241127e86b5fc7b5c65757e3836fc",
+        "asset_revision": "4d5709e171d7c40fc742727adfa98b04b9023039",
+        "asset_archive_sha256": "80fbfed63f66312e2a0c853972d17652c4ada8b2790cda8c4d7286ee667cb9b2",
+        "seed_sha256": "27558f13a9dd3b003435463ceaad8538e2b6f9fc5095c3bd6831666fecaab5d9",
+        "source_inputs_manifest_sha256": "d069f421aabe831e681e6bf66423428b4080a93405a6d1bd6ca29d0afb6d4e8b",
+        "model": "GPT-6 (Codex; inherited runner model)",
+        "harness": "CUA + durable-recorder.mjs",
+        "harness_sha256": "9c4843ea68c52dd44acaff1efcc654183ba916428be764354c0ce937a5771e3b"
+      },
+      "original_manifest_sha256": "f001c604b1e52377bf70d16061b250e2160f9025750adf3156c9ad7bd26a3c0d",
+      "original_manifest_size": 14343,
+      "recorded_step_count": 14,
+      "successful_substantive_action_count": 12,
+      "successful_substantive_step_indices": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "excluded_steps": {
+        "observe": [
+          0,
+          13
+        ],
+        "scroll": [],
+        "failed": []
+      },
+      "recorded_failures": [],
+      "before_db_sha256": "3df29298bafabe3ce6760e2f6daf10f491b6fde08ccf3f347cb0cb89b01fb3d9",
+      "after_db_sha256": "d78494c2ea5cc5c25872cff770cf68b52133ff7d6799103a0f258f9204e28e52",
+      "ui_path_summary": "Sign in → Interstellar search → title → written review form → user reviews.",
+      "visited_relative_routes": [
+        "/",
+        "/login",
+        "/",
+        "/search?s=all&q=Interstellar",
+        "/title/tt0816692",
+        "/title/tt0816692/review",
+        "/title/tt0816692/reviews"
+      ],
+      "final_answer": "Signed in as alice.j@test.com (Alice Johnson) and posted one written review for Interstellar (2014). Headline: Brilliant sci-fi epic. Review rating: 10/10. Body: A moving and ambitious science-fiction adventure, with stunning visuals, memorable music, and a powerful story about family and exploration. Confirmed the new review appears on Interstellar’s user reviews page, attributed to Alice Johnson, with the headline and 10/10 rating displayed.",
+      "representative_image": {
+        "path": "IMDb--17-final.jpg",
+        "sha256": "99792e1b7690421adca103e13774e84c4bbac664956ac098164f5cc506d3b992",
+        "size": 77231,
+        "original_jpeg_path": "screenshots/step_014.source.jpg",
+        "original_png_path": "screenshots/step_014.png",
+        "original_png_sha256": "5f76c95e242a01159ade27d4cba5d058850ffdb4819154fe1b8b25c9b483ca82",
+        "original_png_size": 212293,
+        "width": 1470,
+        "height": 780,
+        "trajectory_step": 13,
+        "image_role": "final recorded after-action capture",
+        "copy_method": "original JPEG bytes; no transcoding"
+      },
+      "scorer_result": "PASS",
+      "claude_result": "PASS",
+      "runner_prior_ui_context": {
+        "prior_answer_knowledge": false,
+        "prior_ui_runs_in_this_session": [
+          "IMDb--3: independent read-only run on separate origin; no IMDb--17 solution knowledge"
+        ]
+      },
+      "scorer_evidence": [
+        "Exactly one new Alice review matches the required Interstellar headline, rating and nonempty body",
+        "Local review submission followed by that movie's reviews page observed; no other business table changed"
+      ],
+      "native_result_sha256": "db6cd1340249e38fb14398b27e89de1b377daa967d2801f7e224b4d09711727f"
+    }
+  ],
+  "scorer": {
+    "code_commit": "a37df75a873842be0ed4510baab5dbff361ac9ad",
+    "inputs_sha256": "22817f45317b99dd93986c3ec19b6b9d9ce029897b039b4acd6cdbe0500cf21d",
+    "mode": "native eval_judge.py --verifier True; offline regrade of unchanged original runs",
+    "blind_review": "PASS_10_RETAINED_MAIN_RUNS"
+  },
+  "independent_review_summary": "../independent-review-summary.json"
+}

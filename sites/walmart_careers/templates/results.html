@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+{% from "_job_card.html" import job_card %}
+{% block title %}{{ total }} open roles | Walmart Careers{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="results-layout">
+    <aside class="results-aside">
+      <div class="map-panel">
+        {{ map_svg|safe }}
+      </div>
+    </aside>
+
+    <div class="results-main">
+      <div class="tabs">
+        <a class="{% if filters.tab == 'jobs' %}active{% endif %}"
+           href="{{ url_for('results') }}?{{ qs(filters, tab='jobs') }}">Open roles
+          <span class="tab-badge">{{ "{:,}".format(total) }}</span></a>
+        <a class="{% if filters.tab == 'future' %}active{% endif %}"
+           href="{{ url_for('results') }}?{{ qs(filters, tab='future') }}">Future roles</a>
+        <a class="{% if filters.tab == 'content' %}active{% endif %}"
+           href="{{ url_for('results') }}?{{ qs(filters, tab='content') }}">Content</a>
+      </div>
+
+      {% if filters.tab == 'future' %}
+        <div class="empty-panel">
+          <h1>Future roles</h1>
+          <h2>No future roles here</h2>
+          <p>{{ content.EMPTY_FUTURE_ROLES }}</p>
+          <a class="btn" href="{{ url_for('results') }}?{{ qs(filters, tab='jobs') }}">Back to open roles</a>
+        </div>
+      {% elif filters.tab == 'content' %}
+        <div class="empty-panel">
+          <h1>Content results</h1>
+          <h2>No content results</h2>
+          <p>{{ content.EMPTY_CONTENT_TAB }}</p>
+          <a class="btn" href="{{ url_for('results') }}?{{ qs(filters, tab='jobs') }}">Back to open roles</a>
+        </div>
+      {% else %}
+
+        <div class="results-head">
+          <h1>{{ "{:,}".format(total) }} open role{{ '' if total == 1 else 's' }}</h1>
+          <details class="pop-wrap loc-pop">
+            <summary class="loc-link">
+              <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true">
+                <path d="M12 2.6a6.6 6.6 0 0 0-6.6 6.6c0 4.9 6.6 12.2 6.6 12.2s6.6-7.3 6.6-12.2A6.6 6.6 0 0 0 12 2.6Z"
+                      fill="none" stroke="currentColor" stroke-width="1.6"/>
+                <circle cx="12" cy="9.2" r="2.4" fill="none" stroke="currentColor" stroke-width="1.6"/>
+              </svg>
+              Add your location
+            </summary>
+            <form class="pop-panel" method="get" action="{{ url_for('results') }}">
+              <div class="pop-head"><h2>Location</h2></div>
+              {% if filters.q %}<input type="hidden" name="q" value="{{ filters.q }}">{% endif %}
+              {% for key in ['area','category','brand','shift','type','rate'] %}
+                {% for value in filters[key] %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+              {% endfor %}
+              {% if filters.sort != 'relevance' %}<input type="hidden" name="sort" value="{{ filters.sort }}">{% endif %}
+              <div class="field">
+                <label for="loc">Search by city, zipcode or state</label>
+                <input type="text" id="loc" name="loc" value="{{ filters.loc }}"
+                       placeholder="Search by city, zipcode or state">
+              </div>
+              {% for radius in radius_values %}
+                <label class="radio-row"><input type="radio" name="radius" value="{{ radius }}"
+                       {% if filters.radius == radius %}checked{% endif %}> Within {{ radius }} miles</label>
+              {% endfor %}
+              <p class="form-note">A state or territory name (for example <b>Puerto Rico</b> or
+                <b>PR</b>) returns every role in that state and ignores the radius.</p>
+              <div class="pop-actions">
+                <a class="reset" href="{{ url_for('results') }}?{{ qs(filters, loc='', page=1) }}">Reset</a>
+                <button class="btn btn-sm" type="submit">Save location</button>
+              </div>
+            </form>
+          </details>
+        </div>
+
+        {% if location_failed %}
+          <p class="flash warning">We couldn't find that location.</p>
+        {% elif location %}
+          <p class="loc-note">
+            {% if location.kind == 'state' %}
+              Showing roles in {{ location.label }} ({{ location.state }}).
+            {% else %}
+              Showing roles within {{ filters.radius }} miles of {{ location.label }}.
+            {% endif %}
+          </p>
+        {% endif %}
+
+        <div class="toolbar">
+          <details class="pop-wrap filters-pop">
+            <summary class="tool-btn">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+                <path d="M3 7h18M6 12h12M10 17h4" stroke="currentColor" stroke-width="1.8"
+                      stroke-linecap="round" fill="none"/>
+              </svg>
+              Filters
+            </summary>
+            <form class="pop-panel wide" method="get" action="{{ url_for('results') }}">
+              <div class="pop-head"><h2>Filters</h2></div>
+              {% if filters.q %}<input type="hidden" name="q" value="{{ filters.q }}">{% endif %}
+              {% if filters.loc %}
+                <input type="hidden" name="loc" value="{{ filters.loc }}">
+                <input type="hidden" name="radius" value="{{ filters.radius }}">
+              {% endif %}
+              {% if filters.sort != 'relevance' %}<input type="hidden" name="sort" value="{{ filters.sort }}">{% endif %}
+              <div class="filter-grid">
+                <fieldset>
+                  <legend>Brand</legend>
+                  {% for value in brand_values %}
+                    <label><input type="checkbox" name="brand" value="{{ value }}"
+                                  {% if value in filters.brand %}checked{% endif %}> {{ value }}</label>
+                  {% endfor %}
+                </fieldset>
+                <fieldset>
+                  <legend>Shift</legend>
+                  {% for value in shift_values %}
+                    <label><input type="checkbox" name="shift" value="{{ value }}"
+                                  {% if value in filters.shift %}checked{% endif %}> {{ value }}</label>
+                  {% endfor %}
+                </fieldset>
+                <fieldset>
+                  <legend>Employment Type</legend>
+                  {% for value in employment_type_values %}
+                    <label><input type="checkbox" name="type" value="{{ value }}"
+                                  {% if value in filters.type %}checked{% endif %}> {{ value }}</label>
+                  {% endfor %}
+                </fieldset>
+                <fieldset>
+                  <legend>Rate</legend>
+                  {% for value in rate_values %}
+                    <label><input type="checkbox" name="rate" value="{{ value }}"
+                                  {% if value in filters.rate %}checked{% endif %}> {{ value }}</label>
+                  {% endfor %}
+                </fieldset>
+                <fieldset class="area-col">
+                  <legend>Career Area</legend>
+                  {% for area in areas %}
+                    <label><input type="checkbox" name="area" value="{{ area.slug }}"
+                                  {% if area.slug in filters.area %}checked{% endif %}> {{ area.name }}</label>
+                    <details class="cat-group" {% if area.categories|selectattr('slug','in',filters.category)|list %}open{% endif %}>
+                      <summary>Categories in {{ area.name }}</summary>
+                      {% for category in area.categories %}
+                        <label><input type="checkbox" name="category" value="{{ category.slug }}"
+                                      {% if category.slug in filters.category %}checked{% endif %}> {{ category.name }}</label>
+                      {% endfor %}
+                    </details>
+                  {% endfor %}
+                </fieldset>
+              </div>
+              <div class="pop-actions">
+                <a class="reset" href="{{ url_for('results') }}?{{ qs(filters, area=[], category=[], brand=[], shift=[], type=[], rate=[], page=1) }}">Reset</a>
+                <button class="btn btn-sm" type="submit">Apply</button>
+              </div>
+            </form>
+          </details>
+
+          <details class="pop-wrap sort-pop">
+            <summary class="tool-btn plain">Sort by: <b>{{ 'Relevance' if filters.sort == 'relevance' else 'Most recent' }}</b>
+              <span class="caret">&#9662;</span></summary>
+            <div class="pop-panel">
+              <div class="pop-head"><h2>Sort by</h2></div>
+              <a class="radio-row" href="{{ url_for('results') }}?{{ qs(filters, sort='relevance', page=1) }}">
+                <b>{% if filters.sort == 'relevance' %}&#9673;{% else %}&#9675;{% endif %}</b> Relevance</a>
+              <a class="radio-row" href="{{ url_for('results') }}?{{ qs(filters, sort='most_recent', page=1) }}">
+                <b>{% if filters.sort == 'most_recent' %}&#9673;{% else %}&#9675;{% endif %}</b> Most recent</a>
+            </div>
+          </details>
+        </div>
+
+        {% if filter_chips %}
+          <div class="active-filters" aria-label="Active filters">
+            {% for chip in filter_chips %}
+              <a class="active-chip" href="{{ chip.remove }}">{{ chip.label }} <span>&times;</span></a>
+            {% endfor %}
+            <a class="clear-all" href="{{ url_for('results') }}?{{ qs(filters, area=[], category=[], brand=[], shift=[], type=[], rate=[], loc='', page=1) }}">Clear all</a>
+          </div>
+        {% endif %}
+
+        {% if jobs %}
+          <div class="job-grid">
+            {% for job in jobs %}{{ job_card(job, saved_ids) }}{% endfor %}
+          </div>
+          {% if pages > 1 %}
+            <nav class="pagination" aria-label="Pagination">
+              {% if page > 1 %}
+                <a href="{{ url_for('results') }}?{{ qs(filters, page=page-1) }}">Prev</a>
+              {% endif %}
+              {% for n in range(1, pages + 1) %}
+                {% if n == page %}
+                  <span class="current" aria-current="page">{{ n }}</span>
+                {% elif n <= 3 or n > pages - 2 or (n >= page - 1 and n <= page + 1) %}
+                  <a href="{{ url_for('results') }}?{{ qs(filters, page=n) }}"
+                     aria-label="Show me page number {{ n }}">{{ n }}</a>
+                {% elif n == 4 or n == pages - 2 %}
+                  <span>&hellip;</span>
+                {% endif %}
+              {% endfor %}
+              {% if page < pages %}
+                <a href="{{ url_for('results') }}?{{ qs(filters, page=page+1) }}">Next</a>
+              {% endif %}
+            </nav>
+          {% endif %}
+        {% else %}
+          <div class="empty-panel">
+            <h2>No roles matched</h2>
+            <p>Try a different keyword, widen your location radius, or clear a filter.</p>
+            <a class="btn" href="{{ url_for('results') }}">Reset all filters</a>
+          </div>
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

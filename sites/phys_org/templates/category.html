@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import article_card, pager %}
+{% block title %}{{ category.name }} — Phys.org Mirror{% endblock %}
+{% block content %}
+<div class="layout">
+  <div>
+    <div class="section-heading">
+      <h2>{{ category.name }}</h2>
+      <span class="text-muted">{{ pagination.total }} article{{ '' if pagination.total == 1 else 's' }}</span>
+      <span style="margin-left:auto;font-size:13px;">
+        <a href="{{ url_for('category', slug=category.slug, sort='recent') }}"
+           {% if sort != 'popular' %}style="font-weight:700;"{% endif %}>Recent</a> ·
+        <a href="{{ url_for('category', slug=category.slug, sort='popular') }}"
+           {% if sort == 'popular' %}style="font-weight:700;"{% endif %}>Popular</a>
+      </span>
+    </div>
+    {% if category.description %}<p class="text-muted">{{ category.description }}</p>{% endif %}
+    {% for a in pagination.items %}{{ article_card(a) }}{% endfor %}
+    {% if not pagination.items %}<p class="text-muted">No articles in this category yet.</p>{% endif %}
+    {{ pager(pagination, 'category', {'slug': category.slug, 'sort': sort}) }}
+  </div>
+  <aside class="sidebar">
+    <div class="widget">
+      <h3>Trending now</h3>
+      <ol>
+        {% for a in sidebar_trending %}
+          <li>
+            <a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a>
+            <div class="text-muted">{{ a.views }} views</div>
+          </li>
+        {% endfor %}
+      </ol>
+    </div>
+    <div class="widget">
+      <h3>Other sections</h3>
+      <ul>
+        {% for c in all_categories %}
+          {% if c.id != category.id %}
+            <li><a href="{{ url_for('category', slug=c.slug) }}">{{ c.name }}</a></li>
+          {% endif %}
+        {% endfor %}
+      </ul>
+    </div>
+  </aside>
+</div>
+{% endblock %}

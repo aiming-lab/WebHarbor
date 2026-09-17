@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Edit Account{% endblock %}
+{% block content %}
+  <section class="card">
+    <div class="kicker">Profile</div>
+    <h1>Edit local account details</h1>
+    {% if errors %}
+      <div class="form-errors" role="alert" tabindex="-1">
+        <h2>These profile details could not be saved</h2>
+        <ul>{% for message in errors %}<li>{{ message }}</li>{% endfor %}</ul>
+      </div>
+    {% endif %}
+    <form method="post" class="stack" novalidate>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-grid two">
+        <div class="field"><label for="first_name">First name</label><input id="first_name" name="first_name" value="{{ form.first_name if form else current_user.first_name }}" required aria-describedby="first_name_hint"><p class="field-hint" id="first_name_hint">Required, up to 80 characters.</p></div>
+        <div class="field"><label for="last_name">Last name</label><input id="last_name" name="last_name" value="{{ form.last_name if form else current_user.last_name }}" required aria-describedby="last_name_hint"><p class="field-hint" id="last_name_hint">Required, up to 80 characters.</p></div>
+      </div>
+      <div class="form-grid two">
+        <div class="field"><label for="phone">Phone</label><input id="phone" name="phone" value="{{ form.phone if form else current_user.phone }}" aria-describedby="phone_hint"><p class="field-hint" id="phone_hint">Digits, spaces and + ( ) - . only.</p></div>
+        <div class="field"><label for="company">Company</label><input id="company" name="company" value="{{ form.company if form else current_user.company }}"></div>
+      </div>
+      <div class="form-grid three">
+        <div class="field"><label for="city">City</label><input id="city" name="city" value="{{ form.city if form else current_user.city }}"></div>
+        <div class="field">
+          <label for="state">State</label>
+          <select id="state" name="state">
+            <option value="">No state selected</option>
+            {% for label in state_labels %}
+              <option value="{{ label }}" {% if (form.state if form else current_user.state) == label %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field"><label for="zip_code">ZIP code</label><input id="zip_code" name="zip_code" value="{{ form.zip_code if form else current_user.zip_code }}" aria-describedby="zip_hint"><p class="field-hint" id="zip_hint">5 digits, optionally followed by -4 digits.</p></div>
+      </div>
+      <div class="form-grid two">
+        <div class="field">
+          <label for="preferred_location_slug">Preferred location</label>
+          <select id="preferred_location_slug" name="preferred_location_slug">
+            <option value="">No preferred location</option>
+            {% for location in all_locations %}
+              <option value="{{ location.slug }}" {% if (form.preferred_location_slug if form else current_user.preferred_location_slug) == location.slug %}selected{% endif %}>{{ location.name }} — {{ location.city }}, {{ location.state }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="field"><label for="invoicing_email">Invoicing email</label><input id="invoicing_email" name="invoicing_email" type="email" value="{{ form.invoicing_email if form else current_user.invoicing_email }}"></div>
+      </div>
+      <input type="submit" value="Save profile">
+    </form>
+  </section>
+{% endblock %}

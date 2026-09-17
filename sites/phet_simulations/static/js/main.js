@@ -18,7 +18,11 @@
             'Content-Type': 'application/json',
             'X-CSRFToken': getCsrfToken(form),
           },
-          body: JSON.stringify({ sim_id: simId }),
+          body: JSON.stringify(
+            action === 'save'
+              ? { sim_id: simId, notes: (form.querySelector('.save-note') || {}).value || '' }
+              : { sim_id: simId }
+          ),
         })
           .then(function (r) { return r.json(); })
           .then(function (data) {
@@ -49,6 +53,16 @@
       });
     });
   });
+
+  var navToggle = document.getElementById('nav-toggle');
+  var primaryNav = document.getElementById('primary-nav');
+  if (navToggle && primaryNav) {
+    navToggle.addEventListener('click', function () {
+      var open = primaryNav.classList.toggle('is-open');
+      navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      navToggle.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+    });
+  }
 
   var playBtn = document.querySelector('.sim-detail-play');
   if (playBtn) {
