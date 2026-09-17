@@ -29,7 +29,7 @@ def main():
     after = resolve_db(a.after_db, a.container, "instance")
     saved = saved_sims_for(after, "teacher@phet.test")
     j.check("account_still_has_four", saved is not None and len(saved) == 4, f"saved={saved}")
-    j.check("catalog_unchanged", catalog_unchanged(init, after) is True, "catalogue tables untouched")
+    j.check("run_is_read_only", read_only_run(init, after) is True, "all runtime rows untouched")
     j.emit()
 
 

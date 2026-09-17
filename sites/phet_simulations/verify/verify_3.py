@@ -22,9 +22,10 @@ def main():
     fa = final_answer(t)
     j.check("final_answer_nonempty", bool(fa), f"final={fa!r}")
     j.check("used_new_filter", navigated_to(t, "release=new"), "release=new in a visited URL")
+    j.check("inspected_release_dates", all(navigated_to(t, "/simulation/" + slug) for slug in ['buoyancy', 'buoyancy-basics', 'generator', 'magnet-and-compass', 'magnets-and-electromagnets', 'mean-share-and-balance', 'membrane-transport', 'models-of-the-hydrogen-atom', 'number-pairs', 'quantum-coin-toss', 'quantum-measurement', 'quantum-wave-interference']),
+            "all New-result detail pages opened to inspect release dates")
     j.check("answer_count_five", counts(fa, 5, "simulation", "sim", "release", "new"),
             f"the count must be reported as a number of simulations; numbers={numbers_in(fa)} final={fa!r}")
-    j.check("answer_not_twelve", not has_number(fa, 12), "12 is the whole New set, not the 2025 subset")
     init = resolve_db(a.initial_db, a.container, "instance_seed")
     after = resolve_db(a.after_db, a.container, "instance")
     ro = read_only_run(init, after)

@@ -24,6 +24,12 @@ def main():
     j.check("used_biology_filter", navigated_to(t, "subject=biology"),
             f"urls={[u for u in __import__('verify_lib').step_urls(t) if 'simulations' in u][:6]}")
     j.check("used_grade_filter", navigated_to(t, "grade=elementary"), "grade=elementary in a visited URL")
+    from urllib.parse import urlsplit, parse_qs
+    combined = any(navigated_to({"steps": [step]}, "/simulations")
+                   and "biology" in parse_qs(urlsplit(step.get("url", "")).query).get("subject", [])
+                   and "elementary" in parse_qs(urlsplit(step.get("url", "")).query).get("grade", [])
+                   for step in t.get("steps", []))
+    j.check("combined_facets", combined, "both facets applied to the same listing")
     j.check("answer_lists_all_three", contains_all(fa, ["Color Vision", "Density", "Natural Selection"]),
             f"final={fa!r}")
     j.check("answer_excludes_non_matches",

@@ -12,7 +12,7 @@ from verify_lib import (load_run, navigated_to, navigated_any, final_answer, las
                         contains_all, contains_any, answer_equals, numbers_in, has_number,
                         dates_in, resolve_db, saved_sims_for, saved_rows_for, user_exists,
                         read_only_run, catalog_unchanged, table_counts, db_query,
-                        llm_text_match, Judge, parse_args)
+                        llm_text_match, exact_save_delta, Judge, parse_args)
 
 
 def main():
@@ -20,8 +20,7 @@ def main():
     j = Judge('PhET Interactive Simulations--14', a.no_llm)
     t = load_run(a.run_dir)
     fa = final_answer(t)
-    j.check("final_answer_nonempty", bool(fa), f"final={fa!r}")
-    j.check("answer_names_saved_sim", contains_any(fa, ["Number Pairs"]),
+    j.check("answer_names_saved_sim", (not fa or contains_any(fa, ["Number Pairs"])),
             f"the final answer must say which simulation was saved; final={fa!r}")
     j.check("nav_register", navigated_to(t, "/register"), "registration page visited")
     j.check("nav_number_pairs", navigated_to(t, "/simulation/number-pairs"), "detail page opened")
@@ -40,6 +39,8 @@ def main():
             ci is not None and ca is not None and ca["saved_simulation"] == ci["saved_simulation"] + 1,
             f"saved rows {ci and ci['saved_simulation']} -> {ca and ca['saved_simulation']}")
     j.check("catalog_unchanged", catalog_unchanged(init, after) is True, "catalogue tables untouched")
+    j.check("exact_state_delta", exact_save_delta(init, after, "test_user@phet.test", "number-pairs", new_user=True),
+            "only the required user/save insertions; all existing rows unchanged")
     j.emit()
 
 

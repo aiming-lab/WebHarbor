@@ -12,7 +12,7 @@ from verify_lib import (load_run, navigated_to, navigated_any, final_answer, las
                         contains_all, contains_any, answer_equals, numbers_in, has_number,
                         dates_in, resolve_db, saved_sims_for, saved_rows_for, user_exists,
                         read_only_run, catalog_unchanged, table_counts, db_query,
-                        llm_text_match, Judge, parse_args)
+                        llm_text_match, exact_save_delta, Judge, parse_args)
 
 
 def main():
@@ -40,6 +40,8 @@ def main():
     teacher = saved_sims_for(after, "teacher@phet.test")
     j.check("other_account_untouched", teacher is not None and len(teacher) == 4, f"teacher={teacher}")
     j.check("catalog_unchanged", catalog_unchanged(init, after) is True, "catalogue tables untouched")
+    j.check("exact_state_delta", exact_save_delta(init, after, "student@phet.test", "membrane-transport", require_note=True),
+            "only the required user/save insertions; all existing rows unchanged")
     j.emit()
 
 

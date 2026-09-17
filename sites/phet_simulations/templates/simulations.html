@@ -42,7 +42,7 @@
             {% for slug, name in subject_tree %}
               <li>
                 <label>
-                  <input type="checkbox" name="subject" value="{{ slug }}"
+                  <input type="radio" name="subject" value="{{ slug }}"
                     {% if slug == subject %}checked{% endif %}>
                   {{ name }}
                 </label>
@@ -51,7 +51,7 @@
                   <div class="sub-group">
                     {% for tslug, tname, _parent in subtopics %}
                       <label>
-                        <input type="checkbox" name="topic" value="{{ tslug }}"
+                        <input type="radio" name="topic" value="{{ tslug }}"
                           {% if tslug == topic %}checked{% endif %}>
                         {{ tname }}
                       </label>
@@ -69,7 +69,7 @@
             {% for g in grade_levels %}
               <li>
                 <label>
-                  <input type="checkbox" name="grade" value="{{ g.slug }}"
+                  <input type="radio" name="grade" value="{{ g.slug }}"
                     {% if g.slug == grade %}checked{% endif %}>
                   {{ g.name }}
                 </label>
@@ -87,10 +87,10 @@
         <details class="filter-group" {% if release %}open{% endif %}>
           <summary>Release Type</summary>
           <ul>
-            <li><label><input type="checkbox" name="release" value="new"
+            <li><label><input type="radio" name="release" value="new"
               {% if release == 'new' %}checked{% endif %}> New</label></li>
-            <li><label><input type="checkbox" name="release" value="updated"
-              {% if release == 'updated' %}checked{% endif %}> Recently updated</label></li>
+            <li><label><input type="radio" name="release" value="updated"
+              {% if release == 'updated' %}checked{% endif %}> Updated since 2024</label></li>
           </ul>
         </details>
 
@@ -104,10 +104,10 @@
         <details class="filter-group">
           <summary>Locale</summary>
           <ul style="max-height: 180px; overflow-y: auto;">
-            {% for l in languages[:25] %}
+            {% for l in languages %}
               <li>
                 <label>
-                  <input type="checkbox" name="language" value="{{ l.code }}"
+                  <input type="radio" name="language" value="{{ l.code }}"
                     {% if l.code == language %}checked{% endif %}>
                   {{ l.name }}
                 </label>
@@ -125,28 +125,33 @@
       <div class="browse-results-head">
         <span class="results-count">{{ total }} result{{ '' if total == 1 else 's' }}</span>
         <div class="results-active-chips">
+          {% if topic %}
+            <span class="results-chip">{{ topic|replace('-', ' ')|upper }}
+              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, release=release, sort=sort) }}" aria-label="Clear topic">&times;</a>
+            </span>
+          {% endif %}
           {% if subject %}
             <span class="results-chip">
               {{ subject|upper }}
-              <a href="{{ url_for('simulations', view='filter', grade=grade, language=language, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
+              <a href="{{ url_for('simulations', view='filter', topic=topic, grade=grade, language=language, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
             </span>
           {% endif %}
           {% if grade %}
             <span class="results-chip">
               {{ grade|upper }}
-              <a href="{{ url_for('simulations', view='filter', subject=subject, language=language, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
+              <a href="{{ url_for('simulations', view='filter', subject=subject, topic=topic, language=language, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
             </span>
           {% endif %}
           {% if language %}
             <span class="results-chip">
               {{ language|upper }}
-              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
+              <a href="{{ url_for('simulations', view='filter', subject=subject, topic=topic, grade=grade, release=release, sort=sort) }}" aria-label="Clear">&times;</a>
             </span>
           {% endif %}
           {% if release %}
             <span class="results-chip">
               {{ 'NEW' if release == 'new' else 'RECENTLY UPDATED' }}
-              <a href="{{ url_for('simulations', view='filter', subject=subject, grade=grade, language=language, sort=sort) }}" aria-label="Clear">&times;</a>
+              <a href="{{ url_for('simulations', view='filter', subject=subject, topic=topic, grade=grade, language=language, sort=sort) }}" aria-label="Clear">&times;</a>
             </span>
           {% endif %}
         </div>

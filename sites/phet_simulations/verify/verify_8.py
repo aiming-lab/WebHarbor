@@ -6,7 +6,7 @@ Search 'quantum': result count, then the 2026 release's version.
 Ground truth is hardcoded here and nowhere in tasks.jsonl.
 Input/Output: see verify_lib.parse_args / Judge.emit.
 """
-import os, sys
+import os, sys, re
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (load_run, navigated_to, navigated_any, final_answer, last_shot,
                         contains_all, contains_any, answer_equals, numbers_in, has_number,
@@ -22,10 +22,11 @@ def main():
     fa = final_answer(t)
     j.check("final_answer_nonempty", bool(fa), f"final={fa!r}")
     j.check("used_search", navigated_to(t, "/search"), "search used")
+    j.check("searched_quantum", navigated_to(t, "q=quantum"), "the requested search term was used")
     j.check("answer_result_count", counts(fa, 7, "result", "simulation", "sim", "hit", "match"),
             f"the count must be reported as a number of results; numbers={numbers_in(fa)} final={fa!r}")
     j.check("nav_target", navigated_to(t, "/simulation/quantum-wave-interference"), "2026 release opened")
-    j.check("answer_version", contains_all(fa, ["1.0.0"]), f"final={fa!r}")
+    j.check("answer_version", bool(re.search(r"(?<![\d.])1\.0\.0(?!\d|\.\d)", fa)), f"final={fa!r}")
     init = resolve_db(a.initial_db, a.container, "instance_seed")
     after = resolve_db(a.after_db, a.container, "instance")
     ro = read_only_run(init, after)

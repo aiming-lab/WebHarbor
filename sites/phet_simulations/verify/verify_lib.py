@@ -22,7 +22,9 @@ Output: JSON {task_id, pass, reason, evidence[]} to stdout; exit 0 on PASS, 1 on
 """
 import base64, json, os, re, sqlite3, subprocess, sys, tempfile, urllib.request
 from pathlib import Path
-from dataclasses import dataclass
+from collections import Counter
+from urllib.parse import urlsplit, parse_qs
+import argparse
 
 SITE = "phet_simulations"
 
@@ -38,8 +40,18 @@ def step_urls(traj):
     return [s.get("url", "") for s in traj.get("steps", [])]
 
 def navigated_to(traj, substr, times=1):
-    """Deterministic: at least `times` trajectory steps have a URL containing substr."""
-    return sum(1 for u in step_urls(traj) if substr in u) >= times
+    """Match a real local path/query, never text hidden in an external URL."""
+    def matches(url):
+        parsed = urlsplit(url)
+        if parsed.scheme not in ("http", "https") or parsed.hostname not in ("localhost", "127.0.0.1", "::1"):
+            return False
+        if substr.startswith("/"):
+            return parsed.path.rstrip("/") == substr.rstrip("/")
+        key, sep, value = substr.partition("=")
+        routes = {"q": ("/search",), "grade": ("/simulations", "/teachers/activities")}
+        allowed = routes.get(key, ("/simulations",))
+        return bool(sep and parsed.path in allowed and value in parse_qs(parsed.query).get(key, []))
+    return sum(matches(url) for url in step_urls(traj)) >= times
 
 def navigated_any(traj, substrs):
     return any(navigated_to(traj, s) for s in substrs)
@@ -164,28 +176,54 @@ def table_counts(db_path, tables=("simulation", "language", "subject", "grade_le
     return out
 
 
-def catalog_unchanged(initial_db, after_db):
-    """The catalogue tables an agent must never be able to write."""
+def table_rows(db_path, table):
+    return Counter(db_query(db_path, f'SELECT * FROM "{table}"'))
+
+
+def tables_unchanged(initial_db, after_db, tables):
     if not initial_db or not after_db:
-        return None
-    for tbl in ("simulation", "language", "subject", "grade_level", "activity"):
-        a = db_query(initial_db, f"SELECT COUNT(*) FROM {tbl}")[0][0]
-        b = db_query(after_db, f"SELECT COUNT(*) FROM {tbl}")[0][0]
-        if a != b:
-            return False
-    return True
+        return False
+    return all(table_rows(initial_db, table) == table_rows(after_db, table) for table in tables)
+
+
+def catalog_unchanged(initial_db, after_db):
+    """Compare complete rows: equal counts do not imply unchanged content."""
+    return tables_unchanged(initial_db, after_db,
+                            ("simulation", "language", "subject", "grade_level", "activity"))
 
 
 def read_only_run(initial_db, after_db):
-    """True when no runtime row changed at all (used by look-up only tasks)."""
-    if not initial_db or not after_db:
-        return None
-    for tbl in ("user", "saved_simulation"):
-        a = db_query(initial_db, f"SELECT COUNT(*) FROM {tbl}")[0][0]
-        b = db_query(after_db, f"SELECT COUNT(*) FROM {tbl}")[0][0]
-        if a != b:
-            return False
-    return catalog_unchanged(initial_db, after_db)
+    return (catalog_unchanged(initial_db, after_db)
+            and tables_unchanged(initial_db, after_db, ("user", "saved_simulation")))
+
+
+def exact_save_delta(initial_db, after_db, email, slug, *, new_user=False, require_note=False):
+    """One requested insertion, all previous rows intact, no unrelated writes."""
+    if not catalog_unchanged(initial_db, after_db):
+        return False
+    old_users, users = table_rows(initial_db, "user"), table_rows(after_db, "user")
+    if old_users - users:
+        return False
+    added_users = list((users - old_users).elements())
+    if len(added_users) != int(new_user):
+        return False
+    targets = db_query(after_db, "SELECT id, role FROM user WHERE email=?", (email,))
+    if len(targets) != 1:
+        return False
+    user_id, role = targets[0]
+    if new_user and (role != "teacher" or added_users[0][0] != user_id
+                     or db_query(initial_db, "SELECT id FROM user WHERE email=?", (email,))):
+        return False
+    old_saved, saved = table_rows(initial_db, "saved_simulation"), table_rows(after_db, "saved_simulation")
+    added = list((saved - old_saved).elements())
+    if old_saved - saved or len(added) != 1:
+        return False
+    # Inspect the single inserted row by primary key; do not assume column order.
+    rows = db_query(after_db,
+        "SELECT ss.user_id, s.slug, ss.notes FROM saved_simulation ss "
+        "JOIN simulation s ON s.id=ss.sim_id WHERE ss.id=?", (added[0][0],))
+    return bool(rows and rows[0][0] == user_id and rows[0][1] == slug
+                and (not require_note or (rows[0][2] or "").strip()))
 
 
 _WORD_NUMBERS = {
@@ -214,26 +252,15 @@ def has_number(text, value):
 
 
 def counts(text, value, *nouns):
-    """True when `value` is reported AS A COUNT of one of `nouns`.
-
-    has_number alone accepts a digit appearing anywhere, so an answer about a
-    different subject ("version 9.9.9") satisfies a check for 9. This binds the
-    number to its referent while still accepting the natural phrasings an agent
-    uses: "9 simulations", "9 sims", "nine simulations", "simulations: 9",
-    "contains 9", "there are 9".
-    """
-    t = (text or "").lower()
-    if value not in numbers_in(text):
-        return False
+    """Bind an integer to its noun, excluding version fragments and larger integers."""
     words = {v: k for k, v in _WORD_NUMBERS.items()}
     forms = [str(value)] + ([words[value]] if value in words else [])
-    for noun in [n.lower() for n in nouns]:
-        for f in forms:
-            pats = [rf"{re.escape(f)}\s*(?:\w+\s+){{0,3}}{re.escape(noun)}",
-                    rf"{re.escape(noun)}[^.]{{0,40}}?\b{re.escape(f)}\b"]
-            if any(re.search(p, t) for p in pats):
-                return True
-    return False
+    number = r"(?<![\w.])(?:" + "|".join(map(re.escape, forms)) + r")(?!\w|\.\d|,\d)"
+    noun = r"\b(?:" + "|".join(re.escape(n) + r"(?:s)?" for n in nouns) + r")\b"
+    return bool(re.search(number + r"\s+(?:(?:saved|available|new|total|different)\s+){0,2}" + noun,
+                          text or "", re.I)
+                or re.search(noun + r"\s*(?:(?:count|total|is|are|of|available)\s*){0,2}[:=]?\s*" + number,
+                             text or "", re.I))
 
 
 def dates_in(text):
@@ -258,7 +285,7 @@ def dates_in(text):
 # ---------------------------------------------------------------- shared LLM utilities (anchored)
 # Unified LLM config, same env vars as agent.py / eval_judge.py:
 #   OPENAI_API_KEY, OPENAI_BASE_URL, JUDGE_MODEL
-import simpleArgParser as sap
+
 
 # When --no_llm is set (via Judge), the llm_* helpers short-circuit so verifiers
 # that call them directly (before j.check(llm=True)) still make ZERO LLM calls.
@@ -364,15 +391,11 @@ class Judge:
         sys.exit(0 if self.ok else 1)
 
 def parse_args():
-    @dataclass
-    class VerifyArgs:
-        run_dir: str = ""
-        initial_db: str = ""
-        after_db: str = ""
-        container: str = os.environ.get("WH_CONTAINER", "wh-review")
-        no_llm: bool = False
-
-        def post_process(self):
-            if not self.run_dir:
-                raise SystemExit("--run_dir is required")
-    return sap.parse_args(VerifyArgs)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--run_dir", required=True)
+    parser.add_argument("--initial_db", default="")
+    parser.add_argument("--after_db", default="")
+    parser.add_argument("--container", default=os.environ.get("WH_CONTAINER", "wh-review"))
+    parser.add_argument("--no_llm", "--no-llm", nargs="?", const=True, default=False,
+                        type=lambda value: str(value).lower() in ("true", "1", "yes"))
+    return parser.parse_args()

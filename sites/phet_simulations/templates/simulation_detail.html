@@ -61,15 +61,15 @@
       <section class="sim-detail-section">
         <h2>Sample Learning Goals</h2>
         <ul class="topic-list">
-          <li>Use the {{ sim.title.lower() }} simulation to model the underlying concepts.</li>
-          <li>Identify the variables and determine the relationships among them.</li>
-          <li>Predict how changes to one parameter affect the rest of the system.</li>
+          {% for goal in sim.learning_goals.split('<br/>') if goal.strip() %}
+            <li>{{ goal|striptags }}</li>
+          {% endfor %}
         </ul>
       </section>
 
       {% if activities %}
       <section id="teaching" class="sim-detail-section">
-        <h2>Teaching Resources &mdash; submitted activities ({{ activities|length }})</h2>
+        <h2>Teaching Resources &mdash; benchmark activities ({{ activities|length }})</h2>
         <ul class="activity-list">
           {% for activity in activities %}
             <li>

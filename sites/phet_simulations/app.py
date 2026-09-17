@@ -10,6 +10,7 @@ import os
 import re
 from datetime import date, datetime
 from pathlib import Path
+from urllib.parse import urlsplit
 
 from flask import (
     Flask, abort, flash, jsonify, redirect, render_template, request,
@@ -272,7 +273,7 @@ def simulations():
     release = request.args.get("release", "").strip()
     sort = request.args.get("sort", "title")
     view = request.args.get("view", "filter").strip()
-    page = max(int(request.args.get("page", 1)), 1)
+    page = max(request.args.get("page", 1, type=int), 1)
     per_page = 24
 
     query = Simulation.query
@@ -287,8 +288,8 @@ def simulations():
     if release == "new":
         query = query.filter_by(is_new=True)
     elif release == "updated":
-        # "Recently updated" in this snapshot = released in 2024 or later.
-        query = query.filter(Simulation.release_date >= date(2024, 1, 1))
+        # Use the published update date, not the original release date.
+        query = query.filter(Simulation.updated_date >= date(2024, 1, 1))
 
     if sort == "newest":
         query = query.order_by(Simulation.release_date.desc())
@@ -562,7 +563,11 @@ def login():
         if user and bcrypt.check_password_hash(user.password_hash, password):
             login_user(user)
             flash(f"Welcome back, {user.name}!", "success")
-            return redirect(request.args.get("next") or url_for("account"))
+            target = request.args.get("next", "")
+            parsed = urlsplit(target)
+            if not target.startswith("/") or target.startswith("//") or parsed.netloc or parsed.scheme or "\\" in target:
+                target = url_for("account")
+            return redirect(target)
         flash("Invalid email or password.", "error")
     return render_template("login.html")
 
@@ -590,11 +595,14 @@ def account():
 @login_required
 def api_save_sim():
     data = request.get_json(silent=True) or request.form
+    if not hasattr(data, "get"):
+        return jsonify({"ok": False, "error": "invalid request"}), 400
     sim_id = data.get("sim_id")
-    notes = (data.get("notes") or "").strip()
-    if not sim_id:
-        return jsonify({"ok": False, "error": "missing sim_id"}), 400
-    sim = Simulation.query.get(int(sim_id))
+    notes = data.get("notes") or ""
+    if not isinstance(notes, str) or not str(sim_id).isdigit():
+        return jsonify({"ok": False, "error": "invalid sim_id or notes"}), 400
+    notes = notes.strip()
+    sim = db.session.get(Simulation, int(sim_id))
     if not sim:
         return jsonify({"ok": False, "error": "unknown simulation"}), 404
     existing = SavedSimulation.query.filter_by(
@@ -616,9 +624,11 @@ def api_save_sim():
 @login_required
 def api_unsave_sim():
     data = request.get_json(silent=True) or request.form
+    if not hasattr(data, "get"):
+        return jsonify({"ok": False, "error": "invalid request"}), 400
     sim_id = data.get("sim_id")
-    if not sim_id:
-        return jsonify({"ok": False, "error": "missing sim_id"}), 400
+    if not str(sim_id).isdigit():
+        return jsonify({"ok": False, "error": "invalid sim_id"}), 400
     row = SavedSimulation.query.filter_by(
         user_id=current_user.id, sim_id=int(sim_id),
     ).first()
