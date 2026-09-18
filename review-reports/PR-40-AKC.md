@@ -1,14 +1,12 @@
 # AKC reviewer validation
 
-Status: **Draft; not ready for maintainer handoff.** The reviewed implementation and
-HF asset candidate are fixed below. All 13 canonical tasks have real browser runs,
-deterministic PASS results, and matching independent blind-review PASS verdicts. The
-fresh full Docker build is not yet run because the host is below the review procedure's
-50 GiB free-space threshold.
+Status: **Draft; not ready for maintainer handoff.** The source-shaped visual repair
+and refreshed real-browser task runs are complete. A replacement blind review and the
+fresh full Docker build remain open gates.
 
 This review preserves [@Sun-sunshine06's original AKC contribution, PR #40](https://github.com/aiming-lab/WebHarbor/pull/40)
-as commit `83e9e6fb685bd2daf8b69aea2b0807e3add93f82` with the contributor's original
-authorship. Reviewer fixes are later commits on an independent branch. The branch
+as commit `83e9e6fb685bd2daf8b69aea2b0807e3add93f82`, with the contributor's
+authorship unchanged. Reviewer fixes are appended on an independent branch. The branch
 integrates `main` at `454e7a49c37abe7eb074f6c86200a1308f109740`, assigns AKC
 port **40040**, and keeps the registry at 41 sites.
 
@@ -16,19 +14,18 @@ port **40040**, and keeps the registry at 41 sites.
 
 | Item | Value |
 |---|---|
-| Executed implementation fixed point | `8a06cfae154ec100feb00b194c2a64389a6756dc` |
-| Current integrated code point | `b48637f68c7b5e4721d5c33290b6b8d85e5c2664` |
+| Executed visual/task fixed point | `ea6c2cbeb9a55f5c8f0a03a9a21130debef4d9ee` |
+| Packaged code point | `6b526ec58f8db1c3520ad43265659d370936501d` |
 | Base | `454e7a49c37abe7eb074f6c86200a1308f109740` (`main`) |
 | Original contribution | `83e9e6fb685bd2daf8b69aea2b0807e3add93f82`, original author preserved |
 | HF asset PR | [ChilleD/WebHarbor #97](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/97), open |
-| Pinned HF revision | `4b3879d288dabff17257e04b3b27e43b8628f63d` |
-| `akc.tar.gz` | SHA256 `a06876a6fb239a340f03134bc66c443ffbaa5a1df43e739eb914cb338bc3f699` |
+| Pinned HF revision | `dc253d3f17cb5d83ee00f9bbc2100a296126327d` |
+| `akc.tar.gz` | SHA256 `a9a5f04d6bdc243b2714c5a056b31d3b134bdf8fed93a74db761f40feb301b36` |
 | Seed `instance_seed/akc.db` | SHA256 `3910bdaef81e20cbdc6bd39a33c6019a56f4e2769e1b8e8001ba59b9c396b727` |
 
-The immutable HF archive was downloaded again through the official client and matched
-the local archive, seed, and 24-file AKC asset inventory. The Dockerfile now requires
-that pinned seed/archive instead of generating a non-reproducible salted seed during
-the image build.
+The HF archive was downloaded again by immutable revision and matched the local
+archive. Its 45 managed members include the frozen seed, 24 breed images, and 16
+source-backed task-path visual assets. The tracked inventory verifies all 40 images.
 
 ## Review findings and repairs
 
@@ -36,121 +33,101 @@ The original site supplied a useful Flask/Jinja foundation, AKC-shaped routes, s
 entities, and ten task ideas. The review found issues that prevented reliable
 acceptance:
 
-- the UI was sparse and used placeholders rather than a recognizable photographic AKC
-  experience;
+- the UI was sparse and visually distant from the live AKC site;
 - the login page exposed seeded credentials;
 - list cards disclosed facts that tasks were supposed to require opening detail pages;
 - selector answers were posted without reproducible URL state;
-- article identity and wording did not match the current official AKC article;
+- article identity and wording did not match the official AKC article;
 - the seed was regenerated with salted password hashes instead of being immutable;
 - tasks had no deterministic verifier or browser-evidence contract;
 - state actions accepted invalid values and allowed duplicate saved/registration rows.
 
-The candidate keeps the original stack and contribution, while adding an AKC-like
-responsive layout, 24 locally bundled official images, validated forms and uniqueness
-constraints, reproducible selector/filter URLs, a pinned seed archive, 13 task-specific
-offline verifiers, and focused application/verifier tests. Credentials are no longer
-rendered in the UI. Task-critical facts are on detail pages rather than listing cards.
-
-Official-source checks corrected the breeder article to
-[Questions You Can Ask Your Potential Breeder](https://www.akc.org/expert-advice/nutrition/questions-to-ask-your-potential-breeder/)
-by Randa Kriss and checked the Cavalier King Charles Spaniel dimensions against AKC's
-breed material. Breed/event/user data used only for benchmark interactions remains
-fixed synthetic state and is not represented as current live AKC data.
+The candidate keeps the original framework and author contribution. It adds an
+AKC-shaped responsive header, home page, breed/search/compare/selector flows, advice
+and event pages, account forms, locally bundled source assets, validated forms and
+uniqueness constraints, reproducible URLs, an immutable seed, 13 offline verifiers,
+and focused tests. Credentials are no longer rendered in the UI, and task-critical
+facts remain on their intended detail paths.
 
 ## UI and visual fidelity
 
-The mirror and live source were opened side by side for human comparison. The candidate
-uses local assets only. Four real responsive viewports—1440×900, 768×900, 390×844, and
-320×568—showed no horizontal overflow. Browser console inspection after reload found
-no warnings or errors.
+The mirror and live source were captured at the same four viewports: 1440×900,
+768×900, 390×844, and 320×568. The final matrix covers 11 task-path pages for both
+source and mirror: **88 captures, 0 capture errors**. All **44 mirror captures** have
+no horizontal overflow. Source cookie overlays were dismissed before capture.
 
-| Original source | Original mirror | Candidate |
+| Live source | Original mirror | Repaired mirror |
 |---|---|---|
 | ![AKC source home](assets/pr40-akc/visual/source-home-1440.png) | ![Original AKC mirror](assets/pr40-akc/visual/baseline-mirror-home-1440.png) | ![Reviewed AKC mirror](assets/pr40-akc/visual/home-1440x900.png) |
 
-| Responsive candidate | Evidence |
+| Repaired mirror | Evidence |
 |---|---|
 | 768×900 | ![AKC candidate at 768](assets/pr40-akc/visual/home-768x900.png) |
 | 390×844 | ![AKC candidate at 390](assets/pr40-akc/visual/home-390x844.png) |
 | 320×568 | ![AKC candidate at 320](assets/pr40-akc/visual/home-320x568.png) |
 
-The in-app browser's full-page stitcher duplicated already rendered blocks in its PNG
-output even though the DOM contained one copy. Those PNGs were rejected; the retained
-candidate images were recaptured with the project's existing Playwright Chromium
-runtime. DOM counts, dimensions, and overflow checks were kept separate from screenshot
-evidence.
+Manual comparison covered home, breed listing/detail, selector, comparison, search,
+article listing/detail, event listing, registration, and login. The repair aligns
+content order, typography hierarchy, navigation, card/grid shape, forms, and
+responsive collapse. The live site's rotating campaign image, ads, app banner,
+PuppyVisor, commerce/video integrations, and other dynamic marketing layers are not
+reproduced. Several live-source narrow pages themselves overflow; the mirror does not
+copy those defects.
 
 ## Task and verifier quality
 
-The candidate has 13 tasks: nine read-only navigation/reasoning tasks and four exact
-state-change tasks. Read tasks require filtered/search/account paths plus detail facts
-or correctly bound comparisons. State tasks require the specified actor, UI action,
-and exact SQLite delta, rejecting no-ops, wrong accounts, duplicate/extra writes, and
-collateral changes.
+The accepted set has 13 tasks: nine read-only navigation/reasoning tasks and four
+exact state-change tasks. Read tasks require filtered/search/account paths plus detail
+facts or correctly bound comparisons. State tasks require the specified actor, UI
+action, and exact SQLite delta, rejecting no-ops, wrong accounts, duplicate/extra
+writes, and collateral changes.
 
-Every task was run from a fresh seed through real Playwright Chromium UI actions. The
-13 selected runs contain 71 recorded actions, step screenshots, exact task text and
-final answers, plus initial/after SQLite snapshots. All 13 passed the repository's
-`eval_judge.py --verifier True` path. See the
+After the visual repair, all tasks were rerun as `candidate-003` from a fresh immutable
+seed through real Playwright Chromium actions. The runs contain 71 actions, step
+screenshots, task text and final answers, and initial/after SQLite snapshots. All
+13 passed `eval_judge.py --verifier True`. See the
 [per-task table](assets/pr40-akc/tasks/task-table.md) and
 [structured results](assets/pr40-akc/tasks/task-results.json).
 
-The real runs exposed one verifier false negative: native GET forms include untouched
-empty controls such as `q=` or `state=`. Exact-query validation now treats
-empty-only controls as absent while still rejecting any real extra narrowing. The
-regression suite covers that legal browser path and retains the negative check for
-additional non-empty query constraints.
+The verifier suite covers all 13 positives, compare-order alternatives,
+entity/value binding, knowledge shortcuts, wrong answers, non-empty extra query
+narrowing, foreign origins, stale task text, failed actions, no-ops, wrong
+actors/values, and collateral writes. Empty native GET controls are treated as absent,
+while real extra narrowing remains rejected.
 
-The verifier unittest suite passes 13/13 methods and covers all 13 positives, compare
-order alternatives, entity/value binding, knowledge shortcuts, wrong answers, extra
-query narrowing, foreign origins, stale task text, failed actions, no-ops, wrong
-actors/values, and collateral writes.
-
-The frozen first-pass blind review independently returned **13 PASS / 0 FAIL** for
-the same 13 runs. Its packet manifest SHA-256 is
-`d43cdb643cd3ddcd60391005e2d9ed0ab9e4922864250c93eb01baf73afdff5a` and its
-result SHA-256 is
-`565d9bd94e0805183b0102a83ff8c26cbb61c1b769349251fbae582da80a1d36`.
-The [public blind-review receipt](https://github.com/aiming-lab/WebHarbor/pull/134#issuecomment-5730265701)
-records the scope and exclusions. Task-by-task comparison found no disagreement with
-the deterministic verifier. A reviewer re-check of representative common PASS cases
-covered the selector task (AKC--1), exact event-registration write (AKC--8), and
-three-breed comparison (AKC--12).
-
-After the blind result was frozen, current `main` was merged without changing AKC
-application, seed, rubric, or verifier behavior. The only AKC task-file change is the
-registry-driven base URL shift from port 40035 to 40040; existing runs used an explicit
-case-local port and remain semantically applicable. Registry, asset, application, and
-verifier checks were repeated on the integrated tree.
+The earlier blind review returned 13/13 PASS for the pre-visual-repair candidate. It is
+retained as historical evidence only because it explicitly did not assess visual
+fidelity and its packet predates the material UI changes. The refreshed candidate is
+**pending a replacement blind review**.
 
 ## Engineering results
 
 | Check | Observed result |
 |---|---|
-| Canonical UI runs | 13/13 completed, 71 recorded actions |
+| Refreshed UI runs | 13/13 completed, 71 recorded actions (`candidate-003`) |
 | Deterministic grading | 13/13 PASS through `eval_judge.py --verifier True` |
-| AKC app tests | 8/8 PASS in the project dependency image |
-| Verifier tests | 13/13 unittest methods PASS |
-| Anonymous route sweep | 58/58 HTTP 200, including all breed/article/event details |
+| AKC app tests | 8/8 PASS |
+| Verifier tests | 13/13 methods PASS; 71 subtests |
+| Anonymous route sweep | 58/58 HTTP 200 |
 | Registry | 41 sites consistent; ports 40000–40040 |
-| Extracted assets | Full repository check PASS; AKC inventory 24/24 |
-| Browser console | 0 warnings/errors after candidate reload |
-| Responsive overflow | none at 1440, 768, 390, and 320 CSS pixels |
-| Fresh full Docker build | **NOT RUN** — 41 GiB free; procedure requires 50 GiB before starting |
-| Independent blind review | 13/13 PASS; 0 disagreements with deterministic grading |
+| Extracted assets | Repository check PASS; AKC inventory 40/40 |
+| Visual matrix | 88/88 captured; mirror 44/44 without horizontal overflow |
+| HF archive | remote immutable download matched; 45 managed members validated |
+| Fresh full Docker build | **NOT RUN** — 35 GiB free; procedure requires 50 GiB before starting |
+| Refreshed independent blind review | **PENDING** |
 
-Two failed diagnostic attempts are not counted as passes: a stale preview process still
-held the old Python route until restart, and atomic replacement of a live SQLite file
-left the pooled connection pointing at an obsolete inode. Canonical state runs instead
-stop the case-specific preview, restore the immutable seed, restart, and then execute.
+Failed diagnostic attempts are not counted as passes. In particular, stale preview
+processes and unsafe atomic replacement of a database used by a pooled SQLite handle
+were rejected; canonical state runs stop the preview, restore the seed, restart it,
+and then execute.
 
 ## Remaining gates
 
-1. Free enough disk to reach the 50 GiB pre-build threshold and run the fresh full
-   Docker build plus final image-level health/reset checks.
-2. Mark the Review PR ready only if that remaining gate passes. Do not merge either PR
-   from the reviewer account.
+1. Run the frozen replacement blind-review packet and reconcile its task verdicts.
+2. Free enough disk to reach the 50 GiB pre-build threshold, then run the fresh full
+   Docker build and final image-level health/reset checks.
+3. Mark the Review PR ready only after both gates pass. Do not merge either PR from
+   the reviewer account.
 
 ## Reproduction
 
