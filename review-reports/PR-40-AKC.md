@@ -19,7 +19,7 @@ port **40035**, and keeps the registry at 36 sites.
 | Implementation fixed point | `8a06cfae154ec100feb00b194c2a64389a6756dc` |
 | Base | `2a9ca30b5fb9dbc4fcd52a814c92649b12b4a29b` (`main`) |
 | Original contribution | `83e9e6fb685bd2daf8b69aea2b0807e3add93f82`, original author preserved |
-| HF asset PR | [ChilleD/WebHarbor #97](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/97), Draft |
+| HF asset PR | [ChilleD/WebHarbor #97](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/97), open |
 | Pinned HF revision | `4b3879d288dabff17257e04b3b27e43b8628f63d` |
 | `akc.tar.gz` | SHA256 `a06876a6fb239a340f03134bc66c443ffbaa5a1df43e739eb914cb338bc3f699` |
 | Seed `instance_seed/akc.db` | SHA256 `3910bdaef81e20cbdc6bd39a33c6019a56f4e2769e1b8e8001ba59b9c396b727` |
