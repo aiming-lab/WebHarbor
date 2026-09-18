@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Order Lookup · Best Buy Demo{% endblock %}
+{% block body_class %}identity-page{% endblock %}
+{% block content %}
+  <section class="shell page-section auth-layout guest-order-layout">
+    <div class="panel identity-card sign-in-prompt">
+      <h1>Sign in or create your account</h1>
+      <p>View purchases, saved items, rewards, and support activity from a benchmark account.</p>
+      <a class="button button--secondary" href="{{ url_for('login') }}">Continue</a>
+    </div>
+    <div class="panel identity-card">
+      <h1>Find a Guest Order</h1>
+      <p>Check the status, options and tracking for a single local order.</p>
+      <form method="post" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Order number
+          <input type="text" name="order_number" placeholder="BBY-240001" required>
+        </label>
+        <label>Email
+          <input type="email" name="email" placeholder="demo@example.com" required>
+        </label>
+        <button class="button button--secondary" type="submit">Find order</button>
+      </form>
+      <p class="identity-terms">This form only checks deterministic local benchmark data.</p>
+    </div>
+  </section>
+{% endblock %}

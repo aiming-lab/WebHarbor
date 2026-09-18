@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}Best Buy Demo Mirror{% endblock %}
+{% block body_class %}retail-home-page{% endblock %}
+{% block content %}
+  {% set hero_product = featured_products[0] %}
+  <section class="home-hero shell">
+    <div class="home-hero__copy">
+      <p class="home-hero__kicker">Featured technology</p>
+      <h1>Big-screen entertainment, built for right now.</h1>
+      <p>Explore source-backed products with local pickup and delivery options.</p>
+      <a class="button button--light" href="{{ url_for('product_page', sku=hero_product.sku) }}">Shop now</a>
+    </div>
+    <a class="home-hero__media" href="{{ url_for('product_page', sku=hero_product.sku) }}">
+      <img src="{{ url_for('static', filename=hero_product.image_path) }}" alt="{{ hero_product.name }}">
+    </a>
+  </section>
+
+  <section class="shell promo-grid">
+    {% for product in featured_products[1:5] %}
+      <a class="promo-card" href="{{ url_for('product_page', sku=product.sku) }}">
+        <span>Featured</span>
+        <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+        <strong>{{ product.name }}</strong>
+        <small>{{ product.price|currency }}</small>
+        <b>Shop now</b>
+      </a>
+    {% endfor %}
+  </section>
+
+  <section class="shell member-strip">
+    <div>
+      <strong>Sign in for saved items, rewards, order tracking and more.</strong>
+      <span>Use a seeded benchmark account to continue.</span>
+    </div>
+    <div class="inline-actions">
+      <a class="button button--secondary" href="{{ url_for('login') }}">Sign in</a>
+      <a class="button button--outline" href="{{ url_for('register') }}">Create an account</a>
+    </div>
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading"><h2>Shop by category</h2></div>
+    <div class="category-carousel">
+    {% for category in categories[:7] %}
+      <a href="{{ url_for('category_page', category_slug=category.slug) }}" class="category-bubble">
+        <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+        <strong>{{ category.name }}</strong>
+      </a>
+    {% endfor %}
+    </div>
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <h2>Top Deals</h2>
+      </div>
+      <a href="{{ url_for('deals_page') }}">See all deals</a>
+    </div>
+    {% set products = featured_products[:4] %}
+    {% set compact_grid = true %}
+    {% include "_product_cards.html" %}
+  </section>
+
+  <section class="shell dual-grid">
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Store pickup</h2>
+        </div>
+        <a href="{{ url_for('stores_page') }}">See all stores</a>
+      </div>
+      <div class="store-list">
+        {% for store in stores %}
+          <a class="store-list__item" href="{{ url_for('store_page', store_slug=store.slug) }}">
+            <img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">
+            <div>
+              <strong>{{ store.name }}</strong>
+              <p>{{ store.city }}, {{ store.state }}</p>
+              <span>{{ store.amenities()[0] }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Help topics</h2>
+        </div>
+      </div>
+      <div class="support-list">
+        {% for article in support_articles %}
+          <a href="{{ url_for('support_article_page', article_slug=article.slug) }}" class="support-list__item">
+            <strong>{{ article.title }}</strong>
+            <p>{{ article.summary }}</p>
+            <span>{{ article.topic }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

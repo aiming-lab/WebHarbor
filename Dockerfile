@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 40 Flask mirror sites + control plane on :8101.
+# 41 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -125,7 +125,7 @@ print('AccuWeather seed DB generated at build time.')" && rm -rf /opt/WebSyn/acc
 # Upgrade the pinned Recreation.gov seed before it becomes the reset fixture.
 RUN cd /opt/WebSyn/recreation_gov && python3 migrate_seed.py
 
-EXPOSE 8101 40000-40039
+EXPOSE 8101 40000-40040
 
 # Keep the downloaded BabyCenter seed aligned with tracked source corrections.
 RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/babycenter && \
