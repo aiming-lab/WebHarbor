@@ -51,6 +51,7 @@ fi
 # integration. An explicit ASSETS_REVISION override deliberately replaces all
 # pins, which is useful when validating a proposed consolidated release.
 declare -A SITE_REVISIONS
+declare -A SITE_REPOS
 TARBALLS=()
 BASE_INCLUDES=()
 for archive in "${INCLUDES[@]}"; do
@@ -60,16 +61,23 @@ for archive in "${INCLUDES[@]}"; do
         exit 1
     fi
     revision="$REVISION"
+    asset_repo="$REPO"
     if [[ -z "${ASSETS_REVISION:-}" ]]; then
         scoped=$(awk -v key="site.$site:" '$1 == key {print $2}' .assets-revision)
+        scoped_repo=$(awk -v key="site.$site.repo:" '$1 == key {print $2}' .assets-revision)
         if [[ -n "$scoped" ]]; then
             [[ "$scoped" =~ ^[0-9a-f]{40}$ ]] || { echo "Invalid immutable pin for $site" >&2; exit 1; }
             revision="$scoped"
+            asset_repo="${scoped_repo:-$REPO}"
+        elif [[ -n "$scoped_repo" ]]; then
+            echo "Scoped repository needs an immutable revision: $site" >&2
+            exit 1
         fi
     fi
     SITE_REVISIONS[$site]="$revision"
+    SITE_REPOS[$site]="$asset_repo"
     TARBALLS+=("sites/.cache/tarballs/$revision/$archive")
-    if [[ "$revision" == "$REVISION" ]]; then
+    if [[ "$revision" == "$REVISION" && "$asset_repo" == "$REPO" ]]; then
         BASE_INCLUDES+=(--include "$archive")
     fi
 done
@@ -80,9 +88,9 @@ fi
 for archive in "${INCLUDES[@]}"; do
     site=${archive%.tar.gz}
     revision=${SITE_REVISIONS[$site]}
-    if [[ "$revision" != "$REVISION" ]]; then
+    if [[ "$revision" != "$REVISION" || "${SITE_REPOS[$site]}" != "$REPO" ]]; then
         echo "[fetch] $site scoped pin: $revision"
-        hf download "$REPO" --include "$archive" --repo-type dataset --revision "$revision" \
+        hf download "${SITE_REPOS[$site]}" --include "$archive" --repo-type dataset --revision "$revision" \
             --local-dir "sites/.cache/tarballs/$revision"
     fi
 done
@@ -109,6 +117,12 @@ extracted=0
 for tarball in "${TARBALLS[@]}"; do
     site=$(basename "$tarball" .tar.gz)
     if [[ -n "$ONLY_SITE" && "$site" != "$ONLY_SITE" ]]; then continue; fi
+    expected_sha=$(awk -v key="site.$site.sha256:" '$1 == key {print $2}' .assets-revision)
+    if [[ -n "$expected_sha" && -z "${ASSETS_REVISION:-}" ]]; then
+        [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]] || { echo "Invalid archive hash: $site" >&2; exit 1; }
+        actual_sha=$(sha256sum "$tarball" | cut -d' ' -f1)
+        [[ "$actual_sha" == "$expected_sha" ]] || { echo "Archive hash mismatch: $site" >&2; exit 1; }
+    fi
     python3 scripts/validate_asset_archive.py "$tarball" "$site"
     echo "[fetch] extracting $site"
     python3 scripts/extract_asset_archive.py "$tarball" sites "$site"

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Forums — {{ g.name }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      <a href="{{ url_for('browse') }}">Browse</a> ›
+      <a href="{{ g.detail_url }}">{{ g.name }}</a> › Forums
+    </div>
+    <h1>{{ g.name }} — Forums</h1>
+    <table class="collection_table">
+      <thead><tr>
+        <th>Forum</th><th class="collection_bggrating">Threads</th>
+        <th class="collection_bggrating">Posts</th>
+      </tr></thead>
+      <tbody>
+        {% for f in forums %}
+        <tr>
+          <td class="collection_objectname">
+            <a class="primary" href="{{ url_for('forum_detail', fid=f.id) }}">{{ f.title }}</a>
+            <div class="muted">{{ f.description }}</div>
+          </td>
+          <td class="collection_bggrating">{{ f.num_threads | thousands }}</td>
+          <td class="collection_bggrating">{{ f.num_posts | thousands }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

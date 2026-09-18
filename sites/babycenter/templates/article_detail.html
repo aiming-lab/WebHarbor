@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<article class="article-detail">
+  <div class="eyebrow">{{ article.category }} · {{ article.trimester }}</div>
+  <h1>{{ article.title }}</h1>
+  <p class="lede">{{ article.summary }}</p>
+  <img class="article-hero-image" src="{{ url_for('static', filename='images/' ~ article_image(article.slug)) }}" alt="Editorial image for {{ article.title }}">
+  <div class="article-body">{% for para in article.body.split("\n") %}{% if para.strip() %}<p>{{ para }}</p>{% endif %}{% endfor %}</div>
+  <p class="muted">About {{ article.read_minutes }} min read</p>
+  <form method="post" action="{{ url_for('save_item', item_type='article', slug=article.slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Save article</button></form>
+</article>
+{% set attribution = article.attribution %}
+{% include "_attribution.html" with context %}
+{% endblock %}

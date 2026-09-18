@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Expansions — {{ g.name }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      <a href="{{ url_for('browse') }}">Browse</a> ›
+      <a href="{{ g.detail_url }}">{{ g.name }}</a> › Expansions
+    </div>
+    <h1>{{ g.name }} — Expansions ({{ expansions | length }})</h1>
+    {% if expansions %}
+    <table class="collection_table">
+      <thead><tr>
+        <th></th><th>Title</th><th class="collection_bggrating">Year</th>
+        <th class="collection_bggrating">Avg Rating</th>
+        <th class="collection_bggrating">Voters</th>
+      </tr></thead>
+      <tbody>
+      {% for e in expansions %}
+        <tr>
+          <td class="collection_thumbnail">
+            {% if e.thumb_filename %}<img src="{{ url_for('static', filename='images/' + e.thumb_filename) }}" alt="">{% endif %}
+          </td>
+          <td class="collection_objectname">
+            <a class="primary" href="{{ e.detail_url }}">{{ e.name }}</a>
+          </td>
+          <td class="collection_bggrating">{{ e.year_published or '—' }}</td>
+          <td class="collection_bggrating">{{ e.avg_rating | one_decimal }}</td>
+          <td class="collection_bggrating">{{ e.num_ratings | thousands }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    {% else %}<p class="muted">No expansions on record.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,25 +1,34 @@
 # Hugging Face dataset holding WebHarbor's heavy static assets.
-# Pin an immutable commit SHA; never a moving branch or refs/pr/<n>.
+# Pin an immutable merged commit SHA, never a moving branch or refs/pr/<n>.
 #
-# Merged dataset-main commit from HF asset PR #88 (NBA review, #30).
-# https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/88
+# Consolidated HF main after merging original asset PRs #8 (Recreation.gov),
+# #15 (CarMax), #25 (BoardGameGeek), #66 (AccuWeather), then CarMax supplement #95.
+# https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/95
 #
-# Adds nba.tar.gz: 26,495,947 bytes, LFS oid
-# 4ade0429edc12ffbfa1ee42a8f0192fc3009647912ff57a8d232d52abe7b349d.
-# The 35 archives present at the previous main pin
-# e8f59470b76b95d607f288958186cb9b73681d9e (IMDb, HF PR #57) are byte-for-byte unchanged,
-# including imdb, gov_uk, berkeley and bh_photo.
-# This revision carries an archive for 34 of the 35 registered sites; accuweather has
-# no archive in the dataset and is pinned per-site below.
-# The two further archives (bandcamp and drugs_com) are ignored by fetch_assets.sh.
-# B&H's bundle contains images and external cache; Docker generates its seed
-# from tracked catalog data (sites/bh_photo/.build-generated-seed).
+# All 36 archives from the previous global pin
+# 2aaf9d598f3e71cddd17a4efcdfee7dd7c073337 are byte-for-byte unchanged.
+# Recreation.gov, BoardGameGeek and AccuWeather retain their previously reviewed
+# archive bytes. CarMax adds 11 source-backed stock photos; every original file,
+# including its seed, is unchanged. Provenance: sites/carmax/recovered_assets.json.
+# CarMax archive SHA-256:
+# 274ac06abebf353ebb6561ab0647fed5c8a048916dd8867b9dfa951963a8d81d
+#
+# This merged revision contains archives for all 38 registered sites. The two
+# additional archives (bandcamp and drugs_com) are ignored by fetch_assets.sh.
+# Tracked seed migrations/build-generation remain part of the build contract.
 repo: ChilleD/WebHarbor
-revision: 2aaf9d598f3e71cddd17a4efcdfee7dd7c073337
+revision: 9d67d0088a7535e455a331a823b67e3a7d666161
 
-# AccuWeather HF PR #66; immutable archive validated in the task review.
-# Other sites retain their merged and validated asset revision above.
-site.accuweather: 0a73c1c1ac2e47513389a8a1a67601f75c8c4150
+# BabyCenter: immutable merged HF PR #78 revision, preserving all prior assets.
+# https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/78
+# Archive SHA-256: 8b83000a1fad3969968290ae537af0bbf0e0a179284f915827cffadb0fe103f3
+# The tracked migration corrects the shipped seed during fetch/build.
+site.babycenter: 8f3437ffa3b80c606687c49a5c5bbdf158f1c9ce
+
+# Amtrak: original contributor bundle, unchanged, merged through HF PR #96.
+# https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/96
+site.amtrak: 6f432484307f76ca3c58b1d5c8f7b614dfb34f54
+site.amtrak.sha256: 22f0132a5f9bfee45a641e8172050a94bb4fc0de4ad45f1d9e52deb50eb37f34
 
 # AKC review asset candidate, HF PR #97. The immutable revision is usable for
 # review while maintainers coordinate the final dataset merge.

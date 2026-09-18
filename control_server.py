@@ -32,7 +32,7 @@ SITES = [
     'fedex', 'webmd_doctor', 'healthline', 'kaggle',
     'nvidia', 'berkeley', 'bh_photo', 'accuweather', 'gov_uk',
     'imdb',
-    'nba',
+    'nba', 'recreation_gov', 'boardgamegeek', 'carmax', 'babycenter', 'amtrak',
     'akc',
 ]
 BASE_PORT = 40000

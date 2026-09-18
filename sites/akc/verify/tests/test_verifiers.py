@@ -181,7 +181,7 @@ class VerifierTests(unittest.TestCase):
         for index, path in enumerate(urls):
             steps.append({
                 "step": index,
-                "url": "http://localhost:40035" + path,
+                "url": "http://localhost:40040" + path,
                 "action": "click",
                 "params": params_by_index.get(index, {}),
                 "action_result": {"success": True, "error": None},

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% from "_macros.html" import option_card %}
+{% block title %}Booking Results · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">{{ leg_title }}</div>
+      <h2>{{ origin_station.city_name if origin_station else params.origin }} → {{ destination_station.city_name if destination_station else params.destination }}</h2>
+      <p>
+        {{ service_date|date_label }} · {{ params.passengers }} traveler{% if params.passengers != 1 %}s{% endif %}
+        · Sorted by {{ params.sort|replace('_', ' ') }}
+        {% if params.direct_only %}· Direct only{% endif %}
+      </p>
+      {% if params.trip_type == 'round-trip' and selected_outbound %}
+        <div class="card" style="margin-top: 18px;">
+          <strong>Saved outbound</strong>
+          <div class="muted">{{ selected_outbound.route_label }} · {{ selected_outbound.departure_dt|dt_label }}</div>
+        </div>
+      {% endif %}
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=(origin_station.hero_image if origin_station else 'images/stations/NYP.svg')) }}" alt="Origin station">
+    </div>
+  </section>
+
+  <section class="section">
+    {% if results %}
+      <div class="detail-list">
+        {% for option in results %}
+          <form action="{{ url_for('booking_select_trip') }}" method="post">
+            {{ option_card(option, selectable=True, choice_name='option_token', token=leg ~ '_' ~ loop.index0) }}
+            <div class="hero-actions" style="margin-top: 12px;">
+              <button class="button" type="submit">{% if params.trip_type == 'round-trip' and leg == 'outbound' %}Save outbound and continue{% else %}Choose this itinerary{% endif %}</button>
+            </div>
+          </form>
+        {% endfor %}
+      </div>
+    {% else %}
+      <div class="empty-state">
+        No itineraries were seeded for that combination. Try another station pair, disable direct-only, or switch the service date.
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
