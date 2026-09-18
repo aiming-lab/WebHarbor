@@ -1,23 +1,24 @@
 # AKC reviewer validation
 
 Status: **Draft; not ready for maintainer handoff.** The reviewed implementation and
-HF asset candidate are fixed below. All 13 canonical tasks have real browser runs and
-deterministic PASS results. Independent blind review is still pending, and the fresh
-full Docker build is not yet run because the host is below the review procedure's
+HF asset candidate are fixed below. All 13 canonical tasks have real browser runs,
+deterministic PASS results, and matching independent blind-review PASS verdicts. The
+fresh full Docker build is not yet run because the host is below the review procedure's
 50 GiB free-space threshold.
 
 This review preserves [@Sun-sunshine06's original AKC contribution, PR #40](https://github.com/aiming-lab/WebHarbor/pull/40)
 as commit `83e9e6fb685bd2daf8b69aea2b0807e3add93f82` with the contributor's original
 authorship. Reviewer fixes are later commits on an independent branch. The branch
-integrates `main` at `2a9ca30b5fb9dbc4fcd52a814c92649b12b4a29b`, assigns AKC
-port **40035**, and keeps the registry at 36 sites.
+integrates `main` at `454e7a49c37abe7eb074f6c86200a1308f109740`, assigns AKC
+port **40040**, and keeps the registry at 41 sites.
 
 ## Fixed candidate
 
 | Item | Value |
 |---|---|
-| Implementation fixed point | `8a06cfae154ec100feb00b194c2a64389a6756dc` |
-| Base | `2a9ca30b5fb9dbc4fcd52a814c92649b12b4a29b` (`main`) |
+| Executed implementation fixed point | `8a06cfae154ec100feb00b194c2a64389a6756dc` |
+| Current integrated code point | `b48637f68c7b5e4721d5c33290b6b8d85e5c2664` |
+| Base | `454e7a49c37abe7eb074f6c86200a1308f109740` (`main`) |
 | Original contribution | `83e9e6fb685bd2daf8b69aea2b0807e3add93f82`, original author preserved |
 | HF asset PR | [ChilleD/WebHarbor #97](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/97), open |
 | Pinned HF revision | `4b3879d288dabff17257e04b3b27e43b8628f63d` |
@@ -106,6 +107,23 @@ order alternatives, entity/value binding, knowledge shortcuts, wrong answers, ex
 query narrowing, foreign origins, stale task text, failed actions, no-ops, wrong
 actors/values, and collateral writes.
 
+The frozen first-pass blind review independently returned **13 PASS / 0 FAIL** for
+the same 13 runs. Its packet manifest SHA-256 is
+`d43cdb643cd3ddcd60391005e2d9ed0ab9e4922864250c93eb01baf73afdff5a` and its
+result SHA-256 is
+`565d9bd94e0805183b0102a83ff8c26cbb61c1b769349251fbae582da80a1d36`.
+The [public blind-review receipt](https://github.com/aiming-lab/WebHarbor/pull/134#issuecomment-5730265701)
+records the scope and exclusions. Task-by-task comparison found no disagreement with
+the deterministic verifier. A reviewer re-check of representative common PASS cases
+covered the selector task (AKC--1), exact event-registration write (AKC--8), and
+three-breed comparison (AKC--12).
+
+After the blind result was frozen, current `main` was merged without changing AKC
+application, seed, rubric, or verifier behavior. The only AKC task-file change is the
+registry-driven base URL shift from port 40035 to 40040; existing runs used an explicit
+case-local port and remain semantically applicable. Registry, asset, application, and
+verifier checks were repeated on the integrated tree.
+
 ## Engineering results
 
 | Check | Observed result |
@@ -115,12 +133,12 @@ actors/values, and collateral writes.
 | AKC app tests | 8/8 PASS in the project dependency image |
 | Verifier tests | 13/13 unittest methods PASS |
 | Anonymous route sweep | 58/58 HTTP 200, including all breed/article/event details |
-| Registry | 36 sites consistent; ports 40000–40035 |
+| Registry | 41 sites consistent; ports 40000–40040 |
 | Extracted assets | Full repository check PASS; AKC inventory 24/24 |
 | Browser console | 0 warnings/errors after candidate reload |
 | Responsive overflow | none at 1440, 768, 390, and 320 CSS pixels |
-| Fresh full Docker build | **NOT RUN** — 44 GiB free; procedure requires 50 GiB before starting |
-| Independent blind review | **PENDING** |
+| Fresh full Docker build | **NOT RUN** — 41 GiB free; procedure requires 50 GiB before starting |
+| Independent blind review | 13/13 PASS; 0 disagreements with deterministic grading |
 
 Two failed diagnostic attempts are not counted as passes: a stale preview process still
 held the old Python route until restart, and atomic replacement of a live SQLite file
@@ -129,12 +147,10 @@ stop the case-specific preview, restore the immutable seed, restart, and then ex
 
 ## Remaining gates
 
-1. Free at least 6 GiB and run the fresh full Docker build plus final image-level
-   health/reset checks.
-2. Complete the frozen-package independent blind review and reconcile its task-by-task
-   result with deterministic grading.
-3. Mark the Review PR ready only if both gates pass. Do not merge either PR from the
-   reviewer account.
+1. Free enough disk to reach the 50 GiB pre-build threshold and run the fresh full
+   Docker build plus final image-level health/reset checks.
+2. Mark the Review PR ready only if that remaining gate passes. Do not merge either PR
+   from the reviewer account.
 
 ## Reproduction
 
