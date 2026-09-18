@@ -143,11 +143,12 @@ Its tracked idempotent seed migration corrects the week-18 excerpt during
 fetch/build; the existing image/archive bytes do not require repacking.
 
 AKC, the 41st site, uses immutable candidate commit
-`4b3879d288dabff17257e04b3b27e43b8628f63d` from
+`dc253d3f17cb5d83ee00f9bbc2100a296126327d` from
 [HF asset PR #97](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/97)
 while maintainers coordinate the dataset merge. Its archive includes the frozen
-seed and 24 source-backed breed images; `akc.tar.gz` has SHA-256
-`a06876a6fb239a340f03134bc66c443ffbaa5a1df43e739eb914cb338bc3f699`.
+seed, 24 source-backed breed images, and 16 source-backed task-path visual
+assets; `akc.tar.gz` has SHA-256
+`a9a5f04d6bdc243b2714c5a056b31d3b134bdf8fed93a74db761f40feb301b36`.
 
 B&H's archive contains images and external cache. The Docker build validates
 its 508 declared assets and generates `instance_seed/bh_photo.db` from the tracked
