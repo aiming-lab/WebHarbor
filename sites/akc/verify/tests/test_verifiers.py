@@ -251,6 +251,19 @@ class VerifierTests(unittest.TestCase):
                 narrowed[0] += "&extra=shortcut" if "?" in narrowed[0] else "?extra=shortcut"
                 self.assertFalse(self.verify(number, self.make_run(number, urls=narrowed))["pass"])
 
+    def test_exact_filter_tasks_accept_blank_native_form_fields(self):
+        cases = {
+            0: "/breeds?q=&group=Toy&size=Small",
+            5: "/events?type=Training&state=",
+            7: "/breeds?q=patient&group=Working&size=",
+        }
+        for number, submitted_url in cases.items():
+            with self.subTest(number=number):
+                urls, _ = positive_case(number)
+                submitted = list(urls)
+                submitted[0] = submitted_url
+                self.assertTrue(self.verify(number, self.make_run(number, urls=submitted))["pass"])
+
     def test_read_tasks_reject_any_business_write(self):
         def collateral(db):
             db.execute("INSERT INTO saved_breed VALUES (9,1,6,'collateral')")

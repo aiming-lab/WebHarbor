@@ -223,10 +223,23 @@ class RunEvidence:
     def visited(self, path, query=None, exact_query=False):
         wanted = _path(path)
         query = query or {}
+        if exact_query:
+            query = {
+                key: values for key, values in query.items()
+                if any(value != "" for value in values)
+            }
         for event in self.events:
             if _path(event["path"]) != wanted:
                 continue
             actual = event["query"]
+            if exact_query:
+                # Native GET forms submit untouched controls as empty strings.
+                # Empty-only parameters carry no filtering semantics and must
+                # not turn an ordinary UI submission into a false negative.
+                actual = {
+                    key: values for key, values in actual.items()
+                    if any(value != "" for value in values)
+                }
             if exact_query and set(actual) != set(query):
                 continue
             if all(Counter(actual.get(key, [])) == Counter(values) if exact_query
