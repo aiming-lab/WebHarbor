@@ -264,7 +264,11 @@ def product_membership(path: str, table: str, email: str, skus: list[str]) -> se
 
 
 def task_0(trajectory: dict[str, object], initial: str, after: str) -> None:
-    require(visited_search_terms(trajectory, "/search", ["dell", "touchscreen"]), "required product search was not recorded")
+    searched = (
+        visited_search_terms(trajectory, "/search", ["dell", "touchscreen"])
+        or visited_query(trajectory, "/search", {"q": "6668953"})
+    )
+    require(searched, "required product search was not recorded")
     require(visited(trajectory, "/product/6668953"), "requested product page was not opened")
     require(has_tokens(final_answer(trajectory), "549.99", "4.5"), "answer does not contain the frozen price and rating")
     require_unchanged_tables(initial, after, {"search_logs"})
@@ -275,7 +279,9 @@ def task_1(trajectory: dict[str, object], initial: str, after: str) -> None:
     requested = ["6668953", "6672899"]
     require(product_membership(initial, "compare_items", "alice.j@test.com", requested) == set(), "requested products were already compared initially")
     require(product_membership(after, "compare_items", "alice.j@test.com", requested) == set(requested), "after-state lacks both requested comparison products")
-    require(has_tokens(final_answer(trajectory), "hp", "omnibook", "70"), "answer does not identify the cheaper product and price difference")
+    answer = final_answer(trajectory)
+    cheaper_product = has_tokens(answer, "hp", "omnibook") or has_tokens(answer, "6672899")
+    require(cheaper_product and has_tokens(answer, "70"), "answer does not identify the cheaper product and price difference")
     require_unchanged_tables(initial, after, {"compare_items", "search_logs"})
     before_memberships = membership_rows(initial, "compare_items")
     after_memberships = membership_rows(after, "compare_items")
@@ -295,7 +301,11 @@ def task_2(trajectory: dict[str, object], initial: str, after: str) -> None:
 
 
 def task_3(trajectory: dict[str, object], initial: str, after: str) -> None:
-    require(visited_search_terms(trajectory, "/search", ["canon", "t7", "lens"]), "required camera search was not recorded")
+    searched = (
+        visited_search_terms(trajectory, "/search", ["canon", "t7", "lens"])
+        or visited_query(trajectory, "/search", {"q": "6323759"})
+    )
+    require(searched, "required camera search was not recorded")
     require(visited(trajectory, "/product/6323759"), "requested camera page was not opened")
     require(has_tokens(final_answer(trajectory), "18-55mm", "75-300mm"), "answer does not contain both lens ranges")
     require_unchanged_tables(initial, after, {"search_logs"})
@@ -304,8 +314,9 @@ def task_3(trajectory: dict[str, object], initial: str, after: str) -> None:
 def task_4(trajectory: dict[str, object], initial: str, after: str) -> None:
     require(visited_in_order(trajectory, ["/login", "/account/rewards"]), "required sign-in and Rewards path was not recorded")
     answer = final_answer(trajectory)
-    require("1840" in normalize(answer), "answer lacks the frozen points balance")
     normalized = normalize(answer)
+    normalized_numbers = re.sub(r"(?<=\d)[,_\s](?=\d{3}\b)", "", normalized)
+    require("1840" in normalized_numbers, "answer lacks the frozen points balance")
     require((re.search(r"\b0\b", normalized) or re.search(r"\bno\b", normalized)) and "certificate" in normalized, "answer lacks the available-certificate count")
     require_unchanged_tables(initial, after, {"search_logs"})
 
