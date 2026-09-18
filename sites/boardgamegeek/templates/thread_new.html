@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}New Thread — {{ forum.title }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      <a href="{{ url_for('forums_index') }}">Forums</a> ›
+      <a href="{{ url_for('forum_detail', fid=forum.id) }}">{{ forum.title }}</a> › New Thread
+    </div>
+    <h1>New thread in {{ forum.title }}</h1>
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div class="field">
+        {{ form.subject.label }}
+        {{ form.subject() }}
+      </div>
+      <div class="field">
+        {{ form.body.label }}
+        {{ form.body() }}
+      </div>
+      <div class="btn-row">
+        <button type="submit">Post thread</button>
+        <a class="btn btn-quiet" href="{{ url_for('forum_detail', fid=forum.id) }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

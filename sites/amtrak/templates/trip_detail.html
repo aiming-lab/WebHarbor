@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}{{ booking.booking_code }} · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Trip details</div>
+      <h2>{{ booking.booking_code }} · {{ booking.origin_code }} → {{ booking.destination_code }}</h2>
+      <p>{{ booking.status }} · {{ booking.departure_date|date_label }}{% if booking.return_date %} returning {{ booking.return_date|date_label }}{% endif %}</p>
+      <div class="badge-row">
+        <span class="badge">{{ booking.total_amount|currency }}</span>
+        <span class="badge">{{ booking.reward_points_earned }} reward points</span>
+        <span class="badge">{{ booking.trip_type|replace('-', ' ')|title }}</span>
+      </div>
+      <div class="hero-actions">
+        <form action="{{ url_for('trip_cancel', booking_code=booking.booking_code) }}" method="post">
+          <button class="button-ghost" type="submit">Mark cancelled</button>
+        </form>
+        <form action="{{ url_for('trip_change', booking_code=booking.booking_code) }}" method="post">
+          <button class="button-secondary" type="submit">Record change request</button>
+        </form>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/routes/pacific-surfliner-hero.svg') }}" alt="Trip details">
+    </div>
+  </section>
+
+  <section class="section grid two">
+    <div class="card">
+      <div class="eyebrow">Segments</div>
+      <h2>Itinerary legs</h2>
+      <div class="detail-list">
+        {% for segment in booking.segments %}
+          <div class="detail-item">
+            <strong>{{ segment.route_name }} {{ segment.train_number }}</strong>
+            <div class="muted">{{ segment.origin_code }} → {{ segment.destination_code }}</div>
+            <div class="subtle">{{ segment.depart_dt|dt_label }} → {{ segment.arrive_dt|dt_label }}</div>
+            <div class="meta-row">
+              <span class="tag">{{ segment.fare_class_name }}</span>
+              <span class="tag">{{ segment.accommodation_type }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Tickets and payment</div>
+      <h2>Issued records</h2>
+      <div class="detail-list">
+        {% for ticket in booking.tickets %}
+          <div class="detail-item">
+            <strong>{{ ticket.passenger.full_name }}</strong>
+            <div class="muted">{{ ticket.accommodation_type }} · {{ ticket.seat_or_room }}</div>
+            <div class="subtle">QR {{ ticket.qr_token }} · {{ ticket.status }}</div>
+          </div>
+        {% endfor %}
+        <div class="detail-item">
+          <strong>{{ booking.payment.payment_label }}</strong>
+          <div class="muted">{{ booking.payment.status }} · {{ booking.payment.approval_code }}</div>
+        </div>
+        {% if booking.notes %}
+          <div class="detail-item">
+            <strong>Notes</strong>
+            <div class="muted">{{ booking.notes }}</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

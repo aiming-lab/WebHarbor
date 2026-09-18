@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Your baby at {{ month.month }} months{% endblock %}
+{% block content %}
+<section class="detail-hero">
+  <img src="{{ url_for('static', filename='images/baby-six-months.jpg') }}" alt="Baby development at month {{ month.month }}">
+  <div><div class="eyebrow">Month {{ month.month }}</div><h1>{{ month.headline }}</h1><p>{{ month.physical or month.motor or month.communication }}</p>
+  <form method="post" action="{{ url_for('save_item', item_type='month', slug=month.month) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Save month</button></form></div>
+</section>
+<section class="content-columns">
+  <article><h2>Physical development</h2>
+    {% if month.physical %}<p>{{ month.physical }}</p>{% else %}<p class="muted">The source article does not document physical development separately at this age.</p>{% endif %}</article>
+  <article><h2>Motor development</h2>
+    {% if month.motor %}<p>{{ month.motor }}</p>{% else %}<p class="muted">The source article does not document motor development separately at this age.</p>{% endif %}</article>
+  <article><h2>Communication and social</h2>
+    {% if month.communication %}<p>{{ month.communication }}</p>{% else %}<p class="muted">The source article does not document communication separately at this age.</p>{% endif %}</article>
+</section>
+{% set attribution = month.attribution %}
+{% include "_attribution.html" with context %}
+{% endblock %}

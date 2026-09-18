@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Get pre-qualified | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <h1>Get pre-qualified</h1>
+  <p>See personalized monthly payment terms - no impact to your credit. Takes about 5 minutes. Good for 30 days.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row"><label>Annual income (pre-tax)</label>{{ form.annual_income() }}{% for e in form.annual_income.errors %}<div class="errors">{{ e }}</div>{% endfor %}</div>
+    <div class="form-row"><label>Employment status</label>{{ form.employment_status() }}</div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Max monthly payment</label>{{ form.monthly_payment_max() }}</div>
+      <div class="form-row"><label>Down payment</label>{{ form.down_payment() }}</div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-row"><label>Loan term</label>{{ form.term_months() }}</div>
+      <div class="form-row"><label>Credit profile</label>{{ form.credit_tier() }}</div>
+    </div>
+    <button class="btn btn-primary btn-lg">Get pre-qualified</button>
+  </form>
+  <p style="margin-top:16px;font-size:12px;color:var(--cmx-text-light)">
+    Pre-qualification uses a soft credit inquiry and does not impact your credit score.
+    Final financing terms require a credit application.
+  </p>
+</div>
+{% endblock %}

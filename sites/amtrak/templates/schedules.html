@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Schedules · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Schedules</div>
+      <h2>Inspect station departures for a fixed seeded service date.</h2>
+      <p>The schedule board is pinned to deterministic trip data so benchmarking remains stable even after repeated resets.</p>
+      <form class="form-panel" action="{{ url_for('schedules_page') }}" method="get" style="margin-top: 18px;">
+        <div class="form-grid">
+          <div class="field-wide">
+            <label for="station_code">Station</label>
+            <input id="station_code" list="station-directory" name="station_code" value="{{ station.code if station else 'NYP' }}">
+          </div>
+          <div class="field">
+            <label for="date">Service date</label>
+            <input id="date" type="date" name="date" value="{{ schedule_date.strftime('%Y-%m-%d') }}">
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="button" type="submit">Refresh board</button>
+        </div>
+      </form>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=station.hero_image if station else 'images/stations/NYP.svg') }}" alt="Schedule art">
+    </div>
+  </section>
+
+  <section class="section card">
+    <div class="eyebrow">{{ station.code if station else 'Station' }}</div>
+    <h2>{{ station.name if station else 'Unknown station' }}</h2>
+    <div class="info-table-wrap">
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Depart</th>
+            <th>Route</th>
+            <th>Train</th>
+            <th>Destination</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for departure in departures %}
+            <tr>
+              <td>{{ departure.departure_dt|time_label }}</td>
+              <td>{{ departure.route_name }}</td>
+              <td>{{ departure.train_number }}</td>
+              <td>{{ departure.destination_name }}</td>
+              <td>{{ departure.status_label }}{% if departure.delay_minutes %} · {{ departure.delay_minutes }} min{% endif %}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5">No departures were seeded for that station/date pair.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}

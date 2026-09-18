@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import option_card %}
+{% block title %}Selected Trip · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Trip selected</div>
+      <h2>Review the itinerary before picking fares.</h2>
+      <p>The selected legs are locked into your local session. Next you will compare fare classes and, if needed, sleeper rooms.</p>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('booking_select_fare') }}">Continue to fares</a>
+        <a class="button-ghost" href="{{ url_for('booking_search') }}">Start over</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/routes/northeast-regional-map.svg') }}" alt="Itinerary">
+    </div>
+  </section>
+
+  <section class="section detail-list">
+    {% for option in options %}
+      {{ option_card(option) }}
+    {% endfor %}
+  </section>
+{% endblock %}

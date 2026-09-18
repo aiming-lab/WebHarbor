@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="wrap" style="max-width:840px;">
+    {% if kind == 'editorial' %}
+      <p class="eyebrow">{{ article.kicker }}</p>
+      <h1>{{ article.title }}</h1>
+      <img class="article-hero" src="{{ article.image_url }}" alt="">
+      <p class="article-deck">{{ article.summary }}</p>
+      {% for paragraph in article.paragraphs %}
+        <p>{{ paragraph }}</p>
+      {% endfor %}
+    {% elif kind == 'america250' %}
+      <p class="eyebrow">Recreation.gov article</p>
+      <h1>{{ title }}</h1>
+      <p>Explore historic parks, cultural sites, scenic landscapes, and public lands connected to America's 250th anniversary. The mirror highlights places like San Francisco Maritime National Historical Park, Fort Point, Golden Gate, Yosemite, Yellowstone, Denali, and Cumberland Island.</p>
+      <p>Trip ideas include pairing a historic tour with a nearby campground, reserving a timed-entry pass for a national park, or comparing wilderness permits before a backpacking route.</p>
+    {% else %}
+      <p class="eyebrow">Recreation.gov article</p>
+      <h1>{{ title }}</h1>
+      <p>Recreation.gov helps visitors discover and reserve experiences across federal lands and waters. This local WebHarbor mirror focuses on the workflows agents need: search, filtering, detail reading, saving, cart, checkout, reservations, and account management.</p>
+      <p>The real site integrates inventory from agencies such as NPS, USFS, BLM, FWS, USACE, and other public land partners.</p>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

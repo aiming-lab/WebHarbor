@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}MaxCare extended service plans | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>MaxCare extended service plans</h1>
+  <p>Optional coverage that picks up where the limited warranty leaves off.</p>
+  <div class="grid grid-3" style="margin-top:24px">
+    {% for tier, label in labels.items() %}
+    <div class="kpi" style="text-align:left">
+      <h3 style="margin:0 0 8px;color:var(--cmx-blue-darker)">{{ label }}</h3>
+      <div class="v">{{ prices[tier]|money }}</div>
+      <div class="l">one-time</div>
+      <ul style="font-size:13px;color:var(--cmx-text)">
+        <li>Hassle-free repairs (deductible per visit)</li>
+        <li>24/7/365 emergency roadside</li>
+        <li>Rental reimbursement up to $40/day</li>
+        <li>Nationwide US &amp; Canada coverage</li>
+        <li>Cancel any time</li>
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

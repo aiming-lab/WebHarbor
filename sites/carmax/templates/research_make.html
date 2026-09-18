@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Used {{ make_name }} | CarMax research{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <div class="breadcrumbs"><a href="{{ url_for('research_index') }}">Research</a> / {{ make_name }}</div>
+  <h1>{{ make_name }} research</h1>
+  <div class="grid grid-3">
+    {% for make, mslug, model, modelslug, n in models %}
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('research_model', make=mslug, model=modelslug) }}">
+      <div class="v" style="font-size:18px">{{ model }}</div>
+      <div class="l">{{ n }} in stock - read review</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
