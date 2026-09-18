@@ -7,9 +7,9 @@
 <section class="account-layout">
   <form class="side-form" method="post" action="{{ url_for('update_profile') }}">
     <h2>Owner Preferences</h2>
-    <label>Household <input name="household" value="{{ user.household }}"></label>
-    <label>Activity level <input name="activity_level" value="{{ user.activity_level }}"></label>
-    <label>Experience <input name="experience" value="{{ user.experience }}"></label>
+    <label>Household <select name="household">{% for item in household_options %}<option {% if item == user.household %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+    <label>Activity level <select name="activity_level">{% for item in activity_options %}<option {% if item == user.activity_level %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
+    <label>Experience <select name="experience">{% for item in experience_options %}<option {% if item == user.experience %}selected{% endif %}>{{ item }}</option>{% endfor %}</select></label>
     <button type="submit">Update Profile</button>
   </form>
   <div>
