@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 {% block title %}Sign in · Best Buy Demo{% endblock %}
+{% block body_class %}identity-page{% endblock %}
 {% block content %}
-  <section class="shell page-section auth-layout">
-    <div class="panel">
-      <p class="eyebrow">Sign in</p>
-      <h1>Use a benchmark account</h1>
+  <section class="shell page-section auth-layout identity-layout">
+    <div class="panel identity-card">
+      <h1>Sign in to your account</h1>
       <form method="post" class="auth-form">
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-        <label>Email
+        <label>Email Address
           <input type="email" name="email" required>
         </label>
         <label>Password
@@ -15,18 +15,10 @@
         </label>
         <button class="button" type="submit">Sign in</button>
       </form>
-      <p class="auth-note">Demo password for seeded accounts: <strong>{{ benchmark_password }}</strong></p>
-    </div>
-    <div class="panel">
-      <h2>Seeded accounts</h2>
-      <ul class="bullet-list">
-        <li>alice.j@test.com</li>
-        <li>bob.c@test.com</li>
-        <li>carol.d@test.com</li>
-        <li>david.k@test.com</li>
-      </ul>
-      <p>Create a new synthetic account from the register page if you want a fresh profile.</p>
-      <a class="button button--secondary" href="{{ url_for('register') }}">Register a demo account</a>
+      <p class="identity-terms">By continuing or signing in, you agree this is a local benchmark simulation. No real Best Buy account is contacted.</p>
+      <p class="auth-note">Demo password: <strong>{{ benchmark_password }}</strong></p>
+      <hr>
+      <p><strong>Don't have a benchmark account?</strong> <a href="{{ url_for('register') }}">Create an account</a></p>
     </div>
   </section>
 {% endblock %}

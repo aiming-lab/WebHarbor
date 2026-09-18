@@ -2,15 +2,27 @@
 {% block title %}Deals · Best Buy Demo{% endblock %}
 {% block content %}
   <section class="shell page-section">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Current offers</p>
-        <h1>Deals seeded for retail benchmark tasks</h1>
-      </div>
+    <div class="section-heading"><h1>Top Deals</h1></div>
+    <div class="deal-category-row">
+      {% for category in nav_categories[:6] %}
+        <a href="{{ url_for('category_page', category_slug=category.slug) }}">
+          <span><img src="{{ url_for('static', filename=category.image_path) }}" alt=""></span>
+          <strong>{{ category.name }}</strong>
+        </a>
+      {% endfor %}
     </div>
-    <div class="deal-grid">
+
+    {% if deals and deals[0].product %}
+      <a class="deals-hero" href="{{ url_for('product_page', sku=deals[0].product.sku) }}">
+        <div><small>TOP DEALS</small><strong>Find deals worthy<br>of the highlight reel.</strong><span>Shop now</span></div>
+        <img src="{{ url_for('static', filename=deals[0].product.image_path) }}" alt="{{ deals[0].product.name }}">
+      </a>
+    {% endif %}
+
+    <div class="deal-grid retail-deal-grid">
       {% for deal in deals %}
         <article class="deal-card">
+          {% if deal.product %}<img src="{{ url_for('static', filename=deal.product.image_path) }}" alt="{{ deal.product.name }}">{% endif %}
           <p class="deal-card__badge">{{ deal.badge }}</p>
           <h3>{{ deal.title }}</h3>
           <p>{{ deal.subtitle }}</p>
@@ -19,7 +31,7 @@
             <span>{{ deal.ends_label }}</span>
           </div>
           {% if deal.product %}
-            <a class="button button--secondary" href="{{ url_for('product_page', sku=deal.product.sku) }}">Open product</a>
+            <a class="button button--secondary" href="{{ url_for('product_page', sku=deal.product.sku) }}">Shop now</a>
           {% endif %}
         </article>
       {% endfor %}

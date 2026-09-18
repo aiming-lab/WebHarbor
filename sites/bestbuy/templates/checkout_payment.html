@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% block title %}Payment · Best Buy Demo{% endblock %}
+{% block body_class %}checkout-page{% endblock %}
 {% block content %}
   <section class="shell page-section">
     {% set current_step = 2 %}
@@ -7,7 +8,7 @@
     <div class="checkout-layout">
       <div class="panel">
         <p class="eyebrow">Payment</p>
-        <h1>Enter demo payment details</h1>
+        <h1>Enter payment details</h1>
         <form method="post" class="auth-form">
           <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <label>Payment label
@@ -21,7 +22,7 @@
           <label>Last four digits
             <input type="text" name="payment_last4" maxlength="4" value="{{ checkout.get('payment_last4', '') }}" required>
           </label>
-          <p class="auth-note">This step is synthetic only. No real card or processor is involved.</p>
+          <p class="auth-note">Local benchmark only. No real card or processor is involved.</p>
           <button class="button" type="submit">Continue to review</button>
         </form>
       </div>

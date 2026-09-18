@@ -1,69 +1,64 @@
 {% extends "base.html" %}
 {% block title %}Best Buy Demo Mirror{% endblock %}
+{% block body_class %}retail-home-page{% endblock %}
 {% block content %}
-  <section class="hero">
-    <div class="shell hero__grid">
-      <div class="hero__copy">
-        <p class="eyebrow">Best Buy local benchmark</p>
-        <h1>Search, compare, pick up, and check out without leaving localhost.</h1>
-        <p>This mirror uses a pinned source-backed product catalog with deterministic benchmark stores, rewards, and orders. It is designed for tasks, not real shopping.</p>
-        <div class="hero__actions">
-          <a class="button" href="{{ url_for('products_page') }}">Shop products</a>
-          <a class="button button--secondary" href="{{ url_for('support_page') }}">Browse support</a>
-        </div>
-      </div>
-      <div class="hero__visual">
-        <img src="{{ url_for('static', filename='images/hero/bestbuy-hero.svg') }}" alt="Best Buy demo hero graphic">
-      </div>
+  {% set hero_product = featured_products[0] %}
+  <section class="home-hero shell">
+    <div class="home-hero__copy">
+      <p class="home-hero__kicker">Featured technology</p>
+      <h1>Big-screen entertainment, built for right now.</h1>
+      <p>Explore source-backed products with local pickup and delivery options.</p>
+      <a class="button button--light" href="{{ url_for('product_page', sku=hero_product.sku) }}">Shop now</a>
     </div>
+    <a class="home-hero__media" href="{{ url_for('product_page', sku=hero_product.sku) }}">
+      <img src="{{ url_for('static', filename=hero_product.image_path) }}" alt="{{ hero_product.name }}">
+    </a>
   </section>
 
-  <section class="shell feature-strip">
-    {% for category in categories[:4] %}
-      <a href="{{ url_for('category_page', category_slug=category.slug) }}" class="feature-tile">
-        <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
-        <div>
-          <span>{{ category.section }}</span>
-          <strong>{{ category.name }}</strong>
-        </div>
+  <section class="shell promo-grid">
+    {% for product in featured_products[1:5] %}
+      <a class="promo-card" href="{{ url_for('product_page', sku=product.sku) }}">
+        <span>Featured</span>
+        <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+        <strong>{{ product.name }}</strong>
+        <small>{{ product.price|currency }}</small>
+        <b>Shop now</b>
       </a>
     {% endfor %}
   </section>
 
-  <section class="shell page-section">
-    <div class="section-heading">
-      <div>
-        <p class="eyebrow">Featured deals</p>
-        <h2>Captured offers with strong task coverage</h2>
-      </div>
-      <a href="{{ url_for('deals_page') }}">See all deals</a>
+  <section class="shell member-strip">
+    <div>
+      <strong>Sign in for saved items, rewards, order tracking and more.</strong>
+      <span>Use a seeded benchmark account to continue.</span>
     </div>
-    <div class="deal-grid">
-      {% for deal in deal_cards %}
-        <article class="deal-card">
-          <p class="deal-card__badge">{{ deal.badge }}</p>
-          <h3>{{ deal.title }}</h3>
-          <p>{{ deal.subtitle }}</p>
-          <div class="deal-card__meta">
-            <span>Save {{ deal.discount_percent }}%</span>
-            <span>{{ deal.ends_label }}</span>
-          </div>
-          {% if deal.product %}
-            <a class="button button--secondary" href="{{ url_for('product_page', sku=deal.product.sku) }}">Open product</a>
-          {% endif %}
-        </article>
-      {% endfor %}
+    <div class="inline-actions">
+      <a class="button button--secondary" href="{{ url_for('login') }}">Sign in</a>
+      <a class="button button--outline" href="{{ url_for('register') }}">Create an account</a>
+    </div>
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading"><h2>Shop by category</h2></div>
+    <div class="category-carousel">
+    {% for category in categories[:7] %}
+      <a href="{{ url_for('category_page', category_slug=category.slug) }}" class="category-bubble">
+        <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+        <strong>{{ category.name }}</strong>
+      </a>
+    {% endfor %}
     </div>
   </section>
 
   <section class="shell page-section">
     <div class="section-heading">
       <div>
-        <p class="eyebrow">Trending now</p>
-        <h2>Local bestsellers across electronics categories</h2>
+        <h2>Top Deals</h2>
       </div>
+      <a href="{{ url_for('deals_page') }}">See all deals</a>
     </div>
-    {% set products = featured_products %}
+    {% set products = featured_products[:4] %}
+    {% set compact_grid = true %}
     {% include "_product_cards.html" %}
   </section>
 
@@ -71,8 +66,7 @@
     <div class="panel">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Store pickup</p>
-          <h2>Demo stores with pickup windows</h2>
+          <h2>Store pickup</h2>
         </div>
         <a href="{{ url_for('stores_page') }}">See all stores</a>
       </div>
@@ -92,8 +86,7 @@
     <div class="panel">
       <div class="section-heading">
         <div>
-          <p class="eyebrow">Help topics</p>
-          <h2>Support pages wired into tasks</h2>
+          <h2>Help topics</h2>
         </div>
       </div>
       <div class="support-list">
