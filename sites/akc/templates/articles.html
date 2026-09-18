@@ -1,23 +1,51 @@
 {% extends "base.html" %}
 {% block title %}Expert Advice{% endblock %}
 {% block content %}
-<section class="page-heading">
-  <div><div class="eyebrow">Training, health, and lifestyle</div><h1>Expert Advice</h1></div>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><span>Expert Advice</span></nav>
+<a class="advice-mobile-back" href="{{ url_for('index') }}">‹ Back to Home</a>
+<form class="advice-mobile-nav" method="get">
+  <label for="advice-category">Expert Advice</label>
+  <select id="advice-category" name="category" onchange="this.form.submit()">
+    <option value="">Explore This Section</option>
+    {% for item in categories %}<option value="{{ item }}" {% if item == category %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+</form>
+<section class="page-heading centered">
+  <h1>Expert Advice</h1>
+  <p>Everything you need to provide the best care for your dog, including expert opinions on health, grooming and training; the latest news and feature stories in the dog world; Best-of lists; and fun and useful quizzes.</p>
 </section>
-<div class="category-pills">
-  <a class="{{ 'active' if not category }}" href="{{ url_for('articles') }}">All</a>
-  {% for item in categories %}
-    <a class="{{ 'active' if item == category }}" href="{{ url_for('articles', category=item) }}">{{ item }}</a>
-  {% endfor %}
-</div>
-<section class="article-grid">
-  {% for article in articles %}
-    <article class="article-card">
-      <span class="eyebrow">{{ article.category }}</span>
-      <h2><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h2>
-      <p>{{ article.summary }}</p>
-      <span class="card-link">Read article →</span>
-    </article>
-  {% endfor %}
+
+<section class="advice-layout">
+  <aside>
+    <h2>Expert Advice</h2>
+    <nav class="category-pills" aria-label="Advice categories">
+      <a class="{{ 'active' if not category }}" href="{{ url_for('articles') }}">All</a>
+      {% for item in categories %}
+        <a class="{{ 'active' if item == category }}" href="{{ url_for('articles', category=item) }}">{{ item }} <span aria-hidden="true">›</span></a>
+      {% endfor %}
+    </nav>
+  </aside>
+  <div>
+    {% if articles %}
+      <article class="advice-feature">
+        <img src="{{ url_for('static', filename='images/akc-home/expert-advice-feature.jpg') }}" alt="Dog resting in grass">
+        <div>
+          <small>{{ articles[0].category }}</small>
+          <h2><a href="{{ url_for('article_detail', slug=articles[0].slug) }}">{{ articles[0].title }}</a></h2>
+          <p>{{ articles[0].summary }}</p>
+        </div>
+      </article>
+    {% endif %}
+    <div class="article-grid">
+      {% for article in articles[1:] %}
+        <article class="article-card">
+          <span class="eyebrow">{{ article.category }}</span>
+          <h2><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h2>
+          <p>{{ article.summary }}</p>
+          <span class="card-link">Read article →</span>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
 </section>
 {% endblock %}

@@ -1,9 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Create Profile{% endblock %}
 {% block content %}
-<section class="auth-panel">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><span>Registration</span></nav>
+<section class="registration-hero">
+  <img src="{{ url_for('static', filename='images/akc-home/register-hero.jpg') }}" alt="">
+  <div>
+    <h1>Declare Your Love<br>With AKC<br>Registration</h1>
+    <p>You found the one. Make it official with AKC. Celebrate your dog, connect with a supportive community, and enjoy benefits that help you both thrive — all starting at $45.</p>
+    <a class="button primary" href="#registration-form">Register</a>
+    <a class="button light-button" href="{{ url_for('breeds') }}">Explore My Options</a>
+    <p class="registration-status">Submitted application?<br><a href="#registration-form">Check my registration status</a></p>
+  </div>
+</section>
+<nav class="registration-tabs" aria-label="Registration sections">
+  <a href="#registration-form">Register</a><span>Why Register</span><span>What's Included</span><span>FAQs</span><span>Registration Options</span>
+</nav>
+<section class="auth-panel" id="registration-form">
   <form method="post">
-    <h1>Create AKC Profile</h1>
+    <h2>Create AKC Profile</h2>
     <label>Name <input name="display_name" required></label>
     <label>Username <input name="username" required></label>
     <label>Email <input name="email" type="email" required></label>

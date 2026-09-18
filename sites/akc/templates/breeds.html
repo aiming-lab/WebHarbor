@@ -1,29 +1,52 @@
 {% extends "base.html" %}
 {% block title %}Dog Breeds{% endblock %}
 {% block content %}
-<section class="page-heading">
+<nav class="breadcrumb" aria-label="Breadcrumb"><a class="desktop-crumb" href="{{ url_for('index') }}">Home</a><span class="desktop-crumb">/</span><span class="desktop-crumb">Dog Breeds</span><a class="mobile-back" href="{{ url_for('index') }}">‹ Back to Home</a></nav>
+<section class="page-heading centered">
+  <h1>Dog Breeds</h1>
+  <p>This is the official list of all American Kennel Club dog breeds.</p>
+</section>
+
+<section class="breed-intro">
+  <figure>
+    <img src="{{ url_for('static', filename='images/akc-home/greyhound-running.jpg') }}" alt="Greyhound running in a field">
+    <figcaption>Greyhound</figcaption>
+  </figure>
   <div>
-    <div class="eyebrow">AKC Breed Library</div>
-    <h1>Dog Breeds</h1>
-    <p>Filter by group, size, temperament, and care needs.</p>
+    <h2>What's a dog breed?</h2>
+    <p>People have been breeding dogs since prehistoric times. From the beginning, humans purposefully bred dogs to perform various tasks. Explore the library to find the right match for your home and lifestyle.</p>
   </div>
 </section>
-<form class="filter-bar" action="{{ url_for('breeds') }}">
-  <input name="q" placeholder="Search breed or temperament" value="{{ query }}">
-  <select name="group">
-    <option value="">All groups</option>
-    {% for item in groups %}<option value="{{ item }}" {% if item == group %}selected{% endif %}>{{ item }}</option>{% endfor %}
-  </select>
-  <select name="size">
-    <option value="">All sizes</option>
-    {% for item in sizes %}<option value="{{ item }}" {% if item == size %}selected{% endif %}>{{ item }}</option>{% endfor %}
-  </select>
-  <button type="submit">Apply</button>
-</form>
-<div class="result-count">{{ breeds|length }} breeds shown</div>
-<section class="card-grid">
-  {% for breed in breeds %}
-    {% include "_breed_card.html" %}
-  {% endfor %}
+
+<section class="breed-catalog">
+  <aside>
+    <form class="filter-bar" action="{{ url_for('breeds') }}">
+      <h2>Filter Breeds</h2>
+      <label>Find by breed name
+        <input name="q" placeholder="Search breed or temperament" value="{{ query }}">
+      </label>
+      <label>Group
+        <select name="group">
+          <option value="">All groups</option>
+          {% for item in groups %}<option value="{{ item }}" {% if item == group %}selected{% endif %}>{{ item }}</option>{% endfor %}
+        </select>
+      </label>
+      <label>Size
+        <select name="size">
+          <option value="">All sizes</option>
+          {% for item in sizes %}<option value="{{ item }}" {% if item == size %}selected{% endif %}>{{ item }}</option>{% endfor %}
+        </select>
+      </label>
+      <button type="submit">Apply Filters</button>
+    </form>
+  </aside>
+  <div class="breed-results">
+    <div class="result-count">{{ breeds|length }} breeds shown</div>
+    <div class="card-grid">
+      {% for breed in breeds %}
+        {% include "_breed_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
 </section>
 {% endblock %}

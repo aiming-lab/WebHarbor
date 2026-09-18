@@ -1,12 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Sign in{% endblock %}
 {% block content %}
-<section class="auth-panel">
-  <form method="post">
-    <h1>Sign in</h1>
-    <label>Email <input name="email" type="email" autocomplete="username" required></label>
-    <label>Password <input name="password" type="password" autocomplete="current-password" required></label>
-    <button type="submit">Sign in</button>
+<section class="login-shell">
+  <a href="{{ url_for('index') }}" aria-label="American Kennel Club home">
+    <img src="{{ url_for('static', filename='images/akc-home/akc-wordmark.png') }}" alt="American Kennel Club">
+  </a>
+  <form method="post" class="login-form auth-panel">
+    <div class="login-form-inner">
+      <h1>Sign In</h1>
+      <div class="social-logins" aria-label="Social sign in options">
+        <span class="social-facebook">▣&nbsp; Log in</span>
+        <span class="social-twitter">♥&nbsp; Twitter</span>
+        <span class="social-linkedin">in.&nbsp; LinkedIn</span>
+        <span class="social-google">G&nbsp; Google</span>
+        <span class="social-yahoo">Y&nbsp; Yahoo</span>
+      </div>
+      <div class="login-divider"><span>OR</span></div>
+      <label>Email Address: <input name="email" type="email" autocomplete="username" required></label>
+      <label class="password-label">Password: <a href="#" aria-label="Forgot Password">Forgot Password?</a><input name="password" type="password" autocomplete="current-password" required></label>
+      <button type="submit">Log In</button>
+      <div class="login-signup"><strong>Don't have an account?</strong><a href="{{ url_for('register') }}">Create your AKC account now</a></div>
+    </div>
   </form>
+  <a class="login-back" href="{{ url_for('index') }}">← Go to American Kennel Club</a>
 </section>
 {% endblock %}

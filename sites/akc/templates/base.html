@@ -6,38 +6,53 @@
   <title>{% block title %}American Kennel Club{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
 </head>
-<body>
-  <div class="utility-bar">
-    <nav aria-label="Utility">
-      <a href="{{ url_for('events') }}">Event Search</a>
-      <a href="{{ url_for('breeds') }}">Find a Breed</a>
-      <a href="{{ url_for('register') }}">Register</a>
-    </nav>
-  </div>
-  <header class="site-header" role="banner">
-    <a class="brand" href="{{ url_for('index') }}">
-      <span class="brand-mark">AKC</span>
-      <span>American Kennel Club</span>
+<body class="page-{{ request.endpoint or 'unknown' }}">
+  <header class="site-header" id="site-header" role="banner">
+    <a class="brand" href="{{ url_for('index') }}" aria-label="American Kennel Club home">
+      <img src="{{ url_for('static', filename='images/akc-home/akc-wordmark.png') }}" alt="American Kennel Club">
     </a>
-    <nav class="top-nav" role="navigation" aria-label="Main">
-      <a href="{{ url_for('breeds') }}">Breeds</a>
-      <a href="{{ url_for('breed_selector') }}">Breed Selector</a>
-      <a href="{{ url_for('compare') }}">Compare</a>
-      <a href="{{ url_for('articles') }}">Expert Advice</a>
-      <a href="{{ url_for('events') }}">Events</a>
-    </nav>
-    <form class="header-search" action="{{ url_for('search') }}">
-      <input name="q" placeholder="Search breeds, training, events" value="{{ request.args.get('q', '') }}">
-      <button type="submit">Search</button>
-    </form>
-    <div class="account-links">
+
+    <nav class="utility-bar account-links" aria-label="Utility">
+      <a href="{{ url_for('events') }}"><span aria-hidden="true">▣</span> Event Search</a>
+      <a href="{{ url_for('breed_selector') }}" aria-label="Breed Selector"><span aria-hidden="true">♣</span> Find a Puppy</a>
+      <a href="{{ url_for('register') }}"><span aria-hidden="true">▱</span> Register</a>
+      <a href="{{ url_for('breeds') }}"><span aria-hidden="true">▾</span> Shop</a>
+      <a href="{{ url_for('articles') }}"><span aria-hidden="true">▹</span> AKC TV</a>
       {% if current_user %}
-        <a href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
-        <a href="{{ url_for('logout') }}">Sign out</a>
+        <a href="{{ url_for('account') }}"><span aria-hidden="true">♟</span> {{ current_user.display_name }}</a>
       {% else %}
-        <a href="{{ url_for('login') }}">Sign in</a>
+        <a href="{{ url_for('login') }}"><span aria-hidden="true">♟</span> Sign In</a>
       {% endif %}
-    </div>
+    </nav>
+
+    <nav class="top-nav" aria-label="Main">
+      <a href="{{ url_for('breeds') }}" aria-label="Breeds">Dog Info</a>
+      <a href="{{ url_for('register') }}">Registration</a>
+      <a href="{{ url_for('events') }}" aria-label="Events">Sports &amp; Events</a>
+      <a href="{{ url_for('compare') }}" aria-label="Compare">Clubs &amp; Delegates</a>
+      <a href="{{ url_for('articles') }}">Expert Advice</a>
+    </nav>
+
+    <form class="header-search" action="{{ url_for('search') }}">
+      <button type="submit" aria-label="Search"><span aria-hidden="true">⌕</span></button>
+      <input name="q" aria-label="Search AKC" placeholder="Search" value="{{ request.args.get('q', '') }}">
+    </form>
+
+    <nav class="mobile-actions" aria-label="Mobile utility">
+      <a href="{{ url_for('search') }}"><span class="mobile-action-label">SEARCH</span><span class="mobile-action-icon" aria-hidden="true">⌕</span></a>
+      <a href="{{ url_for('account') if current_user else url_for('login') }}"><span class="mobile-action-label">{{ 'MY AKC' if current_user else 'SIGN IN' }}</span><span class="mobile-action-icon" aria-hidden="true">♟</span></a>
+      <details class="mobile-menu">
+        <summary><span class="mobile-action-label">MENU</span><span class="hamburger" aria-hidden="true"></span></summary>
+        <nav aria-label="Mobile menu">
+          <a href="{{ url_for('breeds') }}" aria-label="Breeds">Dog Info</a>
+          <a href="{{ url_for('breed_selector') }}">Breed Selector</a>
+          <a href="{{ url_for('compare') }}">Compare Breeds</a>
+          <a href="{{ url_for('events') }}">Sports &amp; Events</a>
+          <a href="{{ url_for('articles') }}">Expert Advice</a>
+          <a href="{{ url_for('register') }}">Registration</a>
+        </nav>
+      </details>
+    </nav>
   </header>
 
   {% with messages = get_flashed_messages(with_categories=true) %}
@@ -55,15 +70,18 @@
   </main>
 
   <footer class="site-footer">
-    <div class="footer-about">
-      <strong>American Kennel Club</strong>
-      <p>Breed information, responsible dog ownership, training guidance, and dog sports.</p>
+    <div class="footer-intro">
+      <strong>AKC</strong>
+      <p>Founded in 1884, the not-for-profit AKC is the recognized and trusted expert in breed, health, and training information for all dogs.</p>
     </div>
     <div class="footer-links">
-      <nav aria-label="Dog resources"><strong>Dog Resources</strong><a href="{{ url_for('breeds') }}">Find a Breed</a><a href="{{ url_for('breed_selector') }}">Breed Selector</a><a href="{{ url_for('compare') }}">Compare Breeds</a></nav>
-      <nav aria-label="Training and events"><strong>Training & Events</strong><a href="{{ url_for('articles') }}">Expert Advice</a><a href="{{ url_for('events') }}">Event Calendar</a></nav>
-      <nav aria-label="Account"><strong>My AKC</strong><a href="{{ url_for('login') }}">Sign In</a><a href="{{ url_for('register') }}">Create Profile</a></nav>
+      <nav aria-label="About"><strong>About Us</strong><a href="{{ url_for('index') }}">About AKC</a><a href="{{ url_for('articles') }}">Our Mission</a><a href="{{ url_for('account') if current_user else url_for('login') }}">Contact Us</a></nav>
+      <nav aria-label="Services"><strong>Top Services</strong><a href="{{ url_for('breeds') }}">Find a Puppy</a><a href="{{ url_for('register') }}">Register</a><a href="{{ url_for('breed_selector') }}">Choose a Breed</a></nav>
+      <nav aria-label="Resources"><strong>Top Resources</strong><a href="{{ url_for('compare') }}">Compare Breeds</a><a href="{{ url_for('articles') }}">Expert Advice</a><a href="{{ url_for('events') }}">Event Calendar</a></nav>
+      <nav aria-label="Get involved"><strong>Get Involved</strong><a href="{{ url_for('events') }}">Attend a Dog Show</a><a href="{{ url_for('events') }}">Participate in an Event</a><a href="{{ url_for('account') if current_user else url_for('login') }}">My AKC</a></nav>
+      <nav aria-label="Favorites"><strong>Favorite Things</strong><a href="{{ url_for('breeds') }}">Most Popular Breeds</a><a href="{{ url_for('articles') }}">Training Help</a><a href="{{ url_for('articles') }}">Dog Health</a></nav>
     </div>
+    <div class="footer-legal">© The American Kennel Club, Inc. 2026. All rights reserved.</div>
   </footer>
 </body>
 </html>

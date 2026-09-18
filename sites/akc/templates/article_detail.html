@@ -1,12 +1,17 @@
 {% extends "base.html" %}
 {% block title %}{{ article.title }}{% endblock %}
 {% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><a href="{{ url_for('articles') }}">Expert Advice</a><span>/</span><span>{{ article.category }}</span></nav>
 <article class="article-detail">
-  <div class="eyebrow">{{ article.category }} · {{ article.read_minutes }} min read</div>
+  <span class="eyebrow article-task-meta">{{ article.category }} · {{ article.read_minutes }} min read</span>
   <h1>{{ article.title }}</h1>
-  <p class="article-byline">By {{ article.author }}</p>
+  <p class="article-byline">By <em>{{ article.author }}</em></p>
+  <p class="article-meta">Updated: Aug 13, 2025 | {{ article.read_minutes }} Minutes</p>
+  {% if article.slug == 'questions-to-ask-your-potential-breeder' %}<p class="article-tags">● responsible dog ownership, first puppy,<br>find a breeder</p>{% endif %}
+  <div class="article-rule"></div>
   <p class="lede">{{ article.summary }}</p>
   <p>{{ article.body }}</p>
-  <p>Use the breed library, selector, and compare tools to turn this advice into a practical shortlist.</p>
+  <h2>Turn expert advice into a plan</h2>
+  <p>Use the breed library, selector, and compare tools to turn this advice into a practical shortlist for your dog and household.</p>
 </article>
 {% endblock %}

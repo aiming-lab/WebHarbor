@@ -1,19 +1,35 @@
 {% extends "base.html" %}
-{% block title %}AKC Events{% endblock %}
+{% block title %}Find an Event{% endblock %}
 {% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><a href="{{ url_for('events') }}">Sports &amp; Events</a><span>/</span><span>Find an Event</span></nav>
 <section class="page-heading">
-  <div><div class="eyebrow">Calendar</div><h1>AKC Events</h1><p>Filter local and virtual events by discipline and state.</p></div>
+  <h1>Find an Event</h1>
+  <p>With 22,000 events held each year, there’s a dog sport for every dog — and every owner. Whether you want to just want to watch or actually participate, it’s easy to find an event:</p>
+  <div class="event-overview">
+    <h2>To Attend an Event</h2>
+    <p>AKC events are fun and exciting for both owners and dogs! There’s no pressure to participate: you can just watch as a spectator, mingle with other dog lovers, and cheer on the competitors. To find an event to attend, check out our <a href="#event-search">Event Calendar</a> where you can search by type of event; breed eligibility; location; and date.</p>
+    <a class="button primary" href="#event-search">Search Event Calendar</a>
+    <h2>To Participate in an Event</h2>
+    <p>Interested in participating in an event or reviewing the results from an event? Visit our new <a href="#event-search">Event and Results Search</a>.</p>
+    <a class="button primary" href="#event-search">Event and Results Search</a>
+  </div>
 </section>
-<form class="filter-bar" action="{{ url_for('events') }}">
-  <select name="type">
-    <option value="">All event types</option>
-    {% for item in types %}<option value="{{ item }}" {% if item == event_type %}selected{% endif %}>{{ item }}</option>{% endfor %}
-  </select>
-  <select name="state">
-    <option value="">All states</option>
-    {% for item in states %}<option value="{{ item }}" {% if item == state %}selected{% endif %}>{{ item }}</option>{% endfor %}
-  </select>
-  <button type="submit">Apply</button>
+<section class="event-search-section" id="event-search">
+<h2>Search the Event Calendar</h2>
+<form class="filter-bar event-filters" action="{{ url_for('events') }}">
+  <label>Event type
+    <select name="type">
+      <option value="">All event types</option>
+      {% for item in types %}<option value="{{ item }}" {% if item == event_type %}selected{% endif %}>{{ item }}</option>{% endfor %}
+    </select>
+  </label>
+  <label>State
+    <select name="state">
+      <option value="">All states</option>
+      {% for item in states %}<option value="{{ item }}" {% if item == state %}selected{% endif %}>{{ item }}</option>{% endfor %}
+    </select>
+  </label>
+  <button type="submit">Search Event Calendar</button>
 </form>
 <section class="event-list">
   {% for event in events %}
@@ -21,9 +37,11 @@
       <span class="date-badge">{{ event.starts_on.strftime("%b") }}<strong>{{ event.starts_on.day }}</strong></span>
       <span>
         <strong>{{ event.title }}</strong>
-        <small>{{ event.event_type }} · Open event details</small>
+        <small>{{ event.city }}, {{ event.state }} · {{ event.event_type }}</small>
+        <em>Open event details →</em>
       </span>
     </a>
   {% endfor %}
+</section>
 </section>
 {% endblock %}
