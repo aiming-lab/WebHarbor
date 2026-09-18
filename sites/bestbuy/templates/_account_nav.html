@@ -3,4 +3,8 @@
   <a href="{{ url_for('account_orders') }}" class="{% if request.endpoint == 'account_orders' %}is-active{% endif %}">Orders</a>
   <a href="{{ url_for('account_rewards') }}" class="{% if request.endpoint == 'account_rewards' %}is-active{% endif %}">Rewards</a>
   <a href="{{ url_for('account_wishlist') }}" class="{% if request.endpoint == 'account_wishlist' %}is-active{% endif %}">Wishlist</a>
+  <form action="{{ url_for('logout') }}" method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="button button--ghost" type="submit">Sign out</button>
+  </form>
 </aside>

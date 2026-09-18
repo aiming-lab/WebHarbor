@@ -17,6 +17,7 @@
             <h3>{{ product.name }}</h3>
             <p>{{ product.price|currency }}</p>
             <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <input type="hidden" name="next" value="{{ request.full_path }}">
               <button class="button button--ghost" type="submit">Remove</button>
             </form>

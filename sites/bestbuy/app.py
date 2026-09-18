@@ -3,12 +3,17 @@
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
+import re
+import secrets
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from flask import (
     Flask,
@@ -45,6 +50,10 @@ IMAGE_DIR = STATIC_DIR / "images"
 RUNTIME_DB_PATH = INSTANCE_DIR / "bestbuy.db"
 SEED_DB_PATH = SEED_DIR / "bestbuy.db"
 PASSWORD_NAMESPACE = "bestbuy-webharbor-demo"
+PAYMENT_BRANDS = ("Demo Visa", "Demo Mastercard", "Demo Amex")
+
+if __name__ == "__main__":
+    sys.modules.setdefault("app", sys.modules[__name__])
 
 
 def _ensure_dirs() -> None:
@@ -572,6 +581,94 @@ def clear_checkout_state() -> None:
     session.modified = True
 
 
+def csrf_token() -> str:
+    token = session.get("bestbuy_csrf_token")
+    if not isinstance(token, str) or not token:
+        token = secrets.token_urlsafe(32)
+        session["bestbuy_csrf_token"] = token
+    return token
+
+
+@app.before_request
+def validate_csrf() -> None:
+    if request.method != "POST":
+        return
+    expected = session.get("bestbuy_csrf_token")
+    submitted = request.form.get("csrf_token", "")
+    if not isinstance(expected, str) or not hmac.compare_digest(expected, submitted):
+        abort(400, description="Invalid or missing form token.")
+
+
+def safe_redirect_target(candidate: str | None, fallback: str) -> str:
+    if not candidate:
+        return fallback
+    parsed = urlsplit(candidate)
+    if parsed.scheme or parsed.netloc:
+        request_host = urlsplit(request.host_url)
+        if parsed.scheme not in {"http", "https"} or parsed.netloc != request_host.netloc:
+            return fallback
+    if not parsed.path.startswith("/") or parsed.path.startswith("//"):
+        return fallback
+    target = parsed.path
+    if parsed.query:
+        target += f"?{parsed.query}"
+    if parsed.fragment:
+        target += f"#{parsed.fragment}"
+    return target
+
+
+def form_integer(
+    name: str,
+    *,
+    minimum: int | None = None,
+    maximum: int | None = None,
+    default: str | None = None,
+) -> int:
+    raw = request.form.get(name, default or "").strip()
+    if not re.fullmatch(r"-?\d+", raw):
+        abort(400, description=f"Invalid {name}.")
+    value = int(raw)
+    if minimum is not None and value < minimum:
+        abort(400, description=f"Invalid {name}.")
+    if maximum is not None and value > maximum:
+        abort(400, description=f"Invalid {name}.")
+    return value
+
+
+def optional_form_integer(name: str) -> int | None:
+    if not request.form.get(name, "").strip():
+        return None
+    return form_integer(name, minimum=1)
+
+
+def checkout_state_valid(checkout: dict[str, Any]) -> tuple[bool, str]:
+    mode = checkout.get("mode")
+    payment_last4 = str(checkout.get("payment_last4", ""))
+    if mode == "delivery":
+        option_id = str(checkout.get("delivery_option_id", ""))
+        if not option_id.isdigit() or not db.session.get(DeliveryOption, int(option_id)):
+            return False, "checkout_shipping"
+        required = ("shipping_name", "shipping_city", "shipping_state", "shipping_zip")
+        if not all(str(checkout.get(field, "")).strip() for field in required):
+            return False, "checkout_shipping"
+        if not re.fullmatch(r"\d{5}(?:-\d{4})?", str(checkout["shipping_zip"])):
+            return False, "checkout_shipping"
+    elif mode == "pickup":
+        store_id = str(checkout.get("store_id", ""))
+        slot_id = str(checkout.get("slot_id", ""))
+        if not store_id.isdigit() or not slot_id.isdigit():
+            return False, "checkout_pickup"
+        store = db.session.get(Store, int(store_id))
+        slot = db.session.get(PickupSlot, int(slot_id))
+        if not store or not slot or slot.store_id != store.id or slot.available_capacity <= 0:
+            return False, "checkout_pickup"
+    else:
+        return False, "checkout"
+    if not re.fullmatch(r"\d{4}", payment_last4):
+        return False, "checkout_payment"
+    return True, ""
+
+
 def merge_compare_session_into_user() -> None:
     compare_skus = session.pop("compare_skus", [])
     if not compare_skus or not current_user.is_authenticated:
@@ -601,6 +698,7 @@ def inject_global_context() -> dict[str, Any]:
         "compare_count": len(compare_products),
         "preferred_store": get_preferred_store(),
         "reward_points": reward_points,
+        "csrf_token": csrf_token,
     }
 
 
@@ -618,6 +716,35 @@ def log_search(query: str, scope: str, result_count: int) -> None:
     db.session.commit()
 
 
+def filter_products_by_terms(query, raw_query: str):
+    for term in raw_query.casefold().split():
+        q_like = f"%{term}%"
+        query = query.filter(
+            or_(
+                db.func.lower(Product.sku).like(q_like),
+                db.func.lower(Product.name).like(q_like),
+                db.func.lower(Product.search_keywords).like(q_like),
+                db.func.lower(Brand.name).like(q_like),
+                db.func.lower(Category.name).like(q_like),
+            )
+        )
+    return query
+
+
+def filter_support_by_terms(query, raw_query: str):
+    for term in raw_query.casefold().split():
+        q_like = f"%{term}%"
+        query = query.filter(
+            or_(
+                db.func.lower(SupportArticle.title).like(q_like),
+                db.func.lower(SupportArticle.summary).like(q_like),
+                db.func.lower(SupportArticle.body).like(q_like),
+                db.func.lower(SupportArticle.keywords_json).like(q_like),
+            )
+        )
+    return query
+
+
 def product_query_from_filters(category_slug: str | None = None):
     query = Product.query.join(Brand).join(Category)
     if category_slug:
@@ -625,15 +752,7 @@ def product_query_from_filters(category_slug: str | None = None):
 
     q = request.args.get("q", "").strip()
     if q:
-        q_like = f"%{q.lower()}%"
-        query = query.filter(
-            or_(
-                db.func.lower(Product.name).like(q_like),
-                db.func.lower(Product.search_keywords).like(q_like),
-                db.func.lower(Brand.name).like(q_like),
-                db.func.lower(Category.name).like(q_like),
-            )
-        )
+        query = filter_products_by_terms(query, q)
 
     brand_slug = request.args.get("brand", "").strip()
     if brand_slug:
@@ -784,7 +903,7 @@ def products_page():
     return render_template(
         "products.html",
         page_title="Shop all products",
-        page_description="Synthetic products, deterministic stock, and fully local browsing for benchmark tasks.",
+        page_description="Source-backed products, deterministic stock, and fully local browsing for benchmark tasks.",
         category=None,
         products=products,
         brands=Brand.query.order_by(Brand.name.asc()).all(),
@@ -893,15 +1012,7 @@ def support_page():
     topic = request.args.get("topic", "").strip()
     query = SupportArticle.query
     if q:
-        q_like = f"%{q}%"
-        query = query.filter(
-            or_(
-                db.func.lower(SupportArticle.title).like(q_like),
-                db.func.lower(SupportArticle.summary).like(q_like),
-                db.func.lower(SupportArticle.body).like(q_like),
-                db.func.lower(SupportArticle.keywords_json).like(q_like),
-            )
-        )
+        query = filter_support_by_terms(query, q)
     if topic:
         query = query.filter(SupportArticle.topic == topic)
     articles = query.order_by(SupportArticle.title.asc()).all()
@@ -935,13 +1046,7 @@ def search_page():
     if q:
         q_like = f"%{q.lower()}%"
         product_results = (
-            Product.query.join(Brand).filter(
-                or_(
-                    db.func.lower(Product.name).like(q_like),
-                    db.func.lower(Product.search_keywords).like(q_like),
-                    db.func.lower(Brand.name).like(q_like),
-                )
-            )
+            filter_products_by_terms(Product.query.join(Brand).join(Category), q)
             .order_by(Product.featured.desc(), Product.rating.desc())
             .limit(24)
             .all()
@@ -959,13 +1064,7 @@ def search_page():
             .all()
         )
         article_results = (
-            SupportArticle.query.filter(
-                or_(
-                    db.func.lower(SupportArticle.title).like(q_like),
-                    db.func.lower(SupportArticle.summary).like(q_like),
-                    db.func.lower(SupportArticle.body).like(q_like),
-                )
-            )
+            filter_support_by_terms(SupportArticle.query, q)
             .order_by(SupportArticle.title.asc())
             .limit(8)
             .all()
@@ -996,7 +1095,7 @@ def login():
             merge_compare_session_into_user()
             flash(f"Welcome back, {user.full_name}.", "success")
             next_url = request.args.get("next") or url_for("account")
-            return redirect(next_url)
+            return redirect(safe_redirect_target(next_url, url_for("account")))
     return render_template("login.html")
 
 
@@ -1050,7 +1149,7 @@ def register():
     return render_template("register.html", stores=stores)
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 def logout():
     if current_user.is_authenticated:
         logout_user()
@@ -1106,7 +1205,8 @@ def toggle_wishlist(sku: str):
         db.session.add(WishlistItem(user_id=current_user.id, product_id=product.id))
         flash(f"Saved {product.name} to your wishlist.", "success")
     db.session.commit()
-    return redirect(request.form.get("next") or request.referrer or url_for("product_page", sku=sku))
+    fallback = url_for("product_page", sku=sku)
+    return redirect(safe_redirect_target(request.form.get("next") or request.referrer, fallback))
 
 
 @app.route("/compare/toggle/<sku>", methods=["POST"])
@@ -1135,7 +1235,9 @@ def toggle_compare(sku: str):
             flash(f"Added {product.name} to compare.", "success")
         session["compare_skus"] = compare_skus
         session.modified = True
-    return redirect(request.form.get("next") or request.referrer or url_for("compare_page"))
+    return redirect(
+        safe_redirect_target(request.form.get("next") or request.referrer, url_for("compare_page"))
+    )
 
 
 @app.route("/cart")
@@ -1151,11 +1253,26 @@ def cart_page():
 @login_required
 def add_to_cart():
     product = Product.query.filter_by(sku=request.form.get("sku", "").strip()).first_or_404()
-    quantity = max(1, min(5, int(request.form.get("quantity", "1") or 1)))
+    quantity = form_integer("quantity", minimum=1, maximum=5, default="1")
     fulfillment_method = request.form.get("fulfillment_method", "delivery")
-    store_id = request.form.get("store_id")
-    delivery_option_id = request.form.get("delivery_option_id")
-    protection_plan_id = request.form.get("protection_plan_id")
+    if fulfillment_method not in {"delivery", "pickup"}:
+        abort(400, description="Invalid fulfillment method.")
+    store_id = optional_form_integer("store_id")
+    delivery_option_id = optional_form_integer("delivery_option_id")
+    protection_plan_id = optional_form_integer("protection_plan_id")
+    store = db.session.get(Store, store_id) if store_id else None
+    delivery_option = db.session.get(DeliveryOption, delivery_option_id) if delivery_option_id else None
+    protection_plan = db.session.get(ProtectionPlan, protection_plan_id) if protection_plan_id else None
+    if store_id and not store:
+        abort(400, description="Invalid pickup store.")
+    if delivery_option_id and not delivery_option:
+        abort(400, description="Invalid delivery option.")
+    if protection_plan_id and (not protection_plan or protection_plan.product_id != product.id):
+        abort(400, description="Invalid protection plan for this product.")
+    if fulfillment_method == "pickup" and delivery_option_id:
+        abort(400, description="Pickup cannot use a delivery option.")
+    if fulfillment_method == "delivery" and store_id:
+        abort(400, description="Delivery cannot use a pickup store.")
 
     cart_item = CartItem.query.filter_by(user_id=current_user.id, product_id=product.id).first()
     if not cart_item:
@@ -1163,19 +1280,19 @@ def add_to_cart():
         db.session.add(cart_item)
     cart_item.quantity = quantity
     cart_item.fulfillment_method = fulfillment_method
-    cart_item.store_id = int(store_id) if store_id else None
-    cart_item.delivery_option_id = int(delivery_option_id) if delivery_option_id else None
-    cart_item.protection_plan_id = int(protection_plan_id) if protection_plan_id else None
+    cart_item.store_id = store_id
+    cart_item.delivery_option_id = delivery_option_id
+    cart_item.protection_plan_id = protection_plan_id
     db.session.commit()
     flash(f"Added {product.name} to your cart.", "success")
-    return redirect(request.form.get("next") or url_for("cart_page"))
+    return redirect(safe_redirect_target(request.form.get("next"), url_for("cart_page")))
 
 
 @app.route("/cart/update/<int:item_id>", methods=["POST"])
 @login_required
 def update_cart(item_id: int):
     cart_item = CartItem.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
-    quantity = int(request.form.get("quantity", cart_item.quantity) or cart_item.quantity)
+    quantity = form_integer("quantity", minimum=0, maximum=5)
     if quantity <= 0:
         db.session.delete(cart_item)
         flash(f"Removed {cart_item.product.name} from your cart.", "info")
@@ -1220,16 +1337,20 @@ def checkout_shipping():
     delivery_options = DeliveryOption.query.order_by(DeliveryOption.fee.asc()).all()
     checkout = get_checkout_state()
     if request.method == "POST":
-        checkout.update(
-            {
-                "mode": "delivery",
-                "delivery_option_id": request.form.get("delivery_option_id"),
-                "shipping_name": request.form.get("shipping_name", "").strip(),
-                "shipping_city": request.form.get("shipping_city", "").strip(),
-                "shipping_state": request.form.get("shipping_state", "").strip(),
-                "shipping_zip": request.form.get("shipping_zip", "").strip(),
-            }
-        )
+        delivery_option_id = form_integer("delivery_option_id", minimum=1)
+        if not db.session.get(DeliveryOption, delivery_option_id):
+            abort(400, description="Invalid delivery option.")
+        shipping = {
+            "shipping_name": request.form.get("shipping_name", "").strip(),
+            "shipping_city": request.form.get("shipping_city", "").strip(),
+            "shipping_state": request.form.get("shipping_state", "").strip().upper(),
+            "shipping_zip": request.form.get("shipping_zip", "").strip(),
+        }
+        if not all(shipping.values()) or not re.fullmatch(r"[A-Z]{2}", shipping["shipping_state"]):
+            abort(400, description="Complete the delivery address.")
+        if not re.fullmatch(r"\d{5}(?:-\d{4})?", shipping["shipping_zip"]):
+            abort(400, description="Invalid ZIP code.")
+        checkout.update({"mode": "delivery", "delivery_option_id": str(delivery_option_id), **shipping})
         save_checkout_state(checkout)
         flash("Delivery details saved.", "success")
         return redirect(url_for("checkout_payment"))
@@ -1252,13 +1373,13 @@ def checkout_pickup():
     stores = Store.query.order_by(Store.city.asc()).all()
     checkout = get_checkout_state()
     if request.method == "POST":
-        checkout.update(
-            {
-                "mode": "pickup",
-                "store_id": request.form.get("store_id"),
-                "slot_id": request.form.get("slot_id"),
-            }
-        )
+        store_id = form_integer("store_id", minimum=1)
+        slot_id = form_integer("slot_id", minimum=1)
+        store = db.session.get(Store, store_id)
+        slot = db.session.get(PickupSlot, slot_id)
+        if not store or not slot or slot.store_id != store.id or slot.available_capacity <= 0:
+            abort(400, description="Invalid pickup store or slot.")
+        checkout.update({"mode": "pickup", "store_id": str(store_id), "slot_id": str(slot_id)})
         save_checkout_state(checkout)
         flash("Store pickup details saved.", "success")
         return redirect(url_for("checkout_payment"))
@@ -1285,16 +1406,27 @@ def checkout_payment():
 
     checkout = get_checkout_state()
     if request.method == "POST":
+        payment_brand = request.form.get("payment_brand", "").strip()
+        payment_last4 = request.form.get("payment_last4", "").strip()
+        if payment_brand not in PAYMENT_BRANDS:
+            abort(400, description="Invalid payment label.")
+        if not re.fullmatch(r"\d{4}", payment_last4):
+            abort(400, description="Payment last four must be four digits.")
         checkout.update(
             {
-                "payment_brand": request.form.get("payment_brand", "Demo Visa").strip() or "Demo Visa",
-                "payment_last4": (request.form.get("payment_last4", "1111").strip() or "1111")[-4:],
+                "payment_brand": payment_brand,
+                "payment_last4": payment_last4,
             }
         )
         save_checkout_state(checkout)
         flash("Demo payment details saved.", "success")
         return redirect(url_for("checkout_review"))
-    return render_template("checkout_payment.html", cart_items=cart_items, checkout=checkout)
+    return render_template(
+        "checkout_payment.html",
+        cart_items=cart_items,
+        checkout=checkout,
+        payment_brands=PAYMENT_BRANDS,
+    )
 
 
 @app.route("/checkout/review", methods=["GET", "POST"])
@@ -1308,15 +1440,10 @@ def checkout_review():
     checkout = get_checkout_state()
     summary = build_checkout_summary(cart_items, checkout)
     if request.method == "POST":
-        if summary["mode"] == "delivery" and not checkout.get("delivery_option_id"):
-            flash("Choose a delivery option before placing the order.", "warning")
-            return redirect(url_for("checkout_shipping"))
-        if summary["mode"] == "pickup" and not checkout.get("store_id"):
-            flash("Choose a pickup store before placing the order.", "warning")
-            return redirect(url_for("checkout_pickup"))
-        if not checkout.get("payment_last4"):
-            flash("Enter demo payment details before placing the order.", "warning")
-            return redirect(url_for("checkout_payment"))
+        valid, endpoint = checkout_state_valid(checkout)
+        if not valid:
+            flash("Review the required checkout details before placing the order.", "warning")
+            return redirect(url_for(endpoint))
 
         order_number = f"BBY-{240000 + Order.query.count() + 1}"
         order = Order(

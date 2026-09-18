@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import json
 import random
+import re
 import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
+from xml.sax.saxutils import escape
 
 from app import (
     BENCHMARK_PASSWORD,
@@ -39,11 +42,12 @@ from app import (
 
 SEED_TIMESTAMP = datetime(2026, 3, 18, 10, 0, 0)
 RNG = random.Random(20260604)
+SOURCE_CATALOG_PATH = Path(__file__).resolve().parent / "source_catalog.json"
 EXPECTED_COUNTS = {
     "users": 4,
     "categories": 12,
     "brands": 25,
-    "products": 150,
+    "products": 125,
     "stores": 15,
     "inventory": 500,
     "reviews": 250,
@@ -108,7 +112,7 @@ CATEGORIES = [
         "name": "TVs & Home Theater",
         "section": "TVs & Home Theater",
         "description": "4K TVs, soundbar-ready displays, and theater gear with pickup and delivery options.",
-        "hero_title": "Bigger screens, brighter badges, and synthetic stock that resets instantly.",
+        "hero_title": "Bigger screens, captured product cards, and benchmark stock that resets instantly.",
     },
     {
         "slug": "tablets",
@@ -164,7 +168,7 @@ CATEGORIES = [
         "name": "Small Appliances",
         "section": "Home Appliances",
         "description": "Coffee makers, air fryers, vacuums, and kitchen upgrades with support coverage options.",
-        "hero_title": "Synthetic home upgrades with realistic pricing, pickup options, and plan comparisons.",
+        "hero_title": "Source-backed home upgrades with local pickup and plan comparisons.",
     },
     {
         "slug": "phones-wearables",
@@ -240,6 +244,63 @@ BENCHMARK_USERS = [
 
 PRODUCT_TARGETS = {item["slug"]: 13 for item in CATEGORIES}
 
+CATEGORY_SOURCE_MAP = {
+    "laptops": "laptops",
+    "tvs-home-theater": "tvs-home-theater",
+    "tablets": "tablets",
+    "cameras": "cameras",
+    "headphones": "headphones",
+    "gaming": "gaming",
+    "smart-home": "smart-home",
+    "monitors": "monitors",
+    "storage-networking": "storage-networking",
+    "appliances": "appliances",
+    "phones-wearables": "phones-wearables",
+    "printers-office": "printers-office",
+}
+
+
+def source_catalog() -> dict[str, object]:
+    catalog = json.loads(SOURCE_CATALOG_PATH.read_text(encoding="utf-8"))
+    if catalog.get("schema_version") != 1 or len(catalog.get("batches", [])) != 12:
+        raise ValueError("unsupported or incomplete Best Buy source catalog")
+    return catalog
+
+
+def source_catalog_items() -> list[dict[str, object]]:
+    items: list[dict[str, object]] = []
+    for batch in source_catalog()["batches"]:
+        category_slug = CATEGORY_SOURCE_MAP[batch["category_slug"]]
+        for item in batch["items"]:
+            items.append({**item, "category_slug": category_slug, "query": batch["query"]})
+    if len(items) != 125 or len({item["sku"] for item in items}) != 125:
+        raise ValueError("Best Buy source catalog must contain 125 unique products")
+    return items
+
+
+def _normalize_product_name(value: str) -> str:
+    return re.sub(r"\s+-\s+", " - ", " ".join(value.split())).strip()
+
+
+def _source_brand_name(value: str) -> str:
+    return _normalize_product_name(value).split(" - ", 1)[0].strip()
+
+
+def _source_price(value: str) -> float:
+    return float(value.replace("$", "").replace(",", ""))
+
+
+def _source_list_price(item: dict[str, object], price: float) -> float:
+    match = re.search(
+        r"(?:Comp\. Value:|Was|previous price was)\s*\$([\d,]+\.\d{2})",
+        str(item.get("text", "")),
+        re.IGNORECASE,
+    )
+    if not match:
+        return price
+    candidate = float(match.group(1).replace(",", ""))
+    return candidate if candidate > price else price
+
 
 def _counts_ok() -> bool:
     checks = {
@@ -257,7 +318,10 @@ def _counts_ok() -> bool:
 
 def _write_svg(path: Path, title: str, subtitle: str, palette: tuple[str, str, str], badge: str = "") -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    top, mid, accent = palette
+    top, mid, accent = (escape(value, {'"': "&quot;"}) for value in palette)
+    title = escape(title)
+    subtitle = escape(subtitle)
+    badge = escape(badge)
     badge_markup = ""
     if badge:
         badge_markup = (
@@ -301,15 +365,26 @@ def _category_lookup() -> dict[str, Category]:
 
 
 def _add_brand_records() -> None:
-    for name, accent in BRANDS:
+    brands = list(BRANDS)
+    known_slugs = {slugify(name) for name, _ in brands}
+    for item in source_catalog_items():
+        name = _source_brand_name(str(item["name"]))
+        if slugify(name) not in known_slugs:
+            brands.append((name, "#0046be"))
+            known_slugs.add(slugify(name))
+    for name, accent in brands:
         db.session.add(Brand(name=name, slug=slugify(name), accent_color=accent))
 
 
 def _add_category_records(image_root: Path) -> None:
+    source_images: dict[str, str] = {}
+    for item in source_catalog_items():
+        category_slug = str(item["category_slug"])
+        source_images.setdefault(
+            category_slug,
+            f"images/categories/{category_slug}{Path(str(item['local_path'])).suffix}",
+        )
     for category in CATEGORIES:
-        palette = CATEGORY_COLORS[category["slug"]]
-        relative_path = f"images/categories/{category['slug']}.svg"
-        _write_svg(image_root / "categories" / f"{category['slug']}.svg", category["name"], category["hero_title"], palette, "SHOP")
         db.session.add(
             Category(
                 name=category["name"],
@@ -317,7 +392,7 @@ def _add_category_records(image_root: Path) -> None:
                 section=category["section"],
                 description=category["description"],
                 hero_title=category["hero_title"],
-                image_path=relative_path,
+                image_path=source_images[category["slug"]],
             )
         )
 
@@ -1056,14 +1131,6 @@ def _generic_products(start_sku: int) -> list[dict[str, object]]:
 
 
 def _ensure_generated_assets(image_root: Path) -> None:
-    for category in Category.query.all():
-        _write_svg(
-            image_root / "categories" / f"{category.slug}.svg",
-            category.name,
-            category.hero_title,
-            CATEGORY_COLORS[category.slug],
-            "SHOP",
-        )
     for store in Store.query.all():
         palette = CATEGORY_COLORS[list(CATEGORY_COLORS.keys())[store.id % len(CATEGORY_COLORS)]]
         _write_svg(
@@ -1073,14 +1140,6 @@ def _ensure_generated_assets(image_root: Path) -> None:
             palette,
             "STORE",
         )
-    for product in Product.query.all():
-        _write_svg(
-            image_root / "products" / f"{product.sku}.svg",
-            product.name,
-            product.brand.name,
-            CATEGORY_COLORS[product.category.slug],
-            product.deal_badge or product.category.name,
-        )
     _attach_seed_images(image_root)
 
 
@@ -1088,33 +1147,56 @@ def _persist_products(image_root: Path) -> list[Product]:
     brand_lookup = _brand_lookup()
     category_lookup = _category_lookup()
     products: list[Product] = []
-    for payload in _generic_products(100021):
-        brand = brand_lookup[payload["brand_slug"]]
-        category = category_lookup[payload["category_slug"]]
-        palette = CATEGORY_COLORS[category.slug]
-        relative_path = f"images/products/{payload['sku']}.svg"
-        _write_svg(image_root / "products" / f"{payload['sku']}.svg", payload["name"], brand.name, palette, payload["deal_badge"] or category.name)
+    category_position: dict[str, int] = {}
+    for index, item in enumerate(source_catalog_items(), start=1):
+        name = _normalize_product_name(str(item["name"]))
+        brand = brand_lookup[slugify(_source_brand_name(name))]
+        category = category_lookup[str(item["category_slug"])]
+        category_position[category.slug] = category_position.get(category.slug, 0) + 1
+        price = _source_price(str(item["price"]))
+        list_price = _source_list_price(item, price)
+        detail_parts = [part.strip() for part in name.split(" - ")[1:] if part.strip()]
+        rating = float(item["rating"]) if str(item.get("rating", "")).strip() else 0.0
+        review_count = int(str(item.get("reviews", "0")).replace(",", "") or 0)
+        text = str(item.get("text", ""))
+        save_match = re.search(r"Save \$([\d,]+(?:\.\d{2})?)", text)
+        deal_badge = f"Save ${save_match.group(1)}" if save_match else ""
+        pickup_eligible = "pick up" in text.lower() and "pickup unavailable" not in text.lower()
+        delivery_eligible = "shipping unavailable" not in text.lower()
+        specs = _make_spec_sections(
+            (
+                "Captured product title details",
+                [(f"Detail {detail_index}", value) for detail_index, value in enumerate(detail_parts, start=1)],
+            ),
+            (
+                "Source record",
+                [("SKU", str(item["sku"])), ("Captured query", str(item["query"]))],
+            ),
+        )
         product = Product(
-            sku=payload["sku"],
-            slug=payload["slug"],
-            name=payload["name"],
-            short_description=payload["description"],
-            long_description=payload["long_description"],
-            price=payload["price"],
-            list_price=payload["list_price"],
-            rating=payload["rating"],
-            review_count=payload["review_count"],
-            availability_status="In stock" if payload["stock_count"] > 6 else "Limited stock",
-            pickup_eligible=payload["pickup_eligible"],
-            delivery_eligible=payload["delivery_eligible"],
-            featured=payload["featured"],
-            deal_badge=payload["deal_badge"],
-            image_path=relative_path,
-            highlights_json=dump_json(payload["highlights"]),
-            specs_json=dump_json(payload["specs"]),
-            tags_json=dump_json(payload["tags"]),
-            search_keywords=" ".join(payload["tags"] + [brand.name.lower(), category.name.lower()]),
-            stock_count=payload["stock_count"],
+            sku=str(item["sku"]),
+            slug=slugify(f"{name}-{item['sku']}"),
+            name=name,
+            short_description="Product facts captured from a Best Buy search result card.",
+            long_description=(
+                "The product name, current price, rating, review count, and image come from the "
+                "pinned source record. Inventory and fulfillment are deterministic benchmark state."
+            ),
+            price=price,
+            list_price=list_price,
+            rating=rating,
+            review_count=review_count,
+            availability_status="Benchmark stock available",
+            pickup_eligible=pickup_eligible,
+            delivery_eligible=delivery_eligible,
+            featured=category_position[category.slug] <= 2,
+            deal_badge=deal_badge,
+            image_path=str(item["local_path"]),
+            highlights_json=dump_json(detail_parts[:4]),
+            specs_json=dump_json(specs),
+            tags_json=dump_json([str(item["query"]), category.slug, brand.slug, *detail_parts]),
+            search_keywords=" ".join([str(item["query"]), category.name, brand.name, *detail_parts]).lower(),
+            stock_count=8 + (index * 7 % 35),
             category_id=category.id,
             brand_id=brand.id,
         )
@@ -1272,16 +1354,20 @@ def _add_support_articles() -> None:
 
 
 def _add_deals(products: list[Product]) -> None:
-    sorted_products = sorted(products, key=lambda product: product.discount_percent(), reverse=True)
+    sorted_products = sorted(
+        (product for product in products if product.discount_percent() > 0),
+        key=lambda product: product.discount_percent(),
+        reverse=True,
+    )
     for index, product in enumerate(sorted_products[:18], start=1):
         db.session.add(
             Deal(
                 slug=f"deal-{product.sku.lower()}",
                 title=f"{product.name} limited-time savings",
-                subtitle=f"Save {product.discount_percent()}% on a local demo favorite.",
+                subtitle=f"Captured card price is {product.discount_percent()}% below its comparison price.",
                 badge="Top Deal" if index <= 6 else "Member Deal",
                 discount_percent=product.discount_percent(),
-                ends_label=f"Ends {['Mar 28', 'Mar 29', 'Mar 30'][index % 3]}",
+                ends_label="Captured offer; availability may change",
                 category_slug=product.category.slug,
                 product_id=product.id,
             )
@@ -1477,8 +1563,8 @@ def _seed_orders(users: list[User], products: list[Product]) -> None:
 def _attach_seed_images(image_root: Path) -> None:
     _write_svg(
         image_root / "hero" / "bestbuy-hero.svg",
-        "Best Buy local benchmark mirror",
-        "Synthetic deals, pickup, delivery, rewards, and checkout tasks",
+        "Best Buy benchmark",
+        "Source-backed local catalog",
         ("#082b63", "#0046be", "#fff200"),
         "NEW",
     )

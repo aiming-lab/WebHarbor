@@ -32,6 +32,7 @@
               </a>
               <div class="cart-row__actions">
                 <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <label>Qty
                     <select name="quantity">
                       {% for qty in range(0, 6) %}
@@ -49,7 +50,7 @@
           <h2>Cart summary</h2>
           <div class="summary-row"><span>Items</span><strong>{{ totals.count }}</strong></div>
           <div class="summary-row"><span>Subtotal</span><strong>{{ totals.subtotal|currency }}</strong></div>
-          <p>This cart uses synthetic product, price, and fulfillment data only.</p>
+          <p>Product names, prices, and images come from the pinned source catalog; fulfillment state remains synthetic.</p>
           <a class="button" href="{{ url_for('checkout') }}">Go to checkout</a>
         </aside>
       </div>

@@ -31,6 +31,7 @@
       <div class="product-card__actions">
         <a class="button button--secondary" href="{{ url_for('product_page', sku=product.sku) }}">View details</a>
         <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="next" value="{{ request.full_path }}">
           <button class="button button--ghost" type="submit">Compare</button>
         </form>
