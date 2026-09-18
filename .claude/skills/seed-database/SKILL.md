@@ -169,10 +169,10 @@ gh pr create
 ./scripts/check_assets.sh                       # every site has instance_seed/
 ./scripts/build.sh webharbor:dev                # docker build succeeds
 docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41034:40000-40034 webharbor:dev
+  -p 8201:8101 -p 41000-41040:40000-40040 webharbor:dev
 
-# all 35 sites return 200
-for p in $(seq 41000 41034); do
+# all 41 sites return 200
+for p in $(seq 41000 41040); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 

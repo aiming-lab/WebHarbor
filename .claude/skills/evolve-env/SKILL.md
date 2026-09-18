@@ -65,7 +65,7 @@ through `BASE_DIR = os.path.dirname(os.path.abspath(__file__))`.
 After any DB-affecting change:
 
 ```bash
-# 1. Stop test container (don't touch user's working container on :40000-40034)
+# 1. Stop test container (don't touch user's working container on :40000-40040)
 docker stop wh-test 2>/dev/null || true
 
 # 2. Rebuild
@@ -73,7 +73,7 @@ docker stop wh-test 2>/dev/null || true
 
 # 3. Run on alt ports
 docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41034:40000-40034 webharbor:dev
+  -p 8201:8101 -p 41000-41040:40000-40040 webharbor:dev
 
 # 4. Reset your site and confirm byte-identity
 curl -X POST http://localhost:8201/reset/<your_site>
@@ -149,7 +149,7 @@ After Phase 3:
 - Every task in `tasks.jsonl` is hand-verified to work end-to-end
 - The mirror has no obvious leaks, broken forms, or empty pages
 - Byte-identical reset passes
-- All 35 sites still return 200
+- All 41 sites still return 200
 
 ## Next step
 

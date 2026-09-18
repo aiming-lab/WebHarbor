@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 40 Flask mirror sites + control plane on :8101.
+# 41 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm
 
@@ -81,6 +81,12 @@ RUN python3 /opt/WebSyn/berkeley/check_generated_assets.py
 RUN cd /opt/WebSyn/berkeley && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
+# AKC ships source-backed breed imagery and a frozen SQLite seed in its pinned
+# asset bundle. Validate the exact image inventory and fail closed if the seed
+# was not extracted before the image build.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/akc && \
+    cd /opt/WebSyn/akc && test -f instance_seed/akc.db && rm -rf instance
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
@@ -125,7 +131,7 @@ print('AccuWeather seed DB generated at build time.')" && rm -rf /opt/WebSyn/acc
 # Upgrade the pinned Recreation.gov seed before it becomes the reset fixture.
 RUN cd /opt/WebSyn/recreation_gov && python3 migrate_seed.py
 
-EXPOSE 8101 40000-40039
+EXPOSE 8101 40000-40040
 
 # Keep the downloaded BabyCenter seed aligned with tracked source corrections.
 RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/babycenter && \
