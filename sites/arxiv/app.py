@@ -29,6 +29,8 @@ from flask_bcrypt import Bcrypt
 from flask_wtf import CSRFProtect
 from sqlalchemy import or_, and_, func
 
+from metadata_cleaning import clean_arxiv_metadata_text, clean_paper_metadata_fields
+
 BASE_DIR = Path(__file__).parent
 DB_DIR = BASE_DIR / "instance"
 DB_DIR.mkdir(exist_ok=True)
@@ -521,7 +523,7 @@ def seed_database():
         if primary_category not in primary_cats and subject_code in primary_cats:
             primary_category = subject_code
         # Titles
-        title = rp.get("title", "").strip()
+        title = clean_arxiv_metadata_text(rp.get("title", "").strip())
         if not title:
             continue
         # Parse date, falling back to arxiv-id-encoded yymm (e.g. 2604.08525 -> 2026-04)
@@ -547,7 +549,7 @@ def seed_database():
         if not authors:
             authors = _synthesize_authors(arxiv_id)
         # Parse figures, tables, formulas counts from comments
-        cmt = rp.get("comments", "")
+        cmt = clean_arxiv_metadata_text(rp.get("comments", "") or "")
         figs = 0
         tbls = 0
         frms = 0
@@ -564,7 +566,7 @@ def seed_database():
         versions = rp.get("versions", [])
         # Loss function from abstract
         loss_fn = ""
-        abs_text = rp.get("abstract", "") or ""
+        abs_text = clean_arxiv_metadata_text(rp.get("abstract", "") or "")
         # Backfill empty abstracts for high-traffic categories so the /abs
         # and listing pages always surface something meaningful.
         if not abs_text:
@@ -590,7 +592,7 @@ def seed_database():
             submitted_day=sub_d,
             announce_date=(f"{sub_y:04d}-{sub_m:02d}-{sub_d:02d}" if sub_y else ""),
             comments=cmt,
-            journal_ref=rp.get("journal_ref", ""),
+            journal_ref=clean_arxiv_metadata_text(rp.get("journal_ref", "") or ""),
             doi=rp.get("doi", ""),
             pdf_url=f"https://arxiv.org/pdf/{arxiv_id}",
             html_url=f"https://arxiv.org/abs/{arxiv_id}",
@@ -2404,6 +2406,29 @@ def seed_benchmark_users():
 # MAIN
 # =======================================================================
 
+def normalize_paper_metadata():
+    """Collapse duplicated LaTeX/math fragments in already-seeded Paper rows.
+
+    Safe to run every startup: only writes when a field actually changes, so
+    a clean packaged DB is left byte-identical (no empty commit).
+    """
+    try:
+        changed = 0
+        for paper in Paper.query.all():
+            updates = clean_paper_metadata_fields(paper)
+            if not updates:
+                continue
+            for field, value in updates.items():
+                setattr(paper, field, value)
+                changed += 1
+        if changed:
+            db.session.commit()
+            print(f"  [+] Normalized {changed} arXiv metadata fields")
+    except Exception as e:
+        db.session.rollback()
+        print(f"  ! normalize_paper_metadata failed: {e}")
+
+
 def backfill_paper_gaps():
     """Patch pre-existing Paper rows with empty authors / abstract so the
     /abs, listing, and /list/<code>/new views never render blank content.
@@ -2494,6 +2519,7 @@ with app.app_context():
     ensure_affiliation_column()
     seed_database()
     seed_benchmark_users()
+    normalize_paper_metadata()
     backfill_paper_gaps()
     backfill_affiliations()
 
