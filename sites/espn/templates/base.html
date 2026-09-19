@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="csrf-token" content="{{ csrf_token() }}">
   <title>{% block title %}ESPN{% endblock %} - ESPN</title>
-  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/espn/logo/espn-wordmark.png') }}">
+  {% set wordmark_url = espn_asset_url('images/espn/logo/espn-wordmark.png') %}
+  {% if wordmark_url %}<link rel="icon" type="image/png" href="{{ wordmark_url }}">{% endif %}
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   {% block extra_head %}{% endblock %}
 </head>
@@ -27,7 +28,7 @@
       <li class="scorebar__item">
         <a href="{{ sp.url_prefix }}scoreboard">
           <span class="scorebar__league">
-            <img src="{{ url_for('static', filename='images/espn/leagues/' ~ sp.slug ~ '.png') }}" onerror="this.style.display='none'" alt="">
+            <img src="{{ league_icon_url(sp.slug) }}" alt="">
             <span>{{ sp.name }}</span>
           </span>
           <span class="scorebar__state">Scores</span>
@@ -40,14 +41,14 @@
   <!-- Global dark nav -->
   <nav class="global-nav">
     <div class="global-nav__inner">
-      <a href="/" class="logo-block" aria-label="ESPN">
-        <img src="{{ url_for('static', filename='images/espn/logo/espn-wordmark.png') }}" alt="ESPN" onerror="this.style.display='none'; this.parentElement.classList.add('logo-block--text');">
+      <a href="/" class="logo-block{% if not wordmark_url %} logo-block--text{% endif %}" aria-label="ESPN">
+        {% if wordmark_url %}<img src="{{ wordmark_url }}" alt="ESPN">{% endif %}
       </a>
       <ul class="nav-tabs">
         {% for sp in nav_sports %}
         <li>
           <a href="{{ sp.url_prefix }}">
-            <img class="nav-tabs__icon" src="{{ url_for('static', filename='images/espn/leagues/' ~ sp.slug ~ '.png') }}" onerror="this.style.display='none'" alt="">
+            <img class="nav-tabs__icon" src="{{ league_icon_url(sp.slug) }}" alt="">
             <span>{% if sp.name|length > 8 %}{{ sp.slug|upper }}{% else %}{{ sp.name }}{% endif %}</span>
           </a>
         </li>

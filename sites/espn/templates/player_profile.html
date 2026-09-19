@@ -6,9 +6,10 @@
   <!-- Player Header -->
   <div class="player-header">
     <div class="player-header__row">
-      <img class="player-header__photo"
-           src="{{ url_for('static', filename='images/espn/placeholders/headshot.png') }}"
-           onerror="this.style.display='none';" alt="">
+      {% set headshot_url = espn_asset_url('images/espn/placeholders/headshot.png') %}
+      {% if headshot_url %}
+      <img class="player-header__photo" src="{{ headshot_url }}" alt="">
+      {% endif %}
     <div class="player-header__main">
       <h1>{{ player.name }}</h1>
       <div class="player-meta">

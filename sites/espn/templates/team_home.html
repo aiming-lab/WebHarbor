@@ -7,8 +7,8 @@
   <div class="team-header" style="border-left-color: {{ team.color_primary or '#DD0000' }};">
     <div class="team-header__row">
       <img class="team-header__logo"
-           src="{{ url_for('static', filename='images/espn/teams/' ~ (sport.slug if sport else '') ~ '/' ~ (team.abbreviation or '').lower() ~ '.png') }}"
-           onerror="this.style.display='none';" alt="">
+           src="{{ team_icon_url(sport.slug if sport else '', team.abbreviation) }}"
+           alt="">
       <div class="team-header__info">
         <h1>{{ team.full_name or team.name }}</h1>
         {% if sport %}<p class="team-sport">{{ sport.display_name or sport.name }}</p>{% endif %}

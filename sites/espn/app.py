@@ -392,6 +392,95 @@ def load_user(user_id):
     return User.query.get(int(user_id))
 
 
+# ─── Static icon fallbacks ────────────────────────────────────────────────────
+# League/team PNGs live in the Hugging Face asset bundle under
+# static/images/espn/. The current published pin ships nba/nfl/mlb/nhl league
+# icons but not soccer/ncaaf/ncaam/ncaaw/tennis/golf/fantasy (or soccer team
+# marks). Templates must not emit those missing paths — onerror still 404s.
+# When a named file exists (including after an asset-bundle update) it is used.
+
+_SPORT_PLACEHOLDER = 'icons/sport-placeholder.svg'
+
+# Closest shipped league icons for college sports; other missing slugs use
+# the committed placeholder. Checked after the real file so a future HF
+# upload of ncaaf.png etc. is picked up automatically.
+_LEAGUE_ICON_ALIASES = {
+    'ncaaf': 'nfl',
+    'college-football': 'nfl',
+    'ncaam': 'nba',
+    'mens-college-basketball': 'nba',
+    'ncaaw': 'nba',
+    'womens-college-basketball': 'nba',
+    'ncaa': 'nba',
+}
+
+
+def _safe_asset_slug(value) -> str:
+    text = (value or '').strip().lower()
+    if not text or not re.fullmatch(r'[a-z0-9_-]+', text):
+        return ''
+    return text
+
+
+def static_exists(relpath: str) -> bool:
+    """True when relpath exists under this app's static/ directory."""
+    if not relpath or relpath.startswith('/') or '\\' in relpath:
+        return False
+    parts = relpath.split('/')
+    if any(p in ('', '.', '..') for p in parts):
+        return False
+    full = os.path.normpath(os.path.join(app.static_folder, *parts))
+    root = os.path.abspath(app.static_folder)
+    if full != root and not full.startswith(root + os.sep):
+        return False
+    return os.path.isfile(full)
+
+
+def espn_asset_url(relpath: str, fallback: str | None = None) -> str:
+    """url_for a static file only if it exists; otherwise fallback or ''."""
+    if static_exists(relpath):
+        return url_for('static', filename=relpath)
+    if fallback and static_exists(fallback):
+        return url_for('static', filename=fallback)
+    return ''
+
+
+def league_icon_url(slug) -> str:
+    """League icon URL that always resolves to a file in this image."""
+    slug = _safe_asset_slug(slug)
+    if slug:
+        rel = f'images/espn/leagues/{slug}.png'
+        if static_exists(rel):
+            return url_for('static', filename=rel)
+        alias = _LEAGUE_ICON_ALIASES.get(slug)
+        if alias:
+            rel = f'images/espn/leagues/{alias}.png'
+            if static_exists(rel):
+                return url_for('static', filename=rel)
+    return espn_asset_url(_SPORT_PLACEHOLDER)
+
+
+def team_logo_url(sport_slug, abbreviation) -> str:
+    """Team PNG URL if that file is shipped; otherwise empty."""
+    sport = _safe_asset_slug(sport_slug)
+    abbr = _safe_asset_slug(abbreviation)
+    if not sport or not abbr:
+        return ''
+    rel = f'images/espn/teams/{sport}/{abbr}.png'
+    if static_exists(rel):
+        return url_for('static', filename=rel)
+    return ''
+
+
+def team_icon_url(sport_slug, abbreviation) -> str:
+    """Team PNG if present, else the shared placeholder.
+
+    Do not alias a missing club mark to nba/nfl/mlb/nhl — that makes
+    every college or soccer side look like the same pro league.
+    """
+    return team_logo_url(sport_slug, abbreviation) or espn_asset_url(_SPORT_PLACEHOLDER)
+
+
 # ─── Context Processors ───────────────────────────────────────────────────────
 
 @app.context_processor
@@ -403,6 +492,11 @@ def inject_globals():
         'today': mirror_today().strftime('%Y-%m-%d'),
         'mirror_today_label': MIRROR_REFERENCE_DATE_LABEL,
         'mirror_today_iso':   mirror_today().strftime('%Y-%m-%d'),
+        'static_exists': static_exists,
+        'espn_asset_url': espn_asset_url,
+        'league_icon_url': league_icon_url,
+        'team_logo_url': team_logo_url,
+        'team_icon_url': team_icon_url,
     }
 
 
