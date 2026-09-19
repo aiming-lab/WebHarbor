@@ -35,7 +35,7 @@ git clone https://github.com/<you>/webharbor && cd webharbor
 ./scripts/fetch_assets.sh                       # pull current assets
 ./scripts/new_site.py mywebsite                 # OR edit an existing site
 ./scripts/build.sh && docker run -e WEBSYN_CONTROL_TOKEN -d --rm \
-  -p 8101:8101 -p 40000-40044:40000-40044 webharbor:dev
+  -p 8101:8101 -p 40000-40045:40000-40045 webharbor:dev
 # iterate locally...
 
 ./scripts/extract_assets.sh ../webharbor-static-pr/   # split assets out

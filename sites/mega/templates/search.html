@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Search MEGA</h1><p>Results for "{{ q }}".</p></section>
+{% for heading, rows, endpoint in [
+  ('Plans', plans, 'plan_detail'),
+  ('Products', pages, 'product_page'),
+  ('Help', articles, 'help_article')
+] %}
+<section class="section-tight">
+  <h2>{{ heading }}</h2>
+  <div class="list-grid">
+    {% for row in rows %}
+      {% if heading == 'Plans' %}
+        <a class="list-item" href="{{ url_for(endpoint, slug=row.slug) }}"><span>{{ row.category }}</span><strong>{{ row.name }}</strong><p>{{ row.tagline }}</p></a>
+      {% elif heading == 'Products' %}
+        <a class="list-item" href="{{ url_for(endpoint, slug=row.slug) }}"><span>{{ row.section }}</span><strong>{{ row.title }}</strong><p>{{ row.summary }}</p></a>
+      {% else %}
+        <a class="list-item" href="{{ url_for(endpoint, slug=row.slug) }}"><span>{{ row.category }}</span><strong>{{ row.title }}</strong></a>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endfor %}
+<section class="section-tight">
+  <h2>Downloads</h2>
+  <div class="list-grid">{% for d in downloads %}<a class="list-item" href="{{ url_for('download_detail', download_id=d.id) }}"><span>{{ d.product }} · {{ d.platform }}</span><strong>{{ d.package_name }}</strong></a>{% endfor %}</div>
+</section>
+{% if current_user.is_authenticated %}
+<section class="section-tight">
+  <h2>Your files</h2>
+  <div class="list-grid">{% for f in files %}<a class="list-item" href="{{ url_for('file_detail', slug=f.slug) }}"><span>{{ f.folder }}</span><strong>{{ f.name }}</strong></a>{% endfor %}</div>
+</section>
+<section class="section-tight">
+  <h2>Your vault</h2>
+  <div class="list-grid">{% for v in vault_items %}<article class="list-item"><span>{{ v.category }} · {{ v.strength }}</span><strong>{{ v.title }}</strong></article>{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

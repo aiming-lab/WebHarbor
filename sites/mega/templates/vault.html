@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}MEGA Pass Vault{% endblock %}
+{% block content %}
+<section class="page-head"><h1>MEGA Pass</h1><p>Encrypted password vault entries for {{ current_user.display_name }}.</p></section>
+<form class="filters" action="{{ url_for('vault') }}">
+  <input name="q" value="{{ q }}" placeholder="Search vault">
+  <button type="submit">Search</button>
+</form>
+<section class="columns two">
+  <div class="file-list">
+    {% for item in items %}
+      <article class="file-row">
+        <span>{{ item.category }}</span>
+        <strong>{{ item.title }}</strong>
+        <span>{{ item.username }}</span>
+        <span>{{ item.strength }}</span>
+        <span>{{ '2FA' if item.two_factor else 'No 2FA' }}</span>
+      </article>
+    {% endfor %}
+  </div>
+  <form class="form-card" method="post">
+    <h2>Add vault entry</h2>
+    <label>Title <input name="title"></label>
+    <label>Username <input name="username"></label>
+    <label>Site URL <input name="site_url"></label>
+    <label>Category <input name="category" value="Login"></label>
+    <label>Strength <select name="strength"><option>Strong</option><option>Reused</option><option>Weak</option></select></label>
+    <label class="check-row"><input type="checkbox" name="two_factor"> Two-factor enabled</label>
+    <label>Notes <textarea name="notes"></textarea></label>
+    <button type="submit">Save entry</button>
+  </form>
+</section>
+{% endblock %}

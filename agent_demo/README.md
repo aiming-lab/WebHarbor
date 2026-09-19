@@ -30,7 +30,7 @@ export OPENAI_BASE_URL=https://api.openai.com/v1   # or your Azure / vLLM endpoi
 
 ## Run a task
 
-WebHarbor must already be running locally (`docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40044:40000-40044 battalion7244/webharbor:latest`).
+WebHarbor must already be running locally (`docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40045:40000-40045 battalion7244/webharbor:latest`).
 
 Run a single task from a site's `tasks.jsonl`:
 

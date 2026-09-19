@@ -24,7 +24,7 @@ EXPECTED = [
     "target", "ted", "osu", "rotten_tomatoes", "compass", "walmart_careers",
     "fedex", "webmd_doctor", "healthline", "kaggle", "nvidia", "berkeley",
     "bh_photo", "accuweather", "gov_uk", "imdb", "nba", "recreation_gov",
-    "boardgamegeek", "carmax", "babycenter", "amtrak", "cookpad", "craigslist", "drugs_com", "versus", "y_combinator",
+    "boardgamegeek", "carmax", "babycenter", "amtrak", "cookpad", "craigslist", "drugs_com", "versus", "y_combinator", "mega",
 ]
 
 
@@ -51,7 +51,7 @@ def load_control_server():
     return module
 
 
-def test_exact_45_site_registry_and_ports():
+def test_exact_46_site_registry_and_ports():
     assert shell_sites() == control_sites() == EXPECTED
     assert EXPECTED.index("rotten_tomatoes") + 40000 == 40021
     assert EXPECTED.index("compass") + 40000 == 40022
@@ -59,6 +59,7 @@ def test_exact_45_site_registry_and_ports():
     assert EXPECTED.index("drugs_com") + 40000 == 40042
     assert EXPECTED.index("versus") + 40000 == 40043
     assert EXPECTED.index("y_combinator") + 40000 == 40044
+    assert EXPECTED.index("mega") + 40000 == 40045
 
 
 def test_task_manifest_uses_port_40042_and_complete_verifiers():
@@ -71,10 +72,10 @@ def test_task_manifest_uses_port_40042_and_complete_verifiers():
     assert all("do not require JSON or verbatim wording" in row["judge_rubric"] for row in rows)
 
 
-def test_docker_and_docs_use_45_site_range():
+def test_docker_and_docs_use_46_site_range():
     dockerfile = (ROOT / "Dockerfile").read_text()
-    assert "45 Flask mirror sites" in dockerfile
-    assert "EXPOSE 8101 40000-40044" in dockerfile
+    assert "46 Flask mirror sites" in dockerfile
+    assert "EXPOSE 8101 40000-40045" in dockerfile
     assert "check_asset_inventory.py /opt/WebSyn/drugs_com" in dockerfile
     assert "cd /opt/WebSyn/drugs_com" in dockerfile
     assert "check_seed_databases.py /opt/WebSyn" in dockerfile
@@ -83,7 +84,7 @@ def test_docker_and_docs_use_45_site_range():
     dockerignore = set((ROOT / ".dockerignore").read_text().splitlines())
     assert {"**/.env", "**/.env.*", "**/secrets.json", "**/*.pem", "**/*.key"} <= dockerignore
     for relative in ["README.md", "AGENTS.md", "CONTRIBUTING.md", "CLAUDE.md", "agent_demo/README.md"]:
-        assert "40000-40044" in (ROOT / relative).read_text(), relative
+        assert "40000-40045" in (ROOT / relative).read_text(), relative
 
 
 def test_asset_path_contracts_are_synchronized():

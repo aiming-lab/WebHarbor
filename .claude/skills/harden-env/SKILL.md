@@ -130,7 +130,7 @@ Hardening changes seed data. After any DB change:
 ```bash
 ./scripts/build.sh webharbor:dev
 docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41044:40000-40044 webharbor:dev
+  -p 8201:8101 -p 41000-41045:40000-40045 webharbor:dev
 curl -X POST http://localhost:8201/reset/<your_site>
 docker exec wh-test md5sum \
   /opt/WebSyn/<your_site>/instance/<your_site>.db \
