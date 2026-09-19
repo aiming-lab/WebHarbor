@@ -381,6 +381,69 @@ class VerifierTests(unittest.TestCase):
                       ("nav_waterproof_filter_or_product", "answer_lists_all_four"))
 
 
+    def _make_anon_add_run(self, root, bag_text, answer):
+        """Acceptor's failed-run shape: search -> card add -> /bag, no product
+        page, no blue filter, no login, no DB row; the identity lives in the
+        cart page's recorded DOM text."""
+        run = root / "run_anon"
+        shots = run / "screenshots"
+        shots.mkdir(parents=True)
+        paths = ["/", "/search?dept=All&q=Blue+iPhone+12+Pro+128GB", "/bag", "/bag"]
+        steps = []
+        for i, p in enumerate(paths):
+            shot = f"step_{i:03d}.png"
+            (shots / shot).write_bytes(PNG)
+            steps.append({"step": i, "url": ORIGIN + p, "action": "click",
+                          "action_result": {"success": True},
+                          "screenshot_after": shot,
+                          "observed_text_after": bag_text if i == 2 else "page"})
+        trajectory = {
+            "task_id": "Amazon--5", "task": "fixture", "start_url": ORIGIN + "/",
+            "terminated": True, "termination_reason": "agent_done",
+            "final_answer": answer, "steps": steps,
+        }
+        (run / "trajectory.json").write_text(json.dumps(trajectory), encoding="utf-8")
+        return run
+
+    def test_task5_acceptor_anonymous_card_add_passes(self):
+        # D1 regression: the acceptor's failed run shape must PASS (identity from
+        # the cart page: model name + add confirmation + product 84's $699.00)
+        bag_text = ("Added Apple iPhone 12 Pro 128GB to cart. Item added to your "
+                    "shopping cart. Shopping Cart $699.00 Subtotal (1 items): $699.00")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initial = seed_db(root)
+            run = self._make_anon_add_run(root, bag_text,
+                                          "Added the Blue Apple iPhone 12 Pro 128GB to the cart.")
+            result = run_verifier(5, run, initial, initial)
+            self.assertTrue(result["pass"], result)
+
+    def test_task5_anonymous_wrong_price_unit_fails(self):
+        # a Graphite 128GB unit (wrong color, $679.00) must not pass the anchor
+        bag_text = ("Added Apple iPhone 12 Pro 128GB to cart. Item added to your "
+                    "shopping cart. Shopping Cart $679.00 Subtotal (1 items): $679.00")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initial = seed_db(root)
+            run = self._make_anon_add_run(root, bag_text,
+                                          "Added the Blue Apple iPhone 12 Pro 128GB to the cart.")
+            result = run_verifier(5, run, initial, initial)
+            self.assertFalse(result["pass"], result)
+            self.assertEqual(result.get("reason"), "nav_blue_128gb_identified")
+
+    def test_task5_anonymous_pro_max_bag_fails(self):
+        # the Pro Max bag row (name + $849.00) must not pass
+        bag_text = ("Added Apple iPhone 12 Pro Max 128GB to cart. Item added to your "
+                    "shopping cart. Shopping Cart $849.00 Subtotal (1 items): $849.00")
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            initial = seed_db(root)
+            run = self._make_anon_add_run(
+                root, bag_text,
+                "Added the Apple iPhone 12 Pro Max 128GB to the cart.")
+            result = run_verifier(5, run, initial, initial)
+            self.assertFalse(result["pass"], result)
+
     def test_task5_pro_max_answer_fails(self):
         # the Pro Max 128GB shares the name prefix; it must not pass task 5
         result = self.execute(5, answer="Added the Apple iPhone 12 Pro Max 128GB in Pacific Blue to the cart.")

@@ -36,13 +36,33 @@ def main():
     after_db = __import__('verify_lib').resolve_db(a.after_db, a.container, "instance")
     cart_has_84 = bool(__import__('verify_lib').db_query(
         after_db, "SELECT 1 FROM cart_items WHERE product_id=84"))
+    # Anonymous-card-add path: no product page, no blue filter param, no login,
+    # no DB row - the identity is carried by the cart page the add redirects to.
+    # Product 84 is the ONLY "iPhone 12 Pro 128GB" at $699.00 (the Graphite/Gold/
+    # Silver 128GB units cost $679/$689/$674, the Unlocked Graphite $729), so the
+    # cart page showing the model name, the add confirmation, and $699.00 pins
+    # the qualifying unit deterministically.
+    anon_cart_identified = False
+    for s in t.get("steps", []):
+        on_bag = "/bag" in (s.get("url") or "") or "/bag" in (s.get("url_after") or "")
+        if not on_bag:
+            continue
+        blob = " ".join(filter(None, [
+            s.get("observed_text"), s.get("observed_text_after"),
+            (s.get("action_result") or {}).get("extracted_content") or ""]))
+        nblob = __import__('verify_lib').norm(blob)
+        if ("iphone 12 pro 128gb" in nblob and "699.00" in nblob
+                and "to cart" in nblob):
+            anon_cart_identified = True
     j.check("nav_blue_128gb_identified",
             visited_product(t, "apple-iphone-12-pro-128gb")
             or search_url_with(t, ["iphone", "color=blue"])
             or contains_all(fa, ["pacific blue"])
-            or cart_has_84,
+            or cart_has_84
+            or anon_cart_identified,
             "128GB product page, blue-filtered search, Pacific Blue reported, "
-            "or the run's cart_items row for the qualifying product 84")
+            "the run's cart_items row for product 84, or the cart page showing "
+            "the model + add confirmation + $699.00 (anonymous card-add path)")
     j.check("cart_add_evidence", navigated_to(t, "/bag"), "add-to-cart redirects to /bag")
     j.check("answer_iphone_12_pro_128gb",
             contains_all(fa, ["iphone 12 pro"]) and contains_any(fa, ["128gb", "128 gb", "128"])
