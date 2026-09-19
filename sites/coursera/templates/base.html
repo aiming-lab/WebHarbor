@@ -38,7 +38,7 @@
               <h4>Goals</h4>
               <a href="{{ url_for('degrees') }}">Take a degree</a>
               <a href="{{ url_for('professional_certificates') }}">Earn a Certificate</a>
-              <a href="{{ url_for('search') }}?free=1">Learn for Free</a>
+              <a href="/search?free=1">Learn for Free</a>
               <a href="{{ url_for('coursera_plus') }}">Coursera Plus</a>
             </div>
             <div class="dropdown-col">
@@ -57,8 +57,8 @@
         </div>
       </div>
     </div>
-    <form class="nav-search" action="{{ url_for('search') }}" method="get" role="search">
-      <input type="text" name="q" placeholder="What do you want to learn?" value="{{ request.args.get('q', '') }}" aria-label="Search">
+    <form class="nav-search" action="/search" method="get" role="search">
+      <input type="text" name="query" placeholder="What do you want to learn?" value="{{ request.args.get('query') or request.args.get('q', '') }}" aria-label="Search">
       <button type="submit" aria-label="Search">&#128269;</button>
     </form>
     <div class="nav-auth">
@@ -79,12 +79,12 @@
   <div class="footer-inner">
     <div class="footer-col">
       <h4>Skills</h4>
-      <a href="{{ url_for('search') }}?q=python">Python Skills</a>
-      <a href="{{ url_for('search') }}?q=excel">Excel Skills</a>
-      <a href="{{ url_for('search') }}?q=data+analysis">Data Analysis</a>
-      <a href="{{ url_for('search') }}?q=machine+learning">Machine Learning</a>
-      <a href="{{ url_for('search') }}?q=cybersecurity">Cybersecurity</a>
-      <a href="{{ url_for('search') }}?q=project+management">Project Management</a>
+      <a href="{{ url_for('search') }}?query=python">Python Skills</a>
+      <a href="{{ url_for('search') }}?query=excel">Excel Skills</a>
+      <a href="{{ url_for('search') }}?query=data+analysis">Data Analysis</a>
+      <a href="{{ url_for('search') }}?query=machine+learning">Machine Learning</a>
+      <a href="{{ url_for('search') }}?query=cybersecurity">Cybersecurity</a>
+      <a href="{{ url_for('search') }}?query=project+management">Project Management</a>
     </div>
     <div class="footer-col">
       <h4>Professional Certificates</h4>
@@ -92,14 +92,14 @@
       <a href="{{ url_for('professional_certificates') }}">IBM Certificates</a>
       <a href="{{ url_for('professional_certificates') }}">Meta Certificates</a>
       <a href="{{ url_for('professional_certificates') }}">All Certificates</a>
-      <a href="{{ url_for('search') }}?type=Professional+Certificate">Browse Certificates</a>
+      <a href="/search?type=Professional+Certificate">Browse Certificates</a>
     </div>
     <div class="footer-col">
       <h4>Courses &amp; Specializations</h4>
-      <a href="{{ url_for('search') }}?type=Course">Courses</a>
-      <a href="{{ url_for('search') }}?type=Specialization">Specializations</a>
-      <a href="{{ url_for('search') }}?type=Guided+Project">Guided Projects</a>
-      <a href="{{ url_for('search') }}?free=1">Free Courses</a>
+      <a href="/search?type=Course">Courses</a>
+      <a href="/search?type=Specialization">Specializations</a>
+      <a href="/search?type=Guided+Project">Guided Projects</a>
+      <a href="/search?free=1">Free Courses</a>
       <a href="{{ url_for('coursera_plus') }}">Coursera Plus</a>
       <a href="{{ url_for('degrees') }}">Online Degrees</a>
     </div>

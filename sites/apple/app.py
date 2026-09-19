@@ -1259,8 +1259,9 @@ def _apply_sort(results, key):
 
 
 @app.route('/search')
-def search():
-    q = request.args.get('q', '').strip()
+@app.route('/search/<path:apple_query>')
+def search(apple_query=''):
+    q = (apple_query or request.args.get('q', '')).strip()
     query_obj = Product.query
     query_obj = _apply_product_filters(query_obj)
     candidates = query_obj.all()
