@@ -438,17 +438,23 @@ def inject_globals():
 # ─── External github.com redirect middleware ───
 # Some WebVoyager agents hallucinate real github.com URLs even though the task
 # is hosted locally. If such a request ever reaches this Flask app (via
-# /etc/hosts, proxy, or host header), rewrite it to the local equivalent so the
-# agent lands on usable content instead of `about:blank`.
+# /etc/hosts, proxy, or host header), keep serving the local route instead of
+# bouncing to a hardcoded localhost port.
+def is_external_github_host(host):
+    """True when this Flask app received a github.com Host header."""
+    host = (host or '').lower()
+    return 'github.com' in host and 'localhost' not in host and '127.0.0.1' not in host
+
+
 @app.before_request
 def _redirect_external_github():
     host = (request.host or '').lower()
-    # If the request arrives with a real github.com Host header, 307-redirect
-    # to the local mirror path preserving the URL path & query string.
-    if 'github.com' in host and 'localhost' not in host and '127.0.0.1' not in host:
-        target = request.full_path.rstrip('?') or '/'
-        # Strip leading /https:/github.com/ or similar, keep the path portion.
-        return redirect(f"http://localhost:40006{target}", code=302)
+    # If the request arrives with a real github.com Host header, the Flask
+    # app is already handling it (hosts file / proxy). Serve the local route
+    # instead of bouncing to a hardcoded localhost port, which leaks a
+    # mirror address and is wrong when the site is not on :40006.
+    if is_external_github_host(host):
+        return None
     # Some agents also type URLs like /https://github.com/foo/bar into the bar.
     path = request.path or ''
     m = re.match(r'^/(https?:)?/*github\.com/(.*)$', path)

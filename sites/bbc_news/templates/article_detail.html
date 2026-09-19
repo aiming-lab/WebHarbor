@@ -79,7 +79,7 @@
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>
             <span>{{ article.comment_count }} comments</span>
         </a>
-        <button class="article-action-btn" onclick="copyShareUrl()">
+        <button class="article-action-btn" data-share-url="{{ article_share_url }}" onclick="copyShareUrl(this)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
             <span>Share</span>
         </button>
@@ -211,8 +211,11 @@
 
 {% block extra_js %}
 <script>
-function copyShareUrl() {
-    navigator.clipboard.writeText(window.location.href).then(() => {
+window.BBC_ARTICLE_SHARE_URL = {{ article_share_url|tojson }};
+function copyShareUrl(btn) {
+    var shareUrl = (btn && btn.getAttribute && btn.getAttribute('data-share-url'))
+        || window.BBC_ARTICLE_SHARE_URL;
+    navigator.clipboard.writeText(shareUrl).then(() => {
         alert('Article link copied to clipboard');
     }).catch(() => {});
 }
