@@ -57,6 +57,14 @@ in three places (must stay in sync):
 
 Modern target sites (Amazon, Booking, Apple, Coursera, ...) are JS-heavy SPAs / hydrated React apps. `requests.get(url)` returns an empty shell — no products, no images, no cards. Recon and scraping both **must** be done by driving a real Chromium via Playwright (or an equivalent real-browser tool); only that path produces the rendered DOM and the real image URLs the live site actually serves. The `agent_demo/` env already has Playwright + Chromium installed via `uv sync` — reuse it.
 
+Before scraping, define a **Snapshot Contract** for this mirror and save it under `sites/<your_site>/scraped_data/snapshot_contract.json`:
+
+- `captured_at`: one timestamp for the whole recon pass
+- `locale`, `timezone`, `viewport`: fixed browser settings used for all captures
+- `modules`: canonical upstream URL per mirrored module/page type (`home`, `list`, `detail`, `search`, `auth`, ...)
+
+Do not switch upstream URLs mid-implementation for the same module. If a URL changes, update the contract and recapture all affected evidence.
+
 Minimum scraping recipe — render the page, then pull the post-hydration DOM and the resolved image `src` attributes:
 
 ```python
@@ -123,6 +131,14 @@ Drive the live site with Playwright (recipe above) and download assets into `scr
 
 **Critical**: use REAL images from the live site, captured via Playwright + a follow-up `httpx.get` of the resolved URL. Never use placeholders, colored rectangles, AI-generated stock photos, or `requests.get(target_url)` HTML (it returns a JS shell without the image URLs). Multimodal fidelity is a core WebHarbor differentiator and is the #1 reason agents reject reviews.
 
+Apply **Resource Alignment Rules** before seeding:
+
+- Build an entity-level mapping file (`scraped_data/entity_assets.jsonl`) with at least:
+  - `entity_key` (stable id/slug), `title`, `upstream_url`, `image_url`, `local_path`
+- Seed rows must join assets by `entity_key` (or another stable key), not by list index position.
+- If a real upstream image exists for an entity, do not replace it with fallback/default images.
+- During review, sample-check `title -> image -> upstream_url` triplets for semantic consistency.
+
 ### Step 4: Backend build
 
 Edit `sites/<your_site>/app.py`:
@@ -166,6 +182,12 @@ Create Jinja2 templates under `sites/<your_site>/templates/`:
 
 Match the original site's color scheme, typography, and navigation. Don't
 ship a generic Bootstrap theme.
+
+Enforce **Interactive Parity** for major controls:
+
+- Tabs/chips/filters/sort controls must change content state, not only active CSS class.
+- If a control is visible in UI, it should have deterministic backend behavior.
+- Remove benchmark-only explanatory copy from user-facing surfaces.
 
 ### Step 6: Seed data
 
@@ -215,9 +237,23 @@ docker exec wh-test md5sum \
   /opt/WebSyn/<your_site>/instance/<your_site>.db \
   /opt/WebSyn/<your_site>/instance_seed/<your_site>.db
 # both md5s MUST match
+
+# restart determinism gate (must still match after restart)
+docker restart wh-test && sleep 5
+docker exec wh-test md5sum \
+  /opt/WebSyn/<your_site>/instance/<your_site>.db \
+  /opt/WebSyn/<your_site>/instance_seed/<your_site>.db
+# both md5s MUST still match
 ```
 
 Then drive the mirror through Playwright (same recipe as recon, but pointing at `http://localhost:41000+i/`): screenshot the homepage, one listing page, one detail page, the login flow, and one search. Diff visually against the screenshots you captured in Step 2. If something looks like a coloured rectangle or "Image" alt text, you're missing real assets — go back to Step 3.
+
+Hard acceptance gates (all required):
+
+- **Broken image gate**: key pages should have zero broken image links (no 404 image URLs in rendered HTML/network logs).
+- **Semantic gate**: sampled cards/entities keep `title-image-link` aligned with upstream entity meaning.
+- **Visual gate**: screenshot compare for homepage + at least 2 core modules (list/detail or equivalent).
+- **Determinism gate**: md5 match after reset and after container restart (shown above).
 
 ## Output
 
