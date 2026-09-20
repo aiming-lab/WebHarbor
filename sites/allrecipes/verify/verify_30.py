@@ -52,7 +52,6 @@ GROUND_TRUTH = [
         "review_count": 34,
         "prep": "20 mins",
         "ingredients": [
-            "acai",
             "bananas",
             "spinach leaves",
             "almond milk",

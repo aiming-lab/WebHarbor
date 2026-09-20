@@ -41,6 +41,24 @@ GROUND_TRUTH = [
         ]
     },
     {
+        "slug": "grilled-halibut-mediterranean",
+        "title": "Grilled Halibut Mediterranean",
+        "avg_rating": "4.5",
+        "review_count": 85,
+        "total": "7 hrs 28 mins",
+        "ingredients": [
+            "fish fillets",
+            "Kalamata olives",
+            "olive oil",
+            "garlic",
+            "lemon",
+            "oregano",
+            "capers",
+            "salt",
+            "parsley"
+        ]
+    },
+    {
         "slug": "grilled-mediterranean-fish-with-olives",
         "title": "Grilled Mediterranean Fish with Olives",
         "avg_rating": "4.4",

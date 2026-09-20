@@ -485,3 +485,72 @@ def test_tasks_jsonl_contract():
         assert (VERIFY_DIR / f"verify_{n}.py").is_file(), row["verifier_path"]
         assert row["judge_rubric"].startswith("FACT CHECKPOINTS."), row["id"]
         assert len(row["judge_rubric"]) > 80, row["id"]
+
+
+# ---- acceptor-audited scope additions (ACCEPT.md items 1-3) -----------------
+# These recipes satisfy every task constraint and appear on the natural-query
+# SERPs; a correct run answering them MUST PASS after the GT additions.
+EXTRA_POSITIVES = {
+    "Allrecipes--13": ["traditional-fish-fry", "cornmeal-fried-catfish"],
+    "Allrecipes--29": ["grilled-halibut-mediterranean"],
+}
+
+
+@pytest.mark.parametrize("tid,slug", [(t, s) for t, slugs in EXTRA_POSITIVES.items()
+                                      for s in slugs])
+def test_expanded_qualifying_scope(tmp_root, tid, slug):
+    gt = load_ground_truth(tid)
+    row = next(r for r in gt if r["slug"] == slug)
+    run_dir = make_run(tmp_root, f"pos-{tid}-{slug}", nav_steps(slug), "placeholder")
+    traj_path = Path(run_dir) / "trajectory.json"
+    traj = json.loads(traj_path.read_text())
+    traj["final_answer"] = facts_answer(tid, row)
+    traj_path.write_text(json.dumps(traj))
+    rc, verdict = run_verifier(tid, run_dir)
+    assert rc == 0 and verdict.get("pass") is True, \
+        f"scope-addition positive must PASS: rc={rc} verdict={verdict}"
+
+
+# ACCEPT.md item 3: an answer naming a WRONG dressing type must FAIL (the
+# page's actual dressing is red-wine-vinegar based).
+def test_greek_salad_wrong_dressing_fails(tmp_root):
+    tid = "Allrecipes--37"
+    gt = load_ground_truth(tid)
+    slug = gt[0]["slug"]
+    ans = (f"{gt[0]['title']} — the primary cheese is feta; the recommended "
+           f"dressing is a lemon oregano vinaigrette.")
+    run_dir = make_run(tmp_root, "neg-37-wrong-dressing", nav_steps(slug), ans)
+    rc, verdict = run_verifier(tid, run_dir)
+    assert rc == 1 and verdict.get("pass") is False, \
+        f"wrong dressing type must FAIL: rc={rc} verdict={verdict}"
+    assert verdict.get("reason") == "answer_states_cheese_and_dressing", verdict
+
+
+# ACCEPT.md item 4: the natural completion reports the review WITHOUT naming
+# the recipe (23/23 real runs, incl. the acceptor's own canonical run); under
+# the shipped attribution guard it must PASS.
+def test_task17_unnamed_review_passes(tmp_root):
+    tid = "Allrecipes--17"
+    ans = ("The latest review says: \"Made this last night — my whole family "
+           "loved it. The spinach filling was perfect, and the top was golden "
+           "and bubbly. Will definitely make again!\"")
+    run_dir = make_run(tmp_root, "pos-17-unnamed",
+                       nav_steps("easy-vegetarian-spinach-lasagna"), ans)
+    rc, verdict = run_verifier(tid, run_dir)
+    assert rc == 0 and verdict.get("pass") is True, \
+        f"unnamed natural review report must PASS: rc={rc} verdict={verdict}"
+
+
+# ACCEPT.md item 4 demonstrated false-pass: an answer attributing the review
+# to a different recipe must FAIL (wrong attribution).
+def test_task17_wrong_attribution_fails(tmp_root):
+    tid = "Allrecipes--17"
+    ans = ("Chocolate Chip Cookies — my whole family loved it. The spinach "
+           "filling was perfect, and the top was golden and bubbly. Will "
+           "definitely make again!")
+    run_dir = make_run(tmp_root, "neg-17-wrong-attribution",
+                       nav_steps("easy-vegetarian-spinach-lasagna"), ans)
+    rc, verdict = run_verifier(tid, run_dir)
+    assert rc == 1 and verdict.get("pass") is False, \
+        f"wrong attribution must FAIL: rc={rc} verdict={verdict}"
+    assert verdict.get("reason") == "answer_attributes_review_to_correct_recipe", verdict

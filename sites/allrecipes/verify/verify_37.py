@@ -21,6 +21,14 @@ from verify_lib import (run, opened_recipe, opened_page, mentions_title,
 
 # Ground truth frozen from the mirror's own pages (rating/review counts, info
 # bar times, ingredient and direction text as rendered on the recipe pages).
+#
+# Scope note (acceptor-audited): "Greek Quinoa Salad" (4.6 stars, 499 reviews,
+# prep 12 mins, feta) satisfies every NUMERIC constraint of the task but is
+# deliberately excluded: its page carries no dressing recommendation — its
+# ingredient list has lemon juice and olive oil (no red wine vinegar) and its
+# Directions are the generic placeholder lines, so the task's dressing
+# deliverable is not completable from that page. "Classic Greek Salad with
+# Feta" (prep 44 mins) fails the prep-time constraint.
 GROUND_TRUTH = [
     {
         "slug": "authentic-greek-salad",
@@ -58,7 +66,12 @@ def body(j, traj, ans):
     j.check("answer_names_opened_recipe", bool(named),
             f"named={[r['title'] for r in named]}")
     feta_ok = keyword_hit(ans, "feta")
-    dressing_ok = mentions_any(ans, ["red wine vinegar", "vinaigrette", "dressing", "vinegar"])
+    # Deterministic anchor: every qualifying page's dressing is built on red
+    # wine vinegar (the ingredient lists carry it and the Greek Salad page's
+    # Directions describe whisking olive oil, red wine vinegar and oregano for
+    # the dressing). Generic "dressing/vinaigrette" wording is NOT accepted —
+    # an answer naming a wrong dressing type must FAIL.
+    dressing_ok = keyword_hit(ans, "red wine vinegar")
     best = named if (feta_ok and dressing_ok) else []
     j.check("answer_states_cheese_and_dressing", feta_ok and dressing_ok,
             f"feta={feta_ok} dressing={dressing_ok}")

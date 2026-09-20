@@ -40,6 +40,22 @@ GROUND_TRUTH = [
         }
     },
     {
+        "slug": "cornmeal-fried-catfish",
+        "title": "Cornmeal Fried Catfish",
+        "avg_rating": "4.2",
+        "review_count": 191,
+        "nutrition": {
+            "CALORIES": "360",
+            "FAT": "22g",
+            "CARBS": "28g",
+            "PROTEIN": "30g",
+            "SODIUM": "720mg",
+            "IRON": "2.4mg",
+            "CALCIUM": "85mg",
+            "CHOLESTEROL": "110mg"
+        }
+    },
+    {
         "slug": "crispy-southern-fried-fish",
         "title": "Crispy Southern Fried Fish",
         "avg_rating": "4.3",
@@ -63,6 +79,23 @@ GROUND_TRUTH = [
         "review_count": 176,
         "nutrition": {
             "CALORIES": "310",
+            "FAT": "22g",
+            "CARBS": "28g",
+            "PROTEIN": "30g",
+            "SODIUM": "720mg",
+            "IRON": "2.4mg",
+            "CALCIUM": "85mg",
+            "FIBER": "1g",
+            "CHOLESTEROL": "110mg"
+        }
+    },
+    {
+        "slug": "traditional-fish-fry",
+        "title": "Traditional Fish Fry",
+        "avg_rating": "3.2",
+        "review_count": 8861,
+        "nutrition": {
+            "CALORIES": "400",
             "FAT": "22g",
             "CARBS": "28g",
             "PROTEIN": "30g",

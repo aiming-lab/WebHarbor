@@ -9,12 +9,18 @@ Checks (deterministic first, no LLM):
    3. the answer names the qualifying recipe it opened
 
 Qualifying-set note (audited): "suitable for 6 people" is graded as the
-recipe's info-bar servings being able to feed 6 people (at least 6 servings
-as displayed). The stricter reading "info bar shows exactly 6" matches only
+recipe being able to feed 6 people — the info-bar servings count is at least
+6 (every qualifying recipe below has 6 or 8 servings), or the answer carries
+an explicit scaling/adaptation note for 6 servings. The adjudicated rule
+(acceptor CONVERGED + orchestrator ruling) is recorded in the task's
+judge_rubric; the scaling arm has no catalog candidates: every vegetarian
+lasagna that passes the >100-review and >=4.5-star constraints already shows
+6, 8, 10 or 12 servings on its page, so no <6-serving recipe can ever be
+graded here. The stricter reading "info bar shows exactly 6" matches only
 two seeded recipes (Easy Vegetarian Spinach Lasagna, Keto Vegetarian
 Lasagna) and was rejected because nine independent real-agent runs
-consistently read the task's wording as suitability (an 8-serving recipe
-feeds 6 people) — see REPORT.md's task-quality audit for the full evidence.
+consistently read the task's wording as suitability — see REPORT.md's
+task-quality audit for the full evidence.
 Input/Output: see verify_lib.run / Judge.emit.
 """
 import re
