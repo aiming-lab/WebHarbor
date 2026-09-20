@@ -289,6 +289,34 @@ def test_verifier_contract(tmp_root, n):
         f"missing trajectory must FAIL: rc={rc} verdict={verdict}"
 
 
+def test_task40_single_destination_insufficient(tmp_root):
+    """Acceptor r2 finding: the GT lists all 55 served explore cards, so
+    ("New York", $90) appears 3x (JFK/LGA/EWR). The counting loop iterates the
+    DEDUPLICATED (city, price) set, so a single-destination answer counts the
+    New York pair once and n=1 < 3 FAILs (r2 evidence package:
+    runs/acceptor/negatives/r2-40-single-newyork-only). A multi-destination
+    answer with >=3 distinct pairs still PASSES (see the positive case)."""
+    single_city_answer = "I recommend New York from $90."
+    run_dir = make_run(tmp_root, "neg-40-single-ny", NAV[40], single_city_answer)
+    rc, verdict = run_verifier(40, run_dir)
+    assert rc == 1 and verdict.get("pass") is False, \
+        f"a single-destination answer must FAIL: rc={rc} verdict={verdict}"
+    assert verdict.get("reason") == "answer_recommends_destinations", verdict
+
+    two_city_answer = "I recommend New York from $90 and Boston from $89."
+    run_dir = make_run(tmp_root, "neg-40-two-cities", NAV[40], two_city_answer)
+    rc, verdict = run_verifier(40, run_dir)
+    assert rc == 1 and verdict.get("pass") is False, \
+        f"a two-destination answer must FAIL: rc={rc} verdict={verdict}"
+
+    multi_city_answer = ("Recommended destinations: Miami from $89, Boston "
+                        "from $89, Toronto from $89, and New York from $90.")
+    run_dir = make_run(tmp_root, "pos-40-multi", NAV[40], multi_city_answer)
+    rc, verdict = run_verifier(40, run_dir)
+    assert rc == 0 and verdict.get("pass") is True, \
+        f"a legitimate multi-destination answer must PASS: rc={rc} verdict={verdict}"
+
+
 def test_task41_dual_business_price_reading(tmp_root):
     """Acceptor Difference 1: the mirror shows TWO business prices for the same
     1-stop flight — the results-page fare and the detail-page booking-sites

@@ -42,7 +42,7 @@ def main(j, traj, ans):
     j.check("nav_explore_seattle", ok_explore,
             "expected the /explore destinations page for origin SEA (Seattle)")
     n = 0
-    for city, price in GROUND_TRUTH["destinations"]:
+    for city, price in set(map(tuple, GROUND_TRUTH["destinations"])):
         if _mentions_city(ans, city) and mentions_price(ans, price):
             n += 1
     j.check("answer_recommends_destinations", n >= 3,
