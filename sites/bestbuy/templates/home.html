@@ -27,6 +27,29 @@
     {% endfor %}
   </section>
 
+  <section class="shell campaign-rail" aria-label="Seasonal campaigns">
+    {% set football_product = featured_products[0] %}
+    {% set deal_product = campaign_laptop or featured_products[2] %}
+    <a class="campaign-panel campaign-panel--football" href="{{ url_for('product_page', sku=football_product.sku) }}">
+      <div class="campaign-panel__copy">
+        <p class="campaign-panel__kicker">Official sponsor of the NFL</p>
+        <h2>This is the season<br>to go all in</h2>
+        <p>NFL Football is back. Grab the tech you need for kickoff.</p>
+        <span>Shop gameday tech</span>
+      </div>
+      <img src="{{ url_for('static', filename=football_product.image_path) }}" alt="{{ football_product.name }}">
+    </a>
+    <a class="campaign-panel campaign-panel--deal" href="{{ url_for('product_page', sku=deal_product.sku) }}">
+      <div class="campaign-panel__copy">
+        <p class="campaign-panel__kicker">Computing deals</p>
+        <h2>DEAL<br>OF THE DAY</h2>
+        <p>Discover today-only deals on select technology.</p>
+        <span>Shop now</span>
+      </div>
+      <img src="{{ url_for('static', filename=deal_product.image_path) }}" alt="{{ deal_product.name }}">
+    </a>
+  </section>
+
   <section class="shell member-strip">
     <div>
       <strong>Sign in for saved items, rewards, order tracking and more.</strong>
@@ -35,6 +58,65 @@
     <div class="inline-actions">
       <a class="button button--secondary" href="{{ url_for('login') }}">Sign in</a>
       <a class="button button--outline" href="{{ url_for('register') }}">Create an account</a>
+    </div>
+  </section>
+
+  <section class="shell home-rail page-section">
+    <div class="section-heading">
+      <div>
+        <h2>Continue shopping for</h2>
+        <p class="rail-subtitle">Recently viewed</p>
+      </div>
+      <a href="{{ url_for('products_page') }}">See more</a>
+    </div>
+    <div class="home-product-rail">
+      {% for product in featured_products[:4] %}
+        <a class="home-product-card" href="{{ url_for('product_page', sku=product.sku) }}">
+          <span class="deal-pill">{% if product.list_price > product.price %}Save {{ product.discount_percent() }}%{% else %}Featured{% endif %}</span>
+          <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+          <strong>{{ product.name }}</strong>
+          <small>{{ product.price|currency }}</small>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="shell home-rail page-section">
+    <div class="section-heading">
+      <div>
+        <h2>Recommended for you</h2>
+        <p class="rail-subtitle">Inspired by your shopping history</p>
+      </div>
+      <a href="{{ url_for('products_page') }}">See more</a>
+    </div>
+    <div class="home-product-rail home-product-rail--soft">
+      {% for product in featured_products[4:8] %}
+        <a class="home-product-card" href="{{ url_for('product_page', sku=product.sku) }}">
+          <span class="deal-pill">Top rated</span>
+          <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+          <strong>{{ product.name }}</strong>
+          <small>{{ product.price|currency }}</small>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="shell inspiration-rail page-section">
+    <div class="section-heading">
+      <div>
+        <h2>Trending deals</h2>
+        <p class="rail-subtitle">Explore the latest finds from innovative tech and trending releases.</p>
+      </div>
+      <a href="{{ url_for('deals_page') }}">See all deals</a>
+    </div>
+    <div class="inspiration-grid">
+      {% for category in categories[7:10] %}
+        <a href="{{ url_for('category_page', category_slug=category.slug) }}" class="inspiration-card">
+          <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+          <strong>{{ category.name }}</strong>
+          <span>Shop now</span>
+        </a>
+      {% endfor %}
     </div>
   </section>
 
@@ -60,6 +142,42 @@
     {% set products = featured_products[:4] %}
     {% set compact_grid = true %}
     {% include "_product_cards.html" %}
+  </section>
+
+  <section class="shell home-feature-banner page-section">
+    <div>
+      <p class="home-feature-banner__kicker">Featured products</p>
+      <h2>Find the right tech for every room.</h2>
+      <p>Compare source-backed TVs, laptops, audio and smart-home essentials with clear local availability.</p>
+      <a class="button button--light" href="{{ url_for('products_page') }}">Explore products</a>
+    </div>
+    {% set feature_product = featured_products[5] if featured_products|length > 5 else featured_products[0] %}
+    <img src="{{ url_for('static', filename=feature_product.image_path) }}" alt="{{ feature_product.name }}">
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <h2>Build your home with latest tech</h2>
+        <p class="rail-subtitle">Ideas for the bedroom, living room, kitchen and more.</p>
+      </div>
+      <a href="{{ url_for('categories_page') }}">Shop all categories</a>
+    </div>
+    <div class="home-room-grid">
+      {% for category in categories[3:7] %}
+        <a href="{{ url_for('category_page', category_slug=category.slug) }}">
+          <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+          <strong>{{ category.name }}</strong>
+          <span>Shop now</span>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="shell home-value-grid page-section">
+    <article><strong>More for your money</strong><p>Clear product facts, ratings and availability before you choose.</p><a href="{{ url_for('products_page') }}">Shop smarter</a></article>
+    <article><strong>Support that has your back</strong><p>Get local guidance for delivery, pickup and setup.</p><a href="{{ url_for('support_page') }}">Visit support</a></article>
+    <article><strong>Same-day pickup or delivery</strong><p>See seeded store inventory and ready-in-one-hour options.</p><a href="{{ url_for('stores_page') }}">Find a store</a></article>
   </section>
 
   <section class="shell dual-grid">

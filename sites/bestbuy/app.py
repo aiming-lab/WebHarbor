@@ -526,7 +526,10 @@ def paragraphs_filter(value: str) -> list[str]:
 
 
 def nav_categories() -> list[Category]:
-    return Category.query.order_by(Category.name.asc()).limit(8).all()
+    # The live Shop menu exposes a broad category panel. Keep every captured
+    # category reachable from the global menu instead of truncating it to the
+    # first eight entries.
+    return Category.query.order_by(Category.name.asc()).all()
 
 
 def get_preferred_store() -> Store | None:
@@ -859,12 +862,14 @@ def require_cart_items() -> list[CartItem]:
 @app.route("/home")
 def home():
     featured_products = Product.query.filter_by(featured=True).order_by(Product.rating.desc()).limit(8).all()
+    campaign_laptop = Product.query.filter_by(sku="6668953").first()
     deal_cards = Deal.query.order_by(Deal.discount_percent.desc(), Deal.title.asc()).limit(6).all()
     stores = Store.query.order_by(Store.city.asc()).limit(4).all()
     support_articles = SupportArticle.query.order_by(SupportArticle.id.asc()).limit(4).all()
     return render_template(
         "home.html",
         featured_products=featured_products,
+        campaign_laptop=campaign_laptop,
         deal_cards=deal_cards,
         stores=stores,
         support_articles=support_articles,
@@ -884,6 +889,7 @@ def category_page(category_slug: str):
     products_query, q = product_query_from_filters(category_slug)
     products = products_query.all()
     brands = Brand.query.join(Product).filter(Product.category_id == category.id).order_by(Brand.name.asc()).distinct().all()
+    category_tiles = Category.query.order_by(Category.name.asc()).limit(7).all()
     return render_template(
         "products.html",
         page_title=category.name,
@@ -891,6 +897,7 @@ def category_page(category_slug: str):
         category=category,
         products=products,
         brands=brands,
+        category_tiles=category_tiles,
         active_query=q,
     )
 
@@ -907,6 +914,7 @@ def products_page():
         category=None,
         products=products,
         brands=Brand.query.order_by(Brand.name.asc()).all(),
+        category_tiles=Category.query.order_by(Category.name.asc()).limit(7).all(),
         active_query=q,
     )
 

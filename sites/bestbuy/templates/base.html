@@ -44,7 +44,10 @@
           <details class="nav-menu">
             <summary>Shop</summary>
             <div class="nav-menu__panel">
-              <a href="{{ url_for('categories_page') }}">All categories</a>
+              <div class="nav-menu__heading">
+                <strong>Shop</strong>
+                <a href="{{ url_for('categories_page') }}">All categories</a>
+              </div>
               {% for category in nav_categories %}
                 <a href="{{ url_for('category_page', category_slug=category.slug) }}">{{ category.name }}</a>
               {% endfor %}
@@ -105,12 +108,41 @@
           </ul>
         </div>
         <div>
-          <h4>Local benchmark</h4>
+          <h4>Payment Options</h4>
           <ul>
-            <li>Source-backed product catalog</li>
-            <li>Deterministic accounts and orders</li>
-            <li>No real payment or reservation</li>
+            <li><a href="{{ url_for('support_page') }}">My Best Buy Credit Card</a></li>
+            <li><a href="{{ url_for('support_page') }}">Lease to Own</a></li>
+            <li><a href="{{ url_for('support_page') }}">Buy Now, Pay Later</a></li>
+            <li><a href="{{ url_for('support_page') }}">Best Buy Business Financing</a></li>
           </ul>
+        </div>
+        <div>
+          <h4>Rewards &amp; Membership</h4>
+          <ul>
+            <li><a href="{{ url_for('account_rewards') if current_user.is_authenticated else url_for('login') }}">My Best Buy Memberships</a></li>
+            <li><a href="{{ url_for('account_rewards') if current_user.is_authenticated else url_for('login') }}">View Points &amp; Certificates</a></li>
+            <li><a href="{{ url_for('deals_page') }}">Member Offers</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>About Best Buy</h4>
+          <ul>
+            <li><a href="{{ url_for('support_page') }}">Corporate Information</a></li>
+            <li><a href="{{ url_for('support_page') }}">Careers</a></li>
+            <li><a href="{{ url_for('support_page') }}">Corporate Responsibility</a></li>
+            <li><a href="{{ url_for('support_page') }}">Accessibility</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="shell site-footer__bottom">
+        <div>
+          <strong>Get the latest deals and more.</strong>
+          <span>Source-backed local benchmark catalog.</span>
+        </div>
+        <div class="site-footer__links">
+          <a href="{{ url_for('support_page') }}">Privacy</a>
+          <a href="{{ url_for('support_page') }}">Terms &amp; Conditions</a>
+          <a href="{{ url_for('support_page') }}">Best Buy app</a>
         </div>
       </div>
     </footer>
