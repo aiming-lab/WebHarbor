@@ -531,5 +531,34 @@ class ContractTests(unittest.TestCase):
             self.assertEqual(verdict.get("reason"), "run_package_valid")
 
 
+class ClearCdpStateToolTests(unittest.TestCase):
+    """D4 contract: the runner's pre-run cookie clearer must fail closed.
+
+    A missing --cdp_url is a usage error (exit 2, playwright never imported),
+    and an unreachable CDP endpoint fails closed with exit 2 instead of
+    letting the task start on an unclean shared Chromium session.
+    """
+
+    def test_missing_cdp_url_is_a_usage_error(self):
+        import clear_cdp_state
+        with self.assertRaises(SystemExit) as caught:
+            clear_cdp_state.main([])
+        self.assertEqual(caught.exception.code, 2)
+        # the tool must keep playwright as a lazy import inside main(), so the
+        # module itself stays import-safe without the runner environment
+        source = (VERIFY_DIR / "clear_cdp_state.py").read_text()
+        import_lines = [line for line in source[:source.index("def main")].splitlines()
+                        if line.startswith(("import ", "from "))]
+        self.assertEqual(import_lines, ["import argparse", "import sys"])
+        self.assertIn("from playwright.sync_api import sync_playwright", source)
+
+    def test_dead_cdp_endpoint_fails_closed(self):
+        import clear_cdp_state
+        # port 9 (discard) on loopback: connection refused, no CDP server
+        with self.assertRaises(SystemExit) as caught:
+            clear_cdp_state.main(["--cdp_url", "http://127.0.0.1:9"])
+        self.assertEqual(caught.exception.code, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
