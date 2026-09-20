@@ -32,20 +32,9 @@ def main(j, traj, ans):
             "expected /flights Bangkok->Madrid depart 02-26 return 02-28")
     n = sum(1 for a, p in GROUND_TRUTH["under_pairs"]
             if mentions_airline(ans, a) and mentions_price(ans, p))
-    import re as _re
-    says_under1000 = bool(_re.search(
-        r"under\s*\$?\s*1,?000|below\s*\$?\s*1,?000|less than\s*\$?\s*1,?000"
-        r"|max(?:imum)?\s*price|price\s*filter", ans.casefold()))
-    content = n >= 3 or configuration_reading(
-        traj, ans,
-        nav_search(traj, FROM, TO, "03-28", return_md="04-04", max_price_le=1000),
-        [p for _a, p in GROUND_TRUTH["under_pairs"]],
-        [a for a, _p in GROUND_TRUTH["under_pairs"]],
-        says_under1000, extra_prices=(1000.0,))
-    j.check("answer_shows_under1000_options", content,
+    j.check("answer_shows_under1000_options", n >= 3,
             f"{n} consistent (airline, price) pairs of the {len(GROUND_TRUTH['under_pairs'])} "
-            f"options under $1000, or an under-$1000-configuration answer with no "
-            f"contradicting facts; final={ans!r}")
+            f"options under $1000; final={ans!r}")
 
 
 if __name__ == "__main__":

@@ -289,6 +289,44 @@ def test_verifier_contract(tmp_root, n):
         f"missing trajectory must FAIL: rc={rc} verdict={verdict}"
 
 
+def test_task41_dual_business_price_reading(tmp_root):
+    """Acceptor Difference 1: the mirror shows TWO business prices for the same
+    1-stop flight — the results-page fare and the detail-page booking-sites
+    airline-direct price (e.g. Cathay Pacific 126588: $2,105 on the results
+    page, $2,000 on the CathayPacific.com row). An answer quoting either is
+    factually correct and MUST PASS; a wrong cabin (economy fare) or a foreign
+    flight/price still FAILs."""
+    direct_price_answer = (
+        "Selected Cathay Pacific CX1567: Hong Kong (HKG) to Kalispell/Glacier "
+        "Park (FCA), departing March 8 at 22:00, one way, Business class, with "
+        "1 stop. Business fare shown: $2,000 (CathayPacific.com lists $2,000 as "
+        "the cheapest booking option).")
+    run_dir = make_run(tmp_root, "pos-41-direct", NAV[41], direct_price_answer)
+    rc, verdict = run_verifier(41, run_dir)
+    assert rc == 0 and verdict.get("pass") is True, \
+        f"airline-direct booking business price must PASS: rc={rc} verdict={verdict}"
+
+    # wrong cabin: the same flight's ECONOMY fare ($679) is not a business price
+    economy_answer = (
+        "Selected Cathay Pacific CX1567, Business class, with 1 stop, "
+        "for $679.")
+    run_dir = make_run(tmp_root, "neg-41-wrong-cabin", NAV[41], economy_answer)
+    rc, verdict = run_verifier(41, run_dir)
+    assert rc == 1 and verdict.get("pass") is False, \
+        f"economy fare (wrong cabin) must FAIL: rc={rc} verdict={verdict}"
+    assert verdict.get("reason") == "answer_selects_1stop_ticket", verdict
+
+    # wrong flight/price: airline-direct price of a flight that is not one of
+    # the task's 1-stop options
+    foreign_answer = (
+        "Selected Alaska Airlines, Business class, with 1 stop, cheapest "
+        "booking fare $3,900 via AlaskaAir.com.")
+    run_dir = make_run(tmp_root, "neg-41-foreign", NAV[41], foreign_answer)
+    rc, verdict = run_verifier(41, run_dir)
+    assert rc == 1 and verdict.get("pass") is False, \
+        f"foreign flight/price must FAIL: rc={rc} verdict={verdict}"
+
+
 def test_tasks_jsonl_contract():
     tasks = SITE_DIR / "tasks.jsonl"
     rows = [json.loads(l) for l in tasks.read_text().splitlines() if l.strip()]

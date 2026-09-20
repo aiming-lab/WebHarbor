@@ -21,7 +21,7 @@ from verify_lib import (nav_search, flights_queries, graph_queries, explore_quer
                         stated_prices_consistent, run)
 
 
-GROUND_TRUTH = {"min_co2": 471, "airline": "Air France", "co2_values": [471, 518, 549, 579, 607, 636, 637, 665, 668, 684, 689, 693, 697, 700, 721, 786, 818, 826, 829, 855, 924]}
+GROUND_TRUTH = {"min_co2": 471, "airline": "Air France", "co2_values": [471, 518, 549, 579, 607, 636, 637, 665, 665, 668, 684, 689, 693, 697, 700, 721, 786, 818, 826, 829, 855, 924]}
 
 FROM = ["shanghai", "pvg"]
 TO = ["vancouver", "yvr"]
