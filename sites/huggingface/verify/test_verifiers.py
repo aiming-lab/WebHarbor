@@ -412,6 +412,32 @@ class VerifierTests(unittest.TestCase):
                 self.assertEqual(result.get("reason"), "db_state")
 
 
+    def test_task2_multilingual_v2_in_window_passes(self):
+        # acceptor Finding A: Helsinki-NLP/opus-mt-en-multilingual-v2 (updated
+        # Mar 20, 2026, Translation) is inside the documented on/after-Mar-20
+        # band; an answer naming it must PASS.
+        result = self.execute(
+            2, paths=["/models?task=translation&sort=updated"],
+            answer="Three new popular open-source translation models released "
+                   "in the past month: Helsinki-NLP/opus-mt-en-multilingual-v2 "
+                   "(updated Mar 20, 2026, English-to-Multilingual), facebook/"
+                   "seamless-m4t-v2-large (Mar 22, 2026), and facebook/nllb-"
+                   "200-3.3B-flash (Mar 20, 2026).")
+        self.assertTrue(result["pass"], result)
+
+    def test_task2_out_of_band_models_fail(self):
+        # band edge: models updated before Mar 20, 2026 (Hunyuan-MT-7B Mar 18,
+        # mengzi-t5-base-mt-en-zh Mar 15, opus-mt-en-es-2026 Mar 10) stay
+        # outside the accepted window.
+        result = self.execute(
+            2, paths=["/models?task=translation&sort=updated"],
+            answer="Three new popular open-source translation models released "
+                   "in the past month: tencent/Hunyuan-MT-7B (updated Mar 18, "
+                   "2026), Langboat/mengzi-t5-base-mt-en-zh (Mar 15, 2026), "
+                   "and Helsinki-NLP/opus-mt-en-es-2026 (Mar 10, 2026).")
+        self.assertFalse(result["pass"], result)
+        self.assertIn("answer_three_recent_translation_models", result["reason"])
+
     def test_task7_downloads_sorted_listing_passes(self):
         # D1-style regression: an agent that sorts the whole datasets catalog by
         # downloads sees the audio dataset at the top — that solve must PASS.

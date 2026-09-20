@@ -44,8 +44,8 @@ def main():
               "nllb-200-distilled-600M", "opus-mt-en-ko-2026", "Qwen3-MT-3B",
               "DeepSeek-Translate-V2-7B", "whisper-translate-en-2026",
               "seamless-m4t-v3-medium", "seamless-m4t-v2-large",
-              "nllb-200-3.3b-flash", "madlad400-10b-mt-2026",
-              "opus-mt-ja-en-v3"]
+              "opus-mt-en-multilingual-v2", "nllb-200-3.3b-flash",
+              "madlad400-10b-mt-2026", "opus-mt-ja-en-v3"]
     urls = __import__('verify_lib').step_urls(t)
     j.check("nav_translation_listing_or_task",
             navigated_any(t, ["translation"]),
