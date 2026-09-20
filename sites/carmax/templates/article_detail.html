@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} | CarMax{% endblock %}
+{% block content %}
+<div class="container-narrow" style="padding-top:24px">
+  <div class="breadcrumbs">
+    <a href="{{ url_for('articles_index') }}">Articles</a> /
+    <a href="{{ url_for('articles_index', category=article.category) }}">{{ article.category|capitalize }}</a>
+  </div>
+  <h1>{{ article.title }}</h1>
+  <p style="color:var(--cmx-text-light);font-size:14px">By {{ article.author }} &middot; {{ article.published_at }}</p>
+  {% if article.hero_image %}
+  <img src="{{ article.hero_image }}" style="width:100%;border-radius:6px;margin:16px 0"
+       onerror="this.src='/static/images/_pending.svg'" alt="{{ article.title }}">
+  {% endif %}
+  <div style="font-size:16px;line-height:1.7;white-space:pre-wrap">{{ article.body }}</div>
+  {% if related %}
+  <h2 style="margin-top:48px">Related articles</h2>
+  <div class="grid grid-4">
+    {% for r in related %}
+    <a class="vcard" style="text-decoration:none;color:inherit" href="{{ url_for('article_detail', slug=r.slug) }}">
+      <div class="vcard-img"><img src="{{ r.hero_image or '/static/images/_pending.svg' }}" onerror="this.src='/static/images/_pending.svg'"></div>
+      <div class="vcard-body"><h3 class="vcard-title">{{ r.title }}</h3></div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

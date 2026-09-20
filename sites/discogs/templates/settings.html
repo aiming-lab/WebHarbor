@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Settings | Discogs{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <h1>Profile Settings</h1>
+  <form method="post" class="card">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Real name</label>
+    <input type="text" name="real_name" value="{{ current_user.real_name }}" maxlength="120">
+    <label>Location</label>
+    <input type="text" name="location" value="{{ current_user.location }}" maxlength="100">
+    <label>Bio</label>
+    <textarea name="bio" maxlength="2000">{{ current_user.bio }}</textarea>
+    <p><button class="btn-primary" type="submit">Save</button></p>
+  </form>
+</div>
+{% endblock %}

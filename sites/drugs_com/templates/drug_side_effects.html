@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} Side Effects - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumb-row">
+  <nav class="breadcrumb" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+    <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+    <span>Side effects</span>
+  </nav>
+</div>
+
+<div class="drug-page-type-tabs">
+  <span class="drug-page-type-tab active">Consumer section</span>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-detail">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}" class="active" aria-current="page">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+  <header class="drug-header">
+    <h1>{{ drug.generic_name|capitalize }} Side Effects</h1>
+    <p class="reviewer-line">
+      <span>Fixture date: {{ drug.last_updated.strftime('%b %d, %Y') }}. No author or medical review is claimed.</span>
+    </p>
+    {% if drug.drug_class %}
+    <p><strong>Drug class:</strong>
+      <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
+    </p>
+    {% endif %}
+  </header>
+
+  <div class="disclaimer-box"><p><strong>Software-evaluation data:</strong> The side-effect text below is a deterministic fixture and is not verified medical guidance.</p></div>
+
+  <section class="se-precautions">
+    <h2>Stored side-effect fixture</h2>
+    {% if rt_side_effects or drug.side_effects %}{{ (rt_side_effects or drug.side_effects) | format_drug_text | safe }}{% else %}<p class="muted">No drug-specific side-effect text is stored in this local fixture.</p>{% endif %}
+  </section>
+
+  <section class="se-block se-block--other">
+    <h2>Fixture data scope</h2>
+    <p>The side-effect text above is the complete stored fixture for {{ drug.generic_name }}. This local environment does not add generalized disease, overdose, formulation, or pharmacokinetic claims to the selected medication.</p>
+  </section>
+
+  {% if related_drugs %}
+  <section class="se-see-also">
+    <h2>See also:</h2>
+    <div class="related-drugs-carousel">
+      {% for r in related_drugs[:6] %}
+      <a href="{{ url_for('drug_detail', slug=r.slug) }}" class="related-drug-card">
+        <div class="related-drug-card-head">
+          <strong class="related-drug-name">{{ r.generic_name|capitalize }}</strong>
+          {% if r.avg_rating %}
+          <span class="related-drug-rating-badge">&#9733; {{ "%.1f"|format(r.avg_rating) }}</span>
+          {% endif %}
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section id="further-information">
+    <h2>Data limitation</h2>
+    <p>No dosage-form, frequency, prevalence, causality, monitoring, or reporting instruction is established by this local page.</p>
+  </section>
+
+  <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>
+</article>
+</div>
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

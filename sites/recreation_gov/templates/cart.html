@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Cart - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="wrap">
+    <h1>Your cart</h1>
+    {% for item in items %}
+      <div class="cart-row">
+        <div><strong>{{ item.facility.name }}</strong><br><span class="muted">{{ (item.start_date, item.end_date)|trip_window }} · {{ item.guests }} guests{% if item.campsite %} · {{ item.campsite.name }}{% endif %}</span></div>
+        <div>
+          <strong>${{ "%.0f"|format(item.total) }}</strong>
+          <form method="post" action="{{ url_for('remove_cart_item', item_id=item.id) }}"><button class="btn danger" type="submit">Remove</button></form>
+        </div>
+      </div>
+    {% else %}
+      <p>Your cart is empty. <a href="{{ url_for('search') }}">Search available inventory</a>.</p>
+    {% endfor %}
+    {% if items %}
+      <div class="booking-box"><h2>Total: ${{ "%.0f"|format(total) }}</h2><a class="btn" href="{{ url_for('checkout') }}">Proceed to Checkout</a></div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

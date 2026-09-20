@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}The Hotness | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>The Hotness</h1>
+    <p class="muted">The games BoardGameGeek users are talking about most right now (top 50).</p>
+    <div class="game-grid">
+      {% for g in games %}
+      <a class="game-card" href="{{ g.detail_url }}">
+        {% if g.thumb_filename %}
+          <img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">
+        {% else %}
+          <img src="{{ url_for('static', filename='icons/cover_placeholder.svg') }}" alt="">
+        {% endif %}
+        <span class="title">{{ g.name }}</span>
+        <span class="meta">{{ g.year_published or '—' }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

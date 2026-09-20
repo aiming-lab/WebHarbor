@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Help & Support | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="is-090">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Help &amp; Support</span></nav>
+
+  <section class="is-209">
+    <h1 class="is-210">How can we help?</h1>
+    <p class="is-211">Browse local workflow help, search fixture records, or open the session-only contact form.</p>
+    <form class="is-212" action="{{ url_for('search') }}" method="get">
+      <input class="is-213" type="search" name="q" placeholder="Search drugs and conditions..." aria-label="Search drugs and conditions">
+      <button class="is-214" type="submit">Search drug information</button>
+    </form>
+  </section>
+
+  <section class="is-215">
+    <h2 class="is-216">Frequently Asked Questions</h2>
+
+    <details class="is-217" id="account-access" open>
+      <summary class="is-218">I forgot my password. How do I regain access?</summary>
+      <p class="is-219">This offline benchmark mirror does not send password-reset email. For the demo account, use <strong>alice.j@test.com</strong> with <strong>TestPass123!</strong>. To restore all benchmark accounts and data, reset the <code>drugs_com</code> site through the WebHarbor control plane; otherwise, register a new local account.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">How do I search for a drug?</summary>
+      <p class="is-219">Type the brand or generic drug name into the search box at the top of any page. As you type, suggestions appear with matching drugs and conditions. You can also browse alphabetically via the <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> page, or use the A-Z strip in the header.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">What is the drug interaction checker?</summary>
+      <p class="is-219">The <a href="{{ url_for('interaction_checker') }}">Local Interaction Fixture Checker</a> accepts two or more stored names and returns exact rows from an intentionally incomplete deterministic dataset. It does not establish real coverage or guidance.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">How do I use the pill identifier?</summary>
+      <p class="is-219">Open the <a href="{{ url_for('pill_identifier') }}">Local Pill Descriptor Search</a> and enter any combination of fixture imprint, shape, and color fields. Results are text-field matches with synthetic diagrams; they are not product images, dosage-form evidence, or real-pill identification.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">Can I use this mirror as medical information?</summary>
+      <p class="is-219">No. This environment contains deterministic benchmark fixtures, simulated records, and no claimed medical review. Verify real information with current official labeling and a qualified healthcare professional.</p>
+    </details>
+
+    <details class="is-217">
+      <summary class="is-218">Does the local contact form report a side effect?</summary>
+      <p class="is-219">No. The contact form creates only a session receipt and sends no report. Use current official reporting channels outside this benchmark for any real event.</p>
+    </details>
+  </section>
+
+  <div class="is-220">
+    <section class="is-221">
+      <h2 class="is-222">Local contact workflow</h2>
+      <p class="is-223">The local form stores a session-only receipt and sends no message externally.</p>
+      <p class="is-224"><a href="{{ url_for('contact') }}">Open the local contact form &rsaquo;</a></p>
+    </section>
+
+    <section class="is-221">
+      <h2 class="is-222">Popular Tools</h2>
+      <ul class="is-046">
+        <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+        <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+        <li><a href="{{ url_for('symptom_checker') }}">Symptom Checker</a></li>
+        <li><a href="{{ url_for('side_effects_page') }}">Side Effects Checker</a></li>
+        <li><a href="{{ url_for('compare_drugs') }}">Compare Drugs</a></li>
+        <li><a href="{{ url_for('drug_az') }}">Drugs A-Z Index</a></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="is-225">
+    <strong class="is-226">Emergency-use restriction</strong>
+    <p class="is-094">This benchmark provides no emergency or poison-control service. Use the current official service and telephone number for your location.</p>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{% if heading %}{{ heading }}{% else %}{{ media or '' }} {{ format_ or 'Vinyl Records, CDs, and More' }} in {{ currency }} For Sale at Discogs Marketplace{% endif %}{% endblock %}
+{% block main_class %}page mp-page{% endblock %}
+
+{% set sel = selected if selected is defined else {'currency': currency, 'media': media, 'genre': genre, 'format': format_, 'ships_from': '', 'year': None, 'price_min': None, 'price_max': None, 'q': ''} %}
+{% macro mp_url() %}{% set base = {'sort': sort, 'currency': sel.currency, 'media': sel.media or None, 'genre': sel.genre or None, 'format': sel.format or None, 'ships_from': sel.ships_from or None, 'year': sel.year, 'price_min': sel.price_min, 'price_max': sel.price_max, 'q': sel.q or None} %}{% set _ = base.update(kwargs) %}{{ url_for('marketplace', **base) }}{% endmacro %}
+
+{% block content %}
+<div class="mp-top">
+  <h1 class="mp-h1">{{ heading or 'Marketplace' }}</h1>
+  <nav class="mp-tabs" aria-label="Marketplace sections">
+    <a href="{{ url_for('marketplace') }}" class="{% if not heading %}active{% endif %}">All Items</a>
+    <a href="{{ url_for('shop_my_wants') }}" class="{% if heading == 'Shop My Wants' %}active{% endif %}">Items I Want</a>
+    <a href="/about/features/music-marketplace">Purchases</a>
+    <a href="/about/features/music-marketplace">Cart</a>
+    <a href="/about/features/music-marketplace">Buyer Settings</a>
+  </nav>
+  <form class="mp-search" method="get" action="{{ url_for('marketplace') }}" role="search">
+    <input type="hidden" name="currency" value="{{ sel.currency }}">
+    <input type="text" name="q" value="{{ sel.q }}" placeholder="Search Marketplace" aria-label="Search Marketplace">
+    <button type="submit" aria-label="Search"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M13 4a9 9 0 1 0 5.6 16l5.2 5.2 1.7-1.7-5.2-5.2A9 9 0 0 0 13 4zm0 2.4a6.6 6.6 0 1 1 0 13.2 6.6 6.6 0 0 1 0-13.2z"/></svg></button>
+  </form>
+</div>
+
+<div class="mp-layout">
+  <aside class="mp-sidebar">
+    {% if facets is defined and facets %}
+    <section class="mp-selected">
+      <h3>You Selected:</h3>
+      <ul>
+        <li><span>Currency: {{ sel.currency }}</span></li>
+        {% if sel.media %}<li><span>Media Condition: {{ sel.media }}</span> <a href="{{ mp_url(media=None) }}" aria-label="Remove media condition filter">×</a></li>{% endif %}
+        {% if sel.format %}<li><span>Format: {{ sel.format }}</span> <a href="{{ mp_url(format=None) }}" aria-label="Remove format filter">×</a></li>{% endif %}
+        {% if sel.genre %}<li><span>Genre: {{ sel.genre }}</span> <a href="{{ mp_url(genre=None) }}" aria-label="Remove genre filter">×</a></li>{% endif %}
+        {% if sel.ships_from %}<li><span>Ships From: {{ sel.ships_from }}</span> <a href="{{ mp_url(ships_from=None) }}" aria-label="Remove ships-from filter">×</a></li>{% endif %}
+        {% if sel.year %}<li><span>Year: {{ sel.year }}</span> <a href="{{ mp_url(year=None) }}" aria-label="Remove year filter">×</a></li>{% endif %}
+        {% if sel.price_min is not none or sel.price_max is not none %}<li><span>Price range</span> <a href="{{ mp_url(price_min=None, price_max=None) }}" aria-label="Remove price filter">×</a></li>{% endif %}
+        {% if sel.q %}<li><span>Search: {{ sel.q }}</span> <a href="{{ mp_url(q=None) }}" aria-label="Remove search">×</a></li>{% endif %}
+      </ul>
+    </section>
+    <section class="mp-facet">
+      <h3>Currency</h3>
+      <ul>{% for value in currencies %}<li class="{% if sel.currency == value %}active{% endif %}"><a href="{{ mp_url(currency=value) }}">{{ value }}</a></li>{% endfor %}</ul>
+    </section>
+    <section class="mp-facet">
+      <h3>Ships From</h3>
+      <ul>{% for f in facets.ships_from %}<li class="{% if sel.ships_from == f.name %}active{% endif %}"><span class="mp-count">{{ '{:,}'.format(f.count) }}</span><a href="{{ mp_url(ships_from=f.name) }}">{{ f.name }}</a></li>{% endfor %}</ul>
+    </section>
+    <section class="mp-facet">
+      <h3>Format</h3>
+      <ul>{% for f in facets.format %}<li class="{% if sel.format in (f.name, f.slug) %}active{% endif %}"><span class="mp-count">{{ '{:,}'.format(f.count) }}</span><a href="{{ mp_url(format=f.name) }}">{{ f.name }}</a></li>{% endfor %}</ul>
+    </section>
+    <section class="mp-facet">
+      <h3>Media Condition</h3>
+      <ul>{% for f in facets.media %}<li class="{% if sel.media == f.name %}active{% endif %}"><span class="mp-count">{{ '{:,}'.format(f.count) }}</span><a href="{{ mp_url(media=f.name) }}">{{ f.name }}</a></li>{% endfor %}</ul>
+    </section>
+    <section class="mp-facet">
+      <h3>Price Range</h3>
+      <ul>{% for f in facets.price %}<li class="{% if sel.price_min == f.min and sel.price_max == f.max %}active{% endif %}"><span class="mp-count">{{ '{:,}'.format(f.count) }}</span><a href="{{ mp_url(price_min=f.min, price_max=f.max) }}">{{ f.name }}</a></li>{% endfor %}</ul>
+    </section>
+    <section class="mp-facet">
+      <h3>Genre</h3>
+      <ul>{% for f in facets.genre %}<li class="{% if sel.genre == f.slug %}active{% endif %}"><span class="mp-count">{{ '{:,}'.format(f.count) }}</span><a href="{{ mp_url(genre=f.slug) }}">{{ f.name }}</a></li>{% endfor %}</ul>
+    </section>
+    <section class="mp-facet">
+      <h3>Year</h3>
+      <ul>{% for f in facets.year %}<li class="{% if sel.year == f.name %}active{% endif %}"><span class="mp-count">{{ '{:,}'.format(f.count) }}</span><a href="{{ mp_url(year=f.name) }}">{{ f.name }}</a></li>{% endfor %}</ul>
+    </section>
+    {% endif %}
+    {% if current_user.is_authenticated %}<a class="btn btn-primary mp-sell-btn" href="{{ url_for('sell') }}">Sell on Discogs</a>{% endif %}
+  </aside>
+
+  <section class="mp-main">
+    {% set first = (pag.page - 1) * pag.per_page + 1 if pag.total else 0 %}
+    {% set last = [pag.page * pag.per_page, pag.total]|min %}
+    <h2 class="mp-h2">{% if heading %}{{ intro }}{% else %}Shop {% if sel.media %}{{ sel.media }} {% endif %}{% if sel.format %}{{ sel.format }} Records{% else %}Vinyl Records, CDs, and More{% endif %} in {{ sel.currency }}{% endif %}</h2>
+    <div class="mp-toolbar">
+      <span class="mp-range">{{ first }} – {{ last }} of {{ '{:,}'.format(pag.total) }}</span>
+      <span class="mp-pager">
+        {% if pag.page > 1 %}<a href="{{ page_url(pag.page-1) }}">Prev</a>{% else %}<span class="disabled">Prev</span>{% endif %}
+        {% if pag.page < pag.pages %}<a href="{{ page_url(pag.page+1) }}">Next</a>{% else %}<span class="disabled">Next</span>{% endif %}
+      </span>
+      {% if not heading %}
+      <span class="mp-sorts">
+        <label>Sort
+          <select onchange="window.location.href=this.value">
+            <option value="{{ mp_url(sort='newest') }}" {% if sort == 'newest' %}selected{% endif %}>Listed Newest</option>
+          </select>
+        </label>
+        <label>Price
+          <select onchange="window.location.href=this.value">
+            <option value="{{ mp_url(sort='price_asc') }}" {% if sort == 'price_asc' %}selected{% endif %}>Lowest Price</option>
+            <option value="{{ mp_url(sort='price_desc') }}" {% if sort == 'price_desc' %}selected{% endif %}>Highest Price</option>
+          </select>
+        </label>
+        <span class="mp-show">Show: {{ pag.per_page }}</span>
+      </span>
+      {% endif %}
+    </div>
+
+    <table class="mp-table">
+      <thead>
+        <tr>
+          <th class="mp-th-item">Item</th>
+          <th>Seller</th>
+          <th class="mp-th-price">{% if not heading %}<a href="{{ mp_url(sort=('price_desc' if sort == 'price_asc' else 'price_asc')) }}">Price {% if sort == 'price_asc' %}▲{% elif sort == 'price_desc' %}▼{% endif %}</a>{% else %}Price{% endif %}</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for l in pag.items %}
+        {% set rel = l.release %}
+        <tr class="mp-row">
+          <td class="mp-item">
+            <div class="mp-thumb">
+              <a href="{{ url_for('release_detail', rid=rel.discogs_id or rel.id) }}"><img src="{{ rel.cover_url }}" alt="{{ rel.title }}" loading="lazy"></a>
+              {% if rel.rating_count %}<span class="mp-rated">Rated: <strong>{{ '%.2f'|format(rel.avg_rating) }}</strong></span>{% endif %}
+              <span class="mp-have"><i class="mp-dot mp-dot-have"></i>{{ rel.have_count }} have</span>
+              <span class="mp-want"><i class="mp-dot mp-dot-want"></i>{{ rel.want_count }} want</span>
+            </div>
+            <div class="mp-desc">
+              <a class="mp-title" href="{{ url_for('release_detail', rid=rel.discogs_id or rel.id) }}">{{ rel.display_artist }} - {{ rel.title }} ({{ rel.format_description or rel.primary_format }})</a>
+              <div><span class="mp-label">Label:</span> {% if rel.labels %}<a href="{{ url_for('label_detail', lid=rel.labels[0].id, slug=rel.labels[0].slug) }}">{{ rel.labels[0].name }}</a>{% else %}Not On Label{% endif %}</div>
+              <div><span class="mp-label">Cat#:</span> {{ rel.catno or 'none' }}</div>
+              <div><span class="mp-label">Media Condition:</span> {{ l.media_condition }}</div>
+              <div><span class="mp-label">Sleeve Condition:</span> {{ l.sleeve_condition }}</div>
+              {% if l.comments %}<div class="mp-comments">{{ l.comments }}</div>{% endif %}
+              <a class="mp-view" href="{{ url_for('release_detail', rid=rel.discogs_id or rel.id) }}">View Release Page</a>
+            </div>
+          </td>
+          <td class="mp-seller">
+            <a class="mp-seller-name" href="{{ url_for('user_profile', username=l.user.username) }}">{{ l.user.username }}</a>
+            <div class="mp-seller-rating"><span class="mp-stars">{{ (l.user.seller_rating or 0)|stars }}</span> <strong>{{ '%.1f'|format((l.user.seller_rating or 0) * 20) }}%</strong>, {{ l.user.seller_feedback_count or 0 }} ratings</div>
+            <div><span class="mp-label">Ships From:</span> {{ l.shipping_from }}</div>
+          </td>
+          <td class="mp-price">
+            <strong class="mp-amount">{{ l.price|price(l.currency) }}</strong>
+            <div class="mp-shipping">+ shipping</div>
+            {% if l.allow_offers %}<div class="mp-offers">Make Offer</div>{% endif %}
+          </td>
+          <td class="mp-actions">
+            <span class="mp-cart-btn" title="Cart checkout is not available in this offline mirror">Add to Cart</span>
+            <a class="mp-details" href="{{ url_for('release_detail', rid=rel.discogs_id or rel.id) }}">Details</a>
+          </td>
+        </tr>
+      {% else %}
+        <tr><td colspan="4"><p class="empty">No active listings match these filters.</p></td></tr>
+      {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="mp-toolbar mp-toolbar-bottom">
+      <span class="mp-range">{{ first }} – {{ last }} of {{ '{:,}'.format(pag.total) }}</span>
+      {{ m.pagination(pag, request.endpoint, params={'sort': sort, 'media': sel.media or None, 'genre': sel.genre or None, 'format': sel.format or None, 'currency': sel.currency, 'ships_from': sel.ships_from or None, 'year': sel.year, 'price_min': sel.price_min, 'price_max': sel.price_max, 'q': sel.q or None}) }}
+    </div>
+    <p class="mp-disclaimer">Listings on this mirror come from benchmark seller accounts; prices are asking prices and no checkout is performed.</p>
+  </section>
+</div>
+{% endblock %}

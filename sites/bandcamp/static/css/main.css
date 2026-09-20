@@ -1,0 +1,813 @@
+/* Bandcamp mirror stylesheet — aligned with bandcamp.com (light pages + dark release pages). */
+
+:root {
+  --bg: #ecf3f4;
+  --bg-flat: #f6f6f6;
+  --panel: #ffffff;
+  --ink: #222222;
+  --muted: #6f6f6f;
+  --line: #dcdcdc;
+  --chip: #f7f7f7;
+  --brand: #0cacd7;
+  --dark: #111111;
+  --dark-panel: #1b1b1b;
+  --dark-line: #3a3a3a;
+}
+
+* { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a { color: #1d6fb8; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.brand, .brand:hover, .catnav a, .header-actions a, .release-meta h3 a, .merch-meta h3 a,
+.genre-chip, .scene-card, .sell-card, .button-primary, .button-secondary { color: var(--ink); }
+
+img { max-width: 100%; display: block; }
+
+.container {
+  width: min(1160px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.eyebrow {
+  margin: 0 0 6px;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ---------- Header ---------- */
+
+.site-header {
+  background: var(--bg);
+  border-bottom: 1px solid rgba(34, 34, 34, 0.08);
+}
+
+.header-main {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 18px 0 14px;
+}
+
+.brand {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.brand-mark {
+  width: 14px; height: 14px;
+  background: var(--brand);
+  display: inline-block;
+  transform: translateY(1px);
+  clip-path: polygon(0 30%, 100% 0, 100% 100%, 0 100%);
+}
+
+.brand-text { font-size: 22px; color: var(--ink); }
+.brand-sub { display: none; }
+
+.header-search {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  max-width: 420px;
+  background: #dce3e4;
+  border: 1px solid #d2d9da;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.header-search input {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  padding: 9px 12px 9px 14px;
+  font-size: 14px;
+  color: var(--ink);
+  outline: none;
+}
+
+.header-search button {
+  border: 0;
+  background: transparent;
+  padding: 9px 12px;
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.header-actions {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.header-actions .count {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 11px;
+  text-align: center;
+}
+
+.header-subnav { padding: 0 0 10px; }
+
+.catnav {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  padding: 2px 0 4px;
+  overflow-x: auto;
+}
+
+.catnav a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.catnav a svg { width: 18px; height: 18px; }
+
+/* ---------- Buttons ---------- */
+
+.button-primary,
+button.button-primary {
+  display: inline-block;
+  background: var(--ink);
+  color: #fff;
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  padding: 9px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button-primary:hover { background: #000; text-decoration: none; }
+
+.button-secondary {
+  display: inline-block;
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--ink);
+  border-radius: 3px;
+  padding: 9px 16px;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.button-secondary:hover { background: rgba(34, 34, 34, 0.06); text-decoration: none; }
+
+.button-secondary.full { display: block; text-align: center; }
+
+/* ---------- Flash + layout ---------- */
+
+.flash-wrap { margin: 14px auto 0; }
+.flash {
+  background: #fff3cd;
+  border: 1px solid #ecd9a0;
+  padding: 10px 14px;
+  border-radius: 3px;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+.flash-error { background: #fde8e8; border-color: #f3bcbc; }
+
+.page-main { padding: 22px 0 60px; }
+
+.section-block { margin-top: 34px; }
+
+.section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+  margin: 26px 0 14px;
+}
+
+.section-head h2 { font-size: 24px; font-weight: 500; margin: 0; }
+.section-head p { margin: 4px 0 0; color: var(--muted); font-size: 14px; }
+.section-head.compact { margin: 18px 0 10px; }
+
+/* ---------- Home ---------- */
+
+.home-hero { padding: 34px 0 10px; }
+
+.home-hero h1 {
+  font-size: 44px;
+  line-height: 1.2;
+  font-weight: 500;
+  margin: 0 0 18px;
+  max-width: 900px;
+}
+
+.home-hero .fact {
+  display: inline-block;
+  background: var(--ink);
+  color: #fff;
+  padding: 0 10px;
+  transform: skewX(-6deg);
+}
+
+.home-hero .fact > span { display: inline-block; transform: skewX(6deg); }
+
+.home-hero .sub { color: var(--muted); font-size: 16px; margin: 0 0 18px; }
+
+.hero-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+
+.selling-now {
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  padding: 6px 0 10px;
+}
+
+.sell-card { width: 168px; flex: 0 0 auto; }
+
+.sell-card img {
+  width: 168px; height: 168px;
+  object-fit: cover;
+  background: #ddd;
+}
+
+.sell-card .sold { font-size: 13px; margin-top: 8px; }
+.sell-card .who { font-size: 13px; color: var(--muted); }
+.sell-card .when { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+/* ---------- Cards ---------- */
+
+.card-grid { display: grid; gap: 26px 22px; }
+.release-grid { grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); }
+.merch-grid { grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); }
+
+.release-card { position: relative; }
+
+.release-cover { position: relative; display: block; }
+
+.release-cover img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #d9d9d9;
+}
+
+.format-rail {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(34, 34, 34, 0.85);
+  color: #fff;
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.release-meta h3 { font-size: 16px; font-weight: 700; margin: 10px 0 2px; }
+.release-meta h3 a { color: var(--ink); }
+.release-byline { margin: 0; font-size: 14px; color: var(--muted); }
+.release-copy, .release-tags, .release-bottom { display: none; }
+
+.merch-card .merch-cover img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #fff;
+  border: 1px solid var(--line);
+}
+
+.merch-meta h3 { font-size: 15px; margin: 10px 0 2px; }
+.merch-meta p { margin: 0; font-size: 13px; color: var(--muted); }
+.merch-meta .release-bottom { display: block; margin-top: 4px; }
+.merch-meta .release-bottom strong { font-size: 13px; }
+
+.artist-card { display: flex; gap: 12px; align-items: flex-start; }
+.artist-avatar img { width: 56px; height: 56px; border-radius: 50%; object-fit: cover; }
+.artist-card h3 { margin: 0 0 2px; font-size: 15px; }
+.artist-card p { margin: 0; font-size: 13px; color: var(--muted); }
+.artist-copy { display: none; }
+
+.artist-stack { display: grid; gap: 14px; }
+
+/* ---------- Panels ---------- */
+
+.editorial-panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 20px;
+}
+
+.editorial-panel.pale { background: #f2f7f8; }
+.editorial-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 22px; }
+
+.support-feed { display: grid; gap: 12px; }
+.support-item { display: flex; gap: 12px; align-items: center; }
+.support-item img { width: 52px; height: 52px; object-fit: cover; }
+.support-item strong { display: block; font-size: 14px; }
+.support-item span { display: block; font-size: 13px; color: var(--muted); }
+
+.empty-panel {
+  border: 1px dashed var(--line);
+  padding: 18px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.scene-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.scene-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 14px;
+  display: block;
+}
+.scene-card strong { font-size: 15px; }
+.scene-card span { display: block; color: var(--muted); font-size: 13px; }
+.scene-card p { font-size: 13px; margin: 8px 0 0; color: var(--muted); }
+
+/* ---------- Discover ---------- */
+
+.discover-layout { display: grid; grid-template-columns: 290px 1fr; gap: 30px; align-items: start; }
+
+.filters-panel h1 { font-size: 28px; font-weight: 500; margin: 0 0 4px; }
+.filters-panel > p { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+
+.filters-form {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  position: sticky;
+  top: 16px;
+}
+
+.filters-form label { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+
+.filters-form input,
+.filters-form select,
+.filters-form textarea,
+.auth-card input,
+.auth-card select,
+.purchase-panel input,
+.purchase-panel select,
+.editorial-panel input,
+.editorial-panel select,
+.editorial-panel textarea,
+form input[type="text"],
+form input[type="search"],
+form input[type="email"],
+form input[type="password"],
+form input[type="number"],
+form select,
+form textarea {
+  width: 100%;
+  border: 1px solid #c9c9c9;
+  border-radius: 3px;
+  padding: 8px 10px;
+  font-size: 14px;
+  background: #fff;
+  color: var(--ink);
+}
+
+input:focus, select:focus, textarea:focus {
+  outline: none;
+  border-color: #1d6fb8;
+  box-shadow: 0 0 0 2px rgba(29, 111, 184, 0.18);
+}
+
+textarea { font-family: inherit; }
+
+.filters-form .filter-buttons { display: flex; gap: 8px; }
+
+.discover-main { min-width: 0; }
+
+.focus-release {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 22px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 20px;
+  margin-bottom: 26px;
+}
+
+.focus-release img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+.focus-release h2 { margin: 0 0 4px; font-size: 24px; }
+.focus-byline { color: var(--muted); font-size: 14px; }
+.focus-meta { display: flex; gap: 14px; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+
+.genre-row { display: flex; gap: 8px; flex-wrap: wrap; margin: 0 0 20px; }
+.genre-chip {
+  border: 1px solid var(--line);
+  background: var(--chip);
+  border-radius: 3px;
+  padding: 6px 11px;
+  font-size: 13px;
+}
+.genre-chip.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+/* ---------- Release pages (light, bandcamp layout) ---------- */
+
+.album-hero {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr 0.9fr;
+  gap: 34px;
+  padding-top: 26px;
+  align-items: start;
+}
+
+.album-info h1 { font-size: 34px; font-weight: 700; margin: 4px 0 6px; }
+.album-info .release-byline { color: var(--muted); }
+.album-info .release-byline a { color: #1d6fb8; }
+
+.album-art img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #e4e4e4;
+}
+
+.album-copy-text { color: #333; font-size: 14px; margin-top: 14px; }
+.album-copy-text p { margin: 0 0 10px; }
+
+.album-stats { display: flex; flex-wrap: wrap; gap: 8px 14px; margin: 12px 0 4px; font-size: 13px; color: var(--muted); }
+.album-stats span { border-bottom: 1px dotted #c9c9c9; padding-bottom: 2px; }
+
+.release-tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 4px; }
+.release-tags a, .release-tags span {
+  border: 1px solid var(--line);
+  color: #1d6fb8;
+  font-size: 12px;
+  padding: 3px 8px;
+  border-radius: 10px;
+}
+
+.tracklist { margin-top: 16px; border-top: 1px solid var(--line); }
+.track-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #e7e7e7;
+  font-size: 14px;
+}
+.track-row strong { font-weight: 400; }
+.track-row strong a { color: #1d6fb8; }
+.track-row > div { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.track-row > span { color: var(--muted); }
+.track-row .preview-toggle { border: 0; background: transparent; color: #1d6fb8; font-size: 12px; cursor: pointer; padding: 0; }
+.preview-panel { display: none; width: 100%; }
+.preview-panel.open, .preview-panel.static-open { display: block; }
+.preview-panel p { margin: 4px 0 0; font-size: 12px; color: var(--muted); }
+.wave { display: inline-flex; gap: 3px; align-items: flex-end; height: 16px; }
+.wave span { width: 3px; background: #1d6fb8; height: 8px; display: inline-block; }
+.wave span:nth-child(2) { height: 14px; }
+.wave span:nth-child(3) { height: 6px; }
+.wave span:nth-child(4) { height: 12px; }
+.wave span:nth-child(5) { height: 9px; }
+
+.purchase-panel {
+  background: #fff;
+  border: 1px solid var(--line);
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+.purchase-panel h2 { font-size: 18px; margin: 0; }
+.purchase-panel label { color: var(--muted); font-size: 13px; display: grid; gap: 4px; }
+.price-big { font-size: 22px; margin: 0; color: #1d6fb8; }
+
+.variant-stack { display: grid; gap: 8px; margin-top: 8px; }
+.variant-card { border: 1px solid var(--line); padding: 10px; font-size: 13px; color: #444; }
+.variant-card strong { display: block; }
+.variant-card p, .variant-card small { color: var(--muted); margin: 4px 0 0; display: block; }
+
+/* ---------- Auth / forms pages ---------- */
+
+.auth-shell { display: grid; place-items: start center; padding-top: 30px; }
+.auth-card {
+  width: min(420px, 100%);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 22px;
+  display: grid;
+  gap: 12px;
+}
+.auth-card h1 { margin: 0; font-size: 24px; font-weight: 500; }
+.auth-card label { font-size: 13px; color: var(--muted); display: grid; gap: 4px; }
+
+.form-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+/* ---------- Cart / checkout / orders ---------- */
+
+.cart-layout { display: grid; grid-template-columns: 1.4fr 1fr; gap: 26px; align-items: start; }
+.cart-items { display: grid; gap: 12px; }
+.cart-item {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 12px;
+}
+.cart-item img { width: 64px; height: 64px; object-fit: cover; }
+.cart-copy { flex: 1; }
+.cart-copy strong { display: block; font-size: 14px; }
+.cart-copy h2 { margin: 0; font-size: 15px; font-weight: 500; }
+.cart-copy p { margin: 2px 0 0; color: var(--muted); font-size: 13px; }
+.qty-form { display: flex; gap: 8px; align-items: center; }
+.qty-form input[type="number"] { width: 72px; }
+
+.summary-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.summary-row.total { font-weight: 700; border-bottom: 0; }
+.summary-mini { color: var(--muted); font-size: 13px; }
+
+.order-list { display: grid; gap: 10px; }
+.order-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 12px;
+  font-size: 14px;
+}
+
+.compare-metric { border-bottom: 1px solid var(--line); padding: 10px 0; }
+.compare-metric strong { display: block; font-size: 13px; color: var(--muted); }
+
+.stat-card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  padding: 14px;
+}
+.stat-card strong { display: block; font-size: 18px; }
+.stat-card span { color: var(--muted); font-size: 13px; }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-top: 16px; }
+
+.wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(238px, 1fr)); gap: 22px; }
+.wish-card { background: var(--panel); border: 1px solid var(--line); padding: 12px; }
+.wish-card img { width: 100%; aspect-ratio: 1/1; object-fit: cover; }
+
+/* ---------- Artist / label / scene / merch ---------- */
+
+.artist-hero {
+  position: relative;
+  min-height: 260px;
+  background-size: cover;
+  background-position: center;
+  display: flex;
+  align-items: flex-end;
+  color: #fff;
+}
+.artist-hero::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,0.25), rgba(0,0,0,0.82)); }
+.artist-hero .container { position: relative; padding: 26px 0; display: flex; align-items: flex-end; gap: 18px; }
+.artist-hero img.artist-hero-avatar { width: 96px; height: 96px; border-radius: 4px; object-fit: cover; }
+.artist-hero .eyebrow { color: rgba(255, 255, 255, 0.85); }
+.artist-hero .release-tags span, .artist-hero .release-tags a { border-color: rgba(255, 255, 255, 0.55); color: #fff; }
+.artist-hero h1 { margin: 0 0 4px; font-size: 30px; }
+
+/* merch detail page (album-layout classes used by merch.html) */
+.album-layout { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: 30px; align-items: start; }
+.album-main { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 26px; align-items: start; }
+.album-layout .album-art { background: #fff; border: 1px solid var(--line); padding: 12px; }
+.album-layout .album-art img { width: 100%; height: auto; aspect-ratio: auto; object-fit: contain; background: #fff; display: block; }
+.album-layout .album-copy h1 { font-size: 28px; margin: 4px 0 6px; }
+
+/* ---------- Search ---------- */
+
+.track-search-row { display: flex; gap: 8px; align-items: baseline; padding: 6px 0; border-bottom: 1px solid #e7e7e7; }
+.track-search-row strong { color: var(--ink); }
+.track-search-row span { color: var(--muted); }
+.track-search-row span:last-child { margin-left: auto; }
+.track-search-list { display: grid; gap: 8px; margin-top: 12px; }
+
+/* ---------- Footer ---------- */
+
+.site-footer { border-top: 1px solid var(--line); background: var(--bg-flat); margin-top: 40px; }
+.footer-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; padding: 26px 0; }
+.site-footer h3 { font-size: 14px; margin: 0 0 6px; }
+.site-footer p { margin: 0 0 4px; font-size: 13px; color: var(--muted); }
+
+/* ---------- Responsive ---------- */
+
+@media (max-width: 980px) {
+  .header-main { flex-wrap: wrap; }
+  .header-search { order: 3; max-width: none; width: 100%; }
+  .discover-layout { grid-template-columns: 1fr; }
+  .focus-release { grid-template-columns: 1fr; }
+  .album-hero { grid-template-columns: 1fr; }
+  .editorial-grid, .cart-layout, .merch-layout, .album-layout, .album-main { grid-template-columns: 1fr; }
+  .home-hero h1 { font-size: 32px; }
+}
+
+/* ---------- Editorial / Radio / Gift cards ---------- */
+
+.daily-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 22px; }
+.daily-card { display: grid; grid-template-columns: 120px 1fr; gap: 14px; background: #fff; border: 1px solid var(--line); padding: 12px; }
+.daily-card img { width: 120px; height: 120px; object-fit: cover; }
+.daily-card h3 { margin: 2px 0 4px; font-size: 16px; }
+.daily-byline { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+.daily-blurb { margin: 0; font-size: 13px; color: #444; }
+
+.radio-shows { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.radio-show { background: #fff; border: 1px solid var(--line); padding: 14px; }
+.radio-show h3 { margin: 0 0 6px; font-size: 16px; }
+.radio-show p { margin: 0; color: var(--muted); font-size: 13px; }
+.radio-episodes { display: grid; gap: 12px; }
+.radio-episode { display: flex; gap: 14px; align-items: center; background: #fff; border: 1px solid var(--line); padding: 12px; }
+.radio-episode img { width: 64px; height: 64px; object-fit: cover; }
+.radio-episode > div { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+.radio-episode span { color: var(--muted); font-size: 13px; }
+
+.gift-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.gift-card { height: 130px; display: flex; flex-direction: column; justify-content: flex-end; padding: 16px; color: #fff; border-radius: 4px; background: linear-gradient(135deg, #0cacd7, #1d6fb8); }
+.gift-card.gift-25 { background: linear-gradient(135deg, #1d6fb8, #5b3aa8); }
+.gift-card.gift-50 { background: linear-gradient(135deg, #5b3aa8, #c2417a); }
+.gift-card.gift-100 { background: linear-gradient(135deg, #c2417a, #e0873a); }
+.gift-card strong { font-size: 26px; }
+.gift-card span { font-size: 12px; opacity: 0.85; }
+.gift-form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.gift-form label { flex: 1; min-width: 220px; }
+
+/* ---------- Compare releases (mirror-only page; no upstream equivalent) ---------- */
+
+.compare-form { position: static; display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+
+.compare-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; align-items: start; margin-top: 22px; }
+
+.compare-card { background: #fff; border: 1px solid var(--line); padding: 16px; }
+
+.compare-card img { width: 100%; max-width: 300px; aspect-ratio: 1 / 1; object-fit: cover; display: block; }
+
+.compare-card h2 { margin: 12px 0 0; font-size: 20px; }
+
+.compare-card > p { margin: 2px 0 10px; color: var(--muted); font-size: 14px; }
+
+.compare-metric { display: flex; justify-content: space-between; gap: 14px; padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+.compare-metric span { color: var(--muted); }
+.compare-metric strong { font-weight: 600; text-align: right; }
+
+@media (max-width: 980px) {
+  .compare-form { grid-template-columns: 1fr; }
+  .compare-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Category nav active + list cover play (bandcamp behaviour) ---------- */
+
+.catnav a.active { font-weight: 700; border-bottom: 2px solid var(--ink); padding-bottom: 2px; }
+
+.release-cover { border: 0; padding: 0; background: none; cursor: pointer; position: relative; display: block; width: 100%; }
+.play-badge {
+  position: absolute; left: 8px; bottom: 8px; min-width: 30px; height: 30px; line-height: 30px;
+  border-radius: 15px; background: rgba(17, 17, 17, 0.82); color: #fff; font-size: 13px; text-align: center;
+  opacity: 0; transition: opacity 0.12s ease;
+}
+.release-cover:hover .play-badge, .release-card.playing .play-badge { opacity: 1; }
+.release-card.playing .release-cover img { box-shadow: 0 0 0 3px var(--brand); }
+
+/* ---------- Album page (bandcamp layout) ---------- */
+
+.album-hero { display: block; }
+.album-tabs { display: flex; gap: 26px; border-bottom: 1px solid var(--line); margin: 8px 0 24px; }
+.album-tabs a { padding: 8px 2px 10px; font-size: 15px; color: var(--ink); }
+.album-tabs a.active { font-weight: 700; border-bottom: 3px solid var(--ink); margin-bottom: -1px; }
+
+.album-columns { display: grid; grid-template-columns: 1.15fr 1fr 0.9fr; gap: 34px; align-items: start; }
+
+.player-block { display: flex; gap: 12px; align-items: center; margin: 14px 0 10px; }
+.player-toggle {
+  width: 44px; height: 44px; border: 1px solid var(--ink); background: #fff; color: var(--ink);
+  font-size: 15px; cursor: pointer; flex: 0 0 auto;
+}
+.player-block.playing .player-toggle { background: var(--ink); color: #fff; }
+.player-meta { flex: 1; min-width: 0; }
+.player-line { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.player-line span { color: var(--muted); }
+.player-bar { height: 4px; background: #d9d9d9; margin-top: 6px; }
+.player-bar span { display: block; width: 0; height: 100%; background: var(--ink); }
+.player-block.playing .player-bar span { background: var(--ink); }
+
+.variant-blocks { display: grid; gap: 14px; margin: 14px 0 8px; }
+.variant-block { border-top: 1px solid var(--line); padding-top: 10px; }
+.variant-head { display: flex; justify-content: space-between; gap: 14px; }
+.variant-head h3 { margin: 0; font-size: 16px; }
+.variant-sub { margin: 2px 0 4px; color: var(--muted); font-size: 13px; }
+.variant-note { margin: 0 0 2px; font-size: 13px; color: #444; }
+
+.purchase-panel { background: transparent; border: 0; padding: 14px 0 0; margin-top: 8px; border-top: 1px solid var(--line); }
+.purchase-panel form { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.purchase-panel label { flex: 1 1 100%; min-width: 200px; }
+.purchase-panel select { min-width: 0; width: 100%; padding-right: 28px; }
+.purchase-panel label.qty-label { flex: 0 0 auto; min-width: 0; }
+.purchase-panel label.qty-label input[type="number"] { width: 72px; }
+.purchase-panel > p { margin: 2px 0; }
+.purchase-links { display: flex; gap: 18px; margin-top: 10px; }
+.link-button {
+  border: 0; background: none; padding: 0; color: #1d6fb8; font-size: 14px; cursor: pointer;
+}
+.link-button:hover { text-decoration: underline; }
+.link-button.static { color: var(--muted); cursor: default; }
+.link-button.static:hover { text-decoration: none; }
+
+.art-links { display: flex; gap: 18px; margin-top: 10px; font-size: 14px; }
+
+.album-side { display: grid; gap: 18px; }
+.artist-card-block img.artist-card-avatar { width: 84px; height: 84px; object-fit: cover; border-radius: 4px; }
+.artist-card-block h3 { margin: 8px 0 2px; font-size: 17px; }
+.artist-card-location { margin: 0 0 6px; color: var(--muted); font-size: 13px; }
+.artist-card-bio { margin: 0 0 8px; font-size: 13px; color: #333; }
+.artist-card-links { display: flex; gap: 16px; margin: 0; }
+.discography h4 { margin: 0 0 8px; font-size: 14px; font-weight: 500; }
+.discography-item { display: flex; gap: 10px; align-items: center; margin-bottom: 8px; }
+.discography-item img { width: 52px; height: 52px; object-fit: cover; }
+.discography-item span { font-size: 13px; }
+.album-meta-list { display: grid; }
+
+.track-row strong a::before { content: "▶"; font-size: 10px; margin-right: 8px; color: var(--muted); }
+
+@media (max-width: 980px) {
+  .album-columns { grid-template-columns: 1fr; }
+  .player-block { flex-wrap: wrap; }
+}
+
+/* ---------- Home feed + editorial + artists (bandcamp alignment) ---------- */
+
+.feed-head { display: flex; align-items: baseline; justify-content: space-between; gap: 14px; flex-wrap: wrap; margin: 4px 0 12px; }
+.feed-head-left { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.feed-status { color: var(--muted); font-size: 13px; }
+.feed-head h2 { margin: 0; font-size: 24px; font-weight: 500; }
+.feed-toggle { border: 0; background: none; color: #1d6fb8; font-size: 14px; cursor: pointer; padding: 0; }
+.feed-toggle:hover { text-decoration: underline; }
+.feed-note { color: var(--muted); font-size: 13px; }
+
+.selling-now { display: flex; gap: 14px; overflow-x: auto; padding: 6px 0 12px; scroll-behavior: smooth; }
+.sell-card { width: 126px; flex: 0 0 auto; padding: 6px; }
+.sell-card:hover { background: rgba(34, 34, 34, 0.05); }
+.sell-card img { width: 114px; height: 114px; object-fit: cover; background: #ddd; }
+.sell-card .sold { font-size: 13px; margin-top: 6px; }
+.sell-card .when { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+.daily-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; }
+.daily-cell img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+.daily-cell h3 { margin: 6px 0 2px; font-size: 16px; }
+.daily-cell p { margin: 0; }
+.daily-byline { color: var(--muted); font-size: 13px; }
+
+.album-of-day { display: grid; grid-template-columns: 320px 1fr; gap: 26px; background: #fff; border: 1px solid var(--line); padding: 20px; }
+.aod-cover img { width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+.aod-copy h2 { margin: 4px 0 2px; font-size: 26px; }
+.aod-copy p { margin: 8px 0 0; font-size: 14px; color: #333; }
+.aod-meta { color: var(--muted); font-size: 13px; }
+
+.artist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
+.artist-tile { background: #fff; border: 1px solid var(--line); padding: 14px; }
+.artist-tile-avatar img { width: 72px; height: 72px; border-radius: 50%; object-fit: cover; }
+.artist-tile h3 { margin: 10px 0 2px; font-size: 16px; }
+.artist-tile-meta { margin: 0; color: var(--muted); font-size: 13px; }
+.artist-tile-followers { margin: 6px 0 0; font-size: 13px; }
+
+@media (max-width: 980px) {
+  .album-of-day { grid-template-columns: 1fr; }
+}
+
+/* Keep account navigation, search and cart controls usable on small screens. */
+.header-search input { min-width: 0; }
+.catalog-notice { padding: 12px 0; font-size: 13px; color: #4a4a4a; }
+@media (max-width: 600px) {
+  .header-main { gap: 14px; }
+  .header-actions { flex-wrap: wrap; gap: 12px; margin-left: 0; }
+  .header-search { flex: 1 0 100%; order: 3; max-width: none; }
+  .cart-items, .cart-copy { min-width: 0; }
+  .cart-item { display: grid; grid-template-columns: 64px minmax(0, 1fr); }
+  .cart-copy { overflow-wrap: anywhere; }
+  .qty-form { grid-column: 2; flex-wrap: wrap; }
+  .cart-item > strong { grid-column: 2; }
+  .cart-item > form:last-child { grid-column: 2; }
+}

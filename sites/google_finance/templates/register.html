@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}Create account - Google Finance{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <h1>Create an account</h1>
+  <form method="post" novalidate>
+    {{ form.hidden_tag() }}
+    {% for field in [form.name, form.username, form.email, form.password, form.confirm] %}
+      <div class="form-row">
+        {{ field.label }} {{ field() }}
+        {% for e in field.errors %}<span class="form-error">{{ e }}</span>{% endfor %}
+      </div>
+    {% endfor %}
+    <button class="btn-blue" type="submit">Create account</button>
+  </form>
+  <p style="margin-top:18px"><a class="btn-text" href="{{ url_for('login') }}">Already have an account? Sign in</a></p>
+</div>
+{% endblock %}

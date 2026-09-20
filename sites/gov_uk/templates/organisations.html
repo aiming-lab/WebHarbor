@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Departments, agencies and public bodies - GOV.UK{% endblock %}
+
+{% block content %}
+<h1 class="govuk-heading-xl">Departments, agencies and public bodies</h1>
+<p class="govuk-body-l">Find out about the departments, agencies and public bodies that work with the government.</p>
+
+{% for kind, depts in by_kind.items() %}
+<h2 class="govuk-heading-l">{{ kind }}</h2>
+<ul class="govuk-list">
+  {% for d in depts %}
+  <li class="govuk-!-margin-bottom-4">
+    <h3 class="govuk-heading-s govuk-!-margin-bottom-1">
+      <a class="govuk-link" href="{{ url_for('organisation_detail', slug=d.slug) }}">{{ d.name }}</a>
+      {% if d.abbreviation %}<span class="govuk-hint govuk-!-font-weight-regular">({{ d.abbreviation }})</span>{% endif %}
+    </h3>
+    <p class="govuk-body-s">{{ d.description }}</p>
+  </li>
+  {% endfor %}
+</ul>
+{% endfor %}
+{% endblock %}

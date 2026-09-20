@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} | Y Combinator Startup Library{% endblock %}
+
+{% block content %}
+<article class="shell detail">
+    <h1>{{ article.title }}</h1>
+    <p class="muted">
+        {{ article.author }}
+        {% if article.series %} · {{ article.series }}{% endif %}
+        {% if article.created_at %} · {{ article.created_at[:10] }}{% endif %}
+        {% if article.duration_label %} · {{ article.duration_label }}{% endif %}
+        {% if article.view_count %} · {{ '{:,}'.format(article.view_count) }} views{% endif %}
+    </p>
+    {% if article.thumbnail %}<img src="{{ url_for('static', filename='images/' + article.thumbnail) }}" alt="" style="border-radius:12px;margin:16px 0">{% endif %}
+    {% if article.description %}<p class="lede">{{ article.description }}</p>{% endif %}
+    {% if article.summary %}<p class="prose">{{ article.summary }}</p>{% endif %}
+    {% if article.link %}<p><a class="button secondary" href="{{ article.link }}">Watch on YouTube</a></p>{% endif %}
+
+    <form class="inline" method="POST" action="{{ url_for('toggle_bookmark', slug=article.slug) }}">
+        <button class="button" type="submit">{{ 'Remove bookmark' if bookmarked else 'Bookmark this' }}</button>
+    </form>
+    <p><a href="{{ url_for('library') }}">← Back to the library</a></p>
+</article>
+{% endblock %}

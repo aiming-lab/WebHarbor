@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}craigslist — SF bay area{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static',filename='css/main.css') }}">
+<link rel="stylesheet" href="{{ url_for('static',filename='css/review.css') }}">
+<script src="{{ url_for('static',filename='js/main.js') }}" defer></script>
+</head><body class="{% block body_class %}{% endblock %}">
+<header class="global-header">
+<a class="header-logo" href="{{ url_for('index') }}">☮ CL</a><a class="region-name" href="{{ url_for('index') }}">SF bay area</a>
+<form class="site-search" action="{{ url_for('search') }}"><input name="q" aria-label="Search craigslist" placeholder="search craigslist"><button>search</button></form>
+<nav class="header-actions"><a href="{{ url_for('post_listing') }}">post</a><a href="{{ url_for('account') if current_user.is_authenticated else url_for('login',next=request.full_path) }}">acct</a><a href="{{ url_for('saved') }}">saved{% if saved_count() %} {{ saved_count() }}{% endif %}</a><a href="{{ url_for('hidden') }}">hidden</a></nav>
+</header>
+{% with messages=get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap" role="status">{% for category,message in messages %}<p class="flash {{ category }}">{{ message }}</p>{% endfor %}</div>{% endif %}{% endwith %}
+<main class="page-container">{% block content %}{% endblock %}</main>
+<footer class="footer"><nav class="footer-links">{% for page in ['help','safety','privacy','terms','about'] %}<a href="{{ url_for('information',page=page) }}">{{ page }}</a>{% endfor %}</nav><p>Offline benchmark snapshot · {{ snapshot_date }} · no external messages or transactions</p></footer>
+</body></html>

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ team.full_name }} - NBA{% endblock %}
+{% block content %}
+<section class="team-header" style="--team: {{ team.color }}">
+  <img src="{{ team.logo }}" alt="">
+  <div>
+    <span class="kicker">{{ team.conference }} · {{ team.division }}</span>
+    <h1>{{ team.full_name }}</h1>
+    <p>{{ team.arena }} · Head Coach {{ team.coach }}</p>
+    <div class="tab-row team-tabs">
+      <a class="active" href="{{ url_for('team_detail', slug=team.slug) }}">Profile</a>
+      <a href="{{ url_for('team_roster', slug=team.slug) }}">Roster</a>
+      <a href="{{ url_for('team_schedule', slug=team.slug) }}">Schedule</a>
+      <a href="{{ url_for('team_stats_detail', slug=team.slug) }}">Stats</a>
+      <a href="{{ url_for('tickets', team=team.slug) }}">Tickets</a>
+    </div>
+  </div>
+  <form method="post" action="{{ url_for('favorite', item_type='team', item_id=team.id) }}"><button class="button">Save Team</button></form>
+</section>
+<section class="content-block split-layout">
+  <div>
+    <div class="stat-tile-grid" id="team-stats">
+      <div class="stat-tile"><span>Record</span><strong>{{ team.wins }}-{{ team.losses }}</strong></div>
+      <div class="stat-tile"><span>Win Pct</span><strong>{{ "%.3f"|format(team.win_pct) }}</strong></div>
+      <div class="stat-tile"><span>PPG</span><strong>{{ "%.1f"|format(team.ppg) }}</strong></div>
+      <div class="stat-tile"><span>Diff</span><strong>{{ (team.ppg - team.oppg)|signed }}</strong></div>
+    </div>
+    <section class="content-block inset">
+      <div class="section-title"><h2>Top Players</h2><a href="{{ url_for('team_roster', slug=team.slug) }}">Full Roster</a></div>
+      <div class="story-grid compact">
+        {% for player in team.players %}
+          <a class="player-card" href="{{ url_for('player_detail', slug=player.slug) }}"><img src="{{ player.image }}" alt=""><span>#{{ player.jersey }} · {{ player.position }}</span><strong>{{ player.name }}</strong><em>{{ "%.1f"|format(player.ppg) }} PPG</em></a>
+        {% else %}
+          <p>No seeded roster rows for this team yet.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+  <aside class="portal-rail">
+    <section class="rail-card"><h2>Upcoming</h2>{% for game in upcoming[:4] %}<a class="headline" href="{{ url_for('game_detail', game_id=game.id) }}"><span>{{ game.game_date.strftime('%b %-d') }}</span>{{ game.away_team.abbreviation }} at {{ game.home_team.abbreviation }}</a>{% else %}<p>No upcoming games.</p>{% endfor %}</section>
+    <section class="rail-card"><h2>Latest</h2>{% for article in articles[:5] %}<a class="headline" href="{{ url_for('article_detail', slug=article.slug) }}"><span>{{ article.category }}</span>{{ article.title }}</a>{% else %}<p>No current stories.</p>{% endfor %}</section>
+  </aside>
+</section>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Credits — {{ g.name }} | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <div class="crumb">
+      <a href="{{ url_for('browse') }}">Browse</a> ›
+      <a href="{{ g.detail_url }}">{{ g.name }}</a> › Credits
+    </div>
+    <h1>{{ g.name }} — Credits</h1>
+
+    <h2>Designers</h2>
+    <ul>
+      {% for d in g.designers %}
+        <li><a href="{{ url_for('designer_detail', pid=d.bgg_id, slug=d.slug) }}">{{ d.name }}</a></li>
+      {% else %}<li class="muted">—</li>{% endfor %}
+    </ul>
+
+    <h2>Artists</h2>
+    <ul>
+      {% for a in g.artists %}
+        <li><a href="{{ url_for('artist_detail', pid=a.bgg_id, slug=a.slug) }}">{{ a.name }}</a></li>
+      {% else %}<li class="muted">—</li>{% endfor %}
+    </ul>
+
+    <h2>Publishers</h2>
+    <ul>
+      {% for p in g.publishers %}
+        <li><a href="{{ url_for('publisher_detail', pid=p.bgg_id, slug=p.slug) }}">{{ p.name }}</a></li>
+      {% else %}<li class="muted">—</li>{% endfor %}
+    </ul>
+
+    <h2>Categories</h2>
+    <ul>
+      {% for c in g.categories %}
+        <li><a href="{{ url_for('category_detail', cid=c.bgg_id, slug=c.slug) }}">{{ c.name }}</a></li>
+      {% else %}<li class="muted">—</li>{% endfor %}
+    </ul>
+
+    <h2>Mechanisms</h2>
+    <ul>
+      {% for m in g.mechanics %}
+        <li><a href="{{ url_for('mechanic_detail', mid=m.bgg_id, slug=m.slug) }}">{{ m.name }}</a></li>
+      {% else %}<li class="muted">—</li>{% endfor %}
+    </ul>
+
+    {% if g.families %}
+    <h2>Families</h2>
+    <ul>
+      {% for f in g.families %}
+        <li>{{ f.name }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

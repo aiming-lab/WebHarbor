@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}NBA Games & Scores{% endblock %}
+{% block content %}
+<nav class="games-subnav" aria-label="Games navigation">
+  <strong>Games</strong>
+  <a class="active" href="{{ url_for('games') }}">Home</a>
+  <a href="{{ url_for('tickets') }}">Tickets</a>
+</nav>
+
+<section class="games-page-shell">
+  <main class="games-page-main">
+    <h1>NBA Games &amp; Scores</h1>
+
+    <section class="games-date-bar" aria-label="Game date picker">
+      <div class="month-picker">
+        <strong>May 2026</strong>
+        <span>▣</span>
+        <span>⌄</span>
+      </div>
+      <a class="date-arrow" href="{{ url_for('games', date=prev_week_date, hide_scores=1 if hide_scores else None) }}" aria-label="Previous week">‹</a>
+      <div class="week-strip">
+        {% for day in calendar_days %}
+          <a class="{% if day.active %}active{% endif %}" href="{{ url_for('games', date=day.date, hide_scores=1 if hide_scores else None) }}">
+            <span>{{ day.dow }}</span>
+            <strong>{{ day.day }}</strong>
+            {% if day.count %}<small>{{ day.count }}</small>{% endif %}
+          </a>
+        {% endfor %}
+      </div>
+      <a class="date-arrow" href="{{ url_for('games', date=next_week_date, hide_scores=1 if hide_scores else None) }}" aria-label="Next week">›</a>
+      <a class="hide-scores-toggle {% if hide_scores %}active{% endif %}" href="{{ url_for('games', date=date_param or None, status=status or None, hide_scores=None if hide_scores else 1) }}">Hide Scores <span></span></a>
+    </section>
+
+    <section class="official-games-list">
+      {% for game in games %}
+        <article class="official-game-card">
+          <div class="official-matchup">
+            <p>{{ game_round_label(game) }} · {{ game_number_label(game) }}</p>
+            <div class="matchup-teams">
+              <div>
+                <img src="{{ game.away_team.logo }}" alt="">
+                <span>{{ team_seed(game.away_team) }} {{ game.away_team.name }}</span>
+              </div>
+              <div class="matchup-time">
+                <small>{{ game.game_date.strftime('%a %-d %b') }}</small>
+                <strong>{% if game.status == 'Final' %}{% if hide_scores %}Final{% else %}Final{% endif %}{% else %}{{ game_time_label(game) }}{% endif %}</strong>
+                <em>{{ game_series_label(game) }}</em>
+              </div>
+              <div>
+                <img src="{{ game.home_team.logo }}" alt="">
+                <span>{{ team_seed(game.home_team) }} {{ game.home_team.name }}</span>
+              </div>
+            </div>
+            <div class="matchup-actions">
+              <a href="{{ url_for('game_detail', game_id=game.id) }}">{{ 'Recap' if game.status == 'Final' else 'Preview' }}</a>
+              <a href="{{ url_for('playoff_series', series_slug=game_series_slug(game)) }}">View Series</a>
+            </div>
+            <div class="league-pass-inline"><span>▶</span> League Pass <small>{{ game.broadcast }}</small></div>
+          </div>
+
+          <div class="season-leaders-box">
+            <div class="leaders-head">
+              <strong>Season Leaders</strong>
+              <span>PPG</span>
+              <span>RPG</span>
+              <span>APG</span>
+            </div>
+            {% for player in game_leaders(game) %}
+              <a class="leader-line" href="{{ url_for('player_detail', slug=player.slug) }}">
+                <img src="{{ player.image }}" alt="">
+                <span><b>{{ player.name }}</b><small>{{ player.team.abbreviation }} | #{{ player.jersey }} | {{ player.position }}</small></span>
+                <em>{{ "%.1f"|format(player.ppg) }}</em>
+                <em>{{ "%.1f"|format(player.rpg) }}</em>
+                <em>{{ "%.1f"|format(player.apg) }}</em>
+              </a>
+            {% endfor %}
+          </div>
+
+          <div class="broadcast-box">
+            <span>NBA League Pass</span>
+            <strong>{{ game.broadcast }}</strong>
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+  </main>
+
+  <aside class="games-page-rail">
+    <section class="games-ad-card">
+      <img src="{{ url_for('static', filename='images/articles/lp-right-rail.png') }}" alt="">
+      <div>
+        <h2>Stream every playoff game like you're courtside.</h2>
+        <p>Get League Pass Premium to stream every game or download for later.</p>
+        <a href="{{ url_for('league_pass') }}">Sign Up Now</a>
+      </div>
+    </section>
+
+    <section class="rail-card home-headlines">
+      <div class="section-title compact"><h2>Headlines</h2><a href="{{ url_for('news') }}">See more</a></div>
+      {% for article in headlines %}
+        <a class="headline" href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a>
+      {% endfor %}
+    </section>
+  </aside>
+</section>
+{% endblock %}

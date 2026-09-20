@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Orders - NBA{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Orders</h1></section>
+<section class="band">{% for order in orders %}<div class="panel order"><h2>{{ order.order_number }}</h2><p>{{ order.status }} · {{ order.created_at.strftime('%b %-d, %Y') }} · {{ order.total|money }}</p><p>{{ order.ship_address }} · card ending {{ order.payment_last4 }}</p>{% for item in order.items %}<p>{{ item.quantity }} × {{ item.product_name }} · {{ item.size }} · {{ item.price|money }}</p>{% endfor %}</div>{% else %}<p>No orders yet.</p>{% endfor %}</section>
+{% endblock %}

@@ -88,7 +88,9 @@ def test_tasks_and_verifiers_are_complete_and_use_site_24():
 def test_assets_pin_is_immutable_merged_revision():
     text = (ROOT / ".assets-revision").read_text()
     revision = re.search(r"^revision:\s*([0-9a-f]+)$", text, re.M).group(1)
-    assert revision == "ad6f424f72cada9e6f5c09a58093d0ceeab9c52b"
+    # Merged HF PR #86 produces the immutable dataset-main revision with all
+    # 46 registered-site archives plus the unused Bandcamp archive.
+    assert revision == "df9a1b44a8c5639decc450706a20ac838e21716b"
     assert (SITE / ".build-generated-seed").is_file()
     assert (SITE / ".requires-images").is_file()
     assert (SITE / "asset_inventory.json").is_file()
@@ -97,11 +99,10 @@ def test_assets_pin_is_immutable_merged_revision():
 
 def test_shared_documentation_uses_the_current_site_range():
     current = port_range()
-    stale = {f"40000-400{end}" for end in range(20, 25)} - {current}
     for relative in ["README.md", "AGENTS.md", "CONTRIBUTING.md", "CLAUDE.md", "agent_demo/README.md"]:
         text = (ROOT / relative).read_text()
-        for old in stale:
-            assert old not in text, f"{relative} still documents {old}"
+        ranges = set(re.findall(r"\b40000-4\d{4}\b", text))
+        assert ranges <= {current}, f"{relative} documents stale ranges: {sorted(ranges - {current})}"
         assert current in text, relative
 
 

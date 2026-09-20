@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name if category else 'search' }} - craigslist{% endblock %}
+{% block body_class %}search-page{% endblock %}
+{% block content %}
+<div class="review-search">
+<nav class="search-breadcrumb"><a href="{{ url_for('index') }}">SF bay area</a> › {{ category.name if category else 'all craigslist' }}</nav>
+<form class="main-search-box" method="get">
+{% for key,value in request.args.items() %}{% if key!='q' %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endif %}{% endfor %}
+<input name="q" value="{{ query }}" placeholder="search {{ category.name if category else 'craigslist' }}" aria-label="Search listings"><button aria-label="search">search</button>
+<button class="filter-toggle" type="button" aria-expanded="true" aria-controls="search-filters">filters</button><button class="cl-save-search" type="button">save search</button></form>
+<div class="search-layout"><aside id="search-filters">
+<form class="filters-form" method="get" action="{{ url_for('search') }}">
+<label>category<select name="category"><option value="">all categories</option>{% for group in category_groups() %}<optgroup label="{{ group.name }}">{% for cat in group.categories %}<option value="{{ cat.slug }}" {% if category and cat.slug==category.slug %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}</optgroup>{% endfor %}</select></label>
+<label>area<select name="area"><option value="">all SF bay area</option>{% for area in areas %}<option {% if request.args.get('area')==area %}selected{% endif %}>{{ area }}</option>{% endfor %}</select></label>
+<label>keywords<input name="q" value="{{ query }}"></label>
+<div class="price-inputs"><label>min price<input name="min_price" value="{{ request.args.get('min_price','') }}" inputmode="numeric"></label><label>max price<input name="max_price" value="{{ request.args.get('max_price','') }}" inputmode="numeric"></label></div>
+{% for name,label in [('title_only','search titles only'),('has_image','has image'),('posted_today','posted on snapshot day'),('free','free only')] %}<label class="check"><input type="checkbox" name="{{ name }}" value="1" {% if request.args.get(name)=='1' %}checked{% endif %}> {{ label }}</label>{% endfor %}
+<input type="hidden" name="sort" value="{{ request.args.get('sort','relevance') }}"><input type="hidden" name="view" value="{{ request.args.get('view','gallery') }}">
+<button class="update-search">update search</button><a href="{{ url_for('category_search',category_slug=category.slug) if category else url_for('search') }}">clear</a>
+</form>
+<section id="save-search-panel"><h3>save search</h3><p class="snapshot-note">Stores keywords, category, area and price limits. Display options and checkbox filters are not saved.</p>{% if current_user.is_authenticated %}
+<form method="post" action="{{ url_for('save_search') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+<label>name<input name="name" value="{{ query or 'saved search' }}" required></label><label>keywords<input name="q" value="{{ query }}"></label>
+<label>category<select name="category_slug"><option value="">all categories</option>{% for group in category_groups() %}{% for cat in group.categories %}<option value="{{ cat.slug }}" {% if category and cat.slug==category.slug %}selected{% endif %}>{{ cat.name }}</option>{% endfor %}{% endfor %}</select></label>
+<label>area<select name="area"><option value="">all SF bay area</option>{% for area in areas %}<option {% if request.args.get('area')==area %}selected{% endif %}>{{ area }}</option>{% endfor %}</select></label>
+<div class="price-inputs"><label>min<input name="min_price" value="{{ request.args.get('min_price','') }}"></label><label>max<input name="max_price" value="{{ request.args.get('max_price','') }}"></label></div><button>save search</button></form>
+{% else %}<a href="{{ url_for('login',next=request.full_path) }}">log in to save searches</a>{% endif %}</section>
+</aside><section class="search-results">
+<div class="results-toolbar"><span class="result-count">{{ listings|length }} results</span><div><a href="{{ search_url(view='gallery') }}">gallery</a> · <a href="{{ search_url(view='list') }}">list</a></div>
+<label>sort<select id="sort-order" aria-label="Sort results">{% for key,label in [('relevance','relevance'),('newest','newest'),('oldest','oldest'),('price_asc','price low-high'),('price_desc','price high-low')] %}<option value="{{ search_url(sort=key) }}" {% if request.args.get('sort','relevance')==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label></div>
+<ul class="review-results {{ 'list-view' if request.args.get('view')=='list' else 'gallery-view' }}">
+{% for listing in listings %}<li id="listing-{{ listing.id }}" data-listing-id="{{ listing.id }}">
+{% if request.args.get('view')!='list' %}<a class="result-photo" href="{{ url_for('listing_detail',slug=listing.slug,listing_id=listing.id) }}">{% if listing.image %}<img src="{{ url_for('static',filename=listing.image) }}" alt="{{ listing.title }}" loading="lazy">{% else %}<span class="no-photo">no photo in original listing</span>{% endif %}</a>{% endif %}
+<div class="result-description"><a class="result-title" href="{{ url_for('listing_detail',slug=listing.slug,listing_id=listing.id) }}">{{ listing.title }}</a><div class="result-meta"><strong class="result-price">{{ listing.display_price }}</strong><span>{{ listing.neighborhood or listing.area }}</span><span>{{ listing.posted_at.strftime('%m/%d') }}</span></div>
+<div class="result-actions">{% if current_user.is_authenticated %}<form method="post" action="{{ url_for('unsave_listing' if is_saved(listing.id) else 'save_listing',listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path }}"><button aria-label="{{ 'unsave' if is_saved(listing.id) else 'save' }} listing">{{ '★ saved' if is_saved(listing.id) else '☆ save' }}</button></form>{% endif %}
+<form method="post" action="{{ url_for('hide_listing',listing_id=listing.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="next" value="{{ request.full_path }}"><button aria-label="hide listing">hide</button></form></div></div></li>
+{% else %}<li class="empty">No matching listings. Try fewer keywords or clear a filter.</li>{% endfor %}</ul>
+</section></div></div>
+{% endblock %}

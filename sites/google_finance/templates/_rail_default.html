@@ -1,0 +1,42 @@
+{# Right rail on non-quote pages: market movers plus the latest headlines.
+   The live beta puts a Gemini chat panel here; a mirror cannot serve that
+   deterministically, so the rail carries real market content instead. #}
+<h2 class="rail-panel-title">Research</h2>
+
+<div class="rail-sub">Today's gainers</div>
+<ul class="rail-mini">
+  {% for inst in rail_gainers %}
+    {% set q = inst.quote %}
+    <li><a href="{{ url_for('quote', symbol=inst.slug) }}">
+      <span><span class="m-tic">{{ inst.ticker }}</span>
+        <span class="m-name">{{ inst.name }}</span></span>
+      <span class="chg up">{{ fmt_pct(q.change_pct) }}</span>
+    </a></li>
+  {% endfor %}
+</ul>
+<a class="btn-text" href="{{ url_for('markets', slug='gainers') }}">View all gainers</a>
+
+<div class="rail-sub">Today's losers</div>
+<ul class="rail-mini">
+  {% for inst in rail_losers %}
+    {% set q = inst.quote %}
+    <li><a href="{{ url_for('quote', symbol=inst.slug) }}">
+      <span><span class="m-tic">{{ inst.ticker }}</span>
+        <span class="m-name">{{ inst.name }}</span></span>
+      <span class="chg down">{{ fmt_pct(q.change_pct) }}</span>
+    </a></li>
+  {% endfor %}
+</ul>
+<a class="btn-text" href="{{ url_for('markets', slug='losers') }}">View all losers</a>
+
+<div class="rail-sub">Top news</div>
+<ul class="rail-news">
+  {% for a in rail_news %}
+    <li>
+      <a href="{{ url_for('news_detail', slug=a.slug) }}">{{ a.headline }}</a>
+      <span class="meta">{{ a.publisher.name if a.publisher else 'Newswire' }}
+        &middot; {{ a.ago() }}</span>
+    </li>
+  {% endfor %}
+</ul>
+<a class="btn-text" href="{{ url_for('news_index') }}">More news</a>

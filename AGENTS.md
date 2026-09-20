@@ -1,10 +1,21 @@
 # WebHarbor — agent guide
 
+## Control-plane authentication
+
+The current source requires a bearer token of at least 32 characters for control-plane requests. Before the Docker examples below, set:
+
+```bash
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+```
+
+Pass it with `docker run -e WEBSYN_CONTROL_TOKEN`. Site browsing does not require this token; it is removed from site-process environments. Build from this checkout: previously published images may use an older registry/authentication contract.
+
+
 A coding agent (Claude Code, Cursor, Aider, Codex, ...) is reading this. Read once, then act.
 
 ## What it is
 
-28 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
+50 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
 
 Two repos:
 - **code** (this one) — Flask apps, control plane, scripts.
@@ -48,17 +59,17 @@ Inside the image, sites live at `/opt/WebSyn/<site>/`. The path predates the ren
 # fresh clone
 ./scripts/fetch_assets.sh                     # pulls assets from HF
 ./scripts/build.sh                            # docker build -t webharbor:dev .
-docker run -d -p 8101:8101 -p 40000-40028:40000-40028 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -d -p 8101:8101 -p 40000-40049:40000-40049 webharbor:dev
 ```
 
 Or use the published image directly:
 
 ```bash
-docker run -d -p 8101:8101 -p 40000-40028:40000-40028 \
+docker run -e WEBSYN_CONTROL_TOKEN -d -p 8101:8101 -p 40000-40049:40000-40049 \
   battalion7244/webharbor:latest
 ```
 
-Sites are on `40000`-`40028` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
+Sites are on `40000`-`40049` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
 
 | Method | Path                | Purpose                                   |
 |--------|---------------------|-------------------------------------------|
@@ -135,19 +146,19 @@ python3 -m py_compile sites/<site>/app.py
 ./scripts/build.sh webharbor:dev
 
 # 3. run on alt ports (don't collide with anything you already have running)
-docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41028:40000-40028 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -d --rm --name wh-test \
+  -p 8201:8101 -p 41000-41049:40000-40049 webharbor:dev
 
 # 4. control plane healthy, all sites alive
-curl -s http://localhost:8201/health | python3 -m json.tool | head
+curl -s -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8201/health | python3 -m json.tool | head
 
 # 5. every site renders 200
-for p in $(seq 41000 41028); do
+for p in $(seq 41000 41047); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
 # 6. byte-identical reset (the strict invariant)
-curl -X POST http://localhost:8201/reset/<your_site>
+curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8201/reset/<your_site>
 docker exec wh-test md5sum \
   /opt/WebSyn/<your_site>/instance/<your_site>.db \
   /opt/WebSyn/<your_site>/instance_seed/<your_site>.db
@@ -228,6 +239,38 @@ No cross-imports between `sites/<a>/` and `sites/<b>/`. Image runs one Python pr
 | `/reset` returns but DB still dirty | Popen handle leaked; zombie not reaped    | `_site_procs` dict in `control_server.py`  |
 | Byte-identity fails post-reset      | seed not fully idempotent                 | gate every `seed_*()` function             |
 | Image bloats > 4 GB                 | shipped `scraped_data/` or `instance/`    | `.dockerignore`                            |
+
+## PR integration preference
+
+Code and required HF assets must be integrated together (user requirement,
+2026-09-17). Authorization to merge a reviewed code PR includes publishing and
+merging its required asset changes into `ChilleD/WebHarbor`; do not leave its
+asset dependencies on open HF PRs and call the integration complete.
+
+Before merging code, identify its original asset PRs and any locally modified
+bundles. Publish the reviewed replacements when needed, merge the required HF
+PRs in dependency order while preserving unrelated dataset assets, and verify
+the actual HF merge status. Update `.assets-revision` to tested immutable merged
+revisions, then freshly fetch and validate the combined code/assets, including
+the required build and reset checks. An accessible open-PR commit is not a merged
+asset revision. Tracked build-time seed generation/migrations need not cause an
+unnecessary archive rewrite, but their source asset dependencies must be merged.
+If HF integration is blocked, report it before merging code unless the user
+explicitly approves an exception. Docker image publication and deployment remain
+separate stages and are not implied by this requirement.
+
+For stacked contributions, preserve the original PR ancestry and integrate in
+dependency order: original contribution, reviewer continuation, then follow-up
+fixes. Do not replace that sequence with a copied/squashed integration PR unless
+the user explicitly requests it.
+
+If a combined replacement PR has already merged and the original PR history still
+needs integration, the user's preferred future recovery is a revert PR followed
+by the original PRs in dependency order and a new PR reapplying the reviewed fixes.
+Plan and validate the whole sequence, obtain authorization for the rollback/merges,
+and never force-push shared main. History-only reconciliation while retaining the
+replacement is an explicit exception chosen for PRs #35/#88 after #127, not the
+default for future cases (preference recorded 2026-09-17).
 
 ## When you finish
 

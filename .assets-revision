@@ -1,33 +1,5 @@
-# Hugging Face dataset holding webharbor's heavy static assets
-# (instance_seed/*.db, static/images/, static/external_cache/).
-#
-# fetch_assets.sh uses the `hf download` CLI. The pin below
-# is a git revision (branch name like `main`, a tag, or a specific commit
-# sha). Override at runtime with the ASSETS_REVISION env var.
-#
-# The revision is a commit sha, never a moving branch name.
-#
-# Current pin = the commit that HF dataset `main` points at (verified
-# 2026-09-13). It carries the merged HF dataset PR #74 ("Upload kaggle.tar.gz
-# with huggingface_hub") and the later PR #75 ("Add reviewed NVIDIA asset
-# bundle"), so this sha is on HF `main`.
-#
-# Why this sha and not the other candidate (refs/pr/37, resolved
-# 600a3e1de158ae56dc82a5fab56c2ca25acb1e27):
-#   * this revision carries an archive for every registered site (28 of 28), and
-#     the kaggle seed DB it ships was found identical to the seed the site's own
-#     code generates (13/13 tables, row by row) in the PR #106 audit;
-#   * refs/pr/37 ships an older kaggle seed (models table has 10 rows instead of
-#     11: densenet121-chestxray is absent) and its archives cover only 17 of the
-#     28 registered sites, so pinning there would break fetch_assets.sh.
-#   * this revision's kaggle.tar.gz (sha256
-#     dd6f1ab34f99989b300e3366225a8f8b0932d49d033b48f141938d16f1c0607d,
-#     11278106 bytes) passes the repository's own
-#     scripts/validate_asset_archive.py:
-#         [fetch] validated 73 managed members for kaggle
-#     That 73-member pack has no directory entries, so the earlier
-#     `ValueError: unexpected managed path: 'kaggle/static'` rejection (from the
-#     superseded 11278264-byte pack, sha256 c533c283...) no longer applies and
-#     `scripts/fetch_assets.sh` installs sites/kaggle's assets from this pin.
+# All 49 registered sites use this immutable merged HF main revision.
+# Bandcamp HF #94 is merged; all 51 unrelated dataset files are unchanged.
+# assets-manifest.json binds archives and the extracted managed tree.
 repo: ChilleD/WebHarbor
-revision: 64264d065cdb0b7755ee99dab356be5733d9ddef
+revision: e82d584da9eb2b138f8db71fb28f50438860b17d
