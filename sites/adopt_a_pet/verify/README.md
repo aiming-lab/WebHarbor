@@ -45,7 +45,8 @@ query containing the state token (`Phoenix, AZ`, `Arizona`, `AZ`, `Tucson AZ`) r
 Arizona pet, while a bare city (`Phoenix`) returns only that city. `verify_lib.AZ_WIDE` therefore
 accepts any query whose tokens contain `az` or `arizona`. Result pages hold 6 cards; hidden facts
 (fee, months, color, house-trained, good-with-*) are only on `/pet/<slug>`; shelter phone / e-mail
-are only on `/shelter/<id>`.
+are only on `/shelter/<id>`. Duplicate query keys use the first value, matching Flask,
+including location, breed, species, page and shelter queries.
 
 ## Per-task contract
 
@@ -73,11 +74,19 @@ are only on `/shelter/<id>`.
 | 19 | read | `/search` AZ-wide, species=Dog **and** `page=2`; all 8 AZ dog profiles | winner name, city, both breeds, months, `$fee`, attached to "lowest" |
 
 Answer matchers are affirmative and negation-aware (`not $165`, `isn't good with cats` do not
-count as matches). Money accepts `$165`, `$165.00`, `165 dollars`; months accept `36 months`,
-`36-month-old`, `36 mo`; yes/no statements accept `X: Yes`, `X? No`, `not X`, `she is X`,
+count as matches). Money accepts `$165`, `$165.00`, `165 dollars`, and `one hundred sixty-five dollars`; months accept `36 months`,
+`36-month-old`, `36 mo`, and written numbers such as `seven months`; yes/no statements accept `X: Yes`, `X? No`, `not X`, `she is X`,
 `X and Y: No`, `neither X nor Y`. Comparison answers must attach the winner to the comparison
 word (`lowest` / `cheaper` / `youngest`, or the inverse `more expensive` on a loser); a bare
 report that names only the winner also passes, a list of candidates without a pick does not.
+
+Fees and ages are associated with the named pet in prose, bullets and table rows.
+Task 5 also binds species to each pet. Complete monetary tokens are required:
+`$225.99` cannot match `$225`, a donation is not an adoption fee, and conflicting
+fee/age assertions reject. Negated and contradictory comparison claims reject.
+These are conservative deterministic parsers, not general language understanding;
+complex cross-sentence references and implicit table units may require manual review.
+Task instructions retain natural wording and require no special answer format.
 
 ## Tests
 

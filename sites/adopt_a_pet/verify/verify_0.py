@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import ground_truth as GT  # noqa: E402
 from verify_lib import (  # noqa: E402
-    Judge, check_read_only, check_search_visited, check_trajectory_identity, check_visited_pet,
+    entity_text, Judge, check_read_only, check_search_visited, check_trajectory_identity, check_visited_pet,
     contains_all, contains_money, final_answer, run_verifier,
 )
 
@@ -33,7 +33,7 @@ def run_checks(judge: Judge, traj: dict, initial_db: str, after_db: str) -> None
                 f"expected={PET['age_group']!r}, answer={answer!r}")
     judge.check("answer_has_size", contains_all(answer, [PET["size"]]),
                 f"expected={PET['size']!r}, answer={answer!r}")
-    judge.check("answer_has_fee", contains_money(answer, PET["fee"]),
+    judge.check("answer_has_fee", contains_money(entity_text(answer, PET["name"], [p["name"] for p in GT.PETS], allow_unnamed=True), PET["fee"]),
                 f"expected=${PET['fee']}, answer={answer!r}")
     check_read_only(judge, initial_db, after_db)
 

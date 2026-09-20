@@ -200,12 +200,12 @@ def _query_of(url: str) -> dict[str, list[str]]:
 def _location_ok(query: dict[str, list[str]], location_any: Sequence[set[str]] | None) -> bool:
     if not location_any:
         return True
-    recorded = _tokens(" ".join(query.get("location") or []))
+    recorded = _tokens((query.get("location") or [""])[0])
     return any(set(alt) <= recorded for alt in location_any)
 
 
 def _param_ok(query: dict[str, list[str]], key: str, expected: Any) -> bool:
-    values = [normalize_text(v) for v in (query.get(key) or [])]
+    values = [normalize_text(v) for v in (query.get(key) or [])[:1]]
     if key == "breed":
         return any(normalize_text(expected) in v for v in values)
     if isinstance(expected, (tuple, list, set, frozenset)):
@@ -236,7 +236,7 @@ def shelters_search_visited(traj: dict[str, Any], q_any: Sequence[set[str]]) -> 
     for url in site_urls(traj):
         if normalized_url_path(url) != "/shelters":
             continue
-        recorded = _tokens(" ".join(_query_of(url).get("q") or []))
+        recorded = _tokens((_query_of(url).get("q") or [""])[0])
         if any(set(alt) <= recorded for alt in q_any):
             return True
     return False
@@ -327,23 +327,86 @@ def digits_only(value: Any) -> str:
     return re.sub(r"\D", "", str(value or ""))
 
 
+def number_words(text: Any) -> str:
+    """Normalize ordinary English integer phrases, retaining units and punctuation."""
+    small = dict(zip("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen".split(), range(20)))
+    small.update(dict(zip("twenty thirty forty fifty sixty seventy eighty ninety".split(), range(20, 100, 10))))
+    words = "|".join([*small, "hundred", "thousand"])
+    pattern = rf"\b(?:{words})(?:(?:[ -]+(?:and[ -]+)?)(?:{words}))*\b"
+    def convert(match):
+        total = current = 0
+        for word in re.split(r"[ -]+", match.group()):
+            if word == "and":
+                continue
+            if word == "hundred":
+                current *= 100
+            elif word == "thousand":
+                total += current * 1000
+                current = 0
+            else:
+                current += small[word]
+        return str(total + current)
+    return re.sub(pattern, convert, normalize_text(text))
+
+
+MONEY = r"(?<![\w.$])(?:\$\s*|usd\s+)(\d+(?:,\d{3})*(?:\.\d+)?)(?![\w]|[.,]\d)|(?<![\w.$])(\d+(?:,\d{3})*(?:\.\d+)?)\s*(?:dollars|usd|bucks)\b"
+MONTHS = r"(?<![\w.$])(\d+(?:\.\d+)?)(?!\d)\s*-?\s*(?:months?|mos?)\b"
+
+
+def _quantity(text: Any, amount: int, pattern: str, fee: bool = False) -> bool:
+    from decimal import Decimal
+    normalized = "\n".join(number_words(line) for line in str(text).splitlines())
+    values = []
+    for match in re.finditer(pattern, normalized):
+        before = re.split(r"[;!\n]|(?<!\d)\.(?!\d)", normalized[:match.start()])[-1]
+        # Donations and other prices are not adoption fees. An explicit fee label
+        # after such a label starts a new property assertion.
+        if fee:
+            labels = list(re.finditer(r"\b(?:donation|shipping|tax|reference|adoption fee|fee|price|cost)\b", before))
+            if labels and labels[-1].group() in {"donation", "shipping", "tax", "reference"}:
+                continue
+            if re.match(r"\s*(?:is\s+(?:an?\s+)?)?(?:donation|shipping|tax|reference)\b", normalized[match.end():]):
+                continue
+        value = Decimal(next(g for g in match.groups() if g is not None).replace(",", ""))
+        if fee:
+            cents = re.match(r"\s*,?\s*(?:and\s+)?(\d+)\s+cents\b", normalized[match.end():])
+            if cents:
+                value += Decimal(cents.group(1)) / 100
+        if not _match_is_affirmative(normalized, match):
+            if value == amount:
+                return False
+            continue
+        values.append(value)
+    return bool(values) and all(value == amount for value in values)
+
+
 def contains_money(text: Any, amount: int) -> bool:
-    """``$165``, ``165 dollars``, ``USD 165``, ``$165.00``; not ``$1650`` or ``165 months``."""
-    normalized = normalize_text(text)
-    amount = int(amount)
-    patterns = [
-        rf"(?<![\d.])\$\s*{amount}(?:\.00)?(?![\d])",
-        rf"(?<![\d.$]){amount}(?:\.00)?\s*(?:dollars|usd|bucks)\b",
-        rf"\busd\s*{amount}(?:\.00)?(?![\d])",
-    ]
-    return any(_affirmative_search(p, normalized) for p in patterns)
+    """A complete affirmative fee, with no conflicting fee in this entity's text."""
+    return _quantity(text, amount, MONEY, fee=True)
 
 
 def contains_months(text: Any, months: int) -> bool:
-    """``36 months``, ``36-month-old``, ``36 mo``, ``36 mos.``; not ``136 months``."""
-    normalized = normalize_text(text)
-    months = int(months)
-    return _affirmative_search(rf"(?<![\d.]){months}(?![\d])\s*-?\s*(?:months?|mos?)\b\.?", normalized)
+    return _quantity(text, months, MONTHS)
+
+
+def entity_text(text: Any, name: str, names: Sequence[str], allow_unnamed: bool = False) -> str:
+    """Associate prose/list/table facts with the preceding named pet.
+
+    Preserve line boundaries for quantity/polarity checks. Repeated descriptions
+    are retained so conflicting assertions cannot be hidden by a correct one.
+    """
+    raw = unicodedata.normalize("NFKC", str(text)).casefold()
+    pattern = r"(?<!\w)(?:" + "|".join(re.escape(n.casefold()) for n in names) + r")(?!\w)"
+    hits = list(re.finditer(pattern, raw))
+    if not hits:
+        return raw if allow_unnamed or len(names) == 1 else ""
+    return "\n".join(raw[m.start():hits[i+1].start() if i+1 < len(hits) else len(raw)]
+                     for i, m in enumerate(hits) if m.group() == name.casefold())
+
+
+def pet_species(text: Any, species: str) -> bool:
+    opposite = "Cat" if species == "Dog" else "Dog"
+    return contains_all(text, [species]) and not contains_all(text, [opposite])
 
 
 def contains_count(text: Any, number: int) -> bool:
@@ -484,13 +547,26 @@ def identifies(text: Any, winner: str, others: Sequence[str], keyword_pattern: s
     w = normalize_text(winner)
     normalized = normalize_text(text)
     winner_named = bool(re.search(r"(?<!\w)" + re.escape(w) + r"(?!\w)", normalized))
-    nearest = name_nearest_keyword(text, keyword_pattern, names)
-    if nearest is not None:
-        return nearest == w
-    if inverse_pattern:
-        nearest = name_nearest_keyword(text, inverse_pattern, names)
-        if nearest is not None:
-            return nearest != w and winner_named
+    claims = []
+    for clause in re.split(r"[;!\n]|(?<!\d)\.(?!\d)|\b(?:but|however)\b|\band (?=\w+ (?:is|has|was|costs)\b)", str(text).casefold()):
+        for pattern, inverse in ((keyword_pattern, False), (inverse_pattern, True)):
+            if not pattern:
+                continue
+            for match in re.finditer(pattern, clause):
+                # Limit resolution to this comparison, while retaining its subject.
+                next_claim = re.search(pattern, clause[match.end():])
+                part = clause[:match.end() + next_claim.start()] if next_claim else clause
+                nearest = name_nearest_keyword(part, pattern, names)
+                if nearest is None:
+                    return False
+                following = clause[match.end():]
+                next_name = _first_name_in(following, [normalize_text(n) for n in names])
+                predicate = following[:next_name[0]] if next_name else following
+                if not _match_is_affirmative(clause, match) or re.search(NEGATION, predicate):
+                    return False
+                claims.append((nearest != w if inverse else nearest == w) and winner_named)
+    if claims:
+        return all(claims)
     if not winner_named:
         return False
     return not any(re.search(r"(?<!\w)" + re.escape(normalize_text(o)) + r"(?!\w)", normalized) for o in others)
