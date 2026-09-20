@@ -42,6 +42,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+from urllib.parse import urlsplit
 
 SITE = "booking"
 DB_FILENAME = "booking.db"
@@ -156,10 +157,36 @@ def step_urls(traj):
     return out
 
 
+def _origin(traj):
+    """Netloc of the run's start_url ('' when unavailable)."""
+    try:
+        return urlsplit((traj.get("start_url") or "").strip()).netloc.lower()
+    except Exception:
+        return ""
+
+
+def same_origin_urls(traj):
+    """Step URLs that belong to the mirror: same netloc as the run's start_url
+    (relative paths count as same-origin). A foreign-host URL whose path merely
+    contains the check substring (e.g. 'https://elsewhere/search?q=london')
+    never satisfies a navigation check."""
+    org = _origin(traj)
+    if not org:
+        return step_urls(traj)  # no origin to pin against: fall back to raw URLs
+    out = []
+    for u in step_urls(traj):
+        s = (u or "").strip()
+        if s.startswith("/"):
+            out.append(u)
+        elif urlsplit(s).netloc.lower() == org:
+            out.append(u)
+    return out
+
+
 def navigated_to(traj, substr, times=1):
-    """Case-insensitive substring match on recorded step URLs (space-normalized)."""
+    """Case-insensitive substring match on same-origin step URLs (space-normalized)."""
     needle = _needlenorm(substr).lower()
-    return sum(1 for u in step_urls(traj) if needle in _urlnorm(u).lower()) >= times
+    return sum(1 for u in same_origin_urls(traj) if needle in _urlnorm(u).lower()) >= times
 
 
 def navigated_any(traj, substrs):
@@ -171,15 +198,20 @@ def visited_property(traj, slug):
 
 
 def visited_root(traj):
-    """True when some step URL is the bare site origin (the mirror homepage)."""
-    return any(re.match(r"^https?://[^/]+/?$", u) for u in step_urls(traj))
+    """True when some same-origin step URL is the bare site origin (homepage)."""
+    org = _origin(traj)
+    for u in same_origin_urls(traj):
+        m = re.match(r"^https?://([^/?#]+)/?\s*$", u)
+        if m and (not org or m.group(1).lower() == org):
+            return True
+    return False
 
 
 def search_url_with(traj, must_have_all):
-    """True when some visited URL is a /search page whose query string contains
-    every required param substring (e.g. ['q=london', 'breakfast=1']). Spaces in
-    the check strings match URL-encoded '+' or %20."""
-    for u in step_urls(traj):
+    """True when some same-origin visited URL is a /search page whose query
+    string contains every required param substring (e.g. ['q=london',
+    'breakfast=1']). Spaces in the check strings match URL-encoded '+' or %20."""
+    for u in same_origin_urls(traj):
         if "/search" not in u:
             continue
         nu = _urlnorm(u).lower()
@@ -206,6 +238,67 @@ def contains_all(final, tokens):
 def contains_any(final, tokens):
     f = norm(final)
     return any(norm(t) in f for t in tokens)
+
+
+# ----------------------------------------------------- negation awareness
+# Same convention as arxiv verify_28: a fact token mentioned inside a DENIED
+# clause ('no deal', 'does not include breakfast', 'without wifi') is not an
+# affirmative statement of the fact.
+_NEG_CUE = re.compile(r"\b(?:no|none|zero|without|lack(?:s|ing)?|missing|absent|not|n'?t|never|nor|neither)\b")
+_NEG_PREDICATE = re.compile(r"\b(?:unavailable|missing|absent|not\s+(?:available|provided|accessible|offered|included))\b")
+# cues that also deny a COUNT match ('5 properties are left, not 3',
+# '6 options available, though some say 3', 'definitely not 3 hotels'):
+# negators, contrast/discourse markers and attribution verbs, plus the
+# comparative quantifiers ('fewer/less/more than 3' is not a claim of exactly 3).
+_COUNT_DENY_CUE = re.compile(r"\b(?:no|none|zero|without|lack(?:s|ing)?|missing|absent|not|n'?t|never|nor|neither|"
+                             r"but|however|though|although|yet|rather|instead|"
+                             r"say|said|claim|think|believe|suppose|report|expect|assume|mention|"
+                             r"fewer|less|more)\b")
+
+
+def _clause_start(f, i):
+    """Index just after the last clause break ('.' ';' '!' '?' ':' ',') at or
+    before i, so a cue and a token separated by such punctuation are handled
+    as separate clauses ('..., not Booking Holdings' keeps its own clause)."""
+    return max(f.rfind(c, 0, i) for c in ".;!?,:") + 1
+
+
+def mention_negated(f, i, token):
+    """True when the occurrence of `token` at f[i:i+len(token)] is DENIED:
+    a negation cue in the same clause within 80 chars before it, or a negative
+    predicate after it in the same sentence. Idioms that do not deny the token
+    ('not only', 'no doubt') are ignored."""
+    cstart = _clause_start(f, i)
+    pre = f[cstart:i]
+    for m in _NEG_CUE.finditer(pre):
+        tail = pre[m.start():]
+        if tail.startswith("not only") or tail.startswith("no doubt"):
+            continue
+        if i - (cstart + m.end()) <= 80:
+            return True
+    post = f[i + len(token):]
+    sent_end = min([pos for pos in (post.find(c) for c in ".;!?") if pos >= 0]
+                   or [len(post)])
+    return bool(_NEG_PREDICATE.search(post[:sent_end]))
+
+
+def contains_affirmative(final, tokens):
+    """True when at least one occurrence of at least one token is stated
+    AFFIRMATIVELY. A token that appears only inside denied clauses ('has no
+    deal', 'does not include breakfast') yields False, so an answer naming the
+    right entity while denying the required fact FAILs."""
+    f = norm(final)
+    for t in tokens:
+        tn = norm(t)
+        start = 0
+        while True:
+            i = f.find(tn, start)
+            if i < 0:
+                break
+            if not mention_negated(f, i, tn):
+                return True
+            start = i + len(tn)
+    return False
 
 
 def mentions_one_of(final, names, variants=None):
@@ -241,13 +334,35 @@ def price_in(final, price, tol=0.51):
 
 
 def count_claim(final, number, words=("hotel", "propert", "result", "option", "left", "available", "match")):
-    """True when the answer claims `number` as a count of one of the given
-    word stems ('3 hotels', 'there are 3 properties', '3 left after ...')."""
+    """True when the answer CLAIMS `number` as a count of one of the given word
+    stems ('3 hotels', 'there are 3 properties', '3 left after ...').
+    Polarity-aware (same convention as arxiv verify_28): a match whose digit is
+    denied or merely attributed does not count --
+      * a digit-first claim ('3 hotels') is rejected when a denial cue is glued
+        before the digit in the same clause ('definitely not 3 hotels', 'fewer
+        than 3 results'); the idioms 'not only' / 'no doubt' are not denials;
+      * a word-first match ('properties ... 3') is rejected when a cue sits
+        between the count word and the digit ('5 properties are left, not 3',
+        '6 options available, though some say 3') -- the digit is contradicted,
+        contrasted or attributed there, not claimed."""
     f = norm(final)
     n = str(number)
     for w in words:
-        if re.search(rf"(?<![\d.]){n}(?![\d])[^.;]{{0,40}}{w}", f) or \
-           re.search(rf"{w}[^.;]{{0,40}}(?<![\d.]){n}(?![\d])", f):
+        for m in re.finditer(rf"(?<![\d.]){n}(?![\d])[^.;]{{0,40}}{w}", f):
+            seg = f[_clause_start(f, m.start()):m.start()][-30:]
+            denied = False
+            for cm in _COUNT_DENY_CUE.finditer(seg):
+                tail = seg[cm.start():]
+                if not (tail.startswith("not only") or tail.startswith("no doubt")):
+                    denied = True
+                    break
+            if denied:
+                continue
+            return True
+        for m in re.finditer(rf"{w}[^.;]{{0,40}}(?<![\d.]){n}(?![\d])", f):
+            between = f[m.start() + len(w):m.end() - len(n)]
+            if _COUNT_DENY_CUE.search(between):
+                continue
             return True
     return False
 
@@ -381,7 +496,8 @@ def booking_db_delta(initial_db, after_db, allowed_property_ids,
         seeded cart items the checkout legitimately consumed);
       * cart_item rows REMOVED only when they belonged to the acting user and
         existed in the seed (bag cleanup / checkout consumption);
-      * saved_property rows ADDED for an allowed property;
+      * saved_property rows ADDED for an allowed property (removals are never
+        invited and are violations);
       * user rows ADDED (a fresh registration) with no changes/removals;
       * every other table must be identical.
     check_fn(cart_item_row) -> bool optionally validates extra row fields
@@ -466,13 +582,19 @@ def booking_db_delta(initial_db, after_db, allowed_property_ids,
         if uid not in acting_ids:
             violations.append(f"cart_item: removed a row of user_id={uid}")
 
-    # saved_property: adds for allowed properties only
+    # saved_property: additions only for allowed properties; removals/modifications
+    # are never part of the invited booking flow (wishlist edits are not consumed
+    # by checkout, so a deleted seeded favorite is an uninvited mutation)
     before_sp = {repr(r) for r in _rows(initial_db, "saved_property")}
-    after_sp = [r for k, r in {repr(r): r for r in _rows(after_db, "saved_property")}.items() if k not in before_sp]
+    after_sp_map = {repr(r): r for r in _rows(after_db, "saved_property")}
+    after_sp = [r for k, r in after_sp_map.items() if k not in before_sp]
     for r in after_sp:
         pid = r[2] if len(r) > 2 else None
         if pid not in allowed:
             violations.append(f"saved_property: added row for property_id={pid} (not an allowed property)")
+    gone_sp = [k for k in before_sp if k not in after_sp_map]
+    if gone_sp:
+        violations.append(f"saved_property: {len(gone_sp)} row(s) removed/changed (wishlist edits are not part of the booking flow)")
 
     # every other table identical
     for t in TABLES:

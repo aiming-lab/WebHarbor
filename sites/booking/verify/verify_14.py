@@ -6,8 +6,10 @@ Louvre in Paris for the weekend of March 3-5, 2024 (login + book).
 
 Ground truth (hardcoded; confirmed by browsing the served mirror pages — the
 catalog is fixed by the seed DB, no wall-clock or upstream content involved):
-    Paris pool+WiFi properties near the Louvre (Louvre landmark tag or within
-    1.5 miles of the Louvre) with a high rating: Drawing House, Hotel Le Louvre Paris, Melia Paris Louvre.
+    Paris pool+WiFi properties near the Louvre -- (Louvre landmark tag or
+    within 1.5 miles of the Louvre) AND rated 8.0 or higher (the task's
+    "highly-rated" wording; e.g. Hotel Nolinski Paris is Louvre-tagged at 7.9
+    and therefore excluded): Drawing House, Hotel Le Louvre Paris, Melia Paris Louvre.
     The reservation must carry the March 3-5 dates.
 
 Checks: run-package gate + non-empty answer + navigation (anti-shortcut) +
@@ -18,7 +20,8 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, grade_booking, navigated_to, navigated_any,
                         visited_property, visited_root, search_url_with,
-                        contains_all, contains_any, mentions_one_of, price_in,
+                        contains_all, contains_any, contains_affirmative,
+                        mentions_one_of, price_in,
                         count_claim, first_mention, norm, step_urls, Judge,
                         parse_args)
 

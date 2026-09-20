@@ -39,6 +39,65 @@ BOOKING_TASKS = {6: (109, "2024-01-22", "2024-01-25"),      # Luskin Hotel
                  13: (185, "2024-02-14", "2024-02-21"),     # Le Marais Suites
                  14: (275, "2024-03-03", "2024-03-05")}     # Melia Paris Louvre
 
+# ---------------------------------------------------------------- acceptor probes (rework D1/D2)
+# The independent acceptor's adversarial probe packages (reports/booking/runs/acc/
+# probes/), reproduced verbatim as synthetic packages: the same navigation, the
+# same task ids and the same final answers. Each probe states the RIGHT entity
+# with the required fact DENIED ("... not 3", "no deal", "does not include
+# breakfast", "... , not Booking Holdings") and must FAIL: the count helper is
+# polarity-aware and the mention checks require an AFFIRMATIVE occurrence.
+NEGATION_PROBES = {
+    "p1": (30, ["/search?q=London&breakfast=1&gym=1"],
+           "After applying the Breakfast included and Fitness center filters, 5 properties are left, not 3."),
+    "q1": (30, ["/search?q=London&breakfast=1&gym=1"],
+           "Applying both filters leaves 6 options available, though some say 3."),
+    "p4": (32, ["/search?q=Sydney&pool=1&airport_shuttle=1"],
+           "With the Swimming Pool and Airport Shuttle filters applied, 4 hotels are available, not 3."),
+    "q2": (32, ["/search?q=Sydney&pool=1&airport_shuttle=1"],
+           "Only 2 results are available; definitely not 3 hotels."),
+    "r0": (0, ["/search?q=Mexico&checkin=2025-12-25&checkout=2025-12-26",
+                "/property/st-regis-mexico-city-mexico-city"],
+           "St. Regis Mexico City has no deal and no discount for December 25-26; it costs $209 per night."),
+    "r4": (4, ["/search?q=Kashi+Vishwanath+Temple&breakfast=1"],
+           "Kashi Vishwanath Guest House is the cheapest at $37 but it does not include breakfast."),
+    "r5": (5, ["/search?q=Bali&wifi=1&air_conditioning=1"],
+           "Four Seasons Sayan in Bali has no free WiFi and no air conditioning."),
+    "r22": (22, ["/search?q=Amsterdam"],
+            "Tribe Amsterdam City is rated 9.3 and does not offer bicycle rental."),
+    "r28": (28, ["/search?q=Dubai"],
+            "Atlantis The Palm in Dubai has no swimming pool for the week-long stay."),
+    "r39": (39, ["/search?q=Toronto&pet_friendly=1&parking=1"],
+            "Four Seasons Hotel Toronto allows no pets and has no parking."),
+    "q3": (41, ["/", "/about"],
+            "Booking.com belongs to Expedia Group, not Booking Holdings."),
+}
+
+# the first check each probe must now FAIL on (verifier check names)
+PROBE_EXPECT_REASON = {"p1": "answer_count", "q1": "answer_count", "p4": "answer_count",
+                       "q2": "answer_count", "r0": "answer_states_the_deal",
+                       "r4": "answer_mentions_breakfast", "r5": "answer_mentions_wifi_and_ac",
+                       "r22": "answer_mentions_bicycle", "r28": "answer_mentions_pool",
+                       "r39": "answer_mentions_pet_and_parking", "q3": "answer_parent_company"}
+
+# legitimate affirmative phrasings (incl. the 'not only' idiom and negations in
+# OTHER clauses) that must keep PASSing after the negation guards -- regression
+# guard against over-blocking.
+AFFIRMATIVE_GUARDS = {
+    0: (["/search?q=Mexico&checkin=2024-12-25&checkout=2024-12-26",
+         "/property/polanco-boutique-hotel-mexico-city"],
+        "Not only does the Polanco Boutique Hotel have a Genius deal, it is the cheapest deal in Mexico City at $122 per night."),
+    4: (["/search?q=Kashi+Vishwanath+Temple&breakfast=1"],
+        "Breakfast is included at the Kashi Vishwanath Guest House, which costs $37 per night."),
+    28: (["/search?q=Dubai"],
+         "The Lana - Dorchester Collection has a swimming pool; not every Dubai hotel does."),
+    30: (["/search?q=London&breakfast=1&gym=1"],
+         "There are exactly 3 properties left after applying the Breakfast included and Fitness center filters."),
+    32: (["/search?q=Sydney&pool=1&airport_shuttle=1"],
+         "The filters leave 3 hotels available, with a pool and an airport shuttle for each."),
+    41: (["/", "/about"],
+         "Booking.com belongs to Booking Holdings Inc. (NASDAQ: BKNG), not to Expedia Group."),
+}
+
 # ---------------------------------------------------------------- positives
 P = {}
 P[0] = ([f"{ORIGIN}search?q=Mexico&checkin=2024-12-25&checkout=2024-12-26",
@@ -271,6 +330,61 @@ def expect(cond, label, sub):
         raise AssertionError(f"[{label}] {sub}")
 
 
+def run_negation_probes():
+    """Acceptor probes D1/D2: a correct entity with the required fact DENIED
+    must FAIL (count polarity + affirmative mention). Each probe is graded as a
+    well-formed package with the task's real navigation and seed DBs."""
+    for name, (n, paths, answer) in sorted(NEGATION_PROBES.items(), key=lambda kv: (kv[1][0], kv[0])):
+        urls = [ORIGIN[:-1] + p for p in paths]
+        d = build_run(n, urls, answer)
+        rc, v = run_verifier(n, d, SEED_DB, SEED_DB)
+        expect(rc == 1 and v.get("pass") is False, f"probe {name} T{n}",
+               f"negation probe must FAIL, got rc={rc} v={v}")
+        expect(v.get("reason") == PROBE_EXPECT_REASON[name], f"probe {name} T{n}",
+               f"expected first-fail {PROBE_EXPECT_REASON[name]}, got {v.get('reason')}")
+        print(f"OK  probe {name} T{n} FAIL ({PROBE_EXPECT_REASON[name]})")
+    # affirmative guards: legitimate phrasings (idioms, other-clause negations)
+    # must keep PASSing -- the guards may not over-block.
+    for n, (paths, answer) in sorted(AFFIRMATIVE_GUARDS.items()):
+        urls = [ORIGIN[:-1] + p for p in paths]
+        d = build_run(n, urls, answer)
+        rc, v = run_verifier(n, d, SEED_DB, SEED_DB)
+        expect(rc == 0 and v.get("pass") is True, f"guard T{n}",
+               f"affirmative phrasing must PASS, got rc={rc} v={v}")
+        print(f"OK  guard T{n} affirmative PASS")
+
+
+def run_hardening_negatives():
+    """Rework D9/D10: a booking run that also DELETES a seeded saved_property
+    must FAIL the DB check, and a foreign-host navigation URL must not satisfy
+    a nav check even when its path contains the required substrings."""
+    # D9: invited cart add + an uninvited saved_property removal
+    after = synth_after_db(6)
+    con = sqlite3.connect(after)
+    sp = con.execute("SELECT id FROM saved_property ORDER BY id LIMIT 1").fetchone()
+    con.execute("DELETE FROM saved_property WHERE id=?", (sp[0],))
+    con.commit(); con.close()
+    urls, answer = P[6]
+    d = build_run(6, urls, answer)
+    rc, v = run_verifier(6, d, SEED_DB, after)
+    expect(rc == 1 and v.get("pass") is False, "D9 T6",
+           f"saved_property removal must FAIL, got rc={rc} v={v}")
+    expect(v.get("reason") == "db_state", "D9 T6", f"expected db_state, got {v.get('reason')}")
+    print("OK  D9 T6 saved_property-removal FAIL (db_state)")
+    # D10: foreign-host URL with the right path must not count as navigation
+    # (the run's start_url is the legitimate mirror origin; only the recorded
+    # search step points at a foreign host whose path carries the substrings)
+    urls, answer = P[30]
+    foreign = [f"{ORIGIN}", f"https://foreign.example/search?q=London&breakfast=1&gym=1"]
+    d = build_run(30, foreign, answer)
+    rc, v = run_verifier(30, d, SEED_DB, SEED_DB)
+    expect(rc == 1 and v.get("pass") is False, "D10 T30",
+           f"foreign-host nav must FAIL, got rc={rc} v={v}")
+    expect(v.get("reason") == "nav_london_bkf_gym_filters", "D10 T30",
+           f"expected nav_london_bkf_gym_filters, got {v.get('reason')}")
+    print("OK  D10 T30 foreign-host nav FAIL (nav_london_bkf_gym_filters)")
+
+
 def main():
     from collections import defaultdict
     fails = defaultdict(list)
@@ -345,6 +459,9 @@ def main():
         assert (REPO / r["verifier_path"]).exists(), f"missing verifier {r['verifier_path']}"
         assert r["judge_rubric"].startswith("FACT CHECKPOINTS.") and len(r["judge_rubric"]) > 100, f"row {i} rubric"
     print("OK  tasks.jsonl contract: 44 rows, exact keys, no answer, verifiers exist, rubrics present, originals byte-identical")
+
+    run_negation_probes()
+    run_hardening_negatives()
     print("\nALL CONTRACT TESTS PASSED")
 
 
@@ -376,6 +493,14 @@ def test_clear_cdp_state_tool_source_contract():
 def test_grading_contract():
     """One pytest entry point running the full per-task matrix + contract checks."""
     main()
+
+
+def test_negation_probes_and_hardening():
+    """Pytest entry point for the acceptor-probe negatives (D1 count polarity,
+    D2 affirmative mentions), the affirmative regression guards, and the D9/D10
+    hardening negatives."""
+    run_negation_probes()
+    run_hardening_negatives()
 
 
 if __name__ == "__main__":

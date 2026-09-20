@@ -15,7 +15,8 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, grade_booking, navigated_to, navigated_any,
                         visited_property, visited_root, search_url_with,
-                        contains_all, contains_any, mentions_one_of, price_in,
+                        contains_all, contains_any, contains_affirmative,
+                        mentions_one_of, price_in,
                         count_claim, first_mention, norm, step_urls, Judge,
                         parse_args)
 
@@ -51,7 +52,7 @@ def main():
     named = mentions_one_of(fa, list(ALLOWED), ALLOWED)
     j.check("answer_names_qualifying_hotel", bool(named),
             f"final={fa[:200]!r} expected one of {len(ALLOWED)} qualifying properties")
-    j.check("answer_mentions_pool", contains_any(fa, ["pool"]),
+    j.check("answer_mentions_pool", contains_affirmative(fa, ["pool"]),
             f"final={fa[:200]!r}")
     j.emit()
 

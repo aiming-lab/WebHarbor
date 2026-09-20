@@ -21,7 +21,8 @@ import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, grade_booking, navigated_to, navigated_any,
                         visited_property, visited_root, search_url_with,
-                        contains_all, contains_any, mentions_one_of, price_in,
+                        contains_all, contains_any, contains_affirmative,
+                        mentions_one_of, price_in,
                         count_claim, first_mention, norm, step_urls, Judge,
                         parse_args)
 
@@ -50,7 +51,7 @@ def main():
                 f"final={fa[:200]!r} accepted={PRICES[named]}")
     else:
         j.check("answer_price", False, "no named property")
-    j.check("answer_mentions_breakfast", contains_any(fa, ["breakfast"]),
+    j.check("answer_mentions_breakfast", contains_affirmative(fa, ["breakfast"]),
             f"final={fa[:200]!r}")
     j.emit()
 
