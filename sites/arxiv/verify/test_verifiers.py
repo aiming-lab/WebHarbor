@@ -511,9 +511,13 @@ def test_wrong_answer_fail(task, workdir):
     assert verdict.get("reason") != "run_package_answer", json.dumps(verdict, indent=1)
 
 
-# task-specific extra negatives (e.g. hallucinated day labels for task 40)
+# task-specific extra negatives (e.g. hallucinated day labels for task 40;
+# task 28's semantically-negated HTML-access verdict found by acceptance D1)
 EXTRA_NEGATIVES = {
     40: lambda fixture: fixture["extra_neg"],
+    28: lambda fixture: ("The arXiv title search for 'Poly encoder' returned 0 "
+                         "results. Therefore, there are no articles in the "
+                         "search results providing HTML access."),
 }
 
 
@@ -526,6 +530,43 @@ def test_extra_negative_fail(task, workdir):
     assert code == 1 and verdict.get("pass") is False
     assert verdict.get("reason") not in ("run_package_answer", "answer_day_counts_3_and_2"), \
         json.dumps(verdict, indent=1)
+    if task == 28:
+        # the negated verdict must be caught by the polarity check itself
+        assert verdict.get("reason") == "answer_html_access_available", \
+            json.dumps(verdict, indent=1)
+
+
+# paraphrase positives: hyphenated/line-broken transcriptions of the mirrored
+# source phrasing must PASS (acceptance D2/D3 false negatives)
+PARAPHRASE_POSITIVES = {
+    32: [
+        # D2: "quantum-chaos" instead of the literal "quantum chaos"
+        "The latest paper in Nonlinear Sciences - Chaotic Dynamics is 'Chaos in "
+        "driven nonlinear oscillators with memory' (arXiv:2604.12345), submitted "
+        "2026-04-09. Abstract summary: the paper studies quantum-chaos signatures "
+        "of the quantum kicked top (QKT) in a finite-dimensional Hilbert space.",
+    ],
+    39: [
+        # D3 kind 1: hyphenated compound "natural-language"
+        "One of the main goals of developing such models is to improve their "
+        "ability to understand and generate natural-language text, particularly "
+        "in more complex and nuanced scenarios.",
+        # D3 kind 2: the phrase split across a line break
+        "The introduction states that a main goal of developing such models is "
+        "to improve their ability to understand and generate\nnatural language "
+        "text, particularly in more complex and nuanced scenarios.",
+    ],
+}
+
+
+@pytest.mark.parametrize("task", sorted(PARAPHRASE_POSITIVES))
+def test_paraphrase_positive_pass(task, workdir):
+    for i, answer in enumerate(PARAPHRASE_POSITIVES[task]):
+        fixture = dict(FIXTURES[task])
+        fixture["answer"] = answer
+        run_dir = write_run(task, "genuine", workdir / f"t{task}_paraphrase_{i}", fixture)
+        code, verdict = run_verifier(task, run_dir)
+        assert code == 0 and verdict.get("pass") is True, json.dumps(verdict, indent=1)
 
 
 @pytest.mark.parametrize("task", TASKS)

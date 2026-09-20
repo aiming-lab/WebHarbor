@@ -218,6 +218,23 @@ def norm(s):
     return re.sub(r"\s+", " ", (s or "").strip()).casefold()
 
 
+# hyphens and unicode dashes are writing-style variance, not content: a
+# paraphrase like "quantum-chaos" or "natural-language" must match the
+# mirrored source's "quantum chaos" / "natural language"
+_DASHES = "\u2010\u2011\u2012\u2013\u2014\u2212-"
+
+def norm_loose(s):
+    """norm() plus hyphen/dash-to-space normalisation (paraphrase-tolerant)."""
+    s = re.sub(f"[{_DASHES}]", " ", s or "")
+    return re.sub(r"\s+", " ", s.strip()).casefold()
+
+
+def contains_all_loose(final, tokens):
+    """contains_all with hyphen/whitespace normalisation on both sides."""
+    f = norm_loose(final)
+    return all(norm_loose(t) in f for t in tokens)
+
+
 def answer_equals(final, expected):
     return norm(final) == norm(expected)
 

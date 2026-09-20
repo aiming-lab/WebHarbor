@@ -10,7 +10,7 @@ category returns 48 results; searching all archives returns 207 results.
 
 Checks (deterministic):
   nav:    a /search URL with both query tokens AND the category=quant-ph filter
-  answer: reports both totals (48 and 135) as numbers
+  answer: reports both totals (48 and 207) as numbers
 Input/Output: see verify_lib.parse_args / Judge.emit.
 """
 import os, sys

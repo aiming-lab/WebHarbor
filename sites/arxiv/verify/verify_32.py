@@ -12,13 +12,15 @@ submission date 2026-04-09.
 Checks (deterministic):
   nav:    an nlin.CD listing URL or a candidate /abs page
   answer: names one of the two newest papers + the date 2026-04-09 + >=2
-          keywords from that paper's on-mirror abstract
+          keywords from that paper's on-mirror abstract (hyphen/whitespace
+          normalised matching, so a correct paraphrase like "quantum-chaos"
+          is accepted)
 Input/Output: see verify_lib.parse_args / Judge.emit.
 """
 import os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (load_run, step_urls, final_answer, has_date,
-                        paper_mentioned, navigated_to, contains_all,
+                        paper_mentioned, navigated_to, contains_all_loose,
                         Judge, parse_args)
 
 CANDIDATES = [
@@ -48,7 +50,7 @@ def main():
         j.emit()
     aid, title, keywords = matched
     j.check("answer_summarises_abstract",
-            contains_all(fa, keywords[:2]),
+            contains_all_loose(fa, keywords[:2]),
             f"keywords={keywords[:2]} final={fa[:240]!r}")
     j.emit()
 
