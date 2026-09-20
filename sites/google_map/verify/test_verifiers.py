@@ -283,7 +283,8 @@ WRONG_ANSWER = {
     32: "Roto-Rooter Orlando is a plumber in Orlando open now.",
     33: "The 1-star level has the least proportion of reviews at Denver International Airport.",
     34: "Red Rocks Trail is a hiking trail within 2 miles of 80202 (9.6 mi away).",
-    35: "Big Bend is a national park in East Texas near the Gulf of Mexico.",
+    35: "Big Bend National Park is in East Texas near the Gulf of Mexico; "
+        "amenities include Camping and Hiking.",
     36: "Five pizza places near 30309: 1) Pizza Hut Midtown Atlanta (3.8), 2) Grant "
         "Central Pizza (4.3), 3) Double Zero Atlanta (4.4), 4) Midtown Pizza Kitchen "
         "(4.5), 5) Fellini's Pizza Atlanta (4.5).",
@@ -458,8 +459,8 @@ class VerifierTests(unittest.TestCase):
 
     def test_task27_nine_results_reading_passes(self):
         # the verbatim 'Target stores in Atlanta, GA' search lists 9 places
-        # (6 Target + 3 distractors); both count readings are accepted while the
-        # store names pin the Target stores
+        # (6 Target + 3 others); both count readings are accepted and the check
+        # is count-only (no store-name requirement)
         answer = ("The Target search in Atlanta, GA shows 9 results, six of which are "
                   "Target stores: Target Atlantic Station, Target Midtown Atlanta, "
                   "Target Edgewood, Target Lindbergh, Target Ponce City, and Target "
@@ -467,6 +468,66 @@ class VerifierTests(unittest.TestCase):
                   "REI Co-op Atlanta are the other three results.")
         result = self.execute(27, answer=answer)
         self.assertTrue(result["pass"], result)
+
+    def test_task35_acceptor_wrong_region_fails(self):
+        # acceptor-crafted adversarial: page-true amenity words mixed with a
+        # wrong region claim — must FAIL on the word-boundary region checks
+        answer = ("Big Bend National Park is in East Texas near the Gulf of "
+                  "Mexico; amenities include Camping and Hiking.")
+        result = self.execute(35, answer=answer)
+        self.assertFalse(result["pass"], result)
+        self.assertEqual(result.get("reason"), "answer_region_west_texas")
+
+    def test_task35_worker_wrong_region_fails(self):
+        # the worker's earlier (weaker) adversarial still fails the same way
+        answer = "Big Bend is a national park in East Texas near the Gulf of Mexico."
+        result = self.execute(35, answer=answer)
+        self.assertFalse(result["pass"], result)
+        self.assertEqual(result.get("reason"), "answer_region_west_texas")
+
+    def test_task25_broadway_lot_passes(self):
+        # acceptance-rework positive: Broadway Lot (0.1 mi, 6AM-11PM) qualifies
+        # per its own place page and must be accepted
+        paths = ["/search?q=parking+near+fox+theatre+detroit&sort=distance",
+                 "/place/detroit-mi-broadway-day-lot"]
+        answer = ("Broadway Lot - 1331 Broadway St, Detroit, MI 48226. It is about "
+                  "0.4 miles from the Fox Theatre and is open daily from 6:00 AM "
+                  "to 11:00 PM, so it closes at night.")
+        result = self.execute(25, paths=paths, answer=answer)
+        self.assertTrue(result["pass"], result)
+
+    def test_task25_dac_lot_passes(self):
+        # acceptance-rework positive: Detroit Athletic Club Lot (8:00 AM -
+        # 10:00 PM per its page) qualifies and must be accepted
+        paths = ["/search?q=parking+near+fox+theatre+detroit&sort=distance",
+                 "/place/detroit-mi-detroit-athletic-club-lot"]
+        answer = ("Detroit Athletic Club Lot (2180 Woodward Ave) is 0.4 miles from "
+                  "the Fox Theatre and closes at night: open Mon-Sun 8:00 AM to "
+                  "10:00 PM.")
+        result = self.execute(25, paths=paths, answer=answer)
+        self.assertTrue(result["pass"], result)
+
+    def test_task25_woodward_lot_passes(self):
+        # acceptance-rework positive: Woodward Avenue Lot (6:00 AM - 10:00 PM
+        # per its page) qualifies and must be accepted
+        paths = ["/search?q=parking+near+fox+theatre+detroit&sort=distance",
+                 "/place/detroit-mi-woodward-ave-night-lot"]
+        answer = ("Woodward Avenue Lot (2140 Woodward Ave, 0.7 mi from the Fox "
+                  "Theatre) is open Mon-Sun 6:00 AM to 10:00 PM and closes at "
+                  "night.")
+        result = self.execute(25, paths=paths, answer=answer)
+        self.assertTrue(result["pass"], result)
+
+    def test_task25_nonqualifying_24h_lot_fails(self):
+        # acceptance-rework negative: a 24-hour facility near the Fox Theatre
+        # does not close at night and must FAIL
+        paths = ["/search?q=parking+near+fox+theatre+detroit&sort=distance",
+                 "/place/detroit-mi-grand-circus-24h-deck"]
+        answer = ("Grand Circus Deck (1437 Bagley St, 0.0 mi from the Fox Theatre) "
+                  "is a parking facility open 24 hours.")
+        result = self.execute(25, paths=paths, answer=answer)
+        self.assertFalse(result["pass"], result)
+        self.assertEqual(result.get("reason"), "answer_names_closing_lot")
 
     def test_task12_unsorted_rating_order_fails(self):
         answer = ("Five burger places near 44012: 1) Bubba's 33 (4.5), 2) Five Guys "

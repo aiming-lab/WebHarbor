@@ -10,18 +10,17 @@ the seed DB and carries no wall-clock content):
     Target Atlantic Station (375 18th St NW), Target Midtown Atlanta (375 W
     Peachtree St NW), Target Edgewood (1275 Caroline St NE), Target Lindbergh
     (2539 Piedmont Rd NE), Target Ponce City (650 Ponce De Leon Ave NE), Target
-    Cumberland (2201 Cobb Pkwy SE). The search header reads '6 places found'. (The phrased query 'target stores in
-    atlanta ga' additionally surfaces three non-Target distractors, so 'how many
-    results are shown' has two defensible readings on the mirror: six Target
-    stores, or the nine places the verbatim search lists; the count check accepts
-    either while the store-name check pins the Target stores themselves.)
-    (The phrased query 'target stores in atlanta ga' additionally surfaces three
-    non-Target distractors; the Target stores themselves number six.)
+    Cumberland (2201 Cobb Pkwy SE). The search header reads '6 places found'.
+    The verbatim query 'target stores in atlanta, ga' additionally surfaces
+    three non-Target places (Whole Foods Market Midtown, Margaret Mitchell
+    House, REI Co-op Atlanta), so 'how many results are shown' has two
+    defensible readings on the mirror and the count check accepts either.
     Source: /search?q=target+atlanta (6 results).
 
 Checks (deterministic first; no LLM anywhere in this suite):
-  nav: a Target Atlanta search | answer reports six Target stores and names at
-  least three of them | read-only DB
+  nav: a Target Atlanta search | answer states the result count of the
+  executed search (both on-mirror readings accepted; no store-name check —
+  the task text asks only for the count) | read-only DB
 Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 """
 import os, sys

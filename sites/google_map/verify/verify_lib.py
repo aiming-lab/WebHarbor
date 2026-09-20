@@ -210,6 +210,22 @@ def contains_any(final, tokens):
     return any(norm(t) in f for t in tokens)
 
 
+def re_any(final, patterns):
+    """Case-insensitive regex search over the normalized answer. The caller
+    anchors tokens with explicit word boundaries (\\b) so bare-substring
+    false positives (e.g. 'mexico' inside 'Gulf of Mexico', 'closes' inside
+    'never closes') cannot pass; use this for fact checks where the answer
+    must match a page phrase, not just share a token."""
+    f = norm(final)
+    return any(re.search(pat, f, re.IGNORECASE) for pat in patterns)
+
+
+def re_count(final, patterns):
+    """Count of caller-anchored regex patterns that match the answer."""
+    f = norm(final)
+    return sum(1 for pat in patterns if re.search(pat, f, re.IGNORECASE))
+
+
 def _digit_forms(value):
     if abs(value - round(value)) > 1e-9:
         return [f"{value:.1f}".rstrip("0").rstrip("."), f"{value:.1f}"]
