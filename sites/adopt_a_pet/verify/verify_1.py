@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import ground_truth as GT  # noqa: E402
 from verify_lib import (  # noqa: E402
-    CHILDREN_KW, Judge, check_read_only, check_search_visited, check_trajectory_identity,
+    entity_text, CHILDREN_KW, Judge, check_read_only, check_search_visited, check_trajectory_identity,
     check_visited_pet, contains_all, contains_months, final_answer, run_verifier, stated_yes_no,
 )
 
@@ -29,7 +29,7 @@ def run_checks(judge: Judge, traj: dict, initial_db: str, after_db: str) -> None
                          location_any=({"scottsdale"},), species="Cat")
     check_visited_pet(judge, traj, PET["slug"])
     judge.check("answer_names_pet", contains_all(answer, [PET["name"]]), f"expected={PET['name']!r}, answer={answer!r}")
-    judge.check("answer_has_age_months", contains_months(answer, PET["age_months"]),
+    judge.check("answer_has_age_months", contains_months(entity_text(answer, PET["name"], [p["name"] for p in GT.PETS], allow_unnamed=True), PET["age_months"]),
                 f"expected={PET['age_months']} months, answer={answer!r}")
     judge.check("answer_has_color", contains_all(answer, [PET["color"]]), f"expected={PET['color']!r}, answer={answer!r}")
     judge.check("answer_states_good_with_children_yes",

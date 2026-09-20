@@ -45,7 +45,7 @@ Build this checkout to run its registered web environments (published image tags
 docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40049:40000-40049 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40049` to explore 49 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, and Bandcamp`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40049` to explore 50 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, Bandcamp, and Adopt-a-Pet`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -64,7 +64,7 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 
 ### Site registry
 
-This checkout registers **50 sites**. NVIDIA remains at index 28, UC Berkeley remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index 31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at index 34. Recreation.gov remains at index 35, BoardGameGeek remains at index 36, CarMax remains at index 37, BabyCenter remains at index 38, Amtrak remains at index 39, Cookpad remains at index 40, Craigslist remains at index 41, Drugs.com remains at index 42, Versus remains at index 43, Y Combinator remains at index 44, PhET Interactive Simulations remains at index 45, Discogs remains at index 46, and Google Finance remains at index 47, and Bandcamp is appended at index 48. Build the image from this checkout to use this registry; publishing source does not update the published Docker image automatically.
+This checkout registers **50 sites**. NVIDIA remains at index 28, UC Berkeley remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index 31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at index 34. Recreation.gov remains at index 35, BoardGameGeek remains at index 36, CarMax remains at index 37, BabyCenter remains at index 38, Amtrak remains at index 39, Cookpad remains at index 40, Craigslist remains at index 41, Drugs.com remains at index 42, Versus remains at index 43, Y Combinator remains at index 44, PhET Interactive Simulations remains at index 45, Discogs remains at index 46, and Google Finance remains at index 47, Bandcamp remains at index 48, and Adopt-a-Pet is appended at index 49. Build the image from this checkout to use this registry; publishing source does not update the published Docker image automatically.
 
 | Site | Registry position | Container port | Example local review host port |
 | --- | --- | --- | --- |
@@ -88,8 +88,8 @@ This checkout registers **50 sites**. NVIDIA remains at index 28, UC Berkeley re
 | PhET Interactive Simulations | 45 | 40045 | 48045 |
 | Discogs | 46 | 40046 | 48046 |
 | Google Finance | 47 | 40047 | 48047 |
-| Bandcamp | 48 | 40049 | 48048 |
-| Adopt-a-Pet | `adopt_a_pet` | 40049 |
+| Bandcamp | 48 | 40048 | 48048 |
+| Adopt-a-Pet | 49 | 40049 | 48049 |
 
 `websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
 site's `tasks.jsonl` `web` URL agree on 50 sites and `40000-40049`;
@@ -100,7 +100,7 @@ After preparing the candidate assets and building `webharbor:dev`, the local
 review deployment uses:
 
 ```bash
-docker run -e WEBSYN_CONTROL_TOKEN -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48048:40000-40049 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48049:40000-40049 webharbor:dev
 ```
 
 NVIDIA inherits the site contribution from @KaKituken
@@ -121,7 +121,7 @@ The bundle contains 78 articles and 62 structured guidance sections. That archiv
 is part of the consolidated pinned dataset revision below.
 
 
-The current `.assets-revision` pins all **49 registered sites** to merged HF commit `e82d584da9eb2b138f8db71fb28f50438860b17d`. Bandcamp [HF #94](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/94) is merged; only its archive changed, preserving all 51 unrelated dataset files byte-for-byte. Its reviewed archive has SHA-256 `63b81ffdcafc3738f5a91dbb18680126140e294074cf437c6730ba3acf83b68b` and was not repacked. `assets-manifest.json` binds all selected archives and the extracted managed tree. Unregistered bundles are not fetched; tracked seed migrations and generation remain part of the build contract.
+The current `.assets-revision` pins all **50 registered sites** to merged HF commit `2e9c786038d560b363ad9c046087bf114af7c6bf`. Adopt-a-Pet [HF #67](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/67) is merged; only its archive was added, preserving all 52 existing dataset files. Its reviewed archive has SHA-256 `e337aee58818a0e3128d157afcdf83cfbdf2bca1044ad647ca32ddc85bed4682` and was not repacked. `assets-manifest.json` binds all selected archives and the extracted managed tree. Unregistered bundles are not fetched; tracked seed migrations and generation remain part of the build contract. Adopt-a-Pet's reset seed is generated from tracked code during the Docker build.
 
 Historical asset integration notes below describe superseded pins, not the current pin.
 

@@ -33,9 +33,11 @@ SHELTERS=[('Desert Paws Rescue','Phoenix','AZ','602-555-0141','hello@desertpaws.
 PETS=[
 ('sirius','Sirius','Dog','Chihuahua','Terrier','Male','Senior',108,'Small','Tan','Scottsdale','AZ','85251',175,'pets/sirius.avif',True,True,True,False),('waymo','Waymo','Dog','American Pit Bull Terrier','Mixed Breed','Male','Adult',24,'Large','Gray','Phoenix','AZ','85004',225,'pets/waymo.avif',True,True,False,True),('casper','Casper','Cat','Colorpoint Shorthair',None,'Male','Adult',48,'Medium','Cream','Mesa','AZ','85201',125,'pets/casper.avif',True,False,True,True),('neo','Neo','Cat','Domestic Shorthair',None,'Male','Kitten',7,'Small','Black','Scottsdale','AZ','85250',110,'pets/neo.avif',True,True,True,True),('amba','Amba','Cat','Domestic Mediumhair',None,'Female','Kitten',5,'Small','Tabby','Arizona City','AZ','85123',95,'pets/amba.avif',True,True,True,True),('cinders','Cinders','Cat','Domestic Shorthair',None,'Female','Adult',85,'Medium','Tortoiseshell','Sedona','AZ','86336',120,'pets/cinders.jpg',True,False,True,False),('arno','Arno','Dog','German Shepherd Dog','Mixed Breed','Male','Adult',43,'Large','Black and Tan','Casa Grande','AZ','85122',200,'pets/arno.avif',True,True,False,True),('batman','Batman','Dog','Chihuahua','Yorkshire Terrier','Male','Adult',36,'Small','Black','Tucson','AZ','85701',165,'pets/batman.jpg',True,True,True,False),('horus','Horus','Dog','Pointer','Labrador Retriever','Male','Young',16,'Large','White and Black','Phoenix','AZ','85006',210,'pets/horus.avif',True,True,False,True),
 ('luna','Luna','Dog','Beagle',None,'Female','Young',14,'Medium','Tricolor','New York','NY','10011',250,'pets/luna.jpg',True,True,True,True),('milo','Milo','Cat','Maine Coon',None,'Male','Adult',38,'Large','Orange','New York','NY','10003',150,'pets/milo.jpg',True,False,True,True),('daisy','Daisy','Dog','Golden Retriever',None,'Female','Adult',30,'Large','Golden','Seattle','WA','98109',275,'pets/daisy.jpg',True,True,True,True),('pepper','Pepper','Cat','Domestic Shorthair',None,'Female','Young',13,'Small','Black and White','Seattle','WA','98101',130,'pets/pepper.avif',True,True,True,False),('archie','Archie','Dog','Australian Shepherd',None,'Male','Young',18,'Medium','Merle','Austin','TX','78704',240,'pets/archie.jpg',True,True,False,True),('ruby','Ruby','Dog','Boxer','Mixed Breed','Female','Adult',42,'Large','Fawn','Austin','TX','78702',215,'pets/ruby.jpg',True,True,False,False),('olive','Olive','Cat','Siamese',None,'Female','Adult',27,'Medium','Seal Point','Miami','FL','33130',145,'pets/olive.jpg',True,False,True,True),('teddy','Teddy','Dog','Poodle','Mixed Breed','Male','Senior',96,'Small','White','Miami','FL','33133',185,'pets/teddy.jpg',True,True,True,True),('winston','Winston','Dog','Chihuahua','Mixed Breed','Male','Adult',60,'Small','Tan','Tempe','AZ','85281',230,'pets/winston.avif',True,True,True,False),('yuki','Yuki','Dog','Chihuahua','Mixed Breed','Female','Senior',120,'Small','Cream','Glendale','AZ','85301',205,'pets/yuki.jpg',True,False,True,True),('zorro','Zorro','Dog','Chihuahua','Terrier','Male','Adult',72,'Small','Black','Prescott','AZ','86301',220,'pets/zorro.jpg',True,True,False,False)]
+# Frozen hash for the public demo password; fresh builds produce identical seeds.
+BENCHMARK_PASSWORD_HASH = 'scrypt:32768:8:1$HfUlKIvmrFf6AfYS$74d1f721250a752e3f9b126d649b494581e6f85ce70d345eb44561027080e761352f3a795130a01ef5a9097d0c20ba14ba41a9707d68e98e45770b668412f825'
 def seed_benchmark_users():
  if User.query.first(): return
- for email,name in USERS: db.session.add(User(email=email,name=name,password_hash=generate_password_hash('TestPass123!')))
+ for email,name in USERS: db.session.add(User(email=email,name=name,password_hash=BENCHMARK_PASSWORD_HASH))
  db.session.commit()
 def seed_database():
  if Pet.query.first(): return
@@ -44,11 +46,12 @@ def seed_database():
  for i,p in enumerate(PETS):
   shelter_index=(i%2 if p[11]=='AZ' else {'NY':2,'WA':3,'TX':4,'FL':5}[p[11]])
   db.session.add(Pet(slug=p[0],name=p[1],species=p[2],breed=p[3],secondary_breed=p[4],sex=p[5],age_group=p[6],age_months=p[7],size=p[8],color=p[9],city=p[10],state=p[11],postal=p[12],fee=p[13],image=p[14],description=f'{p[1]} is an affectionate {p[6].lower()} {p[2].lower()} who enjoys companionship, gentle play, and a comfortable place to relax.',house_trained=p[15],good_dogs=p[16],good_cats=p[17],good_children=p[18],shelter_id=shelters[shelter_index].id))
+ db.session.flush()
+ alice=User.query.filter_by(email='alice.j@test.com').first()
+ db.session.add(Favorite(user_id=alice.id,pet_id=Pet.query.filter_by(slug='luna').first().id))
  db.session.commit()
-def seed_user_state():
- if Favorite.query.first() or Application.query.first() or PetAlert.query.first(): return
- alice=User.query.filter_by(email='alice.j@test.com').first(); db.session.add(Favorite(user_id=alice.id,pet_id=Pet.query.filter_by(slug='luna').first().id)); db.session.commit()
-with app.app_context(): os.makedirs(app.instance_path,exist_ok=True);db.create_all();seed_benchmark_users();seed_database();seed_user_state()
+with app.app_context(): os.makedirs(app.instance_path,exist_ok=True);db.create_all();seed_benchmark_users();seed_database()
+
 def user():
  raw=session.get('user_id')
  if isinstance(raw,bool) or not isinstance(raw,int): return None   # a forged cookie must not reach the ORM

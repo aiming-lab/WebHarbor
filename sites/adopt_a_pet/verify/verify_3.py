@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import ground_truth as GT  # noqa: E402
 from verify_lib import (  # noqa: E402
-    AZ_WIDE, HIGHEST, LOWEST, Judge, check_read_only, check_search_visited, check_trajectory_identity,
+    entity_text, AZ_WIDE, HIGHEST, LOWEST, Judge, check_read_only, check_search_visited, check_trajectory_identity,
     check_visited_pets, contains_all, contains_money, final_answer, identifies, run_verifier,
 )
 
@@ -32,7 +32,7 @@ def run_checks(judge: Judge, traj: dict, initial_db: str, after_db: str) -> None
     judge.check("answer_names_winner", contains_all(answer, [WINNER["name"]]), f"expected={WINNER['name']!r}, answer={answer!r}")
     judge.check("answer_has_city", contains_all(answer, [WINNER["city"]]), f"expected={WINNER['city']!r}, answer={answer!r}")
     judge.check("answer_has_breed", contains_all(answer, [WINNER["breed"]]), f"expected={WINNER['breed']!r}, answer={answer!r}")
-    judge.check("answer_has_fee", contains_money(answer, WINNER["fee"]), f"expected=${WINNER['fee']}, answer={answer!r}")
+    judge.check("answer_has_fee", contains_money(entity_text(answer, WINNER["name"], [p["name"] for p in GT.PETS]), WINNER["fee"]), f"expected=${WINNER['fee']}, answer={answer!r}")
     judge.check("answer_identifies_lowest_fee_pet", identifies(answer, WINNER["name"], OTHERS, LOWEST, HIGHEST),
                 f"winner={WINNER['name']!r}, others={OTHERS!r}, answer={answer!r}")
     check_read_only(judge, initial_db, after_db)
