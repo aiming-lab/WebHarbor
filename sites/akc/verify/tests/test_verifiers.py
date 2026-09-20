@@ -254,8 +254,10 @@ class VerifierTests(unittest.TestCase):
     def test_exact_filter_tasks_accept_blank_native_form_fields(self):
         cases = {
             0: "/breeds?q=&group=Toy&size=Small",
+            2: "/compare?breed=golden-retriever&breed=&breed=border-collie&breed=",
             5: "/events?type=Training&state=",
             7: "/breeds?q=patient&group=Working&size=",
+            12: "/compare?breed=cavalier-king-charles-spaniel&breed=&breed=papillon&breed=shih-tzu&breed=",
         }
         for number, submitted_url in cases.items():
             with self.subTest(number=number):
