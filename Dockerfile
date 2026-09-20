@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 49 Flask mirror sites + control plane on :8101.
+# 50 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -153,9 +153,18 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/y_combinator
 RUN cd /opt/WebSyn/y_combinator && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
+# Adopt-a-Pet builds its synthetic catalog; representative photos come from HF.
+RUN test -n "$(ls -A /opt/WebSyn/adopt_a_pet/static/images)" && \
+    cd /opt/WebSyn/adopt_a_pet && rm -rf instance instance_seed && python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/adopt_a_pet.db', 'instance_seed/adopt_a_pet.db'); \
+print('Adopt-a-Pet seed DB generated at build time.')" && rm -rf /opt/WebSyn/adopt_a_pet/instance
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40048
+EXPOSE 8101 40000-40049
 
 CMD ["/opt/websyn_start.sh"]
