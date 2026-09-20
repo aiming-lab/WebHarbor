@@ -9,9 +9,45 @@
   <p class="article-meta">Updated: Aug 13, 2025 | {{ article.read_minutes }} Minutes</p>
   {% if article.slug == 'questions-to-ask-your-potential-breeder' %}<p class="article-tags">● responsible dog ownership, first puppy,<br>find a breeder</p>{% endif %}
   <div class="article-rule"></div>
-  <p class="lede">{{ article.summary }}</p>
-  <p>{{ article.body }}</p>
-  <h2>Turn expert advice into a plan</h2>
-  <p>Use the breed library, selector, and compare tools to turn this advice into a practical shortlist for your dog and household.</p>
+  <div class="article-body">
+    <p class="lede">{{ article.summary }}</p>
+    <p>{{ article.body }}</p>
+    {% if article.slug == 'questions-to-ask-your-potential-breeder' %}
+      <h2>Understanding What to Expect From the Breed</h2>
+      <p>One of the many benefits of purebred dogs is knowing the breed and knowing what to expect. Use these questions to understand the parents, the puppy's needs, and the support available after bringing a puppy home.</p>
+      <img class="article-inline-image" src="{{ url_for('static', filename='images/akc-home/find-puppies.webp') }}" alt="Puppies with a responsible breeder">
+      <h2>Have the Parents Been Health Tested?</h2>
+      <p>Ask which health screenings are recommended for the breed, what the breeder learned from the results, and how those results are shared with future owners.</p>
+      <h2>What Is Your Experience With This Breed?</h2>
+      <p>A responsible breeder should be able to explain the breed's temperament, activity needs, grooming, and the homes that are a good fit.</p>
+      <h2>How Are the Puppies Socialized?</h2>
+      <p>Early experiences help puppies become confident companions. Ask what people, sounds, handling, and everyday environments the puppies have encountered.</p>
+      <div class="article-ad-slot" aria-label="Sponsored content placeholder"></div>
+      <h2>Are the Puppies Up-to-Date on Vaccinations?</h2>
+      <p>Confirm the puppy's veterinary records, vaccination schedule, identification, and the plan for follow-up care after pickup.</p>
+      <h2>Do You Provide a Health Guarantee and Contract?</h2>
+      <p>Review the written agreement carefully. It should explain responsibilities, health information, and what support is available if circumstances change.</p>
+      <div class="article-ad-slot" aria-label="Sponsored content placeholder"></div>
+      <h2>When Will We Be Able to Take the Puppy Home?</h2>
+      <p>The right time to bring a puppy home depends on development, socialization, and the breeder's care plan. Ask how the transition will be supported.</p>
+      <h2>How Can We Contact You After Picking Up the Puppy?</h2>
+      <p>Good breeders stay available for questions. Ask how to reach them and what information they provide for nutrition, training, and routine care.</p>
+      <h2>What Requirements Do You Have for People Looking to Get One of Your Puppies?</h2>
+      <p>Expect thoughtful questions about your household and plans. A responsible placement process helps match each puppy with a prepared family.</p>
+      <h2 class="article-cta-title">Get Your Free AKC eBook</h2>
+      <div class="article-cta"><img src="{{ url_for('static', filename='images/akc-home/register-today.webp') }}" alt="AKC registration"><div><strong>Selecting a Puppy</strong><p>Learn how to find the right fit for your family and prepare for life with a new dog.</p><a class="button primary" href="{{ url_for('register') }}">Learn More</a></div></div>
+    {% else %}
+      <h2>Turn expert advice into a plan</h2>
+      <p>Use the breed library, selector, and compare tools to turn this advice into a practical shortlist for your dog and household.</p>
+      <div class="article-ad-slot" aria-label="Sponsored content placeholder"></div>
+      <h2>Questions to Ask Your Dog Team</h2>
+      <p>Keep a short list of questions for your breeder, trainer, groomer, and veterinarian so every next step is clear.</p>
+    {% endif %}
+  </div>
 </article>
+{% if article.slug == 'questions-to-ask-your-potential-breeder' %}
+<section class="advice-newsletter article-newsletter">
+  <div><h2>AKC PUPDATE newsletter!</h2><p>Get the latest training, socialization, health, and grooming guidance for your puppy.</p><form><input type="email" aria-label="Newsletter email" placeholder="you@yourdomain.com"><button type="button">Sign up</button></form></div>
+</section>
+{% endif %}
 {% endblock %}

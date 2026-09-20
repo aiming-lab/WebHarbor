@@ -10,16 +10,11 @@
 </section>
 
 <form class="filter-bar compare-picker" action="{{ url_for('compare') }}">
-  <div class="compare-slot-row" aria-hidden="true">
-    <span class="compare-slot"><img src="{{ url_for('static', filename='images/akc-home/compare-dog.svg') }}" alt=""></span><b>VS.</b><span class="compare-slot"><img src="{{ url_for('static', filename='images/akc-home/compare-dog.svg') }}" alt=""></span>
+  <div class="compare-slot-row">
+    <label class="compare-choice"><span class="compare-slot"><img src="{{ url_for('static', filename='images/akc-home/compare-dog.svg') }}" alt=""></span><span>Select a breed</span><select name="breed"><option value="">Select A Breed</option>{% for breed in breeds %}<option value="{{ breed.slug }}" {% if selected|length > 0 and breed.slug == selected[0] %}selected{% endif %}>{{ breed.name }}</option>{% endfor %}</select></label>
+    <b>VS.</b>
+    <label class="compare-choice"><span class="compare-slot"><img src="{{ url_for('static', filename='images/akc-home/compare-dog.svg') }}" alt=""></span><span>Select a breed</span><select name="breed"><option value="">Select A Breed</option>{% for breed in breeds %}<option value="{{ breed.slug }}" {% if selected|length > 1 and breed.slug == selected[1] %}selected{% endif %}>{{ breed.name }}</option>{% endfor %}</select></label>
   </div>
-  <label>Select breeds
-    <select name="breed" multiple size="1">
-      {% for breed in breeds %}
-        <option value="{{ breed.slug }}" {% if breed.slug in selected %}selected{% endif %}>{{ breed.name }}</option>
-      {% endfor %}
-    </select>
-  </label>
   <button type="submit">Compare Selected</button>
 </form>
 
