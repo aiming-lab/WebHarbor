@@ -7,18 +7,18 @@ run. These are guided validation runs, not a model success-rate study.
 | Task | Scope | Steps | Verifier | Blind review | Final evidence |
 |---|---|---:|---|---|---|
 | AKC--0 | Toy + Small breed detail facts | 5 | PASS | PENDING | [screenshot](AKC--0-final.png) |
-| AKC--1 | Selector ranking and profile fact | 7 | PASS | PENDING | [screenshot](AKC--1-final.png) |
-| AKC--2 | Two-breed comparison | 3 | PASS | PENDING | [screenshot](AKC--2-final.png) |
-| AKC--3 | Alice saved-breed account path | 5 | PASS | PENDING | [screenshot](AKC--3-final.png) |
-| AKC--4 | On-site article search | 3 | PASS | PENDING | [screenshot](AKC--4-final.png) |
+| AKC--1 | Selector ranking and profile fact | 8 | PASS | PENDING | [screenshot](AKC--1-final.png) |
+| AKC--2 | Two-breed comparison | 9 | PASS | PENDING | [screenshot](AKC--2-final.png) |
+| AKC--3 | Alice saved-breed account path | 9 | PASS | PENDING | [screenshot](AKC--3-final.png) |
+| AKC--4 | On-site article search | 6 | PASS | PENDING | [screenshot](AKC--4-final.png) |
 | AKC--5 | Event filter and detail facts | 4 | PASS | PENDING | [screenshot](AKC--5-final.png) |
-| AKC--6 | Official article category path | 3 | PASS | PENDING | [screenshot](AKC--6-final.png) |
-| AKC--7 | Group + temperament search | 5 | PASS | PENDING | [screenshot](AKC--7-final.png) |
-| AKC--8 | Exact Alice event registration delta | 9 | PASS | PENDING | [screenshot](AKC--8-final.png) |
-| AKC--9 | Alice activity-only update | 6 | PASS | PENDING | [screenshot](AKC--9-final.png) |
-| AKC--10 | Bob saved-breed insert | 9 | PASS | PENDING | [screenshot](AKC--10-final.png) |
+| AKC--6 | Official article category path | 5 | PASS | PENDING | [screenshot](AKC--6-final.png) |
+| AKC--7 | Group + temperament search | 3 | PASS | PENDING | [screenshot](AKC--7-final.png) |
+| AKC--8 | Exact Alice event registration delta | 4 | PASS | PENDING | [screenshot](AKC--8-final.png) |
+| AKC--9 | Alice activity-only update | 3 | PASS | PENDING | [screenshot](AKC--9-final.png) |
+| AKC--10 | Bob saved-breed insert | 5 | PASS | PENDING | [screenshot](AKC--10-final.png) |
 | AKC--11 | Exact owner-profile creation | 9 | PASS | PENDING | [screenshot](AKC--11-final.png) |
-| AKC--12 | Three-breed comparison | 3 | PASS | PENDING | [screenshot](AKC--12-final.png) |
+| AKC--12 | Three-breed comparison | 6 | PASS | PENDING | [screenshot](AKC--12-final.png) |
 
-The earlier 13/13 blind result covered the superseded pre-visual-repair candidate and
-is retained only as historical evidence. This table requires a refreshed blind pass.
+Earlier blind results and the r2 packet predate the full-scroll correction and are
+retained only as historical evidence. This table requires a fresh r3 blind pass.

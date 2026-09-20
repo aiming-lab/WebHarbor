@@ -1,7 +1,7 @@
 # AKC reviewer validation
 
-Status: **Draft; not ready for maintainer handoff.** The source-shaped visual repair
-and refreshed real-browser task runs are complete. A replacement blind review and the
+Status: **Draft; not ready for maintainer handoff.** The full-scroll task-path visual
+correction and refreshed real-browser runs are complete. A new blind review and the
 fresh full Docker build remain open gates.
 
 This review preserves [@Sun-sunshine06's original AKC contribution, PR #40](https://github.com/aiming-lab/WebHarbor/pull/40)
@@ -14,8 +14,8 @@ port **40040**, and keeps the registry at 41 sites.
 
 | Item | Value |
 |---|---|
-| Executed visual/task fixed point | `ea6c2cbeb9a55f5c8f0a03a9a21130debef4d9ee` |
-| Packaged code point | `6b526ec58f8db1c3520ad43265659d370936501d` |
+| Executed visual/task fixed point | `420b54641adfca60635b03c981e768179cb071bd` |
+| Canonical run | `candidate-006` |
 | Base | `454e7a49c37abe7eb074f6c86200a1308f109740` (`main`) |
 | Original contribution | `83e9e6fb685bd2daf8b69aea2b0807e3add93f82`, original author preserved |
 | HF asset PR | [ChilleD/WebHarbor #97](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/97), open |
@@ -43,11 +43,11 @@ acceptance:
 - state actions accepted invalid values and allowed duplicate saved/registration rows.
 
 The candidate keeps the original framework and author contribution. It adds an
-AKC-shaped responsive header, home page, breed/search/compare/selector flows, advice
-and event pages, account forms, locally bundled source assets, validated forms and
-uniqueness constraints, reproducible URLs, an immutable seed, 13 offline verifiers,
-and focused tests. Credentials are no longer rendered in the UI, and task-critical
-facts remain on their intended detail paths.
+AKC-shaped responsive header and complete scrollable home, breed, comparison,
+selector, search, advice/article, event, registration, and account paths; locally
+bundled source assets; validated forms and uniqueness constraints; reproducible URLs;
+an immutable seed; 13 offline verifiers; and focused tests. Credentials are no longer
+rendered in the UI, and task-critical facts remain on their intended detail paths.
 
 ## UI and visual fidelity
 
@@ -66,13 +66,15 @@ no horizontal overflow. Source cookie overlays were dismissed before capture.
 | 390×844 | ![AKC candidate at 390](assets/pr40-akc/visual/home-390x844.png) |
 | 320×568 | ![AKC candidate at 320](assets/pr40-akc/visual/home-320x568.png) |
 
-Manual comparison covered home, breed listing/detail, selector, comparison, search,
-article listing/detail, event listing, registration, and login. The repair aligns
-content order, typography hierarchy, navigation, card/grid shape, forms, and
-responsive collapse. The live site's rotating campaign image, ads, app banner,
-PuppyVisor, commerce/video integrations, and other dynamic marketing layers are not
-reproduced. Several live-source narrow pages themselves overflow; the mirror does not
-copy those defects.
+Manual comparison covered the full scroll range of home, breed listing/detail,
+selector, comparison, search, article listing/detail, event listing, registration,
+and login. The repair aligns content order, menu treatment, source-backed image
+density, typography hierarchy, card/grid geometry, forms, and responsive collapse.
+Compare-page full-height ratios versus source are 97% desktop, 91% tablet, 93%
+mobile, and 93% narrow. The live site's rotating ads, transient campaign overlays,
+commerce/video integrations, and arbitrary lazy-load whitespace are not reproduced.
+Several live-source narrow pages themselves overflow; the mirror does not copy those
+defects.
 
 ## Task and verifier quality
 
@@ -82,38 +84,37 @@ facts or correctly bound comparisons. State tasks require the specified actor, U
 action, and exact SQLite delta, rejecting no-ops, wrong accounts, duplicate/extra
 writes, and collateral changes.
 
-After the visual repair, all tasks were rerun as `candidate-003` from a fresh immutable
-seed through real Playwright Chromium actions. The runs contain 71 actions, step
+After the final full-scroll correction, all tasks were rerun as `candidate-006` from a fresh
+immutable seed through real Playwright Chromium actions. The runs contain 76 actions, step
 screenshots, task text and final answers, and initial/after SQLite snapshots. All
 13 passed `eval_judge.py --verifier True`. See the
 [per-task table](assets/pr40-akc/tasks/task-table.md) and
 [structured results](assets/pr40-akc/tasks/task-results.json).
 
-The verifier suite covers all 13 positives, compare-order alternatives,
+The verifier suite covers all 13 positives, compare-order and repeated-query alternatives,
 entity/value binding, knowledge shortcuts, wrong answers, non-empty extra query
 narrowing, foreign origins, stale task text, failed actions, no-ops, wrong
 actors/values, and collateral writes. Empty native GET controls are treated as absent,
-while real extra narrowing remains rejected.
+while real extra narrowing remains rejected. A preserved pre-fix sample reproduces the
+former false negative for legal selections accompanied by blank repeated controls.
 
-The earlier blind review returned 13/13 PASS for the pre-visual-repair candidate. It is
-retained as historical evidence only because it explicitly did not assess visual
-fidelity and its packet predates the material UI changes. The refreshed candidate is
-**pending a replacement blind review**.
+Earlier blind results and the r2 packet predate the full-scroll visual correction and
+are historical only. `candidate-006` is **pending a fresh r3 blind review**.
 
 ## Engineering results
 
 | Check | Observed result |
 |---|---|
-| Refreshed UI runs | 13/13 completed, 71 recorded actions (`candidate-003`) |
+| Refreshed UI runs | 13/13 completed, 76 recorded actions (`candidate-006`) |
 | Deterministic grading | 13/13 PASS through `eval_judge.py --verifier True` |
 | AKC app tests | 8/8 PASS |
-| Verifier tests | 13/13 methods PASS; 71 subtests |
+| Verifier tests | 13/13 methods PASS; 73 subtests |
 | Anonymous route sweep | 58/58 HTTP 200 |
 | Registry | 41 sites consistent; ports 40000–40040 |
 | Extracted assets | Repository check PASS; AKC inventory 40/40 |
 | Visual matrix | 88/88 captured; mirror 44/44 without horizontal overflow |
 | HF archive | remote immutable download matched; 45 managed members validated |
-| Fresh full Docker build | **NOT RUN** — 35 GiB free; procedure requires 50 GiB before starting |
+| Fresh full Docker build | **NOT RUN** — 41 GiB free; procedure requires 50 GiB before starting |
 | Refreshed independent blind review | **PENDING** |
 
 Failed diagnostic attempts are not counted as passes. In particular, stale preview
