@@ -1,0 +1,303 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ r.display_artist }} – {{ r.title }} – {{ r.format_description or r.primary_format }}{% if r.year %}, {{ r.year }}{% endif %} [r{{ r.discogs_id or r.id }}] | Discogs{% endblock %}
+{% block main_class %}page release-page{% endblock %}
+
+{% block content %}
+<div class="rp-layout">
+<div class="rp-main">
+  <div class="rp-head">
+    <div class="rp-thumb">
+      <a href="{{ r.cover_url }}"><img src="{{ r.cover_url }}" alt="{{ r.title }}"></a>
+      <a class="rp-more-images" href="{{ r.cover_url }}">More images</a>
+    </div>
+    <div class="rp-title-block">
+      <h1 class="rp-h1">
+        {% for artist, display, join in r.artist_entries %}<a href="{{ url_for('artist_detail', aid=artist.id, slug=artist.slug) }}">{{ display }}</a>{% if join %} {{ join }} {% endif %}{% endfor %}
+        <span class="rp-dash">–</span> {{ r.title }}
+      </h1>
+      <table class="rp-info">
+        <tr><th>Label:</th><td>
+          {% if r.label_entries %}
+            {% for l, catno in r.label_entries %}<a href="{{ url_for('label_detail', lid=l.id, slug=l.slug) }}">{{ l.name }}</a>{% if catno %} – {{ catno }}{% endif %}{% if not loop.last %}<br>{% endif %}{% endfor %}
+          {% elif r.labels %}
+            {% for l in r.labels %}<a href="{{ url_for('label_detail', lid=l.id, slug=l.slug) }}">{{ l.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if r.catno %} – {{ r.catno }}{% endif %}
+          {% else %}Not On Label{% endif %}
+        </td></tr>
+        <tr><th>Format:</th><td>
+          {% set parts = (r.format_description or r.primary_format or '').split(', ') %}
+          {% if r.formats %}<a href="{{ url_for('format_detail', slug=r.formats[0].slug) }}">{{ parts[0] }}</a>{% else %}{{ parts[0] }}{% endif %}{% if parts|length > 1 %}, {{ parts[1:]|join(', ') }}{% endif %}
+        </td></tr>
+        {% if r.country %}<tr><th>Country:</th><td><a href="{{ url_for('search', country=r.country) }}">{{ r.country }}</a></td></tr>{% endif %}
+        <tr><th>Released:</th><td>{% if r.released %}{{ r.released }}{% elif r.year %}<a href="{{ url_for('search', year=r.year) }}">{{ r.year }}</a>{% else %}Unknown{% endif %}</td></tr>
+        {% if r.genres %}<tr><th>Genre:</th><td>{% for g in r.genres %}<a href="{{ url_for('genre_detail', slug=g.slug) }}">{{ g.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td></tr>{% endif %}
+        {% if r.styles %}<tr><th>Style:</th><td>{% for s in r.styles %}<a href="{{ url_for('style_detail', slug=s.slug) }}">{{ s.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td></tr>{% endif %}
+      </table>
+    </div>
+  </div>
+
+  {% if r.tracks.count() %}
+  <section class="rp-section">
+    <h2 class="rp-h2">Tracklist</h2>
+    <div class="table-scroll" role="region" aria-label="Tracklist" tabindex="0">
+    <table class="rp-tracklist">
+      <tbody>
+      {% for t in r.tracks %}
+        <tr class="track-{{ t.kind }}">
+          <td class="rp-pos">{{ t.position }}</td>
+          <td class="rp-track-title" style="padding-left: {{ 8 + 16 * (t.depth or 0) }}px;">
+            {{ t.title }}
+            {% if t.artist_credit %}<span class="rp-track-credit">– {{ t.artist_credit }}</span>{% endif %}
+          </td>
+          <td class="rp-dur">{{ t.duration }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if r.source_data.get('extraartists') %}
+  <section class="rp-section">
+    <h2 class="rp-h2">Credits</h2>
+    <ul class="rp-credits">
+    {% for credit in r.source_data['extraartists'] %}
+      <li>{{ credit.get('role', '') }} – <span class="rp-credit-name">{{ credit.get('anv') or credit['name'] }}</span>{% if credit.get('tracks') %} (tracks: {{ credit['tracks'] }}){% endif %}</li>
+    {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if r.notes %}
+  <section class="rp-section">
+    <h2 class="rp-h2">Notes</h2>
+    <div class="rp-notes">{{ r.notes|discogs_text }}</div>
+  </section>
+  {% endif %}
+
+  {% if r.source_data.get('identifiers') or r.barcode %}
+  <section class="rp-section">
+    <h2 class="rp-h2">Barcode and Other Identifiers</h2>
+    <ul class="rp-identifiers">
+      {% for identifier in r.source_data.get('identifiers', []) %}
+        <li>{{ identifier['type'] }}{% if identifier.get('description') %} ({{ identifier['description'] }}){% endif %}: {{ identifier['value'] }}</li>
+      {% else %}
+        <li>Barcode: {{ r.barcode }}</li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+
+  {% if other_versions %}
+  <section class="rp-section">
+    <h2 class="rp-h2 rp-h2-inline">Other Versions ({{ other_versions|length }} of {{ versions_total - 1 }})
+      {% if r.master_id %}<a class="rp-view-all" href="{{ url_for('master_detail', mid=r.master_id) }}">View All</a>{% endif %}</h2>
+    <div class="table-scroll" role="region" aria-label="Other versions" tabindex="0">
+    <table class="rp-versions">
+      <thead><tr><th>Title (Format)</th><th>Label</th><th>Cat#</th><th>Country</th><th>Year</th></tr></thead>
+      <tbody>
+      {% for v in other_versions %}
+        <tr>
+          <td><a href="{{ url_for('release_detail', rid=v.discogs_id or v.id) }}">{{ v.title }}</a> <span class="rp-version-format">({{ v.format_description or v.primary_format }})</span></td>
+          <td>{% for l in v.labels[:2] %}<a href="{{ url_for('label_detail', lid=l.id, slug=l.slug) }}">{{ l.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</td>
+          <td>{{ v.catno }}</td>
+          <td>{{ v.country }}</td>
+          <td>{{ v.year or '' }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+  {% endif %}
+
+  {% if related %}
+  <section class="rp-section">
+    <h2 class="rp-h2">Recommendations</h2>
+    <div class="rp-recs">
+      {% for v in related %}
+        <div class="rp-rec">
+          <a class="rp-rec-cover" href="{{ url_for('release_detail', rid=v.discogs_id or v.id) }}"><img src="{{ v.cover_url }}" alt="{{ v.title }}" loading="lazy"></a>
+          <a class="rp-rec-title" href="{{ url_for('release_detail', rid=v.discogs_id or v.id) }}">{{ v.title }}</a>
+          <span class="rp-rec-artist">{{ v.display_artist }}</span>
+          <span class="rp-rec-meta">{{ v.year or '' }} {{ v.country }}</span>
+          <span class="rp-rec-format"><strong>{{ v.primary_format }}</strong>{% if v.format_description %} — {{ v.format_description.split(', ')[1:]|join(', ') }}{% endif %}</span>
+          <a class="rp-rec-btn" href="{{ url_for('release_detail', rid=v.discogs_id or v.id) }}#listings">Shop</a>
+          <a class="rp-rec-btn" href="{{ url_for('release_detail', rid=v.discogs_id or v.id) }}">Want</a>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="rp-section" id="listings">
+    <h2 class="rp-h2 rp-h2-inline">For Sale ({{ listings|length }})
+      <a class="rp-view-all" href="{{ url_for('marketplace', q=r.title) }}">Search Marketplace</a></h2>
+    {% for l in listings %}
+    <div class="listing-row">
+      <div>
+        <strong><a href="{{ url_for('user_profile', username=l.user.username) }}">{{ l.user.username }}</a></strong>
+        <div class="grade">Media: {{ l.media_condition }} / Sleeve: {{ l.sleeve_condition }}</div>
+        {% if l.comments %}<div class="tiny muted">{{ l.comments }}</div>{% endif %}
+      </div>
+      <div class="grade">Ships From: {{ l.shipping_from }}</div>
+      <div class="price">{{ l.price|price(l.currency) }}</div>
+      <div class="grade">{{ l.posted_at|relative }}</div>
+      <div><span class="mp-cart-btn" title="Cart checkout is not available in this offline mirror">Add to Cart</span></div>
+    </div>
+    {% else %}
+      <p class="muted">No copies are currently for sale.</p>
+    {% endfor %}
+  </section>
+
+  <section class="rp-section" id="reviews">
+    <h2 class="rp-h2">Reviews{% if reviews %} ({{ reviews|length }}){% endif %}</h2>
+    {% if current_user.is_authenticated %}
+      <details class="rp-review-form">
+        <summary class="btn">Add Review</summary>
+        <form method="post" action="{{ url_for('review_post') }}" style="margin-top: 10px;">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="release_id" value="{{ r.id }}">
+          <label>Rating</label>
+          <select name="rating" style="width: auto;">
+            {% for v in [5,4,3,2,1] %}<option value="{{ v }}">{{ v }} ★</option>{% endfor %}
+          </select>
+          <label>Review</label>
+          <textarea name="body" required minlength="20" placeholder="Share your thoughts on this release…"></textarea>
+          <button class="btn-primary" type="submit" style="margin-top: 10px;">Post review</button>
+        </form>
+      </details>
+    {% else %}
+      <p><a class="btn" href="{{ url_for('login', next=request.full_path.rstrip('?')) }}">Add Review</a></p>
+    {% endif %}
+    {% for rv in reviews %}
+      <div class="review">
+        <div class="review-head">
+          {{ m.avatar(rv.user) }}
+          <strong><a href="{{ url_for('user_profile', username=rv.user.username) }}">{{ rv.user.username }}</a></strong>
+          {% if rv.rating %}<span class="stars">{% for i in range(rv.rating) %}★{% endfor %}</span>{% endif %}
+          <span class="muted">{{ rv.created_at|relative }}</span>
+          {% if rv.helpful %}<span class="muted">· {{ rv.helpful }} helpful</span>{% endif %}
+        </div>
+        <div class="review-body">{{ rv.body }}</div>
+      </div>
+    {% endfor %}
+  </section>
+</div>
+
+<aside class="rp-side">
+  <section class="rp-box">
+    <h2 class="rp-box-h">Release <span class="rp-release-id">[r{{ r.discogs_id or r.id }}]</span></h2>
+    <ul class="rp-box-links">
+      <li><a href="/release/add">Edit Release</a></li>
+      {% if r.master_id %}<li><a href="{{ url_for('master_detail', mid=r.master_id) }}">See all versions</a></li>{% endif %}
+      <li><a href="/release/add">New Submission</a></li>
+    </ul>
+  </section>
+
+  <section class="rp-box">
+    <h2 class="rp-box-h">For Sale <a class="rp-box-action" href="{{ url_for('sell') }}">Sell a copy</a></h2>
+    <div class="rp-forsale">
+      <img src="{{ r.cover_url }}" alt="{{ r.title }}">
+      <div>
+        <span class="sr-format">{{ (r.primary_format or '')|upper }}</span>
+        <strong>{{ r.title }}</strong>
+        {% if sale_stats.count %}
+          <span class="muted">From ${{ '%.2f'|format(sale_stats.low) }}{% if sale_stats.high and sale_stats.high != sale_stats.low %} to ${{ '%.2f'|format(sale_stats.high) }}{% endif %}</span>
+        {% else %}
+          <span class="muted">No copies for sale</span>
+        {% endif %}
+      </div>
+    </div>
+    <a class="rp-shop-btn" href="#listings">Shop {{ sale_stats.count }} {{ r.primary_format }}</a>
+  </section>
+
+  <section class="rp-box">
+    <h2 class="rp-box-h">Statistics</h2>
+    <div class="rp-stats">
+      <dl>
+        <dt>Have:</dt><dd>{{ r.have_count }}</dd>
+        <dt>Want:</dt><dd>{{ r.want_count }}</dd>
+        <dt>Avg Rating:</dt><dd>{{ '%.2f'|format(r.avg_rating) }} / 5</dd>
+        <dt>Ratings:</dt><dd>{{ r.rating_count }}</dd>
+      </dl>
+      <dl>
+        <dt>Last Sold:</dt><dd>--</dd>
+        <dt>Low:</dt><dd>--</dd>
+        <dt>Median:</dt><dd>--</dd>
+        <dt>High:</dt><dd>--</dd>
+      </dl>
+    </div>
+    <div class="rp-rate-row">
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('rate') }}" class="rp-rate-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="release_id" value="{{ r.id }}">
+          <label for="rate-sel">Rate:</label>
+          <select id="rate-sel" name="rating" onchange="this.form.submit()">
+            <option value="">☆☆☆☆☆</option>
+            {% for v in [1,2,3,4,5] %}
+              <option value="{{ v }}" {% if user_state.my_rating == v %}selected{% endif %}>{{ '★' * v }}{{ '☆' * (5 - v) }} {{ v }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      {% else %}
+        <a class="rp-stars-link" href="{{ url_for('login', next=request.full_path.rstrip('?')) }}" title="Log in to rate">☆☆☆☆☆</a>
+      {% endif %}
+      <span class="rp-share">Share</span>
+    </div>
+    <div class="rp-actions">
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('collection_add') }}" class="rp-action-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="release_id" value="{{ r.id }}">
+          <select name="folder" aria-label="Collection folder">
+            {% for f in folders %}<option {% if f=='Uncategorized' %}selected{% endif %}>{{ f }}</option>{% endfor %}
+          </select>
+          <select name="media_condition" aria-label="Media condition">
+            {% for g in grades[:6] %}<option {% if g=='Near Mint (NM or M-)' %}selected{% endif %}>{{ g }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="rp-action-btn">{{ 'In Collection ✓' if user_state.in_collection else 'Add to Collection' }}</button>
+        </form>
+        <form method="post" action="{{ url_for('wantlist_add') }}" class="rp-action-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="release_id" value="{{ r.id }}">
+          <select name="min_grade" aria-label="Minimum grade">
+            {% for g in grades[:6] %}<option {% if g=='Very Good Plus (VG+)' %}selected{% endif %}>{{ g }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="rp-action-btn">{{ 'In Wantlist ✓' if user_state.in_wantlist else 'Add to Wantlist' }}</button>
+        </form>
+      {% else %}
+        <a class="rp-action-btn" href="{{ url_for('login', next=request.full_path.rstrip('?')) }}">Add to Collection</a>
+        <a class="rp-action-btn" href="{{ url_for('login', next=request.full_path.rstrip('?')) }}">Add to Wantlist</a>
+      {% endif %}
+    </div>
+  </section>
+
+  <section class="rp-box">
+    <h2 class="rp-box-h">Ratings</h2>
+    {% set max_count = (rating_hist.values()|max) if rating_hist else 1 %}
+    {% for v in [5,4,3,2,1] %}
+      <div class="rh">
+        <span>{{ v }} ★</span>
+        <span class="bar"><span class="bar-fill" style="width: {{ (100 * (rating_hist[v] or 0) / max_count)|round(0)|int if max_count > 0 else 0 }}%"></span></span>
+        <span class="muted">{{ rating_hist[v] or 0 }}</span>
+      </div>
+    {% endfor %}
+  </section>
+
+  <section class="rp-box">
+    <h2 class="rp-box-h">Lists <a class="rp-box-action" href="{{ url_for('lists_index') }}">Add to List</a></h2>
+    <p class="muted">Public lists that include this release appear in <a href="{{ url_for('lists_index') }}">List Explorer</a>.</p>
+    <a class="rp-more" href="{{ url_for('lists_index') }}">View More Lists →</a>
+  </section>
+
+  <section class="rp-box">
+    <h2 class="rp-box-h">Contributors</h2>
+    <p class="muted">{{ r.data_quality or 'Verified snapshot' }}{% if r.source_captured_at %} · captured {{ r.source_captured_at[:10] }}{% endif %}</p>
+    <a class="rp-more" href="/guidelines/community">Report Suspicious Activity</a>
+  </section>
+</aside>
+</div>
+{% endblock %}

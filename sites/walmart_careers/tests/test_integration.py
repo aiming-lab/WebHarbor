@@ -85,13 +85,12 @@ def test_tasks_and_verifiers_are_complete_and_use_site_24():
     assert all("A checkpoint passes only when the required evidence is present" in row["judge_rubric"] for row in rows)
 
 
-def test_assets_pin_is_immutable_review_candidate():
+def test_assets_pin_is_immutable_merged_revision():
     text = (ROOT / ".assets-revision").read_text()
     revision = re.search(r"^revision:\s*([0-9a-f]+)$", text, re.M).group(1)
-    # HF PR #88 is an immutable candidate cut from current dataset main. It
-    # carries 32 archives: all 30 registered sites plus two unused archives.
-    # Re-pin to the HF merge commit before this branch is released.
-    assert revision == "65a85a1494688f3b9e82217e50a1dd3a5c6f1a8a"
+    # Merged HF PR #86 produces the immutable dataset-main revision with all
+    # 46 registered-site archives plus the unused Bandcamp archive.
+    assert revision == "df9a1b44a8c5639decc450706a20ac838e21716b"
     assert (SITE / ".build-generated-seed").is_file()
     assert (SITE / ".requires-images").is_file()
     assert (SITE / "asset_inventory.json").is_file()

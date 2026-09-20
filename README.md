@@ -1,5 +1,3 @@
-<div align="center">
-
 <h1>⚓ WebHarbor</h1>
 <h3>Docking Real Websites for Evolving GUI Agent Environments</h3>
 
@@ -36,7 +34,7 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 41 sites today, scaling to 100+ together
+- **Community-driven** — 49 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
@@ -44,16 +42,16 @@ Build this checkout to run its registered web environments (published image tags
 
 ```bash
 ./scripts/build.sh webharbor:dev
-docker run -p 8101:8101 -p 40000-40040:40000-40040 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40048:40000-40048 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40040` to explore 41 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, and Best Buy`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40048` to explore 49 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, and Best Buy`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
 ```bash
-curl -X POST http://localhost:8101/reset/amazon          # one site
-curl -X POST http://localhost:8101/reset-all             # all sites in parallel
+curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8101/reset/amazon          # one site
+curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8101/reset-all             # all sites in parallel
 ```
 
 If you prefer to build the image yourself:
@@ -66,14 +64,7 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 
 ### Site registry
 
-This checkout registers **41 sites**. NVIDIA remains at index 28, UC Berkeley
-remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index
-31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at
-index 34. Recreation.gov remains at index 35; BoardGameGeek remains at index 36,
-CarMax remains at index 37, BabyCenter remains at index 38, and Amtrak is appended
-at index 39. Best Buy is appended at index 40 (port 40040). Build the image from
-this checkout to use this registry; publishing source does not update the
-published Docker image automatically.
+This checkout registers **49 sites**. NVIDIA remains at index 28, UC Berkeley remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index 31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at index 34. Recreation.gov remains at index 35, BoardGameGeek remains at index 36, CarMax remains at index 37, BabyCenter remains at index 38, Amtrak remains at index 39, Cookpad remains at index 40, Craigslist remains at index 41, Drugs.com remains at index 42, Versus remains at index 43, Y Combinator remains at index 44, PhET Interactive Simulations remains at index 45, Discogs remains at index 46, Google Finance remains at index 47, and Best Buy is appended at index 48. Build the image from this checkout to use this registry; publishing source does not update the published Docker image automatically.
 
 | Site | Registry position | Container port | Example local review host port |
 | --- | --- | --- | --- |
@@ -89,10 +80,18 @@ published Docker image automatically.
 | CarMax | 37 | 40037 | 48037 |
 | BabyCenter | 38 | 40038 | 48038 |
 | Amtrak | 39 | 40039 | 48039 |
-| Best Buy | 40 | 40040 | 48040 |
+| Cookpad | 40 | 40040 | 48040 |
+| Craigslist | 41 | 40041 | 48041 |
+| Drugs.com | 42 | 40042 | 48042 |
+| Versus | 43 | 40043 | 48043 |
+| Y Combinator | 44 | 40044 | 48044 |
+| PhET Interactive Simulations | 45 | 40045 | 48045 |
+| Discogs | 46 | 40046 | 48046 |
+| Google Finance | 47 | 40047 | 48047 |
+| Best Buy | 48 | 40048 | 48048 |
 
 `websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 41 sites and `40000-40040`;
+site's `tasks.jsonl` `web` URL agree on 49 sites and `40000-40048`;
 `scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
 drift.
 
@@ -100,7 +99,7 @@ After preparing the candidate assets and building `webharbor:dev`, the local
 review deployment uses:
 
 ```bash
-docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48040:40000-40040 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48048:40000-40048 webharbor:dev
 ```
 
 NVIDIA inherits the site contribution from @KaKituken
@@ -114,14 +113,18 @@ passed.
 
 GOV.UK is registered at index 32 / port 40032, IMDb at index 33 / port 40033,
 NBA at index 34 / port 40034, Recreation.gov through Amtrak at indexes 35–39,
-and Best Buy at index 40 / port 40040 in builds of this source revision.
+and Best Buy at index 48 / port 40048 in builds of this source revision.
 The published Docker Hub image is updated in a separate release. GOV.UK's reviewed seed originated in
 [HF asset PR #93](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/93).
 The bundle contains 78 articles and 62 structured guidance sections. That archive
 is part of the consolidated pinned dataset revision below.
 
 
-`.assets-revision` pins merged HF main commit
+The current `.assets-revision` pins all **49** registered sites to immutable reviewer candidate `a803852e09a8ef3dc4b86b949c440bb7f750f263`. It merges the current HF main asset revision with the Best Buy archive proposed in open [HF #98](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/98); it does not merge that PR. `assets-manifest.json` binds all selected archives and the extracted managed tree. Unregistered bundles are not fetched; tracked seed migrations and generation remain part of the build contract.
+
+Historical asset integration notes below describe superseded pins, not the current pin.
+
+The previous `.assets-revision` pinned merged HF main commit
 `9d67d0088a7535e455a331a823b67e3a7d666161`, containing archives for all **38**
 previously registered sites. Original asset PRs #8 (Recreation.gov), #15 (CarMax),
 #25 (BoardGameGeek), and #66 (AccuWeather) are merged, followed by
@@ -131,7 +134,7 @@ global pin `2aaf9d598f3e71cddd17a4efcdfee7dd7c073337` are unchanged; the three
 non-CarMax scoped bundles also retain their reviewed bytes. CarMax adds 11
 source-backed model-year stock photos without changing its original files or
 seed. Seven other unavailable vehicle hero images remain explicit placeholders.
-The unregistered Bandcamp and Drugs.com archives are ignored by `fetch_assets.sh`.
+At that earlier revision, the unregistered Bandcamp and Drugs.com archives were ignored by `fetch_assets.sh`.
 Tracked seed migrations and build-generated seeds still run during fetch/build.
 
 BabyCenter, the 39th site, uses the immutable merged scoped
@@ -263,7 +266,7 @@ Use a coding agent to build a new mirror (frontend + backend + database + tasks)
 
 1. Browse the [Contribution Track Sheet](https://docs.google.com/spreadsheets/d/1vZsrQjy9nJKze58fx4kbQtFi85NjVXIWCFyu3ShD7gk/edit?gid=0#gid=0) and pick an unclaimed site.
 2. Submit the [Contribution Request Form](https://forms.gle/ngcD1rzAfUEphNmRA) to claim it. We lock the site to prevent duplicate work.
-3. Follow the [Website Contribution Guide](https://aiming-lab.github.io/webharbor.github.io/guide-create.html) and [CONTRIBUTING.md](CONTRIBUTING.md) to build and open a PR. 
+3. Follow the [Website Contribution Guide](https://aiming-lab.github.io/webharbor.github.io/guide-create.html) and [CONTRIBUTING.md](CONTRIBUTING.md) to build and open a PR.
 
 ### 🔍 Track B — Review environments
 
@@ -289,7 +292,7 @@ Any other improvement — bug fixes, UI polish, data enrichment, task suggestion
 
 ## Citation
 
-WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`. 
+WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`.
 
 ```bibtex
 @misc{webharbor2026,

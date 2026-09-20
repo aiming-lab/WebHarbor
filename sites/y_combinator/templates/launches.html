@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_pagination.html" as pager %}
+{% block title %}Launch YC | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell page-head">
+    <h1>Launch YC</h1>
+    <p class="lede">New products from Y Combinator companies.</p>
+</div>
+<div class="shell">
+    <div class="card-list">
+        {% for launch in launches %}
+        <article class="card">
+            {% if launch.logo %}<img src="{{ url_for('static', filename='images/' + launch.logo) }}" alt="{{ launch.company_name }} logo">{% else %}<span class="avatar"></span>{% endif %}
+            <div>
+                <h3><a href="{{ url_for('launch_detail', slug=launch.slug) }}">{{ launch.title }}</a></h3>
+                <p>{{ launch.tagline }}</p>
+                <p class="muted">
+                    {% if launch.company_batch %}<span class="pill batch">{{ launch.company_batch }}</span>{% endif %}
+                    {% if launch.created_at %}{{ launch.created_at[:10] }} · {% endif %}{{ launch.vote_count }} upvotes
+                </p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {{ pager.render(page_info, 'launches', {}) }}
+</div>
+{% endblock %}

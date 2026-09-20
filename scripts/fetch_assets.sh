@@ -10,8 +10,8 @@
 # Usage:
 #   ./scripts/fetch_assets.sh                 # fetch all sites at pinned rev
 #   ./scripts/fetch_assets.sh google_search   # fetch one site only
-#   ASSETS_REVISION=abc123 ./scripts/fetch_assets.sh   # override all pins
-# .assets-revision may also contain site.<name>: <immutable SHA> entries.
+#   ASSETS_REVISION=<pinned-revision> ./scripts/fetch_assets.sh   # optional exact-pin assertion
+#   ./scripts/fetch_assets.sh --refresh-manifest   # maintainer-only after updating the tracked pin
 #
 # Requires:
 #   - hf CLI  (pip install -U "huggingface_hub[cli]")
@@ -20,8 +20,22 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 
 REPO=$(awk '/^repo:/ {print $2}' .assets-revision)
-REVISION="${ASSETS_REVISION:-$(awk '/^revision:/ {print $2}' .assets-revision)}"
+PINNED_REVISION=$(awk '/^revision:/ {print $2}' .assets-revision)
+REVISION="${ASSETS_REVISION:-$PINNED_REVISION}"
+if [[ "$REVISION" != "$PINNED_REVISION" ]]; then
+    echo "fetch_assets: ASSETS_REVISION must equal pinned revision $PINNED_REVISION" >&2
+    exit 1
+fi
+REFRESH_MANIFEST=0
+if [[ "${1:-}" == "--refresh-manifest" ]]; then
+    REFRESH_MANIFEST=1
+    shift
+fi
 ONLY_SITE="${1:-}"
+if [[ "$REFRESH_MANIFEST" -eq 1 && -n "$ONLY_SITE" ]]; then
+    echo "fetch_assets: --refresh-manifest requires a full fetch" >&2
+    exit 1
+fi
 CACHE_DIR="sites/.cache/tarballs/$REVISION"
 
 if ! command -v hf >/dev/null 2>&1; then
@@ -33,118 +47,145 @@ mkdir -p "$CACHE_DIR"
 echo "[fetch] huggingface.co/datasets/$REPO @ $REVISION -> sites/"
 
 if [[ -n "$ONLY_SITE" ]]; then
-    INCLUDES=("$ONLY_SITE.tar.gz")
+    [[ "$ONLY_SITE" =~ ^[a-z0-9_]+$ && -d "sites/$ONLY_SITE" ]] || { echo "Unknown site: $ONLY_SITE" >&2; exit 1; }
+    INCLUDES=(--include "$ONLY_SITE.tar.gz")
     echo "[fetch] scope: $ONLY_SITE only"
 else
-    # Request exactly the archives this checkout registers. The dataset may also
-    # hold archives for sites whose code has not merged yet; downloading them
-    # would waste bandwidth and make the inventory below ambiguous.
+    # The merged dataset also contains contributions not registered here.
+    # Download exactly the current site's archives, never unrelated bundles.
     INCLUDES=()
     for site_dir in sites/*/; do
-        [[ -d "$site_dir" ]] || continue
-        INCLUDES+=("$(basename "$site_dir").tar.gz")
+        [[ -d "$site_dir" ]] && INCLUDES+=(--include "$(basename "$site_dir").tar.gz")
     done
-    echo "[fetch] scope: ${#INCLUDES[@]} registered site(s)"
+    echo "[fetch] scope: $(( ${#INCLUDES[@]} / 2 )) registered site(s)"
 fi
 
-# A site may pin an immutable bundle independently while its HF PR awaits
-# integration. An explicit ASSETS_REVISION override deliberately replaces all
-# pins, which is useful when validating a proposed consolidated release.
-declare -A SITE_REVISIONS
-declare -A SITE_REPOS
-TARBALLS=()
-BASE_INCLUDES=()
-for archive in "${INCLUDES[@]}"; do
-    site=${archive%.tar.gz}
-    if [[ ! -d "sites/$site" || ! "$site" =~ ^[a-z0-9_]+$ ]]; then
-        echo "fetch_assets: unknown site: $site" >&2
-        exit 1
-    fi
-    revision="$REVISION"
-    asset_repo="$REPO"
-    if [[ -z "${ASSETS_REVISION:-}" ]]; then
-        scoped=$(awk -v key="site.$site:" '$1 == key {print $2}' .assets-revision)
-        scoped_repo=$(awk -v key="site.$site.repo:" '$1 == key {print $2}' .assets-revision)
-        if [[ -n "$scoped" ]]; then
-            [[ "$scoped" =~ ^[0-9a-f]{40}$ ]] || { echo "Invalid immutable pin for $site" >&2; exit 1; }
-            revision="$scoped"
-            asset_repo="${scoped_repo:-$REPO}"
-        elif [[ -n "$scoped_repo" ]]; then
-            echo "Scoped repository needs an immutable revision: $site" >&2
-            exit 1
-        fi
-    fi
-    SITE_REVISIONS[$site]="$revision"
-    SITE_REPOS[$site]="$asset_repo"
-    TARBALLS+=("sites/.cache/tarballs/$revision/$archive")
-    if [[ "$revision" == "$REVISION" && "$asset_repo" == "$REPO" ]]; then
-        BASE_INCLUDES+=(--include "$archive")
-    fi
-done
-if (( ${#BASE_INCLUDES[@]} )); then
-    hf download "$REPO" --repo-type dataset --revision "$REVISION" \
-        "${BASE_INCLUDES[@]}" --local-dir "$CACHE_DIR"
+hf download "$REPO" --repo-type dataset --revision "$REVISION" \
+    "${INCLUDES[@]}" --local-dir "$CACHE_DIR"
+
+if [[ -n "$ONLY_SITE" ]]; then
+    python3 scripts/asset_state.py verify-archive sites .assets-revision assets-manifest.json --cache "$CACHE_DIR" --site "$ONLY_SITE"
 fi
-for archive in "${INCLUDES[@]}"; do
-    site=${archive%.tar.gz}
-    revision=${SITE_REVISIONS[$site]}
-    if [[ "$revision" != "$REVISION" || "${SITE_REPOS[$site]}" != "$REPO" ]]; then
-        echo "[fetch] $site scoped pin: $revision"
-        hf download "${SITE_REPOS[$site]}" --include "$archive" --repo-type dataset --revision "$revision" \
-            --local-dir "sites/.cache/tarballs/$revision"
-    fi
-done
-AVAILABLE_TARBALLS=()
-for tarball in "${TARBALLS[@]}"; do
-    if [[ ! -f "$tarball" ]]; then
-        site=$(basename "$tarball" .tar.gz)
-        # Build-generated sites need no archive only when they also need no
-        # downloaded images or external cache. Required assets still fail closed.
-        if [[ -f "sites/$site/.build-generated-seed" &&
-              ! -f "sites/$site/.requires-images" &&
-              ! -f "sites/$site/.requires-external-cache" ]]; then
-            echo "[fetch] $site: build-generated seed, no archive — skipping"
-            if [[ -n "$ONLY_SITE" ]]; then exit 0; fi
-            continue
-        fi
-        echo "fetch_assets: expected archive: $tarball" >&2
+
+shopt -s nullglob
+if [[ -n "$ONLY_SITE" ]]; then
+    TARBALLS=("$CACHE_DIR/$ONLY_SITE.tar.gz")
+    if [[ ! -f "${TARBALLS[0]}" ]]; then
+        echo "fetch_assets: expected archive for $ONLY_SITE" >&2
         exit 1
     fi
-    AVAILABLE_TARBALLS+=("$tarball")
-done
-TARBALLS=("${AVAILABLE_TARBALLS[@]}")
+else
+    TARBALLS=("$CACHE_DIR"/*.tar.gz)
+    declare -A expected_sites=()
+    declare -A archive_sites=()
+    for site_dir in sites/*/; do
+        [[ -d "$site_dir" ]] && expected_sites["$(basename "$site_dir")"]=1
+    done
+    for tarball in "${TARBALLS[@]}"; do
+        archive_sites["$(basename "$tarball" .tar.gz)"]=1
+    done
+    missing=()
+    extra=()
+    for site in "${!expected_sites[@]}"; do
+        [[ -n "${archive_sites[$site]:-}" ]] || missing+=("$site")
+    done
+    for site in "${!archive_sites[@]}"; do
+        [[ -n "${expected_sites[$site]:-}" ]] || extra+=("$site")
+    done
+    if (( ${#missing[@]} || ${#extra[@]} )); then
+        echo "fetch_assets: archive set mismatch at revision $REVISION; missing=[${missing[*]}] extra=[${extra[*]}]" >&2
+        exit 1
+    fi
+fi
+
+TRANSACTION=""
+MANIFEST_BACKUP=""
+MANIFEST_EXISTED=0
+rollback_assets() {
+    status=$?
+    trap - ERR INT TERM
+    if [[ -n "$TRANSACTION" && -d "$TRANSACTION" ]]; then
+        echo "fetch_assets: rolling back repository-wide managed-asset transaction" >&2
+        python3 scripts/asset_transaction.py rollback sites "$TRANSACTION"
+        if [[ "$REFRESH_MANIFEST" -eq 1 ]]; then
+            if [[ "$MANIFEST_EXISTED" -eq 1 && -f "$MANIFEST_BACKUP" ]]; then
+                cp -p "$MANIFEST_BACKUP" assets-manifest.json
+            else
+                rm -f assets-manifest.json
+            fi
+        fi
+    fi
+    [[ -n "$MANIFEST_BACKUP" ]] && rm -f "$MANIFEST_BACKUP"
+    exit "$status"
+}
+
+if [[ -z "$ONLY_SITE" ]]; then
+    echo "[fetch] pre-validating complete archive set before changing managed roots"
+    for tarball in "${TARBALLS[@]}"; do
+        site=$(basename "$tarball" .tar.gz)
+        if [[ "$REFRESH_MANIFEST" -eq 0 ]]; then
+            python3 scripts/asset_state.py verify-archive sites .assets-revision assets-manifest.json --cache "$CACHE_DIR" --site "$site"
+        fi
+        validator_args=()
+        [[ -f "sites/$site/.build-generated-seed" ]] && validator_args+=(--allow-missing-seed)
+        python3 scripts/validate_asset_archive.py "$tarball" "$site" "${validator_args[@]}"
+    done
+    TRANSACTION="sites/.cache/asset-transaction-$$"
+    if [[ "$REFRESH_MANIFEST" -eq 1 ]]; then
+        MANIFEST_BACKUP="sites/.cache/assets-manifest-backup-$$.json"
+        if [[ -f assets-manifest.json ]]; then
+            cp -p assets-manifest.json "$MANIFEST_BACKUP"
+            MANIFEST_EXISTED=1
+        fi
+    fi
+    trap rollback_assets ERR INT TERM
+    python3 scripts/asset_transaction.py begin sites "$TRANSACTION"
+fi
+
 extracted=0
 for tarball in "${TARBALLS[@]}"; do
     site=$(basename "$tarball" .tar.gz)
     if [[ -n "$ONLY_SITE" && "$site" != "$ONLY_SITE" ]]; then continue; fi
-    expected_sha=$(awk -v key="site.$site.sha256:" '$1 == key {print $2}' .assets-revision)
-    if [[ -n "$expected_sha" && -z "${ASSETS_REVISION:-}" ]]; then
-        [[ "$expected_sha" =~ ^[0-9a-f]{64}$ ]] || { echo "Invalid archive hash: $site" >&2; exit 1; }
-        actual_sha=$(sha256sum "$tarball" | cut -d' ' -f1)
-        [[ "$actual_sha" == "$expected_sha" ]] || { echo "Archive hash mismatch: $site" >&2; exit 1; }
+    validator_args=()
+    if [[ -f "sites/$site/.build-generated-seed" ]]; then
+        validator_args+=(--allow-missing-seed)
     fi
-    python3 scripts/validate_asset_archive.py "$tarball" "$site"
+    python3 scripts/validate_asset_archive.py "$tarball" "$site" "${validator_args[@]}"
     echo "[fetch] extracting $site"
-    python3 scripts/extract_asset_archive.py "$tarball" sites "$site"
-    # An archive can outlive the code that used it: a site may stop shipping a
-    # managed root, or stop generating per-record art. asset_inventory.json is
-    # the declared contract for what the site actually serves, and the build
-    # validates it, so prune managed files the contract does not declare instead
-    # of leaving stale members to fail the inventory gate.
-    python3 scripts/sync_assets_to_inventory.py "sites/$site"
+    extractor_args=()
     migrator="sites/$site/migrate_seed.py"
-    database="sites/$site/instance_seed/$site.db"
+    if [[ ! -f "sites/$site/.build-generated-seed" && -f "$migrator" ]]; then
+        echo "[fetch] applying tracked $site seed migration in staging"
+        extractor_args+=(--migrator "$migrator")
+    fi
+    python3 scripts/extract_asset_archive.py "$tarball" sites "$site" "${extractor_args[@]}"
     if [[ -f "sites/$site/.build-generated-seed" ]]; then
         rm -rf "sites/$site/instance_seed"
-    elif [[ -f "$migrator" && -f "$database" ]]; then
-        echo "[fetch] applying tracked $site seed migration"
-        PYTHONHASHSEED=0 python3 "$migrator" "$database"
     fi
     extracted=$((extracted + 1))
 done
 
+if [[ -z "$ONLY_SITE" ]]; then
+    if [[ "$REFRESH_MANIFEST" -eq 1 ]]; then
+        python3 scripts/asset_state.py write sites .assets-revision assets-manifest.json --cache "$CACHE_DIR"
+    fi
+    # Verify archive bytes and the extracted tree against the tracked immutable manifest while rollback data is available.
+    python3 scripts/asset_state.py verify sites .assets-revision assets-manifest.json --cache "$CACHE_DIR"
+fi
+
+if [[ -n "$TRANSACTION" ]]; then
+    completed_transaction="$TRANSACTION"
+    TRANSACTION=""
+    trap - ERR INT TERM
+    python3 scripts/asset_transaction.py commit sites "$completed_transaction"
+    [[ -n "$MANIFEST_BACKUP" ]] && rm -f "$MANIFEST_BACKUP"
+fi
+
 if [[ -n "$ONLY_SITE" && $extracted -ne 1 ]]; then
     echo "fetch_assets: did not extract requested site $ONLY_SITE" >&2
     exit 1
+fi
+if [[ -n "$ONLY_SITE" ]]; then
+    echo "[fetch] single-site archive matched assets-manifest.json; full-tree verification runs during build"
 fi
 echo "[fetch] done — $extracted site(s) extracted into sites/"

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ l.name }} | Discogs Labels{% endblock %}
+
+{% block content %}
+<div class="profile-head">
+  <div class="avatar avatar-md" style="background: hsl({{ l.id * 17 % 360 }}, 35%, 35%);">
+    {{ l.name[0]|upper }}
+  </div>
+  <div style="flex: 1;">
+    <h1>{{ l.name }}</h1>
+    {% if l.parent_label %}
+      <p class="muted">A division of <a href="{{ url_for('label_detail', lid=l.parent_label.id, slug=l.parent_label.slug) }}">{{ l.parent_label.name }}</a></p>
+    {% endif %}
+    {% if l.profile %}<p>{{ l.profile }}</p>{% endif %}
+    {% if l.contact_info %}<p class="muted">{{ l.contact_info }}</p>{% endif %}
+    <p class="muted">{{ pag.total }} releases</p>
+  </div>
+</div>
+
+{% if sublabels %}
+<div class="card">
+  <h3>Sublabels</h3>
+  <div class="tag-cloud">
+    {% for s in sublabels %}
+      <a href="{{ url_for('label_detail', lid=s.id, slug=s.slug) }}">{{ s.name }}</a>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <h2>Releases on {{ l.name }}</h2>
+  <div class="release-grid">
+    {% for r in pag.items %}{{ m.release_card(r) }}{% endfor %}
+  </div>
+  {{ m.pagination(pag, 'label_detail', params={'lid': l.id, 'slug': l.slug}) }}
+</div>
+{% endblock %}

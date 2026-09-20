@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}Find your next favourite recipe{% endblock %}{% block content %}
+<section class="welcome"><p class="eyebrow">FROM HOME COOKS, FOR HOME COOKS</p><h1>What would you like to cook?</h1><p>Find a little inspiration for your everyday meals.</p>
+<form class="home-search" action="{{ url_for('search') }}"><input name="q" aria-label="Find recipes" placeholder="Chicken, banana bread, tofu…"><button>Search recipes</button></form></section>
+<section><div class="section-header"><h2>Explore collections</h2><a href="{{ url_for('categories_page') }}">View all</a></div><div class="collection-grid">
+{% for cat in categories %}{% set cover=cat.recipes|first %}<a class="collection-tile" href="{{ url_for('category_page',slug=cat.slug) }}">{% if cover %}<img src="{{ cover.image }}" alt="" width="400" height="220">{% endif %}<span>{{ cat.name }}</span></a>{% endfor %}</div></section>
+<section><div class="section-header"><div><h2>Recipes worth keeping</h2><p class="muted">Most saved in this snapshot</p></div><a href="{{ url_for('search',sort='saved') }}">Browse recipes</a></div><div class="recipe-grid">{% for recipe in popular %}{% include "_recipe_card.html" %}{% endfor %}</div></section>
+<section><div class="section-header"><h2>More from the community</h2></div><div class="recipe-grid">{% for recipe in latest %}{% include "_recipe_card.html" %}{% endfor %}</div></section>{% endblock %}

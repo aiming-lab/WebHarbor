@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}DailyMed source labels - {{ site_name }}{% endblock %}
+{% block content %}
+<h1>DailyMed source labels</h1>
+<p>Selected manufacturer-submitted product labels from the U.S. National Library of Medicine's DailyMed service, retrieved on September 18, 2026. These are source-backed supplements, not Drugs.com articles or proof that the remaining mirror content has been verified.</p>
+<p>Each record describes a specific formulation and label version. A shared ingredient does not make products, doses, or packaging interchangeable. This offline snapshot is not a substitute for current labeling or professional advice.</p>
+<div class="condition-grid">
+{% for row in labels %}{% set label = row.data %}
+<article class="condition-card">
+  <h2><a href="{{ url_for('official_label', slug=row.drug.slug) }}">{{ row.drug.generic_name|capitalize }}</a></h2>
+  <p>{{ label.title }}</p><p>Published {{ label.published_date }} · SPL version {{ label.version }}</p>
+  <a href="{{ url_for('drug_detail', slug=row.drug.slug) }}">Local catalog entry</a>
+</article>
+{% endfor %}
+</div>
+{% endblock %}

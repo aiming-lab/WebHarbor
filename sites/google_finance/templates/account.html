@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Your account - Google Finance{% endblock %}
+{% block content %}
+<h1 class="section-title">Your account</h1>
+<div class="panel">
+  <h2>Profile</h2>
+  <div class="stats-grid">
+    <div>
+      <div class="stat-row"><dt>Name</dt><dd>{{ current_user.name }}</dd></div>
+      <div class="stat-row"><dt>Username</dt><dd>{{ current_user.username }}</dd></div>
+    </div>
+    <div>
+      <div class="stat-row"><dt>Email</dt><dd>{{ current_user.email }}</dd></div>
+      <div class="stat-row"><dt>Lists</dt><dd>{{ nav_watchlists|length }}</dd></div>
+    </div>
+    <div>
+      <div class="stat-row"><dt>Portfolios</dt><dd>{{ nav_portfolios|length }}</dd></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Your lists</h2>
+  {% if nav_watchlists %}
+    <ul class="rail-list">
+      {% for wl in nav_watchlists %}
+        <li><a href="{{ url_for('list_detail', list_id=wl.id) }}">{{ wl.name }}
+          <span class="rail-count">{{ wl.items|length }} symbols</span></a></li>
+      {% endfor %}
+    </ul>
+  {% else %}<p class="empty-state">No lists yet.</p>{% endif %}
+</div>
+
+<div class="panel">
+  <h2>Your portfolios</h2>
+  {% if nav_portfolios %}
+    <ul class="rail-list">
+      {% for p in nav_portfolios %}
+        <li><a href="{{ url_for('portfolio_detail', pid=p.id) }}">{{ p.name }}
+          <span class="rail-count">{{ '${:,.2f}'.format(p.market_value()) }}</span></a></li>
+      {% endfor %}
+    </ul>
+  {% else %}<p class="empty-state">No portfolios yet.</p>{% endif %}
+</div>
+{% endblock %}

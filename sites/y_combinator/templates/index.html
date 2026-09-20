@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+
+{% block styles %}<link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">{% endblock %}
+{% block scripts %}<script src="{{ url_for('static', filename='js/home.js') }}" defer></script>{% endblock %}
+{% block content %}
+<div class="homepage">
+<section class="hero">
+    <div class="shell">
+        <h1><span>{{ hero.line_one }}</span><br>
+            <span>{{ hero.line_two_lead }} <em>{{ hero.headline_emphasis }}</em></span><sup>[1]</sup></h1>
+        <div class="mobile-stories" aria-label="YC founder stories">
+            {% set mobile_stories = (before_now|selectattr('key', 'equalto', 'airbnb')|list) + (before_now|selectattr('key', 'equalto', 'openai')|list) + (before_now|rejectattr('key', 'equalto', 'airbnb')|rejectattr('key', 'equalto', 'openai')|list) %}
+            {% for story in mobile_stories %}
+            <button class="mobile-story" type="button" aria-label="{{ story.name }}: switch between YC and now" aria-pressed="false">
+                {% for photo in story.images %}<img class="{{ 'young' if loop.first else 'now' }}" src="{{ url_for('static', filename='images/' + photo) }}" alt="{{ story.name }} {{ 'during YC' if loop.first else 'now' }}" {{ 'loading=lazy' if not loop.first else '' }}>{% endfor %}
+                <span class="mobile-story-body">
+                    <strong>{{ story.name }}</strong>
+                    <span class="mobile-story-description"><span class="young">{{ story.young }}</span><span class="now">{{ story.now }}</span></span>
+                    <span class="story-progress"><span>YC</span><span class="track"><i class="progress-young"></i></span><span class="track"><i class="progress-now"></i></span><span>Now</span></span>
+                </span>
+            </button>
+            {% endfor %}
+        </div>
+        {% if hero.footnote %}
+        <div class="hero-note">
+            <p>[1] {{ hero.footnote }}</p>
+            {% if hero.footnote_attribution %}<p class="attrib">{{ hero.footnote_attribution }}</p>{% endif %}
+        </div>
+        {% endif %}
+        <div class="scroll-cue" aria-hidden="true"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor"><path d="M6 8L10 12L14 8" stroke-width="2"/></svg></div>
+    </div>
+</section>
+
+{% if before_now %}
+<section class="reveal" aria-label="YC companies then and now">
+    {% for side in ['young', 'now'] %}
+    <div class="story-stage story-stage-{{ side }}">
+        {% for story in before_now %}
+        <figure class="story-frame" data-story-frame="{{ loop.index0 }}" aria-hidden="true">
+            <div class="story-label">{{ 'During YC' if side == 'young' else 'Now' }}</div>
+            <img src="{{ url_for('static', filename='images/' + story.images[0 if side == 'young' else 1]) }}" alt="{{ story.name }} {{ 'during YC' if side == 'young' else 'now' }}" loading="lazy">
+            <figcaption>{{ story.young if side == 'young' else story.now }}</figcaption>
+        </figure>
+        {% endfor %}
+        <div class="story-logos" aria-hidden="true">
+            {% set midpoint = (logos|length + 1) // 2 %}
+            {% for logo in (logos[:midpoint] if side == 'young' else logos[midpoint:]) %}
+            <div>{% if logo.logo %}<img src="{{ url_for('static', filename='images/' + logo.logo) }}" alt="{{ logo.name }}" loading="lazy">{% endif %}</div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+    <div class="reveal-center">
+        <ol class="reveal-names">
+            {% for story in before_now %}
+            <li><button type="button" data-story-index="{{ loop.index0 }}">{{ story.name }}</button></li>
+            {% endfor %}
+        </ol>
+        <button type="button" class="reveal-total" data-story-index="{{ before_now|length }}">
+            {{ hero.valuation_amount }}<span class="reveal-caption">{{ hero.valuation_caption }}</span>
+        </button>
+        <p class="reveal-link"><a href="{{ url_for('companies') }}">All companies <span>›</span></a></p>
+    </div>
+</section>
+{% endif %}
+
+{% if narrative or about_quotes %}
+<section class="section home-about">
+    <div class="shell">
+        {% if narrative %}
+        <div class="reading">
+            {% for paragraph in narrative %}
+            <p{% if loop.first %} class="dropcap"{% endif %}>{{ paragraph.text }}</p>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if about_strip %}
+        <div class="about-strip">
+            {% for item in about_strip %}
+            <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="Y Combinator founders during the batch" loading="lazy">
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if about_quotes %}
+        <div class="reading founder-words">
+            <p class="eyebrow">In founders’ words</p>
+            {% for pair in about_quotes|batch(2) %}
+            <p class="founder-quote">
+                {% for quote in pair %}
+                <span class="quote-reference">
+                    <span class="quote-trigger" role="button" tabindex="0" aria-expanded="false">
+                        <span>{{ quote.text }}</span>{% if quote.avatar %}<img src="{{ url_for('static', filename='images/' + quote.avatar) }}" alt="{{ quote.author }}" loading="lazy">{% endif %}
+                    </span>
+                    <span class="quote-profile" role="tooltip">
+                        {% if quote.avatar %}<img src="{{ url_for('static', filename='images/' + quote.avatar) }}" alt="" loading="lazy">{% endif %}
+                        <span><strong>{{ quote.author }}</strong><small>Founder of {{ quote.company }} ({{ quote.batch }})</small></span>
+                    </span>
+                </span>
+                {% endfor %}
+            </p>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+{% endif %}
+
+{% if in_the_room %}
+<section class="section">
+    <div class="shell">
+        <h2 class="section-title">Be in the room with …</h2>
+        <div class="video-grid">
+            {% for video in in_the_room %}
+            <div class="video-card" tabindex="0" aria-label="Preview {{ video.name }}, {{ video.title }}">
+                {% if video.video %}
+                <video src="{{ url_for('static', filename='external_cache/' + video.video) }}" poster="{{ url_for('static', filename='images/' + video.poster) }}" data-start-time="{{ video.start_time or 0 }}" muted loop playsinline preload="metadata" aria-label="{{ video.name }}"></video>
+                {% elif video.poster %}<img src="{{ url_for('static', filename='images/' + video.poster) }}" alt="{{ video.name }}" loading="lazy">{% endif %}
+                <div class="label">
+                    <div class="name">{{ video.name }}</div>
+                    <div class="meta">{{ video.title }}</div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if featured_quote %}
+<section class="section">
+    <div class="shell featured-quote">
+        <blockquote>“{{ featured_quote.text }}”</blockquote>
+        <p class="attrib">{% if featured_quote.avatar %}<img src="{{ url_for('static', filename='images/' + featured_quote.avatar) }}" alt="" loading="lazy">{% endif %}{{ featured_quote.author }}{% if featured_quote.role %}, {{ featured_quote.role }}{% endif %}</p>
+    </div>
+</section>
+{% endif %}
+
+{% if partner_sections %}
+<section class="section">
+    <div class="shell">
+        <h2 class="section-title">All partners were YC founders first</h2>
+        <div class="partner-grid">
+        {% for section in partner_sections %}
+            {% for partner in section.partners %}
+            <a class="partner-card" href="{{ partner.url or '#' }}">
+                {% if partner.photo %}<img class="now" src="{{ url_for('static', filename='images/' + partner.photo) }}" alt="{{ partner.name }}" loading="lazy">{% endif %}
+                {% if partner.batch_photo %}<img class="batch" src="{{ url_for('static', filename='images/' + partner.batch_photo) }}" alt="{{ partner.name }} during their batch" loading="lazy">{% endif %}
+                <span class="body">
+                    <span class="name">{{ partner.name }}</span>
+                    <span class="batch-title">{{ partner.batch_title }}</span>
+                    <span class="bio">{{ partner.bio }}</span>
+                </span>
+            </a>
+            {% endfor %}
+        {% endfor %}
+        </div>
+    </div>
+</section>
+{% endif %}
+
+{% if knowledge_feature or startup_news %}
+<section class="section">
+    <div class="shell">
+        <h2 class="section-title">Knowledge &amp; News</h2>
+        <div class="knowledge">
+            {% if knowledge_feature %}
+            <a class="knowledge-feature" href="{{ knowledge_feature.href }}">
+                {% if knowledge_feature.image %}<img src="{{ url_for('static', filename='images/' + knowledge_feature.image) }}" alt="{{ knowledge_feature.title }}" loading="lazy">{% endif %}
+                <p class="eyebrow" style="margin-top:16px">{{ knowledge_feature.tag }}</p>
+                <h3>{{ knowledge_feature.title }}</h3>
+                <p class="muted">{{ knowledge_feature.description }}</p>
+            </a>
+            {% endif %}
+            <div class="knowledge-side">
+                {% for item in knowledge_thumbnails %}
+                <a class="knowledge-thumb" href="{{ item.href }}">
+                    {% if item.image %}<img src="{{ url_for('static', filename='images/' + item.image) }}" alt="{{ item.title }}" loading="lazy">{% endif %}
+                    <span>
+                        <span class="t">{{ item.title }}</span>
+                        <span class="more">{{ item.link_text }}</span>
+                    </span>
+                </a>
+                {% endfor %}
+            </div>
+        <div class="news-columns">
+            <div>
+                <h3>Startup News</h3>
+                <ul>
+                    {% for item in startup_news %}
+                    <li><a href="{{ item.href }}">{{ item.title }} ›</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div>
+                <h3>Paul Graham’s Essays</h3>
+                <ul>
+                    {% for item in pg_essays %}
+                    <li><a href="{{ item.href }}">{{ item.title }} ›</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<section class="section cta">
+    <div class="shell">
+        <h2>It’s never too early to apply.</h2>
+        <p class="lede">We fund companies with no revenue, product, or fully baked idea.</p>
+        <p><a class="button" href="{{ url_for('static_page', page_slug='apply') }}">Apply</a></p>
+        {% if cta_strip %}
+        <div class="cta-strip">
+            {% for item in cta_strip %}
+            <img src="{{ url_for('static', filename='images/' + item.image) }}" alt="Y Combinator founders" loading="lazy">
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</section>
+</div>
+{% endblock %}
