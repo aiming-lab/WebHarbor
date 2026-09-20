@@ -15,6 +15,12 @@
     <b>VS.</b>
     <label class="compare-choice"><span class="compare-slot"><img src="{{ url_for('static', filename='images/akc-home/compare-dog.svg') }}" alt=""></span><span>Select a breed</span><select name="breed"><option value="">Select A Breed</option>{% for breed in breeds %}<option value="{{ breed.slug }}" {% if selected|length > 1 and breed.slug == selected[1] %}selected{% endif %}>{{ breed.name }}</option>{% endfor %}</select></label>
   </div>
+  <div class="compare-extra-row">
+    {% for slot in range(2, 5) %}
+      <label class="compare-choice compare-choice-extra{% if selected|length > slot %} is-active{% endif %}"><span>Select another breed</span><select name="breed"><option value="">Select A Breed</option>{% for breed in breeds %}<option value="{{ breed.slug }}" {% if selected|length > slot and breed.slug == selected[slot] %}selected{% endif %}>{{ breed.name }}</option>{% endfor %}</select></label>
+    {% endfor %}
+  </div>
+  <button class="compare-add" type="button" onclick="const next=this.form.querySelector('.compare-choice-extra:not(.is-active)'); if(next){next.classList.add('is-active')} if(!this.form.querySelector('.compare-choice-extra:not(.is-active)')){this.hidden=true}">+ Add Another Breed</button>
   <button type="submit">Compare Selected</button>
 </form>
 
