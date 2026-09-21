@@ -153,6 +153,9 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/y_combinator
 RUN cd /opt/WebSyn/y_combinator && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
+# Preserve the downloaded MEGA archive and migrate its seed at build time.
+RUN cd /opt/WebSyn/mega && python3 migrate_seed.py
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 

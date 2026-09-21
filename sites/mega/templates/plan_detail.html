@@ -22,9 +22,9 @@
     </dl>
     <form method="post" action="{{ url_for('add_to_cart', slug=plan.slug) }}">
       <label>Billing
-        <select name="billing_cycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+        <select name="billing_cycle"><option value="monthly">Monthly</option>{% if plan.yearly_price > 0 %}<option value="yearly">Yearly</option>{% endif %}</select>
       </label>
-      <label>Seats <input type="number" name="seats" min="1" value="{{ plan.users_included or 1 }}"></label>
+      <label>Seats <input type="number" name="seats" min="{{ plan.users_included or 1 }}" max="10000" value="{{ plan.users_included or 1 }}"></label>
       <button type="submit">Add to cart</button>
     </form>
   </aside>
