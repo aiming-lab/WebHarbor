@@ -722,6 +722,27 @@ class VerifierTests(unittest.TestCase):
                    "1/186313420339200000 ≈ 5.3673 × 10^-18.")
         self.assertTrue(result["pass"], result)
 
+    def test_task35_abbreviated_det_forms_pass_navigation(self):
+        # R2-1: the mirror renders the full determinant record (Determinant
+        # pod: 1 / 186 313 420 339 200 000 = 5.367 x 10^-18) for the three
+        # abbreviated 'det' forms (browser-probed); navigation must accept
+        # them, while the verbatim task wording still FAILs
+        for q in ("det of 6 by 6 Hilbert matrix",
+                  "Det[HilbertMatrix[6]]",
+                  "det HilbertMatrix[6]"):
+            with self.subTest(query=q):
+                result = self.execute(
+                    35, queries=[q],
+                    answer="The determinant of the 6×6 Hilbert matrix is "
+                           "1/186313420339200000 ≈ 5.3673 × 10^-18.")
+                self.assertTrue(result["pass"], result)
+        with self.subTest(query="verbatim wording (mirror-rejected)"):
+            result = self.execute(
+                35, queries=["Calculate the determinant of a 6x6 Hilbert matrix."],
+                answer="The determinant of the 6×6 Hilbert matrix is "
+                       "1/186313420339200000 ≈ 5.3673 × 10^-18.")
+            self.assertFalse(result["pass"], result)
+
     def test_task34_mass_only_query_fails(self):
         # a query rendering only the mass fact does not cover the day-length
         # requirement

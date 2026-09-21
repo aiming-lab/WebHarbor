@@ -12,6 +12,10 @@ content is involved):
       Exact: 1 / 186313420339200000
       Decimal: = 5.3673 x 10^-18
       Condition number: kappa(H_6) = 1.495 x 10^7
+    The abbreviated forms also render the same record with the
+    Determinant pod (browser-probed): 'det of 6 by 6 Hilbert
+    matrix', 'Det[HilbertMatrix[6]]', 'det HilbertMatrix[6]'
+    (all parsed 'HilbertMatrix[6]').
 Checks (deterministic only): run-package gate + non-empty answer +
 read-only user-state DB + /input navigation (anti-shortcut) + answer facts.
 Input/Output: see verify_lib.parse_args / Judge.emit.
@@ -32,7 +36,7 @@ def main():
     n = math_norm(fa)
     j.check("nav_hilbert_determinant_input_query",
           queried_with_all(t, must_all=['hilbert'],
-                          any_of=[['determinant'], ['6x6', '6by6', '6-by-6', '6*6', 'hilbertmatrix[6]', 'hilbertmatrix(6)', 'hilbertmatrix6', 'hilbertmatrix{6}']],
+                          any_of=[['determinant', 'det'], ['6x6', '6by6', '6-by-6', '6*6', 'hilbertmatrix[6]', 'hilbertmatrix(6)', 'hilbertmatrix6', 'hilbertmatrix{6}']],
                           forbidden=['find the', 'find a ', 'find an ', 'compute the', 'calculate the', 'determine the', 'evaluate the', 'estimate the', 'approximate the', 'what is the', "what's the", 'what is a ', 'what are the', 'how many', 'how much', 'how long', 'how often', 'tell me', 'tell us', 'give me', 'show me', 'display the', 'show the', 'evaluated at', 'at the point', 'when x equals', 'inflation:', 'compare burgers', 'calorie comparison', 'convert', 'converted to', 'calculate the determinant of a 6x6']),
           f"input_queries={input_queries(t)[:6]}")
     j.check("answer_hilbert_determinant", contains_any(fa, ["186313420339200000"]) or (decimal_in(fa, "5.3673", tol=0.0005) and  contains_any(fa, ["10^-18", "e-18"])), f"final={fa[:200]!r}")
