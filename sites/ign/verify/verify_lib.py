@@ -27,6 +27,7 @@ Output: JSON {task_id, pass, reason, evidence[]} to stdout; exit 0 on PASS, 1 on
 import base64, json, os, re, sqlite3, subprocess, sys, tempfile, urllib.request
 from pathlib import Path
 from dataclasses import dataclass
+from urllib.parse import urlsplit, unquote
 
 SITE = "ign"
 
@@ -42,8 +43,18 @@ def step_urls(traj):
     return [s.get("url", "") for s in traj.get("steps", [])]
 
 def navigated_to(traj, substr, times=1):
-    """Deterministic: at least `times` trajectory steps have a URL containing substr."""
-    return sum(1 for u in step_urls(traj) if substr in u) >= times
+    """Count same-origin path visits; slash-prefixed paths must match exactly."""
+    origin = urlsplit(traj.get("start_url", ""))
+    def matches(url):
+        try:
+            parsed = urlsplit(url)
+            if (parsed.scheme, parsed.netloc) != (origin.scheme, origin.netloc):
+                return False
+            path = unquote(parsed.path).rstrip("/") or "/"
+            return path == substr.rstrip("/") if substr.startswith("/") else substr in path
+        except ValueError:
+            return False
+    return sum(matches(u) for u in step_urls(traj)) >= times
 
 def navigated_any(traj, substrs):
     return any(navigated_to(traj, s) for s in substrs)
@@ -139,7 +150,7 @@ def db_query(db_path, sql, params=()):
     if not db_path:
         return None
     try:
-        con = sqlite3.connect(db_path)
+        con = sqlite3.connect(Path(db_path).resolve().as_uri() + "?mode=ro", uri=True)
         try:
             return con.execute(sql, params).fetchall()
         finally:
@@ -375,4 +386,11 @@ def parse_args():
         def post_process(self):
             if not self.run_dir:
                 raise SystemExit("--run_dir is required")
-    return sap.parse_args(VerifyArgs)
+    args = sap.parse_args(VerifyArgs)
+    # Saved evaluation fixtures take precedence over a mutable running container.
+    # Explicit paths (including unavailable ones) always retain fail-closed semantics.
+    for field, name in [("initial_db", "initial.db"), ("after_db", "after.db")]:
+        path = Path(args.run_dir) / name
+        if not getattr(args, field) and path.exists():
+            setattr(args, field, str(path))
+    return args

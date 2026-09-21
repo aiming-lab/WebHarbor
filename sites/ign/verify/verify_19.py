@@ -38,6 +38,8 @@ def main():
     else:
         j.check("db_username", False, "no new user row")
         j.check("db_display_name", False, "no new user row")
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

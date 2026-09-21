@@ -37,6 +37,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, "the PlayStation physical-media video in the playlist with status watching",
             "david's playlist")
         j.check("screenshot_shows_playlist", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

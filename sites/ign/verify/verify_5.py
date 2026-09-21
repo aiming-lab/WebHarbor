@@ -35,6 +35,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, "region San Francisco, CA and favorite platform Nintendo Switch 2",
             "carol's account profile")
         j.check("screenshot_shows_profile", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

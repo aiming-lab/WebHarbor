@@ -38,6 +38,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, "the weekly-update guide alert shown as paused/inactive",
             "bob's alerts list")
         j.check("screenshot_shows_paused", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

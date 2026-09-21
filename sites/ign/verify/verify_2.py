@@ -35,6 +35,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, f"the NVC Clips video in a playlist with note '{NOTE}'",
             "bob's playlist")
         j.check("screenshot_shows_playlist", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":
