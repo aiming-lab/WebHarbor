@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% from "_life.html" import life_block %}
+{% block body_class %}l1{% endblock %}
+{% block title %}About Us | Walmart Careers{% endblock %}
+{% block content %}
+<section class="section-blue">
+  <div class="wrap">
+    <h1 style="font-size:44px;font-weight:400;margin:0 0 16px">{{ content.ABOUT_HEADING }}</h1>
+    <p style="max-width:760px;font-size:19px;margin:0">{{ content.ABOUT_BLURB }}</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="category-grid">
+      {% for heading, body in content.ABOUT_SECTIONS %}
+        <div class="stat-card">
+          <h3>{{ heading }}</h3>
+          <p style="margin:0">{{ body }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<div class="wrap about-life">
+  {{ life_block(content.LIFE_AT_WALMART_HEADING, content.LIFE_AT_WALMART_FIELD) }}
+</div>
+
+<section>
+  <div class="wrap">
+    <h2>Guided by our values</h2>
+    <div class="values-grid">
+      {% for title, blurb in content.VALUES %}
+        <div class="stat-card"><h3>{{ title }}</h3><p style="margin:0">{{ blurb }}</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <h2>Explore our career areas</h2>
+    <div class="ribbon">
+      {% for area in areas %}
+        <a class="ribbon-seg seg-{{ loop.index }}" href="{{ area.nav_url }}">
+          <span>{{ area.name }}</span>
+          <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+            <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

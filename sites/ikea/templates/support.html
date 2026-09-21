@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Support - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Customer service + help search</p>
+  <h1>Help center</h1>
+</section>
+<form class="search-inline" method="get">
+  <input type="search" name="q" value="{{ query_text }}" placeholder="Search delivery, pickup, returns, rewards...">
+  <button type="submit">Search help</button>
+</form>
+<div class="article-list support-grid">
+  {% for article in articles %}
+    <a class="article-card" href="{{ url_for('support_article', article_slug=article.slug) }}">
+      <h2>{{ article.title }}</h2>
+      <p>{{ article.summary }}</p>
+    </a>
+  {% endfor %}
+</div>
+{% endblock %}

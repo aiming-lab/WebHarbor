@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Bandcamp Mirror{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body class="bc-shell {% block body_class %}{% endblock %}">
+    <header class="site-header">
+        <div class="header-main container">
+            <a href="{{ url_for('index') }}" class="brand">
+                <span class="brand-mark"></span>
+                <span class="brand-text">bandcamp</span>
+            </a>
+            <form class="header-search" action="{{ url_for('search') }}" method="get">
+                <input type="search" name="q" placeholder="Search and discover music" value="{{ request.args.get('q', '') }}">
+                <button type="submit" aria-label="Search">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21"/></svg>
+                </button>
+            </form>
+            <nav class="header-actions" aria-label="Account and utility">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('collection') }}">Collection</a>
+                    <a href="{{ url_for('wishlist') }}">Wishlist <span class="count">{{ wishlist_count }}</span></a>
+                    <a href="{{ url_for('cart') }}">Cart{% if cart_count %} <span class="count">{{ cart_count }}</span>{% endif %}</a>
+                    <a href="{{ url_for('account') }}">{{ current_user.first_name }}</a>
+                {% else %}
+                    <a href="{{ url_for('register') }}">Sign up</a>
+                    <a href="{{ url_for('login') }}">Log in</a>
+                {% endif %}
+            </nav>
+        </div>
+        <div class="header-subnav">
+            <div class="container">
+                {% set nav_fmt = request.args.get('format') %}
+                {% set nav_view = request.args.get('view') %}
+                {% set nav_ep = request.endpoint %}
+                <nav class="catnav" aria-label="Categories">
+                    <a class="{% if nav_fmt == 'digital' and nav_ep == 'discover' %}active{% endif %}" href="{{ url_for('discover', format='digital') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 18V6l10-2v12"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="16.5" cy="16" r="2.5"/></svg>
+                        Digital music
+                    </a>
+                    <a class="{% if nav_fmt == 'vinyl' and nav_ep == 'discover' %}active{% endif %}" href="{{ url_for('discover', format='vinyl') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="2.4"/></svg>
+                        Vinyl
+                    </a>
+                    <a class="{% if nav_fmt == 'cd' and nav_ep == 'discover' %}active{% endif %}" href="{{ url_for('discover', format='cd') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 0 1 9 9"/><circle cx="12" cy="12" r="2"/></svg>
+                        Compact discs
+                    </a>
+                    <a class="{% if nav_fmt == 'cassette' and nav_ep == 'discover' %}active{% endif %}" href="{{ url_for('discover', format='cassette') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="6" width="18" height="12" rx="2"/><circle cx="9" cy="12" r="1.6"/><circle cx="15" cy="12" r="1.6"/></svg>
+                        Cassettes
+                    </a>
+                    <a class="{% if nav_view == 'merch' and nav_fmt == 'shirt' %}active{% endif %}" href="{{ url_for('discover', view='merch', format='shirt') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M8 4 5 7l2 3-1 10h12L17 10l2-3-3-3-2 2h-4L8 4Z"/></svg>
+                        T-shirts
+                    </a>
+                    <a class="{% if nav_ep == 'gift_cards' %}active{% endif %}" href="{{ url_for('gift_cards') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="4" y="8" width="16" height="11" rx="1.5"/><path d="M4 8h16M9 8V6a3 3 0 0 1 6 0v2"/></svg>
+                        Gift cards
+                    </a>
+                    <a class="{% if nav_ep == 'editorial_page' %}active{% endif %}" href="{{ url_for('editorial_page') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 4h9l5 5v11H5z"/><path d="M14 4v5h5"/><path d="M9 13h6M9 16h6"/></svg>
+                        Editorial
+                    </a>
+                    <a class="{% if nav_ep == 'radio_page' %}active{% endif %}" href="{{ url_for('radio_page') }}">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3 3 15 0 18M12 3c-3 3-3 15 0 18"/></svg>
+                        Radio
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+            <section class="flash-wrap container">
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            </section>
+        {% endif %}
+    {% endwith %}
+
+    <aside class="container catalog-notice" aria-label="About this catalog">
+        Fictional music catalog. Artists, releases and sales are sample data.
+        Images are illustrative and do not identify the listed artists or products.
+    </aside>
+    <main class="page-main">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div>
+                <h3>About Bandcamp</h3>
+                <p>Discover independent music and support artists directly.</p>
+            </div>
+            <div>
+                <h3>Explore</h3>
+                <p><a href="{{ url_for('discover') }}">Discover releases</a></p>
+                <p><a href="{{ url_for('compare_releases') }}">Compare formats</a></p>
+                <p><a href="{{ url_for('search') }}?q=ambient">Search the catalog</a></p>
+            </div>
+            <div>
+                <h3>Fan Tools</h3>
+                <p><a href="{{ url_for('wishlist') }}">Wishlist</a></p>
+                <p><a href="{{ url_for('cart') }}">Cart and checkout</a></p>
+                <p><a href="{{ url_for('collection') }}">Collection library</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

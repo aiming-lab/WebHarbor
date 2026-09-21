@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ bundle.title }} | B&H{% endblock %}
+{% block content %}
+<section class="shell breadcrumb-row">
+    <a href="{{ url_for('index') }}">Home</a>
+    <span>/</span>
+    <a href="{{ url_for('bundles') }}">Bundles</a>
+    <span>/</span>
+    <span>{{ bundle.title }}</span>
+</section>
+
+<section class="shell bundle-detail-layout">
+    <div class="bundle-detail-media">
+        <img src="{{ url_for('static', filename=bundle.image_path) }}" alt="{{ bundle.title }}">
+    </div>
+    <div class="bundle-detail-main">
+        <p class="eyebrow">{{ bundle.badge }} · {{ bundle.audience }}</p>
+        <h1>{{ bundle.title }}</h1>
+        <p class="lead-copy">{{ bundle.description }}</p>
+        <div class="price-line large">
+            <strong>{{ bundle.bundle_price|currency }}</strong>
+            <span class="strike">{{ bundle.list_price|currency }}</span>
+            <span class="save">Save {{ bundle.savings|currency }}</span>
+        </div>
+        {% if current_user.is_authenticated %}
+            <form action="{{ url_for('add_bundle_to_cart', bundle_slug=bundle.slug) }}" method="post">
+                <button type="submit" class="cta">Add complete kit to cart</button>
+            </form>
+        {% else %}
+            <a class="cta" href="{{ url_for('login') }}">Sign in to add this kit</a>
+        {% endif %}
+    </div>
+</section>
+
+<section class="shell department-section" id="included-items">
+    <div class="section-head">
+        <div>
+            <p class="kicker">Complete package</p>
+            <h2>Items included in this kit</h2>
+        </div>
+        <span>{{ bundle.items|length }} products</span>
+    </div>
+    <div class="bundle-product-grid">
+        {% for item in bundle.items %}
+            <article class="bundle-product-card">
+                <a href="{{ url_for('product_detail', product_slug=item.product.slug) }}">
+                    <img src="{{ url_for('static', filename=item.product.main_image) }}" alt="{{ item.product.name }}">
+                </a>
+                <div>
+                    <p class="eyebrow">{{ item.product.brand.name }}</p>
+                    <h3><a href="{{ url_for('product_detail', product_slug=item.product.slug) }}">{{ item.product.name }}</a></h3>
+                    <p>{{ item.quantity }} × {{ item.product.display_price|currency }}</p>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+{% if related %}
+    <section class="shell department-section compact">
+        <div class="section-head"><div><h2>More {{ bundle.audience }} kits</h2></div></div>
+        <div class="department-link-grid">
+            {% for item in related %}
+                <a href="{{ url_for('bundle_detail', bundle_slug=item.slug) }}">
+                    <strong>{{ item.title }}</strong>
+                    <span>{{ item.bundle_price|currency }} <span aria-hidden="true">→</span></span>
+                </a>
+            {% endfor %}
+        </div>
+    </section>
+{% endif %}
+{% endblock %}

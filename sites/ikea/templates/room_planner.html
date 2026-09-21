@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Room planner - IKEA demo{% endblock %}
+{% block content %}
+<section class="page-lead">
+  <p class="eyebrow">Bundle-first planning</p>
+  <h1>Room planner</h1>
+</section>
+<form class="search-inline" method="get">
+  <select name="room">
+    <option value="">All rooms</option>
+    {% for room_slug, label in room_labels.items() %}
+      <option value="{{ room_slug }}" {% if selected_room == room_slug %}selected{% endif %}>{{ label }}</option>
+    {% endfor %}
+  </select>
+  <button type="submit">Filter bundles</button>
+</form>
+<div class="bundle-list">
+  {% for bundle in bundles %}
+    <article class="bundle-card">
+      <p class="eyebrow">{{ room_labels[bundle.room_slug] }}</p>
+      <h2>{{ bundle.name }}</h2>
+      <p>{{ bundle.summary }}</p>
+      <ul class="bundle-items" aria-label="Products in {{ bundle.name }}">
+        {% for product in bundle_products[bundle.id] %}
+          <li>
+            <img src="{{ url_for('static', filename=product.image_path) }}" alt="">
+            <span><strong>{{ product.card_name }}</strong><small>{{ product.price|money }}</small></span>
+          </li>
+        {% endfor %}
+      </ul>
+      <p class="bundle-total"><span>Bundle total</span><strong>{{ bundle.total_price|money }}</strong></p>
+      {% if current_user.is_authenticated %}
+        <form action="{{ url_for('add_bundle', bundle_slug=bundle.slug) }}" method="post">
+          <button type="submit">Add bundle to cart</button>
+        </form>
+      {% endif %}
+    </article>
+  {% endfor %}
+</div>
+{% endblock %}

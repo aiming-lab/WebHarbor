@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Advanced Search | Discogs{% endblock %}
+{% block content %}
+<div class="page-narrow">
+  <h1>Advanced Search</h1>
+  <p class="muted">Combine title or artist keywords with label, catalog number, barcode, year, country, format, genre and style filters.</p>
+  <form method="get" action="{{ url_for('search') }}" class="card advanced-search">
+    <input type="hidden" name="type" value="release">
+    <label for="adv-q">Title or artist</label>
+    <input id="adv-q" type="text" name="q" placeholder="e.g. Monk's Music">
+    <div class="form-columns">
+      <div>
+        <label for="adv-label">Label</label>
+        <input id="adv-label" type="text" name="label" placeholder="e.g. Riverside Records">
+      </div>
+      <div>
+        <label for="adv-catno">Catalog number</label>
+        <input id="adv-catno" type="text" name="catno" placeholder="e.g. RS 9242">
+      </div>
+      <div>
+        <label for="adv-barcode">Barcode</label>
+        <input id="adv-barcode" type="text" name="barcode">
+      </div>
+      <div>
+        <label for="adv-year">Year</label>
+        <input id="adv-year" type="number" name="year" min="1900" max="2100" placeholder="e.g. 1966">
+      </div>
+      <div>
+        <label for="adv-country">Country</label>
+        <input id="adv-country" type="text" name="country" placeholder="e.g. US">
+      </div>
+      <div>
+        <label for="adv-format">Format</label>
+        <select id="adv-format" name="format">
+          <option value="">Any format</option>
+          {% for f in formats %}<option value="{{ f.slug }}">{{ f.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="adv-genre">Genre</label>
+        <select id="adv-genre" name="genre">
+          <option value="">Any genre</option>
+          {% for g in genres %}<option value="{{ g.slug }}">{{ g.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="adv-style">Style</label>
+        <select id="adv-style" name="style">
+          <option value="">Any style</option>
+          {% for s in styles %}<option value="{{ s.slug }}">{{ s.name }}</option>{% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="adv-sort">Sort</label>
+        <select id="adv-sort" name="sort">
+          {% for v, label in [('relevance','Relevance'), ('newest','Newest'), ('have','Most Collected'), ('want','Most Wanted'), ('rating','Highest Rated'), ('year_desc','Year ↓'), ('year_asc','Year ↑'), ('title','Title A–Z')] %}
+            <option value="{{ v }}">{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+    <p><button class="btn-primary" type="submit">Search</button></p>
+  </form>
+</div>
+{% endblock %}

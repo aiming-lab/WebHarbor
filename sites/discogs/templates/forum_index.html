@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Discogs Forum{% endblock %}
+{% block main_class %}page fr-page{% endblock %}
+{% block content %}
+{% with band_title='Forum', icon=True, band_intro='Your place to talk about music, Discogs, collecting, buying and selling music, and anything else!', show_tabs=True, tab='topics' %}{% include "_forum_band.html" %}{% endwith %}
+
+<div class="fr-boards">
+{% for f in forums %}
+  <div class="fr-board">
+    <div class="fr-board-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 4h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-5 4v-4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"/></svg></div>
+    <div class="fr-board-body">
+      <h2><a href="{{ url_for('forum_view', slug=f.slug) }}">{{ f.name }}</a></h2>
+      <p>{{ f.description }}</p>
+    </div>
+    <div class="fr-board-stats">
+      <span>{{ stats[f.id].threads }} threads</span>
+      <span>{{ stats[f.id].posts }} posts</span>
+      <span>{{ stats[f.id].users }} active users</span>
+    </div>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

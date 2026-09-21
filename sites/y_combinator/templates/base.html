@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Y Combinator{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body>
+<header class="nav">
+    <div class="nav-inner">
+        <div class="nav-group left">
+            {% for label, href, items in nav_sections %}
+            <div class="nav-item">
+                <a href="{{ href }}">{{ label }}{% if items %}<span class="nav-caret">▾</span>{% endif %}</a>
+                {% if items %}
+                <div class="nav-menu">
+                    {% for text, link in items %}<a href="{{ link }}">{{ text }}</a>{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+        <a class="nav-brand" href="{{ url_for('index') }}" aria-label="Y Combinator">
+            <img src="{{ url_for('static', filename='icons/yc-logo.svg') }}" alt="Y Combinator">
+        </a>
+        <div class="nav-group right">
+            {% for label, href, items in nav_right %}
+            <div class="nav-item">
+                <a href="{{ href }}">{{ label }}{% if items %}<span class="nav-caret">▾</span>{% endif %}</a>
+                {% if items %}
+                <div class="nav-menu">
+                    {% for text, link in items %}<a href="{{ link }}">{{ text }}</a>{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <span class="nav-actions">
+                {% if current_user.is_authenticated %}
+                    <a href="{{ url_for('bookmarks') }}">Bookmarks</a>
+                    <a href="{{ url_for('logout') }}">Log out</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}">Log in</a>
+                {% endif %}
+                <a class="nav-apply" href="{{ url_for('static_page', page_slug='apply') }}">Apply</a>
+            </span>
+            <button class="nav-toggle" type="button" aria-label="Open menu"
+                    aria-controls="nav-drawer" aria-expanded="false">☰</button>
+        </div>
+    </div>
+</header>
+<nav class="nav-drawer" id="nav-drawer">
+    <ul>
+        {% for label, href, items in nav_sections + nav_right %}
+        <li>{% if items %}<details><summary>{{ label }}</summary><ul>{% for text, link in items %}<li><a href="{{ link }}">{{ text }}</a></li>{% endfor %}</ul></details>{% else %}<a href="{{ href }}">{{ label }}</a>{% endif %}</li>
+        {% endfor %}
+        <li><a href="{{ url_for('faq') }}">FAQ</a></li>
+        <li><a href="{{ url_for('blog') }}">YC Blog</a></li>
+        <li><a href="{{ url_for('safe') }}">SAFE</a></li>
+        {% if current_user.is_authenticated %}
+            <li><a href="{{ url_for('bookmarks') }}">Bookmarks</a></li>
+            <li><a href="{{ url_for('logout') }}">Log out</a></li>
+        {% else %}
+            <li><a href="{{ url_for('login') }}">Log in</a></li>
+        {% endif %}
+    </ul>
+</nav>
+
+<main>
+    <div class="shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% for category, message in messages %}
+                <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endwith %}
+    </div>
+    {% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+    <div class="shell">
+        <div class="footer-grid">
+            <div>
+                <p class="footer-tagline">Make something people want.</p>
+                <a class="button secondary" style="color:#fff;border-color:#fff"
+                   href="{{ url_for('static_page', page_slug='apply') }}">Apply</a>
+            </div>
+            <div>
+                <h4>Programs</h4>
+                <ul>
+                    <li><a href="{{ url_for('static_page', page_slug='about') }}">YC Program</a></li>
+                    <li><a href="https://startupschool.org">Startup School</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='jobs') }}">Work at a Startup</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='cofounder-matching') }}">Co-Founder Matching</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Resources</h4>
+                <ul>
+                    <li><a href="{{ url_for('companies') }}">Startup Directory</a></li>
+                    <li><a href="{{ url_for('library') }}">Startup Library</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='investors') }}">Investors</a></li>
+                    <li><a href="{{ url_for('safe') }}">SAFE</a></li>
+                    <li><a href="https://news.ycombinator.com/">Hacker News</a></li>
+                    <li><a href="{{ url_for('launches') }}">Launch YC</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>Company</h4>
+                <ul>
+                    <li><a href="{{ url_for('blog') }}">YC Blog</a></li>
+                    <li><a href="{{ url_for('people') }}">People</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='rfs') }}">Requests for Startups</a></li>
+                    <li><a href="{{ url_for('static_page', page_slug='verify') }}">Verify Founders</a></li>
+                    <li><a href="{{ url_for('subscribe') }}">Newsletter</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <span>&copy; 2026 Y Combinator</span>
+            <span class="footer-social">
+                <a href="https://twitter.com/ycombinator">Twitter</a>
+                <a href="https://www.facebook.com/YCombinator/">Facebook</a>
+                <a href="https://www.instagram.com/ycombinator">Instagram</a>
+                <a href="https://www.linkedin.com/school/y-combinator/">LinkedIn</a>
+                <a href="https://www.youtube.com/c/ycombinator">Youtube</a>
+            </span>
+        </div>
+    </div>
+</footer>
+<script src="{{ url_for('static', filename='js/navigation.js') }}" defer></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

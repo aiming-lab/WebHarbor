@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Sign Up | Discogs{% endblock %}
+{% block main_class %}auth-page{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <img class="auth-logo" src="{{ url_for('static', filename='icons/discogs.svg') }}" alt="Discogs" width="128" height="50">
+  <h1 class="auth-h1">Welcome</h1>
+  <p class="auth-sub">Sign up to Discogs to continue</p>
+  <form method="post" class="auth-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="auth-field">
+      <input id="reg-username" type="text" name="username" required minlength="3" maxlength="40" pattern="[A-Za-z0-9_\-.]+" autocomplete="username" placeholder=" ">
+      <label for="reg-username">Username<span>*</span></label>
+    </div>
+    <div class="auth-field">
+      <input id="reg-email" type="email" name="email" required autocomplete="email" placeholder=" ">
+      <label for="reg-email">Email address<span>*</span></label>
+    </div>
+    <div class="auth-field">
+      <input id="reg-password" type="password" name="password" required minlength="6" autocomplete="new-password" placeholder=" ">
+      <label for="reg-password">Password<span>*</span></label>
+      <button type="button" class="auth-eye" data-toggle-password="reg-password" aria-label="Show password">👁</button>
+    </div>
+    <div class="auth-field">
+      <input id="reg-location" type="text" name="location" maxlength="100" placeholder=" ">
+      <label for="reg-location">Location (optional)</label>
+    </div>
+    <button class="auth-continue" type="submit">Continue</button>
+  </form>
+  <p class="auth-alt">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+  <div class="auth-or"><span>OR</span></div>
+  <div class="auth-social">
+    <button type="button" disabled title="Social sign-up is not available in this offline mirror"><span class="auth-social-icon">G</span>Continue with Google</button>
+    <button type="button" disabled title="Social sign-up is not available in this offline mirror"><span class="auth-social-icon"></span>Continue with Apple</button>
+    <button type="button" disabled title="Social sign-up is not available in this offline mirror"><span class="auth-social-icon">f</span>Continue with Facebook</button>
+  </div>
+</div>
+{% endblock %}

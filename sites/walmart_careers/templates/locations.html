@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block body_class %}l1{% endblock %}
+{% block title %}Our locations | Walmart Careers{% endblock %}
+{% block content %}
+<div class="wrap-bleed">
+  <div class="loc-hero">
+    <img src="{{ url_for('static', filename='images/' ~ content.LOCATIONS_HERO_IMAGE) }}" alt="">
+    <h1>{{ content.LOCATIONS_HEADING }}</h1>
+  </div>
+</div>
+<section class="loc-intro">
+  <div class="wrap">
+    <p>{{ content.LOCATIONS_BLURB }}</p>
+  </div>
+</section>
+<section>
+  <div class="wrap">
+    <h2>Hubs around the world</h2>
+    <div class="hub-tiles">
+      {% for hub in hubs %}
+        <div class="hub-tile">
+          <img src="{{ url_for('static', filename='images/' ~ (hub.hub_image or 'loc-international.jpg')) }}"
+               alt="">
+          <b>{{ hub.hub_name or hub.city }}</b>
+          <p>{{ hub.hub_blurb or 'A Walmart hub location.' }}</p>
+          <a class="arrow-link" href="{{ url_for('results', loc=hub.city ~ ', ' ~ hub.state, radius=25) }}"
+             aria-label="See roles near {{ hub.city }}">
+            <svg viewBox="0 0 24 24" width="24" height="24" aria-hidden="true">
+              <path d="M4 12h15M13 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </a>
+        </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+<section class="quote-section">
+  <div class="wrap"><p class="quote-band-text">{{ content.LOCATIONS_CLOSING }}</p></div>
+</section>
+<section class="find-role">
+  <div class="wrap">
+    <h2>{{ content.FIND_ROLE_HEADING }}</h2>
+    <form class="find-search" action="{{ url_for('results') }}" method="get" role="search">
+      <input type="text" name="q" placeholder="{{ content.FIND_ROLE_PLACEHOLDER }}" aria-label="Search open roles">
+      <button type="submit" aria-label="Search">
+        <svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true">
+          <circle cx="10.5" cy="10.5" r="6" fill="none" stroke="currentColor" stroke-width="2"/>
+          <path d="M15.2 15.2 20 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          <path d="M18.4 3.2l.7 1.9 1.9.7-1.9.7-.7 1.9-.7-1.9-1.9-.7 1.9-.7z" fill="currentColor"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+</section>
+{% endblock %}

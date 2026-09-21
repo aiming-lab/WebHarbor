@@ -1,0 +1,254 @@
+/* NVIDIA mirror — design system (black + NVIDIA green #76B900) */
+:root{
+  /* Brand colour: decorative only (hero accents, logo, dark-surface hovers, button fill).
+     It is NOT used for text or focus on light surfaces: #76b900 is 2.41:1 on white. */
+  --brand:#76b900;
+  /* Text/action colour for light surfaces: 5.48:1 on #ffffff and 5.11:1 on #f7f7f7. */
+  --action:#4a7500;
+  /* Focus indicator: 5.48:1 on #ffffff, 5.11:1 on #f7f7f7, 3.84:1 on #000000,
+     3.18:1 on #1a1a1a and 3.45:1 on #111111, so one value clears the 3:1 WCAG 1.4.11 /
+     2.4.11 non-text requirement on both light and dark surfaces. */
+  --focus:#4a7500;
+  /* Rating glyph plus its numeric value: 5.05:1 on #ffffff. */
+  --star:#9c6200;
+  --nv-green:#76b900; --nv-green-d:#5e9400; --ink:#1a1a1a; --muted:#6b6b6b;
+  --line:#e3e3e3; --bg:#ffffff; --bg-soft:#f7f7f7; --black:#000; --dark:#1a1a1a;
+  --radius:6px; --maxw:1280px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  color:var(--ink);background:var(--bg);line-height:1.5;font-size:15px}
+a{color:inherit;text-decoration:none}
+a:hover{color:var(--action)}
+img{max-width:100%;height:auto;display:block}
+.container{max-width:var(--maxw);margin:0 auto;padding:0 24px}
+
+/* header */
+.topbar{background:var(--black);color:#fff;font-size:13px}
+.topbar .container{display:flex;align-items:center;flex-wrap:wrap;gap:18px;min-height:64px;padding-top:12px;padding-bottom:12px;position:relative}
+.logo{display:flex;align-items:center;gap:8px;font-weight:800;letter-spacing:.5px;font-size:20px}
+.logo .eye{color:var(--nv-green);font-size:24px;line-height:1}
+.logo b{color:#fff}
+.nav{display:grid;gap:12px;padding:18px;background:#111;border:1px solid #555;border-radius:6px;position:absolute;left:24px;top:100%;width:min(360px,calc(100% - 48px));z-index:10}
+/* Desktop: a plain, always-visible navigation bar instead of the collapsed disclosure,
+   which cannot be revealed by CSS once the <details> is closed (repair002, M10). */
+.nav-desktop{display:none;gap:16px;align-items:center;flex-wrap:wrap}
+.nav-desktop a{color:#eaeaea;font-weight:500}
+.nav-desktop a:hover{color:var(--nv-green)}
+.site-menu summary{cursor:pointer;padding:8px 12px;border:1px solid #555;border-radius:4px;font-weight:600}
+.site-menu[open] summary{color:var(--nv-green)}
+.nav a{color:#eaeaea;font-weight:500}
+.nav a:hover{color:var(--nv-green)}
+.topbar .actions{display:flex;align-items:center;flex-wrap:wrap;gap:12px;margin-left:auto;min-width:0}
+.topbar .actions a{color:#eaeaea}
+.topbar .actions a:hover{color:var(--nv-green)}
+.searchbox{display:flex;align-items:center;background:#222;border-radius:20px;padding:5px 12px}
+.searchbox input{background:transparent;border:0;color:#fff;width:150px;min-width:0;font:inherit;padding:6px}
+.searchbox button{background:transparent;color:#fff;border:0;padding:6px;cursor:pointer;font:inherit}
+.searchbox input::placeholder{color:#999}
+.cart-badge{background:var(--nv-green);color:#000;border-radius:10px;padding:0 7px;
+  font-weight:700;font-size:11px;margin-left:3px}
+
+/* buttons */
+.btn{display:inline-block;background:var(--nv-green);color:#000;font-weight:700;
+  padding:10px 22px;border-radius:var(--radius);border:0;cursor:pointer;font-size:14px}
+.btn:hover{background:var(--nv-green-d);color:#000}
+.btn-ghost{background:transparent;border:1px solid #555;color:#fff}
+.btn-ghost:hover{border-color:var(--nv-green);color:var(--nv-green)}
+.btn-dark{background:var(--dark);color:#fff}
+.btn-dark:hover{background:#000;color:var(--nv-green)}
+.btn-block{display:block;width:100%;text-align:center}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* hero */
+.hero{background:var(--black);color:#fff;position:relative;overflow:hidden}
+.hero .container{display:flex;align-items:center;gap:40px;padding:64px 24px;min-height:420px}
+.hero-copy{flex:1;z-index:2}
+.hero-copy .eyebrow{color:var(--nv-green);font-weight:700;letter-spacing:1px;text-transform:uppercase;font-size:13px}
+.hero-copy h1{font-size:52px;line-height:1.05;margin:12px 0 16px;font-weight:800}
+.hero-copy p{font-size:18px;color:#cfcfcf;max-width:540px}
+.hero-media{flex:1;text-align:center}
+.hero-media img{margin:0 auto;filter:drop-shadow(0 20px 40px rgba(118,185,0,.25))}
+
+/* sections */
+.section{padding:56px 0}
+.section h2{font-size:30px;font-weight:800;margin:0 0 6px}
+.section .sub{color:var(--muted);margin:0 0 28px}
+.section.alt{background:var(--bg-soft)}
+
+/* category pills */
+.pills{display:flex;flex-wrap:wrap;gap:10px;margin:18px 0}
+.pill{border:1px solid var(--line);border-radius:20px;padding:7px 16px;background:#fff;font-weight:600;font-size:13px}
+.pill.active,.pill:hover{border-color:var(--brand);color:var(--action)}
+
+/* product grid */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(240px,100%),1fr));gap:22px}
+.card{border:1px solid var(--line);border-radius:8px;background:#fff;overflow:hidden;
+  display:flex;flex-direction:column;transition:box-shadow .15s,transform .15s}
+.card:hover{box-shadow:0 8px 24px rgba(0,0,0,.10);transform:translateY(-2px)}
+.card .thumb{background:#0b0b0b;aspect-ratio:4/3;display:flex;align-items:center;justify-content:center;padding:14px}
+.card .thumb img{width:100%;height:100%;object-fit:contain}
+.card .body{padding:14px 16px 18px;display:flex;flex-direction:column;gap:6px;flex:1}
+.card .series{color:var(--action);font-weight:700;font-size:12px;text-transform:uppercase}
+.card .name{font-weight:700;font-size:16px}
+.card .tagline{color:var(--muted);font-size:13px;flex:1}
+.card .price{font-weight:800;font-size:17px;margin-top:6px}
+.card .stars{color:var(--star);font-size:13px;white-space:nowrap}
+.muted{color:var(--muted)}
+/* The rating glyph and its numeric value read as one unit, so the narrowest
+   viewport must not split them across a line break (audit NVIDIA--8: low). */
+.stars{white-space:nowrap}
+.green{color:var(--action)}
+
+/* spec table */
+.specs{width:100%;border-collapse:collapse;margin:18px 0}
+.specs th,.specs td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.specs th{width:240px;color:var(--muted);font-weight:600}
+.compare-tbl{width:100%;border-collapse:collapse;overflow-x:auto}
+.compare-tbl th,.compare-tbl td{border:1px solid var(--line);padding:12px 14px;text-align:center;font-size:14px}
+.compare-tbl th:first-child,.compare-tbl td:first-child{text-align:left;color:var(--muted);font-weight:600;background:var(--bg-soft)}
+.compare-tbl thead th{background:#000;color:#fff}
+.scroll-x{overflow-x:auto;max-width:100%;border:1px solid var(--line);border-radius:6px;overscroll-behavior-x:contain}
+.scroll-x .specs{min-width:740px}
+.compare-tbl th,.compare-tbl td{min-width:180px;max-width:340px}
+.scroll-hint{font-size:13px;color:var(--muted);margin-top:24px}
+
+/* detail layout */
+.detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:40px;padding:40px 0}
+.detail .media{background:#0b0b0b;border-radius:10px;padding:30px;display:flex;align-items:center;justify-content:center}
+.detail .media img{width:100%;height:auto;max-height:480px;object-fit:contain}
+.product-figure{margin:0;min-width:0}
+.product-figure-detail{align-self:start}
+.image-caption{padding:10px 14px;background:#f2f2f2;color:#444;font-size:12px;font-weight:400;line-height:1.5;overflow-wrap:anywhere}
+.compare-image img{height:60px;width:100%;margin:0 auto 6px;object-fit:contain}
+.product-figure-compare .image-caption{margin-bottom:8px;text-align:left}
+.detail h1{font-size:34px;margin:6px 0 10px;font-weight:800}
+.detail .price{font-size:26px;font-weight:800;margin:14px 0}
+.row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+
+/* forms */
+.form{max-width:440px;margin:0 auto}
+.form.wide{max-width:720px}
+.field{margin-bottom:16px}
+.field label{display:block;font-weight:600;margin-bottom:6px;font-size:14px}
+.field input,.field select,.field textarea{width:100%;padding:10px 12px;border:1px solid var(--line);
+  border-radius:var(--radius);font-size:14px;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--focus)}
+/* The global :focus-visible ring is not suppressed here: the previous `outline:none`
+   had higher specificity than the ring rule, so form fields had no focus indicator
+   at all (repair002, M1/M2). */
+.err{color:#c0392b;font-size:13px;margin-top:4px}
+.check{display:flex;align-items:center;gap:8px}
+.check input{width:auto}
+
+/* flash */
+.flashes{margin:16px 0}
+.flash{padding:12px 16px;border-radius:var(--radius);margin-bottom:10px;font-size:14px}
+.flash.success{background:#eef7df;color:#3c6300;border:1px solid #cce6a0}
+.flash.error{background:#fdecea;color:#a83228;border:1px solid #f5c6c2}
+.flash.info{background:#eef4fb;color:#27496b;border:1px solid #c9ddf0}
+
+/* misc */
+.page-head{background:var(--black);color:#fff;padding:40px 0}
+.page-head h1{font-size:34px;margin:0;font-weight:800}
+.page-head p{color:#bbb;margin:8px 0 0}
+.breadcrumb{font-size:13px;color:var(--muted);margin:18px 0}
+.breadcrumb a:hover{color:var(--action)}
+.toolbar{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin:18px 0}
+.toolbar select{padding:8px 10px;border:1px solid var(--line);border-radius:var(--radius)}
+.tag{display:inline-block;background:var(--bg-soft);border:1px solid var(--line);border-radius:4px;
+  padding:2px 8px;font-size:12px;color:var(--muted);margin-right:6px}
+.badge-stock{color:var(--action);font-weight:700;font-size:13px}
+.badge-out{color:#c0392b;font-weight:700;font-size:13px}
+
+/* news */
+.news-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr));gap:24px}
+.news-card{border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
+.news-card .thumb{aspect-ratio:16/9;background:#0b0b0b;overflow:hidden}
+.news-card .thumb img{width:100%;height:100%;object-fit:contain}
+.news-card .body{padding:16px}
+.news-card .cat{color:var(--action);font-weight:700;font-size:12px;text-transform:uppercase}
+.news-card h3{margin:6px 0;font-size:17px}
+.article{max-width:760px;margin:0 auto;padding:40px 0}
+.article h1{font-size:36px;font-weight:800;line-height:1.1}
+.article .meta{color:var(--muted);margin:12px 0 24px;font-size:14px}
+.article img{border-radius:8px;margin:20px 0}
+.article p{font-size:17px;margin:18px 0}
+
+/* footer */
+.footer{background:#000;color:#bbb;padding:40px 0;font-size:13px;margin-top:40px}
+.footer .cols{display:flex;flex-wrap:wrap;gap:40px;justify-content:space-between}
+.footer h4{color:#fff;font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin:0 0 12px}
+.footer a{display:block;color:#bbb;margin-bottom:7px}
+.footer a:hover{color:var(--nv-green)}
+.footer .news-signup input{padding:9px 12px;border-radius:4px 0 0 4px;border:0;width:200px}
+.footer .news-signup button{border-radius:0 4px 4px 0}
+.footer .copyright{border-top:1px solid #222;margin-top:28px;padding-top:18px;color:#777}
+
+/* Local information pages and resilient form/layout primitives. */
+body{overflow-wrap:anywhere}
+button,input,select,textarea{max-width:100%;font-family:inherit}
+input[type=checkbox]{flex-shrink:0}
+.field,.form,.hero-copy,.hero-media,.footer .cols>div,.toolbar>*,.model-entry{min-width:0}
+.btn{text-align:center;white-space:normal}
+a:focus-visible,button:focus-visible,summary:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.scroll-x:focus-visible{outline:3px solid var(--focus);outline-offset:3px}
+/* Logout is a POST form so prefetching cannot end a session; it must still read as a link. */
+.logout-form{display:inline;margin:0}
+.link-button{background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;text-decoration:none}
+.link-button:hover{color:var(--nv-green)}
+.skip-link{position:absolute;left:12px;top:-80px;z-index:20;background:#fff;color:#000;padding:12px}
+.skip-link:focus{top:8px}
+.text-link,.source-list a{text-decoration:underline;text-underline-offset:3px}
+.source-note{font-size:13px;color:var(--muted);margin:12px 0}
+.wishlist-note{flex-basis:100%;margin:4px 0}
+.series-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px}
+.tech-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:22px}
+.feature-panel{display:block;padding:24px;border:1px solid var(--line);border-radius:8px;background:var(--bg-soft)}
+.feature-panel h3{font-size:22px;margin:0 0 12px}
+.feature-panel p{margin:12px 0}
+.feature-panel .buying-model-name{font-size:20px;margin:8px 0}
+.series-hero figcaption{font-size:13px;color:#bbb;margin-top:12px}
+.hero-media{margin:0}
+.model-entry{display:flex;flex-direction:column;gap:10px}
+.model-entry .card{flex:1}
+.buying-info{max-width:900px}
+.buying-info dt{font-weight:700;margin-top:14px}
+.buying-info dd{margin:4px 0}
+.driver-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:end}
+.filter-summary{padding:12px;background:var(--bg-soft);border-left:4px solid var(--action)}
+.footer .news-signup{max-width:100%}
+.footer .news-signup form{flex-wrap:wrap;gap:8px}
+.footer .news-signup input{flex:1 1 160px;min-width:0;border-radius:4px}
+.footer .news-signup button{border-radius:4px}
+
+@media(min-width:881px){
+  .site-menu{display:none}
+  .nav-desktop{display:flex}
+}
+@media(max-width:880px){
+  .hero .container{flex-direction:column;padding:40px 24px}
+  .hero-copy h1{font-size:36px}
+  .detail{grid-template-columns:1fr}
+  .topbar .actions{flex:1 1 100%;margin-left:0}
+  .topbar .searchbox{flex:1 1 100%;width:100%}
+  .searchbox input{width:auto;flex:1}
+  .site-menu{margin-left:auto}
+  .tech-grid{grid-template-columns:1fr}
+}
+@media(max-width:600px){
+  .container{padding-left:16px;padding-right:16px}
+  .topbar .container{gap:10px}
+  .nav{left:16px;width:calc(100% - 32px)}
+  .series-links,.driver-fields{grid-template-columns:1fr}
+  .section{padding:32px 0}
+  .feature-panel{padding:20px}
+  .hero-copy h1,.detail h1,.page-head h1,.article h1{font-size:30px}
+  .specs:not(.scroll-x .specs){table-layout:fixed}
+  .specs:not(.scroll-x .specs) th{width:44%}
+  .specs th,.specs td{padding:10px 8px}
+  .field input,.field select,.field textarea{font-size:16px}
+  .toolbar form{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .toolbar select{min-width:0}
+  .detail .media{padding:16px}
+}

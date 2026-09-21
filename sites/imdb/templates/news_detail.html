@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}{{ item.headline }} - IMDb{% endblock %}
+{% block content %}
+<a class="crumb" href="{{ url_for('news_list') }}">IMDb News</a>
+<article class="news-article">
+  <h1>{{ item.headline }}</h1>
+  <p class="muted">{{ item.source }} · {{ item.published_at }} · {{ item.category }}</p>
+  <p>{{ item.summary }}</p>
+  {% if item.related_tt.startswith('tt') %}
+  <a href="{{ url_for('title_detail', tt_id=item.related_tt) }}">View related title ›</a>
+  {% elif item.related_tt.startswith('nm') %}
+  <a href="{{ url_for('name_detail', nm_id=item.related_tt) }}">View related person ›</a>
+  {% endif %}
+</article>
+{% endblock %}

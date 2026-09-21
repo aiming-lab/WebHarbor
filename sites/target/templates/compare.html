@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Compare products | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Product comparison</p>
+        <h1>Compare products</h1>
+        <p>Compare up to four products side-by-side to find the best match.</p>
+      </div>
+    </div>
+    {% if products %}
+      <div class="compare-strip">
+        {% for product in products %}
+          <article class="compare-product">
+            {# Image and title link back to the product — comparing is useless
+               if you can't get back to the item you're comparing. #}
+            <a href="{{ url_for('product_page', sku=product.sku) }}">
+              <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+            </a>
+            <h3><a href="{{ url_for('product_page', sku=product.sku) }}">{{ product.name }}</a></h3>
+            <p>{{ product.price|currency }}</p>
+            <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="next" value="{{ request.full_path }}">
+              <button class="button button--ghost" type="submit">Remove</button>
+            </form>
+          </article>
+        {% endfor %}
+      </div>
+      {% if spec_rows %}
+        <p class="table-scroll-hint">Scroll horizontally to compare every product column.</p>
+        <div class="table-wrap" tabindex="0" aria-label="Scrollable product comparison">
+          <table class="compare-table">
+            <thead>
+              <tr>
+                <th>Spec</th>
+                {% for product in products %}
+                  <th>{{ product.name }}</th>
+                {% endfor %}
+              </tr>
+            </thead>
+            <tbody>
+              {% for label, values in spec_rows %}
+                <tr>
+                  <th>{{ label }}</th>
+                  {% for value in values %}
+                    <td>{{ value }}</td>
+                  {% endfor %}
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        {# Only rows at least two products share are kept, so an empty table
+           means these items have nothing in common to line up. #}
+        <div class="empty-state">
+          <h3>No comparable specifications</h3>
+          {% if compared_categories|length > 1 %}
+            <p>
+              These items come from different categories
+              ({{ compared_categories|join(', ') }}), so they share no specifications.
+              Compare products from the same category to line up their details.
+            </p>
+          {% else %}
+            <p>These items don't list any specifications in common.</p>
+          {% endif %}
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        <h3>No products in compare</h3>
+        <p>Use product pages or category listings to add items into the compare tray.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}
+
+

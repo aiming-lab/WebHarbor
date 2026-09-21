@@ -1,0 +1,33 @@
+{#
+  Stripped layout for sign-in / register, mirroring identity.walmart.com:
+  a centred spark, no navigation, and a light link footer.
+#}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Sign in | Walmart Careers{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/spark-yellow.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="auth-body">
+<main id="main" class="auth-main">
+  <a class="auth-spark" href="{{ url_for('index') }}" aria-label="Walmart Careers home">
+    <img src="{{ url_for('static', filename='icons/spark-yellow.svg') }}" alt="">
+  </a>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="flash {{ category }} auth-flash">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+<footer class="auth-footer">
+  <span>{{ content.AUTH_COPYRIGHT }}</span>
+  <nav aria-label="Legal">
+    <a href="{{ url_for('resources_terms') }}">Mirror terms and data notice</a>
+  </nav>
+</footer>
+</body>
+</html>

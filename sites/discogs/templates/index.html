@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Discogs - Music Database and Marketplace{% endblock %}
+{% block main_class %}home-page{% endblock %}
+
+{% block content %}
+<h1 class="sr-only">Discogs.com</h1>
+
+<div class="gs-hero" id="gs_homepage_hero">
+  <div class="gs-hero-content">
+    <div class="gs-hero-main">
+      <a class="gs-spotlight" href="{{ url_for('explore') }}">
+        <div class="gs-blog-post gs-blog-main" style="background-image: url('{{ url_for('static', filename='external_cache/homepage/hero-main.jpg') }}');">
+          <h2 class="gs-title">Discover Jazz, Deep Cuts &amp; More From This Snapshot</h2>
+        </div>
+      </a>
+    </div>
+    <div class="gs-hero-side">
+      <a class="gs-spotlight" href="{{ url_for('marketplace', sort='price_desc', currency='USD') }}">
+        <div class="gs-blog-post gs-blog-side" style="background-image: url('{{ url_for('static', filename='external_cache/homepage/hero-most-valuable.jpg') }}');">
+          <h2 class="gs-title gs-title-small">Most Valuable Marketplace Listings</h2>
+        </div>
+      </a>
+      <a class="gs-spotlight" href="{{ url_for('search', sort='newest') }}">
+        <div class="gs-blog-post gs-blog-side" style="background-image: url('{{ url_for('static', filename='external_cache/homepage/hero-best-selling.jpg') }}');">
+          <h2 class="gs-title gs-title-small">Explore Newly Verified Releases</h2>
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="home-carousels">
+  {{ m.carousel("This Week’s Best-Selling Vinyl Records & CDs", best_selling, 'carousel-1') }}
+  {{ m.carousel("This Week’s Most Valuable Vinyl Records & CDs", most_valuable, 'carousel-2') }}
+  {{ m.carousel("This Week’s Most Collected Vinyl Records & CDs", most_collected, 'carousel-3') }}
+</div>
+
+<section class="app-promo">
+  <div class="app-copy">
+    <h2>Millions of Records. Thousands of Shops. All In One App.</h2>
+    <p>Take your collection anywhere on the Discogs App. Download now.</p>
+    <div class="app-badges" aria-label="Discogs app stores">
+      <a href="/about/app"><img src="{{ url_for('static', filename='external_cache/homepage/app-store-badge.svg') }}" alt="Download now from the App Store"></a>
+      <a href="/about/app"><img src="{{ url_for('static', filename='external_cache/homepage/google-play-badge.png') }}" alt="Download now from Google Play"></a>
+    </div>
+  </div>
+  <img class="app-phone" src="{{ url_for('static', filename='external_cache/homepage/phone-hands.png') }}" alt="Phone showing the Discogs app">
+</section>
+{% endblock %}

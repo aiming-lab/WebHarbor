@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Frequently Asked Questions | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell detail">
+    <h1>Frequently Asked Questions</h1>
+    {% for group in groups %}
+    <section>
+        <h2>{{ group.category }}</h2>
+        {% for item in group.questions %}
+        <div style="margin-bottom:22px">
+            <p style="font-weight:400;font-size:1.05rem">{{ item.question }}</p>
+            <p class="muted">{{ item.answer }}</p>
+        </div>
+        {% endfor %}
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

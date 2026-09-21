@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import mini_card %}
+{% block title %}Google Finance - Stock Market Prices, Real-time Quotes & Business News{% endblock %}
+
+{% block content %}
+<nav class="region-tabs" aria-label="Market regions">
+  {% for key, label in regions %}
+    <a href="{{ url_for('index', region=key) }}"
+       class="{{ 'on' if key == region }}">{{ label }}</a>
+  {% endfor %}
+</nav>
+
+<div class="index-cards">
+  {% for inst in cards %}
+    {% set q = inst.quote %}
+    <a class="index-card" href="{{ url_for('quote', symbol=inst.slug) }}">
+      <div class="ic-name">{{ inst.card_name }}</div>
+      <div class="ic-price">{{ '{:,.2f}'.format(q.price) if q.price >= 1 else '{:,.4f}'.format(q.price) }}</div>
+      <div class="ic-abs">({{ '{:+,.2f}'.format(q.change) }})</div>
+      <div class="ic-chg {{ 'up' if q.change_pct >= 0 else 'down' }}">
+        {{ fmt_pct(q.change_pct) }}
+        <span class="arrow-badge {{ 'up' if q.change_pct >= 0 else 'down' }}"
+              aria-hidden="true">{{ '↑' if q.change_pct >= 0 else '↓' }}</span>
+      </div>
+      <div class="ic-spark">{{ spark_svg(inst, 170, 60, True) }}</div>
+    </a>
+  {% endfor %}
+</div>
+
+<h2 class="section-title">
+  {{ regions | selectattr('0', 'equalto', region) | map(attribute='1') | first }} market summary
+</h2>
+
+{% for s in summaries %}
+  {# native details/summary: an agent can expand any block with one click and
+     it works with JavaScript switched off #}
+  <details class="summary-item" {{ 'open' if loop.first }}>
+    <summary class="summary-head">
+      <h3>{{ s.headline }}</h3>
+      <span class="summary-meta">
+        <span class="source-stack">
+          {% for pub in sources.get(s.id, []) %}
+            {% if pub.favicon_url %}
+              <img src="{{ pub.favicon_url }}" alt="{{ pub.name }}"
+                   title="{{ pub.name }}">
+            {% endif %}
+          {% endfor %}
+        </span>
+        <span class="summary-sources">{{ s.sources_count }} sites</span>
+        <span class="summary-chevron" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="m12 8-6 6 1.4 1.4L12 10.8l4.6 4.6L18 14z"/></svg>
+        </span>
+      </span>
+    </summary>
+    <div class="summary-body">
+      {% for para in s.body.split('\n\n') %}<p>{{ para }}</p>{% endfor %}
+    </div>
+  </details>
+{% endfor %}
+
+<h2 class="section-title">Latest updates</h2>
+<ul class="updates">
+  {% for a in updates %}
+    <li>
+      <span class="u-time">{{ a.ago() }}</span>
+      <span class="u-pub">
+        {% if a.publisher and a.publisher.favicon_url %}
+          <img src="{{ a.publisher.favicon_url }}" alt="{{ a.publisher.name }}">
+        {% endif %}
+        <span>{{ a.publisher.name if a.publisher else 'Newswire' }}</span>
+      </span>
+      <a href="{{ url_for('news_detail', slug=a.slug) }}">{{ a.headline }}</a>
+    </li>
+  {% endfor %}
+</ul>
+
+<h2 class="section-title">Market movers</h2>
+<div class="fin-tabs">
+  <a class="on" href="{{ url_for('markets', slug='most-active') }}">Most active</a>
+  <a href="{{ url_for('markets', slug='gainers') }}">Gainers</a>
+  <a href="{{ url_for('markets', slug='losers') }}">Losers</a>
+  <a href="{{ url_for('markets', slug='climate-leaders') }}">Climate leaders</a>
+</div>
+<div class="cards-row">
+  {% for inst in movers['most-active'] %}
+    {{ mini_card(inst, spark_svg, fmt_pct) }}
+  {% endfor %}
+</div>
+{% endblock %}

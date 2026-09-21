@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Versus | Compare everything{% endblock %}
+{% block hero %}
+<section class="hero">
+  <h1>compare<br><span class="accent">everything</span></h1>
+  <p>Products, cities, and universities ranked on the specifications that decide it.</p>
+  <form class="hero-search" action="{{ url_for('search') }}">
+    <input name="q" placeholder="Type here to compare" aria-label="Search products">
+    <button type="submit">Compare</button>
+  </form>
+  <div class="hero-wave"></div>
+</section>
+{% endblock %}
+{% block content %}
+<section class="catalogue-summary" aria-label="Catalogue coverage">
+  <div><strong>{{ entity_count }}</strong><span>entities</span></div>
+  <div><strong>{{ category_count }}</strong><span>categories</span></div>
+  <div><strong>{{ "{:,}".format(comparison_count) }}</strong><span>comparison pairs</span></div>
+</section>
+<section class="section">
+  <div class="section-head">
+    <h2>Popular comparisons</h2>
+    <a href="{{ url_for('compare_picker') }}">Build your own</a>
+  </div>
+  <div class="pair-grid">
+    {% for left, right in pairs %}
+      <a class="pair-card featured-pair" href="{{ url_for('compare_detail', left=left.slug, right=right.slug) }}">
+        <span class="pair-media">
+          <img class="entity-image" src="{{ url_for('static', filename='images/products/' ~ left.slug ~ '.webp') }}"
+               alt="{{ left.name }}" width="960" height="720" loading="lazy">
+          <img class="entity-image" src="{{ url_for('static', filename='images/products/' ~ right.slug ~ '.webp') }}"
+               alt="{{ right.name }}" width="960" height="720" loading="lazy">
+          <b aria-hidden="true">vs</b>
+        </span>
+        <span class="pair-copy"><span>{{ left.name }}</span><em>vs</em><span>{{ right.name }}</span></span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+<section class="section">
+  <div class="section-head">
+    <h2>Top rated by category</h2>
+    <a href="{{ url_for('rankings') }}">Full ranking</a>
+  </div>
+  <div class="card-grid">
+    {% for product in top %}{% include "_product_card.html" %}{% endfor %}
+  </div>
+</section>
+{% endblock %}

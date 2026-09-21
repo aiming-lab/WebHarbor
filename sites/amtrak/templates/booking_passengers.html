@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}Passenger Details · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Passenger details</div>
+      <h2>Enter synthetic traveler names and preferences.</h2>
+      <p>This step requires a signed-in demo account. Use your saved profile as a shortcut, or enter custom benchmark names.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/stations/WAS.svg') }}" alt="Passenger details">
+    </div>
+  </section>
+
+  <section class="section split-layout">
+    <form class="form-panel" action="{{ url_for('booking_passengers') }}" method="post">
+      <div class="detail-list">
+        {% for idx in range(passenger_count) %}
+          <div class="card">
+            <div class="eyebrow">Passenger {{ idx + 1 }}</div>
+            <div class="form-grid">
+              <div class="field-wide">
+                <label for="first_name_{{ idx }}">First name</label>
+                <input id="first_name_{{ idx }}" name="first_name_{{ idx }}" value="{{ flow.passenger_entries[idx].first_name if flow.passenger_entries|length > idx else '' }}">
+              </div>
+              <div class="field-wide">
+                <label for="last_name_{{ idx }}">Last name</label>
+                <input id="last_name_{{ idx }}" name="last_name_{{ idx }}" value="{{ flow.passenger_entries[idx].last_name if flow.passenger_entries|length > idx else '' }}">
+              </div>
+              <div class="field">
+                <label for="passenger_type_{{ idx }}">Traveler type</label>
+                <select id="passenger_type_{{ idx }}" name="passenger_type_{{ idx }}">
+                  {% for label in ['Adult', 'Companion', 'Student', 'Senior'] %}
+                    <option value="{{ label }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="field">
+                <label for="age_band_{{ idx }}">Age band</label>
+                <select id="age_band_{{ idx }}" name="age_band_{{ idx }}">
+                  {% for label in ['18+', '13-17', '2-12'] %}
+                    <option value="{{ label }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="field">
+                <label for="seat_preference_{{ idx }}">Seat preference</label>
+                <select id="seat_preference_{{ idx }}" name="seat_preference_{{ idx }}">
+                  {% for label in ['Window', 'Aisle', 'Quiet Car', 'Near cafe'] %}
+                    <option value="{{ label }}">{{ label }}</option>
+                  {% endfor %}
+                </select>
+              </div>
+              <div class="field-wide">
+                <label for="accessibility_need_{{ idx }}">Accessibility or boarding note</label>
+                <input id="accessibility_need_{{ idx }}" name="accessibility_need_{{ idx }}" value="{{ flow.passenger_entries[idx].accessibility_need if flow.passenger_entries|length > idx else '' }}" placeholder="Optional synthetic note">
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="hero-actions">
+        <button class="button" type="submit">Continue to review</button>
+      </div>
+    </form>
+
+    <aside class="card">
+      <div class="eyebrow">Saved demo profile</div>
+      <h3 class="card-title">Quick-fill the first passenger</h3>
+      {% for profile in saved_profiles %}
+        <div class="detail-item">
+          <strong>{{ profile.full_name }}</strong>
+          <div class="muted">{{ profile.seat_preference }}{% if profile.accessibility_need %} · {{ profile.accessibility_need }}{% endif %}</div>
+          <div class="hero-actions" style="margin-top: 10px;">
+            <button class="button-secondary" type="button"
+                    data-fill-profile
+                    data-first-name="{{ profile.first_name }}"
+                    data-last-name="{{ profile.last_name }}"
+                    data-seat-preference="{{ profile.seat_preference }}"
+                    data-accessibility-need="{{ profile.accessibility_need }}">
+              Use saved profile
+            </button>
+          </div>
+        </div>
+      {% else %}
+        <div class="empty-state">No saved profile was seeded for this account.</div>
+      {% endfor %}
+    </aside>
+  </section>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Search Recreation.gov{% endblock %}
+{% block content %}
+{% set visible_count = results|length if results|length < 20 else 20 %}
+<section class="search-toolbar">
+  <form class="real-search-controls" action="{{ url_for('search') }}" method="get">
+    <div class="toolbar-input">
+      <span aria-hidden="true">⌕</span>
+      <input name="q" value="{{ args.get('q', args.get('location', '')) }}" placeholder="Where to?">
+    </div>
+    <button class="date-pill" type="button">▣ May 15 → May 17 <span>×</span></button>
+    <input type="hidden" name="inventory_type" value="{{ args.get('inventory_type', '') }}">
+    <button class="filter-pill" type="submit">☰ More Filters {% if args.get('inventory_type') %}<span>1</span>{% endif %}</button>
+  </form>
+</section>
+<section class="real-search-page" data-map-root>
+  <div class="real-results-pane">
+      <div class="result-meta real-result-meta">
+        <div>
+          <h1>Search Results{% if args.get('q') %} near {{ args.get('q') }}{% endif %}</h1>
+          <div class="filter-chips">
+            {% if args.get('inventory_type') %}
+              <a class="filter-chip" href="{{ url_for('search', q=args.get('q', '')) }}">{{ inventory_labels.get(args.get('inventory_type'), args.get('inventory_type')) }} <span>×</span></a>
+            {% endif %}
+            <a href="{{ url_for('search') }}">Clear All</a>
+          </div>
+          <span class="muted">1 - {{ visible_count }} results of {{ results|length }}</span>
+        </div>
+        <div class="sort-control">
+          <label>Sort By</label>
+          <form action="{{ url_for('search') }}" method="get">
+            <input type="hidden" name="q" value="{{ args.get('q', '') }}">
+            <input type="hidden" name="inventory_type" value="{{ args.get('inventory_type', '') }}">
+            <select name="sort" onchange="this.form.submit()">
+              <option value="best">Relevance</option>
+              <option value="available" {% if args.get('sort') == 'available' %}selected{% endif %}>Available</option>
+              <option value="distance" {% if args.get('sort') == 'distance' %}selected{% endif %}>Distance</option>
+              <option value="rating" {% if args.get('sort') == 'rating' %}selected{% endif %}>Rating</option>
+              <option value="price" {% if args.get('sort') == 'price' %}selected{% endif %}>Price</option>
+            </select>
+          </form>
+        </div>
+      </div>
+      <div class="search-card-list real-search-card-list">
+        {% for entry in search_entries %}
+          {% set facility = entry.facility %}
+          {% set point = entry.point %}
+          <div class="search-card-row{% if loop.first %} is-active{% endif %}"
+               data-map-target="{{ point.id }}"
+               data-panel-key="search"
+               data-map-name="{{ point.name }}"
+               data-map-location="{{ point.location }}"
+               data-map-price="{{ point.price_display }}"
+               data-map-distance="{{ point.distance }}"
+               data-map-rating="{{ point.rating }}"
+               data-map-reviews="{{ point.reviews }}"
+               data-map-label="{{ point.label }}"
+               data-map-link="{{ point.href }}">
+            {% set card_mode = 'search' %}
+            {% include "_facility_card.html" %}
+            {% set card_mode = 'default' %}
+          </div>
+        {% else %}
+          <p>No inventory matched those filters. Try a broader query.</p>
+        {% endfor %}
+      </div>
+  </div>
+  <aside class="real-map-pane">
+    <div class="map-canvas search-map real-search-map" aria-label="Map of search results">
+      <div class="map-controls" aria-hidden="true">
+        <button class="map-control-btn" type="button">+</button>
+        <button class="map-control-btn" type="button">−</button>
+      </div>
+      <div class="map-attribution" aria-hidden="true">Map <span>Satellite</span></div>
+      {% for entry in search_entries %}
+        {% set point = entry.point %}
+        <button class="map-marker{% if loop.first %} is-active{% endif %}"
+                type="button"
+                style="left: {{ point.x }}%; top: {{ point.y }}%;"
+                data-marker-id="{{ point.id }}"
+                data-panel-key="search"
+                data-map-name="{{ point.name }}"
+                data-map-location="{{ point.location }}"
+                data-map-price="{{ point.price_display }}"
+                data-map-distance="{{ point.distance }}"
+                data-map-rating="{{ point.rating }}"
+                data-map-reviews="{{ point.reviews }}"
+                data-map-label="{{ point.label }}"
+                data-map-link="{{ point.href }}">
+          <span>{{ point.rank }}</span>
+        </button>
+      {% endfor %}
+      <span class="mapbox-wordmark">mapbox</span>
+    </div>
+  </aside>
+</section>
+{% endblock %}

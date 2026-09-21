@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}My account | Walmart Careers{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="form-card form-wide">
+    <h1>{{ current_user.display_name }}</h1>
+    <ul class="review-list">
+      <li><b>Email</b><span>{{ current_user.email }}</span></li>
+      <li><b>First name</b><span>{{ current_user.first_name }}</span></li>
+      <li><b>Last name</b><span>{{ current_user.last_name }}</span></li>
+      <li><b>Phone number</b><span>{{ current_user.phone or '—' }}</span></li>
+      <li><b>City</b><span>{{ current_user.city or '—' }}</span></li>
+      <li><b>State</b><span>{{ current_user.state or '—' }}</span></li>
+      <li><b>Saved roles</b><span>{{ saved_count }}</span></li>
+      <li><b>Applications</b><span>{{ application_count }}</span></li>
+    </ul>
+    <a class="btn" href="{{ url_for('account_edit') }}">Edit profile</a>
+    <a class="btn btn-secondary" href="{{ url_for('saved_roles') }}">Saved roles</a>
+    <a class="btn btn-secondary" href="{{ url_for('applications') }}">My applications</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}{{ store.name }} | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section dual-grid">
+    {% if store.image_path %}
+    <div class="panel panel--store-hero">
+      <img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">
+    </div>
+    {% endif %}
+    <div class="panel">
+      <p class="eyebrow">Store details</p>
+      <h1>{{ store.name }}</h1>
+      <p>{{ store.address }} | {{ store.city }}, {{ store.state }}</p>
+      <p>{{ store.phone }}</p>
+      <p>{{ store.hero_copy }}</p>
+      <h3>Hours</h3>
+      <ul class="bullet-list bullet-list--compact">
+        {% for hour in store.hours() %}
+          <li>{{ hour }}</li>
+        {% endfor %}
+      </ul>
+      <h3>Pickup and store services</h3>
+      <ul class="tag-row tag-row--left">
+        {% for service in store.services() %}
+          <li>{{ service }}</li>
+        {% endfor %}
+      </ul>
+      <h3>Amenities</h3>
+      <ul class="tag-row tag-row--left">
+        {% for amenity in store.amenities() %}
+          <li>{{ amenity }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Pickup-ready inventory</p>
+        <h2>Popular local items at this store</h2>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="inventory-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Pickup window</th>
+            <th>Qty</th>
+            <th>Aisle</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for row in inventory_rows %}
+            <tr>
+              <td><a href="{{ url_for('product_page', sku=row.product.sku) }}">{{ row.product.name }}</a></td>
+              <td>{{ row.pickup_window }}</td>
+              <td>{{ row.quantity }}</td>
+              <td>{{ row.aisle }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endblock %}
+
+

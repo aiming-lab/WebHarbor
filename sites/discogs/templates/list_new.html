@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Create a list | Discogs{% endblock %}
+{% block content %}
+<h1>Create a new list</h1>
+<form method="post" class="card">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Title</label>
+  <input type="text" name="title" required maxlength="200">
+  <label>Description</label>
+  <textarea name="description" maxlength="2000"></textarea>
+  <label><input type="checkbox" name="is_public" checked> Make this list public</label>
+  <p><button class="btn-primary" type="submit">Create list</button></p>
+</form>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Log In | Discogs{% endblock %}
+{% block main_class %}auth-page{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <img class="auth-logo" src="{{ url_for('static', filename='icons/discogs.svg') }}" alt="Discogs" width="128" height="50">
+  <h1 class="auth-h1">Welcome</h1>
+  <p class="auth-sub">Log in to Discogs to continue</p>
+  <form method="post" class="auth-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="auth-field">
+      <input id="login-username" type="text" name="username" required autofocus autocomplete="username" placeholder=" ">
+      <label for="login-username">Username or email address<span>*</span></label>
+    </div>
+    <div class="auth-field">
+      <input id="login-password" type="password" name="password" required autocomplete="current-password" placeholder=" ">
+      <label for="login-password">Password<span>*</span></label>
+      <button type="button" class="auth-eye" data-toggle-password="login-password" aria-label="Show password">👁</button>
+    </div>
+    <a class="auth-forgot" href="/help">Forgot password?</a>
+    <button class="auth-continue" type="submit">Continue</button>
+  </form>
+  <p class="auth-alt">Don't have an account? <a href="{{ url_for('register') }}">Sign up</a></p>
+  <div class="auth-or"><span>OR</span></div>
+  <div class="auth-social">
+    <button type="button" disabled title="Social login is not available in this offline mirror"><span class="auth-social-icon">G</span>Continue with Google</button>
+    <button type="button" disabled title="Social login is not available in this offline mirror"><span class="auth-social-icon"></span>Continue with Apple</button>
+    <button type="button" disabled title="Social login is not available in this offline mirror"><span class="auth-social-icon">f</span>Continue with Facebook</button>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Order confirmation - IKEA demo{% endblock %}
+{% block content %}
+<section class="confirmation-card">
+  <p class="eyebrow">Mock checkout complete</p>
+  <h1>Order {{ order.order_number }} confirmed</h1>
+  <p>This synthetic order was created inside the local benchmark only.</p>
+  <div class="confirmation-grid">
+    <div>
+      <strong>Status</strong>
+      <p>{{ order.status }}</p>
+    </div>
+    <div>
+      <strong>Fulfillment</strong>
+      <p>{{ order.fulfillment_method|capitalize }}</p>
+    </div>
+    <div>
+      <strong>Total</strong>
+      <p>{{ order.total|money }}</p>
+    </div>
+    <div>
+      <strong>Payment</strong>
+      <p>{{ order.payment_summary }}</p>
+    </div>
+  </div>
+  <a class="button" href="{{ url_for('order_detail', order_number=order.order_number) }}">View order details</a>
+</section>
+{% endblock %}

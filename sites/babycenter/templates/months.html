@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Baby month by month{% endblock %}
+{% block content %}
+<section class="section">
+  <h1>Baby month by month</h1>
+  <p class="muted">{{ months|length }} sourced age checkpoints. Each page quotes the upstream article it came from.</p>
+  <div class="timeline">
+  {% for month in months %}
+    <a class="timeline-card" href="{{ url_for('month_detail', month=month.month) }}"><span>Month {{ month.month }}</span><strong>{{ month.headline }}</strong><small>{{ (month.physical or month.motor or month.communication)|truncate(110) }}</small></a>
+  {% endfor %}
+  </div>
+</section>
+{% endblock %}

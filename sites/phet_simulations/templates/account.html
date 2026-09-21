@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}My Account &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<h1 class="page-title">Welcome, {{ current_user.name }}</h1>
+<p class="page-subtitle">
+  {{ current_user.email }}
+  {% if current_user.institution %} &middot; {{ current_user.institution }}{% endif %}
+  {% if current_user.country %} &middot; {{ current_user.country }}{% endif %}
+  &middot; Role: {{ current_user.role|capitalize }}
+</p>
+
+<section class="row">
+  <h2 class="row-title">Saved simulations ({{ saved_rows|length }})</h2>
+  {% if saved_rows %}
+    <ul class="saved-list">
+      {% for row in saved_rows %}
+        <li class="saved-item">
+          <h3>
+            <a href="{{ url_for('simulation_detail', slug=row.simulation.slug) }}">{{ row.simulation.title }}</a>
+          </h3>
+          <p class="saved-desc">{{ row.simulation.short_description }}</p>
+          {% if row.notes %}
+            <p class="saved-notes"><strong>My notes:</strong> {{ row.notes }}</p>
+          {% endif %}
+          <p class="saved-meta">Saved {{ row.saved_at.strftime('%B %d, %Y') }}</p>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="empty-state">
+      You haven't saved any simulations yet.
+      <a href="{{ url_for('simulations') }}">Browse simulations &raquo;</a>
+    </p>
+  {% endif %}
+</section>
+{% endblock %}

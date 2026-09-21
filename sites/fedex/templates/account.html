@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Account dashboard</div>
+      <h1>{{ current_user.full_name }}</h1>
+    </div>
+    <a href="{{ url_for('account_edit') }}">Edit profile</a>
+  </section>
+  <section class="stats-grid">
+    <div class="stat"><strong>{{ shipments|length }}</strong><span>Recent shipments</span></div>
+    <div class="stat"><strong>{{ invoices|length }}</strong><span>Recent invoices</span></div>
+    <div class="stat"><strong>{{ claims|length }}</strong><span>Active claims</span></div>
+  </section>
+
+  <section class="grid two" style="margin-top:1rem">
+    <article class="card stack">
+      <div class="section-title">
+        <div><h2>Recent shipments</h2></div>
+        <a href="{{ url_for('account_shipments') }}">View all</a>
+      </div>
+      {% for shipment in shipments %}
+        <div>
+          <strong><a href="{{ url_for('tracking_detail', tracking_number=shipment.tracking_number) }}">{{ shipment.shipment_code }}</a></strong>
+          <p class="muted">{{ shipment.destination_city }}, {{ shipment.destination_state }} · {{ shipment.status }}</p>
+        </div>
+      {% else %}
+        <div class="empty-state">No shipments yet.</div>
+      {% endfor %}
+    </article>
+    <article class="card stack">
+      <div class="section-title">
+        <div><h2>Scheduled pickups</h2></div>
+        <a href="{{ url_for('pickup') }}">Schedule another</a>
+      </div>
+      {% for pickup in pickups %}
+        <div>
+          <strong>{{ pickup.confirmation_code }}</strong>
+          <p class="muted">{{ pickup.slot_date }} · {{ pickup.time_window }} · {{ pickup.status }}</p>
+        </div>
+      {% else %}
+        <div class="empty-state">No pickups scheduled.</div>
+      {% endfor %}
+    </article>
+  </section>
+
+  <section class="grid two" style="margin-top:1rem">
+    <article class="card stack">
+      <div class="section-title">
+        <div><h2>Invoices</h2></div>
+        <a href="{{ url_for('invoices') }}">Open billing</a>
+      </div>
+      {% for invoice in invoices %}
+        <div>
+          <strong>{{ invoice.invoice_number }}</strong>
+          <p class="muted">{{ invoice.amount|money }} · {{ invoice.status }} · due {{ invoice.due_date }}</p>
+        </div>
+      {% else %}
+        <div class="empty-state">No invoices available.</div>
+      {% endfor %}
+    </article>
+    <article class="card stack">
+      <div class="section-title">
+        <div><h2>Claims</h2></div>
+        <a href="{{ url_for('claims') }}">Open claims</a>
+      </div>
+      {% for claim in claims %}
+        <div>
+          <strong>{{ claim.claim_number }}</strong>
+          <p class="muted">{{ claim.claim_type }} · {{ claim.status }}</p>
+        </div>
+      {% else %}
+        <div class="empty-state">No active claims.</div>
+      {% endfor %}
+    </article>
+  </section>
+{% endblock %}

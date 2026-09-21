@@ -1,0 +1,36 @@
+{# Labels describe what the installed asset actually depicts (PR #107 image repair
+   plus the extended fix round: every entry below is official NVIDIA media for the
+   SKU or family the picture shows, and the two family assets that share one vendor
+   artwork say so). #}
+{% set illustrations = {
+  'geforce-rtx-4060': 'Official NVIDIA product render — RTX 4060 Ti (the RTX 4060 / RTX 4060 Ti family artwork)',
+  'geforce-rtx-4070-super': 'Official NVIDIA product render — RTX 4070 SUPER',
+  'geforce-rtx-4080-super': 'Official NVIDIA product render — RTX 4080 SUPER',
+  'geforce-rtx-5060-ti': 'Official NVIDIA marketing image — RTX 5060 Ti',
+  'geforce-rtx-5060': 'Official NVIDIA marketing image — RTX 5060 family desktop system',
+  'geforce-rtx-5070-ti': 'Official NVIDIA product render — RTX 5070 Ti',
+  'geforce-rtx-5070': 'Official NVIDIA product render — RTX 5070',
+  'geforce-rtx-5080': 'Official NVIDIA product render — GeForce RTX 5080',
+  'geforce-rtx-5090': 'Official NVIDIA product render — GeForce RTX 5090',
+  'h100-tensor-core': 'Official NVIDIA product render — H100',
+  'h200-tensor-core': 'Official NVIDIA product render — H200 Tensor Core GPU',
+  'dgx-b200': 'Official NVIDIA product render — DGX B200',
+  'l40s': 'Official NVIDIA product render — L40S',
+  'rtx-pro-6000-blackwell': 'Official NVIDIA product render — RTX PRO 6000 Blackwell',
+  'rtx-6000-ada': 'Official NVIDIA product render — RTX 6000 Ada Generation',
+  'shield-tv-pro': 'Official NVIDIA product image — SHIELD TV Pro'
+} %}
+{% macro product_image(p, variant='card') -%}
+  {% if p.image %}
+  {# Every product image carries a caption; the entries above keep their specific
+     wording and the rest get a generic one (repair002, L6). #}
+  {% set label = illustrations.get(p.slug, 'Local mirror illustration for ' ~ p.name) %}
+  <figure class="product-figure product-figure-{{ variant }}" data-product-image="{{ p.slug }}">
+    <div class="{{ 'media' if variant == 'detail' else 'compare-image' if variant == 'compare' else 'thumb' }}">
+      <img src="{{ url_for('static', filename='images/' + p.image) }}"
+           alt="{{ label ~ '; not a photograph of this model (' ~ p.name ~ ').' if label else p.name }}">
+    </div>
+    {% if label %}<figcaption class="image-caption">{{ label }}; not a photograph of this model.</figcaption>{% endif %}
+  </figure>
+  {% endif %}
+{%- endmacro %}

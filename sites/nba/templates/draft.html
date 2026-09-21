@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+{% block title %}2026 NBA Draft - NBA{% endblock %}
+{% block content %}
+<nav class="draft-subnav" aria-label="Draft navigation">
+  <strong>2026 NBA Draft</strong>
+  <a class="active" href="{{ url_for('draft') }}">Latest</a>
+  <a href="{{ url_for('draft') }}#lottery">Lottery</a>
+  <a href="{{ url_for('draft') }}#order">Draft Order</a>
+  <a href="{{ url_for('draft') }}#entry">Early Entry</a>
+  <a href="{{ url_for('draft') }}#combine">AWS Draft Combine</a>
+  <a href="{{ url_for('draft') }}#history">Draft History</a>
+  <a href="{{ url_for('draft') }}#all-time">All-Time Picks</a>
+  <a href="{{ url_for('draft') }}#faq">FAQ</a>
+  <a href="{{ url_for('tickets') }}">Tickets</a>
+</nav>
+
+<div class="draft-banner">
+  <img src="{{ url_for('static', filename='images/articles/nba-official-draft-banner.png') }}" alt="2026 NBA Draft">
+</div>
+
+<section class="draft-page">
+  <section class="draft-hero-panel">
+    <div>
+      <h1>2026 NBA Draft | June 23-24</h1>
+      <a class="draft-hero-image" href="{{ url_for('article_detail', slug=draft.hero_slug) }}">
+        <img src="{{ url_for('static', filename='images/articles/nba-official-draft-combine-hero.jpg') }}" alt="">
+        <h2>10 top performers at AWS Draft Combine</h2>
+        <p>With 73 players participating in agility testing, shooting drills, team interviews and more, here are the standout performances.</p>
+      </a>
+    </div>
+    <aside class="draft-headline-list">
+      {% for title in draft.headlines %}
+        <a href="{{ url_for('article_detail', slug=draft.hero_slug) }}"><span>&#9654;</span>{{ title }}</a>
+      {% endfor %}
+    </aside>
+  </section>
+
+  <section class="official-section" id="video">
+    <div class="section-title compact"><h2>Draft Video</h2><a href="{{ url_for('watch') }}">See More</a></div>
+    <div class="official-video-row">
+      {% for title, duration, image, slug in draft.videos %}
+        <a class="video-card-official" href="{{ url_for('article_detail', slug=slug) }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <span>&#9654; {{ duration }}</span>
+          <h3>{{ title }}</h3>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="official-section" id="combine">
+    <h2>AWS NBA Draft Combine: May 10-17</h2>
+    <div class="draft-two-column-list">
+      {% for title, dek, image, slug in draft.combine %}
+        <a class="official-list-card" href="{{ url_for('article_detail', slug=slug) }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <div><h3>{{ title }}</h3><p>{{ dek }}</p><time>May {{ loop.index + 8 }}, 2026</time></div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="official-section">
+    <h2>Mock Draft</h2>
+    <div class="draft-two-column-list compact-list">
+      {% for title, dek, image, slug in draft.mock %}
+        <a class="official-list-card" href="{{ url_for('article_detail', slug=slug) }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <div><h3>{{ title }}</h3><p>{{ dek }}</p><time>May 12, 2026</time></div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="official-section draft-lottery" id="lottery">
+    <a href="{{ url_for('article_detail', slug=draft.hero_slug) }}">
+      <img src="{{ url_for('static', filename='images/articles/nba-official-draft-lottery.jpg') }}" alt="">
+      <h2>Wizards win 2026 Draft Lottery, will pick No. 1</h2>
+      <p>The Washington Wizards win the 2026 NBA Draft Lottery and will pick No. 1 in the 2026 NBA Draft.</p>
+    </a>
+    <div>
+      <a href="{{ url_for('article_detail', slug=draft.hero_slug) }}"><strong>2026 Draft Lottery: Watch the full drawing</strong><span>Watch the full drawing from Chicago that resulted in Washington receiving the No. 1 overall pick.</span></a>
+      <a href="{{ url_for('article_detail', slug=draft.hero_slug) }}"><strong>Draft Lottery FAQ: Wizards come up lucky</strong><span>With a 14.0% chance at the top pick, the Wizards won the lottery.</span></a>
+      <a href="{{ url_for('article_detail', slug=draft.hero_slug) }}"><strong>2026 NBA Draft Lottery full show</strong><span>Watch ABC's broadcast of the lottery from Chicago.</span></a>
+    </div>
+  </section>
+
+  <section class="official-section draft-process" id="order">
+    <h2>2026 Draft Process Key Dates</h2>
+    <ul>
+      <li><strong>April 24:</strong> Deadline for an Early Entry player to apply for 2026 NBA Draft.</li>
+      <li><strong>May 8-10:</strong> AWS NBA G League Combine in Chicago.</li>
+      <li><strong>May 10:</strong> 2026 NBA Draft Lottery.</li>
+      <li><strong>May 10-17:</strong> AWS NBA Draft Combine in Chicago.</li>
+      <li><strong>June 13:</strong> Deadline for an Early Entry player to withdraw.</li>
+      <li><strong>June 23:</strong> NBA Draft First Round | 8 ET.</li>
+      <li><strong>June 24:</strong> NBA Draft Second Round | 8 ET.</li>
+    </ul>
+  </section>
+
+  <section class="official-section" id="entry">
+    <h2>Draft Info</h2>
+    <div class="draft-two-column-list">
+      {% for title, dek, image, slug in draft.draft_info %}
+        <a class="official-list-card" href="{{ url_for('article_detail', slug=slug) }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <div><h3>{{ title }}</h3><p>{{ dek }}</p></div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="official-section" id="history">
+    <div class="section-title compact"><h2>Classic Draft Moments</h2><a href="{{ url_for('news', category='History') }}">See More</a></div>
+    <div class="official-video-row">
+      {% for title, duration, image, slug in draft.classic %}
+        <a class="video-card-official" href="{{ url_for('article_detail', slug=slug) }}">
+          <img src="{{ url_for('static', filename='images/articles/' ~ image) }}" alt="">
+          <span>&#9654; {{ duration }}</span>
+          <h3>{{ title }}</h3>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}

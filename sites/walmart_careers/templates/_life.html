@@ -1,0 +1,23 @@
+{#
+  "Life at Walmart": heading, lead sentence, the two-column text / photo grid,
+  the full-bleed blue quote band and the closing lines. `life` is one of the
+  content.LIFE_AT_WALMART_* dicts; shared by both detail layouts and About Us.
+#}
+{% macro life_block(heading, life, section_id='life-at-walmart') -%}
+<section class="life-block" id="{{ section_id }}">
+  <h2>{{ heading }}</h2>
+  <p class="life-lead">{{ life.lead }}</p>
+  <div class="life-grid">
+    <div class="life-text">
+      {% for paragraph in life.left %}<p>{{ paragraph }}</p>{% endfor %}
+    </div>
+    <div class="life-media">
+      <img src="{{ url_for('static', filename='images/' ~ life.photo) }}" alt="">
+      {% for paragraph in life.right %}<p>{{ paragraph }}</p>{% endfor %}
+    </div>
+  </div>
+  <div class="life-band"><p>{{ life.band }}</p></div>
+  <p class="life-closing">{{ life.closing }}</p>
+  <p class="life-note">{{ life.note }}</p>
+</section>
+{%- endmacro %}

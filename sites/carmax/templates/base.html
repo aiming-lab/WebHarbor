@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}CarMax - Shop for used cars, then buy online or at a store{% endblock %}</title>
+  <meta name="description" content="{% block description %}Search used cars, research vehicle models, and compare cars, all online at CarMax.{% endblock %}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='images/_pending.svg') }}">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <div class="container">
+      <a class="logo" href="{{ url_for('index') }}">Car<span class="accent">Max</span></a>
+      <nav>
+        <a href="{{ url_for('cars_index') }}">Shop</a>
+        <a href="{{ url_for('sell_my_car') }}">Sell / trade</a>
+        <a href="{{ url_for('financing') }}">Financing</a>
+        <a href="{{ url_for('research_index') }}">Research</a>
+        <a href="{{ url_for('stores_index') }}">Stores</a>
+        <a href="{{ url_for('articles_index') }}">Articles</a>
+      </nav>
+      <div class="user-tools">
+        <a href="{{ url_for('compare_view') }}">Compare{% if compare_count %} <span class="badge">{{ compare_count }}</span>{% endif %}</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('saved_view') }}">Saved{% if saved_count %} <span class="badge">{{ saved_count }}</span>{% endif %}</a>
+          <a href="{{ url_for('account') }}">{{ current_user.first_name or 'Account' }}</a>
+          <a href="{{ url_for('logout') }}">Sign out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Sign in</a>
+        {% endif %}
+      </div>
+    </div>
+  </header>
+
+  <div class="flash-row">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, msg in messages %}
+        <div class="flash {{ category }}">
+          <div class="container">{{ msg }}</div>
+        </div>
+      {% endfor %}
+    {% endwith %}
+  </div>
+
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-grid">
+      <div>
+        <h5>Shop</h5>
+        <a href="{{ url_for('cars_index') }}">All inventory</a>
+        <a href="{{ url_for('cars_index', certified=1) }}">CarMax Certified</a>
+        <a href="{{ url_for('cars_index', new_arrival=1) }}">New arrivals</a>
+        <a href="{{ url_for('cars_index', price_drop=1) }}">Price drops</a>
+        <a href="{{ url_for('research_index') }}">Research</a>
+      </div>
+      <div>
+        <h5>Sell &amp; finance</h5>
+        <a href="{{ url_for('sell_my_car') }}">Sell my car</a>
+        <a href="{{ url_for('value_index') }}">Used car value</a>
+        <a href="{{ url_for('pre_qual') }}">Get pre-qualified</a>
+        <a href="{{ url_for('financing') }}">Financing</a>
+        <a href="{{ url_for('maxcare_plans') }}">MaxCare warranty</a>
+      </div>
+      <div>
+        <h5>Support</h5>
+        <a href="{{ url_for('stores_index') }}">Find a store</a>
+        <a href="{{ url_for('faq_index') }}">FAQ</a>
+        <a href="{{ url_for('articles_index') }}">Articles</a>
+        <a href="{{ url_for('articles_index', category='financing') }}">Financing articles</a>
+      </div>
+      <div>
+        <h5>Account</h5>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}">My account</a>
+          <a href="{{ url_for('saved_view') }}">Saved cars</a>
+          <a href="{{ url_for('account_orders') }}">Orders</a>
+          <a href="{{ url_for('logout') }}">Sign out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Sign in</a>
+          <a href="{{ url_for('register') }}">Create account</a>
+        {% endif %}
+        <a href="tel:{{ BRAND_PHONE }}">{{ BRAND_PHONE }}</a>
+      </div>
+    </div>
+    <div class="footer-bottom container">
+      &copy; {{ current_year }} CarMax Business Services, LLC (mirror). 125+ point inspection. 10-day money-back guarantee. 30-day limited warranty.
+      All prices exclude tax, title, and tags.
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% block title %}Target : Expect More. Pay Less.{% endblock %}
+{% block content %}
+  <section class="hero">
+    <div class="shell hero__grid">
+      <div class="hero__copy">
+        <p class="eyebrow">Top deals</p>
+        <h1>Save on everything you need for home, style and everyday essentials.</h1>
+        <p>Shop thousands of items with free Order Pickup and Drive Up in as little as an hour, plus 5% off every purchase with Target Circle.</p>
+        <div class="hero__actions">
+          <a class="button" href="{{ url_for('deals_page') }}">Shop this week's deals</a>
+          <a class="button button--secondary" href="{{ url_for('products_page') }}">Browse all products</a>
+        </div>
+      </div>
+      <div class="hero__visual">
+        {# Real product photography from the catalog — no placeholder graphics. #}
+        <div class="hero__collage">
+          {% for product in featured_products[:4] %}
+            <a href="{{ url_for('product_page', sku=product.sku) }}">
+              <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+            </a>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="shell feature-strip">
+    {% for category in categories[:4] %}
+      <a href="{{ url_for('category_page', category_slug=category.slug) }}" class="feature-tile">
+        <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+        <div>
+          {# Baby / Beauty are their own section, so don't render "Baby Baby". #}
+          {% if category.section != category.name %}<span>{{ category.section }}</span>{% endif %}
+          <strong>{{ category.name }}</strong>
+        </div>
+      </a>
+    {% endfor %}
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Featured deals</p>
+        <h2>This week's top deals</h2>
+      </div>
+      <a href="{{ url_for('deals_page') }}">See all deals</a>
+    </div>
+    <div class="deal-grid">
+      {% for deal in deal_cards %}
+        <article class="deal-card">
+          {% if deal.product and deal.product.image_path %}
+            <a class="deal-card__media" href="{{ url_for('product_page', sku=deal.product.sku) }}">
+              <img src="{{ url_for('static', filename=deal.product.image_path) }}" alt="{{ deal.product.name }}">
+            </a>
+          {% endif %}
+          <p class="deal-card__badge">{{ deal.badge }}</p>
+          <h3>{{ deal.title }}</h3>
+          <p>{{ deal.subtitle }}</p>
+          {% if deal.product %}
+            <p class="deal-card__price">
+              <strong>${{ '%.2f'|format(deal.product.price) }}</strong>
+              {% if deal.product.list_price and deal.product.list_price > deal.product.price %}
+                <s>${{ '%.2f'|format(deal.product.list_price) }}</s>
+              {% endif %}
+            </p>
+          {% endif %}
+          <div class="deal-card__meta">
+            <span>Save {{ deal.discount_percent }}%</span>
+            <span>{{ deal.ends_label }}</span>
+          </div>
+          {% if deal.product %}
+            <a class="button button--secondary" href="{{ url_for('product_page', sku=deal.product.sku) }}">Open product</a>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Trending now</p>
+        <h2>Local bestsellers across home, style, kids, and everyday essentials</h2>
+      </div>
+    </div>
+    {% set products = featured_products %}
+    {% include "_product_cards.html" %}
+  </section>
+
+  <section class="shell dual-grid">
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Store pickup</p>
+          <h2>Stores near you</h2>
+        </div>
+        <a href="{{ url_for('stores_page') }}">See all stores</a>
+      </div>
+      <div class="store-list">
+        {% for store in stores %}
+          <a class="store-list__item" href="{{ url_for('store_page', store_slug=store.slug) }}">
+            {% if store.image_path %}<img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">{% endif %}
+            <div>
+              <strong>{{ store.name }}</strong>
+              <p>{{ store.city }}, {{ store.state }}</p>
+              <span>{{ store.amenities()[0] }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Help topics</p>
+          <h2>Help center</h2>
+        </div>
+      </div>
+      <div class="support-list">
+        {% for article in support_articles %}
+          <a href="{{ url_for('support_article_page', article_slug=article.slug) }}" class="support-list__item">
+            <strong>{{ article.title }}</strong>
+            <p>{{ article.summary }}</p>
+            <span>{{ article.topic }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}
+
+

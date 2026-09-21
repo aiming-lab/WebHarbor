@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Best {{ specialty.plural }} in {{ city.name }}, {{ city.state }}{% endblock %}
+{% block content %}
+<div class="container page">
+  <div class="breadcrumb"><a href="{{ url_for('specialty_landing', spec=specialty.slug) }}">{{ specialty.name }}</a><span class="sep">›</span><a href="{{ url_for('specialty_state', spec=specialty.slug, state=city.state_slug) }}">{{ city.state }}</a><span class="sep">›</span><span>{{ city.name }}</span></div>
+  <h1 class="page-title dark" style="text-align:center">Best <strong>{{ specialty.plural }}</strong> in <strong>{{ city.name }}, {{ city.state }}</strong></h1>
+  <p class="page-sub" style="text-align:center;max-width:960px;margin:0 auto 18px">{{ city.name }}, {{ city.state }} has <strong>{{ total }} {{ specialty.singular }}</strong> results with an average of <strong>{{ average_experience }} years of experience</strong> and <strong>a total of {{ total_reviews }} ratings</strong>. Currently, <strong>{{ accepting }} providers</strong> have noted they are <strong>accepting new patients</strong>. Conditions treated by {{ specialty.plural }} often include <strong>{{ conditions | map(attribute='name') | join(', ') }}</strong>. Some common procedures performed by {{ specialty.plural }} include <strong>{{ procedures | map(attribute='name') | join(', ') }}</strong>.</p>
+  {% include "_filter_bar.html" %}
+  <div class="info-banner"><span class="badge">WebMD PATIENT'S CHOICE</span><span><strong style="color:var(--card-navy)">Patients' Choice</strong> awards are assigned based on patient satisfaction ratings for key specialties in select geographic locations.</span><button type="button" class="close" data-dismiss aria-label="Dismiss">×</button></div>
+  <div class="section-label">All Results</div>
+  {% if page.rows %}
+  <div class="card-list">
+    {% for row in page.rows %}{% with doctor=row.doctor, distance=row.distance %}{% include "_physician_card.html" %}{% endwith %}{% endfor %}
+  </div>
+  {% include "_pagination.html" %}
+  {% else %}
+  <div class="panel empty">No {{ specialty.plural }} in {{ city.name }} matched these filters.</div>
+  {% endif %}
+  <section class="panel below-list">
+    <h2 class="sub-title">What is a {{ specialty.singular }} and How Can They Help You?</h2>
+    <p>{{ specialty.description }}</p>
+    <p>{{ specialty.plural }} complete medical school followed by residency training in {{ specialty.name | lower }}; board certification is issued by the {{ specialty.board_name }}. Each profile's Certifications, License &amp; Education section lists the certifying board, the year and the training institutions.</p>
+    <p>In their daily practice, a {{ specialty.singular }}:</p>
+    <ul class="bullets">
+      <li>Diagnoses and treats conditions including {{ all_conditions[:4] | map(attribute='name') | join(', ') }}</li>
+      <li>Performs procedures such as {{ all_procedures[:3] | map(attribute='name') | join(', ') }}</li>
+      <li>Coordinates care with the hospitals and group practices listed on each profile</li>
+      <li>May also be known as: {{ specialty.name | lower }} specialist, {{ specialty.singular | lower }}, MD, DO</li>
+    </ul>
+  </section>
+  <section class="panel below-list faq">
+    <h2 class="sub-title">Frequently Asked Questions</h2>
+    <dl>
+      <dt>How can I find a {{ specialty.singular }} in {{ city.name }} who takes my insurance?</dt>
+      <dd>Use the Insurance filter at the top of this page to view only {{ specialty.plural }} who accept your carrier, Medicare or Medicaid. You can also verify acceptance on each provider's profile under "Does the provider accept your insurance?".</dd>
+      <dt>How can I schedule a virtual visit (video visit) with a {{ specialty.singular }} in {{ city.name }}?</dt>
+      <dd>Apply the "Virtual Visit" filter to find {{ specialty.plural }} offering telehealth appointments in {{ city.name }}. Profiles that show a Telehealth pill list video visit availability; Enhanced profiles also offer online appointment requests.</dd>
+      <dt>How can I find top-rated {{ specialty.plural }} near me in {{ city.name }}?</dt>
+      <dd>Sort results using the "Ratings" filter to display the most highly reviewed {{ specialty.plural }} in {{ city.name }}. Visit individual profiles to read patient feedback and the Patients' Perspective criteria.</dd>
+      <dt>How can I make a same-day appointment with a {{ specialty.singular }} in {{ city.name }}?</dt>
+      <dd>Browse individual profiles to see the next available appointment for {{ specialty.plural }} in {{ city.name }}. When same-day openings aren't visible online, phone the office listed under Locations.</dd>
+      <dt>How can I find a {{ specialty.singular }} in {{ city.name }} with the shortest wait time?</dt>
+      <dd>The average wait time shown on the Ratings &amp; Reviews card of each Enhanced profile helps identify {{ specialty.plural }} with shorter wait times in {{ city.name }}.</dd>
+      <dt>How can I book an appointment online with a {{ specialty.singular }} in {{ city.name }}?</dt>
+      <dd>Identify {{ specialty.plural }} displaying "Request Now" buttons on their cards. These direct you to the appointment request form; other providers list phone numbers to call.</dd>
+      <dt>How can I find a {{ specialty.singular }} in {{ city.name }} who accepts new patients?</dt>
+      <dd>Tick "Accepts New Patients" in the filter bar. Enhanced cards also show an Accepting New Patients line, and every profile's Locations section lists the office policy.</dd>
+      <dt>What conditions do {{ specialty.plural }} in {{ city.name }} treat?</dt>
+      <dd>{{ specialty.plural }} on WebMD Care list conditions such as {{ all_conditions | map(attribute='name') | join(', ') }}. Each profile's Conditions Treated card shows how often the provider treats them compared with peers.</dd>
+    </dl>
+  </section>
+  <section class="panel below-list">
+    <h2 class="sub-title">Find Other Specialists In Your City</h2>
+    <div class="spec-grid-3">
+      {% for row in related_specialties %}<a href="{{ url_for('specialty_city', spec=row.slug, state=city.state_slug, city=city.slug) }}">{{ row.plural }} in {{ city.name }}, {{ city.state }}</a>{% endfor %}
+      <a href="{{ url_for('specialty_index') }}"><strong>More Specialties</strong></a>
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,1016 @@
+{% extends "base.html" %}
+{% block title %}Sell Your Home | Compass{% endblock %}
+{% block content %}
+<div data-testid="app-root" id="sell-page">
+ <section class="css-1xymkpv em65bxu17" id="sell-hero">
+  <div class="em65bxu16 css-igzm7i e1il2nbp0">
+   <div class="css-1godemj em65bxu15">
+    <div class="css-zdkrpg em65bxu11">
+     <h1 class="em65bxu12 css-13tuf1 ect2g8j0">
+      Your Home.
+      <br/>
+      Your Choice.
+     </h1>
+     <p class="em65bxu10 css-1wb8t9n e1e8d1rb0">
+      Protect and maximize the value
+      <br/>
+      of your home with the Compass
+      <br/>
+      3-Phased Marketing Strategy.
+     </p>
+    </div>
+    <div class="css-50j64n em65bxu9">
+     <a class="em65bxu8 e1w5l5sl0 css-wkxpjh e1d04jal0" data-testid="header-button-sellWithUs" href="#lead-form">
+      Sell with Us
+     </a>
+    </div>
+    <div class="css-1pil7p6 em65bxu7">
+     <div class="css-my3bnf em65bxu6">
+     </div>
+     <div class="css-k5av0z em65bxu5">
+      <div class="cx-text-body1Medium css-1fch67h em65bxu4">
+       Compass 3-Phased Marketing Strategy
+      </div>
+      <div class="css-1xn8cb9 em65bxu3">
+       <span class="css-1dmfr76 em65bxu2">
+        $5,875,000
+       </span>
+       <div class="css-1c4cljx em65bxu1">
+        <div class="css-qnmulz em65bxu0">
+         <span>
+          6
+         </span>
+         <span>
+          Bed
+         </span>
+        </div>
+        <div class="css-qnmulz em65bxu0">
+         <span>
+          7.5
+         </span>
+         <span>
+          Bath
+         </span>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </section>
+ <section class="css-hxazs e1ybot684" id="lead-form">
+  <div class="e1ybot683 css-1pegls6 e1il2nbp0">
+   <div class="e1ybot682 css-ns70sf e1il2nbp0">
+    <div class="css-ekvon egezzux7">
+     <h2 class="egezzux5 css-1pnykj5 ect2g8j0" data-testid="leadForm-view-generalTitle">
+      Sell With Us
+     </h2>
+     <p class="egezzux4 css-b5revq e1e8d1rb0" data-testid="leadForm-view-generalDesc">
+      <span>
+       Stay in control of how, when,
+      </span>
+      <span>
+       and where your home is marketed
+      </span>
+      <span>
+       with a strategy tailored to fit your needs.
+      </span>
+     </p>
+    </div>
+    <div class="css-1m62pb8 egezzux6">
+     <form action="{{ url_for('sell') }}#lead-form" class="css-fz5vzb e6ngtr27" data-testid="lead-form" method="post" name="sell contact form">
+      <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+      {% if seller_errors %}
+      <div class="seller-feedback seller-errors" role="alert">
+       <strong>
+        Please check the form
+       </strong>
+       <ul>
+        {% for error in seller_errors %}
+        <li>
+         {{ error }}
+        </li>
+        {% endfor %}
+       </ul>
+      </div>
+      {% endif %}
+{% if seller_confirmation %}
+      <div class="seller-feedback" role="status">
+       <strong>
+        Saved in this local environment
+       </strong>
+       <p>
+        {{ seller_confirmation.name }} · {{ seller_confirmation.email }} · {{ seller_confirmation.phone }} · {{ seller_confirmation.zip_code }}
+       </p>
+       <p>
+        Reference: {{ seller_confirmation.reference }}
+       </p>
+      </div>
+      {% endif %}
+      <div class="css-n48rgu e6ngtr25">
+       <label class="sr-only" for="seller-0-name">
+        Name
+       </label>
+       <input aria-label="Name" autocomplete="name" class="css-zkuzm3 e6ngtr26" id="seller-0-name" maxlength="120" name="name" placeholder="Name*" required="" type="text" value="{{ seller_values.get('name', '') }}"/>
+      </div>
+      <div class="css-n48rgu e6ngtr25">
+       <label class="sr-only" for="seller-0-email">
+        Email
+       </label>
+       <input aria-label="Email" autocomplete="email" class="css-zkuzm3 e6ngtr26" id="seller-0-email" maxlength="254" name="email" placeholder="Email*" required="" type="email" value="{{ seller_values.get('email', '') }}"/>
+      </div>
+      <div class="css-n48rgu e6ngtr25">
+       <label class="sr-only" for="seller-0-phone">
+        Phone Number
+       </label>
+       <input aria-label="Phone Number" autocomplete="tel" class="css-zkuzm3 e6ngtr26" id="seller-0-phone" maxlength="40" name="phone" placeholder="Phone Number*" required="" type="tel" value="{{ seller_values.get('phone', '') }}"/>
+      </div>
+      <div class="css-n48rgu e6ngtr25">
+       <label class="sr-only" for="seller-0-zip_code">
+        Zip Code
+       </label>
+       <input aria-label="Zip Code" autocomplete="postal-code" class="css-zkuzm3 e6ngtr26" id="seller-0-zip_code" maxlength="10" name="zip_code" pattern="[0-9]{5}(-[0-9]{4})?" placeholder="Zip Code*" required="" type="text" value="{{ seller_values.get('zip_code', '') }}"/>
+      </div>
+      <button class="e6ngtr24 e1w5l5sl0 css-1ipsgz6 e1d04jal0" type="submit">
+       Submit
+      </button>
+     </form>
+    </div>
+    <p class="egezzux3 css-dd6jzd e1e8d1rb0" data-testid="leadForm-view-disclaimer">
+     Your request is saved in this local environment only. No email, call, or text is sent to Compass.
+    </p>
+   </div>
+  </div>
+ </section>
+ <section aria-label="Compass Advantage" aria-roledescription="carousel" class="css-ow0xtu e1vjuddg7" data-sell-stack="" id="sell-advantage" role="region" tabindex="0">
+  <div class="e1vjuddg6 css-z6iz7f e1il2nbp0">
+   <h2 class="css-1u3qnic ect2g8j0">
+    The Compass Advantage
+   </h2>
+   <p class="e1vjuddg5 css-plvqso e1e8d1rb0">
+    The #1 real estate brokerage in the U.S. working for you
+   </p>
+   <p class="css-1f3rnsx e1vjuddg4">
+    RealTrends Closed Sales Volume 2024
+   </p>
+   <div class="e1vjuddg3 css-hrtf5u e1v0aowr4">
+    <div class="css-1f5yd90 e1v0aowr3">
+     <div aria-label="Powered by Intelligent Tech, slide 1 of 3" aria-roledescription="slide" class="css-ur6wbe e1v0aowr2" data-stack-card="" role="group" style="z-index: 3; transform: translateX(var(--card-offset-x-0)) translateY(var(--card-offset-y-0));">
+      <img alt="Powered by Intelligent Tech" class="css-pdxlij e1vjuddg1" src="/static/external_cache/sell-marketing-16d3847461f1.webp"/>
+      <img alt="Powered by Intelligent Tech" class="css-bt4tiu e1vjuddg0" src="/static/external_cache/sell-marketing-fc7c490155d9.webp"/>
+      <div aria-hidden="true" class="sell-card-shade">
+      </div>
+     </div>
+     <div aria-label="Driven by Strategy, slide 2 of 3" aria-roledescription="slide" class="css-ur6wbe e1v0aowr2" data-stack-card="" role="group" style="z-index: 2; transform: translateX(var(--card-offset-x-1)) translateY(var(--card-offset-y-1));">
+      <img alt="Driven by Strategy" class="css-pdxlij e1vjuddg1" src="/static/external_cache/sell-marketing-44a09172713b.webp"/>
+      <img alt="Driven by Strategy" class="css-bt4tiu e1vjuddg0" src="/static/external_cache/sell-marketing-505fb4f9287a.webp"/>
+      <div aria-hidden="true" class="sell-card-shade">
+      </div>
+     </div>
+     <div aria-label="Backed by a 340K+ Agent Network, slide 3 of 3" aria-roledescription="slide" class="css-ur6wbe e1v0aowr2" data-stack-card="" role="group" style="z-index: 1; transform: translateX(var(--card-offset-x-2)) translateY(var(--card-offset-y-2));">
+      <img alt="Backed by a 340K+ Agent Network" class="css-pdxlij e1vjuddg1" src="/static/external_cache/sell-marketing-147f66ee4c76.webp"/>
+      <img alt="Backed by a 340K+ Agent Network" class="css-bt4tiu e1vjuddg0" src="/static/external_cache/sell-marketing-1e98bd95b7e9.webp"/>
+      <div aria-hidden="true" class="sell-card-shade">
+      </div>
+     </div>
+    </div>
+    <div class="css-gukv2g e1v0aowr1">
+     <button aria-label="Previous Compass advantage" class="css-1gqg92w e1d04jal0" data-stack-step="-1" data-testid="stackCards-prevButton" type="button">
+      <svg class="sell-button-icon" fill="none" height="22" viewBox="0 0 74 22" width="74" xmlns="http://www.w3.org/2000/svg">
+       <path d="M12 21.0107L2 11.0107L12 1.01074" stroke="currentColor" stroke-width="2">
+       </path>
+       <line stroke="currentColor" stroke-width="2" transform="matrix(1 -8.74228e-08 -8.74228e-08 -1 2 10.3857)" x2="71.25" y1="-1" y2="-1">
+       </line>
+      </svg>
+     </button>
+     <button aria-label="Next Compass advantage" class="css-1gqg92w e1d04jal0" data-stack-step="1" data-testid="stackCards-nextButton" type="button">
+      <svg class="sell-button-icon" fill="none" height="22" viewBox="0 0 73 22" width="73" xmlns="http://www.w3.org/2000/svg">
+       <path d="M61.25 1.01074L71.25 11.0107L61.25 21.0107" stroke="currentColor" stroke-width="2">
+       </path>
+       <line stroke="currentColor" stroke-width="2" x1="8.74228e-08" x2="71.25" y1="10.6357" y2="10.6357">
+       </line>
+      </svg>
+     </button>
+    </div>
+   </div>
+  </div>
+  <span class="sr-only" data-stack-status="" role="status">Powered by Intelligent Tech, 1 of 3</span>
+ </section>
+ <section id="sell-strategy">
+  <div class="css-1dpdq61 e1il2nbp0">
+   <div class="css-q080k3 e9qmqib1">
+    <h2 class="css-1u3qnic ect2g8j0">
+     More Choices, More Flexibility, More Value
+    </h2>
+    <p class="e9qmqib3 css-y9kbfc efcy15v0">
+     WITH THE COMPASS 3-PHASED MARKETING STRATEGY
+    </p>
+    <p class="e9qmqib2 css-pvc6fy e1e8d1rb0">
+     Our structured launch strategy is designed to test pricing, build maximum exposure, and create a strong market debut. This approach helps protect your home from prolonged time on market, price reductions, and lost value.
+    </p>
+   </div>
+   <div class="css-1wnowod e9qmqib0">
+    <div class="css-1o4gzvb ex9fvnm2" data-testid="TimelinePhaseList__root">
+     <div class="css-d1c51c ex9fvnm1">
+      <div class="uc-timeline-phase-progress-bar css-oyy2pr ex9fvnm0">
+      </div>
+      <div class="css-1tjhk5z e1nfjqsk8">
+       <div class="css-fc72mw e1nfjqsk7">
+        <p class="e1nfjqsk6 css-yk3upm efcy15v0">
+         Phase
+         1
+        </p>
+        <h3 class="css-10955iy e1nfjqsk5">
+         Compass Private Exclusive
+        </h3>
+       </div>
+       <div class="css-1fioe43 e1nfjqsk4">
+        <img alt="Marketing Strategy - Coming Soon Listing" src="/static/external_cache/sell-marketing-6a434ab3a9f5.webp"/>
+        <div class="css-16koxgv e1nfjqsk3">
+         <span class="css-1d680ds e1nfjqsk2">
+          $5,600,000
+         </span>
+         <span>
+          6
+          Beds |
+          7.5
+          Baths
+         </span>
+        </div>
+       </div>
+       <div class="css-fc72mw e1nfjqsk7">
+        <div class="e1nfjqsk1 css-rtdclh ect2g8j0">
+         <span>
+          Validate
+          <br/>
+          Pricing
+         </span>
+        </div>
+        <p class="e1nfjqsk0 css-14qiv98 e1e8d1rb0">
+         Validate your price with 340,000 agents across our network of brokerages, gaining early exposure without days on market, price drops, or a rushed timeline.
+        </p>
+       </div>
+      </div>
+     </div>
+     <div class="css-d1c51c ex9fvnm1">
+      <div class="uc-timeline-phase-progress-bar css-oyy2pr ex9fvnm0">
+      </div>
+      <div class="css-1tjhk5z e1nfjqsk8">
+       <div class="css-fc72mw e1nfjqsk7">
+        <p class="e1nfjqsk6 css-yk3upm efcy15v0">
+         Phase
+         2
+        </p>
+        <h3 class="css-10955iy e1nfjqsk5">
+         Compass Coming Soon
+        </h3>
+       </div>
+       <div class="css-1fioe43 e1nfjqsk4">
+        <img alt="private-exclusives-marketing-srategy-phase-3" src="/static/external_cache/sell-marketing-6f87b9ec80cc.webp"/>
+        <div class="css-16koxgv e1nfjqsk3">
+         <span class="css-1d680ds e1nfjqsk2">
+          $5,750,000
+         </span>
+         <span>
+          6
+          Beds |
+          7.5
+          Baths
+         </span>
+        </div>
+       </div>
+       <div class="css-fc72mw e1nfjqsk7">
+        <div class="e1nfjqsk1 css-rtdclh ect2g8j0">
+         <span>
+          Expand Reach
+          <br/>
+          With No Risks
+         </span>
+        </div>
+        <p class="e1nfjqsk0 css-14qiv98 e1e8d1rb0">
+         List publicly on
+         <a aria-label="Compass.com (opens external website)" class="cx-textLink--secondary" href="https://compass.com/" rel="noopener noreferrer" target="_blank">
+          Compass.com
+         </a>
+         <br/>
+         and
+         <a aria-label="Redfin.com (opens external website)" class="cx-textLink--secondary" href="https://www.redfin.com/" rel="noopener noreferrer" target="_blank">
+          Redfin.com
+         </a>
+         ,
+         <br/>
+         expanding your home’s reach
+         <br/>
+         to 60 million buyers
+         <br/>
+         while protecting
+         <br/>
+         its value.
+        </p>
+       </div>
+      </div>
+     </div>
+     <div class="css-d1c51c ex9fvnm1">
+      <div class="uc-timeline-phase-progress-bar css-oyy2pr ex9fvnm0">
+      </div>
+      <div class="css-1tjhk5z e1nfjqsk8">
+       <div class="css-fc72mw e1nfjqsk7">
+        <p class="e1nfjqsk6 css-yk3upm efcy15v0">
+         Phase
+         3
+        </p>
+        <h3 class="css-10955iy e1nfjqsk5">
+         Public Websites
+        </h3>
+       </div>
+       <div class="css-1fioe43 e1nfjqsk4">
+        <img alt="coming-soon-marketing-srategy-phase-3" src="/static/external_cache/sell-marketing-efdf5ce8cee4.webp"/>
+        <div class="css-16koxgv e1nfjqsk3">
+         <span class="css-1d680ds e1nfjqsk2">
+          $5,875,000
+         </span>
+         <span>
+          6
+          Beds |
+          7.5
+          Baths
+         </span>
+        </div>
+       </div>
+       <div class="css-fc72mw e1nfjqsk7">
+        <div class="e1nfjqsk1 css-rtdclh ect2g8j0">
+         <span>
+          Sell
+          <br/>
+          Better
+         </span>
+        </div>
+        <p class="e1nfjqsk0 css-14qiv98 e1e8d1rb0">
+         Backed by pricing insights and buyer demand, your home enters the broader market positioned to achieve the best possible price and terms.
+        </p>
+       </div>
+      </div>
+     </div>
+    </div>
+   </div>
+  </div>
+ </section>
+ <section class="css-pluit3 e1txrs317" id="sell-choice">
+  <div class="css-1dpdq61 e1il2nbp0">
+   <h2 class="e1txrs316 css-r4jhui ect2g8j0">
+    <span>
+     You Decide How
+    </span>
+    <span>
+     Your Home Is Sold
+    </span>
+   </h2>
+   <p class="e1txrs315 css-3l9169 e1e8d1rb0">
+    At Compass, we believe selling your home should feel as personal and considered as the home itself. Our 3-Phased Marketing Strategy offers distinct pathways that are crafted to align with your goals, your timing, and your vision.
+   </p>
+   <div class="css-5vxow3 e1txrs314">
+   </div>
+   <div class="e1txrs313 css-3nk80r e1e8d1rb0">
+    <p class="css-7w2wi e1txrs312">
+     To help you make the most informed decision, we’ve outlined all available options in our disclosure form:
+    </p>
+    <a aria-label="3-Phased Marketing Strategy Disclosure Form (opens external website)" class="css-9wnoii e1txrs311" data-testid="homeSelling-link-threePhasedMarketingForm" href="https://docs.google.com/document/d/1sz-cFGClOjJibLb1CJxPfZVaumVAMpltPwgvk1-nuQA/edit?tab=t.0" rel="noopener noreferrer" target="_blank">
+     <span class="e1txrs310 e10sxfax0 css-1w8y9b e1d04jal0">
+      <p>
+       3-Phased Marketing Strategy
+      </p>
+      <span class="spacer">
+      </span>
+      <p>
+       Disclosure Form
+       <svg class="sell-button-icon" fill="none" height="16" viewBox="0 0 33 16" width="33" xmlns="http://www.w3.org/2000/svg">
+        <path d="M1 7.17188C0.447715 7.17187 4.82823e-08 7.61959 0 8.17187C-4.82823e-08 8.72416 0.447715 9.17187 1 9.17188L1 7.17188ZM1 8.17188L1 9.17188L31 9.17188L31 8.17188L31 7.17188L1 7.17188L1 8.17188Z" fill="currentColor">
+        </path>
+        <path d="M24 1.67188L31 8.17188L24 14.6719" stroke="currentColor" stroke-linecap="round" stroke-width="2">
+        </path>
+       </svg>
+      </p>
+     </span>
+    </a>
+   </div>
+  </div>
+ </section>
+ <section class="css-1sagztr eb1n3gx4" data-testid="preMarketingBenefits-section" id="sell-benefits">
+  <div class="eb1n3gx3 css-z6iz7f e1il2nbp0">
+   <h2 class="eb1n3gx2 css-1qf9x2w ect2g8j0">
+    <span>
+     Benefits of 3-Phased Marketing
+    </span>
+   </h2>
+   <p class="eb1n3gx1 css-vkoy8m e1e8d1rb0">
+    Just as Hollywood releases trailers to build anticipation for a movie premiere, you can launch your listing multiple times to test your price and build demand for a stronger outcome.
+   </p>
+   <div class="css-12qyots eb1n3gx0">
+    <article class="css-dmbf8o e12j6nyj11">
+     <div class="css-8g9f88 e12j6nyj10">
+      <div class="css-1hk3dg8 e12j6nyj9">
+       <h3 class="e12j6nyj8 css-l9qaof ect2g8j0">
+        Validate Pricing
+       </h3>
+       <p class="e12j6nyj7 css-1bt1yzr efcy15v0">
+        LAUNCH AS A COMPASS PRIVATE EXCLUSIVE
+       </p>
+      </div>
+      <p class="e12j6nyj5 css-wfq3m2 e1e8d1rb0">
+       Unlike traditional brokerages that immediately launch your listing publicly, risking days on market and price drop history that damage its value, Compass first shares your home with 340,000 agents across our network of brokerages and their serious buyers. This builds exposure, provides pricing insights, and lets you make adjustments before going public.
+      </p>
+      <div class="css-15x8mle e12j6nyj3">
+       <a class="css-11ywu96 e12j6nyj0" href="/private-exclusives/">
+        <span class="e12j6nyj2 e10sxfax0 css-4rdfxn e1d04jal0" data-testid="marketingPhase-link">
+         <p>
+          Learn More About
+         </p>
+         <p>
+          Compass Private Exclusives
+          <svg class="sell-button-icon" fill="none" height="16" viewBox="0 0 33 16" width="33" xmlns="http://www.w3.org/2000/svg">
+           <path d="M1 7.17188C0.447715 7.17187 4.82823e-08 7.61959 0 8.17187C-4.82823e-08 8.72416 0.447715 9.17187 1 9.17188L1 7.17188ZM1 8.17188L1 9.17188L31 9.17188L31 8.17188L31 7.17188L1 7.17188L1 8.17188Z" fill="currentColor">
+           </path>
+           <path d="M24 1.67188L31 8.17188L24 14.6719" stroke="currentColor" stroke-linecap="round" stroke-width="2">
+           </path>
+          </svg>
+         </p>
+        </span>
+       </a>
+      </div>
+     </div>
+     <img alt="Validate Pricing" class="css-njtd1l e12j6nyj6" src="/static/external_cache/sell-marketing-f74aab548ede.webp"/>
+    </article>
+    <article class="css-dmbf8o e12j6nyj11">
+     <div class="css-8g9f88 e12j6nyj10">
+      <div class="css-1hk3dg8 e12j6nyj9">
+       <h3 class="e12j6nyj8 css-l9qaof ect2g8j0">
+        Expand Reach With No Risks
+       </h3>
+       <p class="e12j6nyj7 css-1bt1yzr efcy15v0">
+        LAUNCH AS A COMPASS COMING SOON
+       </p>
+      </div>
+      <p class="e12j6nyj5 css-wfq3m2 e1e8d1rb0">
+       Publicly launch your home on
+       <a aria-label="Compass.com (opens external website)" class="cx-textLink--secondary" href="https://compass.com/" rel="noopener noreferrer" style="color: inherit;" target="_blank">
+        Compass.com
+       </a>
+       and
+       <a aria-label="Redfin.com (opens external website)" class="cx-textLink--secondary" href="https://www.redfin.com/" rel="noopener noreferrer" style="color: inherit;" target="_blank">
+        Redfin.com
+       </a>
+       , expanding your reach to 60 million buyers. Appear at the top of search results to build early interest while staying protected from public days on market and price drop history. Receive engagement insights on your listing, and know all serious buyer inquiries go directly to your Compass agent.
+       <br/>
+       <br/>
+       You may opt out of syndication to
+       <a aria-label="Redfin.com (opens external website)" class="cx-textLink--secondary" href="https://www.redfin.com/" rel="noopener noreferrer" style="color: inherit;" target="_blank">
+        Redfin.com
+       </a>
+       at any time.
+      </p>
+      <div class="css-15x8mle e12j6nyj3">
+       <a class="css-11ywu96 e12j6nyj0" href="/coming-soon/">
+        <span class="e12j6nyj2 e10sxfax0 css-4rdfxn e1d04jal0" data-testid="marketingPhase-link">
+         <p>
+          Learn More About
+         </p>
+         <p>
+          Compass Coming Soon
+          <svg class="sell-button-icon" fill="none" height="16" viewBox="0 0 33 16" width="33" xmlns="http://www.w3.org/2000/svg">
+           <path d="M1 7.17188C0.447715 7.17187 4.82823e-08 7.61959 0 8.17187C-4.82823e-08 8.72416 0.447715 9.17187 1 9.17188L1 7.17188ZM1 8.17188L1 9.17188L31 9.17188L31 8.17188L31 7.17188L1 7.17188L1 8.17188Z" fill="currentColor">
+           </path>
+           <path d="M24 1.67188L31 8.17188L24 14.6719" stroke="currentColor" stroke-linecap="round" stroke-width="2">
+           </path>
+          </svg>
+         </p>
+        </span>
+       </a>
+      </div>
+     </div>
+     <img alt="Generate Early Demand" class="css-njtd1l e12j6nyj6" src="/static/external_cache/sell-marketing-8c74116e5c37.webp"/>
+    </article>
+    <article class="css-dmbf8o e12j6nyj11">
+     <div class="css-8g9f88 e12j6nyj10">
+      <div class="css-1hk3dg8 e12j6nyj9">
+       <h3 class="e12j6nyj8 css-l9qaof ect2g8j0">
+        Sell Better
+       </h3>
+       <p class="e12j6nyj7 css-1bt1yzr efcy15v0">
+        LAUNCH ON PUBLIC WEBSITES
+       </p>
+      </div>
+      <p class="e12j6nyj5 css-wfq3m2 e1e8d1rb0">
+       Backed by a validated pricing strategy and early buyer demand, your home is positioned to achieve the best possible price and terms when it goes live on other websites.
+      </p>
+      <div class="css-15x8mle e12j6nyj3">
+       <a class="e12j6nyj1 e10sxfax0 css-18otenb e1d04jal0" data-testid="marketingPhase-button" href="#lead-form">
+        <p>
+         Sell with Us
+         <svg class="sell-button-icon" fill="none" height="16" viewBox="0 0 33 16" width="33" xmlns="http://www.w3.org/2000/svg">
+          <path d="M1 7.17188C0.447715 7.17187 4.82823e-08 7.61959 0 8.17187C-4.82823e-08 8.72416 0.447715 9.17187 1 9.17188L1 7.17188ZM1 8.17188L1 9.17188L31 9.17188L31 8.17188L31 7.17188L1 7.17188L1 8.17188Z" fill="currentColor">
+          </path>
+          <path d="M24 1.67188L31 8.17188L24 14.6719" stroke="currentColor" stroke-linecap="round" stroke-width="2">
+          </path>
+         </svg>
+        </p>
+       </a>
+      </div>
+     </div>
+     <img alt="Generate Early Demand" class="css-njtd1l e12j6nyj6" src="/static/external_cache/sell-marketing-b2001959fa63.webp"/>
+    </article>
+   </div>
+  </div>
+ </section>
+ <section class="css-1brlqjs e1chdame7" id="sell-results">
+  <div class="e1chdame6 css-10jozr0 e1il2nbp0">
+   <h2 class="e1chdame5 css-1oo7s6c ect2g8j0">
+    <span>
+     Phased Marketing
+    </span>
+    <span>
+     Delivers Results
+    </span>
+   </h2>
+   <p class="e1chdame4 css-157aart e1e8d1rb0">
+    Our data shows that Compass-sold homes that are marketed as Private Exclusives or Coming Soons are associated with stronger outcomes.
+    <br/>
+    Data reflects a 12 month period ending March 21, 2026.
+   </p>
+   <div class="css-1abra2g e1chdame3">
+    <div class="css-rhdlph e1chdame2">
+     <div class="css-ir6v37 e1chdame1">
+      4.6%
+     </div>
+     <div class="css-iq2lrl e1chdame0">
+      Higher
+      <br/>
+      Closing Price
+     </div>
+    </div>
+    <div class="css-rhdlph e1chdame2">
+     <div class="css-ir6v37 e1chdame1">
+      34%
+     </div>
+     <div class="css-iq2lrl e1chdame0">
+      Faster
+      <br/>
+      to Contract
+     </div>
+    </div>
+    <div class="css-rhdlph e1chdame2">
+     <div class="css-ir6v37 e1chdame1">
+      29%
+     </div>
+     <div class="css-iq2lrl e1chdame0">
+      Less Likely to
+      <br/>
+      Drop in Price
+     </div>
+    </div>
+   </div>
+   <a class="e1w5l5sl0 css-q3223w e1d04jal0" data-testid="deliversResultsSection-actionButton" href="#lead-form">
+    Sell on Your Terms
+   </a>
+  </div>
+ </section>
+ <section aria-label="How Your Home Appears" aria-roledescription="carousel" data-sell-carousel="" id="sell-appearance" role="region" tabindex="0">
+  <div class="css-1dpdq61 e1il2nbp0">
+   <h2 class="e7ryp3w14 css-1m5pjej ect2g8j0">
+    How Your Home Appears
+    <br/>
+    on Real Estate Websites
+   </h2>
+   <p class="e7ryp3w13 css-exm58i e1e8d1rb0">
+    Other platforms hurt homeowners by displaying
+    <br/>
+    negative insights that can devalue your home.
+    <br/>
+    At Compass, we put homeowners first.
+   </p>
+   <div class="css-gy4239 eeo1u1d4">
+    <div class="css-d3v9zr eeo1u1d3">
+     <div class="css-119k3rf eeo1u1d2" data-appearance-track="" style="transform: translate3d(0px, 0px, 0px);">
+      <div class="css-1ow741c eeo1u1d1" data-appearance-card="">
+       <div class="css-39im2w e7ryp3w12">
+        <div class="css-ent877 e7ryp3w11">
+         <div class="css-8huwwr e7ryp3w10">
+          <div class="css-181tfr e7ryp3w9">
+           1
+          </div>
+          <div>
+           <div class="css-1uqoqyw e7ryp3w8">
+            Control Your Pricing
+           </div>
+           <p class="e7ryp3w7 css-1ugerj0 e1e8d1rb0">
+            Automated home valuations on third-party sites use outdated algorithms and incomplete data, often mispricing homes and shaping buyer expectations before you even list.
+           </p>
+          </div>
+         </div>
+        </div>
+        <div class="css-d8e1g9 e7ryp3w6">
+         <div class="css-1kbak32 e7ryp3w5">
+          <div class="css-ffsuv9 e7ryp3w4">
+           <div class="css-pw7jst e7ryp3w3">
+            <img alt="Control Your Pricing" class="css-q4dzvk e7ryp3w2" src="/static/external_cache/sell-marketing-aab6aeb0c5ea.webp"/>
+            <div class="css-xkkzel e7ryp3w1">
+            </div>
+            <div class="css-8lbx1t e7ryp3w0">
+             1
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="css-1ow741c eeo1u1d1" data-appearance-card="">
+       <div class="css-39im2w e7ryp3w12">
+        <div class="css-ent877 e7ryp3w11">
+         <div class="css-8huwwr e7ryp3w10">
+          <div class="css-181tfr e7ryp3w9">
+           2
+          </div>
+          <div>
+           <div class="css-1uqoqyw e7ryp3w8">
+            Eliminate Days on Market History Risk
+           </div>
+           <p class="e7ryp3w7 css-1ugerj0 e1e8d1rb0">
+            The longer your home sits on the market, the more it can be seen as undesirable or overpriced, potentially reducing buyer interest and lowering the final sale price.
+           </p>
+          </div>
+         </div>
+        </div>
+        <div class="css-d8e1g9 e7ryp3w6">
+         <div class="css-1kbak32 e7ryp3w5">
+          <div class="css-ffsuv9 e7ryp3w4">
+           <div class="css-pw7jst e7ryp3w3">
+            <img alt="Eliminate Days on Market History Risk" class="css-q4dzvk e7ryp3w2" src="/static/external_cache/sell-marketing-aab6aeb0c5ea.webp"/>
+            <div class="css-ajun48 e7ryp3w1">
+            </div>
+            <div class="css-1uoslnw e7ryp3w0">
+             2
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="css-1ow741c eeo1u1d1" data-appearance-card="">
+       <div class="css-39im2w e7ryp3w12">
+        <div class="css-ent877 e7ryp3w11">
+         <div class="css-8huwwr e7ryp3w10">
+          <div class="css-181tfr e7ryp3w9">
+           3
+          </div>
+          <div>
+           <div class="css-1uqoqyw e7ryp3w8">
+            Eliminate Price Drop History Risk
+           </div>
+           <p class="e7ryp3w7 css-1ugerj0 e1e8d1rb0">
+            Dropping your home’s price can cause buyers to second-guess its value and invite less competitive offers.
+           </p>
+          </div>
+         </div>
+        </div>
+        <div class="css-cjcqs0 e7ryp3w6">
+         <div class="css-484tuc e7ryp3w5">
+          <div class="css-g28vmn e7ryp3w4">
+           <div class="css-pw7jst e7ryp3w3">
+            <img alt="Eliminate Price Drop History Risk" class="css-q4dzvk e7ryp3w2" src="/static/external_cache/sell-marketing-aab6aeb0c5ea.webp"/>
+            <div class="css-1mxnf9k e7ryp3w1">
+            </div>
+            <div class="css-1wiajke e7ryp3w0">
+             3
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="css-1ow741c eeo1u1d1" data-appearance-card="">
+       <div class="css-39im2w e7ryp3w12">
+        <div class="css-ent877 e7ryp3w11">
+         <div class="css-8huwwr e7ryp3w10">
+          <div class="css-181tfr e7ryp3w9">
+           4
+          </div>
+          <div>
+           <div class="css-1uqoqyw e7ryp3w8">
+            Avoid Missed Buyer Opportunities
+           </div>
+           <p class="e7ryp3w7 css-1ugerj0 e1e8d1rb0">
+            Some third-party sites block buyers’ ability to reach out to the listing agent directly. These leads are sold to other agents who may be unfamiliar with your home and whose interests may not align with your selling goals.
+           </p>
+          </div>
+         </div>
+        </div>
+        <div class="css-mtdc5q e7ryp3w6">
+         <div class="css-1c73x1g e7ryp3w5">
+          <div class="css-g9ahnu e7ryp3w4">
+           <div class="css-pw7jst e7ryp3w3">
+            <img alt="Avoid Missed Buyer Opportunities" class="css-q4dzvk e7ryp3w2" src="/static/external_cache/sell-marketing-aab6aeb0c5ea.webp"/>
+            <div class="css-1hb0yjc e7ryp3w1">
+            </div>
+            <div class="css-xeuskd e7ryp3w0">
+             4
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="css-1ow741c eeo1u1d1" data-appearance-card="">
+       <div class="css-39im2w e7ryp3w12">
+        <div class="css-ent877 e7ryp3w11">
+         <div class="css-8huwwr e7ryp3w10">
+          <div class="css-181tfr e7ryp3w9">
+           5
+          </div>
+          <div>
+           <div class="css-1uqoqyw e7ryp3w8">
+            Automated Valuation
+           </div>
+           <p class="e7ryp3w7 css-1ugerj0 e1e8d1rb0">
+            An algorithm doesn’t know your home or your goals, which can lead to undervaluation. Rather than being carefully positioned, it’s treated like inventory, often priced with a discount.
+           </p>
+          </div>
+         </div>
+        </div>
+        <div class="css-d8e1g9 e7ryp3w6">
+         <div class="css-1kbak32 e7ryp3w5">
+          <div class="css-ffsuv9 e7ryp3w4">
+           <div class="css-pw7jst e7ryp3w3">
+            <img alt="Automated Valuation" class="css-q4dzvk e7ryp3w2" src="/static/external_cache/sell-marketing-0e719566e50d.webp"/>
+            <div class="css-p8e2vt e7ryp3w1">
+            </div>
+            <div class="css-18k33s7 e7ryp3w0">
+             5
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+      <div class="css-1ow741c eeo1u1d1" data-appearance-card="">
+       <div class="css-39im2w e7ryp3w12">
+        <div class="css-ent877 e7ryp3w11">
+         <div class="css-8huwwr e7ryp3w10">
+          <div class="css-181tfr e7ryp3w9">
+           6
+          </div>
+          <div>
+           <div class="css-1uqoqyw e7ryp3w8">
+            No Negative Insights Added to Your Listing
+           </div>
+           <p class="e7ryp3w7 css-1ugerj0 e1e8d1rb0">
+            Third-party platforms can add their own assessments and data to a listing, which may not accurately reflect the true value or desirability of your property.
+           </p>
+          </div>
+         </div>
+        </div>
+        <div class="css-mtdc5q e7ryp3w6">
+         <div class="css-1c73x1g e7ryp3w5">
+          <div class="css-1wdueg6 e7ryp3w4">
+           <div class="css-pw7jst e7ryp3w3">
+            <img alt="No Negative Insights Added to Your Listing" class="css-q4dzvk e7ryp3w2" src="/static/external_cache/sell-marketing-31c3ca7a8bf0.webp"/>
+            <div class="css-18t54ou e7ryp3w1">
+            </div>
+            <div class="css-1cly1n4 e7ryp3w0">
+             6
+            </div>
+           </div>
+          </div>
+         </div>
+        </div>
+       </div>
+      </div>
+     </div>
+    </div>
+    <div class="css-43x83p eeo1u1d0">
+     <button aria-label="Previous listing comparison" class="css-1gqg92w e1d04jal0" data-appearance-step="-1" data-testid="carousel-prevButton" type="button">
+      <svg class="sell-button-icon" fill="none" height="22" viewBox="0 0 74 22" width="74" xmlns="http://www.w3.org/2000/svg">
+       <path d="M12 21.0107L2 11.0107L12 1.01074" stroke="currentColor" stroke-width="2">
+       </path>
+       <line stroke="currentColor" stroke-width="2" transform="matrix(1 -8.74228e-08 -8.74228e-08 -1 2 10.3857)" x2="71.25" y1="-1" y2="-1">
+       </line>
+      </svg>
+     </button>
+     <button aria-label="Next listing comparison" class="css-1gqg92w e1d04jal0" data-appearance-step="1" data-testid="carousel-nextButton" type="button">
+      <svg class="sell-button-icon" fill="none" height="22" viewBox="0 0 73 22" width="73" xmlns="http://www.w3.org/2000/svg">
+       <path d="M61.25 1.01074L71.25 11.0107L61.25 21.0107" stroke="currentColor" stroke-width="2">
+       </path>
+       <line stroke="currentColor" stroke-width="2" x1="8.74228e-08" x2="71.25" y1="10.6357" y2="10.6357">
+       </line>
+      </svg>
+     </button>
+    </div>
+   </div>
+  </div>
+  <span class="sr-only" data-appearance-status="" role="status">Listing comparison 1 of 6</span>
+  <noscript><p>Carousel controls require JavaScript; the first listing comparison is shown.</p></noscript>
+ </section>
+ <section class="equ27ip0 css-1mk3g6e e1p4lbal2" id="sell-film">
+  <div class="css-1dpdq61 e1il2nbp0">
+   <h2 class="e1p4lbal1 css-1h9tm7g ect2g8j0">
+    <span>
+     Three Strategic Launches,
+     <br/>
+     One Exceptional Sale
+    </span>
+   </h2>
+   <div class="e1p4lbal0 css-mo72mj e12xipqo4" data-testid="youtubeVideoPlayer-container">
+    <a aria-label="Watch film on YouTube (opens external website)" class="css-wndipf e12xipqo3" data-testid="youtubeVideoPlayer-placeholder" href="https://www.youtube.com/watch?v=3iAnSFrgd8g" rel="noopener noreferrer" target="_blank">
+     <img alt="video poster" class="css-1d83ssy e12xipqo2" src="/static/external_cache/sell-marketing-27d1409f2668.webp"/>
+     <svg class="css-1kvrejl e12xipqo1" fill="none" height="68" viewBox="0 0 56 68" width="56" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0.599609 5.52724C0.599609 1.74532 4.76987 -0.551126 7.96589 1.47085L52.9879 29.9542C55.9662 31.8384 55.9662 36.1827 52.9879 38.0669L7.96589 66.5503C4.76986 68.5722 0.599609 66.2758 0.599609 62.4939V5.52724Z" fill="#F3F0EA">
+      </path>
+     </svg>
+     <span class="sell-video-label">
+      Watch on YouTube ↗
+     </span>
+    </a>
+   </div>
+  </div>
+ </section>
+ <section class="css-1xfo15 e21qao64" id="sell-terms">
+  <div class="e21qao63 css-z6iz7f e1il2nbp0">
+   <h2 class="e21qao62 css-dgst30 ect2g8j0">
+    Sell on Your Terms
+   </h2>
+   <p class="e21qao61 css-9u5w7e e1e8d1rb0">
+    The Compass 3-Phased Marketing Strategy provides convenience, flexibility, and control over your timeline.
+   </p>
+   <div class="css-1fb914y e21qao60">
+    <article class="css-5yrdv1 edscwsg7">
+     <div class="css-1cq2l4f edscwsg6">
+      <div class="css-1fttcpj edscwsg5">
+       <h3 class="edscwsg4 css-1hz2qg5 ect2g8j0">
+        <span>
+         Home Not
+        </span>
+        <span>
+         Market-Ready?
+        </span>
+       </h3>
+       <p class="edscwsg3 css-1ualtw1 e1e8d1rb0">
+        Renovations and staging take time and can delay your ability to list.
+       </p>
+      </div>
+      <div class="css-1fttcpj edscwsg2">
+       <p class="css-3mllfd efcy15v0">
+        OUR SOLUTION
+       </p>
+       <p class="edscwsg1 css-1ualtw1 e1e8d1rb0">
+        Listing first as a Compass Private Exclusive buys you time. Begin testing your price with a select audience and attract buyer interest while your home updates are still underway.
+       </p>
+      </div>
+     </div>
+     <img alt="Home Not Market-Ready?" class="css-nn3r2x edscwsg0" src="/static/external_cache/sell-marketing-21d385ef2f47.webp"/>
+    </article>
+    <article class="css-5yrdv1 edscwsg7">
+     <div class="css-1cq2l4f edscwsg6">
+      <div class="css-1fttcpj edscwsg5">
+       <h3 class="edscwsg4 css-1hz2qg5 ect2g8j0">
+        Don’t Want A Public
+        <br/>
+        Open House?
+       </h3>
+       <p class="edscwsg3 css-1ualtw1 e1e8d1rb0">
+        Hosting traditional open houses often means giving up your time, comfort, and privacy.
+       </p>
+      </div>
+      <div class="css-1fttcpj edscwsg2">
+       <p class="css-3mllfd efcy15v0">
+        OUR SOLUTION
+       </p>
+       <p class="edscwsg1 css-1ualtw1 e1e8d1rb0">
+        Preview your home to serious buyers and build demand by listing as a Coming Soon — so you can schedule private showings on your own terms, without the stress of open house foot traffic.
+       </p>
+      </div>
+     </div>
+     <img alt="Don’t Want A Public Open House?" class="css-nn3r2x edscwsg0" src="/static/external_cache/sell-marketing-77591f5b1f69.webp"/>
+    </article>
+   </div>
+  </div>
+ </section>
+ <section class="css-crrk52 e1p4lbal2" id="sell-film-home">
+  <div class="css-1dpdq61 e1il2nbp0">
+   <h2 class="e1p4lbal1 css-1h9tm7g ect2g8j0">
+    <span>
+     Your Home Deserves More Than
+     <br/>
+     A One-Size-Fits-All Public Launch
+    </span>
+   </h2>
+   <div class="e1p4lbal0 css-mo72mj e12xipqo4" data-testid="youtubeVideoPlayer-container">
+    <a aria-label="Watch film on YouTube (opens external website)" class="css-wndipf e12xipqo3" data-testid="youtubeVideoPlayer-placeholder" href="https://www.youtube.com/watch?v=41fZyPX79o0" rel="noopener noreferrer" target="_blank">
+     <img alt="video poster" class="css-1d83ssy e12xipqo2" src="/static/external_cache/sell-marketing-1787f0e7cce9.webp"/>
+     <svg class="css-1kvrejl e12xipqo1" fill="none" height="68" viewBox="0 0 56 68" width="56" xmlns="http://www.w3.org/2000/svg">
+      <path d="M0.599609 5.52724C0.599609 1.74532 4.76987 -0.551126 7.96589 1.47085L52.9879 29.9542C55.9662 31.8384 55.9662 36.1827 52.9879 38.0669L7.96589 66.5503C4.76986 68.5722 0.599609 66.2758 0.599609 62.4939V5.52724Z" fill="#F3F0EA">
+      </path>
+     </svg>
+     <span class="sell-video-label">
+      Watch on YouTube ↗
+     </span>
+    </a>
+   </div>
+  </div>
+ </section>
+ <section class="css-hxazs e1ybot684" id="footer-lead-form">
+  <div class="e1ybot683 css-1pegls6 e1il2nbp0">
+   <div class="e1ybot682 css-ns70sf e1il2nbp0">
+    <div class="css-ekvon egezzux7">
+     <h2 class="egezzux5 css-1pnykj5 ect2g8j0" data-testid="leadForm-view-generalTitle">
+      Sell With Us
+     </h2>
+     <p class="egezzux4 css-b5revq e1e8d1rb0" data-testid="leadForm-view-generalDesc">
+      <span>
+       Stay in control of how, when,
+      </span>
+      <span>
+       and where your home is marketed
+      </span>
+      <span>
+       with a strategy tailored to fit your needs.
+      </span>
+     </p>
+    </div>
+    <div class="css-1m62pb8 egezzux6">
+     <form action="{{ url_for('sell') }}#lead-form" class="css-fz5vzb e6ngtr27" data-testid="lead-form" method="post" name="sell footer contact form">
+      <input name="csrf_token" type="hidden" value="{{ csrf_token() }}"/>
+      {% if seller_errors %}
+      <div class="seller-feedback seller-errors" role="alert">
+       <strong>
+        Please check the form
+       </strong>
+       <ul>
+        {% for error in seller_errors %}
+        <li>
+         {{ error }}
+        </li>
+        {% endfor %}
+       </ul>
+      </div>
+      {% endif %}
+{% if seller_confirmation %}
+      <div class="seller-feedback" role="status">
+       <strong>
+        Saved in this local environment
+       </strong>
+       <p>
+        {{ seller_confirmation.name }} · {{ seller_confirmation.email }} · {{ seller_confirmation.phone }} · {{ seller_confirmation.zip_code }}
+       </p>
+       <p>
+        Reference: {{ seller_confirmation.reference }}
+       </p>
+      </div>
+      {% endif %}
+      <div class="css-n48rgu e6ngtr25">
+       <label class="sr-only" for="seller-1-name">
+        Name
+       </label>
+       <input aria-label="Name" autocomplete="name" class="css-zkuzm3 e6ngtr26" id="seller-1-name" maxlength="120" name="name" placeholder="Name*" required="" type="text" value="{{ seller_values.get('name', '') }}"/>
+      </div>
+      <div class="css-n48rgu e6ngtr25">
+       <label class="sr-only" for="seller-1-email">
+        Email
+       </label>
+       <input aria-label="Email" autocomplete="email" class="css-zkuzm3 e6ngtr26" id="seller-1-email" maxlength="254" name="email" placeholder="Email*" required="" type="email" value="{{ seller_values.get('email', '') }}"/>
+      </div>
+      <div class="css-n48rgu e6ngtr25">
+       <label class="sr-only" for="seller-1-phone">
+        Phone Number
+       </label>
+       <input aria-label="Phone Number" autocomplete="tel" class="css-zkuzm3 e6ngtr26" id="seller-1-phone" maxlength="40" name="phone" placeholder="Phone Number*" required="" type="tel" value="{{ seller_values.get('phone', '') }}"/>
+      </div>
+      <div class="css-n48rgu e6ngtr25">
+       <label class="sr-only" for="seller-1-zip_code">
+        Zip Code
+       </label>
+       <input aria-label="Zip Code" autocomplete="postal-code" class="css-zkuzm3 e6ngtr26" id="seller-1-zip_code" maxlength="10" name="zip_code" pattern="[0-9]{5}(-[0-9]{4})?" placeholder="Zip Code*" required="" type="text" value="{{ seller_values.get('zip_code', '') }}"/>
+      </div>
+      <button class="e6ngtr24 e1w5l5sl0 css-1ipsgz6 e1d04jal0" type="submit">
+       Submit
+      </button>
+     </form>
+    </div>
+    <p class="egezzux3 css-dd6jzd e1e8d1rb0" data-testid="leadForm-view-disclaimer">
+     Your request is saved in this local environment only. No email, call, or text is sent to Compass.
+    </p>
+   </div>
+  </div>
+ </section>
+ <section class="css-yxuiz9 e1t9utv31" id="sell-methodology">
+  <div class="e1t9utv30 css-befxif e1il2nbp0">
+   <p>
+    Findings reflect a combination of descriptive statistics and a causal analysis of the impact of Compass pre-marketing strategies on residential property close prices. The faster time-to-contract (34%) and reduced likelihood of a price drop (29%) findings are descriptive statistics comparing the average of Compass residential listings that went active on a MLS and were pre-marketed as a Compass Private Exclusive and/or Compass Coming Soon vs. the average of Compass residential listings that went active on a MLS but were not pre-marketed as a Compass Private Exclusive and/or Compass Coming Soon; all such values reflect a 12-month trailing moving average for the period ending March 31, 2026. Source: Compass data. The close price finding (4.6%) reflects a causal analysis, based on a hedonic regression that examined 70,809 closed Compass residential sell-side transactions listed between April 1, 2025 and March 31, 2026, across markets where Compass brokerage operates and for all residential property types (single family, co-op, condo, townhouse, and condop). Pre-marketed listings achieved a statistically significant average 4.6% increase in close price compared to listings that went directly to the MLS, after controlling for confounding factors (95% Confidence Interval: 4.2%–4.9%). This finding may vary depending on market conditions and seasonality. The results provided are based on current data and methodologies, and should not be interpreted as definitive predictions of future outcomes. Compass utilizes a Compass Private Exclusive listing and/or Compass Coming Soon listing at the direction of the seller. Compass makes no warranty, representation or guarantee as to the accuracy of these results or any actual outcome of using the Three Phase Marketing Program. Results may vary.
+   </p>
+  </div>
+ </section>
+</div>
+{% endblock %}

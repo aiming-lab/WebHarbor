@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Edit profile | Walmart Careers{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="form-card">
+    <h1>Edit your profile</h1>
+    {% if errors %}
+      <div class="errors" role="alert" tabindex="-1"><ul>{% for error in errors %}<li>{{ error }}</li>{% endfor %}</ul></div>
+    {% endif %}
+    <form method="post" action="{{ url_for('account_edit') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="display_name">Display name</label>
+        <input type="text" id="display_name" name="display_name" value="{{ form.display_name }}" maxlength="120" required>
+      </div>
+      <div class="field">
+        <label for="first_name">First name</label>
+        <input type="text" id="first_name" name="first_name" value="{{ form.first_name }}" maxlength="80" required>
+      </div>
+      <div class="field">
+        <label for="last_name">Last name</label>
+        <input type="text" id="last_name" name="last_name" value="{{ form.last_name }}" maxlength="80" required>
+      </div>
+      <div class="field">
+        <label for="phone">Phone number</label>
+        <input type="tel" id="phone" name="phone" value="{{ form.phone }}" maxlength="32">
+      </div>
+      <div class="field">
+        <label for="city">City</label>
+        <input type="text" id="city" name="city" value="{{ form.city }}" maxlength="80">
+      </div>
+      <div class="field">
+        <label for="state">State (two-letter code)</label>
+        <input type="text" id="state" name="state" value="{{ form.state }}" minlength="2" maxlength="2" pattern="[A-Za-z]{2}" autocapitalize="characters">
+      </div>
+      <button class="btn" type="submit">Save changes</button>
+      <a class="btn btn-secondary" href="{{ url_for('account') }}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

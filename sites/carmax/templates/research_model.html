@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ make }} {{ model }} review | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <div class="breadcrumbs"><a href="{{ url_for('research_index') }}">Research</a> /
+    <a href="{{ url_for('research_make', make=make_slug) }}">{{ make }}</a> / {{ model }}</div>
+  <h1>{{ make }} {{ model }} - generations &amp; year-by-year</h1>
+  <p>Browse a model year for full specs, trims, and reviews.</p>
+  <div class="grid grid-4" style="margin-top:24px">
+    {% for y, n in years %}
+    <a class="kpi" style="text-decoration:none;color:inherit;text-align:center"
+       href="{{ url_for('research_model_year', make=make_slug, model=model_slug, year=y) }}">
+      <div class="v">{{ y }}</div><div class="l">{{ n }} in stock</div>
+    </a>
+    {% endfor %}
+  </div>
+  <p style="margin-top:24px">
+    <a class="btn btn-primary" href="{{ url_for('cars_model', make=make_slug, model=model_slug) }}">Shop {{ make }} {{ model }} inventory</a>
+  </p>
+</div>
+{% endblock %}

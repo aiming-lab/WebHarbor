@@ -1,5 +1,16 @@
 # Contributing to WebHarbor
 
+## Control-plane authentication
+
+The current source requires a bearer token of at least 32 characters for control-plane requests. Before the Docker examples below, set:
+
+```bash
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+```
+
+Pass it with `docker run -e WEBSYN_CONTROL_TOKEN`. Site browsing does not require this token; it is removed from site-process environments. Build from this checkout: previously published images may use an older registry/authentication contract.
+
+
 Thanks for being here. WebHarbor lives across two repositories on purpose:
 
 - **`webharbor`** (this repo, GitHub) — code: per-site Flask apps, control plane, scripts, Dockerfile.
@@ -23,8 +34,8 @@ Workflows A and B below are the **contributor's** job. The **Reviewer role** sec
 git clone https://github.com/<you>/webharbor && cd webharbor
 ./scripts/fetch_assets.sh                       # pull current assets
 ./scripts/new_site.py mywebsite                 # OR edit an existing site
-./scripts/build.sh && docker run -d --rm \
-  -p 8101:8101 -p 40000-40014:40000-40014 webharbor:dev
+./scripts/build.sh && docker run -e WEBSYN_CONTROL_TOKEN -d --rm \
+  -p 8101:8101 -p 40000-40047:40000-40047 webharbor:dev
 # iterate locally...
 
 ./scripts/extract_assets.sh ../webharbor-static-pr/   # split assets out
@@ -94,12 +105,12 @@ If your site has multiple categories / pages / topics, make sure the seed DB has
 
 ```bash
 ./scripts/build.sh
-docker run -d --rm --name wh-test \
+docker run -e WEBSYN_CONTROL_TOKEN -d --rm --name wh-test \
   -p 8101:8101 -p 40000-400NN:40000-400NN webharbor:dev
 
 # the new site should be on port 40000+i
 curl -so /dev/null -w "%{http_code}\n" http://localhost:400NN/
-curl -X POST http://localhost:8101/reset/mywebsite
+curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8101/reset/mywebsite
 
 # make sure /reset/mywebsite keeps the DB byte-identical to the seed
 docker exec wh-test md5sum \

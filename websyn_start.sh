@@ -1,11 +1,20 @@
 #!/bin/bash
-# WebSyn startup: launch all 17 mirror sites, then exec the original CMD.
-# This preserves the base image's browser env server (port 8100) as PID 1.
+# WebSyn startup: launch all mirror sites, then exec the control plane.
+# The control server becomes PID 1 after all per-site supervisors are launched.
 set -e
 
-SITES=(allrecipes amazon apple arxiv bbc_news booking github
-       google_flights google_map google_search huggingface wolfram_alpha
-       cambridge_dictionary coursera espn merriam_webster ign)
+if [[ ${#WEBSYN_CONTROL_TOKEN} -lt 32 ]]; then
+    echo "[WebSyn] WEBSYN_CONTROL_TOKEN is required and must contain at least 32 characters" >&2
+    exit 1
+fi
+
+SITES=(allrecipes amazon apple arxiv bbc_news booking
+       github google_flights google_map google_search huggingface wolfram_alpha
+       cambridge_dictionary coursera espn merriam_webster ikea phys_org
+       target ted osu rotten_tomatoes compass walmart_careers
+       fedex webmd_doctor healthline kaggle nvidia berkeley bh_photo accuweather gov_uk
+       imdb nba recreation_gov boardgamegeek carmax babycenter amtrak cookpad craigslist drugs_com
+       versus y_combinator phet_simulations discogs google_finance bandcamp adopt_a_pet ign)
 BASE_PORT=40000
 PID_DIR=/tmp/websyn_pids
 mkdir -p "$PID_DIR"
@@ -17,16 +26,17 @@ for d in "${SITES[@]}"; do
     cp -a "/opt/WebSyn/$d/instance_seed" "/opt/WebSyn/$d/instance"
 done
 
-echo "[WebSyn] Starting 17 sites on ports ${BASE_PORT}-$((BASE_PORT + 16))..."
+SITE_COUNT=${#SITES[@]}
+END_PORT=$((BASE_PORT + SITE_COUNT - 1))
+echo "[WebSyn] Starting ${SITE_COUNT} sites on ports ${BASE_PORT}-${END_PORT}..."
 for i in "${!SITES[@]}"; do
     site="${SITES[$i]}"
     port=$((BASE_PORT + i))
     # Spawn via /opt/site_runner.py supervisor so SIGTERM works.
     # See site_runner.py for the rationale (Werkzeug ignores SIGTERM).
-    exec python3 /opt/site_runner.py "$site" "$port" \
+    exec env -u WEBSYN_CONTROL_TOKEN python3 /opt/site_runner.py "$site" "$port" \
         > "/tmp/websyn_${site}.log" 2>&1 &
-    echo "$!" > "$PID_DIR/${site}.pid"
-    echo "  $site -> port $port (PID $!)"
+    echo "  $site -> port $port (PID $!; identity record written by supervisor)"
 done
 
 
@@ -51,14 +61,15 @@ except Exception: exit(1)
             ready=$((ready + 1))
         fi
     done
-    echo "  [${elapsed}/${max_wait}s] ${ready}/17 sites ready"
-    if [ $ready -eq 17 ]; then
+    echo "  [${elapsed}/${max_wait}s] ${ready}/${SITE_COUNT} sites ready"
+    if [ $ready -eq $SITE_COUNT ]; then
         break
     fi
 done
 
 # Final status report
 echo "[WebSyn] Site status:"
+failed=0
 for i in "${!SITES[@]}"; do
     site="${SITES[$i]}"
     port=$((BASE_PORT + i))
@@ -72,12 +83,19 @@ except Exception: exit(1)
         echo "  [OK] $site :$port"
     else
         echo "  [!!] $site :$port FAILED -- check /tmp/websyn_${site}.log"
+        failed=1
     fi
 done
+
+if [ "$failed" -ne 0 ]; then
+    echo "[WebSyn] Startup failed; stopping site supervisors." >&2
+    python3 /opt/control_server.py --stop-sites || true
+    exit 1
+fi
 
 echo "[WebSyn] Starting control server on :8101 (PID 1)..."
 
 # Control server becomes PID 1 — receives SIGTERM on `docker stop`,
-# keeps the container alive as long as it's running. The 17 site
+# keeps the container alive as long as it is running. Site
 # subprocesses are managed via /tmp/websyn_pids/<site>.pid.
 exec python3 /opt/control_server.py --port 8101

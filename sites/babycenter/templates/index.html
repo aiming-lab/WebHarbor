@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}BabyCenter — Pregnancy and parenting{% endblock %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+<section class="partner-strip">
+  <div class="shell partner-inner">
+    <strong>BabyCenter is your parenting partner</strong>
+    <div><span aria-hidden="true">◌</span><b>20</b><small>sourced pregnancy weeks</small></div>
+    <div><span aria-hidden="true">♡</span><b>10</b><small>baby age checkpoints</small></div>
+    <div><span aria-hidden="true">✓</span><b>12</b><small>evidence-based articles</small></div>
+  </div>
+</section>
+
+<section class="home-hero shell">
+  <img src="{{ url_for('static', filename='images/hero-pregnancy.jpg') }}" alt="Expectant parent resting a hand on their belly">
+  <div class="hero-card">
+    <div class="eyebrow">Your pregnancy, week by week</div>
+    <h1>See what changes as your baby grows</h1>
+    <p>Follow sourced development milestones and practical guidance from early pregnancy to the final weeks.</p>
+    <a class="button primary" href="{{ url_for('week_index') }}">Explore pregnancy</a>
+  </div>
+</section>
+
+<section class="week-progress shell">
+  <div class="section-head compact-head">
+    <div><div class="eyebrow">Pregnancy tracker</div><h2>My pregnancy week by week</h2></div>
+    <a class="text-link" href="{{ url_for('week_index') }}">See all weeks →</a>
+  </div>
+  <div class="week-rail">
+    {% for item in week_nav %}<a class="{{ 'active' if item.week == week.week }}" href="{{ url_for('week_detail', week=item.week) }}"><span>Week</span><strong>{{ item.week }}</strong></a>{% endfor %}
+  </div>
+</section>
+
+<section class="app-promo">
+  <div class="shell app-inner">
+    <div><div class="eyebrow">A guide that grows with you</div><h2>Get a clearer view of what comes next</h2><p>Create a profile to save useful pages, update your stage, and return to the checkpoint that matters now.</p><a class="button" href="{{ url_for('register') }}">Create your profile</a></div>
+    <div class="phone" aria-hidden="true"><div class="phone-notch"></div><strong>Today</strong><div class="phone-orbit">{{ week.week }}</div><b>weeks</b><small>{{ week.stage }}</small></div>
+  </div>
+</section>
+
+<section class="section tool-section">
+  <div class="section-head compact-head"><div><div class="eyebrow">Quick links</div><h2>Popular tools</h2></div></div>
+  <div class="tool-grid">
+    <a href="{{ url_for('due_date_calculator') }}"><span>◷</span><strong>Due date calculator</strong></a>
+    <a href="{{ url_for('week_index') }}"><span>◉</span><strong>Pregnancy Week by Week</strong></a>
+    <a href="{{ url_for('month_index') }}"><span>☆</span><strong>Baby Month by Month</strong></a>
+    <a href="{{ url_for('articles') }}"><span>✚</span><strong>Articles</strong></a>
+    <a href="{{ url_for('articles', category='Prenatal Testing') }}"><span>⌁</span><strong>Prenatal testing</strong></a>
+    <a href="{{ url_for('search', q='sleep') }}"><span>☾</span><strong>Baby sleep</strong></a>
+    <a href="{{ url_for('community') }}"><span>☻</span><strong>Community</strong></a>
+    <a href="{{ url_for('community', club='Starting Solids') }}"><span>♨</span><strong>Starting solids</strong></a>
+    <a href="{{ url_for('search') }}"><span>⌕</span><strong>Search BabyCenter</strong></a>
+    <a href="{{ url_for('account') if current_user else url_for('login') }}"><span>♡</span><strong>My BabyCenter</strong></a>
+    <a href="{{ url_for('register') }}"><span>＋</span><strong>Join BabyCenter</strong></a>
+    <a href="{{ url_for('articles', trimester='First trimester') }}"><span>≈</span><strong>First trimester</strong></a>
+  </div>
+</section>
+
+<section class="home-callouts shell">
+  <article>
+    <span class="callout-icon" aria-hidden="true">◷</span>
+    <div><div class="eyebrow">Pregnancy tool</div><h2>When is your baby due?</h2><p>Enter the first day of your last period to estimate a due date and find the matching week guide.</p><a class="text-link" href="{{ url_for('due_date_calculator') }}">Use the due date calculator →</a></div>
+  </article>
+  <article>
+    <span class="callout-icon" aria-hidden="true">☆</span>
+    <div><div class="eyebrow">Baby development</div><h2>Browse by your baby's age</h2><p>Choose an age checkpoint to see physical, motor, communication, and social milestones.</p><a class="text-link" href="{{ url_for('month_index') }}">Baby Month by Month →</a></div>
+  </article>
+</section>
+
+<section class="stage-directory">
+  <div class="section directory-inner">
+    <div class="section-head compact-head"><div><div class="eyebrow">Explore BabyCenter</div><h2>Guidance for every stage</h2></div></div>
+    <div class="directory-grid">
+      <article><h3>Pregnancy</h3><a href="{{ url_for('week_index') }}">Week by week</a><a href="{{ url_for('due_date_calculator') }}">Due date calculator</a><a href="{{ url_for('articles', trimester='First trimester') }}">First trimester</a></article>
+      <article><h3>Baby</h3><a href="{{ url_for('month_index') }}">Month by month</a><a href="{{ url_for('search', q='sleep') }}">Sleep</a><a href="{{ url_for('community', club='Starting Solids') }}">Starting solids</a></article>
+      <article><h3>Health</h3><a href="{{ url_for('articles') }}">All articles</a><a href="{{ url_for('articles', category='Prenatal Testing') }}">Prenatal testing</a><a href="{{ url_for('search') }}">Search the library</a></article>
+      <article><h3>Community</h3><a href="{{ url_for('community') }}">Birth clubs</a><a href="{{ url_for('community') }}">Latest conversations</a><a href="{{ url_for('register') }}">Join BabyCenter</a></article>
+    </div>
+  </div>
+</section>
+
+<section class="section latest-section">
+  <div class="section-head compact-head"><div><div class="eyebrow">Read and learn</div><h2>Latest articles</h2></div><a class="text-link" href="{{ url_for('articles') }}">View all →</a></div>
+  <div class="article-grid">
+    {% for article in articles %}<article class="article-card"><a class="card-image" href="{{ url_for('article_detail', slug=article.slug) }}"><img src="{{ url_for('static', filename='images/' ~ article_image(article.slug)) }}" alt=""></a><div><span class="eyebrow">{{ article.category }}</span><h3><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h3><small>{{ article.read_minutes }} min read</small></div></article>{% endfor %}
+  </div>
+</section>
+
+<section class="community-band">
+  <div class="shell community-home"><div><div class="eyebrow">From the community</div><h2>Parents helping parents</h2><p>Browse conversations by birth club, then open a thread for its full details.</p><a class="button" href="{{ url_for('community') }}">Visit the community</a></div><div class="community-stack">{% for post in posts %}<a href="{{ url_for('community_detail', slug=post.slug) }}"><small>{{ post.club }}</small><strong>{{ post.title }}</strong><span>Active {{ post.last_active }} →</span></a>{% endfor %}</div></div>
+</section>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% from "_job_card.html" import job_card %}
+{% block body_class %}l1{% endblock %}
+{% block title %}How we hire | Walmart Careers{% endblock %}
+{% block content %}
+<div class="area-hero">
+  <img src="{{ url_for('static', filename='images/' ~ content.HIRING_HERO_IMAGE) }}" alt="">
+  <div class="area-card">
+    <h1>{{ content.HIRING_HEADING }}</h1>
+    <p>{{ content.HIRING_BLURB }}</p>
+    <a class="btn" href="#explore">{{ content.HIRING_HERO_CTA }}</a>
+  </div>
+</div>
+
+<section id="explore">
+  <div class="wrap">
+    <h2>Explore something new</h2>
+    <div class="steps">
+      {% for title, blurb in content.HIRING_STEPS %}
+        <div class="step"><h3>{{ title }}</h3><p>{{ blurb }}</p></div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% for heading, questions in content.HIRING_FAQ %}
+  {% set intro = content.HIRING_FAQ_INTROS[loop.index0] %}
+  <section class="faq-section">
+    <div class="wrap">
+      <div class="faq-layout">
+        <div class="faq-intro">
+          <img src="{{ url_for('static', filename='icons/' ~ intro[1]) }}" alt="">
+          <h2>{{ heading }}</h2>
+          <p>{{ intro[0] }}</p>
+        </div>
+        <div class="faq">
+          {% for question, answer in questions %}
+            <details>
+              <summary>{{ question }}</summary>
+              <p>{{ answer }}</p>
+            </details>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </section>
+{% endfor %}
+
+<section>
+  <div class="wrap">
+    <div class="feature-row">
+      <img src="{{ url_for('static', filename='images/' ~ content.HIRING_SIMULATOR.photo) }}" alt="">
+      <div class="feature-text">
+        <h3>{{ content.HIRING_SIMULATOR.heading }}</h3>
+        <p>{{ content.HIRING_SIMULATOR.blurb }}</p>
+        <a class="btn" href="{{ url_for('results') }}">{{ content.HIRING_SIMULATOR.cta }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="trending-section">
+  <div class="wrap">
+    <h2>Trending roles</h2>
+    <div class="job-grid three-col">
+      {% for job in trending %}{{ job_card(job, saved_ids, compact=True) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

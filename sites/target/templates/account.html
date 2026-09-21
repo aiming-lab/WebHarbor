@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Account | Target{% endblock %}
+{% block content %}
+  <section class="shell page-section account-layout">
+    {% include "_account_nav.html" %}
+    <div class="account-content">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Account overview</p>
+          <h1>{{ current_user.full_name }}</h1>
+          <p>{{ current_user.email }} | {{ current_user.member_tier }}</p>
+        </div>
+      </div>
+      <div class="stats-grid">
+        <article class="stat-card">
+          <span>Orders</span>
+          <strong>{{ order_count }}</strong>
+          <a href="{{ url_for('account_orders') }}">Open order history</a>
+        </article>
+        <article class="stat-card">
+          <span>Wishlist items</span>
+          <strong>{{ current_user.wishlist_items|length }}</strong>
+          <a href="{{ url_for('account_wishlist') }}">Open wishlist</a>
+        </article>
+        <article class="stat-card">
+          <span>Open support tickets</span>
+          <strong>{{ open_ticket_count }}</strong>
+          <a href="{{ url_for('account_support') }}">Open support history</a>
+        </article>
+      </div>
+      <div class="account-link-grid">
+        <a class="panel account-link-card" href="{{ url_for('account_rewards') }}">
+          <p class="eyebrow">Target Circle</p>
+          <h2>Rewards dashboard</h2>
+          <p>View your points balance, member ID, certificates, and activity.</p>
+        </a>
+        <a class="panel account-link-card" href="{{ url_for('account_edit') }}">
+          <p class="eyebrow">Profile</p>
+          <h2>Account settings</h2>
+          <p>Update your contact details and preferred store.</p>
+        </a>
+      </div>
+    </div>
+  </section>
+{% endblock %}

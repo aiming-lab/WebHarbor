@@ -1,0 +1,48 @@
+{% macro tomato(item) -%}
+{% set score = item.tomatometer|default(none) %}
+{% set status = 'empty' if score is none else ('fresh' if score >= 60 else 'rotten') %}
+<span class="home-score"><img src="/static/external_cache/rt_brand/{% if item.certified_fresh|default(false) %}certified_fresh.svg{% else %}tomatometer-{{ status }}.svg{% endif %}" alt="{% if item.certified_fresh|default(false) %}Certified Fresh{% elif score is none %}No Tomatometer score{% else %}{{ status|capitalize }}{% endif %}" width="18" height="18">{% if score is not none %}{{ score }}%{% else %}--{% endif %}</span>
+{%- endmacro %}
+
+{% macro audience(item) -%}
+{% set score = item.audience_score|default(none) %}
+<span class="home-score"><img src="/static/external_cache/rt_brand/aud_score-{% if score is none %}empty{% elif score >= 60 %}fresh{% else %}rotten{% endif %}.svg" alt="{% if score is none %}No audience score{% else %}Audience score{% endif %}" width="18" height="18">{% if score is not none %}{{ score }}%{% else %}--{% endif %}</span>
+{%- endmacro %}
+
+{% macro poster(item, user_watchlist_ids, current_user, csrf_token) -%}
+<article class="home-poster-card">
+    <div class="home-poster-art">
+        <a href="{{ item.href }}" tabindex="-1" aria-hidden="true"><img src="{{ item.image }}" alt="" loading="lazy" width="164" height="246"></a>
+        {% if item.trailer_href|default('') %}<a class="home-play" href="{{ item.trailer_href }}" aria-label="Play the {{ item.title }} trailer"><span aria-hidden="true">▶</span></a>{% endif %}
+    </div>
+    <a class="home-poster-info" href="{{ item.href }}">
+        <span class="home-card-scores">{{ tomato(item) }}{{ audience(item) }}</span>
+        <span class="home-card-title">{{ item.title }}</span>
+    </a>
+    {% if item.movie_id|default(none) %}
+        {% if current_user.is_authenticated %}
+            {% if item.movie_id in user_watchlist_ids %}
+            <span class="home-watchlist home-watchlist-added">✓ Watchlist</span>
+            {% else %}
+            <form action="/user/watchlist/add/{{ item.movie_id }}" method="POST" class="home-watchlist-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="home-watchlist" aria-label="Add {{ item.title }} to your watchlist"><span aria-hidden="true">⊕</span> Watchlist</button>
+            </form>
+            {% endif %}
+        {% else %}
+        <a href="/login" class="home-watchlist" aria-label="Sign in to add {{ item.title }} to your watchlist"><span aria-hidden="true">⊕</span> Watchlist</a>
+        {% endif %}
+    {% endif %}
+</article>
+{%- endmacro %}
+
+{% macro editorial(item, is_video=false) -%}
+<article class="home-editorial-card">
+    <a href="{{ item.trailer_href if is_video and item.trailer_href|default('') else item.href }}" class="home-editorial-link">
+        {% if item.image|default('') %}<span class="home-editorial-art"><img src="{{ item.image }}" alt="" loading="lazy" width="340" height="191">{% if is_video and item.trailer_href|default('') %}<span class="home-play" aria-hidden="true">▶</span>{% endif %}</span>{% endif %}
+        {% if item.badge|default('') %}<span class="home-editorial-badge">{{ item.badge }}</span>{% endif %}
+        <h3>{{ item.title }}</h3>
+        {% if item.description|default('') %}<p>{{ item.description }}</p>{% endif %}
+    </a>
+</article>
+{%- endmacro %}

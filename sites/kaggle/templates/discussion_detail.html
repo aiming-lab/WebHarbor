@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import tier_badge %}
+{% block title %}{{ d.title }} | Kaggle{% endblock %}
+{% block content %}
+<div class="container section">
+  <p><a href="{{ url_for('discussions_list', forum=d.forum) }}">← {{ d.forum }}</a></p>
+  <h1 class="page-title">{% if d.pinned %}📌 {% endif %}{{ d.title }}</h1>
+  <div class="card-meta" style="margin-bottom:18px;">
+    <span>{% if author %}<a href="{{ url_for('user_profile', username=author.username) }}">{{ author.display_name }}</a>{% else %}{{ d.author_username }}{% endif %}</span>
+    <span>{{ d.created_at|reltime }}</span>
+    <span class="chip">{{ d.forum }}</span>
+  </div>
+
+  <div class="side-box">
+    <div style="display:flex;gap:16px;align-items:flex-start;">
+      <button class="vote-btn {{ 'voted' if has_voted('discussion', d.id) }}" data-vote data-type="discussion" data-id="{{ d.id }}">
+        ▲ <span data-count>{{ d.votes }}</span>
+      </button>
+      <div class="prose" style="flex:1;">{% for para in d.body.split('\n') %}<p>{{ para }}</p>{% endfor %}</div>
+    </div>
+  </div>
+
+  <h3 style="margin-top:28px;">{{ comments|length }} Comment{{ 's' if comments|length != 1 }}</h3>
+  {% for c in comments %}
+  <div class="side-box">
+    <div class="card-meta" style="margin-bottom:6px;">
+      <b>{% if user_by_name(c.author_username) %}<a href="{{ url_for('user_profile', username=c.author_username) }}">{{ c.author_username }}</a>{% else %}{{ c.author_username }}{% endif %}</b>
+      <span>{{ c.created_at|reltime }}</span>
+      <span>👍 {{ c.votes }}</span>
+    </div>
+    <div class="prose">{{ c.body }}</div>
+  </div>
+  {% endfor %}
+
+  {% if current_user.is_authenticated %}
+  <form method="post" action="{{ url_for('discussion_comment', slug=d.slug) }}" style="margin-top:18px;">
+    {{ comment_form.csrf_token }}
+    <div class="field">{{ comment_form.body(rows=3, placeholder="Add a comment...") }}</div>
+    <button class="btn btn-primary" type="submit">Post Comment</button>
+  </form>
+  {% else %}
+  <p class="muted" style="margin-top:18px;"><a href="{{ url_for('login') }}">Sign in</a> to join the discussion.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Contact Us | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="is-090">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Contact Us</span></nav>
+  <h1 class="is-091">Contact Us</h1>
+
+  <div class="is-092">
+    <strong class="is-093">Emergency-use restriction:</strong>
+    <p class="is-094">This benchmark provides no emergency or poison-control service. Use the current official service and telephone number for your location.</p>
+  </div>
+
+  <p class="is-097">Use this form to test a local session-only contact workflow. It does not send email or contact Drugs.com.</p>
+
+  <div class="is-098">
+
+    <section>
+      <h2 class="is-099">Send us a message</h2>
+      <form class="is-100" id="contact-form" method="post" action="{{ url_for('contact') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="is-101">Name
+          <input class="is-102" type="text" name="name" maxlength="80" required>
+        </label>
+        <label class="is-101">Email
+          <input class="is-102" type="email" name="email" maxlength="254" required>
+        </label>
+        <label class="is-101">Subject
+          <select class="is-102" name="subject" required>
+            <option value="">-- Select a subject --</option>
+            <option value="general">General Question</option>
+            <option value="error">Report an Error</option>
+            <option value="feedback">Feedback</option>
+            <option value="drug_info">Drug Information Question</option>
+          </select>
+        </label>
+        <label class="is-101">Message
+          <textarea class="is-103" name="message" rows="6" maxlength="500" required></textarea>
+        </label>
+        <button class="is-104" type="submit">Send Message</button>
+        <div class="is-105" id="contact-confirmation"{% if submitted %} style="display:block"{% endif %}>A receipt for your message was saved in this demo browser session. No external email was sent.</div>
+      </form>
+    </section>
+
+    <section>
+      <h2 class="is-099">Local workflow status</h2>
+      <p class="is-107">A valid submission stores only a receipt identifier in this browser's signed session. No submitted message, name, or email is delivered to an external service.</p>
+      <p class="is-107">For real Drugs.com support, use contact information published by the official service. This local mirror does not reproduce or claim an editorial, medical-review, press, advertising, mailing-address, or telephone channel.</p>
+    </section>
+
+  </div>
+
+  <section class="is-108">
+    <h2 class="is-109">Please note</h2>
+    <p class="is-071">This local software fixture provides no individualized medical advice or support service.</p>
+  </section>
+</div>
+{% endblock %}

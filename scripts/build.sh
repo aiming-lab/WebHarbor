@@ -10,11 +10,28 @@ TAG="${1:-webharbor:dev}"
 # Fast probe — if any site is missing instance_seed/, run fetch_assets.
 need_fetch=0
 for site in sites/*/; do
+    if [[ -f "${site}.requires-images" ]] && { [[ ! -d "${site}static/images" ]] || [[ -z $(ls -A "${site}static/images" 2>/dev/null) ]]; }; then
+        need_fetch=1
+        break
+    fi
+    if [[ -f "${site}.requires-external-cache" ]] && { [[ ! -d "${site}static/external_cache" ]] || [[ -z $(ls -A "${site}static/external_cache" 2>/dev/null) ]]; }; then
+        need_fetch=1
+        break
+    fi
+    if [[ -f "${site}.build-generated-seed" ]]; then
+        continue
+    fi
     if [[ ! -d "${site}instance_seed" ]]; then
         need_fetch=1
         break
     fi
 done
+
+if (( need_fetch == 0 )); then
+    if [[ ! -f assets-manifest.json ]] || ! python3 scripts/asset_state.py verify sites .assets-revision assets-manifest.json; then
+        need_fetch=1
+    fi
+fi
 
 if (( need_fetch )); then
     echo "[build] missing assets, fetching from HF..."
@@ -22,6 +39,7 @@ if (( need_fetch )); then
 fi
 
 ./scripts/check_assets.sh
+python3 scripts/asset_state.py verify sites .assets-revision assets-manifest.json
 
 echo "[build] docker build -t $TAG ."
 docker build -t "$TAG" .

@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% import "_pagination.html" as pager %}
+{% block title %}The YC Founders Directory | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell page-head">
+    <h1>The YC Founders Directory</h1>
+    <p class="lede">Founders of Y Combinator companies. Open a founder to read their profile on the
+        company they started.</p>
+</div>
+<div class="shell layout">
+    <aside class="filters">
+        <form action="{{ url_for('founders') }}" method="GET">
+            <div class="field">
+                <label for="q">Search</label>
+                <input id="q" type="text" name="q" value="{{ q }}" placeholder="Name, company, role">
+            </div>
+            <div class="field">
+                <label for="batch">Batch</label>
+                <select id="batch" name="batch">
+                    <option value="">All batches</option>
+                    {% for b in batches %}<option value="{{ b }}" {% if b == current_batch %}selected{% endif %}>{{ b }}</option>{% endfor %}
+                </select>
+            </div>
+            <button class="button" type="submit" style="width:100%">Apply filters</button>
+        </form>
+    </aside>
+    <div>
+        <p class="result-count">{{ page_info.total }} founder{{ '' if page_info.total == 1 else 's' }}</p>
+        <div class="card-list">
+            {% for founder in founders %}
+            <article class="card">
+                {% if founder.avatar %}<img class="round" src="{{ url_for('static', filename='images/' + founder.avatar) }}" alt="{{ founder.name }}">{% else %}<span class="avatar round"></span>{% endif %}
+                <div>
+                    <h3><a href="{{ url_for('founder_detail', slug=founder.slug) }}">{{ founder.name }}</a></h3>
+                    <p class="muted">{{ founder.title }}{% if founder.company %} at {{ founder.company.name }}{% endif %}</p>
+                    {% if founder.company and founder.company.batch %}<span class="pill batch">{{ founder.company.batch }}</span>{% endif %}
+                </div>
+            </article>
+            {% else %}
+            <p>No founders match that search.</p>
+            {% endfor %}
+        </div>
+        {{ pager.render(page_info, 'founders', {'q': q, 'batch': current_batch}) }}
+    </div>
+</div>
+{% endblock %}
