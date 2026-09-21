@@ -3,6 +3,8 @@
 import json
 import os
 import re
+import math
+from uuid import uuid4
 from datetime import datetime
 from functools import wraps
 
@@ -208,11 +210,22 @@ class PaymentMethod(db.Model):
     is_default = db.Column(db.Boolean, default=False)
 
 
+class CheckoutCart(db.Model):
+    __tablename__ = "checkout_carts"
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), primary_key=True)
+    plan_id = db.Column(db.Integer, db.ForeignKey("plans.id"), nullable=False)
+    billing_cycle = db.Column(db.String(20), nullable=False)
+    seats = db.Column(db.Integer, nullable=False)
+    plan = db.relationship("Plan")
+
+
 class SubscriptionOrder(db.Model):
     __tablename__ = "subscription_orders"
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
     plan_id = db.Column(db.Integer, db.ForeignKey("plans.id"), nullable=False)
+    payment_id = db.Column(db.Integer, db.ForeignKey("payment_methods.id"), nullable=True)
+    payment = db.relationship("PaymentMethod")
     order_number = db.Column(db.String(40), unique=True, nullable=False)
     billing_cycle = db.Column(db.String(20), default="monthly")
     seats = db.Column(db.Integer, default=1)
@@ -265,7 +278,8 @@ def form_int(name, default=1, minimum=1):
 def form_float(name, default=0.0):
     raw = request.form.get(name, default)
     try:
-        return float(raw if raw not in (None, "") else default)
+        value = float(raw if raw not in (None, "") else default)
+        return value if math.isfinite(value) and value >= 0 else float(default)
     except (TypeError, ValueError):
         return float(default)
 
@@ -308,9 +322,26 @@ def scored_search(query, items, fields):
     return [item for _, __, item in ranked]
 
 
+def selected_cart():
+    return db.session.get(CheckoutCart, current_user.id) if current_user.is_authenticated else None
+
+
 def selected_plan():
-    slug = session.get("checkout_plan")
-    return Plan.query.filter_by(slug=slug, active=True).first() if slug else None
+    cart = selected_cart()
+    return cart.plan if cart else None
+
+
+def checkout_values(plan, values):
+    billing = values.get("billing_cycle", "monthly")
+    if billing not in {"monthly", "yearly"} or (billing == "yearly" and plan.yearly_price <= 0):
+        raise ValueError("Choose an available billing cycle.")
+    try:
+        seats = int(values.get("seats", plan.users_included or 1))
+    except (TypeError, ValueError):
+        raise ValueError("Enter a whole number of seats.") from None
+    if seats < max(1, plan.users_included) or seats > 10000:
+        raise ValueError(f"Choose between {max(1, plan.users_included)} and 10000 seats.")
+    return billing, seats
 
 
 def current_cart_count():
@@ -395,9 +426,19 @@ def plan_detail(slug):
 @app.route("/cart/add/<slug>", methods=["POST"])
 def add_to_cart(slug):
     plan = Plan.query.filter_by(slug=slug, active=True).first_or_404()
-    session["checkout_plan"] = plan.slug
-    session["billing_cycle"] = request.form.get("billing_cycle", "monthly") or "monthly"
-    session["seats"] = form_int("seats", 1)
+    if not current_user.is_authenticated:
+        return redirect(url_for("login", next=url_for("plan_detail", slug=slug)))
+    try:
+        billing, seats = checkout_values(plan, request.form)
+    except ValueError as error:
+        flash(str(error), "error")
+        return redirect(url_for("plan_detail", slug=slug))
+    cart = selected_cart()
+    if cart is None:
+        cart = CheckoutCart(user_id=current_user.id)
+        db.session.add(cart)
+    cart.plan_id, cart.billing_cycle, cart.seats = plan.id, billing, seats
+    db.session.commit()
     flash(f"{plan.name} is ready for checkout.", "success")
     return redirect(url_for("checkout"))
 
@@ -411,46 +452,48 @@ def cart():
 @app.route("/checkout", methods=["GET", "POST"])
 @login_required
 def checkout():
-    plan = selected_plan()
-    if not plan:
+    cart = selected_cart()
+    if not cart:
         flash("Choose a plan before checkout.", "info")
         return redirect(url_for("pricing"))
-    billing = request.form.get("billing_cycle") or session.get("billing_cycle", "monthly")
-    if request.method == "POST":
-        seats = form_int("seats", session.get("seats", 1) or 1)
-        session["billing_cycle"] = billing
-        session["seats"] = seats
-    else:
-        try:
-            seats = max(1, int(session.get("seats", 1) or 1))
-        except (TypeError, ValueError):
-            seats = 1
-    payment_id = request.form.get("payment_id", type=int)
+    plan = cart.plan
     methods = PaymentMethod.query.filter_by(user_id=current_user.id).all()
-    subtotal, tax, total = order_total(plan, billing, seats)
     if request.method == "POST":
-        if not payment_id:
-            flash("Select a saved payment method to complete checkout.", "error")
-        else:
-            order = SubscriptionOrder(
-                user_id=current_user.id,
-                plan_id=plan.id,
-                order_number=f"MEGA-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{current_user.id}",
-                billing_cycle=billing,
-                seats=seats,
-                subtotal=subtotal,
-                tax=tax,
-                total=total,
-                status="active",
-                created_at=datetime.utcnow().strftime("%Y-%m-%d"),
-            )
-            current_user.plan_id = plan.id
-            db.session.add(order)
+        try:
+            billing, seats = checkout_values(plan, request.form)
+        except ValueError as error:
+            flash(str(error), "error")
+            return redirect(url_for("checkout"))
+        # A changed selection must first become the reviewed cart. It cannot
+        # silently buy a different subscription from the displayed summary.
+        changed = (billing, seats) != (cart.billing_cycle, cart.seats)
+        if request.form.get("action") == "update" or changed:
+            cart.billing_cycle, cart.seats = billing, seats
             db.session.commit()
-            session.pop("checkout_plan", None)
-            flash("Your MEGA subscription is active.", "success")
-            return redirect(url_for("order_detail", order_number=order.order_number))
-    return render_template("checkout.html", plan=plan, methods=methods, billing=billing, seats=seats, subtotal=subtotal, tax=tax, total=total)
+            flash("Order summary updated. Review the total before completing checkout.", "success")
+            return redirect(url_for("checkout"))
+        payment_id = request.form.get("payment_id", type=int)
+        method = next((m for m in methods if m.id == payment_id), None)
+        if method is None:
+            flash("Select one of your saved payment methods.", "error")
+            return redirect(url_for("checkout"))
+        subtotal, tax, total = order_total(plan, billing, seats)
+        order = SubscriptionOrder(
+            user_id=current_user.id, plan_id=plan.id, payment_id=method.id,
+            order_number=f"MEGA-{uuid4().hex[:16].upper()}",
+            billing_cycle=billing, seats=seats, subtotal=subtotal, tax=tax,
+            total=total, status="active", created_at=datetime.utcnow().strftime("%Y-%m-%d"),
+        )
+        current_user.plan_id = plan.id
+        db.session.add(order)
+        db.session.delete(cart)
+        db.session.commit()
+        flash("Your MEGA subscription is active.", "success")
+        return redirect(url_for("order_detail", order_number=order.order_number))
+    subtotal, tax, total = order_total(plan, cart.billing_cycle, cart.seats)
+    return render_template("checkout.html", plan=plan, methods=methods,
+                           billing=cart.billing_cycle, seats=cart.seats,
+                           subtotal=subtotal, tax=tax, total=total)
 
 
 @app.route("/orders/<order_number>")
@@ -468,7 +511,8 @@ def login():
         user = User.query.filter_by(email=request.form.get("email", "").strip().lower()).first()
         if user and user.check_password(request.form.get("password", "")):
             login_user(user)
-            return redirect(request.args.get("next") or url_for("account"))
+            next_url = request.args.get("next", "")
+            return redirect(next_url if next_url.startswith("/") and not next_url.startswith("//") else url_for("account"))
         flash("Email or password did not match.", "error")
     return render_template("login.html")
 
