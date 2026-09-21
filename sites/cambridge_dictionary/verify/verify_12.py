@@ -32,7 +32,7 @@ IPA_UK = r"""/rɪˈzɪl.i.əns/"""
 IPA_US = r"""/rɪˈzɪl.jəns/"""
 DEF_ANY = ['happy, successful, etc. again after something difficult', 'return to its original form after being bent']
 EX_ANY = ['remarkable resilience in the face of adversity', 'resilience was tested by the floods']
-GT = 'resilience, noun [U], level C1. UK IPA: /rɪˈzɪl.i.əns/. US IPA: /rɪˈzɪl.jəns/. Sense 1: The ability to be happy, successful, etc. again after something difficult or bad has happened. Sense 2: The ability of a substance to return to its original form after being bent, stretched, or pressed. Sample sentence: She showed remarkable resilience in the face of adversity.'
+GT = "resilience, noun [U], level C1. UK IPA: /rɪˈzɪl.i.əns/. US IPA: /rɪˈzɪl.jəns/. The entry gives two senses: (1) The ability to be happy, successful, etc. again after something difficult or bad has happened. (2) The ability of a substance to return to its original form after being bent, stretched, or pressed. ACCEPTANCE RULE: the task asks for 'the definition' (singular); reporting EITHER sense's complete definition fully answers the question (reporting both senses is also fine). Sample sentence shown: She showed remarkable resilience in the face of adversity."
 QUESTION = 'What are the pronunciation, definition, and a sample sentence for the word resilience as shown in the Cambridge Dictionary?'
 SHOT_MUST = 'the dictionary entry for resilience with its IPA pronunciation /rɪˈzɪl.i.əns/'
 

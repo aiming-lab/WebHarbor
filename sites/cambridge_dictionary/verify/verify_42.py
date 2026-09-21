@@ -4,6 +4,7 @@
 Convert the Cambridge Dictionary homepage from English (UK) to Deutsch.
 
 Checks (deterministic first; LLM utilities anchored on ground truth):
+  the run ends on the homepage path / (the language switch redirects back to the homepage; the switch action + German-DOM + vision checks carry the proof)
   a language-switch action selecting Deutsch (select/input with text Deutsch)
   homepage DOM afterwards shows the German UI strings
   answer confirms the conversion to Deutsch/German
@@ -23,6 +24,8 @@ from verify_lib import (run_verifier, navigated_to, navigated_any, nav_urls, ste
                         llm_screenshot_shows, shot_after_url, last_shot, fold)
 
 TASK_ID = "Cambridge Dictionary--42"
+
+from verify_lib import final_url, final_url_is_path
 
 NAV = "/"
 TARGET_LANG = "Deutsch"
@@ -48,7 +51,8 @@ def _german_dom(t):
 
 def main():
     run_verifier(TASK_ID, [
-        ("nav_homepage", lambda t: (navigated_to(t, NAV), f"nav={navigated_to(t, NAV)}")),
+        ("nav_ends_on_homepage", lambda t: (
+            final_url_is_path(t, "/"), f"final_url={final_url(t)}")),
         ("switch_action_selects_deutsch", lambda t: (
             _switch_action(t), "an action param must select Deutsch")),
         ("page_shows_german_ui", lambda t: (

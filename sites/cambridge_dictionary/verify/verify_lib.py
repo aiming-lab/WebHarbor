@@ -125,6 +125,26 @@ def navigated_any(traj, path_substrs):
     return any(navigated_to(traj, s) for s in path_substrs)
 
 
+def final_url(traj):
+    """The URL the run ended on: final_url if recorded, else the last step's
+    url_after/url (mirrors agent.py's final-state capture)."""
+    v = traj.get("final_url")
+    if v:
+        return str(v)
+    for s in reversed(list(_step_pairs(traj))):
+        v = s.get("url_after") or s.get("url")
+        if v:
+            return str(v)
+    return ""
+
+
+def final_url_is_path(traj, path):
+    """Deterministic: the run's final URL is a mirror URL whose path equals
+    `path` exactly (stricter than navigated_to substring matching)."""
+    url = final_url(traj)
+    return is_mirror_url(url) and _url_path(url).casefold() == str(path).casefold()
+
+
 def nav_urls(traj, path_substr):
     """All mirror URLs whose path contains substr (full URLs, for query checks)."""
     needle = path_substr.casefold()

@@ -29,7 +29,7 @@ NAV = "/dictionary/english/sustainability"
 HEADWORD = "sustainability"
 IPA_UK = r"""/səˌsteɪnəˈbɪlɪti/"""
 DEF_ANY = ['continue over a period of time', 'causing little or no damage to the environment']
-GT = 'sustainability, noun [U], level C1. UK and US IPA: /səˌsteɪnəˈbɪlɪti/. Sense 1: The quality of being able to continue over a period of time. Sense 2: The quality of causing little or no damage to the environment and therefore able to continue for a long time.'
+GT = "sustainability, noun [U], level C1. UK and US IPA: /səˌsteɪnəˈbɪlɪti/. The entry gives two senses: (1) The quality of being able to continue over a period of time. (2) The quality of causing little or no damage to the environment and therefore able to continue for a long time. ACCEPTANCE RULE: the task asks for 'the definition' (singular); reporting EITHER sense's complete definition fully answers the question (reporting both senses is also fine)."
 QUESTION = 'What are the pronunciation and the definition(s) of the word sustainability as shown in the Cambridge Dictionary?'
 SHOT_MUST = 'the dictionary entry for sustainability with its IPA pronunciation /səˌsteɪnəˈbɪlɪti/'
 

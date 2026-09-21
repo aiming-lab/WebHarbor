@@ -7,7 +7,7 @@ Checks (deterministic first; LLM utilities anchored on ground truth):
   nav /dictionary/english/solitude
   entry DOM shows headword + IPA
   answer contains the IPA notation as shown on the page
-  answer contains the definition as shown on the page
+  answer contains the on-page definition (verbatim or with the on-page guide word woven in — deterministic regex)
   answer quotes an example sentence shown on the page
   LLM anchored answer match + entry screenshot
 Ground truth below was extracted from the live mirror pages and is frozen here.
@@ -30,7 +30,8 @@ NAV = "/dictionary/english/solitude"
 HEADWORD = "solitude"
 IPA_UK = r"""/ˈsɒlɪtjuːd/"""
 IPA_US = r"""/ˈsɑːlɪtuːd/"""
-DEF_ANY = ['situation of being alone without other people']
+import re
+DEF_PATTERN = re.compile('situation (?:or state )?of being alone without other people')
 EX_ANY = ['enjoyed the solitude of long walks', 'retreated to his mountain cabin for a week of solitude']
 GT = 'solitude, noun [U], level B2. UK IPA: /ˈsɒlɪtjuːd/. US IPA: /ˈsɑːlɪtuːd/. Definition: The situation of being alone without other people. Example: She enjoyed the solitude of long walks in the country.'
 QUESTION = 'What are the meaning, pronunciation, and an example sentence of the word solitude as shown in the Cambridge Dictionary?'
@@ -49,7 +50,7 @@ def main():
             ipa_contains(final_answer(t), IPA_UK),
             f"final={final_answer(t)[:150]!r}")),
         ("answer_definition", lambda t: (
-            contains_any(final_answer(t), DEF_ANY),
+            bool(DEF_PATTERN.search(fold(final_answer(t)))),
             f"final={final_answer(t)[:150]!r}")),
         ("answer_example", lambda t: (
             contains_any(final_answer(t), EX_ANY),

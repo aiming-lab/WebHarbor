@@ -9,7 +9,7 @@ Checks (deterministic first; LLM utilities anchored on ground truth):
   answer contains the IPA notation as shown on the page
   answer contains the definition as shown on the page
   answer quotes an example sentence shown on the page
-  LLM anchored answer match + entry screenshot
+  entry DOM contains the exact rendered IPA string (deterministic; the vision check was removed — the grading model misreads the small IPA stress marks at screenshot resolution, acceptor discrepancy 2)
 Ground truth below was extracted from the live mirror pages and is frozen here.
 Input/Output: see verify_lib.run_verifier / verify_lib.parse_args.
 """
@@ -55,18 +55,10 @@ def main():
             f"final={final_answer(t)[:150]!r}")),
         ("answer_matches_ground_truth", lambda t: (
             *llm_text_match(final_answer(t), GT, QUESTION,
-                            observed_text_at(t, NAV)), True)),
-        ("screenshot_shows_entry", lambda t: _shot_check(t)),
+                            observed_text_at(t, NAV)), True)),        ("page_shows_ipa_dom", lambda t: (
+            '/ˌkwɪntɪˈsenʃəl/' in observed_text_at(t, NAV),
+            "entry DOM must contain the exact rendered IPA string")),
     ])
-
-
-def _shot_check(t):
-    s = shot_after_url(t, NAV) or last_shot(t)
-    if not s:
-        return False, "no screenshots in run", True
-    ok, ev = llm_screenshot_shows(s, SHOT_MUST,
-        f"the Cambridge Dictionary entry page for {HEADWORD}")
-    return ok, ev, True
 
 
 if __name__ == "__main__":
