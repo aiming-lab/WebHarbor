@@ -272,7 +272,7 @@ def tokens_for(query):
 
 
 def scored_search(query, base_query=None):
-    wines = list(base_query or Wine.query.all())
+    wines = list(Wine.query.all() if base_query is None else base_query)
     tokens = tokens_for(query)
     if not tokens:
         return wines
@@ -326,8 +326,7 @@ def index():
     )
 
 
-@app.route("/store/")
-@app.route("/store/is_offer/true/", defaults={"category": "is_offer/true"})
+@app.route("/store/", defaults={"category": None})
 @app.route("/store/<path:category>/")
 def store(category=None):
     query_text = request.args.get("q", "").strip()
@@ -422,7 +421,12 @@ def register():
         elif User.query.filter_by(email=email).first():
             flash("An account already exists for that email.", "error")
         else:
-            username = slugify(email.split("@")[0])
+            username_base = slugify(email.split("@")[0])[:65] or "member"
+            username = username_base
+            suffix = 2
+            while User.query.filter_by(username=username).first():
+                username = f"{username_base}-{suffix}"
+                suffix += 1
             user = User(username=username, email=email, display_name=display_name)
             user.set_password(password)
             db.session.add(user)

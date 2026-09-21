@@ -227,6 +227,8 @@ async def run(args):
                 "step": step_idx,
                 "url": state.url,
                 "title": state.title,
+                # Observed DOM, separate from the agent's own claims.
+                "page_text": dom_text,
                 "thought": thought,
                 "action": name,
                 "params": params,
