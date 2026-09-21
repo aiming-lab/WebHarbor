@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}IRS Refund Tracker Demo{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero__copy">
+    <p class="eyebrow">Synthetic local mirror</p>
+    <h1>Practice the refund lookup flow without using real taxpayer data.</h1>
+    <p class="lede">This IRS-style benchmark mirror includes a secure-looking lookup flow, public demo records, help articles, notice-code explanations, and seeded account history.</p>
+    <div class="hero__actions">
+      <a class="button" href="{{ url_for('refund_status_start') }}">Start refund lookup</a>
+      <a class="button button--secondary" href="{{ url_for('where_is_my_refund') }}">Open public demo cases</a>
+    </div>
+  </div>
+  <div class="hero__panel">
+    <div class="lookup-preview-card">
+      <div class="lookup-preview-card__header">
+        <span class="status-chip">Where's My Refund?</span>
+        <span class="status-chip status-chip--soft">Demo data only</span>
+      </div>
+      <ul class="step-list">
+        <li><strong>Step 1</strong><span>Enter tax year, filing status, and exact refund amount.</span></li>
+        <li><strong>Step 2</strong><span>Confirm demo taxpayer ID last four digits and ZIP code.</span></li>
+        <li><strong>Step 3</strong><span>Review the timeline, delivery method, notices, and next step.</span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <span class="stat-card__value">{{ counts.profiles }}</span>
+    <span class="stat-card__label">Synthetic taxpayer profiles</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-card__value">{{ counts.tax_returns }}</span>
+    <span class="stat-card__label">Seeded synthetic returns</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-card__value">{{ counts.help_articles }}</span>
+    <span class="stat-card__label">Help articles and topics</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-card__value">{{ counts.notices }}</span>
+    <span class="stat-card__label">Notice-code explanations</span>
+  </article>
+</section>
+
+<section class="section-heading">
+  <div>
+    <p class="eyebrow">Public practice library</p>
+    <h2>Featured synthetic lookup cases</h2>
+  </div>
+  <a href="{{ url_for('where_is_my_refund') }}">View all demo cases</a>
+</section>
+<section class="card-grid card-grid--three">
+  {% for case in public_cases %}
+    <article class="case-card">
+      <div class="case-card__top">
+        <span class="status-chip">{{ case.showcase_label }}</span>
+        <span class="case-card__ref">{{ case.reference_code }}</span>
+      </div>
+      <h3>{{ case.profile.full_name }}</h3>
+      <dl class="meta-list">
+        <div><dt>Tax year</dt><dd>{{ case.tax_year }}</dd></div>
+        <div><dt>Filing status</dt><dd>{{ case.filing_status.name }}</dd></div>
+        <div><dt>Refund amount</dt><dd>{{ case.refund_amount|money }}</dd></div>
+        <div><dt>Last four</dt><dd>{{ case.profile.last_four_id }}</dd></div>
+        <div><dt>ZIP code</dt><dd>{{ case.profile.zip_code }}</dd></div>
+      </dl>
+      <a class="button button--secondary button--full" href="{{ url_for('refund_status_start', case=case.reference_code) }}">Load this demo case</a>
+    </article>
+  {% endfor %}
+</section>
+
+<section class="two-column">
+  <div>
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Guidance</p>
+        <h2>Help articles</h2>
+      </div>
+      <a href="{{ url_for('help_index') }}">Browse all help</a>
+    </div>
+    <div class="stacked-cards">
+      {% for article in featured_articles %}
+        <article class="info-card">
+          <span class="info-card__meta">{{ article.category }} / {{ article.tax_topic|replace('-', ' ')|title }}</span>
+          <h3><a href="{{ url_for('help_detail', slug=article.slug) }}">{{ article.title }}</a></h3>
+          <p>{{ article.summary }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Quick answers</p>
+        <h2>Frequently asked questions</h2>
+      </div>
+      <a href="{{ url_for('faq') }}">Open FAQ</a>
+    </div>
+    <div class="stacked-cards">
+      {% for item in faqs %}
+        <article class="faq-card">
+          <span class="info-card__meta">{{ item.category }}</span>
+          <h3>{{ item.question }}</h3>
+          <p>{{ item.answer }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

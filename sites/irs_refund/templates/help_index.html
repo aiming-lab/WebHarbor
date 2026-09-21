@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Refund Help{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Help articles</p>
+  <h1>Guidance for refund timing, delivery methods, notices, and lookup mismatches.</h1>
+  <p>All guidance is written for this synthetic local mirror and does not contact live IRS services.</p>
+</section>
+
+<section class="two-column">
+  <div>
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">All articles</p>
+        <h2>Browse help content</h2>
+      </div>
+    </div>
+    <div class="stacked-cards">
+      {% for article in articles %}
+        <article class="info-card">
+          <span class="info-card__meta">{{ article.category }} / {{ article.tax_topic|replace('-', ' ')|title }}</span>
+          <h3><a href="{{ url_for('help_detail', slug=article.slug) }}">{{ article.title }}</a></h3>
+          <p>{{ article.summary }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Tax topics</p>
+        <h2>Browse by topic</h2>
+      </div>
+      <a href="{{ url_for('tax_topics') }}">Open topic index</a>
+    </div>
+    <div class="stacked-cards">
+      {% for topic, topic_articles in topics.items() %}
+        <article class="faq-card">
+          <h3>{{ topic|replace('-', ' ')|title }}</h3>
+          <p>{{ topic_articles|length }} article(s)</p>
+          <a class="text-link" href="{{ url_for('tax_topics', topic=topic) }}">View this topic</a>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

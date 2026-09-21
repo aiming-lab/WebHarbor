@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Account</p>
+  <h1>{{ current_user.display_name }}</h1>
+  <p>Manage your synthetic benchmark profile defaults and inspect saved lookup history.</p>
+</section>
+
+<section class="summary-strip summary-strip--wide">
+  <span>Preferred contact: <strong>{{ current_user.preferred_contact_method }}</strong></span>
+  <span>Default tax year: <strong>{{ current_user.default_tax_year }}</strong></span>
+  <span>City: <strong>{{ current_user.city }}, {{ current_user.state }}</strong></span>
+  <a href="{{ url_for('account_edit') }}">Edit account</a>
+</section>
+
+<section class="two-column">
+  <div>
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Linked synthetic profiles</p>
+        <h2>Saved practice records</h2>
+      </div>
+    </div>
+    <div class="stacked-cards">
+      {% for profile in profiles %}
+        <article class="case-card">
+          <h3>{{ profile.full_name }}</h3>
+          <dl class="meta-list">
+            <div><dt>City</dt><dd>{{ profile.city }}, {{ profile.state }}</dd></div>
+            <div><dt>ZIP code</dt><dd>{{ profile.zip_code }}</dd></div>
+            <div><dt>Last four</dt><dd>{{ profile.last_four_id }}</dd></div>
+          </dl>
+          <div class="mini-list">
+            {% for row in profile.tax_returns %}
+              <span>{{ row.tax_year }} / {{ row.refund_status.public_label }}</span>
+            {% endfor %}
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Recent saved lookups</p>
+        <h2>Lookup history preview</h2>
+      </div>
+      <a href="{{ url_for('lookup_history') }}">Open full history</a>
+    </div>
+    <div class="stacked-cards">
+      {% for item in histories %}
+        <article class="info-card">
+          <span class="info-card__meta">{{ item.searched_at|datefmt }}</span>
+          <h3>{{ item.label }}</h3>
+          <p>{{ item.tax_year }} / {{ item.filing_status_name }} / {{ item.refund_amount|money }}</p>
+          <p><strong>{{ item.result_stage }}</strong></p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

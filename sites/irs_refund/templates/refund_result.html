@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% block title %}Refund Lookup Result{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Refund status result</p>
+  <h1>{{ result.stage_label }}</h1>
+  <p>{{ result.message }}</p>
+</section>
+
+{% if matched_return %}
+  <section class="result-hero">
+    <div class="result-hero__main">
+      <div class="summary-strip summary-strip--wide">
+        <span>Reference code: <strong>{{ matched_return.reference_code }}</strong></span>
+        <span>Tax year: <strong>{{ matched_return.tax_year }}</strong></span>
+        <span>Filing status: <strong>{{ matched_return.filing_status.name }}</strong></span>
+        <span>Refund amount: <strong>{{ matched_return.refund_amount|money }}</strong></span>
+      </div>
+      <div class="timeline-progress">
+        {% for step in progress %}
+          <div class="timeline-progress__step {% if step.complete %}is-complete{% endif %} {% if step.active %}is-active{% endif %}">
+            <span class="timeline-progress__dot"></span>
+            <strong>{{ step.label }}</strong>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="result-hero__aside">
+      <a class="button button--secondary button--full" href="{{ url_for('refund_status_summary') }}">Open printable summary</a>
+      <p class="support-copy"><strong>Recommended next step:</strong> {{ result.recommended_next_step }}</p>
+    </div>
+  </section>
+
+  <section class="card-grid card-grid--four">
+    <article class="stat-card">
+      <span class="stat-card__label">Return received</span>
+      <span class="stat-card__value stat-card__value--small">{{ matched_return.return_received_on|datefmt }}</span>
+    </article>
+    <article class="stat-card">
+      <span class="stat-card__label">Refund approved</span>
+      <span class="stat-card__value stat-card__value--small">{{ matched_return.refund_approved_on|datefmt }}</span>
+    </article>
+    <article class="stat-card">
+      <span class="stat-card__label">Refund sent</span>
+      <span class="stat-card__value stat-card__value--small">{{ matched_return.refund_sent_on|datefmt }}</span>
+    </article>
+    <article class="stat-card">
+      <span class="stat-card__label">Delivery method</span>
+      <span class="stat-card__value stat-card__value--small">{{ matched_return.delivery_method }}</span>
+    </article>
+  </section>
+
+  <section class="two-column">
+    <div>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Timeline</p>
+          <h2>Refund progress updates</h2>
+        </div>
+      </div>
+      <div class="timeline-list">
+        {% for event in matched_return.timeline_events %}
+          <article class="timeline-entry">
+            <span class="timeline-entry__date">{{ event.event_date|datefmt }}</span>
+            <div>
+              <h3>{{ event.label }}</h3>
+              <p>{{ event.description }}</p>
+            </div>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Next actions</p>
+          <h2>Result details</h2>
+        </div>
+      </div>
+      <div class="stacked-cards">
+        <article class="info-card">
+          <span class="info-card__meta">{{ matched_return.refund_status.public_label }}</span>
+          <h3>Status explanation</h3>
+          <p>{{ matched_return.refund_status.explanation }}</p>
+        </article>
+        {% if notice %}
+          <article class="info-card">
+            <span class="info-card__meta">Notice code</span>
+            <h3><a href="{{ url_for('notice_detail', code=notice.code) }}">{{ notice.code }} - {{ notice.title }}</a></h3>
+            <p>{{ notice.summary }}</p>
+          </article>
+        {% endif %}
+        {% for item in checklist_items %}
+          <article class="faq-card">
+            <h3>{{ item.title }}</h3>
+            <p>{{ item.description }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% elif candidate_return %}
+  <section class="two-column">
+    <div>
+      <article class="info-card info-card--warning">
+        <span class="info-card__meta">Mismatch guidance</span>
+        <h2>The lookup fields do not fully match a synthetic demo return.</h2>
+        <p>{{ result.message }}</p>
+        <p><strong>Try this next:</strong> {{ result.recommended_next_step }}</p>
+      </article>
+      <div class="stacked-cards">
+        {% for field in result.diff_fields %}
+          <article class="faq-card">
+            <h3>Review {{ field }}</h3>
+            <p>Compare this value against the public demo card or saved benchmark history entry before re-running the lookup.</p>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+    <div>
+      <article class="case-card">
+        <span class="status-chip">Closest synthetic match</span>
+        <h2>{{ candidate_return.profile.full_name }}</h2>
+        <dl class="meta-list">
+          <div><dt>Tax year</dt><dd>{{ candidate_return.tax_year }}</dd></div>
+          <div><dt>Filing status</dt><dd>{{ candidate_return.filing_status.name }}</dd></div>
+          <div><dt>Refund amount</dt><dd>{{ candidate_return.refund_amount|money }}</dd></div>
+          <div><dt>Last four</dt><dd>{{ candidate_return.profile.last_four_id }}</dd></div>
+          <div><dt>ZIP code</dt><dd>{{ candidate_return.profile.zip_code }}</dd></div>
+        </dl>
+        {% if candidate_return.is_public_demo %}
+          <a class="button button--secondary button--full" href="{{ url_for('refund_status_start', case=candidate_return.reference_code) }}">Reload the matching public demo case</a>
+        {% endif %}
+      </article>
+    </div>
+  </section>
+{% else %}
+  <section class="two-column">
+    <div>
+      <article class="info-card">
+        <span class="info-card__meta">Not found</span>
+        <h2>No practice record matched those values.</h2>
+        <p>{{ result.recommended_next_step }}</p>
+        <a class="button" href="{{ url_for('where_is_my_refund') }}">Browse public demo cases</a>
+      </article>
+    </div>
+    <div>
+      <article class="faq-card">
+        <h3>Safe reminder</h3>
+        <p>This local mirror never uses real taxpayer data. Only public demo cards and seeded benchmark accounts will work here.</p>
+      </article>
+    </div>
+  </section>
+{% endif %}
+{% endblock %}
