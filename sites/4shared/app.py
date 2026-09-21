@@ -167,6 +167,17 @@ class FileItem(db.Model):
         return self.filename.rsplit(".", 1)[0]
 
 
+class FileRename(db.Model):
+    """Persist the intermediate names of an uploaded file, not just its final name."""
+    __tablename__ = "file_renames"
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
+    file_id = db.Column(db.Integer, db.ForeignKey("files.id"), nullable=False)
+    old_name = db.Column(db.String(220), nullable=False)
+    new_name = db.Column(db.String(220), nullable=False)
+    created_at = db.Column(db.DateTime, nullable=False)
+
+
 class Favorite(db.Model):
     __tablename__ = "favorites"
     id = db.Column(db.Integer, primary_key=True)
@@ -391,10 +402,14 @@ def download(file_id: int):
     item = db.get_or_404(FileItem, file_id)
     if item.deleted or (not item.public and (not current_user.is_authenticated or item.owner_id != current_user.id)):
         abort(404)
+    return record_download(item)
+
+
+def record_download(item, link=None):
     item.download_count += 1
     db.session.add(DownloadLog(user_id=current_user.id if current_user.is_authenticated else None, file_id=item.id, downloaded_at=datetime.utcnow()))
     db.session.commit()
-    return render_template("download_ready.html", file=item)
+    return render_template("download_ready.html", file=item, link=link)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -548,9 +563,13 @@ def rename_file(file_id: int):
     if not filename or "." not in filename:
         flash("Enter a complete filename.", "error")
     else:
+        now = datetime.utcnow()
+        if filename != item.filename:
+            db.session.add(FileRename(user_id=current_user.id, file_id=item.id,
+                                      old_name=item.filename, new_name=filename, created_at=now))
         item.filename = filename
         item.extension = filename.rsplit(".", 1)[1].lower()[:12]
-        item.modified_at = datetime.utcnow()
+        item.modified_at = now
         db.session.commit()
         flash("File renamed.", "success")
     return redirect(url_for("my_files", folder=item.folder_id) if item.folder_id else url_for("my_files"))
@@ -661,10 +680,29 @@ def share_file(file_id: int):
 
 @app.get("/shared/<token>")
 def shared(token: str):
-    link = SharedLink.query.filter_by(token=token).first_or_404()
-    if link.file.deleted:
-        abort(404)
+    link = available_share(token)
     return render_template("shared.html", link=link, file=link.file)
+
+
+def available_share(token: str):
+    link = SharedLink.query.filter_by(token=token).first_or_404()
+    if link.file.deleted or link.permission not in {"view", "download"}:
+        abort(404)
+    return link
+
+
+@app.get("/shared/<token>/preview")
+def shared_preview(token: str):
+    link = available_share(token)
+    return render_template("preview.html", file=link.file, link=link)
+
+
+@app.post("/shared/<token>/download")
+def shared_download(token: str):
+    link = available_share(token)
+    if link.permission != "download":
+        abort(403)
+    return record_download(link.file, link)
 
 
 @app.post("/file/<int:file_id>/comment")

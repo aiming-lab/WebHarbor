@@ -18,9 +18,12 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (ALL_TABLES, Judge, added_rows, check_detail_visited, check_download_recorded,  # noqa: E402
                         check_search_or_category, check_signed_in_as, check_tables_unchanged,
-                        check_trajectory_identity, check_visited_path, contains_filename, contains_number,
+                        check_trajectory_identity, check_visited_path, contains_filename,
                         fail_closed, favorite_file_ids, final_answer, load_run, parse_args,
                         resolve_snapshots, rows_unchanged_except, table_delta)
+
+from verify_lib import catalog_filenames
+from answer_checks import count_claims
 
 TASK_ID = "4shared--19"
 EMAIL, USER_ID = "alice.j@test.com", 1
@@ -49,7 +52,7 @@ def run_checks(j, t, initial_db, after_db):
     check_tables_unchanged(j, initial_db, after_db, [x for x in ALL_TABLES if x not in {"favorites", "downloads", "files"}])
     fa = final_answer(t)
     j.check("answer_has_exact_filename", contains_filename(fa, FILENAME), f"expected={FILENAME!r} answer={fa[:200]!r}")
-    j.check("answer_has_page_count", contains_number(fa, PAGES), f"expected={PAGES} answer={fa[:200]!r}")
+    j.check("answer_has_page_count", count_claims(fa, FILENAME, catalog_filenames(initial_db), "page", PAGES), f"expected={PAGES} answer={fa[:200]!r}")
 
 
 def main():

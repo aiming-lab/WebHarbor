@@ -37,6 +37,7 @@ RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instan
 RUN cd /opt/WebSyn/phys_org && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
 RUN cd /opt/WebSyn/target && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
 RUN cd /opt/WebSyn/ted && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
+RUN cd /opt/WebSyn/4shared && PYTHONHASHSEED=0 python migrate_seed.py && rm -rf instance
 
 # Compass keeps source-backed media in the pinned asset bundle and rebuilds
 # its versioned deterministic SQLite seed from tracked source documents.

@@ -308,7 +308,7 @@ def t16(r: Recorder):
     r.fill("#card_number", "4242 4242 4242 4242")
     r.click("button:has-text('Confirm')", "confirm the checkout")
     r.click("a:has-text('Go to My 4shared')", "open My 4shared")
-    r.done("My 4shared now shows plan Premium with a 100 GB storage allowance (0 B of 100.0 GB used).")
+    r.done("My 4shared now shows plan Premium with a 100 GB storage allowance.")
 
 
 def t17(r: Recorder):

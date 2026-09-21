@@ -42,9 +42,9 @@ uv run python sites/4shared/verify/verify_7.py --run_dir /abs/path/to/run \
    sizes (`contains_size`), resolutions (`contains_resolution`), and comparison
    claims (`claims_winner`: the item credited by "longer/most…" must be the winner).
    Negated mentions ("not X") do not count.
-4. **SQLite after-state** — the snapshot contract (9 tables, seed counts, schema
+4. **SQLite after-state** — the snapshot contract (10 tables, seed counts, schema
    equality, benchmark users) is validated first. Read-only tasks require **all**
-   nine tables row-identical. Stateful tasks require the **exact** row delta and
+   ten tables row-identical. Stateful tasks require the **exact** row delta and
    nothing else:
 
 | task | persisted change that must be exactly present |
@@ -55,12 +55,12 @@ uv run python sites/4shared/verify/verify_7.py --run_dir /abs/path/to/run \
 | 9 | alice `users` row: `location`/`bio` only |
 | 10 | +1 `folders` (bob, root, "Survey Exports") |
 | 11 | +1 `files` (carol, Work, exact name/size/description, private, Documents) |
-| 12 | file 123: new filename + `folder_id` (Shared Projects) only |
+| 12 | file 123: new filename + `folder_id` (Shared Projects), plus its one rename event |
 | 13 | file 146: `deleted` 1 → 0 only |
 | 14 | +1 `shared_links` (alice, file 125, download, "Audio volunteers") |
 | 15 | +1 `comments` (bob, file 93, exact body) |
 | 16 | +1 `plan_orders` (bob, Premium 100 GB, annual, 77.88, 4242); bob `plan`/`storage_limit_mb` |
-| 17 | +1 folder, +1 file (final name, in it, 384 KB, private), +1 view-only link; timestamps ordered |
+| 17 | +1 folder, +1 file (final name, in it, 384 KB, private), +1 view-only link; one persisted rename event from the original name to the final name; timestamps ordered |
 | 18 | +1 `saved_files` (david, Twenty Thousand Leagues Under the Seas) |
 | 19 | +1 `favorites` + 1 `downloads` (alice, file 96), `download_count` +1 |
 
@@ -79,3 +79,21 @@ uv run python sites/4shared/verify/tests/run_matrix.py
 homepage; a wrong answer or a wrong persisted row; the seed as `after.db`), runs
 every verifier with `--no_llm True`, and exits non-zero if any cell disagrees with
 its expectation. Run dirs are git-ignored.
+
+## Reviewed regression checks
+
+Run `python -m pytest sites/4shared/tests` with the site requirements and pytest installed.
+The sharing tests exercise anonymous token access, preview-only download denial,
+owner-only direct endpoints, deleted files, return navigation and download counters.
+Rename history is persisted in `file_renames`; the idempotent `migrate_seed.py` adds
+the empty table after fetching the unchanged HF archive and during Docker build.
+Verifiers 12 and 17 require the exact owner/file/name transition and preserve older
+rename events. Download checks preserve every prior row as well as checking the addition.
+
+`answer_checks.py` binds page/chapter counts and video runtimes to their entities and
+properties and checks the polarity of comparison claims. It supports common prose,
+bullets, numeric/word counts, minute/second spellings, respectively lists and simple
+labelled Markdown tables. This is bounded deterministic parsing, not general semantic
+understanding: an unrecognized construction may fail closed. Regression cases include
+swapped values, unrelated reference numbers, contradictory claims and valid paraphrases.
+Task wording and difficulty are unchanged; no special answer syntax is required.

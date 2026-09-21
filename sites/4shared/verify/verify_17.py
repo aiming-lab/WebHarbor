@@ -19,7 +19,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (ALL_TABLES, Judge, added_rows, check_signed_in_as, check_tables_unchanged,  # noqa: E402
+from verify_lib import (ALL_TABLES, Judge, added_rows, check_rename_recorded, check_signed_in_as, check_tables_unchanged,  # noqa: E402
                         check_trajectory_identity, check_visited_path, fail_closed, load_run,
                         navigated_to_path, normalize_text, parse_args, resolve_snapshots,
                         rows_unchanged_except, table_delta)
@@ -56,7 +56,8 @@ def run_checks(j, t, initial_db, after_db):
     j.check("new_file_description", bool(f) and normalize_text(f["description"]) == normalize_text(DESCRIPTION), f"description={f.get('description')!r}")
     j.check("new_file_private_documents", bool(f) and not f["public"] and not f["deleted"] and f["category"] == "Documents",
             f"public={f.get('public')} deleted={f.get('deleted')} category={f.get('category')!r}")
-    j.check("file_renamed_after_upload", bool(f) and str(f["modified_at"]) >= str(f["uploaded_at"]), f"uploaded_at={f.get('uploaded_at')} modified_at={f.get('modified_at')}")
+    check_rename_recorded(j, initial_db, after_db, f.get("id"), USER_ID,
+                          "spring-workshop-outline.pdf", FINAL_NAME)
     j.check("share_link_for_new_file_preview_only",
             bool(link) and bool(f) and int(link["user_id"]) == USER_ID and link["file_id"] == f["id"]
             and link["permission"] == PERMISSION and normalize_text(link["label"]) == normalize_text(LABEL),
@@ -65,7 +66,7 @@ def run_checks(j, t, initial_db, after_db):
             f"file_modified_at={f.get('modified_at')} link_created_at={link.get('created_at')}")
     j.check("visited_new_file_share_page", bool(f) and navigated_to_path(t, f"/file/{f['id']}/share"), f"required_path=/file/{f.get('id')}/share")
     j.check("other_files_unchanged", rows_unchanged_except(initial_db, after_db, "files", [f["id"]] if f else []), "pre-existing files rows identical")
-    check_tables_unchanged(j, initial_db, after_db, [x for x in ALL_TABLES if x not in {"folders", "files", "shared_links"}])
+    check_tables_unchanged(j, initial_db, after_db, [x for x in ALL_TABLES if x not in {"folders", "files", "shared_links", "file_renames"}])
 
 
 def main():
