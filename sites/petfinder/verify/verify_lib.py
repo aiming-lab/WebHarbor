@@ -156,23 +156,6 @@ def entered_text(trajectory: dict[str, Any], expected: str, path: str | None = N
     return any(normalize_text(value) == normalize_text(expected) for value in input_values(trajectory, path))
 
 
-def action_locator_contains(trajectory: dict[str, Any], expected: str, path: str | None = None) -> bool:
-    needle = normalize_text(expected)
-    for step in trajectory.get("steps") or []:
-        if not isinstance(step, dict) or normalize_text(step.get("action")) not in {"click", "press", "tap"}:
-            continue
-        url = str(step.get("url") or step.get("url_before") or "")
-        if not is_site_url(url, trajectory) or (path and normalized_path(url) != normalized_path(path)):
-            continue
-        params = step.get("params") or {}
-        if not isinstance(params, dict):
-            continue
-        locator_text = " ".join(str(params.get(key) or "") for key in ("locator", "text", "name", "label"))
-        if needle and needle in normalize_text(locator_text):
-            return True
-    return False
-
-
 NEGATIONS = {"not", "no", "never", "without", "isn't", "isnt", "wasn't", "wasnt", "doesn't", "doesnt", "didn't", "didnt"}
 
 
@@ -198,25 +181,6 @@ def affirmative_contains(text: Any, expected: Any) -> bool:
 
 def contains_all(text: Any, expected: Iterable[Any]) -> bool:
     return all(affirmative_contains(text, value) for value in expected)
-
-
-def has_number(text: Any, value: int) -> bool:
-    normalized = normalize_text(text)
-    for match in re.finditer(r"(?<![a-z0-9])\d[\d,]*(?![a-z0-9])", normalized):
-        if int(match.group(0).replace(",", "")) == value and not _negated_before(normalized, match.start()):
-            return True
-    return False
-
-
-def number_bound_to(text: Any, value: int, labels: Sequence[str], distance: int = 90) -> bool:
-    normalized = normalize_text(text)
-    for match in re.finditer(r"(?<![a-z0-9])\d[\d,]*(?![a-z0-9])", normalized):
-        if int(match.group(0).replace(",", "")) != value or _negated_before(normalized, match.start()):
-            continue
-        window = normalized[max(0, match.start() - distance):min(len(normalized), match.end() + distance)]
-        if any(normalize_text(label) in window for label in labels):
-            return True
-    return False
 
 
 def fetch_db(container: str, kind: str) -> str:
@@ -334,3 +298,42 @@ class Judge:
     def emit(self) -> None:
         print(json.dumps({"task_id": self.task_id, "pass": self.passed, "reason": self.reason, "evidence": self.evidence}, ensure_ascii=False, indent=2))
         raise SystemExit(0 if self.passed else 1)
+
+
+def save_action_used(trajectory: dict[str, Any]) -> bool:
+    """Resolve an indexed button against observed DOM, never guess from index alone."""
+    steps = trajectory.get("steps") or []
+    for i, step in enumerate(steps):
+        if step.get("action") not in {"click", "tap", "press"}:
+            continue
+        before = str(step.get("url_before") or step.get("url") or "")
+        if not is_site_url(before, trajectory) or normalized_path(before) != "/pets/milo-labrador-mix":
+            continue
+        result = step.get("action_result") or {}
+        if result.get("error") or result.get("success") is False:
+            continue
+        params = step.get("params") or {}
+        index = params.get("index")
+        if isinstance(index, int) and not isinstance(index, bool):
+            dom = str(step.get("observed_text_before") or step.get("page_text") or "")
+            # browser-use may put a button label on an indented child line.
+            lines = dom.splitlines()
+            line = ""
+            for position, candidate in enumerate(lines):
+                if re.search(rf"\[{index}\]", candidate):
+                    block = [candidate]
+                    indent = len(candidate) - len(candidate.lstrip())
+                    for child in lines[position + 1:]:
+                        if len(child) - len(child.lstrip()) <= indent or re.search(r"\[\d+\]", child):
+                            break
+                        block.append(child)
+                    line = " ".join(block)
+                    break
+            target = bool(re.search(r"\bbutton\b", line, re.I) and "save this pet" in line.casefold())
+        else:
+            locator = " ".join(str(params.get(k) or "") for k in ("locator", "text", "name", "label"))
+            target = "save this pet" in locator.casefold()
+        after = str(step.get("url_after") or (steps[i + 1].get("url_before") or steps[i + 1].get("url") or "" if i + 1 < len(steps) else trajectory.get("final_url") or ""))
+        if target and is_site_url(after, trajectory) and normalized_path(after) == "/account":
+            return True
+    return False

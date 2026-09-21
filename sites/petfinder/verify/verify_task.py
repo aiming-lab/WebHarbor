@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlparse
 
-from ground_truth import CHECKLIST_ITEMS, DETAILS, FILTERS, INQUIRY_MESSAGE
+from answer_checks import numeric_fact, pet_named, winner, checklist as checklist_answer, inquiry_submitted, no_duplicate, preparation_stages
+from ground_truth import DETAILS, FILTERS, INQUIRY_MESSAGE
 from verify_lib import (
     Judge,
-    action_locator_contains,
-    changed_tables,
+    save_action_used,
     check_common,
     check_read_only,
     contains_all,
@@ -16,13 +16,11 @@ from verify_lib import (
     entered_text,
     favorite_names,
     final_answer,
-    has_number,
     inquiry_rows,
     input_values,
     is_site_url,
     normalize_text,
     normalized_path,
-    number_bound_to,
     parse_args,
     resolve_db,
     trajectory_urls,
@@ -83,22 +81,29 @@ def _main(index: int):
         judge.check("matching_detail_opened", visited_path(trajectory, DETAILS[index]), DETAILS[index])
 
     if index == 0:
-        judge.check("answer_identity_and_shelter", contains_all(answer, ["Milo Labrador Mix", "Hudson Valley Animal Rescue"]), repr(answer))
-        judge.check("answer_days", number_bound_to(answer, 3, ["Milo", "day", "Petfinder"]), repr(answer))
+        judge.check("answer_identity_and_shelter", pet_named(answer, "Milo") and contains_all(answer, ["Hudson Valley Animal Rescue"]), repr(answer))
+        judge.check("answer_days", numeric_fact(answer, 3, "days", "Milo"), repr(answer))
     elif index == 1:
-        judge.check("answer_complete", contains_all(answer, ["Luna Domestic Shorthair", "Female", "PAWS Chicago"]), repr(answer))
+        judge.check("answer_complete", pet_named(answer, "Luna") and contains_all(answer, ["Female", "PAWS Chicago"]), repr(answer))
     elif index == 2:
-        judge.check("answer_identity_and_shelter", contains_all(answer, ["Nori Rabbit", "Seattle Animal Shelter"]), repr(answer))
-        judge.check("answer_fee", has_number(answer, 75), repr(answer))
+        judge.check("answer_identity_and_shelter", pet_named(answer, "Nori") and contains_all(answer, ["Seattle Animal Shelter"]), repr(answer))
+        judge.check("answer_fee", numeric_fact(answer, 75, "fee"), repr(answer))
     elif index == 3:
         judge.check("site_search_used", search_used(trajectory, "Nori"), "search q contains Nori")
         judge.check("nori_detail_opened", visited_path(trajectory, "/pets/nori-rabbit"), "detail URL")
         judge.check("answer_detail_facts", contains_all(answer, ["Short", "Seattle Animal Shelter"]), repr(answer))
-        judge.check("answer_fee", has_number(answer, 75), repr(answer))
+        judge.check("mochi_search_and_detail", search_used(trajectory, "Mochi") and visited_path(trajectory, "/pets/mochi-siamese-mix"), "Mochi search + detail")
+        for name, fee in [("Nori", 75), ("Mochi", 185)]:
+            judge.check(f"{name}_fee", numeric_fact(answer, fee, "fee", name, ["Nori", "Mochi"]), repr(answer))
+        judge.check("lower_fee_identified", winner(answer, "Nori", ["Nori", "Mochi"], "fee"), repr(answer))
     elif index == 4:
         judge.check("login_and_account_opened", visited_path(trajectory, "/login") and visited_path(trajectory, "/account"), "login + account")
-        judge.check("answer_names", contains_all(answer, ["Milo Labrador Mix", "Nori Rabbit"]), repr(answer))
-        judge.check("answer_count", number_bound_to(answer, 2, ["favorite", "saved", "pet"]), repr(answer))
+        judge.check("answer_names", pet_named(answer, "Milo") and pet_named(answer, "Nori"), repr(answer))
+        judge.check("answer_count", numeric_fact(answer, 2, "count"), repr(answer))
+        for name, slug, days in [("Milo", "milo-labrador-mix", 3), ("Nori", "nori-rabbit", 6)]:
+            judge.check(f"{name}_detail", visited_path(trajectory, f"/pets/{slug}"), slug)
+            judge.check(f"{name}_days", numeric_fact(answer, days, "days", name, ["Milo", "Nori"]), repr(answer))
+        judge.check("more_recent_favorite", winner(answer, "Milo", ["Milo", "Nori"], "days"), repr(answer))
     elif index == 5:
         initial, after = state_databases(judge, args)
         judge.check("login_and_account_opened", visited_path(trajectory, "/login") and visited_path(trajectory, "/account"), "login + account")
@@ -121,13 +126,14 @@ def _main(index: int):
         judge.check("answer_complete", contains_all(answer, ["Chicago, IL", "Newest pets first"]), repr(answer))
     elif index == 6:
         judge.check("guide_opened", visited_path(trajectory, "/guides/pet-adoption-checklist"), "guide detail")
-        judge.check("all_checklist_items_reported", contains_all(answer, CHECKLIST_ITEMS), repr(answer))
+        judge.check("veterinary_guide_opened", visited_path(trajectory, "/guides/your-new-pet-s-first-veterinary-visit"), "veterinary guide detail")
+        judge.check("both_preparation_stages", preparation_stages(answer), repr(answer))
     elif index == 7:
         judge.check("senior_chicago_filters_used", visited_query(trajectory, "/pets", FILTERS[7]), str(FILTERS[7]))
         judge.check("both_details_opened", visited_path(trajectory, "/pets/maple-senior-beagle") and visited_path(trajectory, "/pets/ollie-poodle-mix"), "Maple + Ollie")
-        judge.check("winner_identified", contains_all(answer, ["Ollie Poodle Mix", "fewer"]), repr(answer))
-        judge.check("ollie_days", number_bound_to(answer, 5, ["Ollie"]), repr(answer))
-        judge.check("maple_days", number_bound_to(answer, 18, ["Maple"]), repr(answer))
+        judge.check("winner_identified", winner(answer, "Ollie", ["Ollie", "Maple"], "days"), repr(answer))
+        judge.check("ollie_days", numeric_fact(answer, 5, "days", "Ollie", ["Ollie", "Maple"]), repr(answer))
+        judge.check("maple_days", numeric_fact(answer, 18, "days", "Maple", ["Ollie", "Maple"]), repr(answer))
     elif index == 8:
         initial, after = state_databases(judge, args)
         judge.check("search_and_detail", search_used(trajectory, "Luna") and visited_path(trajectory, "/pets/luna-domestic-shorthair"), "search + Luna detail")
@@ -151,7 +157,7 @@ def _main(index: int):
             ),
             "only Alice's Luna favorite may be added",
         )
-        judge.check("answer_count", number_bound_to(answer, 3, ["favorite", "saved", "pet"]), repr(answer))
+        judge.check("answer_count", numeric_fact(answer, 3, "count"), repr(answer))
     elif index == 9:
         initial, after = state_databases(judge, args)
         judge.check("search_and_detail", search_used(trajectory, "Nori") and visited_path(trajectory, "/pets/nori-rabbit"), "search + Nori detail")
@@ -176,7 +182,7 @@ def _main(index: int):
             ),
             "only Alice's requested Nori inquiry may be added",
         )
-        judge.check("answer_status", contains_all(answer, ["Submitted"]), repr(answer))
+        judge.check("answer_status", inquiry_submitted(answer), repr(answer))
     elif index == 10:
         judge.check("requested_filters_used", visited_query(trajectory, "/pets", FILTERS[10]), str(FILTERS[10]))
         matches = db_query(
@@ -196,13 +202,13 @@ def _main(index: int):
         judge.check("unique_lowest_fee_pet", len(winners) == 1, f"lowest={lowest_fee} winners={len(winners)}")
         judge.check(
             "lowest_fee_pet_identified",
-            len(winners) == 1 and contains_all(answer, [winners[0]["name"], "lowest"]),
+            len(winners) == 1 and winner(answer, winners[0]["name"], [row["name"] for row in matches], "fee"),
             repr(answer),
         )
         for row in matches:
             judge.check(
                 f"fee_bound_to_{row['slug']}",
-                number_bound_to(answer, int(row["adoption_fee"]), [str(row["name"]), str(row["name"]).split()[0]]),
+                numeric_fact(answer, int(row["adoption_fee"]), "fee", row["name"], [r["name"] for r in matches]),
                 repr(answer),
             )
     elif index == 11:
@@ -250,10 +256,12 @@ def _main(index: int):
         )
         judge.check(
             "answer_fee",
-            bool(expected and number_bound_to(answer, int(expected["adoption_fee"]), [expected["name"], "fee"])),
+            bool(expected and numeric_fact(answer, int(expected["adoption_fee"]), "fee")),
             repr(answer),
         )
     elif index == 13:
+        judge.check("nori_search_and_detail", search_used(trajectory, "Nori") and visited_path(trajectory, "/pets/nori-rabbit"), "Nori search + detail")
+        judge.check("nori_detail_facts", contains_all(answer, ["Short", "Seattle Animal Shelter"]) and numeric_fact(answer, 75, "fee"), repr(answer))
         judge.check("site_search_used", search_used(trajectory, "rabbit housing"), "search q contains rabbit housing")
         rows = db_query(
             initial_read_db,
@@ -270,7 +278,7 @@ def _main(index: int):
         )
         judge.check(
             "heading_and_checklist_reported",
-            bool(expected and len(checklist) == 3 and contains_all(answer, [expected["section_heading"], *checklist])),
+            bool(expected and len(checklist) == 3 and checklist_answer(answer, "rabbit")),
             repr(answer),
         )
     elif index == 14:
@@ -284,7 +292,7 @@ def _main(index: int):
         )
         judge.check(
             "visible_save_action_used",
-            action_locator_contains(trajectory, "Save this pet", "/pets/milo-labrador-mix"),
+            save_action_used(trajectory),
             "click locator on Milo detail",
         )
         initial_names = favorite_names(initial_read_db) if initial_read_db else []
@@ -302,8 +310,8 @@ def _main(index: int):
             bool(initial_read_db and after_read_db and initial_names == after_names),
             f"before={initial_names} after={after_names}",
         )
-        judge.check("answer_already_saved", bool(milo_name and contains_all(answer, [milo_name, "already", "favorite"])), repr(answer))
-        judge.check("answer_count", number_bound_to(answer, len(initial_names), ["favorite", "saved", "pet"]), repr(answer))
+        judge.check("answer_already_saved", no_duplicate(answer), repr(answer))
+        judge.check("answer_count", numeric_fact(answer, len(initial_names), "count"), repr(answer))
     else:
         judge.check("known_task", False, f"unsupported task index {index}")
 
