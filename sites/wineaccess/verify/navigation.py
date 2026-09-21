@@ -73,7 +73,12 @@ def navigation_ok(index, traj, before, after, ctx):
     if index == 10:
         return page('/club', 'Connoisseurs') and page('/club/connoisseurs', 'Connoisseurs Club') and account('carol.d@test.com') and page('/account', 'carol.d@test.com', 'Connoisseurs Club', 'Active')
     if index == 11:
-        return page('/contact-us', '122 Camino Oruga', 'Building A', '94558', '(866) 946-3923')
+        order = ctx['order']
+        items = [i for i in before['order_items'].values() if i['order_id'] == order['id']]
+        return (account('alice.j@test.com')
+                and page('/orders/' + order['order_number'], order['order_number'], 'Total', f"${order['total']:.2f}",
+                         *(f"{i['quantity']} bottle(s)" for i in items), *(i['wine_name'] for i in items))
+                and page('/contact-us', '122 Camino Oruga', 'Building A', '94558', '(866) 946-3923'))
     if index == 12:
         return listing(q='burgundy') and all(detail(wine(slug), 'Drinking Window') for slug in ('2017-maison-leroy-nuits', '2017-maison-leroy-gevrey', '2021-domaine-du-clos-de-tart'))
     if index == 14:
@@ -86,5 +91,8 @@ def navigation_ok(index, traj, before, after, ctx):
         order = ctx.get('order', {})
         return cart() and page('/checkout', 'Shipping', 'Payment') and page('/orders/' + order.get('order_number', ''), order.get('order_number', ''), 'Processing', 'Ship to', 'Total')
     if index == 17:
-        return page('/where-we-ship', 'Weather Holds', 'heat or cold', 'delay shipping')
+        return (page('/where-we-ship', 'Weather Holds', 'heat or cold', 'delay shipping', 'adult-signature')
+                and all(page('/club/' + slug, name, terms) for slug, name, terms in (
+                    ('discovery', 'Discovery Club', '4 bottles / Quarterly / $110 per shipment'),
+                    ('connoisseurs', 'Connoisseurs Club', '2 bottles / Quarterly / $150 per shipment'))))
     return False

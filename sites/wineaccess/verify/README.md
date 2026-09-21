@@ -48,3 +48,12 @@ python3 -m unittest discover -s sites/wineaccess/verify -p 'test_*.py' -v
 Tests use an isolated temporary Flask runtime seeded from the downloaded archive;
 they do not write to a running preview. Full browser recordings and the Docker
 build/reset checks are separate validation steps.
+
+Task 11 now combines contact information with Alice's latest order: the order
+number, sum of item quantities (not number of lines), and total paid. Its order
+expectations come from the initial snapshot; account identity and order detail
+must both be observed. Task 17 now compares Discovery and Connoisseurs unit
+costs and combines that recommendation with weather holds and adult-signature
+policy. Both club detail pages and shipping information must be observed. These
+remain read-only tasks. No action-count threshold or fixed answer format is
+imposed; difficulty comes from gathering and combining the requested facts.

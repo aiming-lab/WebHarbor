@@ -13,7 +13,7 @@ def norm(value):
 
 
 def clauses(value):
-    return [norm(s) for s in re.split(r'(?<!\d)\.(?!\d)|[;\n]|\b(?:but|whereas|while)\b', value, flags=re.I) if s.strip()]
+    return [norm(s) for s in re.split(r'(?<!\d)\.|\.(?!\d)|[;\n]|\b(?:but|whereas|while)\b', value, flags=re.I) if s.strip()]
 
 
 def negative(s):
@@ -113,7 +113,8 @@ def answer_ok(index, text, ctx=None):
     if index == 11:
         address = all(x in s for x in ('122 camino oruga', 'building a', 'napa', '94558'))
         phone = re.findall(r'\(?\b\d{3}\)?[ .-]*\d{3}[ .-]*\d{4}\b', s)
-        return address and [re.sub(r'\D', '', p) for p in phone] == ['8669463923'] and not any(negative(c) for c in clauses(text) if 'camino' in c or '866' in c)
+        from difficulty_answers import support_order
+        return address and [re.sub(r'\D', '', p) for p in phone] == ['8669463923'] and not any(negative(c) for c in clauses(text) if 'camino' in c or '866' in c) and support_order(text, ctx)
     if index == 12:
         return comparison(text, r'(?:maison leroy )?gevrey[- ]chambertin', r'(?:nuits[- ]saint[- ]georges|clos de tart)') and affirmative(text, r'\b2035\b') and windows_match(s, [(r'(?:maison leroy )?gevrey[- ]chambertin', (2026,2035)), (r'(?:maison leroy )?nuits[- ]saint[- ]georges', (2026,2032)), (r'clos de tart', (2026,2033))])
     if index == 14:
@@ -131,5 +132,8 @@ def answer_ok(index, text, ctx=None):
         action = any(re.search(r'delay|hold|postpone|pause|defer|suspend|wait', c) and not negative(c) for c in clauses(text))
         action = action or bool(re.search(r'(?:not|never|dont|do not) ship.{0,35}(?:heat|cold|weather|extreme)', s))
         bad = re.search(r'(?:cannot|cant|do not|dont|not|never)\s+(?:be\s+)?(?:delay|hold|postpone|pause|defer)|ship(?:s|ping)?\s+(?:immediately|regardless)', s)
-        return bool(weather and purpose and action and not bad)
+        from difficulty_answers import club_comparison
+        signature = affirmative(text, r'adult[- ]signature|adult.{0,30}(?:sign|signature)|(?:sign|signature).{0,30}adult')
+        bad_signature = any(re.search(r'sign|adult', c) and (negative(c) or re.search(r'optional|unnecessary', c)) for c in clauses(text))
+        return bool(weather and purpose and action and not bad and signature and not bad_signature and club_comparison(text))
     return False

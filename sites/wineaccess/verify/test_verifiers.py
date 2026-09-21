@@ -23,13 +23,13 @@ ANSWERS = {
     8: 'Its drinking window is 2026 through 2031.',
     9: 'Bank Shot is cheaper: $39.60 per bottle, versus Le Pich at $57.20.',
     10: 'The Connoisseurs Club now appears in the account.',
-    11: '122 Camino Oruga, Building A, Napa, CA 94558. Phone: (866) 946-3923.',
+    11: 'Order WA-260411-204: 4 bottles, total paid $324.75. 122 Camino Oruga, Building A, Napa, CA 94558. Phone: (866) 946-3923.',
     12: 'Maison Leroy Gevrey-Chambertin ends latest in 2035.',
     13: 'Created the account and reached checkout without placing an order.',
     14: 'Removed one line and checked the new total.',
     16: 'The new order number is WA-260520-1005.',
     15: 'Etna Bianco Carricante: roast chicken, shellfish, and spring vegetables.',
-    17: 'They hold shipments in extreme temperatures to keep the wine safe.',
+    17: 'Discovery costs $27.50 per bottle; Connoisseurs costs $75 per bottle. I recommend Discovery as cheaper. Members can delay shipping during heat or cold to protect wine. An adult signature is required at delivery.',
 }
 
 
@@ -115,7 +115,8 @@ class WineAccessTests(unittest.TestCase):
             self.detail('2021-le-pich');self.detail('2021-bank-shot')
         elif i == 10:
             self.login('carol.d');self.request('/club/');self.request('/club/connoisseurs/');self.request('/club/join/connoisseurs', {})
-        elif i == 11: self.request('/contact-us/')
+        elif i == 11:
+            self.request('/contact-us/');self.login();self.request('/orders');self.request('/orders/WA-260411-204')
         elif i == 12:
             self.request('/store/?q=Burgundy+Pinot+Noir')
             for slug in ('2017-maison-leroy-nuits', '2017-maison-leroy-gevrey', '2021-domaine-du-clos-de-tart'): self.detail(slug)
@@ -127,7 +128,8 @@ class WineAccessTests(unittest.TestCase):
             self.request('/store/?region=Italy&max_price=39.99');self.detail('2024-etna-bianco')
         elif i == 16:
             self.request('/cart');self.request('/checkout');self.request('/checkout', {'address_line1':'122 Camino Oruga','city':'Napa','state':'CA','zip_code':'94558','card_last4':'4242'})
-        elif i == 17:self.request('/where-we-ship/')
+        elif i == 17:
+            self.request('/where-we-ship/');self.request('/club/discovery/');self.request('/club/connoisseurs/')
         with sqlite3.connect(self.runtime) as a, sqlite3.connect(self.run/'after.db') as b:a.backup(b)
         self.traj={'task_id':f'Wine Access--{i}','start_url':'http://localhost:40016/','steps':self.steps,'final_answer':ANSWERS[i]}
         return self.verdict(i)
@@ -215,7 +217,7 @@ class WineAccessTests(unittest.TestCase):
         (self.run/'after.db').unlink();missing=subprocess.run(command,capture_output=True,text=True);self.assertEqual(missing.returncode,1)
 
     def test_correct_natural_answers(self):
-        examples={2:['Fantesca.','Fantesca, not DuMOL, has the later window.','Fantesca Estate Chardonnay ends in 2037; DuMOL Chloe ends in 2034.'],3:['Chateau Haut-Brion, Pessac-Leognan. Price: 950 dollars.', 'Pessac-Leognan; current price is $950.'],7:['Added two bottles.','Done.'],9:['Bank Shot has the lower case price per bottle.','Bank Shot: $39.60 per bottle; Le Pich: $57.20 per bottle.'],12:['Gevrey-Chambertin has the latest end year: 2035.'],15:['Etna Bianco: roasted chicken, shellfish and spring veg.', 'Roast chicken, shellfish and spring vegetables.'],17:['Members may postpone shipments during hot weather to protect the wine.','They hold shipments in extreme temperatures to keep wine safe.','They do not ship during extreme heat to protect the wine.']}
+        examples={2:['Fantesca.','Fantesca, not DuMOL, has the later window.','Fantesca Estate Chardonnay ends in 2037; DuMOL Chloe ends in 2034.'],3:['Chateau Haut-Brion, Pessac-Leognan. Price: 950 dollars.', 'Pessac-Leognan; current price is $950.'],7:['Added two bottles.','Done.'],9:['Bank Shot has the lower case price per bottle.','Bank Shot: $39.60 per bottle; Le Pich: $57.20 per bottle.'],12:['Gevrey-Chambertin has the latest end year: 2035.'],15:['Etna Bianco: roasted chicken, shellfish and spring veg.', 'Roast chicken, shellfish and spring vegetables.'],17:[ANSWERS[17], ANSWERS[17].replace('Members can delay shipping during heat or cold to protect wine.', 'They hold shipments in extreme temperatures to keep wine safe.'), ANSWERS[17].replace('Members can delay shipping during heat or cold to protect wine.', 'They do not ship during extreme heat to protect the wine.')]}
         for i,values in examples.items():
             for value in values:
                 with self.subTest(task=i,answer=value):self.assertTrue(answer_ok(i,value))
@@ -225,5 +227,45 @@ class WineAccessTests(unittest.TestCase):
         for i,values in examples.items():
             for value in values:
                 with self.subTest(task=i,answer=value):self.assertFalse(answer_ok(i,value))
+
+
+    def test_revised_tasks_reject_old_short_completion(self):
+        for i, old in ((11, '122 Camino Oruga, Building A, Napa, CA 94558. Phone: (866) 946-3923.'), (17, 'Members can delay shipping in heat or cold to protect wine.')):
+            with self.subTest(task=i):
+                self.setUp();self.assertTrue(self.positive(i)['pass'])
+                self.traj['final_answer'] = old
+                self.assertEqual(self.verdict(i)['reason'], 'answer_not_supported')
+
+    def test_support_brief_uses_order_quantity_sum_and_identity(self):
+        self.assertTrue(self.positive(11)['pass'])
+        for old, new in (('4 bottles', '3 bottles'), ('4 bottles', 'not 4 bottles'), ('$324.75', '$300'), ('WA-260411-204', 'WA-260412-205'), ('total paid $324.75', 'total paid $1; reference $324.75')):
+            with self.subTest(change=new):
+                self.traj['final_answer'] = ANSWERS[11].replace(old, new)
+                self.assertEqual(self.verdict(11)['reason'], 'answer_not_supported')
+        self.traj['final_answer'] = ANSWERS[11].replace('4 bottles', 'four bottles').replace('total paid $324.75', 'total: 324.75 dollars')
+        self.assertTrue(self.verdict(11)['pass'])
+
+    def test_support_brief_requires_account_and_order_detail(self):
+        self.assertTrue(self.positive(11)['pass'])
+        for path in ('/account', '/orders/WA-260411-204', '/contact-us'):
+            self.traj['steps'] = [s for s in self.steps if path not in s['url']]
+            self.assertEqual(self.verdict(11)['reason'], 'required_observed_navigation')
+        self.traj['steps'] = self.steps
+        self.traj['steps'][1]['page_text'] = 'Bob bob.c@test.com'
+        self.assertEqual(self.verdict(11)['reason'], 'required_observed_navigation')
+
+    def test_club_costs_units_direction_and_delivery_policy(self):
+        good = ANSWERS[17]
+        for old, new in (('$27.50', '$75'), ('$75', '$27.50'), ('per bottle', 'per shipment'), ('recommend Discovery as cheaper', 'recommend Connoisseurs as cheaper'), ('recommend Discovery as cheaper', 'think Connoisseurs is cheaper than Discovery'), ('can delay', 'cannot delay'), ('An adult signature is required', 'An adult signature is optional'), ('An adult signature is required', 'No adult signature is required')):
+            with self.subTest(change=new):
+                self.assertFalse(answer_ok(17, good.replace(old, new)))
+        self.assertTrue(answer_ok(17, good.replace('Discovery costs $27.50 per bottle; Connoisseurs costs $75 per bottle.', 'Discovery: 110 dollars for 4 bottles, or 27.50 dollars per bottle. Connoisseurs: 150 dollars for 2 bottles, or 75 dollars per bottle.')))
+        self.assertTrue(answer_ok(17, good.replace('Discovery costs $27.50 per bottle; Connoisseurs costs $75 per bottle.', 'Discovery per bottle: $27.50; Connoisseurs per bottle: $75.')))
+
+    def test_club_planning_requires_both_details_and_shipping(self):
+        self.assertTrue(self.positive(17)['pass'])
+        for path in ('/club/discovery', '/club/connoisseurs', '/where-we-ship'):
+            self.traj['steps'] = [s for s in self.steps if path not in s['url']]
+            self.assertEqual(self.verdict(17)['reason'], 'required_observed_navigation')
 
 if __name__=='__main__':unittest.main()

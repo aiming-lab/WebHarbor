@@ -35,6 +35,11 @@ def qualifying(index, w):
 def transition(index, before, after):
     expected = copy.deepcopy(before)
     ctx = {'wine_ids': [], 'user_id': None}
+    if index == 11:
+        uid = user_id(before, 'alice.j@test.com')
+        order = max((o for o in before['orders'].values() if o['user_id'] == uid), key=lambda o: (o['placed_at'], o['id']))
+        ctx['order'] = order
+        ctx['bottles'] = sum(i['quantity'] for i in before['order_items'].values() if i['order_id'] == order['id'])
     if index not in {0, 1, 4, 5, 7, 10, 13, 14, 16}:
         return before == after, 'read_only_state', ctx
     email = 'carol.d@test.com' if index == 10 else 'david.k@test.com' if index == 14 else 'alice.j@test.com'
