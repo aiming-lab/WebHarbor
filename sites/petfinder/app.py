@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hmac
+import math
 import os
 import re
 import secrets
@@ -151,6 +152,42 @@ def current_user() -> User | None:
     return db.session.get(User, user_id) if user_id else None
 
 
+# City-centre coordinates support the existing "Nearest first" preference.
+# Distances rank cities, not individual shelter addresses.
+CITY_CENTRES = {
+    "New York, NY": (40.7128, -74.0060),
+    "Chicago, IL": (41.8781, -87.6298),
+    "Seattle, WA": (47.6062, -122.3321),
+    "Austin, TX": (30.2672, -97.7431),
+    "Boston, MA": (42.3601, -71.0589),
+}
+SORT_PREFERENCES = {
+    "Nearest first": "nearest",
+    "Newest pets first": "newest",
+    "Longest stay": "longest",
+    "Name A–Z": "name",
+}
+
+
+def default_location():
+    user = current_user()
+    return user.home_location if user and user.home_location in CITY_CENTRES else ""
+
+
+def default_sort():
+    user = current_user()
+    # Legacy "Recently updated" has no timestamp backing in this catalog.
+    return SORT_PREFERENCES.get(user.sort_preference, "newest") if user else "newest"
+
+
+def city_distance(location, origin):
+    if origin not in CITY_CENTRES or location not in CITY_CENTRES:
+        return float("inf")
+    lat1, lon1 = map(math.radians, CITY_CENTRES[origin])
+    lat2, lon2 = map(math.radians, CITY_CENTRES[location])
+    return math.sin((lat2 - lat1) / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin((lon2 - lon1) / 2) ** 2
+
+
 def csrf_token() -> str:
     token = session.get("csrf_token")
     if not token:
@@ -176,6 +213,9 @@ def inject_common():
         "config": CONFIG,
         "csrf_token": csrf_token,
         "current_user": current_user(),
+        "default_location": default_location(),
+        "default_sort": default_sort(),
+        "sort_preferences": SORT_PREFERENCES,
     }
 
 
@@ -248,7 +288,7 @@ def legacy_listings():
 def listings():
     filters = {
         "species": request.args.get("species", ""),
-        "location": request.args.get("location", ""),
+        "location": request.args.get("location", default_location()),
         "breed": request.args.get("breed", ""),
         "age": request.args.get("age", ""),
         "size": request.args.get("size", ""),
@@ -271,8 +311,11 @@ def listings():
     if filters["days"].isdigit():
         rows = [row for row in rows if row.days_on_petfinder <= int(filters["days"])]
 
-    sort_key = request.args.get("sort", "newest")
-    if sort_key == "longest":
+    sort_key = request.args.get("sort", default_sort())
+    if sort_key == "nearest":
+        origin = filters["location"] or default_location()
+        rows.sort(key=lambda row: (city_distance(row.location, origin), row.days_on_petfinder, row.id))
+    elif sort_key == "longest":
         rows.sort(key=lambda row: (-row.days_on_petfinder, row.id))
     elif sort_key == "name":
         rows.sort(key=lambda row: (row.name.casefold(), row.id))
@@ -304,6 +347,7 @@ def listings():
     }
     query_args = {key: value for key, value in filters.items() if value}
     query_args["sort"] = sort_key
+    query_args["location"] = filters["location"]  # Preserve an explicit Anywhere override across pages.
     page_links = [
         (number, url_for("listings", **query_args, page=number))
         for number in range(1, total_pages + 1)
@@ -402,10 +446,9 @@ def info_page(slug):
 @app.route("/search")
 def search():
     query = request.args.get("q", "").strip()
-    location = request.args.get("location", "").strip()
-    listing_results = scored_search(query, Listing.query.all(), ["search_blob"])[:10]
-    if location:
-        listing_results = [item for item in listing_results if item.location == location]
+    location = request.args.get("location", default_location()).strip()
+    candidates = Listing.query.filter_by(location=location).all() if location else Listing.query.all()
+    listing_results = scored_search(query, candidates, ["search_blob"])[:10]
     guide_results = scored_search(query, Guide.query.all(), ["title", "category", "summary", "body"])[:6]
     return render_template(
         "search.html",
@@ -453,7 +496,10 @@ def update_preferences():
     user = current_user()
     home_location = request.form.get("home_location", "").strip()
     sort_preference = request.form.get("sort_preference", "").strip()
-    allowed_sorts = {"Nearest first", "Newest pets first", "Recently updated"}
+    allowed_sorts = SORT_PREFERENCES
+    if home_location and home_location not in CITY_CENTRES:
+        flash("Choose one of the available cities.", "error")
+        return redirect(url_for("account"))
     if home_location:
         user.home_location = home_location[:100]
     if sort_preference in allowed_sorts:

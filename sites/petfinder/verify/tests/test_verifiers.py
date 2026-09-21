@@ -87,6 +87,17 @@ PATHS = {
 }
 
 
+ORIGINAL_ANSWERS = dict(ANSWERS)
+ANSWERS[3] += " Mochi's adoption fee is $185. Nori is less expensive."
+ANSWERS[4] += " Milo has 3 days on Petfinder; Nori has 6 days. Milo was listed more recently."
+ANSWERS[6] = "Before you bring your pet home: " + ANSWERS[6] + " Prepare for the appointment: Bring adoption medical records; List food and medications; Write down behavior or health questions."
+ANSWERS[13] += " Nori's adoption fee is $75, her coat is Short, and her shelter is Seattle Animal Shelter."
+PATHS[3] += [url("/search", {"q": "Mochi"}), url("/pets/mochi-siamese-mix")]
+PATHS[4] += [url("/pets/milo-labrador-mix"), url("/pets/nori-rabbit")]
+PATHS[6] += [url("/guides/your-new-pet-s-first-veterinary-visit")]
+PATHS[13] += [url("/search", {"q": "Nori"}), url("/pets/nori-rabbit")]
+
+
 def trajectory(index: int, answer: str | None = None, paths: list[str] | None = None) -> dict:
     observed_paths = PATHS[index] if paths is None else paths
     steps = [{"url": path, "action": "navigate", "params": {}} for path in observed_paths]
@@ -102,7 +113,7 @@ def trajectory(index: int, answer: str | None = None, paths: list[str] | None = 
             ]
     if index == 9 and observed_paths:
         detail_index = next(
-            (position for position, path in enumerate(observed_paths) if path.startswith(url("/pets/nori-rabbit"))),
+            (position for position, step in enumerate(steps) if step["url"].startswith(url("/pets/nori-rabbit"))),
             None,
         )
         if detail_index is not None:
@@ -116,7 +127,7 @@ def trajectory(index: int, answer: str | None = None, paths: list[str] | None = 
             )
     if index == 14 and observed_paths:
         detail_index = next(
-            (position for position, path in enumerate(observed_paths) if path.startswith(url("/pets/milo-labrador-mix"))),
+            (position for position, step in enumerate(steps) if step["url"].startswith(url("/pets/milo-labrador-mix"))),
             None,
         )
         if detail_index is not None:
@@ -237,6 +248,49 @@ class VerifierMatrixTests(unittest.TestCase):
         result, payload = self.verify(index, observed, mutate)
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse(payload["pass"], payload)
+
+    def test_harder_tasks_reject_original_answers(self):
+        for index in (3, 4, 6, 13):
+            with self.subTest(index=index):
+                self.assert_fails(index, trajectory(index, answer=ORIGINAL_ANSWERS[index]))
+
+    def test_harder_tasks_require_each_new_detail(self):
+        for index in (3, 4, 6, 13):
+            self.assert_fails(index, trajectory(index, paths=PATHS[index][:-1]))
+
+    def test_harder_tasks_reject_swapped_values_and_winners(self):
+        for index, answer in [
+            (3, ANSWERS[3].replace('$75', '$185').replace("Mochi's adoption fee is $185", "Mochi's adoption fee is $75")),
+            (3, ANSWERS[3].replace('Nori is less expensive', 'Mochi is less expensive')),
+            (4, ANSWERS[4].replace('Milo has 3', 'Milo has 6').replace('Nori has 6', 'Nori has 3')),
+            (4, ANSWERS[4].replace('Milo was listed more recently', 'Nori was listed more recently')),
+            (6, ANSWERS[6].replace('Before you bring your pet home', 'TEMP').replace('Prepare for the appointment', 'Before you bring your pet home').replace('TEMP', 'Prepare for the appointment')),
+            (6, ANSWERS[6].replace('List food and medications;', '')),
+            (13, ANSWERS[13].replace('$75', '$999')),
+        ]:
+            with self.subTest(index=index, answer=answer):
+                self.assert_fails(index, trajectory(index, answer=answer))
+
+    def test_harder_tasks_accept_paraphrases(self):
+        self.assert_passes(3, trajectory(3, answer="Nori: $75; Mochi: $185. Nori has the lowest fee. Nori has a Short coat; shelter: Seattle Animal Shelter."))
+        self.assert_passes(4, trajectory(4, answer="Two favorite pets: Milo and Nori. Milo: three days; Nori: six days. Milo has fewer days on Petfinder."))
+        self.assert_passes(6, trajectory(6, answer="Home preparation: Pick a vet and keep the clinic phone number; prepare a quiet space with food, water and a cozy bed; inspect fences, windows, plants and household hazards. Veterinary visit: Take shelter medical paperwork; note food and medicines; list behavior and health questions."))
+
+    def test_indexed_save_click_uses_observed_button_and_transition(self):
+        observed = trajectory(14)
+        save = next(s for s in observed["steps"] if "Save this pet" in str(s["params"]))
+        save["params"] = {"index": 17}
+        save["observed_text_before"] = "[16]<a>My account</a>\n[17]<button type=submit />\n\t♡ Save this pet"
+        save["url_after"] = url("/account")
+        self.assert_passes(14, observed)
+        save["params"] = {"index": 16}
+        self.assert_fails(14, observed)
+        save["params"] = {"index": 17}
+        save["action_result"] = {"error": "click failed"}
+        self.assert_fails(14, observed)
+        save.pop("action_result")
+        save.pop("observed_text_before")
+        self.assert_fails(14, observed)
 
     def test_positive_examples_pass(self):
         for index in range(15):
