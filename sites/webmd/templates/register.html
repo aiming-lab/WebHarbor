@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="auth-box">
+    <h1>Create Your WebMD Account</h1>
+    <form method="post" action="{{ url_for('register') }}">
+      {{ form.hidden_tag() }}
+      <div class="form-field">
+        {{ form.name.label }}
+        {{ form.name(placeholder='Your full name') }}
+        {% for e in form.name.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
+        {{ form.email.label }}
+        {{ form.email(placeholder='you@example.com') }}
+        {% for e in form.email.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
+        {{ form.password.label }}
+        {{ form.password(placeholder='At least 6 characters') }}
+        {% for e in form.password.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <div class="form-field">
+        {{ form.confirm.label }}
+        {{ form.confirm(placeholder='Repeat your password') }}
+        {% for e in form.confirm.errors %}<div class="form-errors">{{ e }}</div>{% endfor %}
+      </div>
+      <button type="submit" class="primary-btn" style="width:100%;">Sign Up</button>
+    </form>
+    <p class="auth-alt">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

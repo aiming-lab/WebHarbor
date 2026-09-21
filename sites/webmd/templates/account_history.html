@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}Reading History | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head"><h1>My WebMD</h1></div>
+  <div class="account-tabs">
+    <a href="{{ url_for('account') }}">Profile</a>
+    <a href="{{ url_for('account_saved') }}">Saved Articles</a>
+    <a href="{{ url_for('account_history') }}" class="active">Reading History</a>
+  </div>
+
+  <ul class="saved-list">
+    {% for h in history %}
+    <li>
+      <div>
+        <div class="saved-title">
+          <a href="{{ url_for('article_detail', slug=h.article.slug) }}">{{ h.article.title }}</a>
+        </div>
+        <div class="saved-meta">{{ h.article.section.name }} &middot; {{ h.article.subcategory }}
+          &middot; viewed {{ h.created_at.strftime('%b %d, %Y') }}</div>
+      </div>
+    </li>
+    {% else %}
+    <p class="empty-note">Your reading history is empty. Articles you open will appear here.</p>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}
