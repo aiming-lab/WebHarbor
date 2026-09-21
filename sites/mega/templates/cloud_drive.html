@@ -3,7 +3,7 @@
 {% block content %}
 <section class="page-head">
   <h1>Cloud drive</h1>
-  <p>{{ items|length }} items{% if q %} matching "{{ q }}"{% endif %}</p>
+  <p>{% if folder %}Folder {{ folder }}{% elif q %}Matches for "{{ q }}"{% else %}Files, folders, and uploads{% endif %}</p>
 </section>
 <form class="filters" action="{{ url_for('cloud_drive') }}">
   <input name="q" value="{{ q }}" placeholder="Search files, folders, summaries">
@@ -26,13 +26,13 @@
     <form class="form-card" method="post" action="{{ url_for('new_folder') }}">
       <h2>New folder</h2>
       <input name="name" placeholder="Folder name">
-      <input name="folder" value="{{ folder or '/' }}">
+      <input name="folder" value="{{ folder or '/' }}" placeholder="/Projects/Atlas">
       <button type="submit">Create folder</button>
     </form>
     <form class="form-card" method="post" action="{{ url_for('upload_file') }}">
       <h2>Upload record</h2>
       <input name="name" placeholder="filename.ext">
-      <input name="folder" value="{{ folder or '/' }}">
+      <input name="folder" value="{{ folder or '/' }}" placeholder="/Projects/Atlas/Q3 Press Kit">
       <input name="size_mb" type="number" step="0.1" value="12">
       <textarea name="content_summary" placeholder="Summary"></textarea>
       <button type="submit">Add file</button>
