@@ -15,7 +15,7 @@ A coding agent (Claude Code, Cursor, Aider, Codex, ...) is reading this. Read on
 
 ## What it is
 
-52 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
+53 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
 
 Two repos:
 - **code** (this one) — Flask apps, control plane, scripts.
@@ -59,17 +59,17 @@ Inside the image, sites live at `/opt/WebSyn/<site>/`. The path predates the ren
 # fresh clone
 ./scripts/fetch_assets.sh                     # pulls assets from HF
 ./scripts/build.sh                            # docker build -t webharbor:dev .
-docker run -e WEBSYN_CONTROL_TOKEN -d -p 8101:8101 -p 40000-40051:40000-40051 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -d -p 8101:8101 -p 40000-40052:40000-40052 webharbor:dev
 ```
 
 Or use the published image directly:
 
 ```bash
-docker run -e WEBSYN_CONTROL_TOKEN -d -p 8101:8101 -p 40000-40051:40000-40051 \
+docker run -e WEBSYN_CONTROL_TOKEN -d -p 8101:8101 -p 40000-40052:40000-40052 \
   battalion7244/webharbor:latest
 ```
 
-Sites are on `40000`-`40051` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
+Sites are on `40000`-`40052` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
 
 | Method | Path                | Purpose                                   |
 |--------|---------------------|-------------------------------------------|
@@ -147,13 +147,13 @@ python3 -m py_compile sites/<site>/app.py
 
 # 3. run on alt ports (don't collide with anything you already have running)
 docker run -e WEBSYN_CONTROL_TOKEN -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41051:40000-40051 webharbor:dev
+  -p 8201:8101 -p 41000-41052:40000-40052 webharbor:dev
 
 # 4. control plane healthy, all sites alive
 curl -s -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8201/health | python3 -m json.tool | head
 
 # 5. every site renders 200
-for p in $(seq 41000 41047); do
+for p in $(seq 41000 41052); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ club.name }} - Wine Access{% endblock %}
+{% block content %}
+<section class="club-detail-hero">
+  <div>
+    <p class="eyebrow">Wine Access Clubs</p>
+    <h1>{{ club.name }}</h1>
+    <p>{{ club.description }}</p>
+    <p class="club-terms">{{ club.bottles }} bottles / {{ club.frequency }} / ${{ '%.0f'|format(club.price_per_shipment) }} per shipment</p>
+    {% if current_user.is_authenticated %}
+      {% if is_member %}
+        <p class="member-badge">This club appears on your account page.</p>
+        <a class="button primary" href="{{ url_for('account') }}">View Account</a>
+      {% else %}
+        <form action="{{ url_for('join_club', slug=club.slug) }}" method="post">
+          <button type="submit">Join {{ club.name }}</button>
+        </form>
+      {% endif %}
+    {% else %}
+      <a class="button primary" href="{{ url_for('login', next=url_for('club_detail', slug=club.slug)) }}">Sign In to Join</a>
+    {% endif %}
+  </div>
+  <img src="{{ url_for('static', filename='images/' ~ club.image) }}" alt="{{ club.name }}">
+</section>
+
+<section class="grid-section">
+  <div class="section-title">
+    <p class="eyebrow">What Members Receive</p>
+    <h2>Curated bottles with context</h2>
+  </div>
+  <div class="club-benefit-grid">
+    <article>
+      <h3>Expert selection</h3>
+      <p>Wine Access tasters choose bottles that match the club's palate and purpose.</p>
+    </article>
+    <article>
+      <h3>Tasting cards</h3>
+      <p>Each shipment includes serving notes, food-pairing ideas, and bottle stories.</p>
+    </article>
+    <article>
+      <h3>Member access</h3>
+      <p>Members get early access to limited releases and club-only discoveries.</p>
+    </article>
+  </div>
+</section>
+
+<section class="grid-section">
+  <div class="section-title">
+    <p class="eyebrow">Other Clubs</p>
+    <h2>Compare your options</h2>
+  </div>
+  <div class="club-mini-grid">
+    {% for other in related_clubs %}
+      <a class="mini-card" href="{{ url_for('club_detail', slug=other.slug) }}">
+        <strong>{{ other.name }}</strong>
+        <span>{{ other.bottles }} bottles / ${{ '%.0f'|format(other.price_per_shipment) }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

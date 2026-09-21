@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Orders - Wine Access{% endblock %}
+{% block content %}
+<section class="grid-section">
+  <h1>Order History</h1>
+  <div class="stack">
+    {% for order in orders|sort(attribute='placed_at', reverse=true) %}
+      <article class="order-card">
+        <div>
+          <p class="eyebrow">{{ order.status }}</p>
+          <h2><a href="{{ url_for('order_detail', order_number=order.order_number) }}">{{ order.order_number }}</a></h2>
+          <p>{{ order.placed_at.strftime('%B %d, %Y') }} · {{ order.tracking_number }}</p>
+        </div>
+        <strong>${{ '%.2f'|format(order.total) }}</strong>
+      </article>
+    {% else %}
+      <p>No orders yet.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

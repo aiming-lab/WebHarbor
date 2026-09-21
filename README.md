@@ -34,7 +34,7 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 52 sites today, scaling to 100+ together
+- **Community-driven** — 53 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
@@ -42,10 +42,10 @@ Build this checkout to run its registered web environments (published image tags
 
 ```bash
 ./scripts/build.sh webharbor:dev
-docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40051:40000-40051 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40052:40000-40052 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40051` to explore 52 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, Bandcamp, Adopt-a-Pet, IGN, and IRS Refund Tracker`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40052` to explore 53 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, Bandcamp, Adopt-a-Pet, IGN, IRS Refund Tracker, and WineAccess`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -64,7 +64,7 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 
 ### Site registry
 
-This checkout registers **52 sites**. NVIDIA remains at index 28, UC Berkeley remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index 31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at index 34. Recreation.gov remains at index 35, BoardGameGeek remains at index 36, CarMax remains at index 37, BabyCenter remains at index 38, Amtrak remains at index 39, Cookpad remains at index 40, Craigslist remains at index 41, Drugs.com remains at index 42, Versus remains at index 43, Y Combinator remains at index 44, PhET Interactive Simulations remains at index 45, Discogs remains at index 46, and Google Finance remains at index 47, Bandcamp remains at index 48, and Adopt-a-Pet remains at index 49, IGN remains at index 50, and IRS Refund Tracker is appended at index 51. Build the image from this checkout to use this registry; publishing source does not update the published Docker image automatically.
+This checkout registers **53 sites**. NVIDIA remains at index 28, UC Berkeley remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index 31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at index 34. Recreation.gov remains at index 35, BoardGameGeek remains at index 36, CarMax remains at index 37, BabyCenter remains at index 38, Amtrak remains at index 39, Cookpad remains at index 40, Craigslist remains at index 41, Drugs.com remains at index 42, Versus remains at index 43, Y Combinator remains at index 44, PhET Interactive Simulations remains at index 45, Discogs remains at index 46, and Google Finance remains at index 47, Bandcamp remains at index 48, and Adopt-a-Pet remains at index 49, IGN remains at index 50, and IRS Refund Tracker remains at index 51, and WineAccess is appended at index 52. Build the image from this checkout to use this registry; publishing source does not update the published Docker image automatically.
 
 | Site | Registry position | Container port | Example local review host port |
 | --- | --- | --- | --- |
@@ -92,9 +92,10 @@ This checkout registers **52 sites**. NVIDIA remains at index 28, UC Berkeley re
 | Adopt-a-Pet | 49 | 40049 | 48049 |
 | IGN | 50 | 40050 | 48050 |
 | IRS Refund Tracker | 51 | 40051 | 48051 |
+| WineAccess | 52 | 40052 | 48052 |
 
 `websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 52 sites and `40000-40051`;
+site's `tasks.jsonl` `web` URL agree on 53 sites and `40000-40052`;
 `scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
 drift.
 
@@ -102,7 +103,7 @@ After preparing the candidate assets and building `webharbor:dev`, the local
 review deployment uses:
 
 ```bash
-docker run -e WEBSYN_CONTROL_TOKEN -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48051:40000-40051 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48052:40000-40052 webharbor:dev
 ```
 
 NVIDIA inherits the site contribution from @KaKituken
@@ -123,9 +124,11 @@ The bundle contains 78 articles and 62 structured guidance sections. That archiv
 is part of the consolidated pinned dataset revision below.
 
 
-The current `.assets-revision` pins all **52 registered sites** to merged HF commit `615fbc37c0d9aa8b8bceed4c86279927b10f9ac4`. Adopt-a-Pet [HF #67](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/67) is merged; only its archive was added, preserving all 52 existing dataset files. Its reviewed archive has SHA-256 `e337aee58818a0e3128d157afcdf83cfbdf2bca1044ad647ca32ddc85bed4682` and was not repacked. `assets-manifest.json` binds all selected archives and the extracted managed tree. Unregistered bundles are not fetched; tracked seed migrations and generation remain part of the build contract. Adopt-a-Pet's reset seed is generated from tracked code during the Docker build.
+The current `.assets-revision` pins all **53 registered sites** to merged HF commit `99909efd8654f7766a43900c13bdf3b5ac87bb4d`. Adopt-a-Pet [HF #67](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/67) is merged; only its archive was added, preserving all 52 existing dataset files. Its reviewed archive has SHA-256 `e337aee58818a0e3128d157afcdf83cfbdf2bca1044ad647ca32ddc85bed4682` and was not repacked. `assets-manifest.json` binds all selected archives and the extracted managed tree. Unregistered bundles are not fetched; tracked seed migrations and generation remain part of the build contract. Adopt-a-Pet's reset seed is generated from tracked code during the Docker build.
 
 IRS Refund Tracker [HF #27](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/27) is merged. Its unchanged archive has SHA-256 `d23cf6ffe1db6b3baefebf299288ebbb09d783a016d2a5c7078647cafcd5a4a9`; all 54 prior dataset files were preserved. IRS is available at index 51 / port 40051.
+
+WineAccess [HF #21](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/21) is merged. Its unchanged archive has SHA-256 `025bd90e6c9b7d0e5148cac329fb9c66cea843f7aec6216766c039e9181cbbba`; all 55 prior dataset files were preserved. WineAccess is available at index 52 / port 40052.
 
 Historical asset integration notes below describe superseded pins, not the current pin.
 
