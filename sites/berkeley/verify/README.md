@@ -4,7 +4,7 @@ Each row in `sites/berkeley/tasks.jsonl` points to `verify_1.py` … `verify_31.
 per row; the ids are the contributor's, so numbers are not contiguous). The wrappers use
 `verify_lib.py` for package, URL, answer and state validation and `ground_truth.py` to re-derive
 every target from the supplied initial SQLite snapshot. No verifier calls an LLM; a verdict never
-depends on a key or a model. `TASK_REVIEW.md` records the per-row ACCEPT/DROP/ADDED decisions.
+depends on a key or a model. The per-row ACCEPT/DROP/ADDED decisions are recorded in the review history.
 
 ## Inputs
 
