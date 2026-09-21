@@ -1,8 +1,8 @@
 """The instrument universe for the google_finance mirror.
 
-Identities only (ticker / exchange / class). Company metadata is harvested
-from the live site by harvest_assets.py; all market data is synthesized by
-the seed generator.
+Identities only (ticker / exchange / class). Company metadata was harvested
+from the live site during the original contribution; all market data is
+synthesized by the seed generator.
 """
 
 # --- US equities, grouped by GICS sector -----------------------------------

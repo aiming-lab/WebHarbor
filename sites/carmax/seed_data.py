@@ -6,8 +6,9 @@ frozen timestamps so the resulting SQLite file is byte-stable across
 boots, which is critical for the WebHarbor reset invariant.
 
 Image paths point into static/images/vehicles/<stock>-<view>.jpg. Those
-files are populated by scripts/scrape_carmax.py (Playwright). Until the
-scraper has run, templates fall back to _pending.svg via onerror.
+files are delivered by the pinned Hugging Face asset archive (see
+`.assetpaths`). Until they are fetched, templates fall back to
+_pending.svg via onerror.
 """
 import json
 from datetime import date, datetime, timedelta

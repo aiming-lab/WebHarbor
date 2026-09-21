@@ -20,4 +20,4 @@ The tests include genuine PASS cases and controls for no-op / empty-answer, answ
 
 ## Image assets
 
-The mirror uses 19 photographs crawled from official Ohio State web properties. `sites/osu/image_sources.json` records each source page, source URL, dimensions, alt text, and source/output SHA-256. `sites/osu/fetch_images.py` reproduces the normalized WebP files. The binaries are distributed as `osu.tar.gz` from the Hugging Face asset revision pinned in `.assets-revision`. The seed database is generated at image build time (`sites/osu/.build-generated-seed`).
+The mirror uses 19 photographs crawled from official Ohio State web properties. `sites/osu/image_sources.json` records each source page, source URL, dimensions, alt text, and source/output SHA-256. The binaries are distributed as `osu.tar.gz` from the Hugging Face asset revision pinned in `.assets-revision`. The seed database is generated at image build time (`sites/osu/.build-generated-seed`).

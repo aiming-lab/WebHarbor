@@ -64,6 +64,12 @@ time curl -X POST http://localhost:8201/reset-all
 
 If any of these fail, request changes; don't bother with the deeper review yet.
 
+Also enforce the repo hygiene rules: no `README.md`, `CLAUDE.md`, reports, or
+unreferenced one-off scripts inside `sites/<site>/` (only code, data, contract files,
+`NOTICE.md`, and the reviewer's `verify/README.md`), and all documentation, commit
+messages, and PR text in English. See AGENTS.md "Per-site directory structure" and
+"Documentation and language rules".
+
 ### Drive review with Playwright — NOT curl
 
 Steps 3, 4, and 5 below MUST be performed by driving a real Chromium via Playwright. `curl | grep` and Flask `test_client` are not acceptable for visual / functional / task-quality review — they miss JS-rendered cards, client-side validation, async loads, and the actual DOM the benchmark agent will see. Use the `agent_demo/` env (it already has Playwright + Chromium installed via `uv sync`):

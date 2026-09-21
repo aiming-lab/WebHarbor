@@ -1,7 +1,7 @@
 """Build-time, source-informed guidance for the 1 April 2025 fixture.
 
 HTTP handlers read GuidanceSection rows, never this module. These are edited
-summaries, not a complete GOV.UK archive. See CONTENT_SOURCES.md for provenance.
+summaries, not a complete GOV.UK archive.
 All markup and local URLs here are trusted source code, never user input.
 """
 import re
