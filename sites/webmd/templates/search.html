@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}{% if q %}{{ q }} - Search{% else %}Search{% endif %} | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="page-head">
+    <h1>{% if q %}Search results for &ldquo;{{ q }}&rdquo;{% else %}Search WebMD{% endif %}</h1>
+    {% if q %}<p>{{ total }} result{{ '' if total == 1 else 's' }} across conditions, drugs, and articles.</p>{% endif %}
+  </div>
+
+  {% if not q %}
+  <p class="empty-note">Enter a condition, drug name, or health topic in the search box above.</p>
+  {% elif total == 0 %}
+  <p class="empty-note">No results found for &ldquo;{{ q }}&rdquo;. Try a different spelling or a broader term,
+    or browse <a href="{{ url_for('conditions_index') }}">Conditions A-Z</a> and
+    <a href="{{ url_for('drugs_index') }}">Drugs A-Z</a>.</p>
+  {% endif %}
+
+  {% if conditions %}
+  <div class="home-block">
+    <h2>Conditions</h2>
+    <ul class="item-list">
+      {% for c in conditions %}
+      <li><span class="item-name"><a href="{{ url_for('condition_detail', slug=c.slug) }}">{{ c.name }}</a></span>
+          <span class="item-meta">Condition Guide</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if drugs %}
+  <div class="home-block">
+    <h2>Drugs &amp; Supplements</h2>
+    <ul class="item-list">
+      {% for d in drugs %}
+      <li><span class="item-name"><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.name }}</a></span>
+          <span class="item-meta">{{ d.category }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if articles %}
+  <div class="home-block">
+    <h2>Articles</h2>
+    <ul class="item-list">
+      {% for a in articles %}
+      <li><span class="item-name"><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></span>
+          <span class="item-meta">{{ a.section.name }}</span></li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
