@@ -34,7 +34,7 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 50 sites today, scaling to 100+ together
+- **Community-driven** — 51 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
@@ -42,10 +42,10 @@ Build this checkout to run its registered web environments (published image tags
 
 ```bash
 ./scripts/build.sh webharbor:dev
-docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40049:40000-40049 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40050:40000-40050 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40049` to explore 50 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, Bandcamp, and Adopt-a-Pet`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40050` to explore 51 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, Bandcamp, Adopt-a-Pet, and IGN`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -64,7 +64,7 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 
 ### Site registry
 
-This checkout registers **50 sites**. NVIDIA remains at index 28, UC Berkeley remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index 31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at index 34. Recreation.gov remains at index 35, BoardGameGeek remains at index 36, CarMax remains at index 37, BabyCenter remains at index 38, Amtrak remains at index 39, Cookpad remains at index 40, Craigslist remains at index 41, Drugs.com remains at index 42, Versus remains at index 43, Y Combinator remains at index 44, PhET Interactive Simulations remains at index 45, Discogs remains at index 46, and Google Finance remains at index 47, Bandcamp remains at index 48, and Adopt-a-Pet is appended at index 49. Build the image from this checkout to use this registry; publishing source does not update the published Docker image automatically.
+This checkout registers **51 sites**. NVIDIA remains at index 28, UC Berkeley remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index 31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at index 34. Recreation.gov remains at index 35, BoardGameGeek remains at index 36, CarMax remains at index 37, BabyCenter remains at index 38, Amtrak remains at index 39, Cookpad remains at index 40, Craigslist remains at index 41, Drugs.com remains at index 42, Versus remains at index 43, Y Combinator remains at index 44, PhET Interactive Simulations remains at index 45, Discogs remains at index 46, and Google Finance remains at index 47, Bandcamp remains at index 48, and Adopt-a-Pet remains at index 49, and IGN is appended at index 50. Build the image from this checkout to use this registry; publishing source does not update the published Docker image automatically.
 
 | Site | Registry position | Container port | Example local review host port |
 | --- | --- | --- | --- |
@@ -90,9 +90,10 @@ This checkout registers **50 sites**. NVIDIA remains at index 28, UC Berkeley re
 | Google Finance | 47 | 40047 | 48047 |
 | Bandcamp | 48 | 40048 | 48048 |
 | Adopt-a-Pet | 49 | 40049 | 48049 |
+| IGN | 50 | 40050 | 48050 |
 
 `websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 50 sites and `40000-40049`;
+site's `tasks.jsonl` `web` URL agree on 51 sites and `40000-40050`;
 `scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
 drift.
 
@@ -100,7 +101,7 @@ After preparing the candidate assets and building `webharbor:dev`, the local
 review deployment uses:
 
 ```bash
-docker run -e WEBSYN_CONTROL_TOKEN -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48049:40000-40049 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48050:40000-40050 webharbor:dev
 ```
 
 NVIDIA inherits the site contribution from @KaKituken

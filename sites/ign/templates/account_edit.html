@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Edit Account - IGN{% endblock %}
+{% block content %}
+<section class="auth-panel wide">
+  <h1>Edit profile</h1>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>Display name <input name="display_name" value="{{ current_user.display_name }}"></label>
+    <label>Region <input name="region" value="{{ current_user.region }}"></label>
+    <label>Favorite platform
+      <select name="favorite_platform">
+        {% for platform in ['PC','PlayStation 5','Xbox Series X/S','Nintendo Switch','Mobile'] %}
+          <option value="{{ platform }}" {% if current_user.favorite_platform == platform %}selected{% endif %}>{{ platform }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Bio <textarea name="bio" rows="4">{{ current_user.bio }}</textarea></label>
+    <label class="check-line"><input type="checkbox" name="notification_email" value="1" {% if current_user.notification_email %}checked{% endif %}> Email me account alerts</label>
+    <button type="submit">Save profile</button>
+  </form>
+</section>
+{% endblock %}
