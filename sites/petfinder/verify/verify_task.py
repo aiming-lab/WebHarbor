@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from urllib.parse import parse_qs, urlparse
 
-from answer_checks import numeric_fact, pet_named, winner, checklist as checklist_answer, inquiry_submitted, no_duplicate
+from answer_checks import numeric_fact, pet_named, winner, checklist as checklist_answer, inquiry_submitted, no_duplicate, preparation_stages
 from ground_truth import DETAILS, FILTERS, INQUIRY_MESSAGE
 from verify_lib import (
     Judge,
@@ -92,11 +92,18 @@ def _main(index: int):
         judge.check("site_search_used", search_used(trajectory, "Nori"), "search q contains Nori")
         judge.check("nori_detail_opened", visited_path(trajectory, "/pets/nori-rabbit"), "detail URL")
         judge.check("answer_detail_facts", contains_all(answer, ["Short", "Seattle Animal Shelter"]), repr(answer))
-        judge.check("answer_fee", numeric_fact(answer, 75, "fee"), repr(answer))
+        judge.check("mochi_search_and_detail", search_used(trajectory, "Mochi") and visited_path(trajectory, "/pets/mochi-siamese-mix"), "Mochi search + detail")
+        for name, fee in [("Nori", 75), ("Mochi", 185)]:
+            judge.check(f"{name}_fee", numeric_fact(answer, fee, "fee", name, ["Nori", "Mochi"]), repr(answer))
+        judge.check("lower_fee_identified", winner(answer, "Nori", ["Nori", "Mochi"], "fee"), repr(answer))
     elif index == 4:
         judge.check("login_and_account_opened", visited_path(trajectory, "/login") and visited_path(trajectory, "/account"), "login + account")
         judge.check("answer_names", pet_named(answer, "Milo") and pet_named(answer, "Nori"), repr(answer))
         judge.check("answer_count", numeric_fact(answer, 2, "count"), repr(answer))
+        for name, slug, days in [("Milo", "milo-labrador-mix", 3), ("Nori", "nori-rabbit", 6)]:
+            judge.check(f"{name}_detail", visited_path(trajectory, f"/pets/{slug}"), slug)
+            judge.check(f"{name}_days", numeric_fact(answer, days, "days", name, ["Milo", "Nori"]), repr(answer))
+        judge.check("more_recent_favorite", winner(answer, "Milo", ["Milo", "Nori"], "days"), repr(answer))
     elif index == 5:
         initial, after = state_databases(judge, args)
         judge.check("login_and_account_opened", visited_path(trajectory, "/login") and visited_path(trajectory, "/account"), "login + account")
@@ -119,7 +126,8 @@ def _main(index: int):
         judge.check("answer_complete", contains_all(answer, ["Chicago, IL", "Newest pets first"]), repr(answer))
     elif index == 6:
         judge.check("guide_opened", visited_path(trajectory, "/guides/pet-adoption-checklist"), "guide detail")
-        judge.check("all_checklist_items_reported", checklist_answer(answer, "adoption"), repr(answer))
+        judge.check("veterinary_guide_opened", visited_path(trajectory, "/guides/your-new-pet-s-first-veterinary-visit"), "veterinary guide detail")
+        judge.check("both_preparation_stages", preparation_stages(answer), repr(answer))
     elif index == 7:
         judge.check("senior_chicago_filters_used", visited_query(trajectory, "/pets", FILTERS[7]), str(FILTERS[7]))
         judge.check("both_details_opened", visited_path(trajectory, "/pets/maple-senior-beagle") and visited_path(trajectory, "/pets/ollie-poodle-mix"), "Maple + Ollie")
@@ -252,6 +260,8 @@ def _main(index: int):
             repr(answer),
         )
     elif index == 13:
+        judge.check("nori_search_and_detail", search_used(trajectory, "Nori") and visited_path(trajectory, "/pets/nori-rabbit"), "Nori search + detail")
+        judge.check("nori_detail_facts", contains_all(answer, ["Short", "Seattle Animal Shelter"]) and numeric_fact(answer, 75, "fee"), repr(answer))
         judge.check("site_search_used", search_used(trajectory, "rabbit housing"), "search q contains rabbit housing")
         rows = db_query(
             initial_read_db,

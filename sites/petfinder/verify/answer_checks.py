@@ -93,7 +93,7 @@ def numeric_fact(value, expected, kind, entity=None, candidates=()):
 
 
 def winner(value, expected, candidates, kind):
-    pattern = r'\b(?:fewer(?: days)?|fewest(?: days)?|less time|shorter(?: time| stay)?|more recent(?:ly)?)\b' if kind == 'days' else r'\b(?:lowest(?: adoption fee| fee| cost)?|cheapest(?: to adopt)?|least expensive|least costly|minimum(?: fee)?)\b'
+    pattern = r'\b(?:fewer(?: days)?|fewest(?: days)?|less time|shorter(?: time| stay)?|more recent(?:ly)?)\b' if kind == 'days' else r'\b(?:lower(?: adoption fee| fee| cost)?|less expensive|lowest(?: adoption fee| fee| cost)?|cheapest(?: to adopt)?|least expensive|least costly|minimum(?: fee)?)\b'
     winners = []
     for clause in clauses(value):
         names = mentions(clause, candidates)
@@ -160,3 +160,31 @@ def no_duplicate(value):
         if (re.search(r'\b(?:already|previously|before this attempt)\b', s) and re.search(r'\b(?:saved|favorites?)\b', s) and not negated(s)) or (re.search(r'\b(?:nothing|none)\b.*\b(?:added|created)\b', s)) or (duplicate and negated(s)):
             positive = True
     return positive
+
+
+def preparation_stages(value):
+    """Check both clearly attributed stages without requiring exact headings."""
+    value = text(value)
+    home = r"(?:before you bring your pet home|(?:home|adoption)[ -]preparation|preparing (?:your |the )?home|before (?:coming|bringing .*|arriving) home)"
+    vet = r"(?:prepare for the appointment|(?:first )?(?:vet(?:erinary)?|veterinarian)[ -](?:appointment|visit)(?: preparation)?|appointment preparation)"
+    # A heading applies until the next stage heading; per-item attribution also
+    # works. Require the actual concepts within their stage, never global overlap.
+    headings = list(re.finditer(r"(?P<home>" + home + r")|(?P<vet>" + vet + r")", value))
+    stages = {"home": [], "vet": []}
+    for i, match in enumerate(headings):
+        end = headings[i + 1].start() if i + 1 < len(headings) else len(value)
+        stages[match.lastgroup].append(value[match.end():end])
+    home_text = "\n".join(stages["home"])
+    vet_text = "\n".join(stages["vet"])
+    # 'veterinarian' within the home item is not a stage heading.
+    if not checklist(home_text, "adoption"):
+        return False
+    groups = [
+        [r"\b(?:bring|take|carry)\b", r"\b(?:adoption|shelter)\b", r"\bmedical\b", r"\b(?:records|paperwork)\b"],
+        [r"\b(?:list|note|record|write down)\b", r"\bfood\b", r"\b(?:medications|medicines)\b"],
+        [r"\b(?:write down|list|note|record|prepare)\b", r"\b(?:behavior|behaviour)\b", r"\bhealth\b", r"\bquestions\b"],
+    ]
+    parts = clauses(vet_text)
+    return all(any(all(re.search(p, part) for p in group) and not negated(part) for part in parts)
+               and not any(all(re.search(p, part) for p in group) and negated(part) for part in parts)
+               for group in groups)

@@ -15,6 +15,16 @@ login inputs, answer facts, and persisted state. Read-only tasks compare every
 application table. Preference, favorite and inquiry tasks permit exactly the
 requested row delta, including preservation of other users' data.
 
+Tasks 3, 4, 6 and 13 include additional research: compare Nori/Mochi fees;
+compare the listing ages of Alice's favorites; distinguish home preparation
+from first-appointment preparation using both guides; and combine Nori's
+profile facts with rabbit housing guidance. Each added detail page is required,
+as are entity-bound values and the comparison winner where requested. Task 6
+accepts stage headings or repeated stage labels, with equivalent checklist
+wording; attributing a checklist to the wrong stage fails. These tasks remain
+read-only and reject any persisted changes. Action counts are review evidence,
+not a minimum-step grading rule; efficient valid paths are accepted.
+
 Task 14 resolves numeric click indices against the recorded pre-action DOM and
 requires a successful transition from Milo's detail page to the account. The
 standard recorder carries the same observed DOM/URLs as current main. Textual
