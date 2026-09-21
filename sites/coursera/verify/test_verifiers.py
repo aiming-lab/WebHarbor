@@ -709,6 +709,36 @@ class CourseraVerifierTests(unittest.TestCase):
                 self.assertNotEqual(code, 0)
                 self.assertFalse(verdict["pass"])
 
+    def test_t29_price_digit_boundary(self):
+        # ACCEPT.md §7 item 4: the T29 price tokens used to be substring
+        # matches, so a 10x price embedding the true price ("$3990 ... $3090
+        # ...") PASSed. The price checks now carry digit boundaries (the
+        # (?<!\d) guard pct_of uses); the same genuine mirror navigation with
+        # an embedded-digit price must FAIL on the price checks, while the
+        # exact $399 price still PASSes.
+        visits, answer = POS[29]
+        code, verdict = self.grade(29, visits, answer)
+        self.assertEqual(code, 0, verdict)
+        self.assertTrue(verdict["pass"], verdict)
+
+        # 10x annual price + 10x discount (both embed the true tokens)
+        code, verdict = self.grade(
+            29, visits, "One year of Coursera Plus costs $3990, with a discount "
+            "of $3090 (430% off). Companies that work with Coursera include "
+            "Google, IBM, and Meta.")
+        self.assertNotEqual(code, 0)
+        self.assertFalse(verdict["pass"])
+        self.assertEqual(verdict["reason"], "answer_year_price")
+
+        # correct annual price but a 10x discount ("$3090" embeds "309")
+        code, verdict = self.grade(
+            29, visits, "One year of Coursera Plus costs $399, with a discount "
+            "of $3090 (430% off). Companies that work with Coursera include "
+            "Google, IBM, and Meta.")
+        self.assertNotEqual(code, 0)
+        self.assertFalse(verdict["pass"])
+        self.assertEqual(verdict["reason"], "answer_discount")
+
     def test_wrong_task_id_fails(self):
         for task in range(42):
             with self.subTest(task=task):

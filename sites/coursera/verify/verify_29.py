@@ -29,9 +29,9 @@ def main():
             "trajectory must open the Coursera Plus page")
     j.check("page_shows_pricing", contains_all(page, ["$399", "$309"]),
             "observed DOM must show the annual price and the discount")
-    j.check("answer_year_price", contains_all(fa, ["399"]),
+    j.check("answer_year_price", re_found(fa, r"(?<!\d)399(?!\d)"),
             "answer must state the one-year price ($399)")
-    j.check("answer_discount", contains_all(fa, ["309"]) or pct_of(fa, 43),
+    j.check("answer_discount", re_found(fa, r"(?<!\d)309(?!\d)") or pct_of(fa, 43),
             "answer must state the discount ($309 / 43% off)")
     companies = ["Google", "IBM", "Meta", "Microsoft", "AWS", "Amazon Web Services",
                 "Salesforce", "Atlassian", "Canva", "PwC", "Commonwealth Bank",
