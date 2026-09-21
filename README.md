@@ -62,198 +62,65 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 ./scripts/build.sh                                 # docker build -t webharbor:dev .
 ```
 
-### Site registry
+### Websites
 
-This checkout registers **53 sites**. NVIDIA remains at index 28, UC Berkeley remains at index 29, B&H Photo remains at index 30, AccuWeather remains at index 31, GOV.UK remains at index 32, IMDb remains at index 33 and NBA remains at index 34. Recreation.gov remains at index 35, BoardGameGeek remains at index 36, CarMax remains at index 37, BabyCenter remains at index 38, Amtrak remains at index 39, Cookpad remains at index 40, Craigslist remains at index 41, Drugs.com remains at index 42, Versus remains at index 43, Y Combinator remains at index 44, PhET Interactive Simulations remains at index 45, Discogs remains at index 46, and Google Finance remains at index 47, Bandcamp remains at index 48, and Adopt-a-Pet remains at index 49, IGN remains at index 50, and IRS Refund Tracker remains at index 51, and WineAccess is appended at index 52. Build the image from this checkout to use this registry; publishing source does not update the published Docker image automatically.
+All registered websites and their default ports, in registration order. A site's container port is `40000 + index` (see the `SITES` array and `BASE_PORT` in `websyn_start.sh`, and the `EXPOSE` line in the `Dockerfile`).
 
-| Site | Registry position | Container port | Example local review host port |
-| --- | --- | --- | --- |
-| NVIDIA | 28 | 40028 | 48028 |
-| UC Berkeley | 29 | 40029 | 48029 |
-| B&H Photo | 30 | 40030 | 48030 |
-| AccuWeather | 31 | 40031 | 48031 |
-| GOV.UK | 32 | 40032 | 48032 |
-| IMDb | 33 | 40033 | 48033 |
-| NBA | 34 | 40034 | 48034 |
-| Recreation.gov | 35 | 40035 | 48035 |
-| BoardGameGeek | 36 | 40036 | 48036 |
-| CarMax | 37 | 40037 | 48037 |
-| BabyCenter | 38 | 40038 | 48038 |
-| Amtrak | 39 | 40039 | 48039 |
-| Cookpad | 40 | 40040 | 48040 |
-| Craigslist | 41 | 40041 | 48041 |
-| Drugs.com | 42 | 40042 | 48042 |
-| Versus | 43 | 40043 | 48043 |
-| Y Combinator | 44 | 40044 | 48044 |
-| PhET Interactive Simulations | 45 | 40045 | 48045 |
-| Discogs | 46 | 40046 | 48046 |
-| Google Finance | 47 | 40047 | 48047 |
-| Bandcamp | 48 | 40048 | 48048 |
-| Adopt-a-Pet | 49 | 40049 | 48049 |
-| IGN | 50 | 40050 | 48050 |
-| IRS Refund Tracker | 51 | 40051 | 48051 |
-| WineAccess | 52 | 40052 | 48052 |
-
-`websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 53 sites and `40000-40052`;
-`scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
-drift.
-
-After preparing the candidate assets and building `webharbor:dev`, the local
-review deployment uses:
-
-```bash
-docker run -e WEBSYN_CONTROL_TOKEN -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48052:40000-40052 webharbor:dev
-```
-
-NVIDIA inherits the site contribution from @KaKituken
-([#55](https://github.com/aiming-lab/WebHarbor/pull/55)) and the verifier/rubric
-contribution from @DEM1TASSE
-([#58](https://github.com/aiming-lab/WebHarbor/pull/58)). This is file-level
-integration, not a claim that either PR was merged or that the NVIDIA review has
-passed.
-
-### Asset delivery status
-
-GOV.UK is registered at index 32 / port 40032, IMDb at index 33 / port 40033 and
-NBA at index 34 / port 40034 in
-builds of this source revision.
-The published Docker Hub image is updated in a separate release. GOV.UK's reviewed seed originated in
-[HF asset PR #93](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/93).
-The bundle contains 78 articles and 62 structured guidance sections. That archive
-is part of the consolidated pinned dataset revision below.
-
-
-The current `.assets-revision` pins all **53 registered sites** to merged HF commit `99909efd8654f7766a43900c13bdf3b5ac87bb4d`. Adopt-a-Pet [HF #67](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/67) is merged; only its archive was added, preserving all 52 existing dataset files. Its reviewed archive has SHA-256 `e337aee58818a0e3128d157afcdf83cfbdf2bca1044ad647ca32ddc85bed4682` and was not repacked. `assets-manifest.json` binds all selected archives and the extracted managed tree. Unregistered bundles are not fetched; tracked seed migrations and generation remain part of the build contract. Adopt-a-Pet's reset seed is generated from tracked code during the Docker build.
-
-IRS Refund Tracker [HF #27](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/27) is merged. Its unchanged archive has SHA-256 `d23cf6ffe1db6b3baefebf299288ebbb09d783a016d2a5c7078647cafcd5a4a9`; all 54 prior dataset files were preserved. IRS is available at index 51 / port 40051.
-
-WineAccess [HF #21](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/21) is merged. Its unchanged archive has SHA-256 `025bd90e6c9b7d0e5148cac329fb9c66cea843f7aec6216766c039e9181cbbba`; all 55 prior dataset files were preserved. WineAccess is available at index 52 / port 40052.
-
-Historical asset integration notes below describe superseded pins, not the current pin.
-
-The previous `.assets-revision` pinned merged HF main commit
-`9d67d0088a7535e455a331a823b67e3a7d666161`, containing archives for all **38**
-previously registered sites. Original asset PRs #8 (Recreation.gov), #15 (CarMax),
-#25 (BoardGameGeek), and #66 (AccuWeather) are merged, followed by
-[CarMax photo supplement #95](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/95).
-Those 38 sites do not depend on open HF PR pins. All 36 archives from the previous
-global pin `2aaf9d598f3e71cddd17a4efcdfee7dd7c073337` are unchanged; the three
-non-CarMax scoped bundles also retain their reviewed bytes. CarMax adds 11
-source-backed model-year stock photos without changing its original files or
-seed. Seven other unavailable vehicle hero images remain explicit placeholders.
-At that earlier revision, the unregistered Bandcamp and Drugs.com archives were ignored by `fetch_assets.sh`.
-Tracked seed migrations and build-generated seeds still run during fetch/build.
-
-BabyCenter, the 39th site, uses the immutable merged scoped
-pin `8f3437ffa3b80c606687c49a5c5bbdf158f1c9ce` from
-[HF asset PR #78](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/78).
-The merged archive matches the reviewed bytes and preserves all 43 pre-existing
-dataset files. Other sites retain their previously validated global pin.
-Its tracked idempotent seed migration corrects the week-18 excerpt during
-fetch/build; the existing image/archive bytes do not require repacking.
-
-B&H's archive contains images and external cache. The Docker build validates
-its 508 declared assets and generates `instance_seed/bh_photo.db` from the tracked
-catalog. No manually prepared B&H database is required for a fresh build.
-
-The earlier pin `b7e605c0ec5fc47de85b09e7427162cc50e38980` is the squash-merge
-commit of HF dataset PR
-[#85](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/85) on the
-dataset's `main`. It sits on top of PR
-[#84](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/84) and PR
-[#75](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/75), which
-added the first reviewed NVIDIA bundle.
-
-| Artifact | Members | Bytes | SHA-256 |
-| --- | --- | --- | --- |
-| `nvidia.tar.gz` at the current pin | 37 | 16,340,955 | `617a3e3740ba6706bcab786c8a5c3f9a22ecbb39eff5728ad2c12e4992cb098b` |
-| `berkeley.tar.gz` at the current pin (HF PR #91) | 171 | 6,951,483 | `ab9d2716ae8d06540a181b5e60c37f613d87b103864b467511da546b1b173789` |
-| `bh_photo.tar.gz` at the current pin (HF PR #92) | 511 | 79,658,793 | `867363d5484eb114d647e236991017992d5ac91ae3415996ad43bf654d99bd9a` |
-| previous pin's `nvidia.tar.gz` (HF PR #84, superseded) | 34 | 9,927,312 | `ee8c6ba966e7a8f7fb5ad2d7ff0134ab98e7b80d6cc77f3328217405b8b34e2f` |
-
-PR #85 replaces five product images and adds three dedicated hero images (see
-"Image and verifier follow-up" below). Its archive passes
-`validate_asset_archive.py` (`validated 37 managed members`) and a clean-room
-extract in which all 36 images have distinct SHA-256 values, the seed database is
-byte-identical to the previous pin
-(`2143c954def96cc921760ab2bea79fe119de3d73212d1b01daf6c61792c2b38d`) and every
-`products.image` path resolves.
-
-The revisions rejected in earlier rounds are kept here for the record: the older
-candidate archive from HF PR #38
-(`2707761e4041a492379ea227f09b3bd9ea838a02`, sha256
-`89e0d0d21000bb94acaeaa329fd28a1264afa05f40834c0f3e3cee5c3a2ae9a1`) passes the
-validator but carries a stale seed (the Jetson descriptions lost the kit/module
-identity text, the RTX 5060 Ti is named without `16GB` and its
-`recommended_psu_watts` is 550 while the page's own source note says 600 W), and a
-revision with no `nvidia.tar.gz` cannot prepare this candidate at all.
-
-### Image and verifier follow-up
-
-HF PR #84 replaced twelve product images that were byte-identical duplicates of
-another SKU (RTX 5060/5060 Ti, RTX 5070/5070 Ti, RTX 4070 SUPER/4080 SUPER) or
-depicted something other than the named product. The follow-up round replaced the
-remaining mismatched or near-identical assets with official NVIDIA media, so
-`static/images` now holds 36 files with 36 distinct SHA-256 values and no
-within-page image reuse on `/`, the two series pages or any listing:
-
-- `geforce-rtx-5080.png` and `geforce-rtx-5090.png` use NVIDIA's own per-SKU og
-  renders instead of two crops of one mirror-bundle strip;
-- `geforce-rtx-5070.png`, `rtx-6000-ada.png` and `shield-tv-pro.png` now carry
-  official renders, which brings every product image into a 1.77–1.90 aspect
-  range;
-- `static/images/heroes/*.jpg` adds three dedicated hero images, so the home hero,
-  the 50-series hero and the 40-series hero no longer reuse a product-card file;
-- captions state what each file shows (`dgx-b200`, `h200-tensor-core`, and the two
-  family assets that share one vendor artwork).
-
-The same round closed the 20-task audit's findings in the graders and in the site:
-the T6 phrasing false negative (blocker), the unit-first spec-row phrasing, the
-bare-price and single-product evidence gates, the driver-series evidence scope,
-the newsletter `topic` check, the whole-catalog search scoring, the price-ordered
-series grid, the leaky sort options, the `Email`/`Search` accessible-name
-collisions, and the scroll-hint and footprint defects. The per-item disposition and
-evidence are in `_wh_review_tools/pr107-audit/agent-{a,b,c}/summary.md`,
-`_wh_review_tools/orch/integration/logs/pr107-fixall/{00-issue-list,01-disposition,02-site-reverify,06-images}.md`
-and `review-reports/PR-107-FINAL-AUDIT.md`.
-
-### Scope note: external references
-
-Several pages render links to `nvidia.com`, `marketplace.nvidia.com` and
-`store.nvidia.com` as dated source references. They are labelled as leaving the
-local mirror, no route fetches them (0 external requests over 114 routes at 1440,
-768, 390 and 320 px), and the site verifiers treat any navigation outside the
-mirror's loopback origin as a failure, so a run that follows one fails rather than
-silently grading against an unreachable page.
-
-### Validation record for this review candidate
-
-The commands below are the ones actually run for the review rounds; raw outputs
-live under `/data/zhaoyang-user-projects/websyn/_wh_review_tools/`
-(`pr107-fixes/` for the phase-1/phase-2 review, `pr107-audit/` for the 20-task
-audit, `pr107-fixall/` for the follow-up round).
-
-```bash
-# site suites (the driver suite is skipped unless its explicit input/output paths are set)
-python3 -B sites/nvidia/tests/test_verifiers.py --seed <seed.db> --out <new-dir>   # 316 cases
-WH_CONTAINER=<container> TEST_OUT=<outside-source-dir> python3 -B -m unittest discover -s sites/nvidia/tests
-#   -> 44 tests when DRIVER_TEST_INPUTS is unset (two classes skipped),
-#      73 tests when it is set (29 driver cases included)
-DRIVER_TEST_INPUTS=<dir-with-initial/after.db> DRIVER_TEST_OUT=<new-dir> \
-  python3 -B -m unittest discover -s sites/nvidia/tests -p 'test_driver_qualifier.py'   # 29 tests
-python3 -B sites/nvidia/test_ui_contract.py --output <new-dir>                     # 15 tests
-python3 -B sites/nvidia/tests/test_t7_verifier.py                                   # 23 tests (parser regressions)
-# verifier CLI contract and the mechanical negative-sample matrix
-WH_CONTAINER=<container> TEST_OUT=<dir> python3 -B -m unittest discover -s sites/nvidia/tests -p 'test_verifier_contract.py'   # 11 tests
-./scripts/check_assets.sh                                                          # exit 0, 36 inventoried assets
-```
-
-The earlier draft of this section quoted "44 unit tests pass" for the site suites;
-44 is the count when the driver regression class is skipped, and that class used to
-fail its own `test_other_information_task_not_relaxed` case in the PR head. Both are
-fixed and the current counts are the ones listed above. The GitHub PR description
-itself cannot be edited from this repository.
+| Website | Default port |
+| --- | --- |
+| Allrecipes | 40000 |
+| Amazon | 40001 |
+| Apple | 40002 |
+| ArXiv | 40003 |
+| BBC News | 40004 |
+| Booking | 40005 |
+| GitHub | 40006 |
+| Google Flights | 40007 |
+| Google Maps | 40008 |
+| Google Search | 40009 |
+| Hugging Face | 40010 |
+| Wolfram Alpha | 40011 |
+| Cambridge Dictionary | 40012 |
+| Coursera | 40013 |
+| ESPN | 40014 |
+| Merriam-Webster | 40015 |
+| IKEA | 40016 |
+| Phys.org | 40017 |
+| Target | 40018 |
+| TED | 40019 |
+| Ohio State University | 40020 |
+| Rotten Tomatoes | 40021 |
+| Compass | 40022 |
+| Walmart Careers | 40023 |
+| FedEx | 40024 |
+| WebMD Doctor | 40025 |
+| Healthline | 40026 |
+| Kaggle | 40027 |
+| NVIDIA | 40028 |
+| UC Berkeley | 40029 |
+| B&H Photo | 40030 |
+| AccuWeather | 40031 |
+| GOV.UK | 40032 |
+| IMDb | 40033 |
+| NBA | 40034 |
+| Recreation.gov | 40035 |
+| BoardGameGeek | 40036 |
+| CarMax | 40037 |
+| BabyCenter | 40038 |
+| Amtrak | 40039 |
+| Cookpad | 40040 |
+| Craigslist | 40041 |
+| Drugs.com | 40042 |
+| Versus | 40043 |
+| Y Combinator | 40044 |
+| PhET Interactive Simulations | 40045 |
+| Discogs | 40046 |
+| Google Finance | 40047 |
+| Bandcamp | 40048 |
+| Adopt-a-Pet | 40049 |
+| IGN | 40050 |
+| IRS Refund Tracker | 40051 |
+| WineAccess | 40052 |
 
 ## 🤝 Contribute
 
