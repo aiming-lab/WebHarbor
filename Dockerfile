@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 54 Flask mirror sites + control plane on :8101.
+# 55 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -87,6 +87,11 @@ RUN python3 /opt/WebSyn/berkeley/check_generated_assets.py
 RUN cd /opt/WebSyn/berkeley && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
 
+# Petfinder generates its reset seed from tracked application data.
+RUN cd /opt/WebSyn/petfinder && rm -rf instance instance_seed && \
+    mkdir -p instance_seed && python3 -c "from app import app" && \
+    cp instance/petfinder.db instance_seed/petfinder.db && rm -rf instance
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
@@ -165,6 +170,6 @@ print('Adopt-a-Pet seed DB generated at build time.')" && rm -rf /opt/WebSyn/ado
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40053
+EXPOSE 8101 40000-40054
 
 CMD ["/opt/websyn_start.sh"]

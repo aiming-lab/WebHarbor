@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}{{ listing.name }}{% endblock %}{% block content %}
+<section class="detail-hero"><img src="{{ url_for('art', slug=listing.slug) }}" alt="{{ listing.name }}"><div><div class="eyebrow">{{ listing.category }} · {{ listing.region }}</div><h1>{{ listing.name }}</h1><p>{{ listing.detail }}</p><div class="score-pill">{{ listing.score }} score · ${{ listing.price }}</div><form method="post" action="{{ url_for('save_listing', slug=listing.slug) }}"><button type="submit">{{ config.actions[0] }}</button></form></div></section>
+<section class="section"><h2>Related {{ config.entity }}s</h2><div class="card-grid">{% for item in related %}{% include "_card.html" %}{% endfor %}</div></section>
+{% endblock %}

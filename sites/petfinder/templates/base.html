@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}{{ config.name }}{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <header class="site-header" role="banner">
+    <a class="brand" href="{{ url_for('index') }}"><span>{{ config.name[:2] }}</span>{{ config.name }}</a>
+    <nav class="top-nav" role="navigation" aria-label="Main">
+      <a href="{{ url_for('listings') }}">{{ config.entity }}s</a>
+      <a href="{{ url_for('tools') }}">Tools</a>
+      <a href="{{ url_for('guides') }}">Guides</a>
+      <a href="{{ url_for('account') }}">Account</a>
+    </nav>
+    <form class="header-search" action="{{ url_for('search') }}">
+      <input name="q" placeholder="Search {{ config.name }}" value="{{ request.args.get('q', '') }}">
+      <button type="submit">Search</button>
+    </form>
+    <div class="account-links">{% if current_user %}<a href="{{ url_for('account') }}">{{ current_user.display_name }}</a><a href="{{ url_for('logout') }}">Sign out</a>{% else %}<a href="{{ url_for('login') }}">Sign in</a>{% endif %}</div>
+  </header>
+  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+  <main>{% block content %}{% endblock %}</main>
+  <footer class="site-footer"><strong>{{ config.name }} Mirror</strong><nav><a href="{{ url_for('listings') }}">Browse</a><a href="{{ url_for('tools') }}">Tools</a><a href="{{ url_for('guides') }}">Guides</a><a href="{{ url_for('search') }}">Search</a></nav></footer>
+</body>
+</html>

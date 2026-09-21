@@ -122,6 +122,7 @@ All registered websites and their default ports, in registration order. A site's
 | IRS Refund Tracker | 40051 |
 | WineAccess | 40052 |
 | WebMD | 40053 |
+| Petfinder | 40054 |
 
 ## 🤝 Contribute
 

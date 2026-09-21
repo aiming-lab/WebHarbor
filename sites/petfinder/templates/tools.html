@@ -1,0 +1,4 @@
+{% extends "base.html" %}{% block title %}Tools{% endblock %}{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Action center</div><h1>{{ config.name }} Tools</h1></div></section>
+<section class="form-panel"><form method="post"><label>What do you need?<select name="need">{% for action in config.actions %}<option>{{ action }}</option>{% endfor %}</select></label><label>Region<input name="region" value="New York"></label><button type="submit">Find options</button></form>{% if result %}<div class="result-card"><span>{{ result.need }} near {{ result.region }}</span>{% for item in result.matches %}<a href="{{ url_for('listing_detail', slug=item.slug) }}">{{ item.name }} · {{ item.score }}</a>{% endfor %}</div>{% endif %}</section>
+{% endblock %}
