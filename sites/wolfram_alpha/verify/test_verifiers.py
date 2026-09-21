@@ -204,12 +204,15 @@ POSITIVE = {
 
 def make_run(root: Path, task: int, queries, answer, *, task_id=None,
              origin=ORIGIN, drop_trajectory=False, break_screenshot=False,
-             verbatim_first=None):
+             verbatim_first=None, step_origin=None):
     """Build a run package whose steps visit /input?i=<query> for each query.
 
     With verbatim_first set, the first submitted query is the task's verbatim
     wording (which the mirror rejects) before the canonical queries, matching
-    the real agent behavior."""
+    the real agent behavior. With step_origin set, the visited /input URLs
+    use that origin while start_url keeps `origin` (the off-site navigation
+    adversarial)."""
+    nav_origin = step_origin or origin
     run = root / f"run_{task}"
     shots = run / "screenshots"
     shots.mkdir(parents=True)
@@ -221,12 +224,12 @@ def make_run(root: Path, task: int, queries, answer, *, task_id=None,
     for index, path in enumerate(paths):
         shot = f"step_{index:03d}.png"
         (shots / shot).write_bytes(PNG)
-        steps.append({"step": index, "url": origin + path, "action": "click",
+        steps.append({"step": index, "url": nav_origin + path, "action": "click",
                       "action_result": {"success": True}, "screenshot_after": shot})
     final_shot = f"step_{len(paths):03d}.png"
     if not break_screenshot:
         (shots / final_shot).write_bytes(PNG)
-    steps.append({"step": len(paths), "url": origin + paths[-1],
+    steps.append({"step": len(paths), "url": nav_origin + paths[-1],
                   "action": "done", "action_result": {"success": True},
                   "screenshot_after": final_shot})
     trajectory = {
@@ -605,6 +608,119 @@ class VerifierTests(unittest.TestCase):
                                  "average price of movie ticket Boise 2023"],
                     answer=ans)
                 self.assertTrue(result["pass"], result)
+
+    def test_external_host_input_query_fails(self):
+        # D1: /input submissions on the real upstream host are NOT on-site
+        # navigation; a correct answer without mirror navigation FAILs
+        for task, query, answer in (
+                (0, "derivative of x^2 at 5.6",
+                 "The derivative of x^2 is 2x. At x = 5.6, it is 11.2."),
+                (2, "3^71",
+                 "3^71 = 7.5095 × 10^33 to 5 significant figures.")):
+            with self.subTest(task=task):
+                with tempfile.TemporaryDirectory() as temporary:
+                    root = Path(temporary)
+                    initial = seed_db(root)
+                    after = root / "after.db"
+                    shutil.copy2(initial, after)
+                    run = make_run(root, task, [query], answer,
+                                   step_origin="https://www.wolframalpha.com")
+                    result = run_verifier(task, run, initial, after)
+                    self.assertFalse(result["pass"], result)
+                    self.assertEqual(result["returncode"], 1)
+
+    def test_task11_runon_swapped_values_fail(self):
+        # D2: single-clause run-on swaps (comma + while) must FAIL
+        result = self.execute(
+            11, queries=["electrical resistivity of UNS A92024 at 20 C",
+                         "electrical resistivity of UNS G10800 at 20 C"],
+            answer="At 20 °C, UNS A92024 has electrical resistivity "
+                   "1.80 × 10⁻⁷ Ω·m, while UNS G10800 has 4.87 × 10⁻⁸ Ω·m.")
+        self.assertFalse(result["pass"], result)
+
+    def test_task13_runon_swapped_years_fail(self):
+        result = self.execute(
+            13, queries=["$10000 in 1980", "$10000 in 1970"],
+            answer="Your $10,000 today would be worth about $1,184.54 in "
+                   "1980 dollars, while in 1970 it would be worth about "
+                   "$2,514.25.")
+        self.assertFalse(result["pass"], result)
+
+    def test_task13_value_before_year_format_passes(self):
+        # the pod-quote layout '$2514.25 in 1980 dollars' must still bind
+        result = self.execute(
+            13, queries=["$10000 in 1980", "$10000 in 1970"],
+            answer="$10,000 today is worth $2,514.25 in 1980 dollars and "
+                   "$1,184.54 in 1970 dollars.")
+        self.assertTrue(result["pass"], result)
+
+    def test_task27_runon_swapped_metals_fail(self):
+        result = self.execute(
+            27, queries=["thermal conductivity copper at 25 c",
+                         "thermal conductivity aluminum at 25 c"],
+            answer="At 25 °C, copper has thermal conductivity 236.9 W/(m·K), "
+                   "while aluminum has 401.2 W/(m·K).")
+        self.assertFalse(result["pass"], result)
+
+    def test_task22_restate_params_wrong_unit_fail(self):
+        # D3: the task parameters restated with 'cm' must not satisfy the
+        # unit binding when the value carries mm² (wrong by x100)
+        result = self.execute(
+            22, queries=["area of regular hexagon side 7 cm"],
+            answer="The area of the regular hexagon with side 7 cm is "
+                   "127.306 mm².")
+        self.assertFalse(result["pass"], result)
+
+    def test_task22_spelled_out_unit_passes(self):
+        result = self.execute(
+            22, queries=["area of regular hexagon side 7 cm"],
+            answer="The area is approximately 127.306 square centimeters.")
+        self.assertTrue(result["pass"], result)
+
+    def test_task25_swapped_distance_height_fail(self):
+        # D4: distance and height swapped must FAIL
+        result = self.execute(
+            25, queries=["projectile 30 m/s 45 degrees, t=3 s"],
+            answer="The projectile reaches a maximum height of 63.64 m and "
+                   "travels a horizontal distance of 15.91 m.")
+        self.assertFalse(result["pass"], result)
+
+    def test_task25_x_y_layout_passes(self):
+        # the recorded live layout: x = 63.64 m, y = 19.49 m
+        result = self.execute(
+            25, queries=["projectile 30 m/s 45 degrees, t=3 s"],
+            answer="Position: x = 63.64 m; y = 19.49 m. Velocity: "
+                   "vx = 21.21 m/s, vy = −8.22 m/s.")
+        self.assertTrue(result["pass"], result)
+
+    def test_task30_scrambled_skin_types_fail(self):
+        # D4: all values present but the type-time mapping scrambled FAILs
+        result = self.execute(
+            30, queries=["sunburn 1:00 pm SPF 1 Brasilia Brazil"],
+            answer="In Brasília with SPF 1 at 1 pm, typical sunburn times "
+                   "are: skin type I: 43 min; II: 32 min; III: 22 min; "
+                   "IV: 17 min; V: 3 h; VI: 1 h 1 min.")
+        self.assertFalse(result["pass"], result)
+
+    def test_task31_weather_only_queries_pass_navigation(self):
+        # D5: the mirror renders the full weather record for weather-only
+        # queries (probe-verified); navigation must accept them
+        for q in ("weather in Chicago IL now", "Chicago weather"):
+            with self.subTest(query=q):
+                result = self.execute(
+                    31, queries=[q],
+                    answer="Chicago, IL is currently 54 °F, with wind at "
+                           "16 mph from the SSW.")
+                self.assertTrue(result["pass"], result)
+
+    def test_task35_hilbertmatrix_wolfram_form_passes_navigation(self):
+        # D6: the mirror renders the determinant record for the Wolfram-syntax
+        # query (probe-verified); navigation must accept it
+        result = self.execute(
+            35, queries=["determinant of HilbertMatrix[6]"],
+            answer="The determinant of the 6×6 Hilbert matrix is "
+                   "1/186313420339200000 ≈ 5.3673 × 10^-18.")
+        self.assertTrue(result["pass"], result)
 
     def test_task34_mass_only_query_fails(self):
         # a query rendering only the mass fact does not cover the day-length

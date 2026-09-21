@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, input_queries, queried_with_all,
                         math_norm, norm, contains_all, contains_any,
                         decimal_in, count_named, bound, bound_nearest,
+                        bound_preceding, in_order, value_unit,
                         Judge, parse_args)
 
 
@@ -31,7 +32,7 @@ def main():
     n = math_norm(fa)
     j.check("nav_chicago_weather_input_query",
           queried_with_all(t, must_all=['chicago'],
-                          any_of=[['temperature', 'weather'], ['wind']],
+                          any_of=[['temperature', 'weather', 'wind']],
                           forbidden=['find the', 'find a ', 'find an ', 'compute the', 'calculate the', 'determine the', 'evaluate the', 'estimate the', 'approximate the', 'what is the', "what's the", 'what is a ', 'what are the', 'how many', 'how much', 'how long', 'how often', 'tell me', 'tell us', 'give me', 'show me', 'display the', 'show the', 'evaluated at', 'at the point', 'when x equals', 'inflation:', 'compare burgers', 'calorie comparison', 'convert', 'converted to', 'using wolfram alpha and determine', 'determine the current temperature', 'wind speed in chicago il', 'chicago il current temperature wind speed', 'using wolfram alpha', 'current temperature and wind', 'chicago il.']),
           f"input_queries={input_queries(t)[:6]}")
     j.check("answer_temperature_and_wind", decimal_in(fa, "54") and decimal_in(fa, "16") and contains_any(fa, ["ssw", "south-southwest", "south by south", "south"]), f"final={fa[:200]!r}")

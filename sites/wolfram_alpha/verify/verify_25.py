@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, input_queries, queried_with_all,
                         math_norm, norm, contains_all, contains_any,
                         decimal_in, count_named, bound, bound_nearest,
+                        bound_preceding, in_order, value_unit,
                         Judge, parse_args)
 
 
@@ -38,8 +39,8 @@ def main():
                           any_of=[['45'], ['3']],
                           forbidden=['find the', 'find a ', 'find an ', 'compute the', 'calculate the', 'determine the', 'evaluate the', 'estimate the', 'approximate the', 'what is the', "what's the", 'what is a ', 'what are the', 'how many', 'how much', 'how long', 'how often', 'tell me', 'tell us', 'give me', 'show me', 'display the', 'show the', 'evaluated at', 'at the point', 'when x equals', 'inflation:', 'compare burgers', 'calorie comparison', 'convert', 'converted to', 'calculate the final position', 'projectile launched at 45', 'with an initial speed of 30', 'after 3 seconds', 'final position', 'final velocity']),
           f"input_queries={input_queries(t)[:6]}")
-    j.check("answer_horizontal_distance", decimal_in(fa, "63.64", tol=0.05), f"final={fa[:200]!r}")
-    j.check("answer_height_or_velocity", decimal_in(fa, "15.91", tol=0.05) or decimal_in(fa, "21.21", tol=0.05) or decimal_in(fa, "19.49", tol=0.05) or decimal_in(fa, "8.22", tol=0.05), f"final={fa[:200]!r}")
+    j.check("answer_horizontal_distance", bound_preceding(fa, ["x", "distance", "range", "horizontal", "travels", "travelled", "traveled", "lands", "away"], ["63.64"], other_anchors=["y", "height", "apex", "peak", "maximum", "max"]), f"final={fa[:200]!r}")
+    j.check("answer_height_or_velocity", (bound_preceding(fa, ["y", "height", "apex", "peak", "maximum", "max"], ["15.91", "19.49"], other_anchors=["x", "distance", "range", "horizontal", "travels", "travelled", "traveled", "lands", "away"]) or decimal_in(fa, "21.21", tol=0.05) or decimal_in(fa, "8.22", tol=0.05)), f"final={fa[:200]!r}")
     j.emit()
 
 

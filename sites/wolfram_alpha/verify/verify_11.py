@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, input_queries, queried_with_all,
                         math_norm, norm, contains_all, contains_any,
                         decimal_in, count_named, bound, bound_nearest,
+                        bound_preceding, in_order, value_unit,
                         Judge, parse_args)
 
 
@@ -42,8 +43,8 @@ def main():
                           any_of=[],
                           forbidden=['find the', 'find a ', 'find an ', 'compute the', 'calculate the', 'determine the', 'evaluate the', 'estimate the', 'approximate the', 'what is the', "what's the", 'what is a ', 'what are the', 'how many', 'how much', 'how long', 'how often', 'tell me', 'tell us', 'give me', 'show me', 'display the', 'show the', 'evaluated at', 'at the point', 'when x equals', 'inflation:', 'compare burgers', 'calorie comparison', 'convert', 'converted to', 'alloy 2024', 'aluminum 2024']),
           f"input_queries={input_queries(t)[:6]}")
-    j.check("answer_resistivity_a92024", bound(fa, ["a92024", "alloy 2024", "aluminum 2024", "aluminium 2024"], ["4.87", "9.731", "4.9"]) and contains_any(fa, ["10^-8", "10^-5", "10^-6"]), f"final={fa[:200]!r}")
-    j.check("answer_resistivity_g10800", bound(fa, ["g10800", "1080 steel", "aisi 1080"], ["1.80", "3.6", "1.8"]) and contains_any(fa, ["10^-7", "10^-4", "10^-5"]), f"final={fa[:200]!r}")
+    j.check("answer_resistivity_a92024", bound_nearest(fa, ["a92024", "alloy 2024", "aluminum 2024", "aluminium 2024"], ["4.87", "9.731", "4.9"], other_anchors=["g10800", "1080 steel", "aisi 1080"]) and contains_any(fa, ["10^-8", "10^-5", "10^-6"]), f"final={fa[:200]!r}")
+    j.check("answer_resistivity_g10800", bound_nearest(fa, ["g10800", "1080 steel", "aisi 1080"], ["1.80", "3.6", "1.8"], other_anchors=["a92024", "alloy 2024", "aluminum 2024", "aluminium 2024"]) and contains_any(fa, ["10^-7", "10^-4", "10^-5"]), f"final={fa[:200]!r}")
     j.check("answer_names_both_alloys", contains_any(fa, ["a92024", "aluminum 2024", "aluminium 2024", "alloy 2024"]) and contains_any(fa, ["g10800", "1080 steel", "aisi 1080", "1080"]), f"final={fa[:200]!r}")
     j.emit()
 

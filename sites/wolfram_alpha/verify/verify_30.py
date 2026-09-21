@@ -25,6 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, input_queries, queried_with_all,
                         math_norm, norm, contains_all, contains_any,
                         decimal_in, count_named, bound, bound_nearest,
+                        bound_preceding, in_order, value_unit,
                         Judge, parse_args)
 
 
@@ -40,6 +41,7 @@ def main():
           f"input_queries={input_queries(t)[:6]}")
     j.check("answer_brasilia_location", contains_any(fa, ["brasilia", "brasília"]), f"final={fa[:200]!r}")
     j.check("answer_skin_type_times", decimal_in(fa, "17") and decimal_in(fa, "22") and decimal_in(fa, "32") and decimal_in(fa, "43"), f"final={fa[:200]!r}")
+    j.check("answer_skin_type_times_in_order", in_order(fa, [["17"], ["22"], ["32"], ["43"], ["1h1", "1hr1", "1hour1", "61min"], ["3h", "3hr", "180min"]]), f"final={fa[:200]!r}")
     j.emit()
 
 

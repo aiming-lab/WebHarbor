@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, input_queries, queried_with_all,
                         math_norm, norm, contains_all, contains_any,
                         decimal_in, count_named, bound, bound_nearest,
+                        bound_preceding, in_order, value_unit,
                         Judge, parse_args)
 
 
@@ -39,8 +40,8 @@ def main():
                           any_of=[],
                           forbidden=['find the', 'find a ', 'find an ', 'compute the', 'calculate the', 'determine the', 'evaluate the', 'estimate the', 'approximate the', 'what is the', "what's the", 'what is a ', 'what are the', 'how many', 'how much', 'how long', 'how often', 'tell me', 'tell us', 'give me', 'show me', 'display the', 'show the', 'evaluated at', 'at the point', 'when x equals', 'inflation:', 'compare burgers', 'calorie comparison', 'convert', 'converted to', '1970 dollar', 'and in 1980', 'how much was', 'today equivalent in 1970', 'inflation: $10000', 'worth in 1970?', 'and 1980', 'in 1970 us']),
           f"input_queries={input_queries(t)[:6]}")
-    j.check("answer_1980_value", bound(fa, ["1980"], ["2514.25"]), f"final={fa[:200]!r}")
-    j.check("answer_1970_value", bound(fa, ["1970"], ["1184.54", "1184.36"]), f"final={fa[:200]!r}")
+    j.check("answer_1980_value", bound_nearest(fa, ["1980"], ["2514.25"], other_anchors=["1970"]), f"final={fa[:200]!r}")
+    j.check("answer_1970_value", bound_nearest(fa, ["1970"], ["1184.54", "1184.36"], other_anchors=["1980"]), f"final={fa[:200]!r}")
     j.check("answer_names_both_years", contains_any(fa, ["1980"]) and contains_any(fa, ["1970"]), f"final={fa[:200]!r}")
     j.emit()
 

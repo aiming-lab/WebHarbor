@@ -19,6 +19,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, input_queries, queried_with_all,
                         math_norm, norm, contains_all, contains_any,
                         decimal_in, count_named, bound, bound_nearest,
+                        bound_preceding, in_order, value_unit,
                         Judge, parse_args)
 
 
@@ -32,7 +33,7 @@ def main():
                           any_of=[['area'], ['7']],
                           forbidden=['find the', 'find a ', 'find an ', 'compute the', 'calculate the', 'determine the', 'evaluate the', 'estimate the', 'approximate the', 'what is the', "what's the", 'what is a ', 'what are the', 'how many', 'how much', 'how long', 'how often', 'tell me', 'tell us', 'give me', 'show me', 'display the', 'show the', 'evaluated at', 'at the point', 'when x equals', 'inflation:', 'compare burgers', 'calorie comparison', 'convert', 'converted to', 'determine the area of a regular hexagon', 'with a side length of 7 cm', 'side 7 centimeters', 'hexagon area at', 'compute area regular']),
           f"input_queries={input_queries(t)[:6]}")
-    j.check("answer_hexagon_area", bound(fa, ["cm"], ["127.306", "127.31"]) or bound(fa, ["cm"], ["147", "sqrt"]) or bound(fa, ["mm"], ["12731"]), f"final={fa[:200]!r}")
+    j.check("answer_hexagon_area", value_unit(fa, ["127.306", "127.31"], ["cm", "centimeter", "centimetre", "squarecentimeter", "squarecentimetre", "sqcm"]) or value_unit(fa, ["12731"], ["mm", "millimeter", "millimetre", "squaremillimeter", "squaremillimetre", "sqmm"]) or contains_any(fa, ["(147sqrt3)/2cm", "(147sqrt(3))/2cm", "73.5sqrt3cm", "73.5sqrt(3)cm", "147sqrt3)/2cm", "147sqrt(3))/2cm"]), f"final={fa[:200]!r}")
     j.emit()
 
 

@@ -151,7 +151,11 @@ def step_urls(traj):
 
 def input_queries(traj):
     """Decoded `i` params of every /input computation submission in the
-    trajectory, in chronological order (deduped)."""
+    trajectory, in chronological order (deduped). Same-origin only: an
+    /input URL on a host other than the run's start_url origin (e.g. the
+    real upstream wolframalpha.com) is NOT on-site navigation and is
+    filtered out; relative /input paths are accepted."""
+    allowed_host = urlparse(traj.get("start_url") or "").netloc
     out = []
     for u in step_urls(traj):
         try:
@@ -160,6 +164,8 @@ def input_queries(traj):
             continue
         if p.path.rstrip("/") != "/input":
             continue
+        if p.netloc and allowed_host and p.netloc != allowed_host:
+            continue  # off-site /input is not mirror navigation
         vals = parse_qs(p.query).get("i") or []
         for v in vals:
             v = unquote(v)
@@ -218,7 +224,7 @@ def count_named(final, names):
     return sum(1 for n in names if math_norm(n) in f)
 
 
-_BOUND_SPLIT = re.compile(r"[;\n]|\band\b")
+_BOUND_SPLIT = re.compile(r"[;\n,]|\band\b|\bwhile\b|\bwhereas\b")
 
 
 def bound(final, anchors, values):
@@ -260,6 +266,77 @@ def bound_nearest(final, anchors, values, other_anchors=(), other_values=()):
             for _, own in ([min(before, key=lambda x: (x[0], x[1]))] if before else []) + \
                           ([min(after, key=lambda x: (x[0], x[1]))] if after else []):
                 if own:
+                    return True
+    return False
+
+
+def bound_preceding(final, anchors, values, other_anchors=()):
+    """Preceding-first value-attribution binding: each value occurrence
+    binds to its nearest PRECEDING anchor interval; only when no anchor
+    precedes it does it bind to the nearest FOLLOWING one. True iff some
+    occurrence of one of `values` binds to one of `anchors`. Use for
+    'name: value' layouts where a following-anchor fallback must not
+    rescue a swapped attribution that already has a (wrong) preceding
+    anchor (contrast with bound_nearest, which accepts both directions)."""
+    f = math_norm(final)
+
+    def spans(tok):
+        return [m.span() for m in re.finditer(re.escape(math_norm(tok)), f)]
+
+    all_anchors = [(s, e, True) for a in anchors for (s, e) in spans(a)] + \
+                  [(s, e, False) for a in other_anchors for (s, e) in spans(a)]
+    if not all_anchors:
+        return False
+    for v in values:
+        for (vs, ve) in spans(v):
+            before = [(vs - e, own) for (s, e, own) in all_anchors if e <= vs]
+            after = [(s - ve, own) for (s, e, own) in all_anchors if s >= ve]
+            if before:
+                _, own = min(before, key=lambda x: (x[0], x[1]))
+            elif after:
+                _, own = min(after, key=lambda x: (x[0], x[1]))
+            else:
+                continue
+            if own:
+                return True
+    return False
+
+
+def in_order(final, token_groups):
+    """True iff the answer carries the given token groups in sequence:
+    some occurrence of any alternative of group 0, then (strictly after it)
+    some occurrence of any alternative of group 1, and so on. Alternatives
+    are math-normalized; purely numeric alternatives are matched with
+    digit-boundaries so '17' does not match inside '117' or '17.5'."""
+    f = math_norm(final)
+    pos = 0
+    for alts in token_groups:
+        found = None
+        for alt in alts:
+            pat = re.escape(math_norm(alt))
+            if re.fullmatch(r"\d+(?:\.\d+)?", math_norm(alt)):
+                pat = r"(?<![\d.])" + pat + r"(?![\d.])"
+            m = re.compile(pat).search(f, pos)
+            if m and (found is None or m.start() < found[0]):
+                found = (m.start(), m.end())
+        if not found:
+            return False
+        pos = found[1]
+    return True
+
+
+def value_unit(final, values, units, gap=2):
+    """True iff some occurrence of one of `values` is directly followed by
+    one of `units` (the unit token must start within `gap` characters of
+    the value's end — normalization has already removed spaces), so the
+    unit attaches to THAT value and a restated task parameter elsewhere
+    in the answer cannot satisfy the binding. Both sides math-normalized."""
+    f = math_norm(final)
+    for v in values:
+        for m in re.finditer(r"(?<![\d.])" + re.escape(math_norm(v)) + r"(?![\d.])", f):
+            for u in units:
+                un = math_norm(u)
+                if any(f[m.end() + g:].startswith(un) for g in range(gap + 1)):
                     return True
     return False
 

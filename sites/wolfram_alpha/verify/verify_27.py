@@ -20,6 +20,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (grade_common, input_queries, queried_with_all,
                         math_norm, norm, contains_all, contains_any,
                         decimal_in, count_named, bound, bound_nearest,
+                        bound_preceding, in_order, value_unit,
                         Judge, parse_args)
 
 
@@ -38,7 +39,7 @@ def main():
                           any_of=[['aluminum', 'aluminium']],
                           forbidden=['find the', 'find a ', 'find an ', 'compute the', 'calculate the', 'determine the', 'evaluate the', 'estimate the', 'approximate the', 'what is the', "what's the", 'what is a ', 'what are the', 'how many', 'how much', 'how long', 'how often', 'tell me', 'tell us', 'give me', 'show me', 'display the', 'show the', 'evaluated at', 'at the point', 'when x equals', 'inflation:', 'compare burgers', 'calorie comparison', 'convert', 'converted to', 'copper']),
           f"input_queries={input_queries(t)[:6]}")
-    j.check("answer_both_conductivities", bound(fa, ["copper", "cu"], ["401.2"]) and bound(fa, ["aluminum", "aluminium", "al"], ["236.9"]), f"final={fa[:200]!r}")
+    j.check("answer_both_conductivities", bound_nearest(fa, ["copper", "cu"], ["401.2"], other_anchors=["aluminum", "aluminium", "al"]) and bound_nearest(fa, ["aluminum", "aluminium", "al"], ["236.9"], other_anchors=["copper", "cu"]), f"final={fa[:200]!r}")
     j.check("answer_names_both_metals", contains_any(fa, ["copper"]) and contains_any(fa, ["aluminum", "aluminium"]), f"final={fa[:200]!r}")
     j.emit()
 
