@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Checkout{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Checkout</h1><p>Review your MEGA subscription and select a saved payment method.</p></section>
+<section class="detail-layout">
+  <form class="form-card" method="post">
+    <h2>{{ plan.name }}</h2>
+    <label>Billing cycle
+      <select name="billing_cycle">
+        <option value="monthly" {% if billing == 'monthly' %}selected{% endif %}>Monthly</option>
+        <option value="yearly" {% if billing == 'yearly' %}selected{% endif %}>Yearly</option>
+      </select>
+    </label>
+    <label>Seats <input type="number" name="seats" min="1" value="{{ seats }}"></label>
+    <fieldset>
+      <legend>Payment method</legend>
+      {% for method in methods %}
+        <label class="radio-row"><input type="radio" name="payment_id" value="{{ method.id }}" {% if method.is_default %}checked{% endif %}> {{ method.label }} {{ method.card_type }} ending {{ method.last4 }}</label>
+      {% endfor %}
+    </fieldset>
+    <button type="submit">Complete checkout</button>
+    <a class="text-link" href="{{ url_for('payment_methods') }}">Add payment method</a>
+  </form>
+  <aside class="purchase-panel">
+    <h2>Order summary</h2>
+    <dl>
+      <div><dt>Subtotal</dt><dd>${{ "%.2f"|format(subtotal) }}</dd></div>
+      <div><dt>Tax</dt><dd>${{ "%.2f"|format(tax) }}</dd></div>
+      <div><dt>Total</dt><dd>${{ "%.2f"|format(total) }}</dd></div>
+    </dl>
+  </aside>
+</section>
+{% endblock %}

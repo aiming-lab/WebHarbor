@@ -123,6 +123,7 @@ All registered websites and their default ports, in registration order. A site's
 | WineAccess | 40052 |
 | WebMD | 40053 |
 | Petfinder | 40054 |
+| MEGA | 40055 |
 
 ## 🤝 Contribute
 

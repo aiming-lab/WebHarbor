@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 55 Flask mirror sites + control plane on :8101.
+# 56 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -170,6 +170,6 @@ print('Adopt-a-Pet seed DB generated at build time.')" && rm -rf /opt/WebSyn/ado
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40054
+EXPOSE 8101 40000-40055
 
 CMD ["/opt/websyn_start.sh"]

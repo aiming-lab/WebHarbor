@@ -1,0 +1,582 @@
+/**
+ * Styling for buttons common to all MEGA Wordpress sites.
+ *
+ * Button sizes are the same, regardless of grid size.
+ *
+ * There are three button bases:
+ * - 'button' for regular buttons that can include before/after icons and text,
+ * - 'icon-button' for square buttons with just an icon and
+ * - 'text-button', similar to 'button' but without the button shape.
+ *
+ * Design file: https://www.figma.com/file/U90j8OCD0pvFFO3fO1YlkN/Website-design-system-v1?node-id=1%3A70
+ */
+
+/* region Common styling to all buttons */
+
+.button, .text-button, .icon-button {
+    all: unset;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-sizing: border-box;
+    border-radius: 8px;
+    cursor: pointer;
+    scroll-margin-top: var(--top-height);
+}
+
+/* endregion */
+
+/* region Common styling for 'button' and 'text-button' */
+
+/* Base */
+.button, .text-button {
+    width: fit-content;
+    flex-direction: row;
+    gap: var(--btn-gap);
+    min-height: var(--btn-height);
+    font: var(--btn-font);
+    letter-spacing: var(--btn-letter-spacing);
+    text-align: center;
+}
+
+/* Size */
+.button.xl, .text-button.xl {
+    --btn-height: 56px;
+    --btn-icon-size: 24px;
+    --btn-gap: 12px;
+    --btn-padding: 0 24px; /* Static regardless of grid size */
+    --btn-font: var(--font-btn-xl);
+    --btn-letter-spacing: var(--font-btn-xl-spacing);
+}
+.button.lg, .text-button.lg {
+    --btn-height: 48px;
+    --btn-icon-size: 24px;
+    --btn-gap: 12px;
+    --btn-padding: 0 24px;
+    --btn-font: var(--font-btn-lg);
+    --btn-letter-spacing: var(--font-btn-lg-spacing);
+}
+.button.md, .text-button.md {
+    --btn-height: 40px;
+    --btn-icon-size: 20px;
+    --btn-gap: 8px;
+    --btn-padding: 0 24px;
+    --btn-font: var(--font-btn-md);
+    --btn-letter-spacing: var(--font-btn-md-spacing);
+}
+.button.sm, .text-button.sm {
+    --btn-height: 36px;
+    --btn-icon-size: 16px;
+    --btn-gap: 8px;
+    --btn-padding: 0 16px;
+    --btn-font: var(--font-btn-sm);
+    --btn-letter-spacing: var(--font-btn-sm-spacing);
+}
+
+/* Icons */
+.button .before, .button .after,
+.text-button .before, .text-button .after {
+    width: var(--btn-icon-size);
+    height: var(--btn-icon-size);
+    flex-shrink: 0;
+    text-align: center;
+    mask-position: center;
+    -webkit-mask-position: center;
+    background-color: currentColor;
+    transition: var(--transition-transform);
+}
+/* Special animation for all 'arrow-right-mro' icons in the 'after' position */
+.button .after.icon.arrow-right-mro,
+.text-button .after.icon.arrow-right-mro {
+    transition: var(--transition-transform);
+}
+.button:hover .after.icon.arrow-right-mro, .button:active .after.icon.arrow-right-mro,
+.text-button:hover .after.icon.arrow-right-mro, .text-button:active .after.icon.arrow-right-mro {
+    transform: translateX(4px);
+}
+/* endregion */
+
+/* region MEGA Molecular Component: Button */
+
+/* Base */
+.button {
+    padding: var(--btn-padding);
+}
+.button:disabled {
+    cursor: default;
+}
+
+/* region Style - Light Theme */
+
+/* Primary */
+.button.primary {
+    color: var(--color-grey-50);
+    background-color: var(--color-primary-red-500);
+}
+.button.primary:hover:not(:disabled),
+.button.primary:focus:not(:disabled) {
+    background-color: var(--color-primary-red-600);
+}
+.button.primary:active:not(:disabled) {
+    background-color: var(--color-primary-red-700);
+}
+.button.primary:disabled {
+    color: var(--color-link-disabled);
+    background-color: var(--color-grey-100);
+}
+
+/* Secondary */
+.button.secondary {
+    color: var(--color-primary-red-500);
+    background-color: var(--color-bg-tinted-pale-pink);
+}
+.button.secondary:hover:not(:disabled),
+.button.secondary:focus:not(:disabled) {
+    background-color: var(--color-bg-tinted-pink);
+}
+.button.secondary:active:not(:disabled) {
+    background-color: var(--color-bg-tinted-peach);
+}
+.button.secondary:disabled {
+    color: var(--color-link-disabled);
+    background-color: var(--color-grey-100);
+}
+
+.theme-dark .button.secondary {
+    color: var(--color-primary-red-800);
+    background-color: var(--color-bg-tinted-peach);
+}
+.theme-dark .button.secondary:active:not(:disabled) {
+    background-color: var(--color-bg-tinted-pale-pink);
+}
+
+
+/* Outline */
+.button.outline {
+    color: var(--color-primary-red-500);
+    border: 2px solid var(--color-primary-red-500);
+}
+.button.outline:hover:not(:disabled),
+.button.outline:focus:not(:disabled) {
+    color: var(--color-primary-red-600);
+    border-color: var(--color-primary-red-600);
+}
+.button.outline:active:not(:disabled) {
+    color: var(--color-primary-red-700);
+    border-color: var(--color-primary-red-700);
+}
+.button.outline:disabled {
+    color: var(--color-link-disabled);
+    border-color: var(--color-grey-100);
+}
+
+/* Text */
+.button.text {
+    color: var(--color-primary-red-700);
+    text-decoration: underline;
+}
+.button.text:hover:not(:disabled),
+.button.text:focus:not(:disabled) {
+    background-color: var(--color-grey-50);
+}
+.button.text:active:not(:disabled) {
+    background-color: var(--color-grey-100);
+}
+.button.text:disabled {
+    color: var(--color-link-disabled);
+}
+
+/* Primary, muted */
+.button.primary-muted {
+    color: var(--color-grey-50);
+    background-color: var(--color-primary-black-900);
+}
+.button.primary-muted:hover:not(:disabled),
+.button.primary-muted:focus:not(:disabled) {
+    background-color: var(--color-primary-black-700);
+}
+.button.primary-muted:active:not(:disabled) {
+    background-color: var(--color-primary-black-600);
+}
+.button.primary-muted:disabled {
+    color: var(--color-link-disabled);
+    background-color: var(--color-grey-100);
+}
+
+/* Secondary, muted */
+.button.secondary-muted {
+    color: var(--color-primary-black-900);
+    background-color: var(--color-grey-100);
+}
+.button.secondary-muted:hover:not(:disabled),
+.button.secondary-muted:focus:not(:disabled) {
+    background-color: var(--color-grey-150);
+}
+.button.secondary-muted:active:not(:disabled) {
+    background-color: var(--color-grey-200);
+}
+.button.secondary-muted:disabled {
+    color: var(--color-link-disabled);
+    background-color: var(--color-grey-100);
+}
+
+/* Outline, muted */
+.button.outline-muted {
+    color: var(--color-primary-black-900);
+    border: 2px solid currentColor;
+}
+.button.outline-muted:hover:not(:disabled),
+.button.outline-muted:focus:not(:disabled) {
+    color: var(--color-primary-black-900);
+    background-color: var(--color-bg-surface-1);
+}
+.button.outline-muted:active:not(:disabled) {
+    color: var(--color-primary-black-800);
+    background-color: var(--color-bg-surface-2);
+}
+.button.outline-muted:disabled {
+    color: var(--color-link-disabled);
+    background-color: unset;
+}
+
+/* Text, muted */
+.button.text-muted {
+    color: var(--color-primary-black-900);
+    text-decoration: underline;
+}
+.button.text-muted:hover:not(:disabled),
+.button.text-muted:focus:not(:disabled) {
+    background-color: var(--color-grey-50);
+}
+.button.text-muted:active:not(:disabled) {
+    background-color: var(--color-grey-100);
+}
+.button-text-muted:disabled {
+    color: var(--color-link-disabled);
+    background-color: unset;
+}
+
+/* endregion */
+
+/* region Style - Dark Theme (applied after Light Theme) */
+
+/* Primary */
+.theme-dark .button.primary {
+    color: var(--color-grey-1000);
+}
+
+/* Secondary */
+.theme-dark .button.secondary {
+    color: var(--color-primary-red-800);
+    background-color: var(--color-bg-tinted-peach);
+}
+.theme-dark .button.secondary:hover:not(:disabled),
+.theme-dark .button.secondary:focus:not(:disabled) {
+    color: var(--color-primary-red-800);
+    background-color: var(--color-bg-tinted-pink);
+}
+.theme-dark .button.secondary:active:not(:disabled) {
+    color: var(--color-primary-red-800);
+    background-color: var(--color-bg-tinted-pale-pink);
+}
+
+/* Outline */
+.theme-dark .button.outline:hover:not(:disabled),
+.theme-dark .button.outline:focus:not(:disabled) {
+    background-color: var(--color-bg-surface-1);
+}
+.theme-dark .button.outline:active:not(:disabled) {
+    background-color: var(--color-bg-surface-2);
+}
+
+/* Text */
+.theme-dark .button.text {
+    color: var(--color-primary-red-700);
+}
+.theme-dark .button.text:hover:not(:disabled),
+.theme-dark .button.text:focus:not(:disabled) {
+    color: var(--color-primary-red-800);
+    background-color: var(--color-grey-100);
+}
+.theme-dark .button.text:active:not(:disabled) {
+    color: var(--color-primary-red-800);
+    background-color: var(--color-grey-150);
+}
+
+/* Primary, muted */
+.theme-dark .button.primary-muted:hover:not(:disabled),
+.theme-dark .button.primary-muted:focus:not(:disabled) {
+    background-color: var(--color-primary-black-800);
+}
+.theme-dark .button.primary-muted:active:not(:disabled) {
+    background-color: var(--color-primary-black-700);
+}
+
+/* Outline, muted */
+.theme-dark .button.outline-muted:hover:not(:disabled),
+.theme-dark .button.outline-muted:focus:not(:disabled) {
+    border-color: var(--color-primary-black-900);
+}
+.theme-dark .button.outline-muted:active:not(:disabled) {
+    border-color: var(--color-primary-black-800);
+}
+.theme-dark .button.outline-muted:disabled {
+    color: var(--color-link-disabled);
+    background-color: unset;
+    border-color: var(--color-grey-100);
+}
+
+/* Text, muted */
+.theme-dark .button.text-muted:hover:not(:disabled),
+.theme-dark .button.text-muted:focus:not(:disabled) {
+    background-color: var(--color-grey-100);
+}
+.theme-dark .button.text-muted:active:not(:disabled) {
+    background-color: var(--color-grey-150);
+}
+.theme-dark .button-text-muted:disabled {
+    background-color: unset;
+}
+
+/* endregion */
+
+/* endregion */
+
+/* region MEGA Molecular Component: Text Button */
+
+/* Light Theme */
+.text-button {
+    color: var(--color-primary-black-900);
+    text-decoration: underline;
+}
+.text-button:visited:not(:disabled) {
+    color: var(--color-primary-black-900);
+}
+.text-button:hover:not(:disabled),
+.text-button:focus:not(:disabled) {
+    color: var(--color-primary-black-700);
+    text-decoration: underline;
+}
+.text-button:active:not(:disabled) {
+    color: var(--color-primary-black-600);
+}
+.text-button:disabled {
+    color: var(--color-link-disabled);
+}
+
+/* Dark Theme */
+.theme-dark .text-button:hover:not(:disabled),
+.theme-dark .text-button:focus:not(:disabled) {
+    color: var(--color-primary-black-800);
+}
+.theme-dark .text-button:active:not(:disabled) {
+    color: var(--color-primary-black-700);
+}
+
+/* endregion */
+
+/* region MEGA Molecular Component: Icon Button */
+
+/* Base */
+.icon-button {
+    width: var(--icon-btn-size);
+    height: var(--icon-btn-size);
+    padding: var(--icon-btn-padding);
+    flex-shrink: 0; /* Don't shrink if used in a flexbox context */
+    color: var(--color-primary-black-900);
+}
+.icon-button:disabled {
+    color: var(--color-link-disabled);
+    cursor: default;
+}
+
+/* Size */
+.icon-button.xl {
+    --icon-btn-size: 56px;
+    --icon-btn-padding: 16px;
+}
+.icon-button.lg {
+    --icon-btn-size: 48px;
+    --icon-btn-padding: 12px;
+}
+.icon-button.md {
+    --icon-btn-size: 40px;
+    --icon-btn-padding: 10px;
+}
+.icon-button.sm {
+    --icon-btn-size: 36px;
+    --icon-btn-padding: 10px;
+}
+
+/* Style - Light Theme */
+
+/* Primary */
+.icon-button.primary {
+    background-color: var(--color-grey-100);
+}
+.icon-button.primary:hover:not(:disabled),
+.icon-button.primary:focus:not(:disabled) {
+    background-color: var(--color-grey-150);
+}
+.icon-button.primary:active:not(:disabled) {
+    background-color: var(--color-grey-200);
+}
+.icon-button.primary:disabled {
+    background-color: var(--color-grey-100);
+}
+
+/* Transparent */
+.icon-button.transparent {
+    background-color: unset;
+}
+.icon-button.transparent:hover:not(:disabled),
+.icon-button.transparent:focus:not(:disabled) {
+    background-color: var(--color-grey-50);
+}
+.icon-button.transparent:active:not(:disabled) {
+    background-color: var(--color-grey-100);
+}
+.icon-button.transparent:disabled {
+    background-color: unset;
+}
+
+/* Style - Dark Theme */
+
+/* Transparent */
+.theme-dark .icon-button.transparent:hover:not(:disabled),
+.theme-dark .icon-button.transparent:focus:not(:disabled) {
+    background-color: var(--color-grey-100);
+}
+.theme-dark .icon-button.transparent:active:not(:disabled) {
+    background-color: var(--color-grey-150);
+}
+
+/* endregion */
+
+
+/* region Radio Button */
+
+.radio-option-btn {
+    all: unset;
+    height: var(--radio-option-btn-height);
+    padding: var(--radio-option-btn-padding) 16px;
+    color: var(--color-link-enabled);
+    box-sizing: border-box;
+    border: 1px solid var(--color-grey-200);
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.radio-option-btn.lg {
+    --radio-option-btn-height: 48px;
+    --radio-option-btn-padding: 12px;
+    font: var(--font-btn-lg);
+    letter-spacing: var(--font-btn-lg-spacing);
+}
+.radio-option-btn.md {
+    --radio-option-btn-height: 40px;
+    --radio-option-btn-padding: 10px;
+    font: var(--font-btn-md);
+    letter-spacing: var(--font-btn-md-spacing);
+}
+.radio-option-btn.sm {
+    --radio-option-btn-height: 36px;
+    --radio-option-btn-padding: 8px;
+    font: var(--font-btn-sm);
+    letter-spacing: var(--font-btn-sm-spacing);
+}
+
+.radio-option-btn:hover:not(:disabled),
+.radio-option-btn:focus:not(:disabled) {
+    color: var(--color-grey-50);
+    background-color: var(--color-primary-black-800);
+    border-color: var(--color-primary-black-800);
+}
+.radio-option-btn:active:not(:disabled),
+.radio-option-btn.active:not(:disabled) {
+    color: var(--color-grey-50);
+    background-color: var(--color-primary-black-900);
+    border-color: var(--color-primary-black-900);
+}
+.radio-option-btn:disabled {
+    color: var(--color-link-disabled);
+    background-color: var(--color-grey-50);
+    border-color: var(--color-grey-50);
+    cursor: default;
+}
+.radio-option-btn.error {
+    border-color: var(--color-system-error);
+}
+
+/* endregion */
+
+/* region Pagination */
+
+.pagination-container {
+    --nav-btn-size: 36px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Button */
+/* span for active/disabled buttons, a for link buttons */
+.pagination-container a,
+.pagination-container span {
+    width: var(--nav-btn-size);
+    height: var(--nav-btn-size);
+    margin-left: var(--spacing-3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 8px;
+    font: var(--font-btn-sm);
+    letter-spacing: var(--font-btn-sm-spacing);
+    text-decoration: none;
+}
+
+.pagination-container a,
+.pagination-container span {
+    color: var(--color-primary-black-800);
+    background-color: var(--color-grey-100);
+}
+.pagination-container a:hover,
+.pagination-container a:focus,
+.pagination-container span:hover,
+.pagination-container span:focus {
+    color: var(--color-grey-50);
+    background-color: var(--color-primary-black-800);
+}
+.pagination-container a:active,
+.pagination-container span.current {
+    color: var(--color-grey-50);
+    background-color: var(--color-primary-black-900);
+}
+.pagination-container span:not(.current) {
+    color: var(--color-link-disabled);
+    background-color: var(--color-grey-100);
+}
+
+.pagination-container .icon {
+    width: 100%;
+    height: 100%;
+    mask-position: center;
+    -webkit-mask-position: center;
+    mask-size: auto;
+    -webkit-mask-size: auto;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    background-color: currentColor;
+}
+.pagination-container span.dots {
+    background-color: unset;
+    background-image: var(--icon-mono-more-horizontal-mro);
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: auto;
+}
+.theme-dark .pagination-container span.dots {
+    filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(288deg) brightness(102%);
+}
+
+/* endregion */

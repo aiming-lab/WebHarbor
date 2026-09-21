@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ plan.name }}{% endblock %}
+{% block content %}
+<section class="detail-layout">
+  <div>
+    <p class="eyebrow">{{ plan.audience|title }} / {{ plan.category|title }}</p>
+    <h1>{{ plan.name }}</h1>
+    <p>{{ plan.description }}</p>
+    <ul class="check-list">
+      {% for feature in plan.get_features() %}<li>{{ feature }}</li>{% endfor %}
+    </ul>
+  </div>
+  <aside class="purchase-panel">
+    <div class="price">${{ "%.2f"|format(plan.monthly_price) }}<small>/mo</small></div>
+    {% if plan.yearly_price %}<p>Yearly: ${{ "%.2f"|format(plan.yearly_price) }}{% if plan.annual_savings() %} saves ${{ "%.2f"|format(plan.annual_savings()) }}{% endif %}</p>{% endif %}
+    <dl>
+      <div><dt>Storage</dt><dd>{{ plan.storage_tb }} TB</dd></div>
+      <div><dt>Transfer</dt><dd>{{ plan.transfer_tb }} TB</dd></div>
+      <div><dt>VPN devices</dt><dd>{{ plan.vpn_devices }}</dd></div>
+      <div><dt>Pass accounts</dt><dd>{{ plan.pass_accounts }}</dd></div>
+    </dl>
+    <form method="post" action="{{ url_for('add_to_cart', slug=plan.slug) }}">
+      <label>Billing
+        <select name="billing_cycle"><option value="monthly">Monthly</option><option value="yearly">Yearly</option></select>
+      </label>
+      <label>Seats <input type="number" name="seats" min="1" value="{{ plan.users_included or 1 }}"></label>
+      <button type="submit">Add to cart</button>
+    </form>
+  </aside>
+</section>
+<section class="section">
+  <h2>Similar options</h2>
+  <div class="plan-grid">
+    {% for plan in alternatives %}
+      {% include "_plan_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Compare MEGA plans{% endblock %}
+{% block content %}
+<section class="page-head">
+  <p class="eyebrow">Pricing</p>
+  <h1>Compare plans for storage, VPN, Pass, business, and S4</h1>
+  <p>Filter by audience or product family, then choose a plan to checkout.</p>
+</section>
+<form class="filters" action="{{ url_for('pricing') }}">
+  <select name="audience">
+    <option value="">All audiences</option>
+    <option value="individual" {% if audience == 'individual' %}selected{% endif %}>Individual</option>
+    <option value="business" {% if audience == 'business' %}selected{% endif %}>Business</option>
+  </select>
+  <select name="category">
+    <option value="">All products</option>
+    {% for value in ['storage','vpn','pass','business','objectstorage'] %}
+      <option value="{{ value }}" {% if category == value %}selected{% endif %}>{{ value|title }}</option>
+    {% endfor %}
+  </select>
+  <select name="billing">
+    <option value="monthly" {% if billing == 'monthly' %}selected{% endif %}>Monthly</option>
+    <option value="yearly" {% if billing == 'yearly' %}selected{% endif %}>Yearly</option>
+  </select>
+  <button type="submit">Apply</button>
+</form>
+<section class="plan-grid section-tight">
+  {% for plan in plans %}
+    {% include "_plan_card.html" %}
+  {% endfor %}
+</section>
+{% endblock %}
