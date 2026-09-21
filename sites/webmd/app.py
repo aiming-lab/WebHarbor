@@ -130,6 +130,14 @@ class Article(db.Model):
     saved_by = db.relationship('SavedArticle', backref='article', lazy=True,
                                cascade='all, delete-orphan')
 
+    @property
+    def image_path(self):
+        # The original labeled raster tile lacks the em-dash glyph. Keep the
+        # HF seed/archive intact and render this existing design as SVG text.
+        if self.slug == 'glp1-weight-loss-drugs-fit':
+            return 'icons/glp1-weight-loss-drugs-fit.svg'
+        return 'images/' + self.image
+
 
 class Drug(db.Model):
     __tablename__ = 'drugs'

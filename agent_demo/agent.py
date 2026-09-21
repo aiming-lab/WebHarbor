@@ -227,6 +227,7 @@ async def run(args):
                 "step": step_idx,
                 "url": state.url,
                 "title": state.title,
+                "page_text": dom_text,
                 "thought": thought,
                 "action": name,
                 "params": params,
