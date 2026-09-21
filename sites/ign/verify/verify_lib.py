@@ -60,7 +60,18 @@ def _shot(traj, name):
     if not name:
         return None
     p = traj["_shots"].get(Path(name).name)
-    return p if (p and p.exists()) else None
+    if p and p.exists():
+        return p
+    # Producers may store absolute paths to screenshots outside screenshots/
+    # (e.g. <run_dir>/browser/after-0007.png). Resolve the recorded path
+    # directly, confined to the run_dir when relative.
+    q = Path(name)
+    if not q.is_absolute():
+        q = traj["_run_dir"] / q
+    try:
+        return q if q.exists() else None
+    except OSError:
+        return None
 
 def shot_after_url(traj, substr):
     """screenshot_after path of the first step whose URL contains substr."""
