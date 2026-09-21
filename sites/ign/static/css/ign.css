@@ -2274,6 +2274,10 @@ td {
   .profile-stats {
     margin-left: 0;
   }
+
+  .profile-tabs {
+    overflow-x: auto;
+  }
 }
 
 @media (max-width: 820px) {
@@ -2337,5 +2341,46 @@ td {
 
   .category-tabs {
     border-radius: 14px;
+  }
+}
+
+/* Keep intrinsic content inside the page grid; tabs may scroll within their row. */
+.page,
+.hub-main,
+.hub-side,
+.profile-main,
+.profile-grid > div {
+  min-width: 0;
+}
+
+@media (max-width: 820px) {
+  .hub-layout,
+  .profile-hero,
+  .profile-grid,
+  .hub-results .item-card {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .advanced-search {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .advanced-search > *,
+  .review-controls > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .profile-stats {
+    margin-left: 0;
+  }
+
+  .profile-main h1 {
+    overflow-wrap: anywhere;
+  }
+
+  .source-prompt {
+    flex-wrap: wrap;
+    gap: 12px;
   }
 }

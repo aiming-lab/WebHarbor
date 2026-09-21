@@ -41,6 +41,8 @@ def main():
                                 "includes the 'headset' tag (the Corsair One A600 does not).",
         "Which of the two Tech reviews' detail pages includes the tag 'headset'?")
     j.check("answer_llm", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

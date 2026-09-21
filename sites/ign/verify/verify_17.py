@@ -40,6 +40,8 @@ def main():
                                 "'Nintendo Switch 2' in Platforms; the HBO Max July story does not.",
         "Which of the two July streaming stories lists 'Nintendo Switch 2' in its Platforms?")
     j.check("answer_llm", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

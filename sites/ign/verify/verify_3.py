@@ -38,6 +38,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, "a daily Games alert for the keyword PlayStation",
             "david's alerts list")
         j.check("screenshot_shows_alert", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

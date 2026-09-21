@@ -42,6 +42,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, "the GTA controversies story saved to a 'Games' folder",
             "alice's saved stories / the save confirmation")
         j.check("screenshot_shows_save", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

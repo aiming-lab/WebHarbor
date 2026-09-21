@@ -35,6 +35,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, f"the reader comment '{COMMENT}' on the Silo Season 3 review",
             "the Silo review comments section")
         j.check("screenshot_shows_comment", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

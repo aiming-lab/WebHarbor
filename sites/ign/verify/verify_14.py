@@ -34,6 +34,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, "no saved story remaining in the Deals folder",
             "alice's saved stories after removal")
         j.check("screenshot_shows_removed", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":

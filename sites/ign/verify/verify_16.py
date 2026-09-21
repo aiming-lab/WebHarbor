@@ -35,6 +35,8 @@ def main():
         ok, ev = llm_screenshot_shows(s, "the Dragon Ball Xenoverse 2 trailer in the playlist with status queued",
             "alice's playlist")
         j.check("screenshot_shows_playlist", ok, ev, llm=True)
+    from task_contract import check_contract
+    check_contract(j, t, a)
     j.emit()
 
 if __name__ == "__main__":
