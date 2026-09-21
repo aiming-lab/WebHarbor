@@ -14,8 +14,7 @@
       <div class="byline">
         Written by <a href="{{ url_for('author_detail', slug=article.author.slug) }}">{{ article.author.name }}</a>
         &middot; Medically reviewed by
-        <a href="{{ url_for('author_detail', slug=article.reviewer.slug) }}">{{ article.reviewer.name }}</a>,
-        {{ article.reviewer.credentials }}
+        <a href="{{ url_for('author_detail', slug=article.reviewer.slug) }}">{{ article.reviewer.name }}</a>{% for credential in article.reviewer.credentials.split(',') %}{% if credential.strip() not in article.reviewer.name.split(', ') %}, {{ credential.strip() }}{% endif %}{% endfor %}
       </div>
       <div class="byline">
         Published {{ article.published_date.strftime('%B %d, %Y') }}
@@ -35,7 +34,7 @@
 
       <p class="detail-summary">{{ article.summary }}</p>
       <div class="detail-hero">
-        <img src="{{ url_for('static', filename='images/' + article.image) }}" alt="{{ article.title }}">
+        <img src="{{ url_for('static', filename=article.image_path) }}" alt="{{ article.title }}">
       </div>
       <div class="article-body">{{ article.body_html|safe }}</div>
     </div>
