@@ -3,26 +3,166 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}{{ config.name }}{% endblock %}</title>
+  <title>{% block title %}Petfinder{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/paw.svg') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <script defer src="{{ url_for('static', filename='js/main.js') }}"></script>
 </head>
 <body>
-  <header class="site-header" role="banner">
-    <a class="brand" href="{{ url_for('index') }}"><span>{{ config.name[:2] }}</span>{{ config.name }}</a>
-    <nav class="top-nav" role="navigation" aria-label="Main">
-      <a href="{{ url_for('listings') }}">{{ config.entity }}s</a>
-      <a href="{{ url_for('tools') }}">Tools</a>
-      <a href="{{ url_for('guides') }}">Guides</a>
-      <a href="{{ url_for('account') }}">Account</a>
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <aside class="app-promo" data-promo aria-label="Petfinder app promotion">
+    <span aria-hidden="true">♥</span>
+    <p>Build your bond in the myPurina App</p>
+    <a href="{{ url_for('info_page', slug='mobile-app') }}">GET APP</a>
+    <button type="button" data-dismiss-promo aria-label="Close promotion">×</button>
+  </aside>
+
+  <header class="site-header">
+    <a class="brand" href="{{ url_for('index') }}" aria-label="Petfinder Home">
+      <img src="{{ url_for('static', filename='icons/petfinder-logo.svg') }}" alt="Petfinder">
+    </a>
+    <nav class="primary-nav" aria-label="Main navigation">
+      <details class="nav-menu nav-menu--find">
+        <summary>Find a Pet <span aria-hidden="true">⌄</span></summary>
+        <div class="nav-popover find-popover">
+          <form action="{{ url_for('listings') }}" method="get" class="nav-location-form">
+            <label for="nav-location">Search by location</label>
+            <div>
+              <select id="nav-location" name="location">
+                <option value="">City, State, or ZIP</option>
+                <option>New York, NY</option><option>Chicago, IL</option><option>Seattle, WA</option><option>Austin, TX</option><option>Boston, MA</option>
+              </select>
+              <button type="submit">GO</button>
+            </div>
+          </form>
+          <div class="find-links">
+            <a href="{{ url_for('listings', species='Dog') }}">Find a Dog <span>→</span></a>
+            <a href="{{ url_for('listings', species='Cat') }}">Find a Cat <span>→</span></a>
+            <strong>Find Other Pets</strong>
+            <a href="{{ url_for('listings', species='Rabbit') }}">Rabbits</a>
+            <a href="{{ url_for('listings', species='Guinea Pig') }}">Small &amp; Furry Pets</a>
+            <a href="{{ url_for('listings') }}">View All Pets</a>
+          </div>
+        </div>
+      </details>
+      <details class="nav-menu nav-menu--wide">
+        <summary>All About Pets <span aria-hidden="true">⌄</span></summary>
+        <div class="nav-popover mega-menu">
+          <div>
+            <strong>ADOPT OR GET INVOLVED</strong>
+            <a href="{{ url_for('info_page', slug='petfinder') }}">About Petfinder</a>
+            <a href="{{ url_for('guides', category='Adopting pets') }}">Adopting Pets</a>
+            <a href="{{ url_for('info_page', slug='shelters-rescues') }}">Animal Shelters &amp; Rescues</a>
+            <a href="{{ url_for('info_page', slug='foundation') }}">Petfinder Foundation</a>
+          </div>
+          <div>
+            <strong>DOGS &amp; PUPPIES</strong>
+            <a href="{{ url_for('listings', species='Dog') }}">Dog Adoption</a>
+            <a href="{{ url_for('info_page', slug='dog-breeds') }}">Dog Breeds</a>
+            <a href="{{ url_for('info_page', slug='feeding-dogs') }}">Feeding Your Dog</a>
+            <a href="{{ url_for('info_page', slug='dog-behavior') }}">Dog Behavior</a>
+            <a href="{{ url_for('info_page', slug='dog-health') }}">Dog Health &amp; Wellness</a>
+            <a href="{{ url_for('info_page', slug='dog-training') }}">Dog Training</a>
+            <a href="{{ url_for('guides') }}">Other Dog Information</a>
+          </div>
+          <div>
+            <strong>CATS &amp; KITTENS</strong>
+            <a href="{{ url_for('listings', species='Cat') }}">Cat Adoption</a>
+            <a href="{{ url_for('info_page', slug='cat-breeds') }}">Cat Breeds</a>
+            <a href="{{ url_for('info_page', slug='feeding-cats') }}">Feeding Your Cat</a>
+            <a href="{{ url_for('info_page', slug='cat-behavior') }}">Cat Behavior</a>
+            <a href="{{ url_for('info_page', slug='cat-health') }}">Cat Health &amp; Wellness</a>
+            <a href="{{ url_for('info_page', slug='cat-training') }}">Cat Training</a>
+            <a href="{{ url_for('guides') }}">Other Cat Information</a>
+          </div>
+          <div>
+            <strong>OTHER TYPES OF PETS</strong>
+            <a href="{{ url_for('listings') }}">Birds</a>
+            <a href="{{ url_for('listings') }}">Exotic Pets</a>
+            <a href="{{ url_for('listings', species='Guinea Pig') }}">Guinea Pigs</a>
+            <a href="{{ url_for('listings') }}">Horses</a>
+            <a href="{{ url_for('listings', species='Rabbit') }}">Rabbits</a>
+            <a href="{{ url_for('listings') }}">Reptiles</a>
+            <a href="{{ url_for('listings', species='Guinea Pig') }}">Small &amp; Furry Pets</a>
+          </div>
+        </div>
+      </details>
     </nav>
-    <form class="header-search" action="{{ url_for('search') }}">
-      <input name="q" placeholder="Search {{ config.name }}" value="{{ request.args.get('q', '') }}">
-      <button type="submit">Search</button>
-    </form>
-    <div class="account-links">{% if current_user %}<a href="{{ url_for('account') }}">{{ current_user.display_name }}</a><a href="{{ url_for('logout') }}">Sign out</a>{% else %}<a href="{{ url_for('login') }}">Sign in</a>{% endif %}</div>
+    <div class="account-nav">
+      <a class="heart-link" href="{{ url_for('account') }}" aria-label="Favorites">♥</a>
+      {% if current_user %}
+        <a class="account-name" href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+        <form method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="text-button" type="submit">Sign out</button>
+        </form>
+      {% else %}
+        <a class="sign-in-link" href="{{ url_for('login') }}">Sign in</a>
+      {% endif %}
+    </div>
   </header>
-  {% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="flash-wrap">{% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
-  <main>{% block content %}{% endblock %}</main>
-  <footer class="site-footer"><strong>{{ config.name }} Mirror</strong><nav><a href="{{ url_for('listings') }}">Browse</a><a href="{{ url_for('tools') }}">Tools</a><a href="{{ url_for('guides') }}">Guides</a><a href="{{ url_for('search') }}">Search</a></nav></footer>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flash-wrap" role="status">
+        {% for category, message in messages %}<div class="flash {{ category }}">{{ message }}</div>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main id="main-content">{% block content %}{% endblock %}</main>
+
+  <footer class="site-footer">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='icons/petfinder-logo.svg') }}" alt="Petfinder">
+        <p>Helping pets find loving homes through shelters and rescues.</p>
+      </div>
+      <div class="footer-column">
+        <strong>RESOURCES</strong>
+        <a href="{{ url_for('info_page', slug='faqs') }}">FAQs</a>
+        <a href="{{ url_for('info_page', slug='mobile-app') }}">Mobile App Download</a>
+        <a href="{{ url_for('info_page', slug='news') }}">News Center</a>
+        <a href="{{ url_for('info_page', slug='widgets') }}">Put Petfinder On Your Site</a>
+        <a href="{{ url_for('info_page', slug='contact') }}">Contact Us</a>
+      </div>
+      <div class="footer-column">
+        <strong>ADOPT OR GET INVOLVED</strong>
+        <a href="{{ url_for('info_page', slug='petfinder') }}">About Petfinder</a>
+        <a href="{{ url_for('listings') }}">Adopting Pets</a>
+        <a href="{{ url_for('info_page', slug='shelters-rescues') }}">Animal Shelters &amp; Rescues</a>
+        <a href="{{ url_for('info_page', slug='foundation') }}">Petfinder Foundation</a>
+      </div>
+      <div class="footer-column">
+        <strong>ABOUT DOGS &amp; PUPPIES</strong>
+        <a href="{{ url_for('listings', species='Dog') }}">Dog Adoption</a>
+        <a href="{{ url_for('info_page', slug='dog-breeds') }}">Dog Breeds</a>
+        <a href="{{ url_for('info_page', slug='feeding-dogs') }}">Feeding Your Dog</a>
+        <a href="{{ url_for('info_page', slug='dog-behavior') }}">Dog Behavior</a>
+        <a href="{{ url_for('info_page', slug='dog-health') }}">Dog Health &amp; Wellness</a>
+        <a href="{{ url_for('info_page', slug='dog-training') }}">Dog Training</a>
+      </div>
+      <div class="footer-column">
+        <strong>ABOUT CATS &amp; KITTENS</strong>
+        <a href="{{ url_for('listings', species='Cat') }}">Cat Adoption</a>
+        <a href="{{ url_for('info_page', slug='cat-breeds') }}">Cat Breeds</a>
+        <a href="{{ url_for('info_page', slug='feeding-cats') }}">Feeding Your Cat</a>
+        <a href="{{ url_for('info_page', slug='cat-behavior') }}">Cat Behavior</a>
+        <a href="{{ url_for('info_page', slug='cat-health') }}">Cat Health &amp; Wellness</a>
+        <a href="{{ url_for('info_page', slug='cat-training') }}">Cat Training</a>
+      </div>
+    </div>
+    <div class="footer-lower">
+      <div class="social-links" aria-label="Social channels"><span>f</span><span>◎</span><span>▶</span><span>p</span></div>
+      <nav aria-label="Legal">
+        <a href="{{ url_for('info_page', slug='terms') }}">Terms of Service</a>
+        <a href="{{ url_for('info_page', slug='privacy') }}">Privacy Policy</a>
+        <a href="{{ url_for('info_page', slug='accessibility') }}">Accessibility</a>
+        <a href="{{ url_for('info_page', slug='sitemap') }}">Sitemap</a>
+      </nav>
+      <p>© 2026 Petfinder. All trademarks are owned by their respective owners.</p>
+    </div>
+  </footer>
 </body>
 </html>

@@ -1,5 +1,9 @@
-{% extends "base.html" %}{% block title %}Guides{% endblock %}{% block content %}
-<section class="page-heading"><div><div class="eyebrow">Guides</div><h1>{{ config.name }} Guides</h1></div></section>
-<div class="pills"><a class="{{ 'active' if not topic }}" href="{{ url_for('guides') }}">All</a>{% for t in topics %}<a class="{{ 'active' if t == topic }}" href="{{ url_for('guides', topic=t) }}">{{ t }}</a>{% endfor %}</div>
-<section class="guide-grid section">{% for guide in rows %}<a class="guide-card" href="{{ url_for('guide_detail', slug=guide.slug) }}"><span class="eyebrow">{{ guide.topic }}</span><strong>{{ guide.title }}</strong><p>{{ guide.summary }}</p></a>{% endfor %}</section>
+{% extends "base.html" %}
+{% block title %}Pet Adoption &amp; Care Articles | Petfinder{% endblock %}
+{% block content %}
+<section class="guide-hero"><p class="eyebrow">ALL ABOUT PETS</p><h1>{% if category %}{{ category }}{% else %}Pet adoption and care advice{% endif %}</h1><p>Helpful guidance for choosing, welcoming, and caring for your new companion.</p></section>
+<section class="guide-grid section">
+  {% for guide in rows %}<a class="guide-card" href="{{ url_for('guide_detail', slug=guide.slug) }}"><span>{{ guide.category|upper }}</span><h2>{{ guide.title }}</h2><p>{{ guide.summary }}</p><strong>{{ guide.read_minutes }} MIN READ →</strong></a>
+  {% else %}<div class="empty-state"><h2>More guidance is on the way</h2><p>Browse all of our current adoption and pet-care articles.</p><a class="button" href="{{ url_for('guides') }}">View all articles</a></div>{% endfor %}
+</section>
 {% endblock %}
