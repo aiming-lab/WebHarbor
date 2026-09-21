@@ -967,6 +967,9 @@ def refund_status_start():
     filing_statuses = FilingStatus.query.order_by(FilingStatus.name.asc()).all()
     start_data = session.get("lookup_start", {})
     if selected_case:
+        if start_data.get("case_reference") != selected_case.reference_code:
+            session.pop("lookup_verify", None)
+            session.pop("lookup_result", None)
         start_data = {
             "tax_year": selected_case.tax_year,
             "filing_status_slug": selected_case.filing_status.slug,
@@ -986,12 +989,16 @@ def refund_status_start():
         if tax_year not in {2021, 2022, 2023, 2024, 2025} or not FilingStatus.query.filter_by(slug=filing_status_slug).first():
             flash("Select a valid synthetic tax year and filing status.", "error")
             return redirect(url_for("refund_status_start"))
-        session["lookup_start"] = {
+        new_start = {
             "tax_year": tax_year,
             "filing_status_slug": filing_status_slug,
             "refund_amount": refund_amount,
             "case_reference": request.form.get("case_reference") or "",
         }
+        if session.get("lookup_start") != new_start:
+            session.pop("lookup_verify", None)
+            session.pop("lookup_result", None)
+        session["lookup_start"] = new_start
         return redirect(url_for("refund_status_verify"))
 
     return render_template(

@@ -227,6 +227,9 @@ async def run(args):
                 "step": step_idx,
                 "url": state.url,
                 "title": state.title,
+                # Persist the same observed DOM that the agent receives. Site
+                # verifiers can bind account/result evidence to this step's URL.
+                "page_text": dom_text,
                 "thought": thought,
                 "action": name,
                 "params": params,
