@@ -1,332 +1,190 @@
 #!/usr/bin/env python3
-"""Deterministic grading helpers for the IRS Refund Tracker tasks.
-
-Every task requires a frozen answer and task-specific URL evidence in the
-recorded trajectory. Task 8 additionally compares the seed and live SQLite
-databases so a plausible self-report cannot pass without the requested profile
-transition.
-"""
+"""IRS graders: observed same-origin pages, natural answers, frozen DB deltas."""
 import argparse
+from copy import deepcopy
 import json
-import math
-import os
+from pathlib import Path
 import re
 import sqlite3
-import subprocess
 import sys
-import tempfile
-from pathlib import Path
-from urllib.parse import unquote
+from urllib.parse import parse_qs, unquote, urlsplit
 
+from answers import answer_ok, norm
 
-SITE = "irs_refund"
 TASK_COUNT = 18
 STATEFUL_TASKS = {8}
-
-
-def _alt(*groups):
-    """One valid navigation alternative made from required URL groups."""
-    return tuple(
-        tuple(group) if isinstance(group, (list, tuple)) else (group,)
-        for group in groups
-    )
-
-
-def _lookup(reference_code, *extra):
-    return _alt(
-        f"/refund-status/start?case={reference_code}",
-        "/refund-status/verify",
-        "/refund-status/result",
-        *extra,
-    )
-
-
-NAV_ALTERNATIVES = {
-    0: (_lookup("wmr-2024-8554"),),
-    1: (_lookup("wmr-2025-8776"),),
-    2: (_lookup("wmr-2023-8887"),),
-    3: (_lookup("wmr-2024-9009"),),
-    4: (_alt("/search", "q=amended return", "/help/amended-return-wait-times"),),
-    5: (_alt("/notices", "/notices/id-221"),),
-    6: (_alt("/login", ("/account", "/lookup-history")),),
-    7: (_alt("/login", ("/account", "/lookup-history")),),
-    8: (_alt("/login", "/account/edit"),),
-    9: (_alt("/login", "/lookup-history"),),
-    10: (_lookup("wmr-2025-8665"),),
-    11: (_lookup("wmr-2025-8221", "/notices/id-221"),),
-    12: (_lookup("wmr-2025-8776"),),
-    13: (_alt(
-        "/search",
-        "q=split deposit",
-        "/refund-status/start?case=wmr-2024-8554",
-        "/refund-status/verify",
-        "/refund-status/result",
-    ),),
-    14: (_alt("/notices?stage=refund sent"),),
-    15: (_alt("/faq"),),
-    16: (_alt("/login", "/lookup-history"),),
-    17: (_lookup("wmr-2023-8887", "/refund-status/summary"),),
-}
-
-
-PASS_ANSWERS = {
-    0: "Nora Patel's expected delivery method is split deposit.",
-    1: "Priya Shah's refund is delayed because identity verification is needed.",
-    2: "Theo Martinez's refund is only approved so far; it has not been sent.",
-    3: "Grant Okafor's current stage is Return Received.",
-    4: "Amended synthetic returns stay in review longer than standard returns.",
-    5: "ID-221 asks the user to open the checklist, confirm the demo address, and review the stored contact preference.",
-    6: "Bob Chen's 2025 entry is Delayed: Identity Verification Needed.",
-    7: "2024 is further along: it is Refund Sent, while 2025 is only Refund Approved.",
-    8: "David Kim's preferred contact method is now Email and his city is Spokane.",
-    9: "Carol Davis's mismatch practice entry has ZIP code 00000.",
-    10: "The result says the ZIP code is incorrect.",
-    11: "The linked notice code is ID-221.",
-    12: "One checklist item is to verify the stored mailing ZIP code.",
-    13: "Nora Patel's result shows split deposit.",
-    14: "The split-deposit allocation notice is SP-177.",
-    15: "No. A guest session does not save lookup history; the user must sign in to an account.",
-    16: "Alice Johnson's prior-year paper-check entry is $980.",
-    17: "Theo Martinez's printable summary lists paper check.",
-}
-
-
-EXPECTED = {
-    0: "Nora Patel; split deposit",
-    1: "Priya Shah; identity-verification delay",
-    2: "Refund Approved, not sent",
-    3: "Return Received",
-    4: "amended returns stay in review longer than standard returns",
-    5: "confirm demo address and review stored contact preference",
-    6: "Delayed: Identity Verification Needed",
-    7: "2024 Refund Sent is further along than 2025 Refund Approved",
-    8: "Email and Spokane, plus matching DB state",
-    9: "ZIP 00000",
-    10: "ZIP code",
-    11: "ID-221",
-    12: "one identity-verification checklist item",
-    13: "split deposit",
-    14: "SP-177",
-    15: "guest history is not saved; sign-in required",
-    16: "$980",
-    17: "paper check on printable summary",
-}
+LOOKUPS = {0: 'WMR-2024-8554', 1: 'WMR-2025-8776', 2: 'WMR-2023-8887',
+           3: 'WMR-2024-9009', 10: 'WMR-2025-8665', 11: 'WMR-2025-8221',
+           12: 'WMR-2025-8776', 13: 'WMR-2024-8554', 17: 'WMR-2023-8887'}
+ACCOUNTS = {6: 'Bob Chen', 7: 'Alice Johnson', 8: 'David Kim',
+            9: 'Carol Davis', 16: 'Alice Johnson'}
+REQUIRED_TABLES = {'users', 'taxpayer_profiles', 'tax_returns', 'refund_statuses',
+                   'lookup_histories', 'search_logs', 'filing_statuses', 'notices',
+                   'help_articles', 'faqs', 'document_checklist_items', 'alerts',
+                   'refund_timeline_events'}
 
 
 def load_run(run_dir):
-    return json.loads((Path(run_dir) / "trajectory.json").read_text())
+    root = Path(run_dir)
+    traj = json.loads((root / 'trajectory.json').read_text())
+    # Older review recorders saved observed body text alongside screenshots.
+    # Never use a final answer/thought/action description as observed page text.
+    for step in traj.get('steps', []):
+        if 'page_text' not in step and isinstance(step.get('step'), int):
+            sidecar = root / f"page_{step['step']:03d}.txt"
+            if sidecar.is_file():
+                step['page_text'] = sidecar.read_text()
+    return traj
 
 
-def step_urls(traj):
-    return [
-        unquote(str(step.get("url", ""))).replace("+", " ").casefold()
-        for step in traj.get("steps", [])
-    ]
-
-
-def final_answer(traj):
-    return str(traj.get("final_answer") or "").strip()
-
-
-def _navigation_ok(task_index, traj):
-    urls = step_urls(traj)
-    for alternative in NAV_ALTERNATIVES[task_index]:
-        if all(
-            any(any(needle.casefold() in url for needle in group) for url in urls)
-            for group in alternative
-        ):
-            return True, urls
-    return False, urls
-
-
-def _norm(text):
-    return re.sub(r"\s+", " ", text or "").strip().casefold()
-
-
-def _has_all(text, *tokens):
-    value = _norm(text)
-    return all(_norm(token) in value for token in tokens)
-
-
-def _has_any(text, *tokens):
-    value = _norm(text)
-    return any(_norm(token) in value for token in tokens)
-
-
-def _numbers(text):
-    cleaned = (text or "").replace(",", "")
-    return [
-        float(value)
-        for value in re.findall(r"(?<![\w.])[-+]?\d+(?:\.\d+)?", cleaned)
-    ]
-
-
-def _has_number(text, expected, tolerance=0.005):
-    return any(
-        math.isclose(value, expected, abs_tol=tolerance, rel_tol=0)
-        for value in _numbers(text)
-    )
-
-
-def answer_ok(task_index, answer):
-    if not answer.strip():
-        return False
-    if task_index in {0, 13}:
-        return _has_all(answer, "split deposit")
-    if task_index == 1:
-        return _has_all(answer, "identity", "verification")
-    if task_index == 2:
-        return _has_all(answer, "approved") and _has_any(
-            answer, "not sent", "not been sent", "only approved"
-        )
-    if task_index == 3:
-        return _has_all(answer, "return received")
-    if task_index == 4:
-        return _has_all(answer, "longer", "standard", "return")
-    if task_index == 5:
-        return _has_all(answer, "address", "contact", "preference")
-    if task_index == 6:
-        return _has_all(answer, "identity", "verification", "needed")
-    if task_index == 7:
-        return _has_all(answer, "2024", "2025", "sent", "approved")
-    if task_index == 8:
-        return _has_all(answer, "email", "spokane")
-    if task_index == 9:
-        return bool(re.search(r"(?<!\d)0{5}(?!\d)", answer))
-    if task_index == 10:
-        return _has_all(answer, "zip")
-    if task_index == 11:
-        return _has_all(answer, "id-221")
-    if task_index == 12:
-        return any(
-            _has_all(answer, *tokens)
-            for tokens in (
-                ("photo", "id", "name"),
-                ("mailing", "zip"),
-                ("preferred", "contact", "method"),
-            )
-        )
-    if task_index == 14:
-        return _has_all(answer, "sp-177")
-    if task_index == 15:
-        return (
-            _has_any(answer, "no", "does not", "doesn't", "not save")
-            and _has_all(answer, "history")
-            and _has_any(answer, "sign in", "signed in", "account")
-        )
-    if task_index == 16:
-        return _has_number(answer, 980)
-    if task_index == 17:
-        return _has_all(answer, "paper check")
-    raise ValueError(f"unknown task index: {task_index}")
-
-
-def _fetch_db(container, kind):
-    source = f"{container}:/opt/WebSyn/{SITE}/{kind}/{SITE}.db"
-    handle, path = tempfile.mkstemp(suffix=".db")
-    os.close(handle)
-    result = subprocess.run(
-        ["docker", "cp", source, path], capture_output=True, text=True
-    )
-    if result.returncode:
-        try:
-            os.unlink(path)
-        except OSError:
-            pass
-        return None
-    return path
-
-
-def _resolve_db(path, container, kind):
-    return path or _fetch_db(container, kind)
-
-
-def _query(db_path, sql, params=()):
-    if not db_path or not Path(db_path).exists():
-        return None
-    connection = sqlite3.connect(db_path)
+def origin(url):
     try:
-        return connection.execute(sql, params).fetchall()
-    except sqlite3.Error:
+        p = urlsplit(url)
+        if p.scheme not in {'http', 'https'} or not p.hostname or p.username or p.password:
+            return None
+        return p.scheme, p.hostname.lower(), p.port or (443 if p.scheme == 'https' else 80)
+    except (TypeError, ValueError):
         return None
-    finally:
-        connection.close()
 
 
-def _david_profile(db_path):
-    rows = _query(
-        db_path,
-        "SELECT city, preferred_contact_method FROM users WHERE email=?",
-        ("david.k@test.com",),
-    )
-    return rows[0] if rows and len(rows) == 1 else None
+def observed_pages(traj):
+    expected = origin(traj.get('start_url', ''))
+    if expected is None:
+        return []
+    pages = []
+    for step in traj.get('steps', []):
+        url = step.get('url', '')
+        if origin(url) != expected:
+            continue
+        p = urlsplit(url)
+        pages.append((unquote(p.path).rstrip('/') or '/', parse_qs(p.query),
+                      norm(step.get('page_text', ''))))
+    return pages
 
 
-def _profile_state_ok(initial_db, after_db):
-    before = _david_profile(initial_db)
-    after = _david_profile(after_db)
-    ok = before == ("Seattle", "Mail") and after == ("Spokane", "Email")
-    return ok, f"initial={before!r}; after={after!r}"
+def navigation_ok(task, traj):
+    pages = observed_pages(traj)
+    paths = {p for p, _, _ in pages}
+
+    def content(path, *tokens):
+        return any(p == path and all(norm(t) in text for t in tokens)
+                   for p, _, text in pages)
+
+    def search(term):
+        return any(p == '/search' and len(q.get('q', [])) == 1
+                   and re.search(term, norm(q['q'][0])) and text
+                   for p, q, text in pages)
+
+    if task in LOOKUPS:
+        if not {'/refund-status/start', '/refund-status/verify', '/refund-status/result'} <= paths:
+            return False, 'lookup form steps/result not observed on the start origin'
+        if task == 10:
+            valid_result = content('/refund-status/result', 'Malik Rivera', 'Information Mismatch',
+                                   'the ZIP code does not match')
+        else:
+            valid_result = content('/refund-status/result', 'refund status result', LOOKUPS[task])
+        if task == 13:
+            valid_result &= search(r'\bsplit\b')
+        if task == 17:
+            valid_result &= content('/refund-status/summary', 'printable summary', LOOKUPS[task], 'paper check')
+        return bool(valid_result), 'required case/result content and optional search/summary'
+    if task in ACCOUNTS:
+        if '/login' not in paths:
+            return False, 'sign-in page not visited'
+        account = ACCOUNTS[task]
+        if task == 8:
+            return ('/account/edit' in paths and content('/account', account, 'Spokane', 'Email')), 'David profile edit and saved account page'
+        allowed = ['/lookup-history'] if task in {9, 16} else ['/lookup-history', '/account']
+        return any(content(p, account) for p in allowed), 'requested account identity on its history/account page'
+    if task == 4:
+        return bool(search(r'\bamend\w*\b') and content('/help/amended-return-wait-times', 'amended', 'longer')), 'relevant search and timing article'
+    if task == 5:
+        return ('/notices' in paths and content('/notices/ID-221', 'ID-221', 'checklist', 'contact preference')), 'notice list and ID-221 detail'
+    if task == 14:
+        return any(p == '/notices' and q.get('stage') == ['Refund Sent'] and 'sp-177' in text for p,q,text in pages), 'Refund Sent notice filter and allocation code'
+    if task == 15:
+        return content('/faq', 'saved lookup history is tied to local benchmark or registered demo accounts'), 'expanded history FAQ answer'
+    return False, 'unknown task'
 
 
-STATE_CHECKS = {8: ("profile_after_state", _profile_state_ok)}
+def snapshot(path):
+    if not path or not Path(path).is_file():
+        raise ValueError('required database snapshot missing')
+    result = {}
+    with sqlite3.connect(Path(path).resolve().as_uri() + '?mode=ro', uri=True) as db:
+        db.row_factory = sqlite3.Row
+        schema = db.execute("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").fetchall()
+        for table, ddl in schema:
+            quoted = table.replace('"', '""')
+            columns = [r[1] for r in db.execute(f'PRAGMA table_info("{quoted}")')]
+            if 'id' not in columns:
+                raise ValueError('table without stable row identity')
+            rows = [dict(row) for row in db.execute(f'SELECT * FROM "{quoted}"')]
+            indexed = {row['id']: row for row in rows}
+            if len(indexed) != len(rows):
+                raise ValueError('duplicate row identity')
+            result[table] = {'schema': ddl, 'rows': indexed}
+    if not REQUIRED_TABLES <= result.keys():
+        raise ValueError('incomplete site snapshot schema')
+    return result
 
 
-def evaluate(task_index, traj, initial_db="", after_db="", container="wh-review"):
-    if task_index not in NAV_ALTERNATIVES:
-        raise ValueError(f"unknown task index: {task_index}")
-    answer = final_answer(traj)
-    navigation_ok, urls = _navigation_ok(task_index, traj)
-    checks = [
-        ("final_answer_nonempty", bool(answer), f"final={answer!r}"),
-        ("required_navigation", navigation_ok, f"urls={urls!r}"),
-        (
-            "frozen_answer",
-            answer_ok(task_index, answer),
-            f"expected={EXPECTED[task_index]}; final={answer!r}",
-        ),
-    ]
-    if task_index in STATEFUL_TASKS:
-        initial_db = _resolve_db(initial_db, container, "instance_seed")
-        after_db = _resolve_db(after_db, container, "instance")
-        name, state_check = STATE_CHECKS[task_index]
-        ok, detail = state_check(initial_db, after_db)
-        checks.append((name, ok, detail))
-
-    passed = all(ok for _, ok, _ in checks)
-    reason = next((name for name, ok, _ in checks if not ok), "")
-    evidence = [
-        f"[{'PASS' if ok else 'FAIL'}] {name}: {detail}"
-        for name, ok, detail in checks
-    ]
-    return {
-        "task_id": f"IRS Refund Tracker--{task_index}",
-        "pass": passed,
-        "reason": reason,
-        "evidence": evidence,
-    }
+def state_ok(task, initial_db, after_db):
+    try:
+        before, after = snapshot(initial_db), snapshot(after_db)
+        expected = deepcopy(before)
+        if task == 8:
+            david = [r for r in expected['users']['rows'].values() if r.get('email') == 'david.k@test.com']
+            if len(david) != 1 or (david[0].get('city'), david[0].get('preferred_contact_method')) != ('Seattle', 'Mail'):
+                return False, 'David initial profile is not the benchmark starting state'
+            david[0].update(city='Spokane', preferred_contact_method='Email')
+        else:
+            # Searches and signed-in lookups may append logging rows. They may
+            # neither edit/delete existing rows nor change domain/user data.
+            for table in ['search_logs', 'lookup_histories']:
+                old = before[table]['rows']
+                new = after.get(table, {}).get('rows', {})
+                if any(new.get(k) != v for k,v in old.items()):
+                    return False, f'pre-existing {table} rows changed'
+                if any(k <= max(old, default=0) for k in new.keys()-old.keys()):
+                    return False, f'non-appended {table} identity'
+                expected[table]['rows'] = new
+        return expected == after, 'only requested profile fields / permitted append-only logs may differ'
+    except (ValueError, sqlite3.Error, OSError, KeyError, TypeError) as exc:
+        return False, f'invalid snapshots: {exc}'
 
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--run_dir", required=True)
-    parser.add_argument("--initial_db", default="")
-    parser.add_argument("--after_db", default="")
-    parser.add_argument(
-        "--container", default=os.environ.get("WH_CONTAINER", "wh-review")
-    )
-    parser.add_argument("--no_llm", nargs="?", const="True", default="False")
-    return parser.parse_args()
+def evaluate(task_index, traj, initial_db='', after_db='', **_unused):
+    if not 0 <= task_index < TASK_COUNT:
+        raise ValueError('unknown task')
+    nav, nav_detail = navigation_ok(task_index, traj)
+    state, state_detail = state_ok(task_index, initial_db, after_db)
+    answer = str(traj.get('final_answer') or '').strip()
+    checks = [('required_navigation', nav, nav_detail),
+              ('answer_claim', answer_ok(task_index, answer), answer),
+              ('snapshot_delta', state, state_detail)]
+    passed = all(ok for _,ok,_ in checks)
+    return {'task_id': f'IRS Refund Tracker--{task_index}', 'pass': passed,
+            'reason': next((name for name,ok,_ in checks if not ok), ''),
+            'evidence': [f"[{'PASS' if ok else 'FAIL'}] {name}: {detail}" for name,ok,detail in checks]}
 
 
 def main(task_index):
-    args = parse_args()
-    verdict = evaluate(
-        task_index,
-        load_run(args.run_dir),
-        initial_db=args.initial_db,
-        after_db=args.after_db,
-        container=args.container,
-    )
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--run_dir', required=True)
+    parser.add_argument('--initial_db', default='')
+    parser.add_argument('--after_db', default='')
+    # Accepted for older callers, but never used as a mutable DB fallback.
+    parser.add_argument('--container', default='')
+    parser.add_argument('--no_llm', nargs='?', const='True', default='True')
+    args = parser.parse_args()
+    root = Path(args.run_dir)
+    try:
+        verdict = evaluate(task_index, load_run(root),
+                           args.initial_db or root/'initial.db',
+                           args.after_db or root/'after.db')
+    except (OSError, ValueError, TypeError) as exc:
+        verdict = {'task_id': f'IRS Refund Tracker--{task_index}', 'pass': False,
+                   'reason': 'invalid_evidence', 'evidence': [str(exc)]}
     print(json.dumps(verdict, indent=2))
-    sys.exit(0 if verdict["pass"] else 1)
+    sys.exit(0 if verdict['pass'] else 1)
