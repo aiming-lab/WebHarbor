@@ -102,7 +102,7 @@ def trajectory(index: int, answer: str | None = None, paths: list[str] | None = 
             ]
     if index == 9 and observed_paths:
         detail_index = next(
-            (position for position, path in enumerate(observed_paths) if path.startswith(url("/pets/nori-rabbit"))),
+            (position for position, step in enumerate(steps) if step["url"].startswith(url("/pets/nori-rabbit"))),
             None,
         )
         if detail_index is not None:
@@ -116,7 +116,7 @@ def trajectory(index: int, answer: str | None = None, paths: list[str] | None = 
             )
     if index == 14 and observed_paths:
         detail_index = next(
-            (position for position, path in enumerate(observed_paths) if path.startswith(url("/pets/milo-labrador-mix"))),
+            (position for position, step in enumerate(steps) if step["url"].startswith(url("/pets/milo-labrador-mix"))),
             None,
         )
         if detail_index is not None:
@@ -237,6 +237,22 @@ class VerifierMatrixTests(unittest.TestCase):
         result, payload = self.verify(index, observed, mutate)
         self.assertNotEqual(result.returncode, 0, result.stdout + result.stderr)
         self.assertFalse(payload["pass"], payload)
+
+    def test_indexed_save_click_uses_observed_button_and_transition(self):
+        observed = trajectory(14)
+        save = next(s for s in observed["steps"] if "Save this pet" in str(s["params"]))
+        save["params"] = {"index": 17}
+        save["observed_text_before"] = "[16]<a>My account</a>\n[17]<button type=submit />\n\t♡ Save this pet"
+        save["url_after"] = url("/account")
+        self.assert_passes(14, observed)
+        save["params"] = {"index": 16}
+        self.assert_fails(14, observed)
+        save["params"] = {"index": 17}
+        save["action_result"] = {"error": "click failed"}
+        self.assert_fails(14, observed)
+        save.pop("action_result")
+        save.pop("observed_text_before")
+        self.assert_fails(14, observed)
 
     def test_positive_examples_pass(self):
         for index in range(15):

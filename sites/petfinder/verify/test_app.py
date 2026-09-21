@@ -84,6 +84,39 @@ class AppTests(unittest.TestCase):
         finally:
             connection.close()
 
+    def test_search_filters_location_before_result_limit(self):
+        response = self.client.get("/search?q=Dog&location=Chicago,+IL")
+        body = response.get_data(as_text=True)
+        for name in ["Archie Dachshund", "Maple Senior Beagle", "Ollie Poodle Mix", "Sage Shepherd Mix", "Theo Boxer Mix", "Winnie Greyhound"]:
+            self.assertIn(name, body)
+        self.assertNotIn("Milo Labrador Mix", body)
+
+    def test_preferences_apply_and_explicit_anywhere_survives_pagination(self):
+        self.login()
+        page = self.client.get("/account")
+        self.client.post("/account/preferences", data={"csrf_token": csrf_token(page), "home_location": "Chicago, IL", "sort_preference": "Name A–Z"})
+        body = self.client.get("/pets?species=Dog").get_data(as_text=True)
+        self.assertIn("6 pets found", body)
+        self.assertIn('<option selected>Chicago, IL</option>', body)
+        self.assertIn('value="name" selected', body)
+        self.assertIn("Ollie Poodle Mix", self.client.get("/search?q=Dog").get_data(as_text=True))
+        self.assertNotIn("Milo Labrador Mix", self.client.get("/search?q=Dog").get_data(as_text=True))
+        body = self.client.get("/pets?species=Dog&location=").get_data(as_text=True)
+        self.assertIn("30 pets found", body)
+        link = html.unescape(re.search(r'href="([^"]+)" rel="next"', body).group(1))
+        self.assertIn("location=", link)
+        self.assertIn("30 pets found", self.client.get(link).get_data(as_text=True))
+        self.assertIn("30 pets found", self.client.get("/pets?species=Dog&location=&sort=newest").get_data(as_text=True))
+
+    def test_nearest_sort_orders_city_centres_without_inventing_updates(self):
+        self.login()
+        body = self.client.get("/pets?species=Dog&location=&sort=nearest").get_data(as_text=True)
+        locations = re.findall(r'<p class="pet-location">([^<]+)</p>', body)
+        self.assertTrue(locations)
+        self.assertEqual(locations[:8], ["New York, NY"] * 8)
+        page = self.client.get("/account").get_data(as_text=True)
+        self.assertNotIn("Recently updated", page)
+
     def test_public_pages_and_all_details_render(self):
         paths = [
             "/",

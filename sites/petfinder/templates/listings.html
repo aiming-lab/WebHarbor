@@ -49,13 +49,14 @@
       </fieldset>
       <label>SORT RESULTS
         <select name="sort" aria-label="SORT RESULTS">
+          <option value="nearest" {% if sort_key == 'nearest' %}selected{% endif %}>Nearest city first</option>
           <option value="newest" {% if sort_key == 'newest' %}selected{% endif %}>Newest arrivals</option>
           <option value="longest" {% if sort_key == 'longest' %}selected{% endif %}>Longest stay</option>
           <option value="name" {% if sort_key == 'name' %}selected{% endif %}>Name A–Z</option>
         </select>
       </label>
       <button type="submit">Apply filters</button>
-      <a class="clear-link" href="{{ url_for('listings') }}">Clear all</a>
+      <a class="clear-link" href="{{ url_for('listings', location='', sort='newest') }}">Clear all</a>
       </form>
     </details>
   </aside>
