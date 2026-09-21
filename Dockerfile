@@ -167,6 +167,9 @@ os.makedirs('instance_seed', exist_ok=True); \
 shutil.copy2('instance/adopt_a_pet.db', 'instance_seed/adopt_a_pet.db'); \
 print('Adopt-a-Pet seed DB generated at build time.')" && rm -rf /opt/WebSyn/adopt_a_pet/instance
 
+# Preserve the downloaded MEGA archive and migrate its seed at build time.
+RUN cd /opt/WebSyn/mega && python3 migrate_seed.py
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 

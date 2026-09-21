@@ -11,7 +11,7 @@
     <div><dt>Users</dt><dd>{{ plan.users_included }}</dd></div>
   </dl>
   <form method="post" action="{{ url_for('add_to_cart', slug=plan.slug) }}">
-    <input type="hidden" name="billing_cycle" value="{{ billing|default('monthly') }}">
+    <input type="hidden" name="billing_cycle" value="{{ 'yearly' if billing|default('monthly') == 'yearly' and plan.yearly_price > 0 else 'monthly' }}">
     <input type="hidden" name="seats" value="{{ plan.users_included or 1 }}">
     <button type="submit">Choose plan</button>
   </form>

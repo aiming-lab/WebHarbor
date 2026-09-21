@@ -159,7 +159,7 @@ def seed_database():
 
     downloads = [
         ("Desktop", "Windows", "MEGAsyncSetup64.exe", "5.12.1", 83.4, "x64", True, "Windows-1.png", "Sync, backup, and transfer manager for Windows."),
-        ("Desktop", "Windows", "MEGAcmdSetup64.exe", "1.7.2", 57.2, "x64", False, "Windows-2.png", "Command-line package for Windows automation."),
+        ("CMD", "Windows", "MEGAcmdSetup64.exe", "1.7.2", 57.2, "x64", False, "Windows-2.png", "Command-line package for Windows automation."),
         ("Desktop", "Windows", "MEGAsyncSetup32.exe", "5.12.1", 79.2, "x86", False, "Windows-1.png", "Legacy Windows sync package for 32-bit systems."),
         ("Desktop", "Windows", "MEGAsyncARM64.exe", "5.12.1", 81.6, "ARM64", False, "Windows-2.png", "Windows ARM64 sync package."),
         ("CMD", "Windows", "MEGAcmdPortable.zip", "1.7.2", 49.8, "Portable x64", False, "20230215_Mega_icons_upd_00017.png", "Portable command-line archive for Windows automation."),

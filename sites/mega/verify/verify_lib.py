@@ -69,6 +69,8 @@ def load_run(run_dir):
         return _empty_run(run_dir, f"trajectory.json must be an object, got {type(traj).__name__}")
     if not isinstance(traj.get("steps", []), list):
         return _empty_run(run_dir, "trajectory.json: 'steps' must be a list")
+    if any(not isinstance(step, dict) for step in traj.get("steps", [])):
+        return _empty_run(run_dir, "trajectory steps must be objects")
     traj["_run_dir"] = d
     shots_dir = d / "screenshots"
     try:
@@ -734,6 +736,12 @@ def parse_args():
     parser.add_argument("--site", default=None)
     parser.add_argument("--no_llm", nargs="?", const="true", default="false")
     args = parser.parse_args()
+    # Saved task snapshots take precedence over a mutable live container.
+    run = Path(args.run_dir)
+    if args.initial_db is None and (run / "initial.db").is_file():
+        args.initial_db = str(run / "initial.db")
+    if args.after_db is None and (run / "after.db").is_file():
+        args.after_db = str(run / "after.db")
     args.no_llm = str(args.no_llm).casefold() in {"1", "true", "yes", "on"}
     if args.site:
         os.environ["WH_SITE"] = args.site
