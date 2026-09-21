@@ -199,10 +199,11 @@ def contains_any(final, tokens):
 
 
 def num_in(final, number):
-    """The integer `number` appears as a standalone number (word boundary),
-    so 76 matches '76 games' but not '76ers'; 1 matches '1' / '1,' not '13'."""
+    """The number appears as a standalone number (word boundary), so 76 matches
+    '76 games' but not '76ers'; floats are regex-escaped so the '.' is literal
+    (0.9 matches '0.9' but not '0x9'); 1 matches '1' / '1,' but not '13'."""
     f = norm(final)
-    return bool(re.search(rf"(?<![\d.]){number}(?![\d])", f))
+    return bool(re.search(rf"(?<![\d.]){re.escape(str(number))}(?![\d])", f))
 
 
 def word_num_in(final, number, word=None):

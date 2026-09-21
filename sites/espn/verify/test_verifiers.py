@@ -470,7 +470,78 @@ def _add_task_tests():
         setattr(TestEspnVerifiers, f"test_broken_package_{task:02d}", broken)
 
 
+def _add_rework_tests():
+    """Acceptor-rework regression controls (items B and C of ACCEPT.md §7).
+
+    B (verify_35): the task asks only for the next game's start and the
+    cheapest ticket, so an answer WITHOUT the opponent named must still PASS
+    when date/time/ticket/navigation are right, while a wrong ticket price or
+    wrong date still FAILs.
+    C (verify_33): an honest answer anchored on the LATER MVP meta-articles
+    (which discuss MVP cases/voting without naming candidates) must PASS
+    with its own on-page facts; a fabricated subject still FAILs (covered by
+    the standard wrong-answer case).
+    """
+    def v35_no_opponent_pass(self):
+        run = make_run(self.tmp, 35,
+                       ["/team/nba/los-angeles-lakers/schedule", "/tickets/135"],
+                       "The Lakers' next game starts on April 13, 2024 at 8:00 PM ET. "
+                       "From ESPN's ticket purchasing page for that game, the cheapest "
+                       "ticket available is the Upper Level (300-Level) at $55.00.")
+        rc, verdict = self.grade(35, run)
+        self.assertEqual(rc, 0, f"no-opponent honest answer must PASS: {verdict}")
+        self.assertTrue(verdict["pass"], verdict)
+
+    def v35_wrong_ticket_fail(self):
+        run = make_run(self.tmp, 35,
+                       ["/team/nba/los-angeles-lakers/schedule", "/tickets/135"],
+                       "The Lakers' next game starts on April 13, 2024 at 8:00 PM ET. "
+                       "From ESPN's ticket purchasing page for that game, the cheapest "
+                       "ticket available is the Courtside (Floor) at $575.00.")
+        rc, verdict = self.grade(35, run)
+        self.assertNotEqual(rc, 0, "a wrong cheapest-ticket claim must FAIL")
+        self.assertEqual(verdict["reason"], "answer_cheapest_ticket")
+
+    def v35_wrong_date_fail(self):
+        run = make_run(self.tmp, 35,
+                       ["/team/nba/los-angeles-lakers/schedule", "/tickets/135"],
+                       "The Lakers' next game starts on April 16, 2024 at 7:30 PM ET, and "
+                       "the cheapest ticket on the ticket page is $55.")
+        rc, verdict = self.grade(35, run)
+        self.assertNotEqual(rc, 0, "a wrong next-game date must FAIL")
+        self.assertEqual(verdict["reason"], "answer_next_game_date")
+
+    def v33_meta_article_pass(self):
+        run = make_run(self.tmp, 33,
+                       ["/nfl/news", "/story/quarterback-evaluation-tools-mvp-april-2024"],
+                       "The latest ESPN article discussing NFL MVP candidates for 2023 is "
+                       "'Quarterback evaluation tools and MVP thinking' (April 4, 2024, "
+                       "Mike Sando): analytics teams around the league have refined the "
+                       "toolkit for assessing quarterback MVP cases, with EPA, CPOE, and "
+                       "time-to-throw becoming standard reference metrics that voters "
+                       "weigh alongside the eye test.")
+        rc, verdict = self.grade(33, run)
+        self.assertEqual(rc, 0, f"honest meta-article answer must PASS: {verdict}")
+        self.assertTrue(verdict["pass"], verdict)
+
+    def v33_retrospective_pass(self):
+        run = make_run(self.tmp, 33,
+                       ["/nfl/news"],
+                       "The latest ESPN article on the 2023 NFL MVP race is the "
+                       "'Retrospective: 2023 MVP race revisited' piece (March 12, 2024, "
+                       "Mike Sando), an offseason look back at the regular-season honors.")
+        rc, verdict = self.grade(33, run)
+        self.assertEqual(rc, 0, f"honest retrospective answer must PASS: {verdict}")
+
+    setattr(TestEspnVerifiers, "test_rework_b35_no_opponent_pass", v35_no_opponent_pass)
+    setattr(TestEspnVerifiers, "test_rework_b35_wrong_ticket_fail", v35_wrong_ticket_fail)
+    setattr(TestEspnVerifiers, "test_rework_b35_wrong_date_fail", v35_wrong_date_fail)
+    setattr(TestEspnVerifiers, "test_rework_c33_meta_article_pass", v33_meta_article_pass)
+    setattr(TestEspnVerifiers, "test_rework_c33_retrospective_pass", v33_retrospective_pass)
+
+
 _add_task_tests()
+_add_rework_tests()
 
 if __name__ == "__main__":
     unittest.main(verbosity=1)

@@ -14,8 +14,11 @@ Ground truth (hardcoded; frozen from the served pages):
     cheapest ticket $55 (Upper Level, 300-Level).
 
 Checks: run-package gate + answer + navigation (Lakers schedule/team page +
-the /tickets/135 page) + next-game facts (April 13, Trail Blazers, 8:00 PM
-ET) + the cheapest ticket $55 + read-only DB.
+the /tickets/135 page) + next-game start (April 13, 8:00 PM ET) + the
+cheapest ticket $55 + read-only DB.  The opponent (Trail Blazers) is NOT
+asked by the task and is therefore optional supporting evidence only — an
+answer with the correct date, tip-off time, and cheapest ticket passes
+whether or not the opponent is named (acceptor rework item B).
 Input/Output: see verify_lib.parse_args / verify_lib.Judge.
 """
 import os, sys
@@ -34,11 +37,13 @@ def main():
     j.check("answer_next_game_date",
             ("april 13" in f) or ("2024-04-13" in f) or ("04-13" in f) or ("4/13" in f),
             "the next Lakers game is on April 13, 2024")
-    j.check("answer_next_game_opponent",
-            contains_any(fa, ["trail blazer", "portland"]),
-            "the next game is @ Portland Trail Blazers")
     j.check("answer_start_time", "8:00" in f,
             "the game starts at 8:00 PM ET")
+    opponent = contains_any(fa, ["trail blazer", "portland"])
+    j.evidence.append(
+        f"[INFO] opponent_named (optional): {opponent} — the task asks only for "
+        "the start time and the cheapest ticket, so the opponent is supporting "
+        "evidence, not a requirement")
     j.check("nav_ticket_page", navigated_to(t, "/tickets/135"),
             "the ticket purchasing page for the next game is /tickets/135")
     j.check("answer_cheapest_ticket", num_in(fa, 55),
