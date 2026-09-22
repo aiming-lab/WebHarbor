@@ -8,7 +8,6 @@ from functools import wraps
 
 from flask import (
     Flask,
-    abort,
     flash,
     redirect,
     render_template,
@@ -24,12 +23,19 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, instance_path=os.path.join(BASE_DIR, "instance"))
 app.config["SECRET_KEY"] = "webharbor-akc-dev-key"
-app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'akc.db')}"
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "AKC_DATABASE_URI",
+    f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'akc.db')}",
+)
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 STOP_WORDS = {"the", "a", "an", "and", "or", "of", "for", "to", "in", "on", "with", "dog", "dogs"}
 REFERENCE_DATE = date(2026, 5, 28)
+EVENT_CLASSES = ("Beginner Novice", "Open Standard", "Junior Handler", "Canine Good Citizen")
+HOUSEHOLDS = ("Apartment", "Condo", "House with yard", "Suburban home")
+ACTIVITY_LEVELS = ("Low", "Moderate", "High")
+EXPERIENCE_LEVELS = ("First-time owner", "Family owner", "Experienced owner", "Sports competitor")
 
 
 class User(db.Model):
@@ -87,6 +93,7 @@ class Event(db.Model):
 
 
 class SavedBreed(db.Model):
+    __table_args__ = (db.UniqueConstraint("user_id", "breed_id"),)
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     breed_id = db.Column(db.Integer, db.ForeignKey("breed.id"), nullable=False)
@@ -95,6 +102,7 @@ class SavedBreed(db.Model):
 
 
 class EventRegistration(db.Model):
+    __table_args__ = (db.UniqueConstraint("user_id", "event_id", "dog_name", "class_name"),)
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     event_id = db.Column(db.Integer, db.ForeignKey("event.id"), nullable=False)
@@ -110,7 +118,13 @@ def current_user() -> User | None:
 
 @app.context_processor
 def inject_user():
-    return {"current_user": current_user(), "reference_date": REFERENCE_DATE}
+    return {
+        "current_user": current_user(),
+        "reference_date": REFERENCE_DATE,
+        "household_options": HOUSEHOLDS,
+        "activity_options": ACTIVITY_LEVELS,
+        "experience_options": EXPERIENCE_LEVELS,
+    }
 
 
 def login_required(view):
@@ -144,21 +158,6 @@ def scored_search(query: str, rows, fields: list[str]):
             scored.append((score, row))
     scored.sort(key=lambda item: (-item[0], getattr(item[1], "name", getattr(item[1], "title", ""))))
     return [row for _, row in scored]
-
-
-def breed_image_style(slug: str) -> str:
-    palette = {
-        "sporting": "#006778",
-        "hound": "#9a3412",
-        "working": "#1d4ed8",
-        "terrier": "#7c2d12",
-        "toy": "#be185d",
-        "non-sporting": "#047857",
-        "herding": "#4f46e5",
-    }
-    breed = Breed.query.filter_by(slug=slug).first()
-    color = palette.get((breed.group if breed else "").lower(), "#6b7280")
-    return f"background: linear-gradient(135deg, {color}, #f5f0e6);"
 
 
 @app.route("/")
@@ -215,26 +214,37 @@ def save_breed(slug):
     return redirect(url_for("breed_detail", slug=slug))
 
 
-@app.route("/breed-selector", methods=["GET", "POST"])
+@app.route("/breed-selector")
 def breed_selector():
     matches = []
     answers = {}
-    if request.method == "POST":
-        answers = {
-            "home": request.form.get("home", "apartment"),
-            "energy": int(request.form.get("energy", "3")),
-            "grooming": int(request.form.get("grooming", "3")),
-            "children": int(request.form.get("children", "3")),
-        }
-        for breed in Breed.query.all():
-            score = 0
-            score += 6 - abs(breed.energy - answers["energy"])
-            score += 6 - abs(breed.grooming - answers["grooming"])
-            score += 6 - abs(breed.good_with_children - answers["children"])
-            score += breed.apartment_score if answers["home"] == "apartment" else min(5, breed.energy + 1)
-            matches.append((score, breed))
-        matches.sort(key=lambda item: (-item[0], item[1].name))
-        matches = matches[:8]
+    if request.args.get("home"):
+        try:
+            answers = {
+                "home": request.args.get("home", "apartment"),
+                "energy": int(request.args.get("energy", "3")),
+                "grooming": int(request.args.get("grooming", "3")),
+                "children": int(request.args.get("children", "3")),
+            }
+        except ValueError:
+            answers = {}
+        valid = (
+            answers.get("home") in {"apartment", "house"}
+            and all(1 <= answers.get(field, 0) <= 5 for field in ("energy", "grooming", "children"))
+        )
+        if not valid:
+            flash("Choose valid selector values.", "error")
+            answers = {}
+        else:
+            for breed in Breed.query.all():
+                score = 0
+                score += 6 - abs(breed.energy - answers["energy"])
+                score += 6 - abs(breed.grooming - answers["grooming"])
+                score += 6 - abs(breed.good_with_children - answers["children"])
+                score += breed.apartment_score if answers["home"] == "apartment" else min(5, breed.energy + 1)
+                matches.append((score, breed))
+            matches.sort(key=lambda item: (-item[0], item[1].name))
+            matches = matches[:8]
     return render_template("selector.html", matches=matches, answers=answers)
 
 
@@ -283,17 +293,34 @@ def event_detail(slug):
         if not current_user():
             flash("Sign in before registering for an event.", "info")
             return redirect(url_for("login", next=request.path))
+        dog_name = request.form.get("dog_name", "").strip()
+        class_name = request.form.get("class_name", "")
+        if not dog_name:
+            flash("Enter a dog name before saving the registration.", "error")
+            return render_template("event_detail.html", event=event, event_classes=EVENT_CLASSES)
+        if class_name not in EVENT_CLASSES:
+            flash("Choose a valid event class.", "error")
+            return render_template("event_detail.html", event=event, event_classes=EVENT_CLASSES)
+        existing = EventRegistration.query.filter_by(
+            user_id=current_user().id,
+            event_id=event.id,
+            dog_name=dog_name,
+            class_name=class_name,
+        ).first()
+        if existing:
+            flash("That dog is already registered for this class.", "info")
+            return redirect(url_for("account"))
         reg = EventRegistration(
             user_id=current_user().id,
             event_id=event.id,
-            dog_name=request.form.get("dog_name", "").strip() or "TBD",
-            class_name=request.form.get("class_name", "Beginner Novice"),
+            dog_name=dog_name,
+            class_name=class_name,
         )
         db.session.add(reg)
         db.session.commit()
         flash("Registration saved in your AKC profile.", "success")
         return redirect(url_for("account"))
-    return render_template("event_detail.html", event=event)
+    return render_template("event_detail.html", event=event, event_classes=EVENT_CLASSES)
 
 
 @app.route("/search")
@@ -330,17 +357,26 @@ def register():
     if request.method == "POST":
         email = request.form.get("email", "").lower().strip()
         username = request.form.get("username", "").strip()
-        if User.query.filter((User.email == email) | (User.username == username)).first():
+        display_name = request.form.get("display_name", "").strip()
+        password = request.form.get("password", "")
+        household = request.form.get("household", "")
+        activity_level = request.form.get("activity_level", "")
+        experience = request.form.get("experience", "")
+        if not display_name or not username or not email or len(password) < 8:
+            flash("Complete every required field and use a password of at least 8 characters.", "error")
+        elif household not in HOUSEHOLDS or activity_level not in ACTIVITY_LEVELS or experience not in EXPERIENCE_LEVELS:
+            flash("Choose valid owner preferences.", "error")
+        elif User.query.filter((User.email == email) | (User.username == username)).first():
             flash("That email or username is already registered.", "error")
         else:
             user = User(
                 email=email,
                 username=username,
-                display_name=request.form.get("display_name", username),
-                password_hash=generate_password_hash(request.form.get("password", "TestPass123!")),
-                household=request.form.get("household", "Apartment"),
-                activity_level=request.form.get("activity_level", "Moderate"),
-                experience=request.form.get("experience", "First-time owner"),
+                display_name=display_name,
+                password_hash=generate_password_hash(password),
+                household=household,
+                activity_level=activity_level,
+                experience=experience,
             )
             db.session.add(user)
             db.session.commit()
@@ -370,9 +406,21 @@ def account():
 @login_required
 def update_profile():
     user = current_user()
-    user.household = request.form.get("household", user.household)
-    user.activity_level = request.form.get("activity_level", user.activity_level)
-    user.experience = request.form.get("experience", user.experience)
+    household = request.form.get("household", "")
+    activity_level = request.form.get("activity_level", "")
+    experience = request.form.get("experience", "")
+    if household not in HOUSEHOLDS:
+        flash("Choose a valid household type.", "error")
+        return redirect(url_for("account"))
+    if activity_level not in ACTIVITY_LEVELS:
+        flash("Choose a valid activity level.", "error")
+        return redirect(url_for("account"))
+    if experience not in EXPERIENCE_LEVELS:
+        flash("Choose a valid experience level.", "error")
+        return redirect(url_for("account"))
+    user.household = household
+    user.activity_level = activity_level
+    user.experience = experience
     db.session.commit()
     flash("Profile preferences updated.", "success")
     return redirect(url_for("account"))
@@ -381,37 +429,6 @@ def update_profile():
 @app.route("/_health")
 def health():
     return {"ok": True, "site": "akc"}
-
-
-@app.route("/breed-art/<slug>.svg")
-def breed_art(slug):
-    breed = Breed.query.filter_by(slug=slug).first()
-    if not breed:
-        abort(404)
-    initials = "".join(part[0] for part in breed.name.split()[:2]).upper()
-    color = {
-        "Sporting": "#006778",
-        "Hound": "#9a3412",
-        "Working": "#1d4ed8",
-        "Terrier": "#7c2d12",
-        "Toy": "#be185d",
-        "Non-Sporting": "#047857",
-        "Herding": "#4f46e5",
-    }.get(breed.group, "#4b5563")
-    svg = f"""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 480" role="img" aria-label="{breed.name}">
-<rect width="720" height="480" fill="#f5f0e6"/>
-<circle cx="140" cy="90" r="180" fill="{color}" opacity=".14"/>
-<circle cx="590" cy="405" r="210" fill="{color}" opacity=".18"/>
-<path d="M221 334c-24-51 6-118 64-147 41-21 90-22 132-2 27 13 48 35 61 62 43 9 72 42 72 81 0 47-42 85-94 85H300c-37 0-69-20-79-79z" fill="{color}" opacity=".88"/>
-<path d="M302 182l-52-68c-9-12-2-29 13-30l89-7c18-1 31 17 23 33l-35 72z" fill="{color}"/>
-<path d="M456 184l49-67c9-12 28-9 32 5l26 88c5 17-12 31-27 23l-80-42z" fill="{color}"/>
-<circle cx="344" cy="263" r="12" fill="#111827"/>
-<circle cx="461" cy="263" r="12" fill="#111827"/>
-<path d="M382 306c21 16 43 16 65 0" fill="none" stroke="#111827" stroke-width="14" stroke-linecap="round"/>
-<text x="38" y="70" font-family="Arial, sans-serif" font-size="34" font-weight="700" fill="#111827">{initials}</text>
-<text x="38" y="112" font-family="Arial, sans-serif" font-size="22" fill="#4b5563">{breed.group} Group</text>
-</svg>"""
-    return app.response_class(svg, mimetype="image/svg+xml")
 
 
 def seed_database():
@@ -458,7 +475,12 @@ def seed_database():
             height=height,
             weight=weight,
             temperament=temperament,
-            overview=f"The {name} profile summarizes AKC-style breed history, temperament, size, and owner fit for benchmark browsing tasks.",
+            overview={
+                "cavalier-king-charles-spaniel": "The Cavalier King Charles Spaniel combines the gentle attentiveness of a toy breed with the verve and athleticism of a sporting spaniel.",
+                "border-collie": "A remarkably bright workaholic, the Border Collie is an energetic dog best suited to owners with time and space to keep it occupied.",
+                "golden-retriever": "The Golden Retriever is an exuberant Scottish gundog known for field work, service, obedience, and an endearing love of life.",
+                "great-dane": "The easygoing Great Dane is a joy to live with, but its imposing size, weight, and strength require a serious commitment.",
+            }.get(slug, f"Explore the {name}'s breed traits, size, care needs, and owner-fit signals."),
             care=f"{name} owners should plan routine veterinary care, structured socialization, nail trims, dental care, and age-appropriate nutrition.",
             exercise=f"Exercise needs are rated {energy}/5. Use the rating with household size and training goals when comparing breeds.",
         ))
@@ -468,14 +490,14 @@ def seed_database():
         ("canine-good-citizen-overview", "Canine Good Citizen Overview", "Training", "Evan Porter", 5, "Understand the ten skills in AKC's CGC program and how to prepare."),
         ("dog-grooming-basics", "Dog Grooming Basics by Coat Type", "Health", "Priya Shah", 8, "Compare grooming routines for smooth, double, curly, and drop coats."),
         ("first-dog-show-guide", "Your First AKC Dog Show", "Sports", "Lena Morris", 6, "What to bring, where to check in, and how conformation rings are organized."),
-        ("responsible-breeder-questions", "Questions to Ask a Responsible Breeder", "Puppies", "Noah Rivera", 7, "Health testing, contracts, pedigrees, and early socialization questions."),
+        ("questions-to-ask-your-potential-breeder", "Questions You Can Ask Your Potential Breeder", "Puppy Information", "Randa Kriss", 3, "Know what to ask about health testing, breed experience, socialization, contracts, and ongoing support."),
         ("summer-safety-for-dogs", "Summer Safety for Dogs", "Health", "AKC Staff", 4, "Heat, hydration, pavement checks, and safe travel reminders."),
         ("agility-training-introduction", "Introduction to Agility Training", "Sports", "Mina Brooks", 5, "A beginner path from foundation skills to local trials."),
         ("therapy-dog-title-basics", "Therapy Dog Title Basics", "Training", "Owen Kim", 5, "Visits, documentation, and temperament expectations for therapy dog teams."),
         ("apartment-dog-owner-tips", "Apartment Dog Owner Tips", "Lifestyle", "AKC Staff", 6, "Noise, elevators, exercise routines, and neighbor-friendly planning."),
     ]
     for slug, title, category, author, minutes, summary in articles:
-        db.session.add(Article(slug=slug, title=title, category=category, author=author, read_minutes=minutes, summary=summary, body=summary + " The mirror includes practical steps, comparison cues, and realistic navigation text so agents can ground answers in visible content."))
+        db.session.add(Article(slug=slug, title=title, category=category, author=author, read_minutes=minutes, summary=summary, body=summary + " Review the visible guidance and follow the linked AKC workflows to plan the next step."))
     events = [
         ("national-obedience-classic", "National Obedience Classic", "Obedience", "Orlando", "FL", date(2026, 6, 14), "Orange County Convention Center"),
         ("midwest-agility-trial", "Midwest Agility Trial", "Agility", "Madison", "WI", date(2026, 7, 9), "Dane County Expo Center"),
@@ -487,7 +509,7 @@ def seed_database():
         ("sporting-dog-field-day", "Sporting Dog Field Day", "Field Trial", "Lancaster", "PA", date(2026, 10, 2), "Brandywine Preserve"),
     ]
     for slug, title, event_type, city, state, starts_on, venue in events:
-        db.session.add(Event(slug=slug, title=title, event_type=event_type, city=city, state=state, starts_on=starts_on, venue=venue, description=f"{title} offers AKC-style schedules, entry information, class selection, and local venue details."))
+        db.session.add(Event(slug=slug, title=title, event_type=event_type, city=city, state=state, starts_on=starts_on, venue=venue, description=f"Review the {title} schedule, venue, entry window, and available registration classes."))
     db.session.commit()
 
 

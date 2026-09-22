@@ -1,23 +1,82 @@
 {% extends "base.html" %}
 {% block title %}Expert Advice{% endblock %}
 {% block content %}
-<section class="page-heading">
-  <div><div class="eyebrow">Training, health, and lifestyle</div><h1>Expert Advice</h1></div>
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><span>Expert Advice</span></nav>
+<a class="advice-mobile-back" href="{{ url_for('index') }}">‹ Back to Home</a>
+<form class="advice-mobile-nav" method="get">
+  <label for="advice-category">Expert Advice</label>
+  <select id="advice-category" name="category" onchange="this.form.submit()">
+    <option value="">Explore This Section</option>
+    {% for item in categories %}<option value="{{ item }}" {% if item == category %}selected{% endif %}>{{ item }}</option>{% endfor %}
+  </select>
+</form>
+<section class="page-heading centered">
+  <h1>Expert Advice</h1>
+  <p>Everything you need to provide the best care for your dog, including expert opinions on health, grooming and training; the latest news and feature stories in the dog world; Best-of lists; and fun and useful quizzes.</p>
 </section>
-<div class="category-pills">
-  <a class="{{ 'active' if not category }}" href="{{ url_for('articles') }}">All</a>
-  {% for item in categories %}
-    <a class="{{ 'active' if item == category }}" href="{{ url_for('articles', category=item) }}">{{ item }}</a>
-  {% endfor %}
-</div>
-<section class="article-grid">
-  {% for article in articles %}
-    <article class="article-card">
-      <span class="eyebrow">{{ article.category }}</span>
-      <h2><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h2>
-      <p>{{ article.summary }}</p>
-      <small>{{ article.author }} · {{ article.read_minutes }} min read</small>
-    </article>
-  {% endfor %}
+
+<section class="advice-layout">
+  <aside>
+    <h2>Expert Advice</h2>
+    <nav class="category-pills" aria-label="Advice categories">
+      <a class="{{ 'active' if not category }}" href="{{ url_for('articles') }}">All</a>
+      {% for item in categories %}
+        <a class="{{ 'active' if item == category }}" href="{{ url_for('articles', category=item) }}">{{ item }} <span aria-hidden="true">›</span></a>
+      {% endfor %}
+    </nav>
+  </aside>
+  <div>
+    {% if articles %}
+      <article class="advice-feature">
+        <img src="{{ url_for('static', filename='images/akc-home/expert-advice-feature.jpg') }}" alt="Dog resting in grass">
+        <div>
+          <small>{{ articles[0].category }}</small>
+          <h2><a href="{{ url_for('article_detail', slug=articles[0].slug) }}">{{ articles[0].title }}</a></h2>
+          <p>{{ articles[0].summary }}</p>
+        </div>
+      </article>
+    {% endif %}
+    <div class="article-grid">
+      {% for article in articles[1:] %}
+        <article class="article-card">
+          <img class="article-card-image" src="{{ url_for('static', filename=loop.cycle('images/akc-home/expert-advice-feature.jpg', 'images/akc-home/agility-search.jpg', 'images/breeds/australian-shepherd.jpg', 'images/breeds/beagle.jpg')) }}" alt="{{ article.category }} advice">
+          <span class="eyebrow">{{ article.category }}</span>
+          <h2><a href="{{ url_for('article_detail', slug=article.slug) }}">{{ article.title }}</a></h2>
+          <p>{{ article.summary }}</p>
+          <span class="card-link">Read article →</span>
+        </article>
+      {% endfor %}
+    </div>
+    <section class="advice-promo-grid">
+      <a href="{{ url_for('articles', category='Training') }}"><img src="{{ url_for('static', filename='images/akc-home/training.webp') }}" alt="Dog training"><strong>Training resources for every dog</strong></a>
+      <a href="{{ url_for('articles', category='Puppies') }}"><img src="{{ url_for('static', filename='images/akc-home/find-puppies.webp') }}" alt="Find puppies"><strong>Plan the next step with your puppy</strong></a>
+      <a href="{{ url_for('articles', category='Health') }}"><img src="{{ url_for('static', filename='images/akc-home/pet-insurance.webp') }}" alt="Dog health"><strong>Make informed health decisions</strong></a>
+    </section>
+  </div>
+</section>
+
+<section class="advice-tools section">
+  <div class="section-head centered"><h2>Tools &amp; Quizzes</h2></div>
+  <div class="advice-tool-grid">
+    <a href="{{ url_for('breed_selector') }}"><b>♡</b><strong>Dog Breed Selector</strong><span>Find a breed that fits your lifestyle.</span></a>
+    <a href="{{ url_for('compare') }}"><b>⚖</b><strong>Compare Breeds</strong><span>See how your favorite breeds compare.</span></a>
+    <a href="{{ url_for('breeds') }}"><b>♣</b><strong>Dog Name Finder</strong><span>Explore names for your new companion.</span></a>
+    <a href="{{ url_for('events') }}"><b>⌕</b><strong>Can My Dog Eat…?</strong><span>Read practical health and nutrition guidance.</span></a>
+  </div>
+</section>
+
+<section class="advice-education">
+  <img src="{{ url_for('static', filename='images/akc-home/greyhound-running.jpg') }}" alt="Dog in an education program">
+  <div><h2>AKC Public Education Program</h2><p>The AKC Public Education Program teaches and promotes responsible dog ownership and supports participation in the world of purebred dogs.</p><a class="button primary" href="{{ url_for('articles') }}">Learn more</a></div>
+</section>
+
+<section class="advice-resources section">
+  <h2>Additional Resources</h2>
+  <p>Discover breed history, responsible ownership guidance, research, health information, and practical resources for dog owners.</p>
+  <div><a href="{{ url_for('breeds') }}">AKC Canine College ›</a><a href="{{ url_for('articles') }}">AKC Public Education Program ›</a><a href="{{ url_for('events') }}">Digital Library and Archives ›</a><a href="{{ url_for('register') }}">Government Relations ›</a></div>
+</section>
+
+<section class="advice-newsletter">
+  <div><h2>AKC PUPDATE newsletter!</h2><p>Get training, socialization, health, and grooming advice delivered to your inbox.</p><form><input type="email" aria-label="Newsletter email" placeholder="you@yourdomain.com"><button type="button">Sign up</button></form></div>
 </section>
 {% endblock %}

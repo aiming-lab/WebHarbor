@@ -92,9 +92,9 @@ RUN cd /opt/WebSyn/petfinder && rm -rf instance instance_seed && \
     mkdir -p instance_seed && python3 -c "from app import app" && \
     cp instance/petfinder.db instance_seed/petfinder.db && rm -rf instance
 
-# AKC original contribution generates its initial seed from tracked code.
-RUN cd /opt/WebSyn/akc && rm -rf instance instance_seed && mkdir -p instance_seed && \
-    python3 -c "from app import app" && cp instance/akc.db instance_seed/akc.db && rm -rf instance
+# AKC ships source-backed imagery and its reviewed frozen SQLite seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/akc && \
+    cd /opt/WebSyn/akc && test -f instance_seed/akc.db && rm -rf instance
 
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py

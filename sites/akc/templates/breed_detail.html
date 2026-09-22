@@ -1,20 +1,22 @@
 {% extends "base.html" %}
 {% block title %}{{ breed.name }}{% endblock %}
 {% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><a href="{{ url_for('breeds') }}">Dog Breeds</a><span>/</span><span>{{ breed.name }}</span></nav>
+
 <section class="detail-hero">
-  <img src="{{ url_for('breed_art', slug=breed.slug) }}" alt="{{ breed.name }}">
-  <div>
-    <div class="eyebrow">{{ breed.group }} Group</div>
+  <div class="detail-identity">
     <h1>{{ breed.name }}</h1>
-    <p>{{ breed.overview }}</p>
-    <div class="button-row">
-      <a class="button primary" href="{{ url_for('compare', breed=breed.slug) }}">Compare Breed</a>
-      <form action="{{ url_for('save_breed', slug=breed.slug) }}" method="post">
-        <button class="button" type="submit">{{ "Saved" if saved else "Save Breed" }}</button>
-      </form>
-    </div>
+    <p>{{ breed.temperament|lower|replace(',', ' /') }}</p>
+    <a class="group-badge" href="{{ url_for('breeds', group=breed.group) }}">{{ breed.group }} Group ›</a>
+  </div>
+  <div class="detail-actions">
+    <a class="button light-button" href="{{ url_for('compare', breed=breed.slug) }}">Compare Breed</a>
+    <form action="{{ url_for('save_breed', slug=breed.slug) }}" method="post">
+      <button class="button light-button" type="submit">{{ "Saved" if saved else "Save Breed" }}</button>
+    </form>
   </div>
 </section>
+
 <section class="metric-grid">
   <div><span>Temperament</span><strong>{{ breed.temperament }}</strong></div>
   <div><span>Height</span><strong>{{ breed.height }}</strong></div>
@@ -25,18 +27,96 @@
   <div><span>Trainability</span><strong>{{ breed.trainability }}/5</strong></div>
   <div><span>Apartment Fit</span><strong>{{ breed.apartment_score }}/5</strong></div>
 </section>
-<section class="content-columns">
-  <article>
-    <h2>Care</h2>
-    <p>{{ breed.care }}</p>
-  </article>
-  <article>
-    <h2>Exercise</h2>
-    <p>{{ breed.exercise }}</p>
-  </article>
+
+<section class="breed-traits-panel">
+  <div class="section-head"><h2>Breed Traits &amp; Characteristics</h2></div>
+  <div class="trait-grid">
+    <div><span>Affectionate with family</span><i><b style="width: {{ breed.apartment_score * 20 }}%"></b></i></div>
+    <div><span>Good with other dogs</span><i><b style="width: {{ breed.good_with_children * 20 }}%"></b></i></div>
+    <div><span>Good with young children</span><i><b style="width: {{ breed.good_with_children * 20 }}%"></b></i></div>
+    <div><span>Trainability</span><i><b style="width: {{ breed.trainability * 20 }}%"></b></i></div>
+    <div><span>Energy level</span><i><b style="width: {{ breed.energy * 20 }}%"></b></i></div>
+    <div><span>Grooming needs</span><i><b style="width: {{ breed.grooming * 20 }}%"></b></i></div>
+  </div>
 </section>
+
+<section class="breed-standard-section">
+  <aside>
+    <strong>The {{ breed.name }} was recognized as a breed by the AKC.</strong>
+    <span>AKC breed popularity ranking</span>
+    <div class="ranking-chart" aria-label="Breed popularity chart"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+  </aside>
+  <div>
+    <p class="section-kicker">The Breed Standard</p>
+    <h2>Breed Standard &amp; Description</h2>
+    <p>A description of the ideal dog for this breed, used by breeders and judges to preserve type, structure, movement, and temperament.</p>
+    <a class="button primary" href="{{ url_for('register') }}">View full breed standard</a>
+    <h3>Bred Colors &amp; Markings</h3>
+    <details><summary>Colors</summary><p>Recognized colors vary by breed and help describe the dog's coat.</p></details>
+    <details><summary>Markings</summary><p>Markings are recorded with a dog's registration information.</p></details>
+  </div>
+</section>
+
+<section class="breed-about">
+  <div>
+    <p class="section-kicker">About the Breed</p>
+    <h2>{{ breed.name }}</h2>
+    <p>{{ breed.overview }} {{ breed.temperament }} companions thrive with thoughtful socialization, regular exercise, and close contact with their families.</p>
+    <a class="button" href="{{ url_for('articles') }}">Read more</a>
+  </div>
+</section>
+
+<section class="breed-care-section">
+  <p class="section-kicker">Responsible ownership</p>
+  <h2>What To Expect When Caring For a {{ breed.name }}</h2>
+  <p>Owning a dog is not just a privilege; it is a responsibility. They depend on us for food, shelter, veterinary care, training, exercise, and companionship.</p>
+  <div class="breed-care-list">
+    <details><summary>Health</summary><p>{{ breed.care }}</p></details>
+    <details><summary>Grooming</summary><p>Regular brushing, nail care, dental care, and routine checks help keep the coat and skin healthy.</p></details>
+    <details><summary>Exercise</summary><p>{{ breed.exercise }}</p></details>
+    <details><summary>Training</summary><p>Positive, consistent lessons support good manners and make training part of everyday life.</p></details>
+    <details><summary>Nutrition</summary><p>Feed a complete diet appropriate for the dog's age, activity, and veterinary needs.</p></details>
+  </div>
+</section>
+
+<section class="breed-puppy-band">
+  <div>
+    <h2>Find {{ breed.name }} Puppies</h2>
+    <p>AKC Marketplace is the only site to exclusively list puppies from AKC-registered litters and breeders who follow responsible breeding practices.</p>
+    <a class="button primary" href="{{ url_for('breeds') }}">Look for your puppy</a>
+  </div>
+</section>
+
+<section class="breed-shop-band">
+  <div>
+    <h2>Shop {{ breed.name }} Collection</h2>
+    <p>Show your love with breed-inspired gifts, accessories, and more.</p>
+    <a class="button primary" href="{{ url_for('register') }}">Shop now</a>
+  </div>
+  <img src="{{ url_for('static', filename='images/akc-home/shop.webp') }}" alt="Dog products and gifts">
+</section>
+
+<section class="breed-history-section">
+  <div><span class="section-kicker">History</span><h2>The story of the {{ breed.name }}</h2><p>{{ breed.overview }} Learn how the breed's history, structure, and temperament shape everyday life with a dog.</p><a class="button" href="{{ url_for('articles') }}">Read more</a></div>
+  <img src="{{ url_for('static', filename='images/breeds/' ~ breed.slug ~ '.jpg') }}" alt="{{ breed.name }} outdoors">
+</section>
+
+<section class="breed-did-you-know">
+  <h2>Did You Know?</h2>
+  <div>
+    <article>The {{ breed.name }} belongs to the {{ breed.group }} Group.</article>
+    <article>{{ breed.temperament }} are defining hallmarks of the breed.</article>
+    <article>Consistent training and socialization help this breed thrive.</article>
+    <article>Responsible breeders screen dogs for relevant health conditions.</article>
+  </div>
+</section>
+
 <section class="section">
-  <div class="section-head"><h2>Related {{ breed.group }} Breeds</h2></div>
+  <div class="breed-compare-callout">
+    <div><p class="section-kicker">Compare Breeds</p><h2>See how the {{ breed.name }} stacks up to other breeds.</h2></div>
+    <a class="button primary" href="{{ url_for('compare', breed=breed.slug) }}">Compare breeds</a>
+  </div>
+  <div class="section-head"><h2>Explore Other {{ breed.group }} Breeds</h2></div>
   <div class="card-grid compact">
     {% for breed in related %}
       {% include "_breed_card.html" %}
