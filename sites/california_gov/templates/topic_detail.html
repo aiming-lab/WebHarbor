@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block page_scripts %}
+    <script src="{{ url_for('static', filename='js/data_service.min.js') }}" defer></script>
+{% endblock %}
+{% block title %}{{ topic.name }}{% endblock %}
+{% block nav_services %} active{% endblock %}
+{% block main %}
+<div class="section-understated lineart bg-s1" style="background: url('{{ url_for('static', filename=topic.lineart) }}') no-repeat right / auto;">
+  <div class="container p-y-md">
+<nav aria-label="You are here" class="breadcrumbs">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li><a href="/services/">Services</a></li>
+    <li><a href="/topics/">Topics</a></li>
+    <li class="active">{{ topic.name }}</li>
+  </ol>
+</nav>
+<h1 class="m-t-0 color-p2-darker">{{ topic.name }}</h1>
+  </div>
+</div>
+
+<div class="container-lg p-b-lg pt-lg-5 px-0">
+  <div class="row p-b-lg">
+    <div class="col-12 col-lg-3 pb-lg-5 sticky-6 h-100 p-b-md px-0">
+      <details class="side-navigation-toggle" aria-label="Toggle side navigation" aria-expanded="false" aria-controls="side-nav-content">
+        <summary>
+          <span class="container d-block">Topics</span>
+        </summary>
+      </details>
+      <div class="container" id="side-nav-content">
+        <nav class="side-navigation sticky-6 overflow-auto" id="side-navigation" style="max-height:606px">
+          <a href="javascript:;" aria-hidden="true" class="d-none">{{ topic.name }}</a>
+          <ul class="list-navigation">
+            <li>
+              <a href="/topics/" class="landing back" id="color-themes-list"><span class="sr-only">Back to </span>
+                Topics
+              </a>
+            </li>
+            {% for nav_topic in nav_topics %}
+            <li>
+              <a href="{{ topic_url(nav_topic) }}"{% if nav_topic.slug == topic.slug %} class="active landing" aria-current="page" tabindex="-1"{% endif %}>{{ nav_topic.name }}</a>
+            </li>
+            {% endfor %}
+          </ul>
+        </nav>
+      </div>
+    </div>
+    <div class="col-12 col-lg-9">
+      <div class="container">
+        <div class="p-t-md lead">{{ topic.description_html | safe if topic.description_html else ("<p>" ~ topic.description ~ "</p>") | safe }}</div>
+
+        <h2 class="m-b-0">Popular related services</h2>
+
+        <div class="row m-b-lg">
+          {% for card in cards %}
+          <div class="col-md-6 m-t-md">
+            <article class="pos-rel h-100 d-flex flex-column transform-scale-1_05--hover transition-0_3">
+              <figure class="pos-rel border-0 pb-5 mb-5 pb-xl-5 mb-xl-4 pb-lg-5 mb-lg-4 pb-md-4 mb-md-4">
+                <img src="{{ url_for('static', filename=card.image) }}" class="img-fluid p-a pos-abs absolute-centered-x width-75pct square" loading="lazy" alt="{{ card.image_alt }}">
+              </figure>
+              <div class="bg-white bg-gray-50-hover text-center p-t-xxl p-x-md p-b-md brd-solid-1 brd-gray-200 rounded-10 h-100">
+                <h3 class="h4 m-b text-left">
+                  <a href="/departments/{{ card.department_id }}/services/{{ card.service_id }}/" class="link-before no-underline">{{ card.title }}</a>
+                </h3>
+                <p class="m-b text-left gray-900">{{ card.blurb }}</p>
+              </div>
+            </article>
+          </div>
+          {% endfor %}
+        </div>
+
+        <hr>
+
+        <h2 class="lead m-t items-count" aria-live="polite" role="region">
+          0 services <span class="sr-only">found</span>
+        </h2>
+        <div class="d-flex">
+          <label class="sr-only" for="searchbox">Filter services</label>
+          <input type="search" id="searchbox" placeholder="Filter services" class="height-50 brd-solid-1 brd-color-light rounded-start flex-grow-1 p-l webkit-appearance-none">
+        </div>
+
+        <input type="hidden" id="defaultFilter" name="AgencyTags" value="{{ topic.name }}" />
+        <!-- This is the filter that will be applied to the search results -->
+
+        <div class="p-b-lg"><cagov-accordion>
+  <details>
+    <summary class="brd-solid-1 brd-gray-200">Filter by topic</summary>
+    <div class="accordion-body topic-filters brd-solid-1 brd-gray-200 p-a">
+      <fieldset>
+        <legend class="m-y font-size-16">
+          Select topics to help you find what you need:
+        </legend>
+        {% for t in filter_topics %}
+        {% if t.name != topic.name %}
+        <div class="form-check m-b-sm">
+          <input class="form-check-input" type="checkbox" value="{{ t.name }}" name="AgencyTags" id="chkTopic{{ t.num }}">
+          <label class="form-check-label" for="chkTopic{{ t.num }}">
+            {{ t.name }}
+            <span>({{ t.count }})</span>
+          </label>
+        </div>
+        {% endif %}
+        {% endfor %}
+      </fieldset>
+      <hr />
+      <button type="reset" class="btn btn-sm btn-default js-filter-clear resetSearch d-block" onclick="this.parentElement.querySelectorAll('input:checked').forEach(x => x.click())">
+        Reset
+      </button>
+    </div>
+  </details>
+</cagov-accordion></div>
+
+        <cagovhome-filterlist data-search-input-id="searchbox" data-result-count-query=".items-count" data-filter-storage-key="service" data-row-filter-key="ServiceId" data-filter-trigger-selector='input#defaultFilter,input[name="AgencyTags"]' role="list">
+          {% for service in topic_services %}
+          <div data-row-key="{{ service.id }}" class="pos-rel" role="listitem">
+            <h2 class="lead bold m-t-0 m-b">
+              <a href="{{ service_url(service) }}">{{ service.name }}</a>
+            </h2>
+            <p class="font-size-14 bold m-t-sm">by {{ service.department.short_name }}</p>
+            {% if service.description %}<p class="service-description">{{ service.description }}</p>{% endif %}
+            {% if service.launch_url is not none %}
+            <a class="btn btn-outline-primary btn-lg{% if service.launch_url and not service.launch_url.startswith("https://www.ca.gov/") %} cagov-external-link{% endif %}"{% if service.launch_url and service.launch_url.startswith("https://www.ca.gov/") %} data-cagov-external="skip"{% endif %} href="{{ service.launch_url }}">Launch service
+              <span class="sr-only">: {{ service.name }}</span>{% if service.launch_url and not service.launch_url.startswith("https://www.ca.gov/") %}<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span>{% endif %}</a>
+            {% endif %}
+            <hr class="m-y-md">
+          </div>
+          {% else %}
+          <p>No services found.</p>
+          {% endfor %}
+        </cagovhome-filterlist>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

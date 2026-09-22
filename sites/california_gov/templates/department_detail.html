@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ dept.name }}{% endblock %}
+{% block nav_departments %} active{% endblock %}
+{% block meta_description %}{{ dept.description or dept.name }}{% endblock %}
+{% block main %}
+<div class="section-understated lineart bg-s1" style="background: url('{{ url_for('static', filename='images/lineart/departments-lineart.svg') }}') no-repeat right / auto;">
+  <div class="container p-y-md">
+    <div class="row">
+      <div class="col-xl-8">
+<nav aria-label="You are here" class="breadcrumbs">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li><a href="/departments/">Departments</a></li>
+    <li class="active">{{ dept.name }}</li>
+  </ol>
+</nav>
+<h1 class="m-t-0 color-p2-darker">{{ dept.name }}</h1>
+        <p class="m-t-md font-size-13">
+          <em>Last updated {{ dept.last_updated }}</em>
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container p-y-lg">
+  <div class="row">
+    <div class="col-lg-3 pb-lg-5">
+      {% if dept.logo %}
+      <img src="{{ url_for('static', filename=dept.logo) }}" class="img-fluid sticky-6 square" style="object-fit: contain;" alt="{{ dept.name }} logo" />
+      {% endif %}
+    </div>
+    <div class="col-lg-9">
+      <h2 class="mt-lg-0">Contact</h2>
+      <ul class="list-unstyled mb-1">
+        {% if dept.phone %}
+        <li>
+          <span class="bold">Phone:</span>
+          <a href="tel:{{ dept.phone_digits }}">{{ dept.phone }}</a>
+        </li>
+        {% endif %}
+      </ul>
+
+      {% if dept.socials %}
+      {% for social in dept.socials %}
+      <a href="{{ social.url }}" class="no-underline font-size-30 me-1"><span class="ca-gov-icon-share-{{ 'twitter' if social.platform == 'x' else social.platform }}"></span><span class="sr-only">{% if social.platform == 'x' %}X (twitter){% elif social.platform == 'youtube' %}Youtube{% else %}Facebook{% endif %}</span></a>
+      {% endfor %}
+      {% endif %}
+
+      <div class="p-y-md">
+        {% if dept.website %}
+        <a class="btn btn-primary btn-lg m-r-md m-b cagov-external-link" href="{{ dept.website }}">
+          Department website
+        <span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+        {% endif %}
+        {% if dept.more_contact %}
+        <a href="{{ dept.more_contact }}" class="btn btn-outline-primary btn-lg m-b cagov-external-link">
+          More contact info
+        <span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+        {% endif %}
+      </div>
+
+      <hr>
+
+      {% if dept.apps %}
+      <h2>Android and iOS apps</h2>
+
+      {% for app_url in dept.apps %}
+      <a href="{{ app_url }}" class="wp-block-button__link{% if not loop.last %} me-4{% endif %}">
+        {% if 'play.google' in app_url %}
+        <img src="{{ url_for('static', filename='icons/googleplay-download.svg') }}" alt="Get it on Google Play" class="height-50 mb-3">
+        {% else %}
+        <img src="{{ url_for('static', filename='icons/app-store-download.svg') }}" alt="Get it on the App Store" class="height-50 mb-3">
+        {% endif %}
+      </a>
+      {% endfor %}
+      <hr>
+      {% endif %}
+
+      <h2 class="m-t-md">Description</h2>
+      <p class="m-b">{{ dept.description }}</p>
+
+      <hr class="m-b-md">
+      <h2>Services</h2>
+      {% for service in services %}
+      <h3 class="lead bold m-t-0">
+        <a href="{{ service_url(service) }}">{{ service.name }}</a>
+      </h3>
+      <p>{{ service.description }}</p>
+      <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3">
+        {% if service.launch_url is not none %}
+        <a class="btn btn-outline-primary btn-lg m-r-sm{% if service.launch_url and not service.launch_url.startswith("https://www.ca.gov/") %} cagov-external-link{% endif %}"{% if service.launch_url and service.launch_url.startswith("https://www.ca.gov/") %} data-cagov-external="skip"{% endif %} href="{{ service.launch_url }}">
+          Launch service<span class="sr-only">: {{ service.name }}</span>{% if service.launch_url and not service.launch_url.startswith("https://www.ca.gov/") %}<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span>{% endif %}</a>
+        {% endif %}
+        <p class="font-size-13 ms-sm-auto">
+          <em>Last updated {{ service.last_updated }}</em>
+        </p>
+      </div><hr class="m-b-lg m-t-md">
+      {% else %}
+      <p>No services listed for this department.</p>
+      {% endfor %}
+
+      {% if dept.faq_rows %}
+      <h3 class="mt-lg-9">Frequently Asked Questions</h3>
+      {% for faq in dept.faq_rows %}
+      <cagov-accordion>
+        <details style="height: 50px;">
+          <summary>{{ faq.question }}<div class="cagov-open-indicator" aria-hidden="true"></div></summary>
+          <div class="accordion-body">{{ faq.answer }}</div>
+        </details>
+      </cagov-accordion>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

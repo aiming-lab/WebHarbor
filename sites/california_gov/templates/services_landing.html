@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Services{% endblock %}
+{% block nav_services %} active{% endblock %}
+{% block main %}
+<div class="section-primary lineart bg-p2" style="background: url('{{ url_for('static', filename='images/lineart/services-lineart.svg') }}') no-repeat right / auto;">
+  <div class="container p-y-md">
+<nav aria-label="You are here" class="breadcrumbs">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li class="active">Services</li>
+  </ol>
+</nav>
+<h1 class="m-t-0">Services</h1>
+  </div>
+</div>
+
+<div class="container-lg p-b-lg pt-lg-5 px-0">
+  <div class="row">
+    <div class="col-12 col-lg-3 pb-lg-5 sticky-6 h-100 p-b-md">
+<details class="side-navigation-toggle" aria-label="Toggle side navigation" aria-expanded="false" aria-controls="side-nav-content">
+  <summary><span class="container d-block"> Services </span></summary>
+</details>
+<div class="container" id="side-nav-content">
+  <nav class="side-navigation sticky-6">
+    <a href="javascript:;" aria-hidden="true" class="d-none">Services</a>
+    <ul class="list-navigation">
+      <li><a href="/services/" class="active landing" aria-current="page" tabindex="-1">Services<span class="sr-only">landing page</span></a></li>
+      <li><a href="/services/all/">All services</a></li>
+      <li><a href="/services/list/">Services list</a></li>
+      <li><a href="/topics/">Topics</a></li>
+    </ul>
+  </nav>
+</div>
+</div>
+    <div class="col-12 col-lg-9">
+      <div class="container">
+        <p class="lead">
+          Find California state services by browsing popular options or
+          searching by topic.
+        </p>
+
+        <h2>Popular services</h2>
+        <div class="row">
+          {% for service in popular_services %}
+          <div class="col-md-4 mb-4">
+            <a href="{{ service_url(service) }}" class="link-grid"><h3 class="m-a-0 lead bold">{{ service.popular_label or service.name }}</h3></a>
+          </div>
+          {% endfor %}
+        </div>
+
+        <a href="/services/all/" class="btn btn-primary btn-lg btn-hover m-t">View all services</a>
+
+        <h2>Topics</h2>
+
+        <div class="row">
+          {% for topic in topics %}
+          <div class="col-md-4 mb-4">
+            <div class="bg-gray-50 bg-gray-75-hover text-center p-x-md p-b-md pos-rel h-100 brd-solid-1 brd-gray-200 transform-scale-1_05--hover transition-0_3 rounded">
+              <h3 class="h5 m-b">
+                <a href="{{ topic_url(topic) }}" class="color-p2 link-before text-left no-underline d-block">{{ topic.name }}</a>
+              </h3>
+              <p class="m-b text-left">{{ topic.landing_description }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

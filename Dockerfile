@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 59 Flask mirror sites + control plane on :8101.
+# 61 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -180,9 +180,17 @@ RUN cd /opt/WebSyn/4shared && python3 migrate_seed.py
 # Preserve the 9GAG archive; curated benchmark stories have no matching source photos.
 RUN cd /opt/WebSyn/9gag && python3 migrate_seed.py
 
+
+# CA.gov mirrors the live https://www.ca.gov/ directory; upstream-sourced
+# media ships in the pinned asset bundle and the deterministic SQLite seed is
+# rebuilt from the committed scrape-derived literals.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/california_gov && \
+    cd /opt/WebSyn/california_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40059
+EXPOSE 8101 40000-40064
 
 CMD ["/opt/websyn_start.sh"]
