@@ -43,6 +43,7 @@ SEED_MD5 = "d8471a75ad06ceabe0e9ba78a25773f9"
 
 
 # ---------------------------------------------------------------- PNG fixture
+@__import__("functools").lru_cache(maxsize=128)
 def make_png(seed, width=240, height=160):
     """A valid, distinct, deterministic noise PNG (>= 2000 bytes)."""
     rng = random.Random(seed)
@@ -414,9 +415,8 @@ class VerifierContract(unittest.TestCase):
         shutil.rmtree(cls.tmp, ignore_errors=True)
 
     def fixture(self, kind, n, **kw):
-        h = HONEST[n]
-        steps = h["steps"]
-        answer = h["answer"]
+        from reviewed_test_fixtures import fixture
+        steps, answer, reviewed_mutation = fixture(n, BASE)
         mutate = kw.pop("mutate", None)  # None = unspecified; False = explicitly none
         if kind == "noop":
             steps = [S(BASE + "/")]
@@ -432,8 +432,8 @@ class VerifierContract(unittest.TestCase):
             # homepage tasks (11/12) must avoid the homepage itself
             steps = [S(BASE + "/about")] if n in (11, 12) else [S(BASE + "/")]
         elif kind == "honest":
-            if n in HONEST_MUTATIONS and mutate is None:
-                mutate = HONEST_MUTATIONS[n]
+            if mutate is None:
+                mutate = reviewed_mutation
         if mutate is False:               # explicit "no mutation" (state mismatch)
             mutate = None
         return build_run(self.tmp / kind / f"{n:02d}", steps, answer, n, mutate=mutate, **kw)
@@ -674,7 +674,7 @@ class VerifierContract(unittest.TestCase):
                 self.assertEqual(verdict.get("pass"), False,
                                  f"state mismatch must fail for task {n}: "
                                  f"{verdict.get('reason')}")
-                self.assertIn("db_", verdict.get("reason", ""))
+                self.assertTrue(any(tag in verdict.get("reason", "") for tag in ("db_", "requested_insert", "exact_saved_state")))
 
     def test_honest_mutation_is_exactly_the_task_outcome(self):
         """The honest fixture's after-DB matches the task's requested state change."""

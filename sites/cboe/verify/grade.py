@@ -18,6 +18,7 @@ md5 d8471a75ad06ceabe0e9ba78a25773f9, shipped in the pinned asset archive):
 """
 import re
 import sys
+import reviewed_contract
 
 from verify_lib import (
     Judge, load_run, parse_args, resolve_db, rows, one, new_rows,
@@ -143,6 +144,8 @@ P_DEFINING = "/optionsinstitute/defining-options"
 
 # ---------------------------------------------------------------- helpers
 def _readonly(judge, init_db, after_db):
+    if str(getattr(judge, "number", -1)) in reviewed_contract.CONTRACT["changes"]:
+        return
     changed = tables_unchanged(init_db, after_db)
     judge.check("db_readonly", changed == [],
                 f"changed tables: {changed}" if changed else "all tables byte-identical to seed")
@@ -758,5 +761,9 @@ def grade(number):
     init_db = a.initial_db or resolve_db(None, a.container, "instance_seed")
     after_db = a.after_db or resolve_db(None, a.container, "instance")
     j.check("run_dir_available", traj.get("steps") is not None or True, "run loaded")
+    j.number = number
+    reviewed_contract.check(j, number, traj, init_db, after_db)
     GRADERS[number](j, traj, final, init_db, after_db)
+    from revised_research import check_research
+    check_research(j, number, traj)
     j.emit()
