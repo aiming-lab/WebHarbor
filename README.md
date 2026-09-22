@@ -64,70 +64,30 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 
 ### Websites
 
-All registered websites and their default ports, in registration order. A site's container port is `40000 + index` (see the `SITES` array and `BASE_PORT` in `websyn_start.sh`, and the `EXPOSE` line in the `Dockerfile`).
+All registered websites and their default ports, in registration order down each group, from left to right. A site's container port is `40000 + index` (see the `SITES` array and `BASE_PORT` in `websyn_start.sh`, and the `EXPOSE` line in the `Dockerfile`).
 
-| Website | Default port |
-| --- | --- |
-| Allrecipes | 40000 |
-| Amazon | 40001 |
-| Apple | 40002 |
-| ArXiv | 40003 |
-| BBC News | 40004 |
-| Booking | 40005 |
-| GitHub | 40006 |
-| Google Flights | 40007 |
-| Google Maps | 40008 |
-| Google Search | 40009 |
-| Hugging Face | 40010 |
-| Wolfram Alpha | 40011 |
-| Cambridge Dictionary | 40012 |
-| Coursera | 40013 |
-| ESPN | 40014 |
-| Merriam-Webster | 40015 |
-| IKEA | 40016 |
-| Phys.org | 40017 |
-| Target | 40018 |
-| TED | 40019 |
-| Ohio State University | 40020 |
-| Rotten Tomatoes | 40021 |
-| Compass | 40022 |
-| Walmart Careers | 40023 |
-| FedEx | 40024 |
-| WebMD Doctor | 40025 |
-| Healthline | 40026 |
-| Kaggle | 40027 |
-| NVIDIA | 40028 |
-| UC Berkeley | 40029 |
-| B&H Photo | 40030 |
-| AccuWeather | 40031 |
-| GOV.UK | 40032 |
-| IMDb | 40033 |
-| NBA | 40034 |
-| Recreation.gov | 40035 |
-| BoardGameGeek | 40036 |
-| CarMax | 40037 |
-| BabyCenter | 40038 |
-| Amtrak | 40039 |
-| Cookpad | 40040 |
-| Craigslist | 40041 |
-| Drugs.com | 40042 |
-| Versus | 40043 |
-| Y Combinator | 40044 |
-| PhET Interactive Simulations | 40045 |
-| Discogs | 40046 |
-| Google Finance | 40047 |
-| Bandcamp | 40048 |
-| Adopt-a-Pet | 40049 |
-| IGN | 40050 |
-| IRS Refund Tracker | 40051 |
-| WineAccess | 40052 |
-| WebMD | 40053 |
-| Petfinder | 40054 |
-| MEGA | 40055 |
-| 4shared | 40056 |
-| 9GAG | 40057 |
-| American Kennel Club | 40058 |
-| Best Buy | 40059 |
+| Website | Default port | Website | Default port | Website | Default port |
+| --- | --- | --- | --- | --- | --- |
+| Allrecipes | 40000 | Ohio State University | 40020 | Cookpad | 40040 |
+| Amazon | 40001 | Rotten Tomatoes | 40021 | Craigslist | 40041 |
+| Apple | 40002 | Compass | 40022 | Drugs.com | 40042 |
+| ArXiv | 40003 | Walmart Careers | 40023 | Versus | 40043 |
+| BBC News | 40004 | FedEx | 40024 | Y Combinator | 40044 |
+| Booking | 40005 | WebMD Doctor | 40025 | PhET Interactive Simulations | 40045 |
+| GitHub | 40006 | Healthline | 40026 | Discogs | 40046 |
+| Google Flights | 40007 | Kaggle | 40027 | Google Finance | 40047 |
+| Google Maps | 40008 | NVIDIA | 40028 | Bandcamp | 40048 |
+| Google Search | 40009 | UC Berkeley | 40029 | Adopt-a-Pet | 40049 |
+| Hugging Face | 40010 | B&H Photo | 40030 | IGN | 40050 |
+| Wolfram Alpha | 40011 | AccuWeather | 40031 | IRS Refund Tracker | 40051 |
+| Cambridge Dictionary | 40012 | GOV.UK | 40032 | WineAccess | 40052 |
+| Coursera | 40013 | IMDb | 40033 | WebMD | 40053 |
+| ESPN | 40014 | NBA | 40034 | Petfinder | 40054 |
+| Merriam-Webster | 40015 | Recreation.gov | 40035 | MEGA | 40055 |
+| IKEA | 40016 | BoardGameGeek | 40036 | 4shared | 40056 |
+| Phys.org | 40017 | CarMax | 40037 | 9GAG | 40057 |
+| Target | 40018 | BabyCenter | 40038 | American Kennel Club | 40058 |
+| TED | 40019 | Amtrak | 40039 | Best Buy | 40059 |
 
 ## 🤝 Contribute
 
