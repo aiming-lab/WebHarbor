@@ -14,6 +14,13 @@
   </div>
 </section>
 
+{% if current_user.is_authenticated %}
+<form method="post" action="{{ url_for('save_location', slug=location.slug) }}" class="wx-location-save">
+ <input type="hidden" name="csrf_token" value="{{ generate_csrf() }}">
+ <button type="submit">Save location</button>
+ <a href="{{ url_for('account') }}">Saved locations</a>
+</form>
+{% endif %}
 <section class="wx-dashboard-grid">
   <div class="wx-dashboard-main">
     <section class="detail-card current-hero-card">
@@ -126,6 +133,7 @@
 
     <section class="rail-card wx-side-module">
       <h3>Alerts</h3>
+      <a href="{{ url_for('alerts', slug=location.slug) }}">View all alerts</a>
       {% for alert in alerts %}
         <article class="wx-alert-compact">
           <span class="alert-badge">{{ alert.severity }}</span>

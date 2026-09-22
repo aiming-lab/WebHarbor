@@ -42,7 +42,7 @@
     <a href="{{ url_for('radar', slug=location.slug) }}">Open Radar</a>
   </header>
   <div class="radar-frame">
-    <img src="{{ location.radar_image }}" alt="{{ location.city }} radar view">
+    {% if location.radar_image %}<img src="{{ location.radar_image }}" alt="{{ location.city }} radar view">{% else %}<p>Local radar imagery is unavailable for {{ location.city }} in this snapshot.</p>{% endif %}
   </div>
 </section>
 
