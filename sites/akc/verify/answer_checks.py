@@ -61,6 +61,11 @@ def entity_blocks(answer, entities):
     text = '\n'.join(prepared)
     hits = sorted((m.start(), m.end(), key) for key, names in entities.items()
                   for name in names for m in re.finditer(r'(?<!\w)' + re.escape(normalize(name)) + r'(?!\w)', text))
+    nonoverlapping = []
+    for hit in sorted(hits, key=lambda hit: (hit[0], -hit[1])):
+        if not nonoverlapping or hit[0] >= nonoverlapping[-1][1]:
+            nonoverlapping.append(hit)
+    hits = nonoverlapping
     blocks = {key: [] for key in entities}
     for i, (start, end, key) in enumerate(hits):
         stop = hits[i+1][0] if i+1 < len(hits) else len(text)
@@ -157,15 +162,15 @@ def rating(text, metric, value):
     return found
 
 
-def winner(answer, entities, expected):
+def winner(answer, entities, expected, *, terms=None):
     text = canonical(answer)
     if globally_denied(text):
         return False
     claims = []
     name_pattern = '|'.join(re.escape(normalize(name)) for names in entities.values() for name in names)
     name_to_key = {normalize(name): key for key,names in entities.items() for name in names}
-    terms = r'(?:higher|highest|winner|wins|most trainable|more trainable|more energetic|highest-rated|top-rated)'
-    for clause in re.split(r'[;\n]|(?<=[.!?])\s+', text):
+    terms = terms or r'(?:higher|highest|winner|wins|most trainable|more trainable|more energetic|highest-rated|top-rated)'
+    for clause in re.split(r'\n|(?<=[.!?])\s+', text):
         names = list(re.finditer(name_pattern, clause))
         for i,m in enumerate(names):
             stop = names[i+1].start() if i+1<len(names) else len(clause)

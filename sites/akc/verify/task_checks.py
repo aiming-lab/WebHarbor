@@ -63,20 +63,21 @@ def _metric(text, label, value):
     return rating(text, label, value)
 
 
-def _article_answer(run, article):
+def _article_answer(run, article, answer=None):
+    answer = run.answer if answer is None else answer
     authors = [row[0] for row in run.initial.execute("SELECT DISTINCT author FROM article")]
     titles = [row[0] for row in run.initial.execute("SELECT title FROM article")]
-    if any(mentions(run.answer, title) for title in titles):
-        _require(named_fact(run.answer, article["title"], titles),
+    if any(mentions(answer, title) for title in titles):
+        _require(named_fact(answer, article["title"], titles),
                  "The reported article identity is wrong or contradicted")
     for claim in re.finditer(
-        r"(?:\bauthor(?: is|:)??|\bby)\s+([a-z][a-z '’-]*?)(?=[,;.\n]|\s+and\b|$)",
-        canonical(run.answer),
+        r"(?:\bauthor(?: is|:)??|\bby)\s+((?:dr\.\s+)?[a-z][a-z '’-]*?)(?=[,;.\n]|\s+and\b|$)",
+        canonical(answer),
     ):
         _require(mentions(claim[1], article["author"]), "The stated author is incorrect")
-    _require(named_fact(run.answer, article["author"], authors),
+    _require(named_fact(answer, article["author"], authors),
              "The author is missing, wrong, or contradicted")
-    _require(quantity_facts(run.answer, [f"{article['read_minutes']} minutes"]),
+    _require(quantity_facts(answer, [f"{article['read_minutes']} minutes"]),
              "The reading time is missing, wrong, or contradicted")
 
 
@@ -163,7 +164,20 @@ def check_read_task(number, run):
         ])
         _answer_required(run)
         _article_answer(run, article)
-        return ["agility search", "article detail", "author and read time"]
+        event = _event(run, "midwest-agility-trial")
+        event_filter = {"type": ["Agility"]}
+        _require(run.visited("/events", event_filter, exact_query=True),
+                 "The Agility event filter was not recorded")
+        _require_read_path(run, [
+            ("/events", event_filter), ("/events/" + event["slug"], None),
+        ])
+        _require(named_fact(run.answer, event["venue"],
+                            [row[0] for row in run.initial.execute("SELECT venue FROM event")]),
+                 "The agility trial venue is missing or wrong")
+        _require(event_date(run.answer, event["starts_on"]),
+                 "The agility trial date is missing or wrong")
+        return ["agility search and article", "Agility calendar and trial detail",
+                "article author/time and trial venue/date"]
 
     if number == 5:
         event = _event(run, "canine-good-citizen-test-ny")
@@ -189,9 +203,25 @@ def check_read_task(number, run):
             ("/articles", filters),
             ("/articles/" + article["slug"], None),
         ])
-        _answer_required(run)
-        _article_answer(run, article)
-        return ["Puppy Information filter", "official article detail", "author and read time"]
+        articles = [article, _article(run, "puppy-socialization-checklist"),
+                    _article(run, "how-to-choose-the-right-dog-breed")]
+        aliases = [
+            [article["title"], "Questions to Ask Your Potential Breeder", "Breeder Questions"],
+            [articles[1]["title"], "Socialization Checklist"],
+            [articles[2]["title"], "How to Choose the Right Breed", "Choosing the Right Dog Breed"],
+        ]
+        entities = {row["slug"]: names for row, names in zip(articles, aliases)}
+        blocks = entity_blocks(run.answer, entities)
+        for row in articles:
+            _require(run.visited("/articles/" + row["slug"]),
+                     "One of the three required article details was not visited")
+            _article_answer(run, row, blocks[row["slug"]])
+        longest = max(articles, key=lambda row: row["read_minutes"])["slug"]
+        _require(answer_winner(run.answer, entities, longest,
+                              terms=r"(?:longest|longer|most time|largest reading slot)"),
+                 "The longest-read conclusion is missing or contradicted")
+        return ["Puppy Information filter", "three article details",
+                "three bound author/time pairs", "longest-read conclusion"]
 
     if number == 7:
         breed = _breed(run, "great-dane")

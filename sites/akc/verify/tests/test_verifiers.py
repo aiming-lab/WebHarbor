@@ -78,10 +78,13 @@ def create_seed(path):
     )
     db.executemany("INSERT INTO article VALUES (?,?,?,?,?,?,?,?)", [
         (1, "agility-training-introduction", "Introduction to Agility Training", "Sports", "Mina Brooks", 5, "summary", "body"),
+        (3, "puppy-socialization-checklist", "Puppy Socialization Checklist", "Puppies", "Dr. Mara Chen", 6, "summary", "body"),
+        (4, "how-to-choose-the-right-dog-breed", "How to Choose the Right Dog Breed", "Getting Started", "AKC Staff", 7, "summary", "body"),
         (2, "questions-to-ask-your-potential-breeder", "Questions You Can Ask Your Potential Breeder", "Puppy Information", "Randa Kriss", 3, "summary", "body"),
     ])
     db.executemany("INSERT INTO event VALUES (?,?,?,?,?,?,?,?,?)", [
         (1, "canine-good-citizen-test-ny", "Canine Good Citizen Test", "Training", "New York", "NY", "2026-06-27", "Riverside Training Hall", "description"),
+        (3, "midwest-agility-trial", "Midwest Agility Trial", "Agility", "Madison", "WI", "2026-07-09", "Dane County Expo Center", "description"),
         (2, "puppy-training-webinar", "Puppy Training Webinar", "Education", "Online", "US", "2026-06-03", "AKC Virtual Classroom", "description"),
     ])
     db.executemany("INSERT INTO saved_breed VALUES (?,?,?,?)", [
@@ -102,12 +105,14 @@ def positive_case(number):
             "Golden Retriever: energy 4/5.\nBorder Collie: energy 5/5 and has the higher rating."),
         3: (["/login", "/account", "/breeds/cavalier-king-charles-spaniel"],
             "Cavalier King Charles Spaniel has a 12-15 years life expectancy."),
-        4: (["/search?q=agility", "/articles/agility-training-introduction"],
-            "Introduction to Agility Training is by Mina Brooks and is a 5 min read."),
+        4: (["/search?q=agility", "/articles/agility-training-introduction", "/events?type=Agility", "/events/midwest-agility-trial"],
+            "Introduction to Agility Training is by Mina Brooks and is a 5 min read. Midwest Agility Trial is at Dane County Expo Center on July 9, 2026."),
         5: (["/events?type=Training", "/events/canine-good-citizen-test-ny"],
             "Canine Good Citizen Test is at Riverside Training Hall on June 27, 2026."),
-        6: (["/articles?category=Puppy+Information", "/articles/questions-to-ask-your-potential-breeder"],
-            "Questions You Can Ask Your Potential Breeder is by Randa Kriss and is a 3 min read."),
+        6: (["/articles?category=Puppy+Information", "/articles/questions-to-ask-your-potential-breeder", "/articles/puppy-socialization-checklist", "/articles/how-to-choose-the-right-dog-breed"],
+            "Questions You Can Ask Your Potential Breeder is by Randa Kriss and is a 3 min read.\n"
+            "Puppy Socialization Checklist is by Dr. Mara Chen and is a 6 min read.\n"
+            "How to Choose the Right Dog Breed is by AKC Staff and is a 7 min read, the longest."),
         7: (["/breeds?group=Working&q=patient", "/breeds/great-dane"],
             "Great Dane: weight 110-175 lb; life expectancy 7-10 years."),
         8: (["/login", "/account", "/events/puppy-training-webinar", "/account"],
@@ -224,6 +229,54 @@ class VerifierTests(unittest.TestCase):
                 mutation = (lambda db, n=number: correct_mutation(n, db)) if number in STATE_TASKS else None
                 self.assertTrue(self.verify(number, self.make_run(number, mutation=mutation))["pass"])
 
+    def test_reading_plan_equivalent_answers(self):
+        answers = [
+            "Breeder Questions: Randa Kriss, three minutes.\n"
+            "Socialization Checklist: Dr. Mara Chen, six minutes.\n"
+            "Choosing the Right Dog Breed: AKC Staff, seven minutes, the longest read.",
+            "| Article | Author | Read time |\n|---|---|---|\n"
+            "| Questions You Can Ask Your Potential Breeder | Randa Kriss | 3 min |\n"
+            "| Puppy Socialization Checklist | Dr. Mara Chen | 6 min |\n"
+            "| How to Choose the Right Dog Breed | AKC Staff | 7 min |\n"
+            "The longest read is How to Choose the Right Dog Breed.",
+        ]
+        answers.append(positive_case(6)[1].replace(" and is a ", "; "))
+        for answer in answers:
+            with self.subTest(answer=answer):
+                self.assertTrue(self.verify(6, self.make_run(6, answer=answer))["pass"])
+        urls, answer = positive_case(6)
+        self.assertTrue(self.verify(6, self.make_run(6, urls=urls[:2] + urls[2:][::-1], answer=answer))["pass"])
+
+    def test_revised_tasks_reject_incomplete_or_misbound_plans(self):
+        for number in [4, 6]:
+            urls, answer = positive_case(number)
+            for i in range(len(urls)):
+                with self.subTest(number=number, omitted_path=urls[i]):
+                    self.assertFalse(self.verify(number, self.make_run(number, urls=urls[:i] + urls[i+1:]))["pass"])
+            answers = ([
+                answer.split(" Midwest")[0],
+                answer.replace("July 9", "July 10"),
+                answer.replace("Dane County Expo Center", "Riverside Training Hall"),
+                answer.replace("5 min", "6 min"),
+                answer.replace("Mina Brooks", "Randa Kriss"),
+                answer + " The trial is on July 10, 2026.",
+                answer.replace("at Dane", "not at Dane"),
+            ] if number == 4 else [
+                answer.replace("Randa Kriss", "Dr. Mara Chen").replace("by Dr. Mara Chen and is a 6", "by Randa Kriss and is a 6"),
+                answer.replace("3 min", "6 min").replace("a 6 min read.\nHow", "a 3 min read.\nHow"),
+                answer.replace(", the longest", "") + " Puppy Socialization Checklist is the longest.",
+                answer.replace(", the longest", ", not the longest"),
+                answer.replace(", the longest", ""),
+                answer + " Puppy Socialization Checklist is also the longest.",
+                answer.replace("by Randa", "not by Randa"),
+                "\n".join(answer.splitlines()[1:]),
+                answer.replace("7 min", "7 hours"),
+                answer.replace("by AKC Staff", "by John Doe; reference: AKC Staff"),
+            ])
+            for wrong in answers:
+                with self.subTest(number=number, answer=wrong):
+                    self.assertFalse(self.verify(number, self.make_run(number, answer=wrong))["pass"])
+
     def test_password_must_authenticate_requested_value(self):
         for value in ["invalid:hash", generate_password_hash("WrongPassword123!", method="pbkdf2:sha256:1000")]:
             with self.subTest(value=value):
@@ -236,7 +289,7 @@ class VerifierTests(unittest.TestCase):
             (0, True, "Cavalier King Charles Spaniel lives 12 to 15 years and weighs 13 to 18 pounds."),
             (0, False, "Cavalier King Charles Spaniel weight is 12-15 years and lifespan is 13-18 lb."),
             (2, False, "Golden Retriever energy 4/5. Border Collie energy 1/5 and is higher."),
-            (4, True, "The author is Mina Brooks; it takes five minutes to read."),
+            (4, True, "The author is Mina Brooks; it takes five minutes to read. The trial is at Dane County Expo Center on 9 Jul 2026."),
             (4, False, "The author is John Doe. Mina Brooks reviewed it; 5 minutes."),
             (4, False, "Mina Brooks is not the author. It takes 5 minutes."),
             (4, False, "Questions You Can Ask Your Potential Breeder by Mina Brooks; 5 minutes."),
