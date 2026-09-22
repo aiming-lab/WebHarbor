@@ -699,6 +699,8 @@ def grade(number: int) -> None:
         judge.check("seed_applications_empty", init_rows is not None and init_rows["applications"] == [],
                     "applications table starts empty in the seed")
     final = final_answer(traj)
+    from reviewed import check
+    check(judge, number, traj, init_rows, after_rows)
     GRADERS[number](judge, traj, final, init_db, after_db, init_rows, after_rows)
     judge.emit()
 
