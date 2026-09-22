@@ -18,9 +18,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (ALL_TABLES, Judge, added_rows, check_detail_visited, check_signed_in_as,  # noqa: E402
-                        check_tables_unchanged, check_trajectory_identity, claims_winner,
-                        contains_filename, contains_number, fail_closed, final_answer, load_run,
+                        check_tables_unchanged, check_trajectory_identity,
+                        contains_filename, fail_closed, final_answer, load_run,
                         parse_args, resolve_snapshots, saved_file_ids, table_delta)
+
+from answer_checks import count_claims, winner_claim
 
 TASK_ID = "4shared--18"
 EMAIL, USER_ID = "david.k@test.com", 4
@@ -35,11 +37,11 @@ def run_checks(j, t, initial_db, after_db):
     for slug in SLUGS:
         check_detail_visited(j, t, slug)
     fa = final_answer(t)
-    j.check("answer_names_longest_book", contains_filename(fa, WINNER_FILENAME) or claims_winner(fa, WINNER_KEY, LOSER_KEYS, cue=r"most|longest|largest|more|highest|biggest"),
+    j.check("answer_names_longest_book", contains_filename(fa, WINNER_FILENAME) or winner_claim(fa, WINNER_KEY, LOSER_KEYS),
             f"expected={WINNER_FILENAME!r} answer={fa[:200]!r}")
-    j.check("answer_not_crediting_a_loser", claims_winner(fa, WINNER_KEY, LOSER_KEYS, cue=r"most|longest|largest|more|highest|biggest"), f"answer={fa[:200]!r}")
-    j.check("answer_has_page_count", contains_number(fa, PAGES), f"expected={PAGES} answer={fa[:200]!r}")
-    j.check("answer_has_chapter_count", contains_number(fa, CHAPTERS), f"expected={CHAPTERS} answer={fa[:200]!r}")
+    j.check("answer_not_crediting_a_loser", winner_claim(fa, WINNER_KEY, LOSER_KEYS), f"answer={fa[:200]!r}")
+    j.check("answer_has_page_count", count_claims(fa, WINNER_FILENAME, [WINNER_FILENAME, *LOSER_KEYS], "page", PAGES), f"expected={PAGES} answer={fa[:200]!r}")
+    j.check("answer_has_chapter_count", count_claims(fa, WINNER_FILENAME, [WINNER_FILENAME, *LOSER_KEYS], "chapter", CHAPTERS), f"expected={CHAPTERS} answer={fa[:200]!r}")
     check_signed_in_as(j, t, EMAIL)
     before, after = saved_file_ids(initial_db, USER_ID), saved_file_ids(after_db, USER_ID)
     j.check("initial_target_not_saved", WINNER_ID not in before, f"initial_saved={sorted(before)!r}")
