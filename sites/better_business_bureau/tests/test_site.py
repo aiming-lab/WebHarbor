@@ -257,7 +257,7 @@ def test_tasks_jsonl_schema():
         assert set(row) == {"web_name", "id", "ques", "web", "upstream_url",
                             "verifier_path", "judge_rubric"}, row
         assert "answer" not in row
-        assert row["web"] == "http://localhost:40063/"
+        assert row["web"] == "http://localhost:40064/"
         assert row["upstream_url"] == "https://www.bbb.org/"
         assert row["id"].startswith("Better Business Bureau--")
         assert row["id"] not in seen_ids
