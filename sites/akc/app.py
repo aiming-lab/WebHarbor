@@ -202,8 +202,10 @@ def breed_detail(slug):
 
 
 @app.route("/breeds/<slug>/save", methods=["POST"])
-@login_required
 def save_breed(slug):
+    if not current_user():
+        flash("Sign in, then save this breed to your profile.", "info")
+        return redirect(url_for("login", next=url_for("breed_detail", slug=slug)))
     breed = Breed.query.filter_by(slug=slug).first_or_404()
     user = current_user()
     existing = SavedBreed.query.filter_by(user_id=user.id, breed_id=breed.id).first()
@@ -326,9 +328,9 @@ def event_detail(slug):
 @app.route("/search")
 def search():
     query = request.args.get("q", "").strip()
-    breed_results = scored_search(query, Breed.query.all(), ["name", "group", "temperament", "overview"])[:8] if query else []
-    article_results = scored_search(query, Article.query.all(), ["title", "category", "summary", "body"])[:8] if query else []
-    event_results = scored_search(query, Event.query.all(), ["title", "event_type", "city", "description"])[:8] if query else []
+    breed_results = scored_search(query, Breed.query.all(), ["name", "group", "temperament", "overview"]) if query else []
+    article_results = scored_search(query, Article.query.all(), ["title", "category", "summary", "body"]) if query else []
+    event_results = scored_search(query, Event.query.all(), ["title", "event_type", "city", "description"]) if query else []
     return render_template(
         "search.html",
         query=query,

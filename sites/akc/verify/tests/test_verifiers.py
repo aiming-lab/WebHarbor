@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from werkzeug.security import generate_password_hash
 from urllib.parse import urlencode
 
 
@@ -152,7 +153,8 @@ def correct_mutation(number, db):
         db.execute("INSERT INTO saved_breed VALUES (3,2,6,'')")
     elif number == 11:
         db.execute("INSERT INTO user VALUES (3,'morgan_reed','morgan.r@test.com','Morgan Reed',"
-                   "'scrypt:morgan','House with yard','High','Experienced owner')")
+                   "?,'House with yard','High','Experienced owner')",
+                   (generate_password_hash("TrailDog42!", method="pbkdf2:sha256:1000"),))
 
 
 class VerifierTests(unittest.TestCase):
@@ -221,6 +223,28 @@ class VerifierTests(unittest.TestCase):
             with self.subTest(number=number):
                 mutation = (lambda db, n=number: correct_mutation(n, db)) if number in STATE_TASKS else None
                 self.assertTrue(self.verify(number, self.make_run(number, mutation=mutation))["pass"])
+
+    def test_password_must_authenticate_requested_value(self):
+        for value in ["invalid:hash", generate_password_hash("WrongPassword123!", method="pbkdf2:sha256:1000")]:
+            with self.subTest(value=value):
+                run = self.make_run(11, mutation=lambda db: correct_mutation(11, db),
+                                    extra_mutation=lambda db: db.execute("UPDATE user SET password_hash=? WHERE id=3", (value,)))
+                self.assertFalse(self.verify(11, run)["pass"])
+
+    def test_read_fact_binding_and_equivalent_prose(self):
+        cases = [
+            (0, True, "Cavalier King Charles Spaniel lives 12 to 15 years and weighs 13 to 18 pounds."),
+            (0, False, "Cavalier King Charles Spaniel weight is 12-15 years and lifespan is 13-18 lb."),
+            (2, False, "Golden Retriever energy 4/5. Border Collie energy 1/5 and is higher."),
+            (4, True, "The author is Mina Brooks; it takes five minutes to read."),
+            (4, False, "The author is John Doe. Mina Brooks reviewed it; 5 minutes."),
+            (4, False, "Mina Brooks is not the author. It takes 5 minutes."),
+            (4, False, "Questions You Can Ask Your Potential Breeder by Mina Brooks; 5 minutes."),
+            (5, True, "Riverside Training Hall on 27 Jun 2026."),
+        ]
+        for number, expected, answer in cases:
+            with self.subTest(number=number, answer=answer):
+                self.assertEqual(self.verify(number, self.make_run(number, answer=answer))["pass"], expected)
 
     def test_read_tasks_reject_knowledge_shortcuts(self):
         for number in READ_TASKS:

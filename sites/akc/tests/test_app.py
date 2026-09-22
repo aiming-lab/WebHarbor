@@ -107,6 +107,48 @@ class AkcAppTests(unittest.TestCase):
         with akc.app.app_context():
             self.assertEqual(akc.db.session.get(akc.User, 1).activity_level, "Moderate")
 
+    def test_signed_out_save_returns_to_breed_after_login(self):
+        response = self.client.post('/breeds/whippet/save')
+        self.assertEqual(response.status_code, 302)
+        self.assertIn('next=/breeds/whippet', response.location)
+        self.assertNotIn('/save', response.location)
+        response = self.client.post(response.location, data={
+            'email': 'bob.c@test.com', 'password': 'TestPass123!'
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('Whippet', response.get_data(as_text=True))
+        self.assertIn('Save Breed', response.get_data(as_text=True))
+        response = self.client.post('/breeds/whippet/save', follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        with akc.app.app_context():
+            bob = akc.User.query.filter_by(email='bob.c@test.com').one()
+            breed = akc.Breed.query.filter_by(slug='whippet').one()
+            self.assertEqual(akc.SavedBreed.query.filter_by(user_id=bob.id, breed_id=breed.id).count(), 1)
+
+    def test_search_empty_and_real_result_count(self):
+        body = self.client.get('/search?q=zzzzunmatchedquery').get_data(as_text=True)
+        self.assertIn('0 results', body)
+        self.assertNotIn('4,028', body)
+        self.assertNotIn('Agility Events', body)
+        self.assertNotIn('search-pagination', body)
+        body = self.client.get('/search?q=agility').get_data(as_text=True)
+        self.assertIn('Introduction to Agility Training', body)
+        self.assertNotIn('Agility FAQ', body)
+        # Broad matches must not be silently truncated at the previous eight rows.
+        body = self.client.get('/search?q=breed').get_data(as_text=True)
+        with akc.app.app_context():
+            breeds = akc.scored_search('breed', akc.Breed.query.all(), ['name','group','temperament','overview'])
+        self.assertGreater(len(breeds), 8)
+        for breed in breeds:
+            self.assertIn('/breeds/' + breed.slug, body)
+
+    def test_trait_labels_match_supported_data(self):
+        body = self.client.get('/breeds/great-dane').get_data(as_text=True)
+        self.assertIn('<span>Apartment fit</span>', body)
+        self.assertIn('<span>Good with young children</span>', body)
+        self.assertNotIn('<span>Affectionate with family</span>', body)
+        self.assertNotIn('<span>Good with other dogs</span>', body)
+
 
 if __name__ == "__main__":
     unittest.main()
