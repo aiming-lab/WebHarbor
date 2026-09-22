@@ -166,3 +166,20 @@ button, input, textarea, select { font: inherit; }
   .account-actions { width: 100%; justify-content: flex-end; }
   .account-grid { grid-template-columns: 1fr; }
 }
+
+/* Keep content intrinsic widths inside the viewport. */
+.shell-body { grid-template-columns: 220px minmax(0, 1fr); }
+.main-area, .watch-main, .video-card, .video-meta > div, .channel-overview > div { min-width: 0; }
+.video-title { overflow-wrap: anywhere; }
+@media (max-width: 1100px) { .shell-body { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 760px) {
+ .main-area { padding: 16px; }
+ .video-grid { grid-template-columns: minmax(0, 1fr); }
+ .watch-actions, .channel-overview { flex-wrap: wrap; }
+ .action-row { flex-wrap: wrap; }
+ .side-card { grid-template-columns: 110px minmax(0, 1fr); }
+ .playlist-row { grid-template-columns: 24px minmax(0, 1fr); }
+ .channel-tabs { overflow-x: auto; }
+}
+.account-hero > div { min-width: 0; overflow-wrap: anywhere; }
+.account-hero > img, .account-hero > .avatar-pill { flex-shrink: 0; }

@@ -26,6 +26,11 @@
             <option value="metric" {% if current_user.preferred_units == 'metric' %}selected{% endif %}>Metric</option>
           </select>
         </label>
+        <label>Home location
+          <select name="home_location_id">
+            {% for item in saved %}<option value="{{ item.location.id }}" {% if current_user.home_location_id == item.location.id %}selected{% endif %}>{{ item.location.city }}, {{ item.location.region }}</option>{% endfor %}
+          </select>
+        </label>
         <button type="submit">Save preferences</button>
       </form>
     </section>

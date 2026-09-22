@@ -1,3 +1,8 @@
+from pathlib import Path
+import json
+
+SEED_MEDIA = json.loads(Path(__file__).with_name("seed_media.json").read_text())
+DEMO_PASSWORD_HASH = '$2b$12$r5GnPw8fuwOpKrTrmsrDV.M3PAJbB2Tach.APxZ4IQGZkWRrIYVsK'
 from datetime import datetime, timedelta
 
 BRAND_LOGO_PATH = '/static/images/weather/upstream/branding/weather-channel-logo.svg'
@@ -99,16 +104,6 @@ def seed_database(db, Location, CurrentConditions, DailyForecast, HourlyForecast
         ('san-francisco-ca', 'San Francisco', 'CA', 'United States', 61, 59, 68, 16, 'NW', 4, 'Marine Layer', 'jpg'),
         ('singapore-sg', 'Singapore', 'Singapore', 'Singapore', 88, 95, 84, 7, 'S', 9, 'Tropical Showers', 'jpg'),
     ]
-    hero_fallback = {
-        'denver-co': '/static/images/weather/hero/feature-story.jpg',
-        'san-francisco-ca': '/static/images/weather/hero/editor-pick.jpg',
-        'singapore-sg': '/static/images/weather/hero/seasonal-tip.png',
-    }
-    radar_fallback = {
-        'denver-co': '/static/images/weather/radar/new-york-ny.svg',
-        'san-francisco-ca': '/static/images/weather/radar/new-york-ny.svg',
-        'singapore-sg': '/static/images/weather/radar/new-york-ny.svg',
-    }
     locations = {}
     for slug, city, region, country, temp, feels_like, humidity, wind, wind_dir, uv, label, hero_ext in locations_data:
         location = Location(
@@ -117,8 +112,8 @@ def seed_database(db, Location, CurrentConditions, DailyForecast, HourlyForecast
             region=region,
             country=country,
             search_label=f'{city}, {region}, {country}',
-            hero_image=hero_fallback.get(slug, image_path('weather/hero', slug, hero_ext)),
-            radar_image=radar_fallback.get(slug, image_path('weather/radar', slug)),
+            hero_image=SEED_MEDIA['locations'][slug]['hero_image'],
+            radar_image=SEED_MEDIA['locations'][slug]['radar_image'],
             summary=f'{city} has a rich local forecast view with current conditions, a 10-day outlook, and detailed alert tracking.',
         )
         db.session.add(location)
@@ -218,7 +213,7 @@ def seed_benchmark_users(db, User, SavedLocation, Location):
     lookup = {location.slug: location for location in Location.query.all()}
     for email, name, units, home_slug, saved_slugs in users:
         user = User(email=email, full_name=name, preferred_units=units, home_location_id=lookup[home_slug].id)
-        user.set_password('TestPass123!')
+        user.password_hash = DEMO_PASSWORD_HASH
         db.session.add(user)
         db.session.flush()
         for slug in saved_slugs:

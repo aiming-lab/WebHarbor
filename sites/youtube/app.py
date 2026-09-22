@@ -33,12 +33,13 @@ def mirror_now() -> datetime:
 def user_avatar_path(user: UserMixin | None) -> str:
     if not user or not getattr(user, 'email', None):
         return ''
-    return BENCHMARK_USER_AVATAR_PATHS.get(user.email.lower(), '')
+    path = BENCHMARK_USER_AVATAR_PATHS.get(user.email.lower(), '')
+    return path if path and os.path.isfile(os.path.join(BASE_DIR, path.lstrip('/'))) else ''
 
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'), static_folder=os.path.join(BASE_DIR, 'static'))
 app.config['SECRET_KEY'] = 'webharbor-youtube-dev-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'youtube.db')}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.environ.get('WEBSYN_DB_PATH', os.path.join(BASE_DIR, 'instance', 'youtube.db'))}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
@@ -59,7 +60,7 @@ class User(db.Model, UserMixin):
     display_name = db.Column(db.String(120), nullable=False)
     handle = db.Column(db.String(80), unique=True, nullable=False, index=True)
     avatar_color = db.Column(db.String(20), default='#3ea6ff')
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=mirror_now)
 
     comments = db.relationship('Comment', backref='user', lazy=True, cascade='all, delete-orphan')
     subscriptions = db.relationship('Subscription', backref='user', lazy=True, cascade='all, delete-orphan')
@@ -177,7 +178,7 @@ class Comment(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     body = db.Column(db.Text, nullable=False)
     like_count = db.Column(db.Integer, default=0)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=mirror_now)
 
 
 class Subscription(db.Model):
@@ -185,7 +186,7 @@ class Subscription(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     channel_id = db.Column(db.Integer, db.ForeignKey('channels.id'), nullable=False)
-    subscribed_at = db.Column(db.DateTime, default=datetime.utcnow)
+    subscribed_at = db.Column(db.DateTime, default=mirror_now)
     channel = db.relationship('Channel')
 
 
@@ -194,7 +195,7 @@ class WatchLater(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     video_id = db.Column(db.Integer, db.ForeignKey('videos.id'), nullable=False)
-    added_at = db.Column(db.DateTime, default=datetime.utcnow)
+    added_at = db.Column(db.DateTime, default=mirror_now)
     video = db.relationship('Video')
 
 
@@ -203,7 +204,7 @@ class WatchHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     video_id = db.Column(db.Integer, db.ForeignKey('videos.id'), nullable=False)
-    watched_at = db.Column(db.DateTime, default=datetime.utcnow)
+    watched_at = db.Column(db.DateTime, default=mirror_now)
     video = db.relationship('Video')
 
 
@@ -212,7 +213,7 @@ class UserLike(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     video_id = db.Column(db.Integer, db.ForeignKey('videos.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=mirror_now)
     video = db.relationship('Video')
 
 
@@ -263,7 +264,7 @@ def score_video(video: Video, query: str) -> int:
             score += 8
         if any(term in haystack for haystack in haystacks[1:]):
             score += 4
-    if video.is_trending:
+    if score and video.is_trending:
         score += 2
     return score
 
