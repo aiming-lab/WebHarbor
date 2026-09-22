@@ -15,9 +15,16 @@ Short research tasks now combine comparison or investigation with relevant saved
 - Scripted visible-UI browser review with per-action screenshots and independent initial/final SQLite backups; contributor reference answers informed the flows. These are not independent autonomous-agent attempts. The secondary LLM judge was not run.
 - All 91 corrected trajectories pass, all 91 GIFs decode, and the dashboard's filters, task anchors, 364 evidence links, desktop layout and mobile width were checked in Chromium.
 - Forty controls produced their expected results, including natural equivalent answers, swapped values, unrelated reference numbers, wrong alert frequency, unrelated record deletion, fixture tampering, invalid PNGs, and wrong origins.
-- Amazon verifier suite: 36 tests passed. BBB verifier suite: 37 tests passed; BBB route suite: 26 tests passed. Cboe suite and final combined Docker validation are recorded in the batch report when complete.
+- Amazon verifier suite: 36 tests passed. BBB verifier suite: 37 tests passed; BBB route suite: 26 tests passed. Cboe verifier suite: 8 test methods and the full per-task matrix passed (349 subtests).
 - Fresh HF fetch validated all 65 bundles at `bd574ee3270c40ebf3347fb89e5fbfb6f4adf2a0`. HF #106, #110 and #107 are merged; all 65 previously existing dataset files were preserved and the three archives were not repacked.
 - Static checks confirm 65 unique registry ports, existing 62 port assignments unchanged, new sites at 40062–40064, matching task URLs and Docker EXPOSE, and changes confined to the README Websites table.
+
+## Final integration validation
+
+- Built `webharbor:pr159-161-reviewed`, image `sha256:f08aecb3f1635a2b988e24553c4374bcf74ffa5930bb425549e8328cbc814f42`, using `docker build --network=host` after asset checks. Its runtime source matches the integrated candidate; a later test-only change aligns BBB's schema assertion with port 40064.
+- Only Amazon Jobs, Cboe and BBB were started in an isolated Docker network. Each returned HTTP 200 and appeared alive/ready, preserved a deliberate account mutation across restart, reset byte-identically to its seed twice, and matched the reviewed seed's logical table hashes. Checks ran inside the container; aggregate `/health` returns 503 because the other 62 sites were intentionally not started.
+- Syntax and changed-code whitespace checks passed. The 65-site registry/README/task URL/EXPOSE checks preserve existing ports. BBB's 26 route tests include exact-name priority, per-state positive-loss medians (including fractional values), quote navigation and seed-text cleanup. The Amazon sort-offset browser check and BBB final median mobile check passed.
+- Original contributions and fixes use this integration order: #159 → #171 → #160 → #172 → #161 → #173. Required HF #106/#110/#107 merge status was independently rechecked. The code's immutable asset revision is the merged dataset commit above.
 
 ## Review artifacts
 
@@ -58,3 +65,5 @@ Short research tasks now combine comparison or investigation with relevant saved
 | Cboe--28 | Reviewed | 11 | PASS | [GIF and trajectory](http://localhost:45044/#cboe-28) |
 | Cboe--29 | Reviewed | 6 | PASS | [GIF and trajectory](http://localhost:45044/#cboe-29) |
 | Cboe--30 | Revised | 10 | PASS | [GIF and trajectory](http://localhost:45044/#cboe-30) |
+
+Fix PR: https://github.com/aiming-lab/WebHarbor/pull/172. Integration status and exact remote merge commits are recorded in the dashboard report and `/data/pr159-161-review/github-integration.json`.
