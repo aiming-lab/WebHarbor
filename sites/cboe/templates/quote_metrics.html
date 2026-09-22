@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ sym.ticker }} - Delayed Quotes{% endblock %}
+{% block content %}
+<div class="quote-shell">
+  <div class="quote-head">
+    <h1>{{ sym.ticker }} - Quotes Dashboard</h1>
+    <div class="quote-tabs">
+      <a class="qt {% if tab == 'dashboard' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}">Dashboard</a>
+      <a class="qt {% if tab == 'charts' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/chart">Charts</a>
+      <a class="qt {% if tab == 'options' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/quote_table">Options</a>
+      <a class="qt {% if tab == 'metrics' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/metrics">Metrics</a>
+    </div>
+  </div>
+
+  <div class="quote-overview">
+    <div class="overview-panel wide">
+      <h2 class="instrument-name">{{ sym.name }} ({{ sym.display_symbol }})</h2>
+      <div class="metrics-grid">
+        <div class="metric-box">
+          <p class="metric-label">Call Volume</p>
+          <p class="metric-value">{{ fmt_int(calls_vol) }}</p>
+        </div>
+        <div class="metric-box">
+          <p class="metric-label">Put Volume</p>
+          <p class="metric-value">{{ fmt_int(puts_vol) }}</p>
+        </div>
+        <div class="metric-box">
+          <p class="metric-label">Put/Call Ratio (Volume)</p>
+          <p class="metric-value">{{ "%.2f"|format(pcr) }}</p>
+        </div>
+        <div class="metric-box">
+          <p class="metric-label">Call Open Interest</p>
+          <p class="metric-value">{{ fmt_int(calls_int) }}</p>
+        </div>
+        <div class="metric-box">
+          <p class="metric-label">Put Open Interest</p>
+          <p class="metric-value">{{ fmt_int(puts_int) }}</p>
+        </div>
+        <div class="metric-box">
+          <p class="metric-label">IV30</p>
+          <p class="metric-value">{{ "%.3f"|format(quote.iv30) }}</p>
+        </div>
+      </div>
+      <p class="metric-note">Aggregated across all listed {{ sym.ticker }} option contracts in the delayed snapshot. Market data provided by Cboe.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

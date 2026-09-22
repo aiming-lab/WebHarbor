@@ -89,6 +89,7 @@ All registered websites and their default ports, in registration order from left
 | Petfinder | 40054 | MEGA | 40055 | 4shared | 40056 |
 | 9GAG | 40057 | American Kennel Club | 40058 | Best Buy | 40059 |
 | YouTube | 40060 | Weather | 40061 | Amazon Jobs | 40062 |
+| Cboe | 40063 |  |  |  |  |
 
 ## 🤝 Contribute
 

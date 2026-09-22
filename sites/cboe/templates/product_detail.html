@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<div class="product-shell">
+  <section class="product-hero">
+    <div class="product-hero-copy">
+      <p class="eyebrow">{{ p.eyebrow }}</p>
+      <h1>{{ p.hero_title }}</h1>
+      <p class="hero-desc">{{ p.hero_desc }}</p>
+      <div class="hero-ctas">
+        <a class="btn-ghost-light" href="#why">Why {{ p.quote_symbol }}</a>
+        <a class="btn-ghost-light" href="#resources">Key Resources</a>
+        <a class="btn-ghost-light" href="/insights/">Insights</a>
+        <a class="btn-ghost-light" href="/optionsinstitute">Options Institute</a>
+      </div>
+    </div>
+    <div class="quick-links-card">
+      <p class="ql-title">QUICK LINKS</p>
+      <ul>
+        <li><a href="#specs">{% if p.slug == 'spx-options' %}SPX Contract Specifications{% else %}Product Resources{% endif %}</a></li>
+        <li><a href="/delayed_quotes/{{ p.quote_symbol }}">{{ p.quote_symbol }} Delayed Quotes</a></li>
+        <li><a href="/delayed_quotes/{{ p.quote_symbol }}/quote_table">{{ p.quote_symbol }} Options Chain</a></li>
+        <li><a href="/insights/categories/products/">Product Updates</a></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="trade-data">
+    <h2>Trade Data</h2>
+    <p class="trade-as-of">as of {{ p.trade_as_of }}</p>
+    <div class="trade-stats">
+      <div class="trade-stat">
+        <p class="trade-value">{{ p.trade_volume }}</p>
+        <p class="trade-label">VOLUME</p>
+      </div>
+      <div class="trade-stat">
+        <p class="trade-value">{{ p.trade_open_interest }}</p>
+        <p class="trade-label">OPEN INTEREST</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="product-section" id="why">
+    <h2>{% if p.quote_symbol %}Why {{ p.quote_symbol }}{% else %}Key Benefits{% endif %}</h2>
+    <p class="section-blurb">Key benefits of trading {{ p.name }}.</p>
+    <div class="benefit-grid">
+      {% for benefit in p.benefits() %}
+        <div class="benefit-card">
+          <h3>{{ benefit.title }}</h3>
+          <p>{{ benefit.desc }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  {% if p.sections() %}
+  <section class="product-section {% if not p.benefits() %}alt{% endif %}" id="overview">
+    {% for section in p.sections() %}
+      <div class="product-content-section">
+        <h3>{{ section.heading }}</h3>
+        {% for para in section.paras %}<p>{{ para }}</p>{% endfor %}
+      </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  {% if p.gth() or p.gth_note %}
+  <section class="product-section alt" id="gth">
+    <h2>Extended Global Trading Hours</h2>
+    {% if p.gth_note %}<p class="section-blurb">{{ p.gth_note }}</p>{% endif %}
+    {% if p.gth() %}
+      <table class="stats-table gth-table">
+        <thead><tr>{% for h in p.gth().headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in p.gth().rows %}<tr>{% for cell in row %}<td class="mono">{{ cell }}</td>{% endfor %}</tr>{% endfor %}
+        </tbody>
+      </table>
+      <p class="footnote">Trading hours are determined by time in Chicago. Global trading hours may differ on holidays.</p>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% if view == 'specs' and p.specs() %}
+  <section class="product-section" id="specs">
+    <h2>Product Specifications</h2>
+    <div class="specs-list">
+      {% for spec in p.specs() %}
+        <details class="spec-item">
+          <summary>{{ spec.label }}</summary>
+          <p>{{ spec.value }}</p>
+        </details>
+      {% endfor %}
+    </div>
+  </section>
+  {% elif p.specs() %}
+  <section class="product-section" id="specs">
+    <h2>Product Specifications</h2>
+    <p class="section-blurb">Contract specifications for {{ p.name }}.</p>
+    <a class="btn-solid" href="/tradable-products/{{ p.family }}/{{ p.slug }}{% if p.slug == 'spx-options' %}/spx-specifications{% endif %}">View full specifications</a>
+  </section>
+  {% endif %}
+
+  {% if p.slug == 'spx-options' %}
+  <section class="product-section" id="calculator">
+    <h2>Comparison Calculator</h2>
+    <p class="section-blurb">S&amp;P 500 (SPX&reg;) and Mini-SPX (XSP&reg;) Index Options</p>
+    <div class="calculator-panel">
+      <form class="calc-form" method="get" action="/tradable-products/sp-500/spx-options">
+        <label>S&amp;P 500 Level
+          <input type="number" name="level" step="0.01" value="{{ request.args.get('level', '7764.70') }}">
+        </label>
+        <label>Number of Options Contracts
+          <input type="number" name="contracts" step="1" value="{{ request.args.get('contracts', '10') }}">
+        </label>
+        <button class="btn-solid" type="submit">Calculate</button>
+        <button class="btn-outline" type="submit" name="reset" value="1">Reset</button>
+      </form>
+      {% set level = request.args.get('level', '7764.70')|float %}
+      {% set contracts = request.args.get('contracts', '10')|int %}
+      <table class="stats-table calc-table">
+        <thead><tr><th>Metric</th><th>S&amp;P 500 (SPX) Index Options</th><th>Mini-SPX (XSP) Index Options</th></tr></thead>
+        <tbody>
+          <tr><td>Contract Size</td><td class="mono">1</td><td class="mono">10</td></tr>
+          <tr><td>Contract Multiplier</td><td class="mono">$100</td><td class="mono">$100</td></tr>
+          <tr><td>Notional Value</td><td class="mono">${{ '{:,.2f}'.format(level * 100 * contracts) }}</td><td class="mono">${{ '{:,.2f}'.format(level * 10 * contracts) }}</td></tr>
+          <tr><td>At the Money Strike</td><td class="mono">{{ '{:,.0f}'.format(level) }}</td><td class="mono">{{ '{:,.0f}'.format(level) }}</td></tr>
+        </tbody>
+      </table>
+      <p class="footnote">The Mini-SPX Index is based on 1/10th the value of the Standard and Poor's 500 Index. The SPX and XSP Comparison Calculator is an educational tool.</p>
+      <div class="xsp-cta">
+        <p>Monitor XSP Quotes!</p>
+        <a class="btn-solid" href="/delayed_quotes/XSP">XSP Quote Viewer</a>
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="product-section" id="resources">
+    <h2>Key Resources</h2>
+    <p class="section-blurb">Enhance your strategies with in-depth trading guides, product briefs, and real-world examples.</p>
+    <div class="resource-grid">
+      {% for resource in p.resources() %}
+        <div class="resource-card"><h3>{{ resource.title }}</h3><p>{{ resource.desc }}</p></div>
+      {% else %}
+        <div class="resource-card"><h3>{{ p.name }}</h3><p>See the product page resources for guides and briefs.</p></div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="product-section dark-list">
+    <div class="section-head-row">
+      <h2>Latest Market Insights</h2>
+      <a class="section-more" href="/insights/">View All Insights</a>
+    </div>
+    <p class="section-blurb">Access real-time market trends and macro updates that shape performance. Gain timely perspectives to support your trading decisions.</p>
+    <div class="article-grid">
+      {% for article in related %}
+        <article class="article-card">
+          {% if article.category %}<p class="card-cat"><a href="/insights/categories/{{ article.category.slug }}/">{{ article.category.name }}</a></p>{% endif %}
+          <h3><a href="/insights/posts/{{ article.slug }}/">{{ article.title }}</a></h3>
+          <p class="card-desc">{{ article.excerpt()|truncate(180) }}</p>
+          <a class="card-more" href="/insights/posts/{{ article.slug }}/">Read More</a>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="cta-band">
+    <p>Get the latest Cboe derivatives news and insights.</p>
+    <a class="btn-solid" href="/insights/todays-market-take">Subscribe</a>
+  </section>
+</div>
+{% endblock %}

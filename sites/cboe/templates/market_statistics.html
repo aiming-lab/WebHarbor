@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Daily Market Statistics{% endblock %}
+{% block content %}
+<div class="stats-shell">
+  <div class="stats-head">
+    <h1>Cboe Daily Market Statistics</h1>
+    <p class="stats-disclaimer">Cboe Market Statistics Summary Data is compiled for the convenience of site visitors and is furnished without responsibility for accuracy and is accepted by the site visitor on the condition that transmission or omissions shall not be made the basis for any claim, demand or cause for action. The information in the Market Statistics Summary Data is provided \"as is\" for user information only and is not intended for trading purposes. This information is subject to the terms and conditions of use applicable to Cboe websites. Please review the Terms and Conditions of Use of Cboe Websites.</p>
+    <p class="stats-note"><strong>NOTE:</strong> Any questions about this data may be directed to the Cboe Trade Desk at <strong>(913) 815-7001</strong>.</p>
+    <form class="stats-date-form" method="get" action="/markets/us/options/market-statistics/daily">
+      <label for="dt">Select trading date:</label>
+      <select name="dt" id="dt" onchange="this.form.submit()">
+        {% for d in dates %}
+          <option value="{{ d }}" {% if d == stat_date %}selected{% endif %}>{{ d }}</option>
+        {% endfor %}
+      </select>
+      <noscript><button class="btn-solid" type="submit">View</button></noscript>
+    </form>
+    <p class="stats-selected">Showing statistics for <strong>{{ stat_date }}</strong>.</p>
+  </div>
+
+  <div class="stats-ratios">
+    <h2>Ratios</h2>
+    <table class="stats-table ratio-table">
+      <thead><tr><th>Ratios</th><th>Value</th></tr></thead>
+      <tbody>
+        {% for r in ratios %}
+          <tr><td>{{ r.stat_key }}</td><td class="mono">{{ r.value }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% for section in sections %}
+    <div class="stats-section">
+      <h2>{{ section.name }}</h2>
+      <table class="stats-table">
+        <thead><tr><th>Name</th><th>Call</th><th>Put</th><th>Total</th></tr></thead>
+        <tbody>
+          {% for row in section.rows %}
+            <tr>
+              <td>{{ row.kind|replace('_', ' ')|title }}</td>
+              <td class="mono">{{ row.call }}</td>
+              <td class="mono">{{ row.put }}</td>
+              <td class="mono">{{ row.total }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

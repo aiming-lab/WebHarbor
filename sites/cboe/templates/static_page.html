@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="static-shell">
+  <nav class="breadcrumb"><a href="/">Home</a> &rsaquo; {{ title }}</nav>
+  <section class="page-hero slim-hero">
+    <h1>{{ page.title if page else title }}</h1>
+    {% if page and page.intro %}<p class="hero-sub">{{ page.intro }}</p>{% endif %}
+  </section>
+  {% if page %}
+    {% for section in page.sections() %}
+      <section class="static-section {% if loop.index is even %}alt{% endif %}">
+        <h2>{{ section.heading }}</h2>
+        {% for block in section.blocks %}
+          {% if block.type == 'p' %}<p>{{ block.text }}</p>
+          {% elif block.type == 'ul' %}
+            <ul class="static-list">{% for item in block["items"] %}<li>{{ item }}</li>{% endfor %}</ul>
+          {% elif block.type == 'table' %}
+            <table class="stats-table">
+              <thead><tr>{% for h in block.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+              <tbody>{% for row in block.rows %}<tr>{% for cell in row %}<td class="mono">{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+            </table>
+          {% endif %}
+        {% endfor %}
+      </section>
+    {% endfor %}
+  {% else %}
+    <section class="static-section"><p class="empty-note">Content coming soon.</p></section>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}{{ sym.ticker }} - Delayed Quotes{% endblock %}
+{% block content %}
+<div class="quote-shell">
+  <div class="quote-head">
+    <div class="qh-top">
+      <h1>{{ sym.ticker }} - Quotes Dashboard</h1>
+      <div class="qh-meta">
+        <span class="qh-name">{{ sym.name }} ({{ sym.display_symbol|lower }})</span>
+        <span class="qh-timestamp">{{ quote.as_of }}</span>
+      </div>
+    </div>
+    <div class="quote-tabs">
+      <a class="qt {% if tab == 'dashboard' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}">Dashboard</a>
+      <a class="qt {% if tab == 'charts' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/chart">Charts</a>
+      <a class="qt {% if tab == 'options' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/quote_table">Options</a>
+      <a class="qt {% if tab == 'metrics' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/metrics">Metrics</a>
+    </div>
+    <div class="chain-quote-bar">
+      <span class="cqb-item"><label>Bid</label> {{ fmt_num(quote.bid) }}</span>
+      <span class="cqb-item"><label>Ask</label> {{ fmt_num(quote.ask) }}</span>
+      <span class="cqb-item"><label>Vol</label> {{ fmt_int(quote.volume) }}</span>
+      <span class="cqb-item"><label>Last</label> {{ fmt_num(quote.current_price) }}</span>
+      <span class="cqb-item {% if quote.price_change > 0 %}up{% elif quote.price_change < 0 %}down{% endif %}">
+        <label>Change</label> {{ "%+0.4f"|format(quote.price_change) }} ({{ "%+.4f"|format(quote.price_change_percent) }}%)
+      </span>
+    </div>
+
+    <form class="chain-filters" method="get" action="/delayed_quotes/{{ sym.ticker }}/quote_table">
+      <span class="cf-title">Filters By:</span>
+      <div class="cf-group"><label>Volume:</label>
+        <select name="volume">
+          <option value="all" {% if volume_min == 'all' %}selected{% endif %}>All</option>
+          <option value=">0" {% if volume_min == '>0' %}selected{% endif %}>&gt;0</option>
+        </select>
+      </div>
+      <div class="cf-group"><label>Options Range:</label>
+        <select name="range">
+          {% for value, label in ranges.items() %}
+            <option value="{{ value }}" {% if opt_range == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="cf-group"><label>Size:</label>
+        <select name="size">
+          {% for s in [3, 5, 10, 20] %}
+            <option value="{{ s }}" {% if size == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="cf-group"><label>Expiration:</label>
+        <select name="expiration">
+          <option value="">All months</option>
+          {% for month in months %}
+            <option value="{{ month }}" {% if expiration == month %}selected{% endif %}>{{ month }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn-solid" type="submit">View Chain</button>
+    </form>
+    <p class="total-records">Total Records: {{ total }}{% if capped %} (showing the first 3000 rows){% endif %}</p>
+  </div>
+
+  {% set ns = namespace(current_expiry='') %}
+  {% for row in table %}
+    {% if row.expiry != ns.current_expiry %}
+      {% if ns.current_expiry %}</tbody></table></div>{% endif %}
+      {% set ns.current_expiry = row.expiry %}
+      <h3 class="expiry-head" id="exp-{{ row.expiry }}">{{ row.expiry|expiry_label }}</h3>
+      <div class="chain-scroll">
+      <table class="chain-table">
+        <thead>
+          <tr>
+            <th colspan="9" class="side-head call-head">Calls</th>
+            <th class="side-head strike-head">Strike</th>
+            <th colspan="9" class="side-head put-head">Puts</th>
+          </tr>
+          <tr>
+            <th>Last</th><th>Net</th><th>Bid</th><th>Ask</th><th>Vol</th><th>IV</th><th>Delta</th><th>Gamma</th><th>Int</th>
+            <th class="strike-col">{{ sym.ticker }}</th>
+            <th>Last</th><th>Net</th><th>Bid</th><th>Ask</th><th>Vol</th><th>IV</th><th>Delta</th><th>Gamma</th><th>Int</th>
+          </tr>
+        </thead>
+        <tbody>
+    {% endif %}
+    <tr>
+      {% if row.call %}
+        <td class="mono">{{ fmt_num(row.call.last_trade_price) }}</td>
+        <td class="mono {% if row.call.change > 0 %}up{% elif row.call.change < 0 %}down{% endif %}">{{ "%+0.3f"|format(row.call.change) }}</td>
+        <td class="mono">{{ fmt_num(row.call.bid) }}</td>
+        <td class="mono">{{ fmt_num(row.call.ask) }}</td>
+        <td class="mono">{{ fmt_int(row.call.volume) }}</td>
+        <td class="mono">{{ "%.2f"|format(row.call.iv) }}</td>
+        <td class="mono">{{ "%.4f"|format(row.call.delta) }}</td>
+        <td class="mono">{{ "%.4f"|format(row.call.gamma) }}</td>
+        <td class="mono">{{ fmt_int(row.call.open_interest) }}</td>
+      {% else %}
+        <td colspan="9" class="mono dim">-</td>
+      {% endif %}
+      <td class="strike-col mono">{{ row.root }} {{ "%.3f"|format(row.strike) }}</td>
+      {% if row.put %}
+        <td class="mono">{{ fmt_num(row.put.last_trade_price) }}</td>
+        <td class="mono {% if row.put.change > 0 %}up{% elif row.put.change < 0 %}down{% endif %}">{{ "%+0.2f"|format(row.put.change) }}</td>
+        <td class="mono">{{ fmt_num(row.put.bid) }}</td>
+        <td class="mono">{{ fmt_num(row.put.ask) }}</td>
+        <td class="mono">{{ fmt_int(row.put.volume) }}</td>
+        <td class="mono">{{ "%.2f"|format(row.put.iv) }}</td>
+        <td class="mono">{{ "%.4f"|format(row.put.delta) }}</td>
+        <td class="mono">{{ "%.4f"|format(row.put.gamma) }}</td>
+        <td class="mono">{{ fmt_int(row.put.open_interest) }}</td>
+      {% else %}
+        <td colspan="9" class="mono dim">-</td>
+      {% endif %}
+    </tr>
+    {% if loop.last %}</tbody></table></div>{% endif %}
+  {% else %}
+    <p class="empty-note">No contracts match the current filters. Adjust the expiration month or options range.</p>
+  {% endfor %}
+
+  <div class="expiry-shortcuts">
+    <span class="es-title">Jump to expiration:</span>
+    {% for month in months %}
+      <a class="es-btn {% if expiration == month %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/quote_table?expiration={{ month }}&amp;range={{ opt_range }}&amp;size={{ size }}">{{ month }}</a>
+    {% endfor %}
+  </div>
+  <p class="download-note">Options chains shown with delayed data as of the snapshot. <a href="/delayed_quotes/{{ sym.ticker }}/metrics">See {{ sym.ticker }} metrics</a> for aggregate volume and open interest.</p>
+</div>
+{% endblock %}

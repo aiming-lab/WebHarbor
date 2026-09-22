@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Cboe Global Markets{% endblock %}
+{% block content %}
+<section class="home-hero">
+  <div class="hero-copy">
+    <span class="hero-badge">New</span>
+    <h1 class="hero-line1">{{ cards.hero.line1 }}</h1>
+    <h2 class="hero-line2">{{ cards.hero.line2|safe }}</h2>
+    <a class="btn-ghost-dark" href="/insights/todays-market-take">{{ cards.hero.cta }}</a>
+  </div>
+</section>
+
+<section class="volume-snapshot">
+  <div class="vs-head">
+    <h2>VOLUME SNAPSHOT</h2>
+    <p>{{ cards.volume_snapshot.label }}</p>
+  </div>
+  <div class="vs-grid">
+    <div class="vs-item">
+      <p class="vs-label">SPX Index Options</p>
+      <p class="vs-value">{{ cards.volume_snapshot.spx_index_options }}</p>
+      <p class="vs-sub">Volume</p>
+    </div>
+    <div class="vs-item">
+      <p class="vs-label">VIX Index Options</p>
+      <p class="vs-value">{{ cards.volume_snapshot.vix_index_options }}</p>
+      <p class="vs-sub">Volume</p>
+    </div>
+    <div class="vs-item">
+      <p class="vs-label">VIX Futures</p>
+      <p class="vs-value">{{ cards.volume_snapshot.vix_futures }}</p>
+      <p class="vs-sub">Volume</p>
+    </div>
+    <div class="vs-item">
+      <p class="vs-label">Industry Volume</p>
+      <p class="vs-value">{{ cards.volume_snapshot.industry_volume }}</p>
+      <p class="vs-sub">Total Options Industry Volume in Contracts</p>
+    </div>
+  </div>
+</section>
+
+<section class="home-section">
+  <div class="section-head">
+    <h2>The Home of the VIX&reg; Index &amp; SPX</h2>
+  </div>
+  <div class="duo-grid">
+    {% for key, title, blurb, links in [
+      ("vix_card", "The VIX Index", "Welcome to your go-to place for information about the VIX complex, including VIX options and futures. Learn to measure, model and trade market moves with the world's widest array of volatility products and resources.",
+       [("Explore VIX Options", "/tradable-products/vix/vix-options"), ("Discover VIX Futures", "/tradable-products/vix/vix-futures"), ("VIX Delayed Quotes", "/delayed_quotes/VIX")]),
+      ("spx_card", "S&amp;P 500 Index Options", "Cboe's SPX&reg; options products provide investors with the tools to gain efficient exposure to the U.S. equity market and execute risk management, hedging, asset allocation, and income generation strategies.",
+       [("Learn more about SPX Options", "/tradable-products/sp-500/spx-options"), ("Get to know XSP Options", "/tradable-products/sp-500/xsp-options"), ("SPX Delayed Quotes", "/delayed_quotes/SPX")]),
+    ] %}
+      <div class="duo-card">
+        <h3>{{ title|safe }}</h3>
+        <p class="duo-blurb">{{ blurb }}</p>
+        {% if cards.get(key) %}
+        <div class="quote-card">
+          <div class="qc-head">
+            <span class="qc-ticker">{{ cards[key].ticker }}</span>
+            <span class="qc-name">{{ cards[key].name }}</span>
+          </div>
+          <div class="qc-row">
+            <span class="qc-price">{{ fmt_num(cards[key].quote.current_price) }}</span>
+            <span class="qc-change {% if cards[key].quote.price_change > 0 %}up{% elif cards[key].quote.price_change < 0 %}down{% endif %}">
+              {{ cards[key].quote.price_change|fmt_num }} ({{ "%.2f"|format(cards[key].quote.price_change_percent) }}%)
+            </span>
+          </div>
+          <div class="qc-chart">{{ cards[key].svg }}</div>
+          <div class="qc-tabs"><span class="qc-tab active">Intraday</span><span class="qc-tab">1M</span><span class="qc-tab">3M</span><span class="qc-tab">6M</span><span class="qc-tab">1Y</span></div>
+        </div>
+        {% endif %}
+        <ul class="duo-links">
+          {% for label, href in links %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}
+        </ul>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="home-section alt">
+  <div class="section-head"><h2>Market Snapshot</h2></div>
+  <div class="snap-grid">
+    <div class="snap-card">
+      <div class="snap-title">U.S. Equities<span class="snap-link"><a href="/markets/us/options/market-statistics/daily">&rarr;</a></span></div>
+      <p class="snap-sub">MOST ACTIVE SYMBOLS ON EDGX</p>
+      <table class="snap-table">
+        {% for row in cards.market_snapshot.most_active %}
+          <tr><td>{{ row.symbol }}</td><td class="mono">${{ "%.4f"|format(row.last_price|float) }}</td><td class="mono">({{ row.volume }})</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="snap-card">
+      <div class="snap-title">U.S. Options<span class="snap-link"><a href="/markets/us/options/market-statistics/daily">&rarr;</a></span></div>
+      <div class="snap-stat">
+        <p class="snap-big">{{ cards.market_snapshot.us_options_avg_daily }}</p>
+        <p class="snap-sub">AVERAGE DAILY CONTRACTS</p>
+      </div>
+    </div>
+    <div class="snap-card">
+      <div class="snap-title">U.S. Futures<span class="snap-link"><a href="/tradable-products/vix/vix-futures">&rarr;</a></span></div>
+      <p class="snap-sub">VIX FUTURES SETTLEMENT AND EXPIRATION</p>
+      <table class="snap-table">
+        {% for row in cards.market_snapshot.vx_futures %}
+          <tr><td>{{ row.symbol }}</td><td class="mono">{{ row.settlement }}</td><td class="mono">{{ row.expiration }}</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="snap-card">
+      <div class="snap-title">U.S. Options Market Share</div>
+      <table class="snap-table">
+        {% for row in cards.market_snapshot.options_market_share %}
+          <tr><td>{{ row.name }}</td><td class="mono">{{ "%.2f"|format(row.share) }}%</td></tr>
+        {% endfor %}
+      </table>
+    </div>
+    <div class="snap-card">
+      <div class="snap-title">Canadian Equities</div>
+      <div class="snap-stat">
+        <p class="snap-big">{{ cards.market_snapshot.canada_avg_daily }}</p>
+        <p class="snap-sub">AVERAGE DAILY VOLUME</p>
+      </div>
+    </div>
+    <div class="snap-card">
+      <div class="snap-title">Foreign Exchange</div>
+      <div class="snap-stat">
+        <p class="snap-big">{{ cards.market_snapshot.fx_avg_daily }}</p>
+        <p class="snap-sub">SPOT AVERAGE DAILY VOLUME</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <p>Get real-time and historical data from our markets around the globe.</p>
+  <a class="btn-solid" href="/account/register">Request a Demo</a>
+</section>
+
+<section class="home-section dark">
+  <div class="dark-intro">
+    <div class="dark-left">
+      <h2>Harness the Knowledge.<br>Wield the Power.</h2>
+      <a class="dark-link" href="/insights/">DISCOVER OUR INSIGHTS</a>
+    </div>
+    <p class="dark-right">At Cboe, we're dedicated to helping you navigate any market condition and efficiently manage risk. Our world-class innovators, educators and market specialists provide comprehensive resources and insightful guidance on how to use our tools, analyze markets and take your investment outcomes to new heights.</p>
+  </div>
+  <div class="insight-cards">
+    <div class="icard">
+      <p class="icard-tag">Insights and Analysis</p>
+      <h3>Derivatives Market<br>Intelligence</h3>
+      <p>Unlock actionable derivatives insights and analysis from Mandy Xu and the market intelligence team.</p>
+      <a href="/insights/categories/derivatives-market-intelligence/">Discover Market Intelligence</a>
+    </div>
+    <div class="icard">
+      <p class="icard-tag">Education</p>
+      <h3>The Options Institute</h3>
+      <p>Explore courses, events, research and more from the education arm of Cboe.</p>
+      <a href="/optionsinstitute">Learn More</a>
+    </div>
+    <div class="icard">
+      <p class="icard-tag">News and Resources</p>
+      <h3>Insights</h3>
+      <p>Stay informed with timely updates and resources for every trader, across asset classes.</p>
+      <a href="/insights/">Stay Updated</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

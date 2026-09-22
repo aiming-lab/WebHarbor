@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign In{% endblock %}
+{% block content %}
+<div class="auth-shell">
+  <section class="auth-card">
+    <h1>Sign In</h1>
+    <p class="auth-sub">Log in to manage your watchlist, class registrations, and saved articles.</p>
+    {% if current_user.is_authenticated %}
+      <p>You are already signed in as {{ current_user.display_name }}. <a href="/account">Go to your account</a>.</p>
+    {% else %}
+      <form method="post" class="auth-form">
+        <label>Email
+          <input type="email" name="email" required autocomplete="email" placeholder="you@test.com">
+        </label>
+        <label>Password
+          <input type="password" name="password" required autocomplete="current-password" placeholder="Your password">
+        </label>
+        <button class="btn-solid wide" type="submit">Sign In</button>
+      </form>
+      <p class="auth-alt">New to the mirror? <a href="/account/register">Create an account</a>.</p>
+      <p class="auth-note">Demo accounts: alice.j@test.com, bob.c@test.com, carol.d@test.com, david.k@test.com (password TestPass123!).</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Insights Overview{% endblock %}
+{% block content %}
+<div class="insights-shell">
+  <section class="page-hero dark-hero">
+    <h1>Insights Overview</h1>
+    <p class="hero-sub">Expert commentary, research and education on derivatives markets, straight from the source.</p>
+  </section>
+
+  <section class="insights-section">
+    <div class="section-head-row">
+      <h2>Today's Market Take</h2>
+      <a class="section-more" href="/insights/todays-market-take">View All Daily Takes &gt;</a>
+    </div>
+    <p class="section-blurb">Even more quick reads, all in one place. Discover what's moving the market and why it matters.</p>
+    <div class="article-grid">
+      {% for article in tmt %}
+        <article class="article-card">
+          <p class="card-cat"><a href="/insights/categories/{{ article.category.slug }}/">{{ article.category.name }}</a></p>
+          <h3><a href="/insights/posts/{{ article.slug }}/">{{ article.title }}</a></h3>
+          <p class="card-author">By {{ article.author_name }}</p>
+          <p class="card-desc">{{ article.excerpt() }}</p>
+          <a class="card-more" href="/insights/posts/{{ article.slug }}/">Read More</a>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="insights-section alt">
+    <div class="section-head-row"><h2>Explore Categories</h2></div>
+    <div class="cat-grid">
+      {% for cat in categories %}
+        <a class="cat-card" href="/insights/categories/{{ cat.slug }}/">
+          <h3>{{ cat.name }}</h3>
+          <p>{{ cat.blurb }}</p>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="insights-section">
+    <div class="section-head-row">
+      <h2>Latest Insights</h2>
+      <a class="section-more" href="/search?q=options">Search all insights &gt;</a>
+    </div>
+    <div class="article-grid">
+      {% for article in latest %}
+        <article class="article-card">
+          <p class="card-cat"><a href="/insights/categories/{{ article.category.slug }}/">{{ article.category.name }}</a></p>
+          <h3><a href="/insights/posts/{{ article.slug }}/">{{ article.title }}</a></h3>
+          <p class="card-author">By {{ article.author_name }}{% if article.date %} &middot; {{ article.date }}{% endif %}</p>
+          <p class="card-desc">{{ article.excerpt() }}</p>
+          <a class="card-more" href="/insights/posts/{{ article.slug }}/">Read More</a>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
