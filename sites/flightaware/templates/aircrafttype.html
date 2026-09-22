@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ aircraft.name }} ({{ aircraft.code }}) Aircraft Tracker - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">{{ aircraft.name | upper }} ({{ aircraft.code }})</div>
+<div class="panel">
+  <div class="panel-head">All flights with maps <span class="more">{{ flights|length }} flights today</span></div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Ident</th><th>Operator</th><th>Origin</th><th>Destination</th><th>Departure</th><th>Arrival</th><th>Status</th></tr>
+    {% for f in flights %}
+    <tr>
+      <td class="ident"><a href="/live/flight/{{ f.ident }}">{{ f.ident }}</a></td>
+      <td><a href="/live/fleet/{{ f.airline_code }}">{{ f.airline_code }}</a></td>
+      <td><a href="/live/airport/{{ f.origin_code }}">{{ f.origin_code }}</a></td>
+      <td><a href="/live/airport/{{ f.dest_code }}">{{ f.dest_code }}</a></td>
+      <td>{{ f.dep_text }}</td>
+      <td>{{ f.arr_text }}</td>
+      <td>{{ f.status or '' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No flights currently tracked for this aircraft type.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endblock %}

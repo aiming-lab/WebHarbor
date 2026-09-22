@@ -1,5 +1,8 @@
 # WebHarbor — slim, self-contained image.
-# 62 Flask mirror sites + control plane on :8101.
+# 66 Flask mirror sites + control plane on :8101 (registry in flight: flightaware
+# is assigned index 74 / port 40074 at this rebase; the SITES array is
+# append-only, so the positional index re-slots if other in-flight site PRs
+# merge first — see the PR description for the agreed parallel merge order).
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -189,12 +192,24 @@ RUN cd /opt/WebSyn/better_business_bureau && rm -rf instance instance_seed && \
     rm -rf instance __pycache__ && \
     echo "Better Business Bureau seed DB generated at build time."
 
+# FlightAware's media ships in the pinned asset bundle; its SQLite seed is rebuilt
+# deterministically from the tracked source snapshots — see .build-generated-seed.
+# No wall clock, no random salt and a frozen bcrypt hash reach any row, so the
+# artifact is byte-reproducible and websyn_start.sh just copies it at boot.
+# The tracked inventory gate enforces exact coverage, per-file SHA-256,
+# real source URLs and image-format framing for all managed images.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/flightaware
+RUN test -n "$(ls -A /opt/WebSyn/flightaware/static/images)" && \
+    test -f /opt/WebSyn/flightaware/.build-generated-seed
+RUN cd /opt/WebSyn/flightaware && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40064
+EXPOSE 8101 40000-40074
 
 CMD ["/opt/websyn_start.sh"]

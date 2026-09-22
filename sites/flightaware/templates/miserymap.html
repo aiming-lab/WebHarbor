@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}FlightAware MiseryMap&reg;{% endblock %}
+{% block content %}
+<div class="page-title-bar">FLIGHTAWARE MISERYMAP&reg;</div>
+
+<div class="panel">
+  <div class="panel-head">MiseryMap <span class="more"><a href="/live/airport/delays/">worldwide airport delays</a> &middot; <a href="/live/cancelled/">cancellations</a></span></div>
+  <div class="map-box">
+    <img src="/static/images/maps/map_miserymap.png" alt="MiseryMap">
+    <div class="map-note">Delay levels at the busiest US airports &middot; {{ mirror_date_text }}</div>
+  </div>
+  <div class="panel-body">
+    <div>Total delays within, into, or out of the United States today:&nbsp;&nbsp;<b>{{ total_us | commas if total_us else 'n/a' }}</b></div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Airports currently experiencing delays</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Airport</th><th>Departure delays</th><th>Arrival delays</th></tr>
+    {% for d in delays %}
+    <tr>
+      <td>{{ d.airport_label }}</td>
+      <td>{{ d.dep_delay_text or 'None reported' }}</td>
+      <td>{{ d.arr_delay_text or 'None reported' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">No significant delays reported right now.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endblock %}

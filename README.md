@@ -90,6 +90,7 @@ All registered websites and their default ports, in registration order from left
 | 9GAG | 40057 | American Kennel Club | 40058 | Best Buy | 40059 |
 | YouTube | 40060 | Weather | 40061 | Amazon Jobs | 40062 |
 | Cboe | 40063 | Better Business Bureau | 40064 |  |  |
+| FlightAware | 40074 |  |  |  | |
 
 ## 🤝 Contribute
 
