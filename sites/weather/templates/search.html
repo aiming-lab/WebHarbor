@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Search · Weather{% endblock %}
+{% block content %}
+<section class="wx-page-hero">
+  <div>
+    <p class="wx-page-kicker">Search</p>
+    <h1>Search results</h1>
+    <p>{{ locations|length }} locations for “{{ query }}”.</p>
+  </div>
+</section>
+<section class="results-list wx-search-list">
+  {% for location in locations %}
+    {% set condition = result_conditions.get(location.id) %}
+    <article class="search-row wx-search-row">
+      <img src="{{ location.hero_image }}" alt="{{ location.city }} skyline">
+      <div>
+        <h2>{{ location.city }}, {{ location.region }}</h2>
+        <p>{{ location.country }}</p>
+        {% if condition %}
+          <p class="wx-search-current">{{ condition.temperature_f }}° · {{ condition.condition_label }}</p>
+        {% endif %}
+        <p>{{ location.summary }}</p>
+      </div>
+      <div class="wx-search-actions">
+        <a class="ghost-btn" href="{{ url_for('location_detail', slug=location.slug) }}">Today</a>
+        <a class="ghost-btn secondary" href="{{ url_for('forecast', slug=location.slug) }}">10 Day</a>
+      </div>
+    </article>
+  {% else %}
+    <section class="detail-card wx-module-card">
+      <p>No locations matched this search.</p>
+    </section>
+  {% endfor %}
+</section>
+{% endblock %}
