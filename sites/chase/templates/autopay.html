@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Automatic payments | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Automatic payments</h1>
+    <p class="muted">Turn automatic payments on so your credit cards get paid on time each month from your Chase checking account.</p>
+    {% for c in cards %}
+    <div class="acct-panel">
+      <div class="acct-panel__body">
+        <div class="acct-line">
+          <div style="display:flex;gap:14px;align-items:center;">
+            <img src="{{ url_for('static', filename='images/' + c.card.card_art) }}" alt="{{ c.card.name }}" style="width:54px;border-radius:5px;">
+            <div>
+              <span class="name">{{ c.card.name }}</span>
+              <span class="meta">...{{ c.masked }} · pays from checking on the due date</span>
+            </div>
+          </div>
+          <div>
+            <span class="badge">{{ 'Autopay on' if c.autopay else 'Autopay off' }}</span>
+            <form method="post" action="{{ url_for('account_autopay') }}" style="display:inline;margin-left:10px;">
+              <input type="hidden" name="card_id" value="{{ c.id }}">
+              {% if c.autopay %}
+                <input type="hidden" name="enable" value="off">
+                <button class="btn btn--danger btn--sm" type="submit">Turn off automatic payments</button>
+              {% else %}
+                <input type="hidden" name="enable" value="on">
+                <button class="btn btn--green btn--sm" type="submit">Turn on automatic payments</button>
+              {% endif %}
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

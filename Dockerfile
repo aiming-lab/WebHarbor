@@ -1,5 +1,9 @@
 # WebHarbor — slim, self-contained image.
 # 59 Flask mirror sites + control plane on :8101.
+# (Registry in flight: chase is assigned declared index 69 / port 40069 — 9 sites
+# ahead of it in the merge order — while its SITES-array position on this
+# branch is 60; the array is append-only, so the positional port re-slots to
+# 40069 once the preceding site PRs merge.)
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -96,6 +100,18 @@ RUN cd /opt/WebSyn/petfinder && rm -rf instance instance_seed && \
 RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/akc && \
     cd /opt/WebSyn/akc && test -f instance_seed/akc.db && rm -rf instance
 
+# Chase's media ships in the pinned asset bundle; its SQLite seed is rebuilt
+# deterministically from the tracked source snapshots — see .build-generated-seed.
+# No wall clock, no random salt and a frozen password hash reach any row, so the
+# artifact is byte-reproducible and websyn_start.sh just copies it at boot.
+# Chase's tracked inventory gate enforces exact coverage, per-file SHA-256,
+# real source URLs and image-format framing for all 172 managed images.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/chase
+RUN test -n "$(ls -A /opt/WebSyn/chase/static/images)" && \
+    test -f /opt/WebSyn/chase/.build-generated-seed
+RUN cd /opt/WebSyn/chase && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
@@ -183,6 +199,6 @@ RUN cd /opt/WebSyn/9gag && python3 migrate_seed.py
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40059
+EXPOSE 8101 40000-40069
 
 CMD ["/opt/websyn_start.sh"]

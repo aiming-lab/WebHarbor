@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Transfers & payments | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Transfers &amp; payments</h1>
+    <p class="muted">Scheduled transfers can be canceled before they post; completed transfers are part of your history.</p>
+    <p><a class="btn btn--green" href="{{ url_for('account_transfer') }}">Schedule a transfer</a></p>
+    <div class="compare-grid">
+    <table class="data">
+      <tr><th>Date</th><th>From</th><th>To</th><th>Frequency</th><th>Status</th><th class="right">Amount</th><th></th></tr>
+      {% for t in transfers %}
+      <tr>
+        <td class="num">{{ t.date.strftime('%b %d, %Y') }}</td>
+        <td>{{ t.from_label }}</td>
+        <td>{{ t.to_label }}{% if t.memo %}<span class="meta small muted" style="display:block;">{{ t.memo }}</span>{% endif %}</td>
+        <td>{{ t.frequency }}</td>
+        <td>{{ t.status|title }}</td>
+        <td class="right num">{{ t.amount|usd2 }}</td>
+        <td>
+          {% if t.status == 'scheduled' %}
+          <form method="post" action="{{ url_for('transfer_cancel', transfer_id=t.id) }}" style="display:inline;">
+            <button class="btn btn--danger btn--sm" type="submit">Cancel</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7"><div class="empty-state">No transfers yet.</div></td></tr>
+      {% endfor %}
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Compare Checking Accounts & Apply Online | Chase{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Show me checking accounts for:</h1>
+    <div class="chip-row">
+      {% for slug, label in tabs %}
+        <a class="chip {{ 'chip--active' if active == slug }}" href="{{ url_for('checking', tab=slug) }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<div class="container">
+  <p class="result-summary">{{ products|length }} accounts shown. Accounts subject to approval. Monthly service fee rules current as of {{ mirror_date }}.</p>
+  {% for p in products %}
+  <div class="card-row card-row--deposit">
+    <div>
+      <div class="card-row__name"><a href="{{ url_for('checking_detail', slug=p.slug) }}" style="text-decoration:none;color:inherit;">{{ p.name }}</a></div>
+      <p class="muted" style="margin:0 0 10px;">{{ p.tagline }}</p>
+      <ul class="small" style="margin:0;padding-left:18px;color:#414042;">
+        {% for f in feats[p.id][:3] %}<li>{{ f }}</li>{% endfor %}
+      </ul>
+    </div>
+    <div>
+      <div class="kv"><h4>Monthly Service Fee</h4><p>{{ p.fee_text }}</p></div>
+      {% if p.fee_waiver %}<div class="kv"><h4>How to avoid the fee</h4><p class="small">{{ p.fee_waiver[:170] }}</p></div>{% endif %}
+    </div>
+    <div class="card-row__actions">
+      <a class="btn btn--green" href="{{ url_for('checking_detail', slug=p.slug) }}">Open now</a>
+      <a class="btn btn--outline" href="{{ url_for('checking_detail', slug=p.slug) }}">Account details</a>
+    </div>
+  </div>
+  {% endfor %}
+  <div class="notice">As a new Chase checking customer, get $400 when you open a Chase Total Checking® account with qualifying activities. <a href="{{ url_for('checking_detail', slug='total-checking') }}">See details</a></div>
+  <div class="section">
+    <h2>Experience seamless banking with Chase</h2>
+    <div class="trio">
+      <div class="trio-card"><div class="trio-card__body">
+        <h4>Convenient ATMs and branches</h4>
+        <p>Access to more than 14,000 ATMs and nearly 4,700 branches. <a href="{{ url_for('locator') }}">Find a location</a></p>
+      </div></div>
+      <div class="trio-card"><div class="trio-card__body">
+        <h4>Chase Mobile® app</h4>
+        <p>Manage money, deposit checks and pay bills or people from virtually anywhere.</p>
+      </div></div>
+      <div class="trio-card"><div class="trio-card__body">
+        <h4>Card lock</h4>
+        <p>Lock and unlock your debit card if you misplace it, right from your account.</p>
+      </div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

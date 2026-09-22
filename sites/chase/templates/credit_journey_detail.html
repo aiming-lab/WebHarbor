@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Credit Journey® | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Chase Credit Journey®</h1>
+    <p class="muted">Your VantageScore® 3.0 by Chase Credit Journey, refreshed monthly. Checking your score does not affect it.</p>
+    {% if latest %}
+    <div class="stat-row">
+      <div class="stat"><div class="num" style="font-size:3rem;">{{ latest }}</div><div class="lbl">{{ band }} score</div></div>
+      <div class="stat"><div class="num" style="font-size:2rem;margin-top:14px;">{{ '+' if delta > 0 }}{{ delta if delta else 0 }}</div><div class="lbl">change since last month</div></div>
+    </div>
+    <h2>Score history</h2>
+    <div class="compare-grid">
+    <table class="data">
+      <tr><th>Date</th><th class="right">Score</th></tr>
+      {% for s in snapshots %}
+      <tr>
+        <td class="num">{{ s.date.strftime('%B %Y') }}</td>
+        <td class="right num">{{ s.score }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    <p class="small muted" style="margin-top:12px;">Credit score bands: Exceptional 800+, Very Good 740–799, Good 670–739, Fair 580–669, Poor below 580. Users who successfully achieve their personalized plan goal improve their score by an average of 35 points or more.</p>
+    <p><a href="{{ url_for('article_detail', slug='747-credit-score') }}">Read our guide to credit scores →</a></p>
+    {% else %}
+    <div class="empty-state"><p>Your credit score history will appear here.</p></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
