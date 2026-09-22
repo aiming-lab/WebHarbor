@@ -35,7 +35,7 @@ git clone https://github.com/<you>/webharbor && cd webharbor
 ./scripts/fetch_assets.sh                       # pull current assets
 ./scripts/new_site.py mywebsite                 # OR edit an existing site
 ./scripts/build.sh && docker run -e WEBSYN_CONTROL_TOKEN -d --rm \
-  -p 8101:8101 -p 40000-40048:40000-40048 webharbor:dev
+  -p 8101:8101 -p 40000-40047:40000-40047 webharbor:dev
 # iterate locally...
 
 ./scripts/extract_assets.sh ../webharbor-static-pr/   # split assets out
@@ -222,7 +222,7 @@ The reviewer confirms the grading contract is sound before merge:
 - For stateful tasks, a **state-mismatch case** (agent self-reports success but the DB is unchanged) FAILs on the DB check.
 - The **LLM judge** appends a rubric-specific system-prompt block (and emits `rubric_checkpoints`) ONLY for tasks with a non-empty `judge_rubric`; tasks without one get the plain base prompt.
 
-Why two graders: an LLM-as-judge alone is gullible — a plausible-but-wrong answer, or a correct answer recalled from memory with no page visit, can pass. The deterministic verifier catches both (wrong-answer via ground-truth match; knowledge-shortcut via the navigation check). The rubric makes the LLM judge stricter and more consistent. The verifier is the **primary** grader; the rubric-driven LLM judge is secondary/lenient. Both are invoked through the single `agent_demo/eval_judge.py` entry point (`--verifier True` for the verifier, default for the LLM judge). See `sites/merriam_webster/verify/README.md` and the `merriam_webster` site for a worked example (20 tasks, 20 verifiers + `verify_lib.py`).
+Why two graders: an LLM-as-judge alone is gullible — a plausible-but-wrong answer, or a correct answer recalled from memory with no page visit, can pass. The deterministic verifier catches both (wrong-answer via ground-truth match; knowledge-shortcut via the navigation check). The rubric makes the LLM judge stricter and more consistent. The verifier is the **primary** grader; the rubric-driven LLM judge is secondary/lenient. Both are invoked through the single `agent_demo/eval_judge.py` entry point (`--verifier True` for the verifier, default for the LLM judge). See the `merriam_webster` site for a worked example (20 tasks, 20 verifiers + `verify_lib.py`).
 
 ### Unified LLM config (agent, judge, verifiers)
 

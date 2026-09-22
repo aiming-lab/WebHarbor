@@ -1,0 +1,43 @@
+"""Reviewer-only answer examples used by regression tests."""
+PASS_ANSWERS = {
+    0: "Nora Patel's expected delivery method is split deposit.",
+    1: "Priya Shah's refund is delayed because identity verification is needed.",
+    2: "Theo Martinez's refund is only approved so far; it has not been sent.",
+    3: "Grant Okafor's current stage is Return Received.",
+    4: "Amended synthetic returns stay in review longer than standard returns.",
+    5: "ID-221 asks the user to open the checklist, confirm the demo address, and review the stored contact preference.",
+    6: "Bob Chen's 2025 entry is Delayed: Identity Verification Needed.",
+    7: "2024 is further along: it is Refund Sent, while 2025 is only Refund Approved.",
+    8: "David Kim's preferred contact method is now Email and his city is Spokane.",
+    9: "Carol Davis's mismatch practice entry has ZIP code 00000.",
+    10: "The result says the ZIP code is incorrect.",
+    11: "The linked notice code is ID-221.",
+    12: "One checklist item is to verify the stored mailing ZIP code.",
+    13: "Nora Patel's result shows split deposit.",
+    14: "The split-deposit allocation notice is SP-177.",
+    15: "No. A guest session does not save lookup history; the user must sign in to an account.",
+    16: "Alice Johnson's prior-year paper-check entry is $980.",
+    17: "Theo Martinez's printable summary lists paper check.",
+}
+
+
+EXPECTED = {
+    0: "Nora Patel; split deposit",
+    1: "Priya Shah; identity-verification delay",
+    2: "Refund Approved, not sent",
+    3: "Return Received",
+    4: "amended returns stay in review longer than standard returns",
+    5: "confirm demo address and review stored contact preference",
+    6: "Delayed: Identity Verification Needed",
+    7: "2024 Refund Sent is further along than 2025 Refund Approved",
+    8: "Email and Spokane, plus matching DB state",
+    9: "ZIP 00000",
+    10: "ZIP code",
+    11: "ID-221",
+    12: "one identity-verification checklist item",
+    13: "split deposit",
+    14: "SP-177",
+    15: "guest history is not saved; sign-in required",
+    16: "$980",
+    17: "paper check on printable summary",
+}

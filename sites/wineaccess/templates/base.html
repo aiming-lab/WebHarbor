@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Wine Access{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to main content</a>
+  <div class="promo">Rack Up $50 Wine Credits</div>
+  <header class="site-header">
+    <nav class="account-nav">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}">{{ current_user.first_name }}</a>
+        <a href="{{ url_for('saved') }}">Saved {{ saved_count }}</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign Up / Log In</a>
+      {% endif %}
+    </nav>
+    <a class="brand" href="{{ url_for('index') }}">Wine Access</a>
+    <div class="header-actions">
+      <form class="search" action="{{ url_for('store') }}" method="get">
+        <input name="q" value="{{ request.args.get('q', '') }}" placeholder="Search" aria-label="Search Wine Access">
+        <button type="submit">Search</button>
+      </form>
+      <a class="cart-link" href="{{ url_for('cart') }}" aria-label="Cart">
+        <span class="cart-icon" aria-hidden="true"></span>
+        <span class="cart-text">{% if current_user.is_authenticated %}{{ cart_count }}{% else %}Cart{% endif %}</span>
+      </a>
+    </div>
+  </header>
+  <nav class="main-nav">
+    <a href="{{ url_for('store') }}">Shop</a>
+    <a href="{{ url_for('store', category='red-wine') }}">Collections</a>
+    <a href="{{ url_for('store', category='is_offer/true') }}" {% if request.view_args.get('category') == 'is_offer/true' %}class="active"{% endif %}>Limited Time Offers</a>
+    <a href="{{ url_for('club') }}" {% if request.endpoint == 'club' %}class="active"{% endif %}>Exclusive Clubs</a>
+    <a href="{{ url_for('gifting') }}" {% if request.endpoint == 'gifting' %}class="active"{% endif %}>Gifting</a>
+    <a href="{{ url_for('podcast') }}" {% if request.endpoint == 'podcast' %}class="active"{% endif %}>Podcast</a>
+    <a href="{{ url_for('experts') }}" {% if request.endpoint == 'experts' %}class="active"{% endif %}>Unrivaled Experts</a>
+  </nav>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flashes">
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  <main id="main">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="footer">
+    <div>
+      <h3>Wine Access</h3>
+      <p>Expert-selected wines, careful provenance, and cellar-ready shipping.</p>
+    </div>
+    <div>
+      <a href="{{ url_for('contact') }}">Contact Us</a>
+      <a href="{{ url_for('where_we_ship') }}">Where We Ship</a>
+      <a href="{{ url_for('club') }}">Wine Clubs</a>
+      <a href="{{ url_for('experts') }}">Wine Team</a>
+    </div>
+    <div>
+      <p>help@wineaccess.com</p>
+      <p>(866) 946-3923</p>
+    </div>
+  </footer>
+</body>
+</html>

@@ -10,7 +10,7 @@ Mirrors the structure of www.gov.uk:
 Expanded guidance uses authored summaries of official GOV.UK content, with
 historical rates pinned to 1 April 2025. Organisation profiles and news remain
 illustrative benchmark fixtures. All runtime content lives in SQLite.
-See CONTENT_SOURCES.md for provenance and the limits of this offline corpus.
+The reference date is displayed in the site banner.
 """
 import os
 import sys

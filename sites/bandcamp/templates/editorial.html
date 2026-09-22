@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_cards.html" import album_card %}
+{% block title %}Editorial - Bandcamp{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Bandcamp Daily</p>
+            <h1>Editorial</h1>
+            <p>Stories, scene reports, and album picks from the mirror catalog.</p>
+        </div>
+    </div>
+    <div class="daily-grid">
+        {% for item in daily %}
+            <article class="daily-card">
+                <a href="{{ url_for('album_page', slug=item.album.slug) }}">
+                    <img src="{{ url_for('static', filename=item.album.cover_image) }}" alt="{{ item.album.title }}" loading="lazy">
+                </a>
+                <div>
+                    <p class="eyebrow">{{ item.kicker }}</p>
+                    <h3><a href="{{ url_for('album_page', slug=item.album.slug) }}">{{ item.album.title }}</a></h3>
+                    <p class="daily-byline">by {{ item.album.artist.name }} / {{ item.album.scene.name.split(',')[0] }}</p>
+                    <p class="daily-blurb">{{ item.album.story[:150] }}{% if item.album.story|length > 150 %}...{% endif %}</p>
+                </div>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head compact"><h2>Scene reports</h2></div>
+    <div class="scene-grid">
+        {% for scene in scenes %}
+            <a class="scene-card" href="{{ url_for('scene_page', slug=scene.slug) }}">
+                <strong>{{ scene.name.split(',')[0] }}</strong>
+                <span>{{ scene.country }}</span>
+                <p>{{ scene.description }}</p>
+            </a>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

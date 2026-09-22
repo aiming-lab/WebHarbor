@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% from "_cards.html" import album_card, artist_card %}
+{% block title %}{{ scene.name }} - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Scene page</p>
+            <h1>{{ scene.name }}</h1>
+            <p>{{ scene.description }}</p>
+        </div>
+    </div>
+    <div class="artist-stack">
+        {% for artist in artists %}
+            {{ artist_card(artist) }}
+        {% endfor %}
+    </div>
+    <div class="card-grid release-grid">
+        {% for album in albums %}
+            {{ album_card(album, show_scene=False) }}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

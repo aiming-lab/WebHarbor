@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Search</p>
+  <h1>{% if query %}Search results for "{{ query }}"{% else %}Search notices, help, FAQs, and topics{% endif %}</h1>
+  <p>{% if query %}{{ total_results }} result(s) matched this synthetic help query.{% else %}Try queries like "amended return", "identity verification", "split deposit", or "paper check".{% endif %}</p>
+</section>
+
+{% if not query %}
+  <section class="stacked-cards">
+    <article class="faq-card"><h2>Try "refund timing"</h2><p>Find help articles about processing, approval, and sent statuses.</p></article>
+    <article class="faq-card"><h2>Try "ID-221"</h2><p>Open the synthetic identity-verification notice explanation.</p></article>
+    <article class="faq-card"><h2>Try "amended return"</h2><p>Find articles and notices about amended synthetic returns.</p></article>
+  </section>
+{% else %}
+  {% for label, items in results.items() %}
+    <section class="search-group">
+      <h2>{{ label|title }} ({{ items|length }})</h2>
+      {% if items %}
+        <div class="stacked-cards">
+          {% for item in items %}
+            <article class="info-card">
+              <span class="info-card__meta">{{ item.meta }}</span>
+              <h3><a href="{{ item.url }}">{{ item.title }}</a></h3>
+              <p>{{ item.summary }}</p>
+            </article>
+          {% endfor %}
+        </div>
+      {% else %}
+        <article class="faq-card"><p>No {{ label }} matched this query.</p></article>
+      {% endif %}
+    </section>
+  {% endfor %}
+{% endif %}
+{% endblock %}

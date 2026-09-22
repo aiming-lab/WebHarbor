@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Wine Access - Exceptional Wines, Curated by Experts{% endblock %}
+{% block content %}
+<section class="home-hero">
+  <div class="home-hero-copy">
+    <p class="eyebrow">Share exceptional wine</p>
+    <h1>Give $50.<br>Get $50.</h1>
+    <p>Invite a friend to Wine Access. They receive $50 toward their first discovery, and you receive $50 in wine credit.</p>
+    <a class="button light" href="{{ url_for('register') }}">Refer a Friend</a>
+  </div>
+</section>
+
+<section class="grid-section home-favorites">
+  <div class="section-title centered">
+    <p class="eyebrow">Curated for our members</p>
+    <h2>This Week's Member Favorites</h2>
+    <p>Bottles our community is opening, sharing, and returning to right now.</p>
+  </div>
+  <div class="wine-grid">
+    {% for wine in wines %}
+      {% include "_wine_card.html" %}
+    {% endfor %}
+  </div>
+  <p class="centered"><a class="button" href="{{ url_for('store') }}">Shop All Wines</a></p>
+</section>
+
+<section class="home-press">
+  <p class="eyebrow">A better way to buy wine</p>
+  <blockquote>“Wine Access brings the world's most compelling bottles directly to your door.”</blockquote>
+  <div class="press-names" aria-label="Featured publications">
+    <span>Forbes</span><span>Business Insider</span><span>Food &amp; Wine</span>
+  </div>
+</section>
+
+<section class="grid-section">
+  <div class="section-title centered">
+    <p class="eyebrow">Explore Wine Access</p>
+    <h2>Shop Collections</h2>
+  </div>
+  <div class="home-collections">
+    {% for wine in collections %}
+      <a href="{{ url_for('wine_detail', slug=wine.slug) }}">
+        <img src="{{ url_for('static', filename='images/' ~ wine.image) }}" alt="{{ wine.name }}">
+        <span>{{ wine.region }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

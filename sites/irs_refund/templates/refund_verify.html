@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Verify Refund Lookup{% endblock %}
+{% block content %}
+<div class="content-grid">
+  <section class="main-panel">
+    <div class="page-header">
+      <p class="eyebrow">Refund status lookup</p>
+      <h1>Step 2 of 2: Verify synthetic practice details</h1>
+      <p>Use the demo taxpayer ID last four digits and ZIP code that belong to the same synthetic case.</p>
+    </div>
+    <div class="summary-strip">
+      <span>Tax year: <strong>{{ start_data.tax_year }}</strong></span>
+      <span>Filing status: <strong>{{ start_data.filing_status_slug|replace('-', ' ')|title }}</strong></span>
+      <span>Refund amount: <strong>{{ start_data.refund_amount|money }}</strong></span>
+    </div>
+    <form class="form-card" method="post">
+      <div class="form-grid">
+        <label class="field">
+          <span>Demo taxpayer ID last four digits</span>
+          <input name="last_four_id" type="text" inputmode="numeric" maxlength="4" value="{{ verify_data.last_four_id or '' }}" placeholder="8110" required>
+        </label>
+        <label class="field">
+          <span>ZIP code</span>
+          <input name="zip_code" type="text" inputmode="numeric" maxlength="5" value="{{ verify_data.zip_code or '' }}" placeholder="62701" required>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">Check refund status</button>
+        <a class="button button--secondary" href="{{ url_for('refund_status_start') }}">Back to step 1</a>
+      </div>
+    </form>
+  </section>
+
+  <aside class="side-panel">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Reminder</p>
+        <h2>Use exact practice values</h2>
+      </div>
+    </div>
+    <div class="stacked-cards">
+      {% for case in public_cases %}
+        <article class="case-card case-card--compact">
+          <span class="status-chip">{{ case.showcase_label }}</span>
+          <h3>{{ case.profile.full_name }}</h3>
+          <p>Last four {{ case.profile.last_four_id }} / ZIP {{ case.profile.zip_code }}</p>
+          <a class="text-link" href="{{ url_for('refund_status_start', case=case.reference_code) }}">Reset step 1 to this case</a>
+        </article>
+      {% endfor %}
+    </div>
+  </aside>
+</div>
+{% endblock %}

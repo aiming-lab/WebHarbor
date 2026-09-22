@@ -5,8 +5,8 @@ and `18–27` (thirteen read-only and seven state-changing tasks). The first ten
 contracts are unchanged. New tasks cover constrained film pairs, credit-set
 comparisons, displayed financial ratios, account-specific lists, review identity,
 release intervals, and source-derived changes to saved lists and ratings.
-Implementation is separate from acceptance; the [review report](../../../review-reports/PR-33-IMDB.md)
-records execution and independent-review coverage.
+Implementation is separate from acceptance; execution and independent-review
+coverage are recorded in the review history.
 
 Tasks `1, 3, 4, 5, 6, 8, 11, 13` remain retired after task-quality review.
 Historical runs and site features remain available; these IDs have no current

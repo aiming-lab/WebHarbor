@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Refund FAQ{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">FAQ</p>
+  <h1>Short answers for common refund-tracker benchmark questions.</h1>
+  <p>Use this page for quick procedural guidance when you do not need the full help-article workflow.</p>
+</section>
+
+{% for category, items in grouped.items() %}
+  <section class="faq-section">
+    <h2>{{ category }}</h2>
+    <div class="faq-accordion">
+      {% for item in items %}
+        <details class="faq-item">
+          <summary>{{ item.question }}</summary>
+          <p>{{ item.answer }}</p>
+        </details>
+      {% endfor %}
+    </div>
+  </section>
+{% endfor %}
+{% endblock %}

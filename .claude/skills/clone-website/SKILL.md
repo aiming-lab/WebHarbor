@@ -32,11 +32,19 @@ sites/<your_site>/
 ├── instance_seed/<site>.db       ← seed DB, lives in HF dataset
 ├── instance/                     ← gitignored, recreated on boot
 ├── scraped_data/                 ← gitignored, build-time only
+├── verify/                       ← reviewer-written: one deterministic verifier per task
 └── tasks.jsonl                   ← benchmark tasks (jsonl, one per line)
 ```
 
 Inside the running container sites live at `/opt/WebSyn/<site>/`. The path
 predates the rename and is kept stable.
+
+Do not create `README.md`, `CLAUDE.md`, review notes, reports, or one-off harvest
+scripts inside `sites/<your_site>/`. A site directory holds code, data, and contract
+files only; the allowed doc files are `NOTICE.md` (third-party attribution) and the
+reviewer-written `verify/README.md` (verifier contract). Write all documentation,
+commit messages, and PR descriptions in English. See AGENTS.md ("Per-site directory
+structure" and "Documentation and language rules").
 
 ## Workflow
 
@@ -204,7 +212,7 @@ Then run the site once locally to produce `instance/<site>.db`, copy it to
 ```bash
 ./scripts/build.sh webharbor:dev
 docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41048:40000-40048 webharbor:dev
+  -p 8201:8101 -p 41000-41046:40000-40046 webharbor:dev
 
 # your new site is on port 41000 + its index
 curl -so /dev/null -w "%{http_code}\n" http://localhost:41000NN/
@@ -228,8 +236,9 @@ After Phase 1, you should have:
 - `sites/<your_site>/static/` with real CSS/JS/icons (and images under HF assets)
 - `sites/<your_site>/instance_seed/<site>.db` with seeded data
 - Site registered in `websyn_start.sh`, `control_server.py`, `Dockerfile`
-- All 49 sites still return 200 on the alt-port container
+- All 47 sites still return 200 on the alt-port container
 - Byte-identical reset passes
+- No `README.md`, reports, or unreferenced one-off scripts left in `sites/<your_site>/`; all docs English
 
 ## Next step
 

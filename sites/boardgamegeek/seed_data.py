@@ -230,7 +230,7 @@ def seed_database(db, app):
         print(f'  ! {DATA_FILE} missing — using built-in fallback (~2 games)')
         data = _build_fallback_data()
 
-    # Optional: expansion + low-rating augmentation pass (scrape_extras.py).
+    # Optional: expansion + low-rating augmentation pass (scraped_data/bgg_extras.json).
     extras = None
     if os.path.exists(EXTRAS_FILE):
         with open(EXTRAS_FILE) as f:

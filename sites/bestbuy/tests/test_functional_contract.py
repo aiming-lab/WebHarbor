@@ -138,6 +138,21 @@ class FunctionalContractTests(unittest.TestCase):
                 "orders": self.site.Order.query.count(),
             }
 
+    def test_guest_cart_login_returns_to_product_for_explicit_retry(self):
+        client = self.app.test_client()
+        response = self.post(client, "/cart/add", {"sku": "1000001", "quantity": "2"})
+        self.assertIn("next=/product/1000001", response.location)
+        response = self.post(client, response.location, {
+            "email": "alice@example.com", "password": self.site.BENCHMARK_PASSWORD,
+        }, follow_redirects=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.request.path, "/product/1000001")
+        self.assertEqual(self.state_counts()["cart"], 0)
+        response = self.post(client, "/cart/add", {"sku": "1000001", "quantity": "2"})
+        self.assertEqual(response.status_code, 302)
+        with self.app.app_context():
+            self.assertEqual(self.site.CartItem.query.one().quantity, 2)
+
     def test_post_requires_csrf_and_logout_is_not_get(self) -> None:
         client = self.app.test_client()
         response = client.post("/login", data={"email": "alice@example.com", "password": "x"})

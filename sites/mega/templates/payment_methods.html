@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Payment Methods{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Payment methods</h1></section>
+<section class="columns two">
+  <div>
+    {% for method in methods %}
+      <article class="list-item"><span>{{ method.card_type }} · {{ method.billing_country }}</span><strong>{{ method.label }} ending {{ method.last4 }}{% if method.is_default %} · Default{% endif %}</strong></article>
+    {% endfor %}
+  </div>
+  <form class="form-card" method="post">
+    <h2>Add card</h2>
+    <label>Label <input name="label" value="Project card"></label>
+    <label>Card type <select name="card_type"><option>Visa</option><option>Mastercard</option><option>Amex</option></select></label>
+    <label>Card number <input name="card_number" placeholder="4242 4242 4242 4242"></label>
+    <label>Exp month <input name="exp_month" type="number" min="1" max="12" value="12"></label>
+    <label>Exp year <input name="exp_year" type="number" min="2026" value="2030"></label>
+    <label>Billing country <input name="billing_country" value="United States"></label>
+    <label class="check-row"><input type="checkbox" name="is_default"> Make default</label>
+    <button type="submit">Save payment method</button>
+  </form>
+</section>
+{% endblock %}
