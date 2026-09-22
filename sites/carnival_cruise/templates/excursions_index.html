@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Shore Excursions | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; Shore Excursions</div>
+<section class="section">
+  <h1 style="color:var(--navy);text-align:center;">Shore Excursions</h1>
+  <p class="text-center muted" style="max-width:820px;margin:0 auto 22px;">
+    Browse shore excursions by port of call. From beach breaks and snorkeling to city tours,
+    dolphin encounters and cabana rentals — find the perfect fun for every port.
+  </p>
+  <div class="results-count"><h1>{{ groups | length }} Ports with Excursions</h1></div>
+  <div class="feature-grid" style="grid-template-columns:repeat(4,1fr);">
+    {% for slug, info in groups.items() %}
+    <a class="feature-card" href="{{ url_for('excursions_port', port_slug=slug) }}" style="text-decoration:none;">
+      <div class="fc-body" style="padding:14px 16px;">
+        <h4>{{ info.name }}</h4>
+        <div class="small muted">{{ info.count }} excursion{{ 's' if info.count != 1 }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

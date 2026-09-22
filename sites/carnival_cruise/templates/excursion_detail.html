@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ exc.title }} | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; <a href="{{ url_for('excursions_index') }}">Shore Excursions</a> &rsaquo; <a href="{{ url_for('excursions_port', port_slug=exc.port_slug) }}">{{ port.name if port else exc.port_slug.replace('-', ' ').title() }}</a> &rsaquo; {{ exc.title }}</div>
+<section class="itin-hero" style="margin-bottom:0;">
+  <img src="{{ url_for('static', filename=exc.image.replace('static/', '')) }}" alt="{{ exc.title }}">
+</section>
+
+<section class="itin-summary">
+  <div class="sum-main">
+    <h1>{{ exc.title }}</h1>
+    {% if exc.rating %}
+    <div class="exc-rating">
+      <span class="rating-stars">
+        {% for i in range(5) %}{% if i < (exc.rating | round(0, 'floor')) %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}
+      </span>
+      {{ '%.1f' % exc.rating }} ({{ exc.review_count }} review{{ 's' if exc.review_count != 1 }})
+    </div>
+    {% endif %}
+    <div class="result-meta" style="margin-top:8px;">
+      {% if exc.duration %}<span>{{ exc.duration }}</span>{% endif %}
+      {% if exc.activity_level %}<span>{{ exc.activity_level }} Activity Level</span>{% endif %}
+      {% if exc.min_age %}<span>Minimum Age: {{ exc.min_age }}</span>{% endif %}
+    </div>
+  </div>
+  <div class="itin-price">
+    {% if exc.price %}
+    <div class="price-from">Starting At</div>
+    <div class="price-big">${{ '%.2f' % exc.price }}</div>
+    <div class="price-note">{{ exc.price_unit or 'per person' }}</div>
+    {% endif %}
+    <a class="btn btn-red" href="{{ url_for('excursions_port', port_slug=exc.port_slug) }}">Browse More Excursions</a>
+    <p class="small muted" style="margin-top:8px;">Already booked a cruise? <a href="{{ url_for('manage_bookings') }}">Look up your reservation</a></p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="info-prose" style="max-width:860px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px 28px;">
+    <h2>Details</h2>
+    {% if exc.desc_html %}
+      {{ exc.desc_html | safe }}
+    {% else %}
+      <p>Ask about this excursion when you book your cruise. Prices and availability vary by sailing date.</p>
+    {% endif %}
+    {% if related %}
+    <h2>More Excursions at {{ port.name if port else 'this port' }}</h2>
+    <ul>
+      {% for r in related %}
+      <li><a href="{{ url_for('excursion_detail', port_slug=r.port_slug, exc_slug=r.slug) }}">{{ r.title }}</a> — {{ '$%.2f' % r.price if r.price else 'see details' }}</li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}My Account | Carnival Cruise Line{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="results-count">
+    <h1>Welcome back, {{ current_user.first_name }}!</h1>
+    <span class="results-note">VIFP #{{ current_user.vifp_number }} &middot; {{ current_user.rewards_tier }} Member</span>
+  </div>
+
+  <div class="two-col">
+    <div>
+      <h2 style="color:var(--navy);">My Cruises</h2>
+      {% if upcoming %}
+      <table class="data-table">
+        <thead><tr><th>Booking #</th><th>Cruise</th><th>Dates</th><th>Room</th><th>Total</th><th></th></tr></thead>
+        <tbody>
+          {% for b in upcoming %}
+          <tr>
+            <td><a href="{{ url_for('manage_booking_detail', booking_number=b.booking_number) }}">{{ b.booking_number }}</a></td>
+            <td>{{ b.itinerary.title }}<br><span class="small muted">{{ b.itinerary.ship.name }}</span></td>
+            <td>{{ b.sailing.dep_arr }}<br><span class="small muted">{{ b.sailing.dep_arr_days }}</span></td>
+            <td>{{ b.room_category }}<br><span class="small muted">Cabin {{ b.cabin_number }}</span></td>
+            <td>${{ '%.2f' % b.total_price }}</td>
+            <td><a class="btn btn-blue btn-small" href="{{ url_for('manage_booking_detail', booking_number=b.booking_number) }}">Manage</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <p class="muted">You have no upcoming cruises. <a href="{{ url_for('cruise_search') }}">Find a cruise</a> to get started!</p>
+      {% endif %}
+
+      {% if cancelled %}
+      <h2 style="color:var(--navy);margin-top:26px;">Cancelled Bookings</h2>
+      <table class="data-table">
+        <thead><tr><th>Booking #</th><th>Cruise</th><th>Dates</th><th>Total</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for b in cancelled %}
+          <tr>
+            <td>{{ b.booking_number }}</td>
+            <td>{{ b.itinerary.title }}</td>
+            <td>{{ b.sailing.dep_arr }}</td>
+            <td>${{ '%.2f' % b.total_price }}</td>
+            <td><span class="soldout">Cancelled</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+
+      <h2 style="color:var(--navy);margin-top:26px;">Payment Methods</h2>
+      <table class="data-table">
+        <thead><tr><th>Card</th><th>Name</th><th>Expires</th><th></th></tr></thead>
+        <tbody>
+          {% for pm in current_user.payments %}
+          <tr>
+            <td>{{ pm.card_type }} &bull;&bull;&bull;&bull; {{ pm.last4 }} {% if pm.is_default %}<span class="badge badge-deal">Default</span>{% endif %}</td>
+            <td>{{ pm.holder_name }}</td>
+            <td>{{ '%02d' % pm.exp_month }}/{{ pm.exp_year }}</td>
+            <td></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h2 style="color:var(--navy);margin-top:26px;">Add a Payment Method</h2>
+      <form method="post" action="{{ url_for('add_payment') }}" class="form-card" style="max-width:560px;margin:0;">
+        <div class="form-row">
+          <div>
+            <label for="card_type">Card Type</label>
+            <select id="card_type" name="card_type">
+              <option>Visa</option>
+              <option>Mastercard</option>
+            </select>
+          </div>
+          <div>
+            <label for="card_number">Card Number</label>
+            <input id="card_number" name="card_number" inputmode="numeric" required>
+          </div>
+        </div>
+        <label for="holder_name">Name on Card</label>
+        <input id="holder_name" name="holder_name" required>
+        <div class="form-row">
+          <div>
+            <label for="exp_month">Exp. Month</label>
+            <input id="exp_month" name="exp_month" inputmode="numeric" placeholder="MM" required>
+          </div>
+          <div>
+            <label for="exp_year">Exp. Year</label>
+            <input id="exp_year" name="exp_year" inputmode="numeric" placeholder="YYYY" required>
+          </div>
+        </div>
+        <button class="btn btn-blue" type="submit">SAVE CARD</button>
+      </form>
+    </div>
+
+    <aside>
+      <div class="side-card">
+        <h3 style="color:var(--navy);margin-top:0;">Carnival Rewards</h3>
+        <div style="font-size:34px;font-weight:800;color:var(--navy);">{{ '{:,}'.format(current_user.rewards_points) }}</div>
+        <div class="small muted">Reward Points &middot; {{ current_user.rewards_stars }} Status Qualifying Stars</div>
+        <p class="small muted">Earn 3 points for every $1 of eligible spend with Carnival.</p>
+        <a class="btn btn-outline btn-small btn-block" href="{{ url_for('info_carnival_rewards') }}">LEARN MORE</a>
+      </div>
+      <div class="side-card" style="margin-top:14px;">
+        <h3 style="color:var(--navy);margin-top:0;">Profile</h3>
+        <p class="small">
+          {{ current_user.full_name }}<br>
+          {{ current_user.email }}<br>
+          {% if current_user.phone %}{{ current_user.phone }}<br>{% endif %}
+          {% if current_user.address1 %}{{ current_user.address1 }}{% if current_user.address2 %}, {{ current_user.address2 }}{% endif %}<br>
+          {{ current_user.city }}, {{ current_user.state }} {{ current_user.zip_code }}{% endif %}
+        </p>
+        <a class="btn btn-blue btn-small btn-block" href="{{ url_for('account_edit') }}">EDIT PROFILE</a>
+        <a class="btn btn-ghost btn-small btn-block" style="margin-top:8px;" href="{{ url_for('favorites') }}">SAVED CRUISES</a>
+        <a class="btn btn-ghost btn-small btn-block" style="margin-top:8px;" href="{{ url_for('logout') }}">LOG OUT</a>
+      </div>
+    </aside>
+  </div>
+</section>
+{% endblock %}

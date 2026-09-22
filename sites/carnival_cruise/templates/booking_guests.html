@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Guest Details | Carnival Cruise Line{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="step-strip" aria-label="Booking steps">
+    <a class="step-pill done" href="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=sailing.sailing_id, numGuests=num_guests) }}">1. Select Stateroom</a><span class="step-arrow">&#8250;</span>
+    <span class="step-pill active">2. Guest Details</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill">3. Payment</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill">4. Confirmation</span>
+  </div>
+
+  <div class="itin-summary" style="margin-top:0;">
+    <div class="sum-main">
+      <h1>{{ itin.title | upper }}</h1>
+      <div class="result-ship">{{ itin.ship.name }}</div>
+      <div class="sum-dates">{{ sailing.dep_arr }} ({{ sailing.dep_arr_days }})</div>
+    </div>
+    <div class="itin-price">
+      <div class="price-from">{{ room_type | capitalize }} Stateroom</div>
+      {% set rt_price = sailing.room_price(room_type) %}
+      <div class="price-big">${{ '%d' % rt_price }}</div>
+      <div class="price-note">per person</div>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-top:26px;">
+    <h2>Lead Guest Details</h2>
+    <form method="post" action="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=sailing.sailing_id, numGuests=num_guests, roomType=room_type, step='guests') }}">
+      <label for="lead_guest">Lead Guest Full Name</label>
+      <input id="lead_guest" name="lead_guest" required placeholder="First Last"
+         value="{{ session.get('booking_lead', current_user.full_name if current_user.is_authenticated else '') }}">
+      <label for="guests">Number of Guests</label>
+      <select id="guests" name="guests">
+        {% for n in range(1, 9) %}
+        <option value="{{ n }}" {% if n == num_guests %}selected{% endif %}>{{ n }} Guest{{ 's' if n > 1 }}</option>
+        {% endfor %}
+      </select>
+      <div class="form-hint">Staterooms hold up to 8 guests. Children under 2 sail free.</div>
+      <button class="btn btn-red btn-block" type="submit">CONTINUE TO PAYMENT</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

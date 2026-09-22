@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}{{ ship.name }} | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; <a href="{{ url_for('ships_index') }}">Cruise Ships</a> &rsaquo; {{ ship.name }}</div>
+<section class="itin-hero">
+  <img src="{{ url_for('static', filename=ship.hero_image.replace('static/', '')) }}" alt="{{ ship.name }} at sea">
+</section>
+
+<section class="itin-summary">
+  <div class="sum-main">
+    <h1>{{ ship.name | upper }}</h1>
+    {% if ship.sail_from_list %}
+    <div class="sum-route">Sails from {{ ship.sail_from_list | join(', ') }}</div>
+    {% endif %}
+    {% if ship.sail_to_list %}
+    <div class="sum-route" style="color:var(--muted);">Sails to {{ ship.sail_to_list | join(', ') }}</div>
+    {% endif %}
+  </div>
+  <div class="itin-price">
+    <a class="btn btn-red" href="{{ url_for('cruise_search', shipcode=ship.code) }}">SEARCH CRUISES</a>
+  </div>
+</section>
+
+{% if ship.intro %}
+<section class="section" style="padding-top:8px;">
+  <div class="info-prose" style="max-width:860px;text-align:center;background:var(--sky);border-radius:18px;padding:24px 28px;">
+    {% for line in ship.intro.split('\n') %}
+    {% if line %}<p style="font-size:16px;color:var(--navy);font-weight:600;">{{ line }}</p>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if zones %}
+<section class="section">
+  <h2 class="section-head">Zones &amp; Features</h2>
+  <div class="feature-grid">
+    {% for z in zones %}
+    {% if z.image %}
+    <div class="feature-card">
+      <img src="{{ url_for('static', filename=z.image.replace('static/', '')) }}" alt="{{ z.title }}">
+      <div class="fc-body">
+        <h4>{{ z.title }}</h4>
+        {% if z.cost %}<span class="cost-pill cost-{{ z.cost }}">{{ z.cost }}</span>{% endif %}
+        {% if z.desc_html %}
+        <div class="small muted" id="zdesc-{{ z.id }}" style="max-height:60px;overflow:hidden;">{{ z.desc_html | striptags | truncate(120) }}</div>
+        <button class="read-more-toggle" data-target="zdesc-{{ z.id }}" type="button">read more</button>
+        {% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if activities %}
+<section class="section">
+  <h2 class="section-head">Onboard Activities</h2>
+  <div class="feature-grid">
+    {% for a in activities %}
+    {% if a.image %}
+    <div class="feature-card">
+      <img src="{{ url_for('static', filename=a.image.replace('static/', '')) }}" alt="{{ a.title }}">
+      <div class="fc-body">
+        <h4>{{ a.title }}</h4>
+        <span class="cost-pill cost-{{ a.cost }}">{{ a.cost }}</span>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if dining %}
+<section class="section">
+  <h2 class="section-head">Onboard Dining</h2>
+  <div class="feature-grid">
+    {% for d in dining %}
+    {% if d.image %}
+    <div class="feature-card">
+      <img src="{{ url_for('static', filename=d.image.replace('static/', '')) }}" alt="{{ d.title }}">
+      <div class="fc-body">
+        <h4>{{ d.title }}</h4>
+        <span class="cost-pill cost-{{ d.cost }}">{{ d.cost }}</span>
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if staterooms %}
+<section class="section">
+  <h2 class="section-head">Your Stateroom</h2>
+  <div style="max-width:1160px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);gap:12px;">
+    {% for st in staterooms %}
+    {% if st.title %}
+    <div class="side-card">
+      <strong style="color:var(--navy);">{{ st.title }}</strong>
+      {% if st.text %}<div class="small muted">{{ st.text | truncate(240) }}</div>{% endif %}
+    </div>
+    {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if itins %}
+<section class="section">
+  <h2 class="section-head">Cruises on {{ ship.name }}</h2>
+  {% for itin in itins[:10] %}
+  <article class="result-card">
+    <div class="result-photo">
+      <img src="{{ url_for('static', filename=itin.image.replace('static/', '')) }}" alt="{{ itin.title }}">
+    </div>
+    <div class="result-body">
+      <h2 class="result-title"><a href="{{ itin.url_path }}?itinportcode={{ itin.departure_port.code }}" style="color:inherit">{{ itin.title }}</a></h2>
+      <div class="result-route">{{ itin.route_display }}</div>
+      <div class="result-meta"><span>{{ itin.dur }} Days</span><span>{{ itin.sailing_count }} sail dates</span></div>
+    </div>
+    <div class="result-price-box">
+      <div class="price-from">From*</div>
+      <div class="price-big">${{ itin.from_price }}</div>
+      <div class="price-note">per person</div>
+    </div>
+  </article>
+  {% endfor %}
+  <p class="text-center"><a class="btn btn-blue" href="{{ url_for('cruise_search', shipcode=ship.code) }}">See all {{ itins | length }} cruises on {{ ship.name }}</a></p>
+</section>
+{% endif %}
+{% endblock %}

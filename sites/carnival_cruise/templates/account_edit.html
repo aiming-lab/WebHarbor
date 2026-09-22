@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="form-card" style="max-width:640px;">
+  <h1>Edit Profile</h1>
+  <form method="post" action="{{ url_for('account_edit') }}">
+    <div class="form-row">
+      <div>
+        <label for="first_name">First Name</label>
+        <input id="first_name" name="first_name" value="{{ current_user.first_name }}" required>
+      </div>
+      <div>
+        <label for="last_name">Last Name</label>
+        <input id="last_name" name="last_name" value="{{ current_user.last_name }}" required>
+      </div>
+    </div>
+    <label for="phone">Phone Number</label>
+    <input id="phone" name="phone" value="{{ current_user.phone }}" placeholder="555-555-0100">
+    <label for="address1">Address Line 1</label>
+    <input id="address1" name="address1" value="{{ current_user.address1 }}">
+    <label for="address2">Address Line 2</label>
+    <input id="address2" name="address2" value="{{ current_user.address2 }}">
+    <div class="form-row">
+      <div>
+        <label for="city">City</label>
+        <input id="city" name="city" value="{{ current_user.city }}">
+      </div>
+      <div>
+        <label for="state">State</label>
+        <select id="state" name="state">
+          {% for s in states %}
+          <option value="{{ s }}" {% if current_user.state == s %}selected{% endif %}>{{ s }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div>
+        <label for="zip_code">ZIP Code</label>
+        <input id="zip_code" name="zip_code" value="{{ current_user.zip_code }}">
+      </div>
+    </div>
+    <button class="btn btn-red" type="submit">SAVE CHANGES</button>
+    <a class="btn btn-ghost" style="margin-left:8px;" href="{{ url_for('account') }}">CANCEL</a>
+  </form>
+</div>
+{% endblock %}

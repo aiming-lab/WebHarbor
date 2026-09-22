@@ -14,7 +14,7 @@ SITES=(allrecipes amazon apple arxiv bbc_news booking
        target ted osu rotten_tomatoes compass walmart_careers
        fedex webmd_doctor healthline kaggle nvidia berkeley bh_photo accuweather gov_uk
        imdb nba recreation_gov boardgamegeek carmax babycenter amtrak cookpad craigslist drugs_com
-       versus y_combinator phet_simulations discogs google_finance bandcamp adopt_a_pet ign irs_refund wineaccess webmd petfinder mega 4shared 9gag akc)
+       versus y_combinator phet_simulations discogs google_finance bandcamp adopt_a_pet ign irs_refund wineaccess webmd petfinder mega 4shared 9gag akc carnival_cruise)
 BASE_PORT=40000
 PID_DIR=/tmp/websyn_pids
 mkdir -p "$PID_DIR"
