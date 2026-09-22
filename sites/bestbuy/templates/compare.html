@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Compare products · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Product comparison</p>
+        <h1>Side-by-side spec view</h1>
+        <p>Compare up to four synthetic products. The table highlights the same specs seeded into detail pages.</p>
+      </div>
+    </div>
+    {% if products %}
+      <div class="compare-strip">
+        {% for product in products %}
+          <article class="compare-product">
+            <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.price|currency }}</p>
+            <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+              <input type="hidden" name="next" value="{{ request.full_path }}">
+              <button class="button button--ghost" type="submit">Remove</button>
+            </form>
+          </article>
+        {% endfor %}
+      </div>
+      <div class="table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Spec</th>
+              {% for product in products %}
+                <th>{{ product.name }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for label, values in spec_rows %}
+              <tr>
+                <th>{{ label }}</th>
+                {% for value in values %}
+                  <td>{{ value }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>No products in compare</h3>
+        <p>Use product pages or category listings to add items into the compare tray.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

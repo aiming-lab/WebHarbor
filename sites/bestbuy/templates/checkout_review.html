@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Review Order · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 3 %}
+    {% include "_checkout_steps.html" %}
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="eyebrow">Review</p>
+        <h1>Confirm your synthetic order</h1>
+        {% for item in cart_items %}
+          <div class="cart-row">
+            <div class="mini-product">
+              <img src="{{ url_for('static', filename=item.product.image_path) }}" alt="{{ item.product.name }}">
+              <div>
+                <strong>{{ item.product.name }}</strong>
+                <p>{{ item.product.price|currency }} · Qty {{ item.quantity }}</p>
+                {% if item.protection_plan %}
+                  <span>{{ item.protection_plan.name }} · {{ item.protection_plan.price|currency }}</span>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+        <form method="post">
+          <button class="button" type="submit">Place demo order</button>
+        </form>
+      </div>
+      <aside class="panel order-summary">
+        <h2>Order summary</h2>
+        <div class="summary-row"><span>Fulfillment</span><strong>{{ summary.mode|title }}</strong></div>
+        {% if summary.delivery_option %}
+          <div class="summary-row"><span>Delivery</span><strong>{{ summary.delivery_option.title }}</strong></div>
+        {% endif %}
+        {% if summary.store %}
+          <div class="summary-row"><span>Pickup store</span><strong>{{ summary.store.name }}</strong></div>
+        {% endif %}
+        <div class="summary-row"><span>Subtotal</span><strong>{{ summary.subtotal|currency }}</strong></div>
+        <div class="summary-row"><span>Shipping</span><strong>{{ summary.shipping_fee|currency }}</strong></div>
+        <div class="summary-row"><span>Tax</span><strong>{{ summary.tax|currency }}</strong></div>
+        <div class="summary-row summary-row--total"><span>Total</span><strong>{{ summary.total|currency }}</strong></div>
+      </aside>
+    </div>
+  </section>
+{% endblock %}

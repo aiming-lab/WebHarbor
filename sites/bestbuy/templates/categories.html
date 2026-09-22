@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Categories · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Category map</p>
+        <h1>Shop the synthetic catalog by department</h1>
+      </div>
+    </div>
+    <div class="category-grid">
+      {% for category in categories %}
+        <a href="{{ url_for('category_page', category_slug=category.slug) }}" class="category-card">
+          <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+          <div>
+            <span>{{ category.section }}</span>
+            <strong>{{ category.name }}</strong>
+            <p>{{ category.description }}</p>
+          </div>
+        </a>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}{{ site_name }} Demo Mirror{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  </head>
+  <body>
+    <div class="promo-strip">
+      <div class="shell promo-strip__inner">
+        <span>Local benchmark mirror only</span>
+        <span>No real checkout, payment, or Best Buy APIs</span>
+        <span>Benchmark password: <strong>{{ benchmark_password }}</strong></span>
+      </div>
+    </div>
+
+    <header class="site-header">
+      <div class="shell site-header__top">
+        <a href="{{ url_for('home') }}" class="logo-badge">
+          <span class="logo-badge__mark">BEST</span>
+          <span class="logo-badge__text">BUY<br>demo</span>
+        </a>
+        <form class="site-search" action="{{ url_for('search_page') }}" method="get">
+          <input type="search" name="q" placeholder="Search laptops, TVs, headphones, support..." value="{{ request.args.get('q', '') }}">
+          <button type="submit">Search</button>
+        </form>
+        <nav class="header-actions">
+          <a href="{{ url_for('stores_page') }}">Stores</a>
+          <a href="{{ url_for('support_page') }}">Support</a>
+          {% if current_user.is_authenticated %}
+            <a href="{{ url_for('account') }}">Account</a>
+          {% else %}
+            <a href="{{ url_for('login') }}">Sign in</a>
+          {% endif %}
+          <a href="{{ url_for('compare_page') }}">Compare <span>{{ compare_count }}</span></a>
+          <a href="{{ url_for('cart_page') }}">Cart <span>{{ cart_item_count }}</span></a>
+        </nav>
+      </div>
+      <div class="shell site-header__nav">
+        <nav class="category-nav">
+          <a href="{{ url_for('categories_page') }}">All categories</a>
+          {% for category in nav_categories %}
+            <a href="{{ url_for('category_page', category_slug=category.slug) }}">{{ category.name }}</a>
+          {% endfor %}
+        </nav>
+      </div>
+    </header>
+
+    {% if preferred_store %}
+      <section class="store-banner">
+        <div class="shell store-banner__inner">
+          <span>Preferred store</span>
+          <strong>{{ preferred_store.name }}</strong>
+          <span>{{ preferred_store.city }}, {{ preferred_store.state }}</span>
+          <a href="{{ url_for('store_page', store_slug=preferred_store.slug) }}">View hours & pickup</a>
+        </div>
+      </section>
+    {% endif %}
+
+    <main class="page-main">
+      <div class="shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            <div class="flash-stack">
+              {% for category, message in messages %}
+                <div class="flash flash--{{ category }}">{{ message }}</div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        {% endwith %}
+      </div>
+
+      {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+      <div class="shell site-footer__grid">
+        <div>
+          <h4>Best Buy mirror</h4>
+          <p>Deterministic local retail data for search, pickup, delivery, rewards, and checkout tasks.</p>
+        </div>
+        <div>
+          <h4>Benchmark accounts</h4>
+          <ul>
+            <li>alice.j@test.com</li>
+            <li>bob.c@test.com</li>
+            <li>carol.d@test.com</li>
+            <li>david.k@test.com</li>
+          </ul>
+        </div>
+        <div>
+          <h4>Quick links</h4>
+          <ul>
+            <li><a href="{{ url_for('deals_page') }}">Deals</a></li>
+            <li><a href="{{ url_for('order_lookup') }}">Order lookup</a></li>
+            <li><a href="{{ url_for('support_page') }}">Support articles</a></li>
+          </ul>
+        </div>
+      </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+  </body>
+</html>

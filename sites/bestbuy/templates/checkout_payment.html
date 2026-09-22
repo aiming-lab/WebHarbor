@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Payment · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 2 %}
+    {% include "_checkout_steps.html" %}
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="eyebrow">Payment</p>
+        <h1>Enter demo payment details</h1>
+        <form method="post" class="auth-form">
+          <label>Payment label
+            <select name="payment_brand">
+              <option value="Demo Visa" {% if checkout.get('payment_brand') == 'Demo Visa' %}selected{% endif %}>Demo Visa</option>
+              <option value="Demo Mastercard" {% if checkout.get('payment_brand') == 'Demo Mastercard' %}selected{% endif %}>Demo Mastercard</option>
+              <option value="Demo Store Card" {% if checkout.get('payment_brand') == 'Demo Store Card' %}selected{% endif %}>Demo Store Card</option>
+            </select>
+          </label>
+          <label>Last four digits
+            <input type="text" name="payment_last4" maxlength="4" value="{{ checkout.get('payment_last4', '1111') }}" required>
+          </label>
+          <p class="auth-note">This step is synthetic only. No real card or processor is involved.</p>
+          <button class="button" type="submit">Continue to review</button>
+        </form>
+      </div>
+    </div>
+  </section>
+{% endblock %}

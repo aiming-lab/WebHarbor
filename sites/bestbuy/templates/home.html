@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Best Buy Demo Mirror{% endblock %}
+{% block content %}
+  <section class="hero">
+    <div class="shell hero__grid">
+      <div class="hero__copy">
+        <p class="eyebrow">Best Buy local benchmark</p>
+        <h1>Search, compare, pick up, and check out without leaving localhost.</h1>
+        <p>This mirror uses deterministic synthetic products, stores, rewards, and orders. It is designed for benchmark tasks, not real shopping.</p>
+        <div class="hero__actions">
+          <a class="button" href="{{ url_for('products_page') }}">Shop products</a>
+          <a class="button button--secondary" href="{{ url_for('support_page') }}">Browse support</a>
+        </div>
+      </div>
+      <div class="hero__visual">
+        <img src="{{ url_for('static', filename='images/hero/bestbuy-hero.svg') }}" alt="Best Buy demo hero graphic">
+      </div>
+    </div>
+  </section>
+
+  <section class="shell feature-strip">
+    {% for category in categories[:4] %}
+      <a href="{{ url_for('category_page', category_slug=category.slug) }}" class="feature-tile">
+        <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+        <div>
+          <span>{{ category.section }}</span>
+          <strong>{{ category.name }}</strong>
+        </div>
+      </a>
+    {% endfor %}
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Featured deals</p>
+        <h2>Demo offers with strong task coverage</h2>
+      </div>
+      <a href="{{ url_for('deals_page') }}">See all deals</a>
+    </div>
+    <div class="deal-grid">
+      {% for deal in deal_cards %}
+        <article class="deal-card">
+          <p class="deal-card__badge">{{ deal.badge }}</p>
+          <h3>{{ deal.title }}</h3>
+          <p>{{ deal.subtitle }}</p>
+          <div class="deal-card__meta">
+            <span>Save {{ deal.discount_percent }}%</span>
+            <span>{{ deal.ends_label }}</span>
+          </div>
+          {% if deal.product %}
+            <a class="button button--secondary" href="{{ url_for('product_page', sku=deal.product.sku) }}">Open product</a>
+          {% endif %}
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="shell page-section">
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Trending now</p>
+        <h2>Local bestsellers across electronics categories</h2>
+      </div>
+    </div>
+    {% set products = featured_products %}
+    {% include "_product_cards.html" %}
+  </section>
+
+  <section class="shell dual-grid">
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Store pickup</p>
+          <h2>Demo stores with pickup windows</h2>
+        </div>
+        <a href="{{ url_for('stores_page') }}">See all stores</a>
+      </div>
+      <div class="store-list">
+        {% for store in stores %}
+          <a class="store-list__item" href="{{ url_for('store_page', store_slug=store.slug) }}">
+            <img src="{{ url_for('static', filename=store.image_path) }}" alt="{{ store.name }}">
+            <div>
+              <strong>{{ store.name }}</strong>
+              <p>{{ store.city }}, {{ store.state }}</p>
+              <span>{{ store.amenities()[0] }}</span>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="panel">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Help topics</p>
+          <h2>Support pages wired into tasks</h2>
+        </div>
+      </div>
+      <div class="support-list">
+        {% for article in support_articles %}
+          <a href="{{ url_for('support_article_page', article_slug=article.slug) }}" class="support-list__item">
+            <strong>{{ article.title }}</strong>
+            <p>{{ article.summary }}</p>
+            <span>{{ article.topic }}</span>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Register · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section auth-layout">
+    <div class="panel">
+      <p class="eyebrow">Create demo account</p>
+      <h1>Register a synthetic shopper profile</h1>
+      <form method="post" class="auth-form">
+        <label>Full name
+          <input type="text" name="full_name" required>
+        </label>
+        <label>Email
+          <input type="email" name="email" required>
+        </label>
+        <label>Password
+          <input type="password" name="password" required>
+        </label>
+        <label>Confirm password
+          <input type="password" name="confirm_password" required>
+        </label>
+        <label>Preferred store
+          <select name="preferred_store_slug">
+            <option value="">Pick later</option>
+            {% for store in stores %}
+              <option value="{{ store.slug }}">{{ store.name }} — {{ store.city }}, {{ store.state }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <div class="filter-form__row">
+          <label>City
+            <input type="text" name="city">
+          </label>
+          <label>State
+            <input type="text" name="state">
+          </label>
+        </div>
+        <label>Phone
+          <input type="text" name="phone" placeholder="Demo only">
+        </label>
+        <button class="button" type="submit">Create demo account</button>
+      </form>
+    </div>
+    <div class="panel">
+      <h2>Why register?</h2>
+      <ul class="bullet-list">
+        <li>Persist wishlist, cart, rewards, and order history locally.</li>
+        <li>Access checkout, pickup, and synthetic order confirmation flows.</li>
+        <li>No real customer or payment data is sent anywhere.</li>
+      </ul>
+    </div>
+  </section>
+{% endblock %}
