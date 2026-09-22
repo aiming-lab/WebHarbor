@@ -8,11 +8,13 @@
     if (!button) return;
     button.addEventListener("click", function (event) {
       event.stopPropagation();
-      var isOpen = item.classList.contains("open");
+      var isOpen = button.getAttribute("aria-expanded") === "true";
       document.querySelectorAll(".nav-item.open").forEach(function (other) {
         other.classList.remove("open");
+        other.querySelector(".nav-button").setAttribute("aria-expanded", "false");
       });
       if (!isOpen) item.classList.add("open");
+      button.setAttribute("aria-expanded", String(!isOpen));
     });
     item.addEventListener("mouseenter", function () {
       document.querySelectorAll(".nav-item.open").forEach(function (other) {
@@ -20,7 +22,7 @@
       });
       item.classList.add("open");
     });
-    item.addEventListener("mouseleave", function () { item.classList.remove("open"); });
+    item.addEventListener("mouseleave", function () { item.classList.remove("open"); button.setAttribute("aria-expanded", "false"); });
   });
   document.addEventListener("click", function () {
     document.querySelectorAll(".nav-item.open").forEach(function (other) {

@@ -44,6 +44,7 @@ seed rebuilt deterministically with PYTHONHASHSEED=0 + canonicalize_seed.py):
 """
 import re
 import sys
+import reviewed_contract
 from urllib.parse import unquote_plus
 
 from verify_lib import (
@@ -189,8 +190,11 @@ def grade(number):
     init_db = resolve_db(args.initial_db, args.container, "instance_seed")
     after_db = resolve_db(args.after_db, args.container, "instance")
     before_rows, after_rows = rows(init_db), rows(after_db)
+    reviewed_contract.check(j, number, traj, init_db, after_db)
 
     def check_readonly(j, ignore=()):
+        if str(number) in reviewed_contract.CONTRACT["changes"]:
+            return
         if before_rows is None or after_rows is None:
             j.check("db_available", False,
                     f"cannot read DBs (initial={bool(init_db)}, after={bool(after_db)}); "
@@ -532,6 +536,8 @@ def grade(number):
     else:
         j.check("unknown_task", False, f"no verifier for task {number}")
 
+    from revised_research import check_research
+    check_research(j, number, traj)
     j.emit()
 
 

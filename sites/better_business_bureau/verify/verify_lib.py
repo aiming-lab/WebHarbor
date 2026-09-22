@@ -195,6 +195,15 @@ def allowed_hosts():
 
 def origin_ok(traj, extra_hosts=()):
     """(ok, note): every URL in the trajectory must belong to a local mirror origin."""
+    from urllib.parse import urlsplit
+    start_origin = urlsplit(traj.get("start_url", ""))
+    if not start_origin.hostname:
+        return False, "missing start origin"
+    expected = (start_origin.scheme, start_origin.hostname, start_origin.port)
+    for step in traj.get("steps", []):
+        value = urlsplit(step.get("url", ""))
+        if (value.scheme, value.hostname, value.port) != expected:
+            return False, "recorded URL does not match the start origin"
     allowed = allowed_hosts() | {h.lower() for h in extra_hosts}
     allowed_bare = {bare for bare in (_host_only(h) for h in allowed) if bare}
     seen = []
@@ -257,16 +266,17 @@ def png_size(path):
     if not path:
         return None
     try:
-        data = Path(path).read_bytes()
-    except OSError:
+        from PIL import Image
+        with Image.open(path) as image:
+            if image.format != "PNG":
+                return None
+            image.verify()
+        with Image.open(path) as image:
+            image.load()
+            return image.size
+    except (OSError, ValueError, SyntaxError, TypeError):
         return None
-    if len(data) < 33 or data[:8] != PNG_SIGNATURE or data[12:16] != b"IHDR":
-        return None
-    width = int.from_bytes(data[16:20], "big")
-    height = int.from_bytes(data[20:24], "big")
-    if width <= 0 or height <= 0:
-        return None
-    return width, height
+
 
 
 def screenshot_ok(path, min_w=200, min_h=120, min_bytes=2000):
@@ -562,4 +572,6 @@ def parse_args():
         os.environ["WH_SITE"] = args.site
     if args.container:
         os.environ["WH_CONTAINER"] = args.container
+    if bool(args.initial_db) != bool(args.after_db):
+        parser.error("initial.db and after.db must be supplied together; partial snapshots cannot use live fallback")
     return args

@@ -58,6 +58,7 @@ SEED_COPY = None  # per-test frozen copy of the seed DB
 
 
 # ---------------------------------------------------------------- PNG fixture
+@__import__("functools").lru_cache(maxsize=128)
 def make_png(seed, width=240, height=160):
     """A valid, distinct, deterministic noise PNG (>= 2000 bytes)."""
     rng = random.Random(seed)
@@ -198,6 +199,11 @@ def mutate_wrong_quote(path):
 
 # ---------------------------------------------------------------- honest fixtures per task
 def honest_fixture(number, root):
+    from reviewed_test_fixtures import fixture
+    return fixture(number, BASE)
+
+
+def baseline_fixture(number, root):
     """(steps, answer, mutate) replicating an honest on-site run for the task."""
     S = BASE + "/search"
     if number == 0:

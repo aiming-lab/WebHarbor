@@ -268,3 +268,37 @@ def test_tasks_jsonl_schema():
         assert "FACT CHECKPOINTS" in row["judge_rubric"]
         assert "MUST" in row["judge_rubric"]
         seen_ids.add(row["id"])
+
+
+def test_exact_business_name_precedes_partial_matches(client):
+    from app import search_businesses
+    with app.app_context():
+        rows, _, _ = search_businesses('Precision Tune Auto Care', 'Seattle, WA')
+        assert rows[0].name == 'Precision Tune Auto Care'
+
+
+def test_dashboard_median_uses_positive_report_losses(client):
+    from flask import template_rendered
+    from statistics import median
+    contexts = []
+    def capture(sender, template, context, **extra):
+        contexts.append(context)
+    with template_rendered.connected_to(capture, app):
+        response = client.get('/scamtracker/dashboard?metric=median&period=all')
+    assert response.status_code == 200
+    context = contexts[-1]
+    with app.app_context():
+        reports = ScamReport.query.all()
+        positive = [r.dollar_value for r in reports if r.dollar_value > 0]
+        assert context['stats']['median_loss'] == median(positive)
+        for state, values in context['by_state'].items():
+            losses = values['positive_losses']
+            expected = median(losses) if losses else 0
+            assert float(context['labels'][state].replace('$', '').replace(',', '')) == expected
+
+
+def test_quote_link_and_clean_products(client):
+    response = client.get('/us/wa/shoreline/profile/auto-repair/car-tender-1296-7042420')
+    assert b'/get-a-quote/7042420' in response.data
+    assert seed_data._clean_products(['Brakes', 'Business Details', 'Contact']) == ['Brakes']
+    assert seed_data.clean_consumer_text('My review\nCompany is NOT a BBB Accredited Business.\nFooter') == 'My review'
