@@ -40,7 +40,7 @@ from sqlalchemy import or_
 
 SITE_SLUG = "bestbuy"
 SITE_NAME = "Best Buy"
-SITE_PORT = 40040
+SITE_PORT = 40059
 BENCHMARK_PASSWORD = "TestPass123!"
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
@@ -1258,9 +1258,11 @@ def cart_page():
 
 
 @app.route("/cart/add", methods=["POST"])
-@login_required
 def add_to_cart():
     product = Product.query.filter_by(sku=request.form.get("sku", "").strip()).first_or_404()
+    if not current_user.is_authenticated:
+        flash("Sign in, then choose your quantity and add this product to your cart.", "info")
+        return redirect(url_for("login", next=url_for("product_page", sku=product.sku)))
     quantity = form_integer("quantity", minimum=1, maximum=5, default="1")
     fulfillment_method = request.form.get("fulfillment_method", "delivery")
     if fulfillment_method not in {"delivery", "pickup"}:

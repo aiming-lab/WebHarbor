@@ -5,6 +5,9 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
+from decimal import Decimal
+import answer_checks as answers
+import research_checks as research
 from contextlib import closing
 import ipaddress
 import json
@@ -263,16 +266,46 @@ def product_membership(path: str, table: str, email: str, skus: list[str]) -> se
     return {str(row[0]) for row in result}
 
 
-def task_0(trajectory: dict[str, object], initial: str, after: str) -> None:
-    searched = (
-        visited_search_terms(trajectory, "/search", ["dell", "touchscreen"])
-        or visited_query(trajectory, "/search", {"q": "6668953"})
-    )
-    require(searched, "required product search was not recorded")
-    require(visited(trajectory, "/product/6668953"), "requested product page was not opened")
-    require(has_tokens(final_answer(trajectory), "549.99", "4.5"), "answer does not contain the frozen price and rating")
-    require_unchanged_tables(initial, after, {"search_logs"})
+def searched_product(trajectory: dict[str, object], initial: str, sku: str) -> bool:
+    product = rows(initial, "SELECT p.name,p.sku,b.name,c.name FROM products p JOIN brands b ON b.id=p.brand_id JOIN categories c ON c.id=p.category_id WHERE p.sku=?", (sku,))[0]
+    searchable = normalize(" ".join(map(str, product)))
+    urls = trajectory_urls(trajectory)
+    for i, url in enumerate(urls):
+        if not site_url(url, trajectory) or path_of(url) != "/search":
+            continue
+        query = normalize((parse_qs(urlparse(url).query).get("q") or [""])[0])
+        if query and all(term in searchable for term in query.split()) and any(
+            site_url(later, trajectory) and path_of(later) == f"/product/{sku}" for later in urls[i+1:]
+        ):
+            return True
+    return False
 
+
+def require_wishlist_add(initial, after, email, sku):
+    require_unchanged_tables(initial, after, {"wishlist_items", "search_logs"})
+    before = membership_rows(initial, "wishlist_items")
+    current = membership_rows(after, "wishlist_items")
+    require(current - before == Counter({(email, sku): 1}) and not (before - current),
+            "wishlist must add only the requested product for the requested user")
+
+
+def require_compare_add(initial, after, email, skus):
+    require_unchanged_tables(initial, after, {"compare_items", "search_logs"})
+    before = membership_rows(initial, "compare_items")
+    current = membership_rows(after, "compare_items")
+    require(current - before == Counter({(email, sku): 1 for sku in skus}), "comparison additions do not match the requested products/user")
+    removed = before - current
+    eviction = max(0, sum(count for (user, _), count in before.items() if user == email) + len(skus) - 4)
+    require(sum(removed.values()) == eviction and all(user == email for user, _ in removed), "unexpected comparison removals")
+
+
+def task_0(trajectory, initial, after):
+    require(searched_product(trajectory, initial, "6668953"), "requested product search/page missing")
+    require(visited_in_order(trajectory, ["/login", "/product/6668953", "/account/wishlist"]), "sign-in and saved-items confirmation missing")
+    price, rating = rows(initial, "SELECT price,rating FROM products WHERE sku='6668953'")[0]
+    require(price <= 600 and rating >= 4.5, "requested product does not meet the task constraints")
+    require(answers.price(final_answer(trajectory), price) and answers.rating(final_answer(trajectory), rating), "incorrect product price/rating")
+    require_wishlist_add(initial, after, "bob.c@test.com", "6668953")
 
 def task_1(trajectory: dict[str, object], initial: str, after: str) -> None:
     require(visited_in_order(trajectory, ["/login", "/compare"]), "required sign-in and Compare path was not recorded")
@@ -280,8 +313,7 @@ def task_1(trajectory: dict[str, object], initial: str, after: str) -> None:
     require(product_membership(initial, "compare_items", "alice.j@test.com", requested) == set(), "requested products were already compared initially")
     require(product_membership(after, "compare_items", "alice.j@test.com", requested) == set(requested), "after-state lacks both requested comparison products")
     answer = final_answer(trajectory)
-    cheaper_product = has_tokens(answer, "hp", "omnibook") or has_tokens(answer, "6672899")
-    require(cheaper_product and has_tokens(answer, "70"), "answer does not identify the cheaper product and price difference")
+    require(answers.cheaper(answer, 70), "answer does not correctly identify the cheaper product and price difference")
     require_unchanged_tables(initial, after, {"compare_items", "search_logs"})
     before_memberships = membership_rows(initial, "compare_items")
     after_memberships = membership_rows(after, "compare_items")
@@ -294,32 +326,46 @@ def task_1(trajectory: dict[str, object], initial: str, after: str) -> None:
 
 
 def task_2(trajectory: dict[str, object], initial: str, after: str) -> None:
-    require(visited_query(trajectory, "/category/monitors", {"max_price": "350", "sort": "rating"}), "requested monitor filters were not recorded")
+    filtered = False
+    for url in trajectory_urls(trajectory):
+        if not site_url(url, trajectory) or path_of(url) != "/category/monitors": continue
+        params = parse_qs(urlparse(url).query)
+        try:
+            filtered |= Decimal((params.get("max_price") or [""])[0]) == Decimal("350") and params.get("sort") == ["rating"]
+        except (ValueError, ArithmeticError):
+            continue
+    require(filtered, "requested monitor filters were not recorded")
     require(visited(trajectory, "/product/6675156"), "highest-rated matching product was not opened")
-    require(has_tokens(final_answer(trajectory), "playstation", "27", "4.9"), "answer does not identify the frozen top result and rating")
+    require(answers.positive_mentions(final_answer(trajectory), r"\bplaystation\b") and answers.positive_mentions(final_answer(trajectory), r"\b27\b(?:-inch|[\"])?") and answers.rating(final_answer(trajectory), 4.9), "answer does not identify the top result and its correct rating")
     require_unchanged_tables(initial, after, {"search_logs"})
 
 
-def task_3(trajectory: dict[str, object], initial: str, after: str) -> None:
-    searched = (
-        visited_search_terms(trajectory, "/search", ["canon", "t7", "lens"])
-        or visited_query(trajectory, "/search", {"q": "6323759"})
-    )
-    require(searched, "required camera search was not recorded")
-    require(visited(trajectory, "/product/6323759"), "requested camera page was not opened")
-    require(has_tokens(final_answer(trajectory), "18-55mm", "75-300mm"), "answer does not contain both lens ranges")
+def task_3(trajectory, initial, after):
+    for sku in ["6323759", "11834823"]:
+        require(visited_in_order(trajectory, [f"/product/{sku}", "/compare"]), "both requested camera pages followed by comparison are required")
+    require(visited_in_order(trajectory, ["/login", "/compare"]), "authenticated comparison visit missing")
+    prices = dict(rows(initial, "SELECT sku,price FROM products WHERE sku IN ('6323759','11834823')"))
+    require(research.camera_premium(final_answer(trajectory), round(prices['6323759'] - prices['11834823'], 2)), "incorrect lens ranges or camera upgrade premium")
+    require_compare_add(initial, after, "bob.c@test.com", ["6323759", "11834823"])
+
+def task_4(trajectory, initial, after):
+    require(visited_in_order(trajectory, ["/login", "/account/rewards", "/login", "/account/rewards"]), "two authenticated Rewards visits missing")
+    seen_accounts = set()
+    active_email = None
+    for step in trajectory.get("steps", []):
+        if step.get("action") in {"type", "fill"}:
+            params = step.get("params", {})
+            typed = str(params.get("text", params.get("value", "")))
+            if typed in {"alice.j@test.com", "bob.c@test.com"}:
+                active_email = typed
+        url = str(step.get("url_after", step.get("url", "")))
+        if active_email and site_url(url, trajectory) and path_of(url) == "/account/rewards":
+            seen_accounts.add(active_email)
+    require(seen_accounts == {"alice.j@test.com", "bob.c@test.com"}, "both account sign-ins must be evidenced before Rewards visits")
+    accounts = {email.split('.')[0]: (points, certs) for email, points, certs in rows(initial,
+        "SELECT u.email,r.points_balance,r.available_certificates FROM reward_accounts r JOIN users u ON u.id=r.user_id WHERE u.email IN ('alice.j@test.com','bob.c@test.com')")}
+    require(research.reward_comparison(final_answer(trajectory), accounts, accounts['bob'][0] - accounts['alice'][0]), "incorrect account-bound rewards or comparison")
     require_unchanged_tables(initial, after, {"search_logs"})
-
-
-def task_4(trajectory: dict[str, object], initial: str, after: str) -> None:
-    require(visited_in_order(trajectory, ["/login", "/account/rewards"]), "required sign-in and Rewards path was not recorded")
-    answer = final_answer(trajectory)
-    normalized = normalize(answer)
-    normalized_numbers = re.sub(r"(?<=\d)[,_\s](?=\d{3}\b)", "", normalized)
-    require("1840" in normalized_numbers, "answer lacks the frozen points balance")
-    require((re.search(r"\b0\b", normalized) or re.search(r"\bno\b", normalized)) and "certificate" in normalized, "answer lacks the available-certificate count")
-    require_unchanged_tables(initial, after, {"search_logs"})
-
 
 def task_5(trajectory: dict[str, object], initial: str, after: str) -> None:
     require(visited_in_order(trajectory, ["/login", "/product/6603337"]), "required sign-in and product path was not recorded")
@@ -327,8 +373,6 @@ def task_5(trajectory: dict[str, object], initial: str, after: str) -> None:
     after_rows = product_membership(after, "wishlist_items", "bob.c@test.com", ["6603337"])
     require(initial_rows == set(), "requested product was already wishlisted initially")
     require(after_rows == {"6603337"}, "wishlist after-state does not contain the requested product")
-    answer = final_answer(trajectory)
-    require(has_tokens(answer, "echo show") and ("wishlist" in normalize(answer) or "saved" in normalize(answer)), "final answer does not confirm the requested wishlist action")
     require_unchanged_tables(initial, after, {"wishlist_items", "search_logs"})
     before_memberships = membership_rows(initial, "wishlist_items")
     after_memberships = membership_rows(after, "wishlist_items")
@@ -342,9 +386,6 @@ def task_6(trajectory: dict[str, object], initial: str, after: str) -> None:
     found = rows(after, "SELECT x.quantity,x.fulfillment_method FROM cart_items x JOIN users u ON u.id=x.user_id JOIN products p ON p.id=x.product_id WHERE u.email=? AND p.sku=?", ("bob.c@test.com", "6501017"))
     require(before == 0, "requested product was already in Bob's cart initially")
     require(found == [(2, "delivery")], "cart after-state is not exactly two delivery units of the requested SKU")
-    answer = final_answer(trajectory)
-    normalized = normalize(answer)
-    require("beats" in normalized and (re.search(r"\b2\b", normalized) or "two" in normalized) and ("cart" in normalized or "delivery" in normalized), "final answer does not confirm the requested two-unit cart action")
     require_unchanged_tables(initial, after, {"cart_items", "search_logs"})
     before_cart = cart_rows(initial)
     after_cart = cart_rows(after)
@@ -401,6 +442,24 @@ def require_checkout_effects(initial: str, after: str, email: str, order: tuple[
     subtotal, total, payment_brand = rows(
         after, "SELECT subtotal,total,payment_brand FROM orders WHERE id=?", (order[0],)
     )[0]
+    expected_subtotal = round(sum((price + plan) * quantity for price, plan, quantity in rows(
+        initial, "SELECT p.price,COALESCE(pp.price,0),x.quantity FROM cart_items x "
+        "JOIN users u ON u.id=x.user_id JOIN products p ON p.id=x.product_id "
+        "LEFT JOIN protection_plans pp ON pp.id=x.protection_plan_id WHERE u.email=?", (email,))), 2)
+    status, order_email, tax, store_id, delivery_id, slot_label = rows(
+        after, "SELECT status,email,tax,store_id,delivery_option_id,pickup_slot_label FROM orders WHERE id=?", (order[0],))[0]
+    fee = 0
+    if order[2] == "delivery":
+        options = rows(initial, "SELECT fee FROM delivery_options WHERE id=?", (delivery_id,))
+        require(len(options) == 1 and store_id is None and not slot_label, "delivery has inconsistent fulfillment fields")
+        fee = options[0][0]
+        require(status == "Preparing shipment", "delivery order has an incorrect status")
+    else:
+        require(delivery_id is None and status == "Ready for pickup", "pickup order has inconsistent fulfillment fields or status")
+        require(bool(rows(initial, "SELECT id FROM pickup_slots WHERE store_id=? AND time_window=? AND available_capacity>0", (store_id, slot_label))), "pickup slot is not available at the selected store")
+    expected_tax = round((expected_subtotal + fee) * 0.086, 2)
+    require(order_email == email, "order email differs from checkout account")
+    require(subtotal == expected_subtotal and tax == expected_tax and total == round(expected_subtotal + fee + expected_tax, 2), "checkout subtotal, tax or total is incorrect")
     payments = rows(
         after,
         "SELECT amount,card_label,auth_status,approval_code FROM payment_mocks WHERE order_id=?",
@@ -411,7 +470,7 @@ def require_checkout_effects(initial: str, after: str, email: str, order: tuple[
         and payments[0][0] == total
         and payments[0][1] == payment_brand
         and payments[0][2] == "Approved"
-        and re.fullmatch(r"BBYOK\d{4}", str(payments[0][3] or "")),
+        and payments[0][3] == f"BBYOK{order[0]:04d}",
         "checkout payment record is missing or inconsistent",
     )
     before_payments = table_rows(initial, "payment_mocks")
@@ -453,7 +512,7 @@ def task_7(trajectory: dict[str, object], initial: str, after: str) -> None:
     require(order[2:9] == ("delivery", "Alice Jordan", "Seattle", "WA", "98101", "Demo Visa", "4242"), "new order does not match the requested delivery and payment fields")
     require(order[11] == "standard-shipping", "new order does not use standard delivery")
     require(rows(after, "SELECT COUNT(*) FROM cart_items x JOIN users u ON u.id=x.user_id WHERE u.email=?", ("alice.j@test.com",))[0][0] == 0, "Alice's cart was not emptied by checkout")
-    require(str(order[1]).casefold() in final_answer(trajectory).casefold(), "final answer lacks the confirmation order number")
+    require(answers.order_number(final_answer(trajectory), str(order[1])), "answer must affirm the confirmation order number")
     require_checkout_effects(initial, after, "alice.j@test.com", order)
 
 
@@ -463,35 +522,42 @@ def task_8(trajectory: dict[str, object], initial: str, after: str) -> None:
     require(order[2] == "pickup" and order[7:9] == ("Demo Mastercard", "5555"), "new order does not match the requested pickup payment")
     require(order[9] and order[10] == "austin-domain", "new order lacks the requested Austin store and pickup slot")
     require(rows(after, "SELECT COUNT(*) FROM cart_items x JOIN users u ON u.id=x.user_id WHERE u.email=?", ("bob.c@test.com",))[0][0] == 0, "Bob's cart was not emptied by checkout")
-    require(str(order[1]).casefold() in final_answer(trajectory).casefold(), "final answer lacks the confirmation order number")
+    require(answers.order_number(final_answer(trajectory), str(order[1])), "answer must affirm the confirmation order number")
     require_checkout_effects(initial, after, "bob.c@test.com", order)
 
 
-def task_9(trajectory: dict[str, object], initial: str, after: str) -> None:
-    require(visited_in_order(trajectory, ["/order-lookup", "/order/BBY-240001"]), "required order-lookup path was not recorded")
-    require(has_tokens(final_answer(trajectory), "pickup", "delivered"), "answer lacks the frozen fulfillment method and status")
+def task_9(trajectory, initial, after):
+    numbers = ['BBY-240001', 'BBY-240003']
+    require(any(visited_in_order(trajectory, ['/order-lookup', f'/order/{a}', '/order-lookup', f'/order/{b}']) for a, b in [numbers, numbers[::-1]]), 'two complete order lookup flows are required')
+    for number in numbers:
+        require(visited_in_order(trajectory, ["/order-lookup", f"/order/{number}"]), "both order lookups/details are required")
+    orders = {number: (method, status, total) for number, method, status, total in rows(initial,
+        "SELECT order_number,fulfillment_method,status,total FROM orders WHERE order_number IN ('BBY-240001','BBY-240003')")}
+    higher = max(orders, key=lambda number: orders[number][2])
+    delta = round(abs(orders[numbers[0]][2] - orders[numbers[1]][2]), 2)
+    require(research.order_comparison(final_answer(trajectory), orders, higher, delta), "incorrect order-bound facts or total comparison")
     require_unchanged_tables(initial, after, {"search_logs"})
 
-
-def task_10(trajectory: dict[str, object], initial: str, after: str) -> None:
-    require(visited_search_terms(trajectory, "/support", ["pickup"]), "required support search was not recorded")
-    require(visited(trajectory, "/support/pickup-id-requirements"), "matching support article was not opened")
-    answer = normalize(final_answer(trajectory))
-    require("order number" in answer and ("photo id" in answer or "photo identification" in answer), "answer lacks both items stated by the article")
+def task_10(trajectory, initial, after):
+    require(visited_search_terms(trajectory, "/support", ["pickup"]), "pickup support search missing")
+    require(visited(trajectory, "/support/pickup-id-requirements") and visited(trajectory, "/stores/austin-domain"), "support article or Austin store visit missing")
+    quantity, window, aisle = rows(initial, "SELECT i.quantity,i.pickup_window,i.aisle FROM store_inventory i JOIN stores s ON s.id=i.store_id JOIN products p ON p.id=i.product_id WHERE s.slug='austin-domain' AND p.sku='6427551'")[0]
+    require(quantity > 0 and window == 'Ready in 1 hour', "task inventory fixture no longer supports one-hour pickup")
+    require(research.pickup_plan(final_answer(trajectory), aisle), "incorrect pickup requirements, window or aisle")
     require_unchanged_tables(initial, after, {"search_logs"})
 
+def task_11(trajectory, initial, after):
+    deals = rows(initial, "SELECT p.sku,d.discount_percent,p.list_price-p.price FROM deals d JOIN products p ON p.id=d.product_id ORDER BY d.discount_percent DESC LIMIT 2")
+    require([r[0] for r in deals] == ['6672899','6623881'], "task's leading deals changed")
+    for sku, _, _ in deals:
+        require(visited_in_order(trajectory, ["/deals", f"/product/{sku}", "/account/wishlist"]), "both leading deal products must be opened before saved-items confirmation")
+    require(visited_in_order(trajectory, ["/login", "/account/wishlist"]), "sign-in and saved-items confirmation missing")
+    expected = dict(zip(['omnibook','victus'], [(r[1], round(r[2], 2)) for r in deals]))
+    require(research.deals(final_answer(trajectory), expected), "incorrect product-bound percentages or dollar savings")
+    winner = max(deals, key=lambda r: r[2])[0]
+    require_wishlist_add(initial, after, "bob.c@test.com", winner)
 
-def task_11(trajectory: dict[str, object], initial: str, after: str) -> None:
-    require(visited_in_order(trajectory, ["/deals", "/product/6672899"]), "required Deals-to-product path was not recorded")
-    answer = normalize(final_answer(trajectory))
-    require("hp" in answer and "omnibook" in answer and ("45%" in answer or "45 percent" in answer), "answer lacks the frozen product and savings percentage")
-    require_unchanged_tables(initial, after, {"search_logs"})
-
-
-TASKS = {
-    0: task_0, 1: task_1, 2: task_2, 3: task_3, 4: task_4, 5: task_5,
-    6: task_6, 7: task_7, 8: task_8, 9: task_9, 10: task_10, 11: task_11,
-}
+TASKS = {0: task_0, 1: task_1, 2: task_2, 3: task_3, 4: task_4, 5: task_5, 6: task_6, 7: task_7, 8: task_8, 9: task_9, 10: task_10, 11: task_11}
 SNAPSHOT_REQUIRED = set(TASKS)
 
 
@@ -510,8 +576,13 @@ def main(task_number: int) -> None:
         require(bool(final_answer(trajectory)), "final answer is empty")
         initial = after = ""
         if task_number in SNAPSHOT_REQUIRED:
-            initial = database(args.initial_db, args.container, "instance_seed")
-            after = database(args.after_db, args.container, "instance")
+            run_dir = Path(str(trajectory["_run_dir"]))
+            initial_snapshot = run_dir / "initial.db"
+            after_snapshot = run_dir / "after.db"
+            if initial_snapshot.exists() != after_snapshot.exists() and not (args.initial_db and args.after_db):
+                raise InfraError("both initial.db and after.db snapshots are required together")
+            initial = database(args.initial_db or (str(initial_snapshot) if initial_snapshot.exists() else None), args.container, "instance_seed")
+            after = database(args.after_db or (str(after_snapshot) if after_snapshot.exists() else None), args.container, "instance")
         TASKS[task_number](trajectory, initial, after)
     except TaskFailure as error:
         print(json.dumps({"task_id": task_id, "pass": False, "reason": str(error)}, indent=2))
