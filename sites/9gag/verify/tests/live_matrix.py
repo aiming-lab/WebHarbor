@@ -39,8 +39,8 @@ sys.path.insert(0, str(HERE))
 from _support import State  # noqa: E402
 
 PASSWORD = "TestPass123!"
-READ_TASKS = range(0, 10)
-STATEFUL_TASKS = range(10, 20)
+READ_TASKS = (0, 1, 2, 3, 4, 6, 8, 9)
+STATEFUL_TASKS = (5, 7, *range(10, 20))
 
 WRONG_ANSWERS = {
     0: "The room is 3.8 meters wide and the desk is walnut.",
@@ -59,6 +59,8 @@ WRONG_ANSWERS = {
 def wrong_state(n):
     """A plausible-but-wrong after-state for each stateful task (built on the seed)."""
     return {
+        5: State().add_saved(2, 15),
+        7: State().add_saved(1, 14),
         10: State().add_saved(1, 47),  # the remix clone instead of the original
         11: State().add_vote(3, 20, -1),  # downvote
         12: State().add_comment(2, 19, "Resonance is neat."),
@@ -204,62 +206,87 @@ PRESS = "A mysterious press-conference moment from 2009"
 BALLOON = "Students launch a weather balloon with a tiny rubber duck"
 
 
-def drive_0(rec):
-    search(rec, "lighthouse offices")
-    open_title(rec, LIGHTHOUSE)
-    return description(rec)
+# Titles guide browser selection; every answer below comes from rendered content.
+RESEARCH_TITLES = {
+ 0: (LIGHTHOUSE, "Miniature lighthouse built for a seaside bookshop", "Remote lighthouse receives a compact radio desk"),
+ 1: (CAT, "Rescue dog recognizes the volunteer who found him", "Foster kitten discovers the automatic treat puzzle"),
+ 2: (SOLAR, "Solar lantern comparison for a week of camping", "Rainy campsite kitchen stays dry under one clever tarp"),
+ 3: (BRIDGE, "Suspension bridge whistles only during winter gusts", "Footbridge becomes a percussion instrument in heavy rain"),
+ 4: (LIBRARY, "Community library adds a shelf for night-bus drivers", "Hospital staff open a midnight reading cart"),
+ 5: (MARATHON, "Local team celebrates its first championship in 34 years"),
+ 6: (SOURDOUGH, "The museum guard who quietly sketches every visitor", "A ten-second drawing trick that changes every cartoon face"),
+ 7: (KEYBOARD, "Hand-painted arcade cabinet celebrates classic space games"),
+ 8: (CONCERT, "Footbridge becomes a percussion instrument in heavy rain", "City bridge lights react to nearby music"),
+ 9: (CAT, DOG, FOX),
+}
+RESEARCH_QUERIES = {
+ 0: ("lighthouse office", "miniature lighthouse", "radio desk"),
+ 1: ("rescue cat", "rescue dog", "foster kitten"),
+ 2: ("solar camping", "solar lantern", "campsite kitchen"),
+ 3: ("bridge hums", "suspension bridge", "footbridge"),
+ 4: ("community library", "night-bus", "midnight reading"),
+ 6: ("sourdough skyline", "museum guard", "drawing trick"),
+ 8: ("rain delay", "footbridge", "city bridge"),
+}
 
+
+def drive_research(rec, n):
+    feeds = {3: "/interest/science", 5: "/interest/sports", 7: "/interest/gaming", 9: "/interest/animals"}
+    if n in (5, 7):
+        login(rec, "bob.c@test.com" if n == 5 else "alice.j@test.com")
+    records = []
+    for i, title in enumerate(RESEARCH_TITLES[n]):
+        if n in (5, 7, 9) or n == 3 and i == 0:
+            find_in_feed(rec, feeds[n], title)
+        else:
+            search(rec, RESEARCH_QUERIES[n][i])
+            open_title(rec, title)
+        visible_title = rec.page.inner_text(".detail h1")
+        points = int(re.search(r"(\d+) points", rec.page.inner_text(".detail .stats"))[1])
+        records.append((visible_title, description(rec), points))
+    if n == 9:
+        records.sort(key=lambda r: r[2], reverse=True)
+    answer = "\n\n".join(f"{title}: {desc}" + (f" {points} points." if n in (5, 7, 9) else "") for title, desc, points in records)
+    if n in (5, 7):
+        winner = max(records, key=lambda r: r[2])[0]
+        if rec.page.inner_text(".detail h1") != winner:
+            find_in_feed(rec, feeds[n], winner)
+        rec.click(".detail .actions form[action$='/save'] button", "Save higher-point story")
+        answer += f"\nSaved {winner}. {flash(rec)}"
+    if n == 9:
+        answer += f"\nThe top-two point gap is {records[0][2] - records[1][2]} points."
+    return answer
+
+
+def drive_0(rec):
+    return drive_research(rec, 0)
 
 def drive_1(rec):
-    search(rec, "rescue cat")
-    open_title(rec, CAT)
-    return description(rec)
-
+    return drive_research(rec, 1)
 
 def drive_2(rec):
-    search(rec, "solar camping")
-    open_title(rec, SOLAR)
-    return description(rec)
-
+    return drive_research(rec, 2)
 
 def drive_3(rec):
-    find_in_feed(rec, "/interest/science", BRIDGE)
-    return description(rec)
-
+    return drive_research(rec, 3)
 
 def drive_4(rec):
-    search(rec, "community library")
-    open_title(rec, LIBRARY)
-    return description(rec)
-
+    return drive_research(rec, 4)
 
 def drive_5(rec):
-    find_in_feed(rec, "/interest/sports", MARATHON)
-    return description(rec)
-
+    return drive_research(rec, 5)
 
 def drive_6(rec):
-    search(rec, "sourdough skyline")
-    open_title(rec, SOURDOUGH)
-    return description(rec)
-
+    return drive_research(rec, 6)
 
 def drive_7(rec):
-    find_in_feed(rec, "/interest/gaming", KEYBOARD)
-    return description(rec)
-
+    return drive_research(rec, 7)
 
 def drive_8(rec):
-    search(rec, "rain delay concert")
-    open_title(rec, CONCERT)
-    return description(rec)
-
+    return drive_research(rec, 8)
 
 def drive_9(rec):
-    points = card_points(rec, "/interest/animals", {CAT, DOG, FOX})
-    winner = max(points, key=points.get)
-    find_in_feed(rec, "/interest/animals", winner)
-    return f"{winner} has the most points ({points[winner]} vs {sorted(points.values())}). {description(rec)}"
+    return drive_research(rec, 9)
 
 
 def drive_10(rec):
@@ -456,13 +483,13 @@ def main():
 
             variants = {"genuine": genuine}
             noop = out / f"task{n:02d}_noop"
-            clone_run(noop_src, noop, task_id=task_id, task=task["ques"], final_answer=None, success_self_report=False)
+            clone_run(noop_src, noop, task_id=task_id, task=task["ques"], verifier_path=task["verifier_path"], judge_rubric=task.get("judge_rubric", ""), final_answer=None, success_self_report=False)
             shutil.copy2(seed_db, noop / "initial.db")
             shutil.copy2(seed_db, noop / "after.db")
             variants["noop"] = noop
 
             shortcut = out / f"task{n:02d}_shortcut"
-            clone_run(noop_src, shortcut, task_id=task_id, task=task["ques"], final_answer=answer, success_self_report=True)
+            clone_run(noop_src, shortcut, task_id=task_id, task=task["ques"], verifier_path=task["verifier_path"], judge_rubric=task.get("judge_rubric", ""), final_answer=answer, success_self_report=True)
             shutil.copy2(seed_db, shortcut / "initial.db")
             shutil.copy2(seed_db, shortcut / "after.db")
             variants["shortcut"] = shortcut

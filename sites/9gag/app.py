@@ -334,10 +334,10 @@ def submit():
         description = bounded_text(request.form.get("description"), 2000, "description")
         tags = bounded_text(request.form.get("tags"), 400, "tags")
         section = request.form.get("section", POST_INTERESTS[0])
-        image = request.form.get("image", PREVIEW_IMAGES[0])
+        image = request.form.get("image", "")
         if section not in POST_INTERESTS:
             abort(400, "unknown interest")
-        if image not in PREVIEW_IMAGES:
+        if image and image not in PREVIEW_IMAGES:
             abort(400, "unknown preview image")
         if len(title) < 4:
             flash("A title of at least 4 characters is required.", "error")
@@ -348,7 +348,7 @@ def submit():
             post = Post(source_id=next_local_source_id(), slug=slug, title=title,
                         description=description or "Shared with the 9GAG community.",
                         image=image, section=section,
-                        post_type="Photo", tags=tags, author_name=current_user.username,
+                        post_type="Photo" if image else "Text", tags=tags, author_name=current_user.username,
                         up_votes=0, down_votes=0, comment_count=0, created_rank=Post.query.count() + 100)
             db.session.add(post)
             db.session.commit()

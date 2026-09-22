@@ -173,6 +173,9 @@ RUN cd /opt/WebSyn/mega && python3 migrate_seed.py
 # Preserve the original 4shared archive and add deterministic rename history.
 RUN cd /opt/WebSyn/4shared && python3 migrate_seed.py
 
+# Preserve the 9GAG archive; curated benchmark stories have no matching source photos.
+RUN cd /opt/WebSyn/9gag && python3 migrate_seed.py
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
