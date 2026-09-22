@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Sign Up | Merriam-Webster{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Create Your Account</h1>
+  <form method="post" action="{{ url_for('register') }}">
+    {{ form.hidden_tag() }}
+    <div class="form-group">
+      <label for="name">Name</label>
+      {{ form.name(id='name') }}
+      {% for e in form.name.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="form-group">
+      <label for="username">Username</label>
+      {{ form.username(id='username') }}
+      {% for e in form.username.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="form-group">
+      <label for="email">Email</label>
+      {{ form.email(id='email') }}
+      {% for e in form.email.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="form-group">
+      <label for="password">Password</label>
+      {{ form.password(id='password') }}
+      {% for e in form.password.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="form-group">
+      <label for="confirm">Confirm Password</label>
+      {{ form.confirm(id='confirm') }}
+      {% for e in form.confirm.errors %}<div class="form-error">{{ e }}</div>{% endfor %}
+    </div>
+    <button class="btn" type="submit">Sign Up</button>
+  </form>
+  <p style="margin-top:16px; font-family:Arial,sans-serif;">
+    Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+  </p>
+</div>
+{% endblock %}

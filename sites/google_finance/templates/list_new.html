@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}New list - Google Finance{% endblock %}
+{% block content %}
+<nav class="crumbs">
+  <a href="{{ url_for('lists_index') }}">&larr; Lists</a>
+  <span>|</span><span>New list</span>
+</nav>
+<h1 class="section-title">Create a list</h1>
+<div class="panel" style="max-width:520px">
+  <form method="post" action="{{ url_for('list_new') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-row">
+      <label for="new-list">List name</label>
+      <input id="new-list" name="name" required autofocus
+             placeholder="e.g. Semis to watch">
+    </div>
+    <p class="empty-state" style="padding:0 0 14px">
+      Lists let you follow a set of symbols and see them side by side.</p>
+    <button class="btn-blue" type="submit">Create list</button>
+    <a class="btn-text" href="{{ url_for('lists_index') }}">Cancel</a>
+  </form>
+</div>
+{% endblock %}

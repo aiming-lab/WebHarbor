@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Wishlist - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <h1>Wishlist</h1>
+            <p>Albums and merch you want to revisit later.</p>
+        </div>
+    </div>
+    {% if items %}
+        <div class="wishlist-grid">
+            {% for item in items %}
+                <article class="wish-card">
+                    <img src="{{ url_for('static', filename=item.image_path()) }}" alt="{{ item.title() }}">
+                    <div>
+                        <h2>{{ item.title() }}</h2>
+                        <p>{{ item.artist_name() }}</p>
+                    </div>
+                    <form method="post" action="{{ url_for('wishlist_remove', item_id=item.id) }}">
+                        <button class="button-secondary" type="submit">Remove</button>
+                    </form>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-panel"><p>Your wishlist is empty right now.</p></div>
+    {% endif %}
+</section>
+{% endblock %}

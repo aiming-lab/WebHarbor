@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Where's My Refund?{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Where's My Refund?</p>
+  <h1>Run the public synthetic refund lookup flow.</h1>
+  <p>Every practice record on this page is fake and deterministic. Use the exact values shown on a card, then move through the two-step form to open the result page.</p>
+</section>
+
+<section class="lookup-banner">
+  <div>
+    <h2>How the demo flow works</h2>
+    <p>Use the exact tax year, filing status, refund amount, last four digits, and ZIP code shown on a public practice card or inside a seeded benchmark account.</p>
+  </div>
+  <a class="button" href="{{ url_for('refund_status_start') }}">Begin lookup</a>
+</section>
+
+<section class="card-grid card-grid--three">
+  {% for case in public_cases %}
+    <article class="case-card">
+      <div class="case-card__top">
+        <span class="status-chip">{{ case.showcase_label }}</span>
+        <span class="case-card__ref">{{ case.reference_code }}</span>
+      </div>
+      <h2>{{ case.profile.full_name }}</h2>
+      <p class="case-card__lede">Synthetic practice record for the local WebHarbor refund-tracker benchmark.</p>
+      <dl class="meta-list">
+        <div><dt>Tax year</dt><dd>{{ case.tax_year }}</dd></div>
+        <div><dt>Filing status</dt><dd>{{ case.filing_status.name }}</dd></div>
+        <div><dt>Refund amount</dt><dd>{{ case.refund_amount|money }}</dd></div>
+        <div><dt>Demo taxpayer ID last four</dt><dd>{{ case.profile.last_four_id }}</dd></div>
+        <div><dt>ZIP code</dt><dd>{{ case.profile.zip_code }}</dd></div>
+      </dl>
+      <a class="button button--secondary button--full" href="{{ url_for('refund_status_start', case=case.reference_code) }}">Use this demo case</a>
+    </article>
+  {% endfor %}
+</section>
+
+<section class="stats-grid">
+  <article class="stat-card">
+    <span class="stat-card__value">{{ counts.tax_returns }}</span>
+    <span class="stat-card__label">Synthetic tax returns</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-card__value">{{ counts.refund_statuses }}</span>
+    <span class="stat-card__label">Refund status records</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-card__value">{{ counts.timeline_events }}</span>
+    <span class="stat-card__label">Timeline events</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-card__value">{{ counts.lookup_histories }}</span>
+    <span class="stat-card__label">Seeded history entries</span>
+  </article>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_macros.html" import notebook_card %}
+{% block title %}Code | Kaggle{% endblock %}
+{% block content %}
+<div class="container-wide section">
+  <h1 class="page-title">Code</h1>
+  <p class="page-sub">Explore and run machine learning code with Kaggle Notebooks.</p>
+
+  <div class="toolbar">
+    <form method="get">
+      <input type="text" name="q" aria-label="Search this listing" placeholder="Search notebooks" value="{{ q }}">
+      <select name="language" aria-label="Language filter" onchange="this.form.submit()">
+        <option value="">All languages</option>
+        <option value="Python" {{ 'selected' if language=='Python' }}>Python</option>
+        <option value="R" {{ 'selected' if language=='R' }}>R</option>
+      </select>
+      <select name="medal" aria-label="Medal filter" onchange="this.form.submit()">
+        <option value="">All</option>
+        <option value="gold" {{ 'selected' if medal=='gold' }}>🥇 Gold</option>
+        <option value="silver" {{ 'selected' if medal=='silver' }}>🥈 Silver</option>
+        <option value="bronze" {{ 'selected' if medal=='bronze' }}>🥉 Bronze</option>
+      </select>
+      <select name="sort" aria-label="Sort order" onchange="this.form.submit()">
+        <option value="recent" {{ 'selected' if sort=='recent' or sort=='relevance' }}>Recently run</option>
+        <option value="votes" {{ 'selected' if sort=='votes' }}>Most votes</option>
+        <option value="comments" {{ 'selected' if sort=='comments' }}>Most comments</option>
+      </select>
+      <button class="btn btn-sm btn-ghost" type="submit">Apply</button>
+    </form>
+    <span class="count-pill">{{ notebooks|length }} notebooks</span>
+  </div>
+
+  {% if notebooks %}
+  <div class="grid grid-4">{% for n in notebooks %}{{ notebook_card(n) }}{% endfor %}</div>
+  {% else %}<div class="empty">No notebooks match your search.</div>{% endif %}
+</div>
+{% endblock %}

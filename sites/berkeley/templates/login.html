@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Sign In — UC Berkeley{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div style="max-width: 480px; margin: 40px auto;">
+    <div style="text-align: center; margin-bottom: 32px;">
+      <div style="width: 64px; height: 64px; background: var(--gold); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 28px; color: var(--blue); margin: 0 auto 16px; font-family: Arial, sans-serif;">C</div>
+      <h1 style="color: var(--blue); font-size: 28px;">Sign In to Berkeley</h1>
+      <p style="font-family: Arial, sans-serif; color: var(--gray-mid); font-size: 15px;">Access your bookmarks and personalized content</p>
+    </div>
+
+    <div style="background: var(--white); border: 1px solid var(--gray-light); border-radius: 4px; padding: 32px; box-shadow: 0 2px 12px rgba(0,0,0,0.08);">
+      <form method="post" action="{{ url_for('login') }}">
+        {{ form.csrf_token }}
+        <div class="form-group">
+          {{ form.email.label }}
+          {{ form.email(class="form-control", placeholder="your@berkeley.edu") }}
+          {% if form.email.errors %}
+          <div style="color: #dc3545; font-size: 13px; margin-top: 4px; font-family: Arial, sans-serif;">{{ form.email.errors[0] }}</div>
+          {% endif %}
+        </div>
+        <div class="form-group">
+          {{ form.password.label }}
+          {{ form.password(class="form-control", placeholder="Password") }}
+          {% if form.password.errors %}
+          <div style="color: #dc3545; font-size: 13px; margin-top: 4px; font-family: Arial, sans-serif;">{{ form.password.errors[0] }}</div>
+          {% endif %}
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%; font-size: 16px; padding: 12px;">Sign In</button>
+      </form>
+    </div>
+
+    <p style="text-align: center; font-family: Arial, sans-serif; font-size: 14px; color: var(--gray-mid); margin-top: 20px;">
+      Don't have an account? <a href="{{ url_for('register') }}">Create one</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

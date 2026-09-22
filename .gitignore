@@ -11,12 +11,14 @@ sites/*/static/external_cache/
 # =============================================================
 # scrape pipeline intermediate; runtime data lives in instance_seed/*.db
 sites/*/scraped_data/
+/scraped_data/
 # rebuilt at every container boot from instance_seed/
 sites/*/instance/
 sites/*/venv/
 
 # HF download metadata produced by `hf download`.
 sites/.cache/
+sites/.assets-state.json
 **/.cache/huggingface/
 
 # HF dataset auto-artifacts that arrive together with the assets but belong
@@ -95,12 +97,12 @@ secrets.json
 # Agent demo results
 # =============================================================
 agent_demo/runs/
+
+# walmart_careers verifier validation runs (run signatures + DB snapshots): never committed.
+sites/*/scripts_dev/runs/
+sites/*/scripts_dev/**/*.db
+
+# Local browser and editor state
 agent_demo/.playwright/
-
-# ============================================================
-# Local-only scratch/test artifacts
-# =============================================================
 .local_ignore/
-
-# Editor / local history (never commit)
 .history/

@@ -1,0 +1,13 @@
+{% macro render(page_info, endpoint, args) %}
+{% if page_info.pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+    {% if page_info.page > 1 %}
+        <a href="{{ url_for(endpoint, page=page_info.page - 1, **args) }}">← Previous</a>
+    {% endif %}
+    <span class="current">Page {{ page_info.page }} of {{ page_info.pages }}</span>
+    {% if page_info.page < page_info.pages %}
+        <a href="{{ url_for(endpoint, page=page_info.page + 1, **args) }}">Next →</a>
+    {% endif %}
+</nav>
+{% endif %}
+{% endmacro %}

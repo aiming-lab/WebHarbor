@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}The SAFE — the open standard for startup fundraising | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell detail">
+    <h1>SAFE financing documents</h1>
+    <p class="lede">The post-money SAFE and its side letters, as published by Y Combinator.</p>
+    {% for group in groups %}
+    <section>
+        <h2>{{ group.name.replace('_', ' ').title() }}</h2>
+        <ul>
+            {% for doc in group.docs %}
+            <li><a href="{{ doc.url }}">{{ doc.title }}</a>{% if doc.filename %} <span class="muted">({{ doc.filename }})</span>{% endif %}</li>
+            {% endfor %}
+        </ul>
+    </section>
+    {% endfor %}
+</div>
+{% endblock %}

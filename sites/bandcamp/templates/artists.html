@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% from "_cards.html" import artist_card %}
+{% block title %}Artists - Bandcamp{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Artists</p>
+            <h1>Artists to follow</h1>
+            <p>Independent artists on the mirror, most supported first.</p>
+        </div>
+    </div>
+    <div class="artist-grid">
+        {% for artist in artists %}
+            <article class="artist-tile">
+                <a class="artist-tile-avatar" href="{{ url_for('artist_page', slug=artist.slug) }}">
+                    <img src="{{ url_for('static', filename=artist.avatar_image) }}" alt="{{ artist.name }}" loading="lazy">
+                </a>
+                <h3><a href="{{ url_for('artist_page', slug=artist.slug) }}">{{ artist.name }}</a></h3>
+                <p class="artist-tile-meta">{{ artist.primary_genre.name }} / {{ artist.scene.name.split(',')[0] }}</p>
+                <p class="artist-tile-followers">{{ artist.follow_count }} followers</p>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} Monograph for Professionals - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo;
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo;
+  <span>Professional</span>
+</nav>
+
+<div class="drug-page-type-tabs">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}" class="drug-page-type-tab">Consumer</a>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab active" aria-current="page">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-pro-monograph">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+  <header class="pro-monograph-header">
+    <span class="pro-monograph-eyebrow">Professional-layout fixture</span>
+    <h1>{{ drug.generic_name|capitalize }}</h1>
+    {% if drug.brand_names %}
+    <p class="pro-monograph-brands">
+      <strong>Brand names:</strong>
+      {% for bn in drug.brand_names %}<span class="brand-chip">{{ bn }}</span>{% if not loop.last %} {% endif %}{% endfor %}
+    </p>
+    {% endif %}
+    {% if drug.drug_class %}
+    <p class="pro-monograph-class">
+      <strong>Pharmacologic class:</strong>
+      <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a>
+    </p>
+    {% endif %}
+    <p class="muted pro-monograph-audience">
+      This local professional-layout fixture is intended for software evaluation. It is not clinical reference material. See the <a href="{{ url_for('drug_detail', slug=drug.slug) }}">consumer-layout fixture</a>.
+    </p>
+  </header>
+
+  <section>
+    <h2>Stored uses fixture</h2>
+    {{ (drug.uses or 'Not stored in this fixture.') | format_drug_text | safe }}
+  </section>
+
+  <section>
+    <h2>Stored dosage fixture</h2>
+    {{ (drug.dosage or 'Not stored in this fixture.') | format_drug_text | safe }}
+    <p><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Detailed dosage information &rsaquo;</a></p>
+  </section>
+
+  <section>
+    <h2>Stored warning fixture</h2>
+    {{ (drug.warnings or 'Not stored in this fixture.') | format_drug_text | safe }}
+  </section>
+
+  <section>
+    <h2>Stored side-effect fixture</h2>
+    {{ (drug.side_effects or 'Not stored in this fixture.') | format_drug_text | safe }}
+    <p><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Detailed adverse reactions &rsaquo;</a></p>
+  </section>
+
+  <section>
+    <h2>Stored interaction-text fixture</h2>
+    {{ (drug.interactions_text or 'Not stored in this fixture.') | format_drug_text | safe }}
+    <p><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Detailed interactions &rsaquo;</a></p>
+  </section>
+
+  <section>
+    <h2>Structured fixture status</h2>
+    <dl>
+      <dt>Availability</dt><dd>{{ drug.availability or 'Not stored in this fixture.' }}</dd>
+      <dt>Controlled-substance schedule</dt><dd>{{ drug.csa_schedule or 'Not stored in this fixture.' }}</dd>
+      <dt>Pregnancy fixture</dt><dd>{{ drug.pregnancy_risk or 'Not stored in this fixture.' }}</dd>
+    </dl>
+    <p><a href="{{ url_for('drug_pregnancy', slug=drug.slug) }}">Pregnancy fixture details &rsaquo;</a></p>
+  </section>
+
+  <p class="muted medical-disclaimer"><strong>Local fixture:</strong> This page renders only fields stored for the selected medication. It does not establish current prescribing information, medical review, pharmacokinetics, or clinical guidance.</p>
+
+  <section id="further-information">
+    <h2>External verification</h2>
+    <p>Verify real medication information against current official labeling and a qualified healthcare professional.</p>
+  </section>
+
+  <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to full {{ drug.generic_name|capitalize }} information</a></p>
+</article>
+</div>
+
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

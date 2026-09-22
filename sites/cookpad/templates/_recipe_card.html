@@ -1,0 +1,5 @@
+<article class="recipe-card">
+<a class="recipe-card-image" href="{{ url_for('recipe_detail',slug=recipe.slug) }}"><img src="{{ recipe.image }}" alt="{{ recipe.title }}" width="600" height="400" loading="lazy"></a>
+<div class="recipe-card-body"><h3 class="recipe-card-title"><a href="{{ url_for('recipe_detail',slug=recipe.slug) }}">{{ recipe.title }}</a></h3>
+<a class="author-link" href="{{ url_for('author_page',slug=recipe|author_slug) }}">{{ recipe.author_name }}</a>
+<div class="recipe-card-meta"><span>◷ {{ recipe.total_time or 'Time not provided' }}</span>{% if recipe.save_count is not none %}<span>▤ {{ '{:,}'.format(recipe.save_count) }} saves</span>{% endif %}</div></div></article>

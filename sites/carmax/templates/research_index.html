@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Car research & advice | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <h1>Car research &amp; advice</h1>
+  <p>Reviews, ratings, specs, and FAQs to help you find your next car.</p>
+  <h2 style="margin-top:32px">Most-researched models</h2>
+  <div class="grid grid-4">
+    {% for make, mslug, model, modelslug, n in popular %}
+    <a class="kpi" style="text-decoration:none;color:inherit" href="{{ url_for('research_model', make=mslug, model=modelslug) }}">
+      <div class="v" style="font-size:16px">{{ make }} {{ model }}</div>
+      <div class="l">{{ n }} in stock</div>
+    </a>
+    {% endfor %}
+  </div>
+  <h2 style="margin-top:32px">All makes</h2>
+  <div class="grid grid-6">
+    {% for make, slug, n in makes %}
+    <a class="kpi" style="text-decoration:none;color:inherit;text-align:center" href="{{ url_for('research_make', make=slug) }}">
+      <div class="v" style="font-size:15px">{{ make }}</div><div class="l">{{ n }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

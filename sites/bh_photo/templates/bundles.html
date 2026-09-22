@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Bundles | B&H{% endblock %}
+{% block content %}
+<section class="shell page-hero simple">
+    <p class="kicker">Curated kits</p>
+    <h1>Bundles</h1>
+    <p>Pre-built kits that group compatible items at a package price. Search by product, then open a kit to review every included item.</p>
+</section>
+<section class="shell bundle-search-panel">
+    <form method="get" class="bundle-search-form">
+        <label>Search within bundles
+            <input type="search" name="q" value="{{ query_text }}" placeholder="Try a camera or accessory name">
+        </label>
+        <label>Kit type
+            <select name="audience">
+                <option value="">All kit types</option>
+                {% for audience in audiences %}
+                    <option value="{{ audience }}" {% if selected_audience == audience %}selected{% endif %}>{{ audience }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit" class="cta">Find kits</button>
+    </form>
+    <p class="result-count">{{ bundles|length }} matching kits</p>
+</section>
+<section class="shell bundle-grid tall">
+    {% for bundle in bundles %}
+        <article class="bundle-card">
+            <a class="bundle-card-media" href="{{ url_for('bundle_detail', bundle_slug=bundle.slug) }}">
+                <img src="{{ url_for('static', filename=bundle.image_path) }}" alt="{{ bundle.title }}">
+            </a>
+            <div>
+                <p class="eyebrow">{{ bundle.badge }} · {{ bundle.audience }}</p>
+                <h2><a href="{{ url_for('bundle_detail', bundle_slug=bundle.slug) }}">{{ bundle.title }}</a></h2>
+                <p>{{ bundle.description|replace('Each item in the kit is listed below.', 'Open the kit to see every included item.') }}</p>
+                <p class="bundle-count">{{ bundle.items|length }} products included · Open kit for the complete item list</p>
+                <div class="price-line">
+                    <strong>{{ bundle.bundle_price|currency }}</strong>
+                    <span class="strike">{{ bundle.list_price|currency }}</span>
+                    <span class="save">Save {{ bundle.savings|currency }}</span>
+                </div>
+                {% if current_user.is_authenticated %}
+                    <form action="{{ url_for('add_bundle_to_cart', bundle_slug=bundle.slug) }}" method="post">
+                        <button type="submit" class="cta small">Add bundle to cart</button>
+                    </form>
+                {% endif %}
+            </div>
+        </article>
+    {% else %}
+        <div class="empty-state">
+            <h2>No matching kits</h2>
+            <p>Try a shorter product name or clear the kit type filter.</p>
+            <a class="quiet-btn" href="{{ url_for('bundles') }}">Clear filters</a>
+        </div>
+    {% endfor %}
+</section>
+{% endblock %}

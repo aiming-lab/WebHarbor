@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}My Words | Merriam-Webster{% endblock %}
+{% block content %}
+<div class="container section">
+  <h1 class="section-title">My Account — {{ current_user.name }}</h1>
+  <p class="muted">{{ current_user.email }} · @{{ current_user.username }}</p>
+
+  <div class="account-grid">
+    <div class="account-box">
+      <h2>Saved Words ({{ saved | length }})</h2>
+      {% if saved %}
+      <ul class="list-plain">
+        {% for sw in saved %}
+        <li>
+          <a href="{{ url_for('word_detail', slug=sw.word.slug) }}">{{ sw.word.headword }}</a>
+          <form method="post" action="{{ url_for('remove_saved', sw_id=sw.id) }}" style="margin:0;">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-outline" type="submit" style="padding:4px 10px;">Remove</button>
+          </form>
+        </li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">You haven't saved any words yet. Look up a word and click "Save Word".</p>
+      {% endif %}
+    </div>
+
+    <div class="account-box">
+      <h2>Recent Searches</h2>
+      {% if history %}
+      <ul class="list-plain">
+        {% for h in history %}
+        <li><a href="{{ url_for('search', q=h.term) }}">{{ h.term }}</a>
+          <span class="muted">{{ h.created_at.strftime('%b %d') }}</span></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">No search history yet.</p>
+      {% endif %}
+    </div>
+
+    <div class="account-box">
+      <h2>Quiz Scores</h2>
+      {% if scores %}
+      <ul class="list-plain">
+        {% for s in scores %}
+        <li><span>Quiz #{{ s.quiz_id }}</span><strong>{{ s.score }} / {{ s.total }}</strong></li>
+        {% endfor %}
+      </ul>
+      {% else %}
+      <p class="muted">No quiz scores yet. <a href="{{ url_for('games_quizzes') }}">Take a quiz</a>.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

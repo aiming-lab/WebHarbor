@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Compare Breeds{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><span>Compare Breeds</span></nav>
+<section class="compare-heading">
+  <h1>Compare Breeds</h1>
+  <div class="compare-sponsor"><span>Presented by</span><img src="{{ url_for('static', filename='images/akc-home/pro-plan-logo.png') }}" alt="Purina Pro Plan"></div>
+  <p>Can’t decide which breed of dog is right for you? Compare dog breeds below to see how different breed characteristics and attributes stack up against each other.</p>
+  <h2>Select up to 5 breeds to see a side-by-side comparison</h2>
+</section>
+
+<form class="filter-bar compare-picker" action="{{ url_for('compare') }}">
+  <div class="compare-slot-row">
+    <label class="compare-choice"><span class="compare-slot"><img src="{{ url_for('static', filename='images/akc-home/compare-dog.svg') }}" alt=""></span><span>Select a breed</span><select name="breed"><option value="">Select A Breed</option>{% for breed in breeds %}<option value="{{ breed.slug }}" {% if selected|length > 0 and breed.slug == selected[0] %}selected{% endif %}>{{ breed.name }}</option>{% endfor %}</select></label>
+    <b>VS.</b>
+    <label class="compare-choice"><span class="compare-slot"><img src="{{ url_for('static', filename='images/akc-home/compare-dog.svg') }}" alt=""></span><span>Select a breed</span><select name="breed"><option value="">Select A Breed</option>{% for breed in breeds %}<option value="{{ breed.slug }}" {% if selected|length > 1 and breed.slug == selected[1] %}selected{% endif %}>{{ breed.name }}</option>{% endfor %}</select></label>
+  </div>
+  <div class="compare-extra-row">
+    {% for slot in range(2, 5) %}
+      <label class="compare-choice compare-choice-extra{% if selected|length > slot %} is-active{% endif %}"><span>Select another breed</span><select name="breed" {% if selected|length <= slot %}disabled{% endif %}><option value="">Select A Breed</option>{% for breed in breeds %}<option value="{{ breed.slug }}" {% if selected|length > slot and breed.slug == selected[slot] %}selected{% endif %}>{{ breed.name }}</option>{% endfor %}</select></label>
+    {% endfor %}
+  </div>
+  <button class="compare-add" type="button" onclick="const next=this.form.querySelector('.compare-choice-extra:not(.is-active)'); if(next){next.classList.add('is-active'); next.querySelector('select').disabled=false} if(!this.form.querySelector('.compare-choice-extra:not(.is-active)')){this.hidden=true}">+ Add Another Breed</button>
+  <button type="submit">Compare Selected</button>
+</form>
+
+{% if compared %}
+<div class="compare-table-wrap">
+  <table class="compare-table">
+    <thead><tr><th>Signal</th>{% for breed in compared %}<th>{{ breed.name }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      <tr><th>Group</th>{% for breed in compared %}<td>{{ breed.group }}</td>{% endfor %}</tr>
+      <tr><th>Size</th>{% for breed in compared %}<td>{{ breed.size }}</td>{% endfor %}</tr>
+      <tr><th>Temperament</th>{% for breed in compared %}<td>{{ breed.temperament }}</td>{% endfor %}</tr>
+      <tr><th>Energy</th>{% for breed in compared %}<td>{{ breed.energy }}/5</td>{% endfor %}</tr>
+      <tr><th>Grooming</th>{% for breed in compared %}<td>{{ breed.grooming }}/5</td>{% endfor %}</tr>
+      <tr><th>Trainability</th>{% for breed in compared %}<td>{{ breed.trainability }}/5</td>{% endfor %}</tr>
+      <tr><th>Apartment Fit</th>{% for breed in compared %}<td>{{ breed.apartment_score }}/5</td>{% endfor %}</tr>
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="empty-state compare-empty">Select two or more breeds to compare owner fit signals.</p>
+{% endif %}
+{% endblock %}

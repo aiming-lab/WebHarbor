@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}{{ lst.title }} by {{ lst.user.username }} | Discogs Lists{% endblock %}
+{% block main_class %}page ls-detail-page{% endblock %}
+{% block content %}
+{% set u = lst.user %}
+<div class="ub-band">
+  <div class="ub-inner">
+    <div class="ub-avatar">{{ m.avatar(u, 'md') }}</div>
+    <div class="ub-actions">
+      <a class="ub-btn" href="{{ url_for('user_profile', username=u.username) }}">✉ Send a message</a>
+      <a class="ub-btn" href="{{ url_for('user_profile', username=u.username) }}">+ Add friend</a>
+    </div>
+  </div>
+  <div class="ub-tabs-row">
+    <div class="ub-name"><h2>{{ u.username }}</h2></div>
+    <nav class="ub-tabs" aria-label="{{ u.username }}'s pages">
+      <a href="{{ url_for('marketplace') }}">For Sale</a>
+      <a href="{{ url_for('user_profile', username=u.username) }}">Contributed</a>
+      <a href="{{ url_for('user_collection', username=u.username) }}">In Collection</a>
+      <a href="{{ url_for('user_wantlist', username=u.username) }}">In Wantlist</a>
+      <a href="{{ url_for('user_profile', username=u.username) }}">Images</a>
+      <a class="active" href="{{ url_for('user_lists', username=u.username) }}">Lists</a>
+      <a href="{{ url_for('user_reviews', username=u.username) }}">Reviews</a>
+    </nav>
+  </div>
+</div>
+
+<div class="ls-detail-layout">
+  <div class="ls-detail-main">
+    <h1 class="ls-detail-title">{{ lst.title }}</h1>
+    <p class="ls-detail-by">By {{ m.avatar(u) }} <a href="{{ url_for('user_profile', username=u.username) }}">{{ u.username }}</a>
+      <span class="muted">updated {{ lst.created_at|relative }}{% if not lst.is_public %} · private{% endif %}</span></p>
+    {% if lst.description %}<div class="ls-detail-desc">{{ lst.description }}</div>{% endif %}
+
+    <ol class="ls-items">
+      {% for it in lst.items %}
+        <li class="ls-item">
+          <span class="ls-item-num">{{ loop.index }}</span>
+          {% if it.release %}
+            <a class="ls-item-cover" href="{{ url_for('release_detail', rid=it.release.discogs_id or it.release.id) }}"><img src="{{ it.release.cover_url }}" alt="{{ it.release.title }}" loading="lazy"></a>
+            <div class="ls-item-body">
+              <a class="ls-item-title" href="{{ url_for('release_detail', rid=it.release.discogs_id or it.release.id) }}">{{ it.release.display_artist }} – {{ it.release.title }}</a>
+              <div class="ls-item-meta">{{ it.release.format_description or it.release.primary_format }}{% if it.release.year %} · {{ it.release.year }}{% endif %}</div>
+              {% if it.comment %}<div class="ls-item-comment">{{ it.comment }}</div>{% endif %}
+            </div>
+          {% elif it.artist %}
+            <div class="ls-item-body"><a class="ls-item-title" href="{{ url_for('artist_detail', aid=it.artist.id, slug=it.artist.slug) }}">{{ it.artist.name }}</a>{% if it.comment %}<div class="ls-item-comment">{{ it.comment }}</div>{% endif %}</div>
+          {% endif %}
+        </li>
+      {% else %}
+        <li class="ls-item-empty">No items found.</li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  <aside class="ls-detail-side">
+    <p>Want to see other lists from the Discogs Community?<br>Check out <a href="{{ url_for('lists_index') }}">Recent Lists.</a></p>
+    {% if current_user.is_authenticated and current_user.id == lst.user_id %}
+      <h3 class="ls-side-h">Manage List</h3>
+      <form method="post" action="{{ url_for('list_add_item', lid=lst.id) }}" class="ls-add-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="add-release-id">Add a release by ID (from its release URL)</label>
+        <input id="add-release-id" type="number" name="release_id" required>
+        <label for="add-comment">Comment</label>
+        <input id="add-comment" type="text" name="comment" maxlength="400">
+        <button class="btn-primary" type="submit" style="margin-top: 10px;">Add</button>
+      </form>
+    {% else %}
+      <h3 class="ls-side-h">About this list</h3>
+      <p class="muted">{{ lst.items.count() }} items · created {{ lst.created_at|relative }}</p>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}

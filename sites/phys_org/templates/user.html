@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{{ user.username }} — Phys.org Mirror{% endblock %}
+{% block content %}
+<section class="profile-head">
+  <h1>{{ user.full_name or user.username }}</h1>
+  <div class="text-muted">@{{ user.username }}{% if user.location %} · {{ user.location }}{% endif %} · joined {{ user.created_at.strftime('%b %Y') if user.created_at else '' }}</div>
+  {% if user.bio %}<p style="margin:10px 0 0;">{{ user.bio }}</p>{% endif %}
+  <div class="profile-stats" style="margin-top:12px;">
+    <span><strong>{{ saved_count }}</strong> saved</span>
+    <span><strong>{{ comment_count }}</strong> comments</span>
+    {% if user.interests %}<span>Interests: {{ user.interests }}</span>{% endif %}
+  </div>
+</section>
+
+<div class="section-heading"><h2>Recent comments</h2></div>
+{% if recent_comments %}
+  {% for c in recent_comments %}
+    <div class="comment">
+      <div class="head">
+        on <a href="{{ url_for('article_detail', slug=c.article.slug) }}">{{ c.article.title }}</a>
+        · {{ c.time_ago }}
+      </div>
+      <div class="body">{{ c.text }}</div>
+    </div>
+  {% endfor %}
+{% else %}
+  <p class="text-muted">No comments yet.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+{% block title %}Merriam-Webster | America's Most Trusted Dictionary{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <h1>The dictionary America relies on</h1>
+    <form class="search-form hero-search" action="{{ url_for('search') }}" method="get" autocomplete="off">
+      <input type="text" name="q" placeholder="Look up a word" aria-label="Search">
+      <button type="submit">Search</button>
+    </form>
+  </div>
+</section>
+
+{% if wotd %}
+<section class="section">
+  <div class="container">
+    <div class="wotd-feature">
+      <div>
+        <div class="wotd-label">Word of the Day</div>
+        <a href="{{ url_for('word_of_the_day') }}"><h2 class="wotd-word">{{ wotd.headword }}</h2></a>
+        <div class="wotd-pos">{{ wotd.pos }}
+          {% if wotd.pronunciation %}<span class="wotd-pron">| {{ wotd.pronunciation }}</span>{% endif %}
+        </div>
+        <p class="wotd-def">{{ wotd.definition }}</p>
+        <a class="btn btn-outline" href="{{ url_for('word_of_the_day') }}">See the full entry</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Trending Words</h2>
+    <div class="card-grid">
+      {% for w in trending %}
+      <a class="word-card" href="{{ url_for('word_detail', slug=w.slug) }}">
+        <div class="wc-head">{{ w.headword }}</div>
+        <div class="wc-pos">{{ w.pos }}</div>
+        {% if w.get_definitions() %}
+        <div class="wc-def">{{ w.get_definitions()[0].text | truncate(70) }}</div>
+        {% endif %}
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Browse the Dictionary</h2>
+    <div class="browse-strip">
+      {% for w in browse %}
+      <a href="{{ url_for('word_detail', slug=w.slug) }}">{{ w.headword }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Test Your Vocabulary</h2>
+    <div class="card-grid">
+      <a class="word-card" href="{{ url_for('games_quizzes') }}">
+        <img src="{{ url_for('static', filename='images/game-blossom.jpg') }}"
+             alt="Word games" style="width:100%;height:120px;object-fit:cover;">
+        <div class="wc-head" style="margin-top:8px;">Word Games</div>
+        <div class="wc-def">Play daily word puzzles and challenges.</div>
+      </a>
+      <a class="word-card" href="{{ url_for('quiz_detail', slug='name-that-word') }}">
+        <img src="{{ url_for('static', filename='images/quiz-baby-chick.jpg') }}"
+             alt="Vocabulary quiz" style="width:100%;height:120px;object-fit:cover;">
+        <div class="wc-head" style="margin-top:8px;">Name That Word</div>
+        <div class="wc-def">Match each definition to its word.</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container promo-row">
+    <img src="{{ url_for('static', filename='images/app-promo.png') }}" alt="Merriam-Webster app">
+    <div>
+      <h2 class="section-title">Get the Merriam-Webster App</h2>
+      <p>America's most useful and respected dictionary, in your pocket.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

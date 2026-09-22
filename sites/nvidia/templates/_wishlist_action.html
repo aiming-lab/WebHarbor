@@ -1,0 +1,10 @@
+{% if current_user.is_authenticated %}
+{# Explicit, idempotent endpoints: repeating the same submit keeps the same state (repair002, M8). #}
+<form method="post" action="{{ url_for('wishlist_remove' if in_wishlist else 'wishlist_add', product_id=p.id) }}">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <button class="btn btn-dark" type="submit">{% if in_wishlist %}Remove from Local Wishlist{% else %}Save to Local Wishlist{% endif %}</button>
+</form>
+{% else %}
+<a class="btn btn-dark" href="{{ url_for('login', next=request.path) }}">Log in to Save to Local Wishlist</a>
+{% endif %}
+<p class="source-note wishlist-note">Local Wishlist is a mirror-only saved list. It does not reserve stock or place an order.</p>

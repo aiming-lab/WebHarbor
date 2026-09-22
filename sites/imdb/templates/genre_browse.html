@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}{{ genre.name }} movies and TV - IMDb{% endblock %}
+{% block content %}
+<h1>Browse {{ genre.name }}</h1>
+<p class="muted">Top-rated {{ genre.name|lower }} titles in the mirror.</p>
+<ul class="result-list">
+  {% for t in titles %}
+  <li>
+    <a href="{{ url_for('title_detail', tt_id=t.tt_id) }}">{{ t.primary_title }}</a>
+    <span class="muted">({{ t.year }}) &middot;
+      <span class="star">&#9733;</span>{{ '%.1f'|format(t.rating_avg) }}
+    </span>
+  </li>
+  {% endfor %}
+</ul>
+{% endblock %}

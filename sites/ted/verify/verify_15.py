@@ -1,0 +1,6 @@
+#!/usr/bin/env python3
+from verify_lib import Judge, affirmative_contains, check_common, check_read_only, clicked_transition, contains_any, final_answer, load_run, number_bound_in_comparison, parse_args, visited_in_order
+TASK_ID="TED--15";A="/talks/akoth-jumadi-and-mr-lu-east-african-sound-meets-cosmic-trap";T="/talks/turkana-sessions-a-musical-journey-through-turkana"
+def main():
+ a=parse_args();t=load_run(a.run_dir);j=Judge(TASK_ID);answer=final_answer(t);check_common(j,t,TASK_ID);j.check("ordered_music_topic_flow",visited_in_order(t,[("/topics",{}),("/talks",{"topic":"music"}),(A,{}),(T,{})]),"music listing and both details");j.check("clicked_both_music_talks",clicked_transition(t,"/topics","/talks") and clicked_transition(t,"/talks",A) and clicked_transition(t,"/talks",T),"visible links used");j.check("akoth_views_bound",number_bound_in_comparison(answer,2781,("Akoth","Mr. Lu","East African")),repr(answer));j.check("turkana_views_bound",number_bound_in_comparison(answer,4223,("Turkana",)),repr(answer));j.check("turkana_identified_higher",affirmative_contains(answer,"Turkana") and contains_any(answer,("more views","higher")),repr(answer));check_read_only(j,a);j.emit()
+if __name__=="__main__":main()

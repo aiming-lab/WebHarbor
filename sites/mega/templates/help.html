@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}MEGA Help{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Help center</h1><p>Guides and support for MEGA products.</p></section>
+<form class="filters" action="{{ url_for('help_center') }}">
+  <input name="q" value="{{ q }}" placeholder="Search help">
+  <select name="category"><option value="">All categories</option>{% for c in categories %}<option value="{{ c }}" {% if category == c %}selected{% endif %}>{{ c }}</option>{% endfor %}</select>
+  <button type="submit">Search</button>
+</form>
+<section class="list-grid">
+  {% for article in articles %}
+    <a class="list-item" href="{{ url_for('help_article', slug=article.slug) }}">
+      <span>{{ article.category }} · {{ article.updated_at }}</span>
+      <strong>{{ article.title }}</strong>
+      <p>{{ article.applies_to }} · {{ article.difficulty }}</p>
+    </a>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}IRS Refund Tracker{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+  <div class="utility-banner">
+    <div class="container utility-banner__inner">
+      <span>Local WebHarbor benchmark mirror</span>
+      <span>Use only synthetic demo taxpayer data</span>
+      <span>Reference date: {{ reference_date|datefmt }}</span>
+    </div>
+  </div>
+
+  <header class="agency-header">
+    <div class="container agency-header__top">
+      <a class="agency-brand" href="{{ url_for('index') }}">
+        <span class="agency-brand__seal" aria-hidden="true">
+          <svg viewBox="0 0 48 48" role="img">
+            <circle cx="24" cy="24" r="22" fill="#17365d"></circle>
+            <path d="M24 9l8 5v9c0 8-5 12-8 14-3-2-8-6-8-14v-9z" fill="#ffffff"></path>
+            <path d="M24 15l4 2.5v5.5c0 4.7-2.9 7.5-4 8.4-1.1-.9-4-3.7-4-8.4v-5.5z" fill="#d9b24c"></path>
+          </svg>
+        </span>
+        <span>
+          <strong>IRS Refund Tracker</strong>
+          <small>Where's My Refund? mirror</small>
+        </span>
+      </a>
+      <form class="header-search" action="{{ url_for('search') }}" method="get">
+        <label for="global-search" class="sr-only">Search help and notices</label>
+        <input id="global-search" name="q" type="search" placeholder="Search help articles, FAQs, or notices">
+        <button type="submit">Search</button>
+      </form>
+      <div class="account-links">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}">Account</a>
+          <a href="{{ url_for('lookup_history') }}">Lookup History</a>
+          <a href="{{ url_for('logout') }}">Sign out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Sign in</a>
+          <a href="{{ url_for('register') }}">Register</a>
+        {% endif %}
+      </div>
+    </div>
+    <nav class="main-nav">
+      <div class="container main-nav__inner">
+        <a href="{{ url_for('refunds') }}">Refunds</a>
+        <a href="{{ url_for('where_is_my_refund') }}">Where's My Refund?</a>
+        <a href="{{ url_for('help_index') }}">Help</a>
+        <a href="{{ url_for('faq') }}">FAQ</a>
+        <a href="{{ url_for('notices') }}">Notices</a>
+        <a href="{{ url_for('tax_topics') }}">Tax Topics</a>
+        <a href="{{ url_for('contact') }}">Contact</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="page-shell">
+    <div class="container">
+      {% for alert in current_alerts %}
+        <section class="alert alert--{{ alert.level }}">
+          <strong>{{ alert.title }}</strong>
+          <p>{{ alert.body }}</p>
+        </section>
+      {% endfor %}
+
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash flash--{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container site-footer__grid">
+      <div>
+        <h2>About this mirror</h2>
+        <p>This site is a deterministic local benchmark environment. It is not connected to live IRS systems.</p>
+      </div>
+      <div>
+        <h2>Safe practice</h2>
+        <p>Use public demo cases or seeded benchmark accounts only. Never enter a full SSN, ITIN, or live refund record.</p>
+      </div>
+      <div>
+        <h2>Quick links</h2>
+        <ul class="footer-links">
+          <li><a href="{{ url_for('refund_status_start') }}">Start a refund lookup</a></li>
+          <li><a href="{{ url_for('notices') }}">Browse notice codes</a></li>
+          <li><a href="{{ url_for('help_index') }}">Open refund help</a></li>
+        </ul>
+      </div>
+    </div>
+  </footer>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Search</div><h1>{{ query or "Search BabyCenter" }}</h1></div></section>
+<form class="filter-bar" action="{{ url_for('search') }}"><input name="q" value="{{ query }}" placeholder="nausea, anatomy scan, sleep, solids"><button type="submit">Search</button></form>
+{% if query %}
+<section class="search-grid">
+  <div><h2>Articles</h2>{% for article in article_results %}<a class="mini-result" href="{{ url_for('article_detail', slug=article.slug) }}"><strong>{{ article.title }}</strong><small>{{ article.category }}</small></a>{% else %}<p class="empty-state">No articles.</p>{% endfor %}</div>
+  <div><h2>Pregnancy weeks</h2>{% for week in week_results %}<a class="mini-result" href="{{ url_for('week_detail', week=week.week) }}"><strong>Week {{ week.week }}</strong><small>{{ week.headline }}</small></a>{% else %}<p class="empty-state">No weeks.</p>{% endfor %}</div>
+  <div><h2>Baby months</h2>{% for month in month_results %}<a class="mini-result" href="{{ url_for('month_detail', month=month.month) }}"><strong>Month {{ month.month }}</strong><small>{{ month.headline }}</small></a>{% else %}<p class="empty-state">No months.</p>{% endfor %}</div>
+  <div><h2>Community</h2>{% for post in post_results %}<a class="mini-result" href="{{ url_for('community_detail', slug=post.slug) }}"><strong>{{ post.title }}</strong><small>{{ post.club }}</small></a>{% else %}<p class="empty-state">No posts.</p>{% endfor %}</div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} - IKEA demo{% endblock %}
+{% block content %}
+<section class="detail-layout">
+  <div class="detail-media">
+    <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
+    <div class="badge-row">
+      <span class="pill">{{ product.series }}</span>
+      <span class="pill pill-muted">{{ room_labels[product.room_slug] }}</span>
+      {% if product.is_deal %}<span class="pill pill-deal">Local deal</span>{% endif %}
+    </div>
+  </div>
+  <div class="detail-copy">
+    <p class="eyebrow">{{ category.name if category else product.category_slug }}</p>
+    <h1>{{ product.name }}</h1>
+    <p class="rating-row">{{ product.rating|stars }} ★ · {{ product.review_count }} reviews</p>
+    <p class="detail-price">
+      <strong>{{ product.price|money }}</strong>
+      {% if product.list_price > product.price %}
+        <span class="strike">{{ product.list_price|money }}</span>
+      {% endif %}
+    </p>
+    <p>{{ product.description }}</p>
+    <ul class="feature-list">
+      {% for feature in product.features %}
+        <li>{{ feature }}</li>
+      {% endfor %}
+    </ul>
+    <div class="purchase-panel">
+      <p><strong>{{ product.availability_bucket }}</strong></p>
+      <p>{{ product.delivery_note }} · {{ product.pickup_badge }}</p>
+      {% if current_user.is_authenticated %}
+        <form action="{{ url_for('cart_add') }}" method="post">
+          <input type="hidden" name="sku" value="{{ product.sku }}">
+          <label>Quantity
+            <input type="number" name="quantity" value="1" min="1" max="9">
+          </label>
+          <button type="submit">Add to cart</button>
+        </form>
+        <div class="stacked-actions">
+          <form action="{{ url_for('wishlist_toggle', sku=product.sku) }}" method="post">
+            {% set is_wishlisted = product.id in wishlist_product_ids %}
+            <button type="submit" class="secondary" aria-pressed="{{ 'true' if is_wishlisted else 'false' }}">
+              {{ 'Remove from wishlist' if is_wishlisted else 'Save to wishlist' }}
+            </button>
+          </form>
+          <form action="{{ url_for('compare_toggle', sku=product.sku) }}" method="post">
+            {% set is_compared = product.id in compare_product_ids %}
+            <button type="submit" class="secondary" aria-pressed="{{ 'true' if is_compared else 'false' }}">
+              {{ 'Remove from compare' if is_compared else 'Add to compare' }}
+            </button>
+          </form>
+        </div>
+      {% else %}
+        <a class="button" href="{{ url_for('login') }}">Sign in to shop</a>
+      {% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="detail-sections">
+  <article class="info-card">
+    <h2>Key specs</h2>
+    <dl class="spec-grid">
+      {% for key, value in product.specs.items() %}
+        <div>
+          <dt>{{ key }}</dt>
+          <dd>{{ value }}</dd>
+        </div>
+      {% endfor %}
+    </dl>
+  </article>
+  <article class="info-card">
+    <h2>Protection plan comparison</h2>
+    <div class="plan-grid">
+      {% for plan in product.protection_plans %}
+        <div class="plan-card">
+          <h3>{{ plan.name }}</h3>
+          <p>{{ plan.price|money }}</p>
+          <p>{{ plan.description }}</p>
+          <ul>
+            {% for benefit in plan.benefits %}
+              <li>{{ benefit }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="info-card">
+    <h2>Store pickup snapshot</h2>
+    <div class="store-pickup-list">
+      {% for record in store_records %}
+        <div>
+          <strong>{{ record.store.name }}</strong>
+          <p>{{ record.quantity }} in stock · Aisle {{ record.aisle }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+  <article class="info-card">
+    <h2>Customer reviews</h2>
+    <div class="review-list">
+      {% for review in product.reviews[:4] %}
+        <div class="review-card">
+          <strong>{{ review.headline }}</strong>
+          <p>{{ review.rating }} ★ · {{ review.author_name }}</p>
+          <p>{{ review.body }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </article>
+</section>
+
+<section class="section-block">
+  <div class="section-heading">
+    <h2>Related picks</h2>
+  </div>
+  <div class="product-grid">
+    {% for product in related %}
+      {% include "partials_product_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

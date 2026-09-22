@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Playlist - IGN{% endblock %}
+{% block content %}
+<header class="page-header">
+  <span class="eyebrow">Account</span>
+  <h1>Playlist</h1>
+  <p>Queue videos, reviews, and guides to watch or read later.</p>
+</header>
+
+<section class="manage-list">
+  {% for row in rows %}
+    <div class="manage-row">
+      {% set item = row.item %}
+      {% set compact = true %}
+      {% include "_item_card.html" with context %}
+      <div class="manage-meta">
+        <form method="post" action="{{ url_for('update_playlist_status', entry_id=row.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label>Status
+            <select name="status">
+              {% for status in ['queued','watching','watched','skipped'] %}
+                <option value="{{ status }}" {% if row.status == status %}selected{% endif %}>{{ status }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Note <textarea name="note" rows="2">{{ row.note }}</textarea></label>
+          <button type="submit">Update</button>
+        </form>
+        <form method="post" action="{{ url_for('remove_playlist', entry_id=row.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button type="submit">Remove</button>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <div class="empty-state">No playlist entries yet.</div>
+  {% endfor %}
+</section>
+{% endblock %}

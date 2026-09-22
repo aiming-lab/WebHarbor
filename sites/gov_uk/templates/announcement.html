@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ announcement.title }} - GOV.UK{% endblock %}
+{% block content %}
+<nav class="govuk-breadcrumbs" aria-label="Breadcrumb">
+  <ol class="govuk-breadcrumbs__list">
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('index') }}">Home</a></li>
+    <li class="govuk-breadcrumbs__list-item"><a class="govuk-breadcrumbs__link" href="{{ url_for('announcements_index') }}">Announcements</a></li>
+  </ol>
+</nav>
+<span class="govuk-caption-l">{{ announcement.kind.replace('_', ' ').title() }}</span>
+<h1 class="govuk-heading-xl">{{ announcement.title }}</h1>
+<p class="govuk-body-l">{{ announcement.summary }}</p>
+<p class="govuk-body-s">From: <a class="govuk-link" href="{{ url_for('organisation_detail', slug=announcement.department.slug) }}">{{ announcement.department.name }}</a><br>
+Published {{ announcement.published_at.strftime('%-d %B %Y') }}</p>
+<div class="govuk-grid-row"><div class="govuk-grid-column-two-thirds">
+  {% for paragraph in announcement.body.split('\n\n') %}<p class="govuk-body">{{ paragraph }}</p>{% endfor %}
+</div>{% if related %}<aside class="govuk-grid-column-one-third"><h2 class="govuk-heading-m">Related guidance</h2><ul class="govuk-list">{% for a in related %}<li><a class="govuk-link" href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></li>{% endfor %}</ul></aside>{% endif %}</div>
+{% endblock %}

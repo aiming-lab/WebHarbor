@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Collection - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <h1>Collection</h1>
+            <p>Your purchased library, with formats and favorite tracks.</p>
+        </div>
+    </div>
+    {% if items %}
+        <div class="card-grid release-grid">
+            {% for item in items %}
+                <article class="release-card">
+                    <a class="release-cover" href="{{ url_for('album_page', slug=item.album.slug) }}">
+                        <img src="{{ url_for('static', filename=item.album.cover_image) }}" alt="{{ item.album.title }}">
+                    </a>
+                    <div class="release-meta">
+                        <h3><a href="{{ url_for('album_page', slug=item.album.slug) }}">{{ item.album.title }}</a></h3>
+                        <p>{{ item.album.artist.name }}</p>
+                        <p>{{ item.format_variant.label_text() if item.format_variant else 'Library add' }}</p>
+                        <p>Favorite track: {{ item.favorite_track.title if item.favorite_track else 'Not set' }}</p>
+                    </div>
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-panel"><p>Your collection is empty.</p></div>
+    {% endif %}
+</section>
+{% endblock %}

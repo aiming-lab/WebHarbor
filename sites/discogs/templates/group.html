@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Groups | Discogs{% endblock %}
+{% block content %}
+<h1>Groups</h1>
+<p class="muted">Discussion groups in this offline mirror are the forum boards below. Join a conversation by opening a board and replying to a thread.</p>
+<div class="card">
+{% for f in forums %}
+  <div class="community-item">
+    <h3 style="margin: 0 0 4px;"><a href="{{ url_for('forum_view', slug=f.slug) }}">{{ f.name }}</a></h3>
+    <p class="muted" style="margin: 0;">{{ f.description }} · {{ f.threads.count() }} threads</p>
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

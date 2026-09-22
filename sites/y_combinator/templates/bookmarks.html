@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Your bookmarks | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell detail">
+    <h1>Your bookmarks</h1>
+    <div class="card-list">
+        {% for article in articles %}
+        <article class="card">
+            {% if article.thumbnail %}<img src="{{ url_for('static', filename='images/' + article.thumbnail) }}" alt="">{% endif %}
+            <div>
+                <h3><a href="{{ url_for('library_detail', slug=article.slug) }}">{{ article.title }}</a></h3>
+                <p class="muted">{{ article.author }}{% if article.series %} · {{ article.series }}{% endif %}</p>
+            </div>
+        </article>
+        {% else %}
+        <p>You have not bookmarked anything yet.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

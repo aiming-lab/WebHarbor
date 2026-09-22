@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}My Account | Petfinder{% endblock %}
+{% block content %}
+<section class="account-head"><p class="eyebrow">MY PETFINDER</p><h1>{{ current_user.display_name }}</h1><p>{{ current_user.email }}</p></section>
+<div class="account-layout">
+  <form class="settings-card" method="post" action="{{ url_for('update_preferences') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Search preferences</h2>
+    <label>Home location<input name="home_location" value="{{ current_user.home_location }}"></label>
+    <label>Default sort<select name="sort_preference" aria-label="Default sort">{% for value, key in sort_preferences.items() %}<option {% if default_sort == key %}selected{% endif %}>{{ value }}</option>{% endfor %}</select></label>
+    <button type="submit">Save preferences</button>
+  </form>
+  <section>
+    <div class="section-heading"><h2>Favorite pets ({{ saved|length }})</h2></div>
+    <div class="saved-list">{% for saved_item in saved %}<a href="{{ url_for('listing_detail', slug=saved_item.listing.slug) }}"><span class="saved-thumb sprite sprite-{{ saved_item.listing.image_index }}"></span><span><strong>{{ saved_item.listing.name }}</strong><small>{{ saved_item.listing.breed }} · {{ saved_item.listing.location }}</small></span></a>{% else %}<p>No favorite pets yet.</p>{% endfor %}</div>
+    <div class="section-heading inquiry-heading"><h2>Adoption inquiries</h2></div>
+    <div class="inquiry-list">{% for inquiry in inquiries %}<article><strong>{{ inquiry.listing.name }}</strong><span class="status">{{ inquiry.status }}</span><p>{{ inquiry.message }}</p></article>{% else %}<p>No adoption inquiries yet.</p>{% endfor %}</div>
+  </section>
+</div>
+{% endblock %}

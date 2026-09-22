@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title }} | Discogs{% endblock %}
+{% block content %}
+<div class="page-narrow info-page">
+  <h1>{{ page.title }}</h1>
+  {% if page.lead %}<p class="info-lead">{{ page.lead }}</p>{% endif %}
+  {% for paragraph in page.body %}<p>{{ paragraph }}</p>{% endfor %}
+  {% if page.links %}
+    <ul class="info-links">
+      {% for label, href in page.links %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}
+    </ul>
+  {% endif %}
+  <p class="muted tiny">This page belongs to the WebHarbor offline mirror of Discogs. Marketplace, collection and community activity here are synthetic benchmark data; release metadata and cover images come from Discogs.</p>
+</div>
+{% endblock %}

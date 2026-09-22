@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Support{% endblock %}
+{% block content %}
+  <section class="section-title">
+    <div>
+      <div class="kicker">Support center</div>
+      <h1>How can we help you?</h1>
+    </div>
+  </section>
+  <section class="card">
+    <form method="get" class="form-grid two">
+      <div class="field">
+        <label for="q">Search support topics</label>
+        <input id="q" name="q" value="{{ query }}" placeholder="Search the local support guides" maxlength="180">
+      </div>
+      <div class="field" style="align-self:end">
+        <input type="submit" value="Search support">
+      </div>
+    </form>
+  </section>
+  {% if query_rejected %}
+    <div class="empty-state" role="status">That support search is longer than this local demo accepts. Enter 180 characters or fewer.</div>
+  {% endif %}
+  <section class="article-list" style="margin-top:1rem">
+    {% for article in articles %}
+      <article class="card">
+        <div class="badge">{{ article.category }}</div>
+        <h2><a href="{{ url_for('support_article', article_slug=article.slug) }}">{{ article.title }}</a></h2>
+        <p class="muted">{{ article.summary }}</p>
+      </article>
+    {% endfor %}
+  </section>
+{% endblock %}

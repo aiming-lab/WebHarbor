@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Rewards · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Rewards dashboard</div>
+      <h2>{{ reward_account.member_number }} · {{ reward_account.tier }}</h2>
+      <p>Reward balances update immediately in this mirror after mock checkout so tasks can verify points earned from a booking.</p>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/destinations/denver.svg') }}" alt="Rewards">
+    </div>
+  </section>
+
+  <section class="section grid two">
+    <div class="card">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <span class="kicker">Points balance</span>
+          <strong>{{ reward_account.points_balance }}</strong>
+        </div>
+        <div class="stat-card">
+          <span class="kicker">Points YTD</span>
+          <strong>{{ reward_account.points_ytd }}</strong>
+        </div>
+        <div class="stat-card">
+          <span class="kicker">Status credits</span>
+          <strong>{{ reward_account.status_credits }}</strong>
+        </div>
+        <div class="stat-card">
+          <span class="kicker">Preferred station</span>
+          <strong>{{ reward_account.preferred_station.code if reward_account.preferred_station else '—' }}</strong>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Activity</div>
+      <h2>Recent points activity</h2>
+      <div class="detail-list">
+        {% for item in reward_account.activities %}
+          <div class="detail-item">
+            <strong>{{ item.description }}</strong>
+            <div class="muted">{{ item.posted_at|dt_label }} · {{ item.category }}</div>
+            <div class="subtle">{{ item.points_delta }} points · balance {{ item.balance_after }}</div>
+          </div>
+        {% else %}
+          <div class="empty-state">No reward activity is available for this account.</div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+{% endblock %}

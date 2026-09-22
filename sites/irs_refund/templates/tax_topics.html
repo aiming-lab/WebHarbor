@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Tax Topics{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Tax topics</p>
+  <h1>Browse refund guidance by topic.</h1>
+  <p>Each topic groups help articles written for this deterministic local mirror.</p>
+</section>
+
+{% for topic, items in topics.items() %}
+  {% if not selected_topic or selected_topic == topic %}
+    <section class="topic-group">
+      <div class="section-heading">
+        <div>
+          <p class="eyebrow">Topic</p>
+          <h2>{{ topic|replace('-', ' ')|title }}</h2>
+        </div>
+      </div>
+      <div class="stacked-cards">
+        {% for article in items %}
+          <article class="info-card">
+            <span class="info-card__meta">{{ article.category }}</span>
+            <h3><a href="{{ url_for('help_detail', slug=article.slug) }}">{{ article.title }}</a></h3>
+            <p>{{ article.summary }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+{% endfor %}
+{% endblock %}

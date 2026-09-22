@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Discogs Forum - {{ t.title }}{% endblock %}
+{% block main_class %}page fr-page{% endblock %}
+{% block content %}
+{% set replies = posts|length - 1 if posts else 0 %}
+{% set band_extra %}
+  <span class="fr-started">Started by <a href="{{ url_for('user_profile', username=t.user.username) }}">{{ t.user.username }}</a> {{ t.created_at|relative }}, {{ replies }} {{ 'reply' if replies == 1 else 'replies' }}</span>
+  <span class="fr-band-buttons">
+    <button type="button" class="fr-btn-dark" title="Saving threads is not available in this offline mirror">★ Save Thread</button>
+    <button type="button" class="fr-btn-dark" title="Notifications are not available in this offline mirror">✉ Notify Me of Replies</button>
+  </span>
+{% endset %}
+{% with band_title=t.title, band_extra=band_extra, show_tabs=False, crumbs=[('Forum', url_for('forum_index')), (t.forum.name, url_for('forum_view', slug=t.forum.slug))], new_thread_url=(url_for('thread_new', slug=t.forum.slug) if current_user.is_authenticated else url_for('login', next=url_for('thread_new', slug=t.forum.slug))) %}{% include "_forum_band.html" %}{% endwith %}
+
+<div class="fr-thread-layout">
+  <div class="fr-posts">
+    {% for p in posts %}
+      <article class="fr-post" id="post-{{ p.id }}">
+        <div class="fr-post-side">
+          {{ m.avatar(p.user, 'md') }}
+          <span class="fr-post-count">✎ {{ post_counts.get(p.user_id, 0) }}</span>
+        </div>
+        <div class="fr-post-main">
+          <h2 class="fr-post-head"><a href="{{ url_for('user_profile', username=p.user.username) }}">{{ p.user.username }}</a> <span class="fr-post-time">{{ p.created_at|relative }}</span></h2>
+          <div class="fr-post-body">{{ p.body }}</div>
+          <a class="fr-permalink" href="#post-{{ p.id }}">⚓ Permalink</a>
+        </div>
+      </article>
+    {% endfor %}
+    <div class="fr-post-range">1 – {{ posts|length }} of {{ posts|length }}</div>
+
+    {% if current_user.is_authenticated and not t.locked %}
+      <form method="post" action="{{ url_for('thread_reply', tid=t.id) }}" class="fr-reply">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="reply-body">Reply</label>
+        <textarea id="reply-body" name="body" required minlength="2" placeholder="Type your reply…"></textarea>
+        <p><button class="btn-primary" type="submit">Post reply</button></p>
+      </form>
+    {% elif t.locked %}
+      <p class="empty">🔒 This thread is locked.</p>
+    {% else %}
+      <p class="fr-login-note"><a class="btn" href="{{ url_for('login', next=request.full_path.rstrip('?')) }}">Log In</a> You must be logged in to post.</p>
+    {% endif %}
+  </div>
+  <aside class="fr-thread-side">
+    <h3>Help</h3>
+    <a href="/guidelines/community">Community Guidelines →</a>
+  </aside>
+</div>
+{% endblock %}

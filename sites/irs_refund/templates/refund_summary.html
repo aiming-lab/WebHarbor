@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Printable Refund Summary{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Printable summary</p>
+  <h1>Refund lookup summary</h1>
+  <p>This summary is for local benchmark review only. Use the browser print command if you want a paper copy.</p>
+</section>
+
+<section class="summary-sheet">
+  <div class="summary-sheet__header">
+    <div>
+      <h2>{{ result.stage_label }}</h2>
+      <p>{{ result.message }}</p>
+    </div>
+    <button class="button button--secondary" type="button" data-print-summary>Print this page</button>
+  </div>
+  <div class="summary-sheet__grid">
+    <div>
+      <h3>Lookup fields</h3>
+      <dl class="meta-list">
+        <div><dt>Tax year</dt><dd>{{ result.input.tax_year }}</dd></div>
+        <div><dt>Filing status</dt><dd>{{ result.input.filing_status_slug|replace('-', ' ')|title }}</dd></div>
+        <div><dt>Refund amount</dt><dd>{{ result.input.refund_amount|money }}</dd></div>
+        <div><dt>Last four</dt><dd>{{ result.input.last_four_id }}</dd></div>
+        <div><dt>ZIP code</dt><dd>{{ result.input.zip_code }}</dd></div>
+      </dl>
+    </div>
+    <div>
+      <h3>Summary</h3>
+      <p><strong>Recommended next step:</strong> {{ result.recommended_next_step }}</p>
+      {% if matched_return %}
+        <p><strong>Delivery method:</strong> {{ matched_return.delivery_method }}</p>
+        <p><strong>Reference code:</strong> {{ matched_return.reference_code }}</p>
+      {% elif candidate_return %}
+        <p><strong>Closest practice record:</strong> {{ candidate_return.profile.full_name }} / {{ candidate_return.tax_year }}</p>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

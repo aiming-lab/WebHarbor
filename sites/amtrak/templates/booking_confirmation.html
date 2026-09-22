@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Booking Confirmed · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Booking confirmed</div>
+      <h2>Your demo trip is saved locally.</h2>
+      <p>No real reservation or payment was processed. Use the confirmation code below for trip lookup tasks and account review.</p>
+      <div class="confirmation-code">{{ booking.booking_code }}</div>
+      <div class="hero-actions">
+        <a class="button" href="{{ url_for('trip_detail', booking_code=booking.booking_code) }}">Open trip details</a>
+        <a class="button-secondary" href="{{ url_for('account_trips') }}">View my trips</a>
+      </div>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename='images/routes/coast-starlight-hero.svg') }}" alt="Confirmation">
+    </div>
+  </section>
+
+  <section class="section grid two">
+    <div class="card">
+      <div class="eyebrow">Segments</div>
+      <h2>Issued itinerary</h2>
+      <div class="detail-list">
+        {% for segment in booking.segments %}
+          <div class="detail-item">
+            <strong>{{ segment.route_name }} {{ segment.train_number }}</strong>
+            <div class="muted">{{ segment.origin_code }} → {{ segment.destination_code }}</div>
+            <div class="subtle">{{ segment.depart_dt|dt_label }} → {{ segment.arrive_dt|dt_label }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="eyebrow">Payment mock</div>
+      <h2>Local approval record</h2>
+      <div class="detail-list">
+        <div class="detail-item"><strong>Total</strong><div class="muted">{{ booking.total_amount|currency }}</div></div>
+        <div class="detail-item"><strong>Status</strong><div class="muted">{{ booking.payment.status }}</div></div>
+        <div class="detail-item"><strong>Approval code</strong><div class="muted">{{ booking.payment.approval_code }}</div></div>
+        <div class="detail-item"><strong>Rewards</strong><div class="muted">{{ booking.reward_points_earned }} points earned</div></div>
+      </div>
+    </div>
+  </section>
+{% endblock %}
