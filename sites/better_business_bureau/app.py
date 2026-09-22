@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 """Better Business Bureau mirror — business search, profiles, reviews, complaints,
 Scam Tracker, quote/complaint/review intake flows, and consumer accounts."""
+# Keep one model registry when launched directly as well as through Flask.
+import sys
+if __name__ == "__main__":
+    sys.modules["app"] = sys.modules[__name__]
+
 import json
 import math
 import os
 import re
+from statistics import median
 from datetime import datetime
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
@@ -434,7 +440,7 @@ def search_businesses(find_text, find_loc, page=1, accredited=None, ratings=None
     elif sort == "rating":
         base.sort(key=lambda b: (rating_rank(b.rating), -int(b.accredited), b.name.lower()))
     else:  # best match: accredited first, then relevance score, then name
-        base.sort(key=lambda b: (-int(b.accredited), -score_map.get(b.id, 0), b.name.lower()))
+        base.sort(key=lambda b: (-(bool(find_text) and find_text.casefold().strip() == b.name.casefold().strip()), -int(b.accredited), -score_map.get(b.id, 0), b.name.lower()))
     total = len(base)
     per_page = 15
     pages = max(1, math.ceil(total / per_page))
@@ -916,19 +922,18 @@ def scam_dashboard():
     by_state = {}
     for r in rows:
         st = r.target_state or "--"
-        rec = by_state.setdefault(st, {"reports": 0, "losses": 0.0, "lost_reports": 0})
+        rec = by_state.setdefault(st, {"reports": 0, "losses": 0.0, "lost_reports": 0, "positive_losses": []})
         rec["reports"] += 1
         rec["losses"] += (r.dollar_value or 0)
         if (r.dollar_value or 0) > 0:
             rec["lost_reports"] += 1
+            rec["positive_losses"].append(r.dollar_value)
     losses = [r.dollar_value for r in rows if (r.dollar_value or 0) > 0]
     losses.sort()
-    median = 0
-    if losses:
-        median = losses[len(losses) // 2]
+    median_loss = median(losses) if losses else 0
     stats = {
         "reports": len(rows),
-        "median_loss": median,
+        "median_loss": median_loss,
         "pct_loss": round(100.0 * len(losses) / len(rows), 1) if rows else 0,
         "locations": len(by_state),
     }
@@ -942,7 +947,7 @@ def scam_dashboard():
     elif metric == "median":
         values = {}
         for st, rec in by_state.items():
-            values[st] = (rec["losses"] / rec["lost_reports"]) if rec["lost_reports"] else 0
+            values[st] = median(rec["positive_losses"]) if rec["positive_losses"] else 0
     else:
         values = {st: rec["reports"] for st, rec in by_state.items()}
     max_value = max(values.values()) if values else 1
@@ -955,7 +960,7 @@ def scam_dashboard():
         if metric == "losses":
             labels[st] = "${:,}".format(int(value))
         elif metric == "median":
-            labels[st] = "${:,}".format(int(value))
+            labels[st] = f"${value:,.2f}".rstrip("0").rstrip(".")
         else:
             labels[st] = "{:,}".format(int(value))
     return render_template("scam_dashboard.html", stats=stats,

@@ -10,7 +10,7 @@
 
   <h1 style="color:#032160;letter-spacing:1px;font-size:1.6rem;">SCAM TRACKER</h1>
   <h2 style="color:#032160;font-size:2.2rem;margin-bottom:.4rem;">Heatmap</h2>
-  <p style="max-width:820px;color:#53565a;">A live look at scam activity reported to BBB across the United States and Canada. Per-capita metrics are adjusted for population so smaller regions aren't masked by larger ones - the best single proxy for the risk to an individual living there. Click any location to drill down.</p>
+  <p style="max-width:820px;color:#53565a;">Scam reports in this snapshot, grouped by location. Totals and loss percentages describe the selected period; median loss uses reports with a positive loss. Click a location to explore its reports.</p>
 
   <div class="scam-stats">
     <div class="stat-card">
@@ -42,7 +42,7 @@
     <span>METRIC</span>
     <a href="{{ url_for('scam_dashboard', period=period, metric='losses') }}" {% if metric == 'losses' %}class="active"{% endif %}>Total losses</a>
     <a href="{{ url_for('scam_dashboard', period=period, metric='reports') }}" {% if metric == 'reports' %}class="active"{% endif %}>Total reports</a>
-    <a href="{{ url_for('scam_dashboard', period=period, metric='median') }}" {% if metric == 'median' %}class="active"{% endif %}>Median loss / report</a>
+    <a href="{{ url_for('scam_dashboard', period=period, metric='median') }}" {% if metric == 'median' %}class="active"{% endif %}>Median reported loss</a>
   </div>
 
   <div class="side-card">
@@ -59,7 +59,7 @@
     </svg>
     <div class="heat-legend">
       <span>Low</span><span class="ramp"></span><span>High</span>
-      <span style="margin-left:.6rem;">&middot; colored by {{ 'total losses' if metric == 'losses' else ('total reports' if metric == 'reports' else 'median loss per report') }}</span>
+      <span style="margin-left:.6rem;">&middot; colored by {{ 'total losses' if metric == 'losses' else ('total reports' if metric == 'reports' else 'median reported loss') }}</span>
     </div>
     <p style="font-size:.85rem;color:#53565a;">Click any location to drill down into its reports.</p>
     <label style="font-size:.85rem;font-weight:700;color:#032160;display:block;margin-top:.8rem;">Jump to location</label>
@@ -97,7 +97,7 @@
   <div class="side-card">
     <h3>How to use</h3>
     <p style="font-size:.92rem;">Click any location on the map (or pick from the list) to drill down into reports, total losses, the share of reports that lost money, and the top scam types for that region.</p>
-    <p style="font-size:.92rem;"><b>Tip:</b> switch the metric pills to recolor the map by total losses, reports, or median loss per report. Period pills change the reporting window.</p>
+    <p style="font-size:.92rem;"><b>Tip:</b> switch the metric pills to recolor the map by total losses, reports, or median reported loss. Period pills change the reporting window.</p>
   </div>
 
   <p style="font-size:.85rem;color:#53565a;max-width:820px;">BBB Scam Tracker Heatmap was created with financial support from JPMorganChase. JPMorgan Chase &amp; Co. and its affiliates are not responsible for, nor provide or endorse third party products, services or other content.</p>

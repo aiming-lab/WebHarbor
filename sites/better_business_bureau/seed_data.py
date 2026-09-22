@@ -91,19 +91,34 @@ def _logo_path(card_logo, business_id):
 PS_JUNK = re.compile(
     r"Started|Opened|Incorporated|Entity|Alternate|Management|Employees|Contact|"
     r"Categories|Resources|Licensing|Information|BBB|Accredited|Reviews|Photos|"
-    r"^\\d{1,2}/\\d|:$|^MORE|^Industry")
+    r"^\d{1,2}/\d|:$|^MORE|^Industry")
 
 
 def _clean_products(items):
     out = []
     for item in items:
         item = (item or "").strip()
+        if item in {"Business Details", "Additional Contact Information", "Business Management"}:
+            break
         if not item or len(item) > 50:
             continue
         if PS_JUNK.search(item):
             continue
         out.append(item)
     return out[:24]
+
+
+def clean_consumer_text(text):
+    """Remove captured profile/footer chrome after the consumer's own text."""
+    markers = (
+        r"\n[^\n]*is (?:NOT )?a BBB Accredited Business\.",
+        r"\nBBB Business Profiles are provided solely",
+        r"\nWhy choose a BBB Accredited Business\?",
+        r"\n(?:TM\n)?For Consumers\nGet a Quote",
+    )
+    endings = [match.start() for pattern in markers
+               if (match := re.search(pattern, text or ""))]
+    return (text[:min(endings)] if endings else text).strip()
 
 
 def seed_database():
@@ -210,7 +225,7 @@ def seed_database():
                 continue
             db.session.add(Review(
                 business_id=biz.id, author_name=name, rating=int(stars),
-                text=body[:4000], review_date=date,
+                text=clean_consumer_text(body)[:4000], review_date=date,
                 sort_date=_iso(date)))
         for complaint in (complaints.get("complaints") or []):
             text = (complaint.get("text") or "").strip()
@@ -225,10 +240,10 @@ def seed_database():
                 status=complaint.get("status") or "Answered",
                 complaint_date=complaint.get("date") or "",
                 sort_date=_iso(complaint.get("date")),
-                text=body[:4000],
-                business_response=complaint.get("businessResponse") or "",
+                text=clean_consumer_text(body)[:4000],
+                business_response=clean_consumer_text(complaint.get("businessResponse") or ""),
                 business_response_date=complaint.get("businessResponseDate") or "",
-                customer_answer=complaint.get("customerAnswer") or "",
+                customer_answer=clean_consumer_text(complaint.get("customerAnswer") or ""),
                 customer_answer_date=complaint.get("customerAnswerDate") or ""))
 
     # Ad placements observed on upstream search pages (resolved to seeded businesses)

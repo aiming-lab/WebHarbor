@@ -14,7 +14,7 @@
     <p style="font-size:.88rem;margin:.4rem 0 0;">This content is based on victim and potential victim accounts. Government agencies and legitimate business names and phone numbers are often used by scam artists to take advantage of people.</p>
   </div>
 
-  <div style="max-width:860px;">
+  <div style="max-width:860px;overflow-wrap:anywhere;">
     <h2 class="section-heading" style="margin-top:1.4rem;">Description</h2>
     <p>{{ report.description }}</p>
 
@@ -31,6 +31,9 @@
 
     <h2 class="section-heading">Scam Type</h2>
     <p>{{ report.scam_type }} &middot; <a href="{{ url_for('scam_lookup', scam_type=report.scam_type) }}">Learn More</a></p>
+
+    <h2 class="section-heading">Reported loss</h2>
+    <p>{{ '${:,}'.format(report.dollar_value or 0) }}</p>
 
     <h2 class="section-heading">Business name</h2>
     <p>{{ report.scammer_business_name or 'No name' }}</p>

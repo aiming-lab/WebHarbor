@@ -36,6 +36,7 @@
           {% if biz.website %}<a href="{{ biz.website }}" rel="noreferrer">Visit Website</a>{% endif %}
           {% if biz.phone %}<a href="tel:{{ biz.phone }}">{{ biz.phone }}</a>{% endif %}
           <a href="{{ url_for('leave_a_review_form', biz_id=biz.id) }}">Write a Review</a>
+          {% if biz.offers_quotes %}<a href="{{ url_for('get_quote_form', biz_id=biz.id) }}">Get a Quote</a>{% endif %}
           {% if current_user.is_authenticated %}
           <form method="post" action="{{ url_for('toggle_favorite', biz_id=biz.id) }}" style="display:inline;">
             <button class="btn btn-outline" type="submit" style="padding:.3rem .9rem;font-size:.85rem;">
