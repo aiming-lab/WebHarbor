@@ -38,7 +38,7 @@ def canonical(answer: str) -> str:
 def denied(text: str, start: int, end: int) -> bool:
     prefix = re.split(BOUNDARY, text[:start])[-1]
     # A negation after a completed assertion refers to the next claim.
-    return bool(re.search(r"\b(?:not|never|neither|nor|isn't|aren't|wasn't|don't|doesn't|do not|does not|instead of|rather than)\b[^,;]*$", prefix)
+    return bool(re.search(r"\b(?:no|not|never|neither|nor|isn't|aren't|wasn't|don't|doesn't|do not|does not|instead of|rather than)\b[^,;]*$", prefix)
                 or re.match(r'\s*(?:(?:is|are|was) )?(?:false|incorrect|wrong|not included|not required)\b', text[end:]))
 
 
@@ -87,8 +87,8 @@ def rating(answer: str, expected: float) -> bool:
 
 
 def rewards(answer: str, points: int, certificates: int) -> bool:
-    return (facts(answer, [VALUE + r'\s*(?:reward )?(?:points?|pts)\b', r'\b(?:points?|balance)\s*(?:balance|is|:|=)*\s*' + VALUE], points)
-            and facts(answer, [VALUE + r'\s*(?:available )?certificate(?:s|\(s\))?\b', r'\bcertificates?\s*(?:available|is|:|=)*\s*' + VALUE], certificates))
+    return (facts(answer, [VALUE + r'\s*(?:reward )?(?:points?|pts)\b', r'\b(?:points?(?:[ \t]+balance)?|balance)[ \t]*(?:is|:|=)[ \t]*' + VALUE], points)
+            and facts(answer, [VALUE + r'\s*(?:available )?certificate(?:s|\(s\))?\b', r'\bcertificates?(?:[ \t]+available)?[ \t]*(?:is|:|=)[ \t]*' + VALUE], certificates))
 
 
 def lenses(answer: str) -> bool:
