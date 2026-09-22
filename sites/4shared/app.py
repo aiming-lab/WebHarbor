@@ -16,6 +16,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
+from sqlalchemy.exc import IntegrityError
 
 
 SITE_SLUG = "4shared"
@@ -31,8 +32,8 @@ PASSWORD_NAMESPACE = "webharbor-4shared-v1"
 
 PREMIUM_PLANS = {
     "100": {"label": "Premium 100 GB", "account_plan": "Premium", "storage_mb": 102400, "annual": 77.88},
-    "500": {"label": "Premium 500 GB", "account_plan": "Premium 500 GB", "storage_mb": 512000, "annual": 29.99},
-    "1000": {"label": "Premium 1 TB", "account_plan": "Premium 1 TB", "storage_mb": 1048576, "annual": 39.99},
+    "500": {"label": "Premium 500 GB", "account_plan": "Premium 500 GB", "storage_mb": 512000, "annual": 119.88},
+    "1000": {"label": "Premium 1 TB", "account_plan": "Premium 1 TB", "storage_mb": 1048576, "annual": 155.88},
 }
 
 UPLOAD_CATEGORY_BY_EXTENSION = {
@@ -269,6 +270,62 @@ def owned_file_or_404(file_id: int) -> FileItem:
     return item
 
 
+def viewable_file_or_404(file_id: int) -> FileItem:
+    """A file the current user is allowed to act on: public, or their own private one.
+
+    Never a trashed file. Used by every route that writes a row referencing a file
+    the user does not necessarily own (favorite / comment / share), so that another
+    account's private filename can never surface through those surfaces.
+    """
+    item = db.get_or_404(FileItem, file_id)
+    owner_is_current = current_user.is_authenticated and item.owner_id == current_user.id
+    if item.deleted or (not item.public and not owner_is_current):
+        abort(404)
+    return item
+
+
+def bounded_int(raw, low: int, high: int) -> int | None:
+    """A plain decimal integer inside [low, high], else None. SQLite enforces neither."""
+    value = (raw or "").strip()
+    if not value.isdigit():
+        return None
+    number = int(value)
+    return number if low <= number <= high else None
+
+
+def owned_folder_id_or_abort(raw) -> int | None:
+    """'' means the account root; anything else must be one of this user's folders.
+
+    A non-numeric value is a client error (400), not a silent fall back to the root.
+    """
+    value = (raw or "").strip()
+    if not value:
+        return None
+    if not value.isdigit():
+        abort(400)
+    folder_id = int(value)
+    if not Folder.query.filter_by(id=folder_id, user_id=current_user.id).first():
+        abort(404)
+    return folder_id
+
+
+def allocate_file_slug(filename: str, user_id: int) -> str:
+    """`<slug>-<user>`, then the lowest free `-N` suffix.
+
+    Derived from the rows that exist rather than from a wall-clock counter, so a
+    second upload of the same name (in the same second, or after the first was
+    trashed) gets a fresh slug instead of violating files.slug UNIQUE.
+    """
+    base = f"{slugify(filename)}-{user_id}"
+    taken = {row[0] for row in db.session.query(FileItem.slug).filter(FileItem.slug.like(f"{base}%")).all()}
+    if base not in taken:
+        return base
+    suffix = 2
+    while f"{base}-{suffix}" in taken:
+        suffix += 1
+    return f"{base}-{suffix}"
+
+
 @app.context_processor
 def common_context():
     categories = ["Music", "Video", "Apps", "Images", "Books", "Documents", "Archives"]
@@ -280,10 +337,9 @@ def common_context():
 
 @app.route("/")
 def index():
-    featured = public_files_query().filter_by(featured=True).order_by(FileItem.id.asc()).limit(8).all()
-    popular = public_files_query().order_by(FileItem.download_count.desc(), FileItem.id.asc()).limit(8).all()
-    recent = public_files_query().order_by(FileItem.uploaded_at.desc(), FileItem.id.asc()).limit(8).all()
-    return render_template("index.html", featured=featured, popular=popular, recent=recent)
+    # index.html renders the hero, the drop zone and the app band only; it lists no
+    # files, so the homepage runs no catalog queries.
+    return render_template("index.html")
 
 
 @app.route("/search")
@@ -307,7 +363,7 @@ def search():
 @app.route("/category/<category>")
 def category(category: str):
     display = category.replace("-", " ").title()
-    files = public_files_query().filter(db.func.lower(FileItem.category) == display.lower()).order_by(FileItem.download_count.desc()).all()
+    files = public_files_query().filter(db.func.lower(FileItem.category) == display.lower()).order_by(FileItem.download_count.desc(), FileItem.id.asc()).all()
     if not files:
         abort(404)
     return render_template("category.html", files=files, category=display)
@@ -318,7 +374,7 @@ def file_detail(slug: str):
     item = FileItem.query.filter_by(slug=slug, deleted=False).first_or_404()
     if not item.public and (not current_user.is_authenticated or item.owner_id != current_user.id):
         abort(404)
-    related = public_files_query().filter(FileItem.category == item.category, FileItem.id != item.id).order_by(FileItem.download_count.desc()).limit(6).all()
+    related = public_files_query().filter(FileItem.category == item.category, FileItem.id != item.id).order_by(FileItem.download_count.desc(), FileItem.id.asc()).limit(6).all()
     return render_template("file_detail.html", file=item, related=related)
 
 
@@ -377,7 +433,7 @@ def register():
     return render_template("register.html")
 
 
-@app.get("/logout")
+@app.post("/logout")
 @login_required
 def logout():
     logout_user()
@@ -426,9 +482,7 @@ def my_files():
 @login_required
 def folder_new():
     name = request.form.get("name", "").strip()[:120]
-    parent_id = request.form.get("parent_id", type=int)
-    if parent_id and not Folder.query.filter_by(id=parent_id, user_id=current_user.id).first():
-        abort(404)
+    parent_id = owned_folder_id_or_abort(request.form.get("parent_id"))
     if not name:
         flash("Folder name is required.", "error")
     elif Folder.query.filter_by(user_id=current_user.id, parent_id=parent_id, name=name).first():
@@ -448,30 +502,41 @@ def upload():
         filename = request.form.get("filename", "").strip()[:220]
         category_name = request.form.get("category", "auto")[:32]
         description = request.form.get("description", "").strip()[:1000]
-        folder_id = request.form.get("folder_id", type=int)
-        if folder_id and not Folder.query.filter_by(id=folder_id, user_id=current_user.id).first():
-            abort(404)
+        folder_id = owned_folder_id_or_abort(request.form.get("folder_id"))
+        size_kb = bounded_int(request.form.get("size_kb"), 1, 4096)
+        visibility = (request.form.get("visibility") or "").strip()
         if not filename or "." not in filename:
             flash("Enter a filename with an extension, such as notes.pdf.", "error")
-        else:
-            extension = filename.rsplit(".", 1)[1].lower()[:12]
-            if category_name == "auto":
-                category_name = UPLOAD_CATEGORY_BY_EXTENSION.get(extension, "Documents")
-            elif category_name not in {"Music", "Video", "Apps", "Images", "Books", "Documents", "Archives"}:
-                category_name = "Documents"
-            slug = f"{slugify(filename)}-{current_user.id}-{int(datetime.utcnow().timestamp())}"
-            item = FileItem(
-                owner_id=current_user.id, folder_id=folder_id, filename=filename, slug=slug,
-                category=category_name, extension=extension, mime_type="application/octet-stream",
-                size_bytes=max(1024, request.form.get("size_kb", type=int, default=128) * 1024),
-                description=description, tags="personal upload", license_name="Private",
-                uploader_name=current_user.display_name, public=request.form.get("public") == "on",
-                uploaded_at=datetime.utcnow(), modified_at=datetime.utcnow(), preview_text=description,
-            )
+            return render_template("upload.html", folders=folders), 400
+        if size_kb is None:
+            flash("Enter a size in KB between 1 and 4096.", "error")
+            return render_template("upload.html", folders=folders), 400
+        if visibility not in {"private", "public"}:
+            flash("Choose whether this file is private or public.", "error")
+            return render_template("upload.html", folders=folders), 400
+        extension = filename.rsplit(".", 1)[1].lower()[:12]
+        if category_name == "auto":
+            category_name = UPLOAD_CATEGORY_BY_EXTENSION.get(extension, "Documents")
+        elif category_name not in {"Music", "Video", "Apps", "Images", "Books", "Documents", "Archives"}:
+            category_name = "Documents"
+        item = FileItem(
+            owner_id=current_user.id, folder_id=folder_id, filename=filename,
+            slug=allocate_file_slug(filename, current_user.id),
+            category=category_name, extension=extension, mime_type="application/octet-stream",
+            size_bytes=size_kb * 1024,
+            description=description, tags="personal upload", license_name="Private",
+            uploader_name=current_user.display_name, public=visibility == "public",
+            uploaded_at=datetime.utcnow(), modified_at=datetime.utcnow(), preview_text=description,
+        )
+        try:
             db.session.add(item)
             db.session.commit()
-            flash(f"{filename} uploaded.", "success")
-            return redirect(url_for("my_files", folder=folder_id) if folder_id else url_for("my_files"))
+        except IntegrityError:
+            db.session.rollback()
+            flash("That upload collided with an existing record. Try again.", "error")
+            return render_template("upload.html", folders=folders), 409
+        flash(f"{filename} uploaded.", "success")
+        return redirect(url_for("my_files", folder=folder_id) if folder_id else url_for("my_files"))
     return render_template("upload.html", folders=folders)
 
 
@@ -495,9 +560,7 @@ def rename_file(file_id: int):
 @login_required
 def move_file(file_id: int):
     item = owned_file_or_404(file_id)
-    folder_id = request.form.get("folder_id", type=int)
-    if folder_id and not Folder.query.filter_by(id=folder_id, user_id=current_user.id).first():
-        abort(404)
+    folder_id = owned_folder_id_or_abort(request.form.get("folder_id"))
     item.folder_id = folder_id
     item.modified_at = datetime.utcnow()
     db.session.commit()
@@ -537,9 +600,7 @@ def restore_file(file_id: int):
 @app.post("/file/<int:file_id>/favorite")
 @login_required
 def toggle_favorite(file_id: int):
-    item = db.get_or_404(FileItem, file_id)
-    if item.deleted:
-        abort(404)
+    item = viewable_file_or_404(file_id)
     row = Favorite.query.filter_by(user_id=current_user.id, file_id=item.id).first()
     if row:
         db.session.delete(row)
@@ -581,13 +642,13 @@ def saved():
 @app.route("/file/<int:file_id>/share", methods=["GET", "POST"])
 @login_required
 def share_file(file_id: int):
-    item = db.get_or_404(FileItem, file_id)
-    if not item.public and item.owner_id != current_user.id:
-        abort(404)
+    item = viewable_file_or_404(file_id)
+    links = SharedLink.query.filter_by(user_id=current_user.id, file_id=item.id).order_by(SharedLink.created_at.desc()).all()
     if request.method == "POST":
-        permission = request.form.get("permission", "view")
+        permission = (request.form.get("permission") or "").strip()
         if permission not in {"view", "download"}:
-            permission = "view"
+            flash("Choose a link permission.", "error")
+            return render_template("share.html", file=item, links=links), 400
         token = secrets.token_urlsafe(12)
         link = SharedLink(user_id=current_user.id, file_id=item.id, token=token, permission=permission,
                           label=request.form.get("label", "").strip()[:120], created_at=datetime.utcnow())
@@ -595,7 +656,6 @@ def share_file(file_id: int):
         db.session.commit()
         flash("Share link created.", "success")
         return redirect(url_for("share_file", file_id=item.id))
-    links = SharedLink.query.filter_by(user_id=current_user.id, file_id=item.id).order_by(SharedLink.created_at.desc()).all()
     return render_template("share.html", file=item, links=links)
 
 
@@ -610,7 +670,7 @@ def shared(token: str):
 @app.post("/file/<int:file_id>/comment")
 @login_required
 def add_comment(file_id: int):
-    item = db.get_or_404(FileItem, file_id)
+    item = viewable_file_or_404(file_id)
     body = request.form.get("body", "").strip()[:600]
     if len(body) < 2:
         flash("Comment cannot be empty.", "error")
@@ -637,9 +697,10 @@ def premium():
 @app.route("/premium/checkout", methods=["GET", "POST"])
 @login_required
 def premium_checkout():
-    plan_key = request.values.get("plan", "100")
+    # No silent fallback: a missing or unknown plan is a 404, never the first plan.
+    plan_key = (request.values.get("plan") or "").strip()
     if plan_key not in PREMIUM_PLANS:
-        plan_key = "100"
+        abort(404)
     plan = PREMIUM_PLANS[plan_key]
     period = "annual"
     amount = plan[period]
@@ -699,9 +760,20 @@ def health():
     return {"ok": True, "site": SITE_SLUG, "files": public_files_query().count()}
 
 
+@app.errorhandler(400)
+def bad_request(_error):
+    return render_template("400.html"), 400
+
+
 @app.errorhandler(404)
 def not_found(_error):
     return render_template("404.html"), 404
+
+
+@app.errorhandler(500)
+def server_error(_error):
+    db.session.rollback()
+    return render_template("500.html"), 500
 
 
 def initialize_database() -> None:

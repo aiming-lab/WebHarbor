@@ -4,7 +4,7 @@
 <section class="search-page"><div class="container">
   <div class="search-tabs" aria-label="Categories">
     <a class="{% if category == 'All Files' %}active{% endif %}" href="{{ url_for('search',q=query) }}">All</a>
-    {% for item in ['Music','Video','Apps','Images','Books','Archives'] %}<a class="{% if category == item %}active{% endif %}" href="{{ url_for('search',q=query,category=item) }}">{{ item }}</a>{% endfor %}
+    {% for item in nav_categories %}<a class="{% if category == item %}active{% endif %}" href="{{ url_for('search',q=query,category=item) }}">{{ item }}</a>{% endfor %}
   </div>
   <div class="result-toolbar">
     <strong>{{ files|length }} files</strong>

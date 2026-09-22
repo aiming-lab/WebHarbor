@@ -8,5 +8,5 @@
   <a class="{% if request.endpoint == 'activity' %}current{% endif %}" href="{{ url_for('activity') }}">◷ &nbsp; Activity</a>
   <a class="{% if request.endpoint == 'account' %}current{% endif %}" href="{{ url_for('account') }}">● &nbsp; Account</a>
   <a class="{% if request.endpoint == 'account_edit' %}current{% endif %}" href="{{ url_for('account_edit') }}">⚙ &nbsp; Settings</a>
-  <a href="{{ url_for('logout') }}">↪ &nbsp; Log out</a>
+  <form class="account-nav-logout" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">↪ &nbsp; Log out</button></form>
 </nav>
