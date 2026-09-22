@@ -1,0 +1,98 @@
+{% extends "base.html" %}
+{% block title %}{{ game.title }}{% endblock %}
+{% block content %}
+<div class="page-wrap-inner">
+  <div class="breadcrumb-links">
+    <a href="{{ url_for('math_games') }}">Math Games</a> <span class="sep">/</span>
+    {% if game.topic %}<a href="{{ url_for('game_detail', ident=game.topic) }}">{{ topic_name }}</a> <span class="sep">/</span>{% endif %}
+    {{ game.title }}
+  </div>
+
+  <div class="detail-layout">
+    <div class="detail-main">
+      <h1>{{ game.title }}</h1>
+      <div class="game-stage">
+        <div class="open-fullscreen">Open</div>
+        <div class="stage-inner race-stage" id="raceStage" data-game="{{ game.slug }}" data-operation="{{ game.topic or 'counting' }}" data-contents="{{ game.contents }}">
+          <div class="race-top">
+            <div class="race-lane you"><span class="lane-label">You</span><div class="lane-track"><div class="lane-runner" id="runnerYou"></div></div></div>
+            <div class="race-lane"><span class="lane-label">Racer 1</span><div class="lane-track"><div class="lane-runner ai1"></div></div></div>
+            <div class="race-lane"><span class="lane-label">Racer 2</span><div class="lane-track"><div class="lane-runner ai2"></div></div></div>
+            <div class="race-lane"><span class="lane-label">Racer 3</span><div class="lane-track"><div class="lane-runner ai3"></div></div></div>
+          </div>
+          <div class="race-question" id="raceQuestion" hidden>
+            <div class="rq-text" id="rqText"></div>
+            <div class="rq-input-row">
+              <input class="rq-answer" id="rqAnswer" type="text" inputmode="numeric" aria-label="Enter your answer" maxlength="4" autocomplete="off">
+              <button class="rq-submit" id="rqSubmit" type="button">Submit</button>
+            </div>
+            <div class="rq-feedback" id="rqFeedback"></div>
+          </div>
+          <div class="race-overlay" id="raceOverlay">
+            <h3>{{ game.title }}</h3>
+            <p id="raceSubtitle">{{ game.description or 'Answer math facts to win the race!' }}</p>
+            <button id="raceStart" type="button">Start Race</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="game-meta">
+        <div class="field-name-field-instructions">
+          <p>{{ game.description }}</p>
+        </div>
+        {% if game.contents %}<div class="field-label-inline field"><span class="field-label">Contents: </span><span>{{ game.contents }}</span></div>{% endif %}
+        {% if game.standards %}<div class="field-label-inline field"><span class="field-label">Standards: </span><span>{{ game.standards }}</span></div>{% endif %}
+        {% if game.players %}<div class="field-label-inline field"><span class="field-label">Players: </span><span>{{ game.players }}</span></div>{% endif %}
+        <div class="favorite-row" style="margin-top:14px;">
+          {% if current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('toggle_favorite', slug=game.slug) }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="btn-continue" style="font-size:14px;padding:8px 18px;">
+              {% if is_favorite %}♥ Remove from favorites{% else %}♡ Add to favorites{% endif %}
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="sidebar-right">
+      <div class="views-element-container">
+        <div class="games-grid grid-3 more-games-section" style="grid-template-columns:1fr;">
+          <div class="section-header" style="justify-content:flex-start;">
+            <h2 style="font-size:26px;text-align:left;">More Games</h2>
+            <div class="header-right"><a class="link-arrow--next" href="{{ url_for('math_games') }}">See all games</a></div>
+          </div>
+          {% if related %}
+          <div class="games-grid" style="grid-template-columns:1fr;gap:12px;">
+            {% for g in related %}
+            <div class="views-row">
+              <div class="views-field views-field-field-thumbnail">
+                <div class="field-content">
+                  <a href="{{ url_for('game_detail', ident=g.slug) }}">
+                    <img class="game-thumb" src="/static/images/games/related/{{ g.slug }}.png" width="337" height="214" alt="{{ g.title }} Game">
+                  </a>
+                </div>
+              </div>
+              <div class="views-field views-field-title-1">
+                <span class="field-content">
+                  <a href="{{ url_for('game_detail', ident=g.slug) }}" class="term-icon">
+                    <span class="term-icon op-{{ g.topic or 'none' }}"></span>{{ g.title }}
+                  </a>
+                </span>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          {% else %}
+          <div class="no-related-games">There are no related games available</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/race.js"></script>
+{% endblock %}

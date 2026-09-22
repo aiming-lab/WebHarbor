@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}{{ op_name }} Quiz{% endblock %}
+{% block content %}
+<div class="breadcrumb-links">
+  <a href="{{ url_for('quizzes_index') }}">Quizzes</a> <span class="sep">/</span> <a href="{{ url_for('quiz_page', operation=operation) }}">{{ op_name }}</a>
+</div>
+
+<div class="quiz-frame">
+  <div class="quiz-panel">
+    <div class="quiz-op-header">
+      <span class="op-badge">{{ op_name }}</span>
+    </div>
+    <div class="quiz-question-count">Question {{ question_no }} of {{ attempt.total_questions }}</div>
+    <div class="quiz-timer" id="quizTimer" data-seconds="{{ time_per_question }}">{{ time_per_question }}</div>
+    <form class="quiz-question-area quiz-answer-form" method="post" action="{{ url_for('quiz_answer', operation=operation) }}" id="answerForm">
+      <input type="hidden" name="attempt" value="{{ attempt.token }}">
+      <input type="hidden" name="elapsed_ms" value="0" id="elapsedField">
+      <input type="hidden" name="timeout" value="0" id="timeoutField">
+      <div class="question-text">
+        <span>{{ question[0] }}</span>
+        <img src="/static/images/quiz/symbols/{{ operation }}.png" alt="{{ symbol }}">
+        <span>{{ question[1] }}</span>
+        <img src="/static/images/quiz/symbols/equals.png" alt="=">
+      </div>
+      <input type="text" name="answer" id="userAnswer" aria-label="Enter your answer" inputmode="numeric" maxlength="4" autocomplete="off" autofocus>
+      <div class="quiz-numpad">
+        <button type="button" data-key="1">1</button>
+        <button type="button" data-key="2">2</button>
+        <button type="button" data-key="3">3</button>
+        <button type="button" data-key="4">4</button>
+        <button type="button" data-key="5">5</button>
+        <button type="button" data-key="6">6</button>
+        <button type="button" data-key="7">7</button>
+        <button type="button" data-key="8">8</button>
+        <button type="button" data-key="9">9</button>
+        <button type="button" class="action" id="clearBtn">clear</button>
+        <button type="button" data-key="0">0</button>
+        <button type="submit" id="submitBtn">submit</button>
+      </div>
+    </form>
+    <div class="instruction-text">Tip: You can use the numbers on your keyboard and "Enter" to submit</div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+(function () {
+  var timerEl = document.getElementById('quizTimer');
+  var seconds = timerEl.getAttribute('data-seconds');
+  var unlimited = (seconds === 'Unlimited' || seconds === 'unlimited');
+  var remaining = unlimited ? null : parseInt(seconds, 10);
+  var start = Date.now();
+  var form = document.getElementById('answerForm');
+  var timeoutField = document.getElementById('timeoutField');
+
+  function tick() {
+    if (unlimited) { timerEl.textContent = 'Unlimited'; return; }
+    var left = remaining - Math.round((Date.now() - start) / 1000);
+    if (left <= 0) {
+      document.getElementById('elapsedField').value = Date.now() - start;
+      timeoutField.value = '1';
+      form.submit();
+      return;
+    }
+    timerEl.textContent = left + ' Sec.';
+    setTimeout(tick, 250);
+  }
+  if (unlimited) { timerEl.textContent = 'Unlimited'; }
+  else { tick(); }
+
+  var answer = document.getElementById('userAnswer');
+  document.querySelectorAll('.quiz-numpad button[data-key]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      answer.value += b.getAttribute('data-key');
+      answer.focus();
+    });
+  });
+  document.getElementById('clearBtn').addEventListener('click', function () {
+    answer.value = '';
+    answer.focus();
+  });
+  form.addEventListener('submit', function () {
+    document.getElementById('elapsedField').value = Date.now() - start;
+  });
+  answer.focus();
+})();
+</script>
+{% endblock %}

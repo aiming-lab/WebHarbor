@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{{ op_name }} Quiz Results{% endblock %}
+{% block content %}
+<div class="breadcrumb-links">
+  <a href="{{ url_for('quizzes_index') }}">Quizzes</a> <span class="sep">/</span>
+  <a href="{{ url_for('quiz_page', operation=operation) }}">{{ op_name }}</a> <span class="sep">/</span> Results
+</div>
+
+<div class="quiz-frame">
+  <div class="results-container">
+    <div class="results-banner">
+      <img src="/static/images/quiz/results-screen/results-text.png" alt="results" class="results-text-image">
+    </div>
+    <div class="results-summary">
+      <div>{{ attempt.operation }}: {{ attempt.range_label }}, <span class="time-per-question-results">{{ attempt.time_per_question }} seconds</span></div>
+      <div class="results-feedback">{{ feedback }}</div>
+      <div class="user-time">Average Time Per Question: {{ attempt.avg_seconds }} seconds</div>
+      <div class="user-score">{{ attempt.correct_count }} out of {{ attempt.total_questions }}
+        {% if needs_practice %}
+        <div class="needs-practice-text">★ Needs Practice with {{ needs_practice | join(', ') }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <table class="resultsTable">
+      {% for row in rows %}
+      <tr>
+        <td class="right-or-wrong-column">
+          {% if row.right %}
+          <img src="/static/images/quiz/results-screen/check.png" alt="✓">
+          {% else %}
+          <img src="/static/images/quiz/results-screen/x.png" alt="x">
+          {% endif %}
+        </td>
+        <td class="{% if row.right %}user-correct-answer{% else %}user-incorrect-answer{% endif %}">
+          {{ row.a }} {{ row.symbol }} {{ row.b }} = {% if row.got == -1 %}{% else %}{{ row.got }}{% endif %}
+        </td>
+        {% if not row.right %}
+        <td class="corrected-answer">({{ row.correct }})</td>
+        {% else %}
+        <td class="results-corrected-answer-none">&nbsp;</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </table>
+
+    <div class="submit-button-area">
+      <form method="get" action="{{ url_for('quiz_page', operation=operation) }}">
+        <button type="submit" class="btn-secondary" formaction="{{ url_for('quiz_page', operation=operation) }}">Keep Practicing</button>
+      </form>
+    </div>
+
+    <div class="certificate-area" id="certificate-area">
+      {% if certificate %}
+      <div class="cert-form">
+        <img src="/static/images/quiz/results-screen/you-earned.png" alt="Your Score Earned a Certificate!" class="certificate-title">
+        <p>Certificate already issued to <strong>{{ certificate.person_name }}</strong> ({{ certificate.correct }}/{{ certificate.total }}).</p>
+        <a class="btn-secondary" href="{{ url_for('certificate_view', cert_id=certificate.id) }}">View your certificate</a>
+      </div>
+      {% elif attempt.score_pct < 80 %}
+      <div class="under80">
+        Score {{ certificate_threshold }} out of {{ attempt.total_questions }} to earn a certificate.
+        <div class="tryagain" id="tryagain">Try Again!</div>
+        <img src="/static/images/quiz/results-screen/try-again-1.png" alt="try again">
+      </div>
+      {% else %}
+      <form class="cert-form" method="post" action="{{ url_for('issue_certificate', token=attempt.token) }}" id="certificateForm">
+        <img src="/static/images/quiz/results-screen/you-earned.png" alt="Your Score Earned a Certificate!" class="certificate-title">
+        <h3 class="cert-info">1. Enter Your Name:</h3>
+        <input type="text" id="certificatename" name="name" maxlength="25" required>
+        <h3 class="cert-info" id="theme-select">2. Choose a Theme:</h3>
+        <input type="hidden" name="theme" id="themeField" value="mathgirl">
+        <div id="themeArea" class="themeArea">
+          {% for t in themes %}
+          <div class="certificate-theme {{ t.key }} {% if loop.first %}active{% endif %}" data-theme="{{ t.key }}" title="{{ t.label }}"></div>
+          {% endfor %}
+        </div>
+        <button type="submit" class="btn-continue">Get My Certificate</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var tryagain = document.getElementById('tryagain');
+  if (tryagain) {
+    tryagain.addEventListener('click', function () { window.location.href = tryagain.closest('.quiz-frame') ? document.referrer : window.location.href; });
+  }
+  var form = document.getElementById('certificateForm');
+  if (form) {
+    form.querySelectorAll('.certificate-theme').forEach(function (el) {
+      el.addEventListener('click', function () {
+        form.querySelectorAll('.certificate-theme').forEach(function (x) { x.classList.remove('active'); });
+        el.classList.add('active');
+        document.getElementById('themeField').value = el.getAttribute('data-theme');
+      });
+    });
+  }
+})();
+</script>
+{% endblock %}
