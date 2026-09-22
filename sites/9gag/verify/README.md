@@ -103,3 +103,11 @@ navigation), wrong answers per fact, wrong task id, unterminated runs, mixed ori
 read-only writes, schema/catalog tampering, stale-state preconditions, wrong target/account/reason/text,
 duplicate actions, counter-bump consistency and collateral writes. `verify/tests/` is excluded from the
 image by `.dockerignore`.
+
+## Reviewed answer and media corrections
+
+Read-task facts are checked by `answer_checks.py`: quantities include units and property associations; swapped values, contradictory claims and unrelated matching tokens are rejected by the covered controls. Common paraphrases (such as salvaged oak and quiet tactile switches) and exact unit conversions are accepted. These are bounded deterministic patterns, not unrestricted natural-language understanding. Task wording remains unchanged; rubrics explicitly permit equivalent phrasing.
+
+`migrate_seed.py` converts the 70 curated posts to text posts without changing descriptions, IDs, task facts or account state. The original archive is preserved; fetch/build applies the correction before runtime/reset copies. New posts default to no preview image.
+
+Additional focused controls live in `test_answer_checks.py` and `test_media_migration.py`. Re-run the official grading entrypoint on browser trajectories as well as these synthetic controls.

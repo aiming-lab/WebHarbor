@@ -10,9 +10,17 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from answer_checks import check as check_answer
+
 from verify_lib import (  # noqa: E402
-    advisory_llm_answer, check_detail_visited, check_read_only, check_trajectory_identity,
-    check_visited_path, contains_all, contains_count, final_answer, post_by_slug, run_verifier,
+    advisory_llm_answer,
+    check_detail_visited,
+    check_read_only,
+    check_trajectory_identity,
+    check_visited_path,
+    final_answer,
+    post_by_slug,
+    run_verifier,
 )
 
 TASK_ID = "9GAG--5"
@@ -30,8 +38,8 @@ def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_visited_path(judge, traj, "visited_sports_interest_feed", INTEREST_PATH)
     check_detail_visited(judge, traj, DETAIL_SLUGS)
-    judge.check("answer_has_kilometre", contains_count(answer, KILOMETRE), f"expected={KILOMETRE!r}, answer={answer!r}")
-    judge.check("answer_has_flag_colour", contains_all(answer, (COLOUR,)), f"expected={COLOUR!r}, answer={answer!r}")
+    judge.check("answer_has_kilometre", check_answer(5, "distance", answer), f"expected={KILOMETRE!r}, answer={answer!r}")
+    judge.check("answer_has_flag_colour", check_answer(5, "color", answer), f"expected={COLOUR!r}, answer={answer!r}")
     check_read_only(judge, initial_db, after_db)
     advisory_llm_answer(judge, answer, "kilometer 38; handmade orange flags", QUESTION)
 

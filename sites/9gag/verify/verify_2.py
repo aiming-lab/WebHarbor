@@ -10,9 +10,17 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from answer_checks import check as check_answer
+
 from verify_lib import (  # noqa: E402
-    advisory_llm_answer, check_detail_visited, check_read_only, check_search_visited,
-    check_trajectory_identity, contains_count, contains_phrase, final_answer, post_by_slug, run_verifier,
+    advisory_llm_answer,
+    check_detail_visited,
+    check_read_only,
+    check_search_visited,
+    check_trajectory_identity,
+    final_answer,
+    post_by_slug,
+    run_verifier,
 )
 
 TASK_ID = "9GAG--2"
@@ -30,8 +38,8 @@ def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_search_visited(judge, traj, SEARCH_TOKENS)
     check_detail_visited(judge, traj, DETAIL_SLUGS)
-    judge.check("answer_has_panel_wattage", contains_count(answer, WATTS), f"expected={WATTS!r}, answer={answer!r}")
-    judge.check("answer_has_controller_protection", contains_phrase(answer, PROTECTION), f"expected={PROTECTION!r}, answer={answer!r}")
+    judge.check("answer_has_panel_wattage", check_answer(2, "power", answer), f"expected={WATTS!r}, answer={answer!r}")
+    judge.check("answer_has_controller_protection", check_answer(2, "protection", answer), f"expected={PROTECTION!r}, answer={answer!r}")
     check_read_only(judge, initial_db, after_db)
     advisory_llm_answer(judge, answer, "120-watt folding panel; controller kept in a waterproof lunch box", QUESTION)
 

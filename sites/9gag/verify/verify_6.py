@@ -10,9 +10,17 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+from answer_checks import check as check_answer
+
 from verify_lib import (  # noqa: E402
-    advisory_llm_answer, check_detail_visited, check_read_only, check_search_visited,
-    check_trajectory_identity, contains_count, final_answer, post_by_slug, run_verifier,
+    advisory_llm_answer,
+    check_detail_visited,
+    check_read_only,
+    check_search_visited,
+    check_trajectory_identity,
+    final_answer,
+    post_by_slug,
+    run_verifier,
 )
 
 TASK_ID = "9GAG--6"
@@ -33,8 +41,8 @@ def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_search_visited(judge, traj, SEARCH_TOKENS)
     check_detail_visited(judge, traj, DETAIL_SLUGS)
-    judge.check("answer_has_attempt_count", contains_count(answer, ATTEMPTS), f"expected={ATTEMPTS!r}, answer={answer!r}")
-    judge.check("answer_has_shaping_hours", contains_count(answer, HOURS), f"expected={HOURS!r}, answer={answer!r}")
+    judge.check("answer_has_attempt_count", check_answer(6, "attempts", answer), f"expected={ATTEMPTS!r}, answer={answer!r}")
+    judge.check("answer_has_shaping_hours", check_answer(6, "hours", answer), f"expected={HOURS!r}, answer={answer!r}")
     check_read_only(judge, initial_db, after_db)
     advisory_llm_answer(judge, answer, "three attempts; nearly fourteen hours to shape", QUESTION)
 

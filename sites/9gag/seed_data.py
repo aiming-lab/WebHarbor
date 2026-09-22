@@ -72,17 +72,17 @@ def seed_database(db, User, Post, Comment, SavedPost, Vote):
         (f"Community remix {index}: {title.lower()}", f"A different community member adds context: {description}", section, f"{tags}|community", f"user{index:02d}")
         for index, (title, description, section, tags, _author) in enumerate(CURATED, start=1)
     ]
-    images = [row[3] for row in CAPTURED] + EXTRA_IMAGES
     for index, row in enumerate(rows):
         if len(row) == 7:
             source_id, title, description, image, section, tags, author = row
         else:
             title, description, section, tags, author = row
             source_id = f"seed{index:03d}"
-            image = images[index % len(images)]
+            # Curated text posts have no corresponding source photograph.
+            image = ""
         slug = "-".join("".join(ch.lower() if ch.isalnum() else " " for ch in title).split())[:150]
         db.session.add(Post(source_id=source_id, slug=f"{slug}-{index + 1}", title=title,
-                            description=description, image=image, section=section, post_type="Photo",
+                            description=description, image=image, section=section, post_type="Photo" if image else "Text",
                             tags=tags, author_name=author, up_votes=430 + ((index * 173) % 8400),
                             down_votes=5 + ((index * 7) % 90), comment_count=12 + ((index * 19) % 430),
                             created_rank=index + 1, featured=index in {2, 11, 24}))

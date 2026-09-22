@@ -21,4 +21,6 @@ The files under `static/images/reference/` are the 9GAG logo and interest thumbn
 
 An additional 28 unique feed images under `static/images/posts/` were captured through Chromium from the public `/v1/group-posts/group/default/type/{hot,trending,fresh}?c=10` responses. Their source post IDs remain in every filename, and the resolved source URLs are retained in the ignored reconnaissance record `scraped_data/feed-posts.json`.
 
-The 80-row seeded catalog rotates across 38 genuine 9GAG post images while keeping titles, descriptions, authors, tags, and task facts distinct. This avoids blank, generated, or placeholder imagery and limits repetition across feed pages.
+The ten captured posts retain their original media mappings. The 70 curated benchmark posts (including community remixes) are text posts: no matching source photograph was captured for their fictional descriptions. Their former arbitrary image rotation is removed by the tracked `migrate_seed.py` correction. The task facts and starting account state are preserved. User-created posts default to text; selecting a preview image remains optional.
+
+The original archive is unchanged. Unreferenced feed images, including the effectively black `posts/a9y3MD1-aac2d674.jpg`, are retained in the source archive but are not assigned to curated posts or offered in the submission form.
