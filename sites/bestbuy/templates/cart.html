@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}Cart · Best Buy Demo{% endblock %}
+{% block body_class %}cart-page{% endblock %}
 {% block content %}
   <section class="shell page-section">
     <div class="section-heading">
       <div>
-        <p class="eyebrow">Cart</p>
-        <h1>Your demo cart</h1>
+        <h1>Your Cart</h1>
       </div>
     </div>
     {% if requires_login %}
@@ -32,6 +32,7 @@
               </a>
               <div class="cart-row__actions">
                 <form action="{{ url_for('update_cart', item_id=item.id) }}" method="post">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                   <label>Qty
                     <select name="quantity">
                       {% for qty in range(0, 6) %}
@@ -46,10 +47,10 @@
           {% endfor %}
         </div>
         <aside class="panel order-summary">
-          <h2>Cart summary</h2>
+          <h2>Order Summary</h2>
           <div class="summary-row"><span>Items</span><strong>{{ totals.count }}</strong></div>
           <div class="summary-row"><span>Subtotal</span><strong>{{ totals.subtotal|currency }}</strong></div>
-          <p>This cart uses synthetic product, price, and fulfillment data only.</p>
+          <p>Product names, prices, and images come from the pinned source catalog; fulfillment state remains synthetic.</p>
           <a class="button" href="{{ url_for('checkout') }}">Go to checkout</a>
         </aside>
       </div>

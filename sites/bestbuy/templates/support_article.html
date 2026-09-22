@@ -1,8 +1,16 @@
 {% extends "base.html" %}
 {% block title %}{{ article.title }} · Best Buy Demo{% endblock %}
 {% block content %}
-  <section class="shell page-section article-layout">
-    <article class="panel">
+  <section class="shell page-section account-layout support-layout">
+    <aside class="account-nav support-nav">
+      <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}">Account</a>
+      <a href="{{ url_for('order_lookup') }}">Purchases</a>
+      <a href="{{ url_for('account_rewards') if current_user.is_authenticated else url_for('login') }}">Points &amp; Rewards</a>
+      <a href="{{ url_for('account_wishlist') if current_user.is_authenticated else url_for('login') }}">Saved Items</a>
+      <a href="{{ url_for('support_page') }}" class="is-active">Support</a>
+    </aside>
+    <div class="article-layout">
+    <article class="panel support-article">
       <p class="eyebrow">{{ article.topic }}</p>
       <h1>{{ article.title }}</h1>
       <p>{{ article.summary }}</p>
@@ -24,5 +32,6 @@
         {% endfor %}
       </div>
     </aside>
+    </div>
   </section>
 {% endblock %}

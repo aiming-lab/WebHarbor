@@ -8,9 +8,28 @@
         <h1>{{ page_title }}</h1>
         <p>{{ page_description }}</p>
       </div>
-      <div class="result-count">{{ products|length }} demo products</div>
+      <div class="result-count">{{ products|length }} items</div>
     </div>
-    <div class="catalog-layout">
+    {% if category %}
+      <nav class="category-subnav" aria-label="Explore categories">
+        {% for tile in category_tiles %}
+          <a href="{{ url_for('category_page', category_slug=tile.slug) }}">
+            <span><img src="{{ url_for('static', filename=tile.image_path) }}" alt=""></span>
+            <strong>{{ tile.name }}</strong>
+          </a>
+        {% endfor %}
+      </nav>
+      <section class="category-feature-banner">
+        <div>
+          <p class="category-feature-banner__kicker">{{ category.section }}</p>
+          <h2>{{ category.name }}. Built for your next upgrade.</h2>
+          <p>Shop source-backed {{ category.name|lower }} with pickup and delivery options.</p>
+          <a class="button button--outline" href="#catalog-results">Shop the category</a>
+        </div>
+        <img src="{{ url_for('static', filename=category.image_path) }}" alt="{{ category.name }}">
+      </section>
+    {% endif %}
+    <div class="catalog-layout" id="catalog-results">
       <aside class="filter-card">
         <form method="get" class="filter-form">
           {% if category %}
@@ -74,7 +93,7 @@
           {% include "_product_cards.html" %}
         {% else %}
           <div class="empty-state">
-            <h3>No synthetic products matched those filters</h3>
+            <h3>No products matched those filters</h3>
             <p>Try widening the price range or clearing one of the availability filters.</p>
           </div>
         {% endif %}

@@ -1,6 +1,12 @@
 {% extends "base.html" %}
 {% block title %}{{ product.name }} · Best Buy Demo{% endblock %}
+{% block body_class %}retail-product-page{% endblock %}
 {% block content %}
+  <nav class="shell breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('home') }}">Best Buy</a><span>›</span>
+    <a href="{{ url_for('categories_page') }}">{{ product.category.section }}</a><span>›</span>
+    <a href="{{ url_for('category_page', category_slug=product.category.slug) }}">{{ product.category.name }}</a>
+  </nav>
   <section class="shell page-section product-layout">
     <div class="product-layout__media">
       <img src="{{ url_for('static', filename=product.image_path) }}" alt="{{ product.name }}">
@@ -8,6 +14,7 @@
     <div class="product-layout__content">
       <p class="eyebrow">{{ product.brand.name }} · {{ product.category.name }}</p>
       <h1>{{ product.name }}</h1>
+      <p class="product-identifiers">SKU: {{ product.sku }}</p>
       <div class="rating-row">
         <span>{{ product.rating|stars }} ★</span>
         <span>{{ product.review_count }} ratings</span>
@@ -30,8 +37,30 @@
         {% if product.pickup_eligible %}<span>Store pickup</span>{% endif %}
         {% if product.delivery_eligible %}<span>Delivery</span>{% endif %}
       </div>
-      <div class="inline-actions">
+    </div>
+    <aside class="product-layout__buybox">
+      {% if product.deal_badge %}<strong class="buybox-deal">{{ product.deal_badge }}</strong>{% endif %}
+      <p class="buybox-price">{{ product.price|currency }}</p>
+      {% if product.list_price > product.price %}
+        <p class="buybox-savings"><strong>Save {{ (product.list_price - product.price)|currency }}</strong> · Comp. value {{ product.list_price|currency }}</p>
+      {% endif %}
+      <hr>
+      <h3>Availability</h3>
+      <ul class="bullet-list bullet-list--compact">
+        {% if product.pickup_eligible %}<li><strong>Pickup</strong> · Ready at a benchmark store</li>{% endif %}
+        {% if product.delivery_eligible %}<li><strong>Shipping</strong> · Available</li>{% endif %}
+      </ul>
+      <div class="buybox-panel">
+        {% for row in inventory_rows[:3] %}
+          <div class="inventory-row">
+            <strong>{{ row.store.name }}</strong>
+            <span>{{ row.quantity }} in local stock · {{ row.pickup_window }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <div class="buybox-actions">
         <form action="{{ url_for('add_to_cart') }}" method="post" class="inline-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="sku" value="{{ product.sku }}">
           <input type="hidden" name="next" value="{{ request.full_path }}">
           <label>Qty
@@ -44,33 +73,19 @@
           <button class="button" type="submit">Add to cart</button>
         </form>
         <form action="{{ url_for('toggle_compare', sku=product.sku) }}" method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="next" value="{{ request.full_path }}">
           <button class="button button--secondary" type="submit">{% if product.sku in compare_skus %}Remove from compare{% else %}Add to compare{% endif %}</button>
         </form>
         {% if current_user.is_authenticated %}
           <form action="{{ url_for('toggle_wishlist', sku=product.sku) }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             <input type="hidden" name="next" value="{{ request.full_path }}">
             <button class="button button--ghost" type="submit">{% if product.id in wishlist_product_ids %}Remove wishlist{% else %}Save to wishlist{% endif %}</button>
           </form>
         {% endif %}
       </div>
-    </div>
-    <aside class="product-layout__buybox">
-      <h3>Pickup and delivery</h3>
-      <p class="buybox-price">{{ product.price|currency }}</p>
-      <ul class="bullet-list bullet-list--compact">
-        <li>Demo checkout only. No real payment will run.</li>
-        <li>Pickup and shipping options are synthetic but grounded in seeded store data.</li>
-        <li>Protection plans below can be attached at checkout.</li>
-      </ul>
-      <div class="buybox-panel">
-        {% for row in inventory_rows[:3] %}
-          <div class="inventory-row">
-            <strong>{{ row.store.name }}</strong>
-            <span>{{ row.quantity }} in local stock · {{ row.pickup_window }}</span>
-          </div>
-        {% endfor %}
-      </div>
+      <p class="buybox-disclaimer">Local benchmark checkout only. No real payment or reservation.</p>
     </aside>
   </section>
 

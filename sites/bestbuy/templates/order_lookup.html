@@ -1,27 +1,27 @@
 {% extends "base.html" %}
 {% block title %}Order Lookup · Best Buy Demo{% endblock %}
+{% block body_class %}identity-page{% endblock %}
 {% block content %}
-  <section class="shell page-section auth-layout">
-    <div class="panel">
-      <p class="eyebrow">Order lookup</p>
-      <h1>Find a synthetic order by number</h1>
+  <section class="shell page-section auth-layout guest-order-layout">
+    <div class="panel identity-card sign-in-prompt">
+      <h1>Sign in or create your account</h1>
+      <p>View purchases, saved items, rewards, and support activity from a benchmark account.</p>
+      <a class="button button--secondary" href="{{ url_for('login') }}">Continue</a>
+    </div>
+    <div class="panel identity-card">
+      <h1>Find a Guest Order</h1>
+      <p>Check the status, options and tracking for a single local order.</p>
       <form method="post" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <label>Order number
           <input type="text" name="order_number" placeholder="BBY-240001" required>
         </label>
         <label>Email
           <input type="email" name="email" placeholder="demo@example.com" required>
         </label>
-        <button class="button" type="submit">Find order</button>
+        <button class="button button--secondary" type="submit">Find order</button>
       </form>
-    </div>
-    <div class="panel">
-      <h2>How it works</h2>
-      <ul class="bullet-list">
-        <li>Use a synthetic order number from seeded account history or benchmark tasks.</li>
-        <li>This form never contacts real Best Buy systems.</li>
-        <li>After a successful lookup, the order detail page stays available for the current session.</li>
-      </ul>
+      <p class="identity-terms">This form only checks deterministic local benchmark data.</p>
     </div>
   </section>
 {% endblock %}

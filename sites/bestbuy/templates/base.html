@@ -6,58 +6,65 @@
     <title>{% block title %}{{ site_name }} Demo Mirror{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
   </head>
-  <body>
-    <div class="promo-strip">
-      <div class="shell promo-strip__inner">
-        <span>Local benchmark mirror only</span>
-        <span>No real checkout, payment, or Best Buy APIs</span>
-        <span>Benchmark password: <strong>{{ benchmark_password }}</strong></span>
-      </div>
-    </div>
-
+  <body class="{% block body_class %}{% endblock %}">
     <header class="site-header">
       <div class="shell site-header__top">
-        <a href="{{ url_for('home') }}" class="logo-badge">
-          <span class="logo-badge__mark">BEST</span>
-          <span class="logo-badge__text">BUY<br>demo</span>
+        <a href="{{ url_for('home') }}" class="logo-badge" aria-label="Best Buy demo home">
+          <span>BEST</span>
+          <span>BUY<i></i></span>
         </a>
         <form class="site-search" action="{{ url_for('search_page') }}" method="get">
-          <input type="search" name="q" placeholder="Search laptops, TVs, headphones, support..." value="{{ request.args.get('q', '') }}">
-          <button type="submit">Search</button>
+          <input type="search" name="q" aria-label="Search Best Buy" placeholder="Search Best Buy" value="{{ request.args.get('q', '') }}">
+          <button type="submit" aria-label="Submit search">⌕</button>
         </form>
         <nav class="header-actions">
-          <a href="{{ url_for('stores_page') }}">Stores</a>
-          <a href="{{ url_for('support_page') }}">Support</a>
+          <a href="{{ url_for('stores_page') }}" class="header-action">
+            <span class="header-action__icon">▣</span>
+            <span><small>Your store</small><strong>{{ preferred_store.city if preferred_store else 'Select store' }}</strong></span>
+          </a>
           {% if current_user.is_authenticated %}
-            <a href="{{ url_for('account') }}">Account</a>
+            <a href="{{ url_for('account') }}" class="header-action">
+              <span class="header-action__icon">◯</span>
+              <span><small>Account</small><strong>{{ current_user.full_name.split()[0] }}</strong></span>
+            </a>
           {% else %}
-            <a href="{{ url_for('login') }}">Sign in</a>
+            <a href="{{ url_for('login') }}" class="header-action">
+              <span class="header-action__icon">◯</span>
+              <span><small>Account</small><strong>Sign in</strong></span>
+            </a>
           {% endif %}
-          <a href="{{ url_for('compare_page') }}">Compare <span>{{ compare_count }}</span></a>
-          <a href="{{ url_for('cart_page') }}">Cart <span>{{ cart_item_count }}</span></a>
+          <a href="{{ url_for('cart_page') }}" class="header-cart" aria-label="Cart, {{ cart_item_count }} items">
+            <span>Cart</span><strong>{{ cart_item_count }}</strong>
+          </a>
         </nav>
+        <a class="identity-return" href="{{ url_for('home') }}">Return to previous page</a>
       </div>
       <div class="shell site-header__nav">
-        <nav class="category-nav">
-          <a href="{{ url_for('categories_page') }}">All categories</a>
-          {% for category in nav_categories %}
-            <a href="{{ url_for('category_page', category_slug=category.slug) }}">{{ category.name }}</a>
-          {% endfor %}
+        <nav class="primary-nav">
+          <details class="nav-menu">
+            <summary>Shop</summary>
+            <div class="nav-menu__panel">
+              <div class="nav-menu__heading">
+                <strong>Shop</strong>
+                <a href="{{ url_for('categories_page') }}">All categories</a>
+              </div>
+              {% for category in nav_categories %}
+                <a href="{{ url_for('category_page', category_slug=category.slug) }}">{{ category.name }}</a>
+              {% endfor %}
+            </div>
+          </details>
+          <a href="{{ url_for('deals_page') }}">Deals</a>
+          <a href="{{ url_for('support_page') }}">Support &amp; Services</a>
+          <a href="{{ url_for('products_page') }}">Discover</a>
+        </nav>
+        <nav class="secondary-nav">
+          <a href="{{ url_for('compare_page') }}">Compare{% if compare_count %} ({{ compare_count }}){% endif %}</a>
+          <a href="{{ url_for('deals_page') }}">Top Deals</a>
+          <a href="{{ url_for('order_lookup') }}">Order Status</a>
+          <a href="{{ url_for('categories_page') }}">More</a>
         </nav>
       </div>
     </header>
-
-    {% if preferred_store %}
-      <section class="store-banner">
-        <div class="shell store-banner__inner">
-          <span>Preferred store</span>
-          <strong>{{ preferred_store.name }}</strong>
-          <span>{{ preferred_store.city }}, {{ preferred_store.state }}</span>
-          <a href="{{ url_for('store_page', store_slug=preferred_store.slug) }}">View hours & pickup</a>
-        </div>
-      </section>
-    {% endif %}
-
     <main class="page-main">
       <div class="shell">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -74,28 +81,68 @@
       {% block content %}{% endblock %}
     </main>
 
+    <div class="demo-notice">
+      <div class="shell">
+        <strong>LOCAL BENCHMARK MIRROR</strong>
+        <span>No real checkout, payment, or Best Buy APIs.</span>
+        <span>Demo password: <b>{{ benchmark_password }}</b></span>
+      </div>
+    </div>
+
     <footer class="site-footer">
       <div class="shell site-footer__grid">
         <div>
-          <h4>Best Buy mirror</h4>
-          <p>Deterministic local retail data for search, pickup, delivery, rewards, and checkout tasks.</p>
-        </div>
-        <div>
-          <h4>Benchmark accounts</h4>
+          <h4>Order &amp; Purchases</h4>
           <ul>
-            <li>alice.j@test.com</li>
-            <li>bob.c@test.com</li>
-            <li>carol.d@test.com</li>
-            <li>david.k@test.com</li>
+            <li><a href="{{ url_for('order_lookup') }}">Check Order Status</a></li>
+            <li><a href="{{ url_for('support_page') }}">Shipping, Delivery &amp; Pickup</a></li>
+            <li><a href="{{ url_for('account_orders') if current_user.is_authenticated else url_for('login') }}">Order History</a></li>
           </ul>
         </div>
         <div>
-          <h4>Quick links</h4>
+          <h4>Support &amp; Services</h4>
           <ul>
-            <li><a href="{{ url_for('deals_page') }}">Deals</a></li>
-            <li><a href="{{ url_for('order_lookup') }}">Order lookup</a></li>
-            <li><a href="{{ url_for('support_page') }}">Support articles</a></li>
+            <li><a href="{{ url_for('support_page') }}">Visit our Support Center</a></li>
+            <li><a href="{{ url_for('stores_page') }}">Store Pickup</a></li>
+            <li><a href="{{ url_for('deals_page') }}">Top Deals</a></li>
           </ul>
+        </div>
+        <div>
+          <h4>Payment Options</h4>
+          <ul>
+            <li><a href="{{ url_for('support_page') }}">My Best Buy Credit Card</a></li>
+            <li><a href="{{ url_for('support_page') }}">Lease to Own</a></li>
+            <li><a href="{{ url_for('support_page') }}">Buy Now, Pay Later</a></li>
+            <li><a href="{{ url_for('support_page') }}">Best Buy Business Financing</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>Rewards &amp; Membership</h4>
+          <ul>
+            <li><a href="{{ url_for('account_rewards') if current_user.is_authenticated else url_for('login') }}">My Best Buy Memberships</a></li>
+            <li><a href="{{ url_for('account_rewards') if current_user.is_authenticated else url_for('login') }}">View Points &amp; Certificates</a></li>
+            <li><a href="{{ url_for('deals_page') }}">Member Offers</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4>About Best Buy</h4>
+          <ul>
+            <li><a href="{{ url_for('support_page') }}">Corporate Information</a></li>
+            <li><a href="{{ url_for('support_page') }}">Careers</a></li>
+            <li><a href="{{ url_for('support_page') }}">Corporate Responsibility</a></li>
+            <li><a href="{{ url_for('support_page') }}">Accessibility</a></li>
+          </ul>
+        </div>
+      </div>
+      <div class="shell site-footer__bottom">
+        <div>
+          <strong>Get the latest deals and more.</strong>
+          <span>Source-backed local benchmark catalog.</span>
+        </div>
+        <div class="site-footer__links">
+          <a href="{{ url_for('support_page') }}">Privacy</a>
+          <a href="{{ url_for('support_page') }}">Terms &amp; Conditions</a>
+          <a href="{{ url_for('support_page') }}">Best Buy app</a>
         </div>
       </div>
     </footer>
