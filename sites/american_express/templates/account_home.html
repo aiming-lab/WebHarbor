@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Account Home | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-grid">
+    <aside class="account-side">
+      <a class="active" href="{{ url_for('account_home') }}">Account Home</a>
+      <a href="{{ url_for('account_statements') }}">Statements &amp; Activity</a>
+      <a href="{{ url_for('account_payments') }}">Make a Payment</a>
+      <a href="{{ url_for('account_rewards') }}">Rewards &amp; Benefits</a>
+      <a href="{{ url_for('account_offers') }}">Amex Offers</a>
+      <a href="{{ url_for('account_benefits') }}">Card Benefits</a>
+      <a href="{{ url_for('account_profile') }}">Profile</a>
+    </aside>
+    <div class="account-main">
+      <h1 class="section-title">Welcome, {{ current_user.display_name }}</h1>
+      <p class="section-sub">Member since {{ current_user.member_since or '2026' }} &middot; {{ current_user.email }}</p>
+
+      <div class="summary-row">
+        <div class="summary-card">
+          <div class="k">Total Balance</div>
+          <div class="v">${{ '{:,.2f}'.format(total_balance) }}</div>
+          <div class="s">Across {{ user_cards|length }} Card{{ 's' if user_cards|length != 1 }}</div>
+        </div>
+        <div class="summary-card">
+          <div class="k">Membership Rewards&reg; Points</div>
+          <div class="v">{{ '{:,}'.format(current_user.total_points()) }}</div>
+          <div class="s"><a href="{{ url_for('account_rewards') }}">Redeem points</a></div>
+        </div>
+      </div>
+
+      {% for uc in user_cards %}
+      <div class="card-tile" style="margin-bottom:18px;">
+        <div style="display:flex;gap:18px;align-items:center;flex-wrap:wrap;">
+          <img src="{{ url_for('static', filename=uc.card.card_art.replace('static/', '')) }}" alt="{{ uc.card.name }}" style="width:150px;border-radius:6px;">
+          <div style="flex:1 1 260px;">
+            <h3 style="margin:0;"><a href="{{ url_for('account_card_detail', user_card_id=uc.id) }}">{{ uc.card.name }}</a></h3>
+            <p style="font-size:13px;color:#5c5f63;margin:4px 0;">Card ending {{ uc.last4 }} &middot; opened {{ uc.opened_date.strftime('%B %Y') }}</p>
+            <table class="rates-table" style="margin:6px 0;">
+              <tr><th>Current Balance</th><td>${{ '{:,.2f}'.format(uc.current_balance) }}</td></tr>
+              <tr><th>Available Credit</th><td>${{ '{:,.2f}'.format(uc.available_credit()) }}</td></tr>
+              <tr><th>Points / Miles</th><td>{{ '{:,}'.format(uc.points_balance) }}</td></tr>
+            </table>
+            <div class="actions">
+              <a class="btn btn-primary btn-sm" href="{{ url_for('account_card_detail', user_card_id=uc.id) }}">View Activity</a>
+              <a class="btn btn-outline btn-sm" href="{{ url_for('account_payments') }}">Make a Payment</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

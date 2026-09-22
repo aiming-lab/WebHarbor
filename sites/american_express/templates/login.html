@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Log In | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <h1>Log In to Your Account</h1>
+    <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+      <div class="field">
+        <label for="email">User ID (email)</label>
+        <input id="email" name="email" type="email" required maxlength="140" autofocus>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required maxlength="72">
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Log In</button>
+        <a href="{{ url_for('register') }}">Create a new account</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

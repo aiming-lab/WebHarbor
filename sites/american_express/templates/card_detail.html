@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}{{ card.name }} | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <a href="{{ url_for('cards_index') }}">Credit Cards</a> &rsaquo; {{ card.name }}</p>
+  <div class="detail-grid">
+    <div class="detail-art">
+      <img src="{{ url_for('static', filename=card.card_art.replace('static/', '')) }}" alt="{{ card.name }}">
+      <div class="cta-col">
+        <a class="btn btn-primary" href="{{ url_for('apply_card', slug=card.slug) }}">Apply Now</a>
+      </div>
+      <p style="font-size:12px;color:#5c5f63;margin-top:10px;">Rates &amp; Fees apply &middot; Offer &amp; Benefit Terms apply</p>
+    </div>
+    <div class="detail-main">
+      <h1>{{ card.name }}</h1>
+      <p class="fee-line">Annual Fee: <b>{{ card.annual_fee_text }}</b></p>
+      <p style="color:#5c5f63;font-size:14px;margin-top:-8px;">APR: {{ card.apr_text }} &middot; Rewards: {{ card.rewards_summary }}</p>
+
+      <h2 style="color:#003a63;font-size:18px;">Welcome Offer</h2>
+      <div class="offer-box">
+        <span class="offer-tag">Limited Time Offer</span>
+        <div class="offer-headline">{{ card.welcome_headline }}</div>
+        <p>{{ card.welcome_body }}</p>
+        {% if card.offer_end %}
+        <p style="font-size:13px;color:#5c5f63;">Offer ends {{ card.offer_end.strftime('%m/%d/%y') }}.</p>
+        {% endif %}
+      </div>
+
+      <h2 style="color:#003a63;font-size:18px;">Benefits and Features</h2>
+      {% set benefit_images = card.benefit_images() %}
+      <div class="benefit-grid">
+        {% for benefit in card.benefits() %}
+        <div class="benefit-cell" style="{% if loop.index0|string in benefit_images %}flex-direction:column;align-items:stretch;{% endif %}">
+          {% if loop.index0|string in benefit_images %}
+          <img src="{{ url_for('static', filename=benefit_images[loop.index0|string].replace('static/', '')) }}" alt="{{ card.name }} benefit" style="width:100%;border-radius:6px;">
+          {% endif %}
+          <span style="display:flex;gap:12px;align-items:flex-start;">
+            <span class="glyph">&#10003;</span><span>{{ benefit }}</span>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h2 style="color:#003a63;font-size:18px;">Rates &amp; Fees</h2>
+      <table class="rates-table">
+        <tr><th>Annual Fee</th><td>{{ card.annual_fee_text }}</td></tr>
+        <tr><th>Purchase APR</th><td>{{ card.apr_text }}</td></tr>
+        <tr><th>Product Type</th><td>{{ 'Charge Card — pay in full each month' if card.product_type == 'charge' else 'Credit Card — you may carry a balance' }}</td></tr>
+        <tr><th>Rewards Program</th><td>{{ card.program }}</td></tr>
+      </table>
+
+      <h2 style="color:#003a63;font-size:18px;">Frequently Asked Questions about the {{ card.name }}</h2>
+      <div class="faq">
+        <details>
+          <summary>What is the annual fee for the {{ card.name }}?</summary>
+          <div class="a">The annual fee is {{ card.annual_fee_text }}. {{ 'Rates &amp; Fees apply.' }}</div>
+        </details>
+        <details>
+          <summary>What rewards does the {{ card.name }} earn?</summary>
+          <div class="a">{{ card.rewards_summary }} through the {{ card.program }} program.</div>
+        </details>
+        <details>
+          <summary>What is the purchase APR?</summary>
+          <div class="a">{{ card.apr_text }}.</div>
+        </details>
+      </div>
+
+      {% if related %}
+      <h2 style="color:#003a63;font-size:18px;">Compare the {{ card.name }} to other Cards</h2>
+      <div class="card-grid">
+        {% for other in related %}
+        <div class="card-tile">
+          <a class="art-link" href="{{ url_for('card_detail', slug=other.slug) }}">
+            <img src="{{ url_for('static', filename=other.card_art.replace('static/', '')) }}" alt="{{ other.name }}" style="width:190px;">
+          </a>
+          <h3><a href="{{ url_for('card_detail', slug=other.slug) }}">{{ other.name }}</a></h3>
+          <p class="fee">Annual Fee: <b>{{ other.annual_fee_text }}</b></p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

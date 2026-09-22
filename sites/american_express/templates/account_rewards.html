@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Rewards &amp; Benefits | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-grid">
+    <aside class="account-side">
+      <a href="{{ url_for('account_home') }}">Account Home</a>
+      <a href="{{ url_for('account_statements') }}">Statements &amp; Activity</a>
+      <a href="{{ url_for('account_payments') }}">Make a Payment</a>
+      <a class="active" href="{{ url_for('account_rewards') }}">Rewards &amp; Benefits</a>
+      <a href="{{ url_for('account_offers') }}">Amex Offers</a>
+      <a href="{{ url_for('account_benefits') }}">Card Benefits</a>
+      <a href="{{ url_for('account_profile') }}">Profile</a>
+    </aside>
+    <div class="account-main">
+      <h1 class="section-title">Rewards &amp; Benefits</h1>
+      <p class="section-sub">Track and redeem the points you earn on eligible purchases.</p>
+
+      <div class="summary-row">
+        {% for uc in user_cards %}
+        <div class="summary-card">
+          <div class="k">{{ uc.card.name }} ({{ uc.last4 }})</div>
+          <div class="v">{{ '{:,}'.format(uc.points_balance) }}</div>
+          <div class="s">{{ uc.card.program }}</div>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h2 class="section-title" style="font-size:20px;">Redeem Points</h2>
+      <p class="section-sub">Choose a Card and a redemption option. One {{ 'unit' }} per redemption.</p>
+      <div class="card-grid" style="margin-bottom:30px;">
+        {% for option in options %}
+        <div class="card-tile">
+          <h3>{{ option.name }}</h3>
+          <p style="font-size:14px;">{{ option.description }}</p>
+          <p class="fee">{{ option.points_per_unit|int }} points &rarr; <b>{{ option.unit_label }}</b></p>
+          <form method="post" action="{{ url_for('account_rewards_redeem') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="option_id" value="{{ option.id }}">
+            <div class="field" style="margin-bottom:10px;">
+              <label for="card_{{ option.id }}">Redeem from</label>
+              <select id="card_{{ option.id }}" name="user_card_id" required>
+                {% for uc in user_cards %}
+                <option value="{{ uc.id }}">{{ uc.card.name }} ending {{ uc.last4 }} &mdash; {{ '{:,}'.format(uc.points_balance) }} points</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit">Redeem</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h2 class="section-title" style="font-size:20px;">Reward Activity</h2>
+      <table class="data">
+        <thead>
+          <tr><th>Date</th><th>Card</th><th>Description</th><th class="num">Points Change</th></tr>
+        </thead>
+        <tbody>
+          {% for entry in activity %}
+          <tr>
+            <td>{{ entry.date.strftime('%m/%d/%Y') }}</td>
+            <td>{{ entry.user_card.card.name }} ({{ entry.user_card.last4 }})</td>
+            <td>{{ entry.description }}</td>
+            <td class="num {{ 'positive' if entry.points_change > 0 else 'negative' }}">{{ '+' if entry.points_change > 0 }}{{ '{:,}'.format(entry.points_change) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

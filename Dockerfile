@@ -189,12 +189,20 @@ RUN cd /opt/WebSyn/better_business_bureau && rm -rf instance instance_seed && \
     rm -rf instance __pycache__ && \
     echo "Better Business Bureau seed DB generated at build time."
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/american_express && \
+    cd /opt/WebSyn/american_express && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 -c "import app; import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/american_express.db', 'instance_seed/american_express.db'); \
+print('American Express seed DB generated at build time.')" && \
+    rm -rf instance
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40066
+EXPOSE 8101 40000-40067
 
 CMD ["/opt/websyn_start.sh"]

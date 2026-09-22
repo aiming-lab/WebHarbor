@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Checking Accounts | Open Online Checking Account | Amex US{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Banking &rsaquo; Personal Checking</p>
+  <div class="hero" style="margin-top:12px;border-radius:12px;background:#0b3059;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">American Express Rewards Checking</span>
+        <h1>{{ product.headline }}</h1>
+        <p>{{ product.intro }} Currently accepting applications from U.S. Card Members.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="{{ url_for('register') }}">Apply Now</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img src="{{ url_for('static', filename='images/consumer-checking/hero-image-desktop.jpg') }}" alt="Amex Rewards Checking">
+      </div>
+    </div>
+  </div>
+
+  <div class="band-white">
+    <div class="container">
+      <h2 class="section-title">Limited-Time Offer: Earn $300</h2>
+      <p class="section-sub">after you open an American Express Rewards Checking account by 02/01/2027 and receive a total of $7,500 or more of Qualifying Direct Deposit(s) within 90 days of account opening.</p>
+      <h2 class="section-title" style="margin-top:32px;">Featured Benefits</h2>
+      <div class="benefit-grid">
+        {% for feature in product.features() %}
+        <div class="benefit-cell"><span class="glyph">&#10003;</span><span>{{ feature }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="container">
+      <h2 class="section-title">An online checking account for earning rewards and building your balance</h2>
+      <p>Reward your everyday spending and earn 1 Membership Rewards point for every $2 of eligible Debit Card purchases. Then redeem those points for deposits right into your Amex Rewards Checking account. You&rsquo;ll also earn a {{ product.apy_text }} on your checking account balance.</p>
+      <p style="margin-top:18px;"><a href="{{ url_for('rewards_index') }}">See redemption options &rarr;</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}
