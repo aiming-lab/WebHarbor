@@ -1,0 +1,19 @@
+<a href="{{ url_for('doctor_detail', slug=doctor.slug) }}" class="doctor-card">
+    <div class="doctor-card-img">
+        {% if doctor.image %}
+        <img src="{{ url_for('static', filename=doctor.image) }}" alt="{{ doctor.name }}" loading="lazy">
+        {% else %}
+        <div class="doctor-card-img-placeholder">{{ doctor.name[:1] }}</div>
+        {% endif %}
+    </div>
+    <div class="doctor-card-body">
+        <div class="doctor-card-name">{{ doctor.name }}</div>
+        <div class="doctor-card-specialty">{{ doctor.specialty_name }}</div>
+        {% if doctor.review_count %}
+        <div class="doctor-card-rating">★ {{ '%.1f'|format(doctor.rating) }} <span class="muted">({{ doctor.review_count }} reviews)</span></div>
+        {% else %}
+        <div class="doctor-card-rating muted">No reviews yet</div>
+        {% endif %}
+        <div class="doctor-card-loc">{{ doctor.city }}, {{ doctor.state }}</div>
+    </div>
+</a>

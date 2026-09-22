@@ -1,0 +1,22 @@
+<a href="{{ url_for('product_detail', slug=product.slug) }}" class="product-card">
+    <div class="product-card-img">
+        {% if product.image %}
+        <img src="{{ url_for('static', filename=product.image) }}" alt="{{ product.name }}" loading="lazy">
+        {% else %}
+        <div class="product-card-img-placeholder"></div>
+        {% endif %}
+    </div>
+    <div class="product-card-body">
+        <div class="product-card-name">{{ product.name }}</div>
+        <div class="product-card-price">
+            {% if product.min_price == product.max_price %}
+                ${{ '%.2f'|format(product.min_price) }}
+            {% else %}
+                ${{ '%.2f'|format(product.min_price) }} &ndash; ${{ '%.2f'|format(product.max_price) }}
+            {% endif %}
+        </div>
+        {% if product.rating %}
+        <div class="product-card-rating">★ {{ '%.1f'|format(product.rating) }} ({{ product.review_count }})</div>
+        {% endif %}
+    </div>
+</a>

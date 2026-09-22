@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Order {{ order.order_number }} | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">Order {{ order.order_number }}</h1>
+    <p><span class="status-badge status-{{ order.status }}">{{ order.status }}</span> &middot; Placed {{ order.created_at.strftime('%Y-%m-%d') }}</p>
+
+    <table class="order-table">
+        <thead><tr><th>Item</th><th>Color / Size</th><th>Qty</th><th>Price</th></tr></thead>
+        <tbody>
+            {% for item in order.items %}
+            <tr>
+                <td>
+                    {% if item.product %}<a href="{{ url_for('product_detail', slug=item.product.slug) }}">{{ item.product_name }}</a>{% else %}{{ item.product_name }}{% endif %}
+                </td>
+                <td>{{ item.color }} / {{ item.size }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>${{ '%.2f'|format(item.price) }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="order-summary">
+        <p>Subtotal: ${{ '%.2f'|format(order.subtotal) }}</p>
+        <p>Shipping: ${{ '%.2f'|format(order.shipping) }}</p>
+        <p>Tax: ${{ '%.2f'|format(order.tax) }}</p>
+        <p class="order-total">Total: ${{ '%.2f'|format(order.total) }}</p>
+    </div>
+
+    <div class="ship-to">
+        <h3>Ship To</h3>
+        <p>{{ order.ship_name }}<br>{{ order.ship_address }}<br>{{ order.ship_city }}, {{ order.ship_state }} {{ order.ship_zip }}</p>
+    </div>
+</div>
+{% endblock %}

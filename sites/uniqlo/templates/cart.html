@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Shopping Cart | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">Shopping Cart</h1>
+    {% if items %}
+    <div class="cart-list">
+        {% for item in items %}
+        <div class="cart-row" data-item-id="{{ item.id }}">
+            <a href="{{ url_for('product_detail', slug=item.variant.product.slug) }}" class="cart-row-img">
+                {% if item.variant.product.image %}
+                <img src="{{ url_for('static', filename=item.variant.product.image) }}" alt="{{ item.variant.product.name }}">
+                {% endif %}
+            </a>
+            <div class="cart-row-info">
+                <a href="{{ url_for('product_detail', slug=item.variant.product.slug) }}">{{ item.variant.product.name }}</a>
+                <p class="muted">Color: {{ item.variant.color }} / Size: {{ item.variant.size }}</p>
+                <p>${{ '%.2f'|format(item.variant.price) }} &times; {{ item.quantity }}</p>
+            </div>
+            <form method="post" action="{{ url_for('cart_remove', item_id=item.id) }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+                <button type="submit" class="btn-link">Remove</button>
+            </form>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="cart-summary">
+        <p class="order-total">Subtotal: ${{ '%.2f'|format(subtotal) }}</p>
+        <a href="{{ url_for('checkout') }}" class="btn-primary">CHECKOUT</a>
+    </div>
+    {% else %}
+    <p>Your cart is empty. <a href="{{ url_for('index') }}">Continue shopping</a>.</p>
+    {% endif %}
+</div>
+{% endblock %}

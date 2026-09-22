@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}My Account | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">My Account</h1>
+    <div class="account-grid">
+        <div class="account-card">
+            <h3>Profile</h3>
+            <p>{{ current_user.name }}</p>
+            <p>{{ current_user.email }}</p>
+            <p>{{ current_user.phone }}</p>
+            <p>{{ current_user.address_line1 }} {{ current_user.city }}, {{ current_user.state }} {{ current_user.zip_code }}</p>
+            <a href="{{ url_for('edit_profile') }}" class="btn-secondary">Edit Profile</a>
+        </div>
+        <div class="account-card">
+            <h3>Quick Links</h3>
+            <ul class="account-links">
+                <li><a href="{{ url_for('cart') }}">Shopping Cart</a></li>
+                <li><a href="{{ url_for('wishlist') }}">Wish List</a></li>
+                <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>Order History</h2>
+    <table class="order-table">
+        <thead>
+            <tr><th>Order #</th><th>Date</th><th>Status</th><th>Total</th><th></th></tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+            <tr>
+                <td>{{ order.order_number }}</td>
+                <td>{{ order.created_at.strftime('%Y-%m-%d') }}</td>
+                <td><span class="status-badge status-{{ order.status }}">{{ order.status }}</span></td>
+                <td>${{ '%.2f'|format(order.total) }}</td>
+                <td><a href="{{ url_for('order_detail', order_id=order.id) }}">View</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5">No orders yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+<a href="{{ url_for('vehicle_detail', slug=vehicle.slug) }}" class="vehicle-card">
+    <div class="vehicle-card-img">
+        {% if vehicle.image %}
+        <img src="{{ url_for('static', filename=vehicle.image) }}" alt="{{ vehicle.title }}" loading="lazy">
+        {% else %}
+        <div class="vehicle-card-img-placeholder"></div>
+        {% endif %}
+    </div>
+    <div class="vehicle-card-body">
+        <div class="vehicle-card-name">{{ vehicle.title }}</div>
+        <div class="vehicle-card-price">
+            {% if vehicle.min_price == vehicle.max_price %}
+                Starting at ${{ '{:,.0f}'.format(vehicle.min_price) }}
+            {% else %}
+                ${{ '{:,.0f}'.format(vehicle.min_price) }} &ndash; ${{ '{:,.0f}'.format(vehicle.max_price) }}
+            {% endif %}
+        </div>
+        {% if vehicle.review_count %}
+        <div class="vehicle-card-rating">★ {{ '%.1f'|format(vehicle.rating) }} <span class="muted">({{ vehicle.review_count }} reviews)</span></div>
+        {% else %}
+        <div class="vehicle-card-rating muted">No reviews yet</div>
+        {% endif %}
+    </div>
+</a>
