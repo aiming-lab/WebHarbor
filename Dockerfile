@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 59 Flask mirror sites + control plane on :8101.
+# 60 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -180,9 +180,21 @@ RUN cd /opt/WebSyn/4shared && python3 migrate_seed.py
 # Preserve the 9GAG archive; curated benchmark stories have no matching source photos.
 RUN cd /opt/WebSyn/9gag && python3 migrate_seed.py
 
+# American Express ships real upstream imagery in the pinned archive (verified
+# against the tracked inventory with per-file SHA-256 and source URLs), while
+# its deterministic SQLite seed is generated from the tracked source catalog
+# at build time — see .build-generated-seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/american_express && \
+    cd /opt/WebSyn/american_express && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 -c "import app; import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/american_express.db', 'instance_seed/american_express.db'); \
+print('American Express seed DB generated at build time.')" && \
+    rm -rf instance
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40058
+EXPOSE 8101 40000-40059
 
 CMD ["/opt/websyn_start.sh"]

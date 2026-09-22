@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }} Credit Cards | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="hero" style="margin-top:24px;border-radius:12px;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">Personal Cards</span>
+        <h1>{{ category.name }} Credit Cards</h1>
+        <p>{{ category.intro }}</p>
+      </div>
+      {% set category_images = {'travel-rewards': 'images/category/travel-rewards-cards-desktop-2x.jpg', 'cash-back': 'images/category/cash-back-cards-tablet-2x.jpg', 'airline-miles': 'images/hero-images/filter_airline_l.jpg', 'lounge-access': 'images/featured-benefits/GlobalLoungeCollection.jpg'} %}
+      {% if category.slug in category_images %}
+      <div class="hero-art">
+        <img src="{{ url_for('static', filename=category_images[category.slug]) }}" alt="{{ category.name }}" style="max-height:340px;border-radius:10px;">
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <a href="{{ url_for('cards_index') }}">Credit Cards</a> &rsaquo; {{ category.name }}</p>
+  <div class="card-grid">
+    {% for card in cards %}
+    <div class="card-tile">
+      {% if card.featured %}<span class="badge">Featured</span>{% endif %}
+      <a class="art-link" href="{{ url_for('card_detail', slug=card.slug) }}">
+        <img src="{{ url_for('static', filename=card.card_art.replace('static/', '')) }}" alt="{{ card.name }}">
+      </a>
+      <h3><a href="{{ url_for('card_detail', slug=card.slug) }}">{{ card.name }}</a></h3>
+      <p class="fee">Annual Fee: <b>{{ card.annual_fee_text }}</b></p>
+      <ul class="benefits">
+        {% for benefit in card.benefits()[:3] %}<li>{{ benefit }}</li>{% endfor %}
+      </ul>
+      <div class="actions">
+        <a class="btn btn-primary btn-sm" href="{{ url_for('apply_card', slug=card.slug) }}">Apply Now</a>
+        <a class="btn btn-outline btn-sm" href="{{ url_for('card_detail', slug=card.slug) }}">View Details</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p style="margin-top:24px;"><a href="{{ url_for('cards_index') }}">View All Cards &rarr;</a></p>
+</div>
+{% endblock %}

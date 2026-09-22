@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Create Your Online Account | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <h1>Create Your Online Account</h1>
+    <form method="post" action="{{ url_for('register') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="display_name">Full name</label>
+        <input id="display_name" name="display_name" required maxlength="80" value="{{ form.get('display_name', '') }}">
+      </div>
+      <div class="field">
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" required maxlength="140" value="{{ form.get('email', '') }}">
+        <div class="hint">This is the User ID you will use to log in.</div>
+      </div>
+      <div class="field">
+        <label for="username">User ID</label>
+        <input id="username" name="username" required maxlength="40" value="{{ form.get('username', '') }}">
+        <div class="hint">3-40 lowercase letters, digits, dots, or underscores.</div>
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required maxlength="72">
+        <div class="hint">8-72 characters with letters and numbers.</div>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Create Account</button>
+        <a href="{{ url_for('login') }}">I already have an account</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

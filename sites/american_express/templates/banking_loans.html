@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Personal Loans up to $50,000 - Apply Online | Amex US{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Banking &rsaquo; Personal Loans</p>
+  <div class="hero" style="margin-top:12px;border-radius:12px;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">American Express Personal Loans</span>
+        <h1>{{ product.headline }}</h1>
+        <p>{{ product.intro }}</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="{{ url_for('login') }}">Log In to Check for an Offer</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img src="{{ url_for('static', filename='images/personal-loans/Hero_Background_Desktop.png') }}" alt="American Express Personal Loans" style="border-radius:10px;">
+      </div>
+    </div>
+  </div>
+
+  <div class="band-white">
+    <div class="container">
+      <h2 class="section-title">{{ product.apy_text }}</h2>
+      <p class="section-sub">Repay a personal loan in terms of 12&ndash;60 months.</p>
+      <div class="offer-box">
+        <span class="offer-tag">Repayment Example</span>
+        <p>An American Express Personal Loan of $10,000 repaid over 36 months at 12.98% APR will have a monthly payment of $336.85 and the total cost will be $12,123. Actual rates, interest, and costs may vary.</p>
+      </div>
+      <h2 class="section-title" style="margin-top:30px;">Why Choose American Express&reg; Personal Loans?</h2>
+      <div class="benefit-grid">
+        {% for feature in product.features() %}
+        <div class="benefit-cell"><span class="glyph">&#10003;</span><span>{{ feature }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="container">
+      <h2 class="section-title">How can you use an American Express&reg; Personal Loan?</h2>
+      <div class="two-col">
+        <div class="card-tile"><h3>Pay off debt faster</h3><p style="font-size:14px;">Consolidate higher-interest credit card and other debts, and pay the balance off with a fixed interest rate and monthly payments. With no origination fees or prepayment penalties, you can save your money for what matters.</p></div>
+        <div class="card-tile"><h3>Make home improvements</h3><p style="font-size:14px;">Use your Personal Loan to improve your home, whether it&rsquo;s upgrading your kitchen or building a home office. With fixed monthly payments and repayment options, it&rsquo;s a great resource.</p></div>
+        <div class="card-tile"><h3>Fund big purchases</h3><p style="font-size:14px;">Whether it&rsquo;s a big screen TV, a new refrigerator, or a vacation to your dream destination, an American Express Personal Loan can help you get what you want, when you want it.</p></div>
+        <div class="card-tile"><h3>Cover personal expenses</h3><p style="font-size:14px;">Life is full of expenses like moving costs, welcoming a new baby, or unexpected vet bills. An American Express Personal Loan can help you handle your personal expenses.</p></div>
+      </div>
+      <p style="font-size:13px;color:#5c5f63;margin-top:18px;">American Express Personal Loans cannot be used to pay down or consolidate balances on American Express issued credit cards.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}
