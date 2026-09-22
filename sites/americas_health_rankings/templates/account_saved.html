@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Saved Items{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>Saved Items</h1>
+  <p class="section-sub">Measures, states, reports and articles you saved.</p>
+</div>
+<div class="container" style="padding-bottom:60px">
+  <table class="data-table">
+    <thead><tr><th>Type</th><th>Title</th><th>Saved</th><th></th></tr></thead>
+    <tbody>
+      {% for b in bookmarks %}
+      <tr>
+        <td>{{ b.kind | capitalize }}</td>
+        <td><a href="{{ item_url(b) }}">{{ b.title }}</a></td>
+        <td>{{ b.created_at.strftime('%B %d, %Y') }}</td>
+        <td>
+          <form action="{{ url_for('toggle_bookmark') }}" method="post">
+            <input type="hidden" name="kind" value="{{ b.kind }}">
+            <input type="hidden" name="slug" value="{{ b.item_slug }}">
+            <input type="hidden" name="title" value="{{ b.title }}">
+            <input type="hidden" name="next" value="{{ request.path }}">
+            <button type="submit" class="btn btn-outline btn-sm">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4">No saved items yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
