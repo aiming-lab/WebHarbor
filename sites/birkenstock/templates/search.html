@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% from "_tile.html" import tile with context %}
+{% block title %}Search results for "{{ query }}" | BIRKENSTOCK United States{% endblock %}
+{% block content %}
+<div class="plp-head">
+  <h1>SEARCH RESULTS{% if query %} FOR &ldquo;{{ query|upper }}&rdquo;{% endif %}</h1>
+  <span class="count">{{ total }} products found</span>
+</div>
+<div class="plp-layout">
+  <aside class="filters">
+    <h3>Filter by:</h3>
+    <p class="plp-blurb">Refine your search by browsing the categories in the navigation above, or run a new search.</p>
+  </aside>
+  <section>
+    <div class="grid-meta">
+      <div class="active-filters"></div>
+      <form class="sort-form" method="get" action="/us/search/">
+        <input type="hidden" name="q" value="{{ query }}">
+        <label for="sort">Sort by</label>
+        <select name="sort" id="sort" onchange="this.form.submit()">
+          {% for value, label in sorts.items() %}
+          <option value="{{ value }}" {% if sort == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+    {% if results %}
+    <div class="product-grid">
+      {% for p in results %}{{ tile(p) }}{% endfor %}
+    </div>
+    <div class="plp-more">
+      <p class="progress">You've viewed {{ page * per_page if page * per_page < total else total }} of {{ total }} products</p>
+      {% if page * per_page < total %}
+      <a class="btn btn-outline" href="/us/search/?q={{ query | urlencode }}&sort={{ sort }}&page={{ page + 1 }}">LOAD {{ per_page }} MORE</a>
+      {% endif %}
+    </div>
+    {% else %}
+    <p>No products found{% if query %} for &ldquo;{{ query }}&rdquo;{% endif %}. Try another search term like <a href="/us/search/?q=arizona">arizona</a> or browse <a href="/us/women/">Women</a>.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

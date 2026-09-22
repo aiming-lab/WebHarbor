@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% from "_tile.html" import tile with context %}
+{% block title %}{{ title }} | BIRKENSTOCK United States{% endblock %}
+{% block content %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  {% for label, href in breadcrumbs %}
+    {% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}
+    {% if not loop.last %}<span>/</span>{% endif %}
+  {% endfor %}
+</nav>
+<div class="plp-head">
+  <h1>{{ title }}</h1>
+  <span class="count">{{ total }} products found</span>
+</div>
+<div class="plp-layout">
+  <aside class="filters" aria-label="Filters">
+    <h3>Filter by:</h3>
+    <form method="get" action="{{ request.path }}" id="filters">
+      {% if request.args.get('sort') %}<input type="hidden" name="sort" value="{{ request.args.get('sort') }}">{% endif %}
+      <div class="filter-group">
+        <h4>Price</h4>
+        <label><input type="radio" name="max_price" value="" {% if not active.get('max_price') %}checked{% endif %}> All prices</label>
+        <label><input type="radio" name="max_price" value="100" {% if active.get('max_price') == 100 %}checked{% endif %}> Under $100</label>
+        <label><input type="radio" name="max_price" value="150" {% if active.get('max_price') == 150 %}checked{% endif %}> Under $150</label>
+        <label><input type="radio" name="max_price" value="200" {% if active.get('max_price') == 200 %}checked{% endif %}> Under $200</label>
+      </div>
+      <div class="filter-group">
+        <h4>Color</h4>
+        {% for color, count in colors.items()|sort %}
+        <label><input type="checkbox" name="color" value="{{ color }}" {% if color in active.get('colors', []) %}checked{% endif %}> {{ color }} <span class="count">({{ count }})</span></label>
+        {% endfor %}
+      </div>
+      <div class="filter-group">
+        <h4>Upper material</h4>
+        {% for material, count in materials.items()|sort %}
+        <label><input type="checkbox" name="material" value="{{ material }}" {% if material in active.get('materials', []) %}checked{% endif %}> {{ material }} <span class="count">({{ count }})</span></label>
+        {% endfor %}
+      </div>
+      <div class="filter-actions">
+        <button type="submit" class="btn btn-dark btn-sm">APPLY FILTERS</button>
+      </div>
+    </form>
+  </aside>
+  <section>
+    <div class="grid-meta">
+      <div class="active-filters">
+        {% for c in active.get('colors', []) %}<a href="{{ request.path }}?{{ rebuild_query(exclude_color=c) }}">{{ c }} ✕</a>{% endfor %}
+        {% for m in active.get('materials', []) %}<a href="{{ request.path }}?{{ rebuild_query(exclude_material=m) }}">{{ m }} ✕</a>{% endfor %}
+        {% if active.get('max_price') %}<a href="{{ request.path }}?{{ rebuild_query(clear_price=1) }}">Under ${{ active.get('max_price') }} ✕</a>{% endif %}
+      </div>
+      <form class="sort-form" method="get" action="{{ request.path }}">
+        {% for c in active.get('colors', []) %}<input type="hidden" name="color" value="{{ c }}">{% endfor %}
+        {% for m in active.get('materials', []) %}<input type="hidden" name="material" value="{{ m }}">{% endfor %}
+        {% if active.get('max_price') %}<input type="hidden" name="max_price" value="{{ active.get('max_price') }}">{% endif %}
+        <label for="sort">Sort by</label>
+        <select name="sort" id="sort" onchange="this.form.submit()">
+          {% for value, label in sorts.items() %}
+          <option value="{{ value }}" {% if sort == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+    {% if items %}
+    <div class="product-grid">
+      {% for p in items %}{{ tile(p) }}{% endfor %}
+    </div>
+    <div class="plp-more">
+      <p class="progress">You've viewed {{ page * per_page if page * per_page < total else total }} of {{ total }} products</p>
+      {% if page * per_page < total %}
+      <a class="btn btn-outline" href="{{ request.path }}?{{ query_string(page=page+1) }}">LOAD {{ per_page }} MORE</a>
+      {% endif %}
+    </div>
+    {% else %}
+    <p>No products match those filters. <a href="{{ request.path }}">Clear all filters</a></p>
+    {% endif %}
+    {% if blurb %}<p class="plp-blurb">{{ blurb }}</p>{% endif %}
+  </section>
+</div>
+{% endblock %}

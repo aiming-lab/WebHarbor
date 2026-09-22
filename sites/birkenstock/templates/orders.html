@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Orders | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Orders</h1>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <div class="you">
+        <div class="name">{{ current_user.name }}</div>
+        <div class="tier">{{ current_user.vip_tier }} &middot; {{ current_user.vip_points }} points</div>
+      </div>
+      <a href="/us/account/">Overview</a>
+      <a href="/us/account/profile">Profile &amp; Addresses</a>
+      <a href="/us/account/payment">Payment Methods</a>
+      <a href="/us/orders/">Orders</a>
+      <a href="/us/wishlist/">Wish List</a>
+      <a href="/us/logout">Log Out</a>
+    </aside>
+    <section>
+      {% if orders %}
+      {% for o in orders %}
+      <div class="order-card">
+        <div class="top">
+          <span class="no">Order {{ o.order_no }}</span>
+          <span>{{ o.created_at.strftime('%B %d, %Y') }}</span>
+          <span class="status">{{ o.status }}</span>
+          <span>${{ '%.2f' % o.total }}</span>
+        </div>
+        <div class="items">
+          {% for i in o.items %}<img src="{{ url_for('static', filename='images/' + i.image) }}" alt="{{ i.name }}">{% endfor %}
+        </div>
+        <p style="margin:10px 0 0"><a href="/us/orders/{{ o.order_no }}/">View order details</a></p>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p style="color:#494954">You have no orders yet.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{% macro tile(p, show_wishlist=True) %}
+<div class="tile">
+  <div class="tile-badges">
+    {% if p.badge %}<span class="badge {% if p.badge == 'VIP Access' %}badge-vip{% elif p.badge == 'New' %}badge-new{% endif %}">{{ p.badge }}</span>{% endif %}
+    {% if p.on_sale %}<span class="badge">-{{ p.sale_percent }}%</span>{% endif %}
+  </div>
+  {% if show_wishlist and current_user.is_authenticated %}
+  <div class="tile-wl">
+    <form method="post" action="/us/wishlist/add/{{ p.pid }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      <button type="submit" aria-label="Add to wish list">&#9825;</button>
+    </form>
+  </div>
+  {% endif %}
+  <div class="tile-img">
+    <a href="{{ _pdp_url(p) }}">
+      <img src="{{ url_for('static', filename='images/' + p.main_image) }}" alt="{{ p.name }} - main image" loading="lazy">
+    </a>
+  </div>
+  <div class="tile-name"><a href="{{ _pdp_url(p) }}">{{ p.model }}</a></div>
+  <div class="tile-material">{{ p.material }}</div>
+  <div class="tile-color">{{ p.color }}</div>
+  <div class="tile-price">
+    {% if p.on_sale %}
+      <span class="old">${{ '%.2f' % p.list_price }}</span><span class="new">${{ '%.2f' % p.price }}</span><span class="save">-{{ p.sale_percent }}%</span>
+    {% else %}
+      ${{ '%.2f' % p.price }}
+    {% endif %}
+  </div>
+  {% if p.sibling_colorways|length > 1 %}
+  <div class="tile-swatches">
+    {% for s in p.sibling_colorways[:9] %}
+    <a href="{{ _pdp_url(s) }}" title="{{ s.color }}" class="{% if s.id == p.id %}selected{% endif %}">
+      <img src="{{ url_for('static', filename='images/' + s.main_image) }}" alt="{{ s.color }}" loading="lazy">
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endmacro %}

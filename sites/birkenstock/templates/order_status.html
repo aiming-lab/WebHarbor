@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Order Status | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="prose-page">
+  <h1>Order Status</h1>
+  <p style="color:#494954">Enter your order number and the email address used at checkout to track your order.</p>
+  {% if order %}
+    <div class="cs-box">
+      <h2>Order {{ order.order_no }}</h2>
+      <p>Placed {{ order.created_at.strftime('%B %d, %Y') }} &middot; <strong style="color:#001489">{{ order.status }}</strong></p>
+      <p>{{ order.shipping_method }} &middot; Tracking number <strong>{{ order.tracking_no }}</strong></p>
+      <p>{{ order.items|length }} item(s) &middot; Total ${{ '%.2f' % order.total }}</p>
+      <p><a href="/us/orders/{{ order.order_no }}/">View full order details</a>{% if not current_user.is_authenticated %} (log in to view){% endif %}</p>
+    </div>
+  {% elif error %}
+    <div class="cs-box"><p style="color:#d01d1b">{{ error }}</p></div>
+  {% endif %}
+  <form method="post" action="/us/track-order/" class="form-card">
+    <div class="field">
+      <label for="order_no">Order number*</label>
+      <input type="text" id="order_no" name="order_no" value="{{ order_no or '' }}" required placeholder="e.g. US-20260921-00001">
+    </div>
+    <div class="field">
+      <label for="email">Email address used at checkout*</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <button type="submit" class="btn btn-dark">TRACK ORDER</button>
+  </form>
+</div>
+{% endblock %}

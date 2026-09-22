@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My Account | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>My Account</h1>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <div class="you">
+        <div class="name">{{ current_user.name }}</div>
+        <div class="tier">{{ current_user.vip_tier }} &middot; {{ current_user.vip_points }} points</div>
+      </div>
+      <a href="/us/account/">Overview</a>
+      <a href="/us/account/profile">Profile &amp; Addresses</a>
+      <a href="/us/account/payment">Payment Methods</a>
+      <a href="/us/orders/">Orders</a>
+      <a href="/us/wishlist/">Wish List</a>
+      <a href="/us/logout">Log Out</a>
+    </aside>
+    <section>
+      <div class="vip-box">
+        <h2>BIRKENSTOCK VIP</h2>
+        <p style="color:#494954;font-size:13px">Earn points and unlock rewards as you go. You earn 1 point for every $1 spent.</p>
+        <div class="vip-stats">
+          <div class="stat"><div class="n">{{ current_user.vip_points }}</div><div class="l">POINTS AVAILABLE</div></div>
+          <div class="stat"><div class="n">{{ current_user.vip_tier }}</div><div class="l">CURRENT TIER</div></div>
+          <div class="stat"><div class="n">${{ '%.2f' % current_user.lifetime_spend }}</div><div class="l">LIFETIME SPEND</div></div>
+        </div>
+        <p style="font-size:12.5px;color:#898992;margin-top:10px">Classic unlocks at $200 lifetime spend. Premium unlocks at $700. Icon unlocks at $1,500. <a href="/us/vip-access/">Learn more</a>.</p>
+      </div>
+      <h2 style="font-size:16px;text-transform:uppercase;letter-spacing:.06em">Recent Orders</h2>
+      {% if orders %}
+        {% for o in orders[:5] %}
+        <div class="order-card">
+          <div class="top">
+            <span class="no">Order {{ o.order_no }}</span>
+            <span>{{ o.created_at.strftime('%B %d, %Y') }}</span>
+            <span class="status">{{ o.status }}</span>
+            <span>${{ '%.2f' % o.total }}</span>
+          </div>
+          <div class="items">
+            {% for i in o.items %}<img src="{{ url_for('static', filename='images/' + i.image) }}" alt="{{ i.name }}">{% endfor %}
+          </div>
+          <p style="margin:10px 0 0"><a href="/us/orders/{{ o.order_no }}/">View order details</a></p>
+        </div>
+        {% endfor %}
+        <p><a href="/us/orders/">All orders</a></p>
+      {% else %}
+        <p style="color:#494954">You have no orders yet. <a href="/us/best-sellers/">Start with the best sellers</a>.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
