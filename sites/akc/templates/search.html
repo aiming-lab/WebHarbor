@@ -9,17 +9,10 @@
   </form>
 </section>
 {% if query %}
-<section class="search-results-layout">
-  <aside class="search-filters">
-    <h2>Filter Results</h2>
-    <span>Sections</span>
-    <label><input type="checkbox" checked disabled> Dog Breeds</label>
-    <label><input type="checkbox" checked disabled> Expert Advice</label>
-    <label><input type="checkbox" checked disabled> Sports &amp; Events</label>
-  </aside>
+<section class="search-results-layout search-results-only">
   <div class="search-columns">
-    <h2>Showing 1-10 of 4,028 results</h2>
-    <div class="search-sort"><b>Sort by</b> <a href="#">Relevance</a> <a href="#">Newest</a> <a href="#">Oldest</a></div>
+    {% set result_count = breed_results|length + article_results|length + event_results|length %}
+    <h2>{{ result_count }} {{ "result" if result_count == 1 else "results" }} for “{{ query }}”</h2>
     <section>
       <h3>Breeds</h3>
       {% for breed in breed_results %}
@@ -41,24 +34,8 @@
         <a class="mini-result" href="{{ url_for('event_detail', slug=event.slug) }}"><strong>{{ event.title }}</strong><small>{{ event.city }}, {{ event.state }} · {{ event.event_type }}</small></a>
       {% else %}<p class="empty-state">No event results.</p>{% endfor %}
     </section>
-    <section class="related-search-results">
-      {% for title, category, summary in [
-        ('Agility Events', 'Sports & Events', 'Browse upcoming trials, classes, and event resources for dogs and handlers.'),
-        ('Agility League Spotlight: A Winner Is Still an Agility Standout', 'Sports & Events', 'Meet experienced dogs and handlers who continue to enjoy the sport together.'),
-        ('Agility FAQ', 'Sports & Events', 'Answers to frequently asked questions about clubs, training, equipment, and competing.'),
-        ('Agility Statistics', 'Sports & Events', 'Explore participation and event statistics from the AKC agility community.'),
-        ('Building Community and Agility Skills', 'Sports & Events', 'How local classes help dogs and people build confidence and make connections.'),
-        ('Agility Judging Requirements', 'Sports & Events', 'Learn about the experience and education required for AKC agility judges.'),
-        ('Graphing and Agility', 'Public Education', 'A classroom activity that uses dog sports to explore data and measurement.'),
-        ('The Joys of Agility', 'Canine Partners', 'Discover a fast, rewarding activity that dogs and people can learn together.')
-      ] %}
-        <a class="mini-result" href="{{ url_for('articles') }}"><span><small>{{ category }}</small><strong>{{ title }}</strong><span>{{ summary }}</span></span></a>
-      {% endfor %}
-    </section>
-    <nav class="search-pagination" aria-label="Search pages"><span>1</span><a href="#">2</a><a href="#">3</a><span>…</span><a href="#">403</a><a href="#">Next ›</a></nav>
   </div>
 </section>
-<button class="mobile-filter-button" type="button">Filter</button>
 <section class="search-discovery section">
   <div class="section-head"><h2>Explore More From AKC</h2></div>
   <div class="search-discovery-grid"><a href="{{ url_for('breeds') }}"><img src="{{ url_for('static', filename='images/breeds/golden-retriever.jpg') }}" alt="Dog breeds"><strong>Find the right breed</strong><span>Explore breed traits, size, and owner-fit signals.</span></a><a href="{{ url_for('articles') }}"><img src="{{ url_for('static', filename='images/akc-home/expert-advice-feature.jpg') }}" alt="Expert advice"><strong>Read expert advice</strong><span>Get practical guidance for everyday dog care.</span></a><a href="{{ url_for('events') }}"><img src="{{ url_for('static', filename='images/akc-home/agility-search.jpg') }}" alt="Dog sports"><strong>Discover sports and events</strong><span>Find activities and events for your dog.</span></a></div>

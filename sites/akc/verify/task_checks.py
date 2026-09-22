@@ -4,14 +4,12 @@ from __future__ import annotations
 
 import re
 
-from verify_lib import (
-    VerificationError,
-    entity_texts,
-    has_date,
-    has_number,
-    mentions,
-    mentions_range,
-    normalize,
+from werkzeug.security import check_password_hash
+
+from verify_lib import VerificationError, mentions
+from answer_checks import (
+    entity_blocks, event_date, globally_denied, named_fact, quantity_facts,
+    rating, subject_text, canonical, winner as answer_winner,
 )
 
 
@@ -51,20 +49,36 @@ def _answer_required(run):
 
 def _answer_facts(run, name, *values):
     _answer_required(run)
-    _require(mentions(run.answer, name), "The answer does not identify the required entity")
-    for value in values:
-        _require(mentions_range(run.answer, value), "The answer is missing or contradicts a required displayed fact")
-
-
-def _metric(text, label, value):
-    clauses = re.split(r"[\n;]|(?<=[.!?])\s+", normalize(text))
-    return any(label in clause and has_number(clause, value) for clause in clauses)
+    names = [row[0] for row in run.initial.execute("SELECT name FROM breed")]
+    text = subject_text(run.answer, name, names)
+    _require(quantity_facts(text, values),
+             "A required fact is missing, contradicted, or has the wrong property/unit")
 
 
 def _winner(answer, entities, expected, terms):
-    blocks = entity_texts(answer, entities)
-    claims = {key for key, text in blocks.items() if re.search(terms, text)}
-    return claims == {expected}
+    return answer_winner(answer, entities, expected)
+
+
+def _metric(text, label, value):
+    return rating(text, label, value)
+
+
+def _article_answer(run, article, answer=None):
+    answer = run.answer if answer is None else answer
+    authors = [row[0] for row in run.initial.execute("SELECT DISTINCT author FROM article")]
+    titles = [row[0] for row in run.initial.execute("SELECT title FROM article")]
+    if any(mentions(answer, title) for title in titles):
+        _require(named_fact(answer, article["title"], titles),
+                 "The reported article identity is wrong or contradicted")
+    for claim in re.finditer(
+        r"(?:\bauthor(?: is|:)??|\bby)\s+((?:dr\.\s+)?[a-z][a-z '’-]*?)(?=[,;.\n]|\s+and\b|$)",
+        canonical(answer),
+    ):
+        _require(mentions(claim[1], article["author"]), "The stated author is incorrect")
+    _require(named_fact(answer, article["author"], authors),
+             "The author is missing, wrong, or contradicted")
+    _require(quantity_facts(answer, [f"{article['read_minutes']} minutes"]),
+             "The reading time is missing, wrong, or contradicted")
 
 
 def _require_read_path(run, requirements):
@@ -73,6 +87,7 @@ def _require_read_path(run, requirements):
 
 
 def check_read_task(number, run):
+    _require(not globally_denied(run.answer), "The answer denies the reported facts")
     if number == 0:
         breed = _breed(run, "cavalier-king-charles-spaniel")
         filters = {"group": ["Toy"], "size": ["Small"]}
@@ -102,6 +117,7 @@ def check_read_task(number, run):
             ("/breed-selector", choices),
             ("/breeds/" + winner["slug"], None),
         ])
+        _require(named_fact(run.answer, winner["name"]), "The first recommended breed is missing or denied")
         _answer_facts(run, winner["name"], winner["life_expectancy"])
         return ["selector submitted", "first recommendation profile", "life expectancy"]
 
@@ -113,7 +129,7 @@ def check_read_task(number, run):
         run.assert_unchanged()
         _answer_required(run)
         entities = {golden["slug"]: [golden["name"]], border["slug"]: [border["name"]]}
-        blocks = entity_texts(run.answer, entities)
+        blocks = entity_blocks(run.answer, entities)
         _require(_metric(blocks[golden["slug"]], "energy", golden["energy"]),
                  "Golden Retriever's energy rating is missing or misbound")
         _require(_metric(blocks[border["slug"]], "energy", border["energy"]),
@@ -147,10 +163,21 @@ def check_read_task(number, run):
             ("/search", filters), ("/articles/" + article["slug"], None),
         ])
         _answer_required(run)
-        _require(mentions(run.answer, article["title"]) and mentions(run.answer, article["author"]),
-                 "The required article and author are not both reported")
-        _require(_metric(run.answer, "min", article["read_minutes"]), "The read time is missing or wrong")
-        return ["agility search", "article detail", "author and read time"]
+        _article_answer(run, article)
+        event = _event(run, "midwest-agility-trial")
+        event_filter = {"type": ["Agility"]}
+        _require(run.visited("/events", event_filter, exact_query=True),
+                 "The Agility event filter was not recorded")
+        _require_read_path(run, [
+            ("/events", event_filter), ("/events/" + event["slug"], None),
+        ])
+        _require(named_fact(run.answer, event["venue"],
+                            [row[0] for row in run.initial.execute("SELECT venue FROM event")]),
+                 "The agility trial venue is missing or wrong")
+        _require(event_date(run.answer, event["starts_on"]),
+                 "The agility trial date is missing or wrong")
+        return ["agility search and article", "Agility calendar and trial detail",
+                "article author/time and trial venue/date"]
 
     if number == 5:
         event = _event(run, "canine-good-citizen-test-ny")
@@ -161,9 +188,10 @@ def check_read_task(number, run):
             ("/events", filters), ("/events/" + event["slug"], None),
         ])
         _answer_required(run)
-        _require(mentions(run.answer, event["title"]) and mentions(run.answer, event["venue"]),
+        _require(named_fact(run.answer, event["venue"],
+                            [row[0] for row in run.initial.execute("SELECT venue FROM event")]),
                  "The event and its venue are not both reported")
-        _require(has_date(run.answer, event["starts_on"]), "The event date is missing or wrong")
+        _require(event_date(run.answer, event["starts_on"]), "The event date is missing or wrong")
         return ["Training filter", "event detail", "venue and date"]
 
     if number == 6:
@@ -175,11 +203,25 @@ def check_read_task(number, run):
             ("/articles", filters),
             ("/articles/" + article["slug"], None),
         ])
-        _answer_required(run)
-        _require(mentions(run.answer, article["title"]) and mentions(run.answer, article["author"]),
-                 "The official article identity and author are not both reported")
-        _require(_metric(run.answer, "min", article["read_minutes"]), "The read time is missing or wrong")
-        return ["Puppy Information filter", "official article detail", "author and read time"]
+        articles = [article, _article(run, "puppy-socialization-checklist"),
+                    _article(run, "how-to-choose-the-right-dog-breed")]
+        aliases = [
+            [article["title"], "Questions to Ask Your Potential Breeder", "Breeder Questions"],
+            [articles[1]["title"], "Socialization Checklist"],
+            [articles[2]["title"], "How to Choose the Right Breed", "Choosing the Right Dog Breed"],
+        ]
+        entities = {row["slug"]: names for row, names in zip(articles, aliases)}
+        blocks = entity_blocks(run.answer, entities)
+        for row in articles:
+            _require(run.visited("/articles/" + row["slug"]),
+                     "One of the three required article details was not visited")
+            _article_answer(run, row, blocks[row["slug"]])
+        longest = max(articles, key=lambda row: row["read_minutes"])["slug"]
+        _require(answer_winner(run.answer, entities, longest,
+                              terms=r"(?:longest|longer|most time|largest reading slot)"),
+                 "The longest-read conclusion is missing or contradicted")
+        return ["Puppy Information filter", "three article details",
+                "three bound author/time pairs", "longest-read conclusion"]
 
     if number == 7:
         breed = _breed(run, "great-dane")
@@ -201,7 +243,7 @@ def check_read_task(number, run):
         run.assert_unchanged()
         _answer_required(run)
         entities = {breed["slug"]: [breed["name"]] for breed in breeds}
-        blocks = entity_texts(run.answer, entities)
+        blocks = entity_blocks(run.answer, entities)
         for breed in breeds:
             _require(_metric(blocks[breed["slug"]], "trainability", breed["trainability"]),
                      "A trainability rating is missing or misbound")
@@ -300,8 +342,11 @@ def check_state_task(number, run):
         _require(all(row.get(key) == value for key, value in fields.items()),
                  "The inserted owner profile does not match every specified field")
         password_hash = row.get("password_hash")
-        _require(isinstance(password_hash, str) and password_hash and password_hash != "TrailDog42!"
-                 and ":" in password_hash, "The password was not stored as a supported hash")
+        try:
+            password_matches = isinstance(password_hash, str) and check_password_hash(password_hash, "TrailDog42!")
+        except (ValueError, TypeError):
+            password_matches = False
+        _require(password_matches, "The stored password does not authenticate the requested password")
         _require(mentions(run.answer, "Morgan Reed"), "The final answer does not confirm the new profile")
         return ["registration form", "exact Morgan profile delta", "hashed password"]
 
