@@ -1,6 +1,11 @@
 #!/usr/bin/env python3
 """Amazon Jobs (amazon.jobs) mirror — job search, categories, teams, locations,
 benefits, applicant account, applications, and job alerts."""
+# Keep one model registry when launched directly as well as through Flask.
+import sys
+if __name__ == "__main__":
+    sys.modules["app"] = sys.modules[__name__]
+
 import json
 import os
 import re
@@ -443,6 +448,8 @@ def modified_query(key, value, base=None):
         args.pop("offset", None)
     else:
         args[key] = [str(value)]
+        if key == "sort_by":
+            args.pop("offset", None)
     pairs = []
     for k, values in args.items():
         for v in values:

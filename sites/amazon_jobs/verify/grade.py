@@ -34,6 +34,7 @@ from verify_lib import (
     contains_all, contains_any, norm, final_answer, step_text, shot_at,
 )
 import answers
+import reviewed_contract
 
 SITE = "amazon_jobs"
 
@@ -94,12 +95,21 @@ DAVID_EMAIL = "david.k@test.com"
 # ---------------------------------------------------------------- helpers
 def search_step_with(traj, *substrs):
     """True when a /search step URL carries every substring (query unquoted)."""
-    from verify_lib import step_urls, url_path
+    from urllib.parse import urlsplit, parse_qs
+    from verify_lib import step_urls
     for url in step_urls(traj):
-        if url_path(url).rstrip("/") != "/search":
+        parts = urlsplit(url)
+        if parts.path.rstrip("/") != "/search":
             continue
-        decoded = unquote_plus(url).casefold()
-        if all(s.casefold() in decoded for s in substrs):
+        values = parse_qs(parts.query, keep_blank_values=True)
+        matches = []
+        for item in substrs:
+            if "=" in item:
+                key, value = item.split("=", 1)
+                matches.append(value.casefold() in [v.casefold() for v in values.get(key, [])])
+            else:
+                matches.append(any(re.search(r'\b'+re.escape(item.casefold())+r'\b', value.casefold()) is not None for value in values.get("base_query", [])))
+        if all(matches):
             return True
     return False
 
@@ -115,14 +125,15 @@ def db_tables_unchanged(judge, init_db, after_db, expect_note):
 
 
 def read_only_gate(judge, init_db, after_db):
-    db_tables_unchanged(judge, init_db, after_db, "read-only task")
+    if str(getattr(judge, "number", -1)) not in reviewed_contract.CONTRACT["changes"]:
+        db_tables_unchanged(judge, init_db, after_db, "read-only task")
 
 
 # ---------------------------------------------------------------- per-task grading
 def grade_0(judge, traj, args, init_db, after_db, after):
     fa = final_answer(traj)
     judge.bind_run(traj, shot_url="/search")
-    judge.check("search_visited", search_step_with(traj, "base_query=data", "loc_keyword=seattle"),
+    judge.check("search_visited", search_step_with(traj, "base_query=data engineer", "loc_keyword=seattle"),
                 "searched 'data engineer' with location Seattle on the mirror")
     judge.check("answer_count", contains_count(fa, T0_SEATTLE_ENGINEER),
                 fa or "")
@@ -132,8 +143,8 @@ def grade_0(judge, traj, args, init_db, after_db, after):
 def grade_1(judge, traj, args, init_db, after_db, after):
     fa = final_answer(traj)
     judge.bind_run(traj, shot_url="/search")
-    judge.check("search_visited", navigated_path(traj, "/search"),
-                "opened the job search page with its Job Type filter")
+    judge.check("search_visited", search_step_with(traj, "job_type=Part Time"),
+                "applied the Part Time filter")
     judge.check("answer_count", contains_count(fa, T1_PART_TIME), fa or "")
     read_only_gate(judge, init_db, after_db)
 
@@ -197,7 +208,7 @@ def grade_7(judge, traj, args, init_db, after_db, after):
     fa = final_answer(traj)
     judge.bind_run(traj, shot_url="business_category=amazon-operations")
     judge.check("search_visited",
-                search_step_with(traj, "business_category=amazon-operations", "experience=7"),
+                search_step_with(traj, "business_category=amazon-operations", "experience=7+ years"),
                 "filtered to Amazon Operations + 7+ years industry experience")
     judge.check("answer_count", contains_count(fa, T7_OPS_7Y), fa or "")
     read_only_gate(judge, init_db, after_db)
@@ -309,7 +320,7 @@ def grade_18(judge, traj, args, init_db, after_db, after):
     judge.bind_run(traj, shot_url="/faq")
     judge.check("faq_page_opened", navigated_path(traj, "/faq"), "opened the FAQ")
     judge.check("answer_use_site", answers.uses_this_site(fa), fa or "")
-    judge.check("answer_filter_dims", answers.filter_dims(fa, 2), fa or "")
+    judge.check("answer_filter_dims", answers.filter_dims(fa, 4), fa or "")
     read_only_gate(judge, init_db, after_db)
 
 
@@ -529,8 +540,13 @@ def grade(number):
     judge = Judge(f"Amazon Jobs--{number}", no_llm=args.no_llm)
     init_db = resolve_db(args.initial_db, args.container, "instance_seed")
     after_db = resolve_db(args.after_db, args.container, "instance")
+    args.initial_db, args.after_db = init_db, after_db
+    judge.number = number
+    reviewed_contract.check(judge, number, traj, init_db, after_db)
     after = rows(after_db)
     GRADES[number](judge, traj, args, init_db, after_db, after)
+    from revised_research import check_research
+    check_research(judge, number, traj)
     judge.emit()
 
 
