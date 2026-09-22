@@ -326,6 +326,14 @@ HONEST = {
         ], answer="The saved item is shown with the title \"Montana\" on my Saved Items page.", mutate=mut_t34),
 }
 
+# Reviewed request fixtures are synthetic controls based on checked browser paths.
+for _number, _fixture in json.loads((VERIFY / "reviewed_fixtures.json").read_text()).items():
+    HONEST[int(_number)]["answer"] = _fixture["answer"]
+    HONEST[int(_number)]["steps"] = [
+        S(BASE + step["path"], step["action"], step["params"], step["text"])
+        for step in _fixture["steps"]
+    ]
+
 WRONG_ANSWER = {
     0: "The top-ranked state for Teen Suicide is Massachusetts, with a value of 5.3.",
     1: "Mississippi is ranked last in the nation for obesity, with a value of 34.5%.",
