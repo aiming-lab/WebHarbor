@@ -1,102 +1,10 @@
-import json
-import os
-from glob import glob
+"""Materialize benchmark fixtures using the pinned, reviewed media mapping."""
 from datetime import datetime, timedelta
+import json
+from pathlib import Path
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CHANNEL_ASSET_SLUGS = {
-    'quantum-lab': {'avatar': 'quantum-lab-avatar', 'banner': 'quantum-lab-banner'},
-    'frame-by-frame': {'avatar': 'frame-by-frame-avatar', 'banner': 'frame-by-frame-banner'},
-    'night-shift-jazz': {'avatar': 'night-shift-jazz-avatar', 'banner': 'night-shift-jazz-banner'},
-    'pixel-quest': {'avatar': 'pixel-quest-avatar', 'banner': 'pixel-quest-banner'},
-    'pantry-notes': {'avatar': 'pantry-notes-avatar', 'banner': 'pantry-notes-banner'},
-    'window-seat': {'avatar': 'window-seat-avatar', 'banner': 'window-seat-banner'},
-}
-CHANNEL_UPSTREAM_AVATARS = {
-    'quantum-lab': '/static/images/youtube/upstream/channels/c_010_avatar.jpg',
-    'frame-by-frame': '/static/images/youtube/upstream/channels/c_011_avatar.jpg',
-    'night-shift-jazz': '/static/images/youtube/upstream/channels/c_024_avatar.jpg',
-    'pixel-quest': '/static/images/youtube/upstream/channels/c_012_avatar.jpg',
-    'pantry-notes': '/static/images/youtube/upstream/channels/c_013_avatar.jpg',
-    'window-seat': '/static/images/youtube/upstream/channels/c_023_avatar.jpg',
-}
-LOCAL_VIDEO_TO_UPSTREAM_ID = {
-    'how-quantum-sensors-read-invisible-changes': 'yFRoKxOkNSk',
-    'why-lunar-dust-destroys-precision-hardware': 's9ALylTC9YQ',
-    'building-a-tabletop-gravity-wave-demo': 'VrXIjava968',
-    'inside-the-tiny-pc-that-replaced-my-laptop': 'UjRWQND6_ro',
-    'can-this-studio-camera-beat-a-flagship-phone': 'n5QeBru9Rzk',
-    'three-display-calibrators-tested-back-to-back': 'Otim2mDjsYM',
-    'loft-session-midnight-rhodes-and-tape-echo': 'uVofSpZxhEs',
-    'rainy-city-vinyl-mix-for-late-work': 'h4Gnqv0AvQ8',
-    'sunrise-sax-theme-with-analog-delay': '2HPQxTUw5ds',
-    'speedrunning-the-archive-ruins-in-18-minutes': 'Vo6QTBMdUfU',
-    'which-stealth-build-survives-nightmare-mode': 'C952MlU-5fE',
-    'five-open-world-settings-that-still-feel-new': 'Bbp5g1MhCLY',
-    'the-crispy-chili-oil-noodles-i-make-weekly': 'OAZpSsu03VA',
-    'freezer-dumplings-with-a-restaurant-finish': 'MPqR0Q4i1D0',
-    'three-knife-skills-that-change-weeknight-cooking': 'b67vr72fNtc',
-    'a-weekend-rail-journey-across-northern-spain': 'wIW_VbXa58E',
-    'how-to-pack-one-bag-for-a-rainy-spring-city': '5DcBkOs6hQA',
-    'the-quiet-coffee-streets-of-kyoto-at-dawn': 'YnOH3nGfF-0',
-    'can-you-hear-a-starquake-through-data': 'KW4yBSV4U38',
-    'desk-studio-lighting-under-100-dollars': 'I2F2xFvt4mQ',
-    'blue-hour-piano-loop-for-deep-focus': 'xESVaYvG4xE',
-    'best-controller-settings-for-faster-aiming': 'kae1JzT93ao',
-    'one-pan-garlic-rice-for-busy-weeknights': 'YYsg_vZEDng',
-    '48-hours-in-lisbon-without-a-car': 'U_dt_b-kMME',
-}
-
-
-def image_path(section: str, slug: str, ext: str = 'svg') -> str:
-    return f'/static/images/{section}/{slug}.{ext}'
-
-
-def pick_existing_image(section: str, slug: str, preferred_exts: tuple[str, ...]) -> str:
-    for ext in preferred_exts:
-        rel = image_path(section, slug, ext)
-        abs_path = os.path.join(BASE_DIR, rel.lstrip('/'))
-        if os.path.exists(abs_path):
-            return rel
-    return ''
-
-
-def pick_upstream_video_image(video_id: str, kind: str) -> str:
-    if not video_id:
-        return ''
-    folder = 'thumbnails' if kind == 'thumbnail' else 'posters'
-    pattern = os.path.join(BASE_DIR, 'static', 'images', 'youtube', 'upstream', folder, f'v_*_{video_id}.jpg')
-    matches = glob(pattern)
-    if not matches:
-        return ''
-    filename = os.path.basename(matches[0])
-    return f'/static/images/youtube/upstream/{folder}/{filename}'
-
-
-def pick_video_asset(video_slug: str):
-    upstream_id = LOCAL_VIDEO_TO_UPSTREAM_ID.get(video_slug, '')
-    thumbnail = pick_upstream_video_image(upstream_id, 'thumbnail') or pick_existing_image('youtube/thumbnails', video_slug, ('jpg', 'svg'))
-    poster = pick_upstream_video_image(upstream_id, 'poster') or pick_existing_image('youtube/posters', video_slug, ('jpg', 'svg')) or thumbnail
-    return {
-        'thumbnail_path': thumbnail,
-        'poster_path': poster,
-    }
-
-
-def pick_channel_asset(channel_slug: str):
-    slugs = CHANNEL_ASSET_SLUGS.get(
-        channel_slug,
-        {'avatar': 'frame-by-frame-avatar', 'banner': 'frame-by-frame-banner'},
-    )
-    avatar = CHANNEL_UPSTREAM_AVATARS.get(channel_slug, '')
-    if not avatar:
-        avatar = pick_existing_image('youtube/channels', slugs['avatar'], ('png', 'svg'))
-    banner = pick_existing_image('youtube/channels', slugs['banner'], ('jpg', 'svg'))
-    if not avatar:
-        avatar = image_path('youtube/channels', 'frame-by-frame-avatar', 'svg')
-    if not banner:
-        banner = image_path('youtube/channels', 'frame-by-frame-banner', 'svg')
-    return {'avatar_path': avatar, 'banner_path': banner}
+SEED_MEDIA = json.loads(Path(__file__).with_name('seed_media.json').read_text())
+DEMO_PASSWORD_HASH = '$2b$12$xmu6gQgfkGSUV4aAOEKL9OSEptDVIFuw7cptBw93.2cTSXzyEnzSW'
 
 
 def seed_database(db, Channel, Video, Playlist, PlaylistVideo):
@@ -113,7 +21,7 @@ def seed_database(db, Channel, Video, Playlist, PlaylistVideo):
     ]
     channels = {}
     for slug, name, category, accent, verified in channels_data:
-        channel_assets = pick_channel_asset(slug)
+        channel_assets = SEED_MEDIA['channels'][slug]
         channel = Channel(
             slug=slug,
             name=name,
@@ -167,7 +75,7 @@ def seed_database(db, Channel, Video, Playlist, PlaylistVideo):
     videos = {}
     for spec in video_specs:
         channel_slug, slug, title, category, tags, duration, views, likes, trending, comments_enabled, days_ago, _image_ext = spec
-        asset_paths = pick_video_asset(slug)
+        asset_paths = SEED_MEDIA['videos'][slug]
         video = Video(
             slug=slug,
             title=title,
@@ -224,7 +132,7 @@ def seed_benchmark_users(db, User, Subscription, WatchLater, WatchHistory, UserL
     created = {}
     for email, name, handle, color in users:
         user = User(email=email, display_name=name, handle=handle, avatar_color=color)
-        user.set_password('TestPass123!')
+        user.password_hash = DEMO_PASSWORD_HASH
         db.session.add(user)
         created[email] = user
     db.session.flush()

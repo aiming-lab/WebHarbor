@@ -265,7 +265,7 @@ def resolve_topic_by_slug(topics: list[dict], topic_slug: str | None):
 
 app = Flask(__name__, template_folder=os.path.join(BASE_DIR, 'templates'), static_folder=os.path.join(BASE_DIR, 'static'))
 app.config['SECRET_KEY'] = 'webharbor-weather-dev-key'
-app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'weather.db')}"
+app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.environ.get('WEBSYN_DB_PATH', os.path.join(BASE_DIR, 'instance', 'weather.db'))}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['WTF_CSRF_TIME_LIMIT'] = None
 os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
@@ -286,7 +286,7 @@ class User(db.Model, UserMixin):
     full_name = db.Column(db.String(120), nullable=False)
     preferred_units = db.Column(db.String(20), default='imperial')
     home_location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=mirror_now)
 
     saved_locations = db.relationship('SavedLocation', backref='user', lazy=True, cascade='all, delete-orphan')
 
@@ -390,7 +390,7 @@ class SavedLocation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=mirror_now)
     location = db.relationship('Location')
 
 
@@ -563,7 +563,7 @@ def homepage_story_data():
 
 
 def build_homepage_view_model(featured_locations: list[Location], conditions_by_slug: dict, forecast_hint):
-    lead_location = next((location for location in featured_locations if location.slug == 'new-york-ny'), featured_locations[0] if featured_locations else None)
+    lead_location = (db.session.get(Location, current_user.home_location_id) if current_user.is_authenticated and current_user.home_location_id else None) or next((location for location in featured_locations if location.slug == 'new-york-ny'), featured_locations[0] if featured_locations else None)
     lead_condition = conditions_by_slug.get(lead_location.slug) if lead_location else None
     stories = homepage_story_data()
     spotlight_modules = None
@@ -641,7 +641,7 @@ def search_locations(query: str):
 def index():
     featured = Location.query.filter(Location.slug.in_(['new-york-ny', 'miami-fl', 'tokyo-jp', 'reykjavik-is'])).all()
     conditions = {condition.location.slug: condition for condition in CurrentConditions.query.all()}
-    lead_location = next((location for location in featured if location.slug == 'new-york-ny'), featured[0] if featured else None)
+    lead_location = (db.session.get(Location, current_user.home_location_id) if current_user.is_authenticated and current_user.home_location_id else None) or next((location for location in featured if location.slug == 'new-york-ny'), featured[0] if featured else None)
     forecast_hint = None
     if lead_location:
         forecast_hint = DailyForecast.query.filter_by(location_id=lead_location.id).order_by(DailyForecast.forecast_date.asc()).first()
@@ -766,8 +766,20 @@ def explore_topic(topic_slug: str):
 @login_required
 def account():
     if request.method == 'POST':
+        units = request.form.get('preferred_units', current_user.preferred_units)
+        if units not in {'imperial', 'metric'}:
+            return 'Invalid units', 400
+        home = request.form.get('home_location_id')
+        if home:
+            try:
+                home_id = int(home)
+            except ValueError:
+                return 'Invalid home location', 400
+            if not SavedLocation.query.filter_by(user_id=current_user.id, location_id=home_id).first():
+                return 'Choose a saved location', 400
+            current_user.home_location_id = home_id
         current_user.full_name = (request.form.get('full_name') or current_user.full_name).strip()
-        current_user.preferred_units = (request.form.get('preferred_units') or current_user.preferred_units).strip()
+        current_user.preferred_units = units
         db.session.commit()
         flash('Preferences updated.', 'success')
         return redirect(url_for('account'))
@@ -793,6 +805,9 @@ def remove_location(slug: str):
     location = Location.query.filter_by(slug=slug).first_or_404()
     item = SavedLocation.query.filter_by(user_id=current_user.id, location_id=location.id).first()
     if item:
+        if current_user.home_location_id == location.id:
+            flash('Choose another home location before removing this one.', 'error')
+            return redirect(url_for('account'))
         db.session.delete(item)
         db.session.commit()
         flash(f'{location.city} removed from your saved locations.', 'success')
