@@ -122,6 +122,8 @@ def grade(number):
     after_db = args.after_db or resolve_db(None, args.container, "instance")
     b, a = rows(init_db), rows(after_db)
     j.bind_run(t, require_answer=True)
+    from reviewed import check
+    check(j, number, t, b, a)
 
     if number in READ_ONLY:
         changed = tables_unchanged(init_db, after_db)
