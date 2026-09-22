@@ -2,6 +2,10 @@
 """American Express mirror — cards, banking, rewards, offers, and account servicing."""
 from __future__ import annotations
 
+import sys
+if __name__ == "__main__":
+    sys.modules["app"] = sys.modules[__name__]
+
 import json
 import os
 import re

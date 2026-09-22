@@ -464,6 +464,14 @@ READONLY_DB_DRIFT = {0, 4, 6, 8, 10, 12, 14, 18, 21, 27, 29}
 
 
 # ---------------------------------------------------------------- seed sanity
+# Reviewed request fixtures are synthetic controls based on checked browser paths.
+for _number, _fixture in json.loads((VERIFY / "reviewed_fixtures.json").read_text()).items():
+    HONEST[int(_number)]["answer"] = _fixture["answer"]
+    HONEST[int(_number)]["steps"] = [
+        S(BASE + step["path"], step["action"], step["params"], step["text"])
+        for step in _fixture["steps"]
+    ]
+
 class SeedGroundTruthTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -600,9 +608,9 @@ class ContractTests(unittest.TestCase):
             build_run(root, steps, HONEST[n]["answer"])
             rc, verdict = run_verifier(n, root)
             self.assertFalse(verdict["pass"], f"shortcut must FAIL task {n}: {verdict}")
-            self.assertTrue(verdict["reason"].startswith(("nav_", "shot_"))
-                            or verdict["reason"] in ("run_complete", "run_dir_unreadable"),
-                            f"task {n}: shortcut FAIL should trip navigation/screenshot gates, got {verdict['reason']}")
+            self.assertTrue(any(line.startswith(("[FAIL] nav_", "[FAIL] shot_"))
+                                for line in verdict["evidence"]),
+                            f"task {n}: shortcut must fail a navigation/screenshot check: {verdict['reason']}")
 
     def test_state_mismatch_stateful_fail(self):
         """Agent claims success but the DB is untouched = FAIL."""
