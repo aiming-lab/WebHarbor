@@ -3,6 +3,11 @@
 chains, daily market statistics, Insights articles, Options Institute
 classes/experts/courses, tradable products, market data pages, and an
 authenticated account with watchlist, class registrations and saved articles."""
+# Keep one model registry when launched directly as well as through Flask.
+import sys
+if __name__ == "__main__":
+    sys.modules["app"] = sys.modules[__name__]
+
 import json
 import math
 import os

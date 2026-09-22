@@ -20,7 +20,11 @@ import os
 import re
 from datetime import datetime
 
-from bs4 import BeautifulSoup
+def _parse_html(source, parser="html.parser"):
+    # Scrape parsing is build-time only; populated HF seeds need no parser.
+    from bs4 import BeautifulSoup
+    return BeautifulSoup(source, parser)
+
 
 # Model imports happen inside each seed function (deferred) so the module
 # can be imported by app.py's bootstrap without a circular import.
@@ -417,7 +421,7 @@ def _expert_dialogs():
 
 def _expert_names_from_dom(html):
     """The ordered (name, title) list rendered in the experts grid."""
-    soup = BeautifulSoup(html, "html.parser")
+    soup = _parse_html(html, "html.parser")
     main = soup.find("main") or soup
     grid = None
     for h in main.find_all(["h1", "h2", "h3"]):
@@ -440,7 +444,7 @@ def seed_experts_and_classes():
     from app import Expert, OIClass, OiEventFilter, db
     # --- experts from the rendered experts page --------------------------
     html = load_html("pages/oi_experts.html")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = _parse_html(html, "html.parser")
     main = soup.find("main") or soup
     dialogs = {d["name"].strip(): d for d in _expert_dialogs()}
     order = 0
@@ -538,7 +542,7 @@ def seed_courses():
     from app import Course, db
     # --- Options 101 ------------------------------------------------------
     html = load_html("pages/oi_options101.html")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = _parse_html(html, "html.parser")
     main = soup.find("main") or soup
     modules = []
     # Modules are cards with an h2/h3 title and a duration label.
@@ -571,7 +575,7 @@ def seed_courses():
 
     # --- Defining Options (glossary) — answers live in the RSC flight data.
     html = load_html("pages/oi_defining.html")
-    soup = BeautifulSoup(html, "html.parser")
+    soup = _parse_html(html, "html.parser")
     main = soup.find("main") or soup
     qa = []
     by_q = {q: a for q, a in _defining_options_flight_pairs(html)}
@@ -748,7 +752,7 @@ def seed_products():
 
 
 def _parse_product_page(html):
-    soup = BeautifulSoup(html, "html.parser")
+    soup = _parse_html(html, "html.parser")
     main = soup.find("main") or soup
     out = {"hero_title": "", "hero_desc": "", "benefits": [], "gth_note": "",
            "gth": [], "resources": [], "quick_links": [], "sections": []}
@@ -848,7 +852,7 @@ def _parse_product_page(html):
 def _parse_specs_page(html):
     """Parse the SPX specifications page: the server-rendered Product Snapshot
     (symbol/CUSIP/multiplier, trading hours, expiration rules, underlying)."""
-    soup = BeautifulSoup(html, "html.parser")
+    soup = _parse_html(html, "html.parser")
     main = soup.find("main") or soup
     specs = []
 
@@ -981,7 +985,7 @@ def seed_static_pages():
 
 def _sections_from_page(relpath, skip_names=frozenset()):
     html = load_html(relpath)
-    soup = BeautifulSoup(html, "html.parser")
+    soup = _parse_html(html, "html.parser")
     main = soup.find("main") or soup
     sections = []
     current = None
