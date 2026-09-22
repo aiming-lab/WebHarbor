@@ -46,16 +46,16 @@ a task allows it. Any drift fails closed with `snapshot_contract_invalid`.
 
 | Task | Navigation gates (all required) | Answer / state check |
 |---|---|---|
-| 0 | `/search?q=` with a lighthouse/office/ocean token; detail of the best-ocean-view post (original **or** its remix clone — same facts) | width `4.2` (decimal-exact) + `reclaimed` + `oak`; DB unchanged |
-| 1 | search (rescue/cat/treat/drawer/miso); detail of the treat-drawer cat post (original or clone) | `February` + count `11`/`eleven`; DB unchanged |
-| 2 | search (solar/camping/camp/rainy/panel); detail of the rainy-weekend solar setup (original or clone) | count `120` + phrase `lunch box` (`lunchbox`/`lunch-box` ok); DB unchanged |
-| 3 | `/interest/science`; detail of the humming-bridge post (original or clone) | count `440` + `railing(s)`; DB unchanged |
-| 4 | search (library/community/night/shift/cabinet); detail of the night-shift library (original or clone) | `blue` + `Thursday` + clock `6 am` (`6:00 AM`, `06:00`, `6 a.m.` ok); DB unchanged |
-| 5 | `/interest/sports`; detail of the grandmother-marathon post (original or clone) | count `38` + `orange`; DB unchanged |
-| 6 | search (sourdough/skyline/baker/bread); detail of the sourdough post (original **or** its remix clone — same facts) | count `3`/`three` + count `14`/`fourteen`; DB unchanged |
-| 7 | `/interest/gaming`; detail of the transparent keyboard (original or clone) | `silent` + `tactile` + `acrylic`; DB unchanged |
-| 8 | search (rain/delay/concert/musician/street/platform/chorus); detail of the street-musician post (original **or** its remix clone — same facts) | count `7`/`seven`; DB unchanged |
-| 9 | `/interest/animals`; detail of the garden-fox post (the original with the most points; frozen points re-checked against the seed) | `Copper`; DB unchanged |
+| 0 | search; all three lighthouse details | office width/material, bookshop desk materials, radio test/weather; DB unchanged |
+| 1 | search; all three rescue details | names and behaviors; cat dates, dog occasion, kitten solution; DB unchanged |
+| 2 | search; all three camping details | solar protection/power, lantern test count/criteria, tarp runoff mechanism; DB unchanged |
+| 3 | Science & Tech; all three bridge details | humming frequency/railings, whistling seam/location, rain-struck panels; DB unchanged |
+| 4 | search; all three library details | cabinet color/schedule, depot supplies, hospital coverage/shift; DB unchanged |
+| 5 | Bob login; Sports; both original details | marathon and championship facts/points; save only championship post 30; only the requested save changes |
+| 6 | search; all three creative-project details | baker attempts/time, guard years/notebooks, eyebrow displacement; DB unchanged |
+| 7 | Alice login; Gaming; both original details | keyboard and arcade facts/points; save only arcade post 21; only the requested save changes |
+| 8 | search; all three music/rain details | concert platform, percussion rain mechanism, city light sensor/response; DB unchanged |
+| 9 | Animals & Pets; all three original details | names/points ranked highest first, dog/fox behavior, top-two point gap; DB unchanged |
 | 10 | login as alice (`/login` + identity typed); search (lighthouse/office/ocean); detail of the **original** lighthouse office; `/login` before the detail | exactly one added `saved_post` (alice, post 12); nothing else changes |
 | 11 | login as carol; `/interest/animals`; detail of the **original** kayak-dog post; order login → feed → detail | exactly one added `vote` (carol, post 20, +1); post 20 `up_votes` +1 only; nothing else changes |
 | 12 | login as bob; `/interest/science`; detail of the **original** humming-bridge post; order login → feed → detail | exactly one added `comment` (bob, post 19) whose text equals the task sentence (case and trailing period tolerated); post 19 `comment_count` +1; nothing else changes |
@@ -75,12 +75,12 @@ decimals must match exactly.
 Note on the "Community remix" clones: the seed duplicates every curated post as `Community remix N: …`
 with the same description. The rule is **provenance only matters where it changes the graded outcome**:
 
-- **Read-only fact tasks (0-8): either detail page is accepted**, because the clone repeats the original's
+- **Read-only fact tasks (0–4, 6, 8): either detail page is accepted**, because the clone repeats the original's
   description verbatim, so an agent that reads the fact off the clone has answered the question correctly.
   Requiring the original there would fail a correct answer on a hidden provenance rule.
-- **Task 9 requires the original**, because it compares *point counts* and the clones carry different ones,
+- **Tasks 5, 7 and 9 require the originals**, because it compares *point counts* and the clones carry different ones,
   so using a clone changes the answer.
-- **Stateful tasks (10-13, 18, 19) require the original**, because the clone is a genuinely different row
+- **Stateful tasks (5, 7, 10-13, 18, 19) require the original**, because the clone is a genuinely different row
   and saving/voting/hiding/commenting on it is a different database effect.
 
 Every task whose grade depends on provenance now says so in its `ques` ("not its 'Community remix' copy"),
@@ -103,3 +103,17 @@ navigation), wrong answers per fact, wrong task id, unterminated runs, mixed ori
 read-only writes, schema/catalog tampering, stale-state preconditions, wrong target/account/reason/text,
 duplicate actions, counter-bump consistency and collateral writes. `verify/tests/` is excluded from the
 image by `.dockerignore`.
+
+## Reviewed answer and media corrections
+
+Read-task facts are checked by `answer_checks.py`: quantities include units and property associations; swapped values, contradictory claims and unrelated matching tokens are rejected by the covered controls. Common paraphrases (such as salvaged oak and quiet tactile switches) and exact unit conversions are accepted. These are bounded deterministic patterns, not unrestricted natural-language understanding. Tasks 0–9 now require multi-source investigation; wording, rubrics and `research_checks.py` define the same expanded contract. Tasks 5 and 7 also require one exact save. Entity-labelled prose, bullets and tables are accepted without a fixed output template. The shared `answer_checks.py` still validates each primary property inside its entity context.
+
+`migrate_seed.py` converts the 70 curated posts to text posts without changing descriptions, IDs, task facts or account state. The original archive is preserved; fetch/build applies the correction before runtime/reset copies. New posts default to no preview image.
+
+Additional focused controls live in `test_answer_checks.py` and `test_media_migration.py`. Re-run the official grading entrypoint on browser trajectories as well as these synthetic controls.
+
+## Difficulty revision
+
+The short tasks retain their original primary facts and add related sources or an evidence-based saved outcome. No catalog or HF archive changed. The verifier does not impose an action-count minimum: source visits, complete correctly attributed answers and exact saved state determine success. Measured replay counts are evidence, not a guaranteed shortest path.
+
+`research_fixtures.py` supplies independent synthetic answers and equivalents. Contract tests reject missing individual sources, former single-post answers, wrong secondary facts, contradictions, wrong accounts/targets, extra writes and remix substitutions where points differ. `live_matrix.py` reads answers from rendered pages and records scripted UI replays; it is not an autonomous LLM run.
