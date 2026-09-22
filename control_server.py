@@ -43,7 +43,7 @@ SITES = [
     'wineaccess', 'webmd', 'petfinder', 'mega',
     '4shared', '9gag', 'akc', 'bestbuy',
     'youtube', 'weather', 'amazon_jobs', 'cboe',
-    'better_business_bureau',
+    'better_business_bureau', 'birkenstock',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'
