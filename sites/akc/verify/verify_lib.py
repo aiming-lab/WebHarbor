@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter
-from datetime import datetime
 import json
 from pathlib import Path
 import re
@@ -27,58 +26,6 @@ def normalize(value):
 def mentions(text, phrase):
     pattern = r"(?<!\w)" + re.escape(normalize(phrase)) + r"(?!\w)"
     return re.search(pattern, normalize(text)) is not None
-
-
-def has_number(text, value):
-    expected = str(value)
-    return any(match.group().replace(",", "") == expected for match in re.finditer(
-        r"(?<![\w.])-?\d[\d,]*(?:\.\d+)?(?!\w|\.\d)", normalize(text)
-    ))
-
-
-def has_date(text, value):
-    date = datetime.strptime(str(value)[:10], "%Y-%m-%d")
-    variants = {
-        date.strftime("%Y-%m-%d"),
-        f"{date:%B} {date.day}, {date.year}",
-        f"{date:%B} {date.day} {date.year}",
-        f"{date:%b} {date.day}, {date.year}",
-        f"{date.day} {date:%B} {date.year}",
-    }
-    return any(mentions(text, variant) for variant in variants)
-
-
-def mentions_range(text, value):
-    expected = normalize(value)
-    variants = {expected, expected.replace("-", " to ")}
-    return any(variant in normalize(text) for variant in variants)
-
-
-def entity_texts(answer, entities):
-    """Bind ordinary prose or Markdown-table facts to named entities."""
-    source = normalize(answer)
-    patterns = {
-        key: re.compile(r"(?<!\w)(?:" + "|".join(
-            re.escape(normalize(name)) for name in sorted(names, key=len, reverse=True)
-        ) + r")(?!\w)")
-        for key, names in entities.items()
-    }
-    output = {key: [] for key in entities}
-    for line in source.splitlines():
-        hits = [(match.start(), match.end(), key) for key, pattern in patterns.items()
-                for match in pattern.finditer(line)]
-        hits.sort(key=lambda item: (item[0], -(item[1] - item[0])))
-        distinct = []
-        for hit in hits:
-            if not distinct or hit[0] >= distinct[-1][1]:
-                distinct.append(hit)
-        if len(distinct) == 1:
-            output[distinct[0][2]].append(line)
-        else:
-            for index, (start, _, key) in enumerate(distinct):
-                stop = distinct[index + 1][0] if index + 1 < len(distinct) else len(line)
-                output[key].append(line[start:stop])
-    return {key: "\n".join(parts) for key, parts in output.items()}
 
 
 def _local_url(value):
