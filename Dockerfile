@@ -170,6 +170,9 @@ print('Adopt-a-Pet seed DB generated at build time.')" && rm -rf /opt/WebSyn/ado
 # Preserve the downloaded MEGA archive and migrate its seed at build time.
 RUN cd /opt/WebSyn/mega && python3 migrate_seed.py
 
+# Preserve the original 4shared archive and add deterministic rename history.
+RUN cd /opt/WebSyn/4shared && python3 migrate_seed.py
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 

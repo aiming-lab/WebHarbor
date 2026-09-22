@@ -53,13 +53,13 @@ SITE = "4shared"
 DEFAULT_CONTAINER = os.environ.get("WH_CONTAINER", "wh-review")
 
 EXPECTED_TABLES = {"comments", "downloads", "favorites", "files", "folders",
-                   "plan_orders", "saved_files", "shared_links", "users"}
+                   "plan_orders", "saved_files", "shared_links", "users", "file_renames"}
 SEED_COUNTS = {"users": 4, "files": 146, "folders": 16, "favorites": 16, "saved_files": 12,
-               "downloads": 8, "shared_links": 4, "comments": 12, "plan_orders": 1}
+               "downloads": 8, "shared_links": 4, "comments": 12, "plan_orders": 1, "file_renames": 0}
 SEED_PUBLIC_FILES = 122
 USER_IDS = {"alice.j@test.com": 1, "bob.c@test.com": 2, "carol.d@test.com": 3, "david.k@test.com": 4}
 ALL_TABLES = ("users", "folders", "files", "favorites", "saved_files", "downloads",
-              "shared_links", "comments", "plan_orders")
+              "shared_links", "comments", "plan_orders", "file_renames")
 PNG_MAGIC = b"\x89PNG\r\n\x1a\n"
 
 
@@ -493,6 +493,10 @@ def added_rows(initial_db, after_db, table: str) -> list[dict]:
     return [dict(zip(cols, r)) for r in table_delta(initial_db, after_db, table)["added"]]
 
 
+def catalog_filenames(db_path):
+    return [r["filename"] for r in db_query(db_path, "SELECT filename FROM files WHERE public = 1")]
+
+
 def tables_unchanged(initial_db, after_db, tables: Iterable[str]) -> dict[str, bool]:
     return {t: table_rows(initial_db, t) == table_rows(after_db, t) for t in tables}
 
@@ -706,9 +710,26 @@ def check_read_only(j: Judge, initial_db, after_db) -> None:
     check_tables_unchanged(j, initial_db, after_db, ALL_TABLES, prefix="read_only_")
 
 
+def check_rename_recorded(j, initial_db, after_db, file_id, user_id, old_name, new_name):
+    delta = table_delta(initial_db, after_db, "file_renames")
+    added = added_rows(initial_db, after_db, "file_renames")
+    row = added[0] if len(added) == 1 else {}
+    file = row_by_id(after_db, "files", file_id) or {}
+    j.check("exact_rename_event", len(added) == 1 and not delta["removed"] and not delta["changed"]
+            and row.get("file_id") == file_id and row.get("user_id") == user_id
+            and row.get("old_name") == old_name and row.get("new_name") == new_name,
+            f"rename_events={added!r}")
+    j.check("rename_after_upload", bool(row) and bool(file)
+            and file["uploaded_at"] <= row["created_at"] <= file["modified_at"],
+            f"uploaded={file.get('uploaded_at')} renamed={row.get('created_at')} modified={file.get('modified_at')}")
+
+
 def check_download_recorded(j: Judge, initial_db, after_db, file_id: int, user_id: int | None = None, allow_anonymous: bool = True) -> None:
     """Exactly one new downloads row for file_id (+1 download_count on that file)."""
     added = added_rows(initial_db, after_db, "downloads")
+    delta = table_delta(initial_db, after_db, "downloads")
+    j.check("prior_downloads_preserved", not delta["removed"] and not delta["changed"],
+            f"removed={len(delta['removed'])} changed={len(delta['changed'])}")
     mine = [r for r in added if int(r["file_id"]) == int(file_id)]
     # user_id=None means "any account (or anonymous when allowed)"; a concrete
     # user_id must match exactly (anonymous only if allow_anonymous).

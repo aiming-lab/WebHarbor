@@ -14,8 +14,11 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (Judge, check_detail_visited, check_read_only, check_search_or_category,  # noqa: E402
-                        check_trajectory_identity, contains_all, contains_filename, contains_number,
+                        check_trajectory_identity, contains_all, contains_filename,
                         fail_closed, final_answer, load_run, parse_args, resolve_snapshots)
+
+from verify_lib import catalog_filenames
+from answer_checks import count_claims
 
 TASK_ID = "4shared--3"
 SLUG = "rain-garden-planting-guide-pdf-97"
@@ -30,7 +33,7 @@ def run_checks(j, t, initial_db, after_db):
     check_detail_visited(j, t, SLUG)
     fa = final_answer(t)
     j.check("answer_has_exact_filename", contains_filename(fa, FILENAME), f"expected={FILENAME!r} answer={fa[:200]!r}")
-    j.check("answer_has_page_count", contains_number(fa, PAGES), f"expected={PAGES} answer={fa[:200]!r}")
+    j.check("answer_has_page_count", count_claims(fa, FILENAME, catalog_filenames(initial_db), "page", PAGES), f"expected={PAGES} answer={fa[:200]!r}")
     j.check("answer_has_uploader", contains_all(fa, [UPLOADER]), f"expected={UPLOADER!r} answer={fa[:200]!r}")
     check_read_only(j, initial_db, after_db)
 

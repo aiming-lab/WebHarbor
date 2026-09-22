@@ -14,7 +14,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from verify_lib import (ALL_TABLES, Judge, check_signed_in_as, check_tables_unchanged,  # noqa: E402
+from verify_lib import (ALL_TABLES, Judge, check_rename_recorded, check_signed_in_as, check_tables_unchanged,  # noqa: E402
                         check_trajectory_identity, check_visited_path, fail_closed, load_run, parse_args,
                         resolve_snapshots, row_by_id, row_changed_only_in, rows_unchanged_except)
 
@@ -35,7 +35,9 @@ def run_checks(j, t, initial_db, after_db):
     j.check("file_moved_to_shared_projects", after.get("folder_id") == DEST_FOLDER_ID, f"after_folder_id={after.get('folder_id')} expected={DEST_FOLDER_ID}")
     j.check("file_row_changed_only_expected_columns", ok and bool(diff), f"diff={diff!r}")
     j.check("other_files_unchanged", rows_unchanged_except(initial_db, after_db, "files", [FILE_ID]), f"files rows other than {FILE_ID} identical")
-    check_tables_unchanged(j, initial_db, after_db, [x for x in ALL_TABLES if x != "files"])
+    check_rename_recorded(j, initial_db, after_db, FILE_ID, USER_ID,
+                          "Alice Quarterly retreat budget.xlsx", NEW_NAME)
+    check_tables_unchanged(j, initial_db, after_db, [x for x in ALL_TABLES if x not in {"files", "file_renames"}])
 
 
 def main():

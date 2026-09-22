@@ -14,8 +14,10 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from verify_lib import (Judge, check_detail_visited, check_read_only, check_trajectory_identity,  # noqa: E402
-                        claims_winner, contains_runtime, fail_closed, final_answer, load_run,
+                        fail_closed, final_answer, load_run,
                         parse_args, resolve_snapshots)
+
+from answer_checks import runtime_claims, winner_claim
 
 TASK_ID = "4shared--5"
 WINNER_SLUG, WINNER_KEY, WINNER_RUNTIME = "open-data-mapping-basics-mp4-22", "Open Data Mapping Basics", "27:03"
@@ -27,9 +29,8 @@ def run_checks(j, t, initial_db, after_db):
     check_detail_visited(j, t, WINNER_SLUG)
     check_detail_visited(j, t, LOSER_SLUG)
     fa = final_answer(t)
-    j.check("answer_has_winner_runtime", contains_runtime(fa, WINNER_RUNTIME), f"expected={WINNER_RUNTIME!r} answer={fa[:200]!r}")
-    j.check("answer_has_loser_runtime", contains_runtime(fa, LOSER_RUNTIME), f"expected={LOSER_RUNTIME!r} answer={fa[:200]!r}")
-    j.check("answer_names_longer_video", claims_winner(fa, WINNER_KEY, [LOSER_KEY]), f"expected_longer={WINNER_KEY!r} answer={fa[:200]!r}")
+    j.check("runtimes_bound_to_videos", runtime_claims(fa, [WINNER_KEY, LOSER_KEY], [27 * 60 + 3, 19 * 60 + 5]), f"answer={fa[:400]!r}")
+    j.check("answer_names_longer_video", winner_claim(fa, WINNER_KEY, [LOSER_KEY]), f"expected_longer={WINNER_KEY!r} answer={fa[:400]!r}")
     check_read_only(j, initial_db, after_db)
 
 
