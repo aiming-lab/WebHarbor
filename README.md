@@ -124,6 +124,7 @@ All registered websites and their default ports, in registration order. A site's
 | WebMD | 40053 |
 | Petfinder | 40054 |
 | MEGA | 40055 |
+| 4shared | 40056 |
 
 ## 🤝 Contribute
 

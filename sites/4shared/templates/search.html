@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}{% if query %}{{ query }} - {% endif %}4shared - free file sharing and storage{% endblock %}
+{% block content %}
+<section class="search-page"><div class="container">
+  <div class="search-tabs" aria-label="Categories">
+    <a class="{% if category == 'All Files' %}active{% endif %}" href="{{ url_for('search',q=query) }}">All</a>
+    {% for item in ['Music','Video','Apps','Images','Books','Archives'] %}<a class="{% if category == item %}active{% endif %}" href="{{ url_for('search',q=query,category=item) }}">{{ item }}</a>{% endfor %}
+  </div>
+  <div class="result-toolbar">
+    <strong>{{ files|length }} files</strong>
+    <form class="filters" method="get">
+      <input type="hidden" name="q" value="{{ query }}">
+      <label class="sr-only" for="category">Category</label><select id="category" name="category"><option>All Files</option>{% for item in nav_categories %}<option {% if item == category %}selected{% endif %}>{{ item }}</option>{% endfor %}</select>
+      <label class="sr-only" for="sort">Sort by</label><select id="sort" name="sort"><option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Relevance</option><option value="downloads" {% if sort == 'downloads' %}selected{% endif %}>Most downloaded</option><option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option><option value="size" {% if sort == 'size' %}selected{% endif %}>Largest</option></select>
+      <button aria-label="Apply filters">↕</button>
+    </form>
+  </div>
+  <div class="result-list">
+    {% for file in files %}
+    <article class="result-row">
+      <a class="result-visual type-{{ file.category|lower }}" href="{{ url_for('file_detail',slug=file.slug) }}">
+        {% if file.thumbnail %}<img src="{{ url_for('static',filename=file.thumbnail) }}" alt="">{% else %}<span class="media-glyph">{% if file.category == 'Music' %}♪{% elif file.category == 'Video' %}▷{% elif file.category == 'Images' %}▧{% elif file.category == 'Books' %}▥{% else %}{{ file.extension|upper }}{% endif %}</span>{% endif %}
+      </a>
+      <div class="result-info"><h3><a href="{{ url_for('file_detail',slug=file.slug) }}">{{ file.filename }}</a></h3><p>{{ file.size_bytes|filesize }}</p><div class="result-owner">● {{ file.uploader_name }} &nbsp;in&nbsp; ▰ My 4shared</div></div>
+      <a class="result-add" href="{{ url_for('file_detail',slug=file.slug) }}" aria-label="Open {{ file.filename }}">＋</a>
+    </article>
+    {% else %}<div class="empty">No files matched. Try fewer words or another category.</div>{% endfor %}
+  </div>
+</div></section>
+{% endblock %}
