@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Log In{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <h1>Log In</h1>
+    {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+    <form method="post" action="{{ url_for('login', next=request.args.get('next','')) }}">
+      <div class="form-row">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" required>
+      </div>
+      <div class="form-row">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" required>
+      </div>
+      <button class="btn btn-primary" type="submit">Log In</button>
+    </form>
+    <p class="auth-links">New here? <a href="{{ url_for('register') }}">Create an account</a></p>
+  </div>
+</div>
+{% endblock %}

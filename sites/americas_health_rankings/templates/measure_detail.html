@@ -1,0 +1,196 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import us_map, legend, trend_chart with context %}
+{% block title %}{{ m.display_name }} in United States | AHR{% endblock %}
+{% block content %}
+<div class="container page-head measure-head">
+  <h1>{{ m.display_name }} in United States</h1>
+  <p class="section-sub" style="margin-top:6px">{{ m.description }}</p>
+  {% if m.latest_year %}
+  <p style="color:#666;font-size:13.5px">Value and rank based on data from {{ m.source_years or m.latest_year }}</p>
+  {% endif %}
+</div>
+
+<section class="section section-white" style="padding-top:10px">
+  <div class="container">
+    <div class="indepth-box">
+      <div>
+        <h3>{{ m.display_name }} in depth:</h3>
+        <h4 style="font-size:14px">Additional Measures:</h4>
+        <ul>
+          {% for a in additional %}
+          <li><a href="{{ url_for('measure_detail', slug=a.target_slug) }}">{{ a.target_name }}</a></li>
+          {% else %}<li>—</li>{% endfor %}
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-bottom:6px">Explore Population Data:</h3>
+        {% if groups %}
+        <select onchange="if (this.value) { window.location = '/explore/measures/' + this.value; }">
+          {% for g in groups %}
+          {% if not loop.first %}<option disabled></option>{% endif %}
+          {% for opt in g.options %}
+          <option value="{{ opt.option_value }}">{{ opt.option_label }}</option>
+          {% endfor %}
+          {% endfor %}
+        </select>
+        {% else %}
+        <select><option>General Population</option></select>
+        {% endif %}
+      </div>
+      <div>
+        <h3>Appears In:</h3>
+        <ul>
+          {% for a in appears %}<li>{{ a.edition }}</li>{% endfor %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="section-head" id="by-state">
+      <h2 class="section-title" style="font-size:22px">{{ m.display_name }} by State</h2>
+    </div>
+    <p class="section-sub">{{ m.description }}</p>
+    <div class="map-wrap">
+      {{ us_map(states, colors, m, bins) }}
+      {{ legend(bins) }}
+      <div class="chart-source">Data from {{ m.source_name }}{% if m.source_years %}, {{ m.source_years }}{% endif %}</div>
+    </div>
+
+    <div class="rank-tables">
+      <div class="sc-box">
+        <h3>Top States</h3>
+        <table class="data-table">
+          <thead><tr><th>State</th><th class="num">Rank</th><th class="num">Value</th></tr></thead>
+          <tbody>
+            {% for v in top_states %}
+            <tr>
+              <td><a href="{{ url_for('state_summary', code=v.state_code) }}">{{ state_name(v.state_code) }}</a></td>
+              <td class="num">{{ v.rank }}</td>
+              <td class="num">{{ v.value_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="sc-box">
+        <h3>Bottom States</h3>
+        <table class="data-table">
+          <thead><tr><th>State</th><th class="num">Rank</th><th class="num">Value</th></tr></thead>
+          <tbody>
+            {% for v in bottom_states %}
+            <tr>
+              <td><a href="{{ url_for('state_summary', code=v.state_code) }}">{{ state_name(v.state_code) }}</a></td>
+              <td class="num">{{ v.rank }}</td>
+              <td class="num">{{ v.value_display }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <details class="accordion">
+      <summary>View All States</summary>
+      <div class="acc-body">
+        <table class="data-table">
+          <thead><tr><th>State</th><th class="num">Rank</th><th class="num">{{ m.latest_year }} Value</th></tr></thead>
+          <tbody>
+            {% for v in ranked %}
+            <tr>
+              <td><a href="{{ url_for('state_summary', code=v.state_code) }}">{{ state_name(v.state_code) }}</a></td>
+              <td class="num">{{ v.rank if v.rank is not none else '•' }}</td>
+              <td class="num">{{ v.value_display if v.value_display else '•' }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </details>
+
+    <div class="section-head" id="trends" style="margin-top:36px">
+      <h2 class="section-title" style="font-size:22px">{{ m.display_name }} Trends</h2>
+    </div>
+    <p class="section-sub">{{ m.description }}</p>
+    <div class="chart-box">
+      {{ trend_chart([{'label': 'United States', 'color': '#0066f5', 'points': us_series | map_points }]) }}
+      <div class="chart-source">Source: {{ m.source_name }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-light">
+  <div class="container two-col">
+    <div>
+      <h2 class="section-title" style="font-size:22px">About {{ m.display_name }}</h2>
+      <div class="about-facts">
+        {% if us_value %}<div><strong>US Value:</strong> {{ us_value.value_display }}</div>{% endif %}
+        {% if top_states %}<div><strong>Top State(s):</strong> {{ state_name(top_states[0].state_code) }}: {{ top_states[0].value_display }}</div>{% endif %}
+        {% if bottom_states %}<div><strong>Bottom State(s):</strong> {{ state_name(bottom_states[-1].state_code) }}: {{ bottom_states[-1].value_display }}</div>{% endif %}
+        <div><strong>Definition:</strong> {{ m.description }}</div>
+        <div><strong>Data Source and Year(s):</strong> {{ m.source_name }}{% if m.source_years %}, {{ m.source_years }}{% endif %}</div>
+        {% if m.citation %}<div><strong>Suggested Citation:</strong> {{ m.citation }}</div>{% endif %}
+      </div>
+      <details class="accordion" {% if not m.about_why %}hidden{% endif %}>
+        <summary>Why does this matter?</summary>
+        <div class="acc-body">{{ about.why | safe }}</div>
+      </details>
+      <details class="accordion" {% if not m.about_who %}hidden{% endif %}>
+        <summary>Who is affected?</summary>
+        <div class="acc-body">{{ about.who | safe }}</div>
+      </details>
+      <details class="accordion" {% if not m.about_works %}hidden{% endif %}>
+        <summary>What works?</summary>
+        <div class="acc-body">{{ about.works | safe }}</div>
+      </details>
+      <details class="accordion" {% if not m.about_goals %}hidden{% endif %}>
+        <summary>Goals</summary>
+        <div class="acc-body">{{ about.goals | safe }}</div>
+      </details>
+      <details class="accordion" {% if not m.about_references %}hidden{% endif %}>
+        <summary>References</summary>
+        <div class="acc-body">{{ about.references | safe }}</div>
+      </details>
+      <form action="{{ url_for('toggle_bookmark') }}" method="post" style="margin-top:16px">
+        <input type="hidden" name="kind" value="measure">
+        <input type="hidden" name="slug" value="{{ m.slug }}">
+        <input type="hidden" name="title" value="{{ m.display_name }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        {% if current_user.is_authenticated %}
+        <button type="submit" class="btn {{ 'btn-outline' if bookmarked else 'btn-primary' }}">
+          {% if bookmarked %}Saved ✓ (remove){% else %}Save this measure{% endif %}</button>
+        {% else %}
+        <a class="btn btn-outline" href="{{ url_for('login', next=request.path) }}">Log in to save</a>
+        {% endif %}
+      </form>
+    </div>
+    <div>
+      <h2 class="section-title" style="font-size:22px">Related Measures</h2>
+      <div class="related-grid">
+        {% for r in related %}
+        <a href="{{ url_for('measure_detail', slug=r.target_slug) }}">{{ r.target_name }}</a>
+        {% else %}<p>No related measures.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-white">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">Reports</h2>
+      <a class="btn btn-outline" href="{{ url_for('reports_archive') }}">All Reports ›</a>
+    </div>
+    <p class="section-sub">America’s Health Rankings provides detailed health assessments of key populations.</p>
+    <div class="pub-grid three">
+      {% for r in flagship_reports %}
+      <div class="report-card">
+        <h3><a href="{{ url_for('report_page', slug=r.slug) }}">{{ r.title }}</a></h3>
+        <div class="published">Published {{ r.published }}</div>
+        <p>{{ r.excerpt }}</p>
+        <a href="{{ url_for('report_page', slug=r.slug) }}">View Report ›</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
