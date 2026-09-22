@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Settings | Amazon.jobs{% endblock %}
+{% block content %}
+<div class="container page-content account-page narrow">
+  <div class="account-head">
+    <h1>Communication preferences</h1>
+    <p class="account-sub">Choose which emails you would like to receive from Amazon Jobs.</p>
+  </div>
+  <form method="post" action="{{ url_for('communication_preferences') }}" class="settings-form">
+    <label class="check-row">
+      <input type="checkbox" name="notify_recommendations" {% if user.notify_recommendations %}checked{% endif %}>
+      <span><b>Job recommendations</b> — emails with roles that match your profile and searches.</span>
+    </label>
+    <label class="check-row">
+      <input type="checkbox" name="notify_application_updates" {% if user.notify_application_updates %}checked{% endif %}>
+      <span><b>Application updates</b> — status changes for the roles you applied to.</span>
+    </label>
+    <label class="check-row">
+      <input type="checkbox" name="notify_newsletter" {% if user.notify_newsletter %}checked{% endif %}>
+      <span><b>Amazon Newsletter</b> — stories about Amazonians, teams, and innovations.</span>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">Save preferences</button>
+    </div>
+  </form>
+</div>
+{% endblock %}

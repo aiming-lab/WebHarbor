@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>{{ title }}</h1>
+    <p class="hero-intro">{{ intro }}</p>
+  </div>
+</div>
+<div class="container page-content narrow">
+  {% for block in blocks %}
+  <div class="content-block">
+    {% if block.heading %}<h2 class="section-heading">{{ block.heading }}</h2>{% endif %}
+    {% for para in block.body.split('\n') %}
+    <p>{{ para }}</p>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

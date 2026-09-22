@@ -1,0 +1,84 @@
+<div class="search-layout">
+  <div class="search-results-col">
+    <aside class="filter-panel">
+      <h2 class="filter-heading">Filter by</h2>
+      {% for facet in facets %}
+      <div class="filter-group">
+        <button type="button" class="filter-title" aria-expanded="true">
+          <span>{{ facet.label }}</span><span class="arrow-up" aria-hidden="true"></span>
+        </button>
+        <div class="filter-options">
+          {% for value, label, count in facet.options %}
+          {% if count %}
+          <a class="filter-option{% if value in (active.get(facet.key) or []) %} selected{% endif %}"
+             href="{{ modified_query(facet.key, value) }}">
+            <span class="filter-label">{{ label }}</span>
+            {% if value in (active.get(facet.key) or []) %}<span class="filter-check" aria-hidden="true">✓</span>{% else %}<span class="filter-count">({{ count }})</span>{% endif %}
+          </a>
+          {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </aside>
+  </div>
+  <div class="search-main-col">
+    {% if not current_user.is_authenticated %}
+    <div class="alert-bar">
+      <span class="alert-icon" aria-hidden="true"></span>
+      <span>Set job alerts for your search and never miss an opportunity! <a href="{{ url_for('login') }}">Login</a> or <a href="{{ url_for('register') }}">create an account</a></span>
+      <button type="button" class="alert-close" aria-label="Dismiss">&times;</button>
+    </div>
+    {% else %}
+    <div class="alert-bar">
+      <span class="alert-icon" aria-hidden="true"></span>
+      <span>Like this search? <a href="{{ url_for('job_alerts', base_query=base_query, loc_keyword=loc_keyword) }}">Save it as a job alert</a> and never miss an opportunity.</span>
+      <button type="button" class="alert-close" aria-label="Dismiss">&times;</button>
+    </div>
+    {% endif %}
+    <div class="results-toolbar">
+      <h2 class="results-listed">Results listed</h2>
+      <div class="sort-wrap">
+        <button type="button" class="sort-btn" id="sort-btn" aria-haspopup="true" aria-expanded="false">
+          Sort by: {{ sort_options[sort_by] }} <span class="caret"></span>
+        </button>
+        <div class="sort-menu" id="sort-menu" hidden>
+          <a href="{{ modified_query('sort_by', 'relevant') }}" {% if sort_by == 'relevant' %}class="selected" aria-selected="true"{% else %}aria-selected="false"{% endif %}>Most relevant</a>
+          <a href="{{ modified_query('sort_by', 'recent') }}" {% if sort_by == 'recent' %}class="selected" aria-selected="true"{% else %}aria-selected="false"{% endif %}>Most recent</a>
+        </div>
+      </div>
+    </div>
+    <p class="results-count">{{ total }} result{{ 's' if total != 1 }}</p>
+    <div class="job-tile-lists">
+      {% for job in page_jobs %}
+      {% include "_job_tile.html" %}
+      {% else %}
+      <div class="no-results">
+        <h3>No jobs found</h3>
+        <p>Try removing some filters, or search with a different keyword.</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% if pages > 1 %}
+    <nav class="pagination" aria-label="Search results pages">
+      {% set prev_offset = offset - limit %}
+      {% if prev_offset >= 0 %}
+      <a class="page-link" href="{{ modified_query('offset', prev_offset) }}" aria-label="Previous page">&laquo;</a>
+      {% endif %}
+      {% for p in page_window %}
+        {% if p == '…' %}
+        <span class="page-ellipsis">&hellip;</span>
+        {% elif p == current_page %}
+        <span class="page-link current">{{ p }}</span>
+        {% else %}
+        <a class="page-link" href="{{ modified_query('offset', (p - 1) * limit) }}">{{ p }}</a>
+        {% endif %}
+      {% endfor %}
+      {% set next_offset = offset + limit %}
+      {% if next_offset < total %}
+      <a class="page-link" href="{{ modified_query('offset', next_offset) }}" aria-label="Next page">&raquo;</a>
+      {% endif %}
+    </nav>
+    {% endif %}
+  </div>
+</div>

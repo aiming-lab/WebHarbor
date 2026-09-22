@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}How We Hire{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>How We Hire</h1>
+    <p class="hero-intro">From online application to interview, learn what to expect at each step of the Amazon hiring process.</p>
+  </div>
+</div>
+<div class="container page-content">
+  {% if intro %}
+  <div class="landing-copy">
+    <h2 class="section-heading-left">The interview process</h2>
+    <p>{{ intro }}</p>
+  </div>
+  {% endif %}
+  <div class="hwh-grid">
+    {% for block in blocks if block.image %}
+    <div class="hwh-card">
+      <img src="{{ image_url(block.image) }}" alt="{{ block.heading }}">
+      <h3>{{ block.heading }}</h3>
+      <p>{{ block.body }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% if resources %}
+  <div class="talent-band">
+    <div class="container">
+      <h2>General resources</h2>
+      <ul class="resource-list">
+        {% for r in resources %}
+        <li>{{ r }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+  {% endif %}
+  {% for block in blocks if not block.image %}
+  <div class="landing-copy">
+    {% if block.heading %}<h2 class="section-heading-left">{{ block.heading }}</h2>{% endif %}
+    <p>{{ block.body }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

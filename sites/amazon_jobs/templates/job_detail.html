@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} - Job ID: {{ job.job_id }} | Amazon.jobs{% endblock %}
+{% block content %}
+<div id="job-detail">
+  <div class="apply-header">
+    <div class="container">
+      <div class="apply-header-inner">
+        <div class="job-headline">
+          <h1 class="title">{{ job.title }}</h1>
+          <p class="meta">Job ID: {{ job.job_id }}{% if job.company_name %} | {{ job.company_name }}{% endif %}</p>
+        </div>
+        <div class="apply-wrapper">
+          <div class="apply">
+            {% if applied %}
+            <span class="btn btn-primary applied-btn">Applied</span>
+            {% elif current_user.is_authenticated %}
+            <a class="btn btn-primary" href="{{ url_for('apply_job', job_id=job.job_id) }}">Apply now</a>
+            {% else %}
+            <a class="btn btn-primary" href="{{ url_for('login', next=url_for('apply_job', job_id=job.job_id)) }}">Apply now</a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="container job-detail-body">
+    <div class="row">
+      <div class="job-content">
+        <section class="section">
+          <h2>Description</h2>
+          {% for para in job.description.split('\n') %}
+          <p>{{ para }}</p>
+          {% endfor %}
+        </section>
+        {% if job.basic_qualifications %}
+        <section class="section">
+          <h2>Basic Qualifications</h2>
+          <ul class="qual-list">
+            {% for qual in job.quals_list(job.basic_qualifications) %}
+            <li>{{ qual }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
+        {% if job.preferred_qualifications %}
+        <section class="section">
+          <h2>Preferred Qualifications</h2>
+          <ul class="qual-list">
+            {% for qual in job.quals_list(job.preferred_qualifications) %}
+            <li>{{ qual }}</li>
+            {% endfor %}
+          </ul>
+        </section>
+        {% endif %}
+      </div>
+      <div class="job-sidebar">
+        <div class="sidebar">
+          <h2 class="job-details-title">Job details</h2>
+          <ul class="associations">
+            <li class="association-wrapper">
+              <div class="association location-icon">
+                <span class="assoc-icon pin" aria-hidden="true"></span>
+                <ul class="association-content">
+                  <li>{{ job.location_sidebar() }}</li>
+                </ul>
+              </div>
+            </li>
+            <li class="association-wrapper">
+              <div class="association job-category-icon">
+                <span class="assoc-icon briefcase" aria-hidden="true"></span>
+                <ul class="association-content">
+                  {% if job.category_slug %}
+                  <a href="{{ url_for('job_category_detail', slug=job.category_slug) }}">{{ job.category }}</a>
+                  {% else %}
+                  <li>{{ job.category }}</li>
+                  {% endif %}
+                </ul>
+              </div>
+            </li>
+            <li class="association-wrapper">
+              <div class="association posted-icon">
+                <span class="assoc-icon calendar" aria-hidden="true"></span>
+                <ul class="association-content">
+                  <li>Posted {{ job.posted_date_label() }}</li>
+                </ul>
+              </div>
+            </li>
+          </ul>
+        </div>
+        <div class="sidebar recommended">
+          <h2 class="job-details-title">Recommended jobs</h2>
+          <p class="subtitle">Based on your recent activity, you may be interested in:</p>
+          <ul class="jobs list-unstyled">
+            {% for rec in recommended %}
+            <li class="recommended-job" data-job-id="{{ rec.job_id }}">
+              <a class="title" href="{{ url_for('job_detail', job_id=rec.job_id, slug=rec.slug) }}">{{ rec.title }}</a>
+              <div class="location"><b>Location:</b> {{ rec.location_sidebar() }}</div>
+              <div class="posted-date"><b>Posted:</b> {{ rec.posted_date_label() }} <span class="updated-time">{{ rec.updated_label() }}</span></div>
+            </li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="sidebar share">
+          <h2 class="job-details-title">Share this job</h2>
+          <div class="share-row">
+            <input type="text" class="share-link" readonly value="{{ share_url }}" aria-label="Job link">
+            <button type="button" class="copy-btn" data-copy>Copy link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
