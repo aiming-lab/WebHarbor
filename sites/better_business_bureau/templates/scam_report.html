@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Report a Scam | BBB Scam Tracker | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Report a Scam</h1>
+    <p>Report a scam to help BBB track scam activity and warn other consumers. Fields marked with <span style="color:#ba0c2f;">*</span> are required.</p>
+  </div>
+</div>
+<div class="flash-zone">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="flash-msg {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+</div>
+<div class="container">
+  <form class="form-card" method="post" action="{{ url_for('scam_report') }}">
+    <div class="form-row">
+      <label for="scam_type">Scam type <span class="req">*</span></label>
+      <select id="scam_type" name="scam_type">
+        <option value="">Select a scam type...</option>
+        {% for t in types %}<option value="{{ t }}">{{ t }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="description">What happened? <span class="req">*</span></label>
+      <textarea id="description" name="description" placeholder="Describe the scam: how you were contacted, what was requested, and any details that can help others recognize it..."></textarea>
+    </div>
+    <div class="form-row">
+      <label for="target_city">Your city <span class="req">*</span></label>
+      <input type="text" id="target_city" name="target_city">
+    </div>
+    <div class="form-row">
+      <label for="target_state">Your state <span class="req">*</span></label>
+      <input type="text" id="target_state" name="target_state" maxlength="2" placeholder="WA">
+    </div>
+    <div class="form-row">
+      <label for="target_zip">Your ZIP code</label>
+      <input type="text" id="target_zip" name="target_zip">
+    </div>
+    <div class="form-row">
+      <label for="scammer_phone">Scammer phone (if known)</label>
+      <input type="text" id="scammer_phone" name="scammer_phone">
+    </div>
+    <div class="form-row">
+      <label for="scammer_email">Scammer email (if known)</label>
+      <input type="text" id="scammer_email" name="scammer_email">
+    </div>
+    <div class="form-row">
+      <label for="scammer_url">Scammer website (if known)</label>
+      <input type="text" id="scammer_url" name="scammer_url">
+    </div>
+    <div class="form-row">
+      <label for="business_name">Business named in the scam (if any)</label>
+      <input type="text" id="business_name" name="business_name">
+    </div>
+    <div class="form-row">
+      <label for="dollar_value">Dollar amount lost</label>
+      <input type="text" id="dollar_value" name="dollar_value" placeholder="0" value="0">
+    </div>
+    <button class="btn btn-primary" type="submit">Submit Scam Report</button>
+    <p class="hint" style="margin-top:1rem;">Your report is published to BBB Scam Tracker to help other consumers. Do not include passwords or full financial account numbers.</p>
+  </form>
+</div>
+{% endblock %}

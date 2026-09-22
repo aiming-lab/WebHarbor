@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Create Your Account | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="container">
+  <form class="form-card" method="post" action="{{ url_for('register') }}">
+    <h1>Create Your BBB Account</h1>
+    <p class="hint">An account lets you save businesses, write reviews, file complaints, and report scams.</p>
+    <div class="form-row">
+      <label for="display_name">Your name <span class="req">*</span></label>
+      <input type="text" id="display_name" name="display_name">
+    </div>
+    <div class="form-row">
+      <label for="email">Email address <span class="req">*</span></label>
+      <input type="email" id="email" name="email" placeholder="you@example.com">
+    </div>
+    <div class="form-row">
+      <label for="password">Password (8+ characters) <span class="req">*</span></label>
+      <input type="password" id="password" name="password">
+    </div>
+    <div class="form-row">
+      <label for="city">City</label>
+      <input type="text" id="city" name="city">
+    </div>
+    <div class="form-row">
+      <label for="state">State</label>
+      <input type="text" id="state" name="state" maxlength="2" placeholder="WA">
+    </div>
+    <button class="btn btn-primary" type="submit">Create Account</button>
+    <p style="margin-top:1rem;">Already have an account? <a href="{{ url_for('signin') }}">Sign in</a></p>
+  </form>
+</div>
+{% endblock %}

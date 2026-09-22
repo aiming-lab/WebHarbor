@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Review a Business | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Leave a Review</h1>
+    <p>Search for a business to write a customer review and share your opinions.</p>
+  </div>
+</div>
+<div class="container">
+  <div class="lookup-bar">
+    <form action="{{ url_for('leave_a_review') }}" method="get" style="display:flex;gap:.8rem;flex-wrap:wrap;flex:1;">
+      <input type="text" name="find_text" value="{{ find_text }}" placeholder="Businesses">
+      <button class="btn btn-yellow" type="submit">
+        <svg width="16" height="16" viewBox="0 0 512 512" aria-hidden="true"><path d="M505 442.7L405.3 343c28.5-35.6 44-79.7 44-127.9C449.3 93.1 346.2 0 224.6 0 103 0 0 93.1 0 215.1s103 215.1 224.6 215.1c48.2 0 92.7-16.6 128.3-44.5l99.6 99.6c9.4 9.4 24.6 9.4 34 0l18.5-18.5c9.4-9.4 9.4-24.6 0-34zM224.6 344.5c-71.4 0-129.4-57.9-129.4-129.4s58-129.4 129.4-129.4 129.4 57.9 129.4 129.4-58 129.4-129.4 129.4z" fill="#2d2926"/></svg>
+        Search
+      </button>
+    </form>
+  </div>
+
+  {% if find_text %}
+    {% if rows %}
+    <h2 style="color:#032160;">Select the business you want to review</h2>
+    {% for biz in rows %}
+    <div class="article-card">
+      <h3><a href="{{ url_for('leave_a_review_form', biz_id=biz.id) }}">{{ biz.name }}</a></h3>
+      <div class="meta">{{ biz.primary_category }} &middot; {{ biz.city }}, {{ biz.state }} &middot; BBB Rating: {{ biz.rating }}{% if biz.accredited %} &middot; BBB Accredited{% endif %}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No businesses matched your search. Try a different name.</p>
+    {% endif %}
+  {% endif %}
+
+  <div class="search-side-promo" style="max-width:560px;margin-top:2rem;">
+    <h4>Still Need Assistance?</h4>
+    <p style="font-size:.92rem;color:#53565a;">Contact Your Local BBB. Your local Better Business Bureau can assist you with finding businesses you can trust. Start With Trust&reg;.</p>
+    <p style="font-size:.92rem;color:#53565a;">General Inquiries: <a href="{{ url_for('local_bbb') }}">Email this BBB</a></p>
+  </div>
+</div>
+{% endblock %}

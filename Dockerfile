@@ -180,12 +180,21 @@ RUN cd /opt/WebSyn/4shared && python3 migrate_seed.py
 # Preserve the 9GAG archive; curated benchmark stories have no matching source photos.
 RUN cd /opt/WebSyn/9gag && python3 migrate_seed.py
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/better_business_bureau
+RUN cd /opt/WebSyn/better_business_bureau && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 -c "import app" && \
+    python3 canonicalize_seed.py && \
+    mkdir -p instance_seed && \
+    cp instance/better_business_bureau.db instance_seed/better_business_bureau.db && \
+    rm -rf instance __pycache__ && \
+    echo "Better Business Bureau seed DB generated at build time."
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40063
+EXPOSE 8101 40000-40064
 
 CMD ["/opt/websyn_start.sh"]

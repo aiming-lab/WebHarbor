@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% import "_profile_macros.html" as pm with context %}
+{% block title %}{{ biz.name }} | BBB Reviews | Better Business Bureau{% endblock %}
+{% block searchband %}{{ pm.search_band() }}{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.state, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.state }}</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.state, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.city }}</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.primary_category, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.primary_category }}</a><span>/</span>
+    <a href="{{ biz.profile_path() }}">{{ biz.name }}</a><span>/</span>
+    <span>Reviews</span>
+  </nav>
+</div>
+{{ pm.profile_head(biz, 'reviews') }}
+<div class="container">
+  <div class="profile-layout">
+    <aside class="profile-side">
+      {{ pm.overview_card(biz) }}
+      {{ pm.accred_card(biz) }}
+    </aside>
+
+    <div class="profile-main-col">
+      <h2 class="section-heading">Reviews</h2>
+      {% if reviews %}
+      <div class="review-summary">
+        <div>
+          <div class="label" style="font-size:.85rem;font-weight:700;color:#53565a;">Customer Review Ratings</div>
+          <div class="stars">{% for i in range((avg or 0) | round | int) %}&#9733;{% endfor %}{% for i in range(5 - ((avg or 0) | round | int)) %}&#9734;{% endfor %}</div>
+          <div class="avg">{{ avg }} / 5 stars</div>
+          <div style="font-size:.9rem;color:#53565a;">({{ '{:,}'.format(biz.reviews_total or (reviews | length)) }} customer review{{ 's' if (biz.reviews_total or (reviews | length)) != 1 }})</div>
+        </div>
+        <div class="dist">
+          {% for n in [5, 4, 3, 2, 1] %}
+          <div>{{ n }} star: {{ dist[n] }}</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% else %}
+      <p>This business has 0 reviews</p>
+      <div class="side-card" style="max-width:520px;">
+        <p>Be the first one to share your experience with {{ biz.name }}.</p>
+      </div>
+      {% endif %}
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin:1.2rem 0 .6rem;">
+        <h3 style="margin:0;color:#032160;">Review Details</h3>
+        <form method="get" action="{{ biz.profile_path() }}/customer-reviews">
+          <label style="font-size:.85rem;font-weight:700;color:#53565a;">Sort by
+            <select class="sort-select" name="sort" onchange="this.form.submit()">
+              <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Most recent</option>
+              <option value="highest" {% if sort == 'highest' %}selected{% endif %}>Highest rated</option>
+              <option value="lowest" {% if sort == 'lowest' %}selected{% endif %}>Lowest rated</option>
+            </select>
+          </label>
+        </form>
+      </div>
+
+      {% for r in reviews %}
+      <div class="review-card">
+        <div class="head">
+          <svg width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="#c8c9c7"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6" fill="#c8c9c7"/></svg>
+          <span class="author">{{ r.author_name }}</span>
+          <span class="date">Date: {{ r.review_date }}</span>
+          <span class="stars">{% for i in range(r.rating) %}&#9733;{% endfor %}{% for i in range(5 - r.rating) %}&#9734;{% endfor %}</span>
+        </div>
+        <p class="text">{{ r.text }}</p>
+      </div>
+      {% endfor %}
+
+      <div class="side-card" style="margin-top:1.4rem;text-align:center;">
+        <p style="font-weight:700;">Want to share your experience?</p>
+        <a class="btn btn-primary" href="{{ url_for('leave_a_review_form', biz_id=biz.id) }}">Leave a Review</a>
+      </div>
+
+      <div class="disclaimer">
+        <p>{{ profile_disclaimer }}</p>
+        <p>{{ complaint_disclaimer }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

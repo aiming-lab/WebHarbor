@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ a.title }} | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('news') }}">Newsroom and Resources</a><span>/</span>
+    <span>{{ a.title }}</span>
+  </nav>
+  <article style="max-width:860px;padding-bottom:2rem;">
+    <div class="meta" style="color:#53565a;font-size:.9rem;">{{ a.category }} &middot; {{ a.published }}</div>
+    <h1 style="color:#032160;font-size:2rem;margin:.4rem 0 1rem;">{{ a.title }}</h1>
+    {% if a.image %}<img src="{{ url_for('static', filename='images/' + a.image) }}" alt="{{ a.title }}" style="border-radius:.375rem;">{% endif %}
+    <div style="font-size:1.02rem;margin-top:1.2rem;white-space:pre-line;">{{ a.body }}</div>
+  </article>
+</div>
+{% endblock %}

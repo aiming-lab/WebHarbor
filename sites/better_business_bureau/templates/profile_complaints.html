@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% import "_profile_macros.html" as pm with context %}
+{% block title %}{{ biz.name }} | BBB Complaints | Better Business Bureau{% endblock %}
+{% block searchband %}{{ pm.search_band() }}{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.state, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.state }}</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.state, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.city }}</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.primary_category, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.primary_category }}</a><span>/</span>
+    <a href="{{ biz.profile_path() }}">{{ biz.name }}</a><span>/</span>
+    <span>Complaints</span>
+  </nav>
+</div>
+{{ pm.profile_head(biz, 'complaints') }}
+<div class="container">
+  <div class="profile-layout">
+    <aside class="profile-side">
+      {{ pm.overview_card(biz) }}
+      {{ pm.accred_card(biz) }}
+    </aside>
+
+    <div class="profile-main-col">
+      <h2 class="section-heading">Complaints</h2>
+      <div class="complaint-summary">
+        <b>Customer Complaints Summary</b>
+        <p style="margin:.3rem 0;">{{ '{:,}'.format(biz.complaints_total or (biz.complaints | length)) }} total complaint{{ '' if (biz.complaints_total or (biz.complaints | length)) == 1 else 's' }} in the last 3 years.
+        {{ '{:,}'.format(biz.complaints_closed_12m or 0) }} complaint{{ 's' if (biz.complaints_closed_12m or 0) != 1 }} closed in the last 12 months.</p>
+      </div>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin:1rem 0 .4rem;">
+        <h3 style="margin:0;color:#032160;">If you've experienced an issue</h3>
+        <a class="btn btn-primary" href="{{ url_for('file_complaint_form', biz_id=biz.id) }}">Submit a Complaint</a>
+      </div>
+      <p style="font-size:.85rem;color:#53565a;">The complaint text that is displayed might not represent all complaints filed with BBB. Some complaints may not meet BBB's standards for publication, or BBB may display a portion of complaints when a high volume is received for a particular business.</p>
+
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;margin:1.2rem 0 .4rem;">
+        <h3 style="margin:0;color:#032160;">Filter and sort by</h3>
+        <form method="get" action="{{ biz.profile_path() }}/complaints" style="display:flex;gap:.7rem;align-items:center;">
+          <label style="font-size:.85rem;font-weight:700;color:#53565a;">Sort by
+            <select class="sort-select" name="sort" disabled>
+              <option>Most Recent</option>
+            </select>
+          </label>
+          <noscript><button class="btn btn-outline" type="submit">Apply</button></noscript>
+        </form>
+      </div>
+
+      <div class="filter-pills">
+        <a href="{{ biz.profile_path() }}/complaints" {% if not status_filter %}class="active"{% endif %}>All complaint statuses ({{ biz.complaints | length }})</a>
+        {% for status, count in status_counts.items() | sort %}
+        <a href="{{ biz.profile_path() }}/complaints?status={{ status | urlencode }}" {% if status_filter == status %}class="active"{% endif %}>Complaint {{ status }} ({{ count }})</a>
+        {% endfor %}
+      </div>
+      <div class="filter-pills">
+        {% for ctype, count in type_counts.items() | sort %}
+        <a href="{{ biz.profile_path() }}/complaints?type={{ ctype | urlencode }}" {% if type_filter == ctype %}class="active"{% endif %}>{{ ctype }} ({{ count }})</a>
+        {% endfor %}
+      </div>
+
+      {% for c in complaints %}
+      <div class="complaint-card">
+        <div class="meta">
+          <span><b>Initial Complaint</b></span>
+          <span>Date: <b>{{ c.complaint_date }}</b></span>
+          <span>Type: <b>{{ c.complaint_type }}</b></span>
+          <span>Status: <b class="status">{{ c.status }}</b></span>
+          {% if c.amount %}<span>Amount: <b>{{ c.amount }}</b></span>{% endif %}
+        </div>
+        <p style="margin:.4rem 0;">{{ c.text }}</p>
+        {% if c.business_response %}
+        <div class="resp-block">
+          <b>Business Response</b>
+          <div>Date: {{ c.business_response_date or '' }}</div>
+          <p style="margin:.3rem 0 0;">{{ c.business_response }}</p>
+        </div>
+        {% endif %}
+        {% if c.customer_answer %}
+        <div class="resp-block">
+          <b>Customer Answer</b>
+          <div>Date: {{ c.customer_answer_date or '' }}</div>
+          <p style="margin:.3rem 0 0;">{{ c.customer_answer }}</p>
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <p>This business has 0 complaints.</p>
+      {% endfor %}
+
+      <div class="status-legend">
+        <p style="font-weight:700;color:#2d2926;">Complaint statuses</p>
+        {% for status, definition in status_help.items() %}
+        <p><b>{{ status }}</b>: {{ definition }}</p>
+        {% endfor %}
+      </div>
+
+      <div class="disclaimer">
+        <p>{{ complaint_disclaimer }}</p>
+        <p>{{ profile_disclaimer }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
