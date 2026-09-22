@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<div class="search-shell">
+  <section class="page-hero slim-hero">
+    <h1>Search Cboe</h1>
+    <p class="hero-sub">Find symbols, articles, classes, courses, experts and products across the site.</p>
+  </section>
+  <form class="search-form" method="get" action="/search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search symbols, insights, classes, courses, products..." aria-label="Search">
+    <button class="btn-solid" type="submit">Search</button>
+  </form>
+
+  {% if q %}
+    <section class="search-results">
+      {% if symbols %}
+        <h2>Quotes &amp; Symbols</h2>
+        <table class="stats-table symbol-table">
+          <thead><tr><th>Symbol</th><th>Name</th><th>Last</th><th>Change</th><th></th></tr></thead>
+          <tbody>
+            {% for sym in symbols %}
+              <tr>
+                <td class="mono"><strong>{{ sym.ticker }}</strong></td>
+                <td>{{ sym.name }}</td>
+                <td class="mono">{% if sym.quote %}{{ fmt_num(sym.quote.current_price) }}{% endif %}</td>
+                <td class="mono {% if sym.quote and sym.quote.price_change > 0 %}up{% elif sym.quote and sym.quote.price_change < 0 %}down{% endif %}">{% if sym.quote %}{{ sym.pct_label() }}{% endif %}</td>
+                <td><a href="/delayed_quotes/{{ sym.ticker }}">Quotes Dashboard</a></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        {% if directory %}
+          <details class="directory-more">
+            <summary>More symbol directory matches</summary>
+            <table class="stats-table">
+              <thead><tr><th>Symbol</th><th>Company Name</th></tr></thead>
+              <tbody>
+                {% for entry in directory %}
+                  <tr><td class="mono">{{ entry.name }}</td><td>{{ entry.company_name }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </details>
+        {% endif %}
+      {% endif %}
+
+      {% if articles %}
+        <h2>Insights Articles</h2>
+        <div class="article-list">
+          {% for article in articles %}
+            <article class="article-card row-card">
+              <div class="row-main">
+                {% if article.category %}<p class="card-cat">{{ article.category.name }}</p>{% endif %}
+                <h3><a href="/insights/posts/{{ article.slug }}/">{{ article.title }}</a></h3>
+                <p class="card-author">By {{ article.author_name }}{% if article.date %} &middot; {{ article.date }}{% endif %}</p>
+                <p class="card-desc">{{ article.excerpt()|truncate(200) }}</p>
+                <a class="card-more" href="/insights/posts/{{ article.slug }}/">Read More</a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if classes %}
+        <h2>Options Institute Classes</h2>
+        <div class="article-list">
+          {% for klass in classes %}
+            <article class="article-card row-card">
+              <div class="row-main">
+                <p class="card-cat">{{ klass.series or 'Options Institute Class' }}</p>
+                <h3><a href="/optionsinstitute/classes">{{ klass.title }}</a></h3>
+                <p class="card-author">{{ klass.date }} &middot; {{ klass.time }} &middot; {{ klass.format }}</p>
+                <a class="card-more" href="/optionsinstitute/classes">View class</a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if courses %}
+        <h2>Options Institute Courses</h2>
+        <div class="article-list">
+          {% for course in courses %}
+            <article class="article-card row-card">
+              <div class="row-main">
+                <p class="card-cat">Options Institute Course</p>
+                <h3><a href="{% if course.slug == 'defining-options' %}/optionsinstitute/defining-options{% else %}/optionsinstitute/courses/{{ course.slug }}{% endif %}">{{ course.title }}</a></h3>
+                <p class="card-author">{{ course.intro[:160] }}{% if course.intro|length > 160 %}&hellip;{% endif %}</p>
+                <a class="card-more" href="{% if course.slug == 'defining-options' %}/optionsinstitute/defining-options{% else %}/optionsinstitute/courses/{{ course.slug }}{% endif %}">View course</a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if experts %}
+        <h2>Options Institute Experts</h2>
+        <div class="expert-grid">
+          {% for expert in experts %}
+            <div class="expert-card">
+              <div class="expert-diamond">
+                {% if expert.headshot %}<img src="{{ url_for('static', filename='images/' ~ expert.headshot) }}" alt="{{ expert.name }}">{% endif %}
+              </div>
+              <p class="expert-name">{{ expert.name }}</p>
+              <p class="expert-title">{{ expert.title }}</p>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if products %}
+        <h2>Tradable Products</h2>
+        <div class="article-list">
+          {% for product in products %}
+            <article class="article-card row-card">
+              <div class="row-main">
+                <p class="card-cat">{{ product.eyebrow }}</p>
+                <h3><a href="/tradable-products/{{ product.family }}/{{ product.slug }}">{{ product.name }}</a></h3>
+                <a class="card-more" href="/tradable-products/{{ product.family }}/{{ product.slug }}">Learn more</a>
+              </div>
+            </article>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      {% if not (articles or symbols or classes or courses or experts or products) %}
+        <p class="empty-note">No results for "{{ q }}". Try a different search, or explore the <a href="/tradable-products/product-list">product list</a> or <a href="/insights/">insights</a>.</p>
+      {% endif %}
+    </section>
+  {% endif %}
+</div>
+{% endblock %}

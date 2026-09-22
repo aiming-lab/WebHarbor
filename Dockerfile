@@ -1,5 +1,8 @@
 # WebHarbor — slim, self-contained image.
-# 59 Flask mirror sites + control plane on :8101.
+# 60 Flask mirror sites + control plane on :8101 (registry in flight: cboe is
+# assigned index 66 / port 40066; the array is append-only and slots 59-65 are
+# reserved for concurrent contributors, so the positional index re-slots at the
+# merge-order rebase).
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -183,6 +186,6 @@ RUN cd /opt/WebSyn/9gag && python3 migrate_seed.py
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40058
+EXPOSE 8101 40000-40066
 
 CMD ["/opt/websyn_start.sh"]

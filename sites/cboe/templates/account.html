@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}My Account{% endblock %}
+{% block content %}
+<div class="account-shell">
+  <section class="page-hero slim-hero">
+    <h1>My Account</h1>
+    <p class="hero-sub">Welcome back, {{ current_user.display_name }}. Manage your watchlist, class registrations and saved articles.</p>
+  </section>
+
+  <div class="account-grid">
+    <section class="account-panel" id="watchlist">
+      <div class="panel-head">
+        <h2>Watchlist</h2>
+        <a class="section-more" href="/delayed_quotes/SPX">Browse quotes &gt;</a>
+      </div>
+      <form class="watchlist-add" method="post" action="/account/watchlist/add">
+        <select name="ticker">
+          {% for sym in ['SPX', 'VIX', 'XSP', 'NDX', 'RUT', 'OEX', 'DJX', 'MRUT'] %}
+            <option value="{{ sym }}">{{ sym }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn-solid" type="submit">Add symbol</button>
+      </form>
+      <table class="stats-table">
+        <thead><tr><th>Symbol</th><th>Name</th><th>Last</th><th>Change</th><th></th></tr></thead>
+        <tbody>
+          {% for item in watchlist %}
+            <tr>
+              <td class="mono"><strong>{{ item.symbol.ticker }}</strong></td>
+              <td>{{ item.symbol.name }}</td>
+              <td class="mono">{% if item.symbol.quote %}{{ fmt_num(item.symbol.quote.current_price) }}{% endif %}</td>
+              <td class="mono {% if item.symbol.quote and item.symbol.quote.price_change > 0 %}up{% elif item.symbol.quote and item.symbol.quote.price_change < 0 %}down{% endif %}">
+                {% if item.symbol.quote %}{{ item.symbol.pct_label() }}{% endif %}
+              </td>
+              <td>
+                <form method="post" action="/account/watchlist/remove">
+                  <input type="hidden" name="ticker" value="{{ item.symbol.ticker }}">
+                  <button class="btn-link danger" type="submit">Remove</button>
+                </form>
+              </td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="empty-note">Your watchlist is empty. Add a symbol above.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="account-panel" id="registrations">
+      <div class="panel-head">
+        <h2>Class Registrations</h2>
+        <a class="section-more" href="/optionsinstitute/classes">Browse classes &gt;</a>
+      </div>
+      <div class="reg-list">
+        {% for reg in regs %}
+          <div class="reg-card">
+            <p class="card-cat">{{ reg.klass.series or 'Options Institute Class' }}</p>
+            <h3>{{ reg.klass.title }}</h3>
+            <p class="card-author">{{ reg.klass.date }} &middot; {{ reg.klass.time }} &middot; {{ reg.klass.format }}</p>
+            <p class="card-desc">Instructor: {{ reg.klass.instructor }}</p>
+            <form method="post" action="/account/classes/withdraw">
+              <input type="hidden" name="registration_id" value="{{ reg.id }}">
+              <button class="btn-link danger" type="submit">Withdraw</button>
+            </form>
+          </div>
+        {% else %}
+          <p class="empty-note">No class registrations yet. <a href="/optionsinstitute/classes">Register for an upcoming class</a>.</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="account-panel" id="saved">
+      <div class="panel-head">
+        <h2>Saved Articles</h2>
+        <a class="section-more" href="/insights/">Browse insights &gt;</a>
+      </div>
+      <div class="article-list">
+        {% for item in saved %}
+          <article class="article-card row-card compact">
+            <div class="row-main">
+              {% if item.article.category %}<p class="card-cat">{{ item.article.category.name }}</p>{% endif %}
+              <h3><a href="/insights/posts/{{ item.article.slug }}/">{{ item.article.title }}</a></h3>
+              <p class="card-author">By {{ item.article.author_name }}{% if item.article.date %} &middot; {{ item.article.date }}{% endif %}</p>
+              <form method="post" action="/account/saved/toggle">
+                <input type="hidden" name="slug" value="{{ item.article.slug }}">
+                <button class="btn-link danger" type="submit">Remove from saved</button>
+              </form>
+            </div>
+          </article>
+        {% else %}
+          <p class="empty-note">No saved articles yet. Open an article and click "Save article".</p>
+        {% endfor %}
+      </div>
+    </section>
+
+    <section class="account-panel profile">
+      <div class="panel-head"><h2>Profile</h2></div>
+      <table class="stats-table">
+        <tr><td>Display Name</td><td>{{ current_user.display_name }}</td></tr>
+        <tr><td>Username</td><td class="mono">{{ current_user.username }}</td></tr>
+        <tr><td>Email</td><td class="mono">{{ current_user.email }}</td></tr>
+        <tr><td>Country</td><td>{{ current_user.country }}</td></tr>
+        <tr><td>Type of Trader</td><td>{{ current_user.trader_type }}</td></tr>
+        <tr><td>Today's Market Take emails</td><td>{{ 'On' if current_user.notify_market_take else 'Off' }}</td></tr>
+        <tr><td>Derivatives Research emails</td><td>{{ 'On' if current_user.notify_research else 'Off' }}</td></tr>
+        <tr><td>Product updates</td><td>{{ 'On' if current_user.notify_products else 'Off' }}</td></tr>
+      </table>
+    </section>
+  </div>
+</div>
+{% endblock %}

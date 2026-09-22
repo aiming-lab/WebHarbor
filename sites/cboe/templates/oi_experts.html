@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}The Options Institute Experts{% endblock %}
+{% block content %}
+<div class="oi-shell">
+  <section class="oi-hero">
+    <div class="oi-hero-copy">
+      <img class="oi-logo" src="{{ url_for('static', filename='images/misc/Cboe_OI_Blue.png') }}" alt="Options Institute logo">
+      <h1>Meet Our Experts</h1>
+      <p>For 40+ years, The Options Institute has provided expert-led education designed for traders looking to deepen their options understanding.</p>
+      <p class="oi-backed"><strong>The Options Institute is backed by Cboe</strong></p>
+      <ul class="oi-bullets">
+        <li>Largest U.S. options exchange and global derivatives innovator</li>
+        <li>50+ years advancing options markets and trading infrastructure</li>
+        <li>Serving institutional and retail investors across global markets</li>
+      </ul>
+    </div>
+    <img class="oi-hero-img" src="{{ url_for('static', filename='images/heros/Hero-OI-Experts-desktop.png') }}" alt="The Options Institute experts hero">
+  </section>
+
+  <section class="oi-section">
+    <h2>Get to Know Our Faculty</h2>
+    <p class="section-blurb">Meet the industry professionals who bring real-world expertise to The Options Institute's educational programming. Our faculty roster includes derivatives traders, quantitative analysts, risk managers, market makers, practitioners and academics who've spent decades shaping modern derivatives trading. They're here to share their learnings and passion for derivatives that come from years of hands-on experience.</p>
+    <div class="expert-grid">
+      {% for expert in experts %}
+        <div class="expert-card">
+          <div class="expert-diamond">
+            {% if expert.headshot %}
+              <img src="{{ url_for('static', filename='images/' ~ expert.headshot) }}" alt="{{ expert.name }}">
+            {% endif %}
+          </div>
+          <p class="expert-name">{{ expert.name }}</p>
+          <p class="expert-title">{{ expert.title }}</p>
+          {% if expert.bio %}
+            <details class="expert-bio">
+              <summary>Read Bio</summary>
+              <p>{{ expert.bio }}</p>
+            </details>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

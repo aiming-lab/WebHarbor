@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<div class="article-shell">
+  <nav class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/insights/">Insights Overview</a> &rsaquo; {{ article.title }}</nav>
+  <article class="article-main">
+    <header class="article-header">
+      {% if article.category %}<p class="article-cat"><a href="/insights/categories/{{ article.category.slug }}/">{{ article.category.name }}</a></p>{% endif %}
+      <h1>{{ article.title }}</h1>
+      <div class="article-meta">
+        <span>{{ article.author_name }}</span>
+        {% if article.date %}<span class="meta-sep">|</span><span>{{ article.date }}</span>{% endif %}
+      </div>
+    </header>
+    <div class="article-body">
+      {% for block in article.body() %}
+        {% if block.type == 'p' %}<p>{{ block.text }}</p>
+        {% elif block.type in ('h2', 'h3', 'h4') %}<h2>{{ block.text }}</h2>
+        {% elif block.type in ('ul', 'ol') %}
+          <{{ block.type }}>{% for line in block.text.split('\n') %}{% if line.strip() %}<li>{{ line.strip() }}</li>{% endif %}{% endfor %}</{{ block.type }}>
+        {% elif block.type == 'blockquote' %}<blockquote>{{ block.text }}</blockquote>
+        {% elif block.type == 'image' and block.src %}
+          <figure class="article-figure">
+            <img src="{{ url_for('static', filename='images/' ~ block.src) }}" alt="{{ block.alt or 'article chart' }}" loading="lazy">
+          </figure>
+        {% elif block.type == 'table' %}
+          <table class="article-table">
+            {% if block.headers %}<thead><tr>{% for h in block.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>{% endif %}
+            <tbody>{% for row in block.rows %}<tr>{% for cell in row %}<td class="mono">{{ cell }}</td>{% endfor %}</tr>{% endfor %}</tbody>
+          </table>
+        {% endif %}
+      {% endfor %}
+    </div>
+    <footer class="article-footer">
+      <div class="save-article">
+        {% if current_user.is_authenticated %}
+          <form method="post" action="/account/saved/toggle">
+            <input type="hidden" name="slug" value="{{ article.slug }}">
+            <button class="btn-outline" type="submit">{% if saved %}Remove from saved{% else %}Save article{% endif %}</button>
+          </form>
+        {% else %}
+          <a class="btn-outline" href="/account/login?next=/insights/posts/{{ article.slug }}/">Log in to save this article</a>
+        {% endif %}
+      </div>
+      <div class="article-disclaimer">
+        <p>The information in this article is provided for general education and information purposes only, without any express or implied warranty of any kind, including warranties of accuracy, completeness or fitness for any particular purpose. It is not intended to be, and does not constitute, investment advice or a recommendation to buy or sell any security or other financial product.</p>
+      </div>
+      <div class="article-tags">
+        {% for tag in article.tags() %}<span class="tag">{{ tag }}</span>{% endfor %}
+      </div>
+    </footer>
+  </article>
+
+  <section class="related-posts">
+    <div class="section-head-row">
+      <h2>Related Posts</h2>
+      <a class="section-more" href="/insights/">Go to Insights Overview</a>
+    </div>
+    <div class="article-grid">
+      {% for related in related %}
+        <article class="article-card">
+          {% if related.category %}<p class="card-cat"><a href="/insights/categories/{{ related.category.slug }}/">{{ related.category.name }}</a></p>{% endif %}
+          <h3><a href="/insights/posts/{{ related.slug }}/">{{ related.title }}</a></h3>
+          <a class="card-more" href="/insights/posts/{{ related.slug }}/">Read More</a>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}
