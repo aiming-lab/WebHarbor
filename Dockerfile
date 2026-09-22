@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 58 Flask mirror sites + control plane on :8101.
+# 59 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -92,6 +92,10 @@ RUN cd /opt/WebSyn/petfinder && rm -rf instance instance_seed && \
     mkdir -p instance_seed && python3 -c "from app import app" && \
     cp instance/petfinder.db instance_seed/petfinder.db && rm -rf instance
 
+# AKC original contribution generates its initial seed from tracked code.
+RUN cd /opt/WebSyn/akc && rm -rf instance instance_seed && mkdir -p instance_seed && \
+    python3 -c "from app import app" && cp instance/akc.db instance_seed/akc.db && rm -rf instance
+
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
 COPY site_runner.py     /opt/site_runner.py
@@ -179,6 +183,6 @@ RUN cd /opt/WebSyn/9gag && python3 migrate_seed.py
 # Fail closed after all registered-site seed migrations/generators.
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40057
+EXPOSE 8101 40000-40058
 
 CMD ["/opt/websyn_start.sh"]

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Breed Selector{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div>
+    <div class="eyebrow">Guided Finder</div>
+    <h1>Breed Selector</h1>
+    <p>Answer a few lifestyle questions and compare breeds ranked by fit.</p>
+  </div>
+</section>
+<form class="quiz-panel" method="post">
+  <label>Home type
+    <select name="home">
+      <option value="apartment">Apartment or condo</option>
+      <option value="house">House with yard</option>
+    </select>
+  </label>
+  <label>Preferred energy level
+    <input type="range" min="1" max="5" value="{{ answers.energy or 3 }}" name="energy">
+  </label>
+  <label>Grooming tolerance
+    <input type="range" min="1" max="5" value="{{ answers.grooming or 3 }}" name="grooming">
+  </label>
+  <label>Good with children importance
+    <input type="range" min="1" max="5" value="{{ answers.children or 4 }}" name="children">
+  </label>
+  <button type="submit">Find Matches</button>
+</form>
+{% if matches %}
+<section class="section">
+  <h2>Best Matches</h2>
+  <div class="card-grid">
+    {% for score, breed in matches %}
+      {% include "_breed_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

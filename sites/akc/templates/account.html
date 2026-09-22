@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}My AKC Profile{% endblock %}
+{% block content %}
+<section class="page-heading">
+  <div><div class="eyebrow">My AKC</div><h1>{{ user.display_name }}</h1><p>{{ user.email }}</p></div>
+</section>
+<section class="account-layout">
+  <form class="side-form" method="post" action="{{ url_for('update_profile') }}">
+    <h2>Owner Preferences</h2>
+    <label>Household <input name="household" value="{{ user.household }}"></label>
+    <label>Activity level <input name="activity_level" value="{{ user.activity_level }}"></label>
+    <label>Experience <input name="experience" value="{{ user.experience }}"></label>
+    <button type="submit">Update Profile</button>
+  </form>
+  <div>
+    <h2>Saved Breeds</h2>
+    <div class="list-panel">
+      {% for saved_breed in saved %}
+        <a class="list-row" href="{{ url_for('breed_detail', slug=saved_breed.breed.slug) }}"><strong>{{ saved_breed.breed.name }}</strong><small>{{ saved_breed.breed.group }} · {{ saved_breed.breed.temperament }}</small></a>
+      {% else %}<p class="empty-state">No saved breeds yet.</p>{% endfor %}
+    </div>
+    <h2>Event Registrations</h2>
+    <div class="list-panel">
+      {% for reg in registrations %}
+        <a class="list-row" href="{{ url_for('event_detail', slug=reg.event.slug) }}"><strong>{{ reg.event.title }}</strong><small>{{ reg.dog_name }} · {{ reg.class_name }}</small></a>
+      {% else %}<p class="empty-state">No registrations yet.</p>{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

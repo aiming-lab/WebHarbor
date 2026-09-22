@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ breed.name }}{% endblock %}
+{% block content %}
+<section class="detail-hero">
+  <img src="{{ url_for('breed_art', slug=breed.slug) }}" alt="{{ breed.name }}">
+  <div>
+    <div class="eyebrow">{{ breed.group }} Group</div>
+    <h1>{{ breed.name }}</h1>
+    <p>{{ breed.overview }}</p>
+    <div class="button-row">
+      <a class="button primary" href="{{ url_for('compare', breed=breed.slug) }}">Compare Breed</a>
+      <form action="{{ url_for('save_breed', slug=breed.slug) }}" method="post">
+        <button class="button" type="submit">{{ "Saved" if saved else "Save Breed" }}</button>
+      </form>
+    </div>
+  </div>
+</section>
+<section class="metric-grid">
+  <div><span>Temperament</span><strong>{{ breed.temperament }}</strong></div>
+  <div><span>Height</span><strong>{{ breed.height }}</strong></div>
+  <div><span>Weight</span><strong>{{ breed.weight }}</strong></div>
+  <div><span>Life Expectancy</span><strong>{{ breed.life_expectancy }}</strong></div>
+  <div><span>Energy</span><strong>{{ breed.energy }}/5</strong></div>
+  <div><span>Grooming</span><strong>{{ breed.grooming }}/5</strong></div>
+  <div><span>Trainability</span><strong>{{ breed.trainability }}/5</strong></div>
+  <div><span>Apartment Fit</span><strong>{{ breed.apartment_score }}/5</strong></div>
+</section>
+<section class="content-columns">
+  <article>
+    <h2>Care</h2>
+    <p>{{ breed.care }}</p>
+  </article>
+  <article>
+    <h2>Exercise</h2>
+    <p>{{ breed.exercise }}</p>
+  </article>
+</section>
+<section class="section">
+  <div class="section-head"><h2>Related {{ breed.group }} Breeds</h2></div>
+  <div class="card-grid compact">
+    {% for breed in related %}
+      {% include "_breed_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

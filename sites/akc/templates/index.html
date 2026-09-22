@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}American Kennel Club{% endblock %}
+{% block content %}
+<section class="hero">
+  <div class="hero-copy">
+    <div class="eyebrow">Find the right dog, training path, and AKC event</div>
+    <h1>American Kennel Club</h1>
+    <p>Explore breed profiles, compare owner fit, save favorites, and register for local AKC-style events.</p>
+    <div class="button-row">
+      <a class="button primary" href="{{ url_for('breed_selector') }}">Start Breed Selector</a>
+      <a class="button" href="{{ url_for('breeds') }}">Browse Breeds</a>
+    </div>
+  </div>
+  <div class="hero-panel" aria-label="Featured breed fit signals">
+    <span>Apartment friendly</span>
+    <strong>French Bulldog</strong>
+    <span>Family sporting choice</span>
+    <strong>Golden Retriever</strong>
+    <span>High-energy training partner</span>
+    <strong>Border Collie</strong>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Featured Breeds</h2>
+    <a href="{{ url_for('breeds') }}">View all</a>
+  </div>
+  <div class="card-grid">
+    {% for breed in featured %}
+      {% include "_breed_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+
+<section class="split-section">
+  <div>
+    <div class="section-head">
+      <h2>Upcoming Events</h2>
+      <a href="{{ url_for('events') }}">Calendar</a>
+    </div>
+    <div class="list-panel">
+      {% for event in events %}
+        <a class="list-row" href="{{ url_for('event_detail', slug=event.slug) }}">
+          <span class="date-badge">{{ event.starts_on.strftime("%b") }}<strong>{{ event.starts_on.day }}</strong></span>
+          <span><strong>{{ event.title }}</strong><small>{{ event.city }}, {{ event.state }} · {{ event.event_type }}</small></span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="section-head">
+      <h2>Expert Advice</h2>
+      <a href="{{ url_for('articles') }}">Read more</a>
+    </div>
+    <div class="list-panel">
+      {% for article in articles %}
+        <a class="list-row" href="{{ url_for('article_detail', slug=article.slug) }}">
+          <span><strong>{{ article.title }}</strong><small>{{ article.category }} · {{ article.read_minutes }} min read</small></span>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
