@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}My Account | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span><span>My Account</span>
+  </nav>
+  <h1 style="color:#032160;">Hi, {{ current_user.display_name }}</h1>
+  <div class="account-grid">
+    <aside class="account-side">
+      <div class="side-card">
+        <h3>Account menu</h3>
+        <ul class="detail-list">
+          <li><a href="#saved">Saved businesses ({{ favorites | length }})</a></li>
+          <li><a href="#reviews">My reviews ({{ reviews | length }})</a></li>
+          <li><a href="#complaints">My complaints ({{ complaints | length }})</a></li>
+          <li><a href="#scams">My scam reports ({{ scam_subs | length }})</a></li>
+          <li><a href="{{ url_for('logout') }}">Sign out</a></li>
+        </ul>
+      </div>
+    </aside>
+    <div class="account-main">
+      <section id="saved">
+        <h2 class="section-heading">Saved businesses</h2>
+        {% for f in favorites %}
+        <div class="article-card">
+          <h3><a href="{{ f.business.profile_path() }}">{{ f.business.name }}</a></h3>
+          <div class="meta">{{ f.business.primary_category }} &middot; {{ f.business.city }}, {{ f.business.state }} &middot; BBB Rating: {{ f.business.rating }}</div>
+          <form method="post" action="{{ url_for('toggle_favorite', biz_id=f.business.id) }}">
+            <button class="btn btn-outline" type="submit" style="margin-top:.5rem;">Remove</button>
+          </form>
+        </div>
+        {% else %}
+        <p>You have not saved any businesses yet. Find a business and click Save.</p>
+        {% endfor %}
+      </section>
+      <section id="reviews">
+        <h2 class="section-heading">My reviews</h2>
+        {% for r in reviews %}
+        <div class="article-card">
+          <div class="meta">{{ r.stars if False else '' }}{{ r.review_date }} &middot; {{ r.rating }} of 5 stars &middot; <a href="{{ r.business.profile_path() }}/customer-reviews">{{ r.business.name }}</a></div>
+          <p style="margin:.4rem 0 0;">{{ r.text[:200] }}{% if r.text|length > 200 %}...{% endif %}</p>
+        </div>
+        {% else %}
+        <p>You have not written any reviews yet.</p>
+        {% endfor %}
+      </section>
+      <section id="complaints">
+        <h2 class="section-heading">My complaints</h2>
+        {% for c in complaints %}
+        <div class="article-card">
+          <div class="meta">{{ c.complaint_date }} &middot; {{ c.complaint_type }} &middot; Status: {{ c.status }} &middot; <a href="{{ c.business.profile_path() }}/complaints">{{ c.business.name }}</a></div>
+          <p style="margin:.4rem 0 0;">{{ c.text[:200] }}{% if c.text|length > 200 %}...{% endif %}</p>
+        </div>
+        {% else %}
+        <p>You have not filed any complaints yet.</p>
+        {% endfor %}
+      </section>
+      <section id="scams">
+        <h2 class="section-heading">My scam reports</h2>
+        {% for s in scam_subs %}
+        <div class="article-card">
+          <div class="meta">{{ s.date_reported }} &middot; {{ s.scam_type }} &middot; {{ s.target_city }}, {{ s.target_state }}</div>
+          <p style="margin:.4rem 0 0;">{{ s.description[:200] }}{% if s.description|length > 200 %}...{% endif %}</p>
+        </div>
+        {% else %}
+        <p>You have not reported any scams yet. <a href="{{ url_for('scam_report') }}">Report a scam</a>.</p>
+        {% endfor %}
+      </section>
+    </div>
+  </div>
+</div>
+{% endblock %}

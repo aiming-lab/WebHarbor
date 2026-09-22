@@ -127,6 +127,7 @@ All registered websites and their default ports, in registration order. A site's
 | 4shared | 40056 |
 | 9GAG | 40057 |
 | American Kennel Club | 40058 |
+| Better Business Bureau | 40063 |
 
 ## 🤝 Contribute
 

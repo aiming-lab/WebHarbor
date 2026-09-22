@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}File a Complaint against {{ biz.name }} | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>File a Complaint</h1>
+    <p>File a complaint against <b>{{ biz.name }}</b> &mdash; {{ biz.primary_category }}, {{ biz.city }}, {{ biz.state }} &middot; BBB Rating: {{ biz.rating }}</p>
+  </div>
+</div>
+<div class="flash-zone">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="flash-msg {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+</div>
+<div class="container">
+  <form class="form-card" method="post" action="{{ url_for('file_complaint_form', biz_id=biz.id) }}">
+    <h2 style="color:#032160;">Tell us what happened</h2>
+    <p class="hint">BBB will forward your complaint to the business. Most businesses respond within 14 days.</p>
+
+    <div class="form-row">
+      <label for="name">Your name <span class="req">*</span></label>
+      <input type="text" id="name" name="name">
+    </div>
+    <div class="form-row">
+      <label for="email">Your email address <span class="req">*</span></label>
+      <input type="email" id="email" name="email">
+    </div>
+    <div class="form-row">
+      <label for="type">Complaint type <span class="req">*</span></label>
+      <select id="type" name="type">
+        {% for ct in complaint_types %}
+        <option value="{{ ct }}">{{ ct }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="form-row">
+      <label for="date">Date of the issue <span class="req">*</span></label>
+      <input type="date" id="date" name="date">
+    </div>
+    <div class="form-row">
+      <label for="amount">Amount in dispute (optional)</label>
+      <input type="text" id="amount" name="amount" placeholder="e.g. $1,250.00">
+    </div>
+    <div class="form-row">
+      <label for="text">Describe your complaint <span class="req">*</span></label>
+      <textarea id="text" name="text" placeholder="Explain the issue, what you expected, and what you would consider a fair resolution..."></textarea>
+    </div>
+    <button class="btn btn-primary" type="submit">Submit Complaint</button>
+    <p class="hint" style="margin-top:1rem;">By submitting, you agree that BBB may forward your complaint and contact information to the business. Some disputes fall outside BBB's complaint acceptance guidelines.</p>
+  </form>
+</div>
+{% endblock %}

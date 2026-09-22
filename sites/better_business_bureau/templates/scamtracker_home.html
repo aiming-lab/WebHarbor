@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Find and Report a Scam | Better Business Bureau{% endblock %}
+{% block content %}
+<section class="scam-hero">
+  <div class="container">
+    <h1>BBB Scam Tracker<sup style="font-size:.6em;">&reg;</sup></h1>
+    <p>Scam Tracker helps you find and report scams. Search our database of consumer scam reports, alert others to scams you have experienced, and see where scams are happening near you.</p>
+    <div class="scam-cta-row">
+      <a class="btn btn-yellow" href="{{ url_for('scam_report') }}">Report a Scam</a>
+      <a class="btn btn-outline" href="{{ url_for('scam_lookup') }}">Look Up a Scam</a>
+      <a class="btn btn-outline" href="{{ url_for('scam_dashboard') }}">Heatmap</a>
+    </div>
+  </div>
+</section>
+<div class="container">
+  <div class="scam-stats">
+    <div class="stat-card">
+      <div class="label">SCAM REPORTS</div>
+      <div class="value">{{ '{:,}'.format(total) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">STATES REPORTING</div>
+      <div class="value">{{ states }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">TOP SCAM TYPES</div>
+      <div style="font-size:.95rem;margin-top:.5rem;">
+        {% for t, c in top_types %}{{ t }} ({{ c }})<br>{% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-heading">Recent scam reports</h2>
+  {% for r in recent %}
+  <a class="scam-card" href="{{ url_for('scam_detail', scam_id=r.scam_id) }}">
+    <div class="type">{{ r.scam_type }}</div>
+    <div class="desc">{{ r.description[:160] }}{% if r.description|length > 160 %}...{% endif %}</div>
+    <div class="meta">
+      <span>Business name: {{ r.scammer_business_name or 'No name' }}</span>
+      <span>Date Reported: {{ r.date_reported }}</span>
+      <span>Location: {{ r.target_city }}, {{ r.target_state }}{% if r.target_country %}, {{ r.target_country }}{% endif %}</span>
+      <span>Total money lost: {{ '${:,}'.format(r.dollar_value) if r.dollar_value else '$0' }}</span>
+    </div>
+  </a>
+  {% endfor %}
+  <p><a href="{{ url_for('scam_lookup') }}">See all scam reports &rarr;</a></p>
+
+  <section id="prevention">
+    <h2 class="section-heading">Scam Prevention Guide</h2>
+    <p style="max-width:760px;">BBB's Scam Prevention resources help you recognize the signs of a scam before you lose money or personal information. Remember: scammers pressure you to act immediately, ask for payment in gift cards or wire transfers, and pretend to be from an organization you trust.</p>
+    <div class="scam-cta-row">
+      <a class="btn btn-primary" href="{{ url_for('news') }}">Read scam news and tips</a>
+      <a class="btn btn-outline" href="{{ url_for('scam_dashboard') }}">View the Scam Heatmap</a>
+    </div>
+  </section>
+</div>
+{% endblock %}

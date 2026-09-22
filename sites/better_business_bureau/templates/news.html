@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Newsroom and Resources | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Newsroom and Resources</h1>
+    <p>BBB news, scam alerts, and consumer tips.</p>
+  </div>
+</div>
+<div class="container">
+  {% for a in articles %}
+  <a class="article-card" href="{{ url_for('article', slug=a.slug) }}">
+    <h3>{{ a.title }}</h3>
+    <div class="meta">{{ a.category }} &middot; {{ a.published }}</div>
+    <p style="margin:.4rem 0 0;">{{ a.excerpt }}</p>
+  </a>
+  {% else %}
+  <p>No articles yet.</p>
+  {% endfor %}
+</div>
+{% endblock %}

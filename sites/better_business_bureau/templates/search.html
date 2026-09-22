@@ -1,0 +1,182 @@
+{% extends "base.html" %}
+{% block title %}Search results for {{ find_text }} near {{ find_loc }} | Search | Better Business Bureau{% endblock %}
+{% block searchband %}
+<section class="search-band">
+  <div class="container">
+    <form action="{{ url_for('search') }}" method="get">
+      <label for="s_find">Find</label>
+      <input type="text" id="s_find" name="find_text" value="{{ find_text }}" placeholder="businesses, category">
+      <label for="s_near">Near</label>
+      <input type="text" id="s_near" name="find_loc" value="{{ find_loc }}" placeholder="city, state or zip">
+      <span class="country"><img src="{{ url_for('static', filename='icons/flag-us-100__100w.png') }}" alt="" width="18"> US</span>
+      <button class="btn btn-yellow" type="submit">Search</button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('search', find_text=find_text, find_loc=find_loc) }}">{{ state or 'WA' }}</a><span>/</span>
+    <a href="{{ url_for('search', find_text=find_text, find_loc=find_loc) }}">{{ city or 'Redmond' }}</a><span>/</span>
+    <span>{{ find_text or 'browse' }}</span>
+  </nav>
+
+  <div class="search-layout">
+    <aside class="filters">
+      <h3>Filter by</h3>
+      <form method="get" action="{{ url_for('search') }}">
+        <input type="hidden" name="find_text" value="{{ find_text }}">
+        <input type="hidden" name="find_loc" value="{{ find_loc }}">
+        <input type="hidden" name="sort" value="{{ sort }}">
+        <div class="group">
+          <label class="chk"><input type="checkbox" name="accredited" value="y" {% if accredited %}checked{% endif %}> BBB Accredited</label>
+          <label class="chk"><input type="checkbox" name="quotes" value="y" {% if quotes %}checked{% endif %}> Get a Quote</label>
+          <label class="chk"><input type="checkbox" name="service_area" value="y" {% if service_area %}checked{% endif %}> Serving my Area</label>
+        </div>
+        <div class="group">
+          <h4>Category</h4>
+          {% for cat in related[:8] %}
+          <label class="chk"><input type="radio" name="category" value="{{ cat }}" {% if category == cat %}checked{% endif %}> {{ cat }}</label>
+          {% endfor %}
+        </div>
+        <div class="group">
+          <h4>BBB Rating</h4>
+          {% for r in ['A+', 'A', 'A-', 'B+', 'B', 'C', 'D', 'F'] %}
+          <label class="chk"><input type="checkbox" name="ratings" value="{{ r }}" {% if r in ratings %}checked{% endif %}> {{ r }}</label>
+          {% endfor %}
+        </div>
+        <button class="btn btn-outline" type="submit">Apply Filters</button>
+      </form>
+    </aside>
+
+    <section class="results search-results-area">
+      <div class="results-header">
+        <div class="results-heading">Showing: {{ '{:,}'.format(total) }} result{{ 's' if total != 1 }} for {{ find_text or 'businesses' }} near {{ find_loc }}</div>
+        <form method="get" action="{{ url_for('search') }}">
+          <input type="hidden" name="find_text" value="{{ find_text }}">
+          <input type="hidden" name="find_loc" value="{{ find_loc }}">
+          <label class="visually-hidden" for="sortSelect">Sort By</label>
+          <select class="sort-select" id="sortSelect" name="sort" onchange="this.form.submit()">
+            <option value="best" {% if sort == 'best' %}selected{% endif %}>Best Match</option>
+            <option value="distance" {% if sort == 'distance' %}selected{% endif %}>Distance</option>
+            <option value="rating" {% if sort == 'rating' %}selected{% endif %}>Rating</option>
+          </select>
+        </form>
+      </div>
+
+      {% for biz in ads %}
+      <article class="result-card">
+        <a class="ad-disclosure" href="{{ url_for('about') }}#terms">Ad</a>
+        <div class="top">
+          <div>
+            <h3 class="result-business-name"><a href="{{ biz.profile_path() }}">{{ biz.name }}</a></h3>
+            <p class="cats">{{ biz.cat_list() | join(', ') }}</p>
+          </div>
+          {% if biz.accredited %}
+          <span class="seal-wrapper"><img class="bds-accredited-seal" src="{{ url_for('static', filename='icons/Accredited_Business_Seal_NoRating_RGB.svg') }}" alt="BBB Accredited Business"></span>
+          {% endif %}
+        </div>
+        <div class="cluster"><span class="result-rating">BBB Rating: {{ biz.rating }}</span></div>
+        <div class="result-business-info">
+          <div class="left">
+            {% if biz.logo %}
+            <div class="result-image-wrapper"><img src="{{ url_for('static', filename='images/' + biz.logo) }}" alt="{{ biz.name }} logo"></div>
+            {% endif %}
+            <div>
+              <a class="phone" href="tel:{{ biz.phone }}">{{ biz.phone }}</a>
+              <p class="addr">{{ biz.address }}<br>{{ biz.city }}, {{ biz.state }} {{ biz.zip }}</p>
+            </div>
+          </div>
+          {% if biz.offers_quotes %}
+          <a class="result-raq-cta" href="{{ url_for('get_quote_form', biz_id=biz.id) }}">Get a Quote</a>
+          {% endif %}
+        </div>
+      </article>
+      {% endfor %}
+      {% for biz in rows %}
+      <article class="result-card">
+        <div class="top">
+          <div>
+            <h3 class="result-business-name"><a href="{{ biz.profile_path() }}">{{ biz.name }}</a></h3>
+            <p class="cats">{{ biz.cat_list() | join(', ') }}</p>
+          </div>
+          {% if biz.accredited %}
+          <span class="seal-wrapper"><img class="bds-accredited-seal" src="{{ url_for('static', filename='icons/Accredited_Business_Seal_NoRating_RGB.svg') }}" alt="BBB Accredited Business"></span>
+          {% endif %}
+        </div>
+        <div class="cluster">
+          <span class="result-rating">BBB Rating: {{ biz.rating }}</span>
+        </div>
+        <div class="result-business-info">
+          <div class="left">
+            {% if biz.logo %}
+            <div class="result-image-wrapper"><img src="{{ url_for('static', filename='images/' + biz.logo) }}" alt="{{ biz.name }} logo"></div>
+            {% endif %}
+            <div>
+              <a class="phone" href="tel:{{ biz.phone }}">{{ biz.phone }}</a>
+              <p class="addr">{{ biz.address }}<br>{{ biz.city }}, {{ biz.state }} {{ biz.zip }}</p>
+              {% if biz.service_area %}
+              <p class="service-area">
+                <svg width="11" height="11" viewBox="0 0 384 512" aria-hidden="true"><path d="M172.3 501.7C55 381 0 279.4 0 192C0 86 86 0 192 0s192 86 192 192c0 87.4-55 189-172.3 309.7-12.3 15.3-35.1 15.3-47.4 0z" fill="#53565a"/></svg>
+                Service Area
+              </p>
+              {% endif %}
+            </div>
+          </div>
+          {% if biz.offers_quotes %}
+          <a class="result-raq-cta" href="{{ url_for('get_quote_form', biz_id=biz.id) }}">Get a Quote</a>
+          {% endif %}
+        </div>
+      </article>
+      {% else %}
+      <article class="result-card" style="padding:1.4rem;">
+        <h3>No results found</h3>
+        <p>Try a different search term or widen your location.</p>
+      </article>
+      {% endfor %}
+
+      {% if pages > 1 %}
+      <nav class="pagination" aria-label="Pagination">
+        {% set qp = {'find_text': find_text, 'find_loc': find_loc, 'sort': sort} %}
+        {% if page > 1 %}
+          {% set qa = dict(qp, page=page-1) %}
+          <a href="{{ url_for('search', **qa) }}">Previous</a>
+        {% endif %}
+        {% for p in range(1, pages + 1) %}
+          {% if p == page %}<span class="current">{{ p }}</span>
+          {% elif p <= 3 or p > pages - 2 or (p > page - 3 and p < page + 3) %}{% set qa = dict(qp, page=p) %}<a href="{{ url_for('search', **qa) }}">{{ p }}</a>
+          {% elif p == 4 and page > 5 %}<span>&hellip;</span>{% endif %}
+        {% endfor %}
+        {% if page < pages %}
+          {% set qa = dict(qp, page=page+1) %}
+          {% set ql = dict(qp, page=pages) %}
+          <a href="{{ url_for('search', **qa) }}">Next</a>
+          <a href="{{ url_for('search', **ql) }}">Last &raquo;</a>
+        {% endif %}
+      </nav>
+      {% endif %}
+    </section>
+    <aside class="search-right">
+      <div class="search-side-promo">
+        <h4>Join Trusted Businesses</h4>
+        <p style="font-size:.9rem;color:#53565a;">Accredited businesses support BBB's mission of advancing marketplace trust.</p>
+        <a class="btn btn-primary" href="{{ url_for('get_accredited') }}#apply">Become BBB Accredited</a>
+      </div>
+      <div class="related-categories">
+        <h4 style="color:#032160;">Related Categories</h4>
+        {% for cat in related %}
+        <a href="{{ url_for('search', find_text=cat, find_loc=find_loc) }}">{{ cat }}</a>
+        {% endfor %}
+      </div>
+      <div class="search-side-promo">
+        <h4>Didn&rsquo;t find the business you were looking for?</h4>
+        <p style="font-size:.9rem;color:#53565a;">If the business is not in our directory, you can request that we look it up.</p>
+        <a class="btn btn-outline" href="{{ url_for('get_listed') }}">Request a Business</a>
+      </div>
+    </aside>
+  </div>
+
+</div>
+{% endblock %}

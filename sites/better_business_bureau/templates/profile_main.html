@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% import "_profile_macros.html" as pm with context %}
+{% block title %}{{ biz.name }} | BBB Business Profile | Better Business Bureau{% endblock %}
+{% block searchband %}{{ pm.search_band() }}{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.state, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.state }}</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.state, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.city }}</a><span>/</span>
+    <a href="{{ url_for('search', find_text=biz.primary_category, find_loc=biz.city ~ ', ' ~ biz.state) }}">{{ biz.primary_category }}</a><span>/</span>
+    <span>{{ biz.name }}</span>
+  </nav>
+</div>
+{{ pm.profile_head(biz, 'main') }}
+<div class="container">
+  <div class="profile-layout">
+    <aside class="profile-side">
+      <ul class="toc">
+        <li><a class="active" href="#overview">Overview</a></li>
+        <li><a href="#accreditation-rating">BBB Accreditation &amp; Rating</a></li>
+        <li><a href="#about">About This Business</a></li>
+        <li><a href="#business-details">Business Details</a></li>
+        {% if biz.industry_tip %}<li><a href="#industry-tip">Industry Tip</a></li>{% endif %}
+        {% if latest_reviews %}<li><a href="#latest-reviews">Latest Reviews</a></li>{% endif %}
+      </ul>
+      {{ pm.overview_card(biz) }}
+      <div id="accreditation-rating">{{ pm.accred_card(biz) }}</div>
+      <div class="side-card" style="text-align:center;">
+        <h3>Join Trusted Businesses</h3>
+        <a class="btn btn-primary" href="{{ url_for('get_accredited') }}#apply">Become BBB Accredited</a>
+      </div>
+    </aside>
+
+    <div class="profile-main-col">
+      <section id="about">
+        <h2 class="section-heading">About This Business</h2>
+        {% set article = 'an' if biz.primary_category.lower()[0] in 'aeiou' else 'a' %}
+        <p>{{ biz.about or (biz.name + ' is ' + article + ' ' + biz.primary_category.lower() + ' business serving ' + biz.city + ', ' + biz.state + '.') }}</p>
+        <ul class="detail-list">
+          {% if biz.accredited_since %}<li><b>BBB Accredited Since:</b> {{ biz.accredited_since }}</li>{% endif %}
+          {% if biz.years_in_business %}<li><b>Years in Business:</b> {{ biz.years_in_business }}</li>{% endif %}
+        </ul>
+        {% if biz.cat_list() or (biz.products_services_list() if False else []) %}
+        {% endif %}
+        {% if biz.products_services_list() %}
+        <h3 style="margin-top:1.2rem;font-size:1.1rem;color:#032160;">Products and Services</h3>
+        <ul class="ps-list">
+          {% for item in biz.products_services_list() %}<li>{{ item }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </section>
+
+      {% if biz.photos_list() %}
+      <section>
+        <h2 class="section-heading">Photos and Videos</h2>
+        <div class="photos-strip">
+          {% for photo in biz.photos_list() %}
+          <img src="{{ url_for('static', filename='images/' + photo) }}" alt="{{ biz.name }} photo">
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section id="business-details">
+        <h2 class="section-heading">Business Details</h2>
+        <div class="detail-grid">
+          <div>
+            <ul class="detail-list">
+              <li><b>Local BBB:</b> {{ biz.local_bbb }}</li>
+              {% if biz.file_opened %}<li><b>BBB File Opened:</b> {{ biz.file_opened }}</li>{% endif %}
+              {% if biz.started %}<li><b>Business Started:</b> {{ biz.started }}</li>{% endif %}
+              {% if biz.started_locally %}<li><b>Business Started Locally:</b> {{ biz.started_locally }}</li>{% endif %}
+              {% if biz.incorporated %}<li><b>Business Incorporated:</b> {{ biz.incorporated }}</li>{% endif %}
+              {% if biz.entity_type %}<li><b>Type of Entity:</b> {{ biz.entity_type }}</li>{% endif %}
+              {% if biz.alternate_names_list() %}<li><b>Alternate Names:</b> {{ biz.alternate_names_list() | join(', ') }}</li>{% endif %}
+              {% if biz.employees %}<li><b>Number of Employees:</b> {{ biz.employees }}</li>{% endif %}
+            </ul>
+            {% if biz.management_list() %}
+            <h3 style="margin-top:1rem;font-size:1rem;color:#032160;">Business Management</h3>
+            <ul class="detail-list">
+              {% for m in biz.management_list() %}<li>{{ m }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+          </div>
+          <div>
+            <h3 style="font-size:1rem;color:#032160;">Additional Contact Information</h3>
+            {% if biz.principal_contacts_list() %}
+            <p style="font-weight:700;margin:.6rem 0 .1rem;">Principal Contacts</p>
+            <ul class="detail-list">
+              {% for c in biz.principal_contacts_list() %}<li>{{ c }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+            {% if biz.customer_contacts_list() %}
+            <p style="font-weight:700;margin:.6rem 0 .1rem;">Customer Contacts</p>
+            <ul class="detail-list">
+              {% for c in biz.customer_contacts_list() %}<li>{{ c }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+            {% if biz.phones_extra_list() %}
+            <p style="font-weight:700;margin:.6rem 0 .1rem;">Additional Phone Numbers</p>
+            <ul class="detail-list">
+              {% for p in biz.phones_extra_list() %}<li>Other Phone: {{ p }}</li>{% endfor %}
+            </ul>
+            {% endif %}
+            {% if biz.fax %}<p style="font-weight:700;margin:.6rem 0 .1rem;">Fax numbers</p><ul class="detail-list"><li>Primary Fax: {{ biz.fax }}</li></ul>{% endif %}
+            {% if biz.social_list() %}
+            <p style="font-weight:700;margin:.6rem 0 .1rem;">Social Media</p>
+            <p style="font-size:.95rem;">{{ biz.social_list() | join(', ') }}</p>
+            {% endif %}
+          </div>
+        </div>
+
+        <h3 style="margin-top:1.2rem;font-size:1rem;color:#032160;">Licensing Information</h3>
+        <p style="font-size:.93rem;">This business is in an industry that may require professional licensing, bonding or registration. BBB encourages you to check with the appropriate agency to be certain any requirements are currently being met.</p>
+
+        <h3 style="margin-top:1.2rem;font-size:1rem;color:#032160;">Additional Information</h3>
+        {% if biz.payment_methods %}
+        <p style="font-size:.93rem;"><b>Payment methods</b><br>{{ biz.payment_methods }}</p>
+        {% endif %}
+        {% if biz.refund_policy %}
+        <p style="font-size:.93rem;"><b>Refund and Exchange Policy</b><br>{{ biz.refund_policy }}</p>
+        {% endif %}
+        <p style="font-size:.93rem;"><b>Business Categories</b><br>{{ biz.cat_list() | join(', ') }}</p>
+      </section>
+
+      {% if biz.industry_tip %}
+      <section id="industry-tip">
+        <h2 class="section-heading">Industry Tip</h2>
+        <p style="font-size:.95rem;">{{ biz.industry_tip }}</p>
+      </section>
+      {% endif %}
+
+      {% if latest_reviews %}
+      <section id="latest-reviews">
+        <h2 class="section-heading">Latest Reviews</h2>
+        {% for r in latest_reviews %}
+        <div class="review-card">
+          <div class="head">
+            <span class="author">{{ r.author_name }}</span>
+            <span class="date">Date: {{ r.review_date }}</span>
+            <span class="stars">{% for i in range(r.rating) %}&#9733;{% endfor %}{% for i in range(5 - r.rating) %}&#9734;{% endfor %}</span>
+          </div>
+          <p class="text">{{ r.text[:300] }}{% if r.text|length > 300 %}... <a href="{{ biz.profile_path() }}/customer-reviews">Read full review</a>{% endif %}</p>
+        </div>
+        {% endfor %}
+        <p><a href="{{ biz.profile_path() }}/customer-reviews">See all reviews</a></p>
+      </section>
+      {% endif %}
+
+      <div class="disclaimer">
+        <p>{{ profile_disclaimer }}</p>
+        <p>{{ complaint_disclaimer }}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{
+  "captured_at": "2026-09-21",
+  "upstream": "https://www.bbb.org/",
+  "capture_method": "Real Chromium browser driven over CDP against the live bbb.org; every page captured after full client hydration. Business data (names, BBB ratings, accreditation, addresses, phones, business details, complaint records, customer reviews) was read from rendered search result pages and business profile pages; scam reports from the rendered BBB Scam Tracker lookup; newsroom articles from /us/news. Heavy media (business logos, profile photos, homepage hero video) was downloaded from the exact URLs the rendered pages reference; per-file provenance lives in asset_inventory.json.",
+  "capture_sessions": {
+    "search_grid": "20 service categories x 6 Eastside/Seattle locations x pages 1-2, plus 8 out-of-metro searches; result cards include organic results and sponsored ad cards with their ad-resolved profile URLs.",
+    "brand_searches": "62 well-known brand queries across Seattle WA, New York NY, and Chicago IL; brand profile pages carry the lower BBB letter grades and large complaint volumes present in the real directory.",
+    "profiles": "Main, customer-reviews, and complaints tabs for every selected business (review tab captured when the main tab indicates reviews exist).",
+    "scam_tracker": "Lookup pages filtered by scam type (q=scam_type=<T>&from=<N>) across 16 scam types, 4 result windows each; the server-rendered result payloads provide the structured scam records.",
+    "newsroom": "BBB newsroom article list and article bodies."
+  },
+  "benchmark_synthetic_state": "User accounts (alice.j@test.com / bob.c@test.com / carol.d@test.com / david.k@test.com, password TestPass123!), their favorites, reviews, complaints, and scam submissions are benchmark fixtures generated deterministically by seed_data.py and are not upstream content. Quote requests and all form submissions are runtime-local state.",
+  "notes": [
+    "All directory content reflects the public bbb.org state on 2026-09-21; no placeholder or synthetic businesses are seeded.",
+    "Complaint and review texts are reproduced as rendered on the upstream complaints/reviews tabs, with the upstream REMOVED/redaction markers preserved.",
+    "Upstream text that labels redacted personal information (the literal token REMOVED) is preserved verbatim."
+  ]
+}
