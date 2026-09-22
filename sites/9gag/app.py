@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import os
 import re
+import secrets
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import Flask, abort, flash, redirect, render_template, request, url_for
 from flask_login import LoginManager, UserMixin, current_user, login_required, login_user, logout_user
 from flask_sqlalchemy import SQLAlchemy
+from flask_wtf.csrf import CSRFProtect
 from sqlalchemy import UniqueConstraint
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -15,13 +17,25 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
 os.makedirs(INSTANCE_DIR, exist_ok=True)
 
+# Single source of truth for every closed vocabulary the forms offer: the templates render these
+# and the POST handlers validate against them, so the form and the server cannot drift apart.
+POST_INTERESTS = ("humor", "memes", "gaming", "animals", "science", "wholesome",
+                  "sports", "food", "music", "politics", "random")
+REPORT_REASONS = ("Spam", "Harassment", "Misinformation", "Graphic content")
+PREVIEW_IMAGES = ("posts/aVvGONd-41d662a3.jpg", "posts/adB3Nj9-f56e7b44.jpg",
+                  "posts/aYQzNgV-f6067981.jpg", "posts/aQzYqK8-ec9e7408.jpg")
+
 app = Flask(__name__, instance_path=INSTANCE_DIR)
 app.config.update(
-    SECRET_KEY="webharbor-9gag-deterministic-key",
+    # Not a tracked literal: a fixed key lets anyone mint a session cookie for a seeded account.
+    SECRET_KEY=os.environ.get("NINEGAG_SECRET_KEY") or secrets.token_hex(32),
     SQLALCHEMY_DATABASE_URI=f"sqlite:///{os.path.join(INSTANCE_DIR, '9gag.db')}",
     SQLALCHEMY_TRACK_MODIFICATIONS=False,
+    MAX_CONTENT_LENGTH=256 * 1024,
+    WTF_CSRF_TIME_LIMIT=7200,
 )
 db = SQLAlchemy(app)
+csrf = CSRFProtect(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
@@ -112,6 +126,22 @@ def load_user(user_id):
 
 def slugify(value):
     return re.sub(r"[^a-z0-9]+", "-", value.lower()).strip("-")[:160] or "post"
+
+
+def bounded_text(value, limit, field):
+    """SQLite does not enforce VARCHAR length: reject over-long input instead of storing it."""
+    text = str(value or "").strip()
+    if len(text) > limit:
+        abort(400, f"{field} must be at most {limit} characters")
+    return text
+
+
+def next_local_source_id():
+    """MAX(numeric suffix) + 1, so a removed row can never make the next insert collide."""
+    used = [int(match.group(1))
+            for row in Post.query.filter(Post.source_id.like("local-%")).all()
+            if (match := re.fullmatch(r"local-(\d+)", row.source_id or ""))]
+    return f"local-{max(used, default=Post.query.count()) + 1}"
 
 
 def scored_posts(query, posts):
@@ -217,7 +247,10 @@ def post_detail(slug):
 @login_required
 def vote(slug):
     post = Post.query.filter_by(slug=slug).first_or_404()
-    value = 1 if request.form.get("value") == "1" else -1
+    raw_value = request.form.get("value", "")
+    if raw_value not in {"1", "-1"}:
+        abort(400, "vote value must be 1 or -1")
+    value = int(raw_value)
     existing = Vote.query.filter_by(user_id=current_user.id, post_id=post.id).first()
     if existing and existing.value == value:
         db.session.delete(existing)
@@ -254,7 +287,7 @@ def save_post(slug):
 @login_required
 def add_comment(slug):
     post = Post.query.filter_by(slug=slug).first_or_404()
-    body = request.form.get("body", "").strip()
+    body = bounded_text(request.form.get("body"), 1000, "comment body")
     if len(body) < 2:
         flash("Comment must contain at least 2 characters.", "error")
     else:
@@ -282,36 +315,46 @@ def report_post(slug):
     post = Post.query.filter_by(slug=slug).first_or_404()
     if request.method == "POST":
         reason = request.form.get("reason", "").strip()
+        if reason and reason not in REPORT_REASONS:
+            abort(400, "unknown report reason")
         if reason:
             db.session.add(Report(user_id=current_user.id, post_id=post.id, reason=reason))
             db.session.commit()
             flash("Thanks. Your report was submitted.")
             return redirect(url_for("post_detail", slug=slug))
         flash("Choose a reason.", "error")
-    return render_template("report.html", post=post)
+    return render_template("report.html", post=post, reasons=REPORT_REASONS)
 
 
 @app.route("/submit", methods=["GET", "POST"])
 @login_required
 def submit():
     if request.method == "POST":
-        title = request.form.get("title", "").strip()
+        title = bounded_text(request.form.get("title"), 300, "title")
+        description = bounded_text(request.form.get("description"), 2000, "description")
+        tags = bounded_text(request.form.get("tags"), 400, "tags")
+        section = request.form.get("section", POST_INTERESTS[0])
+        image = request.form.get("image", PREVIEW_IMAGES[0])
+        if section not in POST_INTERESTS:
+            abort(400, "unknown interest")
+        if image not in PREVIEW_IMAGES:
+            abort(400, "unknown preview image")
         if len(title) < 4:
             flash("A title of at least 4 characters is required.", "error")
         else:
             base, slug, suffix = slugify(title), slugify(title), 2
             while Post.query.filter_by(slug=slug).first():
                 slug, suffix = f"{base}-{suffix}", suffix + 1
-            post = Post(source_id=f"local-{Post.query.count() + 1}", slug=slug, title=title,
-                        description=request.form.get("description", "").strip() or "Shared with the 9GAG community.",
-                        image=request.form.get("image", "posts/aVvGONd-41d662a3.jpg"), section=request.form.get("section", "humor"),
-                        post_type="Photo", tags=request.form.get("tags", ""), author_name=current_user.username,
+            post = Post(source_id=next_local_source_id(), slug=slug, title=title,
+                        description=description or "Shared with the 9GAG community.",
+                        image=image, section=section,
+                        post_type="Photo", tags=tags, author_name=current_user.username,
                         up_votes=0, down_votes=0, comment_count=0, created_rank=Post.query.count() + 100)
             db.session.add(post)
             db.session.commit()
             flash("Your post is live.")
             return redirect(url_for("post_detail", slug=post.slug))
-    return render_template("submit.html")
+    return render_template("submit.html", interests=POST_INTERESTS, images=PREVIEW_IMAGES)
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -329,7 +372,9 @@ def login():
 @app.route("/register", methods=["GET", "POST"])
 def register():
     if request.method == "POST":
-        email, username, password = request.form.get("email", "").strip().lower(), request.form.get("username", "").strip(), request.form.get("password", "")
+        email = bounded_text(request.form.get("email"), 160, "email").lower()
+        username = bounded_text(request.form.get("username"), 80, "username")
+        password = request.form.get("password", "")
         if "@" not in email or len(username) < 3 or len(password) < 8:
             flash("Enter a valid email, username, and password of at least 8 characters.", "error")
         elif User.query.filter((User.email == email) | (User.username == username)).first():
@@ -344,7 +389,7 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/logout")
+@app.post("/logout")
 @login_required
 def logout():
     logout_user()
@@ -369,13 +414,15 @@ def profile(username):
 @login_required
 def settings():
     if request.method == "POST":
-        display_name = request.form.get("display_name", "").strip()
+        display_name = bounded_text(request.form.get("display_name"), 120, "display name")
+        bio = bounded_text(request.form.get("bio"), 500, "bio")
+        location = bounded_text(request.form.get("location"), 120, "location")
         if not display_name:
             flash("Display name is required.", "error")
         else:
             current_user.display_name = display_name
-            current_user.bio = request.form.get("bio", "").strip()[:500]
-            current_user.location = request.form.get("location", "").strip()[:120]
+            current_user.bio = bio
+            current_user.location = location
             db.session.commit()
             flash("Profile updated.")
     return render_template("settings.html")
@@ -417,6 +464,31 @@ def help_page():
 @app.route("/terms")
 def terms():
     return render_template("terms.html")
+
+
+@app.errorhandler(400)
+def bad_request(error):
+    return render_template("error.html", code=400, heading="That request could not be processed",
+                           body=getattr(error, "description", "") or "Check the form and try again."), 400
+
+
+@app.errorhandler(404)
+def not_found(_error):
+    return render_template("error.html", code=404, heading="This page is not on 9GAG",
+                           body="The post may have been removed, or the link may be wrong."), 404
+
+
+@app.errorhandler(413)
+def payload_too_large(_error):
+    return render_template("error.html", code=413, heading="That upload is too large",
+                           body="A 9GAG post is text plus one preview image."), 413
+
+
+@app.errorhandler(500)
+def server_error(_error):  # pragma: no cover - defensive
+    db.session.rollback()
+    return render_template("error.html", code=500, heading="Something went wrong",
+                           body="Try again in a moment."), 500
 
 
 @app.route("/_health")
