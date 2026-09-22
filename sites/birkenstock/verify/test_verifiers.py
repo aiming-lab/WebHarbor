@@ -181,9 +181,11 @@ def mut_t18(db):
                             ("arizona-core-oiledleather-softfootbed-eva-u_11681", 116.21, 2),
                             ("gizeh-core-birkoflor-0-eva-u_79", 110.00, 1)]:
         prod_id = _pid(db, pid)
+        prod = con.execute("SELECT name,model,color,images_json FROM products WHERE id=?", (prod_id,)).fetchone()
+        variant = con.execute("SELECT size,width FROM cart_items WHERE user_id=? AND product_id=?", (uid,prod_id)).fetchone() or ("8-8.5", "Regular/Wide")
         con.execute("""INSERT INTO order_items (id,order_id,product_id,name,model,color,size,width,price,quantity,image)
             VALUES (?,?,?,?,?,?,?,?,?,?,?)""",
-                    (item_id, oid, prod_id, "fixture", "fixture", "Black", "8-8.5", "Regular/Wide", price, qty, ""))
+                    (item_id, oid, prod_id, prod[0], prod[1], prod[2], variant[0], variant[1], price, qty, json.loads(prod[3])[0]))
         item_id += 1
     nid = (con.execute("SELECT MAX(id) FROM payment_methods").fetchone()[0] or 0) + 1
     con.execute("INSERT INTO payment_methods (id,user_id,label,last_four,holder,exp_month,exp_year,is_default) "
@@ -381,6 +383,14 @@ HONEST = {
               text="Size Conversion Chart 7 - 7 1/2 38 10 - 10 1/2 43"),
         ], answer="A US men's 10-10.5 is BIRKENSTOCK size 43, and a US women's 7-7.5 is size 38."),
 }
+
+# Reviewed request fixtures are synthetic controls based on checked browser paths.
+for _number, _fixture in json.loads((VERIFY / "reviewed_fixtures.json").read_text()).items():
+    HONEST[int(_number)]["answer"] = _fixture["answer"]
+    HONEST[int(_number)]["steps"] = [
+        S(BASE + step["path"], step["action"], step["params"], step["text"])
+        for step in _fixture["steps"]
+    ]
 
 WRONG_ANSWER = {
     0: "The cheapest adult result is Arizona Kids EVA in Black, priced $34.95.",
