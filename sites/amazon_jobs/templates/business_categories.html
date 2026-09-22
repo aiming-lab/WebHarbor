@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Teams{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Teams</h1>
+  </div>
+</div>
+<div class="container page-content">
+  <h2 class="section-heading">Browse jobs by team</h2>
+  <div class="text-card-grid">
+    {% for team in teams %}
+    <a class="text-card" href="{{ url_for('business_category_detail', slug=team.slug) }}">
+      <h3>{{ team.label }}</h3>
+      <p class="count">{{ counts[team.slug] }} open jobs</p>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

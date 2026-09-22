@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}{{ team.label }}{% endblock %}
+{% block content %}
+<div class="team-hero">
+  {% if team.hero_image %}<img class="team-hero-img" src="{{ image_url(team.hero_image) }}" alt="">{% endif %}
+  <div class="team-hero-overlay">
+    <div class="container hero-content">
+      <h1>{{ team.hero_title or team.label }}</h1>
+      <p class="hero-desc">{{ team.hero_desc }}</p>
+      <a class="team-hero-btn" href="{{ url_for('search', business_category=team.slug) }}">View open roles</a>
+    </div>
+  </div>
+</div>
+<div class="container landing-sections">
+  {#- Degenerate captured blocks (heading + icon only, no paragraphs/links/cards):
+      upstream renders these sections as icon/category grids. When the page
+      already renders the matching role grid band (same heading), skip the
+      duplicate block; otherwise render the icon as a centered decorative
+      icon instead of cover-cropping a square icon into the media box. -#}
+  {% set role_grid_items = team.role_grid() %}
+  {% set rendered_blocks = [] %}
+  {% for block in team.blocks() %}
+    {% set block_degenerate = not block.paragraphs and not block.links and not block.cards %}
+    {% if not (block_degenerate and role_grid_items and block.heading == 'Search roles by team') %}
+      {% if rendered_blocks.append(block) %}{% endif %}
+    {% endif %}
+  {% endfor %}
+  {% for block in rendered_blocks %}
+  {% set block_degenerate = not block.paragraphs and not block.links and not block.cards %}
+  {% if block_degenerate %}
+  <div class="team-block degenerate">
+    {% if block.heading %}<h2 class="section-heading-left">{{ block.heading }}</h2>{% endif %}
+    {% if block.image %}<img class="team-block-icon" src="{{ image_url(block.image) }}" alt="">{% endif %}
+  </div>
+  {% else %}
+  <div class="team-block {% if loop.index0 % 2 == 1 %}alt{% endif %}">
+    <div class="team-block-copy">
+      {% if block.kicker %}<p class="block-kicker">{{ block.kicker }}</p>{% endif %}
+      {% if block.heading %}<h2 class="section-heading-left">{{ block.heading }}</h2>{% endif %}
+      {% for para in block.paragraphs %}
+      <p>{{ para }}</p>
+      {% endfor %}
+      {% if block.cards %}
+      <div class="team-card-grid">
+        {% for card in block.cards %}
+        <div class="team-card">
+          <h3>{{ card.title }}</h3>
+          <p>{{ card.body }}</p>
+          {% if card.cta %}<span class="link-more">{{ card.cta }}</span>{% endif %}
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% for link in block.links %}
+      <a class="text-link" href="{{ link.href }}">{{ link.label }}</a>
+      {% endfor %}
+    </div>
+    {% if block.image %}
+    <div class="team-block-media">
+      <img src="{{ image_url(block.image) }}" alt="">
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+  {% endfor %}
+  {% if team.role_grid() %}
+  <div class="role-grid-band">
+    <h2 class="section-heading">Search roles by team</h2>
+    <div class="role-grid">
+      {% for item in team.role_grid() %}
+      <a class="role-card" href="{{ item.href }}">
+        {% if item.icon %}<img src="{{ icon_url(item.icon) }}" alt="">{% endif %}
+        <span>{{ item.label }}</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+<div class="cta-band">
+  <div class="container">
+    <h2>Make your mark on {{ team.label }}</h2>
+    <p>Find the future you want here.</p>
+    <a class="cta-btn" href="{{ url_for('search', business_category=team.slug) }}">See all open roles</a>
+  </div>
+</div>
+{% if sample %}
+<div class="container page-content">
+  <h2 class="section-heading-left">Featured {{ team.label }} opportunities</h2>
+  <div class="job-tile-lists landing-tiles">
+    {% for job in sample %}
+    {% include "_job_tile.html" %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

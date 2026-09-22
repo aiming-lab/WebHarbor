@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}My applications | Amazon.jobs{% endblock %}
+{% block content %}
+<div class="container page-content account-page">
+  <div class="account-head">
+    <h1>My applications</h1>
+    <p class="account-sub">Track the roles you have applied to at Amazon.</p>
+  </div>
+  {% if applications %}
+  <div class="application-list">
+    {% for app in applications %}
+    <div class="application-card">
+      <div class="app-main">
+        <a class="app-title" href="{{ url_for('job_detail', job_id=app.job.job_id, slug=app.job.slug) }}">{{ app.job.title }}</a>
+        <p class="app-meta">{{ app.job.location_card() }} | Job ID: {{ app.job.job_id }}</p>
+        <p class="app-meta">Applied {{ app.submitted_at.strftime('%B %-d, %Y') }}</p>
+      </div>
+      <div class="app-side">
+        <span class="status-badge status-{{ app.status|lower|replace(' ', '-') }}">{{ app.status }}</span>
+        {% if app.status not in ("Withdrawn", "No longer under consideration") %}
+        <form method="post" action="{{ url_for('withdraw_application', application_id=app.id) }}" class="inline-form">
+          <button type="submit" class="btn btn-secondary btn-small">Withdraw</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>No applications yet</h2>
+    <p>When you apply for a role, it will show up here with its current status.</p>
+    <a class="btn btn-primary" href="{{ url_for('search') }}">Search jobs</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

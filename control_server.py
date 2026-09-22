@@ -34,11 +34,15 @@ SITES = [
     'ikea', 'phys_org', 'target', 'ted',
     'osu', 'rotten_tomatoes', 'compass', 'walmart_careers',
     'fedex', 'webmd_doctor', 'healthline', 'kaggle',
-    'nvidia', 'berkeley', 'bh_photo', 'accuweather', 'gov_uk',
-    'imdb',
-    'nba', 'recreation_gov', 'boardgamegeek', 'carmax', 'babycenter', 'amtrak',
-    'cookpad', 'craigslist', 'drugs_com', 'versus', 'y_combinator',
-    'phet_simulations', 'discogs', 'google_finance', 'bandcamp', 'adopt_a_pet', 'ign', 'irs_refund', 'wineaccess', 'webmd', 'petfinder', 'mega', '4shared', '9gag', 'akc', 'bestbuy', 'youtube', 'weather',
+    'nvidia', 'berkeley', 'bh_photo', 'accuweather',
+    'gov_uk', 'imdb', 'nba', 'recreation_gov',
+    'boardgamegeek', 'carmax', 'babycenter', 'amtrak',
+    'cookpad', 'craigslist', 'drugs_com', 'versus',
+    'y_combinator', 'phet_simulations', 'discogs', 'google_finance',
+    'bandcamp', 'adopt_a_pet', 'ign', 'irs_refund',
+    'wineaccess', 'webmd', 'petfinder', 'mega',
+    '4shared', '9gag', 'akc', 'bestbuy',
+    'youtube', 'weather', 'amazon_jobs',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'
