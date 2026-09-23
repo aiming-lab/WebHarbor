@@ -32,6 +32,8 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected 5,100 students from the stat bar")
     judge.check("answer_adoption_year", contains_count(answer, 2015),
                 "expected the Parchment adoption year 2015 from the stat bar")
+    from reviewed import check_facts
+    check_facts(judge, answer, [{'entity': 'Helena|stat bar|case study', 'patterns': ['5[ ,]?100\\s+students', 'Montana', '(?:adopted|adoption|Parchment).{0,25}2015']}])
     check_read_only(judge, initial_db, after_db)
 
 

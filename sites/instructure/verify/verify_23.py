@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Verify Instructure--23."""
 
+import re
+
 from verify_lib import (Judge, check_read_only, check_signed_in_as, check_trajectory_identity,
                         check_visited_path, check_only_tables_changed, contains_all, contains_any,
                         contains_count, contains_date_phrase, contains_klabel, contains_money,
@@ -37,6 +39,8 @@ def run_checks(judge, traj, initial_db, after_db):
               and row["organization_type"] == "K12"
               and row["needs"] == "I want to connect with sales"
               and row["source"] == "Web Site")
+    if ok:
+        ok = bool(re.search('\\b(?:LMS|learning management)\\b', row["message"], re.I))
     judge.check("db_demo_request_row", ok,
                 f"demo_requests delta={delta!r}, expected one Jordan Lee / Summit Public "
                 f"Schools / K12 / sales row with source Web Site")

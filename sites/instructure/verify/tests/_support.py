@@ -130,6 +130,7 @@ class RunBuilder:
         traj = {
             "task": f"fixture for {self.task_id}",
             "task_id": task_id or self.task_id,
+            "task": next((t["ques"] for t in map(json.loads, (SITE_DIR / "tasks.jsonl").read_text().splitlines()) if t["id"] == self.task_id), "unknown task"),
             "start_url": self.start_url,
             "model": "review-fixture",
             "max_steps": 80,

@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """Verify Instructure--24."""
 
+import re
+
 from verify_lib import (Judge, check_read_only, check_signed_in_as, check_trajectory_identity,
                         check_visited_path, check_only_tables_changed, contains_all, contains_any,
                         contains_count, contains_date_phrase, contains_klabel, contains_money,
@@ -37,6 +39,8 @@ def run_checks(judge, traj, initial_db, after_db):
               and row["organization_type"] == "Higher Ed"
               and row["needs"] == "General Inquiry"
               and row["source"] == "Contact Us")
+    if ok:
+        ok = bool(re.search('Parchment.*integrat|integrat.*Parchment', row["message"], re.I))
     judge.check("db_contact_message_row", ok,
                 f"contact_messages delta={delta!r}, expected one Maria Chen / Northgate "
                 f"University / Higher Ed / General Inquiry row")
