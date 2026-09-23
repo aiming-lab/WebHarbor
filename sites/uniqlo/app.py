@@ -6,9 +6,10 @@ import random
 import re
 from datetime import datetime
 from itertools import groupby
+from urllib.parse import urlsplit
 
 from flask import (Flask, render_template, request, redirect, url_for,
-                    flash, jsonify)
+                    flash, jsonify, session, abort)
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, UserMixin, login_user, logout_user,
                           login_required, current_user)
@@ -268,8 +269,8 @@ class ReviewForm(FlaskForm):
 
 @app.route('/')
 def index():
-    featured = Product.query.order_by(func.random()).limit(12).all()
-    bestsellers = Product.query.order_by(Product.review_count.desc()).limit(8).all()
+    featured = Product.query.order_by(Product.id).limit(12).all()
+    bestsellers = Product.query.order_by(Product.review_count.desc(), Product.id).limit(8).all()
     return render_template('index.html', featured=featured, bestsellers=bestsellers)
 
 
@@ -278,11 +279,11 @@ def department_page(department):
     if department not in dict(DEPARTMENTS):
         return render_template('404.html'), 404
     cats = Category.query.filter_by(department=department).order_by(Category.name).all()
-    products = Product.query.filter_by(department=department).order_by(func.random()).limit(24).all()
+    products = Product.query.filter_by(department=department).order_by(Product.id).limit(24).all()
     return render_template('department.html', department=department, categories=cats, products=products)
 
 
-@app.route('/<department>/<category_slug>')
+@app.route('/<department>/<path:category_slug>')
 def category_page(department, category_slug):
     if department not in dict(DEPARTMENTS):
         return render_template('404.html'), 404
@@ -290,13 +291,13 @@ def category_page(department, category_slug):
     sort_key = request.args.get('sort', '')
     q = Product.query.filter_by(department=department, category_slug=category_slug)
     if sort_key == 'price_low':
-        q = q.order_by(Product.min_price.asc())
+        q = q.order_by(Product.min_price.asc(), Product.id)
     elif sort_key == 'price_high':
-        q = q.order_by(Product.min_price.desc())
+        q = q.order_by(Product.min_price.desc(), Product.id)
     elif sort_key == 'rating':
-        q = q.order_by(Product.rating.desc())
+        q = q.order_by(Product.rating.desc(), Product.id)
     else:
-        q = q.order_by(Product.name.asc())
+        q = q.order_by(Product.name.asc(), Product.id)
     products = q.all()
     return render_template('category.html', department=department, category=cat,
                             products=products, current_sort=sort_key)
@@ -309,7 +310,7 @@ def product_detail(slug):
         Product.category_slug == product.category_slug,
         Product.department == product.department,
         Product.id != product.id
-    ).order_by(func.random()).limit(4).all()
+    ).order_by(Product.id).limit(4).all()
     reviews = Review.query.filter_by(product_id=product.id).order_by(Review.created_at.desc()).all()
     in_wishlist = False
     if current_user.is_authenticated:
@@ -360,14 +361,7 @@ def search():
                 s = _score_product(p, tokens)
                 if s >= min_required:
                     scored.append((s, p))
-            seed = abs(hash(q.lower())) % (2 ** 31)
-            rng = random.Random(seed)
-            scored.sort(key=lambda x: -x[0])
-            results = []
-            for _, group in groupby(scored, key=lambda x: x[0]):
-                bucket = [p for _, p in group]
-                rng.shuffle(bucket)
-                results.extend(bucket)
+            results = [item for _, item in sorted(scored, key=lambda x: (-x[0], x[1].name.casefold(), x[1].id))]
         else:
             results = candidates
     else:
@@ -388,7 +382,7 @@ def login():
             login_user(user)
             flash('Welcome back!', 'success')
             next_url = request.args.get('next')
-            if not next_url or not next_url.startswith('/') or next_url.startswith('//'):
+            if not next_url or not next_url.startswith('/') or urlsplit(next_url).netloc or '\\' in next_url or any(ord(c) < 32 for c in next_url):
                 next_url = url_for('index')
             return redirect(next_url)
         flash('Invalid email or password.', 'error')
@@ -459,13 +453,17 @@ def cart():
 
 
 @app.route('/cart/add/<int:variant_id>', methods=['POST'])
-@csrf.exempt
 @login_required
 def cart_add(variant_id):
     variant = ProductVariant.query.get_or_404(variant_id)
-    qty = int(request.form.get('quantity', 1))
+    raw_qty = request.form.get('quantity', '1')
+    if not re.fullmatch(r'[0-9]+', raw_qty) or not 1 <= int(raw_qty) <= 10 or not variant.in_stock:
+        abort(400, description='Choose an available variant and a quantity from 1 to 10.')
+    qty = int(raw_qty)
     existing = CartItem.query.filter_by(user_id=current_user.id, variant_id=variant_id).first()
     if existing:
+        if existing.quantity + qty > 10:
+            abort(400, description="Maximum quantity is 10 per variant.")
         existing.quantity += qty
     else:
         db.session.add(CartItem(user_id=current_user.id, variant_id=variant_id, quantity=qty))
@@ -475,15 +473,21 @@ def cart_add(variant_id):
 
 
 @app.route('/api/cart/update', methods=['POST'])
-@csrf.exempt
 @login_required
 def cart_update():
-    data = request.get_json() or {}
+    data = request.get_json(silent=True)
+    if not isinstance(data, dict):
+        return jsonify({'success': False, 'error': 'Expected a JSON object.'}), 400
     item = CartItem.query.filter_by(id=data.get('item_id'), user_id=current_user.id).first()
     if not item:
         return jsonify({'success': False}), 404
-    qty = int(data.get('quantity', 1))
-    if qty <= 0:
+    raw_qty = str(data.get('quantity', '1'))
+    if not re.fullmatch(r'[0-9]+', raw_qty) or not 0 <= int(raw_qty) <= 10:
+        return jsonify({'success': False, 'error': 'Quantity must be an integer from 0 to 10.'}), 400
+    qty = int(raw_qty)
+    if qty and not item.variant.in_stock:
+        return jsonify({'success': False, 'error': 'This variant is unavailable.'}), 400
+    if qty == 0:
         db.session.delete(item)
     else:
         item.quantity = qty
@@ -494,7 +498,6 @@ def cart_update():
 
 
 @app.route('/cart/remove/<int:item_id>', methods=['POST'])
-@csrf.exempt
 @login_required
 def cart_remove(item_id):
     item = CartItem.query.filter_by(id=item_id, user_id=current_user.id).first_or_404()
@@ -514,9 +517,9 @@ def wishlist():
 
 
 @app.route('/wishlist/toggle/<int:product_id>', methods=['POST'])
-@csrf.exempt
 @login_required
 def wishlist_toggle(product_id):
+    product = Product.query.get_or_404(product_id)
     existing = WishlistItem.query.filter_by(user_id=current_user.id, product_id=product_id).first()
     if existing:
         db.session.delete(existing)
@@ -528,19 +531,20 @@ def wishlist_toggle(product_id):
         added = True
     if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'added': added})
-    return redirect(request.referrer or url_for('index'))
+    return redirect(url_for('product_detail', slug=product.slug))
 
 
 # ----- Routes: checkout -----
 
 @app.route('/checkout', methods=['GET', 'POST'])
-@csrf.exempt
 @login_required
 def checkout():
     items = CartItem.query.filter_by(user_id=current_user.id).all()
     if not items:
         flash('Your cart is empty.', 'info')
         return redirect(url_for('cart'))
+    if any(not i.variant.in_stock or not 1 <= i.quantity <= 10 for i in items):
+        abort(400, description="Update unavailable or invalid cart items before checkout.")
     form = CheckoutForm()
     subtotal = sum(i.variant.price * i.quantity for i in items)
     shipping = 0.0 if subtotal >= 99 else 4.99
@@ -573,7 +577,6 @@ def checkout():
 # ----- Routes: reviews -----
 
 @app.route('/product/<slug>/review', methods=['POST'])
-@csrf.exempt
 @login_required
 def add_review(slug):
     product = Product.query.filter_by(slug=slug).first_or_404()
@@ -583,9 +586,11 @@ def add_review(slug):
             product_id=product.id, author_name=current_user.name,
             rating=form.rating.data, title=form.title.data, body=form.body.data,
         ))
-        product.review_count = Review.query.filter_by(product_id=product.id).count() + 1
-        agg = db.session.query(func.avg(Review.rating)).filter_by(product_id=product.id).scalar() or form.rating.data
-        product.rating = round(float(agg), 1)
+        # The archived reviews are a sample; retain the upstream aggregate.
+        previous_count = product.review_count
+        product.rating = ((product.rating * previous_count + form.rating.data)
+                           / (previous_count + 1))
+        product.review_count = previous_count + 1
         db.session.commit()
         flash('Thanks for your review!', 'success')
     return redirect(url_for('product_detail', slug=slug))

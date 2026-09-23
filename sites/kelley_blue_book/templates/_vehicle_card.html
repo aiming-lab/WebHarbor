@@ -3,13 +3,14 @@
         {% if vehicle.image %}
         <img src="{{ url_for('static', filename=vehicle.image) }}" alt="{{ vehicle.title }}" loading="lazy">
         {% else %}
-        <div class="vehicle-card-img-placeholder"></div>
+        <div class="vehicle-card-img-placeholder" role="img" aria-label="Photo unavailable">Photo unavailable</div>
         {% endif %}
     </div>
     <div class="vehicle-card-body">
         <div class="vehicle-card-name">{{ vehicle.title }}</div>
         <div class="vehicle-card-price">
-            {% if vehicle.min_price == vehicle.max_price %}
+            {% if vehicle.min_price is none %}Price unavailable
+            {% elif vehicle.min_price == vehicle.max_price %}
                 Starting at ${{ '{:,.0f}'.format(vehicle.min_price) }}
             {% else %}
                 ${{ '{:,.0f}'.format(vehicle.min_price) }} &ndash; ${{ '{:,.0f}'.format(vehicle.max_price) }}

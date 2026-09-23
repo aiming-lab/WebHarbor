@@ -19,7 +19,7 @@
                 </div>
                 {% endif %}
             {% else %}
-                <div class="vehicle-card-img-placeholder large"></div>
+                <div class="vehicle-card-img-placeholder large" role="img" aria-label="Photo unavailable">Photo unavailable</div>
             {% endif %}
         </div>
 
@@ -31,7 +31,8 @@
             <div class="rating-line muted">No reviews yet</div>
             {% endif %}
             <div class="price-line">
-                {% if vehicle.min_price == vehicle.max_price %}Starting at ${{ '{:,.0f}'.format(vehicle.min_price) }}
+                {% if vehicle.min_price is none %}Price unavailable
+            {% elif vehicle.min_price == vehicle.max_price %}Starting at ${{ '{:,.0f}'.format(vehicle.min_price) }}
                 {% else %}${{ '{:,.0f}'.format(vehicle.min_price) }} &ndash; ${{ '{:,.0f}'.format(vehicle.max_price) }}{% endif %}
             </div>
 
@@ -59,28 +60,30 @@
                     <button type="submit" class="btn-secondary">{{ '♥ Saved' if is_saved else '♡ Save Vehicle' }}</button>
                 </form>
                 {% else %}
-                <a href="{{ url_for('login') }}" class="btn-secondary">♡ Save Vehicle</a>
+                <a href="{{ url_for('login', next=request.path) }}" class="btn-secondary">♡ Save Vehicle</a>
                 {% endif %}
-                <a href="{{ url_for('compare', slugs=vehicle.slug) }}" class="btn-secondary">Compare</a>
+                <form method="post" action="{{ url_for('compare_add', slug=vehicle.slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token_value }}"><button class="btn-secondary">Add to Compare</button></form>
             </div>
         </div>
 
         <div class="vehicle-quote-cta">
-            {% if current_user.is_authenticated %}
+            {% if current_user.is_authenticated and vehicle.trims %}
             <form method="post" action="{{ url_for('request_quote', slug=vehicle.slug) }}" class="quote-form">
                 {{ quote_form.hidden_tag() }}
                 <h3>Get a Free Price Quote</h3>
                 <div class="form-row">
                     {{ quote_form.trim_name.label }}
-                    <select name="trim_name">
+                    <select name="trim_name" id="trim_name">
                         {% for t in vehicle.trims %}<option value="{{ t.name }}">{{ t.name }}</option>{% endfor %}
                     </select>
                 </div>
                 <div class="form-row">{{ quote_form.zip_code.label }} {{ quote_form.zip_code(placeholder='ZIP code') }}</div>
                 <button type="submit" class="btn-primary full-width">GET MY QUOTE</button>
             </form>
+            {% elif not vehicle.trims %}
+            <p>No archived styles available for a quote.</p>
             {% else %}
-            <a href="{{ url_for('login') }}" class="btn-primary full-width">SIGN IN FOR A QUOTE</a>
+            <a href="{{ url_for('login', next=request.path) }}" class="btn-primary full-width">SIGN IN FOR A QUOTE</a>
             {% endif %}
         </div>
     </div>
@@ -88,7 +91,7 @@
     {% if vehicle.trims %}
     {% set spec_labels = vehicle.spec_labels|from_json %}
     <section class="detail-block">
-        <h3>{{ vehicle.title }} Styles</h3>
+        <h3>{{ vehicle.title }} Styles</h3><p class="muted">Archived style prices and specifications. Missing values are unavailable; FAQ sticker and Fair Purchase prices may reflect a different snapshot.</p>
         <div class="trims-table-wrap">
             <table class="trims-table">
                 <thead>
@@ -98,7 +101,7 @@
                     {% for t in vehicle.trims %}
                     <tr>
                         <td>{{ t.name }}</td>
-                        <td>${{ '{:,.0f}'.format(t.price) }}</td>
+                        <td>{% if t.price is not none %}${{ '{:,.0f}'.format(t.price) }}{% else %}Not available{% endif %}</td>
                         {% for val in t.specs|from_json %}<td>{{ val }}</td>{% endfor %}
                     </tr>
                     {% endfor %}

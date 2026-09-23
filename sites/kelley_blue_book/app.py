@@ -6,9 +6,10 @@ import random
 import re
 from datetime import datetime
 from itertools import groupby
+from urllib.parse import urlsplit
 
 from flask import (Flask, render_template, request, redirect, url_for,
-                    flash, jsonify)
+                    flash, jsonify, session, abort)
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, UserMixin, login_user, logout_user,
                           login_required, current_user)
@@ -16,7 +17,7 @@ from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_bcrypt import Bcrypt
 from wtforms import StringField, PasswordField, TextAreaField
-from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional
+from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional, Regexp
 from sqlalchemy import func
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -170,15 +171,15 @@ class ProfileForm(FlaskForm):
 
 class QuoteForm(FlaskForm):
     trim_name = StringField('Trim', validators=[DataRequired()])
-    zip_code = StringField('ZIP Code', validators=[DataRequired()])
+    zip_code = StringField('ZIP Code', validators=[DataRequired(), Regexp(r'^\d{5}$', message='Enter a five-digit ZIP code.')])
 
 
 # ----- Routes: browse -----
 
 @app.route('/')
 def index():
-    featured = Vehicle.query.order_by(func.random()).limit(12).all()
-    top_rated = Vehicle.query.filter(Vehicle.review_count > 0).order_by(Vehicle.rating.desc()).limit(8).all()
+    featured = Vehicle.query.order_by(Vehicle.id).limit(12).all()
+    top_rated = Vehicle.query.filter(Vehicle.review_count > 0).order_by(Vehicle.rating.desc(), Vehicle.id).limit(8).all()
     return render_template('index.html', featured=featured, top_rated=top_rated)
 
 
@@ -188,13 +189,13 @@ def make_page(slug):
     sort_key = request.args.get('sort', '')
     q = Vehicle.query.filter_by(make_slug=slug)
     if sort_key == 'price_low':
-        q = q.order_by(Vehicle.min_price.asc())
+        q = q.order_by(Vehicle.min_price.is_(None), Vehicle.min_price.asc(), Vehicle.id)
     elif sort_key == 'price_high':
-        q = q.order_by(Vehicle.min_price.desc())
+        q = q.order_by(Vehicle.min_price.is_(None), Vehicle.min_price.desc(), Vehicle.id)
     elif sort_key == 'rating':
-        q = q.order_by(Vehicle.rating.desc())
+        q = q.order_by(Vehicle.rating.desc(), Vehicle.id)
     else:
-        q = q.order_by(Vehicle.model_name.asc())
+        q = q.order_by(Vehicle.model_name.asc(), Vehicle.id)
     vehicles = q.all()
     return render_template('make.html', make=make, vehicles=vehicles, current_sort=sort_key)
 
@@ -205,7 +206,7 @@ def vehicle_detail(slug):
     related = Vehicle.query.filter(
         Vehicle.make_slug == vehicle.make_slug,
         Vehicle.id != vehicle.id
-    ).order_by(func.random()).limit(4).all()
+    ).order_by(Vehicle.id).limit(4).all()
     is_saved = False
     if current_user.is_authenticated:
         is_saved = SavedVehicle.query.filter_by(user_id=current_user.id, vehicle_id=vehicle.id).first() is not None
@@ -250,14 +251,7 @@ def search():
                 s = _score_vehicle(v, tokens)
                 if s >= min_required:
                     scored.append((s, v))
-            seed = abs(hash(q.lower())) % (2 ** 31)
-            rng = random.Random(seed)
-            scored.sort(key=lambda x: -x[0])
-            results = []
-            for _, group in groupby(scored, key=lambda x: x[0]):
-                bucket = [v for _, v in group]
-                rng.shuffle(bucket)
-                results.extend(bucket)
+            results = [item for _, item in sorted(scored, key=lambda x: (-x[0], x[1].title.casefold(), x[1].id))]
         else:
             results = candidates
     else:
@@ -269,9 +263,28 @@ def search():
 
 @app.route('/compare')
 def compare():
-    slugs = [s for s in request.args.get('slugs', '').split(',') if s]
-    vehicles = Vehicle.query.filter(Vehicle.slug.in_(slugs)).all() if slugs else []
+    slugs = request.args.get('slugs', ','.join(session.get('comparison', []))).split(',')
+    vehicles = [v for slug in dict.fromkeys(slugs) if (v := Vehicle.query.filter_by(slug=slug).first())][:4]
     return render_template('compare.html', vehicles=vehicles)
+
+
+@app.route('/compare/add/<slug>', methods=['POST'])
+def compare_add(slug):
+    vehicle = Vehicle.query.filter_by(slug=slug).first_or_404()
+    selected = list(session.get('comparison', []))
+    if slug not in selected:
+        if len(selected) >= 4:
+            flash('Compare up to four vehicles. Remove one to add another.', 'info')
+        else:
+            selected.append(slug)
+    session['comparison'] = selected
+    return redirect(url_for('compare'))
+
+
+@app.route('/compare/remove/<slug>', methods=['POST'])
+def compare_remove(slug):
+    session['comparison'] = [s for s in session.get('comparison', []) if s != slug]
+    return redirect(url_for('compare'))
 
 
 # ----- Routes: auth / account -----
@@ -287,7 +300,7 @@ def login():
             login_user(user)
             flash('Welcome back!', 'success')
             next_url = request.args.get('next')
-            if not next_url or not next_url.startswith('/') or next_url.startswith('//'):
+            if not next_url or not next_url.startswith('/') or urlsplit(next_url).netloc or '\\' in next_url or any(ord(c) < 32 for c in next_url):
                 next_url = url_for('index')
             return redirect(next_url)
         flash('Invalid email or password.', 'error')
@@ -351,7 +364,6 @@ def saved_vehicles():
 # ----- Routes: save / quote -----
 
 @app.route('/vehicle/<slug>/save', methods=['POST'])
-@csrf.exempt
 @login_required
 def save_vehicle(slug):
     vehicle = Vehicle.query.filter_by(slug=slug).first_or_404()
@@ -366,27 +378,27 @@ def save_vehicle(slug):
         saved = True
     if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'saved': saved})
-    return redirect(request.referrer or url_for('vehicle_detail', slug=slug))
+    return redirect(url_for('vehicle_detail', slug=slug))
 
 
 @app.route('/vehicle/<slug>/quote', methods=['POST'])
-@csrf.exempt
 @login_required
 def request_quote(slug):
     vehicle = Vehicle.query.filter_by(slug=slug).first_or_404()
     form = QuoteForm()
-    if form.validate_on_submit():
+    if form.validate_on_submit() and form.trim_name.data in {t.name for t in vehicle.trims}:
         db.session.add(QuoteRequest(
             user_id=current_user.id, vehicle_id=vehicle.id,
             trim_name=form.trim_name.data, zip_code=form.zip_code.data,
         ))
         db.session.commit()
         flash(f'Price quote requested for the {vehicle.title}.', 'success')
+    if form.errors or form.trim_name.data not in {t.name for t in vehicle.trims}:
+        flash('Choose a listed trim and enter a five-digit ZIP code.', 'error')
     return redirect(url_for('vehicle_detail', slug=slug))
 
 
 @app.route('/account/quotes/<int:quote_id>/cancel', methods=['POST'])
-@csrf.exempt
 @login_required
 def cancel_quote(quote_id):
     quote = QuoteRequest.query.filter_by(id=quote_id, user_id=current_user.id).first_or_404()

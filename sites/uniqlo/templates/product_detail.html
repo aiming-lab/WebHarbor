@@ -58,11 +58,11 @@
                 </div>
                 {% endif %}
                 <div class="qty-add-row">
-                    <input type="number" name="quantity" value="1" min="1" max="10" class="qty-input">
+                    <input aria-label="Quantity" type="number" name="quantity" value="1" min="1" max="10" class="qty-input">
                     {% if current_user.is_authenticated %}
                     <button type="submit" class="btn-primary" id="add-to-cart-btn">ADD TO CART</button>
                     {% else %}
-                    <a href="{{ url_for('login') }}" class="btn-primary">SIGN IN TO BUY</a>
+                    <a href="{{ url_for('login', next=request.path) }}" class="btn-primary">SIGN IN TO BUY</a>
                     {% endif %}
                 </div>
             </form>
@@ -164,7 +164,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const firstColor = document.querySelector('.swatch-btn[data-color]');
     const firstSize = document.querySelector('.size-btn');
     if (firstColor) uqSelectColor(firstColor);
-    if (firstSize) uqSelectSize(firstSize);
+    uqUpdateForm();
 });
 </script>
 {% endblock %}
