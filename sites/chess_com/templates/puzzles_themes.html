@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block nav_puzzles %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/book-open-knight.svg') }}" alt="">
+    <h1>Puzzle Themes</h1>
+  </div>
+  <p class="muted">Train specific tactical motifs. Each theme groups puzzles that share the same winning idea.</p>
+  <div class="grid grid-3" style="margin-top:18px;">
+    {% for theme, count in themes %}
+      <a class="card" href="{{ url_for('puzzles') }}">
+        <h3>{{ theme|replace('_', ' ')|title }}</h3>
+        <p class="muted small">{{ count }} puzzles</p>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

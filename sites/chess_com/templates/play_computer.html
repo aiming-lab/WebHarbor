@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block nav_play %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/device-bot.svg') }}" alt="">
+    <h1>Play Bots</h1>
+  </div>
+  <p class="muted">Play vs. a bot of any level — from beginner to master. New bots added every month, each with their own personality and playing style!</p>
+  {% for group_name, group_bots in groups %}
+    <h3 class="bot-group-title" style="margin-top:22px;">{{ group_name }}</h3>
+    <div class="grid grid-3">
+      {% for bot in group_bots %}
+        <div class="bot-card">
+          <span class="avatar" style="background-image:url('{{ url_for('static', filename='images/bots/' + bot.image) if bot.image else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+          <div>
+            <div style="font-family:var(--font-heading); font-weight:800;">{{ bot.name }}</div>
+            <div class="muted small">{{ bot.rating }} rating</div>
+            <div class="small">{{ bot.description or '' }}</div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+  <div class="spacer"></div>
+  <div class="card">
+    <p class="muted small">Bot games are unrated. Bots play instantly at any time of day — perfect for testing a new opening or a tricky endgame technique.</p>
+  </div>
+</div>
+{% endblock %}

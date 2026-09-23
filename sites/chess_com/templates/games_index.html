@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block nav_other %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/board-archive.svg') }}" alt="">
+    <h1>Chess Games Database</h1>
+  </div>
+  <div class="page-with-sidebar">
+    <div>
+      <div class="card">
+        <h3>Search players</h3>
+        <form method="get">
+          <div class="field">
+            <input type="text" name="q" value="{{ search }}" placeholder="Player name (e.g. Magnus Carlsen)">
+          </div>
+          <button class="btn btn-primary btn-sm" type="submit">Search</button>
+        </form>
+        {% if matched is not none %}
+          <div class="spacer"></div>
+          <h4>Results for “{{ search }}”</h4>
+          {% for p in matched %}
+            <a class="variation-row" href="{{ url_for('games_player', slug=p.slug) }}">
+              <span><b>{{ p.name }}</b></span>
+              <span class="muted small">{{ p.total_games or 0 }} games</span>
+            </a>
+          {% else %}
+            <p class="muted small">No players match that search.</p>
+          {% endfor %}
+        {% endif %}
+      </div>
+      <section class="section-title"><h2>Famous players in the database</h2></section>
+      <div class="card" style="padding:4px 8px;">
+        <table class="data-table">
+          <tr><th>Player</th><th>Born</th><th>Federation</th><th class="t-right">Games</th><th class="t-right">Win rate</th></tr>
+          {% for p in players %}
+            <tr>
+              <td><a href="{{ url_for('games_player', slug=p.slug) }}"><b>{{ p.name }}</b></a></td>
+              <td class="muted">{{ p.born or '' }}</td>
+              <td class="muted">{{ p.federation or '' }}</td>
+              <td class="t-right">{{ p.total_games or 0 }}</td>
+              <td class="t-right muted">{{ p.as_white.win if p.as_white else '—' }}% as White</td>
+            </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>Recent games</h3>
+        {% for g in recent %}
+          <a class="variation-row" href="{{ url_for('game_detail', game_id=g.game_id) }}">
+            <span>{{ g.white }} – {{ g.black }}</span>
+            <span class="muted small">{{ g.result }}</span>
+          </a>
+        {% endfor %}
+      </div>
+      <div class="side-panel">
+        <h3>Explore</h3>
+        <a class="side-link" href="{{ url_for('openings') }}">Openings explorer</a>
+        <a class="side-link" href="{{ url_for('leaderboard_live') }}">Leaderboards</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page">
+
+  <section class="hero">
+    <div class="hero-board" id="hero-board" data-fen="r1bqk2r/pppp1ppp/2n2n2/2b1p3/2B1P3/2N2N2/PPPP1PPP/R1BQK2R w KQkq - 4 4"></div>
+    <div>
+      <h1>Play Chess Online<br>on the #1 Site!</h1>
+      <div class="hero-sub">Join 250+ million players in the world's largest chess community</div>
+      <a class="btn btn-primary" href="{{ url_for('register') }}">Get Started</a>
+    </div>
+  </section>
+
+  <section class="promo-block">
+    <div class="promo-text">
+      <h2>Learn with quick, fun lessons designed for players of all levels.</h2>
+      <a class="btn btn-dark" href="{{ url_for('lessons') }}">🎓 Start a Lesson</a>
+    </div>
+    <div class="promo-art">
+      <span class="promo-tile">♞</span>
+      <span class="promo-tile promo-tile-green">🎓</span>
+      <span class="promo-tile">♜</span>
+    </div>
+  </section>
+
+  <section class="promo-block promo-block-reverse">
+    <div class="bot-cluster">
+      {% for bot in bots %}
+        <div class="bot-chip {{ 'bot-chip-hi' if loop.index == 4 }}">
+          <span class="avatar" style="background-image:url('{{ url_for('static', filename='images/bots/' + bot.image) if bot.image else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+          <span class="bot-chip-rating">{{ bot.rating }}</span>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="promo-text">
+      <h2>Play Chess Bots</h2>
+      <p>Play against unique chess personalities ranging in skill and playstyle.</p>
+      <a class="btn btn-dark" href="{{ url_for('play_computer') }}">🤖 Challenge a Bot</a>
+    </div>
+  </section>
+
+  <section class="promo-block">
+    <div class="promo-text">
+      <h2>Level Up With Chess Puzzles</h2>
+      <p>Sharpen your skills and improve your game with thousands of puzzles.</p>
+      <a class="btn btn-dark" href="{{ url_for('puzzles') }}">🧩 Solve a Puzzle</a>
+    </div>
+    <div class="puzzle-demo">
+      <div class="puzzle-demo-score"><b>7,035</b><span>🔥 3</span></div>
+      <div class="puzzle-demo-board" id="puzzle-demo-board" data-fen="{{ daily.fen if daily else '' }}"></div>
+      <div class="puzzle-demo-progress"><span></span></div>
+    </div>
+  </section>
+
+  <section class="promo-block promo-block-reverse">
+    <div class="broadcast-card">
+      <div class="broadcast-row">
+        <span class="avatar" style="background-image:url('{{ url_for('static', filename='images/avatars/' + magnus.avatar) if magnus and magnus.avatar else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+        <span class="broadcast-name">{% if magnus %}GM {{ magnus.name or 'Magnus Carlsen' }}{% else %}GM Magnus Carlsen{% endif %}</span>
+        <span class="flag flag-{{ magnus.country_id if magnus else 58 }}"></span>
+      </div>
+      <div class="broadcast-board" id="broadcast-board" data-fen="1r4k1/5ppp/8/8/8/8/5PPP/1R4K1 w - - 0 1"></div>
+      <div class="broadcast-row">
+        <span class="avatar" style="background-image:url('{{ url_for('static', filename='images/avatars/' + hikaru.avatar) if hikaru and hikaru.avatar else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+        <span class="broadcast-name">{% if hikaru %}GM {{ hikaru.name or 'Hikaru Nakamura' }}{% else %}GM Hikaru Nakamura{% endif %}</span>
+        <span class="flag flag-{{ hikaru.country_id if hikaru else 2 }}"></span>
+      </div>
+    </div>
+    <div class="promo-text">
+      <h2>Watch the Best in<br>the World Compete</h2>
+      <p>Tune into live events and follow top players move-by-move with real-time analysis.</p>
+      <a class="btn btn-dark" href="{{ url_for('watch') }}">👀 Watch Chess</a>
+    </div>
+  </section>
+
+  {% if olympiad %}
+  <section class="promo-block olympiad-block">
+    <div class="promo-text">
+      <h2>Follow the 2026 Chess<br>Olympiad LIVE with<br>the BEST coverage</h2>
+      <p>See which nations take home the gold!</p>
+      <a class="btn btn-primary" href="{{ url_for('event_detail', slug=olympiad.slug) }}">▶ Watch Live</a>
+    </div>
+    <div class="olympiad-art">
+      {% if olympiad.image %}
+      <img src="{{ url_for('static', filename='images/events/' + olympiad.image) }}" alt="{{ olympiad.name }}">
+      {% endif %}
+      <div class="olympiad-art-caption">{{ olympiad.name }}</div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="section-title section-title-center">
+    <h2>Latest Chess News</h2>
+  </section>
+  <div class="news-strip">
+    {% for article in today_news %}
+      <a class="news-card" href="{{ url_for('news_article', slug=article.slug) }}">
+        {% if article.hero_image %}<img src="{{ url_for('static', filename='images/news/' + article.hero_image) }}" alt="{{ article.title }}">{% else %}<div class="news-card-placeholder">♟</div>{% endif %}
+        <div class="news-card-body">
+          <div class="news-card-title">{{ article.title }}</div>
+          <div class="news-card-meta">
+            {% if article.author_title %}<span class="user-title">{{ article.author_title }}</span>{% endif %}
+            <span>{{ article.author }}</span>
+          </div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+
+  <section class="app-banner">
+    <div>
+      <h3>Play Anywhere with the Chess.com App</h3>
+      <div class="app-badges">
+        <span class="app-badge"> Download on the App Store</span>
+        <span class="app-badge">▶ Get it on Google Play</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="final-cta">
+    <h2>Learn, Play, and Have Fun!</h2>
+    <a class="btn btn-primary" href="{{ url_for('register') }}">Get Started</a>
+  </section>
+
+</div>
+<script>
+  window.CHESS_STATIC = "{{ url_for('static', filename='') }}".replace(/\/$/, "");
+</script>
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script>
+  (function () {
+    var el = document.getElementById("hero-board");
+    if (el) new window.ChessBoard(el, { fen: el.dataset.fen, coords: false });
+    var pd = document.getElementById("puzzle-demo-board");
+    if (pd && pd.dataset.fen) new window.ChessBoard(pd, { fen: pd.dataset.fen, coords: false });
+    var bd = document.getElementById("broadcast-board");
+    if (bd) new window.ChessBoard(bd, { fen: bd.dataset.fen, coords: false });
+  })();
+</script>
+{% endblock %}

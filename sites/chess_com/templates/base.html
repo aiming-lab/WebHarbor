@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-color-mode="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Chess.com - Play Chess Online - Free Games{% endblock %}</title>
+  <meta name="description" content="{% block meta_description %}Play chess online for free on Chess.com{% endblock %}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/flags.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body class="dark-mode">
+<div id="scroll-top-anchor"></div>
+<button class="nav-toggle" aria-label="Open navigation" aria-expanded="false">☰</button>
+<div class="nav-backdrop" aria-hidden="true"></div>
+<div class="layout-shell">
+  <nav class="sidebar" aria-label="Site navigation">
+    <a class="sidebar-logo" href="{{ url_for('index') }}">
+      <img src="{{ url_for('static', filename='icons/nav/pawn-solo.svg') }}" alt="" class="sidebar-logo-pawn" width="32" height="32">
+      <span class="sidebar-logo-text">Chess.com</span>
+    </a>
+    <div class="sidebar-scroll">
+      <div class="sidebar-section" data-nav-id="play">
+        <a class="sidebar-link {% block nav_play %}{% endblock %}" href="{{ url_for('play') }}">
+          <img src="{{ url_for('static', filename='icons/nav/play-white.svg') }}" alt="" width="24" height="24">
+          <span>Play</span>
+        </a>
+        <div class="nav-dropdown">
+          <div class="nav-dropdown-inner">
+            <div class="nav-dropdown-section">
+              <div class="nav-dropdown-heading">Games</div>
+              <a class="nav-dropdown-link" href="{{ url_for('play_online') }}"><img src="{{ url_for('static', filename='icons/nav/play-white.svg') }}" alt="" width="20" height="20">Play Online</a>
+              <a class="nav-dropdown-link" href="{{ url_for('play_computer') }}"><img src="{{ url_for('static', filename='icons/nav/device-bot.svg') }}" alt="" width="20" height="20">Play Bots</a>
+            </div>
+            <div class="nav-dropdown-section">
+              <div class="nav-dropdown-heading">More</div>
+              <a class="nav-dropdown-link" href="{{ url_for('play') }}#stats"><img src="{{ url_for('static', filename='icons/nav/rating-stats.svg') }}" alt="" width="20" height="20">Stats</a>
+              <a class="nav-dropdown-link" href="{{ url_for('play') }}#tournaments"><img src="{{ url_for('static', filename='icons/nav/tournament-gold.svg') }}" alt="" width="20" height="20">Tournaments</a>
+              <a class="nav-dropdown-link" href="{{ url_for('play') }}#variants"><img src="{{ url_for('static', filename='icons/nav/variants.svg') }}" alt="" width="20" height="20">Variants</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-section" data-nav-id="puzzles">
+        <a class="sidebar-link {% block nav_puzzles %}{% endblock %}" href="{{ url_for('puzzles') }}">
+          <img src="{{ url_for('static', filename='icons/nav/puzzle-piece.svg') }}" alt="" width="24" height="24">
+          <span>Puzzles</span>
+        </a>
+        <div class="nav-dropdown">
+          <div class="nav-dropdown-inner">
+            <div class="nav-dropdown-section">
+              <a class="nav-dropdown-link" href="{{ url_for('puzzles') }}"><img src="{{ url_for('static', filename='icons/nav/puzzle-piece.svg') }}" alt="" width="20" height="20">Puzzles</a>
+              <a class="nav-dropdown-link" href="{{ url_for('daily_puzzle') }}"><img src="{{ url_for('static', filename='icons/nav/calendar-dailypuzzle.svg') }}" alt="" width="20" height="20">Daily Puzzle</a>
+              <a class="nav-dropdown-link" href="{{ url_for('puzzles') }}?mode=rated"><img src="{{ url_for('static', filename='icons/nav/puzzle-rush.svg') }}" alt="" width="20" height="20">Puzzle Rush</a>
+              <a class="nav-dropdown-link" href="{{ url_for('puzzle_themes') }}"><img src="{{ url_for('static', filename='icons/nav/book-open-knight.svg') }}" alt="" width="20" height="20">Puzzle Themes</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-section" data-nav-id="learn">
+        <a class="sidebar-link {% block nav_learn %}{% endblock %}" href="{{ url_for('lessons') }}">
+          <img src="{{ url_for('static', filename='icons/nav/lessons.svg') }}" alt="" width="24" height="24">
+          <span>Learn</span>
+        </a>
+        <div class="nav-dropdown">
+          <div class="nav-dropdown-inner">
+            <div class="nav-dropdown-section">
+              <a class="nav-dropdown-link" href="{{ url_for('lessons') }}"><img src="{{ url_for('static', filename='icons/nav/lessons.svg') }}" alt="" width="20" height="20">Lessons</a>
+              <a class="nav-dropdown-link" href="{{ url_for('openings') }}"><img src="{{ url_for('static', filename='icons/nav/book-stack-pawn.svg') }}" alt="" width="20" height="20">Openings</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-section" data-nav-id="train">
+        <a class="sidebar-link {% block nav_train %}{% endblock %}" href="{{ url_for('train') }}">
+          <img src="{{ url_for('static', filename='icons/nav/training.svg') }}" alt="" width="24" height="24">
+          <span>Train</span>
+        </a>
+        <div class="nav-dropdown">
+          <div class="nav-dropdown-inner">
+            <div class="nav-dropdown-section">
+              <a class="nav-dropdown-link" href="{{ url_for('train') }}#rated"><img src="{{ url_for('static', filename='icons/nav/puzzle-rush.svg') }}" alt="" width="20" height="20">Rated Puzzles</a>
+              <a class="nav-dropdown-link" href="{{ url_for('lessons_category', slug='endgames') }}"><img src="{{ url_for('static', filename='icons/nav/game-endgames.svg') }}" alt="" width="20" height="20">Endgames</a>
+              <a class="nav-dropdown-link" href="{{ url_for('train') }}#practice"><img src="{{ url_for('static', filename='icons/nav/game-practice.svg') }}" alt="" width="20" height="20">Practice</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-section" data-nav-id="watch">
+        <a class="sidebar-link {% block nav_watch %}{% endblock %}" href="{{ url_for('watch') }}">
+          <img src="{{ url_for('static', filename='icons/nav/binoculars.svg') }}" alt="" width="24" height="24">
+          <span>Watch</span>
+        </a>
+        <div class="nav-dropdown">
+          <div class="nav-dropdown-inner">
+            <div class="nav-dropdown-section">
+              <a class="nav-dropdown-link" href="{{ url_for('events') }}"><img src="{{ url_for('static', filename='icons/nav/trophies.svg') }}" alt="" width="20" height="20">Events</a>
+              <a class="nav-dropdown-link" href="{{ url_for('watch') }}#chesstv"><img src="{{ url_for('static', filename='icons/nav/device-chess-tv.svg') }}" alt="" width="20" height="20">ChessTV</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-section" data-nav-id="community">
+        <a class="sidebar-link {% block nav_community %}{% endblock %}" href="{{ url_for('members') }}">
+          <img src="{{ url_for('static', filename='icons/nav/friends.svg') }}" alt="" width="24" height="24">
+          <span>Community</span>
+        </a>
+        <div class="nav-dropdown">
+          <div class="nav-dropdown-inner">
+            <div class="nav-dropdown-section">
+              <div class="nav-dropdown-heading">Social</div>
+              <a class="nav-dropdown-link" href="{{ url_for('members') }}"><img src="{{ url_for('static', filename='icons/nav/friends.svg') }}" alt="" width="20" height="20">Members</a>
+              <a class="nav-dropdown-link" href="{{ url_for('clubs') }}"><img src="{{ url_for('static', filename='icons/nav/clubs.svg') }}" alt="" width="20" height="20">Clubs</a>
+            </div>
+            <div class="nav-dropdown-section">
+              <div class="nav-dropdown-heading">Players</div>
+              <a class="nav-dropdown-link" href="{{ url_for('titled_players') }}"><img src="{{ url_for('static', filename='icons/nav/masters.svg') }}" alt="" width="20" height="20">Titled Players</a>
+              <a class="nav-dropdown-link" href="{{ url_for('leaderboard_live') }}"><img src="{{ url_for('static', filename='icons/nav/leaderboard.svg') }}" alt="" width="20" height="20">Leaderboards</a>
+            </div>
+            <div class="nav-dropdown-section">
+              <div class="nav-dropdown-heading">Content</div>
+              <a class="nav-dropdown-link" href="{{ url_for('today') }}"><img src="{{ url_for('static', filename='icons/nav/today.svg') }}" alt="" width="20" height="20">Chess Today</a>
+              <a class="nav-dropdown-link" href="{{ url_for('news_index') }}"><img src="{{ url_for('static', filename='icons/nav/page-news.svg') }}" alt="" width="20" height="20">News</a>
+              <a class="nav-dropdown-link" href="{{ url_for('games_index') }}"><img src="{{ url_for('static', filename='icons/nav/board-archive.svg') }}" alt="" width="20" height="20">Games Database</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sidebar-section" data-nav-id="other">
+        <a class="sidebar-link {% block nav_other %}{% endblock %}" href="{{ url_for('other') }}">
+          <img src="{{ url_for('static', filename='icons/nav/ellipsis.svg') }}" alt="" width="24" height="24">
+          <span>Other</span>
+        </a>
+        <div class="nav-dropdown">
+          <div class="nav-dropdown-inner">
+            <div class="nav-dropdown-section">
+              <a class="nav-dropdown-link" href="{{ url_for('games_index') }}"><img src="{{ url_for('static', filename='icons/nav/board-archive.svg') }}" alt="" width="20" height="20">Games Database</a>
+              <a class="nav-dropdown-link" href="{{ url_for('puzzle_themes') }}"><img src="{{ url_for('static', filename='icons/nav/book-open-knight.svg') }}" alt="" width="20" height="20">Puzzle Themes</a>
+              <a class="nav-dropdown-link" href="{{ url_for('today') }}"><img src="{{ url_for('static', filename='icons/nav/today.svg') }}" alt="" width="20" height="20">Chess Today</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="sidebar-footer">
+      <a class="sidebar-link sidebar-search-link" href="{{ url_for('search') }}">
+        <img src="{{ url_for('static', filename='icons/nav/magnifier-analysis.svg') }}" alt="" width="20" height="20">
+        <span>Search</span>
+      </a>
+      {% if current_user.is_authenticated %}
+        <a class="sidebar-user" href="{{ url_for('settings') }}">
+          <span class="avatar avatar-24" style="background-image:url('{{ current_user.avatar_small or url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+          <span class="sidebar-username">{{ current_user.username }}</span>
+        </a>
+        <form method="post" action="{{ url_for('logout') }}" style="margin-top:8px;">
+          <button class="btn btn-secondary btn-block" type="submit">Log Out</button>
+        </form>
+      {% else %}
+        <a class="btn btn-primary btn-block" href="{{ url_for('register') }}">Sign Up</a>
+        <a class="btn btn-secondary btn-block" href="{{ url_for('login') }}">Log In</a>
+      {% endif %}
+      <a class="sidebar-link" href="{{ url_for('other') }}#help">
+        <img src="{{ url_for('static', filename='icons/nav/globe.svg') }}" alt="" width="20" height="20">
+        <span>Help &amp; Support</span>
+      </a>
+      <div class="sidebar-language">
+        <img src="{{ url_for('static', filename='icons/flags-32.png') }}" alt="" class="flag-us" width="16" height="12">
+        <span>English</span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="content">
+    <div class="flashes">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endwith %}
+    </div>
+    {% block content %}{% endblock %}
+    <footer class="site-footer">
+      <div class="footer-links">
+        <a href="{{ url_for('other') }}">About</a>
+        <a href="{{ url_for('other') }}#help">Help</a>
+        <a href="{{ url_for('other') }}#careers">Careers</a>
+        <a href="{{ url_for('other') }}#terms">Terms</a>
+        <a href="{{ url_for('other') }}#privacy">Privacy</a>
+      </div>
+      <div class="footer-social">
+        <span>© 2026 Chess.com mirror — WebHarbor benchmark environment</span>
+      </div>
+    </footer>
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/site.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

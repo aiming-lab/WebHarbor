@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block nav_learn %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/book-stack-pawn.svg') }}" alt="">
+    <h1>Chess Openings</h1>
+  </div>
+  <p class="muted">Learn the theory behind every opening — first moves, description, popularity over time and the top players who trust it.</p>
+  <div class="opening-family-grid" style="margin-top:16px;">
+    {% for o in openings %}
+      <a class="opening-family" href="{{ url_for('opening_detail', slug=o.slug) }}">
+        <span><b>{{ o.name }}</b>{% if o.moves %}<span class="muted small"> · {{ o.moves }}</span>{% endif %}</span>
+        <span class="eco">{{ o.eco or '' }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

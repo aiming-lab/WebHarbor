@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block nav_other %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/board-archive.svg') }}" alt="">
+    <h1>{{ game.white }} – {{ game.black }} ({{ game.year }})</h1>
+  </div>
+  <div class="page-with-sidebar">
+    <div>
+      <div class="card">
+        <div id="game-board" data-fen="{{ start_fen }}" data-moves='{{ (game.san_moves or []) | tojson }}'></div>
+        <div class="board-controls">
+          <button data-board-action="first" title="Go to start">⇤</button>
+          <button data-board-action="prev" title="Previous move">←</button>
+          <button data-board-action="next" title="Next move">→</button>
+          <button data-board-action="last" title="Go to end">⇥</button>
+          <button data-board-action="flip" title="Flip board">⇅</button>
+        </div>
+      </div>
+      <div class="card" style="margin-top:14px;">
+        <h3>Game info</h3>
+        <table class="data-table">
+          {% if game.colors_known %}
+          <tr><td>White</td><td><b>{{ game.white }}</b>{% if game.white_rating %} ({{ game.white_rating }}){% endif %}</td></tr>
+          <tr><td>Black</td><td><b>{{ game.black }}</b>{% if game.black_rating %} ({{ game.black_rating }}){% endif %}</td></tr>
+          {% else %}
+          <tr><td>Players</td><td><b>{{ game.white }}</b> vs <b>{{ game.black }}</b></td></tr>
+          {% endif %}
+          <tr><td>Result</td><td><b>{{ game.result }}</b></td></tr>
+          {% if game.date %}<tr><td>Date</td><td>{{ game.date }}</td></tr>{% endif %}
+          {% if game.event %}<tr><td>Event</td><td>{{ game.event }}</td></tr>{% endif %}
+          {% if game.opening_name %}<tr><td>Opening</td><td>{% if game.opening_slug %}<a href="{{ url_for('opening_detail', slug=game.opening_slug) }}">{{ game.opening_name }}</a>{% else %}{{ game.opening_name }}{% endif %}</td></tr>{% endif %}
+          {% if game.move_count %}<tr><td>Moves</td><td>{{ game.move_count }}</td></tr>{% endif %}
+        </table>
+        {% if game.player_slug %}
+          <p class="muted small" style="margin-top:10px;">Part of the <a href="{{ url_for('games_player', slug=game.player_slug) }}">{{ game.white }} games archive</a>.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>Moves</h3>
+        <div class="move-list" id="game-moves"></div>
+      </div>
+      <div class="side-panel">
+        <h3>Explore</h3>
+        <a class="side-link" href="{{ url_for('games_index') }}">Games database</a>
+        {% if game.opening_slug %}<a class="side-link" href="{{ url_for('opening_detail', slug=game.opening_slug) }}">Opening: {{ game.opening_name }}</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  window.CHESS_STATIC = "{{ url_for('static', filename='') }}".replace(/\/$/, "");
+</script>
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script src="{{ url_for('static', filename='js/gameview.js') }}"></script>
+{% endblock %}

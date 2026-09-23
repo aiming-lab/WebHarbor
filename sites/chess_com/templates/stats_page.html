@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/rating-stats.svg') }}" alt="">
+    <h1>{{ type_|capitalize }} Stats — {{ member.username }}</h1>
+  </div>
+  <div class="page-with-sidebar side-280">
+    <div>
+      <div class="card">
+        {{ macros.user_link(member) }}
+        <div class="spacer"></div>
+        <h3>{{ type_|capitalize }} rating</h3>
+        {% if rating %}
+          <table class="data-table">
+            <tr><th>Current rating</th><th>Best rating</th><th>Wins</th><th>Draws</th><th>Losses</th></tr>
+            <tr>
+              <td><b>{{ rating.rating }}</b></td>
+              <td>{{ rating.best_rating or '—' }}</td>
+              <td class="won">{{ rating.wins }}</td>
+              <td class="draw">{{ rating.draws }}</td>
+              <td class="lost">{{ rating.losses }}</td>
+            </tr>
+          </table>
+          {% if rating.rank %}<p class="muted small" style="margin-top:10px;">World rank: <b>#{{ rating.rank }}</b></p>{% endif %}
+        {% else %}
+          <p class="muted">No {{ type_ }} rating on record.</p>
+        {% endif %}
+      </div>
+      <div class="card">
+        <h3>Other categories</h3>
+        <div class="profile-ratings">
+          {% for cat, label in [('blitz', 'Blitz'), ('bullet', 'Bullet'), ('rapid', 'Rapid'), ('daily', 'Daily'), ('tactics', 'Tactics')] %}
+            {% set r = member.rating_summary.get(cat) %}
+            {% if r %}
+              <a class="rating-chip" href="{{ url_for('stats_page', type_=cat, username=member.username) }}">
+                <div class="r">{{ r.rating or '—' }}</div>
+                <div class="c">{{ label }}</div>
+              </a>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>Profile</h3>
+        <a class="side-link" href="{{ url_for('member_profile', username=member.username) }}">View {{ member.username }}'s profile</a>
+        <a class="side-link" href="{{ url_for('leaderboard_live') }}">Blitz leaderboard</a>
+      </div>
+      {% if entry %}
+        <div class="side-panel">
+          <h3>Leaderboard entry</h3>
+          <p class="small muted">Rank <b>#{{ entry.rank }}</b> with rating <b>{{ entry.score }}</b>.</p>
+          <p class="small muted">Trend: {% if entry.trend_direction == 1 %}<span class="trend trend-up">up {{ entry.trend_delta }}</span>{% elif entry.trend_direction == -1 %}<span class="trend trend-down">down {{ entry.trend_delta }}</span>{% else %}unchanged{% endif %}.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

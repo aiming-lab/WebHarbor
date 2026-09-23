@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/page-news.svg') }}" alt="">
+    <h1>News</h1>
+  </div>
+  <div class="page-with-sidebar">
+    <div>
+      {% if featured %}
+        <a class="news-card" href="{{ url_for('news_article', slug=featured.slug) }}" style="margin-bottom:16px;">
+          {% if featured.hero_image %}<img src="{{ url_for('static', filename='images/news/' + featured.hero_image) }}" alt="{{ featured.title }}">{% endif %}
+          <div class="news-card-body">
+            <div class="news-card-title" style="font-size:20px;">{{ featured.title }}</div>
+            <div class="news-card-meta">
+              {% if featured.author_title %}<span class="user-title">{{ featured.author_title }}</span>{% endif %}
+              <span>{{ featured.author }}</span><span>·</span>
+              <span>{{ featured.published[:10] if featured.published }}</span>
+            </div>
+            <div class="news-card-excerpt">{{ featured.excerpt }}</div>
+          </div>
+        </a>
+      {% endif %}
+      <div class="news-strip" style="grid-template-columns:1fr 1fr;">
+        {% for article in articles if not featured or article.id != featured.id %}
+          <a class="news-card" href="{{ url_for('news_article', slug=article.slug) }}">
+            {% if article.hero_image %}<img src="{{ url_for('static', filename='images/news/' + article.hero_image) }}" alt="{{ article.title }}">{% endif %}
+            <div class="news-card-body">
+              <div class="news-card-title">{{ article.title }}</div>
+              <div class="news-card-meta">
+                {% if article.author_title %}<span class="user-title">{{ article.author_title }}</span>{% endif %}
+                <span>{{ article.author }}</span><span>·</span>
+                <span>{{ article.published[:10] if article.published }}</span>
+              </div>
+            </div>
+          </a>
+        {% endfor %}
+      </div>
+      {% if total_pages > 1 %}
+        <div class="pagination">
+          {% for p in range(1, total_pages + 1) %}
+            {% if p == page %}<span class="current">{{ p }}</span>
+            {% elif category %}<a href="{{ url_for('news_category', slug=category, page=p) }}">{{ p }}</a>
+            {% else %}<a href="{{ url_for('news_index', page=p) }}">{{ p }}</a>{% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>News</h3>
+        {% for c in categories %}
+          <a class="side-link" href="{{ url_for('news_category', slug=c) }}">{{ c|replace('-', ' ')|title }}</a>
+        {% endfor %}
+        <div class="spacer"></div>
+        <a class="side-link" href="{{ url_for('news_category', slug='authors') }}">Authors</a>
+      </div>
+      <div class="side-panel">
+        <h3>Search News</h3>
+        <form method="get" action="{{ url_for('search') }}">
+          <input class="side-input" type="text" name="q" placeholder="Search News...">
+          <div class="spacer"></div>
+          <button class="btn btn-secondary btn-sm" type="submit">Search</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

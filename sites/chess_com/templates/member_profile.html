@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="card profile-head">
+    <span class="avatar avatar-112" style="background-image:url('{{ url_for('static', filename='images/avatars/' + member.avatar) if member.avatar else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+    <div style="flex:1;">
+      <h1 style="font-size:26px;">
+        {% if member.title %}<span class="user-title" style="font-size:14px;">{{ member.title }}</span>{% endif %}
+        {{ member.username }}
+        {{ macros.flag(member.country_id, member.country_code) }}
+        {% if member.flair_svg %}<img class="flair-icon" style="height:20px;" src="{{ url_for('static', filename='images/flair/' + member.flair_svg) }}" alt="" title="{{ member.flair_label or 'Flair' }}">{% endif %}
+      </h1>
+      <div class="muted">
+        {% if member.name and member.name != member.username %}{{ member.name }} · {% endif %}
+        {{ member.country_name or member.country_code or '' }}
+        {% if member.location %} · {{ member.location }}{% endif %}
+      </div>
+      <div class="profile-ratings">
+        {% for cat, label in [('blitz', 'Blitz'), ('bullet', 'Bullet'), ('rapid', 'Rapid'), ('daily', 'Daily'), ('tactics', 'Tactics')] %}
+          {% set r = member.rating_summary.get(cat) %}
+          {% if r %}
+            <div class="rating-chip">
+              <div class="r">{{ r.rating or '—' }}</div>
+              <div class="c">{{ label }}</div>
+            </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+      <div class="muted small" style="margin-top:12px; display:flex; gap:18px; flex-wrap:wrap;">
+        <span><b>{{ '{:,}'.format(member.followers or 0) }}</b> followers</span>
+        <span>Joined {{ member.joined[:10] if member.joined }}</span>
+        <span>Last online {{ member.last_online[:10] if member.last_online }}</span>
+        {% if member.is_streamer and member.twitch_url %}<span>📺 <b>Streamer</b></span>{% endif %}
+        {% if member.views %}<span>{{ '{:,}'.format(member.views) }} profile views</span>{% endif %}
+      </div>
+      {% if current_user.is_authenticated and current_user.id != member.id %}
+        <form method="post" action="{{ url_for('follow', username=member.username) }}" style="margin-top:14px;">
+          <button class="btn {{ 'btn-secondary' if following else 'btn-primary' }}" type="submit">
+            {{ 'Unfollow' if following else 'Follow' }} {{ member.username }}
+          </button>
+        </form>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="grid grid-2" style="margin-top:18px;">
+    <div class="card">
+      <h3>Leaderboard positions</h3>
+      {% if lb_entries %}
+        <table class="data-table">
+          <tr><th>Category</th><th class="t-right">Rank</th><th class="t-right">Rating</th><th class="t-right">W / D / L</th></tr>
+          {% for cat, entry in lb_entries.items() %}
+            <tr>
+              <td><b>{{ cat|capitalize }}</b></td>
+              <td class="t-right">#{{ entry.rank }}</td>
+              <td class="t-right">{{ entry.score }}</td>
+              <td class="t-right muted">{{ entry.wins or 0 }} / {{ entry.draws or 0 }} / {{ entry.losses or 0 }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p class="muted small">Not currently ranked on any leaderboard.</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h3>Badges</h3>
+      {% if member.badges %}
+        {% for b in member.badges %}
+          <div class="result-row">
+            <div>
+              <div><b>{{ b.name }}</b></div>
+              <div class="muted small">{{ b.extra or '' }}</div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="muted small">No badges to show.</p>
+      {% endif %}
+      {% if member.about %}
+        <div class="spacer"></div>
+        <h3>About</h3>
+        <p class="muted small">{{ member.about }}</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

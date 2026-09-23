@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/magnifier-analysis.svg') }}" alt="">
+    <h1>Search</h1>
+  </div>
+  <div class="card" style="padding:12px; margin-bottom:18px;">
+    <form method="get" style="display:flex; gap:10px;">
+      <input class="side-input" style="flex:1;" type="text" name="q" value="{{ q }}" placeholder="Search Chess.com">
+      <button class="btn btn-primary btn-sm" type="submit">Search</button>
+    </form>
+  </div>
+  {% if q %}
+    {% set total = (results.members|length) + (results.articles|length) + (results.openings|length) + (results.lessons|length) + (results.clubs|length) + (results.events|length) + (results.master_players|length) %}
+    <p class="muted small">{{ total }} results for “{{ q }}”.</p>
+    {% if results.members %}
+      <div class="search-section card">
+        <h3>Members</h3>
+        {% for u in results.members %}
+          <div class="result-row">{{ macros.user_link(u) }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if results.master_players %}
+      <div class="search-section card">
+        <h3>Master players</h3>
+        {% for p in results.master_players %}
+          <a class="result-row" href="{{ url_for('games_player', slug=p.slug) }}">
+            <span class="avatar avatar-32" style="background-image:url('{{ url_for('static', filename='images/players/' + p.image) if p.image else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+            <div><b>{{ p.name }}</b><div class="muted small">{{ p.total_games or 0 }} games in the database</div></div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if results.articles %}
+      <div class="search-section card">
+        <h3>News</h3>
+        {% for a in results.articles %}
+          <a class="result-row" href="{{ url_for('news_article', slug=a.slug) }}">
+            <div><b>{{ a.title }}</b><div class="muted small">{{ a.published[:10] if a.published }} · {{ a.author }}</div></div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if results.openings %}
+      <div class="search-section card">
+        <h3>Openings</h3>
+        {% for o in results.openings %}
+          <a class="result-row" href="{{ url_for('opening_detail', slug=o.slug) }}">
+            <div><b>{{ o.name }}</b><div class="muted small">{{ o.eco }} · {{ o.moves }}</div></div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if results.lessons %}
+      <div class="search-section card">
+        <h3>Lessons</h3>
+        {% for c in results.lessons %}
+          <a class="result-row" href="{{ url_for('lesson_detail', slug=c.slug) }}">
+            <div><b>{{ c.title }}</b><div class="muted small">{{ c.n_lessons }} lessons</div></div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if results.clubs %}
+      <div class="search-section card">
+        <h3>Clubs</h3>
+        {% for c in results.clubs %}
+          <a class="result-row" href="{{ url_for('club_detail', slug=c.slug) }}">
+            <div><b>{{ c.name }}</b><div class="muted small">{{ '{:,}'.format(c.members_count or 0) }} members</div></div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if results.events %}
+      <div class="search-section card">
+        <h3>Events</h3>
+        {% for e in results.events %}
+          <a class="result-row" href="{{ url_for('event_detail', slug=e.slug) }}">
+            <div><b>{{ e.name }}</b><div class="muted small">{{ e.start_at[:10] if e.start_at }}</div></div>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% if not results.members and not results.articles and not results.openings and not results.lessons and not results.clubs and not results.events and not results.master_players %}
+      <div class="empty-state">No results for “{{ q }}”.</div>
+    {% endif %}
+  {% else %}
+    <p class="muted">Search for members, news, openings, lessons, clubs and events.</p>
+  {% endif %}
+</div>
+{% endblock %}

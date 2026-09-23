@@ -1,0 +1,50 @@
+{# Shared macros: user taglines, flag rendering, pagination. #}
+{% macro flag(country_id, country_code) -%}
+  {%- if country_id %}<span class="flag country-{{ country_id }}" title="{{ country_code or '' }}"></span>
+  {%- elif country_code %}<span class="flag country-{{ country_code|lower }}" title="{{ country_code }}"></span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro user_link(u, show_title=True, size=40) -%}
+  <a class="user-tagline" href="{{ url_for('member_profile', username=u.username) }}">
+    <span class="avatar avatar-{{ size }}" style="background-image:url('{{ u.avatar_small or u.avatar or url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+    {% if show_title and u.title %}<span class="user-title">{{ u.title }}</span>{% endif %}
+    <span class="username">{{ u.username }}</span>
+    {{ flag(u.country_id, u.country_code) }}
+    {% if u.flair_svg %}<img class="flair-icon" src="{{ url_for('static', filename='images/flair/' + u.flair_svg) }}" alt="" title="{{ u.flair_label or 'Flair' }}">{% endif %}
+  </a>
+{%- endmacro %}
+
+{% macro lb_user(entry) -%}
+  <a class="user-tagline" href="{{ url_for('stats_page', type_='blitz', username=entry.username) }}">
+    <span class="avatar avatar-40" style="background-image:url('{{ url_for('static', filename='images/avatars/' + entry.avatar_url) if entry.avatar_url else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+    {% if entry.chess_title %}<span class="user-title">{{ entry.chess_title }}</span>{% endif %}
+    <span class="username">{{ entry.username }}</span>
+    {{ flag(entry.country_id) }}
+    {% if entry.flair_svg %}<img class="flair-icon" src="{{ url_for('static', filename='images/flair/' + entry.flair_svg) }}" alt="" title="{{ entry.flair_label or 'Flair' }}">{% endif %}
+  </a>
+{%- endmacro %}
+
+{% macro trend(entry) -%}
+  {%- if entry.trend_direction == 1 -%}<span class="trend trend-up">↑{{ entry.trend_delta }}</span>
+  {%- elif entry.trend_direction == -1 -%}<span class="trend trend-down">↓{{ entry.trend_delta }}</span>
+  {%- else -%}<span class="trend trend-flat">–</span>
+  {%- endif -%}
+{%- endmacro %}
+
+{% macro pagination(page, total_pages, endpoint, kwargs={}) -%}
+  <div class="pagination">
+    {%- for p in range(1, total_pages + 1) -%}
+      {%- if p == page -%}<span class="current">{{ p }}</span>
+      {%- else -%}<a href="{{ url_for(endpoint, page=p, **kwargs) }}">{{ p }}</a>{%- endif -%}
+    {%- endfor -%}
+  </div>
+{%- endmacro %}
+
+{% macro board(container_id, fen=None, moves=None, start_fen=None, interactive=False) -%}
+  <div class="board-wrap">
+    <div id="{{ container_id }}" class="board"
+         {% if moves %}data-moves='{{ moves | tojson }}'{% endif %}
+         {% if start_fen %}data-fen="{{ start_fen }}"{% endif %}></div>
+  </div>
+{%- endmacro %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block nav_other %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/board-archive.svg') }}" alt="">
+    <h1>{{ player.name }}</h1>
+  </div>
+  <div class="page-with-sidebar">
+    <div>
+      <div class="card profile-head">
+        {% if player.image %}
+          <span class="avatar avatar-112" style="background-image:url('{{ url_for('static', filename='images/players/' + player.image) }}')"></span>
+        {% endif %}
+        <div>
+          <h2 style="margin-bottom:4px;">{{ player.name }}</h2>
+          {% if player.photo_credit %}<p class="muted small">Photo: {{ player.photo_credit }}</p>{% endif %}
+          <p class="muted small">
+            {% if player.born %}Born: <b>{{ player.born }}</b>{% endif %}
+            {% if player.birthplace %} · Place of birth: <b>{{ player.birthplace }}</b>{% endif %}
+            {% if player.federation %} · Federation: <b>{{ player.federation }}</b>{% endif %}
+          </p>
+        </div>
+      </div>
+      <div class="grid grid-3" style="margin-top:14px;">
+        <div class="card">
+          <h4>Total Games</h4>
+          <div class="stat-value">{{ '{:,}'.format(player.total_games or 0) }}</div>
+          <div class="small muted">Win {{ player.as_white.win if player.as_white else '—' }}% (as White)</div>
+        </div>
+        <div class="card">
+          <h4>As White</h4>
+          {% if player.as_white %}
+            <div class="small">{{ player.as_white.count }} games</div>
+            <div class="won small">Win {{ player.as_white.win }}%</div>
+            <div class="draw small">Draw {{ player.as_white.draw }}%</div>
+            <div class="lost small">Loss {{ player.as_white.loss }}%</div>
+          {% endif %}
+        </div>
+        <div class="card">
+          <h4>As Black</h4>
+          {% if player.as_black %}
+            <div class="small">{{ player.as_black.count }} games</div>
+            <div class="won small">Win {{ player.as_black.win }}%</div>
+            <div class="draw small">Draw {{ player.as_black.draw }}%</div>
+            <div class="lost small">Loss {{ player.as_black.loss }}%</div>
+          {% endif %}
+        </div>
+      </div>
+      <section class="section-title"><h2>{{ player.name }} Chess Games</h2></section>
+      <div class="card" style="padding:4px 8px;">
+        <table class="data-table">
+          <tr><th>Players</th><th>Opening</th><th>Result</th><th class="t-right">Moves</th><th class="t-right">Year</th></tr>
+          {% for g in games %}
+            <tr>
+              <td><a href="{{ url_for('game_detail', game_id=g.game_id) }}">
+                <b>{{ g.white }}</b>{% if g.white_rating %} ({{ g.white_rating }}){% endif %} vs <b>{{ g.black }}</b>{% if g.black_rating %} ({{ g.black_rating }}){% endif %}
+              </a></td>
+              <td class="muted small">
+                {% if g.opening_slug %}<a href="{{ url_for('opening_detail', slug=g.opening_slug) }}">{{ g.opening_name or g.opening_slug }}</a>
+                {% else %}{{ g.opening_name or '' }}{% endif %}
+              </td>
+              <td><b>{{ g.result }}</b></td>
+              <td class="t-right muted">{{ g.move_count or '' }}</td>
+              <td class="t-right muted">{{ g.year or '' }}</td>
+            </tr>
+          {% else %}
+            <tr><td colspan="5" class="muted">No games on record.</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>Openings played</h3>
+        {% for name, slug in openings %}
+          {% if slug %}<a class="variation-row" href="{{ url_for('opening_detail', slug=slug) }}">{{ name }}</a>{% endif %}
+        {% endfor %}
+      </div>
+      <div class="side-panel">
+        <h3>Games database</h3>
+        <a class="side-link" href="{{ url_for('games_index') }}">Search all players</a>
+        <a class="side-link" href="{{ url_for('games_index') }}?q=">Browse famous players</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
