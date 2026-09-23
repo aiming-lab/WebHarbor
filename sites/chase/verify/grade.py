@@ -54,7 +54,12 @@ def _row_matches(row, **want):
     return all(row.get(k) == v for k, v in want.items())
 
 
-def grade(number):
+def _account_money(answer, label, amount):
+    clauses = re.split(r"[;\n]|,\s+(?:and\s+)?|\band\b|(?<=[.!?])\s+", answer, flags=re.I)
+    return any(affirms(clause, label) and affirm_money(clause, amount) for clause in clauses)
+
+
+def grade(number, emit=True):
     args = parse_args()
     j = Judge(f"Chase--{number}")
     t = load_run(args.run_dir)
@@ -216,8 +221,8 @@ def grade(number):
     # ---------------- authenticated read-only tasks ----------------
     elif number == 17:
         j.check("visited_dashboard", navigated_path(t, "/account"), "accounts dashboard")
-        j.check("answer_checking", affirm_money(fa, A.T17_CHECKING), fa)
-        j.check("answer_savings", affirm_money(fa, A.T17_SAVINGS), fa)
+        j.check("answer_checking", _account_money(fa, "checking", A.T17_CHECKING), fa)
+        j.check("answer_savings", _account_money(fa, "savings", A.T17_SAVINGS), fa)
 
     elif number == 18:
         j.check("visited_txns_dining", navigated_query(t, "/account/transactions", category="dining"),
@@ -506,4 +511,6 @@ def grade(number):
     else:
         j.check("unknown_task", False, f"no grading rule for task {number}")
 
-    j.emit()
+    if emit:
+        j.emit()
+    return j
