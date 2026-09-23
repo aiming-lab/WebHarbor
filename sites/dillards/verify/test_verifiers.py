@@ -93,7 +93,7 @@ def build_run(root, steps, final_answer, shots_n=None, mutate=None, terminated=T
         "screenshot_after": f"step_{last % frames:03d}.png",
     })
     traj = {
-        "task": "fixture", "task_id": task_id, "start_url": steps[0][0] if steps else BASE + "/",
+        "task": CURRENT_TASKS.get(task_id, {}).get("ques", "fixture"), "task_id": task_id, "start_url": steps[0][0] if steps else BASE + "/",
         "model": "fixture", "max_steps": 40, "steps": traj_steps,
         "terminated": terminated, "termination_reason": "agent_done" if terminated else None,
         "final_answer": final_answer, "success_self_report": True,
@@ -438,6 +438,13 @@ WRONG_ANSWERS = {
     30: "The $100 Dillard's E-Gift Card for Maria Lopez was purchased; the gift card number received is 7334 0922 0100 0002.",
 }
 
+
+# Synthetic contract examples for the current coherent tasks; these are not browser recordings.
+COHERENT_EXAMPLES = json.loads((VERIFY / 'coherent_examples.json').read_text())
+CURRENT_TASKS = {row['id']: row for row in map(json.loads, (VERIFY.parent / 'tasks.jsonl').read_text().splitlines())}
+for number, example in COHERENT_EXAMPLES.items():
+    HONEST_ANSWERS[int(number)] = example['answer']
+    HONEST_STEPS[int(number)] = [S(BASE + '/', text='Homepage')] + [S(BASE + path, text=example['observations']) for path in example['paths']]
 
 class VerifierContract(unittest.TestCase):
 

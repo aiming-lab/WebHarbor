@@ -330,7 +330,7 @@ def build_run(root, steps, final_answer, n, *, terminated=True, shots_n=None,
         "screenshot_after": f"step_{last:03d}.png",
     })
     traj = {
-        "task": "fixture", "task_id": f"FlightAware--{n}",
+        "task": CURRENT_TASKS[f"FlightAware--{n}"]["ques"], "task_id": f"FlightAware--{n}",
         "start_url": steps[0][0] if steps else BASE + "/",
         "model": "fixture", "max_steps": 40, "steps": traj_steps,
         "terminated": terminated, "termination_reason": "agent_done" if terminated else None,
@@ -445,6 +445,13 @@ for spec in HONEST.values():
 
 HONEST_MUTATIONS = {7: _add_bob_baw117, 8: _delete_bob_aal954, 23: _add_carol_route}
 
+
+# Synthetic contract examples for the current coherent tasks; these are not browser recordings.
+COHERENT_EXAMPLES = json.loads((VERIFY / 'coherent_examples.json').read_text())
+CURRENT_TASKS = {row['id']: row for row in map(json.loads, (VERIFY.parent / 'tasks.jsonl').read_text().splitlines())}
+for number, example in COHERENT_EXAMPLES.items():
+    HONEST[int(number)] = {'answer': example['answer'], 'steps': [S(BASE + '/', text='Homepage')] +
+        [S(BASE + path, text=example['observations']) for path in example['paths']]}
 
 class VerifierContract(unittest.TestCase):
     root = Path("/tmp/wh-fa-verify-tests")
