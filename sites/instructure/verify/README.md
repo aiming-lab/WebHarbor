@@ -62,5 +62,5 @@ Run the tests from the agent_demo env:
 Drive one task with the agent and grade it:
 
     uv run python agent_demo/agent.py --tasks_file sites/instructure/tasks.jsonl \
-        --task_id "Instructure--0" --url http://localhost:40089/ --out_dir runs/0
+        --task_id "Instructure--0" --url http://localhost:40077/ --out_dir runs/0
     uv run python agent_demo/eval_judge.py --run_dir runs/0 --verifier True

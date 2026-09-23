@@ -43,7 +43,7 @@ class TaskContractTests(unittest.TestCase):
     def test_task_ids_and_web(self):
         for i, row in enumerate(self.rows):
             self.assertEqual(row["id"], f"Instructure--{i}")
-            self.assertEqual(row["web"], "http://localhost:40089/")
+            self.assertEqual(row["web"], "http://localhost:40077/")
             self.assertEqual(row["upstream_url"], "https://www.instructure.com/")
             self.assertEqual(row["web_name"], "Instructure")
 
@@ -123,7 +123,7 @@ class RegistrationTests(unittest.TestCase):
 
     def test_readme_row_declares_assigned_port(self):
         readme = (ROOT / "README.md").read_text(encoding="utf-8")
-        self.assertRegex(readme, r"\| Instructure \| 40089 \|")
+        self.assertRegex(readme, r"\| Instructure \| 40077 \|")
 
 
 if __name__ == "__main__":
