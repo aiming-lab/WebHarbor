@@ -28,7 +28,7 @@ from typing import Any
 
 VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
-BASE = "http://localhost:40089"
+BASE = "http://localhost:40077"
 PASSWORD = "TestPass123!"
 CONTAINER = "wh-rev-instructure"
 CACHE = Path(tempfile.gettempdir()) / "inst_verify_tests_seed.db"
