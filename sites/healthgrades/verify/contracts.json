@@ -125,10 +125,11 @@
     }
   },
   "4": {
-    "prompt": "From the Cardiology directory, identify the two doctors with the most reviews. Compare their displayed ratings and hospital affiliations to help me choose a well-reviewed cardiologist.",
+    "prompt": "From the Cardiology directory, identify the three doctors with the most reviews. Compare their displayed ratings and hospital affiliations to help me choose a well-reviewed cardiologist.",
     "paths": [
       "/doctor/dr-joan-woo-xsybq",
-      "/doctor/dr-srinidhi-jayadevappa-meera-xylwhcb"
+      "/doctor/dr-srinidhi-jayadevappa-meera-xylwhcb",
+      "/doctor/dr-eathar-razak-2syhf"
     ],
     "facts": [
       {
@@ -144,6 +145,14 @@
         "patterns": [
           "\\b32\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}32\\b",
           "\\b4\\.7\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.7\\b",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      },
+      {
+        "entity": "Eathar\\s+Razak",
+        "patterns": [
+          "26\\s*reviews?",
+          "5\\.0\\s*stars?",
           "Virginia\\s+Mason\\s+Medical\\s+Center"
         ]
       }
@@ -195,10 +204,11 @@
     "state": {}
   },
   "6": {
-    "prompt": "For kidney care in Bellevue, compare Dr. Lin Li and Dr. Philip King. Give their review counts, full office addresses and hospital affiliations so I can decide which practice to contact.",
+    "prompt": "For kidney care in Bellevue, compare Dr. Lin Li, Dr. Philip King and Dr. Annemarie Dooley. Give their review counts, full office addresses and hospital affiliations so I can decide which practice to contact.",
     "paths": [
       "/doctor/dr-lin-li-gcmy3",
-      "/doctor/dr-philip-king-2try3"
+      "/doctor/dr-philip-king-2try3",
+      "/doctor/dr-annemarie-dooley-y5d4w"
     ],
     "facts": [
       {
@@ -224,6 +234,18 @@
           "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
           "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics",
           "Skagit\\s+Valley\\s+Hospital"
+        ]
+      },
+      {
+        "entity": "Annemarie\\s+Dooley",
+        "patterns": [
+          "5\\s*reviews?",
+          "1370\\s+116th\\s+Ave\\s+NE\\s+Ste\\s+209",
+          "Bellevue",
+          "WA",
+          "98004",
+          "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
+          "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics"
         ]
       }
     ],
@@ -391,10 +413,11 @@
     }
   },
   "15": {
-    "prompt": "Compare the patient feedback for allergy specialists Dr. Kevin Dooms and Dr. Douglas Skarada. Report each displayed rating and review count, and identify the higher-rated doctor and the difference in displayed ratings. Include both doctors\u2019 education entries and hospital affiliations to put the ratings in context.",
+    "prompt": "I am comparing allergy specialists Dr. Kevin Dooms, Dr. Douglas Skarada and Dr. Jon Welch. Report each displayed rating and review count, together with education and hospital affiliations to put the feedback in context. Identify the highest-rated doctor and the rating gap over the runner-up.",
     "paths": [
       "/doctor/dr-kevin-dooms-y2n6c",
-      "/doctor/dr-douglas-skarada-xs6f2"
+      "/doctor/dr-douglas-skarada-xs6f2",
+      "/doctor/dr-jon-welch-2n57n"
     ],
     "facts": [
       {
@@ -426,9 +449,25 @@
         "patterns": [
           "0\\.2\\s*stars?"
         ]
+      },
+      {
+        "entity": "Jon\\s+Welch",
+        "patterns": [
+          "4\\.0\\s*stars?",
+          "4\\s*reviews?",
+          "West\\s+Virginia\\s+University\\s+Hospitals",
+          "MultiCare\\s+Tacoma\\s+General\\s+Hospital",
+          "Seattle\\s+Children's\\s+Hospital"
+        ]
       }
     ],
-    "state": {}
+    "state": {},
+    "answer_patterns": [
+      "Dooms(?:,?\\s*MD)?\\s+(?:has|is)\\s+(?:the\\s+)?highest"
+    ],
+    "answer_forbidden": [
+      "(?:Skarada|Welch)(?:,?\\s*MD)?\\s+(?:has|is)\\s+(?:the\\s+)?highest"
+    ]
   },
   "16": {
     "prompt": "I prefer a urologist with substantial patient feedback over a perfect score based on just a couple of reviews. Compare Dr. Paul Kozlowski, Dr. Jasmir Nayak and Dr. Christian Kuhr: report their displayed ratings, review counts and hospital affiliations.",
@@ -466,10 +505,11 @@
     "state": {}
   },
   "17": {
-    "prompt": "Use the specialty directory to assess Dr. Lauren Haggerty and Dr. Annemarie Dooley as kidney-care options. Compare their full office addresses and hospital affiliations so I can choose between the two practices.",
+    "prompt": "Use the specialty directory to assess Dr. Lauren Haggerty, Dr. Annemarie Dooley and Dr. Lin Li as kidney-care options. Compare their full office addresses and hospital affiliations so I can choose between the three practices.",
     "paths": [
       "/doctor/dr-lauren-haggerty-xynrx2j",
-      "/doctor/dr-annemarie-dooley-y5d4w"
+      "/doctor/dr-annemarie-dooley-y5d4w",
+      "/doctor/dr-lin-li-gcmy3"
     ],
     "facts": [
       {
@@ -484,6 +524,17 @@
       },
       {
         "entity": "Annemarie\\s+Dooley",
+        "patterns": [
+          "1370\\s+116th\\s+Ave\\s+NE\\s+Ste\\s+209",
+          "Bellevue",
+          "WA",
+          "98004",
+          "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
+          "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics"
+        ]
+      },
+      {
+        "entity": "Lin\\s+Li",
         "patterns": [
           "1370\\s+116th\\s+Ave\\s+NE\\s+Ste\\s+209",
           "Bellevue",

@@ -56,6 +56,15 @@ def check_facts(answer, facts):
             # A negated correct phrase must not pass as an affirmative fact.
             if all(re.search(r"\b(?:not|isn't|is not|isn’t|never|incorrect|wrong|instead of)\s*(?:\w+\s+){0,8}$",scoped[max(0,m.start()-90):m.start()],re.I) for m in hits):
                 raise ValueError('Negated required fact: '+f['entity'])
+        if f.get('sections'):
+            markers = list(re.finditer(r"\b(pros?|advantages?|strengths?|benefits?|cons?|drawbacks?|downsides?|limitations?)\s*(?::|are\b|include\b)", scoped, re.I))
+            sections = {'pros': '', 'cons': ''}
+            for j, marker in enumerate(markers):
+                key = 'pros' if re.match(r'pro|advantage|strength|benefit', marker[1], re.I) else 'cons'
+                sections[key] += scoped[marker.end():markers[j+1].start() if j+1<len(markers) else len(scoped)]
+            for key, values in f['sections'].items():
+                if any(norm(value).casefold() not in sections[key].casefold() for value in values):
+                    raise ValueError('Incorrectly attributed advantages/disadvantages')
         for pat in f.get('forbid',[]):
             if re.search(regex(pat),scoped,re.I): raise ValueError('Contradictory fact: '+f['entity'])
         # Reject wrong monetary claims even when a correct amount is appended as a reference.
@@ -124,7 +133,12 @@ def verify(run_dir):
     expected=(HERE/'fixture.sha256').read_text().strip()
     if fingerprint(initial)!=expected: raise ValueError('Initial snapshot does not match reviewed seed')
     evidence=check_state(initial,final,contract['state'])
-    evidence+=check_facts(traj.get('final_answer',''),contract['facts'])
+    answer=traj.get('final_answer','')
+    evidence+=check_facts(answer,contract['facts'])
+    for pat in contract.get('answer_patterns',[]):
+        if not re.search(pat,norm(answer),re.I): raise ValueError('Missing required comparison conclusion')
+    for pat in contract.get('answer_forbidden',[]):
+        if re.search(pat,norm(answer),re.I): raise ValueError('Contradictory comparison conclusion')
     return {'task_id':task_id,'pass':True,'reason':'Requested outcome, relevant page evidence and preserved state verified.','evidence':evidence}
 
 def main():
