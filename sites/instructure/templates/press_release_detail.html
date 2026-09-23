@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} | Instructure{% endblock %}
+{% block content %}
+<section class="container section">
+  <div class="page-crumb"><a href="{{ url_for('press_releases') }}">Press Releases</a><span class="sep">»</span>{{ item.published }}</div>
+  <div class="detail-head" style="max-width:860px;">
+    <h1>{{ item.title }}</h1>
+    <p style="color:var(--muted); margin-top:12px; font-weight:600;">{{ item.published }} — Salt Lake City</p>
+    {% if item.summary %}<p class="lede" style="margin-top:18px;">{{ item.summary }}</p>{% endif %}
+  </div>
+  <div class="prose">
+    {% for block in item.body %}
+      {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+      {% else %}<p>{{ block.text }}</p>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

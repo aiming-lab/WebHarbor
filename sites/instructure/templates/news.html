@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Instructure in the News{% endblock %}
+{% block content %}
+<section class="container section">
+  <h1>Instructure in the News</h1>
+  <p class="lede" style="margin: 14px 0 30px;">What the press is saying about Instructure, Canvas, Mastery, and Parchment.</p>
+  <div class="list-toolbar">
+    <form class="search-box" method="get" action="">
+      <input type="search" name="q" value="{{ query }}" placeholder="Search news">
+      <button type="submit">🔍</button>
+    </form>
+  </div>
+  <table class="news-table">
+    <thead><tr><th style="width:130px;">Date</th><th>Headline</th><th style="width:220px;">Outlet</th></tr></thead>
+    <tbody>
+      {% for n in items %}
+      <tr>
+        <td>{{ n.published }}</td>
+        <td><a href="{{ n.external_url }}" target="_blank" rel="noopener" style="color:var(--ink); font-weight:700;">{{ n.title }} ↗</a>{% if n.summary %}<div style="color:var(--muted); font-size:13.5px; margin-top:4px;">{{ n.summary }}</div>{% endif %}</td>
+        <td style="color:var(--muted);">{{ n.outlet }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% if pages > 1 %}
+  <nav class="pager" aria-label="Pagination">
+    {% for p in range(1, pages + 1) %}
+      {% if p == page %}<span class="cur">{{ p }}</span>
+      {% else %}<a href="{{ url_for('news', page=p, q=query) }}">{{ p }}</a>{% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

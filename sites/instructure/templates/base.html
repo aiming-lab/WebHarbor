@@ -1,0 +1,294 @@
+{% set nav = {
+  'solutions': [
+    ('K-12', 'Your source for K–12 tools and insights', [
+      ('Teaching and Learning', '/k12'),
+      ('Comprehensive Assessment', '/resources/case-studies?topic=Assessment'),
+      ('Leadership Development', '/resources/blog?topic=Professional Development'),
+      ('Records Management', '/resources/case-studies?product=Parchment Pathways'),
+      ('Research: Is Your LMS Future-Ready?', '/resources/research-reports'),
+    ]),
+    ('Higher Education', 'A digital hub for higher education', [
+      ('Teaching and Learning', '/higher-education'),
+      ('Data and Insights', '/resources/blog?topic=Analytics'),
+      ('Student Engagement and Success', '/resources/blog?topic=Student Engagement'),
+      ('Credentialing', '/resources/case-studies?product=Parchment Award'),
+      ('Competency-Based Education', '/resources/research-reports?topic=Competency-Based Education'),
+      ('Continuing Education and Career Readiness', '/resources/videos?product=Canvas Career'),
+      ('Implementation, Migration, and Training', '/services'),
+      ('Learner Mobility', '/resources/case-studies?topic=Equity %26 Accessibility'),
+    ]),
+    ('Business and Government', 'Tools to upskill teams and streamline operations', [
+      ('Workforce Development & Employee Learning', '/business'),
+      ('Enterprise & External Training', '/resources/ebooks'),
+      ('Professional Certification & Continuing Education', '/resources/case-studies?org=Business'),
+      ('Association & Member Learning', '/resources/webinars?org=Business'),
+      ('High School Equivalency', '/parchment'),
+      ('Credentialing', '/resources/case-studies?product=Parchment Award'),
+      ('Learner Mobility', '/resources/case-studies?org=Government'),
+    ]),
+  ],
+  'products': [
+    ('Canvas', "The world's most-loved LMS", [
+      ('Canvas LMS', '/canvas'), ('Canvas Career', '/resources/videos?product=Canvas Career'),
+      ('Studio', '/resources/product-overviews?product=Canvas Studio'),
+      ('Catalog', '/resources/product-overviews?product=Canvas Catalog'),
+    ]),
+    ('Mastery', 'Standards-aligned assessments', [
+      ('Mastery Assessments', '/mastery'),
+      ('Mastery Item Bank', '/resources/product-overviews?product=Mastery Item Bank'),
+    ]),
+    ('Parchment', 'Secure, verified credentials', [
+      ('Award', '/parchment'), ('Pathways', '/resources/case-studies?product=Parchment Pathways'),
+      ('Services', '/services'),
+    ]),
+    ('Platform Enhancements', 'AI, insights, analytics, and more', [
+      ('LearnPlatform', '/resources/product-overviews?product=LearnPlatform'),
+      ('Impact', '/resources/product-overviews?product=Impact'),
+      ('Intelligent Insights', '/resources/product-overviews?product=Intelligent Insights'),
+      ('IgniteAI', '/resources/ebooks?product=IgniteAI'),
+      ('Services', '/services'),
+    ]),
+  ],
+} %}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Instructure: Leading EdTech for K–12, Higher Ed & Business{% endblock %}</title>
+  <meta name="description" content="Empower learning with Instructure’s LMS and edtech solutions for K–12, higher education, and businesses. Discover Canvas, Impact, and Mastery to drive success.">
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+<header class="main-header">
+  <div class="utility-bar">
+    <a href="/partners" class="dropdown">Partners <span class="chev">▾</span></a>
+    <a href="/support/canvas-support-faq">Support</a>
+    <div class="dropdown">
+      <span id="login-trigger">Login <span class="chev">▾</span></span>
+      <div class="dropdown-menu" style="min-width: 320px;">
+        <div class="dropdown-col">
+          <a class="dd-item" href="/login"><strong>Instructure Account</strong><span>Sign in to save resources and register for webinars</span></a>
+          <a class="dd-item" href="/canvas/login"><strong>Canvas</strong><span>Log in to Canvas LMS</span></a>
+          <a class="dd-item" href="https://portfolium.com/login"><strong>Student ePortfolio</strong></a>
+          <a class="dd-item" href="https://app.masteryconnect.com/login"><strong>Mastery Connect</strong></a>
+          <a class="dd-item" href="https://identity.us2.kimonocloud.com/login"><strong>Elevate Data Sync</strong></a>
+          <a class="dd-item" href="https://app.learnplatform.com/users/sign_in"><strong>LearnPlatform by Instructure</strong></a>
+          <a class="dd-item" href="/parchment/parchment-digital-badges/login"><strong>Parchment Digital Badges</strong></a>
+        </div>
+      </div>
+    </div>
+    <a href="/resources/videos/exploring-canvas">Explore Canvas</a>
+    <span class="dropdown">🌐 EN <span class="chev">▾</span></span>
+  </div>
+  <div class="nav-row">
+    <a href="/" class="logo">Instructure<span class="dot">.</span></a>
+    <nav class="main-nav">
+      <div class="dropdown">
+        <button type="button">Why Instructure</button>
+        <div class="dropdown-menu">
+          <div class="dropdown-cols">
+            <div class="dropdown-col">
+              <a class="dd-item" href="/why-instructure"><strong>Why Instructure</strong><span>Read more</span></a>
+              <a class="dd-item" href="/why-instructure"><strong>Ecosystem Overview</strong><span>Connected solutions for learning, assessment, and credentials</span></a>
+            </div>
+            <div class="dropdown-col">
+              <a class="dd-item" href="/partners"><strong>Our Partners</strong><span>Our ecosystem is open for innovation. Meet the EdTech Collective.</span></a>
+              <a class="dd-item" href="/community"><strong>Our Community</strong><span>Collaborate, innovate, and succeed with fellow educators</span></a>
+            </div>
+            <div class="dropdown-col">
+              <a class="dd-item" href="/resources/case-studies"><strong>Our Customers</strong><span>See who's transforming teaching and learning today</span></a>
+              <a class="dd-item" href="/about/ai-perspectives"><strong>AI Perspectives</strong><span>Where AI meets education. Instructure's take</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <button type="button">Solutions</button>
+        <div class="dropdown-menu" style="min-width: 860px;">
+          <div class="dd-tab-grid">
+            {% for tab, blurb, links in nav.solutions %}
+            <div class="dropdown-col">
+              <h4>{{ tab }}</h4>
+              <p class="muted" style="font-size: 13px; margin: 0 0 10px;">{{ blurb }}</p>
+              <ul>
+                {% for label, href in links %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}
+                <li><a href="/{{ ['k12','higher-education','business'][loop.index0] }}" style="font-weight:800;">Learn more</a></li>
+              </ul>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <button type="button">Products</button>
+        <div class="dropdown-menu" style="min-width: 860px;">
+          <div class="dd-tab-grid">
+            {% for tab, blurb, links in nav.products %}
+            <div class="dropdown-col">
+              <h4>{{ tab }}</h4>
+              <p class="muted" style="font-size: 13px; margin: 0 0 10px;">{{ blurb }}</p>
+              <ul>
+                {% for label, href in links %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}
+              </ul>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <button type="button">Resources</button>
+        <div class="dropdown-menu" style="min-width: 320px;">
+          <div class="dropdown-col">
+            <ul>
+              <li><a href="/resources">Resource Center</a></li>
+              <li><a href="/resources/blog?topic=Artificial Intelligence">AI Resources</a></li>
+              <li><a href="/resources/blog">Blogs</a></li>
+              <li><a href="/resources/case-studies">Case Studies</a></li>
+              <li><a href="/resources/ebooks">Ebooks &amp; Buyer’s Guides</a></li>
+              <li><a href="/resources/infographic">Infographics</a></li>
+              <li><a href="/resources/podcast">Podcast</a></li>
+              <li><a href="/resources/product-overviews">Product Overviews</a></li>
+              <li><a href="/resources/research">Research</a></li>
+              <li><a href="/resources/videos">Videos</a></li>
+              <li><a href="/news">Newsroom</a></li>
+              <li><a href="/news/public-relations">Press Releases</a></li>
+              <li><a href="https://www.canvas.net/">Canvas Network</a></li>
+              <li><a href="/events">Events</a></li>
+              <li><a href="/resources/webinars">On-Demand Webinars</a></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+      <div class="dropdown">
+        <button type="button">About Us</button>
+        <div class="dropdown-menu" style="min-width: 560px;">
+          <div class="dropdown-cols">
+            <div class="dropdown-col">
+              <a class="dd-item" href="/about"><strong>Company Overview</strong><span>The makers of Canvas LMS, Instructure is an education technology company</span></a>
+            </div>
+            <div class="dropdown-col">
+              <a class="dd-item" href="/about/leadership"><strong>Leadership</strong><span>Meet the folks leading Instructure's mission</span></a>
+            </div>
+            <div class="dropdown-col">
+              <a class="dd-item" href="/about/careers"><strong>Careers</strong><span>Learn about our company, check out our open positions</span></a>
+            </div>
+          </div>
+        </div>
+      </div>
+      <a href="/search" class="nav-search" aria-label="Search">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+      </a>
+      <a href="/request-demo" class="btn-lets-connect">Let’s Connect</a>
+    </nav>
+    <button class="menu-toggle" type="button" aria-label="Menu" aria-expanded="false"><span class="burger"></span><span>Menu</span></button>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-zone">
+    {% for category, message in messages %}
+    <div class="flash-msg {{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="wide-container">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="logo">Instructure<span class="dot">.</span></div>
+        <address>
+          <strong>North America</strong><br>
+          6330 S 3000 E, Suite 700<br>
+          Salt Lake City, UT 84121, USA<br><br>
+          <strong>Europe</strong><br>
+          Rivington House, 82 Great Eastern Street<br>
+          London, England<br><br>
+          <strong>Asia Pacific</strong><br>
+          Bridgetowne, C-5 Road<br>
+          Ugong Norte, Quezon City, Philippines
+        </address>
+        <form class="newsletter-strip" method="post" action="/newsletter/subscribe">
+          <input type="hidden" name="next" value="{{ request.path }}">
+          <input type="email" name="email" placeholder="Email Address" aria-label="Email Address" required>
+          <button class="btn btn-primary btn-sm" type="submit">Sign Up</button>
+        </form>
+        <div class="socials">
+          <a href="https://www.linkedin.com/company/instructure-inc-/" aria-label="LinkedIn">in</a>
+          <a href="https://twitter.com/Instructure" aria-label="Twitter">𝕏</a>
+          <a href="https://www.facebook.com/Instructure" aria-label="Facebook">f</a>
+          <a href="https://www.instagram.com/instructure/" aria-label="Instagram">◎</a>
+          <a href="https://www.youtube.com/user/instructure" aria-label="YouTube">▶</a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4>Why Instructure</h4>
+        <ul>
+          <li><a href="/why-instructure">Why Instructure</a></li>
+          <li><a href="/why-instructure">Instructure Ecosystem</a></li>
+          <li><a href="/partners">Our Partners</a></li>
+          <li><a href="/community">Our Community</a></li>
+          <li><a href="/resources/case-studies">Our Customers</a></li>
+          <li><a href="/privacy-security">Security</a></li>
+          <li><a href="/privacy-security">Accessibility</a></li>
+          <li><a href="/privacy-security">Privacy</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Products</h4>
+        <ul>
+          <li><a href="/canvas">Canvas</a></li>
+          <li><a href="/mastery">Mastery</a></li>
+          <li><a href="/parchment">Parchment</a></li>
+          <li><a href="/resources/product-overviews">All Products</a></li>
+          <li><a href="/services">Services</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Solutions</h4>
+        <ul>
+          <li><a href="/k12">K–12</a></li>
+          <li><a href="/higher-education">Higher Ed</a></li>
+          <li><a href="/business">Business and Government</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>About Us</h4>
+        <ul>
+          <li><a href="/about">Company Overview</a></li>
+          <li><a href="/about/leadership">Leadership</a></li>
+          <li><a href="/about/careers">Careers</a></li>
+          <li><a href="/about/ai-perspectives">AI Principles</a></li>
+        </ul>
+        <h4 style="margin-top:18px;">Contact Us</h4>
+        <ul><li><a href="/contact-us">Contact Us</a></li></ul>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <a href="/trust-center/legal">Terms</a>
+      <a href="/trust-center/legal">California Terms Notice</a>
+      <a href="/trust-center/legal">Cookie Notice</a>
+      <a href="/trust-center/legal">Do Not Sell/Share My Personal Information</a>
+      <a href="/privacy-security">Privacy Notice</a>
+      <a href="/trust-center/legal">Legal</a>
+      <a href="/sitemap">Site Map</a>
+      <span>©2025 Instructure, Inc. All rights reserved.</span>
+    </div>
+    <div class="footer-wordmark">Instructure</div>
+  </div>
+</footer>
+
+<div class="chat-bubble">
+  <button class="bubble-btn" type="button">💬 Ask PandaBot</button>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
