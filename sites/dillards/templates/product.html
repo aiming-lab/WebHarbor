@@ -23,17 +23,17 @@
         <span class="stars">{% for i in range((product.rating|stars)['full']) %}&#9733;{% endfor %}{% if (product.rating|stars)['half'] %}&#189;{% endif %}</span>
         {{ '%.1f'|format(product.rating or 0) }} ({{ product.review_count }}) <a href="{{ product.url }}/reviews">Write a review</a>
       </div>
-      <div class="pdp-price{% if product.on_sale() %} sale{% endif %}">
+      <div aria-live="polite" class="pdp-price{% if price_was is not none %} sale{% endif %}">
         {%- if explicit_price is not none %}
           ${{ '%.2f'|format(explicit_price) }}
-        {%- elif selected_color %}
-          ${{ '%.2f'|format(selected_color.price) }}
         {%- elif price_high is not none %}
           ${{ '%.2f'|format(price_low) }} - ${{ '%.2f'|format(price_high) }}
+        {%- elif selected_color %}
+          ${{ '%.2f'|format(selected_color.price) }}
         {%- else %}
           ${{ '%.2f'|format(product.price() or 0) }}
         {%- endif %}
-        {% if product.on_sale() %}<span class="was">${{ '%.2f'|format(product.was_price()) }}</span>{% endif %}
+        {% if price_was is not none %}<span class="was">${{ '%.2f'|format(price_was) }}</span>{% endif %}
       </div>
       <div class="shipping-note">shipping SHIPS FREE - Exclusions Apply</div>
 
@@ -90,7 +90,7 @@
         </form>
         <form method="post" action="/registry/add/{{ product.pid }}">
           <input type="hidden" name="next" value="{{ product.url }}">
-          <button class="btn-link" type="submit">&#127873; Add To Registry</button>
+          <button class="btn-link" type="submit">Add To Registry</button>
         </form>
         <a href="/c/shopbybrand">&#9733; Add To Preferred Brands</a>
       </div>
@@ -185,10 +185,28 @@
 </div>
 
 <script>
+const variantOptions = {{ variant_options|tojson }};
+function updateVariantPrice() {
+  const size = document.querySelector('.buy-form input[name="size"]').value;
+  const color = document.querySelector('.buy-form input[name="color"]').value;
+  const variant = variantOptions.find(v => v.size === size && v.color === color);
+  const price = document.querySelector('.pdp-price');
+  const add = document.querySelector('.buy-form button[type="submit"]');
+  add.disabled = !variant;
+  price.classList.toggle('sale', !!variant && variant.was_price > variant.price);
+  price.textContent = variant ? '$' + variant.price.toFixed(2) : 'This size and color combination is unavailable.';
+  if (variant && variant.was_price > variant.price) {
+    const was = document.createElement('span');
+    was.className = 'was';
+    was.textContent = '$' + variant.was_price.toFixed(2);
+    price.appendChild(was);
+  }
+}
 function selectSize(btn) {
   document.querySelectorAll('.size-btn').forEach(function (b) { b.classList.remove('selected'); });
   btn.classList.add('selected');
   document.getElementById('size-input').value = btn.dataset.size;
+  updateVariantPrice();
 }
 function selectColor(btn) {
   document.querySelectorAll('.color-btn').forEach(function (b) { b.classList.remove('selected'); });
@@ -196,6 +214,7 @@ function selectColor(btn) {
   document.getElementById('color-input').value = btn.dataset.color;
   document.getElementById('pdp-main').src = btn.querySelector('img').src;
   document.getElementById('color-name').textContent = btn.dataset.color;
+  updateVariantPrice();
 }
 function bumpQty(delta) {
   var el = document.getElementById('qty');

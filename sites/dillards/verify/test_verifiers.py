@@ -397,6 +397,12 @@ HONEST_ANSWERS = {
          "gift card number received is 7334 0922 0100 0001."),
 }
 
+# Compose the full revised task contract in synthetic positive packages.
+ORIGINAL_STEPS, ORIGINAL_ANSWERS = dict(HONEST_STEPS), dict(HONEST_ANSWERS)
+for number, components in json.loads((VERIFY / 'review_components.json').read_text()).items():
+    HONEST_STEPS[int(number)] = [step for c in components for step in ORIGINAL_STEPS[c]]
+    HONEST_ANSWERS[int(number)] = '\n'.join(ORIGINAL_ANSWERS[c] for c in components)
+
 # Near-miss wrong answers (one key fact off per task).
 WRONG_ANSWERS = {
     0: "The most expensive dress is the Buru Mod Print Mock Neck Sleeveless Shift Maxi Dress at $329.00.",

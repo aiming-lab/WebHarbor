@@ -307,3 +307,22 @@ def test_tasks_jsonl_contract():
         assert "answer" not in row
         assert (SITE.parents[1] / row["verifier_path"]).is_file()  # repo-root relative
         assert row["judge_rubric"].startswith("FACT CHECKPOINTS:")
+
+
+def test_mixed_price_product_range_and_regular_variant(client):
+    import re
+    url = "/p/levis-511-slim-fit-all-seasons-tech-jeans/511371759"
+    def price_block(response):
+        assert response.status_code == 200
+        return re.search(r'<div aria-live="polite" class="pdp-price.*?</div>',
+                         response.get_data(as_text=True), re.S).group()
+    initial = price_block(client.get(url))
+    assert "$43.54 - $64.99" in initial
+    assert 'class="was">$64.99' in initial
+    with site.app.app_context():
+        product = site.Product.query.filter_by(pid="511371759").one()
+        regular = next(v for v in product.variants if v.price == 64.99)
+        selection = {"size": regular.size, "color": regular.color}
+    chosen = price_block(client.get(url, query_string=selection))
+    assert "$64.99" in chosen
+    assert 'class="was"' not in chosen
