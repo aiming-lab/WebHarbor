@@ -198,3 +198,60 @@ def run_verifier(task_n: int, run_dir: Path, initial_db: Path, after_db: Path,
                 "returncode": r.returncode, "pass": False}
     verdict["_returncode"] = r.returncode
     return verdict
+
+
+# ------------------------------------------------------------------ redesign DB helpers
+# Statements that materialize the EXACT after-state of each stateful redesigned
+# task on a seed copy: the placed order MWS1050 with its items, the consumed
+# cart rows, the new address (task 6) and the new user (task 15).
+TS = "2026-09-22 12:00:00.000000"
+NEXT_ORDER_ID = 9  # the seed holds 8 orders (ids 1..8)
+NEXT_ITEM_ID = 9   # the seed holds 8 order_items (ids 1..8)
+
+
+def order_statements(order_number, user_id, email, ship, payment_label,
+                     subtotal, shipping, total, bottle_count, items,
+                     order_id=NEXT_ORDER_ID):
+    """items: list of dicts {variant_id, handle, title, variant_title,
+    unit_price, quantity, bottle_count}; the first item gets id NEXT_ITEM_ID."""
+    stmts = [(
+        "INSERT INTO orders (id, order_number, user_id, email, status, ship_to_name, "
+        "address_line1, address_line2, city, state, zip_code, phone, payment_label, "
+        "subtotal, shipping, processing, total, bottle_count, club_member, "
+        "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (order_id, order_number, user_id, email, "Processing", ship["name"],
+         ship["line1"], ship.get("line2", ""), ship["city"], ship["state"],
+         ship["zip"], ship.get("phone", ""), payment_label, subtotal, shipping,
+         2.95, total, bottle_count, 0, TS, TS))]
+    for offset, it in enumerate(items):
+        stmts.append((
+            "INSERT INTO order_items (id, order_id, variant_id, product_handle, "
+            "product_title, variant_title, unit_price, quantity, bottle_count, "
+            "created_at, updated_at) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+            (NEXT_ITEM_ID + offset, order_id, it["variant_id"], it["handle"],
+             it["title"], it["variant_title"], it["unit_price"], it["quantity"],
+             it["bottle_count"], TS, TS)))
+    return stmts
+
+
+def delete_cart_statements(row_ids):
+    return [("DELETE FROM cart_items WHERE id = ?", (int(i),)) for i in row_ids]
+
+
+def address_statements(user_id, full_name, line1, line2, city, state, zip_code,
+                       phone, address_id=6, is_default=0):
+    return [(
+        "INSERT INTO addresses (id, user_id, label, full_name, line1, line2, city, "
+        "state, zip_code, phone, is_default, created_at, updated_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
+        (address_id, user_id, "Denver", full_name, line1, line2, city, state,
+         zip_code, phone, is_default, TS, TS))]
+
+
+def user_statements(email, first_name, last_name, user_id=5):
+    return [(
+        "INSERT INTO users (id, email, username, display_name, password_hash, "
+        "first_name, last_name, phone, created_at, updated_at) "
+        "VALUES (?,?,?,?,?,?,?,?,?,?)",
+        (user_id, email, email.split("@")[0], f"{first_name} {last_name}",
+         "x" * 64, first_name, last_name, "", TS, TS))]

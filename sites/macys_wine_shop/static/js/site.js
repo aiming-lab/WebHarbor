@@ -245,6 +245,11 @@
     function selectPack(btn) {
       options.forEach(function (o) { o.classList.toggle("selected", o === btn); });
       variantInput.value = btn.getAttribute("data-variant-id");
+      // Keep the AJAX add-to-cart button in sync with the selected pack size —
+      // the button posts its own data-variant-id (mirroring the single-product
+      // variant-select handler below).
+      var addBtn = packForm.querySelector("[data-add-to-cart]");
+      if (addBtn) { addBtn.setAttribute("data-variant-id", btn.getAttribute("data-variant-id")); }
       if (priceNow) { priceNow.textContent = btn.getAttribute("data-price"); }
       if (priceCompare) { priceCompare.textContent = btn.getAttribute("data-compare"); }
       if (priceOff) {

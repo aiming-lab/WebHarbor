@@ -1,35 +1,111 @@
 #!/usr/bin/env python3
-"""Verify MacysWineShop--9: Casa de Alqueria Reserva Red Blend award + wine info"""
+"""Verify MacysWineShop--9: $100 gift card + sparkling, minimum-bottle discovery.
 
-from verify_lib import (Judge, check_read_only, check_signed_in_as, check_trajectory_identity,
-                        check_visited_path, check_only_tables_changed, changed_tables, contains_all,
-                        contains_any, contains_count, contains_free, contains_money, contains_percent,
-                        contains_phrase, entered_identity, final_answer, input_texts,
-                        navigated_collection_with_facets, navigated_listing_sorted, navigated_search_with, navigated_to,
-                        navigated_to_path, navigated_to_path_any, phrases_in_order, run_verifier,
-                        table_delta, db_query, cart_rows, orders_of, order_items_of)
+Frozen ground truth (seed): the gift-card product sells $25/$50/$75/$100
+variants and every gift-card variant carries bottle_count = 1, so it counts
+toward the cart's 3-bottle checkout minimum; with the $100 card plus one
+sparkling bottle (2 'bottles') the cart blocks checkout with 'Minimum 3
+Bottles Required for Checkout'; adding a second sparkling bottle reaches 3
+bottles and unlocks checkout with $14.95 shipping (still under the 6-bottle
+free rule). The placed guest order MWS1050 holds exactly two line items: the
+$100 gift card (qty 1) and one sparkling wine (qty 2, unit price <= $30);
+bottle_count = 3 and total = 100 + 2*price + 14.95 + 2.95.
+"""
+
+from verify_lib import (Judge, check_only_tables_changed, check_trajectory_identity,
+                        check_visited_path, contains_money, contains_phrase, contains_any, db_query,
+                        final_answer, navigated_to, run_verifier, table_delta,
+                        table_columns, advisory_llm_answer)
 
 TASK_ID = "MacysWineShop--9"
+GIFTCARD = "giftcard"
+SPARKLING_COLLECTION = "sparkling-wine"
+GROUND_TRUTH = ("The $100 gift card counts toward the 3-bottle minimum (its variant "
+                "carries bottle_count 1): card + one sparkling bottle showed 'Minimum 3 "
+                "Bottles Required for Checkout' with checkout disabled; adding a second "
+                "sparkling bottle reached 3 bottles and unlocked checkout ($14.95 "
+                "shipping, 'Add 3 bottles for free shipping!'). Order MWS1050: the $100 "
+                "gift card plus 2 bottles of a sparkling wine under $30.")
+QUESTION = ("Buy the $100 gift card and one sparkling bottle as a guest, read the cart's "
+            "minimum rule, add what is needed to pass it, complete the order, and report "
+            "whether the gift card counted, what you ordered, the order number, and the total.")
+
 
 def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_trajectory_identity(judge, traj, TASK_ID)
-    check_visited_path(judge, traj, "visited_casa_product_page",
-                       "/products/2024-casa-de-alqueria-reserva-red-blend-chile")
-    # Frozen ground truth: Gold, 2026, Critics Challenge International Wine
-    # Competition; ABV 13.5; region Valle Central.
-    judge.check("answer_award_level", contains_phrase(answer, "Gold"),
-                "expected the Gold medal level")
-    judge.check("answer_award_year", contains_count(answer, 2026),
-                "expected the 2026 award year")
-    judge.check("answer_award_competition",
-                contains_phrase(answer, "Critics Challenge International Wine Competition"),
-                "expected the Critics Challenge International Wine Competition")
-    judge.check("answer_abv", contains_phrase(answer, "13.5"),
-                "expected ABV 13.5")
-    judge.check("answer_region", contains_phrase(answer, "Valle Central"),
-                "expected region Valle Central")
-    check_read_only(judge, initial_db, after_db)
+    # navigation gates: the gift-card product, the sparkling collection, the
+    # cart (where the minimum rule is read), and the checkout chain.
+    check_visited_path(judge, traj, "visited_giftcard_page", "/products/" + GIFTCARD)
+    check_visited_path(judge, traj, "visited_sparkling_collection",
+                       "/collections/" + SPARKLING_COLLECTION)
+    check_visited_path(judge, traj, "visited_cart", "/cart")
+    check_visited_path(judge, traj, "visited_checkout_information", "/checkout/information")
+    check_visited_path(judge, traj, "visited_checkout_review", "/checkout/review")
+    judge.check("visited_confirmation",
+                navigated_to(traj, "/checkout/confirmation/MWS1050"),
+                "required: the confirmation page for order MWS1050")
+    # DB after-state (drives the answer checks too): exactly one new guest
+    # order MWS1050 holding the $100 gift card + one sparkling wine (qty 2).
+    ocols = table_columns(after_db, "orders")
+    orders_added = [dict(zip(ocols, row)) for row in table_delta(initial_db, after_db, "orders")["added"]]
+    icols = table_columns(after_db, "order_items")
+    items_added = [dict(zip(icols, row)) for row in table_delta(initial_db, after_db, "order_items")["added"]]
+    gc_rows = [r for r in items_added if r["product_handle"] == GIFTCARD]
+    other_rows = [r for r in items_added if r["product_handle"] != GIFTCARD]
+    sparkling_ok = False
+    spark_title = ""
+    if len(other_rows) == 1:
+        row = other_rows[0]
+        spark_title = str(row["product_title"])
+        in_collection = db_query(
+            after_db,
+            "SELECT 1 FROM collection_products cp JOIN collections c ON c.id = cp.collection_id "
+            "JOIN products p ON p.id = cp.product_id WHERE c.handle = ? AND p.handle = ?",
+            (SPARKLING_COLLECTION, row["product_handle"]))
+        sparkling_ok = (bool(in_collection) and int(row["quantity"]) == 2
+                        and float(row["unit_price"]) <= 30.0)
+    ok_items = (len(items_added) == 2 and len(gc_rows) == 1
+                and int(gc_rows[0]["quantity"]) == 1
+                and abs(gc_rows[0]["unit_price"] - 100.0) < 0.005
+                and sparkling_ok)
+    judge.check("db_order_items_giftcard_plus_sparkling", ok_items,
+                f"expected added order_items rows: $100 gift card (qty 1) + one sparkling "
+                f"wine (qty 2, unit <= $30); observed titles="
+                f"{[r['product_title'] for r in items_added]!r}")
+    if ok_items:
+        spark_unit = float(other_rows[0]["unit_price"])
+        expected_total = round(100.0 + 2 * spark_unit + 14.95 + 2.95, 2)
+    else:
+        spark_unit, expected_total = 0.0, 0.0
+    ok_orders = (len(orders_added) == 1 and orders_added[0]["order_number"] == "MWS1050"
+                 and orders_added[0]["user_id"] is None
+                 and int(orders_added[0]["bottle_count"]) == 3
+                 and abs(orders_added[0]["shipping"] - 14.95) < 0.005
+                 and abs(orders_added[0]["total"] - expected_total) < 0.005)
+    judge.check("db_new_order_row", ok_orders,
+                "expected exactly one added guest order row MWS1050 (3 'bottles', "
+                "shipping 14.95, total = 100 + 2*price + 17.90)")
+    # answer checks against the frozen ground truth
+    judge.check("answer_giftcard_counted",
+                contains_any(answer, ("counted", "counts", "count"))
+                and contains_phrase(answer, "gift card"),
+                "expected the answer to state whether the gift card counted toward the minimum")
+    judge.check("answer_minimum_rule",
+                contains_phrase(answer, "Minimum 3 Bottles"),
+                "expected the cart's 'Minimum 3 Bottles Required for Checkout' rule reported")
+    judge.check("answer_giftcard_amount", contains_money(answer, 100.00),
+                "expected the $100.00 gift card in the answer")
+    judge.check("answer_sparkling_named",
+                bool(spark_title) and contains_phrase(answer, spark_title.split()[0].strip("0123456789")),
+                f"expected the sparkling wine to be named ({spark_title!r})")
+    judge.check("answer_order_number", contains_phrase(answer, "MWS1050"),
+                "expected the new order number MWS1050")
+    if ok_items:
+        judge.check("answer_total", contains_money(answer, expected_total),
+                    f"expected the total ${expected_total:.2f}")
+    check_only_tables_changed(judge, initial_db, after_db, {"orders", "order_items"})
+    advisory_llm_answer(judge, answer, GROUND_TRUTH, QUESTION)
 
 
 if __name__ == "__main__":

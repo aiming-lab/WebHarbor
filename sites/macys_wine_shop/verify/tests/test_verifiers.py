@@ -1,509 +1,779 @@
-"""Deterministic verifier contract tests for the 30 macys_wine_shop tasks.
+"""Deterministic verifier contract tests for the 16 redesigned macys_wine_shop
+deep tasks (PR #196 depth redesign).
 
-Covers, per task: the honest trajectory MUST PASS (for the four tasks the live mirror
-currently blocks — 3/5/6 hit the collection sort no-op defect, 27 the missing gift-card
-amount selector — the fixtures simulate the compliant post-fix state, documenting the
-contract, exactly like the instructure T24 precedent); a no-op run (homepage only, empty
-answer, clean DB) MUST FAIL; a wrong answer MUST FAIL; a shortcut (correct answer,
-homepage-only navigation) MUST FAIL for every task (all 30 required surfaces are beyond
-the homepage). Read-only tasks MUST FAIL on a mutated after-DB; stateful tasks
-(13/15/16/24) MUST FAIL on a state-mismatch (no DB delta) and on a wrong state delta.
-Package tampering (task_id mismatch, off-site URLs, missing screenshots, non-done
-trajectory, tampered seed, unavailable DB) MUST fail closed.
+Covers, per task: the honest trajectory MUST PASS (fixtures mirror the live
+honest walks archived in wh-macys_wine_shop-redesign-evidence/ — the guest and
+logged-in checkout chains, the cart-rule chain, the compliance alternative,
+the Wine Club comparison, the gift-card minimum discovery, and both KEEP
+tasks); a no-op run (homepage only, empty answer, clean DB) MUST FAIL; a wrong
+answer MUST FAIL; a shortcut (correct answer, homepage-only navigation) MUST
+FAIL for every task (all 16 required surfaces reach beyond the homepage).
+Read-only task 14 MUST FAIL on a mutated after-DB. Every stateful task MUST
+FAIL on a state mismatch (claimed success, unchanged DB); selected tasks MUST
+FAIL on wrong-state deltas (wrong product, wrong ship state, wrong quantity).
+Package tampering (task_id mismatch, off-site URLs, missing screenshots,
+non-done trajectory, tampered seed, unavailable DB) MUST fail closed.
 
-No LLM: snapshots are seed copies mutated through sqlite, trajectories are hand-written
-in the agent_demo/agent.py shape.
+No docker, no LLM: snapshots are seed copies mutated through sqlite (the exact
+allowed after-state per task), trajectories are hand-written in the
+agent_demo/agent.py shape.
 """
 from __future__ import annotations
 
 import json
 import shutil
 import sqlite3
+import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _support import (BASE, RunBuilder, SEED_DB, _acquire_seed, build_run, copy_db,  # noqa: E402
-                      mutate_db, noop_run, run_verifier)
+from _support import (BASE, SEED_DB, RunBuilder, _acquire_seed, address_statements,  # noqa: E402
+                      copy_db, delete_cart_statements, mutate_db, noop_run,
+                      order_statements, run_verifier, user_statements)
 
-pytestmark = pytest.mark.skipif(not SEED_DB.is_file() and not _acquire_seed().is_file() and False,
-                                reason="seed DB unavailable")
+pytestmark = pytest.mark.skipif(not SEED_DB.is_file() and not _acquire_seed().is_file(),
+                               reason="seed DB unavailable")
 
-STATEFUL = {13, 15, 16, 24}
-READ_ONLY = sorted(set(range(30)) - STATEFUL)
-LOGIN = {"alice": "alice.j@test.com", "bob": "bob.c@test.com",
-         "carol": "carol.d@test.com", "david": "david.k@test.com"}
+ALL_TASKS = list(range(16))
+STATEFUL = [n for n in ALL_TASKS if n != 14]
+GUEST_EMAIL = "mws.redesign@example.com"
+GUEST_SHIP = {"name": "Morgan Cellar", "line1": "77 Vine Street", "city": "Napa",
+              "state": "CA", "zip": "94558"}
+GUEST_PAY = "Visa ending in 4242"
+CAROL = "carol.d@test.com"
+BOB = "bob.c@test.com"
+DAVID = "david.k@test.com"
+PASSWORD = "TestPass123!"
 
-TIMETIDE = "/products/2023-time-tide-chardonnay-monterey-county"
-VALANDA = "/products/2021-valanda-tempranillo"
-CLOSED_WINDOW = "/products/2023-closed-window-pinot-noir-willamette-valley"
-GOLDEN_CASE = "/products/golden-state-essentials-case"
-FESTIVE = "/products/festive-vines-pumpkin-spice-chardonnay-3-pack"
-CELEBRATE = "/products/celebrate-the-season-case-1"
-KELHAM = "/products/kelham-cabernet-sauvignon-oakville-ava-napa-california-2025"
-
-CREATED = "2026-09-22 00:00:00.000000"
-
-# ---------------------------------------------------------------- honest fixtures
-# (steps, answer) — steps are (path, action, params) triples on the recorded URL surface.
-HONEST = {
-    0: ([("/search", "fill", {"text": "pinot noir", "selector": "input[name=q]"}),
-         ("/search?q=pinot+noir&sort_by=price-ascending", "goto", {})],
-        'Searching for "pinot noir" and sorting by Price, low to high finds 19 results. '
-        "The cheapest bottle is 2023 Rewild Sustainable Pinot Grigio at $13.99; its rating "
-        "shows: No reviews yet (0 reviews)."),
-    1: ([("/search", "fill", {"text": "moscato", "selector": "input[name=q]"}),
-         ("/search?q=moscato&sort_by=price-ascending", "goto", {})],
-        'Searching for "moscato" finds 12 products. The cheapest Moscato is 2023 Arenas '
-        "Moscato at $10.49. The most expensive one is 2023 Rewild Sustainable Moscato at $19.99."),
-    2: ([("/collections/all-wine", "goto", {}),
-         ("/collections/all-wine?filter.p.m.drinks.varietal=Cabernet+Sauvignon", "goto", {}),
-         ("/collections/all-wine?filter.p.m.drinks.varietal=Cabernet+Sauvignon&sort_by=price-ascending", "goto", {}),
-         (KELHAM, "goto", {})],
-        "The Shop All Wine collection filtered to Cabernet Sauvignon and sorted by price low "
-        "to high shows 19 wines. The cheapest is 2022 Della Flora Organic Cabernet Sauvignon "
-        "at $16.99. The most expensive one comes from the United States."),
-    3: ([("/collections/wine-sets-under-50?sort_by=price-ascending", "goto", {}),
-         (FESTIVE, "goto", {})],
-        "The Wine Sets Under $50 collection lists 31 sets. The cheapest set is Festive Vines "
-        "Pumpkin Spice Chardonnay 3-Pack at $33.12, and it contains 3 bottles."),
-    4: ([("/collections/all-wine?filter.p.m.drinks.country=Italy&filter.p.m.drinks.sweetness=Sweet", "goto", {})],
-        "Filtering Shop All Wine by Country = Italy and Sweetness = Sweet matches 6 wines: "
-        "Abbazia Moscato Vino Dolce I.G.T. at $16.99; Abbazia La Tartaruga Moscato Provincia "
-        "di Pavia I.G.T. at $12.59; Tesoro Vite Sparkling Moscato at $17.99; Abbazia Moscato "
-        "Dolce at $16.99; Tesoro Vite Sparkling Wine Moscato I.G.T. at $15.99; Abbazia "
-        "Sparkling Moscato Rosé Dolce at $16.99."),
-    5: ([("/collections/sparkling-wine?sort_by=price-ascending", "goto", {})],
-        "The Sparkling Wine collection sorted by price low to high lists 14 sparkling wines; "
-        "the cheapest is Cinguetto Vino Bianco Frizzante Italy at $12.99."),
-    6: ([("/collections/12-bottle-wine-sets?sort_by=price-descending", "goto", {}),
-         (CELEBRATE, "goto", {}),
-         (CELEBRATE, "click", {"selector": ".pack-option"})],
-        "The 12-Bottle Wine Sets collection sorted by price high to low lists 44 sets. The "
-        "most expensive is Celebrate the Season Case at $206.30, and the percentage discount "
-        "currently shown on it is 19% Off."),
-    7: ([(GOLDEN_CASE, "goto", {})],
-        "The Golden State Essentials Case contains 6 Bottles In This Case: (1) 2021 Free "
-        "Flight Red Blend; (2) 2023 House Party Pinot Grigio; (3) 2022 Redland Ranch Reserve "
-        "Zinfandel; (4) 2024 Misirlou Chardonnay; (5) 2024 Wolfson Cellars Sauvignon Blanc; "
-        "(6) 2023 Hats & Hides Cabernet Sauvignon Red Lake HIlls. The case split is 3 Red, "
-        "3 White, and the 6-pack's per-bottle price is $12.74 per bottle."),
-    8: ([("/search", "fill", {"text": "chardonnay reserva", "selector": "input[name=q]"}),
-         ("/search?q=chardonnay+reserva", "goto", {}),
-         ("/products/2023-ahlma-chardonnay-reserva", "goto", {})],
-        "The product with the most customer reviews is 2023 Ahlma Chardonnay Reserva. Its "
-        "average rating is 4.6, it has 11 reviews, and 100% of reviewers would recommend it."),
-    9: ([("/products/2024-casa-de-alqueria-reserva-red-blend-chile", "goto", {})],
-        "The 2024 Casa de Alqueria Reserva Red Blend Chile has won Gold 2026 - Critics "
-        "Challenge International Wine Competition. From its Wine Info table: ABV 13.5, "
-        "region Valle Central."),
-    10: ([("/products/cabs-for-grabs-trio", "goto", {})],
-         "The Cabs For Grabs Trio contains 3 Bottles In This Case: (1) 2021 Cremaschi Furlotti "
-         "Gran Reserva Cabernet Sauvignon; (2) 2024 Magistrale Cabernet Sauvignon I.G.T. "
-         "Veneto; (3) 2023 Fairweather Cabernet Sauvignon. The per-bottle price shown for "
-         "the 3-pack is $22.49 per bottle."),
-    11: ([("/products/2021-free-flight-pinot-noir", "goto", {}),
-          (CLOSED_WINDOW, "goto", {})],
-         "Comparing the two: the 2021 Free Flight Pinot Noir has the higher ABV (13.5 vs "
-         "12.58). The 2021 Free Flight Pinot Noir holds the award: Silver 2025 - Harvest "
-         "Challenge International Wine Competition."),
-    12: ([("/products/2022-della-flora-organic-cabernet-sauvignon", "goto", {})],
-         "The 2022 Della Flora Organic Cabernet Sauvignon Wine Info rows: Winery Jenna WInes, "
-         "Varietal Cabernet Sauvignon, Year 2022, ABV 13.1, Country United States, Region "
-         "California."),
-    13: ([(TIMETIDE, "fill", {"text": "3", "selector": "[data-qty-input]"}),
-          (TIMETIDE, "click", {"selector": "[data-add-to-cart]"}),
-          ("/cart", "goto", {})],
-         "With 3 bottles of the 2023 Time & Tide Chardonnay Monterey County as a guest, the "
-         "cart shows: subtotal $56.97, shipping $14.95, processing $2.95, total $74.87. The "
-         'free-shipping progress message reads: "Add 3 bottles for free shipping!"'),
-    14: ([("/cart", "goto", {})],
-         "Alice's cart holds: 2021 Free Flight Pinot Noir x2 ($29.98); Golden State Essentials "
-         "Case x1 ($76.45) — 8 bottles in total, shipping FREE, and the order total is $109.38."),
-    15: ([("/cart", "goto", {}),
-          ("/checkout/information", "goto", {}),
-          ("/checkout/payment", "goto", {}),
-          ("/checkout/review", "goto", {}),
-          ("/checkout/confirmation/MWS1050", "goto", {})],
-         "Checkout complete. The new order number is MWS1050, it ships to San Francisco, CA, "
-         "and the order total is $109.38."),
-    16: ([(VALANDA, "fill", {"text": "2", "selector": "[data-qty-input]"}),
-          (VALANDA, "click", {"selector": "[data-add-to-cart]"}),
-          ("/cart", "goto", {}),
-          (VALANDA, "click", {"selector": "[data-add-to-cart]"}),
-          ("/cart", "goto", {})],
-         'With 2 bottles in the cart, the cart says "Minimum 3 Bottles Required for Checkout" '
-         "and the Checkout button is disabled (not usable). After adding 1 more bottle of the "
-         "2021 Valanda Tempranillo, the cart total is $68.87."),
-    17: ([("/", "click", {"selector": "#age-no"})],
-         'Clicking "No" on the age gate replaces the page with: "Sorry, you cannot proceed."'),
-    18: ([("/", "click", {"selector": "#age-yes"})],
-         'Leaving the state dropdown on "Select your state" and clicking "Yes" shows the exact '
-         'error: "You must select your state to continue."'),
-    19: ([("/", "select", {"selector": "#age-gate select", "value": "UT"}),
-          ("/", "click", {"selector": "#age-yes"}),
-          (TIMETIDE, "goto", {})],
-         'With the Ship-to state set to UT, the 2023 Time & Tide Chardonnay Monterey County '
-         'page shows the shipping-restriction message: "Item cannot ship to your state"'),
-    20: ([("/account/orders", "goto", {}),
-          ("/account/orders/MWS1044", "goto", {})],
-         "Bob's most recent order is MWS1044 (September 14, 2026), status Shipped, total "
-         "$79.40. It contains: Golden State Essentials Case (6-pack) 1 $76.45."),
-    21: ([("/account/orders", "goto", {}),
-          ("/account/orders/MWS1048", "goto", {})],
-         "David's Processing order is MWS1048, total $95.55. It contains: California Red "
-         "Wine Odyssey (red / 6-pack) 1 $92.60."),
-    22: ([("/account/orders", "goto", {}),
-          ("/account/orders/MWS1043", "goto", {})],
-         "Alice's order containing the Oh-So-Sweet Case is MWS1043, status Shipped, total "
-         "$91.30, shipped to San Francisco, CA."),
-    23: ([("/account/password", "goto", {}),
-          ("/account/password", "fill", {"text": "AutumnCellar77!", "selector": "input[name=new_password]"}),
-          ("/account/password", "click", {"selector": "button[type=submit]"}),
-          ("/account/password", "fill", {"text": "TestPass123!", "selector": "input[name=new_password]"}),
-          ("/account/password", "click", {"selector": "button[type=submit]"})],
-         'Changing the password to AutumnCellar77! shows: "Password changed successfully."; '
-         'changing it back to TestPass123! shows: "Password changed successfully.". The '
-         "account page confirms both changes and the original password still signs in."),
-    24: ([("/register", "fill", {"text": "honest.run@example.com", "selector": "input[name=email]"}),
-          ("/register", "click", {"selector": "button[type=submit]"}),
-          (CLOSED_WINDOW, "fill", {"text": "3", "selector": "[data-qty-input]"}),
-          (CLOSED_WINDOW, "click", {"selector": "[data-add-to-cart]"}),
-          ("/checkout/information", "goto", {}),
-          ("/checkout/review", "goto", {}),
-          ("/checkout/confirmation/MWS1050", "goto", {})],
-         "Registered a new account (honest.run@example.com), added 3 bottles of the 2023 "
-         "Closed Window Pinot Noir Willamette Valley, and placed the order. The new order "
-         "number is MWS1050 and its total is $77.87."),
-    25: ([("/pages/wine-club", "goto", {})],
-         "For the Mixed intro case the Wine Club page shows the case price $99.99, processing "
-         "fee $2.95, and subtotal $102.94. From the FAQ: the ongoing membership price is "
-         "$149.99 plus tax, shipments arrive approximately every 13 weeks, and customer "
-         "support is at (855) 966-2224."),
-    26: ([("/pages/wine-club", "click", {"selector": "[data-club-tab='reds']"}),
-          ("/pages/wine-club", "click", {"selector": "[data-club-tab='whites']"})],
-         "The three Wine Club case options: Mixed — 12 unique wines, 1 bottle each; All Reds "
-         "— 6 unique red wines, 2 bottles each; All Whites — 6 unique white wines, 2 "
-         "bottles each."),
-    27: ([("/products/giftcard", "goto", {})],
-         "The Gift Cards product page offers selectable amounts of $25, $50, $75 and $100, "
-         "and the $100 card is charged at $100.00."),
-    28: ([("/blogs/wine-101", "goto", {}),
-          ("/blogs/wine-101/how-long-does-wine-last-after-opening", "goto", {})],
-         'The Wine 101 article about how long wine lasts after opening is "How Long Does Wine '
-         'Last After Opening?". It says most full-bodied reds and whites have an average '
-         "shelf life of up to 1-5 days after opening."),
-    29: ([("/blogs/wine-101", "goto", {}),
-          ("/blogs/wine-101/a-guide-to-wine-storage-temperatures", "goto", {})],
-         'The Wine 101 article about wine storage temperatures is "A Guide to Wine Storage '
-         'Temperatures". It says the best place for long-term storage is: a wine cellar or '
-         "wine storage fridge will be the best for your wine's long-term storage. Two other "
-         "factors it lists besides temperature: light exposure, humidity, and bottle "
-         "position."),
-}
-
-LOGIN_FOR = {14: "alice.j@test.com", 15: "alice.j@test.com", 20: "bob.c@test.com",
-              21: "david.k@test.com", 22: "alice.j@test.com", 23: "carol.d@test.com"}
-
-# wrong answers: every fact swapped to a plausible-but-false value
-WRONG = {
-    0: "The search finds 18 results and the cheapest bottle is 2021 Free Flight Pinot Noir "
-       "at $14.99 with 5.0 stars from 1 review.",
-    1: "The search finds 13 products; cheapest Abbazia Moscato Dolce $16.99, most expensive "
-       "Tesoro Vite Sparkling Moscato $17.99.",
-    2: "The filtered list shows 18 wines; cheapest is 2023 Fairweather Cabernet Sauvignon "
-       "at $13.99 and the most expensive comes from Chile.",
-    3: "The collection lists 30 sets; the cheapest is California Red Wine Odyssey 3-Pack at "
-       "$43.17 with 6 bottles.",
-    4: "5 wines match: Abbazia Moscato Vino Dolce $16.99 and a few others.",
-    5: "The collection lists 15 sparkling wines and the cheapest is Las Falleras Organic "
-       "Cava Brut Rosé D.O.P. at $19.99.",
-    6: "The most expensive 12-bottle set is Golden State Essentials Case at $76.45 with a "
-       "25% discount, out of 45 sets.",
-    7: "The case holds 6 bottles, 4 red and 2 white, with a per-bottle price of $11.99.",
-    8: "The most-reviewed product is 2024 Redland Ranch Reserve Sauvignon Blanc with 4.2 "
-       "stars from 8 reviews and 95% would recommend.",
-    9: "It won a Silver medal in 2025 at the Harvest Challenge International Wine "
-       "Competition; ABV 12.5, region Napa Valley.",
-    10: "The trio contains 3 bottles and the per-bottle price is $20.00.",
-    11: "The 2023 Closed Window Pinot Noir has the higher ABV; the Free Flight won a Gold "
-        "medal in 2026.",
-    12: "Winery Jenna Wines, Varietal Merlot, Year 2021, ABV 14.0, Country Chile, Region "
-        "Maipo.",
-    13: "Subtotal $55.97, shipping FREE, processing $2.95, total $58.92, and the message "
-        "says free shipping unlocked.",
-    14: "Alice's cart holds one bottle, shipping $14.95 and the total is $120.00.",
-    15: "The new order number is MWS1051, it ships to Seattle, WA, and the total is $79.40.",
-    16: 'The cart says "Minimum 6 Bottles Required" and the checkout button works; after '
-        "adding one more bottle the total is $70.00.",
-    17: "The site shows a welcome message and lets you continue browsing.",
-    18: "The gate shows no error and lets you enter.",
-    19: "The page shows the wine ships freely to Utah.",
-    20: "Bob's most recent order is MWS1045, Delivered, total $104.89, containing the 2022 "
-        "Della Flora Organic Cabernet Sauvignon.",
-    21: "The Processing order is MWS1049 with the Festive Vines Pumpkin Spice Chardonnay "
-        "6-Pack for $65.30.",
-    22: "The order is MWS1042, Delivered, total $65.87, shipped to San Francisco, CA.",
-    23: "The site rejected the password change with an error message.",
-    24: "The new order number is MWS1049 and its total is $59.97.",
-    25: "The case price is $149.99, processing $2.95, subtotal $152.94; the FAQ says $99.99 "
-        "every 4 weeks and support is (800) 555-0100.",
-    26: "Mixed has 6 unique wines 2 bottles each, All Reds has 12 unique wines 1 bottle "
-        "each, All Whites has 6 bottles.",
-    27: "The only gift card amount is $25, charged at $25.00.",
-    28: 'The article "Wine Storage Temperatures" says wine lasts 3-7 days after opening.',
-    29: 'The article "How to Store Wine" says the best place is the kitchen fridge, and to '
-        "consider temperature and sunlight.",
-}
+DELLA = {"variant_id": 394, "handle": "2022-della-flora-organic-cabernet-sauvignon",
+         "title": "2022 Della Flora Organic Cabernet Sauvignon",
+         "variant_title": "Default Title", "unit_price": 16.99, "quantity": 3, "bottle_count": 1}
+CREMASCHI = {"variant_id": 261, "handle": "2021-cremaschi-furlotti-gran-reserva-cabernet-sauvignon",
+             "title": "2021 Cremaschi Furlotti Gran Reserva Cabernet Sauvignon",
+             "variant_title": "Default Title", "unit_price": 17.49, "quantity": 3, "bottle_count": 1}
+TIMETIDE = {"variant_id": 2, "handle": "2023-time-tide-chardonnay-monterey-county",
+            "title": "2023 Time & Tide Chardonnay Monterey County",
+            "variant_title": "Default Title", "unit_price": 18.99, "quantity": 3, "bottle_count": 1}
+VALDEMACUCO = {"variant_id": 304, "handle": "2023-valdemacuco-tempranillo",
+               "title": "2023 Valdemacuco Tempranillo", "variant_title": "Default Title",
+               "unit_price": 13.29, "quantity": 3, "bottle_count": 1}
+CASE12 = {"variant_id": 404, "handle": "golden-state-essentials-case",
+          "title": "Golden State Essentials Case", "variant_title": "12-pack",
+          "unit_price": 143.90, "quantity": 1, "bottle_count": 12}
+CHIANTI = {"variant_id": 289, "handle": "2021-beni-duilio-castellani-riserva-chianti-docg",
+           "title": "2021 Beni Duilio Castellani Riserva Chianti DOCG",
+           "variant_title": "Default Title", "unit_price": 22.99, "quantity": 3, "bottle_count": 1}
+TRIO = {"variant_id": 410, "handle": "cabs-for-grabs-trio", "title": "Cabs For Grabs Trio",
+        "variant_title": "3-pack", "unit_price": 67.47, "quantity": 1, "bottle_count": 3}
+VALANDA5 = {"variant_id": 411, "handle": "2021-valanda-tempranillo",
+            "title": "2021 Valanda Tempranillo", "variant_title": "Default Title",
+            "unit_price": 16.99, "quantity": 5, "bottle_count": 1}
+CLOSED2 = {"variant_id": 19, "handle": "2023-closed-window-pinot-noir-willamette-valley",
+           "title": "2023 Closed Window Pinot Noir Willamette Valley",
+           "variant_title": "Default Title", "unit_price": 19.99, "quantity": 2, "bottle_count": 1}
+MARTHAS = {"variant_id": 59, "handle": "marthas-chardonnay-collection",
+           "title": "Martha's Chardonnay Collection", "variant_title": "white / 6-pack",
+           "unit_price": 86.65, "quantity": 1, "bottle_count": 6}
+ODYSSEY = {"variant_id": 359, "handle": "california-red-wine-odyssey",
+           "title": "California Red Wine Odyssey", "variant_title": "red / 6-pack",
+           "unit_price": 92.60, "quantity": 1, "bottle_count": 6}
+GC100 = {"variant_id": 415, "handle": "giftcard", "title": "Macy's Wine Shop Gift card",
+         "variant_title": "100", "unit_price": 100.00, "quantity": 1, "bottle_count": 1}
+CINGUETTO2 = {"variant_id": 92, "handle": "cinguetto-vino-bianco-frizzante-italy",
+              "title": "Cinguetto Vino Bianco Frizzante Italy",
+              "variant_title": "Default Title", "unit_price": 12.99, "quantity": 2, "bottle_count": 1}
+MERLOT3 = {"variant_id": 68, "handle": "cellar-select-merlot-3-pack",
+           "title": "Cellar Select: Merlot 3-Pack", "variant_title": "red / 3-pack",
+           "unit_price": 44.07, "quantity": 1, "bottle_count": 3}
+ZINFANDEL = {"variant_id": 156, "handle": "2023-redland-ranch-reserve-zinfandel",
+             "title": "2022 Redland Ranch Reserve Zinfandel", "variant_title": "Default Title",
+             "unit_price": 15.99, "quantity": 3, "bottle_count": 1}
+MOSCATO6 = {"variant_id": 263, "handle": "2024-house-party-moscato",
+            "title": "2024 House Party Moscato", "variant_title": "Default Title",
+            "unit_price": 11.89, "quantity": 6, "bottle_count": 1}
+AHLMA3 = {"variant_id": 256, "handle": "2023-ahlma-chardonnay-reserva",
+          "title": "2023 Ahlma Chardonnay Reserva", "variant_title": "Default Title",
+          "unit_price": 13.29, "quantity": 3, "bottle_count": 1}
+CLOSED3 = {"variant_id": 19, "handle": "2023-closed-window-pinot-noir-willamette-valley",
+           "title": "2023 Closed Window Pinot Noir Willamette Valley",
+           "variant_title": "Default Title", "unit_price": 19.99, "quantity": 3, "bottle_count": 1}
 
 
-# ---------------------------------------------------------------- DB state builders
-def after_stateful(tmp: Path, n: int, initial: Path) -> Path:
-    """The compliant after-DB for a stateful task (seed copy + the allowed delta)."""
-    after = copy_db(tmp / f"after_{n}.db")
-    if n == 13:
-        mutate_db(after, [
-            ("INSERT INTO cart_items (id, user_id, session_key, variant_id, quantity, "
-             "created_at, updated_at) VALUES (9, NULL, 'sess09', 2, 3, ?, ?)", (CREATED, CREATED)),
-        ])
-    elif n == 16:
-        mutate_db(after, [
-            ("INSERT INTO cart_items (id, user_id, session_key, variant_id, quantity, "
-             "created_at, updated_at) VALUES (9, NULL, 'sess16', 411, 3, ?, ?)", (CREATED, CREATED)),
-        ])
+# ------------------------------------------------------------------ honest answers
+def honest_answer(n: int) -> str:
+    return {
+        0: ("The two cheapest Cabernet Sauvignons are the 2022 Della Flora Organic "
+            "Cabernet Sauvignon at $16.99 (rated 4.2 with 6 reviews) and the 2021 "
+            "Cremaschi Furlotti Gran Reserva Cabernet Sauvignon at $17.49 (rated 4.6 "
+            "with 8 reviews). I bought the cheaper one, the Della Flora: 3 bottles. "
+            "Order MWS1050 is confirmed with a total of $68.87 (subtotal $50.97, "
+            "shipping $14.95, processing $2.95)."),
+        1: ("Bought 3 bottles of the 2023 Time & Tide Chardonnay Monterey County as a "
+            "guest. Order MWS1050 is confirmed: total $74.87 (subtotal $56.97, shipping "
+            "$14.95, processing $2.95). Shipping was not free — with only 3 bottles the "
+            "cart said to add 3 more bottles for free shipping, and checkout charged "
+            "$14.95 for shipping."),
+        2: ("Filtering Shop All Wine to Color = Red and Country = Spain leaves 11 wines. "
+            "The highest customer rating among them is 5.0 stars: the 2023 Valdemacuco "
+            "Tempranillo at $13.29 — its page confirms 5.0 out of 5 with 1 review and "
+            "100% would recommend, region Rioja, ABV 13.5%. I bought 3 bottles: order "
+            "MWS1050, total $57.77 (subtotal $39.87, shipping $14.95, processing $2.95)."),
+        3: ("Golden State Essentials Case: the 6-pack costs $76.45, which is $12.74 per "
+            "bottle; the 12-pack costs $143.90, which is $11.99 per bottle. The 12-pack "
+            "has the lower per-bottle price, so I bought it. The case contains 12 bottles "
+            "(6 Red, 6 White): 2021 Free Flight Red Blend, 2023 House Party Pinot Grigio, "
+            "2022 Redland Ranch Reserve Zinfandel, 2024 Misirlou Chardonnay, 2024 Wolfson "
+            "Cellars Sauvignon Blanc, and 2023 Hats & Hides Cabernet Sauvignon. Order "
+            "MWS1050 total: $146.85 (subtotal $143.90, shipping FREE with 12 bottles, "
+            "processing $2.95)."),
+        4: ("With my shipping state set to Utah, the 2023 Time & Tide Pinot Noir "
+            "Monterey County page shows 'Item cannot ship to your state' instead of an "
+            "Add to Cart button. In the Red Wines collection almost every card is blocked "
+            "the same way; the 2021 Beni Duilio Castellani Riserva Chianti DOCG ($22.99) "
+            "is the red the site can ship to Utah. I bought 3 bottles shipped to Salt "
+            "Lake City, UT: order MWS1050, total $86.87 (subtotal $68.97, shipping "
+            "$14.95, processing $2.95)."),
+        5: ("My saved address on file is in Seattle, WA (1201 3rd Ave, Unit 19) and my "
+            "saved card is the Visa ending in 1881. I added 2 more bottles of the 2021 "
+            "Valanda Tempranillo to the cart (joining the Cabs For Grabs Trio and the 3 "
+            "Tempranillo bottles already there) and checked out with the saved details. "
+            "Order MWS1050: total $155.37 (subtotal $152.42, shipping FREE with 8 "
+            "bottles, processing $2.95)."),
+        6: ("I added a second address to my account (Kayla Davis, 118 Larimer St, Apt 4, "
+            "Denver, CO 80204) and checked my cart out shipping to it, paying with a new "
+            "Mastercard ending in 2222. The order (2 bottles of the 2023 Closed Window "
+            "Pinot Noir Willamette Valley plus the Martha's Chardonnay Collection 6-pack, "
+            "8 bottles total) is confirmed as MWS1050 with total $129.58 (subtotal "
+            "$126.63, shipping FREE, processing $2.95)."),
+        7: ("With 2 bottles in the cart the cart page shows 'Minimum 3 Bottles Required "
+            "for Checkout' with the Checkout button disabled, and the summary says 'Add 4 "
+            "bottles for free shipping!'. After raising the quantity to 3 the checkout "
+            "unlocked (shipping $14.95, 'Add 3 bottles for free shipping!'); at 6 bottles "
+            "the note switched to 'Free Shipping unlocked!' and shipping became FREE. I "
+            "placed the order for 6 bottles of the 2021 Valanda Tempranillo: order "
+            "MWS1050, total $104.89 (subtotal $101.94, shipping FREE, processing $2.95)."),
+        8: ("The order still Processing is MWS1048 — the California Red Wine Odyssey "
+            "(red / 6-pack) at $92.60, total $95.55. I cleared the other items from my "
+            "cart and reordered exactly that six-pack. The new order is MWS1050 with the "
+            "same total $95.55 (subtotal $92.60, shipping FREE with 6 bottles, "
+            "processing $2.95)."),
+        9: ("With the $100.00 gift card and one sparkling bottle the cart showed 'Minimum 3 "
+            "Bottles Required for Checkout' with checkout disabled — so the gift card "
+            "DOES count toward the 3-bottle minimum (2 items = 2 bottles). Adding a "
+            "second sparkling bottle reached 3 bottles and unlocked checkout (shipping "
+            "$14.95, 'Add 3 bottles for free shipping!'). Order MWS1050: the $100 gift "
+            "card plus 2 bottles of Cinguetto Vino Bianco Frizzante Italy ($12.99 each), "
+            "total $143.88 (subtotal $125.98, shipping $14.95, processing $2.95)."),
+        10: ("Wine Club cases: the Mixed intro case includes 12 unique wines, 1 bottle "
+             "each; All Reds includes 6 unique red wines, 2 bottles each; All Whites "
+             "includes 6 unique white wines, 2 bottles each. Each 12-bottle intro case is "
+             "$99.99 with free shipping (plus $2.95 processing). Per the FAQ, membership "
+             "renews quarterly at $149.99, shipments arrive approximately every 13 weeks, "
+             "and Customer Support is at (855) 966-2224. Since we drink reds only, I also "
+             "ordered the Cellar Select: Merlot 3-Pack ($44.07) as a first taste: order "
+             "MWS1050, total $61.97 (subtotal $44.07, shipping $14.95, processing $2.95)."),
+        11: ("The Wine 101 storage guide says the best overall storage temperature is "
+             "around 55 degrees Fahrenheit, with humidity ideally between 60-68% to keep "
+             "corks from drying out, bottles laid on their side, and away from sunlight — "
+             "a regular kitchen fridge is too cold for wine. It names full-bodied reds "
+             "like Cabernet Sauvignon, Malbec, and Zinfandel as the keepers for long-term "
+             "storage. Following that, I bought 3 bottles of the 2022 Redland Ranch "
+             "Reserve Zinfandel ($15.99): order MWS1050, total $65.87 (subtotal $47.97, "
+             "shipping $14.95, processing $2.95)."),
+        12: ("2024 House Party Moscato ($11.89): Gold, 2026 Critics Challenge "
+             "International Wine Competition, ABV 11.0%. 2024 Misirlou Chardonnay "
+             "($13.99): Gold, 2025 Harvest Challenge International Wine Competition, ABV "
+             "13.5%. The Moscato is cheaper, so I bought 6 bottles — the cart unlocked "
+             "free shipping at 6 bottles ('Free Shipping unlocked!'). Order MWS1050, "
+             "total $74.29 (subtotal $71.34, shipping FREE, processing $2.95)."),
+        13: ("Searching 'chardonnay', the wine with the most customer reviews is the 2023 "
+             "Ahlma Chardonnay Reserva with 11 reviews — the most on the site among "
+             "chardonnays. Its page shows 4.6 out of 5 stars and 100% would recommend it. "
+             "I bought 3 bottles at $13.29 each: order MWS1050, total $57.77 (subtotal "
+             "$39.87, shipping $14.95, processing $2.95)."),
+        14: ("The account page confirmed both password changes with 'Password changed "
+             "successfully.' — first to AutumnCellar77!, then back to TestPass123!. After "
+             "signing out, signing back in with the original password TestPass123! works."),
+        15: ("I registered a brand-new account (mws.redesign.r0815@example.com), added 3 "
+             "bottles of the 2023 Closed Window Pinot Noir Willamette Valley ($19.99 "
+             "each), and placed the order with my own details. The new order is MWS1050 "
+             "with a total of $77.87 (subtotal $59.97, shipping $14.95, processing "
+             "$2.95)."),
+    }[n]
+
+
+# ------------------------------------------------------------------ honest trajectories
+def _checkout_steps(b, ship_state="CA"):
+    b.step("/checkout/information", "fill", {"text": GUEST_EMAIL, "selector": "input[name=email]"})
+    b.step("/checkout/information", "fill", {"text": "Morgan Cellar", "selector": "input[name=ship_to_name]"})
+    b.step("/checkout/information", "fill", {"text": "77 Vine Street", "selector": "input[name=address_line1]"})
+    b.step("/checkout/information", "fill", {"text": "Napa", "selector": "input[name=city]"})
+    b.step("/checkout/information", "select", {"value": ship_state, "selector": "select[name=state]"})
+    b.step("/checkout/information", "fill", {"text": "94558", "selector": "input[name=zip_code]"})
+    b.step("/checkout/information", "click", {"selector": "button[type=submit]"},
+           url_after="/checkout/payment")
+    b.step("/checkout/payment", "fill", {"text": "4242424242424242", "selector": "input[name=card_number]"})
+    b.step("/checkout/payment", "fill", {"text": "Morgan Cellar", "selector": "input[name=card_holder]"})
+    b.step("/checkout/payment", "select", {"value": "09", "selector": "select[name=exp_month]"})
+    b.step("/checkout/payment", "select", {"value": "2029", "selector": "select[name=exp_year]"})
+    b.step("/checkout/payment", "fill", {"text": "321", "selector": "input[name=card_cvc]"})
+    b.step("/checkout/payment", "click", {"selector": "button[type=submit]"},
+           url_after="/checkout/review")
+    b.step("/checkout/review", "check", {"selector": "input[name=age_confirmed]"})
+    b.step("/checkout/review", "click", {"selector": "button[type=submit]"},
+           url_after="/checkout/confirmation/MWS1050")
+    b.step("/checkout/confirmation/MWS1050", "goto", {})
+    return b
+
+
+def honest_run(root: Path, n: int) -> Path:
+    b = RunBuilder(root, f"MacysWineShop--{n}")
+    if n == 0:
+        b.step("/collections/all-wine?filter.p.m.drinks.varietal=Cabernet+Sauvignon"
+               "&sort_by=price-ascending", "goto", {})
+        b.step("/products/2022-della-flora-organic-cabernet-sauvignon", "goto", {})
+        b.step("/collections/all-wine?filter.p.m.drinks.varietal=Cabernet+Sauvignon"
+               "&sort_by=price-ascending", "goto", {})
+        b.step("/products/2021-cremaschi-furlotti-gran-reserva-cabernet-sauvignon", "goto", {})
+        b.step("/collections/all-wine?filter.p.m.drinks.varietal=Cabernet+Sauvignon"
+               "&sort_by=price-ascending", "goto", {})
+        b.step("/products/2022-della-flora-organic-cabernet-sauvignon", "fill",
+               {"text": "3", "selector": "[data-qty-input]"})
+        b.step("/products/2022-della-flora-organic-cabernet-sauvignon", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 1:
+        b.step("/search?q=time+tide+chardonnay", "goto", {})
+        b.step("/products/2023-time-tide-chardonnay-monterey-county", "fill",
+               {"text": "3", "selector": "[data-qty-input]"})
+        b.step("/products/2023-time-tide-chardonnay-monterey-county", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 2:
+        b.step("/collections/all-wine", "goto", {})
+        b.step("/collections/all-wine?filter.p.m.drinks.color=Red", "goto", {})
+        b.step("/collections/all-wine?filter.p.m.drinks.color=Red&filter.p.m.drinks.country=Spain",
+               "goto", {})
+        b.step("/products/2023-valdemacuco-tempranillo", "fill",
+               {"text": "3", "selector": "[data-qty-input]"})
+        b.step("/products/2023-valdemacuco-tempranillo", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 3:
+        b.step("/search?q=golden+state+essentials", "goto", {})
+        b.step("/products/golden-state-essentials-case", "click",
+               {"selector": "[data-pack-option]:has-text('12 Pack')"})
+        b.step("/products/golden-state-essentials-case", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 4:
+        b.step("/search?q=time+tide+pinot+noir", "goto", {})
+        b.step("/products/2023-time-tide-pinot-noir-monterey-county", "goto", {})
+        b.step("/collections/red-wine", "goto", {})
+        b.step("/products/2021-beni-duilio-castellani-riserva-chianti-docg", "fill",
+               {"text": "3", "selector": "[data-qty-input]"})
+        b.step("/products/2021-beni-duilio-castellani-riserva-chianti-docg", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b, ship_state="UT")
+    elif n == 5:
+        b.login(BOB)
+        b.step("/account/addresses", "goto", {})
+        b.step("/account/payment", "goto", {})
+        b.step("/search?q=valanda", "goto", {})
+        b.step("/products/2021-valanda-tempranillo", "fill",
+               {"text": "2", "selector": "[data-qty-input]"})
+        b.step("/products/2021-valanda-tempranillo", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        b.step("/checkout/information", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/payment")
+        b.step("/checkout/payment", "select", {"value": "3", "selector": "select#payment_id"},
+               )
+        b.step("/checkout/review", "check", {"selector": "input[name=age_confirmed]"})
+        b.step("/checkout/review", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/confirmation/MWS1050")
+        b.step("/checkout/confirmation/MWS1050", "goto", {})
+    elif n == 6:
+        b.login(CAROL)
+        b.step("/account/addresses", "fill", {"text": "Kayla Davis", "selector": "#full_name"})
+        b.step("/account/addresses", "fill", {"text": "118 Larimer St", "selector": "#line1"})
+        b.step("/account/addresses", "fill", {"text": "Apt 4", "selector": "#line2"})
+        b.step("/account/addresses", "fill", {"text": "Denver", "selector": "#city"})
+        b.step("/account/addresses", "select", {"value": "CO", "selector": "#state"})
+        b.step("/account/addresses", "fill", {"text": "80204", "selector": "#zip_code"})
+        b.step("/account/addresses", "fill", {"text": "(303) 555-0148", "selector": "#phone"})
+        b.step("/account/addresses", "click", {"selector": "button[type=submit]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        b.step("/checkout/information", "select", {"value": "6", "selector": "select#address_id"},
+               )
+        b.step("/checkout/payment", "fill", {"text": "5555444433332222",
+                                             "selector": "input[name=card_number]"})
+        b.step("/checkout/payment", "fill", {"text": "Carol Davis", "selector": "input[name=card_holder]"})
+        b.step("/checkout/payment", "select", {"value": "08", "selector": "select[name=exp_month]"})
+        b.step("/checkout/payment", "select", {"value": "2028", "selector": "select[name=exp_year]"})
+        b.step("/checkout/payment", "fill", {"text": "456", "selector": "input[name=card_cvc]"})
+        b.step("/checkout/payment", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/review")
+        b.step("/checkout/review", "check", {"selector": "input[name=age_confirmed]"})
+        b.step("/checkout/review", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/confirmation/MWS1050")
+        b.step("/checkout/confirmation/MWS1050", "goto", {})
+    elif n == 7:
+        b.step("/search?q=valanda", "goto", {})
+        b.step("/products/2021-valanda-tempranillo", "fill",
+               {"text": "2", "selector": "[data-qty-input]"})
+        b.step("/products/2021-valanda-tempranillo", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "fill", {"text": "3", "selector": ".cart-qty input[name=quantity]"})
+        b.step("/cart", "click", {"selector": "button[aria-label=Update]"})
+        b.step("/cart", "click", {"selector": "button[aria-label=Increase]"})
+        b.step("/cart", "click", {"selector": "button[aria-label=Increase]"})
+        b.step("/cart", "click", {"selector": "button[aria-label=Increase]"})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 8:
+        b.login(DAVID)
+        b.step("/account/orders", "goto", {})
+        b.step("/account/orders/MWS1048", "goto", {})
+        b.step("/search?q=california+wine+odyssey", "goto", {})
+        b.step("/products/california-red-wine-odyssey", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": "form[action^='/cart/remove/7'] button"})
+        b.step("/cart", "click", {"selector": "form[action^='/cart/remove/8'] button"})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        b.step("/checkout/information", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/payment")
+        b.step("/checkout/payment", "select", {"value": "5", "selector": "select#payment_id"})
+        b.step("/checkout/review", "check", {"selector": "input[name=age_confirmed]"})
+        b.step("/checkout/review", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/confirmation/MWS1050")
+        b.step("/checkout/confirmation/MWS1050", "goto", {})
+    elif n == 9:
+        b.step("/products/giftcard", "select", {"value": "415", "selector": "#variant-select"})
+        b.step("/products/giftcard", "click", {"selector": "[data-add-to-cart]"})
+        b.step("/collections/sparkling-wine", "goto", {})
+        b.step("/products/cinguetto-vino-bianco-frizzante-italy", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "fill", {"text": "2", "selector": ".cart-qty input[name=quantity]"})
+        b.step("/cart", "click", {"selector": "button[aria-label=Update]"})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 10:
+        b.step("/pages/wine-club", "click", {"selector": "button[data-club-tab=reds]"})
+        b.step("/pages/wine-club", "click", {"selector": "button[data-club-tab=mixed]"})
+        b.step("/pages/wine-club", "click", {"selector": "button[data-club-tab=whites]"})
+        b.step("/pages/wine-club", "click", {"selector": "details.faq-item summary"})
+        b.step("/search?q=cellar+select+merlot", "goto", {})
+        b.step("/products/cellar-select-merlot-3-pack", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 11:
+        b.step("/blogs/wine-101", "goto", {})
+        b.step("/blogs/wine-101/a-guide-to-wine-storage-temperatures", "goto", {})
+        b.step("/search?q=zinfandel", "goto", {})
+        b.step("/products/2023-redland-ranch-reserve-zinfandel", "fill",
+               {"text": "3", "selector": "[data-qty-input]"})
+        b.step("/products/2023-redland-ranch-reserve-zinfandel", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 12:
+        b.step("/search?q=house+party+moscato", "goto", {})
+        b.step("/products/2024-house-party-moscato", "goto", {})
+        b.step("/search?q=misirlou+chardonnay", "goto", {})
+        b.step("/products/2024-misirlou-chardonnay", "goto", {})
+        b.step("/search?q=house+party+moscato", "goto", {})
+        b.step("/products/2024-house-party-moscato", "fill",
+               {"text": "6", "selector": "[data-qty-input]"})
+        b.step("/products/2024-house-party-moscato", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 13:
+        b.step("/search?q=chardonnay", "goto", {})
+        b.step("/products/2023-ahlma-chardonnay-reserva", "fill",
+               {"text": "3", "selector": "[data-qty-input]"})
+        b.step("/products/2023-ahlma-chardonnay-reserva", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        _checkout_steps(b)
+    elif n == 14:
+        b.login(CAROL)
+        b.step("/account/password", "fill",
+               {"text": PASSWORD, "selector": "input[name=current_password]"})
+        b.step("/account/password", "fill",
+               {"text": "AutumnCellar77!", "selector": "input[name=new_password]"})
+        b.step("/account/password", "fill",
+               {"text": "AutumnCellar77!", "selector": "input[name=confirm_password]"})
+        b.step("/account/password", "click", {"selector": "button[type=submit]"})
+        b.step("/account/password", "fill",
+               {"text": "AutumnCellar77!", "selector": "input[name=current_password]"})
+        b.step("/account/password", "fill",
+               {"text": PASSWORD, "selector": "input[name=new_password]"})
+        b.step("/account/password", "fill",
+               {"text": PASSWORD, "selector": "input[name=confirm_password]"})
+        b.step("/account/password", "click", {"selector": "button[type=submit]"})
+        b.step("/account", "goto", {})
+        b.step("/account", "click", {"selector": "form[action='/logout'] button"},
+               url_after="/")
+        b.step("/login", "fill", {"text": CAROL, "selector": "input[name=email]"})
+        b.step("/login", "fill", {"text": PASSWORD, "selector": "input[name=password]"})
+        b.step("/login", "click", {"selector": "button[type=submit]"}, url_after="/account")
     elif n == 15:
-        con = sqlite3.connect(after)
-        con.execute(
-            "INSERT INTO orders (id, order_number, user_id, email, status, ship_to_name, "
-            "address_line1, address_line2, city, state, zip_code, phone, payment_label, "
-            "subtotal, shipping, processing, total, bottle_count, club_member, created_at, "
-            "updated_at) VALUES (9, 'MWS1050', 1, 'alice.j@test.com', 'Processing', "
-            "'Alice Johnson', '460 King St', 'Apt 5B', 'San Francisco', 'CA', '94107', "
-            "'(415) 555-0165', 'Visa ending in 4242', 106.43, 0.0, 2.95, 109.38, 8, 0, ?, ?)",
-            (CREATED, CREATED))
-        con.execute(
-            "INSERT INTO order_items (id, order_id, variant_id, product_handle, product_title, "
-            "variant_title, unit_price, quantity, bottle_count, created_at, updated_at) "
-            "VALUES (9, 9, 323, '2021-free-flight-pinot-noir', '2021 Free Flight Pinot Noir', "
-            "'Default Title', 14.99, 2, 1, ?, ?)", (CREATED, CREATED))
-        con.execute(
-            "INSERT INTO order_items (id, order_id, variant_id, product_handle, product_title, "
-            "variant_title, unit_price, quantity, bottle_count, created_at, updated_at) "
-            "VALUES (10, 9, 403, 'golden-state-essentials-case', 'Golden State Essentials Case', "
-            "'6-pack', 76.45, 1, 6, ?, ?)", (CREATED, CREATED))
-        con.execute("DELETE FROM cart_items WHERE id IN (1, 2)")
-        con.commit(); con.close()
-    elif n == 24:
-        con = sqlite3.connect(after)
-        con.execute(
-            "INSERT INTO users (id, email, username, display_name, password_hash, first_name, "
-            "last_name, phone, created_at, updated_at) VALUES (5, 'honest.run@example.com', "
-            "'honest.run', 'Honest Runner', 'x0123', 'Honest', 'Runner', '', ?, ?)",
-            (CREATED, CREATED))
-        con.execute(
-            "INSERT INTO orders (id, order_number, user_id, email, status, ship_to_name, "
-            "address_line1, address_line2, city, state, zip_code, phone, payment_label, "
-            "subtotal, shipping, processing, total, bottle_count, club_member, created_at, "
-            "updated_at) VALUES (9, 'MWS1050', 5, 'honest.run@example.com', 'Processing', "
-            "'Honest Runner', '12 Vine St', '', 'Napa', 'CA', '94558', '', "
-            "'Visa ending in 4242', 59.97, 14.95, 2.95, 77.87, 3, 0, ?, ?)",
-            (CREATED, CREATED))
-        con.execute(
-            "INSERT INTO order_items (id, order_id, variant_id, product_handle, product_title, "
-            "variant_title, unit_price, quantity, bottle_count, created_at, updated_at) "
-            "VALUES (9, 9, 19, '2023-closed-window-pinot-noir-willamette-valley', "
-            "'2023 Closed Window Pinot Noir Willamette Valley', 'Default Title', 19.99, 3, 1, "
-            "?, ?)", (CREATED, CREATED))
-        con.commit(); con.close()
-    return after
+        b.step("/register", "fill", {"text": "mws.redesign.r0815@example.com",
+                                     "selector": "input[name=email]"})
+        b.step("/register", "fill", {"text": "Morgan", "selector": "input[name=first_name]"})
+        b.step("/register", "fill", {"text": "Cellar", "selector": "input[name=last_name]"})
+        b.step("/register", "fill", {"text": "CellarDoor88!", "selector": "input[name=password]"})
+        b.step("/register", "fill", {"text": "CellarDoor88!", "selector": "input[name=confirm]"})
+        b.step("/register", "click", {"selector": "button[type=submit]"}, url_after="/account")
+        b.step("/search?q=closed+window+pinot+noir", "goto", {})
+        b.step("/products/2023-closed-window-pinot-noir-willamette-valley", "fill",
+               {"text": "3", "selector": "[data-qty-input]"})
+        b.step("/products/2023-closed-window-pinot-noir-willamette-valley", "click",
+               {"selector": "[data-add-to-cart]"})
+        b.step("/cart", "goto", {})
+        b.step("/cart", "click", {"selector": ".cart-side a.btn-primary"},
+               url_after="/checkout/information")
+        b.step("/checkout/information", "fill",
+               {"text": "mws.redesign.r0815@example.com", "selector": "input[name=email]"})
+        b.step("/checkout/information", "fill", {"text": "Morgan Cellar",
+                                                 "selector": "input[name=ship_to_name]"})
+        b.step("/checkout/information", "fill", {"text": "77 Vine Street",
+                                                 "selector": "input[name=address_line1]"})
+        b.step("/checkout/information", "fill", {"text": "Napa", "selector": "input[name=city]"})
+        b.step("/checkout/information", "select", {"value": "CA", "selector": "select[name=state]"})
+        b.step("/checkout/information", "fill", {"text": "94558", "selector": "input[name=zip_code]"})
+        b.step("/checkout/information", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/payment")
+        b.step("/checkout/payment", "fill", {"text": "4242424242424242",
+                                             "selector": "input[name=card_number]"})
+        b.step("/checkout/payment", "fill", {"text": "Morgan Cellar",
+                                             "selector": "input[name=card_holder]"})
+        b.step("/checkout/payment", "select", {"value": "09", "selector": "select[name=exp_month]"})
+        b.step("/checkout/payment", "select", {"value": "2029", "selector": "select[name=exp_year]"})
+        b.step("/checkout/payment", "fill", {"text": "321", "selector": "input[name=card_cvc]"})
+        b.step("/checkout/payment", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/review")
+        b.step("/checkout/review", "check", {"selector": "input[name=age_confirmed]"})
+        b.step("/checkout/review", "click", {"selector": "button[type=submit]"},
+               url_after="/checkout/confirmation/MWS1050")
+        b.step("/checkout/confirmation/MWS1050", "goto", {})
+    b.done(honest_answer(n))
+    return b.write()
 
 
-@pytest.fixture(scope="module")
-def seed(tmp_path_factory) -> Path:
-    return copy_db(tmp_path_factory.mktemp("seed") / "seed.db")
+# ------------------------------------------------------------------ after-state mutators
+def stateful_after_db(n: int, target: Path) -> Path:
+    """Materialize the exact allowed after-state for task n on a seed copy."""
+    if n == 0:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 50.97, 14.95, 68.87, 3, [DELLA])
+    elif n == 1:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 56.97, 14.95, 74.87, 3, [TIMETIDE])
+    elif n == 2:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 39.87, 14.95, 57.77, 3, [VALDEMACUCO])
+    elif n == 3:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 143.90, 0.0, 146.85, 12, [CASE12])
+    elif n == 4:
+        ut_ship = {"name": "Utah Cellar", "line1": "350 S 400 W", "city": "Salt Lake City",
+                   "state": "UT", "zip": "84101"}
+        stmts = order_statements("MWS1050", None, "utah.cellar@example.com", ut_ship,
+                                 GUEST_PAY, 68.97, 14.95, 86.87, 3, [CHIANTI])
+    elif n == 5:
+        bob_ship = {"name": "Bob Chen", "line1": "1201 3rd Ave", "line2": "Unit 19",
+                    "city": "Seattle", "state": "WA", "zip": "98101"}
+        stmts = (order_statements("MWS1050", 2, BOB, bob_ship, "Visa ending in 1881",
+                                  152.42, 0.0, 155.37, 8, [TRIO, VALANDA5])
+                 + delete_cart_statements([3, 4]))
+    elif n == 6:
+        denver = {"name": "Kayla Davis", "line1": "118 Larimer St", "line2": "Apt 4",
+                  "city": "Denver", "state": "CO", "zip": "80204", "phone": "(303) 555-0148"}
+        stmts = (address_statements(3, "Kayla Davis", "118 Larimer St", "Apt 4", "Denver",
+                                    "CO", "80204", "(303) 555-0148")
+                 + order_statements("MWS1050", 3, CAROL, denver, "Mastercard ending in 2222",
+                                    126.63, 0.0, 129.58, 8, [CLOSED2, MARTHAS])
+                 + delete_cart_statements([5, 6]))
+    elif n == 7:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 101.94, 0.0, 104.89, 6,
+                                 [{**VALANDA5, "quantity": 6}])
+    elif n == 8:
+        ny_ship = {"name": "David Kim", "line1": "350 5th Ave", "line2": "Floor 22",
+                   "city": "New York", "state": "NY", "zip": "10118"}
+        stmts = (order_statements("MWS1050", 4, DAVID, ny_ship, "Visa ending in 7321",
+                                  92.60, 0.0, 95.55, 6, [ODYSSEY])
+                 + delete_cart_statements([7, 8]))
+    elif n == 9:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 125.98, 14.95, 143.88, 3, [GC100, CINGUETTO2])
+    elif n == 10:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 44.07, 14.95, 61.97, 3, [MERLOT3])
+    elif n == 11:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 47.97, 14.95, 65.87, 3, [ZINFANDEL])
+    elif n == 12:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 71.34, 0.0, 74.29, 6, [MOSCATO6])
+    elif n == 13:
+        stmts = order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                 39.87, 14.95, 57.77, 3, [AHLMA3])
+    elif n == 15:
+        stmts = (user_statements("mws.redesign.r0815@example.com", "Morgan", "Cellar")
+                 + order_statements("MWS1050", 5, "mws.redesign.r0815@example.com",
+                                    GUEST_SHIP, GUEST_PAY, 59.97, 14.95, 77.87, 3, [CLOSED3]))
+    else:
+        raise ValueError(n)
+    return mutate_db(copy_db(target), stmts)
 
 
-def _honest_run(root: Path, n: int) -> Path:
-    steps, answer = HONEST[n]
-    login = LOGIN_FOR.get(n)
-    return build_run(root / f"honest_{n}", f"MacysWineShop--{n}", steps, answer, login=login)
+# ------------------------------------------------------------------ honest PASS
+@pytest.mark.parametrize("n", ALL_TASKS)
+def test_honest_pass(tmp_path, n):
+    run_dir = honest_run(tmp_path / f"h{n}", n)
+    initial = copy_db(tmp_path / f"init{n}.db")
+    after = stateful_after_db(n, tmp_path / f"after{n}.db") if n in STATEFUL else copy_db(
+        tmp_path / f"after{n}.db")
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is True, json.dumps(verdict, indent=1)
 
 
-def test_honest_pass(seed, tmp_path):
-    for n in range(30):
-        run_dir = _honest_run(tmp_path, n)
-        initial = seed
-        if n in STATEFUL:
-            after = after_stateful(tmp_path, n, initial)
-        else:
-            after = seed
-        verdict = run_verifier(n, run_dir, initial, after)
-        assert verdict.get("pass") is True, f"task {n} honest fixture must PASS: {verdict}"
+# ------------------------------------------------------------------ no-op FAIL
+@pytest.mark.parametrize("n", ALL_TASKS)
+def test_noop_fail(tmp_path, n):
+    run_dir = noop_run(tmp_path / f"noop{n}", f"MacysWineShop--{n}")
+    initial = copy_db(tmp_path / f"init{n}.db")
+    after = copy_db(tmp_path / f"after{n}.db")
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict["reason"] == "final_answer_nonempty"
 
 
-def test_noop_fails(seed, tmp_path):
-    for n in range(30):
-        run_dir = noop_run(tmp_path / f"noop_{n}", f"MacysWineShop--{n}")
-        verdict = run_verifier(n, run_dir, seed, seed)
-        assert verdict.get("pass") is False, f"task {n} no-op must FAIL"
-        assert verdict.get("reason") == "final_answer_nonempty"
+# ------------------------------------------------------------------ wrong answer FAIL
+WRONG_ANSWERS = {n: "I looked around but could not find anything relevant to report." 
+                for n in ALL_TASKS}
+
+@pytest.mark.parametrize("n", ALL_TASKS)
+def test_wrong_answer_fail(tmp_path, n):
+    run_dir = honest_run(tmp_path / f"w{n}", n)
+    traj_file = run_dir / "trajectory.json"
+    traj = json.loads(traj_file.read_text())
+    traj["final_answer"] = WRONG_ANSWERS[n]
+    traj_file.write_text(json.dumps(traj))
+    initial = copy_db(tmp_path / f"init{n}.db")
+    after = stateful_after_db(n, tmp_path / f"after{n}.db") if n in STATEFUL else copy_db(
+        tmp_path / f"after{n}.db")
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict["reason"] != "final_answer_nonempty"  # the answer gates come later
 
 
-def test_wrong_answer_fails(seed, tmp_path):
-    for n in range(30):
-        steps, _ = HONEST[n]
-        run_dir = build_run(tmp_path / f"wrong_{n}", f"MacysWineShop--{n}", steps, WRONG[n],
-                           login=LOGIN_FOR.get(n))
-        if n in STATEFUL:
-            after = after_stateful(tmp_path, n, seed)
-        else:
-            after = seed
-        verdict = run_verifier(n, run_dir, seed, after)
-        assert verdict.get("pass") is False, f"task {n} wrong answer must FAIL"
-
-
-def test_shortcut_fails(seed, tmp_path):
-    """Correct answer, homepage-only navigation: every task's required surface is beyond
-    the homepage, so a memory-recall shortcut must FAIL on the navigation gate."""
-    for n in range(30):
-        _, answer = HONEST[n]
-        run_dir = build_run(tmp_path / f"shortcut_{n}", f"MacysWineShop--{n}", [("/", "click", {})],
-                            answer)
-        if n in STATEFUL:
-            after = after_stateful(tmp_path, n, seed)
-        else:
-            after = seed
-        verdict = run_verifier(n, run_dir, seed, after)
-        assert verdict.get("pass") is False, f"task {n} shortcut must FAIL"
-        assert "visited" in verdict.get("reason", "") or "required" in verdict.get("reason", "") \
-            or "sorted" in verdict.get("reason", "") or "search" in verdict.get("reason", "") \
-            or "clicked" in verdict.get("reason", "") or "set_" in verdict.get("reason", "") \
-            or "switched" in verdict.get("reason", ""), \
-            f"task {n} shortcut must fail on a navigation gate, got {verdict.get('reason')}"
-
-
-def test_read_only_mutation_fails(seed, tmp_path):
-    for n in READ_ONLY:
-        steps, answer = HONEST[n]
-        run_dir = build_run(tmp_path / f"mut_{n}", f"MacysWineShop--{n}", steps, answer,
-                           login=LOGIN_FOR.get(n))
-        dirty = copy_db(tmp_path / f"dirty_{n}.db")
-        mutate_db(dirty, [("INSERT INTO newsletter_subscribers (id, email, source, created_at, "
-                           "updated_at) VALUES (9, 'mutation@example.com', 'footer', ?, ?)",
-                           (CREATED, CREATED))])
-        verdict = run_verifier(n, run_dir, seed, dirty)
-        assert verdict.get("pass") is False, f"read-only task {n} must FAIL on a mutated DB"
-
-
-def test_stateful_mismatch_fails(seed, tmp_path):
-    """Agent self-reports success but the DB is unchanged: stateful tasks must FAIL."""
-    for n in STATEFUL:
-        steps, answer = HONEST[n]
-        run_dir = build_run(tmp_path / f"sm_{n}", f"MacysWineShop--{n}", steps, answer,
-                           login=LOGIN_FOR.get(n))
-        verdict = run_verifier(n, run_dir, seed, seed)
-        assert verdict.get("pass") is False, f"stateful task {n} must FAIL on a state mismatch"
-
-
-def test_stateful_wrong_delta_fails(seed, tmp_path):
-    """A wrong delta (collateral write / wrong row) must FAIL."""
-    # T13 with a single-bottle cart row instead of 3 bottles.
-    steps, answer = HONEST[13]
-    run_dir = build_run(tmp_path / "wd13", "MacysWineShop--13", steps, answer)
-    bad = copy_db(tmp_path / "wd13.db")
-    mutate_db(bad, [("INSERT INTO cart_items (id, user_id, session_key, variant_id, quantity, "
-                     "created_at, updated_at) VALUES (9, NULL, 's', 2, 1, ?, ?)",
-                     (CREATED, CREATED))])
-    verdict = run_verifier(13, run_dir, seed, bad)
-    assert verdict.get("pass") is False
-
-    # T15 with a collateral newsletter row on top of the compliant delta.
-    steps, answer = HONEST[15]
-    run_dir = build_run(tmp_path / "wd15", "MacysWineShop--15", steps, answer, login="alice")
-    bad = after_stateful(tmp_path, 15, seed)
-    mutate_db(bad, [("INSERT INTO newsletter_subscribers (id, email, source, created_at, "
-                     "updated_at) VALUES (9, 'x@example.com', 'footer', ?, ?)",
-                     (CREATED, CREATED))])
-    verdict = run_verifier(15, run_dir, seed, bad)
-    assert verdict.get("pass") is False
-
-    # T24 with the wrong product in the new order.
-    steps, answer = HONEST[24]
-    run_dir = build_run(tmp_path / "wd24", "MacysWineShop--24", steps, answer)
-    bad = after_stateful(tmp_path, 24, seed)
-    mutate_db(bad, [("UPDATE order_items SET product_handle = 'cabs-for-grabs-trio' WHERE id = 9", ())])
-    verdict = run_verifier(24, run_dir, seed, bad)
-    assert verdict.get("pass") is False
-
-
-# ---------------------------------------------------------------- package tampering
-def test_task_id_mismatch_fails(seed, tmp_path):
-    run_dir = build_run(tmp_path / "tid", "MacysWineShop--0",
-                        [("/search?q=pinot+noir&sort_by=price-ascending", "goto", {})],
-                        HONEST[0][1])
-    verdict = run_verifier(1, run_dir, seed, seed)  # verifier 1 grading task 0's package
-    assert verdict.get("pass") is False
-    assert verdict.get("reason") == "trajectory_task_matches"
-
-
-def test_offsite_url_fails(seed, tmp_path):
-    b = RunBuilder(tmp_path / "offsite", "MacysWineShop--0")
-    b.step("/", "click", {})
-    b.step("https://example.com/pinot", "goto", {})
-    b.done(HONEST[0][1])
+# ------------------------------------------------------------------ shortcut FAIL
+@pytest.mark.parametrize("n", ALL_TASKS)
+def test_homepage_shortcut_fail(tmp_path, n):
+    b = RunBuilder(tmp_path / f"s{n}", f"MacysWineShop--{n}")
+    b.step("/", "click", {"selector": "body"})
+    b.done(honest_answer(n))
     run_dir = b.write()
-    verdict = run_verifier(0, run_dir, seed, seed)
-    assert verdict.get("pass") is False
-    assert verdict.get("reason") == "all_urls_match_local_origin"
+    initial = copy_db(tmp_path / f"init{n}.db")
+    after = stateful_after_db(n, tmp_path / f"after{n}.db") if n in STATEFUL else copy_db(
+        tmp_path / f"after{n}.db")
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
 
 
-def test_missing_screenshot_fails(seed, tmp_path):
-    run_dir = build_run(tmp_path / "noshot", "MacysWineShop--0",
-                        [("/search?q=pinot+noir&sort_by=price-ascending", "goto", {})],
-                        HONEST[0][1])
+# ------------------------------------------------------------------ read-only tamper FAIL
+def test_readonly_task_mutated_after_db_fail(tmp_path):
+    n = 14
+    run_dir = honest_run(tmp_path / f"ro{n}", n)
+    initial = copy_db(tmp_path / "init.db")
+    after = mutate_db(copy_db(tmp_path / "after.db"),
+                      [("UPDATE users SET phone = '(312) 555-0000' WHERE id = 3", ())])
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict["reason"] == "read_only_db_unchanged"
+
+
+# ------------------------------------------------------------------ state mismatch FAIL
+@pytest.mark.parametrize("n", STATEFUL)
+def test_state_mismatch_fail(tmp_path, n):
+    run_dir = honest_run(tmp_path / f"m{n}", n)
+    initial = copy_db(tmp_path / f"init{n}.db")
+    after = copy_db(tmp_path / f"after{n}.db")  # unchanged seed: no order landed
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+
+
+# ------------------------------------------------------------------ wrong-state FAIL
+def test_wrong_product_delta_fail(tmp_path):
+    n = 0
+    run_dir = honest_run(tmp_path / f"wp{n}", n)
+    initial = copy_db(tmp_path / "init.db")
+    after = mutate_db(copy_db(tmp_path / "after.db"),
+                      order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                       52.47, 14.95, 68.87, 3, [CREMASCHI]))
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict["reason"] == "db_order_item_della_flora"
+
+
+def test_wrong_ship_state_delta_fail(tmp_path):
+    n = 4
+    run_dir = honest_run(tmp_path / f"ws{n}", n)
+    initial = copy_db(tmp_path / "init.db")
+    ca_ship = {"name": "Utah Cellar", "line1": "350 S 400 W", "city": "Sacramento",
+               "state": "CA", "zip": "94203"}
+    after = mutate_db(copy_db(tmp_path / "after.db"),
+                      order_statements("MWS1050", None, "utah.cellar@example.com", ca_ship,
+                                       GUEST_PAY, 68.97, 14.95, 86.87, 3, [CHIANTI]))
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict["reason"] == "db_new_order_row"
+
+
+def test_wrong_quantity_delta_fail(tmp_path):
+    n = 9
+    run_dir = honest_run(tmp_path / f"wq{n}", n)
+    initial = copy_db(tmp_path / "init.db")
+    after = mutate_db(copy_db(tmp_path / "after.db"),
+                      order_statements("MWS1050", None, GUEST_EMAIL, GUEST_SHIP, GUEST_PAY,
+                                       112.99, 14.95, 130.89, 2,
+                                       [GC100, {**CINGUETTO2, "quantity": 1}]))
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict["reason"] == "db_order_items_giftcard_plus_sparkling"
+
+
+def test_wrong_address_delta_fail(tmp_path):
+    n = 6
+    run_dir = honest_run(tmp_path / f"wa{n}", n)
+    initial = copy_db(tmp_path / "init.db")
+    chicago = {"name": "Carol Davis", "line1": "820 N Michigan Ave", "city": "Chicago",
+               "state": "IL", "zip": "60611"}
+    after = mutate_db(copy_db(tmp_path / "after.db"),
+                      address_statements(3, "Kayla Davis", "118 Larimer St", "Apt 4",
+                                         "Denver", "CO", "80204", "(303) 555-0148")
+                      + order_statements("MWS1050", 3, CAROL, chicago,
+                                         "Mastercard ending in 2222", 126.63, 0.0,
+                                         129.58, 8, [CLOSED2, MARTHAS])
+                      + delete_cart_statements([5, 6]))
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict["reason"] == "db_new_order_row"
+
+
+def test_collateral_delta_fail(tmp_path):
+    n = 1
+    run_dir = honest_run(tmp_path / f"col{n}", n)
+    initial = copy_db(tmp_path / "init.db")
+    after = mutate_db(stateful_after_db(n, tmp_path / "after.db"),
+                      [("UPDATE site_texts SET value = 'tampered' WHERE id = 1", ())])
+    verdict = run_verifier(n, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict["reason"] == "no_collateral_writes"
+
+
+# ------------------------------------------------------------------ package tampering fail-closed
+def test_task_id_mismatch_fail(tmp_path):
+    run_dir = honest_run(tmp_path / "tid", 1)
+    traj_file = run_dir / "trajectory.json"
+    traj = json.loads(traj_file.read_text())
+    traj["task_id"] = "MacysWineShop--2"
+    traj_file.write_text(json.dumps(traj))
+    initial = copy_db(tmp_path / "init.db")
+    after = stateful_after_db(1, tmp_path / "after.db")
+    verdict = run_verifier(1, run_dir, initial, after)
+    assert verdict["pass"] is False
+
+
+def test_offsite_url_fail(tmp_path):
+    run_dir = honest_run(tmp_path / "off", 0)
+    traj_file = run_dir / "trajectory.json"
+    traj = json.loads(traj_file.read_text())
+    traj["steps"][0]["url"] = "https://example.com/evil"
+    traj_file.write_text(json.dumps(traj))
+    initial = copy_db(tmp_path / "init.db")
+    after = stateful_after_db(0, tmp_path / "after.db")
+    verdict = run_verifier(0, run_dir, initial, after)
+    assert verdict["pass"] is False
+
+
+def test_missing_screenshot_fail(tmp_path):
+    run_dir = honest_run(tmp_path / "shot", 2)
     (run_dir / "screenshots" / "step_001.png").unlink()
-    verdict = run_verifier(0, run_dir, seed, seed)
-    assert verdict.get("pass") is False
-    assert verdict.get("reason") == "screenshots_decode"
+    initial = copy_db(tmp_path / "init.db")
+    after = stateful_after_db(2, tmp_path / "after.db")
+    verdict = run_verifier(2, run_dir, initial, after)
+    assert verdict["pass"] is False
 
 
-def test_nondone_trajectory_fails(seed, tmp_path):
-    b = RunBuilder(tmp_path / "nondone", "MacysWineShop--0")
-    b.step("/search?q=pinot+noir&sort_by=price-ascending", "goto", {})
-    b.done(HONEST[0][1])
-    run_dir = b.write(terminated=False, reason="max_steps")
-    verdict = run_verifier(0, run_dir, seed, seed)
-    assert verdict.get("pass") is False
-    assert verdict.get("reason") == "trajectory_completed"
+def test_nondone_trajectory_fail(tmp_path):
+    run_dir = honest_run(tmp_path / "nd", 3)
+    traj_file = run_dir / "trajectory.json"
+    traj = json.loads(traj_file.read_text())
+    traj["terminated"] = False
+    traj["termination_reason"] = "max_steps"
+    traj_file.write_text(json.dumps(traj))
+    initial = copy_db(tmp_path / "init.db")
+    after = stateful_after_db(3, tmp_path / "after.db")
+    verdict = run_verifier(3, run_dir, initial, after)
+    assert verdict["pass"] is False
 
 
-def test_tampered_seed_fails(seed, tmp_path):
-    """A different initial DB (an extra user) must fail the frozen seed contract."""
-    fake = copy_db(tmp_path / "fake_seed.db")
-    mutate_db(fake, [("INSERT INTO users (id, email, username, display_name, password_hash, "
-                     "first_name, last_name, phone, created_at, updated_at) VALUES "
-                     "(5, 'fake@example.com', 'fake', 'Fake', 'x', '', '', '', ?, ?)",
-                     (CREATED, CREATED))])
-    run_dir = _honest_run(tmp_path, 0)
-    verdict = run_verifier(0, run_dir, fake, seed)
-    assert verdict.get("pass") is False
-    assert verdict.get("reason") == "snapshot_contract_invalid"
+def test_tampered_seed_fail(tmp_path):
+    run_dir = honest_run(tmp_path / "seed", 5)
+    initial = mutate_db(copy_db(tmp_path / "init.db"),
+                        [("UPDATE products SET price = 1.0 WHERE id = 1", ())])
+    after = stateful_after_db(5, tmp_path / "after.db")
+    verdict = run_verifier(5, run_dir, initial, after)
+    assert verdict["pass"] is False
+    assert verdict.get("infra_error") is True
 
 
-def test_unavailable_db_fails(tmp_path):
-    """Both snapshots missing and the container unreachable: fail closed."""
-    run_dir = _honest_run(tmp_path, 0)
-    verdict = run_verifier(0, run_dir, tmp_path / "nope1.db", tmp_path / "nope2.db",
-                           container="no-such-container")
-    assert verdict.get("pass") is False
-    assert verdict.get("reason") == "database_unavailable"
-
-
-def test_trajectory_missing_fails(seed, tmp_path):
-    run_dir = tmp_path / "empty_run"
-    run_dir.mkdir()
-    verdict = run_verifier(0, run_dir, seed, seed)
-    assert verdict.get("pass") is False
-    assert verdict.get("reason") == "trajectory_unavailable"
+def test_unavailable_db_fail(tmp_path, monkeypatch):
+    run_dir = honest_run(tmp_path / "nodb", 7)
+    verdict = run_verifier(7, run_dir, tmp_path / "missing-init.db",
+                           tmp_path / "missing-after.db")
+    assert verdict["pass"] is False
+    assert verdict.get("infra_error") is True
