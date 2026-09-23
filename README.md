@@ -93,6 +93,7 @@ All registered websites and their default ports, in registration order from left
 | America’s Health Rankings | 40066 | American Express | 40067 | Carnival Cruise | 40068 |
 | CA.gov | 40069 | Coolmath4Kids | 40070 | Chase | 40071 |
 | FlightAware | 40072 | Chronicle Jobs | 40073 | Dillard's | 40074 |
+| Google Shopping | 40075 | | | | |
 
 ## 🤝 Contribute
 
