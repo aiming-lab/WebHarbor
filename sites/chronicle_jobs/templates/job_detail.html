@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} - {{ job.location_text }} job with {{ job.employer_name }} | {{ job.job_id }}{% endblock %}
+{% block content %}
+<div class="job-detail-head">
+  <span><a href="/jobs/">&lsaquo; More results</a></span>
+  {% if next_job %}
+  <span><a href="{{ next_job.detail_path }}"><strong>{{ next_job.title[:42] }}{% if next_job.title | length > 42 %}...{% endif %}</strong> Next job &rsaquo;</a></span>
+  {% endif %}
+</div>
+
+<div class="job-detail-layout">
+  <div class="job-detail-main">
+    <div class="job-detail-card">
+      <h1>{{ job.title }}</h1>
+      <div class="job-summary">
+        <dl>
+          <dt>Employer</dt>
+          <dd>
+            {% if job.employer %}<a href="/employer/{{ job.employer.ref }}/{{ job.employer.slug }}/">{{ job.employer_name }}</a>
+            {% else %}{{ job.employer_name or "Not specified" }}{% endif %}
+          </dd>
+          <dt>Location</dt>
+          <dd>{{ job.location_text or "Not specified" }}</dd>
+          <dt>Salary</dt>
+          <dd>{{ job.salary_text or "Not specified" }}</dd>
+          <dt>Date posted</dt>
+          <dd>{{ job.posted_label or "Not specified" }}</dd>
+        </dl>
+        <div class="job-actions">
+          <a class="btn-apply" href="{{ job.apply_path }}">Apply on website</a>
+          <div class="job-cta-row">
+            {% if current_user.is_authenticated %}
+            <form class="save-form" action="/your-jobs/" method="post">
+              <input type="hidden" name="JobId" value="{{ job.job_id }}">
+              <input type="hidden" name="ReturnUrl" value="~{{ job.detail_path }}">
+              <input type="hidden" name="Action" value="ShortlistJob">
+              <button type="submit">Save</button>
+            </form>
+            {% else %}
+            <a href="/logon?PipelinedPage={{ job.detail_path | urlencode }}">Save</a>
+            {% endif %}
+            <a href="/contact-us/">Send job</a>
+          </div>
+        </div>
+      </div>
+
+      {% set chains = job.category_chain() %}
+      {% if chains %}
+      <details class="categories-accordion" {% if not job.salary_text %}open{% endif %}>
+        <summary>View more categories</summary>
+        <dl>
+          <dt>Position Type</dt>
+          <dd>
+            {% for chain in chains %}{% for cat in chain %}<a href="/jobs/{{ cat.slug }}/">{{ cat.label }}</a>{% if not loop.last %}, {% endif %}{% endfor %}{% if not loop.last %} &nbsp; {% endif %}{% endfor %}
+          </dd>
+          {% for group_label in ["Employment Level", "Institution Type", "Employment Type"] %}
+          {% set group_key = {"Employment Level": "employment_level", "Institution Type": "institution_type", "Employment Type": "employment_type"}[group_label] %}
+          {% set values = job.facet_values_for(group_key) %}
+          {% if values %}
+          <dt>{{ group_label }}</dt>
+          <dd>{% for fv in values %}<a href="/jobs/{{ fv.slug }}/">{{ fv.label }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+          {% endif %}
+          {% endfor %}
+          {% set bands = job.facet_values_for("salary_band") %}
+          {% if bands %}
+          <dt>Salary Band</dt>
+          <dd>{% for fv in bands %}<a href="/jobs/{{ fv.slug }}/">{{ fv.label }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</dd>
+          {% endif %}
+        </dl>
+      </details>
+      {% endif %}
+    </div>
+
+    <div class="job-detail-card">
+      <div class="job-prose">
+        {{ job.description_html | safe }}
+      </div>
+      <div class="share-row">
+        <p style="margin:0"><strong>Share this job</strong></p>
+        <div class="share-links">
+          <a href="https://www.facebook.com/sharer/sharer.php?u={{ ('http://localhost:40065' + job.detail_path) | urlencode }}">Facebook</a>
+          <a href="https://twitter.com/intent/tweet?url={{ ('http://localhost:40065' + job.detail_path) | urlencode }}&text={{ job.title | urlencode }}">X</a>
+          <a href="https://www.linkedin.com/shareArticle?mini=true&url={{ ('http://localhost:40065' + job.detail_path) | urlencode }}">LinkedIn</a>
+        </div>
+      </div>
+      <div class="job-actions" style="margin-top:18px">
+        <a class="btn-apply" href="{{ job.apply_path }}">Apply on website</a>
+      </div>
+    </div>
+  </div>
+
+  <aside class="job-detail-side">
+    <div class="side-card">
+      <h2>Get job alerts</h2>
+      <p>Create a job alert and receive personalized job recommendations straight to your inbox.</p>
+      <a class="btn-apply" href="/newalert">Create alert</a>
+    </div>
+    {% if similar %}
+    <div class="similar-card">
+      <h2>Similar jobs</h2>
+      <ul>
+        {% for s in similar %}
+        <li>
+          <h3><a href="{{ s.detail_path }}">{{ s.title }}</a></h3>
+          <p class="loc">{{ s.location_text }}</p>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+  </aside>
+</div>
+{% endblock %}
