@@ -5,7 +5,7 @@
     <h1 class="page-title">Order {{ order.order_number }}</h1>
     <p><span class="status-badge status-{{ order.status }}">{{ order.status }}</span> &middot; Placed {{ order.created_at.strftime('%Y-%m-%d') }}</p>
 
-    <table class="order-table">
+    <div class="table-scroll"><table class="order-table">
         <thead><tr><th>Item</th><th>Color / Size</th><th>Qty</th><th>Price</th></tr></thead>
         <tbody>
             {% for item in order.items %}
@@ -19,7 +19,7 @@
             </tr>
             {% endfor %}
         </tbody>
-    </table>
+    </table></div>
 
     <div class="order-summary">
         <p>Subtotal: ${{ '%.2f'|format(order.subtotal) }}</p>

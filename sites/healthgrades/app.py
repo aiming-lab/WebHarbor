@@ -6,16 +6,17 @@ import random
 import re
 from datetime import datetime, timedelta
 from itertools import groupby
+from urllib.parse import urlsplit
 
 from flask import (Flask, render_template, request, redirect, url_for,
-                    flash, jsonify)
+                    flash, jsonify, session, abort)
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, UserMixin, login_user, logout_user,
                           login_required, current_user)
 from flask_wtf import FlaskForm
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_bcrypt import Bcrypt
-from wtforms import StringField, PasswordField, TextAreaField, IntegerField, SelectField
+from wtforms import StringField, PasswordField, TextAreaField, IntegerField, SelectField, DateField
 from wtforms.validators import DataRequired, Email, Length, EqualTo, Optional, NumberRange
 from sqlalchemy import func
 
@@ -175,15 +176,15 @@ class ReviewForm(FlaskForm):
 class AppointmentForm(FlaskForm):
     patient_name = StringField('Your Name', validators=[DataRequired()])
     reason = StringField('Reason for Visit', validators=[DataRequired()])
-    preferred_date = StringField('Preferred Date', validators=[DataRequired()])
+    preferred_date = DateField('Preferred Date', validators=[DataRequired()], format='%Y-%m-%d')
 
 
 # ----- Routes: browse -----
 
 @app.route('/')
 def index():
-    featured = Doctor.query.order_by(func.random()).limit(12).all()
-    top_rated = Doctor.query.filter(Doctor.review_count > 0).order_by(Doctor.rating.desc()).limit(8).all()
+    featured = Doctor.query.order_by(Doctor.id).limit(12).all()
+    top_rated = Doctor.query.filter(Doctor.review_count > 0).order_by(Doctor.rating.desc(), Doctor.id).limit(8).all()
     return render_template('index.html', featured=featured, top_rated=top_rated)
 
 
@@ -193,11 +194,11 @@ def specialty_page(slug):
     sort_key = request.args.get('sort', '')
     q = Doctor.query.filter_by(specialty_slug=slug)
     if sort_key == 'rating':
-        q = q.order_by(Doctor.rating.desc())
+        q = q.order_by(Doctor.rating.desc(), Doctor.id)
     elif sort_key == 'reviews':
-        q = q.order_by(Doctor.review_count.desc())
+        q = q.order_by(Doctor.review_count.desc(), Doctor.id)
     else:
-        q = q.order_by(Doctor.name.asc())
+        q = q.order_by(Doctor.name.asc(), Doctor.id)
     doctors = q.all()
     return render_template('specialty.html', specialty=specialty, doctors=doctors, current_sort=sort_key)
 
@@ -215,7 +216,7 @@ def doctor_detail(slug):
     related = Doctor.query.filter(
         Doctor.specialty_slug == doctor.specialty_slug,
         Doctor.id != doctor.id
-    ).order_by(func.random()).limit(4).all()
+    ).order_by(Doctor.id).limit(4).all()
     is_saved = False
     if current_user.is_authenticated:
         is_saved = SavedDoctor.query.filter_by(user_id=current_user.id, doctor_id=doctor.id).first() is not None
@@ -265,14 +266,7 @@ def search():
                 s = _score_doctor(d, tokens)
                 if s >= min_required:
                     scored.append((s, d))
-            seed = abs(hash(q.lower())) % (2 ** 31)
-            rng = random.Random(seed)
-            scored.sort(key=lambda x: -x[0])
-            results = []
-            for _, group in groupby(scored, key=lambda x: x[0]):
-                bucket = [d for _, d in group]
-                rng.shuffle(bucket)
-                results.extend(bucket)
+            results = [item for _, item in sorted(scored, key=lambda x: (-x[0], x[1].name.casefold(), x[1].id))]
         else:
             results = candidates
     else:
@@ -293,7 +287,7 @@ def login():
             login_user(user)
             flash('Welcome back!', 'success')
             next_url = request.args.get('next')
-            if not next_url or not next_url.startswith('/') or next_url.startswith('//'):
+            if not next_url or not next_url.startswith('/') or urlsplit(next_url).netloc or '\\' in next_url or any(ord(c) < 32 for c in next_url):
                 next_url = url_for('index')
             return redirect(next_url)
         flash('Invalid email or password.', 'error')
@@ -357,7 +351,6 @@ def saved_doctors():
 # ----- Routes: save / review / appointment -----
 
 @app.route('/doctor/<slug>/save', methods=['POST'])
-@csrf.exempt
 @login_required
 def save_doctor(slug):
     doctor = Doctor.query.filter_by(slug=slug).first_or_404()
@@ -372,11 +365,10 @@ def save_doctor(slug):
         saved = True
     if request.is_json or request.headers.get('X-Requested-With') == 'XMLHttpRequest':
         return jsonify({'success': True, 'saved': saved})
-    return redirect(request.referrer or url_for('doctor_detail', slug=slug))
+    return redirect(url_for('doctor_detail', slug=slug))
 
 
 @app.route('/doctor/<slug>/review', methods=['POST'])
-@csrf.exempt
 @login_required
 def add_review(slug):
     doctor = Doctor.query.filter_by(slug=slug).first_or_404()
@@ -386,16 +378,17 @@ def add_review(slug):
             doctor_id=doctor.id, author_name=current_user.name,
             rating=form.rating.data, body=form.body.data,
         ))
-        doctor.review_count = Review.query.filter_by(doctor_id=doctor.id).count() + 1
-        agg = db.session.query(func.avg(Review.rating)).filter_by(doctor_id=doctor.id).scalar() or form.rating.data
-        doctor.rating = round(float(agg), 1)
+        # The archived reviews are a sample; retain the upstream aggregate.
+        previous_count = doctor.review_count
+        doctor.rating = ((doctor.rating * previous_count + form.rating.data)
+                           / (previous_count + 1))
+        doctor.review_count = previous_count + 1
         db.session.commit()
         flash('Thanks for sharing your experience!', 'success')
     return redirect(url_for('doctor_detail', slug=slug))
 
 
 @app.route('/doctor/<slug>/request-appointment', methods=['POST'])
-@csrf.exempt
 @login_required
 def request_appointment(slug):
     doctor = Doctor.query.filter_by(slug=slug).first_or_404()
@@ -404,15 +397,16 @@ def request_appointment(slug):
         db.session.add(Appointment(
             user_id=current_user.id, doctor_id=doctor.id,
             patient_name=form.patient_name.data, reason=form.reason.data,
-            preferred_date=form.preferred_date.data,
+            preferred_date=form.preferred_date.data.isoformat(),
         ))
         db.session.commit()
         flash(f'Appointment request sent to {doctor.name}.', 'success')
+    if form.errors:
+        flash('Please provide a name, reason and valid preferred date.', 'error')
     return redirect(url_for('doctor_detail', slug=slug))
 
 
 @app.route('/account/appointments/<int:appt_id>/cancel', methods=['POST'])
-@csrf.exempt
 @login_required
 def cancel_appointment(appt_id):
     appt = Appointment.query.filter_by(id=appt_id, user_id=current_user.id).first_or_404()

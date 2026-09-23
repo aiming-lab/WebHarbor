@@ -195,3 +195,19 @@ img { max-width: 100%; display: block; }
     .product-detail-grid, .checkout-grid, .account-grid { grid-template-columns: 1fr; }
     .dept-tiles { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* Preserve controls and tables on narrow screens. */
+.table-scroll { max-width:100%; overflow-x:auto; }
+.header-inner > *, .product-detail-grid > *, .vehicle-detail-grid > * { min-width:0; }
+.header-links { flex-wrap:wrap; }
+@media(max-width:600px) {
+ .header-inner { flex-wrap:wrap; gap:12px; }
+ .header-inner .search-form { order:3; width:100%; flex-basis:100%; }
+ .header-inner .header-links { margin-left:0; gap:12px; }
+ .doctor-header { flex-wrap:wrap; }
+ .doctor-header-info { min-width:0; flex-basis:60%; }
+ .doctor-header-cta { width:100%; flex-basis:100%; }
+ .product-detail-grid, .vehicle-detail-grid, .account-grid { grid-template-columns:minmax(0,1fr); }
+ .cart-row { flex-wrap:wrap; }
+ .page-inner { padding-left:16px; padding-right:16px; }
+}

@@ -1,0 +1,524 @@
+{
+  "0": {
+    "prompt": "I am budgeting for a hybrid sedan. Compare the archived style-price ranges and consumer ratings for the 2026 Toyota Camry, 2026 Honda Accord Hybrid and 2026 Toyota Prius so I can decide which to investigate further. For each model, identify the cheapest style and its combined fuel economy.",
+    "paths": [
+      "/vehicle/toyota-camry-2026",
+      "/vehicle/honda-accord-hybrid-2026",
+      "/vehicle/toyota-prius-2026"
+    ],
+    "facts": [
+      {
+        "entity": "2026\\s+Toyota\\s+Camry",
+        "patterns": [
+          "\\$\\s*31700\\b",
+          "\\$\\s*38000\\b",
+          "3\\.9\\s*stars?",
+          "21\\s*reviews?",
+          "LE",
+          "50\\s+MPG"
+        ]
+      },
+      {
+        "entity": "2026\\s+Honda\\s+Accord\\s+Hybrid",
+        "patterns": [
+          "\\$\\s*34200\\b",
+          "\\$\\s*39200\\b",
+          "4\\.5\\s*stars?",
+          "10\\s*reviews?",
+          "Sport",
+          "45\\s+MPG"
+        ]
+      },
+      {
+        "entity": "2026\\s+Toyota\\s+Prius",
+        "patterns": [
+          "\\$\\s*30100\\b",
+          "\\$\\s*36100\\b",
+          "4\\.1\\s*stars?",
+          "12\\s*reviews?",
+          "\\bLE\\b",
+          "54\\s+MPG"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "1": {
+    "prompt": "Request a price quote for the least expensive listed style of the 2026 Toyota Camry for Bob in ZIP 78701. Use the style table to choose the trim and keep his existing requests. Use bob.c@test.com / TestPass123!.",
+    "paths": [
+      "/vehicle/toyota-camry-2026"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "quote_requests",
+        "values": {
+          "user_id": 2,
+          "vehicle_id": 3,
+          "trim_name": "LE",
+          "zip_code": "78701",
+          "status": "pending"
+        },
+        "ignore": [
+          "id",
+          "created_at"
+        ]
+      }
+    }
+  },
+  "2": {
+    "prompt": "Alice wants a 2026 Tesla Model 3 with a listed 0\u201360 time under five seconds and an archived style price below $50,000. Select the qualifying style and request a quote for ZIP 94102. Use alice.j@test.com / TestPass123!.",
+    "paths": [
+      "/vehicle/tesla-model-3-2026"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "quote_requests",
+        "values": {
+          "user_id": 1,
+          "vehicle_id": 157,
+          "trim_name": "Premium",
+          "zip_code": "94102",
+          "status": "pending"
+        },
+        "ignore": [
+          "id",
+          "created_at"
+        ]
+      }
+    }
+  },
+  "3": {
+    "prompt": "I am choosing between the 2026 Tesla Model 3 and 2026 Toyota Camry for commuting. Summarize the listed pros and cons for each so I can weigh the trade-offs.",
+    "paths": [
+      "/vehicle/tesla-model-3-2026",
+      "/vehicle/toyota-camry-2026"
+    ],
+    "facts": [
+      {
+        "entity": "2026\\s+Tesla\\s+Model\\s+3",
+        "patterns": [
+          "Comfortable\\s+ride",
+          "Outstanding\\s+efficiency\\s+and\\s+range\\s+ratings",
+          "Cutting\\-edge\\s+driver\\s+assistance\\s+tech",
+          "All\\s+controls\\s+are\\s+in\\s+the\\s+screen",
+          "No\\s+standard\\s+lane\\-centering",
+          "No\\s+Android\\s+Auto/Apple\\s+CarPlay"
+        ],
+        "sections": {
+          "pros": [
+            "Comfortable ride",
+            "Outstanding efficiency and range ratings",
+            "Cutting-edge driver assistance tech"
+          ],
+          "cons": [
+            "All controls are in the screen",
+            "No standard lane-centering",
+            "No Android Auto/Apple CarPlay"
+          ]
+        }
+      },
+      {
+        "entity": "2026\\s+Toyota\\s+Camry",
+        "patterns": [
+          "Hybrid\\s+efficiency",
+          "Available\\s+AWD",
+          "Top\\s+safety\\s+scores",
+          "Rivals\\s+have\\s+roomier\\s+rear\\s+seating"
+        ],
+        "sections": {
+          "pros": [
+            "Hybrid efficiency",
+            "Available AWD",
+            "Top safety scores"
+          ],
+          "cons": [
+            "Rivals have roomier rear seating"
+          ]
+        }
+      }
+    ],
+    "state": {}
+  },
+  "4": {
+    "prompt": "Compare the 2026 Honda Odyssey, 2026 Honda Pilot and 2026 Honda CR-V as family-car candidates. Report each archived style-price range, consumer rating and review count to help me weigh cost against the amount of owner feedback. Compare the seating and cargo volume listed for each model\u2019s least expensive style.",
+    "paths": [
+      "/vehicle/honda-odyssey-2026",
+      "/vehicle/honda-pilot-2026",
+      "/vehicle/honda-cr-v-2026"
+    ],
+    "facts": [
+      {
+        "entity": "2026\\s+Honda\\s+Odyssey",
+        "patterns": [
+          "\\$\\s*42600\\b",
+          "\\$\\s*50500\\b",
+          "3\\.6\\s*stars?",
+          "105\\s*reviews?",
+          "8\\s*seats?",
+          "155\\.8\\s+cu\\s+ft"
+        ]
+      },
+      {
+        "entity": "2026\\s+Honda\\s+Pilot",
+        "patterns": [
+          "\\$\\s*45000\\b",
+          "\\$\\s*54500\\b",
+          "4\\.0\\s*stars?",
+          "14\\s*reviews?",
+          "8\\s*seats?",
+          "111\\.8\\s+cu\\s+ft"
+        ]
+      },
+      {
+        "entity": "2026\\s+Honda\\s+CR\\-V",
+        "patterns": [
+          "\\$\\s*33200\\b",
+          "\\$\\s*37400\\b",
+          "3\\.6\\s*stars?",
+          "22\\s*reviews?",
+          "5\\s*seats?",
+          "76\\.5\\s+cu\\s+ft"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "5": {
+    "prompt": "Carol wants the least expensive listed 2026 Honda Odyssey style. Check the style table and request a quote for that trim in ZIP 10001. Use carol.d@test.com / TestPass123!.",
+    "paths": [
+      "/vehicle/honda-odyssey-2026"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "quote_requests",
+        "values": {
+          "user_id": 3,
+          "vehicle_id": 20,
+          "trim_name": "EX-L",
+          "zip_code": "10001",
+          "status": "pending"
+        },
+        "ignore": [
+          "id",
+          "created_at"
+        ]
+      }
+    }
+  },
+  "6": {
+    "prompt": "I am considering the 2027 BMW 4 Series, 2026 BMW Z4 and 2026 BMW X5. Compare the listed styles for each, their consumer ratings and review counts, and any available archived style-price range. Flag missing prices rather than treating them as zero.",
+    "paths": [
+      "/vehicle/bmw-4-series-2027",
+      "/vehicle/bmw-z4-2026",
+      "/vehicle/bmw-x5-2026"
+    ],
+    "facts": [
+      {
+        "entity": "2027\\s+BMW\\s+4\\s+Series",
+        "patterns": [
+          "5\\.0\\s*stars?",
+          "12\\s*reviews?",
+          "price\\s+(?:unavailable|not available)|no\\s+.*price",
+          "\\b430i\\b",
+          "\\b430i\\s+xDrive\\b",
+          "\\bM440i\\b",
+          "\\bM440i\\s+xDrive\\b"
+        ]
+      },
+      {
+        "entity": "2026\\s+BMW\\s+Z4",
+        "patterns": [
+          "4\\.8\\s*stars?",
+          "4\\s*reviews?",
+          "\\$\\s*68700\\b",
+          "\\$\\s*83500\\b",
+          "\\bsDrive30i\\b",
+          "\\bM40i\\b"
+        ]
+      },
+      {
+        "entity": "2026\\s+BMW\\s+X5",
+        "patterns": [
+          "\\$\\s*66300\\b",
+          "\\$\\s*90300\\b",
+          "4\\.3\\s*stars?",
+          "50\\s*reviews?",
+          "\\bsDrive40i\\b",
+          "\\bxDrive40i\\b",
+          "\\bxDrive50e\\b",
+          "\\bM60i\\b"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "7": {
+    "prompt": "Alice has decided against the Mercedes-Benz GLB. Close her pending quote request for it while retaining her other quote history. Use alice.j@test.com / TestPass123!.",
+    "paths": [
+      "/account"
+    ],
+    "facts": [],
+    "state": {
+      "update": {
+        "table": "quote_requests",
+        "id": 2,
+        "values": {
+          "status": "closed"
+        }
+      }
+    }
+  },
+  "8": {
+    "prompt": "Review the two BMWs on Alice\u2019s saved-vehicle list. Report the model-year and consumer rating of each, and identify which one has archived style prices available for budgeting. Use alice.j@test.com / TestPass123!. Include the listed style names for each BMW so I can see which versions the mirror covers.",
+    "paths": [
+      "/vehicle/bmw-5-series-2027",
+      "/vehicle/bmw-z4-2026"
+    ],
+    "facts": [
+      {
+        "entity": "2027\\s+BMW\\s+5\\s+Series",
+        "patterns": [
+          "5\\.0\\s*stars?",
+          "price\\s+(?:unavailable|not available)",
+          "\\b530i\\b",
+          "\\b530i\\s+xDrive\\b",
+          "\\b540i\\s+xDrive\\b",
+          "\\b550e\\s+xDrive\\b"
+        ]
+      },
+      {
+        "entity": "2026\\s+BMW\\s+Z4",
+        "patterns": [
+          "4\\.8\\s*stars?",
+          "\\$\\s*68700\\b",
+          "\\$\\s*83500\\b",
+          "\\bsDrive30i\\b",
+          "\\bM40i\\b"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "9": {
+    "prompt": "Prepare a follow-up brief for Bob\u2019s existing quote: identify the vehicle, requested trim, ZIP and status, and check the archived style-table price for that same trim. Use bob.c@test.com / TestPass123!.",
+    "paths": [
+      "/vehicle/mazda-cx-50-hybrid-2025"
+    ],
+    "facts": [
+      {
+        "entity": "2025\\s+Mazda\\s+CX\\-50\\s+Hybrid",
+        "patterns": [
+          "Preferred",
+          "78701",
+          "contacted",
+          "\\$\\s*32400\\b"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "10": {
+    "prompt": "Carol is revisiting her BMW X5 M quote. Check its status and the vehicle page, and explain whether the mirror has listed trims and pricing that would support a new quote. Use carol.d@test.com / TestPass123!.",
+    "paths": [
+      "/vehicle/bmw-x5-m-2026"
+    ],
+    "facts": [
+      {
+        "entity": "2026\\s+BMW\\s+X5\\s+M",
+        "patterns": [
+          "closed",
+          "pric(?:e|ing)\\s+is\\s+unavailable|price\\s+unavailable",
+          "no\\s+(?:listed\\s+)?trims"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "11": {
+    "prompt": "David no longer wants a quote for the Audi A3. Close his pending request without changing his profile or other account state. Use david.k@test.com / TestPass123!.",
+    "paths": [
+      "/account"
+    ],
+    "facts": [],
+    "state": {
+      "update": {
+        "table": "quote_requests",
+        "id": 5,
+        "values": {
+          "status": "closed"
+        }
+      }
+    }
+  },
+  "12": {
+    "prompt": "Add the 2026 Toyota Camry to Bob\u2019s saved-vehicle shortlist and keep his existing saved vehicles. Use bob.c@test.com / TestPass123!.",
+    "paths": [
+      "/vehicle/toyota-camry-2026"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "saved_vehicles",
+        "values": {
+          "user_id": 2,
+          "vehicle_id": 3
+        },
+        "ignore": [
+          "id",
+          "saved_at"
+        ]
+      }
+    }
+  },
+  "13": {
+    "prompt": "Request a quote for the 2026 Tesla Model 3 Performance for Carol in ZIP 90001, and confirm the new request in her account. Use carol.d@test.com / TestPass123!.",
+    "paths": [
+      "/vehicle/tesla-model-3-2026"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "quote_requests",
+        "values": {
+          "user_id": 3,
+          "vehicle_id": 157,
+          "trim_name": "Performance",
+          "zip_code": "90001",
+          "status": "pending"
+        },
+        "ignore": [
+          "id",
+          "created_at"
+        ]
+      }
+    }
+  },
+  "14": {
+    "prompt": "Put the 2026 Toyota Camry and 2026 Tesla Model 3 together in the vehicle comparison. Report their archived starting style prices and how much more the Model 3 costs.",
+    "paths": [
+      "/vehicle/toyota-camry-2026",
+      "/vehicle/tesla-model-3-2026",
+      "/compare"
+    ],
+    "facts": [
+      {
+        "entity": "2026\\s+Toyota\\s+Camry",
+        "patterns": [
+          "\\$\\s*31700\\b"
+        ]
+      },
+      {
+        "entity": "2026\\s+Tesla\\s+Model\\s+3",
+        "patterns": [
+          "\\$\\s*36800\\b"
+        ]
+      },
+      {
+        "entity": "difference|costs",
+        "patterns": [
+          "\\$\\s*5100\\b"
+        ]
+      }
+    ],
+    "state": {},
+    "compare": [
+      "2026 Toyota Camry",
+      "2026 Tesla Model 3"
+    ]
+  },
+  "15": {
+    "prompt": "I am choosing a family SUV from the 2026 Ford Expedition, 2026 Expedition MAX and 2027 Explorer. Compare their archived style-price ranges, consumer ratings and review counts, along with the seating and cargo volume in their first listed style. Flag unavailable pricing instead of estimating it.",
+    "paths": [
+      "/vehicle/ford-expedition-2026",
+      "/vehicle/ford-expedition-max-2026",
+      "/vehicle/ford-explorer-2027"
+    ],
+    "facts": [
+      {
+        "entity": "2026\\s+Ford\\s+Expedition",
+        "patterns": [
+          "\\$\\s*63400\\b",
+          "\\$\\s*80700\\b",
+          "4\\.0\\s*stars?",
+          "61\\s*reviews?",
+          "8\\s*seats?",
+          "108\\.5\\s+cu\\s+ft"
+        ]
+      },
+      {
+        "entity": "2026\\s+Ford\\s+Expedition\\s+MAX",
+        "patterns": [
+          "\\$\\s*66100\\b",
+          "\\$\\s*83400\\b",
+          "4\\.0\\s*stars?",
+          "61\\s*reviews?",
+          "8\\s*seats?",
+          "123\\.1\\s+cu\\s+ft"
+        ]
+      },
+      {
+        "entity": "2027\\s+Ford\\s+Explorer",
+        "patterns": [
+          "price\\s+(?:unavailable|not available)",
+          "3\\.6\\s*stars?",
+          "97\\s*reviews?",
+          "7\\s*seats?",
+          "85\\.3\\s+cu\\s+ft"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "16": {
+    "prompt": "For a 2026 Honda Odyssey, Bob can spend up to $45,000 based on the archived style table. Request a quote for the highest-priced trim within that budget in ZIP 78701. Use bob.c@test.com / TestPass123!.",
+    "paths": [
+      "/vehicle/honda-odyssey-2026"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "quote_requests",
+        "values": {
+          "user_id": 2,
+          "vehicle_id": 20,
+          "trim_name": "Sport-L",
+          "zip_code": "78701",
+          "status": "pending"
+        },
+        "ignore": [
+          "id",
+          "created_at"
+        ]
+      }
+    }
+  },
+  "17": {
+    "prompt": "Compare the cheapest 2026 Toyota Camry and 2026 Honda Accord options described in their FAQs. Report each trim\u2019s sticker price and Fair Purchase Price, keeping those two price types distinct.",
+    "paths": [
+      "/vehicle/toyota-camry-2026",
+      "/vehicle/honda-accord-2026"
+    ],
+    "facts": [
+      {
+        "entity": "2026\\s+Toyota\\s+Camry",
+        "patterns": [
+          "sticker\\s+price\\s*(?:of|is|:)??\\s*\\$\\s*30495\\b",
+          "fair\\s+purchase\\s+price\\s*(?:of|is|:)??\\s*\\$\\s*30200\\b",
+          "\\bLE\\b"
+        ]
+      },
+      {
+        "entity": "2026\\s+Honda\\s+Accord",
+        "patterns": [
+          "sticker\\s+price\\s*(?:of|is|:)??\\s*\\$\\s*29590\\b",
+          "fair\\s+purchase\\s+price\\s*(?:of|is|:)??\\s*\\$\\s*29000\\b",
+          "\\bLX\\b"
+        ]
+      }
+    ],
+    "state": {}
+  }
+}
