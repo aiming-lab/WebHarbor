@@ -69,8 +69,8 @@ def test_champion_roster_search_and_sort(client):
     assert html.count('class="champion-card') == 5
     for name in ("Aatrox", "Kayn", "Naafiri", "Varus", "Zaahen"):
         assert name in html
-    html = client.get("/champions/?sort=release").get_data(as_text=True)
-    assert "Naafiri" in html.split('class="champion-card')[1]
+    html = client.get("/champions/?sort=skins").get_data(as_text=True)
+    assert "Miss Fortune" in html.split('class="champion-card')[1]
     html = client.get("/champions/?q=nosuchchampion123").get_data(as_text=True)
     assert "No champions match" in html
 

@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Verify League of Legends--25: new account signup — zero favorites, zero bookmarks (stateful)."""
+import re
+import hashlib
+
 from verify_lib import (SEED_USERS, check_only_tables_changed, check_trajectory_identity,
-                        contains_count, contains_phrase, entered_identity, final_answer,
+                        contains_count, contains_phrase, entered_identity, final_answer, input_texts,
                         navigated_to_path, run_verifier, table_delta)
 
 TASK_ID = "League of Legends--25"
@@ -30,8 +33,29 @@ def run_checks(judge, traj, initial_db, after_db):
                     a["username"].lower() not in SEED_USERNAMES
                     and a["email"].lower() not in SEED_EMAILS,
                     f"the new account must not reuse a benchmark identity; got {a!r}")
+        judge.check("valid_new_identity",
+                    bool(re.fullmatch(r"[a-z0-9_.]{3,40}", a["username"]))
+                    and bool(re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", a["email"]))
+                    and 2 <= len(a["display_name"]) <= 60,
+                    "new account must have a valid username, email and display name")
+        for field in ("username", "email", "display_name"):
+            judge.check("submitted_" + field, entered_identity(traj, a[field]),
+                        "saved identity must match the signup inputs")
         judge.check("new_user_has_password",
-                    bool(a["password_hash"]), "the new user row must carry a password hash")
+                    bool(re.fullmatch(r"[a-f0-9]{64}", a["password_hash"])),
+                    "new user must carry a valid mirror password hash")
+        inputs = input_texts(traj)
+        # Redacted password recordings cannot establish the raw password. When
+        # plaintext inputs are recorded, the stored hash must match one of them.
+        redacted = any(re.fullmatch(r"(?:\*{3,}|\[redacted\]|<redacted>)", value, re.I)
+                       for value in inputs)
+        if not redacted:
+            judge.check("submitted_password", any(
+                len(value) >= 8 and hashlib.sha256(
+                    ("lol-webharbor-demo:" + value).encode()).hexdigest() == a["password_hash"]
+                for value in inputs), "saved password must match a submitted password of at least 8 characters")
+        judge.check("viewed_signed_in_account", navigated_to_path(traj, "/account"),
+                    "inspect the signed-in account after signup")
         fav_delta = table_delta(initial_db, after_db, "favorite_champions")
         bm_delta = table_delta(initial_db, after_db, "bookmark_articles")
         judge.check("new_user_zero_favorites",

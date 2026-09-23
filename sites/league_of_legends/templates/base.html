@@ -19,7 +19,7 @@
       <a class="riotbar-lol-logo" href="{{ url_for('home') }}" aria-label="League of Legends">
         <img src="{{ url_for('static', filename='images/site/riot_fist.svg') }}" alt="League of Legends" height="40">
       </a>
-      <nav class="riotbar-nav">
+      <nav class="riotbar-nav" id="site-navigation">
         <div class="nav-item"><a href="{{ url_for('how_to_play') }}">Game Overview</a></div>
         <div class="nav-item"><a href="/classic/">League of Legends Classic</a></div>
         <div class="nav-item nav-has-sub">
@@ -51,6 +51,7 @@
       </nav>
     </div>
     <div class="riotbar-right">
+      <button class="mobile-menu" type="button" aria-expanded="false" aria-controls="site-navigation">Menu</button>
       <a class="riotbar-icon riotbar-search" href="{{ url_for('search') }}" aria-label="Search"><span class="icon-search"></span></a>
       <a class="riotbar-icon" href="{{ url_for('how_to_play') }}" aria-label="Language"><span class="icon-globe"></span></a>
       {% if current_user.is_authenticated %}
@@ -104,5 +105,20 @@
   </div>
 </footer>
 
+<script>
+const menu = document.querySelector('.mobile-menu');
+const navigation = document.querySelector('#site-navigation');
+menu.addEventListener('click', () => {
+  const open = menu.getAttribute('aria-expanded') !== 'true';
+  menu.setAttribute('aria-expanded', String(open));
+  navigation.classList.toggle('mobile-open', open);
+});
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') {
+    menu.setAttribute('aria-expanded', 'false');
+    navigation.classList.remove('mobile-open');
+  }
+});
+</script>
 </body>
 </html>

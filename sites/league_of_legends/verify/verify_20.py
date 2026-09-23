@@ -29,6 +29,8 @@ def run_checks(judge, traj, initial_db, after_db):
                     f"expected {name!r} with {skins} skins")
     judge.check("answer_most_skins", champion_named(answer, MOST),
                 f"expected {MOST!r} named as having the most skins")
+    from reviewed import check_facts
+    check_facts(judge, answer, [{'entity': 'Amumu', 'patterns': ['\\b15\\s+(?:skins|appearances)']}, {'entity': 'Draven', 'patterns': ['\\b15\\s+(?:skins|appearances)']}, {'entity': 'Kayle', 'patterns': ['\\b19\\s+(?:skins|appearances)']}, {'entity': 'Lee Sin', 'patterns': ['\\b20\\s+(?:skins|appearances)']}, {'entity': 'Yunara', 'patterns': ['\\b3\\s+(?:skins|appearances)']}])
     check_read_only(judge, initial_db, after_db)
 
 

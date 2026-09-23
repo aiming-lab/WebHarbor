@@ -28,10 +28,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from _support import (BASE, RunBuilder, _acquire_seed, build_run, copy_db,  # noqa: E402
                       mutate_db, noop_run, run_verifier, tiny_png)
 
-pytestmark = pytest.mark.skipif(
-    not Path("/data/zhaoyang-user-projects/websyn/wh-lol-review-evidence/seed_snapshot.db").is_file()
-    and not Path("/tmp/lol_verify_tests_seed.db").is_file(),
-    reason="seed DB unavailable")
 
 SEED = _acquire_seed()
 
@@ -127,7 +123,7 @@ HONEST = {
     13: ([(PATCH_2619, "goto", {}), (PATCH_2618, "goto", {})],
          "Champions that received changes in both Patch 26.19 and Patch 26.18 include "
          "Master Yi and Kassadin. In the 26.18 notes, Kassadin's Q - Null Sphere change "
-         "reads: Ability Power Ratio : 70% AP ⇒ 80% AP."),
+         "reads: Ability Power Ratio : 70% AP ⇒ 80% AP in standard League."),
     14: ([(NEWS + "dev/", "goto", {})],
          "The Dev category lists 147 articles. The most recent article is 'TL;DW: Team "
          "Voice, Classic & More Dev Update'."),
@@ -232,6 +228,10 @@ HONEST = {
          "this Ability once. The second cast grants a shield.\""),
 }
 
+# Current task fixtures are synthetic controls, not browser completion evidence.
+HONEST.update({int(k): v for k, v in json.loads(
+    Path(__file__).with_name("reviewed_fixtures.json").read_text()).items()})
+
 # stateful tasks: SQL that materialises the exactly-compliant after-state from the seed
 COMPLIANT_AFTER_SQL = {
     21: ["INSERT INTO favorite_champions (user_id, champion_id, added_date) "
@@ -242,7 +242,7 @@ COMPLIANT_AFTER_SQL = {
     24: ["UPDATE users SET summoner_name = 'RadiantViper', region = 'EUW' WHERE id = 1"],
     25: ["INSERT INTO users (username, email, display_name, summoner_name, region, "
          "password_hash, joined_date) VALUES ('nova_review', 'nova.review@test.com', "
-         "'Nova Review', 'Nova Review', 'NA', 'x', '2026-09-22')"],
+         "'Nova Review', 'Nova Review', 'NA', '4393e74456a378947ee3fc12aad239b62372ee308f7dce631217931775342f3c', '2026-09-22')"],
 }
 # wrong-delta mutations for the stateful tasks (collateral or wrong row)
 WRONG_DELTA_SQL = {
@@ -254,8 +254,8 @@ WRONG_DELTA_SQL = {
     24: ["UPDATE users SET display_name = 'Tampered', region = 'EUW' WHERE id = 1"],  # wrong column
     25: ["INSERT INTO users (username, email, display_name, summoner_name, region, "
          "password_hash, joined_date) VALUES ('nova_review', 'nova.review@test.com', "
-         "'Nova Review', 'Nova Review', 'NA', 'x', '2026-09-22'), "
-         "('nova_two', 'nova.two@test.com', 'Nova Two', 'Nova Two', 'NA', 'x', '2026-09-22')"],
+         "'Nova Review', 'Nova Review', 'NA', '4393e74456a378947ee3fc12aad239b62372ee308f7dce631217931775342f3c', '2026-09-22'), "
+         "('nova_two', 'nova.two@test.com', 'Nova Two', 'Nova Two', 'NA', '4393e74456a378947ee3fc12aad239b62372ee308f7dce631217931775342f3c', '2026-09-22')"],
 }
 
 WRONG_ANSWERS = {
@@ -364,7 +364,7 @@ def test_read_only_tamper_fail(n, tmp):
     after = mutate_db(SEED, tmp / f"after_tamper_{n}.db",
                       ["INSERT INTO users (username, email, display_name, summoner_name, "
                        "region, password_hash, joined_date) VALUES ('tamper', "
-                       "'tamper@test.com', 'Tamper', 'Tamper', 'NA', 'x', '2026-09-22')"])
+                       "'tamper@test.com', 'Tamper', 'Tamper', 'NA', '4393e74456a378947ee3fc12aad239b62372ee308f7dce631217931775342f3c', '2026-09-22')"])
     verdict = run_verifier(n, run, SEED, after)
     assert verdict.get("pass") is False, json.dumps(verdict, indent=1)
 

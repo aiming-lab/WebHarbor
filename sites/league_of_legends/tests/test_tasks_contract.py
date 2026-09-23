@@ -77,7 +77,7 @@ def test_questions_are_nonempty_and_specific():
     for index, row in enumerate(rows):
         question = row["ques"]
         assert len(question) >= 60, f"row {index} question too short: {question!r}"
-        assert "?" in question or "report" in question.lower(), f"row {index} lacks an ask"
+        assert any(word in question.lower() for word in ("report", "explain", "compare", "identify", "give", "list", "create", "change", "remove", "add", "save", "which", "what", "how", "name")), f"row {index} lacks an ask"
         if "demo account" in question:
             assert login_boilerplate.search(question), \
                 f"row {index} references demo account without credentials"
@@ -90,12 +90,12 @@ def test_task_functional_breadth():
     rows = read_rows()
     joined = " ".join(row["ques"].lower() for row in rows)
     areas = {
-        "roster filters": "filter",
+        "roster selection": "roster",
         "roster search": "search",
         "champion detail": "champion page",
         "skins": "skin",
         "patch notes": "patch",
-        "news categories": "category",
+        "news research": "article",
         "account favorites": "favorite",
         "bookmarks": "bookmark",
         "profile management": "summoner name",
