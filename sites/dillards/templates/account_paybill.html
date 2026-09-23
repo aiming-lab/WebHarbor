@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Pay My Bill | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/account">My Dillard's Account</a> &rsaquo; Pay My Bill</div>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <a href="/account">My Dillard's Account</a>
+      <a href="/account/orders">Order History</a>
+      <a href="/account/returns">Returns</a>
+      <a href="/account/paybill" class="active">Pay My Bill</a>
+      <a href="/account/wishlist">My Wish List</a>
+      <a href="/account/profile">Profile &amp; Settings</a>
+      <a href="/account/addresses">Address Book</a>
+    </aside>
+    <section class="panel">
+      <h2>Dillard's Credit Card Account</h2>
+      <div class="card-summary">
+        <div>{{ card.card_kind }} ending in {{ card.last4 }} &middot; {{ card.reward_tier }}</div>
+        <div class="balance">Current Balance: ${{ '%.2f'|format(card.balance) }}</div>
+        <div class="labels">
+          <div><b>${{ '%.2f'|format(card.credit_limit) }}</b> Credit Limit</div>
+          <div><b>${{ '%.2f'|format(card.available_credit) }}</b> Available Credit</div>
+          <div><b>{{ card.points }}</b> Reward Points</div>
+          <div><b>${{ '%.2f'|format(card.minimum_payment) }}</b> Minimum Payment</div>
+        </div>
+        <p class="muted" style="margin-top:8px;">Statement date: {{ card.statement_date.strftime('%B %d, %Y') }} &middot; Payment due: {{ card.payment_due_date.strftime('%B %d, %Y') }}</p>
+        <p class="muted">Reward selection: {{ card and '' }}{{ current_user.rewards_selection }}</p>
+      </div>
+
+      <h2>Make a Payment</h2>
+      {% if error %}<div class="errors">{{ error }}</div>{% endif %}
+      <form method="post" action="/account/paybill" style="max-width: 420px;">
+        <div class="field">
+          <label>Amount</label>
+          <input type="number" step="0.01" min="1" name="amount" placeholder="0.00" required>
+        </div>
+        <div class="field">
+          <label>Payment method</label>
+          <select name="method">
+            <option value="Bank Draft">Bank Draft</option>
+            <option value="Debit Card">Debit Card</option>
+            <option value="Check by Mail">Check by Mail</option>
+          </select>
+        </div>
+        <button class="btn-primary" type="submit">Submit Payment</button>
+      </form>
+
+      {% if payments %}
+        <h2>Payment History</h2>
+        <table>
+          <tr><th>Posted</th><th>Amount</th><th>Method</th><th>Confirmation</th></tr>
+          {% for payment in payments %}
+            <tr>
+              <td>{{ payment.posted.strftime('%B %d, %Y') }}</td>
+              <td class="num">${{ '%.2f'|format(payment.amount) }}</td>
+              <td>{{ payment.method }}</td>
+              <td>{{ payment.confirmation }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+
+      <h2>Recent Activity</h2>
+      <table>
+        <tr><th>Posted</th><th>Description</th><th>Amount</th><th>Points</th></tr>
+        {% for transaction in transactions %}
+          <tr>
+            <td>{{ transaction.posted.strftime('%B %d, %Y') }}</td>
+            <td>{{ transaction.description }}</td>
+            <td class="num">${{ '%.2f'|format(transaction.amount) }}</td>
+            <td class="num">+{{ transaction.points }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </section>
+  </div>
+</div>
+{% endblock %}

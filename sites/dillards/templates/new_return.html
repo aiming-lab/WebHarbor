@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Start a Return | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/account">My Dillard's Account</a> &rsaquo; <a href="/account/orders">Order History</a> &rsaquo; Start a Return</div>
+  <div class="form-card" style="max-width: 640px;">
+    <h1>Start a Return</h1>
+    <p>Order {{ order.order_number }} &middot; placed {{ order.placed_at.strftime('%B %d, %Y') }}</p>
+    {% if error %}<div class="errors">{{ error }}</div>{% endif %}
+    <form method="post" action="/account/returns/new/{{ order.id }}">
+      <div class="field">
+        <label>Which item are you returning?</label>
+        <select name="order_item_id">
+          {% for item in order.items %}
+            <option value="{{ item.id }}">{{ item.product_name }} ({{ item.size }} {{ item.color }}) - ${{ '%.2f'|format(item.price * item.quantity) }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label>Reason for return</label>
+        <select name="reason">
+          <option value="Wrong size or fit">Wrong size or fit</option>
+          <option value="Did not like the color or style">Did not like the color or style</option>
+          <option value="Item arrived damaged">Item arrived damaged</option>
+          <option value="Received the wrong item">Received the wrong item</option>
+          <option value="Found a better price">Found a better price</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Return method</label>
+        <select name="method">
+          <option value="Return by Mail">Return by Mail</option>
+          <option value="Return to Store">Return to Store</option>
+        </select>
+      </div>
+      <button class="btn-primary" type="submit">Request Return</button>
+    </form>
+    <p class="form-note" style="margin-top: 10px;">Merchandise may be returned within 30 days of purchase. See the <a href="/c/returns">Return Policy</a> for details.</p>
+  </div>
+</div>
+{% endblock %}

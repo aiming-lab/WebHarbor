@@ -1,0 +1,36 @@
+{# One job listing card, shared by search results, category pages, and
+   employer pages. The TOP JOB / SPONSORED JOB flags render via CSS
+   ::before/::after content exactly like upstream package.css (see
+   .lister__item--topjob--active / --promotedjob--active), so they stay
+   out of the card's inner text. #}
+<li class="lister__item{% if job.is_top_job %} lister__item--top-job{% endif %}{% if job.is_promoted %} lister__item--promoted-job{% endif %}" id="item-{{ job.job_id }}">
+  <div class="lister__main">
+    <h3 class="lister__header">
+      <a href="{{ job.detail_path }}">{{ job.title }}</a>
+    </h3>
+    <ul class="lister__meta">
+      {% if job.location_text %}<li>{{ job.location_text }}</li>{% endif %}
+      {% if job.salary_text %}<li>{{ job.salary_text }}</li>{% endif %}
+      {% if job.employer_name %}<li>{{ job.employer_name }}</li>{% endif %}
+    </ul>
+    {% if job.snippet %}<p class="lister__description">{{ job.snippet[:280] }}</p>{% endif %}
+    <div class="lister__footer">
+      <a class="btn-view" href="{{ job.detail_path }}">View details</a>
+      {% if current_user.is_authenticated %}
+      <form class="save-form" action="/your-jobs/" method="post">
+        <input type="hidden" name="JobId" value="{{ job.job_id }}">
+        <input type="hidden" name="ReturnUrl" value="~{{ request.path }}">
+        <input type="hidden" name="Action" value="ShortlistJob">
+        <button type="submit">Save</button>
+      </form>
+      {% else %}
+      <a href="/logon?PipelinedPage=%2Fyour-jobs%2F%26PipelinedQueryString%3DJobId%3D{{ job.job_id }}%26Action%3DShortlistJob">Save</a>
+      {% endif %}
+    </div>
+  </div>
+  {% if job.employer and job.employer.logo_path %}
+  <div class="lister__logo">
+    <img src="{{ job.employer.logo_path }}" alt="{{ job.employer_name }} logo">
+  </div>
+  {% endif %}
+</li>

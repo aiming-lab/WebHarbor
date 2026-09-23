@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ store.store_name }} | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/stores">Store Locator</a> &rsaquo; <a href="/stores?state={{ store.state_abrev }}">{{ store.state }}</a> &rsaquo; {{ store.city }}</div>
+  <div class="content-page">
+    <h1>{{ store.store_name }}</h1>
+    <p>Store # {{ store.identifier }}</p>
+    <p>{{ store.address1 }}<br>{{ store.city }}, {{ store.state_abrev }} {{ store.zipcode }}</p>
+    <p><b>Phone:</b> {{ store.phone_display() }}</p>
+    <p class="muted">Store hours vary by location. Call the store for today's hours.</p>
+    <p><b>Other Dillard's stores in {{ store.state }}:</b></p>
+    <ul>
+      {% for other in nearby %}
+        <li><a href="/stores/{{ other.identifier }}">{{ other.store_name }}</a> - {{ other.city }} ({{ other.phone_display() }})</li>
+      {% endfor %}
+    </ul>
+  </div>
+</div>
+{% endblock %}

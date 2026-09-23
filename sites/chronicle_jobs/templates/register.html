@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-card">
+  <img class="auth-mark" src="{{ url_for('static', filename='icons/che_square_logo.svg') }}" alt="The Chronicle of Higher Education">
+  <h1>Create your account</h1>
+  <p class="auth-sub">Shortlist jobs, manage job alerts, and apply with one profile.</p>
+  <form method="post" action="/register">
+    <label for="first_name">First name <span class="form-required">*</span></label>
+    <input id="first_name" type="text" name="first_name" value="{{ request.form.get('first_name', '') }}">
+    <label for="last_name">Last name <span class="form-required">*</span></label>
+    <input id="last_name" type="text" name="last_name" value="{{ request.form.get('last_name', '') }}">
+    <label for="email">Email address <span class="form-required">*</span></label>
+    <input id="email" type="email" name="email" value="{{ request.form.get('email', '') }}">
+    <label for="password">Password <span class="form-required">*</span></label>
+    <input id="password" type="password" name="password">
+    <div class="help">At least 8 characters.</div>
+    <label for="confirm">Confirm password <span class="form-required">*</span></label>
+    <input id="confirm" type="password" name="confirm">
+    <input class="btn-apply" type="submit" value="Create account">
+  </form>
+  <p class="auth-alt">Already have an account? <a href="/logon">Sign in</a></p>
+</div>
+{% endblock %}

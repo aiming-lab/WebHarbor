@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}The Chronicle of Higher Education Jobs | College and Academic Job Search{% endblock %}</title>
+  <link rel="shortcut icon" type="image/x-icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+  <link rel="apple-touch-icon" sizes="114x114" href="{{ url_for('static', filename='icons/appIcon-114x114.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<div class="container">
+  <p class="skip-to-content"><a href="#main">Skip to main content</a></p>
+
+  <header class="masthead">
+    <div class="masthead__inner">
+      <a class="masthead__logo" href="/">
+        <span class="masthead__logo-chronicle">Chronicle</span>
+        <span class="masthead__logo-sub">Careers&nbsp;&nbsp;|&nbsp;&nbsp;Jobs</span>
+      </a>
+      <a class="masthead__post-job" href="/employers/">Employers: Post a job</a>
+    </div>
+    <nav class="primary-nav" aria-label="Primary">
+      <div class="primary-nav__inner">
+        <ul class="primary-nav__items">
+          <li><a href="/">Home</a></li>
+          <li><a href="/jobs/">Find a job</a></li>
+          <li><a href="/newalert">Job alerts</a></li>
+          <li><a href="/profilecv/">My resume</a></li>
+          <li><a href="/career-resources/">Career resources</a></li>
+        </ul>
+        <div class="primary-nav__account">
+          {% if current_user.is_authenticated %}
+            <span class="primary-nav__hello">Hi, {{ current_user.first_name or current_user.email }}</span>
+            <a href="/your-jobs/">My jobs</a>
+            <a href="/logout">Sign out</a>
+          {% else %}
+            <span class="primary-nav__hello">Jobseekers:</span>
+            <a href="/logon">Sign in</a>
+            <a href="/register">Create account</a>
+          {% endif %}
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <div role="main" class="main" id="main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes">
+          {% for category, message in messages %}
+            <div class="flash flash--{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <div class="site-footer__col">
+        <h3 class="site-footer__heading">Job Seeker</h3>
+        <ul class="site-footer__links">
+          <li><a href="/jobs/">Browse Jobs</a></li>
+          <li><a href="/newalert">Create Job Alerts</a></li>
+          <li><a href="/career-resources/">Career Resources</a></li>
+          <li><a href="/profilecv/">Upload Your Resume</a></li>
+          <li><a href="/register">Create a Job Seeker Account</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h3 class="site-footer__heading">Employer</h3>
+        <ul class="site-footer__links">
+          <li><a href="/employers/">Featured Employers</a></li>
+          <li><a href="/employers/">Pricing</a></li>
+          <li><a href="/contact-us/?topic=Issue%20Dates%20%26%20Deadlines">Issue Dates &amp; Deadlines</a></li>
+          <li><a href="/contact-us/?topic=Rate%20Card">Rate Card</a></li>
+          <li><a href="/contact-us/?topic=Employer%20account">Create an Employer Account</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h3 class="site-footer__heading">Customer Support</h3>
+        <ul class="site-footer__links">
+          <li><a href="/about-us/">About Us</a></li>
+          <li><a href="/contact-us/">Contact Us</a></li>
+          <li><a href="/terms-and-conditions/">Terms &amp; Conditions</a></li>
+          <li><a href="/privacy-policy/">Privacy Policy</a></li>
+          <li><a href="/user-agreement/">User Agreement</a></li>
+          <li><a href="/accessibility-statement/">Accessibility Statement</a></li>
+        </ul>
+      </div>
+      <div class="site-footer__col">
+        <h3 class="site-footer__heading">Stay Connected</h3>
+        <ul class="site-footer__links site-footer__links--social">
+          <li><a href="https://www.facebook.com/chronicleofhighereducation/" rel="noopener">Facebook</a></li>
+          <li><a href="https://twitter.com/chronicle" rel="noopener">X</a></li>
+          <li><a href="https://www.linkedin.com/company/the-chronicle-of-higher-education/" rel="noopener">LinkedIn</a></li>
+          <li><a href="https://www.chronicle.com/" rel="noopener">Chronicle.com</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="site-footer__bottom">
+      <img class="site-footer__mark" src="{{ url_for('static', filename='icons/che_square_logo.svg') }}" alt="The Chronicle of Higher Education">
+      <p class="site-footer__address">
+        900 19th Street, N.W., 6th Floor<br>
+        Washington, D.C. 20006
+      </p>
+      <p class="site-footer__copyright">
+        &copy; 2026 The Chronicle of Higher Education, all rights reserved.
+        Powered by Madgex Job Board Software
+      </p>
+    </div>
+  </footer>
+</div>
+</body>
+</html>

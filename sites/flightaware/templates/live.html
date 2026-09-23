@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Live Flight Tracker - FlightAware{% endblock %}
+{% block content %}
+<div class="hero">
+  <h1>FlightAware is Central to Aviation</h1>
+  <div class="sub">Live flight tracking, airport activity, delays and cancellations, aviation photos and news</div>
+  <form class="searchbox" action="/live/form.rvt" method="get">
+    <input type="text" name="query" placeholder="Search for airport">
+    <button type="submit">Search</button>
+  </form>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <div class="panel-head">Quickly &amp; Easily Track a Flight</div>
+    <div class="panel-body">
+      <form action="/live/form.rvt" method="get">
+        <div class="form-row">
+          <label>Airline</label>
+          <select name="airline">
+            <option value="">All Airlines</option>
+            {% for op in operators %}
+            <option value="{{ op.code }}">{{ op.name }} ({{ op.code }})</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Flight number</label>
+          <input type="text" name="flight_number" placeholder="e.g. 1063" required>
+        </div>
+        <button class="btn-primary" type="submit">Track</button>
+      </form>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head">Forgot the flight number?</div>
+    <div class="panel-body">
+      <form action="/live/findflight/" method="get">
+        <div class="form-row">
+          <label>Departure airport or city</label>
+          <input type="text" name="origin" placeholder="e.g. New York">
+        </div>
+        <div style="text-align:center;color:#1f4a75;font-size:12px;">-and-</div>
+        <div class="form-row">
+          <label>Arrival airport or city</label>
+          <input type="text" name="destination" placeholder="e.g. London">
+        </div>
+        <button class="btn-primary" type="submit">Search Flights</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Live Flight Tracker <span class="more">FlightAware MiseryMap&reg; &mdash; <a href="/miserymap/">See delays on a map</a></span></div>
+  <div class="map-box">
+    <a href="/live/airport/random"><img src="/static/images/maps/map_live.png" alt="Live flight map"></a>
+    <div class="map-note">Worldwide airport activity &middot; {{ mirror_date_text }}</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Browsing Suggestions</div>
+  <div class="panel-body">
+    <div class="grid-3">
+      <div>
+        <h3 class="subsection">Airport Activity <span class="muted small">(all flights)</span></h3>
+        {% for a in activity_airports %}
+          <div><a href="/live/airport/{{ a.code }}">{{ a.name }} ({{ a.code }})</a></div>
+        {% endfor %}
+      </div>
+      <div>
+        <h3 class="subsection">Browse by Operator <span class="muted small">(all flights)</span></h3>
+        {% for op in operators %}
+          <div><a href="/live/fleet/{{ op.code }}">{{ op.name }} ({{ op.code }})</a></div>
+        {% endfor %}
+      </div>
+      <div>
+        <h3 class="subsection">Browse by Aircraft Type <span class="muted small">(all flights)</span></h3>
+        {% for t in types %}
+          <div><a href="/live/aircrafttype/{{ t.code }}">{{ t.name }} ({{ t.code }})</a></div>
+        {% endfor %}
+      </div>
+    </div>
+    <p class="small muted">Delays and cancellations: <a href="/live/cancelled/">see today's statistics</a> or browse the <a href="/live/airport/delays/">worldwide airport delays</a> page.</p>
+  </div>
+</div>
+{% endblock %}

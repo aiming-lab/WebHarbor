@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Flight Finder - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">FLIGHT FINDER</div>
+
+<div class="panel">
+  <div class="panel-head">Find a flight</div>
+  <div class="panel-body">
+    <form method="get" action="/live/findflight/">
+      <div class="grid-3">
+        <div class="form-row">
+          <label>Departure airport or city</label>
+          <input type="text" name="origin" value="{{ origin_q }}" placeholder="e.g. New York">
+        </div>
+        <div class="form-row">
+          <label>Arrival airport or city</label>
+          <input type="text" name="destination" value="{{ dest_q }}" placeholder="e.g. London">
+        </div>
+        <div class="form-row">
+          <label>Airline</label>
+          <input type="text" name="airline" value="{{ airline_q }}" placeholder="e.g. United">
+        </div>
+      </div>
+      <button class="btn-primary" type="submit">Search Flights</button>
+    </form>
+  </div>
+</div>
+
+{% if searched %}
+<div class="panel">
+  <div class="panel-head">Results{% if origin_q or dest_q or airline_q %} for {{ origin_q }}{% if dest_q %} &rarr; {{ dest_q }}{% endif %}{% if airline_q %} on {{ airline_q }}{% endif %}{% endif %} <span class="more">{{ flights|length }} flights found</span></div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Ident</th><th>Type</th><th>Origin</th><th>Destination</th><th>Departure</th><th>Arrival</th><th>Status</th></tr>
+    {% for f in flights %}
+    <tr>
+      <td class="ident"><a href="/live/flight/{{ f.ident }}">{{ f.ident }}</a></td>
+      <td>{{ f.aircraft_type }}</td>
+      <td><a href="/live/airport/{{ f.origin_code }}">{{ f.origin_code }}</a></td>
+      <td><a href="/live/airport/{{ f.dest_code }}">{{ f.dest_code }}</a></td>
+      <td>{{ f.dep_text }}</td>
+      <td>{{ f.arr_text }}</td>
+      <td>{{ f.status or '' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="7">No flights matched your search. Try a nearby city or a different airline.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% else %}
+<div class="panel">
+  <div class="panel-head">Popular airports</div>
+  <div class="panel-body">
+    {% for a in airports[:24] %}
+      <a href="/live/airport/{{ a.code }}">{{ a.name }} ({{ a.code }})</a>{% if not loop.last %} &middot; {% endif %}
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

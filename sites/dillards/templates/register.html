@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Create an Account | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <h1>Create an Account</h1>
+    {% if errors %}
+      <ul class="errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% endif %}
+    <form method="post" action="/register">
+      <div class="field">
+        <label>First Name *</label>
+        <input type="text" name="first_name" required>
+      </div>
+      <div class="field">
+        <label>Last Name *</label>
+        <input type="text" name="last_name" required>
+      </div>
+      <div class="field">
+        <label>Email address *</label>
+        <input type="email" name="email" required>
+      </div>
+      <div class="field">
+        <label>Password * (8 characters minimum)</label>
+        <input type="password" name="password" required>
+      </div>
+      <button class="btn-primary" type="submit">Create Account</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

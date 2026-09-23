@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block content %}
+{% if sections %}
+  {% for section, products in sections %}
+  <section class="feed-section">
+    <div class="feed-head">
+      <div>
+        <h2>{{ section.heading }}</h2>
+        {% if section.subheading %}<div class="feed-sub">{{ section.subheading }}</div>{% endif %}
+      </div>
+      <a class="explore-btn" href="{{ url_for('search', q=section.explore_query) }}" aria-label="Explore more {{ section.explore_query }}">
+        <span>Explore</span>
+        <svg viewBox="0 0 24 24"><path d="M12 4l-1.41 1.41L16.17 11H4v2h12.17l-5.58 5.59L12 20l8-8z"/></svg>
+      </a>
+    </div>
+    <div class="feed-row">
+      {% for p in products %}
+      <a class="pcard" href="{{ url_for('product', upstream_id=p.upstream_id) }}">
+        <div class="tile">
+          {% if p.discount_pct %}<span class="badge">{{ p.discount_pct }}% OFF</span>{% endif %}
+          <img src="{{ url_for('static', filename='images/' + p.image) }}" alt="{{ p.title }}">
+        </div>
+        <div class="caption">
+          <div class="title">{{ p.title }}</div>
+          <div class="meta">
+            <span class="merchant">
+              {% if p.merchant_favicon %}<img src="{{ url_for('static', filename='images/' + p.merchant_favicon) }}" alt="">{% endif %}
+              {{ p.merchant_name }}
+            </span>
+            <span class="dot">&middot;</span>
+            <span class="pricegroup">
+              <span class="price">{{ p.price_display }}</span>
+              {% if p.was_display %}<span class="was">{{ p.was_display }}</span>{% endif %}
+            </span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <h1>Nothing to see here</h1>
+    <p>Browse the rest of Google Shopping</p>
+    <a class="home-btn" href="{{ url_for('index') }}">Go to Shopping home</a>
+  </div>
+{% endif %}
+{% endblock %}

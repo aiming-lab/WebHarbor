@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Apply for a Dillard's Card | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/c/DillardsCard">Credit Card</a> &rsaquo; Apply</div>
+  <div class="form-card" style="max-width: 560px;">
+    <h1>Apply for a Dillard's Card</h1>
+    <p class="form-note">Subject to credit approval. Get 2 points per $1 spent at Dillard's.</p>
+    {% if errors %}
+      <ul class="errors">
+        {% for e in errors %}
+          <li>{{ {'first_name':'First name is required.','last_name':'Last name is required.','email':'Email is required.','address1':'Street address is required.','city':'City is required.','state':'State is required.','zip':'ZIP code is required.'}.get(e, e) }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+    <form method="post" action="/creditcard/apply">
+      <div class="field"><label>First Name *</label><input type="text" name="first_name" value="{{ values.get('first_name','') }}"></div>
+      <div class="field"><label>Last Name *</label><input type="text" name="last_name" value="{{ values.get('last_name','') }}"></div>
+      <div class="field"><label>Email *</label><input type="email" name="email" value="{{ values.get('email','') }}"></div>
+      <div class="field"><label>Street Address *</label><input type="text" name="address1" value="{{ values.get('address1','') }}"></div>
+      <div class="field">
+        <div style="display:flex; gap: 12px;">
+          <div style="flex:2;"><label>City *</label><input type="text" name="city" value="{{ values.get('city','') }}"></div>
+          <div style="flex:1;"><label>State *</label><input type="text" name="state" value="{{ values.get('state','') }}"></div>
+          <div style="flex:1;"><label>ZIP *</label><input type="text" name="zip" value="{{ values.get('zip','') }}"></div>
+        </div>
+      </div>
+      <div class="field"><label>Total Annual Income</label><input type="text" name="income" placeholder="e.g. 65000"></div>
+      <button class="btn-primary" type="submit">Submit Application</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
