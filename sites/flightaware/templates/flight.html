@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+{% block title %}{{ flight.display }} ({{ flight.ident }}) {{ airline.name if airline else '' }} Flight Tracking and History - FlightAware{% endblock %}
+{% block content %}
+<div class="panel">
+  <div class="panel-body">
+    <div style="overflow:hidden;">
+      <div style="float:left;">
+        <div style="font-size:20px;font-weight:bold;color:#1f4a75;">{{ airline.name if airline else flight.airline_code }} {{ flight.ident | replace(flight.airline_code, '') }}</div>
+        <div class="small muted">{{ flight.ident }} / {{ flight.display }}
+          {% if not current_user.is_authenticated %}
+          &mdash; <a href="{{ url_for('register') }}">Upgrade account to see tail number</a>
+          {% endif %}
+        </div>
+        {% if flight.status %}
+        <div class="flight-status-ok" style="margin-top:6px;">{{ flight.status | upper }}</div>
+        {% if flight.status_detail %}<div class="small muted">{{ flight.status_detail }}</div>{% endif %}
+        {% endif %}
+      </div>
+      <div style="float:right;">
+        <a class="btn-alert" href="{{ url_for('account_home') }}">Get Alerts</a>
+      </div>
+    </div>
+
+    <div class="grid-2" style="margin-top:14px;">
+      <div>
+        <div style="font-size:24px;font-weight:bold;color:#1f4a75;">{{ (origin.iata or flight.origin_code) if origin else flight.origin_code }}</div>
+        <div class="small">{% if origin and origin.city %}{{ origin.city | upper }}{% if origin.region %}, {{ origin.region | upper }}{% endif %}{% else %}{{ (flight.origin_name or flight.origin_code) | upper }}{% endif %}</div>
+        {% if flight.gate_dep %}<div class="small">left GATE {{ flight.gate_dep }}</div>{% endif %}
+        <div class="small"><a href="/live/airport/{{ flight.origin_code }}">{{ (flight.origin_name or (origin.name if origin else flight.origin_code)) | replace(" Airport", "") }} - {{ (origin.iata if origin else None) or flight.origin_code }}</a></div>
+        <div class="kv" style="margin-top:6px;">
+          <span class="k">{{ flight.flight_date | fa_date }}</span><br>
+          <span class="k">{{ flight.actual_dep or flight.dep_text }}</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:24px;font-weight:bold;color:#1f4a75;">{{ (dest.iata or flight.dest_code) if dest else flight.dest_code }}</div>
+        <div class="small">{% if dest and dest.city %}{{ dest.city | upper }}{% if dest.country and dest.country|length > 3 %}, {{ dest.country | upper }}{% endif %}{% else %}{{ (flight.dest_name or flight.dest_code) | upper }}{% endif %}</div>
+        {% if flight.gate_arr %}<div class="small">arriving at GATE {{ flight.gate_arr }}</div>
+        {% elif flight.arr_terminal %}<div class="small">arriving at TERMINAL {{ flight.arr_terminal }}</div>{% endif %}
+        <div class="small"><a href="/live/airport/{{ flight.dest_code }}">{{ (flight.dest_name or (dest.name if dest else flight.dest_code)) | replace(" Airport", "") }} - {{ (dest.iata if dest else None) or flight.dest_code }}</a></div>
+        <div class="kv" style="margin-top:6px;">
+          <span class="k">{{ flight.flight_date | fa_date }}</span><br>
+          <span class="k">{{ flight.actual_arr or flight.arr_text }}</span>
+        </div>
+      </div>
+    </div>
+
+    {% if flight.elapsed_text or flight.total_travel_text %}
+    <div class="kv" style="margin-top:14px;border-top:1px solid #eef2f6;padding-top:8px;">
+      <div class="small muted">
+        {{ flight.elapsed_text }}{% if flight.flown_mi %} &middot; {{ flight.flown_mi | commas }} mi flown{% endif %}
+        {% if flight.total_travel_text %} &middot; {{ flight.total_travel_text }}{% endif %}
+        {% if flight.remaining_text %} &middot; {{ flight.remaining_text }}{% endif %}
+        {% if flight.togo_mi %} &middot; {{ flight.togo_mi | commas }} mi to go{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="promo-box">
+      <span class="h">NOT YOUR FLIGHT?</span>
+      <a href="/live/flight/{{ flight.ident }}/history">{{ flight.display }} flight schedule</a>
+    </div>
+
+    <div class="promo-box">
+      <span class="h">Set Up Unlimited Flight Alerts &amp; More</span>
+      Check out premium account features for aviation professionals and enthusiasts.
+      <a href="/account/premium/">Discover FlightAware Premium</a>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Flight Tracking <span class="more"><a class="btn-alert" style="font-size:11px;padding:2px 8px;" href="{{ url_for('account_home') }}">Get Alerts</a></span></div>
+  <div class="map-box">
+    <img src="/static/images/maps/map_live.png" alt="{{ flight.display }} tracking map">
+    <div class="map-note">{{ flight.origin_code }} &rarr; {{ flight.dest_code }} &middot; {{ flight.status | upper if flight.status else 'TRACKING' }} &middot; {{ mirror_date_text }}</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Flight Details <span class="more">updated a few seconds ago</span></div>
+  <div class="panel-body">
+    <div class="kv"><span class="k">View track log</span><a href="#">track log</a></div>
+    <div class="kv"><span class="k">Track inbound plane</span><a href="#">inbound aircraft</a></div>
+    <div class="kv"><span class="k">All flights between {{ flight.origin_code }} and {{ flight.dest_code }}</span>
+      <a href="/live/findflight/?origin={{ flight.origin_code }}&destination={{ flight.dest_code }}">see route</a></div>
+
+    <h3 class="subsection">Departure Times</h3>
+    <div class="grid-2">
+      <div>
+        <div class="kv"><span class="k">Gate Departure</span>{{ flight.actual_dep or flight.dep_text }}</div>
+        {% if flight.sched_dep %}<div class="kv"><span class="k">Scheduled</span>{{ flight.sched_dep }}</div>{% endif %}
+        <div class="kv"><span class="k">Average Delay</span>Less than 10 minutes</div>
+      </div>
+    </div>
+
+    <h3 class="subsection">Arrival Times</h3>
+    <div class="grid-2">
+      <div>
+        <div class="kv"><span class="k">Landing</span>{{ flight.actual_arr or flight.arr_text }}</div>
+        {% if flight.sched_arr %}<div class="kv"><span class="k">Scheduled</span>{{ flight.sched_arr }}</div>{% endif %}
+      </div>
+    </div>
+
+    <h3 class="subsection">Aircraft Details</h3>
+    <div class="kv"><span class="k">Aircraft Type</span>{{ aircraft.name if aircraft else flight.aircraft_type }} ({{ flight.aircraft_type }}) <a href="/photos/all/sort/votes?q={{ flight.aircraft_type }}">Photos</a></div>
+    <div class="kv"><span class="k">Registration</span>Upgrade account to see tail number</div>
+    <div class="kv"><span class="k">Airline</span>{{ airline.name if airline else flight.airline_code }} <a href="/live/fleet/{{ flight.airline_code }}">all flights</a></div>
+
+    {% if flight.speed_mph or flight.altitude_ft or flight.distance_mi or flight.route %}
+    <h3 class="subsection">Flight Data</h3>
+    {% if flight.speed_mph %}
+    <div class="kv"><span class="k">Speed</span>{{ flight.speed_mph }} mph{% if flight.planned_speed_mph %} (Planned: {{ flight.planned_speed_mph }} mph){% endif %}</div>
+    {% endif %}
+    {% if flight.altitude_ft %}
+    <div class="kv"><span class="k">Altitude</span>{{ flight.altitude_ft | commas }} ft{% if flight.planned_altitude_ft %} (Planned: {{ flight.planned_altitude_ft | commas }} ft){% endif %}</div>
+    {% endif %}
+    {% if flight.distance_mi %}
+    <div class="kv"><span class="k">Distance</span>Planned: {{ flight.distance_mi | commas }} mi</div>
+    {% endif %}
+    {% if flight.route %}
+    <div class="kv"><span class="k">Route</span>{{ flight.route }} <a href="/statistics/ifr-route/">decode</a></div>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+
+{% if top_photos %}
+<div class="panel">
+  <div class="panel-head">Top {{ aircraft.name if aircraft else flight.aircraft_type }} Photos <span class="more"><a href="/photos/all/sort/votes">view all photos</a> &middot; <a href="/photos/upload">upload photo</a></span></div>
+  <div class="panel-body photo-grid">
+    {% for photo in top_photos %}
+    <div class="photo-card">
+      <a href="{{ photo.href }}"><img src="/static/images/photos/{{ photo.image_file }}" alt="{{ photo.title }}"></a>
+      <div class="cap">
+        <div class="t"><a href="{{ photo.href }}">{{ photo.title }}</a></div>
+        <div class="m">{{ photo.votes | commas }} votes &middot; {{ photo.photographer }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if upcoming %}
+<div class="panel">
+  <div class="panel-head">Upcoming Flights</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Date</th><th>Departure</th><th>Arrival</th><th>Aircraft</th><th>Duration</th></tr>
+    {% for f in upcoming %}
+    <tr>
+      <td>{{ f.flight_date | fa_date }}</td>
+      <td>{{ f.dep_text }}</td>
+      <td>{{ f.arr_text }}</td>
+      <td>{{ f.aircraft_type }}</td>
+      <td>{{ f.duration_text }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endif %}
+
+{% if past %}
+<div class="panel">
+  <div class="panel-head">Past Flights</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Date</th><th>Departure</th><th>Arrival</th><th>Aircraft</th><th>Duration</th></tr>
+    {% for f in past %}
+    <tr>
+      <td>{{ f.flight_date | fa_date }}</td>
+      <td>{{ f.dep_text }}</td>
+      <td>{{ f.arr_text }}</td>
+      <td>{{ f.aircraft_type }}</td>
+      <td>{{ f.duration_text }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

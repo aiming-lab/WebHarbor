@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Purchase a Gift Card | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/c/giftcard">Gift Cards</a> &rsaquo; Purchase</div>
+  <div class="form-card">
+    <h1>Buy an E-Gift Card</h1>
+    {% if errors %}<ul class="errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>{% endif %}
+    <form method="post" action="/giftcards/purchase">
+      <div class="field">
+        <label>Amount ($25 - $2,000) *</label>
+        <input type="number" step="1" min="25" max="2000" name="amount" required>
+      </div>
+      <div class="field">
+        <label>Recipient Name *</label>
+        <input type="text" name="recipient" required>
+      </div>
+      <div class="field">
+        <label>From</label>
+        <input type="text" name="sender">
+      </div>
+      <button class="btn-primary" type="submit">Purchase Gift Card</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

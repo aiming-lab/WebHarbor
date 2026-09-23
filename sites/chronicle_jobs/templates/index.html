@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block body_class %}home home--sydney jobseeker-page__home{% endblock %}
+{% block content %}
+<div class="band band--primary--first">
+  <div class="home-hero">
+    <h1>Search {{ "{:,}".format(total) }} jobs</h1>
+    <form action="/searchjobs/" method="get" class="search-panel" accept-charset="utf-8">
+      <div class="field">
+        <label for="keywords">Keywords</label>
+        <input id="keywords" type="text" name="Keywords" placeholder="e.g. Job Title or Organization">
+      </div>
+      <div class="field">
+        <label for="location">Location</label>
+        <input id="location" type="text" name="radialtown" placeholder="e.g. Country, City or ZIP Code">
+      </div>
+      <div class="field field--within">
+        <label for="RadialLocation">Within</label>
+        <select id="RadialLocation" name="RadialLocation">
+          <option value="0">Everywhere</option>
+          <option value="5">Within 5 miles</option>
+          <option value="10">Within 10 miles</option>
+          <option value="15">Within 15 miles</option>
+          <option value="20" selected>Within 20 miles</option>
+          <option value="50">Within 50 miles</option>
+          <option value="100">Within 100 miles</option>
+        </select>
+      </div>
+      <input type="submit" value="Find jobs">
+    </form>
+    <div class="hero-quicklinks">
+      <a href="/jobs/administrative/">Administrative jobs</a>
+      <a href="/jobs/executive/">Executive jobs</a>
+      <a href="/jobs/faculty-positions/">Faculty positions</a>
+      <a href="/jobs/jobs-outside-academe/">Jobs outside academe</a>
+    </div>
+  </div>
+
+  <section class="browse-brick">
+    <div class="browse-brick__head">
+      <h2 class="browse-brick__title">Browse jobs by position type</h2>
+      <a class="browse-brick__all" href="/jobs/">View all</a>
+    </div>
+    <ul class="facet-columns">
+      {% for cat in position_types() recursive %}
+      {% if cat.parent_id is none %}
+      <li>
+        <a href="/jobs/{{ cat.slug }}/">{{ cat.label }}</a><small>{{ cat.job_count }}</small>
+        {% if cat.children %}
+        <ul>
+          {% for child in cat.children %}
+          <li><a href="/jobs/{{ child.slug }}/">{{ child.label }}</a><small>{{ child.job_count }}</small></li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </li>
+      {% endif %}
+      {% endfor %}
+    </ul>
+  </section>
+</div>
+
+<div class="home-grid">
+  <div class="home-main">
+    <section class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title">Top jobs</h2>
+        <a class="panel__all" href="/jobs/">View all jobs</a>
+      </div>
+      {% for job in top_jobs %}
+      <div class="top-job">
+        {% if job.employer and job.employer.logo_path %}
+        <div class="top-job__logo"><img src="{{ job.employer.logo_path }}" alt="{{ job.employer_name }} logo"></div>
+        {% endif %}
+        <div class="top-job__body">
+          <h3><a href="{{ job.detail_path }}">{{ job.title }}</a></h3>
+          <p class="top-job__meta">
+            {{ job.location_text or "Not specified" }}
+            <span class="sep"></span>
+            {{ job.employer_name }}
+          </p>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+
+    <div class="jobseeker-ctas">
+      <a class="jobseeker-cta" href="/register">
+        <img src="{{ url_for('static', filename='icons/account.svg') }}" alt="">
+        <div>
+          <h3>Create an account</h3>
+          <p>Shortlist jobs, manage your job alerts, and receive special offers.</p>
+          <span class="cta-link">Create account &rsaquo;</span>
+        </div>
+      </a>
+      <a class="jobseeker-cta jobseeker-cta--last" href="/profilecv/">
+        <img src="{{ url_for('static', filename='icons/resume.svg') }}" alt="">
+        <div>
+          <h3>Upload your resume</h3>
+          <p>Upload your CV so our recruiters can match your details to the best available jobs.</p>
+          <span class="cta-link">Upload now &rsaquo;</span>
+        </div>
+      </a>
+    </div>
+
+    <section class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title">Career resources</h2>
+        <a class="panel__all" href="/career-resources/">View all articles</a>
+      </div>
+      {% for article in articles %}
+      <div class="article-card">
+        {% if article.image_path %}<img src="{{ article.image_path }}" alt="">{% endif %}
+        <div>
+          <h3><a href="/career-resources/{{ article.slug }}/">{{ article.title }}</a></h3>
+          {% if article.author %}<p class="top-job__meta">By {{ article.author }}</p>{% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+  </div>
+
+  <div class="home-side">
+    <section class="panel">
+      <h2 class="panel__title">Featured employers</h2>
+      <div class="employer-grid">
+        {% for employer in featured %}
+        <a href="/employer/{{ employer.ref }}/{{ employer.slug }}/">
+          {% if employer.logo_path %}<img src="{{ employer.logo_path }}" alt="{{ employer.name }} logo">{% else %}{{ employer.name }}{% endif %}
+        </a>
+        {% endfor %}
+      </div>
+      <p style="margin-top:12px"><a href="/employers/">View all employers</a></p>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel__title">Popular searches</h2>
+      <div class="popular-searches">
+        <ul>
+          {% for page in popular %}
+          <li><a href="/landingpage/{{ page.landing_id }}/{{ page.slug }}/">{{ page.title }}</a></li>
+          {% endfor %}
+        </ul>
+        <p style="margin-top:12px"><a class="panel__all" href="/landingpagelist/">More jobs</a></p>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

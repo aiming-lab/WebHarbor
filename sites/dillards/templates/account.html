@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}My Dillard's Account | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; My Dillard's Account</div>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <a href="/account" class="active">My Dillard's Account</a>
+      <a href="/account/orders">Order History</a>
+      <a href="/account/returns">Returns</a>
+      <a href="/account/paybill">Pay My Bill</a>
+      <a href="/account/wishlist">My Wish List</a>
+      <a href="/account/profile">Profile &amp; Settings</a>
+      <a href="/account/addresses">Address Book</a>
+    </aside>
+    <section class="panel">
+      <h2>Welcome back, {{ current_user.first_name }}</h2>
+      <p class="muted">Here is a summary of your account.</p>
+
+      <h2>Recent Orders</h2>
+      <table>
+        <tr><th>Order #</th><th>Date</th><th>Total</th><th>Status</th><th></th></tr>
+        {% for order in orders[:5] %}
+          <tr>
+            <td><a href="/account/orders/{{ order.id }}">{{ order.order_number }}</a></td>
+            <td>{{ order.placed_at.strftime('%B %d, %Y') }}</td>
+            <td class="num">${{ '%.2f'|format(order.total) }}</td>
+            <td><span class="badge {{ order.status_code()|lower }}">{{ order.status_code() }}</span></td>
+            <td><a href="/account/orders/{{ order.id }}">View Details</a></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="5" class="muted">No orders yet.</td></tr>
+        {% endfor %}
+      </table>
+
+      {% if card %}
+        <h2>Dillard's Credit Card</h2>
+        <div class="card-summary">
+          <div>Card ending in {{ card.last4 }} &middot; {{ card.card_kind }}</div>
+          <div class="balance">Current Balance: ${{ '%.2f'|format(card.balance) }}</div>
+          <div class="labels">
+            <div><b>{{ card.points }}</b> Reward Points</div>
+            <div><b>${{ '%.2f'|format(card.available_credit) }}</b> Available Credit</div>
+            <div><b>${{ '%.2f'|format(card.minimum_payment) }}</b> Minimum Payment Due</div>
+          </div>
+          <p style="margin-top:10px;"><a href="/account/paybill">Pay My Bill</a></p>
+        </div>
+      {% endif %}
+
+      <h2>My Wish List</h2>
+      <table>
+        <tr><th>Item</th><th>Price</th><th></th></tr>
+        {% for item in wishlist[:5] %}
+          <tr>
+            <td><a href="{{ item.product.url }}">{{ item.product.full_name }}</a></td>
+            <td class="num">${{ '%.2f'|format(item.product.price() or 0) }}</td>
+            <td><a href="/account/wishlist">Manage</a></td>
+          </tr>
+        {% else %}
+          <tr><td colspan="3" class="muted">Your wish list is empty.</td></tr>
+        {% endfor %}
+      </table>
+
+      {% if returns_ %}
+        <h2>Returns</h2>
+        <table>
+          <tr><th>Order #</th><th>Item</th><th>Status</th><th>Credit</th></tr>
+          {% for r in returns_ %}
+            <tr>
+              <td>{{ r.order.order_number }}</td>
+              <td>{{ r.order_item.product_name }}</td>
+              <td>{{ r.status }}</td>
+              <td class="num">${{ '%.2f'|format(r.credit_issued) }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

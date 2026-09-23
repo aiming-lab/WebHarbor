@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ ident }} - FlightAware{% endblock %}
+{% block content %}
+<div class="login-note">
+  We were unable to find the flight <b>{{ ident }}</b>. Check the flight number, or
+  <a href="/live/findflight/">use the Flight Finder</a> to locate it by route.
+</div>
+<div class="panel">
+  <div class="panel-head">Search for flights</div>
+  <div class="panel-body">
+    <form action="/live/form.rvt" method="get">
+      <div class="form-row"><label>Flight number, tail, airport, or city</label>
+        <input type="text" name="query" value="{{ ident }}"></div>
+      <button class="btn-primary" type="submit">Search</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

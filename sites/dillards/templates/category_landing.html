@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }} | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; {{ category.name }}</div>
+  <div class="page-head">
+    <h1>{{ category.nav_label or category.name }}</h1>
+  </div>
+
+  <div class="plp-layout">
+    <aside class="filters">
+      <h2>Filter</h2>
+      <div class="filter-group">
+        <h3>Category</h3>
+        {% for sub in subs %}
+          <a href="/c/{{ sub.slug }}">{{ sub.name }}</a>
+        {% endfor %}
+      </div>
+    </aside>
+
+    <section>
+      <div class="sort-bar">
+        <span class="items-count">Shop {{ category.name }}</span>
+      </div>
+      {% if featured %}
+        <div class="product-grid">
+          {% for product in featured %}
+            <div class="product-card">
+              <a class="card-img" href="{{ product.url }}"><img src="/static/images/{{ product.main_image }}" alt="{{ product.full_name }}"></a>
+              <div class="swatches">
+                {% for color in product.colors()[:5] %}
+                  <img src="/static/images/{{ color.image }}" alt="Color Swatch - {{ color.color }}">
+                {% endfor %}
+              </div>
+              <a class="brand-name" href="{{ product.brand.url }}">{{ product.brand.name }}</a>
+              <a class="product-name" href="{{ product.url }}">{{ product.short_name or product.name }}</a>
+              <div class="price{% if product.on_sale() %} sale{% endif %}">${{ '%.2f'|format(product.price() or 0) }}{% if product.on_sale() %} <span class="was">${{ '%.2f'|format(product.was_price()) }}</span>{% endif %}</div>
+              {% if product.exclusive %}<div class="exclusive-label">Dillard's Exclusive</div>{% endif %}
+              {% if product.review_count %}
+                <div class="stars">{% for i in range((product.rating|stars)['full']) %}&#9733;{% endfor %}{% if (product.rating|stars)['half'] %}&#189;{% endif %} <span class="review-count">({{ product.review_count }})</span></div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p class="muted">No products found in this category.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

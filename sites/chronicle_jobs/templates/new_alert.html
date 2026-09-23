@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}New Job By Email | The Chronicle of Higher Education Jobs{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Create a job alert</h1>
+  <p style="margin-top:-8px">Be the first to apply - get daily alerts with the latest jobs sent directly to your inbox.</p>
+  <p class="help">Fields marked with an asterisk (*) are required.</p>
+  <form method="post" action="/newalert">
+    <label for="email">What is your email address? <span class="form-required">*</span></label>
+    <input id="email" type="email" name="email" value="{{ current_user.email if current_user.is_authenticated else request.form.get('email', '') }}">
+
+    <label for="keywords">What job title are you currently seeking?</label>
+    <input id="keywords" type="text" name="keywords" placeholder="e.g. Job Title or Organization" value="{{ request.form.get('keywords', pre_keywords) }}">
+
+    <label for="location">In which location would you prefer to work?</label>
+    <input id="location" type="text" name="location" placeholder="e.g. Country, City or ZIP Code" value="{{ request.form.get('location', '') }}">
+
+    <label for="radius">How far from this location would you like to search?</label>
+    <select id="radius" name="radius">
+      <option value="0">Everywhere</option>
+      <option value="5">Within 5 miles</option>
+      <option value="10">Within 10 miles</option>
+      <option value="15">Within 15 miles</option>
+      <option value="20" selected>Within 20 miles</option>
+      <option value="50">Within 50 miles</option>
+      <option value="100">Within 100 miles</option>
+    </select>
+
+    <label>How often should we send you jobs? <span class="form-required">*</span></label>
+    <p style="margin:6px 0 0">
+      <label style="display:inline; font-weight:400"><input type="radio" name="frequency" value="Daily" checked> Daily</label>
+      &nbsp;&nbsp;
+      <label style="display:inline; font-weight:400"><input type="radio" name="frequency" value="Weekly"> Weekly</label>
+    </p>
+
+    <p class="help" style="margin-top:18px">When you create this job alert we will email you a selection of jobs matching
+    your criteria. Our <a href="/terms-and-conditions/">terms and conditions</a> and <a href="/privacy-policy/">privacy
+    policy</a> apply to this service and you can unsubscribe at any time.</p>
+    <input class="btn-apply" type="submit" value="Send me new jobs">
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Aviation Photos - FlightAware{% endblock %}
+{% block content %}
+<div class="tab-bar">
+  <a class="active" href="/photos/">FEATURED</a>
+  <a href="/photos/all/sort/votes">ALL PHOTOS</a>
+  <a href="/photos/recentcomments.rvt">RECENT COMMENTS</a>
+  <a href="/photos/crowdsource">COMMUNITY TAGGING</a>
+  <span style="float:right;"><a class="btn-alert" href="/photos/upload">&#8593; Upload Your Photos</a></span>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Browse</div>
+  <div class="panel-body grid-3">
+    <div>
+      <div class="form-row"><label>Aircraft</label><select><option>All Aircraft</option></select></div>
+      <div class="form-row"><label>Airline Name</label><select><option>All Airlines</option></select></div>
+    </div>
+    <div>
+      <div class="form-row"><label>Airport</label><select><option>All Airports</option></select></div>
+      <div class="form-row"><label>Staff picks</label><select><option>No</option><option>Yes</option></select></div>
+    </div>
+    <div>
+      <div class="form-row"><label>Sort by</label><select><option>Votes</option><option>Date</option><option>Views</option></select></div>
+      <div class="form-row"><label>Search</label><form method="get" action="/photos/all/sort/votes" style="display:flex;gap:4px;"><input type="text" name="q" placeholder="e.g. 787"><button class="btn-primary" type="submit">Go!</button></form></div>
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Staff Picks <span class="more"><a href="/photos/staffpicks">See More</a></span></div>
+  <div class="panel-body photo-grid">
+    {% for p in staff %}
+    <div class="photo-card">
+      <a href="{{ p.href }}"><img src="/static/images/photos/{{ p.image_file }}" alt="{{ p.title }}"></a>
+      <div class="cap">
+        <div class="t"><a href="{{ p.href }}">{{ p.title }}</a></div>
+        <div class="m">{{ p.votes | commas }} votes &middot; {{ p.vote_average }} average &middot; by {{ p.photographer }}</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Highest Rated <span class="more"><a href="/photos/all/sort/votes">See More</a></span></div>
+  <div class="panel-body photo-grid">
+    {% for p in highest %}
+    <div class="photo-card">
+      <a href="{{ p.href }}"><img src="/static/images/photos/{{ p.image_file }}" alt="{{ p.title }}"></a>
+      <div class="cap">
+        <div class="t"><a href="{{ p.href }}">{{ p.title }}</a></div>
+        <div class="m">{{ p.votes | commas }} votes &middot; {{ p.views | commas }} views</div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

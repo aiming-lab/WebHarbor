@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Login/My Account | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <h1>Login</h1>
+    <p class="form-note">* Required</p>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}<div class="errors">{% for m in messages %}<div>{{ m }}</div>{% endfor %}</div>{% endif %}
+    {% endwith %}
+    <form method="post" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next')|urlencode }}{% endif %}">
+      <div class="field">
+        <label>Email address *</label>
+        <input type="email" name="email" required>
+      </div>
+      <div class="field">
+        <label>Password *</label>
+        <input type="password" name="password" required>
+      </div>
+      <button class="btn-primary" type="submit">Submit</button>
+    </form>
+    <p style="margin-top:14px;"><a href="/">No, thanks. Continue shopping.</a></p>
+    <p><a href="/register">Create an Account</a></p>
+    <h2 style="margin-top:18px;">Here are some benefits you'll enjoy</h2>
+    <ul style="list-style: disc; padding-left: 20px;">
+      <li>Order history and tracking</li>
+      <li>Wish List</li>
+      <li>Exclusive offers</li>
+      <li>Dillard's Credit Card account management</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}
