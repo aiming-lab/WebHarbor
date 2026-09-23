@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Publications | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li>Publications</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Publications</h1>
+    <p class="lede">Read and order free Medicare products in a variety of formats.</p>
+  </div>
+
+  <section class="coverage-search">
+    <h2>Search for publications</h2>
+    <form action="{{ url_for('publications_search') }}" method="get" class="form-grid" style="margin-top:12px">
+      <div class="field">
+        <label for="pub-cat">Category</label>
+        <select id="pub-cat" name="category">
+          <option value="">Select a category</option>
+          {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="pub-lang">Language</label>
+        <select id="pub-lang" name="language">
+          <option value="English" selected>English</option>
+          {% for l in languages %}{% if l != 'English' %}<option value="{{ l }}">{{ l }}</option>{% endif %}{% endfor %}
+        </select>
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end">
+        <button class="btn btn--solid" type="submit">Search</button>
+      </div>
+    </form>
+  </section>
+
+  {% if featured %}
+  <section class="section">
+    <div class="pub-card">
+      <div class="pub-card__cover"><img src="{{ url_for('static', filename='images/' + featured.thumb) }}" alt="Medicare & You handbook cover"></div>
+      <div>
+        <h3>Medicare &amp; You {{ 2027 }}</h3>
+        <p class="meta">Category: {{ featured.category }} | Product # {{ featured.product_number }}</p>
+        <p class="summary">{{ featured.summary }}</p>
+        <div class="actions">
+          {% if featured.orderable %}
+          <a class="btn btn--solid btn--small" href="{{ url_for('publication_order', product_number=featured.product_number) }}">Order Print</a>
+          {% endif %}
+          <a class="btn btn--outline btn--small" href="{{ url_for('publications_search', q='Medicare & You') }}">Get More Formats</a>
+        </div>
+        {% if not featured.orderable %}
+        <p class="small muted" style="margin-top:8px">This product isn't available to order right now.</p>
+        {% endif %}
+      </div>
+    </div>
+  </section>
+  {% endif %}
+
+  <section class="section">
+    <h2>Popular Publications</h2>
+    {% for pub in popular %}
+    <div class="pub-card">
+      <div class="pub-card__cover"><img src="{{ url_for('static', filename='images/' + pub.thumb) }}" alt="{{ pub.title }} cover"></div>
+      <div>
+        <h3>{{ pub.title }}</h3>
+        <p class="meta">Category: {{ pub.category }} | Product # {{ pub.product_number }}</p>
+        <p class="summary">{{ pub.summary }}</p>
+        <div class="actions">
+          <a class="btn btn--outline btn--small" href="{{ url_for('publication_order', product_number=pub.product_number) }}">Order Print</a>
+          <a class="btn btn--ghost btn--small" href="{{ url_for('publications_search', q=pub.title) }}">Open PDF</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+    <p class="small muted">
+      <a href="{{ url_for('publications_search') }}">Find all publications that are available in languages other than English.</a>
+    </p>
+  </section>
+</div>
+
+<section class="email-signup">
+  <div class="ds-container">
+    <div class="email-signup__inner">
+      <h2>Important updates, straight to your inbox</h2>
+      <p>Get reminders about Open Enrollment, ways to save costs, and more.</p>
+      <form action="{{ url_for('email_signup') }}" method="post">
+        <input type="hidden" name="next" value="{{ url_for('publications_home') }}">
+        <input type="email" name="email" placeholder="Enter your email address" required aria-label="Enter your email address">
+        <button class="btn btn--solid" type="submit">Sign up</button>
+      </form>
+      <p class="consent">By checking this box, you consent to our <a href="#">data privacy policy</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ plan.name }} | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('plan_landing') }}">Find health &amp; drug plans</a></li><li>{{ plan.name }}</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="content-page">
+    <p class="small muted"><a href="{{ url_for('plan_search', zip='62701', plan_choice='health' if plan.plan_type != 'Medicare drug plan' else 'drug') }}">← Back to plan results</a></p>
+    <h1>{{ plan.name }}</h1>
+    <p class="lede">{{ plan.insurer }} · {{ plan.plan_kind }} · {{ plan.county }} County, {{ plan.state }}</p>
+    <div class="badges" style="margin:14px 0">
+      <span class="badge badge--part">{{ plan.plan_type }}</span>
+      <span class="badge">{{ plan.year }} coverage</span>
+      <span class="badge badge--preventive">Rated {{ plan.rating }} of 5 stars</span>
+    </div>
+
+    <section class="detail-section">
+      <h2>Costs</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><th>Monthly premium</th><td>{{ plan.premium }}</td></tr>
+          <tr><th>Deductible</th><td>{{ plan.deductible }}</td></tr>
+          {% if plan.oop_max != 'n/a' %}
+          <tr><th>Out-of-pocket limit</th><td>{{ plan.oop_max }}</td></tr>
+          {% else %}
+          <tr><th>Out-of-pocket limit</th><td>Not applicable to drug plans</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+      <p class="small muted">
+        If you join a Medicare Advantage Plan you must also keep paying your Part B premium.
+        <a href="{{ url_for('costs_page') }}">See Part B premium amounts</a>.
+      </p>
+    </section>
+
+    <section class="detail-section">
+      <h2>Benefits</h2>
+      <ul>
+        {% for b in plan.benefit_list %}<li>{{ b }}</li>{% endfor %}
+      </ul>
+    </section>
+
+    <section class="detail-section">
+      <h2>Enrollment</h2>
+      <p>
+        You can join, switch, or drop this plan during Medicare Open Enrollment (October 15 –
+        December 7). You can also join when you're first eligible for Medicare.
+      </p>
+      <a class="btn btn--solid" href="{{ url_for('talk_to_someone') }}">Call 1-800-MEDICARE to join</a>
+    </section>
+  </div>
+</div>
+{% endblock %}

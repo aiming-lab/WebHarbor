@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+{% block title %}Costs | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('basics_landing') }}">Basics</a></li><li>Medicare costs</li><li>Costs</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Costs</h1>
+    <p class="lede">
+      What you pay for Medicare will vary based on what coverage and services you get, and what
+      providers you visit. <a href="{{ url_for('health_drug_plans') }}">What are my coverage options?</a>
+    </p>
+    <p>
+      There's no yearly limit on what you pay out-of-pocket, unless you have supplemental coverage,
+      like a Medicare Supplement Insurance (Medigap) policy, or you join a Medicare Advantage Plan.
+    </p>
+  </div>
+
+  {% set part_a = costs.get('Part A', []) %}
+  <section class="costs-block">
+    <h2>Part A (Hospital Insurance) costs</h2>
+    <table class="cost-table">
+      <caption>Part A costs: What you pay in {{ part_a[0].year if part_a else 2026 }}</caption>
+      <thead><tr><th scope="col">Part A costs</th><th scope="col">What you pay</th></tr></thead>
+      <tbody>
+        {% for row in part_a %}
+        <tr>
+          <th scope="row">{{ row.item }}</th>
+          <td>{{ row.amount }}{% if row.note %} <span class="cost-note">— {{ row.note }}</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="cost-note">
+      Remember: You also have to sign up for Part B to buy Part A. If you don't buy Part A when
+      you're first eligible for Medicare (usually when you turn 65), you might pay a penalty.
+    </p>
+  </section>
+
+  {% set part_b = costs.get('Part B', []) %}
+  <section class="costs-block">
+    <h2>Part B (Medical Insurance) costs</h2>
+    <table class="cost-table">
+      <caption>Part B costs: What you pay in {{ part_b[0].year if part_b else 2026 }}</caption>
+      <thead><tr><th scope="col">Part B costs</th><th scope="col">What you pay</th></tr></thead>
+      <tbody>
+        {% for row in part_b %}
+        <tr>
+          <th scope="row">{{ row.item }}</th>
+          <td>{{ row.amount }}{% if row.note %} <span class="cost-note">— {{ row.note }}</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="cost-note">
+      You might pay a monthly penalty if you don't sign up for Part B when you're first eligible
+      for Medicare (usually when you turn 65). You'll pay the penalty for as long as you have Part B.
+    </p>
+  </section>
+
+  {% set irmaa = costs.get('IRMAA', []) %}
+  <section class="costs-block">
+    <h2>Who pays a higher Part B premium because of income?</h2>
+    <p>
+      If your yearly income in 2024 was above a certain limit, you'll pay the standard premium
+      amount plus an Income-Related Monthly Adjustment Amount (IRMAA). Social Security bases the
+      extra amount on the income you reported to the IRS.
+    </p>
+    <table class="cost-table data-table">
+      <caption>Income-related monthly adjustment amounts for Part B ({{ irmaa[0].year if irmaa else 2026 }})</caption>
+      <thead>
+        <tr>
+          <th scope="col">File individual tax return</th>
+          <th scope="col">File joint tax return</th>
+          <th scope="col">File married &amp; separate tax return</th>
+          <th scope="col">Total monthly premium amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in irmaa %}
+        <tr>
+          <td>{{ row.item }}</td>
+          <td>{{ row.note.split(';')[0].replace('Joint: ', '') if row.note else '' }}</td>
+          <td>{{ row.note.split(';')[1].replace(' Married filing separately: ', '') if row.note and ';' in row.note else '' }}</td>
+          <td><strong>{{ row.amount }}</strong></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="cost-note">
+      If you have questions about your income-related monthly adjustment amounts, call the Social
+      Security Administration at 1-800-772-1213. TTY users can call 1-800-325-0778.
+    </p>
+  </section>
+
+  {% set ma = costs.get('Medicare Advantage', []) %}
+  <section class="costs-block">
+    <h2>Medicare Advantage Plan (Part C) costs</h2>
+    <table class="cost-table">
+      <caption>Medicare Advantage Plan costs: What you pay in {{ ma[0].year if ma else 2026 }}</caption>
+      <thead><tr><th scope="col">Medicare Advantage Plan costs</th><th scope="col">What you pay</th></tr></thead>
+      <tbody>
+        {% for row in ma %}
+        <tr>
+          <th scope="row">{{ row.item }}</th>
+          <td>{{ row.amount }}{% if row.note %} <span class="cost-note">— {{ row.note }}</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  {% set pd = costs.get('Part D', []) %}
+  <section class="costs-block">
+    <h2>Part D (Drug Coverage) costs</h2>
+    <table class="cost-table">
+      <caption>Part D costs: What you pay in {{ pd[0].year if pd else 2026 }}</caption>
+      <thead><tr><th scope="col">Part D costs</th><th scope="col">What you pay</th></tr></thead>
+      <tbody>
+        {% for row in pd %}
+        <tr>
+          <th scope="row">{{ row.item }}</th>
+          <td>{{ row.amount }}{% if row.note %} <span class="cost-note">— {{ row.note }}</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="cost-note">
+      If you have limited income and resources, you may be able to get Extra Help paying for your
+      Medicare drug plan costs.
+    </p>
+  </section>
+
+  {% set mg = costs.get('Medigap', []) %}
+  <section class="costs-block">
+    <h2>Medicare Supplement Insurance (Medigap)</h2>
+    <table class="cost-table">
+      <caption>Medigap costs: What you pay in {{ mg[0].year if mg else 2026 }}</caption>
+      <thead><tr><th scope="col">Medigap costs</th><th scope="col">What you pay</th></tr></thead>
+      <tbody>
+        {% for row in mg %}
+        <tr>
+          <th scope="row">{{ row.item }}</th>
+          <td>{{ row.amount }}{% if row.note %} <span class="cost-note">— {{ row.note }}</span>{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+
+  <section class="costs-block">
+    <h2>What do you want to do next?</h2>
+    <p>
+      <a href="{{ url_for('talk_to_someone') }}">Next Step: Get help with costs</a><br>
+      <a href="{{ url_for('talk_to_someone') }}">Take Action: Talk to someone</a><br>
+      <a href="{{ url_for('content_page', slug='get-started-with-medicare') }}">Get details: Learn about the parts of Medicare</a>
+    </p>
+  </section>
+</div>
+
+<section class="email-signup">
+  <div class="ds-container">
+    <div class="email-signup__inner">
+      <h2>Important updates, straight to your inbox</h2>
+      <p>Get reminders about Open Enrollment, ways to save costs, and more.</p>
+      <form action="{{ url_for('email_signup') }}" method="post">
+        <input type="hidden" name="next" value="{{ url_for('costs_page') }}">
+        <input type="email" name="email" placeholder="Enter your email address" required aria-label="Enter your email address">
+        <button class="btn btn--solid" type="submit">Sign up</button>
+      </form>
+      <p class="consent">By checking this box, you consent to our <a href="#">data privacy policy</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}

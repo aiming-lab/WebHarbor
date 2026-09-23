@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} coverage | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('coverage_home') }}">What's covered?</a></li><li>{{ item.title }}</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <article class="content-page">
+    <h1>{{ item.title }}</h1>
+    <p class="lede">{{ item.summary }}</p>
+    <div class="badges" style="margin:14px 0 26px">
+      {% if item.covered_by %}<span class="badge badge--part">{{ item.covered_by }}</span>{% endif %}
+      {% if item.is_preventive %}<span class="badge badge--preventive">Preventive Service</span>{% endif %}
+      {% if item.frequency %}<span class="badge badge--freq">{{ item.frequency }}</span>{% endif %}
+      {% if item.cost_summary %}<span class="badge">{{ item.cost_summary }}</span>{% endif %}
+    </div>
+
+    {% if item.description_html %}
+    <section class="detail-section">
+      <h2>Description</h2>
+      <div class="ds-content">{{ item.description_html | safe }}</div>
+    </section>
+    {% endif %}
+    {% if item.details_html %}
+    <section class="detail-section">
+      <h2>Coverage details</h2>
+      <div class="ds-content">{{ item.details_html | safe }}</div>
+    </section>
+    {% endif %}
+    {% if item.eligible_html %}
+    <section class="detail-section">
+      <h2>Who's eligible</h2>
+      <div class="ds-content">{{ item.eligible_html | safe }}</div>
+    </section>
+    {% endif %}
+    {% if item.costs_html %}
+    <section class="detail-section">
+      <h2>Costs</h2>
+      <div class="ds-content">{{ item.costs_html | safe }}</div>
+    </section>
+    {% endif %}
+    {% if item.how_often_html %}
+    <section class="detail-section">
+      <h2>How often</h2>
+      <div class="ds-content">{{ item.how_often_html | safe }}</div>
+    </section>
+    {% endif %}
+    {% if item.facility_html %}
+    <section class="detail-section">
+      <h2>Where you get it</h2>
+      <div class="ds-content">{{ item.facility_html | safe }}</div>
+    </section>
+    {% endif %}
+    {% if item.provider_reqs_html %}
+    <section class="detail-section">
+      <h2>Provider requirements</h2>
+      <div class="ds-content">{{ item.provider_reqs_html | safe }}</div>
+    </section>
+    {% endif %}
+
+    <section class="detail-section">
+      <p class="small muted">
+        Ask your doctor or healthcare provider how much your test, item, or service will cost.
+      </p>
+      <p class="small">
+        Your doctor may recommend services that Medicare does not cover or offers too frequently.
+        This could end up in additional costs for you. Make sure to ask your doctor about the
+        reasons for these recommendations and what Medicare will actually cover.
+      </p>
+    </section>
+
+    <section class="detail-section">
+      <h2>Other related information</h2>
+      <div class="card-grid">
+        <div class="list-card">
+          <h3>Find a provider</h3>
+          <p>Find providers near you that take Medicare.</p>
+          <form action="{{ url_for('care_compare_search', type='Physician') }}" method="get" class="coverage-search__row" style="margin-top:10px">
+            <input type="hidden" name="type" value="Physician">
+            <label class="visually-hidden" for="related-zip" style="position:absolute;left:-9999px;">Enter ZIP Code</label>
+            <input id="related-zip" type="text" name="loc" placeholder="Enter ZIP Code">
+            <button class="btn btn--solid btn--small" type="submit">Go</button>
+          </form>
+        </div>
+        {% if related %}
+        <div class="list-card">
+          <h3>Related covered items</h3>
+          <ul>
+            {% for rel in related %}
+            <li><a href="{{ url_for('coverage_detail', slug=rel.slug) }}">{{ rel.title }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        {% endif %}
+      </div>
+    </section>
+  </article>
+</div>
+{% endblock %}

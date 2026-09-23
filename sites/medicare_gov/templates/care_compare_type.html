@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('care_compare_home') }}">Find care providers</a></li><li>{{ label }}</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Find {{ label | lower }} near me</h1>
+    <p class="lede">Enter a city and state, or pick one of the areas below.</p>
+  </div>
+
+  <section class="coverage-search" style="max-width:720px">
+    <form action="{{ url_for('care_compare_search') }}" method="get">
+      <input type="hidden" name="type" value="{{ provider_type }}">
+      <div class="field">
+        <label for="cc-loc">MY LOCATION</label>
+        <input id="cc-loc" type="text" name="loc" placeholder="Enter city and state (like Springfield, IL)" list="cc-cities" required>
+        <datalist id="cc-cities">
+          {% for c in cities %}<option value="{{ c.city }}, {{ c.state }}"></option>{% endfor %}
+        </datalist>
+      </div>
+      <div class="field">
+        <label for="cc-q">NAME OR KEYWORD (optional)</label>
+        <input id="cc-q" type="text" name="q" placeholder="Enter a specialty, provider name, or group">
+      </div>
+      <button class="btn btn--solid" type="submit">Search</button>
+    </form>
+  </section>
+
+  <section class="section">
+    <h2>Browse an area</h2>
+    <div class="chip-row" style="margin-top:12px">
+      {% for c in cities %}
+      <a class="btn btn--outline btn--small" href="{{ url_for('care_compare_search', type=provider_type, loc=c.query) }}">{{ c.city }}, {{ c.state }}</a>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

@@ -96,6 +96,7 @@ All registered websites and their default ports, in registration order from left
 | Google Shopping | 40075 | Imgur | 40076 | Instructure | 40077 |
 | League of Legends | 40078 | Healthgrades | 40079 | Kelley Blue Book | 40080 |
 | UNIQLO | 40081 | | | | |
+| Medicare.gov | 40103 | | | | |
 
 ## 🤝 Contribute
 

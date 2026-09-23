@@ -245,12 +245,22 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/league_of_legends && \
     cd /opt/WebSyn/league_of_legends && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
 
+# Medicare.gov ships its real upstream imagery via the pinned asset bundle and
+# rebuilds its deterministic SQLite seed from the tracked source snapshot
+# (see sites/medicare_gov/.build-generated-seed).
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/medicare_gov && \
+    test -n "$(ls -A /opt/WebSyn/medicare_gov/static/images)" && \
+    test -f /opt/WebSyn/medicare_gov/.build-generated-seed
+RUN cd /opt/WebSyn/medicare_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    rm -rf instance __pycache__
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40081
+EXPOSE 8101 40000-40103
 
 CMD ["/opt/websyn_start.sh"]

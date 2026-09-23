@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Equipment & supplies A-Z | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('dme_home') }}">Medical equipment &amp; suppliers</a></li><li>A-Z directory</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Equipment &amp; supplies A-Z</h1>
+    <p class="lede">Browse covered equipment and supply categories, then search suppliers near you.</p>
+  </div>
+  <nav class="letter-nav" aria-label="Equipment directory letters">
+    {% for l in letters %}
+    <a href="{{ url_for('dme_directory', letter=l) }}" class="{{ 'active' if l == letter else '' }}">{{ l }}</a>
+    {% endfor %}
+  </nav>
+  <p class="muted small">{{ cats|length }} categories starting with “{{ letter }}”</p>
+  {% for cat in cats %}
+  <article class="coverage-item-card">
+    <div>
+      <h3><a href="{{ url_for('dme_results', location='62701', equipment=cat.name) }}" style="text-decoration:none">{{ cat.name }}</a></h3>
+      <p class="coverage-item-card__summary">{{ cat.description }}</p>
+      {% if cat.alias_list %}
+      <div class="chip-row">
+        {% for a in cat.alias_list[:4] %}<span class="chip">{{ a }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <p>No equipment categories start with “{{ letter }}”.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}Search results | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('care_compare_home') }}">Find care providers</a></li><li>{{ provider_type_labels.get(provider_type, 'Search results') }}</li><li>Results</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Results</h1>
+    <p class="lede">
+      {% if city %}
+        Showing {{ provider_type_labels.get(provider_type, 'providers') }} in {{ city.city }}, {{ city.state }}
+      {% else %}
+        Find {{ provider_type_labels.get(provider_type, 'providers') | lower }} near you
+      {% endif %}
+    </p>
+  </div>
+
+  <section class="coverage-search" style="max-width:760px">
+    <form action="{{ url_for('care_compare_search') }}" method="get" class="form-grid">
+      <div class="field">
+        <label for="cc-loc">MY LOCATION</label>
+        <input id="cc-loc" type="text" name="loc" value="{{ location }}" placeholder="Enter city and state (like Springfield, IL)" required>
+      </div>
+      <div class="field">
+        <label for="cc-type">PROVIDER TYPE</label>
+        <select id="cc-type" name="type">
+          {% for value, lbl in provider_type_labels.items() %}
+          <option value="{{ value }}" {{ 'selected' if value == provider_type else '' }}>{{ lbl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="cc-q">NAME OR KEYWORD (optional)</label>
+        <input id="cc-q" type="text" name="q" value="{{ keyword }}" placeholder="Enter a specialty, provider name, or group">
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end">
+        <button class="btn btn--solid" type="submit">Search</button>
+      </div>
+    </form>
+  </section>
+
+  {% if providers %}
+  <div class="sortbar">
+    <p style="margin:0"><strong>Showing 1 - {{ providers|length }} of {{ total }} {{ provider_type_labels.get(provider_type, 'providers') | lower }}</strong></p>
+    <label>Sort by
+      <select>
+        <option>Closest</option>
+        <option>Alphabetical</option>
+      </select>
+    </label>
+  </div>
+  {% endif %}
+
+  {% for provider in providers %}
+  <article class="result-card">
+    <div class="rank">{{ loop.index }}.</div>
+    <div>
+      <h3><a href="{{ url_for('provider_detail', provider_row_id=provider.id) }}">{{ provider.name }}</a></h3>
+      {% if provider.detail_map.get('group') and provider.provider_type == 'Physician' %}
+      <p class="meta">{{ provider.detail_map.get('group') }}</p>
+      {% elif provider.provider_type == 'GroupPractice' and provider.specialty_list %}
+      <p class="meta">{{ provider.specialty_list | join(', ') }}</p>
+      {% elif provider.provider_type == 'Physician' and provider.specialty_list %}
+      <p class="meta">{{ provider.specialty_list | join(', ') }}</p>
+      {% elif provider.provider_type == 'Hospital' and provider.detail_map.get('hospital_type') %}
+      <p class="meta">{{ provider.detail_map.get('hospital_type') }} · {{ provider.detail_map.get('ownership', '') }}</p>
+      {% elif provider.provider_type == 'DialysisFacility' and provider.detail_map.get('chain_organization') %}
+      <p class="meta">Part of {{ provider.detail_map.get('chain_organization') }}</p>
+      {% endif %}
+      <p class="meta">
+        {% if provider.address2 %}{{ provider.address2 }} · {% endif %}{{ provider.address1 }}<br>
+        {{ provider.city }}, {{ provider.state }} {{ provider.zip }}
+      </p>
+      <p class="meta">{{ provider.phone }}</p>
+      <div class="chip-row">
+        {% for s in provider.specialty_list[:3] %}<span class="chip">{{ s }}</span>{% endfor %}
+        {% if provider.provider_type == 'DialysisFacility' %}
+          {% if provider.detail_map.get('late_shift') %}<span class="chip">Late shift: Yes</span>{% else %}<span class="chip">Late shift: No</span>{% endif %}
+          {% if provider.detail_map.get('stations') %}<span class="chip">{{ provider.detail_map.get('stations') }} stations</span>{% endif %}
+        {% endif %}
+        {% if provider.provider_type == 'Physician' and provider.detail_map.get('telehealth') %}
+          <span class="chip">Telehealth: Yes</span>
+        {% endif %}
+        {% if provider.provider_type == 'Hospital' and provider.detail_map.get('emergency_services') is not none %}
+          <span class="chip">Emergency: {{ 'Yes' if provider.detail_map.get('emergency_services') else 'No' }}</span>
+        {% endif %}
+      </div>
+    </div>
+    <div class="side">
+      {% if provider.distance is not none %}<p class="distance">{{ provider.distance }} mi</p>{% endif %}
+      {% if provider.detail_map.get('overall_rating') %}
+        {% set val = provider.detail_map.get('overall_rating') %}
+        {% if val in ['1','2','3','4','5'] %}
+        <p class="meta">Overall rating</p>
+        <p class="stars">
+          {% for i in range(val | int) %}★{% endfor %}{% for i in range(5 - (val | int)) %}<span class="off">★</span>{% endfor %}
+        </p>
+        {% endif %}
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <p>
+    {% if location and not city %}
+      We couldn't find “{{ location }}” in this directory. Try one of the supported areas:
+      {% for c in ['Springfield, IL', 'Columbus, OH', 'Phoenix, AZ', 'Miami, FL', 'Denver, CO', 'Seattle, WA', 'Boston, MA', 'Houston, TX'] %}
+        <a href="{{ url_for('care_compare_search', type=provider_type, loc=c) }}">{{ c }}</a>{{ ',' if not loop.last }}
+      {% endfor %}
+    {% else %}
+      Enter a location to search for providers.
+    {% endif %}
+  </p>
+  {% endfor %}
+
+  <p class="small muted" style="margin-top:24px">
+    More resources: About this tool — learn more about what this tool can do for you.
+  </p>
+</div>
+{% endblock %}

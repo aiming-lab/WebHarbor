@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Medicare.gov - Log in to your account{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="login-wrap" style="padding-top:34px">
+    <div class="login-intro">
+      <h1>Log in to (or create) your Medicare account</h1>
+      <p>
+        Once you have Medicare, you can use any of these free and secure identity verification
+        services to log in to or create your Medicare account.
+      </p>
+      <p class="small">
+        Learn about the new options. Each Medicare account needs a unique email address. Don't
+        use an email address you share with someone else to create your Medicare account.
+      </p>
+    </div>
+
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+      <div class="flash-band">
+        {% for m in messages %}<div class="flash-msg">{{ m }}</div>{% endfor %}
+      </div>
+      {% endif %}
+    {% endwith %}
+
+    <div class="login-options">
+      <a class="login-option" href="{{ url_for('identity_partner', partner='id-me') }}">
+        <img src="{{ url_for('static', filename='images/login_idme.png') }}" alt="ID.me">
+        <span><h2>ID.me</h2><p>Trusted and used by federal services like IRS.gov and Social Security.</p></span>
+      </a>
+      <a class="login-option" href="{{ url_for('identity_partner', partner='clear') }}">
+        <img src="{{ url_for('static', filename='images/login_clear.png') }}" alt="CLEAR">
+        <span><h2>CLEAR</h2><p>Trusted and used by airports and health systems.</p></span>
+      </a>
+      <a class="login-option" href="{{ url_for('identity_partner', partner='login-gov') }}">
+        <img src="{{ url_for('static', filename='images/login_gov.png') }}" alt="Login.gov">
+        <span><h2>Login.gov</h2><p>Trusted and used by the VA, Social Security, and Global Entry.</p></span>
+      </a>
+      <a class="login-option" href="#medicare-account">
+        <img src="{{ url_for('static', filename='images/login_csp_medicare.png') }}" alt="Medicare.gov">
+        <span><h2>Medicare.gov</h2><p>If you've already created a Medicare account, you can log in with your username and password.</p></span>
+      </a>
+    </div>
+
+    <div class="login-form-card" id="medicare-account">
+      <h2>Log in with your Medicare.gov account</h2>
+      <form action="{{ url_for('login') }}" method="post">
+        <div class="field">
+          <label for="login-email">Email or username</label>
+          <input id="login-email" type="text" name="email" autocomplete="username" required>
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input id="login-password" type="password" name="password" autocomplete="current-password" required>
+        </div>
+        <input type="hidden" name="device" value="Chrome on Windows">
+        <button class="btn btn--solid" type="submit" style="width:100%">Log in</button>
+      </form>
+      <p class="small muted" style="margin-top:12px">
+        Don't have an account yet? <a href="{{ url_for('login') }}">Create an account</a>.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

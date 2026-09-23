@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Get my Medicare card | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container" style="padding-top:30px">
+  <div class="my-layout">
+    <div class="my-content" style="grid-column:1/-1;max-width:760px">
+      <p class="small muted"><a href="{{ url_for('account_settings') }}">← Back to account settings</a></p>
+      <h1>Get my Medicare card</h1>
+      <p class="lede">Order a free replacement Medicare card.</p>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}<div class="flash-band">{% for m in messages %}<div class="flash-msg">{{ m }}</div>{% endfor %}</div>{% endif %}
+      {% endwith %}
+      <div class="medicare-card" style="margin:16px 0 24px">
+        <p class="mc-title">Medicare Health Insurance</p>
+        <p class="mc-number">{{ current_user.medicare_number }}</p>
+        <p class="mc-name">{{ current_user.display_name }}</p>
+        <p class="mc-meta">Part A effective {{ current_user.part_a_effective }} · Part B effective {{ current_user.part_b_effective }}</p>
+      </div>
+      <form action="{{ url_for('replace_card') }}" method="post" class="login-form-card" style="max-width:none;margin:0">
+        <div class="field">
+          <label>Why do you need a replacement card?</label>
+          <div><input type="radio" id="rc-lost" name="reason" value="lost" required> <label for="rc-lost" style="display:inline;font-weight:400">My card was lost</label></div>
+          <div><input type="radio" id="rc-damaged" name="reason" value="damaged"> <label for="rc-damaged" style="display:inline;font-weight:400">My card was damaged</label></div>
+          <div><input type="radio" id="rc-stolen" name="reason" value="stolen"> <label for="rc-stolen" style="display:inline;font-weight:400">My card was stolen</label></div>
+          <div><input type="radio" id="rc-name" name="reason" value="name-change"> <label for="rc-name" style="display:inline;font-weight:400">My name changed</label></div>
+          <div><input type="radio" id="rc-addr" name="reason" value="address-change"> <label for="rc-addr" style="display:inline;font-weight:400">My mailing address changed</label></div>
+        </div>
+        <div class="field" id="name-change-field" style="display:none">
+          <label for="rc-new-name">New name (as it appears on your Social Security card)</label>
+          <input id="rc-new-name" type="text" name="new_name">
+        </div>
+        <p class="form-note">
+          Your replacement card will be mailed to the address on file:
+          {% set addr = current_user.current_address %}
+          {% if addr %}{{ addr.line1 }}, {{ addr.city }} {{ addr.state }} {{ addr.zip }}{% endif %}.
+          Your Medicare Number stays the same.
+        </p>
+        <button class="btn btn--solid" type="submit">Order my replacement card</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var radios = document.querySelectorAll('input[name="reason"]');
+  var field = document.getElementById('name-change-field');
+  radios.forEach(function (r) {
+    r.addEventListener('change', function () {
+      field.style.display = r.checked && r.value === 'name-change' ? 'block' : 'none';
+    });
+  });
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% macro render_blocks(blocks) %}
+  {% for block in blocks %}
+    {% if block.t == 'heading' %}
+      {% if block.level <= 2 %}<h2>{{ block.text }}</h2>{% elif block.level == 3 %}<h3>{{ block.text }}</h3>{% else %}<h4>{{ block.text }}</h4>{% endif %}
+    {% elif block.t == 'para' %}
+      <p>{{ block.text }}</p>
+    {% elif block.t == 'alert' %}
+      <div class="alert">{{ block.text }}</div>
+    {% elif block.t == 'ul' %}
+      <ul>{% for item in block['items'] %}<li>{{ item.text }}</li>{% endfor %}</ul>
+    {% elif block.t == 'ol' %}
+      <ol>{% for item in block['items'] %}<li>{{ item.text }}</li>{% endfor %}</ol>
+    {% elif block.t == 'li' %}
+      <p>{{ block.text }}</p>
+    {% elif block.t == 'image' %}
+      {% if block.src and (block.src.endswith('.webp') or block.src.endswith('.jpg') or block.src.endswith('.png')) %}
+        <img class="content-image" src="{{ block.src }}" alt="{{ block.alt }}">
+      {% endif %}
+    {% elif block.t == 'accordion' %}
+      <div class="accordion">
+        {% for item in block['items'] %}
+        <div class="accordion__item">
+          <button class="accordion__toggle" aria-expanded="false" aria-controls="acc-{{ page.id }}-{{ loop.index }}">{{ item.title }}</button>
+          <div class="accordion__panel" id="acc-{{ page.id }}-{{ loop.index }}" hidden>
+            {{ render_blocks(item.blocks) }}
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+{% block title %}{{ page.title }} | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('basics_landing') }}">Basics</a></li><li>{{ page.title }}</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="content-page">
+    <h1>{{ page.title }}</h1>
+    {% if page.intro %}<p class="lede" style="font-size:18.5px">{{ page.intro }}</p>{% endif %}
+    <div class="cards card-grid" style="margin-bottom:26px">
+      {% for card in page.section_list.cards %}
+      <article class="m-card">
+        <div class="m-card__body">
+          <h3>{{ card.title }}</h3>
+          <p>{{ card.text }}</p>
+          <a class="btn btn--solid btn--small" href="{{ card.href }}">{{ card.cta }}</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+    <div class="content-blocks">
+      {{ render_blocks(page.section_list.blocks) }}
+    </div>
+  </div>
+</div>
+{% endblock %}
