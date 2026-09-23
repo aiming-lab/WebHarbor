@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Job Search RSS</title>
+    <link>http://localhost:40065/jobsrss/</link>
+    <atom:link href="http://localhost:40065/jobsrss/" rel="self" type="application/rss+xml"/>
+    <description></description>
+    {% for job in jobs %}
+    <item>
+      <title>{{ job.title }}</title>
+      <description>{{ job.snippet or job.salary_text or "" }}</description>
+      <link>http://localhost:40065{{ job.detail_path }}</link>
+      <guid isPermaLink="true">http://localhost:40065{{ job.detail_path }}</guid>
+      <pubDate>{{ job.posted_date.strftime("%a, %d %b %Y %H:%M:%S +0000") if job.posted_date else "" }}</pubDate>
+    </item>
+    {% endfor %}
+  </channel>
+</rss>
