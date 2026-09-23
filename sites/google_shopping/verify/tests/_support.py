@@ -24,7 +24,7 @@ from typing import Any
 VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
 SEED_DB = SITE_DIR / "instance_seed" / "google_shopping.db"
-BASE = "http://localhost:40084"
+BASE = "http://localhost:40075"
 PASSWORD = "TestPass123!"
 
 # ------------------------------------------------------------------ tiny valid PNG
