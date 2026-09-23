@@ -1,0 +1,74 @@
+{% macro board_table(rows, board, airport, more=True, page_idents=()) %}
+<div class="panel">
+  <div class="panel-head">
+    {{ board_names[board] | upper }}{% if more %} <span class="more">(<a href="/live/airport/{{ airport.code }}/{{ board }}">MORE</a>)</span>{% endif %}
+  </div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Ident</th><th>Type</th><th>{{ 'From' if board in ('arrivals', 'enroute') else 'To' }}</th><th>Depart</th><th>Arrive</th></tr>
+    {% for row in rows %}
+    <tr>
+      <td class="ident">{% if row.ident in page_idents %}<a href="/live/flight/{{ row.ident }}">{{ row.ident }}</a>{% else %}{{ row.ident }}{% endif %}</td>
+      <td>{{ row.aircraft_type }}</td>
+      <td>{{ row.other_label }}</td>
+      <td>{{ row.dep_text }}</td>
+      <td>{{ row.arr_text }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No flights to display.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endmacro %}
+
+{% extends "base.html" %}
+{% block title %}{{ airport.iata or airport.code }} {{ airport.name }} ({{ airport.iata or airport.code }}/{{ airport.code }}) - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">{{ airport.name | upper }}{% if airport.city %} ({{ airport.city | upper }}, {{ (airport.region or airport.country) | upper }}){% endif %} {{ airport.iata or airport.code }}</div>
+
+<div class="tab-bar">
+  <a href="/resources/airport/{{ airport.code }}/weather">OVERVIEW AND FBOS</a>
+  <a class="active" href="/live/airport/{{ airport.code }}">FLIGHT TRACKER</a>
+  <a href="/resources/airport/{{ airport.code }}/weather">WEATHER</a>
+  <a href="/resources/airport/{{ airport.code }}/map">MAP &amp; DIAGRAM</a>
+  <a href="/resources/airport/{{ airport.code }}/map">IFR PLATES</a>
+  <a href="/resources/airport/{{ airport.code }}/map">VFR SECTIONAL</a>
+  <a href="/resources/airport/{{ airport.code }}/remarks">REMARKS</a>
+  <a href="/about/">BUY DATA</a>
+</div>
+
+{% if delay %}
+<div class="panel">
+  <div class="panel-head">Airport Delays</div>
+  <div class="panel-body">
+    <div><b>{{ airport.name }}</b> is currently experiencing:</div>
+    {% if delay.dep_delay_text %}<div>&bull; {{ delay.dep_delay_text }}</div>{% endif %}
+    {% if delay.arr_delay_text %}<div>&bull; {{ delay.arr_delay_text }}</div>{% endif %}
+    <div class="small muted">See the <a href="/live/airport/delays/">worldwide airport delays</a> page for more.</div>
+  </div>
+</div>
+{% endif %}
+
+<div class="panel">
+  <div class="panel-head">Flight Tracker</div>
+  <div class="map-box">
+    <img src="/static/images/maps/{{ 'map_jfk.png' if airport.code == 'KJFK' else 'map_live.png' }}" alt="{{ airport.name }} area map">
+    <div class="map-note">Airborne aircraft and airport activity near {{ airport.code }} &middot; {{ mirror_date_text }}</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  {{ board_table(arrivals, 'arrivals', airport, page_idents=page_idents) }}
+  {{ board_table(departures, 'departures', airport, page_idents=page_idents) }}
+</div>
+<div class="grid-2">
+  {{ board_table(enroute, 'enroute', airport, page_idents=page_idents) }}
+  {{ board_table(scheduled, 'scheduled', airport, page_idents=page_idents) }}
+</div>
+
+<div class="promo-box">
+  <span class="h">Want to enhance your FBO operations?</span>
+  Interested in seeing blocked tail numbers and what FBO aircraft are scheduled to? FBO Toolbox is the
+  ultimate toolkit to sell more fuel and enhance your customer service.
+  <a href="/commercial/fbo-toolbox/">Discover FBO Toolbox</a>
+</div>
+{% endblock %}

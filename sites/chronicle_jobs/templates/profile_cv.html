@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}My Resume | The Chronicle of Higher Education Jobs{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>My resume</h1>
+  <p class="help" style="margin-top:-8px">Recruiters search these details when matching you to jobs.</p>
+  <form method="post" action="/profilecv/">
+    <label for="headline">Professional headline</label>
+    <input id="headline" type="text" name="headline" value="{{ current_user.headline }}" placeholder="e.g. Tenure-track biologist focused on genomics">
+    <label for="loc">Preferred location</label>
+    <input id="loc" type="text" name="location" value="{{ current_user.location }}" placeholder="e.g. Boston, Massachusetts">
+    <label for="skills">Skills</label>
+    <input id="skills" type="text" name="skills" value="{{ current_user.skills }}" placeholder="e.g. Grant writing, program assessment, teaching">
+    <label for="experience">Experience</label>
+    <textarea id="experience" name="experience" placeholder="Most recent positions, institutions, and dates">{{ current_user.experience }}</textarea>
+    <label for="education">Education</label>
+    <textarea id="education" name="education" placeholder="Degrees, institutions, and years">{{ current_user.education }}</textarea>
+    <label for="cv_text">Resume / CV</label>
+    <textarea id="cv_text" name="cv_text" style="min-height:180px" placeholder="Paste the text of your CV so recruiters can find you.">{{ current_user.cv_text }}</textarea>
+    <input class="btn-apply" type="submit" value="Save resume">
+  </form>
+</div>
+{% endblock %}

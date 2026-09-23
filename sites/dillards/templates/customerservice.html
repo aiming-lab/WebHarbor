@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Customer Service | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; Customer Service</div>
+  <div class="content-page">
+    <h1>Customer Service</h1>
+    {% if page %}
+      {% set d = page.payload() %}
+      {% if d.get('sections') %}
+        {% for heading, body in d['sections'] %}
+          <h2>{{ heading }}</h2>
+          <p>{{ body }}</p>
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+    <h2>Reach Us</h2>
+    <p>Call 1-817-831-5482<br>Monday-Friday: 7AM-9PM GMT-6<br>Saturday-Sunday: 9AM-7PM GMT-6</p>
+    <p>Contact us via email using the form below and we will respond within 24 hours.</p>
+    <form method="post" action="/c/customerservice" style="max-width: 560px;">
+      <div class="field"><label>Your Name</label><input type="text" name="name"></div>
+      <div class="field"><label>Email</label><input type="email" name="email"></div>
+      <div class="field"><label>Message</label><textarea name="message" rows="5"></textarea></div>
+      <button class="btn-primary" type="submit">Submit</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Shopping Bag | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; Shopping Bag</div>
+  <div class="page-head"><h1>Shopping Bag ({{ cart_count }})</h1></div>
+  <div class="bag-layout">
+    <section>
+      {% if items %}
+        {% for item in items %}
+          <div class="bag-item">
+            <a href="{{ item.product.url }}"><img src="/static/images/{{ item.product.main_image }}" alt="{{ item.product.full_name }}"></a>
+            <div>
+              <a class="brand-name" href="{{ item.product.brand.url }}">{{ item.product.brand.name }}</a>
+              <div><a href="{{ item.product.url }}">{{ item.product.full_name }}</a></div>
+              <div class="muted">Size: {{ item.variant.size or 'One Size' }} &middot; Color: {{ item.variant.color or '-' }}</div>
+              <div class="price">${{ '%.2f'|format(item.variant.price) }}</div>
+              <div class="quantity-row" style="margin-top: 8px;">
+                <form method="post" action="/bag/update/{{ item.row.id }}" style="display:inline-flex; gap: 8px; align-items: center;">
+                  <label>Qty</label>
+                  <input class="qty-select" style="width:60px" type="number" min="1" name="quantity" value="{{ item.row.quantity }}">
+                  <button class="btn-link" type="submit">Update</button>
+                </form>
+                <form method="post" action="/bag/remove/{{ item.row.id }}" style="display:inline;">
+                  <button class="btn-danger" type="submit">Remove</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <p class="muted">Your bag is empty. <a href="/">Continue shopping</a>.</p>
+      {% endif %}
+    </section>
+    <aside class="summary-box">
+      <h2>Order Summary</h2>
+      <div class="row"><span>Subtotal</span><span>${{ '%.2f'|format(subtotal) }}</span></div>
+      <div class="row"><span>Shipping</span><span>{% if shipping == 0 %}FREE{% else %}${{ '%.2f'|format(shipping) }}{% endif %}</span></div>
+      <div class="row"><span>Estimated Tax</span><span>Calculated at checkout</span></div>
+      <div class="total"><span>Estimated Total</span><span>${{ '%.2f'|format(subtotal + shipping) }}</span></div>
+      {% if items %}
+        <form method="get" action="/checkout">
+          <button class="btn-primary" type="submit">Checkout</button>
+        </form>
+      {% endif %}
+      <p class="form-note">Free shipping on orders of $150 or more. Standard shipping $8.95.</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}
