@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_card with context %}
+{% block title %}{{ profile.username }} - Imgur{% endblock %}
+{% block body %}
+<div class="userhero">
+  <div class="inner">
+    <img class="avatar" src="{{ (profile.avatar or default_avatar_for(profile.username))|asset }}" alt="{{ profile.username }}">
+    <div>
+      <div class="name">{{ profile.username }}</div>
+      <div class="facts">
+        <span class="pts">{{ profile.reputation|commas }} PTS</span>
+        <span class="tier">{{ profile.reputation_name|upper }}</span>
+        {% if session_user and session_user.username != profile.username %}
+        <form method="post" action="/follow/user/{{ profile.username }}">
+          <input type="hidden" name="back" value="/user/{{ profile.username }}">
+          <button class="btn btn-followuser" type="submit">{{ 'FOLLOWING' if following else 'FOLLOW' }}</button>
+        </form>
+        {% elif not session_user %}
+        <form method="post" action="/follow/user/{{ profile.username }}">
+          <button class="btn btn-followuser" type="submit">FOLLOW</button>
+        </form>
+        {% endif %}
+        <button class="btn btn-chat" type="button">CHAT</button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="usertabs">
+  <div class="inner">
+    <a class="{{ 'active' if tab == 'posts' }}" href="/user/{{ profile.username }}?tab=posts">POSTS</a>
+    <a class="{{ 'active' if tab == 'favorites' }}" href="/user/{{ profile.username }}?tab=favorites">FAVORITES</a>
+    <a class="{{ 'active' if tab == 'comments' }}" href="/user/{{ profile.username }}?tab=comments">COMMENTS</a>
+    <a class="{{ 'active' if tab == 'about' }}" href="/user/{{ profile.username }}?tab=about">ABOUT</a>
+    <span class="right">
+      <span>PUBLIC</span>
+      <span><a href="/user/{{ profile.username }}?tab={{ tab }}" style="color:#aab2bd">NEWEST ▾</a></span>
+    </span>
+  </div>
+</div>
+
+{% if tab == 'posts' %}
+<div class="usergrid">
+  {% for post in posts %}
+  {{ post_card(post, session_user) }}
+  {% else %}
+  <div class="emptynote" style="column-span:all">{{ profile.username }} hasn't posted yet.</div>
+  {% endfor %}
+</div>
+{% elif tab == 'favorites' %}
+<div class="usergrid">
+  {% for post in fav_posts %}
+  {{ post_card(post, session_user) }}
+  {% else %}
+  <div class="emptynote" style="column-span:all">No favorites yet.</div>
+  {% endfor %}
+</div>
+{% elif tab == 'comments' %}
+<div class="commentlist">
+  {% for comment in comments %}
+  <div class="cbox">
+    <div class="meta" style="display:flex;gap:10px;align-items:center">
+      <img class="avatar" src="{{ (profile.avatar or default_avatar_for(profile.username))|asset }}" alt="" style="width:24px;height:24px;border-radius:50%">
+      <a class="postlink" href="/gallery/{{ comment.post.route_slug() }}/comment/{{ comment.id }}">{{ comment.post.title }}</a>
+      <span style="color:#949cb0;font-size:12px">{{ comment.created_at|ago }} ago • {{ comment.point_count }} pts</span>
+    </div>
+    <div class="text" style="color:#e7e9ec;margin-top:6px">{% if comment.image_path %}<img src="{{ comment.image_path|asset }}" alt="comment image" style="max-width:420px;border-radius:6px">{% else %}{{ comment.text }}{% endif %}</div>
+  </div>
+  {% else %}
+  <div class="emptynote">No comments yet.</div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="aboutcard">
+  <h3>{{ profile.username }}</h3>
+  <p>{{ profile.bio or 'This user hasn\'t written anything about themselves yet.' }}</p>
+  <div class="facts">
+    <span>Joined {{ profile.created_at.strftime('%B %d, %Y') }}</span>
+    <span>{{ profile.reputation|count }} reputation points</span>
+    <span>{{ profile.follow_count() }} followers</span>
+  </div>
+  {% if trophies %}
+  <h3 style="margin-top:18px">Trophies</h3>
+  <div class="trophygrid">
+    {% for trophy in trophies %}
+    <div class="trophy">
+      <img src="{{ trophy.image_path|asset }}" alt="{{ trophy.name }}">
+      <div class="tname">{{ trophy.name }}</div>
+      <div class="tdesc">{{ trophy.description }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}

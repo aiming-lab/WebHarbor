@@ -1,0 +1,174 @@
+"""Shared fixtures for the imgur verifier tests.
+
+Snapshots are copies of the real deterministic seed (``instance_seed/imgur.db``,
+rebuilt from the tracked source snapshot by ``seed_data.py`` with PYTHONHASHSEED=0;
+see ``.build-generated-seed``) with mutations applied through sqlite, and trajectories
+are hand-written in the ``agent_demo/agent.py`` shape (step ``url`` = page before the
+action). No docker, no LLM.
+
+Run from the agent_demo env so ``simpleArgParser`` (and Pillow) are importable:
+
+    cd agent_demo && uv run python -m pytest ../sites/imgur/verify/tests -q
+"""
+from __future__ import annotations
+
+import json
+import os
+import shutil
+import sqlite3
+import subprocess
+import sys
+import tempfile
+import zlib
+from pathlib import Path
+from typing import Any
+
+VERIFY_DIR = Path(__file__).resolve().parents[1]
+SITE_DIR = VERIFY_DIR.parent
+SEED_DB = Path(os.environ.get("IMGUR_TEST_SEED_DB")
+               or SITE_DIR / "instance_seed" / "imgur.db")
+BASE = "http://localhost:40084"
+PASSWORD = "TestPass123!"
+
+# ------------------------------------------------------------------ tiny valid PNG
+def tiny_png(width: int = 4, height: int = 4) -> bytes:
+    """Minimal valid single-color PNG (no Pillow needed at fixture-build time)."""
+    raw = b"".join(b"\x00" + b"\x40\x90\xd0" * width for _ in range(height))
+    def chunk(tag: bytes, data: bytes) -> bytes:
+        return (len(data).to_bytes(4, "big") + tag + data
+                + zlib.crc32(tag + data).to_bytes(4, "big"))
+    ihdr = width.to_bytes(4, "big") + height.to_bytes(4, "big") + b"\x08\x02\x00\x00\x00"
+    return (b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", ihdr)
+            + chunk(b"IDAT", zlib.compress(raw)) + chunk(b"IEND", b""))
+
+
+PNG = tiny_png()
+
+
+# ------------------------------------------------------------------ run-dir builder
+class RunBuilder:
+    """Hand-writes an agent_demo-shaped run directory: trajectory.json + screenshots/."""
+
+    def __init__(self, root: Path, task_id: str, start_path: str = "/"):
+        self.root = root
+        self.shots_dir = root / "screenshots"
+        self.shots_dir.mkdir(parents=True, exist_ok=True)
+        (self.shots_dir / "step_000.png").write_bytes(PNG)
+        self.steps: list[dict[str, Any]] = []
+        self.task_id = task_id
+        self.start_url = BASE + start_path
+        self.final_answer: str | None = None
+        self.final_path = start_path
+
+    def step(self, path: str, action: str = "click", params: dict | None = None,
+             url_after: str | None = None):
+        i = len(self.steps)
+        before = f"step_{i:03d}.png"
+        after = f"step_{i + 1:03d}.png"
+        (self.shots_dir / after).write_bytes(PNG)
+        self.steps.append({
+            "step": i,
+            "url": BASE + path if path.startswith("/") else path,
+            "title": "Imgur",
+            "thought": f"review fixture step on {path}",
+            "action": action,
+            "params": params or {},
+            "observed_text": "fixture",
+            "observed_text_before": "fixture",
+            "screenshot_before": before,
+            "screenshot_after": after,
+            **({"url_after": (BASE + url_after if url_after and url_after.startswith("/")
+                              else url_after)} if url_after else {}),
+        })
+        self.final_path = path
+        return self
+
+    def fill(self, path: str, text: str, selector: str = "input"):
+        return self.step(path, "fill", {"text": text, "selector": selector})
+
+    def login(self, email: str, username: str):
+        return (self.fill("/signin", email, "input[name=username]")
+                    .fill("/signin", PASSWORD, "input[name=password]")
+                    .step("/signin", "click", {"selector": "button[type=submit]"}))
+
+    def done(self, answer: str, final_path: str | None = None):
+        self.final_answer = answer
+        if final_path:
+            self.final_path = final_path
+        return self
+
+    def write(self, *, terminated: bool = True, reason: str = "agent_done",
+              task_id: str | None = None) -> Path:
+        traj = {
+            "task": f"fixture for {self.task_id}",
+            "task_id": task_id or self.task_id,
+            "start_url": self.start_url,
+            "model": "review-fixture",
+            "max_steps": 60,
+            "steps": self.steps,
+            "terminated": terminated,
+            "termination_reason": reason,
+            "final_answer": self.final_answer,
+            "judge_rubric": "",
+            "verifier_path": "",
+            "final_url": BASE + (self.final_path if self.final_path.startswith("/") else "/"),
+            "success_self_report": True,
+        }
+        (self.root / "trajectory.json").write_text(json.dumps(traj, indent=2))
+        return self.root
+
+
+def build_run(root: Path, task_id: str, paths_and_actions, answer: str,
+              login: tuple[str, str] | None = None, start_path: str = "/") -> Path:
+    """Compact helper: sequence of (path, action, params) + final answer."""
+    b = RunBuilder(root, task_id, start_path=start_path)
+    if login:
+        b.login(login[0], login[1])
+    for item in paths_and_actions:
+        path, action, params = (list(item) + [None, None])[:3]
+        b.step(path, action or "click", params or {})
+    b.done(answer)
+    return b.write()
+
+
+def noop_run(root: Path, task_id: str) -> Path:
+    """The no-op run: open the homepage, do nothing, empty answer, clean DB."""
+    b = RunBuilder(root, task_id)
+    b.step("/", "click", {"selector": "body"})
+    b.done("")
+    return b.write()
+
+
+# ------------------------------------------------------------------ DB snapshots
+def copy_db(target: Path) -> Path:
+    shutil.copyfile(SEED_DB, target)
+    return target
+
+
+def mutate_db(target: Path, statements: list[tuple[str, tuple]]) -> Path:
+    con = sqlite3.connect(str(target))
+    try:
+        for sql, params in statements:
+            con.execute(sql, params)
+        con.commit()
+    finally:
+        con.close()
+    return target
+
+
+# ------------------------------------------------------------------ verifier runner
+def run_verifier(task_n: int, run_dir: Path, initial_db: Path, after_db: Path,
+                 container: str | None = None) -> dict:
+    script = VERIFY_DIR / f"verify_{task_n}.py"
+    cmd = [sys.executable, str(script), "--run_dir", str(run_dir),
+           "--initial_db", str(initial_db), "--after_db", str(after_db), "--no_llm", "True"]
+    if container:
+        cmd += ["--container", container]
+    r = subprocess.run(cmd, capture_output=True, text=True, cwd=str(VERIFY_DIR), timeout=120)
+    try:
+        verdict = json.loads(r.stdout)
+    except json.JSONDecodeError:
+        return {"_parse_error": True, "stdout": r.stdout[:400], "stderr": r.stderr[:400],
+                "returncode": r.returncode, "pass": False}
+    verdict["_returncode"] = r.returncode
+    return verdict
