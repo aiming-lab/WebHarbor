@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Checkout | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="steps">
+    <span class="step active">1. Shipping</span>
+    <span class="step">2. Payment</span>
+    <span class="step">3. Review</span>
+  </div>
+  <div class="checkout-layout">
+    <div>
+      <h1 style="font-size:22px;margin-bottom:14px;">Shipping Address</h1>
+      <form method="post" action="/checkout/shipping">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        {% if addresses %}
+          <div class="addr-list">
+            {% for address in addresses %}
+              <label class="addr-option {% if loop.first %}selected{% endif %}">
+                <input type="radio" name="address_id" value="{{ address.id }}" {% if loop.first %}checked{% endif %}>
+                <div>
+                  <strong>{{ address.first_name }} {{ address.last_name }}{% if address.is_default %} (Default){% endif %}</strong>
+                  <div class="addr">{{ address.one_line }}</div>
+                  {% if address.phone %}<div class="addr">{{ address.phone }}</div>{% endif %}
+                </div>
+              </label>
+            {% endfor %}
+            <label class="addr-option">
+              <input type="radio" name="address_id" value="new">
+              <div><strong>Enter a new address</strong></div>
+            </label>
+          </div>
+        {% else %}
+          <input type="hidden" name="address_id" value="new">
+        {% endif %}
+        <div id="new-address" {% if addresses %}style="display:none;"{% endif %}>
+          <div class="field-row">
+            <div class="field"><label>First Name</label><input type="text" name="first_name"></div>
+            <div class="field"><label>Last Name</label><input type="text" name="last_name"></div>
+          </div>
+          <div class="field"><label>Address Line 1</label><input type="text" name="line1"></div>
+          <div class="field"><label>Address Line 2 (optional)</label><input type="text" name="line2"></div>
+          <div class="field-row">
+            <div class="field"><label>City</label><input type="text" name="city"></div>
+            <div class="field"><label>State</label>
+              <select name="state">
+                <option value="">Select state</option>
+                {% for code, name in [('AL','Alabama'),('AK','Alaska'),('AZ','Arizona'),('AR','Arkansas'),('CA','California'),('CO','Colorado'),('CT','Connecticut'),('DE','Delaware'),('FL','Florida'),('GA','Georgia'),('HI','Hawaii'),('ID','Idaho'),('IL','Illinois'),('IN','Indiana'),('IA','Iowa'),('KS','Kansas'),('KY','Kentucky'),('LA','Louisiana'),('ME','Maine'),('MD','Maryland'),('MA','Massachusetts'),('MI','Michigan'),('MN','Minnesota'),('MS','Mississippi'),('MO','Missouri'),('MT','Montana'),('NE','Nebraska'),('NV','Nevada'),('NH','New Hampshire'),('NJ','New Jersey'),('NM','New Mexico'),('NY','New York'),('NC','North Carolina'),('ND','North Dakota'),('OH','Ohio'),('OK','Oklahoma'),('OR','Oregon'),('PA','Pennsylvania'),('RI','Rhode Island'),('SC','South Carolina'),('SD','South Dakota'),('TN','Tennessee'),('TX','Texas'),('UT','Utah'),('VT','Vermont'),('VA','Virginia'),('WA','Washington'),('WV','West Virginia'),('WI','Wisconsin'),('WY','Wyoming')] %}
+                  <option value="{{ code }}">{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>ZIP Code</label><input type="text" name="zip" inputmode="numeric"></div>
+            <div class="field"><label>Phone</label><input type="text" name="phone"></div>
+          </div>
+        </div>
+
+        <h2 style="font-size:17px;margin:22px 0 10px;">Delivery Method</h2>
+        <label class="delivery-opt">
+          <input type="radio" name="method" value="standard" checked>
+          <span><strong>Standard Shipping</strong><br>Arrives in 3-5 business days</span>
+          <span class="price">{{ 'FREE' if totals is not defined else '' }}</span>
+        </label>
+        <label class="delivery-opt">
+          <input type="radio" name="method" value="express">
+          <span><strong>Express Shipping</strong><br>Arrives in 2 business days</span>
+          <span class="price">$12.95</span>
+        </label>
+        <label class="delivery-opt">
+          <input type="radio" name="method" value="pickup">
+          <span><strong>Same Day Pickup</strong><br>Order by 3pm, pick up at your store today</span>
+          <span class="price">FREE</span>
+        </label>
+        <button type="submit" class="btn-primary" style="margin-top:14px;width:100%;">Continue to Payment</button>
+      </form>
+    </div>
+    <aside class="summary-box">
+      <h2>Order Summary</h2>
+      {% for item in items %}
+        <div class="summary-row"><span>{{ item.product.name[:38] }}{% if item.product.name|length > 38 %}&hellip;{% endif %} &times; {{ item.quantity }}</span><span>{{ item.line_total|currency }}</span></div>
+      {% endfor %}
+      <div class="summary-row total"><span>Items</span><span>{{ items|length }}</span></div>
+    </aside>
+  </div>
+</div>
+<script>
+document.querySelectorAll('input[name=address_id]').forEach(function (radio) {
+  radio.addEventListener('change', function () {
+    document.getElementById('new-address').style.display = radio.value === 'new' ? 'block' : 'none';
+    document.querySelectorAll('.addr-option').forEach(function (opt) { opt.classList.remove('selected'); });
+    radio.closest('.addr-option').classList.add('selected');
+  });
+});
+</script>
+{% endblock %}

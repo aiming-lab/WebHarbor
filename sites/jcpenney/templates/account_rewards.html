@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}JCPenney Rewards | My Account{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="account-layout">
+    <nav class="account-nav">
+      <a href="/account/dashboard">My Dashboard</a>
+      <a href="/account/dashboard/profile">My Profile</a>
+      <a href="/account/dashboard/orders">Order History</a>
+      <a href="/account/dashboard/wishlist">Wish List</a>
+      <a href="/account/dashboard/rewards" class="active">JCPenney Rewards</a>
+    </nav>
+    <div class="panel">
+      <h1>JCPenney Rewards</h1>
+      <div class="summary-box" style="position:static;margin:16px 0;max-width:420px;">
+        <div class="summary-row"><span>Membership</span><span>{{ current_user.rewards_status }}</span></div>
+        <div class="summary-row total"><span>Points</span><span>{{ current_user.rewards_points }}</span></div>
+      </div>
+      <h2 style="font-size:17px;">Recent Activity</h2>
+      {% for event in events %}
+        <div class="order-row">
+          <div>{{ event.description }}</div>
+          <div style="font-size:12.5px;color:var(--ink-2);">{{ event.event_date.strftime('%B %-d, %Y') }}</div>
+          <div style="font-weight:700;color:var(--jcp-red);">{{ event.points }} pts</div>
+        </div>
+      {% else %}
+        <p style="color:var(--ink-2);">No rewards activity yet.</p>
+      {% endfor %}
+      <p style="margin-top:18px;"><a class="btn-link" href="/rewards">About JCPenney Rewards</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

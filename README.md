@@ -94,6 +94,7 @@ All registered websites and their default ports, in registration order from left
 | CA.gov | 40069 | Coolmath4Kids | 40070 | Chase | 40071 |
 | FlightAware | 40072 | Chronicle Jobs | 40073 | Dillard's | 40074 |
 | Google Shopping | 40075 | Imgur | 40076 | | |
+| JCPenney | 40089 |  |  |  |  |
 
 ## 🤝 Contribute
 
