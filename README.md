@@ -42,10 +42,10 @@ Build this checkout to run its registered web environments (published image tags
 
 ```bash
 ./scripts/build.sh webharbor:dev
-docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40089:40000-40089 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40078:40000-40078 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40089` to explore 54 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, Bandcamp, Adopt-a-Pet, IGN, IRS Refund Tracker, WineAccess, and WebMD`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40078` to explore 79 local mirrors. The table below lists every site in port order.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -93,8 +93,8 @@ All registered websites and their default ports, in registration order from left
 | America’s Health Rankings | 40066 | American Express | 40067 | Carnival Cruise | 40068 |
 | CA.gov | 40069 | Coolmath4Kids | 40070 | Chase | 40071 |
 | FlightAware | 40072 | Chronicle Jobs | 40073 | Dillard's | 40074 |
-| Google Shopping | 40075 | Imgur | 40076 | | |
-| League of Legends | 40089 |  |  |  |  |
+| Google Shopping | 40075 | Imgur | 40076 | Instructure | 40077 |
+| League of Legends | 40078 | | | | |
 
 ## 🤝 Contribute
 

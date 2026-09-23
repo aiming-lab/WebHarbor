@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero container">
+  <div class="hero-grid">
+    {% for slide in slides %}
+    <div class="hero-slide {% if loop.first %}is-active{% endif %}" data-slide="{{ loop.index0 }}">
+      <div class="hero-slide-text">
+        <div class="hero-micro">{{ slide.micro }}</div>
+        <h1 class="hero-title">{{ slide.title }}</h1>
+        <p class="hero-body">{{ slide.body }}</p>
+        <a class="btn btn-primary" href="{{ slide.link_href }}">{{ slide.link_label }}</a>
+      </div>
+      <div class="hero-image">
+        {% if slide.img %}<img src="{{ slide.img|img }}" alt="{{ slide.title }}">{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="hero-nav-cards">
+    {% for slide in slides %}
+    <div class="hero-nav-card {% if loop.first %}is-active{% endif %}" data-slide="{{ loop.index0 }}">
+      <span class="micro">{{ slide.micro }}</span>
+      <span class="title">{{ slide.title }}</span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="carousel-dots hero-dots" style="justify-content:flex-start;">
+    {% for slide in slides %}<button class="{% if loop.first %}is-active{% endif %}" aria-label="Slide {{ loop.index }}"></button>{% endfor %}
+  </div>
+</section>
+
+<section class="container" style="padding-bottom: 40px;">
+  <div class="banner-cta">
+    <img class="bg" src="{{ '/static/images/home/bg-image.png'|img }}" alt="Louisville, Kentucky">
+    <div class="inner">
+      <h2>InstructureCon 2026</h2>
+      <p>Louisville, Kentucky | July 21–23</p>
+      <a class="btn btn-outline-light" href="https://community.instructure.com/en/categories/instructurecon26-blog">Explore the sessions</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Welcome to the most-visited education website in the world.</h2>
+      <p>We love numbers here at Instructure, and it just so happens they love us back. Here are a few of our favorites:</p>
+    </div>
+    <div class="stat-cards">
+      {% for s in stats %}
+      <div class="stat-card">
+        <div class="value">{{ s.value }}</div>
+        <div class="label">{{ s.label }}</div>
+        <p class="text">{{ s.text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section-soft section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Solutions for every age, stage, and transitional moment</h2>
+    </div>
+    <div class="solutions-grid">
+      <div class="solution-card">
+        <div class="thumb"><img src="{{ '/static/images/home/home-3colcontent-p1-k12-v1.jpg'|img }}" alt="K–12 students learning together"></div>
+        <div class="body">
+          <h3>K–12</h3>
+          <p>Our ecosystem supports every student, in any learning environment—so K–12 schools can focus on what matters most.</p>
+          <a class="link" href="/k12">See how ›</a>
+        </div>
+      </div>
+      <div class="solution-card">
+        <div class="thumb"><img src="{{ '/static/images/home/home-3colcontent-p2-he-v1.jpg'|img }}" alt="Higher education students collaborating"></div>
+        <div class="body">
+          <h3>Higher education</h3>
+          <p>Our solutions keep educators at the forefront of modern teaching and learning, helping them ensure student success in a changing world.</p>
+          <a class="link" href="/higher-education">See how ›</a>
+        </div>
+      </div>
+      <div class="solution-card">
+        <div class="thumb"><img src="{{ '/static/images/home/home-3colcontent-p3-bizgov-v1.jpg'|img }}" alt="Business and government training"></div>
+        <div class="body">
+          <h3>Business and government</h3>
+          <p>The best places to work prioritize learning and growth. And our tools make it more intuitive, engaging, and effective.</p>
+          <a class="link" href="/business">See how ›</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section-navy section">
+  <div class="container text-center">
+    <h2>Explore the Instructure ecosystem</h2>
+    <p class="section-head" style="margin: 0 auto 30px;">Our capabilities, partner network, services, and community are here to help you create your ideal edtech environment and deliver on important outcomes.</p>
+    <div class="ecosystem-arches">
+      <div class="ecosystem-arch"><img src="{{ '/static/images/misc/brand-3-brands-type-2025.png'|img }}" alt="Canvas, Mastery, and Parchment brand arches"></div>
+    </div>
+    <a class="btn btn-outline-light" href="/why-instructure">Take a look</a>
+  </div>
+</section>
+
+<section class="section-navy" style="padding: 0 0 70px;">
+  <div class="container">
+    <div class="video-band">
+      <h2>We're dreaming big, so you can, too.</h2>
+      <div class="video-cover">
+        <img src="{{ '/static/images/home/home-bannervideo-cover-dreambig-v1.jpg'|img }}" alt="Canvas by Instructure">
+        <div class="play"><span><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>We love our customers (and the feeling is mutual)</h2>
+    </div>
+    <div class="testimonial-carousel">
+      {% for t in testimonials %}
+      <div class="testimonial-card" style="{% if not loop.first %}display:none;{% endif %}">
+        <blockquote>{{ t.quote }}</blockquote>
+        <div class="author">{{ t.author }}</div>
+        <div class="role">{{ t.role }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="carousel-dots testimonial-dots">
+      {% for t in testimonials %}<button class="{% if loop.first %}is-active{% endif %}" aria-label="Quote {{ loop.index }}"></button>{% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section-soft section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Accolades from the education world</h2>
+      <p>Oh, this? Silly us—we didn't even realize our trophy case was in the background!</p>
+    </div>
+    <div class="logo-strip">
+      <img src="{{ '/static/images/misc/best-companies-award-logo.png'|img }}" alt="Best Companies to work for award logo">
+      <img src="{{ '/static/images/misc/codie-award-logo.png'|img }}" alt="Codie Siia Awards logo">
+      <img src="{{ '/static/images/misc/comparably-best-company-work-life-balance-award-logo.png'|img }}" alt="Best Company Work-Life Balance Award logo">
+      <img src="{{ '/static/images/misc/eventex-logo-award.png'|img }}" alt="Eventex Award Logo">
+      <img src="{{ '/static/images/misc/choice_awards_badge_2025_winner-lms-800px.png'|img }}" alt="Choice Awards Badge 2025 Winner-LMS">
+      <img src="{{ '/static/images/misc/brandon_hall_partner_badge.png'|img }}" alt="Brandon Hall Partner Badge">
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>More partners and integrations than any other edtech company</h2>
+      <p>And not just any partners and integrations. The best in the business.</p>
+    </div>
+    <div class="logo-strip">
+      {% for p in partners %}
+      <img src="{{ p.logo|img }}" alt="{{ p.name }} Logo">
+      {% endfor %}
+    </div>
+    <div class="text-center" style="margin-top: 34px;">
+      <a class="btn btn-outline" href="/partners">Explore the marketplace</a>
+    </div>
+  </div>
+</section>
+
+<section class="section-soft section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Success stories and resources</h2>
+    </div>
+    <div class="res-carousel">
+      {% for r in resource_carousel %}
+      <a class="res-card" href="{{ r.href() }}">
+        <span class="micro">{{ r.type_label }}</span>
+        <h3>{{ r.title }}</h3>
+        <p>{{ r.snippet or r.intro }}</p>
+        <span class="more">Learn more</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="final-cta">
+      <h2>Ready for the next step?</h2>
+      <p>Whether you're in the early stages of LMS discovery or your edtech stack just needs some fine-tuning, we're here to help.<br>Let's talk about your goals. No pressure. No fluff.</p>
+      <a class="btn btn-white" href="/request-demo">Book a meeting</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

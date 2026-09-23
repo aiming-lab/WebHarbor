@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Careers | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <h1>Careers</h1>
+        <p class="lede">Learn about our company, check out our open positions, and come join our crew of smart, creative Instructivists.</p>
+        <div class="ctas">
+          <a class="btn btn-outline-light" href="#open-positions">View all open positions</a>
+        </div>
+      </div>
+      <div><img class="heroimg" src="/static/images/page-careers-hero.jpg" alt="Instructure careers"></div>
+    </div>
+  </div>
+</section>
+<section class="container section">
+  <div class="block-cards" style="margin-bottom:44px;">
+    <div class="block-card"><h3>Our mission and values</h3><p>We’re Instructivists—people who are obsessed with education and dedicated to elevating teaching and learning everywhere.</p></div>
+    <div class="block-card"><h3>Diversity and inclusion</h3><p>We believe different perspectives make us stronger and our products better.</p></div>
+    <div class="block-card"><h3>Benefits</h3><p>Competitive pay, strong health coverage, flexible time off, and a culture built on trust.</p></div>
+  </div>
+
+  <h2 id="open-positions">Open positions</h2>
+  <p class="lede" style="margin: 12px 0 28px;">{{ jobs|length }} open roles across {{ departments|length }} departments.</p>
+  <div class="job-list">
+    <div class="job-row" style="background:var(--navy); color:#fff;">
+      <h3 style="font-size:14px; text-transform:uppercase; letter-spacing:.08em;">Role</h3>
+      <span class="meta" style="color:#b8cbdc;">Department</span>
+      <span class="meta" style="color:#b8cbdc;">Location</span>
+      <span class="meta" style="color:#b8cbdc;">Type</span>
+    </div>
+    {% for j in jobs %}
+    <a class="job-row" href="{{ j.external_url }}" target="_blank" rel="noopener">
+      <h3>{{ j.title }}</h3>
+      <span class="meta">{{ j.department }}</span>
+      <span class="meta">{{ j.location }}</span>
+      <span class="meta">{{ j.employment }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="cta-band">
+    <h2>Don’t see your role?</h2>
+    <p class="lede" style="color:#b8cbdc; margin: 14px auto 0;">Create a job alert and we’ll email you when something matching your keywords opens up.</p>
+    <form method="post" action="{{ url_for('job_alert') }}" style="display:flex; gap:12px; justify-content:center; margin-top:22px; flex-wrap:wrap;">
+      <input type="email" name="email" required placeholder="*Email Address" style="font-family:var(--font); padding:12px 18px; border-radius:100px; border:none; min-width:280px;">
+      <input type="text" name="keywords" placeholder="Keywords (e.g. engineering)" style="font-family:var(--font); padding:12px 18px; border-radius:100px; border:none; min-width:240px;">
+      <button class="btn btn-outline-light" type="submit">Create job alert</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

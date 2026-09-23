@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Instructure Ecosystem | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <h1>Explore the Instructure ecosystem</h1>
+    <p class="lede">Our capabilities, partner network, services, and community are here to help you create your ideal edtech environment and deliver on important outcomes.</p>
+  </div>
+</section>
+<section class="container section">
+  <div class="block-cards">
+    {% for p in products %}
+    <a class="block-card" href="/{{ p.slug }}" style="text-decoration:none; color:inherit;">
+      <h3>{{ p.name }}</h3>
+      <p>{{ p.tagline }}</p>
+      <span class="pill">Learn more</span>
+    </a>
+    {% endfor %}
+  </div>
+  <h2 style="margin: 50px 0 10px; text-align:center;">More partners and integrations than any other edtech company</h2>
+  <p class="lede" style="text-align:center; margin: 0 auto 30px;">And not just any partners and integrations. The best in the business.</p>
+  <div class="partner-grid">
+    {% for p in partners %}
+    <img src="{{ p.logo }}" alt="{{ p.name }} Logo">
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}
