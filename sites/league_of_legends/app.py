@@ -646,6 +646,24 @@ def signup():
     return render_template("signup.html", regions=REGIONS)
 
 
+
+
+def local_return(value, fallback):
+    """Keep account navigation on this mirror, including encoded URL tricks."""
+    from urllib.parse import unquote, urlsplit
+    value = str(value or "")
+    decoded = unquote(value)
+    try:
+        parts = urlsplit(decoded)
+    except ValueError:
+        return fallback
+    if (decoded.startswith("/") and not decoded.startswith("//")
+            and not parts.scheme and not parts.netloc and "\\" not in decoded
+            and not any(ord(c) < 32 or ord(c) == 127 for c in decoded)):
+        return value
+    return fallback
+
+
 @app.route("/login/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
@@ -657,7 +675,7 @@ def login():
         if user and user.check_password(password):
             login_user(user)
             flash("Signed in to your Riot Account.")
-            return redirect(request.args.get("next") or url_for("account"))
+            return redirect(local_return(request.args.get("next"), url_for("account")))
         flash("Invalid username or password.")
     return render_template("login.html")
 
@@ -748,8 +766,9 @@ def champions():
         champions_all = [pair[0] for pair in scored]
     if sort == "difficulty":
         champions_all.sort(key=lambda c: (c.difficulty_value or 0, c.name))
-    elif sort == "release":
-        champions_all.sort(key=lambda c: (-(c.release_key or 0), c.name))
+    elif sort == "skins":
+        counts = dict(db.session.query(Skin.champion_id, db.func.count(Skin.id)).group_by(Skin.champion_id).all())
+        champions_all.sort(key=lambda c: (-counts.get(c.id, 0), c.name))
     favorite_ids = set()
     if current_user.is_authenticated:
         favorite_ids = {
@@ -790,7 +809,7 @@ def champion_favorite(slug):
             added_date=MIRROR_DATE_STR))
         db.session.commit()
         flash(f"Added {champion.name} to your favorites.")
-    return redirect(request.form.get("next") or url_for("champion_detail", slug=slug))
+    return redirect(local_return(request.form.get("next"), url_for("champion_detail", slug=slug)))
 
 
 # --------------------------------------------------------------------------- #
@@ -884,8 +903,8 @@ def article_bookmark(machine_name, slug):
             added_date=MIRROR_DATE_STR))
         db.session.commit()
         flash("Saved this article to your bookmarks.")
-    return redirect(request.form.get("next") or url_for(
-        "article_detail", machine_name=machine_name, slug=slug))
+    return redirect(local_return(request.form.get("next"), url_for(
+        "article_detail", machine_name=machine_name, slug=slug)))
 
 
 # --------------------------------------------------------------------------- #

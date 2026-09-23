@@ -34,6 +34,8 @@ def run_checks(judge, traj, initial_db, after_db):
                     f"expected {name!r} with roles {roles!r}")
 
 
+    from reviewed import check_facts
+    check_facts(judge, answer, [{'entity': 'Aatrox', 'patterns': ['\\bFighter\\b']}, {'entity': 'Kayn', 'patterns': ['\\bFighter\\b', '\\bAssassin\\b']}, {'entity': 'Naafiri', 'patterns': ['\\bAssassin\\b', '\\bFighter\\b']}, {'entity': 'Varus', 'patterns': ['\\bMarksman\\b', '\\bMage\\b']}, {'entity': 'Zaahen', 'patterns': ['\\bFighter\\b']}])
     check_read_only(judge, initial_db, after_db)
 
 

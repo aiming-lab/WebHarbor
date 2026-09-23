@@ -40,15 +40,9 @@ SEED_DB = Path(os.environ.get("LOL_TEST_SEED_DB") or "")
 def _acquire_seed() -> Path:
     if SEED_DB.is_file():
         return SEED_DB
-    if CACHE.is_file():
-        return CACHE
     local = SITE_DIR / "instance_seed" / "league_of_legends.db"
     if local.is_file():
         return local
-    evidence = Path("/data/zhaoyang-user-projects/websyn/wh-lol-review-evidence/"
-                    "seed_snapshot.db")
-    if evidence.is_file():
-        return evidence
     CACHE.parent.mkdir(parents=True, exist_ok=True)
     r = subprocess.run(["docker", "cp", f"{CONTAINER}:/opt/WebSyn/league_of_legends/"
                        f"instance_seed/league_of_legends.db", str(CACHE)],
@@ -127,8 +121,8 @@ class RunBuilder:
             self.final_path = final_path
         self.step(self.final_path, "done", {"text": answer, "success": True})
         traj = {
-            "task": f"{self.task_id} review fixture",
-            "task_id": self.task_id,
+                        "task_id": self.task_id,
+            "task": next((t["ques"] for t in map(json.loads, (SITE_DIR / "tasks.jsonl").read_text().splitlines()) if t["id"] == self.task_id), "unknown task"),
             "start_url": self.start_url,
             "model": "review-fixture",
             "max_steps": 80,

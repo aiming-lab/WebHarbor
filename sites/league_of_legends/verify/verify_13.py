@@ -58,6 +58,7 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_specific_2618_change", detail_ok,
                 "expected a specific 26.18 change detail (values, ability names or quoted "
                 "wording from the 26.18 notes) for one of the named champions")
+    judge.check("answer_identifies_mode", contains_any(answer, ["standard", "Classic", "Arena", "ARAM"]), "identify the mode of the described change")
     check_read_only(judge, initial_db, after_db)
 
 
