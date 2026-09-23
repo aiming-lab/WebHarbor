@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Wish List | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">Wish List</h1>
+    <div class="product-grid">
+        {% for item in items %}
+            {% set product = item.product %}
+            {% include '_product_card.html' %}
+        {% else %}
+        <p>Your wish list is empty. <a href="{{ url_for('index') }}">Browse products</a>.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

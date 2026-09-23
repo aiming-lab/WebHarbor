@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }} | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner product-detail">
+    <div class="breadcrumb">
+        <a href="{{ url_for('department_page', department=product.department) }}">{{ product.department.upper() }}</a> /
+        <a href="{{ url_for('category_page', department=product.department, category_slug=product.category_slug) }}">{{ product.category_name }}</a> /
+        {{ product.name }}
+    </div>
+
+    <div class="product-detail-grid">
+        <div class="product-gallery">
+            {% set gallery = product.gallery_images|from_json %}
+            {% if gallery %}
+                <img class="gallery-main" id="gallery-main" src="{{ url_for('static', filename=gallery[0]) }}" alt="{{ product.name }}">
+                {% if gallery|length > 1 %}
+                <div class="gallery-thumbs">
+                    {% for img in gallery %}
+                    <img src="{{ url_for('static', filename=img) }}" alt="" onclick="document.getElementById('gallery-main').src=this.src">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="product-card-img-placeholder large"></div>
+            {% endif %}
+        </div>
+
+        <div class="product-info">
+            <h1>{{ product.name }}</h1>
+            {% if product.rating %}
+            <div class="rating-line">★ {{ '%.1f'|format(product.rating) }} <span class="muted">({{ product.review_count }} reviews)</span></div>
+            {% endif %}
+            <div class="price-line" id="price-line">
+                {% if product.min_price == product.max_price %}${{ '%.2f'|format(product.min_price) }}
+                {% else %}${{ '%.2f'|format(product.min_price) }} &ndash; ${{ '%.2f'|format(product.max_price) }}{% endif %}
+            </div>
+
+            <form id="add-to-cart-form" method="post" action="">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+                {% if product.colors() %}
+                <div class="option-group">
+                    <label>Color: <span id="selected-color">{{ product.colors()[0] }}</span></label>
+                    <div class="swatch-row">
+                        {% for color in product.colors() %}
+                        <button type="button" class="swatch-btn" data-color="{{ color }}" onclick="uqSelectColor(this)">{{ color }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                {% if product.sizes() %}
+                <div class="option-group">
+                    <label>Size: <span id="selected-size">—</span></label>
+                    <div class="swatch-row">
+                        {% for size in product.sizes() %}
+                        <button type="button" class="swatch-btn size-btn" data-size="{{ size }}" onclick="uqSelectSize(this)">{{ size }}</button>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="qty-add-row">
+                    <input type="number" name="quantity" value="1" min="1" max="10" class="qty-input">
+                    {% if current_user.is_authenticated %}
+                    <button type="submit" class="btn-primary" id="add-to-cart-btn">ADD TO CART</button>
+                    {% else %}
+                    <a href="{{ url_for('login') }}" class="btn-primary">SIGN IN TO BUY</a>
+                    {% endif %}
+                </div>
+            </form>
+
+            {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('wishlist_toggle', product_id=product.id) }}" class="wishlist-form">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+                <button type="submit" class="btn-secondary">{{ '♥ Remove from Wish List' if in_wishlist else '♡ Add to Wish List' }}</button>
+            </form>
+            {% endif %}
+
+            <div class="detail-block">
+                <h3>Description</h3>
+                <p>{{ product.description }}</p>
+            </div>
+            {% if product.material %}
+            <div class="detail-block">
+                <h3>Material</h3>
+                <p>{{ product.material }}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <section class="reviews-section">
+        <h2>Reviews ({{ reviews|length }})</h2>
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('add_review', slug=product.slug) }}" class="review-form">
+            {{ review_form.hidden_tag() }}
+            <div class="form-row">
+                {{ review_form.rating.label }} {{ review_form.rating(min=1, max=5) }}
+            </div>
+            <div class="form-row">
+                {{ review_form.title.label }} {{ review_form.title() }}
+            </div>
+            <div class="form-row">
+                {{ review_form.body.label }} {{ review_form.body(rows=3) }}
+            </div>
+            <button type="submit" class="btn-secondary">Submit Review</button>
+        </form>
+        {% endif %}
+        {% for r in reviews %}
+        <div class="review-item">
+            <div class="review-stars">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</div>
+            <div class="review-title">{{ r.title }}</div>
+            <p class="review-body">{{ r.body }}</p>
+            <div class="review-meta">{{ r.author_name }} &middot; {{ r.created_at.strftime('%Y-%m-%d') }}</div>
+        </div>
+        {% else %}
+        <p class="muted">No reviews yet.</p>
+        {% endfor %}
+    </section>
+
+    {% if related %}
+    <section class="product-section">
+        <h2>You May Also Like</h2>
+        <div class="product-grid">
+            {% for product in related %}
+                {% include '_product_card.html' %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+
+<script>
+const UQ_VARIANT_MAP = {
+    {% for v in product.variants %}"{{ v.color }}|{{ v.size }}": {id: {{ v.id }}, price: {{ v.price }}, stock: {{ 'true' if v.in_stock else 'false' }}},{% endfor %}
+};
+let uqColor = {{ (product.colors()[0] if product.colors() else '')|tojson }};
+let uqSize = null;
+
+function uqSelectColor(btn) {
+    uqColor = btn.dataset.color;
+    document.getElementById('selected-color').textContent = uqColor;
+    document.querySelectorAll('.swatch-btn[data-color]').forEach(b => b.classList.toggle('active', b === btn));
+    uqUpdateForm();
+}
+function uqSelectSize(btn) {
+    uqSize = btn.dataset.size;
+    document.getElementById('selected-size').textContent = uqSize;
+    document.querySelectorAll('.size-btn').forEach(b => b.classList.toggle('active', b === btn));
+    uqUpdateForm();
+}
+function uqUpdateForm() {
+    const key = uqColor + '|' + uqSize;
+    const v = UQ_VARIANT_MAP[key];
+    const form = document.getElementById('add-to-cart-form');
+    const btn = document.getElementById('add-to-cart-btn');
+    if (v) {
+        form.action = '/cart/add/' + v.id;
+        if (btn) btn.disabled = !v.stock;
+        document.getElementById('price-line').textContent = '$' + v.price.toFixed(2);
+    } else if (btn) {
+        btn.disabled = true;
+    }
+}
+document.addEventListener('DOMContentLoaded', () => {
+    const firstColor = document.querySelector('.swatch-btn[data-color]');
+    const firstSize = document.querySelector('.size-btn');
+    if (firstColor) uqSelectColor(firstColor);
+    if (firstSize) uqSelectSize(firstSize);
+});
+</script>
+{% endblock %}
