@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}My Account | Instructure{% endblock %}
+{% block content %}
+<section class="container" style="padding: 44px 0 70px;">
+  <div class="account-grid">
+    <div>
+      <div class="account-panel">
+        <h2>{{ current_user.display_name }}</h2>
+        <p class="muted" style="margin-bottom: 6px;">{{ current_user.email }}</p>
+        {% if current_user.organization %}<p class="muted" style="margin:0;">{{ current_user.organization }}{% if current_user.job_title %} • {{ current_user.job_title }}{% endif %}</p>{% endif %}
+        <div class="account-nav">
+          <a class="is-active" href="/account">Profile</a>
+          <a href="/account/saved">Saved Resources ({{ saved|length }})</a>
+        </div>
+        <h3 style="font-size: 1.1rem;">Webinar registrations ({{ regs|length }})</h3>
+        {% for reg in regs %}
+        <div class="saved-row">
+          <a class="t" href="{{ reg.resource.href() }}">{{ reg.resource.title }}</a>
+        </div>
+        {% else %}
+        <p class="muted">No webinar registrations yet.</p>
+        {% endfor %}
+        <form method="get" action="/logout" style="margin-top: 20px;">
+          <a class="btn btn-outline btn-sm" href="/logout">Sign Out</a>
+        </form>
+      </div>
+    </div>
+    <div>
+      <h2 style="font-size:1.6rem;">Profile details</h2>
+      <form method="post" action="/account" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="form-row">
+          <div class="form-field {% if form.display_name.errors %}has-err{% endif %}">
+            <label>Full name <span class="req">*</span></label>
+            {{ form.display_name(class="form-control") }}
+            {% for e in form.display_name.errors %}<span class="err">{{ e }}</span>{% endfor %}
+          </div>
+          <div class="form-field">
+            <label>Phone</label>
+            {{ form.phone(class="form-control") }}
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Job title</label>
+            {{ form.job_title(class="form-control") }}
+          </div>
+          <div class="form-field">
+            <label>Organization</label>
+            {{ form.organization(class="form-control") }}
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Organization type</label>
+            {{ form.organization_type() }}
+          </div>
+          <div class="form-field">
+            <label>Country</label>
+            {{ form.country() }}
+          </div>
+        </div>
+        <div class="form-field">
+          <label>State</label>
+          {{ form.state() }}
+        </div>
+        <div class="form-footer">
+          <button class="btn btn-primary" type="submit">Save Changes</button>
+        </div>
+      </form>
+
+      <h2 style="font-size:1.4rem; margin-top: 34px;">Saved resources ({{ saved|length }})</h2>
+      {% for row in saved %}
+      <div class="saved-row">
+        <a class="t" href="{{ row.resource.href() }}">{{ row.resource.title }}<small>{{ row.resource.type_label }}</small></a>
+        <form method="post" action="/account/saved/{{ row.resource.slug }}/remove">
+          <button class="remove-btn" type="submit">Remove</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="muted">You haven't saved any resources yet. Browse the <a href="/resources" style="color: var(--blue); font-weight: 600;">Resource Center</a> and save what matters.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

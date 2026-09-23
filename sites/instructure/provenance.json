@@ -1,0 +1,107 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-22",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the instructure.com mirror: homepage, product and solutions pages, Resource Center hubs with exposed-filter search/facets, resource detail pages (case study stat bars, gated downloads, video/webinar transcripts), news and press release pages, events, careers with client-side filters, leadership profiles with modals, support FAQ, scored site search, demo request / contact / newsletter forms, and mirror accounts with saved resources and webinar registrations."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time seeder. All content rows come from the tracked source_data_resources.json / source_data_misc.json snapshots; benchmark users use a frozen bcrypt hash so the SQLite seed is byte-reproducible on every build."
+  },
+  {
+   "path": "source_data_resources.json",
+   "classification": "captured-upstream-content",
+   "scope": "The 700-row resource catalog captured from the live site on 2026-09-22: titles, listing snippets, tags (org type / product / topic), publication dates, author attributions, case-study stat bars, video transcripts, gated PDF URLs, and full body HTML for case studies, blogs, webinars, press releases, and more, exactly as served."
+  },
+  {
+   "path": "source_data_misc.json",
+   "classification": "captured-upstream-content",
+   "scope": "Events, in-the-news items, open jobs, leadership profiles (with modal bios), support FAQ Q&A, homepage hero slides, stat cards, and testimonials captured from the live site on 2026-09-22."
+  },
+  {
+   "path": "asset_inventory.json",
+   "classification": "asset-manifest",
+   "scope": "Per-file inventory (bytes, SHA-256, upstream source URL) for every managed image under static/images/; enforced by the image build's check_asset_inventory.py gate."
+  },
+  {
+   "path": "static/images/resources/",
+   "classification": "captured-upstream-content",
+   "scope": "Resource card thumbnails and detail hero images for the seeded catalog (case studies, ebooks, videos, blogs, webinars, research reports, podcasts, infographics, product overviews) as served by the upstream Resource Center listings and detail pages."
+  },
+  {
+   "path": "static/images/logos/",
+   "classification": "captured-upstream-content",
+   "scope": "Customer logos displayed in the header banner of the upstream case study detail pages."
+  },
+  {
+   "path": "static/images/authors/",
+   "classification": "captured-upstream-content",
+   "scope": "Author headshots displayed on the upstream blog detail pages."
+  },
+  {
+   "path": "static/images/events/",
+   "classification": "captured-upstream-content",
+   "scope": "Event tile images served by the upstream /events listing."
+  },
+  {
+   "path": "static/images/leaders/",
+   "classification": "captured-upstream-content",
+   "scope": "Executive leadership card headshots and modal portraits served by the upstream /about/leadership page."
+  },
+  {
+   "path": "static/images/home/",
+   "classification": "captured-upstream-content",
+   "scope": "Homepage hero slide art, InstructureCon banner art, solutions section photography, video cover art, and section backgrounds served by the upstream homepage."
+  },
+  {
+   "path": "static/images/misc/",
+   "classification": "captured-upstream-content",
+   "scope": "Product and solutions page heroes, community and careers imagery, partner logos, and accolade award logos served by the respective upstream marketing pages."
+  },
+  {
+   "path": "static/icons/",
+   "classification": "captured-upstream-content",
+   "scope": "Case-study stat-bar icons (SVG and PNG variants) served by the upstream asset host, plus the favicon and the site wordmark SVG."
+  },
+  {
+   "path": "static/css/site.css",
+   "classification": "mirror-code",
+   "scope": "Original stylesheet reproducing the upstream visual system: deep navy (#061C30) hero bands and cards, brand blue (#0E68B3) CTAs and labels, pill buttons, rounded cards, hub filter sidebar, and the footer wordmark."
+  },
+  {
+   "path": "static/js/main.js",
+   "classification": "mirror-code",
+   "scope": "Interaction layer: hero slider, testimonial carousel, filter group accordions with auto-submitting exposed filters, careers client-side filters, leadership modals, FAQ accordions, transcript toggles."
+  },
+  {
+   "path": "templates/",
+   "classification": "mirror-code",
+   "scope": "Jinja templates reproducing the captured upstream layout: utility bar + mega-menu header, homepage sections, hub listing pages with filter sidebar and pagination, per-type resource detail pages, news/press/events/careers/leadership pages, forms, and account surfaces."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "30 five-key benchmark task definitions covering search, filtering, case-study reading, events, careers, leadership, news, FAQ, forms, accounts, saves, and webinar registration."
+  }
+ ],
+ "review_supplements": [
+  {
+   "date": "2026-09-23",
+   "field": "events.region",
+   "source": "https://www.instructure.com/events",
+   "method": "Match the 39 captured event about paths against the six region-filtered upstream listings (including pagination). No geographic inference from titles. Existing captured event dates retained.",
+   "filters": {
+    "467": "North America",
+    "468": "Asia–Pacific",
+    "469": "Latin America",
+    "470": "Europe",
+    "733": "Africa",
+    "734": "Middle East"
+   }
+  }
+ ]
+}

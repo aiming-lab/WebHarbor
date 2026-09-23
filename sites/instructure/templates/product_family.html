@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} | Instructure{% endblock %}
+{% block content %}
+{% set b = p.blocks %}
+<section class="mhero">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <h1>{{ b.hero.title }}</h1>
+        <p class="lede">{{ b.hero.lede }}</p>
+        <div class="ctas">
+          <a class="btn btn-outline-light" href="{{ url_for('request_demo') }}">{{ b.hero.cta }}</a>
+          <a href="{{ b.hero.cta_link or url_for('products_all') }}" style="color:#0097d3; font-weight:700;">{{ b.hero.cta2 or 'Explore ' + p.name }} &gt;</a>
+        </div>
+      </div>
+      <div>
+        <img class="heroimg" src="{{ b.hero.image or p.hero_image }}" alt="{{ p.name }}">
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if b.cards %}
+<section class="section">
+  <div class="container">
+    <span class="kicker" style="text-align:center; display:block;">{{ b.cards.kicker }}</span>
+    <h2 style="text-align:center;">{{ b.cards.heading }}</h2>
+    <p class="lede" style="text-align:center; margin: 14px auto 36px;">{{ b.cards.lede }}</p>
+    <div class="block-cards">
+      {% for item in b.cards.items %}
+      <div class="block-card">
+        <h3>{{ item.title }}</h3>
+        <p>{{ item.text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if b.video %}
+<section class="section dark">
+  <div class="container video-block">
+    <h2 style="color:#fff;">{{ b.video.heading }}</h2>
+    <div class="video-frame">
+      <img src="{{ b.video.poster or p.hero_image }}" alt="{{ p.name }} video">
+      <button class="play-btn" aria-label="Play video"></button>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if b.features %}
+<section class="section">
+  <div class="container">
+    <span class="kicker" style="text-align:center; display:block;">{{ b.features.kicker }}</span>
+    <h2 style="text-align:center; margin-bottom: 40px;">{{ b.features.heading }}</h2>
+    <div class="feature-duo">
+      <div class="feature-panel">
+        <h3>{{ b.features.panel.title }}</h3>
+        <p>{{ b.features.panel.text }}</p>
+        <img src="{{ b.features.panel.image }}" alt="{{ b.features.panel.title }}">
+      </div>
+      <div class="feature-list">
+        {% for group in b.features.groups %}
+        <h4>{{ group.name }}</h4>
+        {% for item in group.items %}
+        <span class="pill-link{% if loop.first and loop.index0 == 0 %} active{% endif %}">{{ item }}</span>
+        {% endfor %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if b.tiers %}
+<section class="container">
+  <div class="cta-band">
+    <h2>{{ b.tiers.heading }}</h2>
+    <p class="lede" style="color:#b8cbdc; margin: 14px auto 0;">{{ b.tiers.text }}</p>
+    <a class="btn btn-outline-light" href="{{ url_for('request_demo') }}">{{ b.tiers.cta }}</a>
+  </div>
+</section>
+{% endif %}
+
+{% if p.stats %}
+<section class="section">
+  <div class="container">
+    <p class="lede" style="text-align:center; max-width: 860px; margin: 0 auto 40px;">{{ b.stats_lede }}</p>
+    <div class="stats-grid">
+      {% for s in p.stats %}
+      <div class="stat-card">
+        <div class="num"><span class="countup" data-count="{{ s.number }}" data-prefix="{{ s.prefix or '' }}" data-suffix="{{ s.suffix or '' }}">0</span></div>
+        <h3>{{ s.heading }}</h3>
+        <p>{{ s.text }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% if b.partners %}
+<section class="section soft">
+  <div class="container" style="text-align:center;">
+    <h2>{{ b.partners.heading }}</h2>
+    <p class="lede" style="margin: 14px auto 26px;">{{ b.partners.lede }}</p>
+    <div class="partner-grid">
+      {% for pr in partners %}
+      <img src="{{ pr.logo }}" alt="{{ pr.name }} Logo">
+      {% endfor %}
+    </div>
+    <a class="btn btn-outline" href="{{ url_for('partners') }}" style="margin-top:30px;">Explore the marketplace</a>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container">
+    <h2 style="text-align:center; margin-bottom: 34px;">Learn more about Instructure</h2>
+    <div class="res-grid">
+      {% for r in p.resources %}
+      <a class="res-card" href="{{ resource_url(r) }}">
+        <img class="cover" src="{{ r.hero_image or r.card_image }}" alt="{{ r.title }}">
+        <div class="body">
+          <span class="cat">{{ type_labels.get(r.type, r.type) }}</span>
+          <h3>{{ r.title }}</h3>
+          <span class="more">Read More &gt;</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
