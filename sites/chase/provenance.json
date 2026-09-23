@@ -1,0 +1,76 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-22",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the chase.com mirror: public product catalog (credit cards, checking, savings, CDs), mortgage and auto rate pages with calculators, branch locator, Education Center, customer service hub, site search, and the authenticated online banking surface (dashboard, transactions, transfers, card payments, autopay, alerts, rewards, statements, Credit Journey, profile). Route and URL patterns and page structure follow the upstream site."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time and boot-time seeder. Catalog rows come from the tracked _seed_*.py snapshots; benchmark-user banking data is generated with random.Random(42), a pinned reference date and a frozen bcrypt hash so the SQLite seed is byte-reproducible on every build."
+  },
+  {
+   "path": "_seed_cards.py",
+   "classification": "captured-upstream-content",
+   "scope": "42 credit card catalog entries captured from creditcards.chase.com (all-credit-cards listing plus 20 card detail pages) on 2026-09-22: names, networks, categories, new-cardmember offers, at-a-glance rewards, purchase/intro APR, annual fees, earning bullets and named benefits."
+  },
+  {
+   "path": "_seed_deposit.py",
+   "classification": "captured-upstream-content",
+   "scope": "Checking and savings account catalog with monthly service fees, fee-waiver rules, minimum deposits and feature lists from personal.chase.com and chase.com product pages; CD term and APY table from the CD pages."
+  },
+  {
+   "path": "_seed_rates.py",
+   "classification": "captured-upstream-content",
+   "scope": "Mortgage rate example table (as of 4:48 AM ET 2026-09-22, ZIP 60629) and auto loan advertised rates from the chase.com rate pages, frozen as snapshots."
+  },
+  {
+   "path": "_seed_branches.py",
+   "classification": "captured-upstream-content",
+   "scope": "600 branch and ATM records captured from publicapi.chase.com/cldt/geolocatorsvc/v1/locations — the API the live chase.com/locator search consumes — including names, addresses, phones, lobby/drive-up hours and service lists across 15 metropolitan areas."
+  },
+  {
+   "path": "_seed_articles.py",
+   "classification": "captured-upstream-content",
+   "scope": "24 Education Center article bodies, quick insights and reading times captured from www.chase.com education pages on 2026-09-22, with site chrome removed."
+  },
+  {
+   "path": "_seed_banking.py",
+   "classification": "mirror-code",
+   "scope": "Tracked configuration for the four benchmark users and their accounts, transaction merchant pools, recurring items, scheduled transfers, alerts, redemptions and credit score history. All values are synthetic demo data; the frozen bcrypt hash keeps the seed byte-reproducible."
+  },
+  {
+   "path": "static/images/ (HF-managed)",
+   "classification": "source-backed-media-inventory",
+   "scope": "174 real images downloaded from chase.com / creditcards.chase.com / sites.chase.com / asset.chase.com CDNs: 43 card-art images, 104 article/education photos, 12 banners and 11 product tiles plus 1 misc icon. Per-file byte counts, SHA-256 digests and source URLs are recorded in asset_inventory.json."
+  },
+  {
+   "path": "static/icons/",
+   "classification": "source-backed-icons",
+   "scope": "64 real chase.com icons (Chase logo wordmark and octagon, spot illustrations, UX icon family SVGs, product page icons), also covered by asset_inventory.json entries."
+  },
+  {
+   "path": "static/css/site.css + templates/",
+   "classification": "adapted-visual-structure",
+   "scope": "Original Jinja templates and CSS implementing the chase.com visual system (Chase Blue #005EB8 palette from the live CSS, header/hero/product-card/footer patterns) without copying the upstream stylesheet."
+  },
+  {
+   "path": "scraped_data/ (not shipped)",
+   "classification": "captured-upstream-content",
+   "scope": "Build-time only (gitignored, dockerignored): Playwright captures of the live chase.com pages, the locator API JSON responses, and the generator scripts that produced the tracked _seed_*.py snapshots and the asset inventory."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "30 contributor-defined benchmark tasks over the mirror's public catalog and the seeded benchmark users' banking state."
+  },
+  {
+   "path": "NOTICE.md",
+   "classification": "attribution-notice",
+   "scope": "Mirror scope, provenance summary and takedown contact for JPMorgan Chase and partner marks."
+  }
+ ]
+}

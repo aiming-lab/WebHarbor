@@ -197,12 +197,18 @@ shutil.copy2('instance/american_express.db', 'instance_seed/american_express.db'
 print('American Express seed DB generated at build time.')" && \
     rm -rf instance
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/chase
+RUN test -n "$(ls -A /opt/WebSyn/chase/static/images)" && \
+    test -f /opt/WebSyn/chase/.build-generated-seed
+RUN cd /opt/WebSyn/chase && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40070
+EXPOSE 8101 40000-40071
 
 CMD ["/opt/websyn_start.sh"]

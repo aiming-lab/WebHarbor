@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Auto Loan Rates | New, Used and Refinance | Chase{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Car financing &amp; refinancing loan rates</h1>
+    <p class="muted">Rates like these are only the beginning — rates last updated 11/13/2025 for customers with excellent credit who apply online.</p>
+    <div class="chip-row">
+      <a class="chip" href="{{ url_for('auto') }}">Overview</a>
+      <a class="chip chip--active" href="{{ url_for('auto_rates') }}">Rates</a>
+      <a class="chip" href="{{ url_for('auto_calculator') }}">Calculator</a>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <section class="section">
+    <h2>Learn more about our rates</h2>
+    <p class="result-summary">Rate table last updated 09/17/2025.</p>
+    <div class="table-scroll">
+    <table class="data rate-table">
+      <tr><th>Financing type</th><th>APR</th><th>Term</th><th>Financing amount</th></tr>
+      {% for r in rates %}
+      <tr>
+        <td>{{ r.product }}</td>
+        <td class="rate num">{{ '%.2f'|format(r.apr) }}%</td>
+        <td class="num">{{ r.term_months }} months</td>
+        <td class="num">{{ r.amount|usd0 }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    <p class="small muted">These rates are for online applicants with an excellent credit history.</p>
+
+    <h3>Example payments</h3>
+    <ul class="earn-list small">
+      {% for r in rates %}
+      <li>{{ r.example_note }}</li>
+      {% endfor %}
+    </ul>
+    <div class="disclosure">{{ rates[0].example_note and '' }}Rates may vary based on credit history, vehicle, financing amount and term. Chase does not guarantee these rates and terms. Rates do not include taxes and other fees that may be charged at the dealership.</div>
+    <p style="margin-top:18px;"><a class="btn btn--blue" href="{{ url_for('auto_calculator') }}">Calculate rates and payments</a></p>
+  </section>
+
+  <section class="section section--soft">
+    <h2>Car financing &amp; refinancing loan rates FAQs</h2>
+    <ul class="earn-list small">
+      <li>How will my interest rate be determined for my auto loan?</li>
+      <li>How can I estimate my interest rate based on fair, good, very good or excellent credit?</li>
+      <li>What interest rates and monthly payments can I expect?</li>
+      <li>Will applying for car financing impact my credit score?</li>
+      <li>How do I apply for car financing and what do I need?</li>
+      <li>Is my vehicle eligible for refinancing?</li>
+    </ul>
+    <p><a href="{{ url_for('education', category='auto') }}">Visit the auto education center →</a></p>
+  </section>
+</div>
+{% endblock %}

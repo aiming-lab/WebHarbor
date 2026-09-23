@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ branch.name }} — Chase {{ 'ATM' if branch.loc_type == 'ATM' else 'Branch' }} | Chase Bank{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="{{ url_for('index') }}">Chase home</a> / <a href="{{ url_for('locator') }}">Find a branch or ATM</a> / {{ branch.name }}</div>
+  <h1 class="page-title">{{ branch.name }}</h1>
+  <p class="muted">Chase Bank {{ 'ATM' if branch.loc_type == 'ATM' else 'branch' }} · {{ branch.chase_id or 'Location' }}</p>
+
+  <div class="detail-hero" style="padding-top:20px;">
+    <div>
+      <h2>Location details</h2>
+      <div class="addr muted">{{ branch.address1 }}</div>
+      <div class="addr muted">{{ branch.city }}, {{ branch.state }} {{ branch.zip }}</div>
+      <p class="phone" style="margin-top:12px;">Phone: {{ branch.phone or 'Phone not listed' }}</p>
+      {% if branch.fax %}<p class="small muted">Fax: {{ branch.fax }}</p>{% endif %}
+      <p class="small muted">Coordinates: {{ '%.5f'|format(branch.lat) }}, {{ '%.5f'|format(branch.lng) }}</p>
+      {% if branch.atm_24h %}<p><span class="badge badge--atm">24-hour ATM</span></p>{% endif %}
+      {% if branch.lobby_atm %}<span class="badge badge--atm">Lobby ATM</span>{% endif %}
+      {% if branch.vestibule_atm %}<span class="badge badge--atm">Vestibule ATM</span>{% endif %}
+    </div>
+    <div>
+      <h2>Branch hours</h2>
+      {% if branch.hours_dict %}
+      <table class="hours-table">
+        {% for day, hours in branch.hours_dict.items() %}
+        <tr><td>{{ day.title() }}</td><td>{{ hours[0] }} – {{ hours[1] }}</td></tr>
+        {% else %}
+        <tr><td colspan="2">Lobby hours not listed for this location.</td></tr>
+        {% endfor %}
+      </table>
+      {% else %}
+      <p class="muted">Lobby hours not listed for this location.</p>
+      {% endif %}
+      {% if branch.drive_up_dict %}
+      <h3>Drive-up hours</h3>
+      <table class="hours-table">
+        {% for day, hours in branch.drive_up_dict.items() %}
+        <tr><td>{{ day.title() }}</td><td>{{ hours[0] }} – {{ hours[1] }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if branch.service_list %}
+  <section class="section section--soft">
+    <h2>Services at this location</h2>
+    <div>
+      {% for s in branch.service_list %}<span class="badge">{{ s }}</span>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
+
+  {% if nearby %}
+  <section class="section">
+    <h2>Other Chase locations in {{ branch.city }}</h2>
+    {% for b in nearby %}
+    <div class="branch-card">
+      <div>
+        <h3><a href="{{ url_for('branch_detail', branch_id=b.id) }}">{{ b.name }}</a></h3>
+        <div class="addr">{{ b.address1 }}, {{ b.city }}, {{ b.state }} {{ b.zip }}</div>
+        <div class="small muted">{{ b.hours_label() }}</div>
+      </div>
+      <div class="card-row__actions">
+        <a class="btn btn--outline btn--sm" href="{{ url_for('branch_detail', branch_id=b.id) }}">Branch details</a>
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

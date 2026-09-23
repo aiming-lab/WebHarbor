@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Current Mortgage Interest Rates | Chase{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Today's mortgage rates</h1>
+    <p class="muted">Example rates¹ based on a home in 60629 (Chicago, IL) — rates are as of 4:48 AM ET, {{ mirror_date }}.</p>
+    <div class="chip-row">
+      <a class="chip" href="{{ url_for('mortgage') }}">Overview</a>
+      <a class="chip chip--active" href="{{ url_for('mortgage_rates') }}">Mortgage rates</a>
+      <a class="chip" href="{{ url_for('mortgage_calculator') }}">Calculators</a>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <section class="section">
+    <h2>Example rates by loan type</h2>
+    <p class="result-summary">These example purchase results are based on a home in 60629 (Chicago, IL). Rates may vary depending on location and other factors.</p>
+    <div class="compare-grid">
+    <table class="data rate-table">
+      <tr>
+        <th>Loan type</th><th>Interest rate</th><th>APR</th>
+        <th>Monthly payment (P&amp;I only)</th><th>Discount points</th>
+      </tr>
+      {% for r in rates %}
+      <tr>
+        <td>{{ r.loan_type }}</td>
+        <td class="rate num">{{ '%.3f'|format(r.rate) }}%</td>
+        <td class="num">{{ '%.3f'|format(r.apr) }}%</td>
+        <td class="num">{{ r.monthly_payment|usd0 }}</td>
+        <td class="num">{{ '%.3f'|format(r.points) }} ({{ r.points_cost|usd0 }})</td>
+      </tr>
+      {% endfor %}
+    </table>
+    </div>
+    <div class="notice">Limited-time purchase and refinance rate discount² — lock your discounted rate by October 4, 2026.</div>
+    <h3>Rate assumptions</h3>
+    <p class="small muted">The APR shown here is based on the interest rate, any discount points, and, if applicable, mortgage insurance for that loan. Each rate shown includes the number of discount points listed alongside that rate and is based on the following assumptions: 30-year fixed and 15-year fixed are based on a loan amount of $350,000 with a loan to value of 80%; 30-year fixed FHA is based on a loan amount of $235,000 with a loan to value of 96%; 7/6 ARM non-Agency products are based on a loan amount of $1,300,000 with a loan to value of 70%. All rates assume a single-family residence purchase mortgage with a rate lock period of 30 days.</p>
+    <p><a class="btn btn--blue" href="{{ url_for('mortgage_calculator') }}">Calculate rates in your area</a></p>
+  </section>
+
+  <section class="section section--soft">
+    <h2>Find answers</h2>
+    <ul class="earn-list small">
+      <li>How are mortgage rates determined?</li>
+      <li>Does my credit score affect my mortgage rate?</li>
+      <li>What is the difference between interest rate and APR on a mortgage?</li>
+      <li>How often do mortgage rates change?</li>
+      <li>How do mortgage rates affect monthly payments?</li>
+      <li>What is a mortgage rate lock?</li>
+    </ul>
+    <p><a href="{{ url_for('education', category='mortgage') }}">Visit the mortgage education center →</a></p>
+  </section>
+</div>
+{% endblock %}

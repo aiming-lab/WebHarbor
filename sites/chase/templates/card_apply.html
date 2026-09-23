@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Apply for {{ card.name }} | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="{{ url_for('credit_cards') }}">Credit Cards home</a> / <a href="{{ url_for('credit_card_detail', slug=card.slug) }}">{{ card.name }}</a> / Apply</div>
+  <h1 class="page-title">Apply for the {{ card.name }}</h1>
+  <div class="detail-hero" style="padding-top:20px;">
+    <div>
+      <img src="{{ url_for('static', filename='images/' + card.card_art) }}" alt="{{ card.name }}" style="width:220px;">
+    </div>
+    <div>
+      <div class="kv"><h4>OFFER</h4><p>{{ card.offer or card.tagline }}</p></div>
+      <div class="kv"><h4>APR</h4><p>{{ card.apr }}</p></div>
+      <div class="kv"><h4>ANNUAL FEE</h4><p>{{ card.fee_text }}</p></div>
+      <p class="small muted">By submitting this application you agree to the Pricing &amp; Terms for this card{% if card.pt_code %} (document {{ card.pt_code }}){% endif %}. Application decisions are usually available within 60 seconds.</p>
+    </div>
+  </div>
+
+  <div class="form-card form-card--wide">
+    <form method="post" action="{{ url_for('credit_card_apply', slug=card.slug) }}">
+      <fieldset>
+        <div class="form-grid-2">
+          <div>
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" type="text" value="{{ form.get('first_name', '') }}" required>
+          </div>
+          <div>
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" type="text" value="{{ form.get('last_name', '') }}" required>
+          </div>
+          <div>
+            <label for="email">Email address</label>
+            <input id="email" name="email" type="text" value="{{ form.get('email', '') }}" required>
+          </div>
+          <div>
+            <label for="phone">Phone number</label>
+            <input id="phone" name="phone" type="text" value="{{ form.get('phone', '') }}" placeholder="(555) 123-4567" required>
+          </div>
+        </div>
+        <label for="income">Total annual income (before taxes)</label>
+        <input id="income" name="income" type="text" value="{{ form.get('income', '') }}" placeholder="65000" required>
+        <div class="hint">Include salary, wages, tips, bonuses and any other income you want considered.</div>
+      </fieldset>
+      <div class="form-actions">
+        <button class="btn btn--green" type="submit">Submit application</button>
+        <a href="{{ url_for('credit_card_detail', slug=card.slug) }}">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
