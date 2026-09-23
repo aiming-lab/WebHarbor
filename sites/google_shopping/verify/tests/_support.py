@@ -93,7 +93,7 @@ class RunBuilder:
 
     def write(self) -> Path:
         traj = {
-            "task": f"fixture for {self.task_id}",
+            "task": next(json.loads(line)['ques'] for line in (SITE_DIR / 'tasks.jsonl').read_text().splitlines() if json.loads(line)['id'] == self.task_id),
             "task_id": self.task_id,
             "start_url": self.start_url,
             "model": "review-fixture",

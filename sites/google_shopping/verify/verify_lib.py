@@ -66,7 +66,7 @@ SCHEMA_SHA256 = "1d01ed2b4f8ec450350a1e79bc8db5723854f6f80dea9f45d79f221ea080823
 # deterministically at image-build time (PYTHONHASHSEED=0, frozen bcrypt hash, see
 # .build-generated-seed); the physical file layout may differ between sqlite builds but
 # this logical digest is frozen.
-SEED_ROWS_SHA256 = "bfd18c5b96ae208db485cac5d8c257aa6294bd819881783445987fbaae2b4ca0"
+SEED_ROWS_SHA256 = "b471127c55ebe507ed333fce0227e289f1a0f4126f8bd94fada3dff7e3abaeb3"
 SEED_USERS = {  # email -> (id, display_name); identity columns never change
     "alice.j@test.com": (1, "Alice Johnson"),
     "bob.c@test.com": (2, "Bob Chen"),
@@ -338,6 +338,7 @@ def _money_candidates(amount):
                 grouped = "," + s[-3:] + grouped
                 s = s[:-3]
             out.append(s + grouped)          # 1,704
+            out.append(s + grouped + ".00")
             out.append((s + grouped).replace(",", " "))  # 1 704
     else:
         out.append(f"{whole}.{rem:02d}")
@@ -347,13 +348,17 @@ def _money_candidates(amount):
 
 
 def contains_price(text, amount):
-    """Money match: '$129.90' == '$129.9' == '129.90 dollars'; '1704' == '1,704' == '1704.00'.
-    Accepts an optional '$' and thousands separators; rejects the amount embedded in a
-    longer digit run or a different decimal. Handles the mirror's whole-dollar display."""
+    """Match asserted money, never an unrelated bare reference number."""
     normalized = normalize_text(text)
     for candidate in _money_candidates(amount):
-        pattern = r"(?<![\d.,])\$?\s?" + re.escape(candidate) + r"(?!\d|[.,]\d)"
-        if _affirmative_search(pattern, normalized):
+        number = re.escape(candidate)
+        boundary = r"(?!\d|[.,]\d)"
+        patterns = [
+            r"(?:\$\s*|\busd\s*)" + number + boundary,
+            r"(?<![\d.,])" + number + boundary + r"\s*(?:dollars?|usd)\b",
+            r"\b(?:price|cost|costs|priced|saving|saves|difference)\s*(?:is|of|at|:)??\s*" + number + boundary,
+        ]
+        if any(_affirmative_search(pattern, normalized) for pattern in patterns):
             return True
     return False
 
@@ -621,6 +626,11 @@ def screenshots_decode(traj):
 
 
 def check_trajectory_identity(judge, traj, task_id, require_answer=True):
+    expected = next((json.loads(line)['ques'] for line in
+                     (Path(__file__).resolve().parent.parent / 'tasks.jsonl').read_text().splitlines()
+                     if json.loads(line)['id'] == task_id), None)
+    judge.check("current_task_prompt", expected is not None and traj.get('task') == expected,
+                "trajectory must carry the current task wording")
     answer = final_answer(traj)
     if require_answer:
         judge.check("final_answer_nonempty", bool(answer), f"final_answer={answer!r}")

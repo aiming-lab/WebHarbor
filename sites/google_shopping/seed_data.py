@@ -16,11 +16,14 @@ department tiles with their real gstatic imagery. Feed sections are the
 real homepage shelf headings with their real "Explore" queries.
 """
 import sys
+import json
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from _seed_catalog import DEPARTMENTS, PRODUCTS, SECTION_META
+
+PRODUCT_DETAILS = json.loads((Path(__file__).resolve().parent / "product_details.json").read_text())
 
 MIRROR_DATE = "2026-09-22"
 PASSWORD = "TestPass123!"
@@ -82,8 +85,8 @@ def _title_to_product_row(row):
         merchant_favicon=favicon,
         rating=REAL_RATINGS.get(title, {}).get("rating"),
         review_count=REAL_RATINGS.get(title, {}).get("review_count", 0),
-        description="",
-        specs_json="{}",
+        description=PRODUCT_DETAILS.get(upstream_id, {}).get("description", ""),
+        specs_json=json.dumps(PRODUCT_DETAILS.get(upstream_id, {}).get("specs", {}), sort_keys=True),
         feed_section=section,
     )
 
