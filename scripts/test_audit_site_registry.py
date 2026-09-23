@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import io
 import json
+import subprocess
 import sys
 import tempfile
 import textwrap
@@ -18,6 +19,11 @@ import audit_site_registry as audit  # noqa: E402
 def write(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(textwrap.dedent(content).lstrip("\n"), encoding="utf-8")
+
+
+def git_init_and_add(root: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+    subprocess.run(["git", "add", "."], cwd=root, check=True)
 
 
 def build_repo(
@@ -362,6 +368,7 @@ class AuditSiteRegistryTests(unittest.TestCase):
             root = Path(tmpdir)
             build_repo(root)
             write(root / "sites" / "amazon" / "logs", "runtime output\n")
+            git_init_and_add(root)
             buffer = io.StringIO()
 
             exit_code = audit.main(["--json", "--strict"], root=root, stdout=buffer)
@@ -374,6 +381,22 @@ class AuditSiteRegistryTests(unittest.TestCase):
                     for warning in payload["warnings"]
                 ),
                 payload["warnings"],
+            )
+
+    def test_ignored_runtime_content_does_not_fail_repository_audit(self) -> None:
+        with tempfile.TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            build_repo(root)
+            write(root / ".gitignore", "sites/*/instance/\n")
+            git_init_and_add(root)
+            write(root / "sites" / "amazon" / "instance" / "runtime.db", "runtime\n")
+
+            result = audit.audit_repository(root, strict=True)
+
+            self.assertEqual(result.exit_code, 0)
+            self.assertFalse(
+                any("runtime-like path" in warning.message for warning in result.warnings),
+                result.warnings,
             )
 
     def test_explicit_assetpaths_cover_site_without_wildcard(self) -> None:

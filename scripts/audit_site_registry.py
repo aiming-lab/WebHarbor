@@ -639,22 +639,18 @@ def audit_repository(root: Path, *, site: str | None = None, strict: bool = Fals
             for runtime_subdir in RUNTIME_SUBDIRS:
                 runtime_path = site_dir / runtime_subdir
                 if runtime_path.is_file():
-                    collector.warn(
-                        f"runtime-like path is a file: {runtime_subdir}",
-                        file=str(runtime_path),
-                        site=site_slug,
-                    )
+                    tracked = git_tracked_files(root, site_slug, runtime_subdir)
+                    if tracked:
+                        collector.warn(
+                            f"runtime-like path is a file: {runtime_subdir}",
+                            file=str(runtime_path),
+                            site=site_slug,
+                        )
                 elif runtime_path.is_dir():
                     tracked = git_tracked_files(root, site_slug, runtime_subdir)
                     if tracked:
                         collector.warn(
                             f"runtime-like path has tracked files: {runtime_subdir}",
-                            file=str(runtime_path),
-                            site=site_slug,
-                        )
-                    elif any(runtime_path.iterdir()):
-                        collector.warn(
-                            f"runtime-like path contains files: {runtime_subdir}",
                             file=str(runtime_path),
                             site=site_slug,
                         )
