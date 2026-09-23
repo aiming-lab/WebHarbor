@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}{{ airport.name }} Remarks - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">{{ airport.name | upper }}{% if airport.city %} ({{ airport.city | upper }}, {{ (airport.region or airport.country) | upper }}){% endif %} {{ airport.iata or airport.code }} REMARKS</div>
+
+<div class="tab-bar">
+  <a href="/resources/airport/{{ airport.code }}/weather">OVERVIEW AND FBOS</a>
+  <a href="/live/airport/{{ airport.code }}">FLIGHT TRACKER</a>
+  <a href="/resources/airport/{{ airport.code }}/weather">WEATHER</a>
+  <a href="/resources/airport/{{ airport.code }}/map">MAP &amp; DIAGRAM</a>
+  <a class="active" href="/resources/airport/{{ airport.code }}/remarks">REMARKS</a>
+</div>
+
+<div class="panel">
+  <div class="panel-head">{{ airport.name }} Remarks</div>
+  <div class="panel-body">
+    {% if airport.remarks_text %}
+    <div style="white-space:pre-wrap;">{{ airport.remarks_text }}</div>
+    {% else %}
+    <p>No remarks available for this airport.</p>
+    <p class="small muted">Airport remarks are provided by the A/FD and are not available for airports outside of the published coverage.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}All Airborne Aircraft (by aircraft type) - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">BROWSE BY AIRCRAFT TYPE</div>
+<div class="panel">
+  <div class="panel-head">All airborne aircraft, by aircraft type <span class="more">{{ types|length }} types</span></div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Aircraft type</th><th>Code</th><th>Flights (today)</th></tr>
+    {% for t in types %}
+    <tr>
+      <td><a href="/live/aircrafttype/{{ t.code }}">{{ t.name }}</a></td>
+      <td>{{ t.code }}</td>
+      <td>{{ t.flights_count }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endblock %}

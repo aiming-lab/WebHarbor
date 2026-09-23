@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}FlightAware - Flight Tracker / Flight Status{% endblock %}</title>
+  <link rel="icon" href="/static/icons/favicon.ico">
+  <link rel="stylesheet" href="/static/css/site.css">
+</head>
+<body>
+  <div class="utility-bar">
+    <a href="{{ url_for('register') }}">Join FlightAware</a>
+    <span class="sep">|</span>
+    <a href="{{ url_for('login') }}">Login</a>
+    <div class="right">
+      {{ mirror_clock }}
+      <span class="sep">|</span>
+      English (USA)
+    </div>
+  </div>
+
+  <div class="main-header">
+    <div class="logo"><a href="/"><img src="/static/icons/flightaware-logo.png" alt="FlightAware"></a></div>
+    <form class="search-form" action="/live/form.rvt" method="get">
+      <select name="type" aria-label="Search type">
+        <option value="">All</option>
+        <option value="route">Route</option>
+        <option value="airline">Airline flight</option>
+        <option value="private">Private flight (tail #)</option>
+        <option value="airport">Airport</option>
+      </select>
+      <input type="text" name="query" placeholder="Search for flight, tail, airport, or city">
+      <button class="go" type="submit">Search</button>
+      <a class="forgot" href="/live/findflight/">Forgot the flight number?</a>
+    </form>
+    <div class="header-right">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account_home') }}" style="color:#fff;margin-right:10px;">{{ current_user.username }}</a>
+        <a href="{{ url_for('logout') }}" style="color:#d6e4f0;">Logout</a>
+      {% else %}
+        <a class="btn-signup" href="{{ url_for('register') }}">Sign Up</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="nav-bar">
+    <ul>
+    {% for label, items in nav_menu %}
+      <li>
+        <a href="#">{{ label }}</a>
+        <div class="dropdown">
+        {% for item in items %}
+          {% if item[1] is string %}
+            <a href="{{ item[1] }}">{{ item[0] }}</a>
+          {% else %}
+            <div class="subhead">{{ item[0] }}</div>
+            {% for child in item[1] %}
+              {% if child is string %}
+                <a href="#">{{ child }}</a>
+              {% else %}
+                <a href="{{ child[1] }}">{{ child[0] }}</a>
+              {% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
+        </div>
+      </li>
+    {% endfor %}
+    </ul>
+    <div class="spacer"></div>
+  </div>
+
+  <div class="page">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </div>
+
+  <div class="site-footer">
+    <div class="footer-blurb">
+      FlightAware provides accurate real-time, historical and predictive flight insights to all segments of the
+      aviation industry.
+    </div>
+    <div class="cols">
+      <div class="col">
+        <h4>Products &amp; Services</h4>
+        <a href="/commercial/aeroapi/">AeroAPI</a>
+        <a href="/commercial/firehose/">FlightAware Firehose</a>
+        <a href="/commercial/foresight/">FlightAware Foresight</a>
+        <a href="/commercial/reports/">Rapid Reports</a>
+        <a href="/commercial/reports/">Custom Reports</a>
+        <a href="/commercial/aviator/">FlightAware Aviator</a>
+        <a href="/account/premium/">Premium Subscriptions</a>
+        <a href="/commercial/global/">FlightAware Global</a>
+        <a href="/commercial/fbo-toolbox/">FlightAware FBO Toolbox</a>
+        <a href="/commercial/tv/">FlightAware TV&trade;</a>
+        <a href="/commercial/globalbeacon/">GlobalBeacon</a>
+      </div>
+      <div class="col">
+        <h4>Company</h4>
+        <a href="/about/">About</a>
+        <a href="/about/careers/">Careers</a>
+        <a href="/about/history/">History</a>
+        <a href="/commercial/advertising/">Advertise With Us</a>
+        <a href="/news/">Newsroom</a>
+        <a href="/blog/">Blog</a>
+        <a href="/webinars/">Webinars</a>
+      </div>
+      <div class="col">
+        <h4>Community</h4>
+        <a href="/photos/">Photos</a>
+        <a href="/squawks/">Squawks</a>
+        <a href="/discussions/">Discussions</a>
+        <a href="/adsb/piaware/">Host an ADS-B Site</a>
+      </div>
+      <div class="col">
+        <h4>Support</h4>
+        <a href="/about/contact/">Contact Us</a>
+        <a href="/about/faq/">FAQs</a>
+      </div>
+    </div>
+    <div class="legal">
+      &copy; 2026 FlightAware &nbsp; <a href="/about/terms-of-use/">Terms of Use</a> &nbsp;
+      <a href="/about/privacy/">Privacy</a> &nbsp; <a href="/about/privacy/">Cookie Settings</a>
+    </div>
+  </div>
+</body>
+</html>

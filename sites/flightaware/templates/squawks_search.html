@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Search Squawks - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">SEARCH SQUAWKS</div>
+<div class="panel">
+  <div class="panel-head">Search</div>
+  <div class="panel-body">
+    <form method="get" action="/squawks/search.rvt">
+      <div class="form-row"><label>Keywords</label><input type="text" name="q" value="{{ query }}"></div>
+      <button class="btn-primary" type="submit">Search</button>
+    </form>
+  </div>
+</div>
+{% if query %}
+<div class="panel">
+  <div class="panel-head">Results for &quot;{{ query }}&quot;</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Title</th><th>Source</th><th>Votes</th></tr>
+    {% for s in squawks %}
+    <tr>
+      <td><a href="/squawks/view/1/24_hours/popular/{{ s.sid }}/{{ s.slug }}">{{ s.title }}</a></td>
+      <td>{{ s.source_label }}</td>
+      <td>{{ s.votes }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="3">No squawks matched your search.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endif %}
+{% endblock %}

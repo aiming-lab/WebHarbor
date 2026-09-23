@@ -92,6 +92,7 @@ All registered websites and their default ports, in registration order from left
 | Cboe | 40063 | Better Business Bureau | 40064 | Birkenstock | 40065 |
 | America’s Health Rankings | 40066 | American Express | 40067 | Carnival Cruise | 40068 |
 | CA.gov | 40069 | Coolmath4Kids | 40070 | Chase | 40071 |
+| FlightAware | 40072 |  |  |  |  |
 
 ## 🤝 Contribute
 
