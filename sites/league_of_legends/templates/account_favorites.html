@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Favorite Champions - League of Legends{% endblock %}
+{% block content %}
+
+<section class="masthead">
+  <div class="masthead-kicker">Riot Account</div>
+  <h1>Favorite Champions</h1>
+</section>
+
+<div class="account-shell">
+  {% if favorites %}
+  <div class="champion-grid">
+    {% for champion in favorites %}
+    <a class="champion-card faved" href="{{ url_for('champion_detail', slug=champion.slug) }}">
+      <div class="champ-art">
+        <img src="{{ champion.portrait_url }}" alt="{{ champion.name }}">
+      </div>
+      <span class="champ-name">{{ champion.name }}</span>
+      <span class="fav-star">&#9733;</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-note">No favorite champions yet. Open a champion page and add them to your favorites.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

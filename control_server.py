@@ -45,7 +45,7 @@ SITES = [
     'youtube', 'weather', 'amazon_jobs', 'cboe',
     'better_business_bureau', 'birkenstock', 'americas_health_rankings', 'american_express',
     'carnival_cruise', 'california_gov', 'coolmath4kids', 'chase',
-    'flightaware', 'chronicle_jobs', 'dillards', 'google_shopping', 'imgur', 'instructure',
+    'flightaware', 'chronicle_jobs', 'dillards', 'google_shopping', 'imgur', 'instructure', 'league_of_legends',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'

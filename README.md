@@ -42,10 +42,10 @@ Build this checkout to run its registered web environments (published image tags
 
 ```bash
 ./scripts/build.sh webharbor:dev
-docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40077:40000-40077 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40078:40000-40078 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40077` to explore 78 local mirrors. The table below lists every site in port order.
+Then point your agent at `http://localhost:40000` through `http://localhost:40078` to explore 79 local mirrors. The table below lists every site in port order.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -94,6 +94,7 @@ All registered websites and their default ports, in registration order from left
 | CA.gov | 40069 | Coolmath4Kids | 40070 | Chase | 40071 |
 | FlightAware | 40072 | Chronicle Jobs | 40073 | Dillard's | 40074 |
 | Google Shopping | 40075 | Imgur | 40076 | Instructure | 40077 |
+| League of Legends | 40078 | | | | |
 
 ## 🤝 Contribute
 

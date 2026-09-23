@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Champions - League of Legends{% endblock %}
+{% block content %}
+
+<section class="roster-intro">
+  <div class="kicker">Champions</div>
+  <h1>Choose Your<br>Champion</h1>
+  <p>With over 170 champions in League of Legends, you might be wondering where to start &ndash; we&rsquo;ll help you find one that&rsquo;s just the right fit. Explore the roster below, or search and filter by role and difficulty to find a perfect champion for your playstyle.</p>
+  <a class="btn-ghost" href="{{ url_for('champions', role='Assassin') }}">Discover Your Best Match</a>
+</section>
+
+<div class="roster-filters">
+  <form method="get" action="{{ url_for('champions') }}">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search champions" aria-label="Search champions">
+    <select name="role" aria-label="Role filter">
+      <option value="">All Roles</option>
+      {% for r in roles %}
+      <option value="{{ r }}" {% if role == r %}selected{% endif %}>{{ r }}</option>
+      {% endfor %}
+    </select>
+    <select name="difficulty" aria-label="Difficulty filter">
+      <option value="">All Difficulties</option>
+      {% for d in difficulties %}
+      <option value="{{ d }}" {% if difficulty == d %}selected{% endif %}>{{ d }}</option>
+      {% endfor %}
+    </select>
+    <select name="sort" aria-label="Sort">
+      <option value="name" {% if sort == 'name' %}selected{% endif %}>A to Z</option>
+      <option value="difficulty" {% if sort == 'difficulty' %}selected{% endif %}>Difficulty</option>
+      <option value="release" {% if sort == 'release' %}selected{% endif %}>Newest</option>
+    </select>
+    <button class="btn-dark" type="submit">Apply</button>
+    {% if query or role or difficulty or sort != 'name' %}
+    <a class="filter-chip" href="{{ url_for('champions') }}">Clear Filters</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="roster-count">
+  {{ champions|length }} champion{% if champions|length != 1 %}s{% endif %}{% if query %} matching &ldquo;{{ query }}&rdquo;{% endif %}{% if role %} &middot; {{ role }}{% endif %}{% if difficulty %} &middot; {{ difficulty }} difficulty{% endif %}
+</div>
+
+<div class="champion-grid">
+  {% for champion in champions %}
+  <a class="champion-card {% if champion.id in favorite_ids %}faved{% endif %}" href="{{ url_for('champion_detail', slug=champion.slug) }}">
+    <div class="champ-art">
+      <img src="{{ champion.portrait_url }}" alt="{{ champion.name }}" loading="lazy">
+    </div>
+    <span class="champ-name">{{ champion.name }}</span>
+    {% if champion.id in favorite_ids %}<span class="fav-star">&#9733;</span>{% endif %}
+  </a>
+  {% else %}
+  </div>
+  <div class="search-empty">No champions match those filters. Try clearing the search or role filter.</div>
+  <div class="champion-grid">
+  {% endfor %}
+</div>
+
+{% endblock %}

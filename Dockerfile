@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 78 Flask mirror sites + control plane on :8101.
+# 79 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -235,17 +235,22 @@ RUN cd /opt/WebSyn/imgur && rm -rf instance instance_seed && \
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
-# Instructure's seed is rebuilt deterministically from the tracked source
-# snapshots (see .build-generated-seed); real upstream imagery ships via the
-# asset bundle and is verified by the inventory gate below.
 RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/instructure
 RUN cd /opt/WebSyn/instructure && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && \
     mkdir -p instance_seed && cp instance/instructure.db instance_seed/instructure.db && \
     rm -rf instance __pycache__
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/league_of_legends && \
+    cd /opt/WebSyn/league_of_legends && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+# Fail closed after all registered-site seed migrations/generators.
+RUN cd /opt/WebSyn/youtube && python3 build_seed.py
+RUN cd /opt/WebSyn/weather && python3 build_seed.py
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40077
+EXPOSE 8101 40000-40078
 
 CMD ["/opt/websyn_start.sh"]
