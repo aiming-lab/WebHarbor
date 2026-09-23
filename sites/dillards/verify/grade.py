@@ -10,16 +10,10 @@ Ground truth is HARDCODED in answers.py (never in tasks.jsonl). Checks per task:
      tasks (15, 18, 19, 20, 21, 24, 28, 29, 30) must produce exactly the
      requested rows/fields and preserve the rest.
 
-Known task-text reservations (kept in the review report, not worked around
-here):
-  - T3 asks for the price of each COCO MADEMOISELLE size; the PDP renders the
-    price range ($154.00 - $270.00), so the middle size's exact price is read
-    from the bag lines after adding the sizes (bagging requires a logged-in
-    demo account; the added rows are removed afterwards to keep the DB clean).
-    The verifier requires all three size prices.
-  - T13's "the matching Levi's jeans" matches two Levi's 511 products; the
-    verifier accepts either product as long as name, price and size count are
-    internally consistent.
+Task interpretation notes:
+  - T3 reads variant prices directly from the product page after size selection.
+  - T13 targets the All Seasons Tech jeans and binds their sale/original prices
+    to the corresponding labels.
   - T18 says "from your recent order": the Lancome Lash Idole mascara is in
     Carol's In-Transit order D2609180298 (the UI allows returns from it; her
     delivered order contains different items). The verifier anchors on the
@@ -49,7 +43,7 @@ SHOT_ANCHORS = {
     7: "/p/antonio-melani-carter", 8: "/p/polo-ralph-lauren-classic-fit-solid-mesh-polo-shirt",
     9: "/p/alex-marie-kaitlin", 10: "/p/timberland-mens-premium-waterproof-boots",
     11: "/p/brahmin-melbourne-collection-ady", 12: "/search-term/",
-    13: "/p/levis-511", 14: "/search-term/", 15: "/order-confirmation/",
+    13: "/p/levis-511-slim-fit-all-seasons-tech-jeans/511371759", 14: "/search-term/", 15: "/order-confirmation/",
     16: "/account/orders/4", 17: "/account/orders/2",
     18: "/account/returns", 19: "/bag", 20: "/account/wishlist",
     21: "/account/wishlist", 22: "/registry/114815098", 23: "/registry/114802551",
@@ -59,13 +53,40 @@ SHOT_ANCHORS = {
 
 
 def _coco_size_price(final, size, price):
-    """A COCO size price is affirmed when the size and the money appear."""
-    return affirms(final, size) and affirm_money(final, price)
+    """Bind each ounce size to its own price; accept ordinary prose/tables."""
+    amount = size.split()[0]
+    matches = list(re.finditer(r"(?<![\d.])(\d+(?:\.\d+)?)\s*(?:oz\.?|ounces?)", final, re.I))
+    claims = [final[m.end():matches[k + 1].start() if k + 1 < len(matches) else len(final)]
+              for k, m in enumerate(matches) if m.group(1) == amount]
+    def valid(claim):
+        dollars = [a or b for a, b in re.findall(
+            r"(?:\$|USD\s*)([\d,]+(?:\.\d{1,2})?)|([\d,]+(?:\.\d{1,2})?)\s*(?:USD|dollars)", claim, re.I)]
+        return bool(dollars) and all(abs(float(v.replace(',', '')) - price) < .005 for v in dollars)
+    return bool(claims) and all(valid(c) for c in claims)
 
 
-def grade(number):
+def _jeans_prices(final, sale, original):
+    """Accept natural labeled prices while rejecting reversed sale/original values."""
+    labels = list(re.finditer(
+        r"\b(now|currently|current(?: sale)?(?: price)?|sale(?: price)?|"
+        r"original(?:ly)?(?: price)?|was|regular(?: price)?)\b", final, re.I))
+    seen = set()
+    for index, label in enumerate(labels):
+        claim = final[label.end():labels[index + 1].start() if index + 1 < len(labels) else len(final)]
+        amount = re.search(r"(?<![\d.])(?:\$|USD\s*)?(\d+(?:,\d{3})*(?:\.\d{1,2})?)(?![\d.])", claim)
+        if amount is None:
+            continue
+        kind = 'original' if re.match(r'original|was|regular', label.group(), re.I) else 'sale'
+        expected = original if kind == 'original' else sale
+        if abs(float(amount.group(1).replace(',', '')) - expected) > .005 or not affirm_money(claim, expected):
+            return False
+        seen.add(kind)
+    return seen == {'sale', 'original'}
+
+
+def grade(number, emit=True, task_id=None):
     args = parse_args()
-    j = Judge(f"Dillards--{number}")
+    j = Judge(task_id or f"Dillards--{number}")
     t = load_run(args.run_dir)
     fa = final_answer(t)
     init_db = args.initial_db or resolve_db(None, args.container, "instance_seed")
@@ -75,7 +96,7 @@ def grade(number):
     # trajectory identity: the graded package must be labeled for THIS task
     # (anti cross-task binding; a renamed/mismatched task_id is a tamper FAIL)
     j.check("trajectory_task_matches",
-            str(t.get("task_id") or "").strip() == f"Dillards--{number}",
+            str(t.get("task_id") or "").strip() == j.task_id,
             f"expected='Dillards--{number}' observed={t.get('task_id')!r}")
 
     if number not in STATEFUL:
@@ -185,12 +206,11 @@ def grade(number):
     elif number == 13:
         j.check("visited_search", navigated_url_contains(t, "search-term"),
                 "search results for 511 slim")
-        j.check("visited_levis_511", navigated_prefix(t, "/p/levis-511"),
+        j.check("visited_levis_511", navigated_path(t, "/p/levis-511-slim-fit-all-seasons-tech-jeans/511371759"),
                 "a Levi's 511 product page")
         accepted = False
-        for cand in A.T13_CANDIDATES:
-            price_ok = affirm_money(fa, cand["price"]) or (
-                cand["was"] and affirm_money(fa, cand["was"]))
+        for cand in A.T13_CANDIDATES[:1]:
+            price_ok = _jeans_prices(fa, cand["price"], cand["was"])
             if (all(affirms(fa, tok) for tok in cand["tokens"]) and price_ok
                     and contains_count(fa, cand["sizes"])):
                 accepted = True
@@ -198,7 +218,7 @@ def grade(number):
                                   f"${cand['price']} / {cand['sizes']} sizes")
                 break
         j.check("answer_consistent", accepted,
-                "either 511 product with its matching price and size count")
+                "All Seasons Tech jeans with current sale price, original price and size count")
 
     elif number == 14:
         j.check("visited_search", navigated_url_contains(t, "search-term"),
@@ -288,6 +308,11 @@ def grade(number):
                         f"new order_items: {[r.get('id') for r in items]}")
                 if len(items) == 1:
                     it = items[0]
+                    j.check("item_parent_and_quantity", it.get("order_id") == o.get("id")
+                            and it.get("quantity") == 1,
+                            "one dress belongs to the new order")
+                    j.check("item_color", it.get("color") in {"Black", "Sand", "Navy", "Chestnut"},
+                            "a real Carter dress color")
                     j.check("item_is_carter_dress", A.T15_DRESS_NAME in (it.get("product_name") or ""),
                             it.get("product_name"))
                     j.check("item_size_8", (it.get("size") or "").strip() == A.T15_SIZE,
@@ -312,13 +337,14 @@ def grade(number):
                         card_a.get("points"))
             txns = new_rows(b, a, "card_transactions")
             j.check("one_new_card_txn", len(txns) == 1 and
-                    abs((txns[0].get("amount") or 0) - A.T15_TOTAL) < 0.005,
+                    abs((txns[0].get("amount") or 0) - A.T15_TOTAL) < 0.005
+                    and txns[0].get("card_account_id") == 1,
                     f"new card_transactions: {[(r.get('description'), r.get('amount')) for r in txns]}")
             ok = preserved(b, a,
                            additions={"orders": [r["id"] for r in new_rows(b, a, "orders")],
                                       "order_items": [r["id"] for r in new_rows(b, a, "order_items")],
                                       "card_transactions": [r["id"] for r in txns]},
-                           removals={"cart_items": [r["id"] for r in removed_rows(b, a, "cart_items")]},
+                           removals={"cart_items": [r["id"] for r in b["cart_items"] if r["user_id"] == 1]},
                            changes={"card_accounts": {1: {"balance", "points"}}})
             j.check("other_state_preserved", ok, "all unrelated rows/tables unchanged")
         j.check("answer_order_number", affirms(fa, A.T15_ORDER), fa)
@@ -538,4 +564,6 @@ def grade(number):
     else:
         j.check("unknown_task", False, f"no grading rule for task {number}")
 
-    j.emit()
+    if emit:
+        j.emit()
+    return j

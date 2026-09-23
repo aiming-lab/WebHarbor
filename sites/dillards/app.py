@@ -758,11 +758,17 @@ def product_detail(slug, pid):
     price_low = variant_prices[0] if variant_prices else None
     price_high = variant_prices[-1] if len(variant_prices) > 1 else None
     explicit_price = None
+    explicit_variant = None
     if request.args.get("size"):
         explicit_variant = next((v for v in product.variants
                                  if v.size == request.args.get("size")
                                  and (not selected_color_name or v.color in (None, selected_color_name))), None)
         explicit_price = explicit_variant.price if explicit_variant else None
+    price_was = product.was_price() if product.on_sale() else None
+    if explicit_variant is not None:
+        price_was = (explicit_variant.was_price
+                     if explicit_variant.was_price and explicit_variant.was_price > explicit_variant.price
+                     else None)
     category = Category.query.filter_by(slug=product.category_slug).first()
     category_name = category.name if category else product.category_slug.replace("-", " ").title()
     also_like = [p for p in category_products(product.category_slug)
@@ -773,6 +779,9 @@ def product_detail(slug, pid):
         colors=colors, sizes=sizes, selected_color=selected_color,
         selected_color_name=selected_color_name, selected_size=selected_size,
         price_low=price_low, price_high=price_high, explicit_price=explicit_price,
+        price_was=price_was,
+        variant_options=[dict(size=v.size or "", color=v.color or "", price=v.price,
+                              was_price=v.was_price) for v in product.variants],
         category_name=category_name, also_like=also_like, store=store,
         top_label=top_nav_label(product.top_slug))
 

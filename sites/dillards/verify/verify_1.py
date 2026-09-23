@@ -5,7 +5,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from grade import grade
+from composed_grade import grade
 
 if __name__ == "__main__":
     grade(1)

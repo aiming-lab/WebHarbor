@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import pytest
+from sqlalchemy import create_engine
 
 SITE = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(SITE))
@@ -22,18 +23,25 @@ if not SEED.exists():
 
 
 @pytest.fixture(autouse=True)
-def clean_database():
+def clean_database(tmp_path, monkeypatch):
+    # SQLAlchemy caches its engine at initialization; changing only the config
+    # URI would still send test writes to the running preview's database.
+    database = tmp_path / "dillards.db"
+    shutil.copy2(SEED, database)
+    engine = create_engine(f"sqlite:///{database}")
+    monkeypatch.setattr(site, "DB_PATH", str(database))
+    monkeypatch.setitem(site.app.config, "TESTING", True)
     with site.app.app_context():
         site.db.session.remove()
-        site.db.engine.dispose()
-    Path(site.DB_PATH).parent.mkdir(exist_ok=True)
-    shutil.copy2(SEED, site.DB_PATH)
-    site.app.config.update(TESTING=True)
-    yield
-    with site.app.app_context():
-        site.db.session.remove()
-        site.db.engine.dispose()
-    Path(site.DB_PATH).unlink(missing_ok=True)
+        original_engine = site.db.engines[None]
+        site.db.engines[None] = engine
+    try:
+        yield
+    finally:
+        with site.app.app_context():
+            site.db.session.remove()
+            engine.dispose()
+            site.db.engines[None] = original_engine
 
 
 @pytest.fixture
