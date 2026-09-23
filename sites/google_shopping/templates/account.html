@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Account - Google Shopping{% endblock %}
+{% block content %}
+<div class="list-page-head">
+  <h1>My account</h1>
+</div>
+<div class="tracked-row" style="cursor:default">
+  <span class="avatar" style="width:48px;height:48px;background:#1a73e8;color:#fff;display:flex;align-items:center;justify-content:center;border-radius:50%;font-size:20px">{{ current_user.display_name[0] }}</span>
+  <span class="t-title">
+    <strong>{{ current_user.display_name }}</strong><br>
+    <span style="color:#56595e">{{ current_user.email }}</span>
+  </span>
+</div>
+<div class="tracked-row">
+  <svg style="width:22px;height:22px;fill:#5f6368" viewBox="0 0 24 24"><path d="M21 20H19V3H6V1H19C20.1 1 21 1.9 21 3V20ZM15 5H5C3.9 5 3 5.9 3 7V23L10 20L17 23V7C17 5.9 16.1 5 15 5Z"/></svg>
+  <a class="t-title" href="{{ url_for('saved') }}"><strong>Shopping list</strong><br><span style="color:#56595e">{{ saved_count }} saved item{{ '' if saved_count == 1 else 's' }}</span></a>
+</div>
+<div class="tracked-row">
+  <svg style="width:22px;height:22px;fill:#5f6368" viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.23 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.23 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+  <a class="t-title" href="{{ url_for('tracked') }}"><strong>Price tracking</strong><br><span style="color:#56595e">{{ tracked_count }} tracked item{{ '' if tracked_count == 1 else 's' }}</span></a>
+</div>
+<p style="margin-top:20px"><a href="{{ url_for('logout') }}" style="color:#1a73e8">Sign out</a></p>
+{% endblock %}

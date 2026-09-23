@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Departments - Google Shopping{% endblock %}
+{% block content %}
+<h1 class="page-title">Departments</h1>
+<div class="dept-grid">
+  {% for d in departments %}
+  <a class="dept-tile" href="{{ url_for('search', q=d.name) }}">
+    <span class="frame"><img src="{{ url_for('static', filename='images/' + d.image) }}" alt="{{ d.name }}"></span>
+    <span class="label">{{ d.name }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}
