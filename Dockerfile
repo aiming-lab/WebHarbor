@@ -231,12 +231,18 @@ RUN cd /opt/WebSyn/imgur && rm -rf instance instance_seed && \
     mkdir -p instance_seed && cp instance/imgur.db instance_seed/imgur.db && \
     rm -rf instance __pycache__
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/macys_wine_shop
+RUN test -n "$(ls -A /opt/WebSyn/macys_wine_shop/static/images)" && \
+    test -f /opt/WebSyn/macys_wine_shop/.build-generated-seed
+RUN cd /opt/WebSyn/macys_wine_shop && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40076
+EXPOSE 8101 40000-40089
 
 CMD ["/opt/websyn_start.sh"]

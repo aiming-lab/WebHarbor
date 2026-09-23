@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% from "_macros.html" import card %}
+{% block title %}{{ collection.title }} – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="collection-layout">
+  <aside class="filter-panel">
+    <p class="count">Items {{ (page - 1) * 36 + 1 if total else 0 }} - {{ [(page - 1) * 36 + products|length, total]|min }} of {{ total }}</p>
+    <p style="font-weight:700;font-size:15px;margin:10px 0 6px">Filter by</p>
+    {% for facet, values in facets.items() %}
+      {% if values %}
+      <details class="filter-group" {% if facet in active %}open{% endif %}>
+        <summary><span class="facet-name">{{ facet|capitalize }}</span><span class="plus"></span></summary>
+        <div class="filter-values">
+          {% for value, count in values %}
+          <label>
+            <input type="checkbox" data-filter="{{ facet }}" value="{{ value }}" {% if facet in active and value in active[facet] %}checked{% endif %}>
+            <span>{{ value }}</span> <span class="cnt">({{ count }})</span>
+          </label>
+          {% endfor %}
+        </div>
+      </details>
+      {% endif %}
+    {% endfor %}
+    <a class="clear-all" href="/collections/{{ collection.handle }}">Clear All</a>
+  </aside>
+
+  <div class="collection-main">
+    <div class="collection-head">
+      <div>
+        <h1>{{ collection.title }}</h1>
+        <span class="items">Items {{ (page - 1) * 36 + 1 if total else 0 }} - {{ [(page - 1) * 36 + products|length, total]|min }} of {{ total }}</span>
+      </div>
+      <div class="sort-control">
+        <label for="sort-by">Sort By:</label>
+        <select id="sort-by" data-sort>
+          {% for value, label in sort_options %}
+          <option value="{{ value }}" {% if sort == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    {% if active %}
+    <div class="active-filters">
+      {% for facet, values in active.items() %}
+        {% for v in values %}
+        <a href="#" data-remove-filter="{{ facet }}" data-remove-value="{{ v }}">{{ v }}</a>
+        {% endfor %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="product-grid">
+      {% for p in products %}{{ card(p, ship_state) }}{% endfor %}
+    </div>
+
+    {% if pages > 1 %}
+    <nav class="pagination" aria-label="Pagination">
+      {% if page > 1 %}<a href="?page={{ page - 1 }}{% if sort != 'best-selling' %}&sort_by={{ sort }}{% endif %}{% for facet, values in active.items() %}{% for v in values %}&filter.p.m.drinks.{{ facet }}={{ v|urlencode }}{% endfor %}{% endfor %}">&#8592;</a>{% endif %}
+      {% for n in range(1, pages + 1) %}
+        {% if n == page %}
+        <span class="current">{{ n }}</span>
+        {% elif n <= 2 or n > pages - 2 or (n - page)|abs <= 2 %}
+        <a href="?page={{ n }}{% if sort != 'best-selling' %}&sort_by={{ sort }}{% endif %}{% for facet, values in active.items() %}{% for v in values %}&filter.p.m.drinks.{{ facet }}={{ v|urlencode }}{% endfor %}{% endfor %}">{{ n }}</a>
+        {% elif n == 3 or n == pages - 2 %}
+        <span>…</span>
+        {% endif %}
+      {% endfor %}
+      {% if page < pages %}<a href="?page={{ page + 1 }}{% if sort != 'best-selling' %}&sort_by={{ sort }}{% endif %}{% for facet, values in active.items() %}{% for v in values %}&filter.p.m.drinks.{{ facet }}={{ v|urlencode }}{% endfor %}{% endfor %}">&#8594;</a>{% endif %}
+    </nav>
+    {% endif %}
+  </div>
+</div>
+<script>
+(function () {
+  var params = new URLSearchParams(window.location.search);
+  function apply(mutate) {
+    mutate(new URLSearchParams(params.toString()));
+    window.location.search = params.toString();
+  }
+  document.querySelectorAll("[data-filter]").forEach(function (cb) {
+    cb.addEventListener("change", function () {
+      var key = "filter.p.m.drinks." + cb.getAttribute("data-filter");
+      var existing = params.getAll(key);
+      if (cb.checked) {
+        if (existing.indexOf(cb.value) < 0) params.append(key, cb.value);
+      } else {
+        var keep = existing.filter(function (v) { return v !== cb.value; });
+        params.delete(key);
+        keep.forEach(function (v) { params.append(key, v); });
+      }
+      params.delete("page");
+      window.location.search = params.toString();
+    });
+  });
+  document.querySelectorAll("[data-remove-filter]").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      e.preventDefault();
+      var key = "filter.p.m.drinks." + a.getAttribute("data-remove-filter");
+      var value = a.getAttribute("data-remove-value");
+      var keep = params.getAll(key).filter(function (v) { return v !== value; });
+      params.delete(key);
+      keep.forEach(function (v) { params.append(key, v); });
+      params.delete("page");
+      window.location.search = params.toString();
+    });
+  });
+  var sortSel = document.querySelector("[data-sort]");
+  if (sortSel) {
+    sortSel.addEventListener("change", function () {
+      params.set("sort_by", sortSel.value);
+      params.delete("page");
+      window.location.search = params.toString();
+    });
+  }
+})();
+</script>
+{% endblock %}

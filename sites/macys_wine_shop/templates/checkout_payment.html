@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Checkout – Payment – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="checkout-layout">
+  <div class="checkout-steps">
+    <span class="done">Information</span>
+    <span class="active">Shipping &amp; Payment</span>
+    <span>Review &amp; Place Order</span>
+  </div>
+
+  <div class="checkout-card">
+    <h2>Shipping to {{ info.get('ship_to_name') }} · {{ info.get('city') }}, {{ info.get('state') }} {{ info.get('zip_code') }}</h2>
+    <form method="post" action="/checkout/payment">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if current_user.is_authenticated and current_user.payment_methods %}
+      <div class="field" style="margin-bottom:16px">
+        <label for="payment_id">Use a saved card</label>
+        <select id="payment_id" name="payment_id" onchange="this.form.submit()">
+          <option value="">— Enter a new card —</option>
+          {% for m in current_user.payment_methods %}
+          <option value="{{ m.id }}">{{ m.brand }} ending in {{ m.last4 }} ({{ '%02d'|format(m.exp_month) }}/{{ m.exp_year }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="form-grid">
+        <div class="field full"><label for="card_number">Card number</label>
+          <input id="card_number" name="card_number" inputmode="numeric" placeholder="Card number" required>
+          {% if errors.get('card_number') %}<div class="err">{{ errors['card_number'] }}</div>{% endif %}</div>
+        <div class="field full"><label for="card_holder">Name on card</label>
+          <input id="card_holder" name="card_holder" required>
+          {% if errors.get('card_holder') %}<div class="err">{{ errors['card_holder'] }}</div>{% endif %}</div>
+        <div class="field"><label for="exp_month">Expiration month</label>
+          <select id="exp_month" name="exp_month" required>
+            <option value="">MM</option>
+            {% for i in range(1, 13) %}<option value="{{ '%02d'|format(i) }}">{{ '%02d'|format(i) }}</option>{% endfor %}
+          </select>
+          {% if errors.get('exp_month') %}<div class="err">{{ errors['exp_month'] }}</div>{% endif %}</div>
+        <div class="field"><label for="exp_year">Expiration year</label>
+          <select id="exp_year" name="exp_year" required>
+            <option value="">YYYY</option>
+            {% for y in range(2026, 2037) %}<option value="{{ y }}">{{ y }}</option>{% endfor %}
+          </select>
+          {% if errors.get('exp_year') %}<div class="err">{{ errors['exp_year'] }}</div>{% endif %}</div>
+        <div class="field full"><label for="card_cvc">Security code (CVC)</label>
+          <input id="card_cvc" name="card_cvc" inputmode="numeric" placeholder="CVC" required>
+          {% if errors.get('card_cvc') %}<div class="err">{{ errors['card_cvc'] }}</div>{% endif %}</div>
+      </div>
+      <button class="btn-primary" type="submit" style="margin-top:16px">Continue to review</button>
+      <a href="/checkout/information" style="display:block;text-align:center;margin-top:12px;font-size:14px;text-decoration:underline">Return to information</a>
+    </form>
+  </div>
+
+  <aside class="cart-side" style="max-width:420px;flex:none">
+    <h2>Order Summary</h2>
+    {% for item in summary['items'] %}
+    <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0">
+      <span>{{ item.variant.product.title }} × {{ item.quantity }}</span>
+      <span>{{ (item.quantity * item.variant.price)|money }}</span>
+    </div>
+    {% endfor %}
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>{{ summary['subtotal']|money }}</span></div>
+      <div class="row"><span>Shipping</span><span>{{ summary['shipping']|money if summary['shipping'] else 'FREE' }}</span></div>
+      <div class="row"><span>Processing</span><span>{{ summary['processing']|money }}</span></div>
+      <div class="row total"><span>Total</span><span>{{ summary['total']|money }}</span></div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

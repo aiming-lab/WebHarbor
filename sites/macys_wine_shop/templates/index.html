@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% from "_macros.html" import card %}
+{% block content %}
+{% for section in sections %}
+  {% if section.kind == "hero" %}
+  <section class="hero" data-hero>
+    {% for slide in section.slides %}
+    <div class="hero-slide" {% if not loop.first %}style="display:none"{% endif %}>
+      {% if slide.image %}<img class="hero-bg" src="{{ slide.image }}" alt="{{ slide.heading }}">{% endif %}
+      <div class="hero-copy">
+        <h2>{{ slide.heading }}</h2>
+        <p>{{ slide.subheading }}</p>
+        {% if slide.button_link and slide.button_label %}
+        <a class="hero-btn" href="{{ slide.button_link }}">{{ slide.button_label }}</a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+    <div class="hero-dots">
+      {% for slide in section.slides %}<button aria-label="Slide {{ loop.index }}"></button>{% endfor %}
+    </div>
+  </section>
+  {% elif section.kind == "benefits" %}
+  <section class="benefits">
+    {% for b in section['items'] %}
+    <div class="benefit">
+      {% if b.icon %}<img src="{{ b.icon }}" alt="{{ b.title }}">{% endif %}
+      <div><b>{{ b.title }}</b><span>{{ b.sub }}</span></div>
+    </div>
+    {% endfor %}
+  </section>
+  {% elif section.kind == "category_tiles" %}
+  <h2 class="section-heading" style="display:none">Shop by category</h2>
+  <section class="category-strip">
+    {% for t in section.tiles %}
+    <a class="category-tile" href="{{ t.link }}">
+      {% if t.image %}<img src="{{ t.image }}" alt="{{ t.label }}">{% endif %}
+      <b>{{ t.label }}</b>
+    </a>
+    {% endfor %}
+  </section>
+  {% elif section.kind == "featured" %}
+  <section data-tab-scope>
+    <h2 class="section-heading">{{ section.title }}</h2>
+    <div class="club-tabs" style="margin:18px 0 26px">
+      {% for slug, label in section.tab_labels %}
+      <button class="tab-btn {{ 'selected' if loop.first }}" data-tab="{{ slug }}" type="button">{{ label }}</button>
+      {% endfor %}
+    </div>
+    {% for slug, products in section.resolved.items() %}
+    <div data-tab-panel="{{ slug }}" style="{{ '' if loop.first else 'display:none' }}">
+      <div class="product-grid" style="padding:0 48px">
+        {% for p in products %}{{ card(p, ship_state) }}{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </section>
+  {% elif section.kind == "wine_club_banner" %}
+  <section class="split-banner">
+    <div class="copy">
+      <h2>{{ section.heading }}</h2>
+      <p>{{ section.body_1 }}</p>
+      <p>{{ section.body_2 }}</p>
+      <a class="btn-primary" style="max-width:220px" href="/pages/wine-club">Explore Clubs</a>
+    </div>
+    <div class="image">
+      {% if section.image %}<img src="{{ section.image }}" alt="Macy's Wine Club">{% endif %}
+    </div>
+  </section>
+  {% elif section.kind == "premium_tiles" %}
+  <h2 class="section-heading">{{ section.heading }}</h2>
+  <section class="tile-row">
+    {% for t in section.tiles %}
+    <a class="promo-tile" href="{{ t.link }}">
+      {% if t.image %}<img src="{{ t.image }}" alt="{{ t.label }}">{% endif %}
+      <span class="tile-label">{{ t.label }}</span>
+    </a>
+    {% endfor %}
+  </section>
+  {% elif section.kind == "free_shipping_band" %}
+  <section class="free-ship-band">
+    <span>🚚 Get FREE shipping on orders with 6+ bottles.</span><a href="/pages/faq">Learn More</a>
+  </section>
+  {% elif section.kind == "martha_banner" %}
+  <section class="split-banner">
+    <div class="copy">
+      <h2>{{ section.heading }}</h2>
+      <p>{{ section.body_1 }}</p>
+      <p>{{ section.body_2 }}</p>
+      <a class="btn-primary" style="max-width:220px" href="/collections/martha-stewart-wine-collection">Shop Collection</a>
+    </div>
+    <div class="image">
+      {% if section.image %}<img src="{{ section.image }}" alt="Martha Stewart Wine Collection">{% endif %}
+    </div>
+  </section>
+  {% elif section.kind == "blog_cards" %}
+  <h2 class="section-heading">Latest Blog Articles</h2>
+  <p class="section-sub">Consider our <strong>Wine 101</strong> series your handy guide to the world of wine. Plus, find recipes, podcast episodes, and more!</p>
+  <section class="blog-grid">
+    {% for a in section.articles %}
+    <article class="blog-card">
+      <a href="/blogs/wine-101/{{ a.handle }}">
+        {% if a.image %}<img src="{{ a.image }}" alt="{{ a.title }}">{% endif %}
+      </a>
+      <h3><a href="/blogs/wine-101/{{ a.handle }}">{{ a.title }}</a></h3>
+      <p>{{ a.excerpt }}</p>
+    </article>
+    {% endfor %}
+  </section>
+  {% elif section.kind == "shop_by_price" %}
+  <h2 class="section-heading">Shop by Price</h2>
+  <section class="price-links">
+    {% for t in section.tiles %}
+    <a href="{{ t.link }}">{{ t.label }}</a>
+    {% endfor %}
+  </section>
+  {% endif %}
+{% endfor %}
+{% endblock %}

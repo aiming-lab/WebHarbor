@@ -46,6 +46,7 @@ SITES = [
     'better_business_bureau', 'birkenstock', 'americas_health_rankings', 'american_express',
     'carnival_cruise', 'california_gov', 'coolmath4kids', 'chase',
     'flightaware', 'chronicle_jobs', 'dillards', 'google_shopping', 'imgur',
+    'macys_wine_shop',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'

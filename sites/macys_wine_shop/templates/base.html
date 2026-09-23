@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Macy's Wine Shop – MacysWine Shop{% endblock %}</title>
+  <link rel="icon" type="image/png" href="/static/icons/favicon.png">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+  {% if show_age_gate %}
+  <div class="age-gate-overlay" id="age-gate">
+    <div class="age-gate">
+      <h1>Welcome!</h1>
+      <p>We make it easy to discover new and exciting wines at a great price, shipped directly to your door.</p>
+      <p class="confirm-title">But first, please confirm a few things for us:</p>
+      <form onsubmit="return false">
+        <label style="display:block;text-align:left;font-size:13.5px;font-weight:600;margin-top:14px">Ship to</label>
+        <select name="state" aria-label="Select your state">
+          <option value="">Select your state</option>
+          {% for abbr, name in us_states %}<option value="{{ abbr }}">{{ abbr }}</option>{% endfor %}
+        </select>
+        <p class="confirm-title">Are you 21 years of age or older?</p>
+        <div class="buttons">
+          <button type="button" class="btn-primary" id="age-yes" style="width:130px">Yes</button>
+          <button type="button" class="btn-outline-red" id="age-no" style="width:130px">No</button>
+        </div>
+        <p class="error age-error"></p>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="shop-macys">SHOP MACYS.COM</div>
+  <div class="announcement">
+    <div class="container announcement-slides">
+      <p data-announcement-slide><strong>Wine Club: </strong>Enjoy 12 expertly-curated wines for just <strong>$99.99</strong> — <a href="/pages/wine-club">Learn more</a></p>
+      <p data-announcement-slide style="display:none">Get FREE SHIPPING on orders with 6+ bottles</p>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-row">
+      <a href="/" class="header-logo">
+        <span class="star">★</span>
+        <span>
+          <span class="word">macy's</span>
+          <span class="sub">WINE SHOP</span>
+        </span>
+      </a>
+      <div class="header-search">
+        <form action="/search" method="get" role="search">
+          <input type="search" name="q" placeholder="Search Macy's Wine Shop" value="{{ request.args.get('q', '') }}" aria-label="Search">
+          <button type="submit" aria-label="Search">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="#333" stroke-width="2"/><path d="M20 20l-4.2-4.2" stroke="#333" stroke-width="2"/></svg>
+          </button>
+        </form>
+      </div>
+      <div class="header-actions">
+        <span class="ship-to">Ship to
+          <select data-ship-select aria-label="Ship to state">
+            <option value="">--</option>
+            {% for abbr, name in us_states %}<option value="{{ abbr }}" {% if ship_state == abbr %}selected{% endif %}>{{ abbr }}</option>{% endfor %}
+          </select>
+        </span>
+        <a class="icon-link" href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="8" r="4" stroke="#000" stroke-width="2"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6" stroke="#000" stroke-width="2"/></svg>
+          <span class="link-label">{% if current_user.is_authenticated %}Account{% else %}Sign In{% endif %}</span>
+        </a>
+        <a class="icon-link" href="/cart" aria-label="Cart">
+          <svg width="22" height="20" viewBox="0 0 24 22" fill="none"><path d="M2 5h3l2.5 12h11L21 8H6" stroke="#000" stroke-width="2"/><circle cx="9" cy="19" r="1.7" fill="#CC0000"/><circle cx="17" cy="19" r="1.7" fill="#CC0000"/></svg>
+          <span class="cart-badge" id="cart-badge">{{ cart_count }}</span>
+        </a>
+      </div>
+    </div>
+    <nav class="main-nav" aria-label="Main navigation">
+      <ul>
+        <li><a class="nav-item red" href="/pages/wine-club">Wine Club</a></li>
+        <li><a class="nav-item" href="/products/giftcard">Gift Cards</a></li>
+        <li>
+          <button class="nav-item" type="button">Wine</button>
+          <div class="mega-menu">
+            <div class="col">
+              <h4>Shop by Color</h4>
+              <a href="/collections/red-wine">Red Wines</a>
+              <a href="/collections/white-wine">White Wines</a>
+              <a href="/collections/rose-wine">Rosé Wines</a>
+              <a href="/collections/sparkling-wine">Sparkling Wines</a>
+              <a href="/collections/non-alcoholic-wines">Non-Alcoholic Wines</a>
+              <a href="/collections/ready-to-drink-cocktails">Ready-to-Drink Cocktails</a>
+            </div>
+            <div class="col">
+              <h4>Red Varietals</h4>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Cabernet+Sauvignon">Cabernet Sauvignon</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Malbec">Malbec</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Merlot">Merlot</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Pinot+Noir">Pinot Noir</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Red+Blend">Red Blends</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Sangiovese">Sangiovese</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Syrah%2FShiraz">Syrah / Shiraz</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Zinfandel">Zinfandel</a>
+            </div>
+            <div class="col">
+              <h4>White Varietals</h4>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Chardonnay">Chardonnay</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Pinot+Grigio%2FPinot+Gris">Pinot Grigio</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Riesling">Riesling</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=Sauvignon+Blanc">Sauvignon Blanc</a>
+              <a href="/collections/all-wine?filter.p.m.drinks.varietal=White+Blend">White Blends</a>
+            </div>
+            <div class="col">
+              <h4>By Country</h4>
+              {% for country in ['Argentina','Australia','Chile','France','Italy','Portugal','Spain','United States'] %}
+              <a href="/collections/all-wine?filter.p.m.drinks.country={{ country|replace(' ','+') }}">{{ country }}</a>
+              {% endfor %}
+            </div>
+          </div>
+        </li>
+        <li>
+          <button class="nav-item" type="button">Collections</button>
+          <div class="mega-menu">
+            <div class="col">
+              <h4>Curated</h4>
+              <a href="/collections/new-arrivals">New Arrivals</a>
+              <a href="/collections/on-sale-and-clearance">On Sale</a>
+              <a href="/collections/beyond-the-familiar">Beyond The Familiar</a>
+              <a href="/collections/sustainable">Sustainable Wines</a>
+              <a href="/collections/moscato-other-sweet-wines">Seasonal Sweet Wines</a>
+            </div>
+            <div class="col">
+              <h4>Staff Picks</h4>
+              <a href="/collections/sommeliers-choice">Sommelier’s Choice</a>
+              <a href="/collections/customer-favorites">Customer Favorites</a>
+              <a href="/collections/festive-vines-pumpkin-spice-chardonnay">Pumpkin Spice Chardonnay</a>
+              <a href="/pages/other_im_2025_award_sd_0">Our Most Celebrated</a>
+            </div>
+          </div>
+        </li>
+        <li>
+          <button class="nav-item" type="button">Gifts &amp; Sets</button>
+          <div class="mega-menu">
+            <div class="col">
+              <h4>Wine Sets</h4>
+              <a href="/collections/shop-all-wine-sets">Shop All Wine Sets</a>
+              <a href="/collections/3-bottle-wine-sets">3-Bottle Wine Sets</a>
+              <a href="/collections/6-bottle-wine-sets">6-Bottle Wine Sets</a>
+              <a href="/collections/12-bottle-wine-sets">12-Bottle Wine Sets</a>
+            </div>
+            <div class="col">
+              <h4>By Price</h4>
+              <a href="/collections/wine-sets-under-50">Wine Sets Under $50</a>
+              <a href="/collections/wine-sets-under-100">Wine Sets Under $100</a>
+              <a href="/collections/luxe-gifts">Luxe Gifts</a>
+            </div>
+          </div>
+        </li>
+        <li><a class="nav-item" href="/collections/martha-stewart-wine-collection">Martha Stewart</a></li>
+        <li><a class="nav-item" href="/blogs/wine-101">Wine 101</a></li>
+        <li>
+          <button class="nav-item" type="button">Featured</button>
+          <div class="mega-menu">
+            <div class="col">
+              <h4>Featured</h4>
+              <a href="/collections/90-rated-wine-under-20">90+ Rated Under $20</a>
+              <a href="/collections/award-winners">Award Winners</a>
+              <a href="/collections/winter-warming-reds">Winter Warming Reds</a>
+              <a href="/pages/wedding-wine-shop">Wedding Wine Shop</a>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="MainContent">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-main">
+      <div class="footer-col">
+        <h3>Shop Wine</h3>
+        <a href="/collections/all-wine">Shop Wine</a>
+        <a href="/pages/shipping-policy">Shipping Policy</a>
+        <a href="/pages/faq">Customer Service</a>
+        <a href="https://www.macys.com">Shop Macys.com</a>
+      </div>
+      <div class="footer-col">
+        <h3>Connect With Us</h3>
+        <div class="socials">
+          <a href="https://www.facebook.com/macyswineshop">Facebook</a>
+          <a href="https://www.instagram.com/macyswineshop/">Instagram</a>
+          <a href="https://twitter.com/macyswineshop">Twitter</a>
+        </div>
+      </div>
+      <div class="footer-col footer-news">
+        <h3>Join Our Email List</h3>
+        <p>Stay up to date on insider deals and wine education!</p>
+        <form data-newsletter onsubmit="return false">
+          <input type="email" name="email" placeholder="Enter your email here…" aria-label="Email">
+          <button type="submit">Sign Me Up</button>
+        </form>
+        <p class="fine">By submitting your email, you agree to receive email communication &amp; special offers from Macy's Wine Shop. For information on how to unsubscribe, as well as our privacy practices and commitment to protecting your privacy, please review our <a href="/pages/privacy-policy">Privacy Policy</a>.</p>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <div>© 2026 Drinks Holdings, Inc. All rights reserved.</div>
+      <div>Macy's® is a registered trademark of Macy's West Stores, Inc. or its affiliates and is used under license.</div>
+      <div>Macy's Wine Shop is operated by Drinks Holdings, Inc. in conjunction with a licensed network.</div>
+      <div class="links">
+        <a href="/pages/terms-and-conditions">Terms and Conditions</a>
+        <a href="/pages/privacy-policy">Privacy Policy</a>
+        <a href="/pages/privacy-policy#cnac">California Notice at Collection</a>
+        <a href="/pages/ccpa-cpra-compliance">Do Not Sell or Share My Personal Info</a>
+      </div>
+    </div>
+  </footer>
+
+  <div class="qv-overlay" id="quickview-overlay">
+    <div class="qv-modal">
+      <button class="qv-close" aria-label="Close">✕</button>
+      <div class="qv-img"><img data-qv-img src="" alt=""></div>
+      <div class="qv-info">
+        <h2 data-qv-title></h2>
+        <p class="pdp-subheading" data-qv-sub></p>
+        <div class="qv-price" data-qv-price></div>
+        <table class="spec-table" data-qv-specs></table>
+        <div class="qty-row">
+          <div class="qty-stepper" data-qty>
+            <button type="button" data-qty-dec>−</button>
+            <input type="text" value="1" data-qv-qty aria-label="Quantity">
+            <button type="button" data-qty-inc>+</button>
+          </div>
+        </div>
+        <button class="btn-primary" data-qv-add data-add-to-cart data-variant-id="">Add to Cart</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/site.js') }}"></script>
+</body>
+</html>

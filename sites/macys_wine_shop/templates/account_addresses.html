@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Addresses – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <nav class="account-nav">
+    <a href="/account">Dashboard</a>
+    <a href="/account/orders">Orders</a>
+    <a class="active" href="/account/addresses">Addresses</a>
+    <a href="/account/payment">Payment methods</a>
+    <a href="/account/profile">Profile</a>
+    <a href="/account/password">Password</a>
+  </nav>
+  <div class="account-main">
+    <h1>Your Addresses</h1>
+    {% if errors.get('form') %}<div class="form-error">{{ errors['form'] }}</div>{% endif %}
+    {% if user.addresses %}
+    <table class="order-table">
+      <thead><tr><th>Address</th><th>Default</th><th></th></tr></thead>
+      <tbody>
+        {% for a in user.addresses %}
+        <tr>
+          <td><b>{{ a.full_name }}</b>{% if a.label %} ({{ a.label }}){% endif %}<br>{{ a.line1 }}{% if a.line2 %}, {{ a.line2 }}{% endif %}<br>{{ a.city }}, {{ a.state }} {{ a.zip_code }}{% if a.phone %} · {{ a.phone }}{% endif %}</td>
+          <td>{{ 'Yes' if a.is_default else '—' }}</td>
+          <td>
+            <form method="post" action="/account/addresses" onsubmit="return confirm('Delete this address?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="address_id" value="{{ a.id }}">
+              <button class="remove" style="color:var(--bright-red);border:0;background:none;text-decoration:underline;cursor:pointer;font-size:13.5px" type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No addresses saved yet.</p>
+    {% endif %}
+    <h2 style="font-size:20px;margin-top:30px">Add a new address</h2>
+    <form method="post" action="/account/addresses" style="max-width:560px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="add">
+      <div class="form-grid">
+        <div class="field full"><label for="label">Label (optional)</label><input id="label" name="label" placeholder="Home, Office…"></div>
+        <div class="field full"><label for="full_name">Full name</label><input id="full_name" name="full_name" required></div>
+        <div class="field full"><label for="line1">Street address</label><input id="line1" name="line1" required></div>
+        <div class="field full"><label for="line2">Apartment, suite, etc. (optional)</label><input id="line2" name="line2"></div>
+        <div class="field"><label for="city">City</label><input id="city" name="city" required></div>
+        <div class="field"><label for="state">State</label>
+          <select id="state" name="state" required>
+            <option value="">Select state</option>
+            {% for abbr, name in us_states %}<option value="{{ abbr }}">{{ abbr }} — {{ name }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><label for="zip_code">ZIP code</label><input id="zip_code" name="zip_code" required></div>
+        <div class="field"><label for="phone">Phone (optional)</label><input id="phone" name="phone"></div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px">
+        <input type="checkbox" name="is_default"> Set as default address
+      </label>
+      <button class="btn-primary" type="submit" style="margin-top:16px;max-width:240px">Save Address</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
