@@ -521,6 +521,16 @@ HONEST = {
 }
 
 # near-miss wrong answers: one key value altered per task
+
+# Expanded reviewer tasks retain the independent component fixture expectations.
+_ORIGINAL_HONEST = HONEST.copy()
+_REVIEW_COMPONENTS = json.loads((VERIFY / "review_components.json").read_text())
+
+for _n, _parts in _REVIEW_COMPONENTS.items():
+    HONEST[int(_n)] = dict(_ORIGINAL_HONEST[int(_n)],
+        steps=[step for k in _parts for step in _ORIGINAL_HONEST[k]["steps"]],
+        answer="\n".join(_ORIGINAL_HONEST[k]["answer"] for k in _parts))
+
 WRONG_ANSWERS = {
     0: "The Chase Sapphire Reserve® card's annual fee is $550, and the purchase APR range is 15.99%–22.99% variable APR.",
     1: "The travel credit cards category lists 15 personal travel cards. The ones with no annual fee are UnitedSM Explorer Card and United GatewaySM Card.",
