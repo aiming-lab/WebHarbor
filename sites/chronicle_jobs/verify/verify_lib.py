@@ -90,7 +90,10 @@ def parse_args():
                 self.initial_db = str(run / "initial.db")
             if not self.after_db and (run / "after.db").is_file():
                 self.after_db = str(run / "after.db")
-    return sap.parse_args(VerifyArgs)
+    args = sap.parse_args(VerifyArgs)
+    if bool(args.initial_db) != bool(args.after_db):
+        raise SystemExit("initial.db and after.db must be supplied together")
+    return args
 
 
 # ---------------------------------------------------------------- trajectory
@@ -152,7 +155,10 @@ def same_origin_as_start(url: str, start_url: str) -> bool:
 
 
 def site_urls(traj) -> list[str]:
-    return [u for u in trajectory_urls(traj) if is_site_url(u)]
+    # Navigation claims in action parameters are not evidence of arrival.
+    return [str(step.get(field)) for step in traj.get('steps', [])
+            for field, frame in [('url', 'screenshot_before'), ('url_before', 'screenshot_before'), ('url_after', 'screenshot_after')]
+            if step.get(field) and step.get(frame) and is_site_url(step[field])]
 
 
 def normalized_url_path(url: str) -> str:
@@ -178,7 +184,8 @@ def navigated_to(traj, substr: str, times: int = 1) -> bool:
 
 
 def query_params(url: str) -> dict[str, list[str]]:
-    return parse_qs(urlparse(str(url or "")).query, keep_blank_values=True)
+    values = parse_qs(urlparse(str(url or "")).query, keep_blank_values=True)
+    return values if all(len(v) == 1 for v in values.values()) else {}
 
 
 def detail_visited(traj, job_id: int, slug: str) -> bool:
@@ -281,6 +288,7 @@ def screenshots_ok(traj) -> tuple[bool, str]:
     if not isinstance(steps, list) or not steps:
         return False, "no steps"
     checked = 0
+    hashes = set()
     for i, s in enumerate(steps):
         if not isinstance(s, dict):
             return False, f"step {i} is not an object"
@@ -298,7 +306,21 @@ def screenshots_ok(traj) -> tuple[bool, str]:
                 return False, f"step {i} {key} unreadable: {exc}"
             if head != PNG_MAGIC or p.stat().st_size <= 8:
                 return False, f"step {i} {key} is not a PNG"
+            try:
+                from PIL import Image
+                with Image.open(p) as image:
+                    if image.format != "PNG" or image.width < 200 or image.height < 120:
+                        return False, "invalid screenshot dimensions or format"
+                    image.verify()
+                with Image.open(p) as image:
+                    image.load()
+            except (OSError, ValueError, SyntaxError):
+                return False, f"step {i} has an undecodable screenshot"
+            import hashlib
+            hashes.add(hashlib.sha256(p.read_bytes()).hexdigest())
             checked += 1
+    if len(hashes) < min(3, len(steps)):
+        return False, "insufficient distinct rendered frames"
     return True, f"{checked} PNG screenshots present"
 
 
@@ -626,6 +648,7 @@ def check_trajectory_identity(j: Judge, traj: dict, task_id: str) -> None:
     j.check("trajectory_completed", traj.get("terminated") is True and traj.get("termination_reason") == "agent_done",
             f"terminated={traj.get('terminated')!r} reason={traj.get('termination_reason')!r}")
     steps = traj.get("steps")
+    j.check("final_done_step", bool(steps) and steps[-1].get("action") == "done", "completed run ends with done")
     j.check("trajectory_has_steps", isinstance(steps, list) and bool(steps), f"steps={len(steps) if isinstance(steps, list) else 'invalid'}")
     urls = trajectory_urls(traj)
     bad = [u for u in urls if not same_origin_as_start(u, traj.get("start_url", ""))]
@@ -755,3 +778,24 @@ def check_row_edited_only_in_crlf(j: Judge, initial_db, after_db, table: str, ro
                                   allowed_cols: Iterable[str], label: str = "") -> None:
     ok, diff = row_edited_only_in_with_crlf(initial_db, after_db, table, row_id, allowed_cols)
     j.check(f"{label or table}_row_{row_id}_edited_only_in_{list(allowed_cols)}_crlf_tolerant", ok, f"diff={diff!r}")
+
+def bound_measure(text, label, expected, pattern, convert):
+    labels = list(re.finditer(label, text, re.I))
+    values = list(re.finditer(pattern, text, re.I))
+    claims = []
+    for match in labels:
+        nearby = [(max(value.start() - match.end(), match.start() - value.end(), 0), value)
+                  for value in values
+                  if not re.search(r"[;\n]|(?<!\d)\.(?!\d)",
+                                   text[min(value.end(), match.end()):max(value.start(), match.start())])]
+        if nearby:
+            distance, value = min(nearby, key=lambda item: item[0])
+            if distance <= 80:
+                claims.append(convert(value))
+    return bool(claims) and all(value == expected for value in claims)
+
+
+def money_claim(text, label, amount):
+    return bound_measure(text, label, amount,
+                         r"\$\s*([\d,]+(?:\.\d+)?)",
+                         lambda m: float(m.group(1).replace(',', '')))

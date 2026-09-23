@@ -24,27 +24,18 @@ def run_checks(j, t, initial_db, after_db):
     check_trajectory_identity(j, t, TASK_ID)
     check_search(j, t, "searched_klarman", all_tokens=["Klarman"])
     check_detail_visited(j, t, 38022848, "klarman-postdoctoral-fellowships-college-of-arts-and-sciences-cornell-university")
+    from verify_lib import money_claim
     fa = final_answer(t)
-    j.check("answer_has_stipend", contains_dollar_amount(fa, "$80,000"), f"expected=$80,000 answer={fa[:200]!r}")
-    j.check("answer_has_allowance", contains_dollar_amount(fa, "$12,000"), f"expected=$12,000 answer={fa[:200]!r}")
+    j.check("answer_has_stipend", money_claim(fa, r"stipend", 80000), f"expected=$80,000 answer={fa[:200]!r}")
+    j.check("answer_has_allowance", money_claim(fa, r"research(?:[- ]expense)?(?: allowance| expenses)?", 12000), f"expected=$12,000 answer={fa[:200]!r}")
     j.check("answer_has_window", contains_all(fa, ["July", "September", "2027"]),
             f"expected window July..September 2027 answer={fa[:200]!r}")
     check_read_only(j, initial_db, after_db)
 
 
 def main():
-    a = parse_args()
-    try:
-        t = load_run(a.run_dir)
-    except (OSError, ValueError) as exc:
-        fail_closed(TASK_ID, "trajectory_unavailable", str(exc))
-    initial_db, after_db = resolve_snapshots(a, TASK_ID)
-    j = Judge(TASK_ID, a.no_llm)
-    try:
-        run_checks(j, t, initial_db, after_db)
-    except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
-        fail_closed(TASK_ID, "verifier_error", f"{type(exc).__name__}: {exc}")
-    j.emit()
+    from composed_grade import grade
+    grade(1)
 
 
 if __name__ == "__main__":
