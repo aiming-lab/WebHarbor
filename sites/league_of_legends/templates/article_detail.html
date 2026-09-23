@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} - League of Legends{% endblock %}
+{% block content %}
+
+<section class="article-masthead">
+  <div class="banner" style="background-image:url('{{ article.banner_url }}')"></div>
+  <div class="article-copy">
+    <a class="article-cat" href="{{ url_for('news_category', machine_name=article.category.machine_name) }}">{{ article.category.title }}</a>
+    <h1>{{ article.title }}</h1>
+    {% if article.summary %}
+    <p class="article-desc">{{ article.summary }}</p>
+    {% endif %}
+    <div class="article-byline">{{ article.display_date }} &middot; {{ article.byline }}</div>
+  </div>
+</section>
+
+<div class="article-toolbar">
+  <div class="article-tags">
+    {% for tag in article.tag_list %}
+    <span class="filter-chip">{{ tag }}</span>
+    {% endfor %}
+  </div>
+  {% if current_user.is_authenticated %}
+  <form method="post" action="{{ url_for('article_bookmark', machine_name=article.category.machine_name, slug=article.slug) }}">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ request.path }}">
+    <button class="btn-ghost" type="submit">{% if is_bookmarked %}Remove Bookmark{% else %}Save Article{% endif %}</button>
+  </form>
+  {% else %}
+  <a class="btn-ghost" href="{{ url_for('login', next=request.path) }}">Sign in to Save</a>
+  {% endif %}
+</div>
+
+<article class="article-body">
+  {{ article.body_html|safehtml }}
+</article>
+
+{% if article.related_list %}
+<div class="related-header">
+  <h2>Related Articles</h2>
+</div>
+<div class="related-grid">
+  {% for related in article.related_list[:6] %}
+  <a class="article-card" href="{{ related.path }}">
+    <div class="card-media">
+      {% if related.card %}
+      <img src="{{ url_for('static', filename='images/' ~ related.card) }}" alt="{{ related.title }}" loading="lazy">
+      {% endif %}
+    </div>
+    <div class="card-title">{{ related.title }}</div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% endblock %}

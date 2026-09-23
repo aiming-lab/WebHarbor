@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Sign In - League of Legends{% endblock %}
+{% block content %}
+
+<section class="auth-shell">
+  <h1>Sign In</h1>
+  <p class="auth-sub">Sign in to your Riot Account.</p>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="auth-field">
+      <label for="username">Username or Email</label>
+      <input type="text" id="username" name="username" required>
+    </div>
+    <div class="auth-field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required>
+    </div>
+    <button class="btn-gold auth-submit" type="submit">Sign In</button>
+  </form>
+  <p class="auth-alt">I don&rsquo;t have a Riot Account. <a href="{{ url_for('signup') }}">Create One</a></p>
+</section>
+
+{% endblock %}

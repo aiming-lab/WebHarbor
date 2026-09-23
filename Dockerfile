@@ -231,12 +231,23 @@ RUN cd /opt/WebSyn/imgur && rm -rf instance instance_seed && \
     mkdir -p instance_seed && cp instance/imgur.db instance_seed/imgur.db && \
     rm -rf instance __pycache__
 
+# League of Legends ships real upstream imagery in the pinned archive (verified
+# against the tracked inventory with per-file SHA-256 and source URLs: 173
+# champion portraits, 2118 champion/skin splash arts, 865 ability icons, 851
+# ability preview stills, the news banners/cards/inline art, the League of
+# Legends Classic surface art, and the site chrome), while its deterministic
+# SQLite seed is generated from the tracked source_data.json at build time —
+# see .build-generated-seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/league_of_legends && \
+    cd /opt/WebSyn/league_of_legends && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40076
+EXPOSE 8101 40000-40089
 
 CMD ["/opt/websyn_start.sh"]

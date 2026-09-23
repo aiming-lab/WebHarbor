@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}League Classic Champions{% endblock %}
+{% block bodyclass %}classic-champs-page{% endblock %}
+{% block content %}
+
+<section class="classic-champs-hero">
+  <div class="masthead-kicker">Champion</div>
+  <h1>CHOOSE YOUR CHAMPION</h1>
+  <p class="masthead-sub">Classic champions are here. Play the original designs of over 60 iconic champions from the early days of League, and find the perfect main for a classic game of Summoner&rsquo;s Rift.</p>
+</section>
+
+<section class="classic-champs-grid">
+  {% for name, slug in champions %}
+  <a class="classic-champ-tile" href="/champions/{{ slug }}/">
+    <img src="{{ url_for('static', filename='images/classic/champ_tiles/' ~ slug ~ '.jpg') }}" alt="{{ name }}" loading="lazy">
+    <span class="classic-champ-name">{{ name }}</span>
+  </a>
+  {% endfor %}
+</section>
+
+{% endblock %}

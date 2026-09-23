@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}League of Legends{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='images/site/riot_fist.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+
+<header class="riotbar" data-testid="riotbar:header">
+  <div class="riotbar-inner">
+    <div class="riotbar-left">
+      <a class="riotbar-riot-logo" href="/" aria-label="Riot Games">
+        <img src="{{ url_for('static', filename='images/site/riot_fist.svg') }}" alt="Riot Games" height="28">
+        <span class="riotbar-riot-wordmark">RIOT<span class="riot-word">GAMES</span></span>
+      </a>
+      <a class="riotbar-lol-logo" href="{{ url_for('home') }}" aria-label="League of Legends">
+        <img src="{{ url_for('static', filename='images/site/riot_fist.svg') }}" alt="League of Legends" height="40">
+      </a>
+      <nav class="riotbar-nav">
+        <div class="nav-item"><a href="{{ url_for('how_to_play') }}">Game Overview</a></div>
+        <div class="nav-item"><a href="/classic/">League of Legends Classic</a></div>
+        <div class="nav-item nav-has-sub">
+          <a href="{{ url_for('champions') }}">Champions<span class="nav-caret"></span></a>
+          <ul class="submenu">
+            <li><a href="{{ url_for('champions') }}">LEAGUE OF LEGENDS</a></li>
+            <li><a href="/classic/champions/">LEAGUE CLASSIC</a></li>
+          </ul>
+        </div>
+        <div class="nav-item nav-has-sub">
+          <a href="{{ url_for('news') }}">News<span class="nav-caret"></span></a>
+          <ul class="submenu">
+            {% for machine_name, title in nav_categories %}
+            <li><a href="{{ url_for('news_category', machine_name=machine_name) }}">{{ title|upper }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="nav-item"><a href="{{ url_for('patch_notes') }}">Patch Notes</a></div>
+        <div class="nav-item"><a class="nav-external" href="https://merch.riotgames.com/en-us/">Shop<span class="nav-out"></span></a></div>
+        <div class="nav-item nav-has-sub">
+          <a href="#">More<span class="nav-caret"></span></a>
+          <ul class="submenu">
+            <li><a class="nav-external" href="https://lolesports.com/">Esports<span class="nav-out"></span></a></li>
+            <li><a class="nav-external" href="https://universe.leagueoflegends.com/en_US/">Universe<span class="nav-out"></span></a></li>
+            <li><a class="nav-external" href="https://support.riotgames.com/riot/">Support<span class="nav-out"></span></a></li>
+            <li><a href="{{ url_for('pbe') }}">PBE</a></li>
+          </ul>
+        </div>
+      </nav>
+    </div>
+    <div class="riotbar-right">
+      <a class="riotbar-icon riotbar-search" href="{{ url_for('search') }}" aria-label="Search"><span class="icon-search"></span></a>
+      <a class="riotbar-icon" href="{{ url_for('how_to_play') }}" aria-label="Language"><span class="icon-globe"></span></a>
+      {% if current_user.is_authenticated %}
+      <a class="riotbar-play" href="{{ url_for('account') }}">My Account</a>
+      {% else %}
+      <a class="riotbar-play" href="{{ url_for('signup') }}">Play Now</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+  <div class="flash-bar">
+    <div class="flash-inner">
+      {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+    </div>
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <nav class="footer-links">
+    <a href="{{ url_for('how_to_play') }}">About League of Legends</a>
+    <a href="https://status.riotgames.com/">Server Status</a>
+    <a href="https://support.riotgames.com/riot/">Support</a>
+    <a href="https://lolesports.com/">Esports Pro Site</a>
+    <a href="https://riotmobile.com/">Download Riot Mobile Companion App</a>
+  </nav>
+  <div class="footer-social">
+    <a class="social youtube" href="https://www.youtube.com/leagueoflegends" aria-label="YouTube"></a>
+    <a class="social x" href="https://x.com/LeagueOfLegends" aria-label="X"></a>
+    <a class="social facebook" href="https://www.facebook.com/leagueoflegends" aria-label="Facebook"></a>
+    <a class="social instagram" href="https://www.instagram.com/leagueoflegends" aria-label="Instagram"></a>
+    <a class="social reddit" href="https://www.reddit.com/r/leagueoflegends" aria-label="Reddit"></a>
+  </div>
+  <img class="footer-riot-logo" src="{{ url_for('static', filename='images/site/riot_fist.svg') }}" alt="Riot Games" height="46">
+  <p class="footer-legal">&trade; &copy; 2026 Riot Games, Inc. League of Legends and all related logos, characters, names and distinctive likenesses thereof are exclusive property of Riot Games, Inc. All Rights Reserved.</p>
+  <nav class="footer-legal-links">
+    <a href="https://www.riotgames.com/en/privacy-notice">Privacy Notice</a>
+    <a href="https://www.riotgames.com/en/terms-of-service">Terms of Service</a>
+    <a href="https://www.riotgames.com/en/cookie-policy">Cookie Preferences</a>
+  </nav>
+  <div class="footer-esrb">
+    <img src="{{ url_for('static', filename='images/site/esrb.png') }}" alt="ESRB Teen">
+    <p>Blood<br>Fantasy Violence<br>Mild Suggestive Themes<br>Use of Alcohol and Tobacco<br>Online Interactions Not Rated by the ESRB</p>
+  </div>
+</footer>
+
+</body>
+</html>
