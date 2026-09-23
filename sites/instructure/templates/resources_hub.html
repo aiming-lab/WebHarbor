@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Instructure Resource Center and Content Library{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>The go-to resource for all things edtech.</h1>
+    <p>Everything you need to know about teaching and learning in the digital age—all in one convenient place.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    {% for seg, label, rtype in HUBS %}
+    <div style="margin-bottom: 46px;">
+      <div style="display:flex; justify-content:space-between; align-items:baseline; border-bottom:1px solid var(--line); padding-bottom:10px; margin-bottom:18px;">
+        <h2 style="font-size:1.5rem;">{{ label }}</h2>
+        <a class="btn btn-outline btn-sm" href="/resources/{{ seg }}">View all</a>
+      </div>
+      <div class="card-grid">
+        {% for row in per_type[seg] %}{% set r = row %}{% include "_resource_card.html" %}{% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

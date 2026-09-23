@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Lessons{% endblock %}
+{% block content %}
+<div class="section-header">
+  <img class="title-icon-left" src="/static/images/theme/title-icon1.svg" alt="">
+  <h2>Lessons</h2>
+  <img class="title-icon-right" src="/static/images/theme/title-icon2.svg" alt="">
+</div>
+
+<p class="lessons-landing-intro">This chapter will introduce you to the basic concepts of math and algebra. You will learn about addition, substraction, multiplication, division &amp; fractions. These concepts are the building blocks for all of mathematics, so it is important that you understand them well.</p>
+
+<div class="lessons-landing">
+  {% for t in topics %}
+  <div class="lesson-group">
+    <div class="lesson-group-image">
+      <a href="{{ url_for('lessons_topic', topic=t.slug) }}" aria-labelledby="{{ t.slug }}">
+        <img src="/static/images/topics/{{ t.slug }}.png" width="154" alt="{{ t.name }}">
+      </a>
+    </div>
+    <div class="lesson-group-body">
+      <div class="lesson-group-title">
+        <a href="{{ url_for('lessons_topic', topic=t.slug) }}" class="cm-lesson-category-title {{ t.slug }}" id="{{ t.slug }}">{{ t.name }}</a>
+      </div>
+      <div class="cm-lessons-list">
+        {% for l in t.first_lessons %}
+        <div class="cm-lesson-row">
+          <a href="{{ url_for('lesson_page', topic=t.slug, slug=l.slug) }}">{{ l.title }}</a>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="cm-lessons-view-all">
+        <a href="{{ url_for('lessons_topic', topic=t.slug) }}" class="link-arrow--next">View All Lessons</a>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

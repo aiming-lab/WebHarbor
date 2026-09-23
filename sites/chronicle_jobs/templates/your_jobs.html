@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="account-layout">
+  <nav class="account-nav">
+    <a class="{% if section == 'ShortList' %}is-current{% endif %}" href="/your-jobs/?ActiveSection=ShortList">Saved jobs</a>
+    <a class="{% if section == 'Applications' %}is-current{% endif %}" href="/your-jobs/?ActiveSection=Applications">Applications</a>
+    <a class="{% if section == 'JobAlerts' %}is-current{% endif %}" href="/your-jobs/?ActiveSection=JobAlerts">Job alerts</a>
+    <a class="{% if section == 'Profile' %}is-current{% endif %}" href="/your-jobs/?ActiveSection=Profile">Profile</a>
+  </nav>
+  <div class="account-main">
+    {% if section == "ShortList" %}
+    <h1>Your saved jobs</h1>
+    {% if current_user.saved_jobs %}
+      {% for saved in current_user.saved_jobs %}
+      <div class="account-item">
+        <h3><a href="{{ saved.job.detail_path }}">{{ saved.job.title }}</a></h3>
+        <p class="meta">{{ saved.job.location_text or "Not specified" }} &bull; {{ saved.job.employer_name }} &bull; saved {{ saved.saved_at.strftime("%b %d, %Y") }}</p>
+        <a class="btn-view" href="{{ saved.job.detail_path }}">View details</a>
+        <form action="/your-jobs/" method="post" style="margin-left:10px">
+          <input type="hidden" name="JobId" value="{{ saved.job.job_id }}">
+          <input type="hidden" name="Action" value="RemoveShortlistedJob">
+          <button class="btn-inline btn-inline--danger" type="submit">Remove</button>
+        </form>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-note"><p>You haven&rsquo;t saved any jobs yet. Use the <strong>Save</strong> link on any job listing to shortlist it here.</p></div>
+    {% endif %}
+
+    {% elif section == "Applications" %}
+    <h1>Your applications</h1>
+    {% if applications %}
+      {% for app in applications %}
+      <div class="account-item">
+        <h3><a href="{{ app.job.detail_path }}">{{ app.job.title }}</a></h3>
+        <p class="meta">{{ app.job.employer_name }} &bull; submitted {{ app.submitted_at.strftime("%b %d, %Y") }}</p>
+        <span class="status-tag {% if app.withdrawn %}status-tag--withdrawn{% else %}status-tag--applied{% endif %}">{{ app.status }}</span>
+        {% if not app.withdrawn %}
+        <form style="margin-left:10px" action="/applications/{{ app.id }}/withdraw" method="post">
+          <button class="btn-inline btn-inline--danger" type="submit">Withdraw</button>
+        </form>
+        {% endif %}
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-note"><p>You haven&rsquo;t applied for any jobs yet. Open a job and choose <strong>Apply on website</strong>.</p></div>
+    {% endif %}
+
+    {% elif section == "JobAlerts" %}
+    <h1>Your job alerts</h1>
+    {% if alerts %}
+      {% for alert in alerts %}
+      <div class="account-item">
+        <p class="meta" style="margin:0 0 4px">
+          <strong>{{ alert.keywords or "All jobs" }}</strong>
+          {% if alert.location %} near {{ alert.location }}{% endif %}
+        </p>
+        <p class="meta">{{ alert.frequency }} &bull; {{ alert.email }} &bull; created {{ alert.created_at.strftime("%b %d, %Y") }}</p>
+        <form action="/alerts/{{ alert.id }}/delete" method="post">
+          <button class="btn-inline btn-inline--danger" type="submit">Delete alert</button>
+        </form>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div class="empty-note"><p>No job alerts yet. <a href="/newalert">Create a job alert</a> to get new jobs by email.</p></div>
+    {% endif %}
+
+    {% elif section == "Profile" %}
+    <h1>Your profile</h1>
+    <div class="account-item">
+      <p class="meta">{{ current_user.display_name }}</p>
+      <p class="meta">{{ current_user.email }}</p>
+      {% if current_user.headline %}<p class="meta">{{ current_user.headline }}</p>{% endif %}
+      <p style="margin:10px 0 0"><a class="btn-view" href="/profile/">Edit profile</a>
+      <a class="btn-view" style="margin-left:8px" href="/profilecv/">Edit resume</a></p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

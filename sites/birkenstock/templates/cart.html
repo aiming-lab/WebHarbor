@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Cart | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>{% if summary and summary.cart_items %}Your shopping cart{% else %}There are no items in your shopping cart{% endif %}</h1>
+  {% if summary and summary.cart_items %}
+  <div class="cart-layout">
+    <section>
+      {% for item in summary.cart_items %}
+      <div class="cart-item">
+        <a href="{{ _pdp_url(item.product) }}"><img src="{{ url_for('static', filename='images/' + item.product.main_image) }}" alt="{{ item.product.name }}"></a>
+        <div>
+          <div class="name"><a href="{{ _pdp_url(item.product) }}">{{ item.product.model }}</a></div>
+          <div class="meta">{{ item.product.material }}</div>
+          <div class="meta">Color: {{ item.product.color }}</div>
+          <div class="meta">Size: {{ item.size }} (EU {{ item.product.eu_size(item.size) }})</div>
+          <div class="meta">Width: {{ item.width }}</div>
+          <div class="qty-row">
+            <form method="post" action="/us/cart/update/{{ item.id }}"><input type="hidden" name="action" value="dec"><button class="qty-btn" type="submit" aria-label="Decrease quantity">-</button></form>
+            <span class="qty-val">{{ item.quantity }}</span>
+            <form method="post" action="/us/cart/update/{{ item.id }}"><input type="hidden" name="action" value="inc"><button class="qty-btn" type="submit" aria-label="Increase quantity">+</button></form>
+            <form method="post" action="/us/cart/update/{{ item.id }}" class="cart-actions"><input type="hidden" name="action" value="remove"><button class="link-btn" type="submit">Remove</button></form>
+          </div>
+        </div>
+        <div class="cart-item-price">
+          <div>${{ '%.2f' % item.line_total }}</div>
+          {% if item.product.on_sale %}<div class="meta" style="text-decoration:line-through">${{ '%.2f' % (item.product.list_price * item.quantity) }}</div>{% endif %}
+          <div class="meta">${{ '%.2f' % item.product.price }} each</div>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+    <aside class="summary">
+      <h2>Order Summary</h2>
+      <div class="row"><span>Subtotal</span><span>${{ '%.2f' % summary.subtotal }}</span></div>
+      <div class="row"><span>Shipping</span><span>{{ summary.shipping_note }}</span></div>
+      <div class="row"><span>Estimated tax</span><span>${{ '%.2f' % summary.tax }}</span></div>
+      <div class="row total"><span>Estimated total</span><span>${{ '%.2f' % summary.total }}</span></div>
+      <p class="note">Free shipping with purchase of 2+ full-priced sandals. Sale items discounted 40% or more are final sale.</p>
+      <a class="btn btn-dark btn-wide" href="/us/checkout/">CHECKOUT</a>
+      <p class="note" style="margin-top:10px"><a href="/us/women/">Continue shopping</a></p>
+    </aside>
+  </div>
+  {% else %}
+  <div class="empty-cards">
+    <div class="empty-card">
+      <div class="icon">&#128722;</div>
+      <h3>Your shopping cart is currently empty</h3>
+      <p>Discover pieces you'll love. Time to find your next favorite look.</p>
+      <a class="btn btn-dark" href="/us/women/">CONTINUE SHOPPING</a>
+    </div>
+    {% if not current_user.is_authenticated %}
+    <div class="empty-card">
+      <div class="icon">&#128100;</div>
+      <h3>Create an account</h3>
+      <p>Unlock access to your registry, enjoy exclusive offers, and discover even more personalized benefits just for you.</p>
+      <a class="btn btn-outline" href="/us/register">CREATE AN ACCOUNT</a>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

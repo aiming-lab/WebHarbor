@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Compare Cards | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <a href="{{ url_for('cards_index') }}">Credit Cards</a> &rsaquo; Compare</p>
+  <h1 class="section-title" style="margin-top:8px;">Compare Cards</h1>
+  <p class="section-sub">Compare up to three Cards side by side. Select different Cards from <a href="{{ url_for('cards_index') }}">View All Cards</a>.</p>
+
+  <div class="detail-grid" style="align-items:stretch;">
+    {% for card in cards %}
+    <div class="card-tile" style="flex:1 1 260px;">
+      <a class="art-link" href="{{ url_for('card_detail', slug=card.slug) }}">
+        <img src="{{ url_for('static', filename=card.card_art.replace('static/', '')) }}" alt="{{ card.name }}">
+      </a>
+      <h3><a href="{{ url_for('card_detail', slug=card.slug) }}">{{ card.name }}</a></h3>
+      <p class="fee">Annual Fee: <b>{{ card.annual_fee_text }}</b></p>
+      <a class="btn btn-primary btn-sm" href="{{ url_for('apply_card', slug=card.slug) }}">Apply Now</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <table class="data" style="margin-top:26px;">
+    <tr>
+      <th>Feature</th>
+      {% for card in cards %}<th>{{ card.name }}</th>{% endfor %}
+    </tr>
+    <tr>
+      <td>Annual Fee</td>
+      {% for card in cards %}<td>{{ card.annual_fee_text }}</td>{% endfor %}
+    </tr>
+    <tr>
+      <td>Purchase APR</td>
+      {% for card in cards %}<td>{{ card.apr_text }}</td>{% endfor %}
+    </tr>
+    <tr>
+      <td>Product Type</td>
+      {% for card in cards %}<td>{{ card.product_type|capitalize }}</td>{% endfor %}
+    </tr>
+    <tr>
+      <td>Rewards Program</td>
+      {% for card in cards %}<td>{{ card.program }}</td>{% endfor %}
+    </tr>
+    <tr>
+      <td>Welcome Offer</td>
+      {% for card in cards %}<td>{{ card.welcome_headline }}</td>{% endfor %}
+    </tr>
+    <tr>
+      <td>Benefits &amp; Features</td>
+      {% for card in cards %}<td>
+        <ul style="margin:0;padding-left:16px;font-size:13px;">
+          {% for benefit in card.benefits() %}<li>{{ benefit }}</li>{% endfor %}
+        </ul>
+      </td>{% endfor %}
+    </tr>
+  </table>
+</div>
+{% endblock %}

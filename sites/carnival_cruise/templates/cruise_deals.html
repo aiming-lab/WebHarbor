@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}Cruise Deals | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; Cruise Deals</div>
+<section class="section">
+  <h1 style="color:var(--navy);text-align:center;">Cruise Deals</h1>
+  <p class="text-center muted" style="max-width:820px;margin:0 auto 22px;">
+    Choose Carnival for cruise deals, 2026 and beyond. When you choose Carnival, you can enjoy
+    postcard-perfect destinations with great travel deals, many of which include extra perks like
+    instant savings or free onboard credit!
+  </p>
+</section>
+
+<section class="section">
+  <h2 class="section-head">{{ hero.headline_a }} {{ hero.headline_b }}</h2>
+  <div class="info-prose" style="max-width:860px;background:var(--sky);border-radius:18px;padding:24px 28px;text-align:center;">
+    <p style="font-size:22px;font-weight:800;color:var(--navy);">{{ hero.subhead }}</p>
+    <div class="hero-offer" style="justify-content:center;">
+      <div>
+        <div class="hero-days">{{ hero.offer_days }}</div>
+        <div class="hero-days-note">{{ hero.offer_tail }}</div>
+      </div>
+      <ul class="hero-bullets">
+        {% for b in hero.bullets %}
+        <li>
+          <svg class="check" viewBox="0 0 22 19" aria-hidden="true"><path fill="#10559A" d="M8.4 14.7 2.1 8.4l2.1-2.1 4.2 4.2L17.7 1.2l2.1 2.1z"/></svg>
+          {{ b }}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    <a class="btn btn-red" href="{{ url_for('cruise_search') }}">{{ hero.cta }}</a>
+    <div class="hero-terms" style="margin-top:8px">{{ hero.terms }}</div>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-head">Our Top Destinations Are On Sale</h2>
+  <div class="tile-grid">
+    {% for t in dest_tiles %}
+    <div class="tile">
+      <img class="tile-bg" src="{{ url_for('static', filename=t.image.replace('static/', '')) }}" alt="{{ t.title }}">
+      <div class="tile-shade"></div>
+      <div class="tile-body">
+        <h3>{{ t.title }}</h3>
+        <div class="tile-price">starting at ${{ t.from_price }}*</div>
+        <div class="tile-note">from {{ t.from_days }} | per person</div>
+        <a class="btn btn-small" href="{{ t.href }}">BOOK NOW</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section" style="background:var(--sky);border-radius:24px;max-width:1400px;margin:0 auto;">
+  <div class="text-center">
+    <h2 class="section-head">{{ value_packages.headline }}</h2>
+    <p style="font-weight:700;color:var(--navy);">{{ value_packages.subhead }}</p>
+    <p style="max-width:720px;margin:0 auto;color:var(--muted);font-size:14px;">{{ value_packages['copy'] }}</p>
+    <p style="color:var(--red);font-weight:700;font-size:13px;">{{ value_packages.book_by }}</p>
+  </div>
+  <div class="package-row" style="max-width:900px;margin:14px auto;">
+    {% for pkg in value_packages.packages %}
+    <div class="package-card">
+      <div class="pkg-tier">VALUE PACKAGE</div>
+      <h4>{{ pkg.name }}</h4>
+      <div class="pkg-price">${{ pkg.price }}</div>
+      <div class="pkg-unit">{{ pkg.unit }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="text-center" style="display:flex;gap:12px;justify-content:center;margin-top:6px;">
+    <a class="btn btn-blue" href="{{ url_for('cruise_search') }}">{{ value_packages.cta_a }}</a>
+    <a class="btn btn-ghost" href="{{ url_for('info_carnival_rewards') }}">{{ value_packages.cta_b }}</a>
+  </div>
+  <p class="text-center small muted" style="margin-top:10px;">{{ value_packages.booked_note }}</p>
+</section>
+
+<section class="section">
+  <div class="wide-banner" style="background:#DDEBF8;">
+    <div class="banner-copy">
+      <div class="copy-card" style="text-align:center;">
+        <div class="badge badge-new">New Sailings Unlocked</div>
+        <h3>+ Plan Now. Relax Later.</h3>
+        <p style="font-weight:700;color:var(--navy);">{{ new_sailings.title }}</p>
+        <p>{{ new_sailings['copy'] }}</p>
+        <a class="btn btn-blue" href="{{ new_sailings.href }}">{{ new_sailings.cta }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wide-banner" style="background:var(--navy-deep);">
+    <div class="banner-copy" style="justify-content:space-between;">
+      <div style="color:#fff;">
+        <div style="font-size:34px;font-weight:800;line-height:1.1;">{{ flex_pay.headline_a }}</div>
+        <div style="font-size:34px;font-weight:800;line-height:1.1;">{{ flex_pay.headline_b }}</div>
+      </div>
+      <div style="display:flex;gap:26px;align-items:center;">
+        {% for item in flex_pay.offer_items %}
+        <div style="color:#fff;text-align:center;">
+          <div style="font-size:20px;font-weight:800;">{{ item.label }}</div>
+          {% if item.note %}<div class="small" style="color:#BFD5EC;">{{ item.note }}</div>{% endif %}
+        </div>
+        {% if not loop.last %}<span style="color:#5C7CA0;font-size:26px;">+</span>{% endif %}
+        {% endfor %}
+        <a class="btn btn-red" href="{{ flex_pay.href }}">SHOP THIS DEAL</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

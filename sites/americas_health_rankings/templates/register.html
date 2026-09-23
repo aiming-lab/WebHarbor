@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Create Account{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <h1>Create Account</h1>
+    {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+    <form method="post" action="{{ url_for('register') }}">
+      <div class="form-row">
+        <label for="name">Name</label>
+        <input id="name" type="text" name="name" value="{{ request.form.get('name','') }}" required>
+      </div>
+      <div class="form-row">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" required>
+      </div>
+      <div class="form-row">
+        <label for="password">Password</label>
+        <input id="password" type="password" name="password" required>
+      </div>
+      <div class="form-row">
+        <label for="confirm">Confirm Password</label>
+        <input id="confirm" type="password" name="confirm" required>
+      </div>
+      <button class="btn btn-primary" type="submit">Create Account</button>
+    </form>
+    <p class="auth-links">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+  </div>
+</div>
+{% endblock %}

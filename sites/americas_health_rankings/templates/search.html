@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import pagination %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>Search</h1>
+  <form class="dir-controls" method="get" action="{{ url_for('search') }}">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search measures, reports, articles and states...">
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+</div>
+<div class="container" style="padding-bottom:60px">
+  {% if q %}
+  <p class="section-sub">{{ total }} results for “{{ q }}”</p>
+  {% for kind, item, label in items %}
+  <div class="search-result">
+    <div class="kind">
+      {% if kind == 'measure' %}Explore{% elif kind == 'report' %}Report{% elif kind == 'article' %}Article{% else %}State{% endif %}
+    </div>
+    {% if kind == 'measure' %}
+    <h3><a href="{{ url_for('measure_detail', slug=item.slug) }}">{{ label }}</a></h3>
+    <p style="margin:2px 0 0;font-size:13.5px">{{ item.description[:100] }}{% if item.description|length > 100 %}…{% endif %}</p>
+    {% elif kind == 'report' %}
+    <h3><a href="{{ url_for('report_page', slug=item.slug) }}">{{ label }}</a></h3>
+    <p style="margin:2px 0 0;font-size:13.5px">{{ item.excerpt[:100] }}{% if item.excerpt|length > 100 %}…{% endif %}</p>
+    {% elif kind == 'article' %}
+    <h3><a href="{{ url_for('article_detail', slug=item.slug) }}">{{ label }}</a></h3>
+    <p style="margin:2px 0 0;font-size:13.5px">{{ item.excerpt[:100] }}{% if item.excerpt|length > 100 %}…{% endif %}</p>
+    {% else %}
+    <h3><a href="{{ url_for('state_summary', code=item.code) }}">{{ label }}</a></h3>
+    {% endif %}
+  </div>
+  {% else %}
+  <p>No results found. Try a different search.</p>
+  {% endfor %}
+  {{ pagination(page, pages, q) }}
+  {% else %}
+  <p class="section-sub">Enter a term above to search measures, reports, articles and states.</p>
+  {% endif %}
+</div>
+{% endblock %}

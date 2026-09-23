@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Open a CD Account | American Express® CD Savings US{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Banking &rsaquo; Certificates of Deposit</p>
+  <div class="hero" style="margin-top:12px;border-radius:12px;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">American Express Certificate of Deposit</span>
+        <h1>{{ product.headline }}</h1>
+        <p>{{ product.intro }}</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="{{ url_for('register') }}">Open CD Account</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img src="{{ url_for('static', filename='images/CD/basic-cd-desktop.jpg') }}" alt="Certificate of Deposit">
+      </div>
+    </div>
+  </div>
+
+  <div class="band-white">
+    <div class="container">
+      <h2 class="section-title">Browse all available CD terms</h2>
+      <p class="section-sub">Featured APYs by term &mdash; the rate is fixed for the term you select.</p>
+      <table class="data">
+        <thead>
+          <tr><th>Term</th><th class="num">APY</th></tr>
+        </thead>
+        <tbody>
+          {% for term in terms %}
+          <tr>
+            <td>{{ term.term_months }}-month term</td>
+            <td class="num"><b>{{ '%.2f'|format(term.apy) }}% APY</b></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      <p style="font-size:13px;color:#5c5f63;">Interest is compounded daily and credited to your account monthly. No monthly fees.</p>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="container">
+      <h2 class="section-title">Compare Savings Products</h2>
+      <div class="two-col">
+        <div class="card-tile">
+          <h3><a href="{{ url_for('banking_hysa') }}">High-Yield Savings Account (HYSA)</a></h3>
+          <p style="font-size:14px;">High-yield growth with added flexibility. Interest rates can go up or down based on the market. Funds can be withdrawn with no penalty &mdash; great for unexpected challenges.</p>
+        </div>
+        <div class="card-tile">
+          <h3><a href="{{ url_for('banking_cd') }}">Certificate of Deposit Account</a></h3>
+          <p style="font-size:14px;">Lock in your rate with a fixed term. Know exactly how much you&rsquo;ll earn. A penalty may be imposed for early withdrawal.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

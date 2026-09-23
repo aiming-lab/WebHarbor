@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}{{ card.name }} | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="{{ url_for('credit_cards') }}">Credit Cards home</a> / {{ card.name }}</div>
+  <div class="detail-hero">
+    <div class="detail-hero__art">
+      <img src="{{ url_for('static', filename='images/' + card.card_art) }}" alt="{{ card.name }}">
+    </div>
+    <div>
+      <h1>{{ card.name }}</h1>
+      <div class="stat-row">
+        <div class="stat"><div class="num">{{ card.stat_value or '—' }}</div><div class="lbl">{{ card.stat_label or 'headline offer*' }}</div></div>
+        <div class="stat"><div class="num">${{ card.fee_value }}</div><div class="lbl">annual fee†</div></div>
+        <div class="stat"><div class="num">{{ card.network }}</div><div class="lbl">card network</div></div>
+      </div>
+      {% if card.offer %}
+      <div class="kv">
+        <h4>NEW CARDMEMBER OFFER</h4>
+        <p>{{ card.offer }}</p>
+      </div>
+      {% endif %}
+      <div class="kv">
+        <h4>AT A GLANCE</h4>
+        <p>{{ card.glance }}</p>
+      </div>
+      <div class="kv">
+        <h4>APR</h4>
+        <p>{{ card.apr }}{% if card.intro_apr %} {{ card.intro_apr }}{% endif %}</p>
+      </div>
+      <div class="kv">
+        <h4>ANNUAL FEE</h4>
+        <p>{{ card.fee_text }}</p>
+      </div>
+      <div class="form-actions" style="margin-top:24px;">
+        <a class="btn btn--blue" href="{{ url_for('credit_card_apply', slug=card.slug) }}">Apply now</a>
+        <a class="btn btn--outline" href="{{ url_for('credit_cards_compare', cards=card.slug) }}">Add to compare</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="section section--soft">
+  <div class="container">
+    <h2>{{ card.name }} rewards &amp; benefits</h2>
+    <div class="trio">
+      <div>
+        <h3>Earn rewards</h3>
+        <ul class="earn-list">
+          {% for e in earn %}
+          <li>{{ e }}</li>
+          {% else %}
+          <li class="muted">See the card's Pricing &amp; Terms for the full rewards structure.</li>
+          {% endfor %}
+        </ul>
+        {% if card.intro_apr %}
+        <div class="kv"><h4>INTRO OFFER</h4><p>{{ card.intro_apr }}</p></div>
+        {% endif %}
+      </div>
+      <div>
+        <h3>Card benefits</h3>
+        <ul class="benefit-list">
+          {% for b in benefits %}
+          <li>{{ b }}</li>
+          {% else %}
+          <li class="muted">This card's benefits are described in its Pricing &amp; Terms.</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div>
+        <h3>Rates &amp; fees</h3>
+        <table class="data">
+          <tr><th>Purchase APR</th><td>{{ card.apr }}</td></tr>
+          {% if card.intro_apr %}<tr><th>Intro APR</th><td>{{ card.intro_apr }}</td></tr>{% endif %}
+          <tr><th>Annual fee</th><td>{{ card.fee_text }}</td></tr>
+          <tr><th>Network</th><td>{{ card.network }}</td></tr>
+          {% if card.pt_code %}<tr><th>Pricing &amp; Terms</th><td>See pricing and terms document {{ card.pt_code }}†</td></tr>{% endif %}
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if related %}
+<section class="section">
+  <div class="container">
+    <h2>Related cards you may like</h2>
+    <div class="trio">
+      {% for rc in related[:3] %}
+      <div class="trio-card">
+        <div class="trio-card__body">
+          <img src="{{ url_for('static', filename='images/' + rc.card_art) }}" alt="{{ rc.name }}" style="width:130px; margin-bottom:10px;">
+          <h4><a href="{{ url_for('credit_card_detail', slug=rc.slug) }}">{{ rc.name }}</a></h4>
+          <p class="small">{{ rc.glance[:130] }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

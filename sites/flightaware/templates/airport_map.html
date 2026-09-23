@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ airport.name }} Map & Diagram - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">{{ airport.name | upper }}{% if airport.city %} ({{ airport.city | upper }}, {{ (airport.region or airport.country) | upper }}){% endif %} {{ airport.iata or airport.code }} MAP &amp; DIAGRAM</div>
+
+<div class="tab-bar">
+  <a href="/resources/airport/{{ airport.code }}/weather">OVERVIEW AND FBOS</a>
+  <a href="/live/airport/{{ airport.code }}">FLIGHT TRACKER</a>
+  <a href="/resources/airport/{{ airport.code }}/weather">WEATHER</a>
+  <a class="active" href="/resources/airport/{{ airport.code }}/map">MAP &amp; DIAGRAM</a>
+  <a href="/resources/airport/{{ airport.code }}/remarks">REMARKS</a>
+</div>
+
+<div class="panel">
+  <div class="panel-head">{{ airport.name }} Map &amp; Diagram</div>
+  <div class="map-box">
+    <img src="/static/images/maps/{{ 'map_jfk.png' if airport.code == 'KJFK' else 'map_live.png' }}" alt="{{ airport.name }} map">
+    <div class="map-note">{{ airport.code }} airport area</div>
+  </div>
+  <div class="panel-body small muted">New Window: (<a href="#">Normal</a>) (<a href="#">Terrain</a>) (<a href="#">Satellite</a>)</div>
+</div>
+
+<div class="promo-box">
+  <span class="h">More FBO and Airport Information</span><br>
+  Subscribe to an Fuel Price (Jet A, 100LL) data feed for airports.<br>
+  Buy and download FBO Database.<br>
+  Buy or subscribe to FlightAware's Airport Database (airport name, ICAO/IATA codes, location, etc.)
+</div>
+{% endblock %}

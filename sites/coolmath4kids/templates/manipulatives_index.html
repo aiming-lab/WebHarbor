@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Manipulatives{% endblock %}
+{% block content %}
+<div class="section-header">
+  <img class="title-icon-left" src="/static/images/theme/title-icon1.svg" alt="">
+  <h2>Manipulatives</h2>
+  <img class="title-icon-right" src="/static/images/theme/title-icon2.svg" alt="">
+</div>
+<div class="games-grid no-icon-card">
+  {% for m in items %}
+  <div class="views-row">
+    <div class="views-field views-field-field-manipulatives-image">
+      <div class="field-content">
+        <a href="{{ url_for('manipulative_page', slug=m.slug) }}" aria-labelledby="manip-{{ m.slug }}-link">
+          <img class="game-thumb" src="/static/images/manipulatives/{{ m.slug }}.png" alt="">
+        </a>
+      </div>
+    </div>
+    <div class="views-field views-field-title">
+      <span class="field-content">
+        <a href="{{ url_for('manipulative_page', slug=m.slug) }}" id="manip-{{ m.slug }}-link">{{ m.title }}</a>
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

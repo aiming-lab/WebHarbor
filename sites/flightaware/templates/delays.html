@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Worldwide Airport Delays and Airport Status - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">WORLDWIDE AIRPORT DELAYS AND AIRPORT STATUS</div>
+
+<div class="panel">
+  <div class="panel-head">Worldwide Airport Delays</div>
+  <div class="map-box">
+    <img src="/static/images/maps/map_delays.png" alt="Airport delays map">
+    <div class="map-note">Airports with current delays &middot; {{ mirror_date_text }}</div>
+  </div>
+  <div class="panel-body">
+    <div>Total delays within, into, or out of the United States today:&nbsp;&nbsp;<b>{{ total_us | commas if total_us else 'n/a' }}</b></div>
+    <p>
+      <a href="/live/cancelled/">Full delay and cancellation statistics</a><br>
+      <a href="/miserymap/">MiseryMap</a>
+    </p>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Airport delays</div>
+  <div class="panel-body">
+    {% for d in delays %}
+    <div style="margin-bottom:14px;">
+      <div><b>{{ d.airport_label }}</b> is currently experiencing:</div>
+      {% if d.dep_delay_text %}<div>&bull; {{ d.dep_delay_text }}</div>{% endif %}
+      {% if d.arr_delay_text %}<div>&bull; {{ d.arr_delay_text }}</div>{% endif %}
+    </div>
+    {% else %}
+    <div>No significant airport delays are currently being reported.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

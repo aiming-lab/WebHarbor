@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}My accounts | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1 style="font-size:1.9rem;">Welcome back, {{ current_user.first_name or current_user.display_name }}</h1>
+    <p class="muted">Snapshot date: {{ mirror_date }}. Balances shown reflect the mirror's frozen state.</p>
+    <div class="acct-grid">
+      <div>
+        <div class="acct-panel">
+          <div class="acct-panel__head"><h2>Everyday accounts</h2><span><a class="btn btn--blue btn--sm" href="{{ url_for('account_transfer') }}">Transfer money</a></span></div>
+          <div class="acct-panel__body">
+            {% for a in current_user.bank_accounts %}
+            <div class="acct-line">
+              <div>
+                <span class="name">{{ a.name }}</span>
+                <span class="meta">{{ a.acct_type|title }} · ending in {{ a.masked }}</span>
+              </div>
+              <div>
+                <div class="balance right num">{{ a.balance|usd2 }}</div>
+                <div class="meta right small muted">Available balance</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <div class="acct-panel">
+          <div class="acct-panel__head"><h2>Cards</h2><span><a class="btn btn--blue btn--sm" href="{{ url_for('account_rewards') }}">Rewards</a></span></div>
+          <div class="acct-panel__body">
+            {% for c in current_user.cards %}
+            <div class="acct-line">
+              <div style="display:flex;gap:14px;align-items:center;">
+                <img src="{{ url_for('static', filename='images/' + c.card.card_art) }}" alt="{{ c.card.name }}" style="width:54px;border-radius:5px;">
+                <div>
+                  <span class="name"><a href="{{ url_for('account_pay_card', card_id=c.id) }}" style="text-decoration:none;color:inherit;">{{ c.card.name }}</a></span>
+                  <span class="meta">...{{ c.masked }} · {{ c.card.network }}{% if c.autopay %} · Autopay on{% endif %}</span>
+                </div>
+              </div>
+              <div>
+                <div class="balance right num">{{ c.balance|usd2 }}</div>
+                <div class="meta right small muted">Balance · {{ c.credit_limit|usd0 }} limit</div>
+                <div class="meta right small muted">{{ '{:,}'.format(c.points) }} points</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+
+        {% if upcoming %}
+        <div class="acct-panel">
+          <div class="acct-panel__head"><h2>Upcoming scheduled transfers</h2><span><a class="btn btn--outline btn--sm" href="{{ url_for('account_transfers') }}">View all</a></span></div>
+          <div class="acct-panel__body">
+            {% for t in upcoming %}
+            <div class="acct-line">
+              <div>
+                <span class="name">{{ t.memo or 'Transfer' }}</span>
+                <span class="meta">{{ t.from_label }} → {{ t.to_label }} · {{ t.frequency }}</span>
+              </div>
+              <div>
+                <div class="balance right num">{{ t.amount|usd2 }}</div>
+                <div class="meta right small muted">{{ t.date.strftime('%b %d, %Y') }}</div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <div>
+        <div class="side-panel">
+          <h3>Quick actions</h3>
+          <ul>
+            <li><a href="{{ url_for('account_transactions') }}">View transactions</a></li>
+            <li><a href="{{ url_for('account_transfer') }}">Transfer money</a></li>
+            <li><a href="{{ url_for('account_autopay') }}">Manage automatic payments</a></li>
+            <li><a href="{{ url_for('account_alerts') }}">Manage alerts</a></li>
+            <li><a href="{{ url_for('account_statements') }}">Statements</a></li>
+            <li><a href="{{ url_for('account_credit_journey') }}">Credit Journey® score</a></li>
+            <li><a href="{{ url_for('account_profile') }}">Profile &amp; settings</a></li>
+          </ul>
+        </div>
+        <div class="side-panel">
+          <h3>Payments due</h3>
+          <ul>
+            {% for c in current_user.cards %}
+            <li>{{ c.card.name }} ...{{ c.masked }}: due {{ c.payment_due.strftime('%b %d') if c.payment_due }}</li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="side-panel">
+          <h3>Need help?</h3>
+          <ul>
+            <li>Personal banking: 1-800-935-9935</li>
+            <li>Home lending: 1-800-848-9136</li>
+            <li><a href="{{ url_for('customer_service') }}">All customer service topics</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

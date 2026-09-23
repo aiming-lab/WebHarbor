@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Apply For a Dillard's Credit Card &amp; Get Rewards for Shopping{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; Credit Card</div>
+  <div class="content-page">
+    <h1>Dillard's Credit Card</h1>
+    <p>Earn 10% Off When You Open &amp; Use Your Dillard's Credit Card<sup>&dagger;</sup></p>
+    <p>Get 2 points per $1 spent at Dillard's on net eligible purchases with your Dillard's Credit Card or Dillard's Mastercard. Once you earn 1,500 points, you'll receive your choice of a 10% Off Shopping Pass or a $10 Rewards Certificate.</p>
+    <a class="btn-primary" style="max-width: 260px; display: inline-block;" href="/creditcard/apply">Apply Now</a>
+
+    {% if page %}
+      {% set d = page.payload() %}
+      {% if d.get('benefits') %}
+        <h2>Cardholder Benefits</h2>
+        <ul>
+          {% for benefit in d['benefits'] %}
+            <li>{{ benefit }}</li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+      {% if d.get('rates') %}
+        <h2>Rates, Fees and Cost Information</h2>
+        <table>
+          <tr><th>Item</th><th>Details</th></tr>
+          {% for row in d['rates'] %}
+            <tr><td>{{ row[0] }}</td><td>{{ row[1] }}</td></tr>
+          {% endfor %}
+        </table>
+      {% endif %}
+    {% endif %}
+
+    <h2>Manage Your Card</h2>
+    <p><a href="/account/paybill">Pay Bill / View Credit Account</a> &middot; <a href="/account">Cardholder Benefits</a></p>
+  </div>
+</div>
+{% endblock %}

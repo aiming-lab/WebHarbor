@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Brain Teasers{% endblock %}
+{% block content %}
+<div class="section-header">
+  <img class="title-icon-left" src="/static/images/theme/title-icon1.svg" alt="">
+  <h2>Brain Teasers</h2>
+  <img class="title-icon-right" src="/static/images/theme/title-icon2.svg" alt="">
+</div>
+<div class="games-grid grid-4 no-icon-card brain-teasers-section">
+  {% for t in teasers %}
+  <div class="views-row teaser-tile">
+    <div class="cm-home-teaser-image">
+      <a href="{{ url_for('teaser_page', slug=t.slug) }}" aria-labelledby="teaser-{{ t.slug }}-link">
+        <img class="game-thumb" src="/static/images/teasers/{{ t.slug }}.png" alt="">
+      </a>
+    </div>
+    <div class="views-field views-field-field-brain-teaser-headline">
+      <div class="field-content">
+        <div class="cm-home-teaser-title views-field-title">
+          <span class="field-content">
+            <a href="{{ url_for('teaser_page', slug=t.slug) }}" id="teaser-{{ t.slug }}-link">{{ t.title }}</a>
+          </span>
+        </div>
+        {{ t.blurb }}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

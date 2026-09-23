@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}{{ topic.name }} Lessons{% endblock %}
+{% block content %}
+<div class="breadcrumb-links">
+  <a href="{{ url_for('lessons_index') }}">Lessons</a> <span class="sep">/</span> {{ topic.name }}
+</div>
+
+<div class="detail-layout">
+  <div class="detail-main">
+    <h1>{{ topic.name }} Lessons</h1>
+    <div class="games-grid" style="grid-template-columns:1fr;gap:10px;">
+      {% for l in lessons %}
+      <div class="views-row">
+        <div class="views-field views-field-title">
+          <span class="field-content">
+            <a href="{{ url_for('lesson_page', topic=topic.slug, slug=l.slug) }}" class="term-icon" style="padding-left:12px;">
+              {{ l.title }}
+            </a>
+          </span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="sidebar-right">
+    <div class="sidebar-box">
+      <h2>{{ topic.name }} Games</h2>
+      {% for g in games %}
+      <div class="sidebar-game">
+        <a href="{{ url_for('game_detail', ident=g.slug) }}">
+          <img src="/static/images/games/related/{{ g.slug }}.png" alt="{{ g.title }}">
+        </a>
+        <a href="{{ url_for('game_detail', ident=g.slug) }}">{{ g.title }}</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

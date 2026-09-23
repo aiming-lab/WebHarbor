@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ employer.name }} Employer Hub{% endblock %}
+{% block content %}
+{% if employer.hero_path %}
+<div class="employer-hero"><img src="{{ employer.hero_path }}" alt="{{ employer.name }} campus"></div>
+{% endif %}
+<div class="employer-head">
+  {% if employer.logo_path %}<img class="employer-logo" src="{{ employer.logo_path }}" alt="{{ employer.name }} logo">{% endif %}
+  <div>
+    <h1>{{ employer.name }}</h1>
+    <div class="employer-meta">
+      {% if employer.location %}<span>{{ employer.location }}</span>{% endif %}
+      <span>{{ employer.job_count }} job opening{{ "s" if employer.job_count != 1 }}</span>
+      {% if employer.social %}<span>
+        {% for link in employer.social[:3] %}
+        <a href="{{ link }}" rel="noopener">{{ "Facebook" if "facebook" in link else "X" if "twitter" in link or "x.com" in link else "LinkedIn" if "linkedin" in link else "Website" }}</a>
+        {% endfor %}
+      </span>{% endif %}
+    </div>
+  </div>
+</div>
+
+{% if employer.sections %}
+<div class="job-detail-layout">
+  <div class="job-detail-main">
+    {% for section in employer.sections %}
+    <div class="employer-section">
+      <h2>{{ section.title }}</h2>
+      <div class="job-prose">{{ section.html | safe }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+<div class="job-detail-layout" style="margin-top:6px">
+  <div class="job-detail-main">
+    <div class="panel">
+      <div class="panel__head">
+        <h2 class="panel__title">Latest jobs</h2>
+        <a class="panel__all" href="/employers/">View all employers</a>
+      </div>
+      <ul class="lister">
+        {% for job in jobs %}
+        {% include "_job_card.html" %}
+        {% endfor %}
+      </ul>
+    </div>
+    <p class="employer-see-all"><a class="btn-view" href="/employers/?letter={{ employer.name[:1] | upper }}">See all our jobs</a></p>
+  </div>
+</div>
+{% endblock %}

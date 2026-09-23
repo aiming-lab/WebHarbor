@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="landing-hero">
+  <h1>{{ page.title }}</h1>
+  {% if page.intro %}<p>{{ page.intro }}</p>{% endif %}
+</div>
+<div class="search-layout">
+  <div class="results-column">
+    <div class="results-heading"><h1>{{ total }} matching jobs</h1></div>
+    {% if jobs %}
+    <ul class="lister">
+      {% for job in jobs %}
+      {% include "_job_card.html" %}
+      {% endfor %}
+    </ul>
+    {% else %}
+    <div class="empty-note"><p>No jobs matched this search right now. Check back soon or create a job alert.</p></div>
+    {% endif %}
+    <div class="alert-cta">
+      <p>Get new jobs for this search by email</p>
+      <a href="/newalert?keywords={{ page.keywords | urlencode }}">Create alert</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Saved Cruises | Carnival Cruise Line{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="results-count"><h1>My Saved Cruises</h1></div>
+  {% for fav in saved %}
+  <article class="result-card">
+    <div class="result-photo">
+      <img src="{{ url_for('static', filename=fav.itinerary.image.replace('static/', '')) }}" alt="{{ fav.itinerary.title }}">
+    </div>
+    <div class="result-body">
+      <h2 class="result-title"><a href="{{ fav.itinerary.url_path }}?itinportcode={{ fav.itinerary.departure_port.code }}" style="color:inherit">{{ fav.itinerary.title }}</a></h2>
+      <div class="result-ship">{{ fav.itinerary.ship.name }}</div>
+      <div class="result-route">{{ fav.itinerary.route_display }}</div>
+      <div class="result-meta"><span>{{ fav.itinerary.dur }} Days</span><span>{{ fav.itinerary.sailing_count }} sail dates</span></div>
+    </div>
+    <div class="result-price-box">
+      <div class="price-from">From*</div>
+      <div class="price-big">${{ fav.itinerary.from_price }}</div>
+      <div class="price-note">per person</div>
+      <a class="btn btn-blue btn-small" href="{{ fav.itinerary.url_path }}?itinportcode={{ fav.itinerary.departure_port.code }}">View Itinerary</a>
+    </div>
+  </article>
+  {% else %}
+  <div class="text-center" style="padding:40px 0;">
+    <h2>No saved cruises yet.</h2>
+    <p class="muted">Tap the heart on any cruise to save it here.</p>
+    <a class="btn btn-blue" href="{{ url_for('cruise_search') }}">Browse cruises</a>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

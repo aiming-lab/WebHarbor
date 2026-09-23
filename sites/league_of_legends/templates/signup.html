@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Create a Riot Account - League of Legends{% endblock %}
+{% block content %}
+
+<section class="auth-shell">
+  <h1>Create Account</h1>
+  <p class="auth-sub">Get set up to play League of Legends.</p>
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="auth-field">
+      <label for="username">Username</label>
+      <input type="text" id="username" name="username" required>
+    </div>
+    <div class="auth-field">
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+    </div>
+    <div class="auth-field">
+      <label for="display_name">Display Name</label>
+      <input type="text" id="display_name" name="display_name" required>
+    </div>
+    <div class="auth-field">
+      <label for="summoner_name">Summoner Name</label>
+      <input type="text" id="summoner_name" name="summoner_name" placeholder="Your in-game name">
+    </div>
+    <div class="auth-field">
+      <label for="region">Region</label>
+      <select id="region" name="region">
+        {% for region in regions %}
+        <option value="{{ region }}">{{ region }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="auth-field">
+      <label for="password">Password</label>
+      <input type="password" id="password" name="password" required minlength="8">
+    </div>
+    <button class="btn-gold auth-submit" type="submit">Create Account</button>
+  </form>
+  <p class="auth-alt">I have a Riot Account. <a href="{{ url_for('login') }}">Sign In</a></p>
+</section>
+
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block allowed_query_params %}    <meta name="allowed-query-params" content="q" />
+{% endblock %}
+{% block title %}Search CA.gov{% endblock %}
+{% block main %}
+<div class="section-primary lineart bg-p2" style="background: url('{{ url_for('static', filename='images/lineart/search-lineart.svg') }}') no-repeat right / auto;">
+  <div class="container p-y-md">
+<nav aria-label="You are here" class="breadcrumbs">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li class="active">Search CA.gov</li>
+  </ol>
+</nav>
+<h1 class="m-t-0">Search CA.gov</h1>
+  </div>
+</div>
+
+<div class="container p-y-lg">
+  <!--Search result section-->
+  <div class="row">
+    <div class="col-lg-9">
+      <div class="search-results-header">
+        <form id="Search" class="d-flex" action="/search/">
+          <span class="sr-only" id="SearchInput">Custom Google Search</span>
+          <input type="search" id="q" name="q" aria-labelledby="SearchInput" value="{{ q }}" placeholder="Search this website" class="search-textfield height-40" style="width: 95%;">
+          <button type="submit" class="gsc-search-button width-60 height-40 color-white border-0 bg-gray-600 bg-gray-800-hover">
+            <span class="ca-gov-icon-search" aria-hidden="true"></span>
+            <span class="sr-only">Submit</span>
+          </button>
+        </form>
+      </div>
+
+      <div class="section gcse-parent">
+        {% if q %}
+        <p class="gray-900 m-t">{{ total }} result{{ 's' if total != 1 }} for “{{ q }}”</p>
+        <hr>
+        {% for result in results %}
+        {% if result.kind == 'service' %}
+        {% set item = result.item %}
+        <div class="pos-rel m-b-lg">
+          <div class="gs-title">
+            <a class="lead font-weight-500" href="{{ service_url(item) }}">{{ item.name }}</a>
+          </div>
+          <div class="font-size-14 gray-700 m-y-sm">www.ca.gov{{ service_url(item) }}</div>
+          <p class="m-b-0">{{ item.description }}</p>
+          {% if item.topics %}
+          <p class="font-size-14 m-t-sm">Topics: {% for t in item.topic_rows %}<a href="{{ topic_url(t) }}">{{ t.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}</p>
+          {% endif %}
+        </div>
+        <hr>
+        {% elif result.kind == 'department' %}
+        {% set item = result.item %}
+        <div class="pos-rel m-b-lg">
+          <div class="gs-title">
+            <a class="lead font-weight-500" href="{{ department_url(item) }}">{{ item.name }}</a>
+          </div>
+          <div class="font-size-14 gray-700 m-y-sm">www.ca.gov{{ department_url(item) }} — Department</div>
+          <p class="m-b-0">{{ item.description }}</p>
+        </div>
+        <hr>
+        {% else %}
+        {% set item = result.item %}
+        <div class="pos-rel m-b-lg">
+          <div class="gs-title">
+            <a class="lead font-weight-500" href="{{ topic_url(item) }}">{{ item.name }}</a>
+          </div>
+          <div class="font-size-14 gray-700 m-y-sm">www.ca.gov{{ topic_url(item) }} — Topic</div>
+          <p class="m-b-0">{{ item.description }}</p>
+        </div>
+        <hr>
+        {% endif %}
+        {% else %}
+        <p>No results found for “{{ q }}”. Try different keywords or browse the <a href="/services/all/">services directory</a>.</p>
+        {% endfor %}
+        {% else %}
+        <p class="lead">Search California state services and departments.</p>
+        <p>Popular searches:</p>
+        <p>
+          <a href="/search/?q=real%20id">real id</a>,
+          <a href="/search/?q=birth%20certificate">birth certificate</a>,
+          <a href="/search/?q=unemployment">unemployment</a>,
+          <a href="/search/?q=tax%20refund">tax refund</a>
+        </p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

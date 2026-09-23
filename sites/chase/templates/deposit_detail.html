@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb">
+    <a href="{{ url_for('index') }}">Chase home</a> /
+    <a href="{{ url_for('checking') if product.product_type == 'checking' else url_for('savings') }}">{{ 'Checking' if product.product_type == 'checking' else 'Savings' }}</a> /
+    {{ product.name }}
+  </div>
+  <div class="detail-hero">
+    <div>
+      <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.name }}" style="width:280px;border-radius:6px;">
+    </div>
+    <div>
+      <h1>{{ product.name }}</h1>
+      <p class="muted">{{ product.tagline }}</p>
+      <div class="stat-row">
+        <div class="stat"><div class="num">${{ '%.2f'|format(product.monthly_fee) }}</div><div class="lbl">Monthly Service Fee</div></div>
+        <div class="stat"><div class="num">${{ '%.0f'|format(product.min_deposit) }}</div><div class="lbl">Minimum deposit to open</div></div>
+        {% if product.apy_text %}<div class="stat"><div class="lbl" style="margin-top:10px;">{{ product.apy_text }}</div></div>{% endif %}
+      </div>
+      <a class="btn btn--green" href="{{ url_for('logon') }}">Open now</a>
+      <span class="small muted" style="margin-left:10px;">Account subject to approval</span>
+    </div>
+  </div>
+
+  <section class="section section--soft">
+    <div class="container">
+      <h2>Benefits of {{ product.name }}</h2>
+      <ul class="earn-list">
+        {% for f in features %}<li>{{ f }}</li>{% endfor %}
+      </ul>
+      <h2>How to avoid the Monthly Service Fee</h2>
+      {% if product.fee_waiver %}
+        <p>{{ product.fee_waiver }}</p>
+      {% else %}
+        <p>This account has no Monthly Service Fee.</p>
+      {% endif %}
+      <div class="disclosure">
+        Monthly service fee information shown as of the {{ mirror_date }} snapshot. See the Deposit Account Agreement for full terms. Chase Overdraft Assist℠: no overdraft fees if you're overdrawn by $50 or less at the end of the business day, or if you bring your account to $50 or less by the end of the next business day.
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <h2>Other accounts you may like</h2>
+      <div class="trio">
+        {% for o in others[:3] %}
+        <div class="trio-card"><div class="trio-card__body">
+          <h4><a href="{{ url_for('checking_detail', slug=o.slug) if o.product_type == 'checking' else url_for('savings_detail', slug=o.slug) }}">{{ o.name }}</a></h4>
+          <p class="small">{{ o.tagline }}</p>
+          <p class="small muted">{{ o.fee_text }}</p>
+        </div></div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

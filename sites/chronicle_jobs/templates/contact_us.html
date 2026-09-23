@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="form-card">
+  <h1>Contact us</h1>
+  <p class="help" style="margin-top:-8px">Questions about your job search, an employer account, or a posting? Send the team a note.</p>
+  <form method="post" action="/contact-us/">
+    <label for="name">Your name <span class="form-required">*</span></label>
+    <input id="name" type="text" name="name" value="{{ form.get('name', '') }}">
+    <label for="email">Email address <span class="form-required">*</span></label>
+    <input id="email" type="email" name="email" value="{{ form.get('email', '') }}">
+    <label for="topic">Topic</label>
+    <select id="topic" name="topic">
+      <option>Job seeker support</option>
+      <option>Employer account</option>
+      <option>Job posting</option>
+      <option>Issue Dates &amp; Deadlines</option>
+      <option>Rate Card</option>
+      <option>Billing</option>
+      <option>Accessibility</option>
+    </select>
+    <label for="message">Message <span class="form-required">*</span></label>
+    <textarea id="message" name="message">{{ form.get('message', '') }}</textarea>
+    <input class="btn-apply" type="submit" value="Send message">
+  </form>
+</div>
+{% endblock %}

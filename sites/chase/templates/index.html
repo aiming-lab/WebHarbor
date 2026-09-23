@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Credit Card, Mortgage, Banking, Auto | Chase Online{% endblock %}
+{% block content %}
+<div class="hero">
+  <div class="container">
+    <div class="hero-promo">
+      <h1>Enjoy</h1>
+      <div class="big">$400</div>
+      <p>New Chase checking customers: open a Chase Total Checking® account with qualifying activities.</p>
+      <a class="btn btn--green" href="{{ url_for('checking') }}">Open an account</a>
+    </div>
+    <div class="login-card">
+      <h2>Sign in to see your accounts</h2>
+      <form method="post" action="{{ url_for('logon') }}">
+        <label for="email">Username</label>
+        <input id="email" name="email" type="text" autocomplete="username" placeholder="Email or username">
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password">
+        <div class="login-row">
+          <label><input type="checkbox"> Remember username</label>
+          <a href="{{ url_for('logon') }}">Use token</a>
+        </div>
+        <button class="btn btn--blue btn--block" type="submit">Sign in</button>
+      </form>
+      <div class="or-divider">OR</div>
+      <div class="login-links">
+        <a href="{{ url_for('register') }}">Not enrolled? Sign Up Now.</a>
+        <a href="{{ url_for('logon') }}">Forgot username/password?</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="icon-rail">
+  <div class="container">
+    <h2>Choose what's right for you</h2>
+    <div class="icon-rail-row">
+      <a class="icon-rail-item" href="{{ url_for('credit_cards_category', cat='business') }}">
+        <img src="{{ url_for('static', filename='icons/mds_ill_briefcase_linear_gry.svg') }}" alt="Business">Business</a>
+      <a class="icon-rail-item" href="{{ url_for('credit_cards') }}">
+        <img src="{{ url_for('static', filename='icons/mds_ill_card_linear_gry.svg') }}" alt="Credit cards">Credit cards</a>
+      <a class="icon-rail-item" href="{{ url_for('checking') }}">
+        <img src="{{ url_for('static', filename='icons/mds_ill_check_linear_gry.svg') }}" alt="Checking">Checking</a>
+      <a class="icon-rail-item" href="{{ url_for('credit_cards_category', cat='travel') }}">
+        <img src="{{ url_for('static', filename='icons/mds_ill_plane_linear_gry.svg') }}" alt="Travel">Travel</a>
+      <a class="icon-rail-item" href="{{ url_for('savings') }}">
+        <img src="{{ url_for('static', filename='icons/mds_ill_piggy_bank_linear_gry.svg') }}" alt="Savings">Savings</a>
+      <a class="icon-rail-item" href="{{ url_for('mortgage') }}">
+        <img src="{{ url_for('static', filename='icons/mds_ill_home_linear_gry.svg') }}" alt="Home loans">Home loans</a>
+      <a class="icon-rail-item" href="{{ url_for('auto') }}">
+        <img src="{{ url_for('static', filename='icons/mds_ill_car_linear_gry.svg') }}" alt="Auto">Auto</a>
+      <a class="icon-rail-item" href="{{ url_for('education') }}">
+        <img src="{{ url_for('static', filename='icons/mds_ill_chart_line_linear_gry.svg') }}" alt="Education & goals">Education &amp; goals</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="trio">
+      <div class="trio-card">
+        <div class="trio-card__band trio-card__band--blue">
+          <h3>Chase Credit Cards</h3>
+          <img src="{{ url_for('static', filename='icons/mds_ill_card_linear_gry.svg') }}" alt="" width="28" style="filter: brightness(0) invert(1);">
+        </div>
+        <div class="trio-card__body">
+          <h4>See if you're preapproved</h4>
+          <p>Learn which Chase credit cards you're preapproved for in just a few moments. Plus, there's no impact to your credit score.</p>
+          <a class="btn btn--blue" href="{{ url_for('credit_cards') }}">Get started</a>
+        </div>
+      </div>
+      <div class="trio-card">
+        <div class="trio-card__band trio-card__band--navy">
+          <h3>New Checking Customers</h3>
+          <img src="{{ url_for('static', filename='icons/mds_ill_briefcase_linear_gry.svg') }}" alt="" width="28" style="filter: brightness(0) invert(1);">
+        </div>
+        <div class="trio-card__body">
+          <h4>Keep moving forward with Chase and earn up to $400</h4>
+          <p>Open a new Chase Total Checking® account with qualifying activities and enjoy a welcome bonus.</p>
+          <a class="btn btn--blue" href="{{ url_for('checking') }}">Open account</a>
+        </div>
+      </div>
+      <div class="trio-card">
+        <div class="trio-card__band trio-card__band--blue">
+          <h3>Chase Auto</h3>
+          <img src="{{ url_for('static', filename='icons/mds_ill_car_linear_gry.svg') }}" alt="" width="28" style="filter: brightness(0) invert(1);">
+        </div>
+        <div class="trio-card__body">
+          <h4>Finance your next ride with Chase Auto</h4>
+          <p>Apply online in just minutes and secure your rate and financing terms for 30 days.</p>
+          <a class="btn btn--blue" href="{{ url_for('auto') }}">Apply now</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section--soft">
+  <div class="container">
+    <h2>Popular credit cards right now</h2>
+    <div class="trio">
+      {% for card in featured %}
+      <div class="trio-card">
+        <div class="trio-card__band trio-card__band--blue"><h3>{{ card.network }} · {{ card_categories[card.categories.split(',')[0]] }}</h3></div>
+        <div class="trio-card__body">
+          <img src="{{ url_for('static', filename='images/' + card.card_art) }}" alt="{{ card.name }}" style="width:150px; margin-bottom:12px;">
+          <h4>{{ card.name }}</h4>
+          <p>{{ card.glance[:160] }}</p>
+          <a class="btn btn--blue" href="{{ url_for('credit_card_detail', slug=card.slug) }}">See details</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p><a href="{{ url_for('credit_cards') }}">Browse all credit cards →</a></p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="trio">
+      <div class="trio-card">
+        <div class="trio-card__body" style="padding-top:26px;">
+          <h4>Find a Chase branch or ATM near you</h4>
+          <p>Search by city, state or ZIP code to find branches, lobby hours and 24-hour ATMs.</p>
+          <a class="btn btn--outline" href="{{ url_for('locator') }}">Search locations</a>
+        </div>
+      </div>
+      <div class="trio-card">
+        <div class="trio-card__body" style="padding-top:26px;">
+          <h4>Today's mortgage rates</h4>
+          <p>Example rates by loan type, updated each business day, with the assumptions shown.</p>
+          <a class="btn btn--outline" href="{{ url_for('mortgage_rates') }}">View rates</a>
+        </div>
+      </div>
+      <div class="trio-card">
+        <div class="trio-card__body" style="padding-top:26px;">
+          <h4>Learn with the Chase Education Center</h4>
+          <p>Articles on budgeting, saving, credit scores, mortgages and auto financing.</p>
+          <a class="btn btn--outline" href="{{ url_for('education') }}">Visit the Education Center</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

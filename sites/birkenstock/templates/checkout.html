@@ -1,0 +1,149 @@
+{% extends "base.html" %}
+{% block title %}Checkout | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>CHECKOUT</h1>
+  <div class="checkout-steps">
+    <span class="step {% if step == 'address' %}active{% endif %}">1. Shipping Address</span>
+    <span class="step {% if step == 'payment' %}active{% endif %}">2. Payment</span>
+    <span class="step {% if step in ('review', 'place') %}active{% endif %}">3. Review &amp; Place Order</span>
+  </div>
+  <div class="cart-layout">
+    <section>
+      {% if step == 'address' %}
+      <form method="post" class="form-card">
+        <input type="hidden" name="step" value="address">
+        <div class="field-row">
+          <div class="field">
+            <label for="first_name">First name*</label>
+            <input type="text" id="first_name" name="first_name" value="{{ current_user.first_name }}" required>
+          </div>
+          <div class="field">
+            <label for="ship_name">Full name for shipping*</label>
+            <input type="text" id="ship_name" name="ship_name" value="{{ current_user.name }}" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="address1">Address line 1*</label>
+          <input type="text" id="address1" name="address1" value="{{ current_user.address1 }}" required>
+        </div>
+        <div class="field">
+          <label for="address2">Address line 2</label>
+          <input type="text" id="address2" name="address2" value="{{ current_user.address2 }}">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="city">City*</label>
+            <input type="text" id="city" name="city" value="{{ current_user.city }}" required>
+          </div>
+          <div class="field">
+            <label for="state">State*</label>
+            <input type="text" id="state" name="state" value="{{ current_user.state }}" required>
+          </div>
+        </div>
+        <div class="field">
+          <label for="zip_code">ZIP code*</label>
+          <input type="text" id="zip_code" name="zip_code" value="{{ current_user.zip_code }}" required>
+        </div>
+        <div class="field">
+          <label for="shipping_method">Shipping method</label>
+          <select id="shipping_method" name="shipping_method" disabled>
+            <option>Ground Shipping (2-5 business days)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-dark">CONTINUE TO PAYMENT</button>
+      </form>
+      {% elif step == 'payment' %}
+      <form method="post" class="form-card">
+        <input type="hidden" name="step" value="payment">
+        {% if current_user.payment_methods %}
+        <h2 style="font-size:14px">Your saved cards</h2>
+        {% for pm in current_user.payment_methods %}
+        <div class="radio-row">
+          <input type="radio" name="payment_method_id" id="pm-{{ pm.id }}" value="{{ pm.id }}" {% if loop.first %}checked{% endif %}>
+          <label for="pm-{{ pm.id }}"><strong>{{ pm.label }}</strong> ending in {{ pm.last_four }}</label>
+        </div>
+        {% endfor %}
+        {% endif %}
+        <div class="radio-row">
+          <input type="radio" name="payment_method_id" id="pm-new" value="new">
+          <label for="pm-new"><strong>Use a new card</strong></label>
+        </div>
+        <h2 style="font-size:14px;margin-top:16px">New card</h2>
+        <div class="field">
+          <label for="card_label">Card label <span style="text-transform:none">(e.g. Visa)</span></label>
+          <input type="text" id="card_label" name="card_label">
+        </div>
+        <div class="field">
+          <label for="card_number">Card number</label>
+          <input type="text" id="card_number" name="card_number" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label for="holder">Name on card</label>
+          <input type="text" id="holder" name="holder" value="{{ current_user.name }}">
+        </div>
+        <button type="submit" class="btn btn-dark">CONTINUE TO REVIEW</button>
+      </form>
+      <script>
+        (function () {
+          var newRadio = document.getElementById('pm-new');
+          var fields = ['card_label', 'card_number'].map(document.getElementById, document);
+          function sync() {
+            fields.forEach(function (f) { f.required = newRadio.checked; });
+          }
+          [newRadio].concat(Array.prototype.slice.call(
+            document.querySelectorAll('input[name="payment_method_id"]')))
+            .forEach(function (r) { r.addEventListener('change', sync); });
+          sync();
+        })();
+      </script>
+      {% else %}
+      <form method="post">
+        <input type="hidden" name="step" value="place">
+        <input type="hidden" name="ship_name" value="{{ current_user.name }}">
+        <input type="hidden" name="payment_method_id" value="{{ chosen_pm.id if chosen_pm else '' }}">
+        <h2 style="font-size:15px;text-transform:uppercase;letter-spacing:.06em">Review your order</h2>
+        <div class="cs-box">
+          <h2>Ship to</h2>
+          <p>{{ current_user.name }}<br>{{ current_user.address1 }}{% if current_user.address2 %}<br>{{ current_user.address2 }}{% endif %}<br>{{ current_user.city }}, {{ current_user.state }} {{ current_user.zip_code }}</p>
+        </div>
+        <div class="cs-box">
+          <h2>Payment</h2>
+          {% if chosen_pm %}
+          <p>{{ chosen_pm.label }} ending in {{ chosen_pm.last_four }}</p>
+          {% else %}
+          <p>No payment method on file.</p>
+          {% endif %}
+        </div>
+        <table class="review-table">
+          <thead><tr><th>Item</th><th>Size</th><th>Width</th><th>Qty</th><th>Price</th></tr></thead>
+          <tbody>
+            {% for item in summary.cart_items %}
+            <tr>
+              <td>{{ item.product.model }} &middot; {{ item.product.color }}</td>
+              <td>{{ item.size }}</td>
+              <td>{{ item.width }}</td>
+              <td>{{ item.quantity }}</td>
+              <td>${{ '%.2f' % item.line_total }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <button type="submit" class="btn btn-dark">PLACE ORDER</button>
+      </form>
+      {% endif %}
+    </section>
+    <aside class="summary">
+      <h2>Order Summary</h2>
+      {% for item in summary.cart_items %}
+      <div class="row"><span>{{ item.product.model }} &times; {{ item.quantity }}</span><span>${{ '%.2f' % item.line_total }}</span></div>
+      {% endfor %}
+      <div class="row"><span>Subtotal</span><span>${{ '%.2f' % summary.subtotal }}</span></div>
+      <div class="row"><span>Shipping</span><span>{{ summary.shipping_note }}</span></div>
+      <div class="row"><span>Estimated tax</span><span>${{ '%.2f' % summary.tax }}</span></div>
+      <div class="row total"><span>Estimated total</span><span>${{ '%.2f' % summary.total }}</span></div>
+      <p class="note">By placing your order you agree to the <a href="/us/policies/terms/">Terms of Use</a> and <a href="/us/policies/returns/">Return Policy</a>.</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

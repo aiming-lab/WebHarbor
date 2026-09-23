@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}High Yield Savings Account with No Fees to Open | Amex US{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Banking &rsaquo; High Yield Savings</p>
+  <div class="hero" style="margin-top:12px;border-radius:12px;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">American Express High Yield Savings</span>
+        <h1>{{ product.headline }}</h1>
+        <p>{{ product.intro }}</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="{{ url_for('register') }}">Open an Account</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <img src="{{ url_for('static', filename='images/hysa/basic-desktop.jpg') }}" alt="High Yield Savings Account">
+      </div>
+    </div>
+  </div>
+
+  <div class="band-white">
+    <div class="container">
+      <h2 class="section-title">{{ product.apy_text }}</h2>
+      <p class="section-sub">6x higher than the national rate (national average 0.38% APY as of 04/2026).</p>
+      <div class="benefit-grid">
+        {% for feature in product.features() %}
+        <div class="benefit-cell"><span class="glyph">&#10003;</span><span>{{ feature }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="container">
+      <h2 class="section-title">Compare Savings Products</h2>
+      <p class="section-sub">American Express National Bank offers savings accounts and CDs. Member FDIC.</p>
+      <p style="margin-bottom:10px;"><a href="{{ url_for('banking_cd') }}">Compare the CD terms and APYs &rarr;</a></p>
+      <p><a href="{{ url_for('banking_checking') }}">Learn about Rewards Checking &rarr;</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

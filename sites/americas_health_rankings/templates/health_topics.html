@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Explore Health Topics | AHR{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>Explore Health Topics</h1>
+  <p class="section-sub">Choose from our library of health topics.</p>
+</div>
+<div class="container" style="padding-bottom:60px">
+  <div class="two-col">
+    <div>
+      {% for t in topics %}
+      <a class="topic-link" href="{{ t.href if t.href.startswith('/health-topics?topics=') else '/health-topics?topics=' ~ t.tid }}">
+        <div class="topic-item">
+          <h3 style="margin:0 0 4px;font-size:16px">{{ t.title }}</h3>
+          <p style="margin:0;font-size:13.5px">{{ t.description }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="sidebar">
+      <h4>Using This System</h4>
+      <p style="font-size:13.5px">Choose your state using the state selector on state pages, compare measure values across states, and open any measure page to see rankings, trends and definitions. Health topics group related measures to provide additional context.</p>
+      <h4 style="margin-top:16px">Data Sources</h4>
+      <p style="font-size:13.5px">Data are pulled from publicly available sources that have robust state-level data. See <a href="{{ url_for('methodology') }}">Data Sources &amp; Measures</a> for the full list.</p>
+    </div>
+  </div>
+</div>
+<style>
+.topic-link { display:block; border-bottom:1px solid var(--border); padding:16px 8px; color:inherit; }
+.topic-link:hover { background:var(--light2); text-decoration:none; }
+</style>
+{% endblock %}

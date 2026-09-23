@@ -43,7 +43,9 @@ SITES = [
     'wineaccess', 'webmd', 'petfinder', 'mega',
     '4shared', '9gag', 'akc', 'bestbuy',
     'youtube', 'weather', 'amazon_jobs', 'cboe',
-    'better_business_bureau', 'healthgrades', 'kelley_blue_book', 'uniqlo',
+    'better_business_bureau', 'birkenstock', 'americas_health_rankings', 'american_express',
+    'carnival_cruise', 'california_gov', 'coolmath4kids', 'chase',
+    'flightaware', 'chronicle_jobs', 'dillards', 'google_shopping', 'imgur', 'instructure', 'league_of_legends', 'healthgrades', 'kelley_blue_book', 'uniqlo',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'

@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Application Received | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card" style="text-align:left;">
+    <h1>Application Received</h1>
+    <div class="offer-box">
+      <span class="offer-tag">Confirmation</span>
+      <div class="offer-headline">{{ application.card.name }}</div>
+      <p>Thank you, {{ application.applicant_name }}. Your application was received on {{ application.submitted_at.strftime('%m/%d/%Y') }} and is being reviewed.</p>
+      <table class="rates-table">
+        <tr><th>Application ID</th><td>APP-{{ '%05d'|format(application.id) }}</td></tr>
+        <tr><th>Applicant</th><td>{{ application.applicant_name }}</td></tr>
+        <tr><th>Email</th><td>{{ application.email }}</td></tr>
+        <tr><th>Status</th><td>{{ application.status }}</td></tr>
+      </table>
+    </div>
+    <p style="font-size:14px;color:#5c5f63;">You will receive a decision by email. If approved and you accept the Card, your credit score may be impacted.</p>
+    <div class="form-actions">
+      <a class="btn btn-primary" href="{{ url_for('cards_index') }}">Continue Browsing Cards</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

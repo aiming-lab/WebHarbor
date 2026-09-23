@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Home{% endblock %} | CoolMath4Kids</title>
+  <link rel="icon" href="/static/images/theme/favicon.ico">
+  <link rel="stylesheet" href="/static/css/site.css">
+</head>
+<body>
+<header class="main-header">
+  <div class="page-wrap header-banner-block">
+    <div class="header-logo">
+      <a href="{{ url_for('index') }}" rel="home" aria-label="Home">
+        <img src="/static/images/theme/logo.svg" alt="Home" height="35" width="321">
+      </a>
+    </div>
+    <nav class="main-menu header-nav" aria-label="Main navigation">
+      <ul class="menu">
+        <li><a href="{{ url_for('math_games') }}" {% if request.path == '/math-games' %}class="is-active"{% endif %}>Math Games</a></li>
+        <li><a href="{{ url_for('lessons_index') }}" {% if request.path == '/math-help' %}class="is-active"{% endif %}>Lessons</a></li>
+        <li><a href="{{ url_for('quizzes_index') }}" {% if request.path.startswith('/quizzes') %}class="is-active"{% endif %}>Quizzes</a></li>
+        <li><a href="{{ url_for('manipulatives_index') }}" {% if request.path.startswith('/manipulatives') %}class="is-active"{% endif %}>Manipulatives</a></li>
+        <li><a href="{{ url_for('teasers_index') }}" {% if request.path.startswith('/brain-teasers') %}class="is-active"{% endif %}>Brain Teasers</a></li>
+      </ul>
+    </nav>
+    <div class="header-search" role="search">
+      <form method="get" action="{{ url_for('search') }}">
+        <input type="text" name="q" placeholder="Search the site" aria-label="Search the site" value="" autocomplete="off">
+        <button type="submit" aria-label="Run search">Go</button>
+      </form>
+    </div>
+    <div class="nav-account">
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account') }}">{{ current_user.display_name }}</a>
+        <a href="{{ url_for('logout') }}">Sign Out</a>
+      {% else %}
+        <a href="{{ url_for('login') }}">Sign In</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<div class="hero-band"></div>
+
+{% with messages = get_flashed_messages() %}
+  {% if messages %}
+  <div class="flash-messages">
+    {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main class="content-column-wrapper">
+  <div class="page-wrap">
+    {% block content %}{% endblock %}
+  </div>
+</main>
+
+<div class="footer-bottom"></div>
+<footer id="footer" class="main-footer">
+  <div class="page-wrap">
+    <div class="link-with-body-title">
+      <a href="{{ url_for('privacy_policy') }}">Privacy Policy</a>
+    </div>
+    <div class="field-text-block-wrapper">
+      <p>If you believe your copyrighted content is on our Site without consent, please follow our <a href="{{ url_for('copyright_notice') }}">Copyright Infringement Notice procedure</a>.</p>
+      <p>Coolmath is committed to ensuring digital accessibility for everyone. <a href="{{ url_for('accessibility') }}">Read our Accessibility Policy</a>.</p>
+    </div>
+    <div class="other-sites">
+      <a href="https://www.coolmathgames.com/">CoolmathGames.com</a>
+      <a href="https://www.coolmath.com/">Coolmath.com</a>
+      <a href="https://www.coolmath4teachers.com/">Coolmath4Teachers.com</a>
+      <a href="https://www.coolmath4parents.com/">Coolmath4Parents.com</a>
+    </div>
+    <p class="footer-text">Math + Games for Kids, Teachers, &amp; Parents</p>
+    <div class="copyright-wrapper">
+      <p>© 2026 Coolmath.com LLC. All Rights Reserved.</p>
+    </div>
+  </div>
+</footer>
+<script src="/static/js/site.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

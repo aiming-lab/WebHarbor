@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Search Results - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">SEARCH RESULTS FOR &quot;{{ query }}&quot;</div>
+
+{% if results.flights %}
+<div class="panel">
+  <div class="panel-head">Flights</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Ident</th><th>Type</th><th>Origin</th><th>Destination</th><th>Departure</th><th>Arrival</th><th>Status</th></tr>
+    {% for f in results.flights %}
+    <tr>
+      <td class="ident"><a href="/live/flight/{{ f.ident }}">{{ f.ident }}</a></td>
+      <td>{{ f.aircraft_type }}</td>
+      <td>{{ f.origin_code }}</td>
+      <td>{{ f.dest_code }}</td>
+      <td>{{ f.dep_text }}</td>
+      <td>{{ f.arr_text }}</td>
+      <td>{{ f.status or '' }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endif %}
+
+{% if results.airports %}
+<div class="panel">
+  <div class="panel-head">Airports</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Airport</th><th>Code</th><th>City</th></tr>
+    {% for a in results.airports %}
+    <tr>
+      <td><a href="/live/airport/{{ a.code }}">{{ a.name }}</a></td>
+      <td>{{ a.code }}{% if a.iata %} / {{ a.iata }}{% endif %}</td>
+      <td>{{ a.city }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endif %}
+
+{% if results.photos %}
+<div class="panel">
+  <div class="panel-head">Photos</div>
+  <div class="panel-body photo-grid">
+    {% for p in results.photos %}
+    <div class="photo-card">
+      <a href="{{ p.href }}"><img src="/static/images/photos/{{ p.image_file }}" alt="{{ p.title }}"></a>
+      <div class="cap"><div class="t">{{ p.title }}</div><div class="m">{{ p.votes | commas }} votes</div></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% if results.squawks %}
+<div class="panel">
+  <div class="panel-head">Squawks</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Title</th><th>Source</th><th>Votes</th></tr>
+    {% for s in results.squawks %}
+    <tr>
+      <td><a href="/squawks/view/1/24_hours/popular/{{ s.sid }}/{{ s.slug }}">{{ s.title }}</a></td>
+      <td>{{ s.source_label }}</td>
+      <td>{{ s.votes }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endif %}
+
+{% if total == 0 %}
+<div class="login-note">
+  No results for &quot;{{ query }}&quot;. Try a flight number (e.g. UAL1063), an airport code (e.g. KJFK),
+  a city, or browse the <a href="/live/findflight/">Flight Finder</a>.
+</div>
+{% endif %}
+{% endblock %}

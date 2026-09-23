@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}{{ category.name }} | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a>{% if top_category %} &rsaquo; <a href="/c/{{ top_category.slug }}">{{ top_nav_label }}</a>{% endif %} &rsaquo; {{ category.nav_label or category.name }}</div>
+  <div class="page-head">
+    <h1>{{ category.name }}</h1>
+    <div class="items-count">{{ total }} Items</div>
+  </div>
+
+  <div class="plp-layout">
+    <aside class="filters">
+      <h2>Filter</h2>
+      {% if active %}
+        <div class="active-filters">
+          {% for key, label in active.items() %}
+            <span>{{ label }}</span>
+          {% endfor %}
+          <a href="/c/{{ category.slug }}">Clear All</a>
+        </div>
+      {% endif %}
+      <div class="filter-group">
+        <h3>Shop</h3>
+        <a href="/c/{{ category.slug }}">All {{ category.name }}</a>
+        <a href="/c/{{ category.slug }}/new-arrivals">New Arrivals</a>
+        <a href="/c/{{ category.slug }}/sale">Sale</a>
+        <a href="/c/{{ category.slug }}/exclusive_dillards">Dillard's Exclusive</a>
+      </div>
+      <div class="filter-group">
+        <h3>Category</h3>
+        {% for sub in subs %}
+          <a href="/c/{{ sub.slug }}">{{ sub.name }}</a>
+        {% endfor %}
+      </div>
+      {% if brand_facets %}
+        <div class="filter-group">
+          <h3>Brand</h3>
+          {% for brand_slug, brand_name, count in brand_facets %}
+            <a href="/c/{{ category.slug }}/brand_{{ brand_slug }}">{{ brand_name }} ({{ count }})</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if size_list %}
+        <div class="filter-group">
+          <h3>Size</h3>
+          {% for size in size_list %}
+            <a href="/c/{{ category.slug }}/size_{{ size|replace(' ', '-')|replace('/', '-') }}">{{ size }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+      {% if color_list %}
+        <div class="filter-group">
+          <h3>Color</h3>
+          {% for color in color_list %}
+            <a href="/c/{{ category.slug }}/color_{{ color|lower|replace(' ', '-')|replace('/', '-') }}">{{ color }}</a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </aside>
+
+    <section>
+      <div class="sort-bar">
+        <span class="items-count">{{ total }} Items</span>
+        <!-- action uses the current path so sorting inside a facet view keeps
+             the facet (/c/<slug>/<facet>?orderBy=...), matching upstream,
+             instead of dropping back to the unfiltered category -->
+        <form method="get" action="{{ request.path }}">
+          {% if request.args.get('page') %}<input type="hidden" name="page" value="{{ request.args.get('page') }}">{% endif %}
+          <label for="orderBy">Sort By</label>
+          <select name="orderBy" id="orderBy" onchange="this.form.submit()">
+            {% for key, label in sort_labels.items() %}
+              <option value="{{ key }}" {% if key == sort_key %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+          </select>
+        </form>
+      </div>
+
+      {% if products %}
+        <div class="product-grid">
+          {% for product in products %}
+            <div class="product-card">
+              <a class="card-img" href="{{ product.url }}"><img src="/static/images/{{ product.main_image }}" alt="{{ product.full_name }}"></a>
+              <div class="swatches">
+                {% for color in product.colors()[:5] %}
+                  <img src="/static/images/{{ color.image }}" alt="Color Swatch - {{ color.color }}">
+                {% endfor %}
+              </div>
+              <a class="brand-name" href="{{ product.brand.url }}">{{ product.brand.name }}</a>
+              <a class="product-name" href="{{ product.url }}">{{ product.short_name or product.name }}</a>
+              <div class="price{% if product.on_sale() %} sale{% endif %}">${{ '%.2f'|format(product.price() or 0) }}{% if product.on_sale() %} <span class="was">${{ '%.2f'|format(product.was_price()) }}</span>{% endif %}</div>
+              {% if product.exclusive %}<div class="exclusive-label">Dillard's Exclusive</div>{% endif %}
+              {% if product.review_count %}
+                <div class="stars">{% for i in range((product.rating|stars)['full']) %}&#9733;{% endfor %}{% if (product.rating|stars)['half'] %}&#189;{% endif %} <span class="review-count">({{ product.review_count }})</span></div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+        {% if pages > 1 %}
+          <div class="pagination">
+            {% for p in range(1, pages + 1) %}
+              {% if p == page %}
+                <span class="current">{{ p }}</span>
+              {% else %}
+                <a href="?orderBy={{ sort_key }}&page={{ p }}">{{ p }}</a>
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% else %}
+        <p class="muted">No items match your filters. <a href="/c/{{ category.slug }}">Clear filters</a></p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

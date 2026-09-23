@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+{% from "_tile.html" import tile with context %}
+{% block title %}{{ product.name }} in Color {{ product.color }} | BIRKENSTOCK US{% endblock %}
+{% block content %}
+<nav class="crumbs" aria-label="Breadcrumb">
+  {% for label, href in breadcrumbs %}
+    {% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}
+    {% if not loop.last %}<span>|</span>{% endif %}
+  {% endfor %}
+</nav>
+<div class="pdp">
+  <div class="pdp-gallery">
+    <div class="pdp-thumbs">
+      {% for img in product.images %}
+      <img src="{{ url_for('static', filename='images/' + img) }}" alt="product photo {{ loop.index }} of {{ product.images|length }}" class="{% if loop.first %}selected{% endif %}" onclick="document.getElementById('mainImg').src=this.src;document.querySelectorAll('.pdp-thumbs img').forEach(i=>i.classList.remove('selected'));this.classList.add('selected')">
+      {% endfor %}
+    </div>
+    <div class="pdp-main-img">
+      <img id="mainImg" src="{{ url_for('static', filename='images/' + product.main_image) }}" alt="{{ product.name }} - main image">
+    </div>
+  </div>
+  <div class="pdp-info">
+    <div class="pdp-title">
+      <h1>{{ product.model }}</h1>
+      <div class="pdp-material">{{ product.material }}</div>
+      {% if product.badge %}<span class="badge {% if product.badge == 'VIP Access' %}badge-vip{% elif product.badge == 'New' %}badge-new{% endif %}">{{ product.badge }}</span>{% endif %}
+      {% if product.rating and product.review_count %}
+      <div class="pdp-rating">
+        <span>{{ product.rating }}</span>
+        <span class="stars" aria-label="{{ product.rating }} of 5 stars">
+          {% for i in range(5) %}{% if product.rating >= loop.index %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}
+        </span>
+        <a href="#reviews">{{ product.review_count }} Reviews</a>
+      </div>
+      {% endif %}
+      <div class="pdp-price">
+        {% if product.on_sale %}
+        <span class="old">${{ '%.2f' % product.list_price }}</span>${{ '%.2f' % product.price }}<span class="save">-{{ product.sale_percent }}%</span>
+        {% else %}
+        ${{ '%.2f' % product.price }}
+        {% endif %}
+      </div>
+      <div class="pdp-afterpay">or as low as ${{ '%.2f' % (product.price * 0.08655) }}/mo. with Afterpay</div>
+    </div>
+
+    <div class="pdp-section">
+      <h3>Color: {{ product.color }}</h3>
+      <div class="pdp-color-row">
+        {% for s in siblings %}
+        <a href="{{ _pdp_url(s) }}" title="{{ s.color }}" class="{% if s.id == product.id %}selected{% endif %}">
+          <img src="{{ url_for('static', filename='images/' + s.main_image) }}" alt="{{ s.color }}">
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if not product.one_size %}
+    <div class="pdp-section">
+      <h3>Width</h3>
+      <div class="width-seg">
+        {% for w in widths %}
+        <label><input type="radio" name="width" value="{{ w }}" form="addForm" {% if loop.first %}checked{% endif %}>{{ w }}</label>
+        {% endfor %}
+      </div>
+      <p><a href="/us/service/fitting-guide/">Width Guide</a></p>
+    </div>
+
+    <div class="pdp-section">
+      <h3>Size <span style="text-transform:none;font-weight:400">Please select</span></h3>
+      <div class="size-system">
+        <label><input type="radio" name="sizeSystem" value="US" checked onchange="toggleSizes('US')"> US</label>
+        <label><input type="radio" name="sizeSystem" value="EU" onchange="toggleSizes('EU')"> EU</label>
+      </div>
+    </div>
+    {% endif %}
+    <div class="pdp-section">
+      <form id="addForm" method="post" action="/us/cart/add/{{ product.pid }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        {% for group_label, group_sizes in ([] if product.one_size else product.size_groups) %}
+        <p style="font-size:12.5px;text-transform:uppercase;letter-spacing:.06em;color:#898992;margin:10px 0 6px">{{ group_label }}</p>
+        <div class="size-grid" id="sizeGrid-{{ group_label|lower }}">
+          {% for s in group_sizes %}
+          {% set available = product.size_available(s) %}
+          <label class="size-btn {% if not available %}soldout{% endif %}">
+            <input type="radio" name="size" id="size-{{ group_label|lower }}-{{ loop.index }}" value="{{ s }}" {% if not available %}disabled{% endif %} {% if available %}required{% endif %}>
+            <span data-us="{{ s }}" data-eu="{{ product.eu_size(s) }}">{{ s }}<span class="eu">{{ product.eu_size(s) }}</span></span>
+          </label>
+          {% endfor %}
+        </div>
+        {% endfor %}
+        <div class="pdp-cta">
+          {% if product.badge == 'VIP Access' and not current_user.is_authenticated %}
+            <a class="btn btn-blue" href="/us/vip-access/">JOIN BIRKENSTOCK VIP TO BUY</a>
+          {% else %}
+            <button type="submit" class="btn btn-dark">ADD TO CART</button>
+          {% endif %}
+          {% if current_user.is_authenticated %}
+          <button type="submit" class="wl-btn" formaction="/us/wishlist/add/{{ product.pid }}" aria-label="Add to wish list">&#9825;</button>
+          {% else %}
+          <a class="wl-btn" href="/us/login/?next={{ request.path }}" style="display:grid;place-items:center;text-decoration:none" aria-label="Log in for wish list">&#9825;</a>
+          {% endif %}
+        </div>
+      </form>
+      {% if product.badge == 'VIP Access' and not current_user.is_authenticated %}
+      <div class="vip-note">
+        <span aria-hidden="true">&#9875;</span>
+        <span>Love this style? To purchase, click on JOIN BIRKENSTOCK VIP TO BUY and opt into our loyalty program.</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="accordion">
+      <details open>
+        <summary>Description</summary>
+        <div class="acc-body">
+          {{ product.description }}
+          <p class="item-no">Item no. {{ product.item_no or product.art_no }}</p>
+        </div>
+      </details>
+      <details>
+        <summary>Material</summary>
+        <div class="acc-body">
+          {% if product.material_details %}
+            {% for block in product.material_blocks %}
+            <p><strong>{{ block.heading }}</strong></p>
+            <p>{{ block.content }}</p>
+            {% endfor %}
+          {% else %}
+          <p>details about product materials</p>
+          {% endif %}
+        </div>
+      </details>
+      <details id="reviews">
+        <summary>Reviews</summary>
+        <div class="acc-body">
+          {% if reviews %}
+            <div class="pdp-rating" style="margin-bottom:12px">
+              <span>{{ product.rating }}</span>
+              <span class="stars">{% for i in range(5) %}{% if product.rating >= loop.index %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</span>
+              <span>{{ product.review_count }} Reviews</span>
+            </div>
+            {% for r in reviews %}
+            <div class="review-row">
+              <div><strong>{{ r.title }}</strong></div>
+              <div class="stars">{% for i in range(5) %}{% if r.rating >= loop.index %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}</div>
+              <div>{{ r.body }}</div>
+              <div class="meta">{{ r.author }} &middot; {{ r.created_at.strftime('%B %d, %Y') }}{% if r.verified %} &middot; Verified buyer{% endif %}</div>
+            </div>
+            {% endfor %}
+          {% else %}
+          <p>No reviews yet for this style.</p>
+          {% endif %}
+        </div>
+      </details>
+    </div>
+    <p style="margin-top:14px;font-size:13px"><a href="/us/search/?q={{ product.model | urlencode }}">More from: {{ product.model }}</a></p>
+  </div>
+</div>
+
+{% if similar %}
+<section class="section">
+  <div class="section-head"><h2>SIMILAR STYLES</h2></div>
+  <div class="tiles-row">
+    {% for p in similar %}{{ tile(p) }}{% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="footbed-band">
+  <div class="footbed-band-inner">
+    <img src="{{ url_for('static', filename='images/homepage/hp-authenticity.jpg') }}" alt="The original BIRKENSTOCK footbed">
+    <div class="card">
+      <p class="kicker">The Original Birkenstock Footbed</p>
+      <h3>A Legendary Design</h3>
+      <p>The heart of all models is the original BIRKENSTOCK footbed. The construction, which has been thought out to the smallest detail and makes it feel like you're standing in sand, helps your feet feel as comfortable as possible for hours on end. This supports health and promotes wellbeing.</p>
+    </div>
+  </div>
+</section>
+<script>
+function toggleSizes(system) {
+  document.querySelectorAll('.size-grid [data-us]').forEach(function (el) {
+    el.firstChild.textContent = '';
+    el.prepend(document.createTextNode(system === 'EU' ? el.dataset.eu : el.dataset.us));
+  });
+}
+</script>
+{% endblock %}

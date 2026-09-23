@@ -1,0 +1,844 @@
+/* Google Shopping mirror — design system extracted from the captured
+   shopping.google.com pages (2026-09-22). Token source: upstream inline CSS.
+   Body bg #e9ebf0, text #0a0a0a / #56595e, price green #146c2e,
+   Google Sans / Roboto stack, 24px-radius white feed cards,
+   20px-radius product tiles with #e9ebf0 caption strips. */
+
+:root {
+  --text: #0a0a0a;
+  --text-2: #56595e;
+  --page-bg: #e9ebf0;
+  --card-bg: #ffffff;
+  --btn-bg: #e9ebf0;
+  --accent: #146c2e;          /* price green (upstream --xYkzwf) */
+  --selected: #001d35;        /* selected tab text */
+  --line: #dcdfe5;
+  --radius-card: 24px;
+  --radius-tile: 20px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: "Google Sans", Roboto, Arial, sans-serif;
+  font-size: 14px;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+
+/* ---------------------------------------------------------------- header */
+.site-header {
+  background: var(--card-bg);
+  border-bottom: 1px solid transparent;
+  padding: 14px 24px 10px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+.hamburger {
+  width: 40px; height: 40px;
+  border: none; background: transparent;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.hamburger:hover { background: rgba(60, 64, 67, .08); }
+.hamburger svg { width: 24px; height: 24px; fill: #5f6368; }
+
+.brand {
+  display: flex; align-items: center; gap: 10px;
+  flex-shrink: 0;
+}
+.brand .g-word {
+  font-family: "Product Sans", "Google Sans", Roboto, Arial, sans-serif;
+  font-size: 22px;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+.brand .g-word .g-blue { color: #4285f4; }
+.brand .g-word .g-red { color: #ea4335; }
+.brand .g-word .g-yellow { color: #fbbc05; }
+.brand .g-word .g-green { color: #34a853; }
+.brand .bag {
+  width: 26px; height: 26px;
+  display: inline-flex;
+}
+.brand .bag svg { width: 100%; height: 100%; }
+
+.searchbar {
+  flex: 1;
+  max-width: 640px;
+  margin: 0 12px;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 0 8px 0 20px;
+  gap: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06);
+}
+.searchbar form { display: flex; align-items: center; flex: 1; gap: 8px; min-width: 0; }
+.searchbar input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  font: 16px Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: transparent;
+}
+.searchbar .sb-ico {
+  width: 40px; height: 40px;
+  border: none; background: transparent;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; flex-shrink: 0;
+}
+.searchbar .sb-ico svg { width: 22px; height: 22px; fill: #5f6368; }
+.searchbar .sb-ico:hover { background: rgba(60,64,67,.08); }
+
+.header-right {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 14px;
+  flex-shrink: 0;
+}
+.apps-grid {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.apps-grid:hover { background: rgba(60,64,67,.08); }
+.apps-grid svg { width: 24px; height: 24px; fill: #5f6368; }
+
+.signin-btn {
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 9px 20px;
+  font: 500 14px "Google Sans", Roboto, Arial, sans-serif;
+  cursor: pointer;
+}
+.signin-btn:hover { background: #1b66c9; box-shadow: 0 1px 2px rgba(0,0,0,.2); }
+.account-chip {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text-2);
+}
+.account-chip .avatar {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  background: #1a73e8;
+  color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font: 500 14px "Google Sans", Roboto, Arial, sans-serif;
+}
+
+/* ------------------------------------------------------------------ tabs */
+.tabrow {
+  background: var(--page-bg);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+.g-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--card-bg);
+  border-radius: 999px;
+  height: 36px;
+  padding: 0 6px 0 10px;
+  margin-right: 12px;
+  border: 1px solid transparent;
+  flex-shrink: 0;
+}
+.g-pill img { width: 20px; height: 20px; border-radius: 50%; }
+.g-pill .back-arrow { fill: #5f6368; width: 18px; height: 18px; }
+
+.tabrow .tab {
+  height: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+  position: relative;
+  color: var(--text-2);
+  font: 500 15px "Google Sans", Roboto, Arial, sans-serif;
+}
+.tabrow .tab .bag-mini { width: 18px; height: 18px; }
+.tabrow .tab .bag-mini svg { width: 100%; height: 100%; }
+.tabrow .tab:hover { color: var(--text); }
+.tabrow .tab.selected {
+  color: var(--selected);
+}
+.tabrow .tab.selected::after {
+  content: "";
+  position: absolute;
+  left: 20px; right: 20px; bottom: 0;
+  border-bottom: 3px solid var(--selected);
+  border-radius: 3px 3px 0 0;
+}
+
+/* ------------------------------------------------------------------- main */
+.page {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px 24px 80px;
+}
+
+/* feed section card */
+.feed-section {
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+.feed-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+.feed-head h2 {
+  margin: 0;
+  font: 700 48px/52px "Google Sans", Roboto, Arial, sans-serif;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.feed-sub {
+  margin: 4px 0 0;
+  font: 500 14px/20px "Google Sans", Roboto, Arial, sans-serif;
+  color: var(--text-2);
+}
+.explore-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--btn-bg);
+  border: none;
+  border-radius: 20px;
+  padding: 12px 16px;
+  font: 500 14px/20px "Google Sans", Roboto, Arial, sans-serif;
+  color: var(--text);
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.explore-btn:hover { background: #dee1e6; }
+.explore-btn svg { width: 18px; height: 18px; fill: var(--text); }
+
+.feed-row {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 4px;
+  margin: 0 -4px;
+  align-items: flex-start;
+}
+
+/* product card */
+.pcard {
+  min-width: 250px;
+  max-width: 300px;
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-tile);
+  overflow: hidden;
+  background: var(--card-bg);
+  position: relative;
+}
+.pcard:hover { box-shadow: 0 2px 8px rgba(0,0,0,.12); }
+.pcard .tile {
+  aspect-ratio: 1/1;
+  width: 100%;
+  height: auto;
+  flex-shrink: 0;
+  background: rgba(0,0,0,0.03);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.pcard .tile img {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  max-width: 88%;
+  max-height: 88%;
+  object-fit: contain;
+}
+.pcard .badge {
+  z-index: 1;
+  position: absolute;
+  top: 12px; right: 12px;
+  background: #fff;
+  border-radius: 4px;
+  border: none;
+  padding: 3px 8px;
+  font: 700 12px/16px Roboto, Arial, sans-serif;
+  color: var(--text);
+  box-shadow: 0 1px 2px rgba(0,0,0,.15);
+}
+.pcard .caption {
+  background: var(--btn-bg);
+  border-radius: 0 0 var(--radius-tile) var(--radius-tile);
+  padding: 12px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pcard .title {
+  font: 400 14px/20px Roboto, Arial, sans-serif;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pcard .meta {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  gap: 0;
+}
+.pcard .merchant {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  overflow: hidden;
+  font: 400 12px/16px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+  flex-shrink: 1;
+}
+.pcard .merchant img {
+  width: 16px; height: 16px;
+  border-radius: 16%;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.pcard .dot { padding: 0 4px; color: var(--text-2); }
+.pcard .pricegroup {
+  display: inline-flex;
+  align-items: baseline;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.pcard .price {
+  font: 700 14px/22px Roboto, Arial, sans-serif;
+  color: var(--accent);
+  margin-right: 4px;
+}
+.pcard .was {
+  font: 500 13px/22px "Google Sans", Roboto, Arial, sans-serif;
+  color: var(--text-2);
+  text-decoration: line-through;
+}
+
+/* ----------------------------------------------------------- departments */
+.dept-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 24px 16px;
+  padding: 12px 0;
+}
+.dept-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+.dept-tile .frame {
+  width: 100%;
+  aspect-ratio: 1/1;
+  background: #f0f2f5;
+  border-radius: 16px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.dept-tile .frame img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.dept-tile .label {
+  font: 400 14px/18px Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+.dept-tile:hover .frame { box-shadow: 0 1px 6px rgba(32,33,36,.28); }
+
+.page-title {
+  font: 700 32px/40px "Google Sans", Roboto, Arial, sans-serif;
+  letter-spacing: -0.02em;
+  margin: 8px 0 16px;
+}
+
+/* --------------------------------------------------------------- search */
+.search-layout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+.filters {
+  width: 218px;
+  flex-shrink: 0;
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  padding: 20px;
+  position: sticky;
+  top: 90px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+}
+.filters h3 {
+  margin: 0 0 12px;
+  font: 500 16px/20px "Google Sans", Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+.filters .group { margin-bottom: 18px; }
+.filters .group h4 {
+  margin: 0 0 6px;
+  font: 500 13px/16px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+  text-transform: none;
+  letter-spacing: .2px;
+}
+.filters label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 400 13px/28px Roboto, Arial, sans-serif;
+  color: var(--text);
+  cursor: pointer;
+}
+.filters a.clear {
+  font: 500 13px/28px Roboto, Arial, sans-serif;
+  color: #1a73e8;
+}
+.results {
+  flex: 1;
+  min-width: 0;
+}
+.resultbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.resultbar .count {
+  font: 400 13px/20px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+}
+.resultbar select {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+  padding: 8px 12px;
+  font: 400 13px Roboto, Arial, sans-serif;
+  color: var(--text);
+  cursor: pointer;
+}
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+.result-grid .pcard { min-width: 0; }
+.deal-grid .pcard { min-width: 0; }
+
+/* --------------------------------------------------------------- product */
+.product-panel {
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.panel-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 24px 4px;
+  gap: 12px;
+}
+.panel-actions { display: flex; align-items: center; gap: 8px; }
+.icon-btn {
+  width: 40px; height: 40px;
+  border: none; background: transparent;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+}
+.icon-btn svg { width: 20px; height: 20px; fill: #5f6368; }
+.icon-btn:hover { background: rgba(60,64,67,.08); }
+.panel-body {
+  display: flex;
+  gap: 32px;
+  padding: 16px 24px 28px;
+  align-items: flex-start;
+}
+.product-media {
+  width: 460px;
+  flex-shrink: 0;
+}
+.product-media .imgbox {
+  background: #f6f7f9;
+  border-radius: 16px;
+  overflow: hidden;
+  aspect-ratio: 1/1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.product-media .imgbox img {
+  max-width: 92%;
+  max-height: 92%;
+  object-fit: contain;
+}
+.product-info { flex: 1; min-width: 0; }
+.product-info h1 {
+  font: 400 22px/28px Roboto, Arial, sans-serif;
+  margin: 4px 0 10px;
+  color: var(--text);
+}
+.rating-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+  font: 400 13px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+}
+.rating-row .stars { color: #fbbc05; letter-spacing: 1px; font-size: 15px; }
+.offer-box {
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.offer-box .o-price {
+  font: 700 22px/28px Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+.offer-box .o-was {
+  font: 500 14px/20px "Google Sans", Roboto, Arial, sans-serif;
+  color: var(--text-2);
+  text-decoration: line-through;
+  margin-left: 8px;
+}
+.offer-box .o-merchant {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 12px;
+  font: 400 13px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+}
+.offer-box .o-merchant img {
+  width: 18px; height: 18px; border-radius: 16%; border: 1px solid var(--line);
+}
+.visit-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  padding: 10px 22px;
+  font: 500 14px "Google Sans", Roboto, Arial, sans-serif;
+  color: var(--text);
+  cursor: pointer;
+}
+.visit-btn:hover { background: #f6f7f9; box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.action-row {
+  display: flex;
+  gap: 10px;
+  margin: 4px 0 18px;
+  flex-wrap: wrap;
+}
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--btn-bg);
+  border: none;
+  border-radius: 20px;
+  padding: 10px 18px;
+  font: 500 14px "Google Sans", Roboto, Arial, sans-serif;
+  color: var(--text);
+  cursor: pointer;
+}
+.action-btn:hover { background: #dee1e6; }
+.action-btn.on { background: #d3e5d9; color: #146c2e; }
+.action-btn svg { width: 18px; height: 18px; fill: currentColor; }
+
+.section-head {
+  font: 500 18px/24px "Google Sans", Roboto, Arial, sans-serif;
+  margin: 26px 0 12px;
+  color: var(--text);
+}
+.specs-table { width: 100%; border-collapse: collapse; }
+.specs-table th, .specs-table td {
+  text-align: left;
+  padding: 9px 12px;
+  font: 400 13px/18px Roboto, Arial, sans-serif;
+  border-bottom: 1px solid #eff0f2;
+  vertical-align: top;
+}
+.specs-table th { color: var(--text-2); font-weight: 500; width: 40%; }
+
+.review {
+  border-bottom: 1px solid #eff0f2;
+  padding: 14px 0;
+}
+.review .r-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+.review .r-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 500 13px Roboto, Arial, sans-serif;
+}
+.review .r-avatar {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: #c7d8f0; color: #1a3b66;
+  display: flex; align-items: center; justify-content: center;
+  font: 500 12px "Google Sans", Roboto, Arial, sans-serif;
+}
+.review .r-stars { color: #fbbc05; letter-spacing: 1px; font-size: 13px; }
+.review .r-title { font: 500 14px/20px Roboto, Arial, sans-serif; margin: 4px 0 2px; }
+.review .r-body { font: 400 13px/19px Roboto, Arial, sans-serif; color: var(--text-2); }
+.review .r-meta { font: 400 12px Roboto, Arial, sans-serif; color: var(--text-2); margin-top: 6px; }
+
+/* ----------------------------------------------------------------- deals */
+.deal-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+/* ----------------------------------------------------------- empty state */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px 100px;
+}
+.empty-state .art {
+  width: 300px;
+  margin: 0 auto 24px;
+}
+.empty-state h1 {
+  font: 400 22px/28px Roboto, Arial, sans-serif;
+  color: var(--text);
+  margin: 0 0 8px;
+}
+.empty-state p {
+  font: 400 14px/20px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+  margin: 0 0 24px;
+}
+.empty-state .home-btn {
+  display: inline-block;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: #fff;
+  padding: 10px 22px;
+  font: 500 14px "Google Sans", Roboto, Arial, sans-serif;
+  color: var(--text);
+}
+
+/* --------------------------------------------------------------- sign in */
+.auth-card {
+  background: var(--card-bg);
+  border-radius: var(--radius-card);
+  max-width: 450px;
+  margin: 40px auto;
+  padding: 40px 36px;
+  text-align: center;
+}
+.auth-card .gmark { width: 44px; margin-bottom: 14px; }
+.auth-card h1 {
+  font: 400 24px/30px "Google Sans", Roboto, Arial, sans-serif;
+  margin: 0 0 8px;
+}
+.auth-card .sub {
+  font: 400 14px/20px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+  margin-bottom: 24px;
+}
+.auth-card input {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 13px 14px;
+  font: 400 14px Roboto, Arial, sans-serif;
+  margin-bottom: 14px;
+  outline: none;
+}
+.auth-card input:focus { border-color: #1a73e8; }
+.auth-card .submit {
+  width: 100%;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  padding: 12px;
+  font: 500 14px "Google Sans", Roboto, Arial, sans-serif;
+  cursor: pointer;
+  margin-top: 6px;
+}
+.auth-card .submit:hover { background: #1b66c9; }
+.auth-card .alt {
+  margin-top: 18px;
+  font: 400 13px Roboto, Arial, sans-serif;
+  color: #1a73e8;
+}
+.auth-card .hint {
+  margin-top: 18px;
+  font: 400 12px/18px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+  text-align: left;
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+.auth-error {
+  color: #d93025;
+  font: 400 13px Roboto, Arial, sans-serif;
+  margin-bottom: 12px;
+}
+
+/* ---------------------------------------------------------------- footer */
+.site-footer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 30px 24px 40px;
+  color: var(--text-2);
+  font: 400 13px/20px Roboto, Arial, sans-serif;
+}
+.footer-location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.footer-location .dot-sep { padding: 0 4px; }
+.footer-links { display: flex; gap: 18px; flex-wrap: wrap; }
+.footer-links a { color: var(--text-2); }
+.footer-links a:hover { text-decoration: underline; }
+
+/* ------------------------------------------------------------------ misc */
+.flash {
+  background: #e6f4ea;
+  border: 1px solid #c6e7cf;
+  color: #137333;
+  border-radius: 8px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  font: 400 13px Roboto, Arial, sans-serif;
+}
+.list-page-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin: 6px 0 18px;
+}
+.list-page-head h1 {
+  font: 700 28px/34px "Google Sans", Roboto, Arial, sans-serif;
+  margin: 0;
+}
+.list-page-head .count {
+  font: 400 14px Roboto, Arial, sans-serif;
+  color: var(--text-2);
+}
+.tracked-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: var(--card-bg);
+  border-radius: 16px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+}
+.tracked-row img { width: 56px; height: 56px; object-fit: contain; }
+.tracked-row .t-title { flex: 1; font: 400 14px/20px Roboto, Arial, sans-serif; }
+.tracked-row .t-price { font: 700 14px Roboto, Arial, sans-serif; color: var(--accent); }
+
+@media (max-width: 1100px) {
+  .product-media { width: 340px; }
+  .dept-grid { grid-template-columns: repeat(4, 1fr); }
+}
+@media (max-width: 860px) {
+  .product-panel .panel-body { flex-direction: column; }
+  .product-media { width: 100%; }
+  .dept-grid { grid-template-columns: repeat(3, 1fr); }
+  .feed-head h2 { font-size: 34px; line-height: 40px; }
+}
+
+/* ------------------------------------------------- narrow screens (R3) */
+/* <=880px: the search pill drops onto its own full-width row under the
+   logo row (the upstream mobile header), the header/tab paddings tighten,
+   and the tab pills scroll horizontally like the upstream mobile tab row.
+   The header's intrinsic min-content is ~876px (brand 206 + search pill 385
+   + actions 137 + paddings), so below that the row must wrap instead of
+   overflowing the document. */
+@media (max-width: 880px) {
+  .site-header { flex-wrap: wrap; padding: 14px 16px 10px; gap: 12px; }
+  .searchbar { order: 3; flex: 1 1 100%; max-width: none; margin: 0; }
+  .tabrow { overflow-x: auto; scrollbar-width: none; padding: 0 16px; }
+  .tabrow::-webkit-scrollbar { display: none; }
+  .page { padding: 20px 16px 80px; }
+  .site-footer { padding: 30px 16px 40px; }
+  .empty-state .art { max-width: 100%; }
+  .empty-state .art img { max-width: 100%; }
+}
+/* <=600px: the search page's 218px filter rail + 230px result grid cannot
+   sit side by side below ~520px; stack the filter card above the results
+   (the sticky offset only applies to the side-by-side layout). */
+@media (max-width: 600px) {
+  .search-layout { flex-direction: column; }
+  .filters { width: auto; position: static; }
+}
+/* <=480px: phone grid density — two-column result/deal/department grids
+   like the upstream mobile feeds; the decorative apps-grid button folds
+   away (the hamburger keeps the menu affordance); tracked rows wrap. */
+@media (max-width: 480px) {
+  .apps-grid { display: none; }
+  .result-grid, .deal-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .dept-grid { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
+  .tracked-row { flex-wrap: wrap; }
+}
+/* <=360px: the wrapped logo row (hamburger + wordmark + sign-in = ~385px)
+   still cannot fit; very narrow phones show the compact bag-only mark. */
+@media (max-width: 360px) {
+  .brand .g-word { display: none; }
+}

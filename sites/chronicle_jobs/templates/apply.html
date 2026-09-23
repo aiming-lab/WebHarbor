@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Apply - {{ job.title }}{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Apply for this job</h1>
+  <div class="account-item" style="margin-bottom:18px">
+    <h3><a href="{{ job.detail_path }}">{{ job.title }}</a></h3>
+    <p class="meta">{{ job.location_text or "Not specified" }} &bull; {{ job.employer_name }} &bull; {{ job.posted_label }}</p>
+  </div>
+
+  {% if existing and not existing.withdrawn %}
+  <div class="empty-note">
+    <p>You already applied for this job on {{ existing.submitted_at.strftime("%b %d, %Y") }}. Track its status in
+    <a href="/your-jobs/?ActiveSection=Applications">your applications</a>.</p>
+  </div>
+  {% else %}
+  <p class="help" style="margin-bottom:14px">Your application will be submitted to {{ job.employer_name }} with the
+  resume details from your profile. Add a short cover note explaining your interest in the role.</p>
+  <form method="post" action="{{ job.apply_path }}">
+    <label for="cover">Cover note <span class="form-required">*</span></label>
+    <textarea id="cover" name="cover" placeholder="Why are you a strong fit for this role?">{{ cover }}</textarea>
+    <div class="help">Minimum 20 characters.</div>
+    <input class="btn-apply" type="submit" value="Submit application">
+  </form>
+  {% endif %}
+</div>
+{% endblock %}

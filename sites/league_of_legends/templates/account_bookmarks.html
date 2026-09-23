@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Saved Articles - League of Legends{% endblock %}
+{% block content %}
+
+<section class="masthead">
+  <div class="masthead-kicker">Riot Account</div>
+  <h1>Saved Articles</h1>
+</section>
+
+<div class="account-shell">
+  {% if bookmarks %}
+  <div class="news-grid">
+    {% for article in bookmarks %}
+    <a class="article-card" href="{{ article.path }}">
+      <div class="card-media">
+        {% if article.card_url %}<img src="{{ article.card_url }}" alt="{{ article.title }}">{% endif %}
+      </div>
+      <div class="card-meta">
+        <span class="card-cat">{{ article.category.title|upper }}</span>
+        <span class="card-divider">|</span>
+        <span class="card-date">{{ article.publish_date|daymonth }}</span>
+      </div>
+      <div class="card-title">{{ article.title }}</div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-note">No saved articles yet. Open a news article and save it to your bookmarks.</div>
+  {% endif %}
+</div>
+
+{% endblock %}

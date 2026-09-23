@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Patch Notes - League of Legends{% endblock %}
+{% block content %}
+
+<section class="masthead">
+  <div class="masthead-kicker">Game Updates</div>
+  <h1>Patch Notes</h1>
+  <p class="masthead-sub">The definitive source on all updates coming to the game.</p>
+</section>
+
+<div class="roster-count">{{ total }} patch note articles</div>
+
+<div class="patch-list">
+  {% for article in articles %}
+  <a class="patch-row" href="{{ article.path }}">
+    <div class="patch-date">{{ article.display_date }}</div>
+    <div>
+      <div class="patch-title">{{ article.title }}</div>
+      <div class="patch-summary">{{ article.summary }}</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="news-pager">
+  {% if page > 1 %}
+  <a href="?page={{ page - 1 }}">&laquo; Newer</a>
+  {% endif %}
+  <span class="total">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}
+  <a href="?page={{ page + 1 }}">Older &raquo;</a>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Card Benefits | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-grid">
+    <aside class="account-side">
+      <a href="{{ url_for('account_home') }}">Account Home</a>
+      <a href="{{ url_for('account_statements') }}">Statements &amp; Activity</a>
+      <a href="{{ url_for('account_payments') }}">Make a Payment</a>
+      <a href="{{ url_for('account_rewards') }}">Rewards &amp; Benefits</a>
+      <a href="{{ url_for('account_offers') }}">Amex Offers</a>
+      <a class="active" href="{{ url_for('account_benefits') }}">Card Benefits</a>
+      <a href="{{ url_for('account_profile') }}">Profile</a>
+    </aside>
+    <div class="account-main">
+      <h1 class="section-title">Card Benefits</h1>
+      <p class="section-sub">The benefits included with the Cards on your account.</p>
+      {% for uc in user_cards %}
+      <div class="card-tile" style="margin-bottom:20px;">
+        <h3>{{ uc.card.name }} <span style="font-weight:400;font-size:14px;color:#5c5f63;">&middot; ending {{ uc.last4 }}</span></h3>
+        <div class="benefit-grid" style="margin-bottom:0;">
+          {% for benefit in uc.card.benefits() %}
+          <div class="benefit-cell"><span class="glyph">&#10003;</span><span>{{ benefit }}</span></div>
+          {% endfor %}
+        </div>
+        <p style="font-size:13px;color:#5c5f63;margin-bottom:0;">Rewards program: {{ uc.card.program }} &middot; Annual fee: {{ uc.card.annual_fee_text }} &middot; <a href="{{ url_for('card_detail', slug=uc.card.slug) }}">See full Card details</a></p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

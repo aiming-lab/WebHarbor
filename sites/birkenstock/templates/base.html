@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Sandals, Shoes &amp; Clogs | BIRKENSTOCK United States | Homepage{% endblock %}</title>
+<link rel="icon" href="{{ url_for('static', filename='icons/favicon.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="header">
+  <div class="header-top">
+    <div class="header-top-left">
+      <a href="#main" class="a11y-link">Enable Accessibility</a>
+      <form class="search-form" action="/us/search/" method="get" role="search">
+        <input type="search" name="q" value="{{ request.args.get('q', '') }}" placeholder="Search" aria-label="Search">
+        <button type="submit" aria-label="Search">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5" stroke="currentColor" stroke-width="1.6"/><path d="M15.5 15.5 21 21" stroke="currentColor" stroke-width="1.6"/></svg>
+        </button>
+      </form>
+    </div>
+    <a class="logo" href="/us/" aria-label="Birkenstock home page">
+      <img src="{{ url_for('static', filename='icons/birkenstock-logo.svg') }}" alt="BIRKENSTOCK" width="160" height="26">
+    </a>
+    <nav class="header-top-right" aria-label="Account">
+      <a href="/us/storelocator/">Stores</a>
+      {% if current_user.is_authenticated %}
+      <a href="/us/account/">{{ current_user.first_name or 'Log in' }}</a>
+      {% else %}
+      <a href="/us/login/">Log in</a>
+      {% endif %}
+      <a href="/us/wishlist/">Wish list</a>
+      <a href="/us/cart/">Cart</a>
+    </nav>
+  </div>
+  <nav class="nav" aria-label="Main">
+    <div class="nav-inner">
+      <div class="nav-item">
+        <a href="/us/new-arrivals/">What's New</a>
+        <div class="nav-sub">
+          <div class="nav-sub-group">
+            <h4>Shop By Category</h4>
+            <a href="/us/eva-sandals/">Water-friendly</a>
+            <a href="/us/clogs-edit/">Clogs</a>
+            <a href="/us/big-buckle-collection/">Big Buckle</a>
+            <a href="/us/best-sellers/">Best Sellers</a>
+          </div>
+        </div>
+      </div>
+      <div class="nav-item">
+        <a href="/us/women/">Women</a>
+        <div class="nav-sub">
+          <div class="nav-sub-group">
+            <h4>Categories</h4>
+            <a href="/us/women/sandals/">Sandals</a>
+            <a href="/us/women/shoes/">Shoes</a>
+            <a href="/us/women/shoes/clogs/">Clogs</a>
+            <a href="/us/women/shoes/slippers/">Slippers</a>
+            <a href="/us/women/shoes/sneakers/">Sneakers</a>
+            <a href="/us/women/wedges-platforms/">Wedges &amp; Platforms</a>
+          </div>
+          <div class="nav-sub-group">
+            <h4>Shop By Style</h4>
+            <a href="/us/styles/arizona/">Arizona</a>
+            <a href="/us/styles/madrid/">Madrid</a>
+            <a href="/us/styles/mayari/">Mayari</a>
+            <a href="/us/styles/gizeh/">Gizeh</a>
+          </div>
+        </div>
+      </div>
+      <div class="nav-item">
+        <a href="/us/men/">Men</a>
+        <div class="nav-sub">
+          <div class="nav-sub-group">
+            <h4>Categories</h4>
+            <a href="/us/men/sandals/">Sandals</a>
+            <a href="/us/men/shoes/">Shoes</a>
+            <a href="/us/men/shoes/clogs/">Clogs</a>
+            <a href="/us/men/shoes/boots/">Boots</a>
+            <a href="/us/men/shoes/low-shoes/">Low Shoes</a>
+          </div>
+          <div class="nav-sub-group">
+            <h4>Shop By Style</h4>
+            <a href="/us/styles/arizona/">Arizona</a>
+            <a href="/us/styles/boston/">Boston</a>
+            <a href="/us/styles/milano/">Milano</a>
+            <a href="/us/styles/florida/">Florida</a>
+          </div>
+        </div>
+      </div>
+      <a href="/us/sale/">Sale</a>
+      <a href="/us/clogs-edit/">The Clogs Edit</a>
+      <a href="/us/vip-access/">VIP ACCESS</a>
+      <div class="nav-item">
+        <a href="/us/kids/">Kids &amp; Teens</a>
+        <div class="nav-sub">
+          <div class="nav-sub-group">
+            <h4>Categories</h4>
+            <a href="/us/kids/girls-sandals/">Girls Sandals</a>
+            <a href="/us/kids/boys-sandals/">Boys Sandals</a>
+          </div>
+        </div>
+      </div>
+      <a href="/us/professional/">Professional</a>
+      <a href="/us/journal/">Journal</a>
+      <a href="/us/foot-care/">Foot &amp; Body Care</a>
+      <a href="/us/1774/">1774</a>
+    </div>
+  </nav>
+  <div class="promo-bar" role="region" aria-label="Promotion">
+    <span>Free shipping with purchase of 2+ full-priced sandals. <a href="/us/sandals-edit/">SHOP NOW</a></span>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="footer">
+  <div class="footer-top">
+    <div class="footer-newsletter">
+      <h3>NEWSLETTER</h3>
+      <p>Join our email list for news and special offers</p>
+      <form class="newsletter-form" method="post" action="/us/newsletter/">
+        <input type="email" name="email" placeholder="Your email address" aria-label="Your email address" required>
+        <button type="submit" class="btn btn-dark">SIGN UP</button>
+      </form>
+    </div>
+    <div class="footer-social">
+      <h3>FOLLOW BIRKENSTOCK</h3>
+      <p>Join us, be a part of our journey.</p>
+      <div class="social-icons" aria-label="Social media">
+        <span class="social-dot">Instagram</span><span class="social-dot">Facebook</span><span class="social-dot">Pinterest</span><span class="social-dot">YouTube</span>
+      </div>
+    </div>
+  </div>
+  <div class="footer-columns">
+    <div class="footer-col">
+      <h4>POLICIES</h4>
+      <a href="/us/policies/shipping/">Shipping Policy</a>
+      <a href="/us/policies/returns/">Return Policy</a>
+      <a href="/us/policies/privacy/">Privacy Policy</a>
+      <a href="/us/policies/terms/">Terms of Use</a>
+      <a href="/us/policies/counterfeits/">Counterfeits</a>
+      <a href="/us/policies/rewards/">Rewards Program Terms &amp; Conditions</a>
+    </div>
+    <div class="footer-col">
+      <h4>ABOUT US</h4>
+      <a href="/us/vip-access/">BIRKENSTOCK VIP</a>
+      <a href="/us/journal/heritage/">History &amp; Heritage</a>
+      <a href="/us/education/footbed/">Our Footbed</a>
+      <a href="/us/1774/">1774</a>
+      <a href="/us/storelocator/">Store Locator</a>
+      <a href="/us/service/">Customer Service</a>
+    </div>
+    <div class="footer-col">
+      <h4>CUSTOMER SERVICE</h4>
+      <a href="/us/service/">Contact Us</a>
+      <a href="/us/order-status/">Order Status</a>
+      <a href="/us/service/#payment-methods">Payment Methods</a>
+      <a href="/us/policies/returns/">Return Instructions</a>
+      <a href="/us/faq/">FAQ</a>
+      <a href="/us/service/fitting-guide/">Fitting Guide</a>
+    </div>
+    <div class="footer-col">
+      <h4>ID.ME COMMUNITY</h4>
+      <a href="/us/idme/">FAQs</a>
+      <a href="/us/idme/first-responder/">First Responders</a>
+      <a href="/us/idme/nurses/">Nurses</a>
+      <a href="/us/idme/medical/">Medical Providers</a>
+      <a href="/us/idme/military/">Military</a>
+      <a href="/us/idme/student/">Students</a>
+      <a href="/us/idme/teacher/">Teachers</a>
+    </div>
+    <div class="footer-col">
+      <h4>GIFT CERTIFICATE</h4>
+      <a href="/us/giftcertificate/">Buy A Gift Certificate</a>
+      <a href="/us/giftcertificate/check-balance/">Check Balance</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="footer-legal">
+      <a href="/us/policies/privacy/#privacy-choices">Your Privacy Choices</a>
+      <span>United States</span><span>English</span>
+    </div>
+    <div class="footer-brand">
+      <span class="footer-seal" aria-hidden="true"></span>
+      <p>&copy; 2026 BIRKENSTOCK Digital GmbH</p>
+      <a href="/us/accessibility/">Accessibility Statement</a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

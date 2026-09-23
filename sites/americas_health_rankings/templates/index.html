@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import us_map, legend with context %}
+{% block title %}America’s Health Rankings | AHR{% endblock %}
+{% block content %}
+
+<section class="hero">
+  <div class="container hero-inner">
+    <div class="hero-image">
+      <img src="{{ url_for('static', filename='images/hero-2025.avif') }}" alt="{{ hero.image.alt if hero.image else 'Homepage Hero' }}">
+    </div>
+    <div>
+      <h1>{{ hero.title }}</h1>
+      <div class="hero-body">{{ hero.contentHtml | safe }}</div>
+      <div class="hero-stats">
+        {% for n in hero.numbers or [] %}
+        <div><div class="num">{{ n.value }}</div><div class="lbl">{{ n.label }}</div></div>
+        {% endfor %}
+      </div>
+      <div class="hero-ctas">
+        {% for cta in hero.ctas or [] %}
+        <a class="btn {% if loop.first %}btn-primary{% else %}btn-outline{% endif %}" href="{{ cta.href }}">{{ cta.label }} ›</a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-light">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">{{ publications.title }}</h2>
+      <a class="btn btn-outline" href="{{ publications.href }}">{{ publications.label }} ›</a>
+    </div>
+    <div class="pub-grid">
+      {% for f in publications.features or [] %}
+      {% if f.featured %}
+      <div class="pub-card featured">
+        <span class="pub-tag">{{ f.tag }}</span>
+        <h3>{{ f.title }}</h3>
+        <div class="pub-meta">Published {{ f.date }}</div>
+        <p class="pub-desc">{{ f.contentHtml | safe }}</p>
+        <a class="pub-link" href="{{ f.link }}">{{ f.label }} ›</a>
+      </div>
+      {% endif %}
+      {% endfor %}
+    </div>
+    <div class="pub-grid two">
+      {% for f in publications.features or [] if not f.featured %}
+      <div class="pub-card">
+        <span class="pub-tag">{{ f.tag }}</span>
+        <h3>{{ f.title }}</h3>
+        <div class="pub-meta">Published {{ f.date }}</div>
+        <p class="pub-desc">{{ f.contentHtml | safe }}</p>
+        <a class="pub-link" href="{{ f.link }}">{{ f.label }} ›</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-white">
+  <div class="container">
+    <h2 class="section-title">{{ reliable.title }}</h2>
+    <div class="feature-grid">
+      {% for f in reliable.features or [] %}
+      <div class="feature-item">
+        <div class="feature-icon">
+          {% if f.featureIcon == 'map_pin' %}&#128205;{% elif f.featureIcon == 'health_data' %}&#9776;{% elif f.featureIcon == 'comprehensive_data' %}&#9636;{% else %}&#11015;{% endif %}
+        </div>
+        <div>
+          <h3><a href="{{ f.link }}">{{ f.title }} ›</a></h3>
+          {{ f.contentHtml | safe }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-light" id="data-spotlight">
+  <div class="container">
+    <h2 class="section-title">Data Spotlight By State</h2>
+    <div class="spotlight-card">
+      <div class="spotlight-tabs">
+        {% for sp in spotlight %}
+        <a class="btn btn-outline {% if loop.first %}on{% endif %}" href="#spotlight-{{ sp.measure.slug }}">{{ sp.measure.display_name }}</a>
+        {% endfor %}
+      </div>
+      {% for sp in spotlight %}
+      <div id="spotlight-{{ sp.measure.slug }}" class="map-wrap" {% if not loop.first %}style="display:none"{% endif %}>
+        <h3>{{ sp.measure.display_name }}</h3>
+        <p class="chart-desc">{{ sp.measure.description }}</p>
+        {{ us_map(states_all, sp.colors, sp.measure, sp.bins) }}
+        {{ legend(sp.bins) }}
+        <div class="chart-source">Data from {{ sp.measure.source_name }}{% if sp.measure.source_years %}, {{ sp.measure.source_years }}{% endif %}</div>
+        <a class="btn btn-primary" href="{{ url_for('measure_detail', slug=sp.measure.slug) }}">View {{ sp.measure.display_name }} Data ›</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-white">
+  <div class="container">
+    <div class="section-head">
+      <div>
+        <h2 class="section-title">{{ reports_block.title }}</h2>
+        <div class="section-sub">{{ reports_block.subTitleHtml | safe }}</div>
+      </div>
+      <a class="btn btn-outline" href="{{ reports_block.href }}">{{ reports_block.label }} ›</a>
+    </div>
+    <div class="pub-grid three">
+      {% for f in reports_block.features or [] %}
+      <div class="report-card">
+        <div class="feature-icon">
+          {% if f.reportIcon == 'annual' %}&#128506;{% elif f.reportIcon == 'senior' %}&#9995;{% else %}&#10084;{% endif %}
+        </div>
+        <h3>{{ f.title }}</h3>
+        <div class="published">Published {{ f.date }}</div>
+        {{ f.contentHtml | safe }}
+        <a href="{{ f.link }}">View Report ›</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="section section-light">
+  <div class="container video-feature">
+    <div>
+      <h2 class="section-title">{{ video.title }}</h2>
+      <div class="section-sub">{{ video.contentHtml | safe }}</div>
+      <a class="btn btn-primary" href="{{ video.href }}">{{ video.label }} ›</a>
+    </div>
+    <div>
+      <video controls preload="metadata"
+             poster="{{ url_for('static', filename='images/app/uploads/ahr-video-poster.jpg') }}">
+        <source src="{{ url_for('static', filename='external_cache/app/uploads/22-1558654-uhg-ahr-full_sd_small_-_web_mbl_h264_900.mp4') }}" type="video/mp4">
+      </video>
+      <div class="chart-source">{{ video.caption }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="section section-white">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">{{ experts.title }}</h2>
+      <a class="btn btn-outline" href="{{ experts.href }}">{{ experts.label }} ›</a>
+    </div>
+    <div class="pub-grid two">
+      {% for f in experts.features or [] %}
+      <div class="expert-card">
+        {% set img = f.image or {} %}
+        {% set local_img = img.url and (img.url.replace('https://assets.americashealthrankings.org/', '/static/images/')) %}
+        <img src="{{ local_img }}" alt="{{ img.alt or f.name }}">
+        <div class="expert-body">
+          <h3>{{ f.title }}</h3>
+          <p class="byline">By {{ f.name }}</p>
+          <a href="/{{ f.link if f.link.startswith('publications') else f.link }}">Read More ›</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

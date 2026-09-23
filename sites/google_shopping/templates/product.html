@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}{{ product.title }} - Google Shopping{% endblock %}
+{% block content %}
+<div class="product-panel">
+  <div class="panel-top">
+    <div class="feed-sub" style="margin:0">{{ product.department.name if product.department }}{% if product.category %} &rsaquo; {{ product.category }}{% endif %}</div>
+    <div class="panel-actions">
+      <a class="icon-btn" href="{{ url_for('search', q=product.title) }}" aria-label="Share" title="Share">
+        <svg viewBox="0 0 24 24"><path d="M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7c.05-.23.09-.46.09-.7s-.04-.47-.09-.7l7.05-4.11c.54.5 1.25.81 2.04.81 1.66 0 3-1.34 3-3s-1.34-3-3-3-3 1.34-3 3c0 .24.04.47.09.7L8.04 9.81C7.5 9.31 6.79 9 6 9c-1.66 0-3 1.34-3 3s1.34 3 3 3c.79 0 1.5-.31 2.04-.81l7.12 4.16c-.05.21-.08.43-.08.65 0 1.61 1.31 2.92 2.92 2.92s2.92-1.31 2.92-2.92-1.31-2.92-2.92-2.92z"/></svg>
+      </a>
+      <a class="icon-btn" href="{{ url_for('search', q=product.category) }}" aria-label="More options" title="More options">
+        <svg viewBox="0 0 24 24"><path d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+      </a>
+      <a class="icon-btn" href="{{ url_for('index') }}" aria-label="Close" title="Close">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <div class="panel-body">
+    <div class="product-media">
+      <div class="imgbox">
+        <img src="{{ url_for('static', filename='images/' + product.image) }}" alt="{{ product.title }}">
+      </div>
+    </div>
+
+    <div class="product-info">
+      <h1>{{ product.title }}</h1>
+      {% if product.rating %}
+      <div class="rating-row">
+        <span class="stars">{{ star_rating(product.rating) }}</span>
+        <span>{{ '%.1f'|format(product.rating) }}</span>
+        <span>&middot; {{ product.review_count }} review{{ '' if product.review_count == 1 else 's' }}</span>
+      </div>
+      {% endif %}
+
+      <div class="offer-box">
+        {% if product.discount_pct %}
+        <div class="feed-sub" style="margin:0 0 6px">{{ product.discount_pct }}% OFF</div>
+        {% endif %}
+        <span class="o-price">{{ product.price_display }}</span>
+        {% if product.was_display %}<span class="o-was">{{ product.was_display }}</span>{% endif %}
+        <div class="o-merchant">
+          {% if product.merchant_favicon %}<img src="{{ url_for('static', filename='images/' + product.merchant_favicon) }}" alt="">{% endif %}
+          <span>{{ product.merchant_name }}</span>
+        </div>
+        <a class="visit-btn" href="{{ url_for('search', q=product.merchant_name) }}">Visit site</a>
+      </div>
+
+      <div class="action-row">
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('save_product', product_id=product.id) }}">
+          <button class="action-btn {% if saved %}on{% endif %}" type="submit">
+            <svg viewBox="0 0 24 24"><path d="M21 20H19V3H6V1H19C20.1 1 21 1.9 21 3V20ZM15 5H5C3.9 5 3 5.9 3 7V23L10 20L17 23V7C17 5.9 16.1 5 15 5Z"/></svg>
+            {{ 'Saved' if saved else 'Save' }}
+          </button>
+        </form>
+        <form method="post" action="{{ url_for('track_product', product_id=product.id) }}">
+          <button class="action-btn {% if tracked %}on{% endif %}" type="submit">
+            <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.23 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.23 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+            {{ 'Tracking' if tracked else 'Track price' }}
+          </button>
+        </form>
+        {% else %}
+        <a class="action-btn" href="{{ url_for('login', next=request.path) }}">
+          <svg viewBox="0 0 24 24"><path d="M21 20H19V3H6V1H19C20.1 1 21 1.9 21 3V20ZM15 5H5C3.9 5 3 5.9 3 7V23L10 20L17 23V7C17 5.9 16.1 5 15 5Z"/></svg>
+          Save
+        </a>
+        <a class="action-btn" href="{{ url_for('login', next=request.path) }}">
+          <svg viewBox="0 0 24 24"><path d="M21.41 11.58l-9-9C12.05 2.23 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.23 1.05.59 1.42l9 9c.36.36.86.58 1.41.58s1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41s-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z"/></svg>
+          Track price
+        </a>
+        {% endif %}
+      </div>
+
+      {% if product.description %}
+      <div class="section-head">About this item</div>
+      <p style="font:400 13px/19px Roboto,Arial,sans-serif;color:#56595e;margin:0 0 18px">{{ product.description }}</p>
+      {% endif %}
+
+      {% if product.specs %}
+      <div class="section-head">Product details</div>
+      <table class="specs-table">
+        {% for k, v in product.specs.items() %}
+        <tr><th>{{ k }}</th><td>{{ v }}</td></tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+
+      {% if product.reviews %}
+      <div class="section-head">Reviews</div>
+      {% for r in product.reviews %}
+      <div class="review">
+        <div class="r-head">
+          <span class="r-author"><span class="r-avatar">{{ r.author[0] }}</span>{{ r.author }}</span>
+          <span class="r-stars">{{ star_rating(r.rating) }}</span>
+        </div>
+        <div class="r-title">{{ r.title }}</div>
+        <div class="r-body">{{ r.body }}</div>
+        <div class="r-meta">{{ r.review_date }} &middot; {{ r.helpful }} found this helpful</div>
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if similar %}
+<div class="section-head">Compare with similar items</div>
+<div class="feed-row" style="margin:0">
+  {% for p in similar %}
+  <a class="pcard" href="{{ url_for('product', upstream_id=p.upstream_id) }}">
+    <div class="tile">
+      {% if p.discount_pct %}<span class="badge">{{ p.discount_pct }}% OFF</span>{% endif %}
+      <img src="{{ url_for('static', filename='images/' + p.image) }}" alt="{{ p.title }}">
+    </div>
+    <div class="caption">
+      <div class="title">{{ p.title }}</div>
+      <div class="meta">
+        <span class="merchant">{{ p.merchant_name }}</span>
+        <span class="dot">&middot;</span>
+        <span class="pricegroup"><span class="price">{{ p.price_display }}</span></span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

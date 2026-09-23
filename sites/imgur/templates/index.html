@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% from "_macros.html" import post_card with context %}
+{% block body %}
+<div class="homecover">
+  <div class="welcome">{{ welcome_message }}</div>
+</div>
+<div class="trending container">
+  <a class="more" href="/search?q=trending">MORE TAGS +</a>
+  <div class="tagtiles">
+    <a class="tagtile arcade" href="/arcade">
+      <span class="t1">Imgur Arcade</span>
+      <span class="t2">DAILY GAMES</span>
+    </a>
+    {% for tag in featured_tags + trend_tags %}
+    <a class="tagtile {{ 'featured' if tag.is_featured }}" href="/t/{{ tag.name }}" style="background-image: url('{{ tag.background_path|asset }}')">
+      <span class="t1">{{ tag.display_name|title }}</span>
+      <span class="t2">{% if tag.is_featured %}<b>FEATURED • </b>{% endif %}{{ tag.total_items|commas }} Posts</span>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+<div class="feedcontrols container">
+  <span class="sortlink"><a href="/?section={{ 'user_sub' if section != 'user_sub' else 'hot' }}&sort={{ sort }}">{{ 'MOST VIRAL' if section == 'hot' else 'USER SUBMITTED' }}</a> ▾</span>
+  <span class="right">
+    <span class="sortlink" style="font-size:13px;color:#aab2bd;font-weight:700">
+      <a href="/?section={{ section }}&sort={{ {'newest':'popular','popular':'rising','rising':'newest'}[sort] }}">{{ sort|upper }}</a> ▾
+    </span>
+    <button class="icon-btn" aria-label="filter"><img src="{{ url_for('static', filename='icons/icon-filter.svg') }}" alt=""></button>
+    <button class="icon-btn" aria-label="layout list">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path fill="#b7bcc5" d="M2 3h12v2H2zM2 7h12v2H2zM2 11h12v2H2z"></path></svg>
+    </button>
+    <button class="icon-btn" aria-label="layout grid">
+      <svg width="18" height="18" viewBox="0 0 16 16" fill="none"><path fill="#b7bcc5" d="M2 2h5v5H2zM9 2h5v5H9zM2 9h5v5H2zM9 9h5v5H9z"></path></svg>
+    </button>
+  </span>
+</div>
+<div class="masonry container" id="feed">
+  {% for post in posts %}
+  {{ post_card(post, session_user) }}
+  {% endfor %}
+</div>
+{% if posts|length >= 60 %}
+<div class="emptynote"><a href="/?section={{ section }}&sort={{ sort }}&page={{ page + 1 }}" style="color:#1bb76e;font-weight:700">Load more posts</a></div>
+{% endif %}
+{% endblock %}

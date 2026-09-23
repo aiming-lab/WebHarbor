@@ -1,0 +1,218 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import us_map, legend, trend_chart with context %}
+{% block title %}{{ title }} | AHR{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <div class="state-head">
+    <h1>Summary of
+      {% if state.is_us %}
+      United States
+      {% else %}
+      <select class="state-select" aria-label="Choose a state"
+              onchange="if (this.value) window.location = '/explore/states/' + this.value + {% if edition.value != 'annual' %}'?rank={{ edition.value }}'{% else %}''{% endif %};">
+        {% for st in states_all %}
+        <option value="{{ st.code }}" {% if st.code == state.code %}selected{% endif %}>{{ st.name }}</option>
+        {% endfor %}
+      </select>
+      {% endif %}
+    </h1>
+    {% if state.svg %}
+    <img class="state-icon" src="{{ state.svg | state_svg_url }}" alt="{{ state.name }} state icon">
+    {% endif %}
+    {% if state.dept_website and not state.is_us %}
+    <a href="https://{{ state.dept_website }}" target="_blank" rel="noopener">{{ state.name }} Health Department ↗</a>
+    {% endif %}
+    <form action="{{ url_for('toggle_bookmark') }}" method="post" style="margin-left:auto">
+      <input type="hidden" name="kind" value="state">
+      <input type="hidden" name="slug" value="{{ state.code }}">
+      <input type="hidden" name="title" value="{{ state.name }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+      {% if current_user.is_authenticated %}
+      <button type="submit" class="btn btn-outline btn-sm">{% if state_saved %}Saved ✓ (remove){% else %}Save this state{% endif %}</button>
+      {% else %}
+      <a class="btn btn-outline btn-sm" href="{{ url_for('login', next=request.path) }}">Log in to save</a>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<section class="section section-white" style="padding-top: 20px">
+  <div class="container">
+    <div class="sc-grid">
+      <div class="sc-box">
+        <h3>Strengths</h3>
+        {% if strengths %}
+        <ul>{% for s in strengths %}<li>{{ s.content }}</li>{% endfor %}</ul>
+        {% else %}<p>Strengths are shown for individual states.</p>{% endif %}
+      </div>
+      <div class="sc-box">
+        <h3>Challenges</h3>
+        {% if challenges %}
+        <ul>{% for c in challenges %}<li>{{ c.content }}</li>{% endfor %}</ul>
+        {% else %}<p>Challenges are shown for individual states.</p>{% endif %}
+      </div>
+    </div>
+
+    {% if highlights %}
+    <h2 class="section-title" style="font-size:22px">Key Findings</h2>
+    <div class="hl-grid">
+      {% for h in highlights %}
+      <div class="hl-tile">
+        <div class="hl-name">{{ h.measure_name or h.content.split(' ')[0] }}</div>
+        {% set pct = h.content | regex_first_number %}
+        {% if pct %}<div class="hl-pct">{{ pct }}{% if '%' not in h.content.split(' ')[0] %}%{% endif %}</div>{% endif %}
+        <div class="hl-text">{{ h.content }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="section-head" style="margin-top: 30px">
+      <h2 class="section-title" style="font-size:22px">Measures Impacting a State’s Rank</h2>
+      <form class="edition-select" method="get" action="{{ url_for('state_summary', code=state.code) }}">
+        <label for="rank">Ranked by:</label>
+        <select id="rank" name="rank" onchange="this.form.submit()">
+          {% for e in editions %}
+          <option value="{{ e.value }}" {% if edition.value == e.value %}selected{% endif %}>{{ e.label }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+    <p class="section-sub">See which measures have the most impact on {{ state.name }}’s {{ edition.year }} {{ edition.label }} ranking and how {{ state.name }} ranks on all measures.</p>
+    {% if overall and overall.rank %}
+    <p><strong>{{ state.name }}’s {{ edition.year }} {{ edition.label }} Ranking: #{{ overall.rank }}</strong></p>
+    {% endif %}
+    <table class="data-table">
+      <thead>
+        <tr><th>Measure</th><th class="num">{{ edition.year }} Value</th><th class="num">{{ edition.year }} Rank</th></tr>
+      </thead>
+      <tbody>
+        {% for r in cat_rows %}
+        <tr>
+          <td><span class="cat-chip" style="background:{{ category_color(r.category) }}"></span>{{ r.measure_name }}*</td>
+          <td class="num">{{ r.value_display if r.value_display else '•' }}</td>
+          <td class="num">{{ r.rank if r.rank is not none else '•' }}</td>
+        </tr>
+        {% if children.get(r.display_order) %}
+        <tr class="submeasures">
+          <td colspan="3" style="padding:0">
+            <details>
+              <summary style="cursor:pointer;padding:8px 12px;color:#0066f5">View measures in this category</summary>
+              <table class="data-table" style="font-size:13px">
+                {% for sub in children[r.display_order] %}
+                <tr>
+                  <td>{% if sub.is_summation %}<strong>{{ sub.measure_name }}</strong>†{% else %}<a href="{{ url_for('measure_detail', slug=sub.measure_slug) }}">{{ sub.measure_name }}</a>{% endif %}</td>
+                  <td class="num">{{ sub.value_display if sub.value_display else '•' }}</td>
+                  <td class="num">{{ sub.rank if sub.rank is not none else '•' }}</td>
+                </tr>
+                {% endfor %}
+              </table>
+            </details>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+        <tr>
+          <td><span class="cat-chip" style="background:#8e8e8e"></span>Demographics - Annual</td>
+          <td class="num">-</td>
+          <td class="num">-</td>
+        </tr>
+        {% if demo_rows %}
+        <tr>
+          <td colspan="3" style="padding:0">
+            <details>
+              <summary style="cursor:pointer;padding:8px 12px;color:#0066f5">View demographics</summary>
+              <table class="data-table" style="font-size:13px">
+                {% for sub in demo_rows %}
+                <tr>
+                  <td>{{ sub.measure_name }}</td>
+                  <td class="num">{{ sub.value_display if sub.value_display else '•' }}</td>
+                  <td class="num">{{ sub.rank if sub.rank is not none else '•' }}</td>
+                </tr>
+                {% endfor %}
+              </table>
+            </details>
+          </td>
+        </tr>
+        {% endif %}
+      </tbody>
+    </table>
+    <p class="footnote">* Value indicates a score. Higher scores are healthier and lower scores are less healthy<br>† Not included in the overall score.<br>• Data unavailable.</p>
+    <a href="{{ url_for('measures_directory') }}">View All Measure Rankings ›</a>
+
+    {% if top_positive or top_negative %}
+    <div class="rank-tables" style="margin-top:30px">
+      <div class="sc-box">
+        <h3>Top Positive Impact — {{ state.name }}</h3>
+        <table class="data-table">
+          <thead><tr><th>Rank</th><th>Measure</th></tr></thead>
+          <tbody>
+            {% for pos, r in top_positive %}
+            <tr><td>{{ pos }}.</td><td><a href="{{ url_for('measure_detail', slug=r.measure_slug) }}">{{ r.measure_name }}</a></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="footnote"><span class="cat-chip" style="background:#38a33c"></span>Positive Impact</p>
+      </div>
+      <div class="sc-box">
+        <h3>Negative Impact — {{ state.name }}</h3>
+        <table class="data-table">
+          <thead><tr><th>Rank</th><th>Measure</th></tr></thead>
+          <tbody>
+            {% for pos, r in top_negative %}
+            <tr><td>{{ pos }}.</td><td><a href="{{ url_for('measure_detail', slug=r.measure_slug) }}">{{ r.measure_name }}</a></td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="footnote"><span class="cat-chip" style="background:#d9a521"></span>Negative Impact</p>
+      </div>
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section section-light" id="featured-measures">
+  <div class="container">
+    <h2 class="section-title">Featured Measures</h2>
+    <p class="section-sub">View state data on various measures and see how it compares to other states and the U.S. overall.</p>
+    {% for f in featured %}
+    <div class="chart-box">
+      <h3>{{ f.measure.display_name }} in {{ state.name }}</h3>
+      <p class="chart-desc">{{ f.measure.description }}</p>
+      {{ trend_chart([{ 'label': state.name, 'color': '#003c71', 'points': f.state_series | map_points },
+                      { 'label': 'United States', 'color': '#0066f5', 'points': f.us_series | map_points }]) }}
+      <div class="chart-source">Source: {{ f.measure.source_name }}</div>
+      <a href="{{ url_for('measure_detail', slug=f.measure.slug) }}">Compare States +</a>
+    </div>
+    <div class="chart-box">
+      <h3>{{ f.measure.display_name }} in the United States</h3>
+      <p class="chart-desc">{{ f.measure.description }}</p>
+      {{ us_map(states_all, f.colors, f.measure, f.bins) }}
+      {{ legend(f.bins) }}
+      <div class="chart-source">Data from {{ f.measure.source_name }}{% if f.measure.source_years %}, {{ f.measure.source_years }}{% endif %}</div>
+      <a class="btn btn-primary" href="{{ url_for('measure_detail', slug=f.measure.slug) }}">View {{ f.measure.display_name }} Data ›</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section section-white">
+  <div class="container">
+    <div class="section-head">
+      <h2 class="section-title">Reports</h2>
+      <a class="btn btn-outline" href="{{ url_for('reports_archive') }}">All Reports ›</a>
+    </div>
+    <p class="section-sub">America’s Health Rankings provides detailed health assessments of key populations.</p>
+    <div class="pub-grid three">
+      {% for r in reports %}
+      <div class="report-card">
+        <h3><a href="{{ url_for('report_page', slug=r.slug) }}">{{ r.title }}</a></h3>
+        <div class="published">Published {{ r.published }}</div>
+        <p>{{ r.excerpt }}</p>
+        <a href="{{ url_for('report_page', slug=r.slug) }}">View Report ›</a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}
