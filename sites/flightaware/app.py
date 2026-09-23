@@ -616,6 +616,10 @@ def flight_history(ident):
 @app.route("/live/form.rvt")
 def search_results():
     query = (request.args.get("query") or request.args.get("q") or "").strip()
+    flight_number = (request.args.get("flight_number") or "").strip().upper()
+    if flight_number:
+        operator = (request.args.get("airline") or "").strip().upper()
+        query = operator + flight_number if flight_number.isdigit() else flight_number
     kind = request.args.get("type", "")
     if not query:
         return redirect(url_for("live_home"))

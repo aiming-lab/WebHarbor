@@ -127,20 +127,50 @@ def _alert_snapshot(db):
     return data
 
 
+
+
+def bound_measure(text, label, expected, pattern, convert):
+    labels = list(re.finditer(label, text, re.I))
+    values = list(re.finditer(pattern, text, re.I))
+    claims = []
+    for match in labels:
+        nearby = [(max(value.start() - match.end(), match.start() - value.end(), 0), value)
+                  for value in values
+                  if not re.search(r"[;\n]|(?<!\d)\.(?!\d)",
+                                   text[min(value.end(), match.end()):max(value.start(), match.start())])]
+        if nearby:
+            distance, value = min(nearby, key=lambda item: item[0])
+            if distance <= 80:
+                claims.append(convert(value))
+    return bool(claims) and all(value == expected for value in claims)
+
+def labeled_value(answer, labels, value):
+    """Check a value in the claim about its named property, not elsewhere."""
+    chunks = re.split(r"[;\n]|(?<!\d)\.(?!\d)|\b(?:and|whereas|while)\b", answer, flags=re.I)
+    return any(re.search(labels, chunk, re.I) and value(chunk) for chunk in chunks)
+
+
+def readable_board(j, traj, path, ident):
+    observed = [str(step.get("observed_text") or "") for step in traj.get("steps", [])
+                if url_path(step.get("url_after") or step.get("url", "")).rstrip("/") == path]
+    j.check("board_rows_visible", any(re.search(r"\b" + re.escape(ident) + r"\b", text) for text in observed),
+            "requested flight row must be visible after authentication")
+
 def _t0(j, traj, init_db, after_db):
     j.bind_run(traj, shot_url="/live/flight/UAL1063")
     ans = final_answer(traj)
     j.check("nav_flight_page", navigated_path(traj, "/live/flight/UAL1063"),
             "must open the UAL1063 flight page")
     j.check("ans_gate", affirms(ans, "c71"), "gate C71")
-    j.check("ans_sched_dep", affirm_time(ans, UAL1063["sched_dep"]), "scheduled 08:28AM")
-    j.check("ans_actual_dep", affirm_time(ans, UAL1063["actual_dep"]), "actual 08:22AM")
+    j.check("ans_sched_dep", bound_measure(ans, r"scheduled(?: departure)?", "08:28", r"(\d{1,2}:\d{2})\s*(?:a\.?m\.?|p\.?m\.?)?", lambda m: m.group(1).zfill(5)), "scheduled 08:28AM")
+    j.check("ans_actual_dep", bound_measure(ans, r"actual(?: gate)?(?: departure)?", "08:22", r"(\d{1,2}:\d{2})\s*(?:a\.?m\.?|p\.?m\.?)?", lambda m: m.group(1).zfill(5)), "actual 08:22AM")
     j.check("ans_aircraft", affirms_any(ans, ["737 max 8", "b38m"]), "Boeing 737 MAX 8")
     _check_readonly_db(j, init_db, after_db)
 
 
 def _t1(j, traj, init_db, after_db):
     j.bind_run(traj, shot_url="/live/airport/KBOS/departures")
+    readable_board(j, traj, "/live/airport/KBOS/departures", "RPA5597")
     ans = final_answer(traj)
     j.check("nav_login", navigated_path(traj, "/account/login"), "must log in")
     j.check("nav_board", navigated_path(traj, "/live/airport/KBOS/departures"),
@@ -228,6 +258,11 @@ def _t7(j, traj, init_db, after_db):
             len(added) == 1 and added[0].get("alert_type") == "basic"
             and not added[0].get("origin_code") and not added[0].get("dest_code"),
             f"new row {added}")
+    all_before = _alert_rows(init_db)
+    all_after = _alert_rows(after_db)
+    j.check("prior_alerts_preserved", all(row in all_after for row in all_before)
+            and len(all_after) == len(all_before) + 1,
+            "one new alert, every pre-existing alert preserved")
     j.check("db_others_unchanged",
             tables_unchanged(init_db, after_db, ignore=("alerts",)) == [],
             "only the alerts table may change")
@@ -251,6 +286,12 @@ def _t8(j, traj, init_db, after_db):
             len(after) == len(before) - 1 and len(removed) == 1
             and removed[0].get("ident") == "AAL954",
             f"removed {removed}; kept {len(kept)}")
+    all_before = _alert_rows(init_db)
+    all_after = _alert_rows(after_db)
+    expected_after = [row for row in all_before
+                      if not (row.get("user_id") == BOB and row.get("ident") == "AAL954")]
+    j.check("exact_alert_removal", all_after == expected_after,
+            "only Bob's AAL954 alert is removed; all other rows preserved")
     j.check("db_others_unchanged",
             tables_unchanged(init_db, after_db, ignore=("alerts",)) == [],
             "only the alerts table may change")
@@ -267,8 +308,8 @@ def _t9(j, traj, init_db, after_db):
             "must open the EVA17 flight page")
     j.check("ans_gate", affirm_token(ans, "a8"), "gate A8")
     j.check("ans_terminal", affirm_number(ans, 2), "terminal 2")
-    j.check("ans_speed", affirm_number(ans, EVA17["speed"]), "501 mph")
-    j.check("ans_planned_speed", affirm_number(ans, EVA17["planned_speed"]), "564 mph")
+    j.check("ans_speed", bound_measure(ans, r"current(?:ly)?(?: speed| flying)?", 501, r"(\d+)\s*mph", lambda m:int(m.group(1))), "501 mph")
+    j.check("ans_planned_speed", bound_measure(ans, r"planned(?: speed)?", 564, r"(\d+)\s*mph", lambda m:int(m.group(1))), "564 mph")
     j.check("ans_aircraft", affirms_any(ans, ["777-300er", "b77w"]), "777-300ER")
     _check_readonly_db(j, init_db, after_db)
 
@@ -290,8 +331,8 @@ def _t11(j, traj, init_db, after_db):
     ans = final_answer(traj)
     j.check("nav_fleet_dal", navigated_path(traj, "/live/fleet/DAL"), "must open the DAL fleet page")
     j.check("nav_fleet_jbu", navigated_path(traj, "/live/fleet/JBU"), "must open the JBU fleet page")
-    j.check("ans_dal", affirm_number(ans, DAL_TRACKED), "148 Delta flights")
-    j.check("ans_jbu", affirm_number(ans, JBU_TRACKED), "33 JetBlue flights")
+    j.check("ans_dal", bound_measure(ans, r"Delta Air Lines|\bDAL\b", DAL_TRACKED, r"(?<![\w.])(\d+)(?![\w.])", lambda m:int(m.group(1))), "148 Delta flights")
+    j.check("ans_jbu", bound_measure(ans, r"JetBlue|\bJBU\b", JBU_TRACKED, r"(?<![\w.])(\d+)(?![\w.])", lambda m:int(m.group(1))), "33 JetBlue flights")
     _check_readonly_db(j, init_db, after_db)
 
 
@@ -318,6 +359,7 @@ def _t13(j, traj, init_db, after_db):
 
 def _t14(j, traj, init_db, after_db):
     j.bind_run(traj, shot_url="/live/airport/KJFK/arrivals")
+    readable_board(j, traj, "/live/airport/KJFK/arrivals", "AAL954")
     ans = final_answer(traj)
     j.check("nav_login", navigated_path(traj, "/account/login"), "must log in")
     j.check("nav_board", navigated_path(traj, "/live/airport/KJFK/arrivals"),
@@ -408,6 +450,7 @@ def _t21(j, traj, init_db, after_db):
 
 def _t22(j, traj, init_db, after_db):
     j.bind_run(traj, shot_url="/live/airport/KJFK/enroute")
+    readable_board(j, traj, "/live/airport/KJFK/enroute", "UAE203")
     ans = final_answer(traj)
     j.check("nav_login", navigated_path(traj, "/account/login"), "must log in")
     j.check("nav_board", navigated_path(traj, "/live/airport/KJFK/enroute"),
@@ -438,6 +481,11 @@ def _t23(j, traj, init_db, after_db):
               and str(added[0].get("origin_code", "")).upper() in {"JFK", "KJFK"}
               and str(added[0].get("dest_code", "")).upper() in {"LHR", "EGLL"})
     j.check("db_new_alert_row", ok_row, f"new row {added}")
+    all_before = _alert_rows(init_db)
+    all_after = _alert_rows(after_db)
+    j.check("prior_alerts_preserved", all(row in all_after for row in all_before)
+            and len(all_after) == len(all_before) + 1,
+            "one new alert, every pre-existing alert preserved")
     j.check("db_others_unchanged",
             tables_unchanged(init_db, after_db, ignore=("alerts",)) == [],
             "only the alerts table may change")
@@ -450,6 +498,7 @@ def _t23(j, traj, init_db, after_db):
 
 def _t24(j, traj, init_db, after_db):
     j.bind_run(traj, shot_url="/live/airport/EGLL/departures")
+    readable_board(j, traj, "/live/airport/EGLL/departures", "VIR208")
     ans = final_answer(traj)
     j.check("nav_login", navigated_path(traj, "/account/login"), "must log in")
     j.check("nav_board", navigated_path(traj, "/live/airport/EGLL/departures"),
@@ -532,11 +581,14 @@ TASKS = {0: _t0, 1: _t1, 2: _t2, 3: _t3, 4: _t4, 5: _t5, 6: _t6, 7: _t7, 8: _t8,
          23: _t23, 24: _t24, 25: _t25, 26: _t26, 27: _t27, 28: _t28, 29: _t29}
 
 
-def grade(number):
+def grade(number, emit=True, task_id=None):
     args = parse_args()
     traj = load_run(args.run_dir)
-    j = Judge(f"FlightAware--{number}", no_llm=args.no_llm)
+    j = Judge(task_id or f"FlightAware--{number}", no_llm=args.no_llm)
+    j.check("trajectory_task_matches", traj.get("task_id") == j.task_id, "trajectory belongs to the requested task")
     init_db = resolve_db(args.initial_db, args.container, "instance_seed")
     after_db = resolve_db(args.after_db, args.container, "instance")
     TASKS[number](j, traj, init_db, after_db)
-    j.emit()
+    if emit:
+        j.emit()
+    return j
