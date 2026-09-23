@@ -27,7 +27,7 @@ VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
 SEED_DB = Path(os.environ.get("IMGUR_TEST_SEED_DB")
                or SITE_DIR / "instance_seed" / "imgur.db")
-BASE = "http://localhost:40084"
+BASE = "http://localhost:40076"
 PASSWORD = "TestPass123!"
 
 # ------------------------------------------------------------------ tiny valid PNG
@@ -100,7 +100,7 @@ class RunBuilder:
     def write(self, *, terminated: bool = True, reason: str = "agent_done",
               task_id: str | None = None) -> Path:
         traj = {
-            "task": f"fixture for {self.task_id}",
+            "task": next(json.loads(line)['ques'] for line in (SITE_DIR / 'tasks.jsonl').read_text().splitlines() if json.loads(line)['id'] == self.task_id),
             "task_id": task_id or self.task_id,
             "start_url": self.start_url,
             "model": "review-fixture",

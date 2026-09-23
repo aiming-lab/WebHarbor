@@ -29,7 +29,7 @@
         <span class="dot">·</span>
         <form method="post" action="/follow/user/{{ post.author.username }}" class="followform">
           <input type="hidden" name="back" value="/gallery/{{ post.route_slug() }}">
-          <button class="followmini" type="submit">+ FOLLOW</button>
+          <button class="followmini" type="submit">{{ 'FOLLOWING' if following else '+ FOLLOW' }}</button>
         </form>
       </div>
       <h1 class="posttitle">{{ post.title }}</h1>
@@ -56,7 +56,7 @@
       {% endif %}
     </div>
 
-    <div class="commentbar">
+    <div class="commentbar" id="comments">
       {% if session_user %}
       <form method="post" action="/comment">
         <input type="hidden" name="post_id" value="{{ post.id }}">

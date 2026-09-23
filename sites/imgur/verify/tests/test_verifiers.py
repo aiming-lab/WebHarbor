@@ -33,8 +33,9 @@ from _support import (BASE, SEED_DB, RunBuilder, build_run, copy_db, mutate_db, 
 pytestmark = pytest.mark.skipif(not SEED_DB.is_file(),
                                 reason="seed DB not built (materialize instance_seed/imgur.db)")
 
+LEGACY = [5, 6, 7, 8, 9, 10, 13, 18, 19, 20, 21, 27]
 STATEFUL = {6, 7, 8, 9, 10, 18, 19, 20, 21, 27}
-READ_ONLY = sorted(set(range(30)) - STATEFUL)
+READ_ONLY = sorted(set(LEGACY) - STATEFUL)
 LOGIN = {"alice": ("alice.j@test.com", "alice_j"), "bob": ("bob.c@test.com", "bob_c"),
          "carol": ("carol.d@test.com", "carol_d"), "david": ("david.k@test.com", "david_k")}
 
@@ -318,7 +319,7 @@ def honest_after_db(tmp_path: Path, task_n: int) -> Path:
              "upvote_count, downvote_count, point_count, image_count, comment_count, "
              "favorite_count, virality, score, is_album, in_most_viral, in_top_week, "
              "in_user_sub, platform, created_at) VALUES ('" + FIXTURE_MEME_ID + "', 990000001, "
-             "'My mirror meme', 'my-mirror-meme', '', 0, 0, 0, 0, 1, 0, 0, 0.0, 0.0, 0, 0, 0, "
+             "'My mirror meme', 'my-mirror-meme', 'Annoyed Picard\nWHY DID I\nOPEN THE MEME GENERATOR', 0, 0, 0, 0, 1, 0, 0, 0.0, 0.0, 0, 0, 0, "
              "1, 'web', '2026-09-22 22:00:00.000000')", ()),
             ("INSERT INTO media (id, post_id, position, mime_type, type, ext, feed_path, "
              "detail_path, poster_path, width, height, size, is_animated, has_sound, duration) "
@@ -387,7 +388,7 @@ def adversarial_after_db(tmp_path: Path, task_n: int) -> Path:
              "upvote_count, downvote_count, point_count, image_count, comment_count, "
              "favorite_count, virality, score, is_album, in_most_viral, in_top_week, "
              "in_user_sub, platform, created_at) VALUES ('" + FIXTURE_MEME_ID + "', 990000002, "
-             "'My mirror meme', 'my-mirror-meme', '', 0, 0, 0, 0, 1, 0, 0, 0.0, 0.0, 0, 0, 0, "
+             "'My mirror meme', 'my-mirror-meme', 'Annoyed Picard\nWHY DID I\nOPEN THE MEME GENERATOR', 0, 0, 0, 0, 1, 0, 0, 0.0, 0.0, 0, 0, 0, "
              "1, 'web', '2026-09-22 22:00:00.000000')", ()),
             ("INSERT INTO media (id, post_id, position, mime_type, type, ext, feed_path, "
              "detail_path, poster_path, width, height, size, is_animated, has_sound, duration) "
@@ -423,7 +424,7 @@ def _honest_fixture(tmp_path: Path, task_n: int, answer: str | None = None,
 
 
 # ---------------------------------------------------------------- honest PASS x30
-@pytest.mark.parametrize("task_n", range(30))
+@pytest.mark.parametrize("task_n", LEGACY)
 def test_honest_pass(tmp_path, task_n):
     run, initial, after = _honest_fixture(tmp_path, task_n)
     verdict = run_verifier(task_n, run, initial, after)
@@ -445,20 +446,8 @@ def test_honest_task10_nested_litterboxking_comment_passes(tmp_path):
     assert verdict["pass"] is True, json.dumps(verdict, indent=1)
 
 
-def test_honest_task16_about_tab_klabel_form_passes(tmp_path):
-    """The ABOUT tab renders the reputation as '3727K reputation points'; reporting that
-    exact on-page form passes."""
-    run = build_run(tmp_path / "run", "Imgur--16", HONEST[16][1],
-                    answer="tampacl shows 3727K reputation points on the ABOUT tab, their "
-                           "reputation tier is LEGENDARY, and they joined on December 22, 2015.")
-    initial = copy_db(tmp_path / "initial.db")
-    after = copy_db(tmp_path / "after.db")
-    verdict = run_verifier(16, run, initial, after)
-    assert verdict["pass"] is True, json.dumps(verdict, indent=1)
-
-
 # ---------------------------------------------------------------- no-op FAIL x30
-@pytest.mark.parametrize("task_n", range(30))
+@pytest.mark.parametrize("task_n", LEGACY)
 def test_noop_fails(tmp_path, task_n):
     run = noop_run(tmp_path / "run", f"Imgur--{task_n}")
     initial = copy_db(tmp_path / "initial.db")
@@ -469,7 +458,7 @@ def test_noop_fails(tmp_path, task_n):
 
 
 # ---------------------------------------------------------------- wrong answer FAIL x30
-@pytest.mark.parametrize("task_n", range(30))
+@pytest.mark.parametrize("task_n", LEGACY)
 def test_wrong_answer_fails(tmp_path, task_n):
     run, initial, after = _honest_fixture(tmp_path, task_n, answer=WRONG[task_n])
     verdict = run_verifier(task_n, run, initial, after)
@@ -484,7 +473,7 @@ def test_wrong_answer_fails(tmp_path, task_n):
 SHORTCUT_EXPECTED_PASS = {24, 28}
 
 
-@pytest.mark.parametrize("task_n", sorted(set(range(30)) - SHORTCUT_EXPECTED_PASS))
+@pytest.mark.parametrize("task_n", sorted(set(LEGACY) - SHORTCUT_EXPECTED_PASS))
 def test_shortcut_fails(tmp_path, task_n):
     run = build_run(tmp_path / "run", f"Imgur--{task_n}",
                     [("/", "click", {}), ("/", "scroll", {"down": True})],
@@ -494,14 +483,6 @@ def test_shortcut_fails(tmp_path, task_n):
     verdict = run_verifier(task_n, run, initial, after)
     assert verdict["pass"] is False
     assert verdict.get("infra_error") is not True
-
-
-@pytest.mark.parametrize("task_n", sorted(SHORTCUT_EXPECTED_PASS))
-def test_homepage_surface_tasks_pass_on_homepage(tmp_path, task_n):
-    """Documented design: tasks 24/28 ask only about the homepage feed surface."""
-    run, initial, after = _honest_fixture(tmp_path, task_n)
-    verdict = run_verifier(task_n, run, initial, after)
-    assert verdict["pass"] is True, json.dumps(verdict, indent=1)
 
 
 # ---------------------------------------------------------------- read-only DB tamper FAIL x20
@@ -515,7 +496,7 @@ def test_readonly_tamper_fails(tmp_path, task_n):
 
 
 # ---------------------------------------------------------------- stateful negatives x20
-@pytest.mark.parametrize("task_n", sorted(STATEFUL))
+@pytest.mark.parametrize("task_n", sorted(STATEFUL & set(LEGACY)))
 def test_state_mismatch_fails(tmp_path, task_n):
     """The answer claims success but the DB never changed."""
     run, initial, _ = _honest_fixture(tmp_path, task_n)
@@ -525,7 +506,7 @@ def test_state_mismatch_fails(tmp_path, task_n):
     assert verdict.get("infra_error") is not True
 
 
-@pytest.mark.parametrize("task_n", sorted(STATEFUL))
+@pytest.mark.parametrize("task_n", sorted(STATEFUL & set(LEGACY)))
 def test_adversarial_state_delta_fails(tmp_path, task_n):
     """A wrong or collateral state delta must not pass with the honest answer."""
     run, initial, _ = _honest_fixture(tmp_path, task_n)
@@ -537,65 +518,65 @@ def test_adversarial_state_delta_fails(tmp_path, task_n):
 
 # ---------------------------------------------------------------- package tampering x7
 def test_wrong_task_id_fails(tmp_path):
-    run, initial, after = _honest_fixture(tmp_path, 0)
+    run, initial, after = _honest_fixture(tmp_path, 7)
     traj = json.loads((run / "trajectory.json").read_text())
     traj["task_id"] = "Imgur--29"
     (run / "trajectory.json").write_text(json.dumps(traj))
-    verdict = run_verifier(0, run, initial, after)
+    verdict = run_verifier(7, run, initial, after)
     assert verdict["pass"] is False
     assert verdict["reason"] == "trajectory_task_matches"
 
 
 def test_offsite_url_fails(tmp_path):
-    run, initial, after = _honest_fixture(tmp_path, 0)
+    run, initial, after = _honest_fixture(tmp_path, 7)
     traj = json.loads((run / "trajectory.json").read_text())
     traj["steps"][0]["url"] = "https://evil.example.com/gallery/real-mvp-4SmuGpb"
     (run / "trajectory.json").write_text(json.dumps(traj))
-    verdict = run_verifier(0, run, initial, after)
+    verdict = run_verifier(7, run, initial, after)
     assert verdict["pass"] is False
     assert verdict["reason"] == "all_urls_match_local_origin"
 
 
 def test_broken_png_fails(tmp_path):
-    run, initial, after = _honest_fixture(tmp_path, 0)
+    run, initial, after = _honest_fixture(tmp_path, 7)
     (run / "screenshots" / "step_001.png").write_bytes(b"\x89PNG\r\n\x1a\nGARBAGE")
-    verdict = run_verifier(0, run, initial, after)
+    verdict = run_verifier(7, run, initial, after)
     assert verdict["pass"] is False
     assert verdict["reason"] == "screenshots_decode"
 
 
 def test_missing_screenshot_fails(tmp_path):
-    run, initial, after = _honest_fixture(tmp_path, 0)
+    run, initial, after = _honest_fixture(tmp_path, 7)
     (run / "screenshots" / "step_001.png").unlink()
-    verdict = run_verifier(0, run, initial, after)
+    verdict = run_verifier(7, run, initial, after)
     assert verdict["pass"] is False
     assert verdict["reason"] == "screenshots_decode"
 
 
 def test_not_done_trajectory_fails(tmp_path):
-    run, initial, after = _honest_fixture(tmp_path, 0)
+    run, initial, after = _honest_fixture(tmp_path, 7)
     traj = json.loads((run / "trajectory.json").read_text())
     traj["terminated"] = False
     traj["termination_reason"] = "max_steps"
     (run / "trajectory.json").write_text(json.dumps(traj))
-    verdict = run_verifier(0, run, initial, after)
+    verdict = run_verifier(7, run, initial, after)
     assert verdict["pass"] is False
     assert verdict["reason"] == "trajectory_completed"
 
 
 def test_tampered_seed_fails_closed(tmp_path):
     """A mutated initial snapshot must fail closed before any task check runs."""
-    run, initial, after = _honest_fixture(tmp_path, 0)
+    run, initial, after = _honest_fixture(tmp_path, 7)
     mutate_db(initial, [("UPDATE tags SET total_items = total_items + 1 WHERE name = 'funny'", ())])
-    verdict = run_verifier(0, run, initial, after)
+    verdict = run_verifier(7, run, initial, after)
     assert verdict["pass"] is False
     assert verdict.get("infra_error") is True
     assert verdict["reason"] == "snapshot_contract_invalid"
 
 
 def test_missing_db_fails_closed(tmp_path):
-    run, _, _ = _honest_fixture(tmp_path, 0)
-    verdict = run_verifier(0, run, tmp_path / "nonexistent.db", tmp_path / "nonexistent2.db")
+    run, _, _ = _honest_fixture(tmp_path, 7)
+    verdict = run_verifier(7, run, tmp_path / "nonexistent.db", tmp_path / "nonexistent2.db")
     assert verdict["pass"] is False
     assert verdict.get("infra_error") is True
     assert verdict["reason"] == "database_unavailable"

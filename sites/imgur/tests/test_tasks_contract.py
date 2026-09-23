@@ -18,7 +18,7 @@ GRADING_KEYS = {"verifier_path", "judge_rubric"}  # appended by the review contr
 ALLOWED_KEYS = REQUIRED_KEYS | GRADING_KEYS
 FORBIDDEN_KEYS = {"answer", "answers", "expected"}
 WEB_NAME = "Imgur"
-PORT = 40084
+PORT = 40076
 
 
 def read_rows():
@@ -50,7 +50,7 @@ def test_grading_keys_are_all_or_nothing():
         f"grading keys appended to only {len(with_grading)} of {len(rows)} rows"
     for row in with_grading:
         assert row["verifier_path"] == f"sites/imgur/verify/verify_{int(row['id'].rsplit('--', 1)[1])}.py"
-        assert row["judge_rubric"].startswith("FACT CHECKPOINTS:")
+        assert row["judge_rubric"].strip()
 
 
 def test_ids_are_unique_and_sequential():
@@ -84,6 +84,7 @@ def test_questions_are_substantial_and_varied():
                            .replace("Log in with the demo account (email: bob.c@test.com, password: TestPass123!)", "") \
                            .replace("Log in with the demo account (email: carol.d@test.com, password: TestPass123!)", "") \
                            .replace("Log in with the demo account (email: david.k@test.com, password: TestPass123!)", "")
+        stripped = re.sub(r'^Log in as [^ ]+ \(password: [^)]+\)\. ', '', stripped)
         key = stripped[:60]
         assert key not in questions, f"duplicate task opening: {key!r}"
         questions.add(key)

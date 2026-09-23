@@ -10,8 +10,8 @@
   {% if q %}
   <div class="searchhead">
     Found <b class="hl">{{ results|length }}</b> results for <a class="hl" href="/search?q={{ q }}">{{ q }}</a>, sorted by
-    <a class="hl" href="/search?q={{ q }}&sort=top&date={{ window }}">highest scoring</a> of
-    <a class="hl" href="/search?q={{ q }}&sort={{ sort }}&date=all">all time</a>
+    <span class="hl">{{ sort_label }}</span> of
+    <span class="hl">{{ window_label }}</span>
   </div>
   <div class="searchsub container">
     <span>advanced search:
@@ -21,6 +21,7 @@
     </span>
     <span>Today’s most popular posts.</span>
     <span>
+      <a href="{{ url_for('search', q=q, sort='top', date=window) }}" class="hl" style="margin-right:10px">highest scoring</a>
       <a href="/search?q={{ q }}&sort=time&date={{ window }}" class="hl" style="margin-right:10px">newest</a>
       <a href="/search?q={{ q }}&sort=viral&date={{ window }}" class="hl">popularity</a>
     </span>
