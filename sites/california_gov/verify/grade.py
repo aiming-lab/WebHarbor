@@ -157,6 +157,12 @@ def _nav_ok(traj, n):
         "" if not missing else f" MISSING {missing}")
 
 
+def _bound(final, label, value):
+    # A fact must share a clause with its entity, not merely occur elsewhere.
+    return any(norm(label) in norm(clause) and contains_phone(clause, value)
+               for clause in re.split(r"[;\n]|(?<=[.!?])\s+", final))
+
+
 def _answer_ok(final, n):
     """(ok, evidence): the final answer carries the task's ground-truth facts."""
     if n == 0:
@@ -205,8 +211,7 @@ def _answer_ok(final, n):
         ok = got == 3 and dates_ok
         return ok, f"3 headlines (found {got}/3) + dates {SPOTLIGHT}"
     if n == 11:
-        ok = affirm_number(final, STATE_PARKS) and affirm_number(final, STATE_BEACHES) \
-            and affirms(final, "state parks") and affirms(final, "state beaches")
+        ok = bool(re.search(r"\b87\s+state parks\b", norm(final))) and bool(re.search(r"\b63\s+state beaches\b", norm(final)))
         return ok, f"{STATE_PARKS} state parks + {STATE_BEACHES} state beaches"
     if n == 12:
         ok = contains_all(final, [LT_GOV["name"], LT_GOV["label"]])
@@ -262,14 +267,14 @@ def _answer_ok(final, n):
         ok = contains_phone(final, BREA["phone"]) and contains_date(final, BREA["date"])
         return ok, f"phone {BREA['phone']} + date {BREA['date']}"
     if n == 25:
-        ok = contains_phone(final, BIRTH_CERT["phone"]) and contains_phone(final, CDPH_DEPT["phone"]) \
+        ok = _bound(final, "birth certificate", BIRTH_CERT["phone"]) and _bound(final, "Department of Public Health", CDPH_DEPT["phone"]) \
             and (affirms(final, "not the same") or affirms(final, "different")
                  or affirms(final, "do not match") or (affirms(final, "same") is False))
         return ok, f"both phones ({BIRTH_CERT['phone']} / {CDPH_DEPT['phone']}) + not the same"
     if n == 26:
         named = sum(1 for name in DMV_AUTO_LICENSE_FILTER if norm(name) in norm(final))
         ok = affirm_number(final, DMV_AUTO_LICENSE_FILTER_COUNT) \
-            and named >= DMV_AUTO_LICENSE_FILTER_COUNT - 1
+            and named == DMV_AUTO_LICENSE_FILTER_COUNT
         return ok, f"count {DMV_AUTO_LICENSE_FILTER_COUNT} + names (found {named}/8)"
     if n == 27:
         ok = contains_all(final, [SMOG_STATION_TARGET["name"], SMOG_STATION_TARGET["desc"]]) \
@@ -298,7 +303,7 @@ def _shot_anchor(n):
     return anchors.get(n)
 
 
-def grade(n):
+def grade(n, emit=True):
     args = parse_args()
     traj = load_run(args.run_dir)
     judge = Judge(f"CA.gov--{n}", no_llm=args.no_llm)
@@ -316,8 +321,9 @@ def grade(n):
     after_db = args.after_db or resolve_db(None, args.container, "instance")
     if not initial_db or not after_db:
         judge.check("db_available", False, "initial/after DB unobtainable (run_dir snapshots or container)")
-        judge.emit()
-        return
+        if emit:
+            judge.emit()
+        return judge
     if n in READ_ONLY:
         identical = db_file_identical(initial_db, after_db)
         judge.check("db_read_only_unchanged", identical is True,
@@ -332,12 +338,16 @@ def grade(n):
                 and fresh[0].get("comments") == "The refund status link was hard to find" \
                 and str(fresh[0].get("page_path", "")).rstrip("/").endswith("/departments/236") \
                 and len(after["feedback"]) == len(before["feedback"]) + 1
+            old_ids = {row["id"] for row in before["feedback"]}
+            ok = ok and [row for row in after["feedback"] if row["id"] in old_ids] == before["feedback"]
             judge.check("db_feedback_row", ok,
                         f"exactly one new feedback row (helpful=no, exact comment, FTB page path); got {fresh}")
             others = tables_unchanged(initial_db, after_db, ignore=("feedback",))
             judge.check("db_other_tables_unchanged", others == [],
                         f"unchanged tables outside feedback: {others}")
-    judge.emit()
+    if emit:
+        judge.emit()
+    return judge
 
 
 if __name__ == "__main__":

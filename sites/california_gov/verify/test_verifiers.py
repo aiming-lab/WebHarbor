@@ -188,6 +188,17 @@ HONEST = {
 }
 
 # A wrong answer: plausible-looking but off by the key fact per task.
+
+# Expanded reviewer tasks retain the independent component fixture expectations.
+_ORIGINAL_HONEST = HONEST.copy()
+_REVIEW_COMPONENTS = json.loads((VERIFY / "review_components.json").read_text())
+
+_original_urls_for = urls_for
+def urls_for(n):
+    return list(dict.fromkeys(url for k in _REVIEW_COMPONENTS.get(str(n), [n]) for url in _original_urls_for(k)))
+for _n, _parts in _REVIEW_COMPONENTS.items():
+    HONEST[int(_n)] = "\n".join(_ORIGINAL_HONEST[k] for k in _parts)
+
 WRONG = {n: HONEST[n].replace(BIRTH_CERT["phone"], "916-999-9999") if n in (0, 25) else
          HONEST[n].replace(CHRB_DEPT["date"], "01/01/2030") if n == 1 else
          "The answer is 42." for n in HONEST}
