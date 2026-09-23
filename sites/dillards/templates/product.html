@@ -1,0 +1,206 @@
+{% extends "base.html" %}
+{% block title %}{{ product.full_name }} | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/c/{{ product.top_slug }}">{{ top_label }}</a> &rsaquo; <a href="/c/{{ product.category_slug }}">{{ category_name }}</a> &rsaquo; {{ product.short_name or product.name }}</div>
+
+  <div class="pdp-layout">
+    <div class="gallery pdp-gallery">
+      <div class="thumbs">
+        {% for color in product.colors() %}
+          <img src="/static/images/{{ color.image }}" alt="Color Swatch - {{ color.color }}" onclick="document.getElementById('pdp-main').src='/static/images/{{ color.image }}'">
+        {% endfor %}
+      </div>
+      <div class="main-image">
+        <img id="pdp-main" src="/static/images/{{ selected_color.image or product.main_image }}" alt="{{ product.full_name }}">
+      </div>
+    </div>
+
+    <div class="pdp-info">
+      <a class="brand-link" href="{{ product.brand.url }}">{{ product.brand.name }}</a>
+      <h1>{{ product.short_name or product.name }}</h1>
+      <div class="pdp-rating">
+        <span class="stars">{% for i in range((product.rating|stars)['full']) %}&#9733;{% endfor %}{% if (product.rating|stars)['half'] %}&#189;{% endif %}</span>
+        {{ '%.1f'|format(product.rating or 0) }} ({{ product.review_count }}) <a href="{{ product.url }}/reviews">Write a review</a>
+      </div>
+      <div class="pdp-price{% if product.on_sale() %} sale{% endif %}">
+        {%- if explicit_price is not none %}
+          ${{ '%.2f'|format(explicit_price) }}
+        {%- elif selected_color %}
+          ${{ '%.2f'|format(selected_color.price) }}
+        {%- elif price_high is not none %}
+          ${{ '%.2f'|format(price_low) }} - ${{ '%.2f'|format(price_high) }}
+        {%- else %}
+          ${{ '%.2f'|format(product.price() or 0) }}
+        {%- endif %}
+        {% if product.on_sale() %}<span class="was">${{ '%.2f'|format(product.was_price()) }}</span>{% endif %}
+      </div>
+      <div class="shipping-note">shipping SHIPS FREE - Exclusions Apply</div>
+
+      <form method="post" action="/bag/add/{{ product.pid }}" class="buy-form">
+        {% if sizes %}
+          <div class="option-block">
+            <h3>Size <a class="size-chart" href="#" onclick="return false;">Size Chart</a></h3>
+            <div class="size-options">
+              {% for size in sizes %}
+                <button type="button" class="size-btn{% if size == selected_size %} selected{% endif %}" data-size="{{ size }}" onclick="selectSize(this)">{{ size }}</button>
+              {% endfor %}
+            </div>
+            <input type="hidden" name="size" id="size-input" value="{{ selected_size or sizes[0] }}">
+          </div>
+        {% else %}
+          <input type="hidden" name="size" value="">
+        {% endif %}
+
+        {% if colors %}
+          <div class="option-block">
+            <h3>Color</h3>
+            <div class="color-options">
+              {% for color in product.colors() %}
+                <button type="button" class="color-btn{% if color.color == selected_color_name %} selected{% endif %}" data-color="{{ color.color }}" onclick="selectColor(this)">
+                  <img src="/static/images/{{ color.image }}" alt="Color Swatch - {{ color.color }}">
+                </button>
+              {% endfor %}
+            </div>
+            <div class="color-name" id="color-name">Color: {{ selected_color_name }}</div>
+            <input type="hidden" name="color" id="color-input" value="{{ selected_color_name or (colors[0].color if colors else '') }}">
+          </div>
+        {% else %}
+          <input type="hidden" name="color" value="">
+        {% endif %}
+
+        <div class="option-block quantity-row">
+          <h3>Quantity</h3>
+          <div class="qty">
+            <button type="button" onclick="bumpQty(-1)">-</button>
+            <input type="text" name="quantity" id="qty" value="1" aria-label="Quantity">
+            <button type="button" onclick="bumpQty(1)">+</button>
+          </div>
+        </div>
+
+        <div class="add-actions">
+          <button class="btn-primary" type="submit">Add To Bag</button>
+        </div>
+      </form>
+
+      <div class="link-actions">
+        <form method="post" action="/wishlist/add/{{ product.pid }}">
+          <input type="hidden" name="next" value="{{ product.url }}">
+          <button class="btn-link" type="submit">&#9825; Add To Wish List</button>
+        </form>
+        <form method="post" action="/registry/add/{{ product.pid }}">
+          <input type="hidden" name="next" value="{{ product.url }}">
+          <button class="btn-link" type="submit">&#127873; Add To Registry</button>
+        </form>
+        <a href="/c/shopbybrand">&#9733; Add To Preferred Brands</a>
+      </div>
+
+      <div class="find-in-store">
+        Find In Store &mdash; <a href="/stores">Set Your Store</a> to check availability. In-store availability is subject to change and cannot be guaranteed. Prices may vary by store location.
+      </div>
+
+      <div class="section-block">
+        <h2>Description</h2>
+        <div class="item-number">Item # {{ product.item_number }}</div>
+        {% if product.exclusive %}<div class="exclusive-badge">Dillard's Exclusive</div>{% endif %}
+        <p>{{ product.description }}</p>
+      </div>
+
+      {% if product.brand.about %}
+        <div class="section-block">
+          <h2>About {{ product.brand.name }}</h2>
+          <p>{{ product.brand.about }}</p>
+        </div>
+      {% endif %}
+
+      {% if product.more_details %}
+        <div class="section-block">
+          <h2>More Details</h2>
+          <p>{{ product.more_details }}</p>
+        </div>
+      {% endif %}
+
+      <div class="section-block">
+        <h2>Shipping and Returns</h2>
+        <p>Earn 10% Off With A Dillard's Credit Card after qualifying purchases. Maximum $100 discount. Terms apply. <a href="/c/DillardsCard">See if I Prequalify</a></p>
+        <p>Free shipping on orders of $150 or more. Standard shipping is $8.95. Returns are accepted within 30 days of purchase. <a href="/c/returns">Return Policy</a></p>
+      </div>
+    </div>
+  </div>
+
+  <section class="reviews-section" id="reviews">
+    <h2>Reviews</h2>
+    <div class="rating-snapshot">
+      <div class="snapshot-rows">
+        <h3>Rating Snapshot</h3>
+        <p class="muted">Select a row below to filter reviews.</p>
+        {% for stars in [5, 4, 3, 2, 1] %}
+          <a href="{{ product.url }}/reviews?stars={{ stars }}">
+            {{ stars }} stars
+            <span class="bar"><span style="width: {{ ((breaks.get(stars, 0) / (product.review_count or 1)) * 100)|round }}%"></span></span>
+            {{ breaks.get(stars, 0) }} reviews with {{ stars }} stars.
+          </a>
+        {% endfor %}
+      </div>
+      <div>
+        <div class="overall-rating">
+          <h3>Overall Rating</h3>
+          <div class="big">{{ '%.1f'|format(product.rating or 0) }}</div>
+          <div>{{ product.review_count }} Reviews</div>
+          <p class="muted"><a href="{{ product.url }}/reviews/new">Review this Product</a></p>
+        </div>
+      </div>
+    </div>
+
+    {% for review in reviews[:8] %}
+      <div class="review-row">
+        <div class="review-stars">{% for i in range(review.rating) %}&#9733;{% endfor %}</div>
+        <h4>{{ review.title or review.author }}</h4>
+        <div class="meta">{{ review.author }} &middot; {{ review.date_label }}</div>
+        <p>{{ review.body }}</p>
+      </div>
+    {% else %}
+      <p class="muted">No reviews yet. <a href="{{ product.url }}/reviews/new">Be the first to review this product.</a></p>
+    {% endfor %}
+    {% if reviews|length > 8 %}
+      <p><a href="{{ product.url }}/reviews">Load More</a></p>
+    {% endif %}
+  </section>
+
+  {% if also_like %}
+    <section class="editorial-section">
+      <div class="section-head">YOU MAY ALSO LIKE</div>
+      <div class="rail-row">
+        {% for product in also_like %}
+          <div class="product-card">
+            <a class="card-img" href="{{ product.url }}"><img src="/static/images/{{ product.main_image }}" alt="{{ product.full_name }}"></a>
+            <a class="brand-name" href="{{ product.brand.url }}">{{ product.brand.name }}</a>
+            <a class="product-name" href="{{ product.url }}">{{ product.short_name or product.name }}</a>
+            <div class="price">${{ '%.2f'|format(product.price() or 0) }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </section>
+  {% endif %}
+</div>
+
+<script>
+function selectSize(btn) {
+  document.querySelectorAll('.size-btn').forEach(function (b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  document.getElementById('size-input').value = btn.dataset.size;
+}
+function selectColor(btn) {
+  document.querySelectorAll('.color-btn').forEach(function (b) { b.classList.remove('selected'); });
+  btn.classList.add('selected');
+  document.getElementById('color-input').value = btn.dataset.color;
+  document.getElementById('pdp-main').src = btn.querySelector('img').src;
+  document.getElementById('color-name').textContent = btn.dataset.color;
+}
+function bumpQty(delta) {
+  var el = document.getElementById('qty');
+  var value = parseInt(el.value || '1', 10) + delta;
+  el.value = Math.max(1, value);
+}
+</script>
+{% endblock %}

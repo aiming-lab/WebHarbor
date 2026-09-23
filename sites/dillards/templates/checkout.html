@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Checkout | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/bag">Shopping Bag</a> &rsaquo; Checkout</div>
+  <div class="content-page">
+    <h1>Checkout</h1>
+    {% if error %}<div class="errors">{{ error }}</div>{% endif %}
+    <form method="post" action="/checkout">
+      <h2>Items</h2>
+      <table>
+        <tr><th>Item</th><th>Size</th><th>Color</th><th>Qty</th><th>Price</th></tr>
+        {% for row in rows %}
+          <tr>
+            <td>{{ row.variant.product.full_name }}</td>
+            <td>{{ row.variant.size or 'One Size' }}</td>
+            <td>{{ row.variant.color or '-' }}</td>
+            <td>{{ row.quantity }}</td>
+            <td class="num">${{ '%.2f'|format(row.variant.price * row.quantity) }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+
+      <h2>Shipping Address</h2>
+      {% for address in addresses %}
+        <label class="radio-row{% if loop.first %} checked{% endif %}">
+          <input type="radio" name="address_id" value="{{ address.id }}" {% if loop.first %}checked{% endif %}>
+          <b>{{ address.label }}</b> &mdash; {{ address.one_line() }}, {{ address.city }}, {{ address.state }} {{ address.zipcode }}
+        </label>
+      {% else %}
+        <p class="errors">No saved address on file. Add one from your account first.</p>
+      {% endfor %}
+
+      <h2>Payment Method</h2>
+      {% for payment in payments %}
+        <label class="radio-row{% if loop.first %} checked{% endif %}">
+          <input type="radio" name="payment_id" value="{{ payment.id }}" {% if loop.first %}checked{% endif %}>
+          <b>{{ payment.kind }}</b> ending in {{ payment.last4 }}
+        </label>
+      {% else %}
+        <p class="errors">No payment method on file.</p>
+      {% endfor %}
+
+      <div class="summary-box" style="max-width: 420px; margin-top: 16px;">
+        <div class="row"><span>Subtotal</span><span>${{ '%.2f'|format(subtotal) }}</span></div>
+        <div class="row"><span>Shipping</span><span>{% if shipping == 0 %}FREE{% else %}${{ '%.2f'|format(shipping) }}{% endif %}</span></div>
+        <div class="row"><span>Estimated Tax</span><span>${{ '%.2f'|format(preview_tax) }}</span></div>
+        <div class="total"><span>Total</span><span>${{ '%.2f'|format(subtotal + shipping + preview_tax) }}</span></div>
+      </div>
+      <button class="btn-primary" type="submit" style="max-width: 420px;">Place Order</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

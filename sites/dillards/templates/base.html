@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Dillard's{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+  <div class="promo-bar">EARN POINTS WHEN YOU USE YOUR DILLARD&rsquo;S CREDIT CARD - <a href="/c/DillardsCard">LEARN MORE</a> &nbsp;|&nbsp; Venmo Now Available! Select Venmo At Checkout For A Faster Way To Pay.</div>
+
+  <div class="utility-row">
+    <div class="container">
+      <a href="/c/back-in-stock">Back In Stock</a>
+      <a class="sale-link" href="/c/sale-clearance">Sale and Clearance</a>
+      <a href="/c/shopbybrand">Shop By Brand</a>
+      <a href="/c/limited-availability">Limited Availability</a>
+      <a href="/c/DillardsCard">Credit Card</a>
+      <a href="/stores">Store Locator</a>
+      <a href="/stores">Find a Store</a>
+    </div>
+  </div>
+
+  <header class="site-header">
+    <div class="header-main container">
+      <div class="header-logo">
+        <a href="/" aria-label="Dillard's Homepage">
+          <img src="{{ url_for('static', filename='icons/dillards-logo.svg') }}" alt="Dillard's Homepage">
+        </a>
+      </div>
+      <div class="header-right">
+        <form class="search-form" onsubmit="window.location.href='/search-term/' + encodeURIComponent(document.getElementById('headerSiteSearch').value); return false;">
+          <input type="text" id="headerSiteSearch" placeholder="What are you shopping for?" aria-label="Search">
+          <button type="submit" aria-label="Search">&#128269;</button>
+        </form>
+        <div class="login-menu">
+          <div class="dropdown">
+            <a href="/login">&#128100; Login &#9662;</a>
+            <div class="dropdown-menu">
+              {% if current_user.is_authenticated %}
+                <a href="/account">My Dillard's Account</a>
+                <a href="/account/orders">Order History</a>
+                <a href="/account/returns">Returns</a>
+                <a href="/account/paybill">Pay My Bill</a>
+                <a href="/account/wishlist">My Wish List</a>
+                <a href="/logout">Log Out</a>
+              {% else %}
+                <a href="/login">Login</a>
+                <a href="/account">My Dillard's Account</a>
+                <a href="/account/orders">Order History</a>
+                <a href="/account/returns">Returns</a>
+                <a href="/account/paybill">Pay My Bill</a>
+                <a href="/account/wishlist">My Wish List</a>
+                <a href="/register">Create an Account</a>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <a class="bag-link" href="/bag">&#128717; ({{ cart_count }})</a>
+        <a href="/stores">&#128205; Find a Store</a>
+      </div>
+    </div>
+    <nav class="main-nav">
+      <ul class="container">
+        {% for item in nav %}
+          <li>
+            <a href="/c/{{ item.category.slug }}">{{ item.category.name }}</a>
+            {% if item.subs %}
+              <div class="mega-menu">
+                {% for sub in item.subs %}
+                  <a href="/c/{{ sub.slug }}">{{ sub.name }}</a>
+                {% endfor %}
+              </div>
+            {% endif %}
+          </li>
+        {% endfor %}
+        <li><a href="/registry">Registry</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash-row">
+          {% for message in messages %}
+            <div class="flash-msg">{{ message }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-cols">
+        <div>
+          <h3>Customer Service</h3>
+          <a href="/c/customerservice">Contact Us</a>
+          <a href="/c/faqs-notices-policies">FAQ, Notices &amp; Policies</a>
+          <a href="/c/returns">Returns</a>
+          <a href="/registry">Registry - Wedding, Baby, and Gift</a>
+        </div>
+        <div>
+          <h3>Dillard's Credit Card</h3>
+          <a href="/c/DillardsCard">Apply for a Dillard's Card</a>
+          <a href="/account/paybill">Pay Bill / View Credit Account</a>
+          <a href="/c/DillardsCard">Dillard's Cardholder Benefits</a>
+        </div>
+        <div>
+          <h3>Contact Us</h3>
+          <p>Call 1-817-831-5482<br>Monday-Friday: 7AM-9PM GMT-6<br>Saturday-Sunday: 9AM-7PM GMT-6</p>
+          <a href="/c/customerservice">Contact Us Via Email</a>
+        </div>
+        <div>
+          <h3>More Ways To Shop</h3>
+          <a href="/c/giftcard">Gift Cards</a>
+          <a href="/stores">Store Locations</a>
+          <a href="/c/shopbybrand">Shop By Brand</a>
+          <a href="/c/about-dillards-company-history">About Us</a>
+        </div>
+      </div>
+      <div class="footer-signup">
+        <div class="signup-box">
+          <h3>Stay in Touch.</h3>
+          <p>Sign up for emails and get updates about new products and the latest trends!</p>
+          <form method="post" action="/c/customerservice">
+            <input type="text" name="email_signup" placeholder="Email sign-up">
+            <button type="submit">Submit</button>
+          </form>
+        </div>
+        <div class="signup-box">
+          <h3>Be a Mobile VIP!</h3>
+          <p>Sign up for texts and be the first to know about upcoming sales and great offers.</p>
+          <form method="post" action="/c/customerservice">
+            <input type="text" name="text_signup" placeholder="Text sign-up">
+            <button type="submit">Submit</button>
+          </form>
+        </div>
+      </div>
+      <div class="footer-social">
+        <a href="#">Instagram</a>
+        <a href="#">Facebook</a>
+        <a href="#">Pinterest</a>
+        <a href="#">Twitter/X</a>
+        <a href="#">YouTube</a>
+        <a href="#">TikTok</a>
+        <a href="#">Snapchat</a>
+      </div>
+      <div class="footer-legal">
+        <a href="/c/sitemap">Site Map</a>
+        <a href="/c/faqs-notices-policies">Terms Of Use</a>
+        <a href="/c/faqs-notices-policies">Dillard's Privacy Policy</a>
+        <a href="/c/about-dillards-company-history">Careers</a>
+        <a href="/c/about-dillards-company-history">Investor Relations</a>
+        <p>Prices and sale offers may vary by store location, including Dillards.com, and are subject to change. &copy; 2026 Dillard's</p>
+      </div>
+    </div>
+  </footer>
+</body>
+</html>
