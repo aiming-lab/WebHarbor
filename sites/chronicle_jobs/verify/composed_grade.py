@@ -35,6 +35,9 @@ def grade(number):
     except (OSError, ValueError, TypeError, sqlite3.Error) as error:
         j.check('snapshot_package', False, str(error))
         j.emit()
+    from coherent_grade import check as check_coherent
+    if check_coherent(number, j, t, args.initial_db, args.after_db):
+        j.emit()
     if site == 'flightaware':
         from grade import TASKS, STATEFUL
         for component in components:

@@ -1,72 +1,37 @@
-# Dillards verifier contract
+# Dillard’s deterministic verification
 
-One deterministic verifier per task (`verify_0.py` … `verify_30.py`, thin
-wrappers around `grade.py`), shared helpers in `verify_lib.py`, and hardcoded
-ground truth in `answers.py`. `test_verifiers.py` is the offline contract
-test (honest PASS / no-op FAIL / fabricated FAIL / near-miss FAIL / shortcut
-FAIL / tamper FAIL); it needs no browser and no docker, only the frozen seed
-`instance_seed/dillards.db`.
+Each task has one coherent goal. `coherent_tasks.json` contains the revised
+entity/decision checks and required evidence pages; `coherent_grade.py` checks
+them. The remaining tasks keep their original domain checks. The former
+concatenation map is empty: one task no longer requires unrelated task outcomes.
+Task IDs and entrypoint paths remain stable.
 
-## Verifier input signature
+Run the primary grader from the repository root:
 
+```bash
+python agent_demo/eval_judge.py --run_dir /absolute/path/to/run --verifier True
 ```
-python3 sites/dillards/verify/verify_<n>.py --run_dir <dir> [--container wh-rev-dillards]
-```
 
-`<dir>` is an agent run package: `trajectory.json` (agent_demo schema),
-`screenshots/step_NNN.png`, and optional `initial.db` / `after.db` SQLite
-snapshots. When the snapshots are absent the verifier copies them out of the
-container (`--container`, default `wh-rev-dillards`):
-`/opt/WebSyn/dillards/instance_seed/dillards.db` (initial) and
-`/opt/WebSyn/dillards/instance/dillards.db` (after).
+Supply `initial.db`, `after.db`, `trajectory.json` and referenced PNG screenshots.
+Initial logical tables must match `reviewed_seed.json`. Evidence must record the
+current task wording for a revised task, a completed run, observed navigation on
+the starting origin including its port, decoded and distinct screenshot frames,
+and the relevant entity in browser observations. Parameters requesting a URL
+are not proof that the page loaded. Required pages are checked independently of
+the final answer; an arbitrary action-count minimum is not imposed.
 
-## Checks (fail-closed, no LLM)
+Read tasks must leave every table unchanged. Saved-job tasks check exact added
+or removed rows and preserve other users and unrelated tables. A claim of success
+without the requested state change fails. Natural prose and tables are supported;
+ISO dates and common dollar notation are normalized. The deterministic grader
+uses task-specific phrase and value checks, not unrestricted semantic inference.
+A secondary LLM judge remains a separate assessment.
 
-1. Harness gates (`Judge.bind_run`): terminated run, `agent_done` final step,
-   non-empty answer, every URL on a local origin, real decodable PNG frames
-   bound to the target page, ≥3 distinct frames.
-2. Navigation evidence: the trajectory must have opened the page(s) the task
-   depends on (PLP + sort/facet URL, PDP, account page, registry page, store
-   page, search results …) — a correct answer without that navigation is a
-   knowledge-shortcut FAIL.
-3. Answer checks against `answers.py` ground truth: names, money, counts,
-   phone, codes, dates; negation-aware token matching.
-4. DB after-state: read-only tasks must leave every table unchanged;
-   stateful tasks (15, 18, 19, 20, 21, 24, 28, 29, 30) must produce exactly
-   the expected rows/field changes and preserve everything else.
+`test_coherent_tasks.py` exercises swapped values, wrong selections, origin checks
+and unintended mutations. `test_review_regressions.py` retains the earlier
+fixture and evidence integrity controls. Synthetic fixtures and adversarial
+copies are grading controls, not new browser evidence.
 
-## Grading notes for the task texts
-
-- Task 3 asks for the price of each COCO MADEMOISELLE size. The PDP renders
-  the price range ($154.00 - $270.00); the middle size's exact price is read
-  from bag lines after adding the sizes (bagging requires a logged-in demo
-  account; the added rows are removed afterwards to keep the DB clean). The
-  verifier requires all three size prices.
-- Task 13's "the matching Levi's jeans" matches two Levi's 511 products in
-  the "511 slim" search results. The verifier accepts either product as long
-  as the reported name, price and size count are internally consistent.
-- Task 18 says "from your recent order": the Lancome Lash Idole mascara is in
-  Carol's In-Transit order D2609180298 (the UI allows returns from it; her
-  delivered order contains different items). The verifier anchors on the
-  mascara item + reason + method + credit amount.
-
-## Output
-
-JSON on stdout: `{"task_id": …, "pass": bool, "reason": …, "evidence": […]}`;
-exit 0 on PASS, 1 on FAIL.
-
-## Reviewed task extensions and evidence checks
-
-The reviewer continuation preserves every task ID and expands short requests with
-related outcomes. `review_components.json` lists the required checks for each task;
-`composed_grade.py` requires every component on the same recorded session. Answers
-remain natural prose. Initial and final SQLite snapshots must be supplied together,
-and initial table contents must match `reviewed_seed.json`. Image evidence is decoded
-with Pillow; a PNG header alone is insufficient. Navigation must stay on the starting
-origin, including its port. Synthetic controls are separate from browser evidence.
-
-Run the primary grader from the repository root using
-`python agent_demo/eval_judge.py --run_dir /path/to/run --verifier True`.
-Task paths, screenshots and database outcomes are separate requirements. Grading
-uses deterministic phrase and numeric checks, which are not a general semantic judge.
-The optional LLM judge remains a separate secondary assessment.
+`test_verifiers.py` runs the synthetic per-task contract matrix, including
+`coherent_examples.json` for the revised read tasks. It needs the reviewed seed
+but does not reset or mutate the preview database.
