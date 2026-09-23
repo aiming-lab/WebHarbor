@@ -46,7 +46,9 @@ def run_checks(judge, traj, initial_db, after_db):
         before = row_dict(initial_db, "posts", posts_delta["changed"][0][0])
         after = row_dict(initial_db, "posts", posts_delta["changed"][0][1])
         judge.check("psa_comment_count_40_to_41",
-                    before.get("comment_count") == 40 and after.get("comment_count") == 41,
+                    before.get("comment_count") == 40 and after.get("comment_count") == 41
+                    and {k:v for k,v in before.items() if k != "comment_count"}
+                    == {k:v for k,v in after.items() if k != "comment_count"},
                     f"comment_count {before.get('comment_count')} -> {after.get('comment_count')}")
     judge.check("answer_comments_header_after_post", contains_count(answer, 41),
                 "expected 41 COMMENTS in the header after posting")

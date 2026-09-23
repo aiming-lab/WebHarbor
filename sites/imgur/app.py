@@ -16,12 +16,22 @@ import re
 import random as _random
 import time
 from datetime import datetime, timedelta, timezone
+from urllib.parse import urlsplit
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, send_from_directory, session, url_for)
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
+
+def local_redirect(target, fallback="/"):
+    """Keep user-provided return locations on this mirror."""
+    target = str(target or "")
+    parsed = urlsplit(target)
+    if not target.startswith("/") or target.startswith("//") or "\\" in target or parsed.netloc or parsed.scheme:
+        target = fallback
+    return redirect(target)
+
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -73,7 +83,7 @@ PLATFORM_LABELS = {
 
 SORT_LABELS = {
     "time": "newest",
-    "viral": "highest scoring",
+    "viral": "relevance",
     "top": "highest scoring",
     "rising": "highest scoring",
 }
@@ -458,8 +468,8 @@ def register_template_filters() -> None:
         /media/uploads route so /reset wipes them with the rest of the
         runtime state.
         """
-        if path.startswith("instance/"):
-            return "/media/uploads/" + path[len("instance/"):]
+        if path.startswith("instance/uploads/"):
+            return "/media/uploads/" + path[len("instance/uploads/"):]
         if path.startswith("static/"):
             path = path[len("static/"):]
         return _url_for("static", filename=path)
@@ -495,7 +505,10 @@ def index():
     sort = request.args.get("sort", "newest")
     if sort not in ("newest", "popular", "rising"):
         sort = "newest"
-    page = max(1, int(request.args.get("page", 1) or 1))
+    try:
+        page = max(1, int(request.args.get("page", 1) or 1))
+    except ValueError:
+        abort(400)
     posts = feed_posts(section, sort, page)
     return render_template("index.html", posts=posts, section=section,
                            sort=sort, page=page)
@@ -519,6 +532,7 @@ def gallery(slug):
     return render_template("gallery.html", post=post, comments=comments,
                            sort=sort, sidebar=sidebar, faved=faved,
                            next_post=next_in_feed(post),
+                           following=bool(user and user.is_following(post.author.username)),
                            platform_label=PLATFORM_LABELS.get(post.platform, "Web"))
 
 
@@ -559,8 +573,8 @@ def post_comment_tree(post: Post, sort: str):
             children.setdefault(row.parent_id, []).append(row)
         else:
             tops.append(row)
-    for top in tops:
-        top.replies = sorted(children.get(top.id, []),
+    for row in rows:
+        row.replies = sorted(children.get(row.id, []),
                              key=lambda r: (-r.point_count, r.id))
     return tops
 
@@ -580,6 +594,7 @@ def gallery_comment(slug, cid):
     return render_template("gallery.html", post=post, comments=comments,
                            sort=request.args.get("sort", "best"),
                            sidebar=[], faved=faved, focus_comment=cid,
+                           following=bool(user and user.is_following(post.author.username)),
                            platform_label=PLATFORM_LABELS.get(post.platform, "Web"))
 
 
@@ -694,7 +709,7 @@ def signin():
             flash("Invalid username or password.", "error")
             return render_template("signin.html"), 401
         session["uid"] = user.id
-        return redirect(request.args.get("next") or "/")
+        return local_redirect(request.args.get("next"))
     return render_template("signin.html")
 
 
@@ -818,7 +833,7 @@ def vote_post(post_id):
     db.session.commit()
     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
         return jsonify(ok=True, value=value, points=post.display_points())
-    return redirect(request.form.get("back") or f"/gallery/{post.route_slug()}")
+    return local_redirect(request.form.get("back"), f"/gallery/{post.route_slug()}")
 
 
 @app.route("/favorite/<post_id>", methods=["POST"])
@@ -840,7 +855,7 @@ def favorite_post(post_id):
     db.session.commit()
     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
         return jsonify(ok=True, saved=saved)
-    return redirect(request.form.get("back") or f"/gallery/{post.route_slug()}")
+    return local_redirect(request.form.get("back"), f"/gallery/{post.route_slug()}")
 
 
 @app.route("/vote/comment/<int:comment_id>", methods=["POST"])
@@ -868,7 +883,7 @@ def vote_comment(comment_id):
     db.session.commit()
     if request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.is_json:
         return jsonify(ok=True, value=value, points=comment.display_points())
-    return redirect(request.form.get("back") or f"/gallery/{comment.post.route_slug()}")
+    return local_redirect(request.form.get("back"), f"/gallery/{comment.post.route_slug()}")
 
 
 @app.route("/comment", methods=["POST"])
@@ -878,11 +893,18 @@ def add_comment():
         flash("Sign in to leave a comment.", "error")
         return redirect("/signin")
     post_id = request.form.get("post_id") or ""
-    parent_id = int(request.form.get("parent_id") or 0)
+    try:
+        parent_id = int(request.form.get("parent_id") or 0)
+    except ValueError:
+        abort(400)
     text = (request.form.get("comment") or "").strip()
     post = db.session.get(Post, post_id)
     if not post:
         abort(404)
+    if parent_id:
+        parent = db.session.get(Comment, parent_id)
+        if not parent or parent.post_id != post.id:
+            abort(400)
     if not text:
         flash("Write a comment first.", "error")
         return redirect(f"/gallery/{post.route_slug()}")
@@ -893,7 +915,7 @@ def add_comment():
     db.session.add(comment)
     post.comment_count = (post.comment_count or 0) + 1
     db.session.commit()
-    return redirect(request.form.get("back") or f"/gallery/{post.route_slug()}")
+    return local_redirect(request.form.get("back"), f"/gallery/{post.route_slug()}")
 
 
 @app.route("/follow/user/<username>", methods=["POST"])
@@ -914,7 +936,7 @@ def follow_user(username):
         db.session.add(FollowUser(follower_id=user.id, followee_id=target.id))
         following = True
     db.session.commit()
-    return redirect(request.form.get("back") or f"/user/{target.username}")
+    return local_redirect(request.form.get("back"), f"/user/{target.username}")
 
 
 @app.route("/follow/tag/<tag>", methods=["POST"])
@@ -933,7 +955,7 @@ def follow_tag(tag):
         db.session.add(FollowTag(user_id=user.id, tag_name=tag))
         following = True
     db.session.commit()
-    return redirect(request.form.get("back") or f"/t/{tag}")
+    return local_redirect(request.form.get("back"), f"/t/{tag}")
 
 
 # --------------------------------------------------------------------------
@@ -1031,7 +1053,7 @@ def upload():
                     media_id = match.group(1)
                 else:
                     # a mirror upload path: /media/uploads/name.jpg
-                    match = re.search(r"/media/uploads/([A-Za-z0-9_.-]+)\.(?:jpg|jpeg|png|webp|gif)", url)
+                    match = re.search(r"/media/uploads/([A-Za-z0-9_.-]+)\.(jpg|jpeg|png|webp|gif)", url)
                     if match:
                         upload = os.path.join(BASE_DIR, "instance", "uploads",
                                               f"{match.group(1)}.{match.group(2)}")
@@ -1099,7 +1121,10 @@ def meme_generator():
         template_id = request.form.get("template")
         top_text = (request.form.get("top_text") or "").strip().upper()[:80]
         bottom_text = (request.form.get("bottom_text") or "").strip().upper()[:80]
-        template = db.session.get(MemeTemplate, int(template_id)) if template_id else None
+        try:
+            template = db.session.get(MemeTemplate, int(template_id)) if template_id else None
+        except ValueError:
+            abort(400)
         if not template:
             flash("Pick a template first.", "error")
             return redirect("/meme-generator")
@@ -1114,7 +1139,7 @@ def meme_generator():
             id=new_post_id("m"),
             author_id=user.id, title=title[:500],
             seo_title=re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")[:80],
-            description="", view_count=0, upvote_count=0, downvote_count=0,
+            description=f"{template.name}\n{top_text}\n{bottom_text}", view_count=0, upvote_count=0, downvote_count=0,
             point_count=0, image_count=1, comment_count=0, favorite_count=0,
             virality=0.0, score=0.0, is_album=False, in_most_viral=False,
             in_top_week=False, in_user_sub=True, platform="web",

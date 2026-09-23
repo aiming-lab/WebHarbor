@@ -693,6 +693,11 @@ def screenshots_decode(traj):
 
 
 def check_trajectory_identity(judge, traj, task_id, require_answer=True):
+    expected = next((json.loads(line)['ques'] for line in
+                     (Path(__file__).resolve().parent.parent / 'tasks.jsonl').read_text().splitlines()
+                     if json.loads(line)['id'] == task_id), None)
+    judge.check("current_task_prompt", expected is not None and traj.get('task') == expected,
+                "trajectory must carry the current task wording")
     answer = final_answer(traj)
     if require_answer:
         judge.check("final_answer_nonempty", bool(answer), f"final_answer={answer!r}")

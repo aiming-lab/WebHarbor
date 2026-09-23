@@ -56,7 +56,13 @@ def run_checks(judge, traj, initial_db, after_db):
         words = text.replace("-", " ").split()
         head = " ".join(words[:6])
         tail = " ".join(words[-3:])
-        judge.check("answer_comment_score_after_upvote", contains_count(answer, base_points + 1),
+        from verify_lib import _affirmative_search, _number_word, normalize_text
+        import re
+        value = str(base_points + 1)
+        word = _number_word(base_points + 1)
+        number = "(?:" + value + ("|" + re.escape(word) if word else "") + ")"
+        pattern = r"\b" + number + r"\s*(?:points?|pts)\b|\bscore\s*(?:of|is|:)??\s*" + number + r"\b"
+        judge.check("answer_comment_score_after_upvote", _affirmative_search(pattern, normalize_text(answer)),
                     f"expected {base_points + 1} points after the upvote")
         judge.check("answer_comment_text_head", contains_phrase(answer, head),
                     f"expected the comment text head {head!r}")

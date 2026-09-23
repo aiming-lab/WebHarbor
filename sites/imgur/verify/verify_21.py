@@ -42,6 +42,7 @@ def run_checks(judge, traj, initial_db, after_db):
         judge.check("new_meme_post_row_matches",
                     new_post.get("title") == MEME_TITLE
                     and new_post.get("seo_title") == MEME_SEO_TITLE
+                    and new_post.get("description") == f"Annoyed Picard\n{TOP_TEXT}\n{BOTTOM_TEXT}"
                     and str(new_post.get("id", "")).startswith("m")
                     and str(new_post.get("author_id")) == str(ALICE_USER_ID),
                     f"new meme post row={new_post!r}")

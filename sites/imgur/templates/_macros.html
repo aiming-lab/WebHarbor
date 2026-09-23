@@ -43,14 +43,14 @@
 </div>
 <form method="post" action="/favorite/{{ post.id }}" class="favform">
   <input type="hidden" name="back" value="{{ back_url }}">
-  <button class="actionbtn fav-btn {{ 'active' if faved }}" type="submit" aria-label="Add to Favorites">
+  <button class="actionbtn fav-btn {{ 'active' if faved }}" type="submit" aria-pressed="{{ 'true' if faved else 'false' }}" aria-label="{{ 'Remove from Favorites' if faved else 'Add to Favorites' }}">
     <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Add to Favorites</title><path fill="currentColor" stroke="currentColor" stroke-width="0" fill-rule="evenodd" clip-rule="evenodd" d="M16 27.5c-.4 0-.8-.1-1.1-.4C9.7 22.6 4 17.4 4 11.9 4 7.9 7 5 10.6 5c2.2 0 4.2 1 5.4 2.7C17.2 6 19.2 5 21.4 5 25 5 28 7.9 28 11.9c0 5.5-5.7 10.7-10.9 15.2-.3.3-.7.4-1.1.4z"></path></svg>
   </button>
 </form>
 <button class="actionbtn copylink-btn" type="button" data-link="/gallery/{{ post.route_slug() }}" aria-label="Copy link to clipboard">
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Copy link to clipboard</title><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M12.9 17.1a1 1 0 011.4 0l3.6 3.6a3 3 0 01-.1 4.3l-2.5 2.5a3 3 0 01-4.3 0l-4.5-4.5a3 3 0 010-4.3l2.5-2.5a3 3 0 014.3-.1l1.4 1.4-1.4 1.4-1.4-1.4a1 1 0 00-1.4 0l-2.5 2.5a1 1 0 000 1.4l4.5 4.5a1 1 0 001.4 0l2.5-2.5a1 1 0 000-1.4l-3.6-3.6 1.4-1.4z"></path><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M19.1 14.9a1 1 0 00-1.4 0l-3.6-3.6a3 3 0 01.1-4.3l2.5-2.5a3 3 0 014.3 0l4.5 4.5a3 3 0 010 4.3l-2.5 2.5a3 3 0 01-4.3.1l-1.4-1.4 1.4-1.4 1.4 1.4a1 1 0 001.4 0l2.5-2.5a1 1 0 000-1.4l-4.5-4.5a1 1 0 00-1.4 0l-2.5 2.5a1 1 0 000 1.4l3.6 3.6-1.4 1.4z"></path></svg>
 </button>
-<a class="actionbtn" href="/gallery/{{ post.route_slug() }}">
+<a class="actionbtn" href="/gallery/{{ post.route_slug() }}#comments" aria-label="Jump to Comments">
   <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Jump to Comments</title><path fill="currentColor" d="M8.91 24.39l.733 2.21 2.074-1.06c.532-.27 1.274-.823 2.078-1.479.778-.637 1.742-1.472 2.84-2.487h4.584a6.612 6.612 0 006.612-6.611v-5.31a6.612 6.612 0 00-6.612-6.612H10.612A6.612 6.612 0 004 10.612v5.312c0 2.68 1.865 4.918 4.366 5.496.017.344.05.67.092.958.11.812.315 1.5.337 1.605.033.141.073.274.115.408z"></path></svg>
   <span>{{ post.comment_count|count }}</span>
 </a>
@@ -79,13 +79,17 @@
           <span class="cscore" data-cscore="{{ comment.id }}">{{ comment.display_points() }}</span>
           <button class="cdown {{ 'down-active' if cv == -1 }}" data-comment="{{ comment.id }}" data-value="-1" aria-label="Downvote comment">▼</button>
         </span>
+        <details class="reply-editor">
+        <summary class="replybtn">Reply</summary>
         <form method="post" action="/comment" class="replyform">
           <input type="hidden" name="post_id" value="{{ post.id }}">
           <input type="hidden" name="parent_id" value="{{ comment.id }}">
           <input type="hidden" name="back" value="{{ back_url }}">
-          <input type="hidden" name="comment" value="">
-          <button type="submit" class="replybtn" aria-label="Reply">Reply</button>
+          <label for="reply-{{ comment.id }}">Reply to {{ comment.author.username }}</label>
+          <textarea id="reply-{{ comment.id }}" name="comment" required maxlength="2000" rows="2"></textarea>
+          <button type="submit" class="btn">Post reply</button>
         </form>
+        </details>
       </div>
     </div>
   </div>
