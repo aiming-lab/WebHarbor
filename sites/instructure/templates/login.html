@@ -6,7 +6,7 @@
     <div class="account-panel">
       <h2>Sign in to your Instructure account</h2>
       <p class="muted">Save resources, register for webinars, and manage your profile.</p>
-      <form method="post" action="/login" novalidate>
+      <form method="post" action="{{ url_for('login', next=request.args.get('next', '')) }}" novalidate>
         {{ form.hidden_tag() }}
         <div class="form-field {% if form.email.errors %}has-err{% endif %}">
           <label>Email <span class="req">*</span></label>

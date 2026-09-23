@@ -35,7 +35,7 @@ from _support import (BASE, RunBuilder, SEED_DB, _acquire_seed, build_run, copy_
 pytestmark = pytest.mark.skipif(not SEED_DB.is_file() and not SEED_DB and False,
                                 reason="seed DB unavailable")
 
-STATEFUL = {18, 20, 21, 22, 23, 24, 25}
+STATEFUL = {18, 20, 21, 22, 23, 24, 25, 28}
 READ_ONLY = sorted(set(range(30)) - STATEFUL)
 LOGIN = {"alice": "alice.j@test.com", "bob": "bob.c@test.com",
          "carol": "carol.d@test.com", "david": "david.k@test.com"}
@@ -200,8 +200,13 @@ HONEST = {
          "Montana and Adopted Parchment: 2015 in its stat bar."),
 }
 
+# Current task fixtures are synthetic controls, not browser completion evidence.
+HONEST.update({int(k): v for k, v in json.loads(
+    Path(__file__).with_name("reviewed_fixtures.json").read_text()).items()})
+
 # stateful after-DB mutations (exactly the delta the verifier accepts)
 MUTATIONS = {
+    28: [("INSERT INTO saved_resources (user_id, resource_id, created_at) VALUES (4, 419, ?)", (CREATED,))],
     18: [("DELETE FROM saved_resources WHERE id = 1", ())],
     20: [("INSERT INTO users (id, username, email, display_name, password_hash, job_title, "
           "organization, organization_type, country, state, phone, created_at) VALUES "
@@ -232,7 +237,7 @@ MUTATIONS = {
 }
 
 # tasks whose required surface is the homepage by design (shortcut case is the honest nav)
-HOMEPAGE_SURFACE = {7, 26}
+HOMEPAGE_SURFACE = set()
 
 
 @pytest.fixture(scope="session")

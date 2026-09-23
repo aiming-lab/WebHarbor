@@ -216,7 +216,7 @@ def build_seed(db) -> None:
             event_date=e["date"] or "",
             img=_map_img(url_map, e["img"]),
             external_url=e["href"] or "",
-            region="North America",
+            region=e.get("region", ""),
             audience="All",
             description="",
             list_order=order,

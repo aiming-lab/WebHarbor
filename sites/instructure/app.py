@@ -932,8 +932,12 @@ def events_listing():
         rows = [r for r in rows if r.event_type == event_type]
     if region:
         rows = [r for r in rows if r.region == region]
-    if time_filter == "Past":
-        rows = []
+    def is_past(event):
+        try:
+            return datetime.strptime(event.event_date, "%b %d, %Y").date() < MIRROR_REFERENCE_DATE.date()
+        except ValueError:
+            return False
+    rows = [event for event in rows if is_past(event) == (time_filter == "Past")]
     return render_template("events_listing.html", rows=rows,
                             time_filter=time_filter, audience=audience,
                             event_type=event_type, region=region)
@@ -1050,6 +1054,24 @@ def contact_us_submit():
 # Routes — auth + account
 # --------------------------------------------------------------------------
 
+
+
+def local_return(value, fallback):
+    """Keep account navigation on this mirror, including encoded URL tricks."""
+    from urllib.parse import unquote, urlsplit
+    value = str(value or "")
+    decoded = unquote(value)
+    try:
+        parts = urlsplit(decoded)
+    except ValueError:
+        return fallback
+    if (decoded.startswith("/") and not decoded.startswith("//")
+            and not parts.scheme and not parts.netloc and "\\" not in decoded
+            and not any(ord(c) < 32 or ord(c) == 127 for c in decoded)):
+        return value
+    return fallback
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
     form = LoginForm()
@@ -1058,10 +1080,7 @@ def login():
         if user and user.check_password(form.password.data):
             login_user(user)
             flash("Signed in as %s." % user.display_name, "success")
-            nxt = request.args.get("next")
-            if nxt and nxt.startswith("/"):
-                return redirect(nxt)
-            return redirect(url_for("account"))
+            return redirect(local_return(request.args.get("next"), url_for("account")))
         flash("We couldn't find an account with that email and password.", "error")
     return render_template("login.html", form=form)
 
