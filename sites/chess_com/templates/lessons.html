@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block nav_learn %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/lessons.svg') }}" alt="">
+    <h1>Lessons</h1>
+  </div>
+
+  <div class="card" style="padding:12px;">
+    <form method="get" style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+      <input class="side-input" style="flex:1; min-width:220px;" type="text" name="q" value="{{ search }}" placeholder="Search...">
+      <select name="category" class="side-input" style="width:auto;">
+        <option value="">Category: All</option>
+        {% for c in categories %}
+          <option value="{{ c }}" {% if c == active_category %}selected{% endif %}>{{ c|title }}</option>
+        {% endfor %}
+      </select>
+      <select name="level" class="side-input" style="width:auto;">
+        <option value="">Level: All</option>
+        <option value="0" {% if active_level == 0 %}selected{% endif %}>Beginner</option>
+        <option value="1" {% if active_level == 1 %}selected{% endif %}>Intermediate</option>
+        <option value="2" {% if active_level == 2 %}selected{% endif %}>Advanced</option>
+      </select>
+      <button class="btn btn-primary btn-sm" type="submit">Search</button>
+    </form>
+  </div>
+
+  {% if search or active_category %}
+    <p class="muted small" style="margin-top:10px;">
+      {{ courses|length }} course{{ '' if courses|length == 1 else 's' }}
+      {% if active_category %}in <b>{{ active_category|title }}</b>{% endif %}
+      {% if search %}matching “{{ search }}”{% endif %}
+    </p>
+  {% endif %}
+
+  <div class="course-grid" style="margin-top:16px;">
+    {% for course in courses %}
+      <a class="course-card" href="{{ url_for('lesson_detail', slug=course.slug) }}">
+        {% if course.image %}<img src="{{ url_for('static', filename='images/lessons/' + course.image) }}" alt="{{ course.title }}">{% endif %}
+        <div class="course-card-body">
+          <div class="course-card-title">{{ course.title }}</div>
+          <div class="course-card-desc">{{ (course.description or '') }}</div>
+          <div class="course-card-meta">
+            <span class="level-badge l{{ course.level }}">{{ ['Beginner', 'Intermediate', 'Advanced'][course.level] if course.level < 3 else 'All' }}</span>
+            <span>{{ course.n_lessons }} lessons</span>
+            {% if course.mastery %}<span>· Mastery</span>{% endif %}
+          </div>
+        </div>
+      </a>
+    {% else %}
+      <div class="empty-state">No lessons match your filters.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

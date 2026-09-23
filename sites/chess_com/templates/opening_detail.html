@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block nav_learn %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/book-stack-pawn.svg') }}" alt="">
+    <h1>{{ opening.name }}</h1>
+  </div>
+  <p class="muted">
+    {% if parent %}<a href="{{ url_for('opening_detail', slug=parent.slug) }}">{{ parent.name }}</a> → {% endif %}
+    <b>{{ opening.moves or opening.name }}</b>
+    {% if opening.eco %} · ECO {{ opening.eco }}{% endif %}
+  </p>
+
+  <div class="page-with-sidebar" style="margin-top:16px;">
+    <div>
+      <div class="card">
+        <div id="opening-board" data-fen="{{ start_fen }}" style="max-width:380px; margin:0 auto;"></div>
+        <div class="board-controls">
+          <button data-board-action="prev">←</button>
+          <button data-board-action="first">⇤</button>
+          <button data-board-action="next">→</button>
+          <button data-board-action="flip">⇅</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>About this opening</h3>
+        <p>{{ opening.description or 'No description available.' }}</p>
+        {% if opening.games_count %}
+          <p class="muted small">{{ '{:,}'.format(opening.games_count) }} games in the Chess.com explorer.</p>
+        {% endif %}
+      </div>
+      {% if sections %}
+        {% for s in sections %}
+          <div class="card">
+            <h3>{{ s.heading or 'Overview' }}</h3>
+            {% for para in s.paragraphs %}<p>{{ para }}</p>{% endfor %}
+          </div>
+        {% endfor %}
+      {% endif %}
+      {% if variations %}
+        <div class="card">
+          <h3>Variations</h3>
+          {% for v in variations %}
+            <a class="variation-row" href="{{ url_for('opening_detail', slug=v.slug) }}">
+              <span>{{ v.name }}{% if v.moves %} <span class="muted small">· {{ v.moves }}</span>{% endif %}</span>
+              <span class="eco muted small">{{ v.eco or '' }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>Popularity</h3>
+        {% if popularity_series %}
+          <div class="spark-chart" title="Popularity by year">
+            {% for _, value in popularity_series %}
+              <div class="bar" style="height: {{ value }}%"></div>
+            {% endfor %}
+          </div>
+          <p class="muted small">Share of master games by year ({{ popularity_series[0][0] }}–{{ popularity_series[-1][0] }}).</p>
+        {% else %}
+          <p class="muted small">No popularity data.</p>
+        {% endif %}
+      </div>
+      <div class="side-panel">
+        <h3>Top players</h3>
+        {% for tp in top_players %}
+          <div class="result-row">
+            <span class="avatar avatar-32" style="background-image:url('{{ url_for('static', filename='images/players/' + tp.avatar_url) if tp.avatar_url else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+            <div>
+              <div><b>{{ tp.name }}</b>{% if tp.chess_title %} <span class="user-title">{{ tp.chess_title|replace('Grandmaster', 'GM') }}</span>{% endif %}</div>
+              <div class="muted small">{{ tp.country_name }} · {{ '{:,}'.format(tp.games_count) }} games</div>
+            </div>
+          </div>
+        {% else %}
+          <p class="muted small">No top-player data.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+  window.CHESS_STATIC = "{{ url_for('static', filename='') }}".replace(/\/$/, "");
+  var OPENING_MOVES = {{ san_moves | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script>
+  (function () {
+    var el = document.getElementById("opening-board");
+    if (!el) return;
+    var board = new window.ChessBoard(el, { fen: el.dataset.fen });
+    var ply = 0;
+    el.closest(".page").querySelectorAll("[data-board-action]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var action = btn.dataset.boardAction;
+        if (action === "prev") ply = Math.max(0, ply - 1);
+        else if (action === "next") ply = Math.min(OPENING_MOVES.length, ply + 1);
+        else if (action === "first") ply = 0;
+        else if (action === "flip") {
+          var order = Array.prototype.slice.call(el.children).reverse();
+          order.forEach(function (c) { el.appendChild(c); });
+          board.draw();
+          return;
+        }
+        board.replay(OPENING_MOVES, ply);
+      });
+    });
+  })();
+</script>
+{% endblock %}

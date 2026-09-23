@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/masters.svg') }}" alt="">
+    <h1>Titled Players</h1>
+  </div>
+  <p class="muted">Grandmasters, International Masters and other titled members on Chess.com.</p>
+  {% for title, group in by_title.items() %}
+    <section class="section-title"><h2>{{ title }}</h2></section>
+    <div class="grid grid-4">
+      {% for u in group %}
+        <div class="card">
+          {{ macros.user_link(u, show_title=False, size=64) }}
+          <div class="muted small" style="margin-top:8px;">
+            {{ u.country_name or u.country_code or '' }} · {{ '{:,}'.format(u.followers or 0) }} followers
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-state">No titled players found.</div>
+  {% endfor %}
+</div>
+{% endblock %}

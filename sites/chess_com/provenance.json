@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-09-22",
+  "records": [
+    {
+      "path": "app.py",
+      "classification": "mirror-code",
+      "scope": "Flask application implementing the chess.com mirror: homepage, play hub, puzzle trainer + daily puzzle, lessons, openings, watch/events, leaderboards, member profiles and stats, games database, news, clubs, today, global search, auth + account settings, follow/club/lesson-progress state. Route/URL patterns and page structure follow the upstream site."
+    },
+    {
+      "path": "seed_data.py",
+      "classification": "mirror-code",
+      "scope": "Deterministic build-time conversion of source_data.json into the SQLite seed database. Byte-reproducible (PYTHONHASHSEED=0, fixed bcrypt digest for the benchmark users). Also the source for the container-style boot seeding path."
+    },
+    {
+      "path": "source_data.json",
+      "classification": "captured-upstream-data",
+      "scope": "Frozen mirror snapshot (2026-09-22): 1,300 leaderboard rows across blitz/bullet/rapid/tactics/daily with trend + W/D/L records and rating-distribution sidebars; 1,176 member records from the site's public player/profile endpoints; 168 news articles with full bodies; openings directory with per-ECO popularity history, game counts and top players; lesson course catalog; 625 daily-puzzle archive entries with FEN + solution lines; master-player archives and full game records; clubs; events; ChessTV calendar; today items."
+    },
+    {
+      "path": "scraped_data/ (not shipped)",
+      "classification": "captured-upstream-content",
+      "scope": "Build-time only (gitignored + dockerignored): the capture scripts that drove the live site and its own callback/RPC endpoints (leaderboard paging, member profile gateway, news SSR pages, openings ECO stats, lessons pages, games archive/view pages, DailyPuzzleService archive, club search, events index), plus rendered reference screenshots used for visual-fidelity comparison."
+    },
+    {
+      "path": "instance_seed/chess_com.db (build-generated)",
+      "classification": "captured-upstream-data",
+      "scope": "Generated at image build time from the tracked source snapshot (see .build-generated-seed); not shipped as an opaque blob. Contains the frozen runtime data described above plus the four benchmark users with follows, club memberships and lesson progress."
+    },
+    {
+      "path": "static/images/ (HF-managed)",
+      "classification": "source-backed-media-inventory",
+      "scope": "Every HF-managed runtime image has a local byte count, SHA-256 and source URL in asset_inventory.json: 1,350+ files downloaded directly from images.chesscomfiles.com (member avatars, membership flairs, news photography and inline report images, lesson cover art, event art, club icons, master-player portraits). No placeholders, no generated images."
+    },
+    {
+      "path": "static/css/ + static/js/",
+      "classification": "adapted-visual-structure",
+      "scope": "Layout, color tokens (chess.com dark brown-gray + green accent), typography (the site's own Chess Sans webfonts) and component structure adapted from the live site's rendered pages; country flags render through the live site's own sprite + position stylesheet. The board renderer uses the site's real Neo piece set; the puzzle trainer and game viewer replay real captured positions/move lists."
+    },
+    {
+      "path": "static/icons/ + static/fonts/ + static/pieces/",
+      "classification": "source-backed-icons",
+      "scope": "Navigation icons, flag sprites, favicons, the noavatar default and the Neo/Glass piece sets downloaded at the exact URLs the live site serves; fonts are the site's own woff2 webfonts (Chess Sans Bold/ExtraBold, chessglyph-v3)."
+    },
+    {
+      "path": "tasks.jsonl",
+      "classification": "benchmark-tasks",
+      "scope": "30 contributor-defined benchmark tasks (web_name, id, ques, web, upstream_url only). No answers, no verifier keys; the reviewer adds the grading contract."
+    }
+  ]
+}

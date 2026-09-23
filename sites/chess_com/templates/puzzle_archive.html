@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block nav_puzzles %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/calendar-dailypuzzle.svg') }}" alt="">
+    <h1>Daily Puzzle Archive</h1>
+  </div>
+  <p class="muted small">{{ total }} daily puzzles in the archive — one for every day. Open a puzzle to see its position, title, author and stats.</p>
+  <div class="card">
+    <table class="table">
+      <thead>
+        <tr><th>Date</th><th>Puzzle</th><th>Goal</th><th>Curated by</th><th>Solved</th><th>Comments</th></tr>
+      </thead>
+      <tbody>
+        {% for p in puzzles %}
+        <tr>
+          <td>{{ p.daily_date }}</td>
+          <td><a href="{{ url_for('puzzle_detail', puzzle_id=p.id) }}">{{ p.title or 'Daily Puzzle' }}</a></td>
+          <td>{{ p.goals or 'Tactics' }}</td>
+          <td>{% if p.author_username %}{{ p.author_name or p.author_username }}{% if p.author_title %} ({{ p.author_title }}){% endif %}{% else %}—{% endif %}</td>
+          <td>{{ p.solved_count or 0 }}</td>
+          <td>{{ p.comment_count or 0 }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <div class="pagination">
+      {% if page > 1 %}<a class="btn" href="{{ url_for('puzzle_archive', page=page-1) }}">← Newer</a>{% endif %}
+      <span class="muted small">Page {{ page }} of {{ total_pages }}</span>
+      {% if page < total_pages %}<a class="btn" href="{{ url_for('puzzle_archive', page=page+1) }}">Older →</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

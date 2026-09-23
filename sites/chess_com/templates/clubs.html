@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/clubs.svg') }}" alt="">
+    <h1>Clubs</h1>
+  </div>
+  <div class="card" style="padding:12px; margin-bottom:16px;">
+    <form method="get" style="display:flex; gap:10px;">
+      <input class="side-input" style="flex:1;" type="text" name="q" value="{{ search }}" placeholder="Search clubs by name...">
+      <button class="btn btn-primary btn-sm" type="submit">Search</button>
+    </form>
+  </div>
+  {% if search %}
+    <p class="muted small">{{ clubs|length }} club{{ '' if clubs|length == 1 else 's' }} match “{{ search }}”.</p>
+  {% endif %}
+  {% for club in clubs %}
+    <a class="club-row" href="{{ url_for('club_detail', slug=club.slug) }}">
+      <span class="avatar" style="background-image:url('{{ url_for('static', filename='images/clubs/' + club.icon) if club.icon else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+      <div style="flex:1;">
+        <div><b style="font-family:var(--font-heading);">{{ club.name }}</b>
+          {% if my_clubs and club.id in my_clubs %}<span class="pill pill-green" style="margin-left:8px;">Joined</span>{% endif %}
+        </div>
+        <div class="club-desc">{{ (club.description or '') | striptags | truncate(140) }}</div>
+      </div>
+      <div class="t-right muted small">
+        {{ '{:,}'.format(club.members_count or 0) }} members
+      </div>
+    </a>
+  {% else %}
+    <div class="empty-state">No clubs found.</div>
+  {% endfor %}
+</div>
+{% endblock %}

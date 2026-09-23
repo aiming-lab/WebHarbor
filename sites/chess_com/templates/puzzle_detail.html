@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block nav_puzzles %}active{% endblock %}
+{% block content %}
+<div class="page trainer">
+  <div>
+    <div class="page-header">
+      <img src="{{ url_for('static', filename='icons/nav/puzzle-piece.svg') }}" alt="">
+      <h1>{{ puzzle.title or 'Puzzle #' ~ puzzle.legacy_id }}</h1>
+    </div>
+    <p class="muted small">Daily Puzzle · {{ puzzle.daily_date or '' }} · Puzzle #{{ puzzle.legacy_id }}</p>
+    <div id="puzzle-board" data-fen="{{ puzzle.fen }}"></div>
+    <div class="board-controls">
+      <button id="reveal-solution">Reveal solution</button>
+      <a class="btn btn-primary" href="{{ url_for('puzzles') }}">Train more puzzles</a>
+    </div>
+  </div>
+  <div class="trainer-side">
+    <div class="card">
+      <h3>Details</h3>
+      <div class="pill pill-orange">{{ (puzzle.themes or []) | join(', ') or 'Tactics' }}</div>
+      {% if puzzle.goals %}<div class="pill" style="margin-top:6px;">Goal: {{ puzzle.goals }}</div>{% endif %}
+      {% if puzzle.rating %}<div class="pill" style="margin-top:6px;">Rated {{ puzzle.rating }}</div>{% endif %}
+      {% if solved %}<div class="pill pill-green" style="margin-top:6px;">Solved by you</div>{% endif %}
+      <div class="spacer"></div>
+      <p class="muted small">{{ '{:,}'.format(puzzle.solved_count or 0) }} players solved this puzzle · {{ '{:,}'.format(puzzle.comment_count or 0) }} comments</p>
+      {% if puzzle.author_name %}
+        <p class="muted small">Curated by {{ puzzle.author_title or '' }} {{ puzzle.author_name }} ({{ puzzle.author_username }})</p>
+      {% endif %}
+      <p class="muted small">The side to move plays the only winning line.</p>
+    </div>
+    <div class="card" id="solution-card" style="display:none;">
+      <h3>Solution</h3>
+      <div id="solution-line"></div>
+    </div>
+  </div>
+</div>
+<script>
+  window.CHESS_STATIC = "{{ url_for('static', filename='') }}".replace(/\/$/, "");
+  var PUZZLE_DATA = {
+    fen: {{ puzzle.fen | tojson }},
+    moves: {{ puzzle.uci_moves | tojson }},
+    san: {{ (puzzle.san_moves or []) | tojson }},
+  };
+</script>
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script>
+  (function () {
+    var el = document.getElementById("puzzle-board");
+    var board = new window.ChessBoard(el, { fen: PUZZLE_DATA.fen });
+    document.getElementById("reveal-solution").addEventListener("click", function () {
+      var card = document.getElementById("solution-card");
+      card.style.display = "block";
+      /* render the recorded solution line */
+      var out = [];
+      var whiteFirst = PUZZLE_DATA.fen.split(/\s+/)[1] !== "b";
+      for (var i = 0; i < PUZZLE_DATA.san.length; i++) {
+        var no = Math.floor(i / 2) + 1;
+        if (i % 2 === 0) out.push(no + (whiteFirst ? "." : "…") + " " + PUZZLE_DATA.san[i]);
+        else out.push(" " + PUZZLE_DATA.san[i]);
+      }
+      document.getElementById("solution-line").textContent = out.join(" ");
+      /* play the solution on the board */
+      board.replay(PUZZLE_DATA.san, PUZZLE_DATA.san.length);
+    });
+  })();
+</script>
+{% endblock %}

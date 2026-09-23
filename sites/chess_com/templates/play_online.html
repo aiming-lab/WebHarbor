@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block nav_play %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/play-white.svg') }}" alt="">
+    <h1>Play Chess Online for FREE</h1>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h2>Choose your time control</h2>
+      <div class="time-controls">
+        <div class="tc-group">
+          <div class="tc-title">Bullet</div>
+          <button class="tc" data-tc="1|0">1 min</button>
+          <button class="tc" data-tc="1|1">1|1</button>
+          <button class="tc" data-tc="2|1">2|1</button>
+        </div>
+        <div class="tc-group">
+          <div class="tc-title">Blitz</div>
+          <button class="tc" data-tc="3|0">3 min</button>
+          <button class="tc" data-tc="3|2">3|2</button>
+          <button class="tc" data-tc="5|0">5 min</button>
+          <button class="tc" data-tc="5|5">5|5</button>
+        </div>
+        <div class="tc-group">
+          <div class="tc-title">Rapid</div>
+          <button class="tc" data-tc="10|0">10 min</button>
+          <button class="tc" data-tc="10|5">10|5</button>
+          <button class="tc" data-tc="15|10">15|10</button>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <p class="muted small">Online matchmaking pairs you with a real player at your rating within seconds. Create a free account to start a rated game.</p>
+      {% if not current_user.is_authenticated %}
+        <a class="btn btn-primary" href="{{ url_for('register') }}">Create a free account</a>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h2>While you wait…</h2>
+      <p class="muted">Sharpen your tactics or study a master game:</p>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <a class="btn btn-secondary" href="{{ url_for('puzzles') }}">Solve Puzzles</a>
+        <a class="btn btn-secondary" href="{{ url_for('play_computer') }}">Play a Bot</a>
+        <a class="btn btn-secondary" href="{{ url_for('games_index') }}">Explore the Games Database</a>
+      </div>
+    </div>
+  </div>
+</div>
+<style>
+.time-controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.tc-group { background: var(--bg-elev); border-radius: 8px; padding: 10px; }
+.tc-title { font-family: var(--font-heading); font-weight: 800; text-transform: uppercase; font-size: 13px; color: var(--text-subtle); margin-bottom: 8px; }
+.tc { display: block; width: 100%; background: var(--bg-input); color: var(--text-bold); border: none; border-radius: 6px; padding: 8px 0; margin-bottom: 6px; font-weight: 700; cursor: pointer; }
+.tc:hover { background: var(--green); color: #fff; }
+@media (max-width: 640px) { .time-controls { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}

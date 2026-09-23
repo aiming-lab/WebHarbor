@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page form-wide">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/friends.svg') }}" alt="">
+    <h1>Settings</h1>
+  </div>
+  <div class="grid grid-2">
+    <div class="card">
+      <h3>Profile</h3>
+      <form method="post">
+        <input type="hidden" name="action" value="profile">
+        <div class="field">
+          <label>Username</label>
+          <input type="text" value="{{ current_user.username }}" disabled>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" value="{{ current_user.email or '' }}" disabled>
+        </div>
+        <div class="field">
+          <label for="name">Full name</label>
+          <input id="name" name="name" type="text" value="{{ current_user.name or '' }}">
+        </div>
+        <div class="field">
+          <label for="location">Location</label>
+          <input id="location" name="location" type="text" value="{{ current_user.location or '' }}" placeholder="e.g. Florida">
+        </div>
+        <div class="field">
+          <label for="country_code">Country</label>
+          <input id="country_code" name="country_code" type="text" maxlength="2" value="{{ current_user.country_code or '' }}" placeholder="Two-letter code, e.g. US">
+        </div>
+        <div class="field">
+          <label for="about">About me</label>
+          <textarea id="about" name="about">{{ current_user.about or '' }}</textarea>
+        </div>
+        <button class="btn btn-primary" type="submit">Save profile</button>
+      </form>
+    </div>
+    <div>
+      <div class="card">
+        <h3>Change password</h3>
+        <form method="post">
+          <input type="hidden" name="action" value="password">
+          <div class="field">
+            <label for="old_password">Current password</label>
+            <input id="old_password" name="old_password" type="password" required>
+          </div>
+          <div class="field">
+            <label for="new_password">New password</label>
+            <input id="new_password" name="new_password" type="password" required minlength="8">
+          </div>
+          <button class="btn btn-secondary" type="submit">Change password</button>
+        </form>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>Your activity</h3>
+        <p class="small muted">Following <b>{{ following }}</b> players</p>
+        <p class="small muted">Member of <b>{{ clubs_count }}</b> clubs</p>
+        <p class="small muted">Courses in progress: <b>{{ lessons_done }}</b></p>
+        <p class="small muted">Puzzles solved: <b>{{ solved_puzzles }}</b></p>
+      </div>
+      <div class="card" style="margin-top:16px;">
+        <h3>Session</h3>
+        <p class="small muted">Signed in as <b>{{ current_user.username }}</b></p>
+        <form method="post" action="{{ url_for('logout') }}">
+          <button class="btn btn-danger" type="submit">Log out</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

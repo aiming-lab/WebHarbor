@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="card profile-head">
+    <span class="avatar avatar-112" style="border-radius:16px; background-image:url('{{ url_for('static', filename='images/clubs/' + club.icon) if club.icon else url_for('static', filename='icons/noavatar_l.gif') }}')"></span>
+    <div style="flex:1;">
+      <h1 style="font-size:26px;">{{ club.name }}</h1>
+      <p class="muted small">
+        {{ '{:,}'.format(club.members_count or 0) }} members
+        {% if club.country_code %} · {{ macros.flag(none, club.country_code) }} {{ club.country_code }}{% endif %}
+        · Created {{ club.created[:10] if club.created }}
+        · Last activity {{ club.last_activity[:10] if club.last_activity }}
+      </p>
+      {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('club_join', slug=club.slug) }}" style="margin-top:12px;">
+          <button class="btn {{ 'btn-secondary' if is_member else 'btn-primary' }}" type="submit">
+            {{ 'Leave Club' if is_member else 'Join Club' }}
+          </button>
+        </form>
+      {% else %}
+        <p class="muted small" style="margin-top:12px;"><a href="{{ url_for('login') }}">Log in</a> to join this club.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="card" style="margin-top:16px;">
+    <h3>About this club</h3>
+    <div class="article-body">{{ club.description or 'No description.' | safe }}</div>
+  </div>
+  <div class="grid grid-2" style="margin-top:16px;">
+    <div class="card">
+      <h3>Club activities</h3>
+      <p class="muted small">Clubs run their own tournaments (Arena and Swiss), vote chess, daily matches and forums.</p>
+    </div>
+    <div class="card">
+      <h3>Find more clubs</h3>
+      <a class="btn btn-secondary" href="{{ url_for('clubs') }}">Browse all clubs</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

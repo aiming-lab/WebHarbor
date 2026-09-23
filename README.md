@@ -34,7 +34,7 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 54 sites today, scaling to 100+ together
+- **Community-driven** — 73 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
@@ -42,10 +42,10 @@ Build this checkout to run its registered web environments (published image tags
 
 ```bash
 ./scripts/build.sh webharbor:dev
-docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40053:40000-40053 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40072:40000-40072 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40053` to explore 54 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, Bandcamp, Adopt-a-Pet, IGN, IRS Refund Tracker, WineAccess, and WebMD`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40072` to explore 73 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, B&H Photo, AccuWeather, GOV.UK, IMDb, NBA, Recreation.gov, BoardGameGeek, CarMax, BabyCenter, Amtrak, Cookpad, Craigslist, Drugs.com, Versus, Y Combinator, PhET Interactive Simulations, Discogs, Google Finance, Bandcamp, Adopt-a-Pet, IGN, IRS Refund Tracker, WineAccess, WebMD, Petfinder, MEGA, 4shared, 9GAG, American Kennel Club, Best Buy, YouTube, Weather, Amazon Jobs, Cboe, Better Business Bureau, Birkenstock, Americas Health Rankings, American Express, Carnival Cruise, CA.gov, Coolmath4Kids, Chase, and Chess.com`.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -92,6 +92,7 @@ All registered websites and their default ports, in registration order from left
 | Cboe | 40063 | Better Business Bureau | 40064 | Birkenstock | 40065 |
 | America’s Health Rankings | 40066 | American Express | 40067 | Carnival Cruise | 40068 |
 | CA.gov | 40069 | Coolmath4Kids | 40070 | Chase | 40071 |
+| Chess.com | 40072 |  |  |  |  |
 
 ## 🤝 Contribute
 

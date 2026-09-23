@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block nav_puzzles %}active{% endblock %}
+{% block content %}
+<div class="page trainer">
+  <div>
+    <div class="page-header">
+      <img src="{{ url_for('static', filename='icons/nav/calendar-dailypuzzle.svg') }}" alt="">
+      <h1>Daily Puzzle</h1>
+    </div>
+    <p class="muted small">{{ puzzle.daily_date }} — one new puzzle every day. {% if puzzle.goals %}Goal: <b>{{ puzzle.goals }}</b>.{% endif %}{% if puzzle.title %} Today's puzzle: <b>{{ puzzle.title }}</b>.{% endif %}</p>
+    <div id="daily-board" data-fen="{{ puzzle.fen }}"></div>
+    <div class="board-controls">
+      <button data-board-action="flip">⇅ Flip</button>
+      <a class="btn btn-primary" href="{{ url_for('puzzle_detail', puzzle_id=puzzle.id) }}">Open puzzle page</a>
+    </div>
+  </div>
+  <div class="trainer-side">
+    <div class="card">
+      <h3>Puzzle details</h3>
+      <div class="pill pill-orange">{{ (puzzle.themes or []) | join(', ') or 'Tactics' }}</div>
+      <div class="spacer"></div>
+      <p class="muted small">Every daily puzzle is drawn from real master games and has exactly one winning line.</p>
+      <p class="muted small">Solve it on the <a href="{{ url_for('puzzles') }}">puzzle trainer</a> to add it to your streak.</p>
+    </div>
+    <div class="card">
+      <h3>Streak</h3>
+      <p class="muted small">Log in and solve a puzzle every day to build your streak and earn trophies.</p>
+    </div>
+  </div>
+</div>
+<script>
+  window.CHESS_STATIC = "{{ url_for('static', filename='') }}".replace(/\/$/, "");
+</script>
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script>
+  (function () {
+    var el = document.getElementById("daily-board");
+    var board = new window.ChessBoard(el, { fen: el.dataset.fen });
+    el.closest(".page").querySelectorAll("[data-board-action]").forEach(function (btn) {
+      if (btn.dataset.boardAction !== "flip") return;
+      btn.addEventListener("click", function () {
+        var order = Array.prototype.slice.call(el.children).reverse();
+        order.forEach(function (c) { el.appendChild(c); });
+        board.draw();
+      });
+    });
+  })();
+</script>
+{% endblock %}

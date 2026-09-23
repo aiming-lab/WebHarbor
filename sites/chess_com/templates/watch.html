@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block nav_watch %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/binoculars.svg') }}" alt="">
+    <h1>Watch</h1>
+  </div>
+  <p class="muted">Live events, broadcasts and ChessTV — the best of chess, streaming daily.</p>
+
+  <section class="section-title"><h2>Featured Events</h2><a href="{{ url_for('events') }}">All events →</a></section>
+  <div class="grid grid-4">
+    {% for event in events %}
+      <a class="event-card" href="{{ url_for('event_detail', slug=event.slug) }}">
+        {% if event.image %}<img src="{{ url_for('static', filename='images/events/' + event.image) }}" alt="{{ event.name }}">{% endif %}
+        <div class="event-card-body">
+          <div class="news-card-title">{{ event.name }}</div>
+          <div class="muted small">{{ event.start_at[:10] if event.start_at }} – {{ event.end_at[:10] if event.end_at }}</div>
+          <div class="muted small">{{ '{:,}'.format(event.player_count or 0) }} players</div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+
+  <section class="section-title" id="chesstv"><h2>ChessTV Schedule</h2></section>
+  <div class="card" style="padding:6px 10px;">
+    <table class="data-table">
+      <tr><th>Time</th><th>Broadcast</th></tr>
+      {% for slot in tv %}
+        <tr>
+          <td class="muted small" style="white-space:nowrap;">{{ slot.start }} – {{ slot.end }}</td>
+          <td><b>{{ slot.title }}</b></td>
+        </tr>
+      {% else %}
+        <tr><td colspan="2" class="muted">No broadcasts scheduled.</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

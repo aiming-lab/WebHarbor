@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/friends.svg') }}" alt="">
+    <h1>Members</h1>
+  </div>
+  <p class="muted">The most-followed players in the Chess.com community.</p>
+  <div class="card" style="margin-top:14px; padding:4px 8px;">
+    <table class="data-table">
+      <tr><th class="t-right">#</th><th>Member</th><th>Country</th><th class="t-right">Followers</th><th class="t-right">Blitz</th><th class="t-right">Bullet</th><th class="t-right">Rapid</th></tr>
+      {% for u in users %}
+        <tr>
+          <td class="t-right muted">{{ loop.index }}</td>
+          <td>{{ macros.user_link(u) }}</td>
+          <td class="muted">{{ u.country_name or u.country_code or '' }}</td>
+          <td class="t-right">{{ '{:,}'.format(u.followers or 0) }}</td>
+          {% for cat in ['blitz', 'bullet', 'rapid'] %}
+            <td class="t-right">{{ u.rating_summary[cat].rating if cat in u.rating_summary else '—' }}</td>
+          {% endfor %}
+        </tr>
+      {% endfor %}
+    </table>
+  </div>
+</div>
+{% endblock %}

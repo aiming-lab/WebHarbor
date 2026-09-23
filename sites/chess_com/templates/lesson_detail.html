@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block nav_learn %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/lessons.svg') }}" alt="">
+    <h1>{{ course.title }}</h1>
+  </div>
+  <div class="page-with-sidebar">
+    <div>
+      {% if course.image %}
+        <img class="article-hero" style="aspect-ratio:16/9;" src="{{ url_for('static', filename='images/lessons/' + course.image) }}" alt="{{ course.title }}">
+      {% endif %}
+      <div class="card">
+        <p>{{ course.description }}</p>
+        <div class="course-card-meta" style="margin-top:8px;">
+          <span class="level-badge l{{ course.level }}">{{ ['Beginner', 'Intermediate', 'Advanced'][course.level] if course.level < 3 else 'All levels' }}</span>
+          <span>{{ course.n_lessons }} lessons</span>
+          {% if course.author %}<span>· by {{ course.author }}</span>{% endif %}
+          {% if course.mastery %}<span>· Mastery</span>{% endif %}
+        </div>
+        <div class="spacer"></div>
+        <h3>Chapters</h3>
+        <table class="data-table">
+          {% for i in range(1, course.n_lessons + 1) %}
+            <tr>
+              <td>Lesson {{ i }}</td>
+              <td class="muted">
+                {% if progress and progress.lessons_done >= i %}
+                  <span class="pill pill-green">Completed</span>
+                {% else %}
+                  <span class="pill">{{ 'Interactive lesson' }}</span>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+        {% if current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('lesson_complete', slug=course.slug) }}">
+            <div class="spacer"></div>
+            <button class="btn btn-primary" type="submit" name="lessons_done" value="{{ course.n_lessons }}">
+              Mark all {{ course.n_lessons }} lessons complete
+            </button>
+          </form>
+          {% if progress %}
+            <p class="muted small" style="margin-top:10px;">Your progress: <b>{{ progress.lessons_done }}/{{ course.n_lessons }}</b> lessons completed.</p>
+          {% endif %}
+        {% else %}
+          <p class="muted small" style="margin-top:14px;"><a href="{{ url_for('login') }}">Log in</a> to track your progress through the course.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>Course info</h3>
+        <p class="small muted">Level: <b>{{ ['Beginner', 'Intermediate', 'Advanced'][course.level] if course.level < 3 else 'All levels' }}</b></p>
+        <p class="small muted">Lessons: <b>{{ course.n_lessons }}</b></p>
+        <p class="small muted">Mastery: <b>{{ 'Yes' if course.mastery else 'No' }}</b></p>
+        {% if course.categories %}
+          <p class="small muted">Categories: {% for c in course.categories %}<span class="category-chip">{{ c|title }}</span>{% endfor %}</p>
+        {% endif %}
+      </div>
+      <div class="side-panel">
+        <h3>Related courses</h3>
+        {% for r in related %}
+          <a class="variation-row" href="{{ url_for('lesson_detail', slug=r.slug) }}">{{ r.title }}</a>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

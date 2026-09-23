@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/page-news.svg') }}" alt="">
+    <h1 style="font-size:26px; line-height:1.2;">{{ article.title }}</h1>
+  </div>
+  <div class="page-with-sidebar">
+    <div>
+      {% if article.hero_image %}
+        <img class="article-hero" src="{{ url_for('static', filename='images/news/' + article.hero_image) }}" alt="{{ article.title }}">
+      {% endif %}
+      <div class="article-meta">
+        {% if article.author_title %}<span class="user-title">{{ article.author_title }}</span>{% endif %}
+        <a href="{{ url_for('search') }}?q={{ article.author }}">{{ article.author }}</a>
+        <span>·</span><span>{{ article.published[:10] if article.published }}</span>
+        {% for c in article.categories %}
+          <a class="category-chip" href="{{ url_for('news_category', slug=c) }}">{{ c|replace('-', ' ')|title }}</a>
+        {% endfor %}
+      </div>
+      <div class="article-body">
+        {% for para in article.body %}
+          <p>{{ para }}</p>
+        {% endfor %}
+      </div>
+      {% if article.inline_images %}
+        <div class="spacer"></div>
+        <h3>Images from this report</h3>
+        <div class="grid grid-2">
+          {% for img in article.inline_images[:4] %}
+            <img class="article-hero" style="aspect-ratio:auto;" src="{{ url_for('static', filename='images/news-inline/' + img) }}" alt="">
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>More News</h3>
+        {% for a in more %}
+          <a class="variation-row" href="{{ url_for('news_article', slug=a.slug) }}">{{ a.title[:70] }}</a>
+        {% endfor %}
+        <div class="spacer"></div>
+        <a class="side-link" href="{{ url_for('news_index') }}">All news →</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

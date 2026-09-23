@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/today.svg') }}" alt="">
+    <h1>Chess Today</h1>
+  </div>
+  <p class="muted">{{ today_note }}</p>
+  <div class="grid grid-2" style="margin-top:16px;">
+    <div>
+      {% if daily %}
+        <section class="section-title"><h2>Daily Puzzle</h2><a href="{{ url_for('daily_puzzle') }}">Open →</a></section>
+        <div class="card">
+          <div id="daily-board" data-fen="{{ daily.fen }}" style="max-width:340px;"></div>
+          <div class="board-controls">
+            <a class="btn btn-primary" href="{{ url_for('daily_puzzle') }}">Solve today's puzzle</a>
+          </div>
+        </div>
+      {% endif %}
+      {% if items.news %}
+        <section class="section-title"><h2>News of the day</h2></section>
+        <div class="news-strip" style="grid-template-columns:1fr 1fr;">
+          {% for item in items.news %}
+            <a class="news-card" href="{{ item.url }}">
+              {% if item.image %}<img src="{{ url_for('static', filename='images/news/' + item.image) }}" alt="{{ item.title }}">{% endif %}
+              <div class="news-card-body">
+                <div class="news-card-title">{{ item.title }}</div>
+                <div class="news-card-meta"><span>{{ item.author or '' }}</span></div>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+    <div>
+      {% for kind, label in [('lesson', 'Featured lessons'), ('video', 'Featured videos'), ('article', 'Featured articles'), ('blog', 'From the blogs')] %}
+        {% if items[kind] %}
+          <div class="side-panel">
+            <h3>{{ label }}</h3>
+            {% for item in items[kind] %}
+              <a class="variation-row" href="{{ item.url }}">{{ item.title[:80] }}</a>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<script>
+  window.CHESS_STATIC = "{{ url_for('static', filename='') }}".replace(/\/$/, "");
+</script>
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script>
+  (function () {
+    var el = document.getElementById("daily-board");
+    if (el) new window.ChessBoard(el, { fen: el.dataset.fen });
+  })();
+</script>
+{% endblock %}

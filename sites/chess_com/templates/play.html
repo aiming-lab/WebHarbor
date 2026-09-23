@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block nav_play %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/play-white.svg') }}" alt="">
+    <h1>Play Chess Online</h1>
+  </div>
+  <p class="muted">Play the classic game against friends or bots, join tournaments, and explore chess variants — all free.</p>
+
+  <div class="grid grid-4">
+    <a class="card" href="{{ url_for('play_online') }}">
+      <img src="{{ url_for('static', filename='icons/nav/play-white.svg') }}" alt="" width="36">
+      <h3>Play Online</h3>
+      <p class="muted small">Play vs players of any level from anywhere in the world.</p>
+    </a>
+    <a class="card" href="{{ url_for('play_computer') }}">
+      <img src="{{ url_for('static', filename='icons/nav/device-bot.svg') }}" alt="" width="36">
+      <h3>Play Bots</h3>
+      <p class="muted small">Take on a roster of bots, from absolute beginners to master strength.</p>
+    </a>
+    <a class="card" href="{{ url_for('puzzles') }}">
+      <img src="{{ url_for('static', filename='icons/nav/puzzle-piece.svg') }}" alt="" width="36">
+      <h3>Solve Puzzles</h3>
+      <p class="muted small">Improve your tactics with rated puzzles from real games.</p>
+    </a>
+    <a class="card" href="{{ url_for('leaderboard_live') }}">
+      <img src="{{ url_for('static', filename='icons/nav/leaderboard.svg') }}" alt="" width="36">
+      <h3>Leaderboards</h3>
+      <p class="muted small">See who tops the blitz, bullet and rapid ratings.</p>
+    </a>
+  </div>
+
+  <section class="section-title" id="stats"><h2>Stats</h2></section>
+  <div class="card">
+    <p>Track your rating progression, win rate and game history from your
+       <a href="{{ url_for('settings') }}">account settings</a> page.</p>
+    <table class="data-table">
+      <tr><th>Game type</th><th class="t-right">Rating system</th><th class="t-right">Games</th></tr>
+      <tr><td>Blitz (3–10 min)</td><td class="t-right">Glicko</td><td class="t-right">{{ '{:,}'.format(total_blitz_games or 0) }}</td></tr>
+      <tr><td>Bullet (&lt;3 min)</td><td class="t-right">Glicko</td><td class="t-right">{{ '{:,}'.format(total_bullet_games or 0) }}</td></tr>
+      <tr><td>Rapid (10–60 min)</td><td class="t-right">Glicko</td><td class="t-right">{{ '{:,}'.format(total_rapid_games or 0) }}</td></tr>
+    </table>
+  </div>
+
+  <section class="section-title" id="tournaments"><h2>Tournaments</h2></section>
+  <div class="card">
+    <p>Chess.com runs tournaments every few minutes — blitz, bullet, rapid, variants and themed arenas.</p>
+    <p class="muted small">Arena tournaments pair you continuously for the duration of the event; win streaks earn bonus points.</p>
+  </div>
+
+  <section class="section-title" id="variants"><h2>Variants</h2></section>
+  <div class="card">
+    <p>Explore alternative rules: 4 Player Chess, Bughouse, 3-Check, King of the Hill, Crazyhouse and Chess960.</p>
+  </div>
+</div>
+{% endblock %}

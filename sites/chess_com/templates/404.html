@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="page" style="text-align:center; padding-top:60px;">
+  <h1>Missing Page</h1>
+  <p class="muted">That page doesn't exist (or it moved).</p>
+  <div style="margin:20px 0;">
+    <div id="nf-board" style="max-width:280px; margin:0 auto;" data-fen="8/8/8/8/8/8/8/8 w - - 0 1"></div>
+  </div>
+  <a class="btn btn-primary" href="{{ url_for('index') }}">Back to homepage</a>
+</div>
+<script>
+  window.CHESS_STATIC = "{{ url_for('static', filename='') }}".replace(/\/$/, "");
+</script>
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script>
+  (function () {
+    var el = document.getElementById("nf-board");
+    if (el) new window.ChessBoard(el, { fen: el.dataset.fen });
+  })();
+</script>
+{% endblock %}

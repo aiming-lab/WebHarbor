@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block nav_puzzles %}active{% endblock %}
+{% block content %}
+<div class="page trainer">
+  <div>
+    <div class="page-header">
+      <img src="{{ url_for('static', filename='icons/nav/puzzle-piece.svg') }}" alt="">
+      <h1>Puzzles</h1>
+    </div>
+    <div id="trainer-board" data-fen="rnbqkbnr/pppppppp/8/8/8/8/8/RNBQKBNR w KQkq - 0 1"></div>
+    <div class="board-controls">
+      <button id="trainer-next">Next Puzzle</button>
+    </div>
+    <div class="card" id="trainer-solution" style="display:none; margin-top:12px;">
+      <b>Solution</b>
+      <div id="trainer-solution-line"></div>
+    </div>
+  </div>
+  <div class="trainer-side">
+    <div class="card">
+      <div class="trainer-status" id="trainer-status">Loading puzzle…</div>
+      <div class="spacer"></div>
+      <div id="trainer-side" class="small muted"></div>
+      <div class="pill pill-orange" id="trainer-themes" style="margin-top:8px;">Tactics</div>
+      <div class="pill" id="trainer-goal" style="margin-top:6px;"></div>
+      <div class="pill" id="trainer-rating" style="margin-top:6px;"></div>
+    </div>
+    <div class="card">
+      <h3>Your session</h3>
+      <div class="stat-bar" style="margin:0;">
+        <div class="stat-item"><div class="stat-value" id="trainer-streak">0</div><div class="stat-label">Streak</div></div>
+        <div class="stat-item"><div class="stat-value" id="trainer-solved">{{ solved_count }}</div><div class="stat-label">Solved</div></div>
+      </div>
+      {% if current_user.is_authenticated %}
+        <p class="muted small">Logged in as <b>{{ current_user.username }}</b> — rated solves count towards your tactics rating.</p>
+      {% else %}
+        <p class="muted small"><a href="{{ url_for('login') }}">Log in</a> to track your solved puzzles and tactics rating.</p>
+      {% endif %}
+    </div>
+    <div class="card">
+      <h3>Also try</h3>
+      <a class="variation-row" href="{{ url_for('daily_puzzle') }}">Daily Puzzle</a>
+      <a class="variation-row" href="{{ url_for('puzzle_archive') }}">Daily Puzzle Archive</a>
+      <a class="variation-row" href="{{ url_for('puzzle_themes') }}">Puzzle Themes</a>
+      <a class="variation-row" href="{{ url_for('puzzles') }}?mode=rated">Rated Puzzles</a>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="puzzle-intro" style="display:none;">
+  <div class="card modal-box">
+    <h2>Puzzles</h2>
+    <p class="muted">Train with chess puzzles and improve your game.</p>
+    <div style="text-align:center; margin:14px 0;">
+      <img src="{{ url_for('static', filename='icons/nav/puzzle-piece.svg') }}" alt="" width="72">
+    </div>
+    <ul class="muted" style="padding-left:18px; line-height:1.9;">
+      <li>Solve puzzles to improve your chess tactics</li>
+      <li>Improve pattern recognition and awareness</li>
+      <li>Have fun learning as you solve 500K+ puzzles</li>
+    </ul>
+    <div class="spacer"></div>
+    <button class="btn btn-primary btn-block" id="intro-ok" style="margin:0;">Ok</button>
+  </div>
+</div>
+
+<style>
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); display: flex; align-items: center; justify-content: center; z-index: 300; }
+.modal-box { max-width: 420px; width: 92%; }
+</style>
+<script>
+  window.CHESS_STATIC = "{{ url_for('static', filename='') }}".replace(/\/$/, "");
+  document.body.dataset.loggedIn = "{{ '1' if current_user.is_authenticated else '0' }}";
+</script>
+<script src="{{ url_for('static', filename='js/board.js') }}"></script>
+<script src="{{ url_for('static', filename='js/puzzles.js') }}"></script>
+<script>
+  (function () {
+    var intro = document.getElementById("puzzle-intro");
+    if (intro && !sessionStorage.getItem("cc-puzzle-intro-done")) {
+      intro.style.display = "flex";
+      document.getElementById("intro-ok").addEventListener("click", function () {
+        intro.style.display = "none";
+        sessionStorage.setItem("cc-puzzle-intro-done", "1");
+      });
+    }
+    var sol = document.getElementById("trainer-solution");
+    if (sol) sol.addEventListener("click", function () { sol.style.display = "none"; });
+  })();
+</script>
+{% endblock %}

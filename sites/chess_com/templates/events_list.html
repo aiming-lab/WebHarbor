@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block nav_watch %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/trophies.svg') }}" alt="">
+    <h1>Events</h1>
+  </div>
+  <div class="grid grid-4" style="margin-top:10px;">
+    {% for event in events %}
+      <a class="event-card" href="{{ url_for('event_detail', slug=event.slug) }}">
+        {% if event.image %}<img src="{{ url_for('static', filename='images/events/' + event.image) }}" alt="{{ event.name }}">{% endif %}
+        <div class="event-card-body">
+          <div class="news-card-title">{{ event.name }}</div>
+          <div class="muted small">{{ event.start_at[:10] if event.start_at }} – {{ event.end_at[:10] if event.end_at }}</div>
+          <div class="muted small">{{ '{:,}'.format(event.player_count or 0) }} players{% if event.round_count %} · {{ event.round_count }} rounds{% endif %}</div>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

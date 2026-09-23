@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block nav_community %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/leaderboard.svg') }}" alt="">
+    <h1>{{ spec.title }}</h1>
+  </div>
+
+  <div class="page-with-sidebar side-280">
+    <div class="card" style="padding:4px 8px;">
+      <table class="data-table">
+        <tr>
+          <th>Trend</th><th class="t-right">Rank</th><th>Player</th>
+          <th class="t-right">Rating</th><th class="t-right">Won</th>
+          <th class="t-right">Draw</th><th class="t-right">Lost</th>
+        </tr>
+        {% for entry in entries %}
+          <tr>
+            <td>{{ macros.trend(entry) }}</td>
+            <td class="t-right lb-rank {{ 'lb-rank-top' if entry.rank <= 3 }}">#{{ entry.rank }}</td>
+            <td>{{ macros.lb_user(entry) }}</td>
+            <td class="t-right"><b>{{ entry.score }}</b></td>
+            <td class="t-right won">{{ entry.wins or 0 }}</td>
+            <td class="t-right draw">{{ entry.draws or 0 }}</td>
+            <td class="t-right lost">{{ entry.losses or 0 }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+      {{ macros.pagination(page, total_pages, request.endpoint) }}
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>Leaderboards</h3>
+        <a class="side-link" href="{{ url_for('leaderboard_live') }}">Blitz</a>
+        <a class="side-link" href="{{ url_for('leaderboard_bullet') }}">Bullet</a>
+        <a class="side-link" href="{{ url_for('leaderboard_rapid') }}">Rapid</a>
+        <a class="side-link" href="{{ url_for('leaderboard_tactics') }}">Tactics</a>
+        <a class="side-link" href="{{ url_for('leaderboard_daily') }}">Daily</a>
+      </div>
+      {% if stats %}
+        <div class="side-panel">
+          <h3>{{ spec.label }} stats</h3>
+          <p class="small muted">Players rated: <b>{{ '{:,}'.format(stats.player_count or 0) }}</b></p>
+          <p class="small muted">Average rating: <b>{{ (stats.avg_rating or 0)|round(1) }}</b></p>
+          {% if distribution_bars %}
+            <h4 class="muted small">Rating distribution (players per band)</h4>
+            <div class="spark-chart" title="{{ distribution_note }}">
+              {% for band, height, count in distribution_bars %}
+                <div class="bar" style="height: {{ height }}%" title="{{ band }}: {{ '{:,}'.format(count) }} players"></div>
+              {% endfor %}
+            </div>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

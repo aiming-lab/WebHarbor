@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block nav_watch %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/trophies.svg') }}" alt="">
+    <h1>{{ event.name }}</h1>
+  </div>
+  {% if event.image %}
+    <img class="article-hero" style="max-height:360px;" src="{{ url_for('static', filename='images/events/' + event.image) }}" alt="{{ event.name }}">
+  {% endif %}
+  <div class="page-with-sidebar" style="margin-top:16px;">
+    <div>
+      <div class="card">
+        {% if event.description %}<p>{{ event.description }}</p>{% endif %}
+        <p class="muted">A Chess.com online event{% if event.location %} · {{ event.location }}{% endif %}.</p>
+      </div>
+      {% if event.extra and event.extra.get('rounds') %}
+        <div class="card">
+          <h3>Rounds</h3>
+          <table class="data-table">
+            <tr><th>Round</th><th>Start</th><th>Status</th></tr>
+            {% for r in event.extra['rounds'] %}
+              <tr>
+                <td><b>{{ r.name }}</b></td>
+                <td class="muted">{{ r.start }}</td>
+                <td class="muted">{{ r.status }}</td>
+              </tr>
+            {% endfor %}
+          </table>
+        </div>
+      {% endif %}
+      {% if event.extra and event.extra.get('participants') %}
+        <div class="card">
+          <h3>Top participants</h3>
+          <div class="result-row" style="border:none;">
+            <table class="data-table">
+              <tr><th>Player</th><th>Title</th><th class="t-right">Score</th></tr>
+              {% for p in event.extra['participants'] %}
+                <tr>
+                  <td><b>{{ p.name }}</b></td>
+                  <td class="muted">{{ p.title or '' }}</td>
+                  <td class="t-right">{{ p.score }}</td>
+                </tr>
+              {% endfor %}
+            </table>
+          </div>
+        </div>
+      {% endif %}
+    </div>
+    <div>
+      <div class="side-panel">
+        <h3>Event details</h3>
+        <p class="small muted">Starts: <b>{{ event.start_at[:16].replace('T', ' ') if event.start_at }}</b></p>
+        <p class="small muted">Ends: <b>{{ event.end_at[:16].replace('T', ' ') if event.end_at }}</b></p>
+        <p class="small muted">Players: <b>{{ '{:,}'.format(event.player_count or 0) }}</b></p>
+        {% if event.round_count %}<p class="small muted">Rounds: <b>{{ event.round_count }}</b></p>{% endif %}
+      </div>
+      <div class="side-panel">
+        <h3>Watch live</h3>
+        {% for s in event.streams %}
+          <a class="variation-row" href="{{ url_for('watch') }}">{{ s.channel }} ({{ s.type }})</a>
+        {% else %}
+          <p class="muted small">No streams scheduled.</p>
+        {% endfor %}
+      </div>
+      <div class="side-panel">
+        <h3>More events</h3>
+        <a class="variation-row" href="{{ url_for('events') }}">Browse all events</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

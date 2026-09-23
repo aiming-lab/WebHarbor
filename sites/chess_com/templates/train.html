@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block nav_train %}active{% endblock %}
+{% block content %}
+<div class="page">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='icons/nav/training.svg') }}" alt="">
+    <h1>Train</h1>
+  </div>
+  <p class="muted">Everything you need to get better at chess, in one place.</p>
+  <div class="grid grid-4" style="margin-top:18px;">
+    <a class="card" href="{{ url_for('puzzles') }}?mode=rated" id="rated">
+      <img src="{{ url_for('static', filename='icons/nav/puzzle-rush.svg') }}" alt="" width="36">
+      <h3>Rated Puzzles</h3>
+      <p class="muted small">Solve real positions and earn a tactics rating.</p>
+    </a>
+    <a class="card" href="{{ url_for('puzzles') }}">
+      <img src="{{ url_for('static', filename='icons/nav/puzzle-piece.svg') }}" alt="" width="36">
+      <h3>Puzzle Trainer</h3>
+      <p class="muted small">Unlimited positions from master games, one best move each.</p>
+    </a>
+    <a class="card" href="{{ url_for('lessons_category', slug='endgames') }}" id="practice">
+      <img src="{{ url_for('static', filename='icons/nav/game-endgames.svg') }}" alt="" width="36">
+      <h3>Endgames</h3>
+      <p class="muted small">Study the final phase with dedicated lesson courses.</p>
+    </a>
+    <a class="card" href="{{ url_for('openings') }}">
+      <img src="{{ url_for('static', filename='icons/nav/book-stack-pawn.svg') }}" alt="" width="36">
+      <h3>Openings</h3>
+      <p class="muted small">Explore the theory with popularity stats and top players.</p>
+    </a>
+  </div>
+
+  <section class="section-title"><h2>Puzzle of the day</h2><a href="{{ url_for('daily_puzzle') }}">Open daily puzzle →</a></section>
+  {% if daily %}
+    <div class="card">
+      <a href="{{ url_for('daily_puzzle') }}"><b>Solve today's puzzle</b></a> — {{ (daily.themes or []) | join(', ') }}.
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
