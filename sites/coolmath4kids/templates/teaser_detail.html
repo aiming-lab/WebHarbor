@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ teaser.title }}{% endblock %}
+{% block content %}
+<div class="detail-layout">
+  <div class="detail-main">
+    <div class="breadcrumb-links">
+      <a href="{{ url_for('teasers_index') }}">Brain Teasers</a> <span class="sep">/</span> {{ teaser.title }}
+    </div>
+    <h1>{{ teaser.title }}</h1>
+
+    <div class="teaser-image-main stage-question" id="questionStage">
+      <img src="/static/images/teasers/full/{{ teaser.slug }}.png" alt="{{ teaser.title }}">
+    </div>
+
+    {% if has_hint %}
+    <div class="solution-link" id="hintLink">
+      <a href="javascript:void(0)" class="link-arrow--next">Hint</a>
+    </div>
+    <div class="teaser-image-main cm-hide-element" id="hintStage" style="display:none;">
+      <img src="/static/images/teasers/extra/how-many-triangles-hint.png" alt="hint">
+    </div>
+    {% endif %}
+
+    <div class="solution-link" id="solutionLink">
+      <a href="javascript:void(0)" class="link-arrow--next">Solution</a>
+    </div>
+
+    <div class="teaser-image-main cm-hide-element" id="solutionStage" style="display:none;">
+      <img src="{{ solution_src }}" alt="solution">
+      {% if extra_images %}
+        {% for e in extra_images %}
+        <img src="/static/images/teasers/extra/{{ e }}.png" alt="solution step {{ loop.index }}" style="margin-top:14px;">
+        {% endfor %}
+      {% endif %}
+    </div>
+
+    <div class="back-link cm-hide-element" id="backLink" style="display:none;text-align:center;margin-top:10px;">
+      <a href="javascript:void(0)" class="link-arrow--prev">Back</a>
+    </div>
+  </div>
+
+  <div class="sidebar-right">
+    <div class="sidebar-box">
+      <h2>More Brain Teasers</h2>
+      {% for o in others %}
+      <div class="sidebar-game">
+        <a href="{{ url_for('teaser_page', slug=o.slug) }}">
+          <img src="/static/images/teasers/{{ o.slug }}.png" alt="{{ o.title }}">
+        </a>
+        <a href="{{ url_for('teaser_page', slug=o.slug) }}">{{ o.title }}</a>
+      </div>
+      {% endfor %}
+      <p style="margin:6px 0 0;"><a class="link-arrow--next" href="{{ url_for('teasers_index') }}">See all</a></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  var solutionLink = document.getElementById('solutionLink');
+  var backLink = document.getElementById('backLink');
+  var questionStage = document.getElementById('questionStage');
+  var solutionStage = document.getElementById('solutionStage');
+  var hintLink = document.getElementById('hintLink');
+  var hintStage = document.getElementById('hintStage');
+  function reveal() {
+    questionStage.style.display = 'none';
+    if (hintStage) hintStage.style.display = 'none';
+    if (hintLink) hintLink.style.display = 'none';
+    solutionStage.style.display = 'block';
+    solutionLink.style.display = 'none';
+    backLink.style.display = 'block';
+  }
+  function goBack() {
+    questionStage.style.display = 'block';
+    if (hintLink) hintLink.style.display = 'block';
+    solutionStage.style.display = 'none';
+    backLink.style.display = 'none';
+    solutionLink.style.display = 'block';
+  }
+  solutionLink.addEventListener('click', reveal);
+  backLink.addEventListener('click', goBack);
+  if (hintLink) {
+    hintLink.addEventListener('click', function () {
+      hintStage.style.display = 'block';
+      hintLink.style.display = 'none';
+    });
+  }
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Certificate{% endblock %}
+{% block content %}
+<div class="breadcrumb-links">
+  <a href="{{ url_for('quizzes_index') }}">Quizzes</a> <span class="sep">/</span> Certificate
+</div>
+
+<div class="quiz-frame">
+  <div class="results-container" style="text-align:center;">
+    <img src="/static/images/quiz/results-screen/you-earned.png" alt="Your Score Earned a Certificate!" class="certificate-title" style="width:300px;max-width:90%;">
+    <h1 style="font-family:'Galindo',cursive;font-weight:400;color:var(--purple);font-size:34px;margin:14px 0;">{{ theme_label }} Certificate of Achievement</h1>
+    <div class="certificate-theme {{ cert.theme }}" style="margin:10px auto;width:110px;height:110px;border:0;pointer-events:none;"></div>
+    <p style="font-size:24px;font-weight:800;color:#1d324a;">Awarded to</p>
+    <p style="font-size:30px;font-weight:900;color:var(--purple);margin:4px 0 14px;">{{ cert.person_name }}</p>
+    <p style="font-size:17px;font-weight:600;">
+      for scoring {{ cert.correct }} out of {{ cert.total }} on the {{ cert.operation }} quiz
+      (numbers {{ cert.range_label }}).
+    </p>
+    <p style="font-size:14px;color:#456;">Issued {{ cert.issued_at.strftime('%B %d, %Y') }}</p>
+    <div class="submit-button-area">
+      <button class="btn-secondary" onclick="window.print()">Print This Certificate</button>
+      {% if current_user.is_authenticated %}
+      <a class="btn-secondary" href="{{ url_for('account') }}">Back to My Progress</a>
+      {% else %}
+      <a class="btn-secondary" href="{{ url_for('quizzes_index') }}">Back to Quizzes</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

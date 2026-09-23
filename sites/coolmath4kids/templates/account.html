@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}My Progress{% endblock %}
+{% block content %}
+<div class="section-header">
+  <img class="title-icon-left" src="/static/images/theme/title-icon1.svg" alt="">
+  <h2>My Progress</h2>
+  <img class="title-icon-right" src="/static/images/theme/title-icon2.svg" alt="">
+</div>
+
+<div class="account-panel">
+  <h2>Quiz Scores</h2>
+  {% if attempts %}
+  <table class="data-table">
+    <tr><th>Quiz</th><th>Numbers Covered</th><th>Score</th><th>Avg. Time / Question</th><th>Status</th></tr>
+    {% for a in attempts %}
+    <tr>
+      <td>{{ a.operation }}</td>
+      <td>{{ a.range_label }}</td>
+      <td class="{% if a.score_pct >= 80 %}badge-score{% else %}badge-low{% endif %}">{% if a.status == 'complete' %}{{ a.correct_count }} / {{ a.total_questions }} ({{ a.score_pct | round(0) | int }}%){% else %}—{% endif %}</td>
+      <td>{{ a.avg_seconds }} s</td>
+      <td>{{ 'Complete' if a.status == 'complete' else 'In progress' }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p>You haven't taken any quizzes yet. <a href="{{ url_for('quizzes_index') }}">Take a quiz</a> to start tracking your scores!</p>
+  {% endif %}
+</div>
+
+<div class="account-panel">
+  <h2>My Certificates</h2>
+  {% if certificates %}
+  <div>
+    {% for c in certificates %}
+    <div class="cert-card">
+      <span class="cert-theme-img" style="background-image:url('/static/images/quiz/themes/{{ c.theme }}-img.png');"></span>
+      <div style="font-weight:800;font-size:17px;">{{ c.person_name }}</div>
+      <div>{{ THEME_LABELS.get(c.theme, c.theme) }} — {{ c.operation }} ({{ c.range_label }})</div>
+      <div class="badge-score">{{ c.correct }} / {{ c.total }}</div>
+      <div style="font-size:13px;color:#777;">{{ c.issued_at.strftime('%B %d, %Y') }}</div>
+      <a href="{{ url_for('certificate_view', cert_id=c.id) }}" style="color:var(--teal);font-weight:700;">View</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p>No certificates yet. Score 80% or higher on a quiz to earn one!</p>
+  {% endif %}
+</div>
+
+<div class="account-panel">
+  <h2>My Favorite Games</h2>
+  {% if favorites %}
+  <table class="data-table">
+    <tr><th>Game</th><th>Topic</th><th>Added</th><th></th></tr>
+    {% for f in favorites %}
+    <tr>
+      <td><a href="{{ url_for('game_detail', ident=f.game.slug) }}" style="color:var(--medium-blue);font-weight:700;">{{ f.game.title }}</a></td>
+      <td>{{ f.game.topic or '—' }}</td>
+      <td>{{ f.fav.created_at.strftime('%B %d, %Y') }}</td>
+      <td>
+        <form method="post" action="{{ url_for('remove_favorite', fav_id=f.fav.id) }}">
+          <button type="submit" class="btn-secondary" style="font-size:12px;padding:4px 12px;background:var(--coral);">Remove</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p>No favorite games yet. Open any game page and use “Add to favorites”.</p>
+  {% endif %}
+</div>
+
+<div class="account-panel">
+  <h2>My Game Results</h2>
+  {% if plays %}
+  <table class="data-table">
+    <tr><th>Game</th><th>Facts Correct</th><th>Finish Position</th><th>Played</th></tr>
+    {% for p in plays %}
+    {% set g = play_games.get(p.game_slug) %}
+    <tr>
+      <td>{% if g %}<a href="{{ url_for('game_detail', ident=p.game_slug) }}" style="color:var(--medium-blue);font-weight:700;">{{ g.title }}</a>{% else %}{{ p.game_slug }}{% endif %}</td>
+      <td class="badge-score">{{ p.facts_correct }} / {{ p.facts_total }}</td>
+      <td>{{ p.position }}</td>
+      <td>{{ p.created_at.strftime('%B %d, %Y') }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p>No game results yet. Play a game from the <a href="{{ url_for('math_games') }}" style="color:var(--teal);font-weight:700;">Math Games</a> section!</p>
+  {% endif %}
+</div>
+
+<div class="account-panel" style="text-align:center;">
+  <a class="btn-continue" href="{{ url_for('account_edit') }}">Edit My Profile</a>
+</div>
+{% endblock %}
