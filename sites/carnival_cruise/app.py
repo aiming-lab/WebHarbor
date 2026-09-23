@@ -507,6 +507,7 @@ def register():
                 flash(e, "error")
         else:
             user = User(email=email, first_name=first, last_name=last,
+                        phone=request.form.get("phone", "").strip(),
                         vifp_number="V" + secrets.token_hex(3).upper(),
                         rewards_points=0, rewards_stars=0, rewards_tier="Blue")
             user.set_password(password)

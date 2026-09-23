@@ -50,7 +50,7 @@ def _booking_row(data, number_attr, booking_number):
     return scalar(data, "bookings", booking_number=booking_number)
 
 
-def grade(number):
+def grade(number, emit=True):
     args = parse_args()
     j = Judge(f"Carnival Cruise--{number}")
     t = load_run(args.run_dir)
@@ -135,9 +135,9 @@ def grade(number):
         j.check("answer_bermuda_days",
                 day_number(fa, A.T8_DAYS[0]) and day_number(fa, A.T8_DAYS[1]),
                 f"Bermuda port call spans days {A.T8_DAYS}")
-        j.check("answer_day_count",
-                contains_count(fa, 2) or (contains_count(fa, 1) and affirms(fa, "full day")),
-                "two days in Bermuda (or one explicitly-full day) affirmed")
+        j.check("answer_port_duration", contains_count(fa, 24) and affirms(fa, "hours"),
+                "24 hours between day 3 arrival and day 4 departure")
+        j.check("answer_port_time", affirm_time(fa, 4, 0, "PM"), "4 PM arrival and departure")
 
     elif number == 9:
         j.check("baja_itinerary_visited", navigated_prefix(t, A.BAJA4_PREFIX),
@@ -283,7 +283,9 @@ def grade(number):
     else:
         j.check("task_exists", False, f"no grading logic for task {number}")
 
-    j.emit()
+    if emit:
+        j.emit()
+    return j
 
 
 # ---------------------------------------------------------------- stateful helpers
@@ -306,6 +308,7 @@ def _booking_task(j, t, a, b, fa):
             f"{user['first_name']!r} {user['last_name']!r}")
     sailing = scalar(b, "sailings", sailing_id=A.T13_SAILING_ID)
     j.check("sailing_anchor", sailing is not None, f"sailing {A.T13_SAILING_ID} in seed")
+    j.check("registration_phone", user.get("phone") == "555-0100", "requested contact phone saved")
     new_bookings = new_rows(b, a, "bookings")
     j.check("one_new_booking", len(new_bookings) == 1,
             f"new bookings: {[r['booking_number'] for r in new_bookings]}")
@@ -318,6 +321,7 @@ def _booking_task(j, t, a, b, fa):
             "user_id": user["id"],
             "sailing_id": sailing["id"],
             "room_type": A.T13_ROOM,
+            "room_category": "Interior",
             "guests": A.T13_GUESTS,
             "lead_guest": A.T13_LEAD,
             "status": "confirmed",

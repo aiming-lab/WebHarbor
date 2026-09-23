@@ -149,12 +149,12 @@ def mut_t13(db):
         address2,city,state,zip_code,country,vifp_number,rewards_points,rewards_stars,
         rewards_tier,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)""",
                 (uid, "jordan.rivera@example.com", "$2b$12$fixturehashfixturehashfixturehash",
-                 "Jordan", "Rivera", "", "", "", "", "", "", "United States",
+                 "Jordan", "Rivera", "555-0100", "", "", "", "", "", "United States",
                  "VA1B2C3", 0, 0, "Blue", "2026-09-22 12:00:00"))
     bid = (con.execute("SELECT MAX(id) FROM bookings").fetchone()[0] or 0) + 1
     con.execute("""INSERT INTO bookings (id,booking_number,user_id,sailing_id,room_type,room_category,
         guests,lead_guest,cabin_number,total_price,status,created_at) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
-                (bid, "CCL2609AB12", uid, _sailing_int_id(db, "22233"), "interior", "",
+                (bid, "CCL2609AB12", uid, _sailing_int_id(db, "22233"), "interior", "Interior",
                  2, "Jordan Rivera", "5C111", 858.0, "confirmed", "2026-09-22 12:00:00"))
     pid = (con.execute("SELECT MAX(id) FROM payment_methods").fetchone()[0] or 0) + 1
     con.execute("""INSERT INTO payment_methods (id,user_id,card_type,last4,holder_name,exp_month,
@@ -386,6 +386,18 @@ HONEST = {
 }
 
 # near-miss wrong answers (plausible agent mistakes; each MUST fail its task)
+
+# Expanded reviewer tasks retain the independent component fixture expectations.
+_ORIGINAL_HONEST = HONEST.copy()
+_REVIEW_COMPONENTS = json.loads((VERIFY / "review_components.json").read_text())
+
+_ORIGINAL_HONEST[8] = dict(_ORIGINAL_HONEST[8], answer="In Bermuda the ship arrives on day 3 at 4:00 PM and departs on day 4 at 4:00 PM, spending 24 hours in port.")
+
+for _n, _parts in _REVIEW_COMPONENTS.items():
+    HONEST[int(_n)] = dict(_ORIGINAL_HONEST[int(_n)],
+        steps=[step for k in _parts for step in _ORIGINAL_HONEST[k]["steps"]],
+        answer="\n".join(_ORIGINAL_HONEST[k]["answer"] for k in _parts))
+
 WRONG = {
     0: "The cheapest 3-day cruise from Miami is \"3-Day The Bahamas from Miami, FL\" "
        "starting at $272 per person.",
