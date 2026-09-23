@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% from "_listing_card.html" import listing_card %}
+{% block title %}My LandWatch | LandWatch{% endblock %}
+{% block content %}
+<div class="lw-account-layout">
+  <h1>My LandWatch</h1>
+  <div class="lw-account-tabs">
+    <span class="active">Favorites</span><span>Saved Searches</span><span>My Inquiries</span>
+  </div>
+  <div class="lw-account-grid">
+    <div>
+      <div class="lw-account-card">
+        <h3>Favorites ({{ listings | length }})</h3>
+        {% if listings %}
+          {% for listing in listings %}
+          <div class="lw-mini-listing">
+            <a href="{{ listing.detail_path() }}"><img src="{{ listing.card_photo() }}" alt=""></a>
+            <div style="padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;">
+              <a href="{{ listing.detail_path() }}" style="font-weight: 700; color: #0e0d0c;">{{ listing.title or listing.street }}</a>
+              <span style="font-size: 13px; color: #757575;">{{ listing.location_line }}</span>
+              <span style="font-size: 14px; font-weight: 700;">{{ listing.price_display }} &bull; {{ listing.acres_display }}</span>
+              <form method="post" action="/remove-favorite/{{ listing.pid }}" style="margin-top: 6px;">
+                <button class="lw-btn lw-btn-outline" type="submit">Remove</button>
+              </form>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: #757575; font-size: 14px;">You haven't saved any properties yet. Tap the heart icon on any listing to save it here.</p>
+        {% endif %}
+      </div>
+      <div class="lw-account-card">
+        <h3>Saved Searches ({{ searches | length }})</h3>
+        {% if searches %}
+          {% for row in searches %}
+          <div class="lw-saved-row">
+            <a href="{{ row.url }}">{{ row.name }}</a>
+            <form method="post" action="/remove-saved-search/{{ row.id }}">
+              <button class="lw-btn lw-btn-outline" type="submit">Remove</button>
+            </form>
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: #757575; font-size: 14px;">No saved searches yet. Use the Save Search button on any search results page.</p>
+        {% endif %}
+      </div>
+      <div class="lw-account-card">
+        <h3>My Inquiries ({{ inquiries | length }})</h3>
+        {% if inquiries %}
+          {% for row in inquiries %}
+          <div class="lw-saved-row">
+            <div>
+              <div>To: {{ row.name }} &mdash; {{ row.email }}</div>
+              <div style="color: #757575; font-size: 13px;">{{ row.message[:160] }}{% if row.message | length > 160 %}&hellip;{% endif %}</div>
+              <div style="color: #999; font-size: 12px;">{{ row.created_at }}</div>
+            </div>
+            {% if row.pid %}<a href="/pid/{{ row.pid }}">View listing</a>{% endif %}
+          </div>
+          {% endfor %}
+        {% else %}
+          <p style="color: #757575; font-size: 14px;">No inquiries yet. Use the contact form on any listing page.</p>
+        {% endif %}
+      </div>
+    </div>
+    <div>
+      <div class="lw-account-card">
+        <h3>Profile</h3>
+        <p style="font-size: 14px;"><b>{{ user.name or user.email }}</b></p>
+        <p style="font-size: 13px; color: #757575;">{{ user.email }}</p>
+        {% if user.phone %}<p style="font-size: 13px; color: #757575;">{{ user.phone }}</p>{% endif %}
+        <a class="lw-btn lw-btn-outline-dark" style="width: 100%; margin-top: 10px;" href="/account/edit">Edit profile</a>
+        <a class="lw-btn lw-btn-outline" style="width: 100%; margin-top: 8px;" href="/log-out">Log out</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -235,8 +235,16 @@ RUN cd /opt/WebSyn/imgur && rm -rf instance instance_seed && \
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
+# LandWatch ships real upstream imagery in the pinned archive (verified
+# against the tracked inventory with per-file SHA-256 and source URLs),
+# while its deterministic SQLite seed is generated from the tracked
+# source_data.json at build time — see .build-generated-seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/landwatch && \
+    cd /opt/WebSyn/landwatch && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40076
+EXPOSE 8101 40000-40089
 
 CMD ["/opt/websyn_start.sh"]

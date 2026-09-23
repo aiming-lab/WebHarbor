@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Land for Sale, Farms and Ranches for Sale | LandWatch{% endblock %}</title>
+  <meta name="description" content="{% block description %}Find land for sale, farms, ranches, hunting land, and rural property across the United States.{% endblock %}">
+  <link rel="icon" href="/static/icons/favicon_lw.ico">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/static/css/fonts.css">
+  <link rel="stylesheet" href="/static/css/main.css">
+{% block extra_head %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+
+<header class="lw-header {% block header_class %}{% endblock %}">
+  <div class="lw-header-inner">
+    <a class="lw-logo" href="/" aria-label="LandWatch home">
+      {% block logo %}<img src="/static/icons/lw-logo.svg" alt="LandWatch" width="168" height="36">{% endblock %}
+    </a>
+    <nav class="lw-nav" aria-label="Main">
+      <div class="lw-nav-item has-menu">
+        <a href="/land">Explore Land</a>
+        <div class="lw-mega-menu" role="menu">
+          <div class="lw-mega-col">
+            <a href="/land">Land for Sale</a>
+            <a href="/hunting-property">Hunting Land</a>
+            <a href="/farms-ranches">Farms &amp; Ranches</a>
+            <a href="/homes">Houses</a>
+            <a href="/timberland-property">Timberland</a>
+            <a href="/commercial-property">Commercial Land</a>
+          </div>
+          <div class="lw-mega-col">
+            <a href="/homesites">Homesites</a>
+            <a href="/recreational-property">Recreational</a>
+            <a href="/horse-property">Horse Property</a>
+            <a href="/undeveloped-land">Undeveloped Land</a>
+            <a href="/waterfront-property">Waterfront</a>
+            <a href="/land/owner-financing">Owner Financing</a>
+          </div>
+          <div class="lw-mega-col">
+            <a href="/land/auctions">All Land Auctions</a>
+            <a href="/hunting-property/auctions">Hunting Land Auctions</a>
+            <a href="/farms-ranches/auctions">Farms &amp; Ranches Auctions</a>
+            <a href="/homes/auctions">Home Auctions</a>
+          </div>
+        </div>
+      </div>
+      <div class="lw-nav-item has-menu">
+        <a href="/sitemap">Search By State</a>
+        <div class="lw-mega-menu lw-state-menu" role="menu">
+          {% for state, slug in states_menu %}
+            <a href="/{{ slug }}">{{ state }}</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="lw-nav-item"><a href="/find-agent">Find an Agent</a></div>
+      <div class="lw-nav-item"><a href="https://network.land.com/advertise/" rel="noopener noreferrer" target="_blank">Advertise</a></div>
+    </nav>
+    <div class="lw-header-actions">
+      <button class="lw-btn lw-btn-outline-dark lw-hero-outline" type="button">Add a Listing</button>
+      {% if current_user %}
+        <a class="lw-login-link" href="/account">{{ current_user.short_name }}</a>
+        <a class="lw-login-sub" href="/log-out">Log out</a>
+      {% else %}
+        <a class="lw-login-link" href="/log-in">Log in</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+{% block pre_content %}{% endblock %}
+
+<main class="{% block main_class %}{% endblock %}">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="lw-footer">
+  <div class="lw-footer-inner">
+    <div class="lw-footer-grid">
+      <div class="lw-footer-col">
+        <h4>LISTINGS BY STATE</h4>
+        <div class="lw-footer-states">
+          {% for state, slug in footer_states %}
+            <a href="/{{ slug }}">{{ state }} Land For Sale</a>
+          {% endfor %}
+          <a class="lw-more-link" href="/sitemap">View More</a>
+        </div>
+      </div>
+      <div class="lw-footer-col">
+        <h4>RESOURCES</h4>
+        <a href="https://land.com/addlisting/?siteId=1113" rel="noopener noreferrer" target="_blank">Add a Listing</a>
+        <a href="https://network.land.com/advertise/" rel="noopener noreferrer" target="_blank">Advertise</a>
+        <a href="/find-agent">Find an Agent</a>
+        <a href="https://www.acrevalue.com/" rel="noopener noreferrer" target="_blank">Rural Land Analytics</a>
+        <a href="https://network.land.com/contact/" rel="noopener noreferrer" target="_blank">Give Feedback</a>
+      </div>
+      <div class="lw-footer-col">
+        <h4>ABOUT US</h4>
+        <a href="/">Home</a>
+        <a href="https://network.land.com/contact/" rel="noopener noreferrer" target="_blank">Contact Us</a>
+        <a href="/terms-conditions">Terms and Conditions</a>
+        <a href="https://www.costar.com/about/privacy-notice" rel="noopener noreferrer" target="_blank">Privacy Notice</a>
+        <a href="https://www.costar.com/about/cookie-policy" rel="noopener noreferrer" target="_blank">Cookie Policy</a>
+        <a href="https://privacy.costar.com/DSAR-submission/" rel="noopener noreferrer" target="_blank">Exercise Your Privacy Rights</a>
+        <a href="/sitemap">Sitemap</a>
+      </div>
+    </div>
+    <div class="lw-footer-bottom">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <h4>FOLLOW US</h4>
+        <div class="lw-social">
+        <img src="/static/icons/facebook.svg" alt="Facebook" width="22" height="22">
+        <img src="/static/icons/instagram.svg" alt="Instagram" width="22" height="22">
+        <img src="/static/icons/linkedin.svg" alt="LinkedIn" width="22" height="22">
+        <img src="/static/icons/twitter.svg" alt="Twitter" width="22" height="22">
+        <img src="/static/icons/youtube.svg" alt="YouTube" width="22" height="22">
+        <img src="/static/icons/spotify.svg" alt="Spotify" width="22" height="22">
+          <img src="/static/icons/applemusic.svg" alt="Apple Music" width="22" height="22">
+        </div>
+      </div>
+      <p>&copy; 2026 CoStar Group</p>
+    </div>
+  </div>
+</footer>
+
+<div class="lw-flash{% if not get_flashed_messages() %} hidden{% endif %}" id="lw-flash">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+      <div class="lw-flash-item {{ category }}">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+</div>
+
+<div class="lw-modal hidden" id="lw-search-modal" aria-hidden="true">
+  <div class="lw-modal-backdrop" data-close-modal></div>
+  <div class="lw-modal-card">
+    <button class="lw-modal-close" type="button" data-close-modal aria-label="Close">&#215;</button>
+    <h3>Search Land for Sale</h3>
+    <p class="lw-modal-sub">Find farms, ranches, hunting land and rural property across the United States</p>
+    <form class="lw-searchbar" action="/search" method="get" autocomplete="off">
+      <div class="lw-searchbar-field">
+        <svg class="lw-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" name="q" placeholder="City, County or State" aria-label="City, County or State" id="lw-modal-input">
+        <div class="lw-suggest hidden" id="lw-suggest-modal"></div>
+      </div>
+      <button class="lw-btn lw-btn-primary" type="submit">Search</button>
+    </form>
+    <button class="lw-btn lw-btn-dark" type="button" onclick="window.location='/sitemap'">
+      <img src="/static/icons/map-white.svg" alt="" width="16" height="16"> Search by State
+    </button>
+  </div>
+</div>
+
+<script src="/static/js/main.js"></script>
+</body>
+</html>
