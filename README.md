@@ -91,6 +91,7 @@ All registered websites and their default ports, in registration order from left
 | YouTube | 40060 | Weather | 40061 | Amazon Jobs | 40062 |
 | Cboe | 40063 | Better Business Bureau | 40064 | Birkenstock | 40065 |
 | America’s Health Rankings | 40066 | American Express | 40067 | Carnival Cruise | 40068 |
+| CA.gov | 40069 |  |  |  |  |
 
 ## 🤝 Contribute
 

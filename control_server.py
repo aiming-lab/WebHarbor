@@ -44,7 +44,7 @@ SITES = [
     '4shared', '9gag', 'akc', 'bestbuy',
     'youtube', 'weather', 'amazon_jobs', 'cboe',
     'better_business_bureau', 'birkenstock', 'americas_health_rankings', 'american_express',
-    'carnival_cruise',
+    'carnival_cruise', 'california_gov',
 ]
 BASE_PORT = 40000
 WEBSYN_DIR = '/opt/WebSyn'
