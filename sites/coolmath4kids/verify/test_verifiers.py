@@ -186,6 +186,16 @@ HONEST = {
                     "says 'Prime Numbers 1-100'."),
 }
 
+
+# Expanded reviewer tasks retain the independent component fixture expectations.
+_ORIGINAL_HONEST = HONEST.copy()
+_REVIEW_COMPONENTS = json.loads(((SITE / "verify") / "review_components.json").read_text())
+
+for _n, _parts in _REVIEW_COMPONENTS.items():
+    HONEST[int(_n)] = dict(_ORIGINAL_HONEST[int(_n)],
+        steps=[step for k in _parts for step in _ORIGINAL_HONEST[k]["steps"]],
+        answer="\n".join(_ORIGINAL_HONEST[k]["answer"] for k in _parts))
+
 WRONG_ANSWERS = {
     0: "The Multiplication topic lists 9 games in total. The first game in the grid "
        "is Grand Prix Multiplication.",

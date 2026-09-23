@@ -142,13 +142,10 @@ def navigated_query(traj, path, **params):
     for url in step_urls(traj):
         if (url_path(url).rstrip("/") or "/") != want:
             continue
-        query = url_query(url)
-        got = {}
-        for chunk in query.split("&"):
-            if "=" in chunk:
-                k, v = chunk.split("=", 1)
-                got[k] = v.replace("+", " ")
-        if all(k in got and (v == got[k] if isinstance(v, str) else got[k] in v)
+        from urllib.parse import parse_qs
+        got = parse_qs(url_query(url), keep_blank_values=True)
+        if all(len(got.get(k, [])) == 1 and
+               (got[k][0] == v if isinstance(v, str) else got[k][0] in v)
                for k, v in params.items()):
             return True
     return False
@@ -191,6 +188,22 @@ def allowed_hosts():
 
 def origin_ok(traj, extra_hosts=()):
     """(ok, note): every URL in the trajectory must belong to a local mirror origin."""
+    from urllib.parse import urlsplit
+    try:
+        initial = urlsplit(traj.get("start_url", ""))
+        expected = (initial.scheme, initial.hostname, initial.port)
+        if initial.scheme not in {"http", "https"} or not initial.hostname:
+            return False, "missing or invalid start origin"
+        for step in traj.get("steps", []):
+            for field in ("url", "url_after", "url_before"):
+                url = step.get(field)
+                if field != "url" and (not url or url == "about:blank"):
+                    continue
+                parsed = urlsplit(url or "")
+                if (parsed.scheme, parsed.hostname, parsed.port) != expected:
+                    return False, "recorded URL does not match start origin"
+    except (ValueError, TypeError):
+        return False, "invalid trajectory URL"
     allowed = allowed_hosts() | {h.lower() for h in extra_hosts}
     allowed_bare = {bare for bare in (_host_only(h) for h in allowed) if bare}
     seen = []
@@ -243,16 +256,16 @@ def png_size(path):
     if not path:
         return None
     try:
-        data = Path(path).read_bytes()
-    except OSError:
+        from PIL import Image
+        with Image.open(path) as im:
+            if im.format != "PNG":
+                return None
+            im.verify()
+        with Image.open(path) as im:
+            im.load()
+            return im.size
+    except (OSError, ValueError, SyntaxError, TypeError):
         return None
-    if len(data) < 33 or data[:8] != PNG_SIGNATURE or data[12:16] != b"IHDR":
-        return None
-    width = int.from_bytes(data[16:20], "big")
-    height = int.from_bytes(data[20:24], "big")
-    if width <= 0 or height <= 0:
-        return None
-    return width, height
 
 
 def screenshot_ok(path, min_w=200, min_h=120, min_bytes=2000):
@@ -279,7 +292,9 @@ def shot_at(traj, url_substr, min_w=200, min_h=120, min_bytes=2000):
     for step in traj.get("steps", []):
         if url_substr not in (step.get("url") or ""):
             continue
-        for field in ("screenshot_before", "screenshot_after"):
+        for field in ("screenshot_after", "screenshot_before"):
+            if field == "screenshot_before" and step.get("url_before") != step.get("url"):
+                continue
             path = _shot(traj, step.get(field))
             if not path:
                 continue
@@ -616,4 +631,6 @@ def parse_args():
         os.environ["WH_SITE"] = args.site
     if args.container:
         os.environ["WH_CONTAINER"] = args.container
+    if bool(args.initial_db) != bool(args.after_db):
+        parser.error("initial.db and after.db must be supplied together")
     return args
