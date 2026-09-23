@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ s.name }} | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <h1>{{ s.name }}</h1>
+        <p class="lede">{{ s.tagline }}</p>
+        <div class="ctas">
+          <a class="btn btn-outline-light" href="{{ url_for('request_demo') }}">Book a demo</a>
+          <a href="{{ url_for('resources_hub') }}" style="color:#0097d3; font-weight:700;">Explore resources &gt;</a>
+        </div>
+      </div>
+      <div>
+        <img class="heroimg" src="{{ s.hero_image }}" alt="{{ s.name }}">
+      </div>
+    </div>
+  </div>
+</section>
+<section class="container section">
+  <div class="prose">
+    {% for block in (s.blocks or []) %}
+      {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+      {% elif block.kind == 'h3' %}<h3>{{ block.text }}</h3>
+      {% elif block.kind == 'li' %}<li>{{ block.text }}</li>
+      {% else %}<p>{{ block.text }}</p>{% endif %}
+    {% endfor %}
+  </div>
+  <h2 style="margin: 50px 0 26px;">Solutions for {{ s.name | lower }}</h2>
+  <div class="block-cards">
+    {% for sol in solutions %}
+    <a class="block-card" href="/{{ sol.slug }}" style="text-decoration:none; color:inherit;">
+      <h3>{{ sol.name }}</h3>
+      <p>{{ sol.tagline }}</p>
+      <span class="pill">Learn more</span>
+    </a>
+    {% endfor %}
+  </div>
+  <div class="cta-band">
+    <h2>Ready to talk {{ s.name }}?</h2>
+    <p class="lede" style="color:#b8cbdc; margin: 14px auto 0;">Our team can help you map your goals to the right solutions.</p>
+    <a class="btn btn-outline-light" href="{{ url_for('request_demo') }}">Book a meeting</a>
+  </div>
+</section>
+{% endblock %}

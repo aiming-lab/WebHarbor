@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Saved Resources | Instructure{% endblock %}
+{% block content %}
+<section class="container" style="padding: 44px 0 70px;">
+  <div class="account-grid">
+    <div>
+      <div class="account-panel">
+        <h2>{{ current_user.display_name }}</h2>
+        <p class="muted" style="margin-bottom: 6px;">{{ current_user.email }}</p>
+        <div class="account-nav">
+          <a href="/account">Profile</a>
+          <a class="is-active" href="/account/saved">Saved Resources ({{ saved|length }})</a>
+        </div>
+        <form method="get" action="/logout" style="margin-top: 20px;">
+          <a class="btn btn-outline btn-sm" href="/logout">Sign Out</a>
+        </form>
+      </div>
+    </div>
+    <div>
+      <h2 style="font-size:1.6rem;">Saved resources ({{ saved|length }})</h2>
+      {% for row in saved %}
+      <div class="saved-row">
+        <a class="t" href="{{ row.resource.href() }}">{{ row.resource.title }}<small>{{ row.resource.type_label }}</small></a>
+        <form method="post" action="/account/saved/{{ row.resource.slug }}/remove">
+          <button class="remove-btn" type="submit">Remove</button>
+        </form>
+      </div>
+      {% else %}
+      <p class="muted">You haven't saved any resources yet. Browse the <a href="/resources" style="color: var(--blue); font-weight: 600;">Resource Center</a> and save what matters.</p>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ e.name }} | Instructure{% endblock %}
+{% block content %}
+<section class="container section">
+  <div class="page-crumb"><a href="{{ url_for('events') }}">Events</a><span class="sep">»</span>{{ e.name }}</div>
+  <div class="gate-wrap">
+    <div>
+      <h1>{{ e.name }}</h1>
+      <p style="margin-top:16px; font-weight:700;">{{ e.kind }}{% if e.event_date %} • {{ e.event_date }}{% endif %}{% if e.location %} • {{ e.location }}{% endif %}</p>
+      <div class="prose" style="margin-top:10px;">
+        {% for block in (e.description or '').split('\n') if block %}
+        <p>{{ block }}</p>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="gate-form">
+      {% if registered %}
+      <h3>You’re registered</h3>
+      <p class="sub">We can’t wait to see you there. Watch your inbox for event updates.</p>
+      {% else %}
+      <h3>Register for this event</h3>
+      <p class="sub">Sign in with your Instructure account to reserve your spot.</p>
+      {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('event_register', slug=e.slug) }}">
+        <button class="btn" type="submit">Register now</button>
+      </form>
+      {% else %}
+      <a class="btn" href="{{ url_for('login', next=url_for('event_detail', slug=e.slug)) }}">Log in to register</a>
+      {% endif %}
+      {% endif %}
+    </div>
+  </div>
+  <div class="detail-hero" style="margin-top:40px;">
+    <img src="{{ e.image }}" alt="{{ e.name }}">
+  </div>
+</section>
+{% endblock %}
