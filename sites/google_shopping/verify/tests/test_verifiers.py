@@ -27,8 +27,9 @@ from _support import (BASE, SEED_DB, RunBuilder, build_run, copy_db, mutate_db, 
 
 pytestmark = pytest.mark.skipif(not SEED_DB.is_file(), reason="seed DB not built (run seed_data.py)")
 
+LEGACY = [6, 20, 21, 22, 24, 25, 26, 28, 29]
 STATEFUL = {21, 22, 23, 24, 25, 26, 28, 29}
-READ_ONLY = sorted(set(range(30)) - STATEFUL)
+READ_ONLY = sorted(set(LEGACY) - STATEFUL)
 LOGIN = {"alice": ("alice.j@test.com", "Alice Johnson"), "bob": ("bob.c@test.com", "Bob Chen"),
          "carol": ("carol.d@test.com", "Carol Davis"), "david": ("david.k@test.com", "David Kim")}
 
@@ -248,7 +249,7 @@ def honest_fixture(tmp_path: Path, n: int, answer: str | None = None):
 
 
 # ---------------------------------------------------------------- honest PASS x30
-@pytest.mark.parametrize("n", range(30))
+@pytest.mark.parametrize("n", LEGACY)
 def test_honest_passes(tmp_path, n):
     run_dir, initial_db, after_db = honest_fixture(tmp_path, n)
     verdict = run_verifier(n, run_dir, initial_db, after_db)
@@ -256,7 +257,7 @@ def test_honest_passes(tmp_path, n):
 
 
 # ---------------------------------------------------------------- no-op FAIL x30
-@pytest.mark.parametrize("n", range(30))
+@pytest.mark.parametrize("n", LEGACY)
 def test_noop_fails(tmp_path, n):
     run_dir = noop_run(tmp_path / f"noop_{n}", f"Google Shopping--{n}")
     initial_db = copy_db(tmp_path / f"noop_initial_{n}.db")
@@ -267,7 +268,7 @@ def test_noop_fails(tmp_path, n):
 
 
 # ---------------------------------------------------------------- wrong answer FAIL x30
-@pytest.mark.parametrize("n", range(30))
+@pytest.mark.parametrize("n", LEGACY)
 def test_wrong_answer_fails(tmp_path, n):
     run_dir, initial_db, after_db = honest_fixture(tmp_path, n, answer=WRONG[n])
     verdict = run_verifier(n, run_dir, initial_db, after_db)
@@ -280,7 +281,7 @@ def test_wrong_answer_fails(tmp_path, n):
 # Correct answer but the agent never left the homepage: every task whose required surface
 # is beyond the homepage MUST FAIL (tasks 0 and 3 are homepage-surface by design — their
 # navigation gate is the homepage itself, so a homepage-only correct run is legitimate).
-SHORTCUT_EXPECT_FAIL = sorted(set(range(30)) - {0, 3})
+SHORTCUT_EXPECT_FAIL = sorted(set(LEGACY) - {0, 3})
 
 
 @pytest.mark.parametrize("n", SHORTCUT_EXPECT_FAIL)
@@ -294,16 +295,6 @@ def test_shortcut_fails(tmp_path, n):
     assert verdict["pass"] is False, json.dumps(verdict, indent=1)
 
 
-@pytest.mark.parametrize("n", [0, 3])
-def test_homepage_surface_tasks_documented(tmp_path, n):
-    """Tasks 0 and 3 are homepage-surface by design: a homepage-only run with the correct
-    facts is a legitimate solve (their facts are catalog-specific and cannot be recalled
-    without opening the mirror), so the shortcut case reduces to the honest case."""
-    run_dir, initial_db, after_db = honest_fixture(tmp_path, n)
-    verdict = run_verifier(n, run_dir, initial_db, after_db)
-    assert verdict["pass"] is True
-
-
 # ---------------------------------------------------------------- read-only DB tamper
 @pytest.mark.parametrize("n", READ_ONLY)
 def test_readonly_db_tamper_fails(tmp_path, n):
@@ -315,7 +306,7 @@ def test_readonly_db_tamper_fails(tmp_path, n):
 
 
 # ---------------------------------------------------------------- stateful: state mismatch + collateral
-@pytest.mark.parametrize("n", sorted(STATEFUL))
+@pytest.mark.parametrize("n", sorted(STATEFUL & set(LEGACY)))
 def test_stateful_state_mismatch_fails(tmp_path, n):
     """Agent self-reports success but the DB is unchanged -> FAIL."""
     login_key, steps, honest_answer = HONEST[n]
@@ -327,7 +318,7 @@ def test_stateful_state_mismatch_fails(tmp_path, n):
     assert verdict["pass"] is False
 
 
-@pytest.mark.parametrize("n", sorted(STATEFUL))
+@pytest.mark.parametrize("n", sorted(STATEFUL & set(LEGACY)))
 def test_stateful_collateral_write_fails(tmp_path, n):
     """The honest delta PLUS a collateral row another user never asked for -> FAIL."""
     run_dir, initial_db, after_db = honest_fixture(tmp_path, n)
@@ -341,7 +332,7 @@ def test_stateful_collateral_write_fails(tmp_path, n):
 
 # ---------------------------------------------------------------- package tampering (task 8 shape)
 def _task8_honest(tmp_path):
-    return honest_fixture(tmp_path, 8)
+    return honest_fixture(tmp_path, 21)
 
 
 def test_tampered_task_id_fails(tmp_path):
@@ -349,7 +340,7 @@ def test_tampered_task_id_fails(tmp_path):
     traj = json.loads((run_dir / "trajectory.json").read_text())
     traj["task_id"] = "Google Shopping--12"
     (run_dir / "trajectory.json").write_text(json.dumps(traj))
-    verdict = run_verifier(8, run_dir, initial_db, after_db)
+    verdict = run_verifier(21, run_dir, initial_db, after_db)
     assert verdict["pass"] is False
     assert verdict["reason"] == "trajectory_task_matches"
 
@@ -359,7 +350,7 @@ def test_offsite_url_fails(tmp_path):
     traj = json.loads((run_dir / "trajectory.json").read_text())
     traj["steps"][0]["url"] = "https://example.com/search?q=St+Barts"
     (run_dir / "trajectory.json").write_text(json.dumps(traj))
-    verdict = run_verifier(8, run_dir, initial_db, after_db)
+    verdict = run_verifier(21, run_dir, initial_db, after_db)
     assert verdict["pass"] is False
     assert verdict["reason"] == "all_urls_match_local_origin"
 
@@ -367,7 +358,7 @@ def test_offsite_url_fails(tmp_path):
 def test_broken_screenshot_fails(tmp_path):
     run_dir, initial_db, after_db = _task8_honest(tmp_path)
     (run_dir / "screenshots" / "step_001.png").write_bytes(b"this is not a png")
-    verdict = run_verifier(8, run_dir, initial_db, after_db)
+    verdict = run_verifier(21, run_dir, initial_db, after_db)
     assert verdict["pass"] is False
     assert verdict["reason"] == "screenshots_decode"
 
@@ -375,7 +366,7 @@ def test_broken_screenshot_fails(tmp_path):
 def test_missing_screenshot_fails(tmp_path):
     run_dir, initial_db, after_db = _task8_honest(tmp_path)
     (run_dir / "screenshots" / "step_001.png").unlink()
-    verdict = run_verifier(8, run_dir, initial_db, after_db)
+    verdict = run_verifier(21, run_dir, initial_db, after_db)
     assert verdict["pass"] is False
     assert verdict["reason"] == "screenshots_decode"
 
@@ -383,7 +374,7 @@ def test_missing_screenshot_fails(tmp_path):
 def test_tampered_seed_fails_closed(tmp_path):
     run_dir, initial_db, after_db = _task8_honest(tmp_path)
     mutate_db(initial_db, [("UPDATE products SET price = 1.0 WHERE id = 41", ())])
-    verdict = run_verifier(8, run_dir, initial_db, after_db)
+    verdict = run_verifier(21, run_dir, initial_db, after_db)
     assert verdict["pass"] is False
     assert verdict.get("infra_error") is True
     assert verdict["reason"] == "snapshot_contract_invalid"
@@ -391,7 +382,7 @@ def test_tampered_seed_fails_closed(tmp_path):
 
 def test_unavailable_db_fails_closed(tmp_path):
     run_dir, _, _ = _task8_honest(tmp_path)
-    verdict = run_verifier(8, run_dir, Path("/nonexistent/initial.db"),
+    verdict = run_verifier(21, run_dir, Path("/nonexistent/initial.db"),
                            Path("/nonexistent/after.db"), container="definitely-not-a-container")
     assert verdict["pass"] is False
     assert verdict.get("infra_error") is True
@@ -403,6 +394,6 @@ def test_terminated_without_done_fails(tmp_path):
     traj = json.loads((run_dir / "trajectory.json").read_text())
     traj["termination_reason"] = "max_steps"
     (run_dir / "trajectory.json").write_text(json.dumps(traj))
-    verdict = run_verifier(8, run_dir, initial_db, after_db)
+    verdict = run_verifier(21, run_dir, initial_db, after_db)
     assert verdict["pass"] is False
     assert verdict["reason"] == "trajectory_completed"

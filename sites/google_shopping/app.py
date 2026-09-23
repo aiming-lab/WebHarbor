@@ -18,6 +18,7 @@ no random salts; the reset seed is byte-reproducible.
 import json
 import os
 import re
+from urllib.parse import urlsplit
 from datetime import datetime
 
 from flask import (Flask, abort, flash, redirect, render_template, request,
@@ -267,6 +268,13 @@ def parse_price(text):
         return None
 
 
+def local_redirect(target, fallback="/"):
+    """Accept only site-relative return paths supplied by the UI."""
+    target = str(target or "")
+    parsed = urlsplit(target)
+    return target if target.startswith("/") and not target.startswith("//") and not parsed.netloc and not parsed.scheme and "\\" not in target else fallback
+
+
 # --------------------------------------------------------------------------
 # Routes
 # --------------------------------------------------------------------------
@@ -463,7 +471,7 @@ def login():
         user = User.query.filter_by(email=email).first()
         if user and bcrypt.check_password_hash(user.password_hash, password):
             login_user(user)
-            return redirect(request.args.get("next") or url_for("index"))
+            return redirect(local_redirect(request.args.get("next")))
         return render_template("login.html", error=True, email=email)
     return render_template("login.html", error=False, email="")
 
@@ -522,23 +530,12 @@ def server_error(error):
 # --------------------------------------------------------------------------
 # Bootstrap
 # --------------------------------------------------------------------------
-def seed_benchmark_users():
-    if User.query.filter_by(email="alice.j@test.com").first():
-        return
-    from seed_data import BENCHMARK_USERS, PASSWORD_HASH
-    for row in BENCHMARK_USERS:
-        db.session.add(User(email=row["email"],
-                            display_name=row["display_name"],
-                            password_hash=PASSWORD_HASH))
-
-
 with app.app_context():
     db.create_all()
     if os.environ.get("GOOGLE_SHOPPING_SKIP_SEED") != "1":
-        from seed_data import seed_database
+        from seed_data import seed_database, seed_benchmark_users
         seed_database()
         seed_benchmark_users()
-        db.session.commit()
 
 
 if __name__ == "__main__":

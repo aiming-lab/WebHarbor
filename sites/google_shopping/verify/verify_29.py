@@ -12,9 +12,27 @@ RECTANGLE_PATH = "/product/gsdbc82b9ec167c52c"   # Blue Light Rectangle Glasses 
 RAQUELLA_PATH = "/product/gs8613f95434064d79"    # Raquella Rectangle Blue Light Glasses ($4.40)
 
 
+def product_price_clause(answer, product):
+    """Separate sibling products even when both appear in one sentence."""
+    import re
+    matches = list(re.finditer(r'Blue Light Rectangle|Raquella', answer, re.I))
+    parts = []
+    for i, match in enumerate(matches):
+        if match.group().casefold() == product.casefold():
+            end = matches[i+1].start() if i+1 < len(matches) else len(answer)
+            parts.append(answer[match.start():end])
+    return ' '.join(parts)
+
+
 def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_trajectory_identity(judge, traj, TASK_ID)
+    from reviewed import fact_scope
+    from verify_lib import contains_price
+    judge.check("bound_price_blue", contains_price(product_price_clause(answer, 'Blue Light Rectangle'), 4.4), "price belongs to Blue Light Rectangle")
+    judge.check("bound_price_raquella", contains_price(product_price_clause(answer, 'Raquella'), 4.4), "price belongs to Raquella")
+    import re
+    judge.check("no_denied_price", not re.search(r"(?:not|instead of|rather than)\s*\$(?:4\.40?|45(?:\.00)?|48\.50?)(?![\d.])", answer, re.I), "requested prices must be asserted")
     # Auth + navigation gates: sign in as david, search the edikted glasses, save both from
     # their product pages.
     check_signed_in_as(judge, traj, "david.k@test.com", "David Kim")

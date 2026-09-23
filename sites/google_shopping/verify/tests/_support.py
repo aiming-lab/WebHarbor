@@ -24,7 +24,7 @@ from typing import Any
 VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
 SEED_DB = SITE_DIR / "instance_seed" / "google_shopping.db"
-BASE = "http://localhost:40084"
+BASE = "http://localhost:40075"
 PASSWORD = "TestPass123!"
 
 # ------------------------------------------------------------------ tiny valid PNG
@@ -93,7 +93,7 @@ class RunBuilder:
 
     def write(self) -> Path:
         traj = {
-            "task": f"fixture for {self.task_id}",
+            "task": next(json.loads(line)['ques'] for line in (SITE_DIR / 'tasks.jsonl').read_text().splitlines() if json.loads(line)['id'] == self.task_id),
             "task_id": self.task_id,
             "start_url": self.start_url,
             "model": "review-fixture",
