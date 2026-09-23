@@ -94,6 +94,7 @@ DEMO_PASSWORD = "TestPass123!"
 # primary key columns per table (delta keys); default "id"
 PK_COLUMNS = {}
 INPUT_ACTIONS = {"input", "type", "fill", "input_text", "type_text"}
+SELECT_ACTIONS = {"select_dropdown", "select", "select_option"}
 
 
 # ---------------------------------------------------------------- trajectory
@@ -254,6 +255,24 @@ def input_texts(traj):
 def entered_identity(traj, *identities):
     wanted = {normalize_text(i) for i in identities}
     return any(normalize_text(v) in wanted for v in input_texts(traj))
+
+
+def select_texts(traj):
+    """Visible option texts entered through dropdown selects (agent_demo shape:
+    action 'select_dropdown' with params {'index': N, 'text': <option text>})."""
+    values = []
+    for step in traj.get("steps") or []:
+        if not isinstance(step, dict) or normalize_text(step.get("action")) not in SELECT_ACTIONS:
+            continue
+        params = step.get("params")
+        if isinstance(params, dict) and params.get("text") is not None:
+            values.append(str(params["text"]))
+    return values
+
+
+def selected_option(traj, text):
+    wanted = normalize_text(text)
+    return any(normalize_text(v) == wanted for v in select_texts(traj))
 
 
 # ---------------------------------------------------------------- deterministic answer match
@@ -739,6 +758,46 @@ def check_only_tables_changed(judge, initial_db, after_db, allowed):
                        f"tables_outside_allowed={list(others)!r}, changed={changed!r}")
 
 
+# ---------------------------------------------------------------- stateful-delta helpers
+def single_added_row(initial_db, after_db, table):
+    """(ok, row_dict): exactly one row added to `table`, none removed/changed."""
+    delta = table_delta(initial_db, after_db, table)
+    ok = (len(delta["added"]) == 1 and not delta["removed"] and not delta["changed"])
+    if not ok:
+        return False, delta
+    cols = [r["name"] for r in db_query(after_db, f"PRAGMA table_info({table})")]
+    return True, dict(zip(cols, delta["added"][0]))
+
+
+def single_changed_user(initial_db, after_db, email, expect_fields):
+    """Exactly one users row changed (the benchmark user `email`), and ONLY the
+    fields in expect_fields differ (with the exact expected values)."""
+    delta = table_delta(initial_db, after_db, "users")
+    if len(delta["changed"]) != 1 or delta["added"] or delta["removed"]:
+        return False, f"users delta not a single edit: added={delta['added']!r} removed={delta['removed']!r} changed={len(delta['changed'])}"
+    before_row, after_row = delta["changed"][0]
+    cols = [r["name"] for r in db_query(after_db, "PRAGMA table_info(users)")]
+    before, after = dict(zip(cols, before_row)), dict(zip(cols, after_row))
+    if after.get("email", "").lower() != email.lower():
+        return False, f"edited user is {after.get('email')!r}, expected {email!r}"
+    for key, value in expect_fields.items():
+        if after.get(key) != value:
+            return False, f"field {key}={after.get(key)!r}, expected {value!r}"
+    differing = {c for c in cols if before.get(c) != after.get(c) and c != "id"}
+    if differing != set(expect_fields):
+        return False, f"unexpected profile fields changed: {sorted(differing - set(expect_fields))!r}"
+    return True, ""
+
+
+def new_test_user(delta_added):
+    """(ok, row): the single newly-registered users row uses a @test.com email."""
+    cols_hint = delta_added
+    if not isinstance(cols_hint, dict):
+        return False, {}
+    email = str(cols_hint.get("email", ""))
+    return email.endswith("@test.com"), cols_hint
+
+
 # ---------------------------------------------------------------- anchored LLM utilities (advisory only)
 _NO_LLM = False
 
@@ -849,3 +908,25 @@ def run_verifier(task_id, run_checks):
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()
+
+
+def entered_test_email(traj):
+    """A form input carries some agent-chosen @test.com address (registration
+    tasks: 'your own details and a @test.com email')."""
+    return any(normalize_text(v).endswith("@test.com") for v in input_texts(traj))
+
+
+def user_id_by_email(db_path, email):
+    row = db_query(db_path, "SELECT id FROM users WHERE lower(email)=lower(?)", (email,))
+    return int(row[0]["id"]) if row else None
+
+
+def resource_id_by_slug(db_path, slug):
+    row = db_query(db_path, "SELECT id FROM resources WHERE slug = ?", (slug,))
+    return int(row[0]["id"]) if row else None
+
+
+def delta_dicts(db_path, table, delta, kind="added"):
+    """Materialize a table_delta's added/removed rows as dicts (column names from db_path)."""
+    cols = [r["name"] for r in db_query(db_path, f"PRAGMA table_info({table})")]
+    return [dict(zip(cols, row)) for row in delta[kind]]
