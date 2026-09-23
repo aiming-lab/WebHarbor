@@ -33,18 +33,8 @@ def run_checks(j, t, initial_db, after_db):
 
 
 def main():
-    a = parse_args()
-    try:
-        t = load_run(a.run_dir)
-    except (OSError, ValueError) as exc:
-        fail_closed(TASK_ID, "trajectory_unavailable", str(exc))
-    initial_db, after_db = resolve_snapshots(a, TASK_ID)
-    j = Judge(TASK_ID, a.no_llm)
-    try:
-        run_checks(j, t, initial_db, after_db)
-    except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
-        fail_closed(TASK_ID, "verifier_error", f"{type(exc).__name__}: {exc}")
-    j.emit()
+    from composed_grade import grade
+    grade(16)
 
 
 if __name__ == "__main__":
