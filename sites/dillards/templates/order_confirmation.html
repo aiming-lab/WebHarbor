@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmation | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="content-page center">
+    <h1>Thank you for your order!</h1>
+    <p>Your order <b>{{ order.order_number }}</b> has been placed.</p>
+    <p class="muted">A confirmation email is on the way. You can follow your order from your <a href="/account/orders">Order History</a>.</p>
+    <table style="max-width: 640px; margin: 20px auto; text-align: left;">
+      <tr><th>Item</th><th>Qty</th><th>Price</th></tr>
+      {% for item in order.items %}
+        <tr>
+          <td>{{ item.product_name }}</td>
+          <td>{{ item.quantity }}</td>
+          <td class="num">${{ '%.2f'|format(item.price * item.quantity) }}</td>
+        </tr>
+      {% endfor %}
+      <tr><td colspan="2"><b>Total</b></td><td class="num"><b>${{ '%.2f'|format(order.total) }}</b></td></tr>
+    </table>
+    <p><a href="/">Continue Shopping</a></p>
+  </div>
+</div>
+{% endblock %}

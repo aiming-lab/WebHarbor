@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Application Status | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="content-page center">
+    <h1>Thank you for applying!</h1>
+    {% if reference or application %}
+      <p>Your Dillard's Card application has been received.</p>
+      <p>Reference Number: <b>{{ application.reference if application else reference }}</b></p>
+      <p class="muted">Status: {{ application.status if application else 'Received' }}. A decision is typically mailed within 7-10 business days.</p>
+    {% else %}
+      <p class="muted">No application reference provided. Check your application status with the reference number from your confirmation.</p>
+      <form method="get" action="/creditcard/status">
+        <div class="field"><label>Reference Number</label><input type="text" name="reference"></div>
+        <button class="btn-primary" type="submit">Check Status</button>
+      </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

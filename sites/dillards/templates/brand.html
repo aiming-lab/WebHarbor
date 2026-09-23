@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ brand.name }} | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/c/shopbybrand">Shop By Brand</a> &rsaquo; {{ brand.name }}</div>
+  <div class="page-head">
+    <h1>{{ brand.name }}</h1>
+    {% if brand.exclusive %}<div class="items-count">A Dillard's Exclusive Brand</div>{% endif %}
+  </div>
+  {% if brand.about %}
+    <div class="content-page" style="padding-top: 0;">
+      <h2>About {{ brand.name }}</h2>
+      <p>{{ brand.about }}</p>
+    </div>
+  {% endif %}
+  <div class="product-grid">
+    {% for product in products %}
+      <div class="product-card">
+        <a class="card-img" href="{{ product.url }}"><img src="/static/images/{{ product.main_image }}" alt="{{ product.full_name }}"></a>
+        <div class="swatches">
+          {% for color in product.colors()[:5] %}
+            <img src="/static/images/{{ color.image }}" alt="Color Swatch - {{ color.color }}">
+          {% endfor %}
+        </div>
+        <a class="brand-name" href="{{ product.brand.url }}">{{ product.brand.name }}</a>
+        <a class="product-name" href="{{ product.url }}">{{ product.short_name or product.name }}</a>
+        <div class="price{% if product.on_sale() %} sale{% endif %}">${{ '%.2f'|format(product.price() or 0) }}{% if product.on_sale() %} <span class="was">${{ '%.2f'|format(product.was_price()) }}</span>{% endif %}</div>
+        {% if product.exclusive %}<div class="exclusive-label">Dillard's Exclusive</div>{% endif %}
+        {% if product.review_count %}
+          <div class="stars">{% for i in range((product.rating|stars)['full']) %}&#9733;{% endfor %}{% if (product.rating|stars)['half'] %}&#189;{% endif %} <span class="review-count">({{ product.review_count }})</span></div>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_number }} | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/account">My Dillard's Account</a> &rsaquo; <a href="/account/orders">Order History</a> &rsaquo; {{ order.order_number }}</div>
+  <div class="content-page">
+    <h1>Order {{ order.order_number }}</h1>
+    <p>Placed {{ order.placed_at.strftime('%B %d, %Y') }} &middot; Status: <span class="badge {{ order.status_code()|lower }}">{{ order.status_code() }}</span></p>
+    {% if order.tracking_number %}
+      <p>Tracking Number: {{ order.tracking_number }}{% if order.carrier %} via {{ order.carrier }}{% endif %}</p>
+    {% endif %}
+    <h2>Items</h2>
+    <table>
+      <tr><th>Item</th><th>Size</th><th>Color</th><th>Qty</th><th>Price</th></tr>
+      {% for item in order.items %}
+        <tr>
+          <td><a href="{{ item.variant.product.url }}">{{ item.product_name }}</a></td>
+          <td>{{ item.size }}</td>
+          <td>{{ item.color }}</td>
+          <td>{{ item.quantity }}</td>
+          <td class="num">${{ '%.2f'|format(item.price * item.quantity) }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+    <h2>Summary</h2>
+    <p>Ship to: {{ order.ship_to }}</p>
+    <p>Shipping method: {{ order.ship_method }}</p>
+    <p>Subtotal: ${{ '%.2f'|format(order.subtotal) }}</p>
+    <p>Shipping: ${{ '%.2f'|format(order.shipping_total) }}</p>
+    <p>Tax: ${{ '%.2f'|format(order.tax) }}</p>
+    <p><b>Total: ${{ '%.2f'|format(order.total) }}</b></p>
+    <p>Payment: {{ order.payment_kind }} ending in {{ order.payment_last4 }}</p>
+    {% if order.status_code() in ('Delivered', 'Shipped', 'In Transit') %}
+      <p><a href="/account/returns/new/{{ order.id }}">Start a Return</a></p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
