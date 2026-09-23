@@ -73,3 +73,22 @@ def test_package_guards(tmp_path,mutation):
     if mutation=='missing_screenshot':t['steps'][0]['screenshot_after']='missing.png'
     p.write_text(json.dumps(t));result=run_verifier(int(key),run,initial,after)
     assert not result['pass'],result
+
+
+@pytest.mark.parametrize('separator',['; ', ', and ', '\n'])
+def test_multi_entity_values_do_not_cross_bind(separator):
+    if SITE == 'google_shopping':
+        key='0'
+        correct=separator.join(['Beauty And Brains: plastic square, $3.98',
+            'Playing It Smart: metal aviator, $2.98, my recommendation',
+            'Office Siren: plastic square, $5.99'])
+        wrong=correct.replace('$3.98','SWAP').replace('$2.98','$3.98').replace('SWAP','$2.98')
+    else:
+        key='14'
+        correct=separator.join(['Beach time by ginalynn8942: 718 points',
+            'OnlyBiscuits by PushPullMagnet: 587 points', 'Score difference: 131 points'])
+        wrong=correct.replace('718','SWAP').replace('587','718').replace('SWAP','587')
+    for answer,expected in [(correct,True),(wrong,False)]:
+        judge=Judge(NAME+'--'+key,True)
+        reviewed.check_facts(judge,answer,reviewed.CONFIG[key]['facts'])
+        assert judge.ok == expected, judge.evidence

@@ -14,7 +14,7 @@ from verify_lib import (check_trajectory_identity, check_signed_in_as,
 CONFIG = json.loads(Path(__file__).with_name('reviewed_tasks.json').read_text())
 
 
-def fact_scope(answer, entity):
+def fact_scope(answer, entity, entities=()):
     # Split prose at sentence boundaries without splitting decimals, and split
     # tables/bullets at line boundaries. Keep a named entity's contiguous text.
     answer = answer.replace('’', "'").replace('“', '"').replace('”', '"')
@@ -24,12 +24,20 @@ def fact_scope(answer, entity):
     # breaks while retaining decimals and the actual words for matching.
     answer = re.sub(r'"[^"]*"', lambda m: re.sub(r'([.!?])(?=\s+[A-Z])', ' ', m.group()), answer)
     segments = re.split(r'\n|(?<=[.!?])\s+(?=[A-Z])', answer)
+    if entities:
+        labels = '|'.join('(?:' + e + ')' for e in entities)
+        # Product/comment comparisons often use semicolons, table cells, or
+        # "and" within one sentence. Keep each explicitly named entity with
+        # its own following facts; do not pool all values in that sentence.
+        boundary = r'(?:;\s*|,\s*|\s+and\s+|\|\s*)(?=["\']?(?:[A-Za-z][A-Za-z\'_-]*\s+){0,4}(?:' + labels + r'))'
+        segments = [part for segment in segments for part in re.split(boundary, segment, flags=re.I)]
+
     return ' '.join(s for s in segments if re.search(entity, s, re.I))
 
 
 def check_facts(judge, answer, facts):
     for index, fact in enumerate(facts):
-        scoped = fact_scope(answer, fact['entity'])
+        scoped = fact_scope(answer, fact['entity'], [f['entity'] for f in facts])
         judge.check(f'fact_{index}_entity', bool(scoped), fact['entity'])
         for n, pattern in enumerate(fact['patterns']):
             matches = list(re.finditer(pattern, scoped, re.I))
