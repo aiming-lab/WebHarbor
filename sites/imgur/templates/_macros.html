@@ -1,0 +1,99 @@
+{% macro post_card(post, session_user=None) %}
+<a class="card" href="/gallery/{{ post.route_slug() }}">
+  <div class="media">
+    {% set cover = post.cover %}
+    {% if cover and cover.type == 'video' %}
+      <video src="{{ cover.feed_path|asset }}" poster="{{ cover.poster_path|asset }}" muted loop autoplay playsinline></video>
+    {% elif cover %}
+      <img src="{{ cover.feed_path|asset }}" alt="{{ post.title }}" loading="lazy">
+    {% endif %}
+    {% if post.image_count > 1 %}
+      <span class="counter">1/{{ post.image_count }}</span>
+    {% endif %}
+  </div>
+  <div class="caption">
+    <p class="title">{{ post.title }}</p>
+    <div class="stats">
+      <span class="stat"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M7.197 2.524a1.2 1.2 0 011.606 0c.521.46 1.302 1.182 2.363 2.243a29.617 29.617 0 012.423 2.722c.339.435.025 1.028-.526 1.028h-2.397v4.147c0 .524-.306.982-.823 1.064-.417.066-1.014.122-1.843.122s-1.427-.056-1.843-.122c-.517-.082-.824-.54-.824-1.064V8.517H2.937c-.552 0-.865-.593-.527-1.028.52-.669 1.32-1.62 2.423-2.722a52.996 52.996 0 012.364-2.243z"></path></svg>{{ post.point_count|count }}</span>
+      <span class="stat"><svg width="16" height="16" viewBox="0 0 16 16" class="PostCommentsIcon" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="currentColor" d="M4.455 12.195l.367 1.105 1.037-.53c.266-.135.637-.412 1.039-.74.39-.319.872-.737 1.422-1.245h2.291a3.306 3.306 0 003.306-3.306V5.306A3.306 3.306 0 0010.611 2H5.306A3.306 3.306 0 002 5.306v2.656c0 1.34.933 2.461 2.185 2.75.008.172.025.335.046.479a6.622 6.622 0 00.168.803c.016.07.035.137.056.2z"></path></svg>{{ post.comment_count|count }}</span>
+      <span class="stat"><svg width="16" height="16" viewBox="0 0 16 16" class="PostViewsIcon" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8 2.5C4.74998 2.5 2.30142 5.50267 1.27514 6.77517C0.925337 7.20917 0.908553 7.76483 1.2278 8.16583C2.22527 9.41833 4.6991 12.5 8 12.5C11.3686 12.5 13.8396 9.31133 14.796 8.0905C15.0769 7.732 15.0674 7.2535 14.7692 6.8755C13.7938 5.6395 11.3376 2.5 8 2.5ZM7.98224 9.33333C6.90897 9.33333 6.03887 8.51233 6.03887 7.5C6.03887 6.4875 6.90897 5.66667 7.98224 5.66667C9.05551 5.66667 9.92561 6.4875 9.92561 7.5C9.92561 8.51233 9.05551 9.33333 7.98224 9.33333Z" fill="currentColor"></path></svg>{{ post.view_count|count }}</span>
+    </div>
+  </div>
+</a>
+{% endmacro %}
+
+{% macro vote_well(post, faved, back_url) %}
+{% set v = post.session_vote() %}
+<div class="votewell">
+  <form method="post" action="/vote/{{ post.id }}">
+    <input type="hidden" name="value" value="1">
+    <input type="hidden" name="back" value="{{ back_url }}">
+    <button class="votebtn up-btn {{ 'up-active' if v == 1 }}" data-post="{{ post.id }}" data-value="1" type="submit" aria-label="Upvote">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Upvote</title><path fill="none" stroke="currentColor" stroke-width="2" fill-rule="evenodd" clip-rule="evenodd" d="M14.8505 7.71282C15.5179 7.12573 16.4821 7.12573 17.1495 7.71282C17.9307 8.39996 19.1203 9.49532 20.75 11.125C22.4432 12.8182 23.6614 14.2739 24.44 15.28C24.9219 15.9028 24.4732 16.75 23.6857 16.75H20V23.0316C20 23.7799 19.5634 24.435 18.8251 24.5568C18.1981 24.6603 17.2841 24.75 16 24.75C14.7159 24.75 13.8019 24.6603 13.1749 24.5568C12.4366 24.435 12 23.7799 12 23.0316V16.75H8.31433C7.52677 16.75 7.07806 15.9028 7.56004 15.28C8.33861 14.2739 9.55681 12.8182 11.25 11.125C12.8797 9.49532 14.0693 8.39996 14.8505 7.71282Z"></path></svg>
+    </button>
+  </form>
+  <span class="votescore" data-score="{{ post.id }}">{{ post.display_points() }}</span>
+  <form method="post" action="/vote/{{ post.id }}">
+    <input type="hidden" name="value" value="-1">
+    <input type="hidden" name="back" value="{{ back_url }}">
+    <button class="votebtn down-btn {{ 'down-active' if v == -1 }}" data-post="{{ post.id }}" data-value="-1" type="submit" aria-label="Downvote">
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Downvote</title><path fill="none" stroke="currentColor" fill-rule="evenodd" clip-rule="evenodd" stroke-width="2" d="M17.1495 24.2872C16.4821 24.8743 15.5179 24.8743 14.8505 24.2872C14.0693 23.6 12.8797 22.5047 11.25 20.875C9.55681 19.1818 8.33861 17.7261 7.56005 16.72C7.07806 16.0972 7.52677 15.25 8.31433 15.25L12 15.25L12 8.96842C12 8.2201 12.4366 7.56497 13.1749 7.44316C13.8019 7.33973 14.7159 7.25 16 7.25C17.2841 7.25 18.1981 7.33973 18.8251 7.44317C19.5634 7.56497 20 8.2201 20 8.96842L20 15.25L23.6857 15.25C24.4732 15.25 24.9219 16.0972 24.44 16.72C23.6614 17.7261 22.4432 19.1818 20.75 20.875C19.1203 22.5047 17.9307 23.6 17.1495 24.2872Z"></path></svg>
+    </button>
+  </form>
+</div>
+<form method="post" action="/favorite/{{ post.id }}" class="favform">
+  <input type="hidden" name="back" value="{{ back_url }}">
+  <button class="actionbtn fav-btn {{ 'active' if faved }}" type="submit" aria-label="Add to Favorites">
+    <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Add to Favorites</title><path fill="currentColor" stroke="currentColor" stroke-width="0" fill-rule="evenodd" clip-rule="evenodd" d="M16 27.5c-.4 0-.8-.1-1.1-.4C9.7 22.6 4 17.4 4 11.9 4 7.9 7 5 10.6 5c2.2 0 4.2 1 5.4 2.7C17.2 6 19.2 5 21.4 5 25 5 28 7.9 28 11.9c0 5.5-5.7 10.7-10.9 15.2-.3.3-.7.4-1.1.4z"></path></svg>
+  </button>
+</form>
+<button class="actionbtn copylink-btn" type="button" data-link="/gallery/{{ post.route_slug() }}" aria-label="Copy link to clipboard">
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Copy link to clipboard</title><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M12.9 17.1a1 1 0 011.4 0l3.6 3.6a3 3 0 01-.1 4.3l-2.5 2.5a3 3 0 01-4.3 0l-4.5-4.5a3 3 0 010-4.3l2.5-2.5a3 3 0 014.3-.1l1.4 1.4-1.4 1.4-1.4-1.4a1 1 0 00-1.4 0l-2.5 2.5a1 1 0 000 1.4l4.5 4.5a1 1 0 001.4 0l2.5-2.5a1 1 0 000-1.4l-3.6-3.6 1.4-1.4z"></path><path fill="currentColor" fill-rule="evenodd" clip-rule="evenodd" d="M19.1 14.9a1 1 0 00-1.4 0l-3.6-3.6a3 3 0 01.1-4.3l2.5-2.5a3 3 0 014.3 0l4.5 4.5a3 3 0 010 4.3l-2.5 2.5a3 3 0 01-4.3.1l-1.4-1.4 1.4-1.4 1.4 1.4a1 1 0 001.4 0l2.5-2.5a1 1 0 000-1.4l-4.5-4.5a1 1 0 00-1.4 0l-2.5 2.5a1 1 0 000 1.4l3.6 3.6-1.4 1.4z"></path></svg>
+</button>
+<a class="actionbtn" href="/gallery/{{ post.route_slug() }}">
+  <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><title>Jump to Comments</title><path fill="currentColor" d="M8.91 24.39l.733 2.21 2.074-1.06c.532-.27 1.274-.823 2.078-1.479.778-.637 1.742-1.472 2.84-2.487h4.584a6.612 6.612 0 006.612-6.611v-5.31a6.612 6.612 0 00-6.612-6.612H10.612A6.612 6.612 0 004 10.612v5.312c0 2.68 1.865 4.918 4.366 5.496.017.344.05.67.092.958.11.812.315 1.5.337 1.605.033.141.073.274.115.408z"></path></svg>
+  <span>{{ post.comment_count|count }}</span>
+</a>
+{% endmacro %}
+
+{% macro comment_tree(comments, post, back_url, depth=0) %}
+{% for comment in comments %}
+<div class="comment {{ 'highlighted' if focus_comment == comment.id }}" id="comment-{{ comment.id }}">
+  <div class="row">
+    <img class="avatar" src="{{ (comment.author.avatar or default_avatar_for(comment.author.username))|asset }}" alt="{{ comment.author.username }}">
+    <div class="body">
+      <div class="meta">
+        <a class="name" href="/user/{{ comment.author.username }}">{{ comment.author.username }}</a>
+        <span>· {{ comment.created_at|ago }} ago</span>
+        {% if comment.platform != 'web' %}<span>via {{ PLATFORM_LABELS.get(comment.platform, 'Web') }}</span>{% endif %}
+      </div>
+      {% if comment.image_path %}
+        <div class="text"><img src="{{ comment.image_path|asset }}" alt="comment image"></div>
+      {% else %}
+        <div class="text">{{ comment.text }}</div>
+      {% endif %}
+      <div class="foot">
+        <span class="votes">
+          {% set cv = comment.session_vote() %}
+          <button class="cup {{ 'up-active' if cv == 1 }}" data-comment="{{ comment.id }}" data-value="1" aria-label="Upvote comment">▲</button>
+          <span class="cscore" data-cscore="{{ comment.id }}">{{ comment.display_points() }}</span>
+          <button class="cdown {{ 'down-active' if cv == -1 }}" data-comment="{{ comment.id }}" data-value="-1" aria-label="Downvote comment">▼</button>
+        </span>
+        <form method="post" action="/comment" class="replyform">
+          <input type="hidden" name="post_id" value="{{ post.id }}">
+          <input type="hidden" name="parent_id" value="{{ comment.id }}">
+          <input type="hidden" name="back" value="{{ back_url }}">
+          <input type="hidden" name="comment" value="">
+          <button type="submit" class="replybtn" aria-label="Reply">Reply</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% if comment.replies %}
+  <div class="replies">
+    {{ comment_tree(comment.replies, post, back_url, depth + 1) }}
+  </div>
+  {% endif %}
+</div>
+{% endfor %}
+{% endmacro %}

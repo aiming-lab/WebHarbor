@@ -1,0 +1,35 @@
+<div class="suggest open" id="suggest-inner">
+  {% if tags %}
+  <h4>tags</h4>
+  {% for tag in tags %}
+  <a class="row" href="/t/{{ tag.name }}">
+    <img class="thumb" src="{{ tag.background_path|asset }}" alt="">
+    <span>#{{ tag.name }}</span>
+    <span class="kind">{{ tag.total_items|count }} posts</span>
+  </a>
+  {% endfor %}
+  {% endif %}
+  {% if posts %}
+  <h4>posts</h4>
+  {% for post in posts %}
+  <a class="row" href="/gallery/{{ post.route_slug() }}">
+    {% if post.cover %}
+    <img class="thumb" src="{{ post.cover.feed_path|asset }}" alt="">
+    {% endif %}
+    <span>{{ post.title[:70] }}{% if post.title|length > 70 %}...{% endif %}</span>
+  </a>
+  {% endfor %}
+  {% endif %}
+  {% if users %}
+  <h4>users</h4>
+  {% for user in users %}
+  <a class="row" href="/user/{{ user.username }}">
+    <img class="thumb avatar-sm" src="{{ (user.avatar or default_avatar_for(user.username))|asset }}" alt="">
+    <span>@{{ user.username }}</span>
+  </a>
+  {% endfor %}
+  {% endif %}
+  {% if not tags and not posts and not users %}
+  <div class="row"><span class="kind">No matches — keep typing!</span></div>
+  {% endif %}
+</div>
