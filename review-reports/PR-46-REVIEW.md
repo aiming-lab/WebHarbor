@@ -4,15 +4,15 @@ Original contribution: [aiming-lab/WebHarbor#46](https://github.com/aiming-lab/W
 
 ## Scope and fixed versions
 
-- Current upstream base: `5d7a4e8c594028b845cbdcc180619e438c3a22ab`
-- Integrated and tested implementation: `4610b5df689ef664d49d7ba56bc53d123de28261`
+- Current upstream base: `1ec9d6c74b6b814bbf3585464b4c57099aeeaecf`
+- Integrated and tested implementation: `1fc4278cc1948fdd6aa87ae53369f9d0234ff0b2`
 - Original review base: `f20b5ee8377ba31bcb825b4dfe30ad96c416e477`
 - Original contribution: `6e5d77b0af6c2b7dfcd82039361df4228f2c3c65`
 - Isolated-review fixed point: `80bd5817109563313d1ae30fac684a8b918599f7`
 - Reconciled implementation commit: `839c74dc0dd1a2967552b9d6df991701c61aafe6`
-- Assets pin inherited from current upstream: `fa1e8a5b9e8e5d0e42764cd658825f4dea088d8f`
+- Assets pin inherited from current upstream: `741c9e428835e9355a71ae64e28ac43aac57dcb0`
 
-Relative to current upstream, this PR adds repository-level tooling and documentation only. It does not add or modify a mirror site, task set, deterministic task verifier, or Hugging Face asset. The asset pin is identical to upstream; the original review used `ad6f424f72cada9e6f5c09a58093d0ceeab9c52b`.
+Relative to current upstream, this PR adds repository-level tooling, tests, the canonical pre-PR checklist entry, and this report. It also removes two empty tracked `.gitkeep` files from CarMax runtime-only directories so the strict repository audit starts clean. It does not modify mirror behavior, task sets, deterministic task verifiers, or Hugging Face assets. The asset pin is identical to upstream; the original review used `ad6f424f72cada9e6f5c09a58093d0ceeab9c52b`.
 
 ## Baseline findings
 
@@ -35,8 +35,10 @@ Reproducible review fixtures also confirmed that the original implementation:
 - Remove the unreliable brand-name/slug heuristic while retaining within-file `web_name` consistency checks.
 - Document that pre-PR and CI use should pass `--strict`.
 - Report runtime-like regular files as structured warnings instead of raising `NotADirectoryError`.
+- Inspect Git-tracked runtime artifacts without rejecting normal ignored local runtime state created by site execution.
 - Parse only top-level registry declarations, remove unreachable duplicate-generated-port logic, and make the task-port collision test assert the actual diagnostic.
 - Add the strict registry audit to the canonical `AGENTS.md` pre-PR checklist.
+- Remove the two tracked CarMax runtime-directory placeholders caught by the strict scan.
 
 ## Isolated review reconciliation
 
@@ -48,17 +50,17 @@ The frozen candidate was independently reviewed at `80bd581`. The reviewer repro
 
 Affected tests and the full validation set were rerun after reconciliation. A direct regression check also confirmed that restricting Python assignments to module scope does not reject valid indented shell declarations.
 
-## Upstream synchronization — 2026-09-16
+## Upstream synchronization — 2026-09-23
 
-Merged upstream `main` at `5d7a4e8`, preserving the original contribution and reviewer commits. The only content conflict was in the `AGENTS.md` pre-PR checklist: the audit had shifted the step numbers while upstream expanded the HTTP sweep. The resolution keeps the audit step, consecutive numbering, and the current `41000–41030` host-port range.
+Merged upstream `main` at `1ec9d6c`, preserving the original contribution and reviewer commits. The only text conflict was in the `AGENTS.md` pre-PR checklist. The resolution keeps the audit step and consecutive numbering while adopting the current control-token requirement. It also refreshes the documented 72-site range to container ports `40000–40071` and host ports `41000–41071`.
 
-Upstream now includes `scripts/check_site_registry.py`, called by `scripts/check_assets.sh` during the build. That check verifies exact task URLs and referenced verifier paths. It remains enabled and unchanged. The supplemental audit adds structured JSON diagnostics, per-site selection, asset-path coverage, and runtime-file checks; README now explains the relationship.
+Upstream includes `scripts/check_site_registry.py`, called by `scripts/check_assets.sh` during the build. That check verifies exact task URLs and referenced verifier paths. It remains enabled and unchanged. The supplemental audit adds structured JSON diagnostics, per-site selection, asset-path coverage, and tracked runtime-artifact checks. An older explanatory README section was removed because current repository policy limits root README edits to the Websites table.
 
-The audit implementation and its 22 tests are byte-for-byte unchanged from the previously reconciled PR head `472863e`. The historical isolated review therefore remains applicable to that code; no new independent review is claimed. Integration checks below were rerun against all 31 current sites. The upstream HF revision was confirmed reachable; no asset archives were downloaded or modified for this tooling update.
+The historical isolated review remains applicable to the previously reviewed implementation. This synchronization adds one scoped behavior correction: ignored local runtime data no longer fails a repository audit, while Git-tracked runtime artifacts still do. That change was driven by a red-then-green regression test and the complete validation matrix below. No new independent review is claimed. Integration checks were rerun against all 72 current sites; no asset archives were downloaded or modified.
 
 ## Validation
 
-All commands below were run on 2026-09-16 from the tree committed as `4610b5d`; the subsequent report update changes documentation only:
+All commands below were run on 2026-09-23 from the tree committed as `1fc4278`; the subsequent report update changes documentation only:
 
 ```bash
 python3.12 -m py_compile scripts/audit_site_registry.py scripts/test_audit_site_registry.py
@@ -70,17 +72,17 @@ pyright scripts/audit_site_registry.py scripts/test_audit_site_registry.py
 
 Results:
 
-- 22/22 unit and adversarial tests passed.
-- Current repository scan covered 31 site directories, 31 registered sites, 31 ports, 31 task files, and 945 tasks.
+- 23/23 unit and adversarial tests passed.
+- Current repository scan covered 72 site directories, 72 registered sites, 72 ports, 72 task files, and 1,830 tasks.
 - Strict scan: 0 errors, 0 warnings, exit 0.
-- Upstream registry check: all 31 sites, task URLs, and referenced verifier paths passed; Docker exposure is `8101 40000-40030`.
+- Upstream registry check: all 72 sites, task URLs, and referenced verifier paths passed; Docker exposure is `8101 40000-40071`.
 - Pyright: 0 errors, 0 warnings.
 - Python byte-compilation: passed.
-- Git whitespace/conflict checks: passed; only the audit, its tests, and documentation differ from current upstream.
+- Git whitespace/conflict checks: passed; only the audit, its tests, the pre-PR documentation, this report, and removal of two empty ignored runtime placeholders differ from current upstream.
 
 The original 2026-09-13 validation covered 26 sites and 843 tasks. Those historical counts are superseded by the current integration results above.
 
-The negative fixtures cover missing registrations/directories, duplicate task ports, mismatched ports, malformed JSONL inputs, malformed registries, function-local lookalike declarations, runtime-like regular files, missing core files, invalid Docker ranges/ports, warning/strict exit behavior, and JSON error output. Legal alternatives cover explicit per-site asset paths, brand aliases, shell comments and indentation, and protocol-qualified Docker ports.
+The negative fixtures cover missing registrations/directories, duplicate task ports, mismatched ports, malformed JSONL inputs, malformed registries, function-local lookalike declarations, tracked runtime-like files, missing core files, invalid Docker ranges/ports, warning/strict exit behavior, and JSON error output. Legal alternatives cover ignored local runtime state, explicit per-site asset paths, brand aliases, shell comments and indentation, and protocol-qualified Docker ports.
 
 ## Applicability and unexecuted checks
 
@@ -91,8 +93,8 @@ The negative fixtures cover missing registrations/directories, duplicate task po
 | Browser task trajectories and before/after state | N/A | No benchmark task differs from current upstream |
 | Deterministic task verifier review | N/A | No task verifier differs from current upstream |
 | Hugging Face asset PR | N/A | Current upstream pin retained; no new asset contribution |
-| Full Docker image build/smoke | NOT RUN | Not repeated for this tooling/documentation update; Dockerfile, runtime, sites, and assets are identical to current upstream |
+| Full Docker image build/smoke | NOT RUN | Not repeated for this repository-tooling update; Dockerfile, application/runtime code, site behavior, and assets are identical to current upstream |
 
 ## Current status
 
-The synchronized candidate passes the repository-tooling checks and is ready for maintainer review. The original full Docker build was not run because the review host lacked safe rebuild headroom; this update does not claim a fresh Docker build or runtime smoke. Final approval and merge remain with the maintainer.
+The synchronized candidate passes the repository-tooling checks and is ready for maintainer review. No fresh Docker build or runtime smoke is claimed because the added audit is not invoked by the image build or runtime and does not change application or site behavior. Final approval and merge remain with the maintainer.
