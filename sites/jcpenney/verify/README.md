@@ -1,6 +1,6 @@
 # JCPenney — verifier contract (reviewer-authored)
 
-This directory holds the grading contract for the 30 JCPenney benchmark tasks, written
+This directory holds the grading contract for the 15 JCPenney benchmark tasks, written
 by the reviewer (review-env skill Step 6). Ground truth is **hardcoded inside each
 `verify_N.py`** — never in `tasks.jsonl` (the agent reads that file; an answer key there
 would leak answers). After the reviewer's pass, each `tasks.jsonl` row carries
@@ -8,24 +8,38 @@ would leak answers). After the reviewer's pass, each `tasks.jsonl` row carries
 (`web_name, id, ques, web, upstream_url`) — see `append_rubrics.py`, which preserves the
 original bytes as the line prefix and adds no `answer` key.
 
+**Depth redesign (2026-09-23 user standard).** The set was rebuilt from 30 shallow tasks
+to 15 deep-chain tasks per the depth-review report (`wh-jcpenney-depth-review-evidence/
+REPORT.md`): three KEEP entries (registration cycle → `verify_0`, address-book add →
+`verify_1`, password-change cycle → `verify_2`, honest-walk measured at 15/16/17 steps)
+plus twelve redesigned deep chains (`verify_3`…`verify_14`), each honest-walk measured at
+≥ 15 real interaction steps through the visible UI only (search + sort, product pages
+with swatch/size/quantity, guest bag merge, three-step checkout with new-address /
+new-card / coupon / gift-message variants, bag quantity update + line removal, order
+dual-view check, wish-list-driven purchase + heart removal, payment-default flip,
+store service/state dual comparison, homepage-claims verification, category sort
+analysis, cross-domain account audit).
+
 ## Layout
 
 - `verify_lib.py` — shared fail-closed machinery: trajectory identity gates (task_id
-  match, `terminated` + `agent_done`, non-empty final answer, every recorded URL on the
-  same loopback origin/port as `start_url`, every referenced screenshot a decodable
+  match, `terminated` + `agent_done`, non-empty final answer, every recorded URL on
+  the same loopback origin/port as `start_url`, every referenced screenshot a decodable
   PNG), navigation gates (search `/s/<query>` with sort modes, gallery facet params
-  like `brand=` / `state=`, product pages, bag + three-step checkout, guest order
-  tracker, account surfaces, coupons, gift cards, store locator), affirmative answer
-  matching (phrases / counts / money amounts tolerant of `$`, `,`, trailing-zero and
-  `X.5` vs `X.50` renderings), the frozen seed contract (schema sha256, per-table seed
+  like `brand=` / `state=` / `sortBy=`, product pages, bag + three-step checkout, guest
+  order tracker, account surfaces, coupons, gift cards, store locator), affirmative
+  answer matching (phrases / counts / money amounts tolerant of `$`, `,`, trailing-zero
+  and `X.5` vs `X.50` renderings), parallel-answer attribution (`fact_owner` — the
+  reading-order subject governs its facts, so swapped two-store / three-claim
+  attributions cannot pass), the frozen seed contract (schema sha256, per-table seed
   counts, benchmark-user identities, table-scanonical rows digest), exact DB-delta
-  helpers for the six stateful tasks, and advisory-only anchored LLM helpers (verdicts
+  helpers for the ten stateful tasks, and advisory-only anchored LLM helpers (verdicts
   never depend on them; run with `--no_llm True`).
-- `verify_0.py` … `verify_29.py` — one deterministic verifier per task.
+- `verify_0.py` … `verify_14.py` — one deterministic verifier per task.
 - `append_rubrics.py` — the byte-preserving `verifier_path` + `judge_rubric` writer.
-- `tests/` — 164 pytest cases covering the whole contract (honest / no-op /
-  wrong-answer / shortcut / mutated-after-DB / state-mismatch / wrong-delta / package
-  tampering). Run from the `agent_demo` environment:
+- `tests/` — 94 pytest cases covering the whole contract (honest / no-op /
+  wrong-answer incl. attribution swaps / shortcut / mutated-after-DB / state-mismatch /
+  wrong-delta / package tampering). Run from the `agent_demo` environment:
 
       cd agent_demo && uv run python -m pytest ../sites/jcpenney/verify/tests -q
 
@@ -51,28 +65,38 @@ across SQLite builds (page-layout artifact), so the contract pins content, not b
 ## Contract notes (mirror-specific behaviors the verifiers encode)
 
 - **Price rendering.** The `currency` Jinja filter renders two decimals, so the DOM
-  shows `$37.50` for 37.50 and `$63.00` for 63.00 (the contributor's first pass
-  stripped trailing zeros; F4 fixed it to match the upstream's two-decimal display).
-  Verifiers accept either rendering (`contains_amount`). Range products display
-  `$low - $high` (e.g. `$52.50 - $80.50`).
-- **Checkout tax.** The review step applies the estimated tax to the discounted
-  subtotal, matching the bag page's `?code=` convention (order: subtotal $68.99,
-  discount $20.70, shipping $8.95, tax $3.98, total $61.22). The contributor's first
-  pass kept the tax on the PRE-discount subtotal ($5.69/$62.93); F3 fixed the
-  arithmetic and the frozen expectations moved with it (the pre-fix pair now feeds
-  the wrong-amounts test variant).
+  shows `$37.50` for 37.50 and `$63.00` for 63.00. Verifiers accept either rendering
+  (`contains_amount`). Range products display `$low - $high` (e.g. `$52.50 - $80.50`).
+- **Checkout tax and shipping.** The review step applies the estimated tax to the
+  discounted subtotal, matching the bag page's `?code=` convention; shipping is free
+  once the PRE-discount subtotal reaches $75 (e.g. order: subtotal $68.99, discount
+  $20.70, shipping $8.95, tax $3.98, total $61.22; redesigned chains with subtotal
+  ≥ $75 freeze $0.00 shipping).
 - **Order numbers.** Checkout order numbers are runtime-generated
-  (`JCP` + `HHMMSS` + user id), so `verify_8` matches the pattern `JCP\d{6}00?1` and
-  validates the row's frozen amounts; the navigation gate accepts any
-  `/checkout/confirmation/<number>` URL.
-- **Address labels.** The profile's Add-an-Address form exposes a label field
-  (added by the F5 fix; the first pass omitted it), so `verify_20` accepts the added
-  row's label as either `""` or the task's `"Brother"`; the task's reportable facts
-  (address count + unchanged default) are checked from the DOM and the DB row.
-- **T5 rating display.** The PDP renders the raw 3.875 as `3.9`; both are accepted.
-- **T0/T26 price ties.** Two products tie at $27.99 in the boots search / women's
-  shoes category; the price-low sort orders them deterministically (seed `sort`), and
-  T26 accepts either name.
+  (`JCP` + `HHMMSS` + user id), so the redesigned purchase verifiers match the
+  pattern `JCP\d{6}0?NN` per account id and validate the row's frozen amounts; the
+  navigation gate accepts any `/checkout/confirmation/<number>` URL.
+- **Address labels.** The profile's Add-an-Address form exposes a label field, so
+  `verify_1` accepts the added row's label as either `""` or the task's `"Brother"`;
+  the task's reportable facts (address count + unchanged default) are checked from
+  the DOM and the DB row.
+- **Rating display.** The PDP renders the raw 3.875 as `3.9` and the gallery shows
+  `'%.1f'` averages (`3.8` for 3.75); `verify_12` pins the rendered form.
+- **Price ties.** Two booties tie at $27.99 in the boots search / women's shoes
+  category; the price-low sort orders them deterministically (seed `sort`), and the
+  redesigned chains accept either bootie as "the cheapest" (their unit price is
+  identical, so every frozen amount is tie-invariant).
+- **GOSHOP15 terms vs application.** The coupon card advertises "$10 off your $50
+  purchase" but the checkout applies the seeded 15% off; `verify_7` requires the
+  answer to report the applied amount ($24.36 on the $162.37 subtotal) and the
+  does-not-match verdict — the site's own discrepancy is the task's fact-check.
+- **Gift message.** The review step collects the gift message (stored on the order
+  row) but the confirmation page does not echo it, so `verify_10` pins the message in
+  the DB after-state while the answer reports the balance, order number and total.
+- **Payment radio order.** The checkout payment step pre-selects the OLDEST saved
+  card (lowest id), not the default, so `verify_8` requires the trajectory to have
+  entered the new card and the DB to show the default flip; the answer reports the
+  card the placed order actually used.
 
 ## Verdicts
 

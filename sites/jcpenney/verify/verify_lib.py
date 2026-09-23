@@ -321,6 +321,48 @@ def phrases_in_order(text, phrases):
     return True
 
 
+def _flex_pattern(phrase):
+    words = [re.escape(w) for w in normalize_text(phrase).replace("-", " ").replace("_", " ").split()]
+    if not words:
+        return None
+    return r"(?<!\w)" + r"[\s_=-]*".join(words) + r"(?!\w)"
+
+
+def fact_owner(text, fact, owners, rivals=()):
+    """Attribution check for parallel answers: True when some occurrence of `fact`
+    is governed by one of `owners` rather than any of `rivals`. Governance is by
+    reading order — the subject whose mention is the latest one before the fact
+    (or the nearest one after it when nothing precedes the fact), which matches
+    how per-subject answer blocks are actually written and defeats swapped
+    attributions. `owners`/`rivals` accept a single phrase or a tuple of
+    alternatives."""
+    normalized = normalize_text(text)
+    fact_pat = _flex_pattern(fact)
+    if not fact_pat:
+        return False
+    owners = (owners,) if isinstance(owners, str) else tuple(owners)
+    rivals = (rivals,) if isinstance(rivals, str) else tuple(rivals)
+    owner_pats = [p for p in map(_flex_pattern, owners) if p]
+    rival_pats = [p for p in map(_flex_pattern, rivals) if p]
+    if not owner_pats:
+        return False
+    subjects = ([(m, True) for pat in owner_pats for m in re.finditer(pat, normalized)]
+                + [(m, False) for pat in rival_pats for m in re.finditer(pat, normalized)])
+    if not subjects:
+        return False
+    subjects.sort(key=lambda s: s[0].start())
+    for fm in re.finditer(fact_pat, normalized):
+        before = [s for s in subjects if s[0].end() <= fm.start()]
+        if before:
+            if before[-1][1]:
+                return True
+            continue
+        after = [s for s in subjects if s[0].start() >= fm.end()]
+        if after and after[0][1]:
+            return True
+    return False
+
+
 _NUMBER_WORDS = {
     0: "zero", 1: "one", 2: "two", 3: "three", 4: "four", 5: "five", 6: "six", 7: "seven", 8: "eight",
     9: "nine", 10: "ten", 11: "eleven", 12: "twelve", 13: "thirteen", 14: "fourteen", 15: "fifteen",
