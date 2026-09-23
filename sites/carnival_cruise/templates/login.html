@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Log In | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Log In</h1>
+  <p class="muted small">Log in to your Carnival account to manage your cruises, favorites and rewards.</p>
+  <form method="post" action="{{ url_for('login', next=request.args.get('next', '')) }}">
+    <label for="email">Email Address</label>
+    <input id="email" name="email" type="email" required autocomplete="email">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required autocomplete="current-password">
+    <button class="btn btn-red btn-block" type="submit">LOG IN</button>
+  </form>
+  <p class="small" style="margin-top:16px;">Need an account? <a href="{{ url_for('register') }}">Create one now</a></p>
+</div>
+{% endblock %}

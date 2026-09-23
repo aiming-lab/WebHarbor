@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Shore Excursions in {{ port_name }} | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; <a href="{{ url_for('excursions_index') }}">Shore Excursions</a> &rsaquo; {{ port_name }}</div>
+<section class="section">
+  <div class="results-count">
+    <h1>Shore Excursions in {{ port_name }}</h1>
+    <span class="results-note">{{ excs | length }} excursions found</span>
+  </div>
+
+  <form class="filters-bar" method="get">
+    <span class="muted">Sort By:</span>
+    <select name="sort" onchange="this.form.submit()">
+      <option value="recommended" {% if sort == 'recommended' %}selected{% endif %}>Recommended</option>
+      <option value="price" {% if sort == 'price' %}selected{% endif %}>Price - Low to High</option>
+      <option value="rating" {% if sort == 'rating' %}selected{% endif %}>Rating - High to Low</option>
+    </select>
+  </form>
+
+  {% if not excs %}
+  <div class="text-center" style="padding:40px 0;">
+    <h2>No shore excursions are available for {{ port_name }} yet.</h2>
+    <p class="muted">Check back later or browse excursions at other ports on this itinerary.</p>
+    <a class="btn btn-blue" href="{{ url_for('excursions_index') }}">Browse All Shore Excursions</a>
+  </div>
+  {% endif %}
+
+  {% for exc in excs %}
+  <article class="exc-card">
+    <img src="{{ url_for('static', filename=exc.image.replace('static/', '')) }}" alt="{{ exc.title }}">
+    <div class="exc-body">
+      <h3><a href="{{ url_for('excursion_detail', port_slug=exc.port_slug, exc_slug=exc.slug) }}" style="color:inherit">{{ exc.title }}</a></h3>
+      {% if exc.rating %}
+      <div class="exc-rating">
+        <span class="rating-stars">
+          {% for i in range(5) %}{% if i < (exc.rating | round(0, 'floor')) %}&#9733;{% else %}&#9734;{% endif %}{% endfor %}
+        </span>
+        {{ '%.1f' % exc.rating }} ({{ exc.review_count }} review{{ 's' if exc.review_count != 1 }})
+      </div>
+      {% elif exc.review_count %}
+      <div class="exc-rating muted small">Be the first to write a review</div>
+      {% endif %}
+      <div class="exc-meta">
+        {% if exc.duration %}<span>{{ exc.duration }}</span>{% endif %}
+        {% if exc.activity_level %}<span>{{ exc.activity_level }} Activity Level</span>{% endif %}
+        {% if exc.min_age %}<span>Minimum Age: {{ exc.min_age }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="exc-price">
+      {% if exc.price %}
+      <div class="price-from">Starting At</div>
+      <div class="price-big">${{ '%.2f' % exc.price }}</div>
+      <div class="price-note">{{ exc.price_unit or 'per person' }}</div>
+      {% else %}
+      <div class="price-note">See details for pricing</div>
+      {% endif %}
+      <a class="btn btn-red btn-small" href="{{ url_for('excursion_detail', port_slug=exc.port_slug, exc_slug=exc.slug) }}">More Details</a>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

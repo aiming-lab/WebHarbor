@@ -1,0 +1,144 @@
+{% extends "base.html" %}
+{% block title %}{{ itin.title }} | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; <a href="{{ url_for('cruise_search') }}">Cruise Search</a> &rsaquo; {{ itin.title }}</div>
+
+<section class="itin-hero">
+  <img src="{{ url_for('static', filename=itin.image.replace('static/', '')) }}" alt="{{ itin.title }}">
+</section>
+
+<section class="itin-summary">
+  <div class="sum-main">
+    <h1>{{ itin.title | upper }}</h1>
+    <div class="result-ship">{{ itin.ship.name }}</div>
+    <div class="sum-route">{{ itin.route_display }}</div>
+    {% if itin.sailings %}
+    {% set s0 = itin.sailings[0] %}
+    <div class="sum-dates">Lead sailing: {{ s0.dep_arr }} ({{ s0.dep_arr_days }})</div>
+    {% endif %}
+  </div>
+  <div class="itin-price">
+    <div class="price-from">From*</div>
+    <div class="price-big">${{ itin.from_price }}</div>
+    <div class="price-note">average per person, 2 person room</div>
+    {% if itin.sailings %}
+    <a class="btn btn-red" href="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=itin.sailings[0].sailing_id, sailDate=itin.sailings[0].departure_date, numGuests=2) }}">START BOOKING</a>
+    {% endif %}
+    <button class="fav-btn {% if saved %}saved{% endif %}" data-itinerary="{{ itin.id }}" style="position:static;margin:10px auto;display:inline-flex;" aria-label="Save this cruise" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.6-9.5-9C.6 8.6 2.6 5 6 5c2 0 3.4 1.2 4 2.2h4c.6-1 2-2.2 4-2.2 3.4 0 5.4 3.6 3.5 7-2.5 4.4-9.5 9-9.5 9z"/></svg>
+    </button>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-head">Cruise Itinerary</h2>
+  {% for day in days %}
+  <div class="day-card">
+    <div class="day-photo">
+      {% set port_img = (day.port.image if day.port and day.port.image else itin.image) %}
+      <img src="{{ url_for('static', filename=port_img.replace('static/', '')) }}" alt="{{ day.port_name }}">
+    </div>
+    <div class="day-body">
+      <h3>Day {{ day.day }}: {{ day.port_name }}</h3>
+      {% if day.arrive or day.depart %}
+      <div class="day-times">
+        {% if day.arrive %}Arrive {{ day.arrive }}{% endif %}
+        {% if day.arrive and day.depart %} - {% endif %}
+        {% if day.depart %}Departs {{ day.depart }}{% endif %}
+      </div>
+      {% elif day.port and day.port.is_homeport %}
+      <div class="day-times">Home Port</div>
+      {% endif %}
+      {% if day.port and day.port.desc_html %}
+      <div class="day-desc" id="day-desc-{{ day.id }}">
+        {{ day.port.desc_html | safe }}
+      </div>
+      {% elif day.port_code.startswith('FS') %}
+      <div class="day-desc"><p>No port today! It's a great time to explore your ship and its exciting entertainment, food and activities! Or take it easy at the pool, spa, or... if you book a room with a balcony, enjoy the waves.</p></div>
+      {% endif %}
+      {% if day_excs.get(day.id) %}
+      <div style="margin-top:10px;">
+        <strong class="small" style="color:var(--navy);">Shore Excursions at this port:</strong>
+        <ul style="list-style:none;padding:0;margin:6px 0 0;">
+          {% for exc in day_excs[day.id] %}
+          <li class="small"><a href="{{ url_for('excursion_detail', port_slug=exc.port_slug, exc_slug=exc.slug) }}">{{ exc.title }}</a> — {{ '$%.2f' % exc.price if exc.price else 'see details' }}{% if exc.rating %} ({{ '%.1f' % exc.rating }} stars){% endif %}</li>
+          {% endfor %}
+        </ul>
+        {% set port = day.port %}
+        {% if port and port.slug %}
+        <a class="btn btn-outline btn-small" href="{{ url_for('excursions_port', port_slug=port.slug) }}" style="margin-top:6px;">SHORE EXCURSIONS</a>
+        {% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+{% if itin.ship.long_desc_html %}
+<section class="section" style="background:var(--sky);border-radius:24px;max-width:1400px;margin:0 auto;">
+  <h2 class="section-head">Get to Know {{ itin.ship.name }}</h2>
+  <div class="info-prose" style="max-width:860px;background:#fff;border-radius:18px;padding:22px 28px;">
+    {{ itin.ship.long_desc_html | safe }}
+    <p style="margin-top:12px;"><a class="btn btn-blue btn-small" href="{{ url_for('ship_detail', slug=itin.ship.slug) }}">VIEW SHIP</a></p>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <h2 class="section-head">All Available Sail Dates</h2>
+  <div style="max-width:1160px;margin:0 auto;overflow-x:auto;">
+    <table class="sailings-table" style="background:#fff;border:1px solid var(--line);border-radius:12px;">
+      <thead>
+        <tr><th>Dates</th><th>Days</th><th>Interior</th><th>Ocean View</th><th>Balcony</th><th>Suite</th><th>From</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for s in sailings %}
+        <tr>
+          <td>{{ s.dep_arr }} {{ s.year }}</td>
+          <td>{{ s.dep_arr_days }}</td>
+          <td class="price-cell">{{ '$%d' % s.interior if s.interior else 'Sold Out' }}</td>
+          <td class="price-cell">{{ '$%d' % s.oceanview if s.oceanview else 'Sold Out' }}</td>
+          <td class="price-cell">{{ '$%d' % s.balcony if s.balcony else 'Sold Out' }}</td>
+          <td class="price-cell">{{ '$%d' % s.suite if s.suite else 'Sold Out' }}</td>
+          <td class="price-cell">${{ '%d' % s.lowest }}</td>
+          <td>
+            <a class="btn btn-red btn-small" href="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=s.sailing_id, sailDate=s.departure_date, numGuests=2) }}">START BOOKING</a>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section" style="background:var(--sky);border-radius:24px;max-width:1400px;margin:0 auto;">
+  <h2 class="section-head">Change Your Itinerary</h2>
+  <form class="cruise-search-widget" style="box-shadow:none;border:1px solid var(--line);margin-top:-10px;" action="{{ url_for('cruise_search') }}" method="get">
+    <div class="search-field">
+      <label for="cy-dest">SAIL TO</label>
+      <select id="cy-dest" name="dest">
+        <option value="">Anywhere</option>
+        {% for code, label in dest_options %}<option value="{{ code }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="search-field">
+      <label for="cy-port">SAIL FROM</label>
+      <select id="cy-port" name="port">
+        <option value="">All Ports</option>
+        {% for code, label in port_options %}<option value="{{ code }}">{{ label }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="search-field">
+      <label for="cy-dur">DURATION</label>
+      <select id="cy-dur" name="dur">
+        <option value="">Any Length</option>
+        <option value="D1">2 - 5 Days</option>
+        <option value="D2">6 - 9 Days</option>
+        <option value="D3">10+ Days</option>
+      </select>
+    </div>
+    <button class="btn btn-red" type="submit">SEARCH CRUISES</button>
+  </form>
+</section>
+{% endblock %}

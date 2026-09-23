@@ -203,6 +203,6 @@ RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40067
+EXPOSE 8101 40000-40068
 
 CMD ["/opt/websyn_start.sh"]

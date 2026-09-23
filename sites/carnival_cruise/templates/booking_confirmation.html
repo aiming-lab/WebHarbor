@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Booking Confirmed | Carnival Cruise Line{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="step-strip" aria-label="Booking steps">
+    <span class="step-pill done">1. Select Stateroom</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill done">2. Guest Details</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill done">3. Payment</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill active">4. Confirmation</span>
+  </div>
+
+  <div class="form-card text-center" style="max-width:720px;">
+    <svg viewBox="0 0 24 24" width="64" height="64" aria-hidden="true" style="margin:0 auto;"><circle cx="12" cy="12" r="11" fill="#E2F6E9"/><path fill="#14622C" d="M10.2 15.8 6.4 12l1.4-1.4 2.4 2.4 6-6L17.6 8.4z"/></svg>
+    <h1 style="color:var(--navy);">You're Booked!</h1>
+    <p class="muted">Your Carnival vacation is confirmed. A confirmation has been sent to your account.</p>
+
+    <table class="data-table" style="text-align:left;margin:18px 0;">
+      <tbody>
+        <tr><th>Booking Number</th><td><strong style="color:var(--navy);font-size:18px;">{{ booking.booking_number }}</strong></td></tr>
+        <tr><th>Cruise</th><td>{{ itin.title }} on {{ itin.ship.name }}</td></tr>
+        <tr><th>Sail Date</th><td>{{ sailing.dep_arr }} ({{ sailing.dep_arr_days }})</td></tr>
+        <tr><th>Stateroom</th><td>{{ booking.room_category }} &middot; Cabin {{ booking.cabin_number }}</td></tr>
+        <tr><th>Guests</th><td>{{ booking.guests }}</td></tr>
+        <tr><th>Lead Guest</th><td>{{ booking.lead_guest }}</td></tr>
+        <tr><th>Total Paid</th><td>${{ '%.2f' % booking.total_price }}</td></tr>
+      </tbody>
+    </table>
+
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">
+      <a class="btn btn-blue" href="{{ url_for('manage_booking_detail', booking_number=booking.booking_number) }}">MANAGE BOOKING</a>
+      <a class="btn btn-ghost" href="{{ url_for('excursions_index') }}">BROWSE SHORE EXCURSIONS</a>
+      <a class="btn btn-ghost" href="{{ url_for('cruise_search') }}">BOOK ANOTHER CRUISE</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

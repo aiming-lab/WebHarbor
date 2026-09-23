@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Select Your Stateroom | Carnival Cruise Line{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="step-strip" aria-label="Booking steps">
+    <span class="step-pill active">1. Select Stateroom</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill">2. Guest Details</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill">3. Payment</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill">4. Confirmation</span>
+  </div>
+
+  <div class="itin-summary" style="margin-top:0;">
+    <div class="sum-main">
+      <h1>{{ itin.title | upper }}</h1>
+      <div class="result-ship">{{ itin.ship.name }}</div>
+      <div class="sum-route">{{ itin.route_display }}</div>
+      <div class="sum-dates">{{ sailing.dep_arr }} ({{ sailing.dep_arr_days }})</div>
+    </div>
+    <div class="itin-price">
+      <div class="price-from">From*</div>
+      <div class="price-big">${{ '%d' % sailing.lowest }}</div>
+      <div class="price-note">per person</div>
+    </div>
+  </div>
+
+  <h2 class="section-head" style="margin-top:30px;">Choose Your Stateroom</h2>
+
+  {% set rooms = [
+    ('interior', 'Interior', sailing.interior, 'A cozy hideaway with all the Carnival essentials.'),
+    ('oceanview', 'Ocean View', sailing.oceanview, 'A window to the sea as you sail to paradise.'),
+    ('balcony', 'Balcony', sailing.balcony, 'Your own private balcony with ocean views.'),
+    ('suite', 'Suite', sailing.suite, 'The most spacious rooms at sea with priority perks.'),
+  ] %}
+  {% for key, label, price, blurb in rooms %}
+  <div class="room-type-card">
+    <div>
+      <div class="rt-name">{{ label }}</div>
+      <div class="rt-desc">{{ blurb }}</div>
+      {% if staterooms %}
+      <div class="small muted">Categories on {{ itin.ship.name }}: {{ staterooms | map(attribute='title') | join(', ') | truncate(220) }}</div>
+      {% endif %}
+    </div>
+    <div style="text-align:right;">
+      {% if price %}
+      <div class="price-big" style="font-size:22px;">${{ '%d' % price }}</div>
+      <div class="price-note">per person, {{ num_guests }} guest{{ 's' if num_guests > 1 }}</div>
+      <a class="btn btn-red btn-small" href="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=sailing.sailing_id, numGuests=num_guests, roomType=key, step='guests') }}">SELECT</a>
+      {% else %}
+      <span class="soldout">Sold Out</span>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <p class="text-center muted small">*All taxes and fees are included.</p>
+</section>
+{% endblock %}

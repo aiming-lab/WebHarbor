@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Cruises to {{ dest.name }} | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; Explore &rsaquo; Cruise Destinations &rsaquo; {{ dest.name }}</div>
+<section class="itin-hero">
+  <img src="{{ url_for('static', filename=dest.hero_image.replace('static/', '')) }}" alt="{{ dest.name }}">
+</section>
+
+<section class="itin-summary">
+  <div class="sum-main">
+    <h1>CRUISES TO {{ dest.name | upper }}</h1>
+    {% if ships_here %}
+    <div class="sum-route">Ships that sail here: {{ ships_here | join(', ') }}</div>
+    {% endif %}
+  </div>
+  <div class="itin-price">
+    <a class="btn btn-red" href="{{ url_for('cruise_search', q=dest.name) }}">VIEW SAILINGS</a>
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-head">Overview</h2>
+  <div class="info-prose" style="max-width:860px;background:#fff;border:1px solid var(--line);border-radius:18px;padding:24px 28px;">
+    {% if dest.overview %}
+      {% for para in dest.overview.split('\n\n') %}<p>{{ para }}</p>{% endfor %}
+    {% else %}
+      <p>Discover {{ dest.name }} cruises with Carnival. Explore itineraries, ports of call and shore excursions across this destination.</p>
+    {% endif %}
+    {% if dest.things_to_do_list %}
+    <h3>Things to Do</h3>
+    <ul class="hero-bullets" style="max-width:640px;">
+      {% for item in dest.things_to_do_list %}
+      <li>
+        <svg class="check" viewBox="0 0 22 19" aria-hidden="true"><path fill="#10559A" d="M8.4 14.7 2.1 8.4l2.1-2.1 4.2 4.2L17.7 1.2l2.1 2.1z"/></svg>
+        <span>{{ item }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <div class="results-count">
+    <h1>{{ itins | length }} {{ dest.name }} Cruise{{ 's' if itins|length != 1 }}</h1>
+    <span class="results-note">*Starting from price in USD. Taxes and fees are included.</span>
+  </div>
+  {% for itin in itins[:12] %}
+  <article class="result-card">
+    <div class="result-photo">
+      <img src="{{ url_for('static', filename=itin.image.replace('static/', '')) }}" alt="{{ itin.title }}">
+    </div>
+    <div class="result-body">
+      <h2 class="result-title"><a href="{{ itin.url_path }}?itinportcode={{ itin.departure_port.code }}" style="color:inherit">{{ itin.title }}</a></h2>
+      <div class="result-ship">{{ itin.ship.name }}</div>
+      <div class="result-route">{{ itin.route_display }}</div>
+      <div class="result-meta"><span>{{ itin.dur }} Days</span><span>{{ itin.sailing_count }} sail dates</span></div>
+    </div>
+    <div class="result-price-box">
+      <div class="price-from">From*</div>
+      <div class="price-big">${{ itin.from_price }}</div>
+      <div class="price-note">per person</div>
+      <a class="btn btn-blue btn-small" href="{{ itin.url_path }}?itinportcode={{ itin.departure_port.code }}">View Itinerary</a>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

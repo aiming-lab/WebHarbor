@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Booking {{ booking.booking_number }} | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; <a href="{{ url_for('manage_bookings') }}">Manage My Cruises</a> &rsaquo; {{ booking.booking_number }}</div>
+<section class="itin-hero">
+  <img src="{{ url_for('static', filename=itin.image.replace('static/', '')) }}" alt="{{ itin.title }}">
+</section>
+
+<section class="itin-summary">
+  <div class="sum-main">
+    <h1>{{ itin.title | upper }}</h1>
+    <div class="result-ship">{{ itin.ship.name }}</div>
+    <div class="sum-route">Booking {{ booking.booking_number }} &middot; Cabin {{ booking.cabin_number }}</div>
+    <div class="sum-dates">{{ sailing.dep_arr }} {{ sailing.year }} ({{ sailing.dep_arr_days }})</div>
+  </div>
+  <div class="itin-price">
+    <div class="price-from">Total</div>
+    <div class="price-big">${{ '%.2f' % booking.total_price }}</div>
+    <div class="price-note">{{ booking.guests }} guest{{ 's' if booking.guests > 1 }} &middot; {{ booking.room_category }}</div>
+    {% if booking.status == 'confirmed' %}
+    <form method="post" action="{{ url_for('cancel_booking', booking_number=booking.booking_number) }}" style="margin-top:10px;"
+          onsubmit="return confirm('Cancel booking {{ booking.booking_number }}? This cannot be undone.');">
+      <button class="btn btn-ghost btn-small" type="submit">CANCEL BOOKING</button>
+    </form>
+    {% else %}
+    <div class="soldout" style="margin-top:10px;">This booking is cancelled.</div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="section">
+  <h2 class="section-head">Your Itinerary</h2>
+  {% for day in itin.days %}
+  <div class="day-card">
+    <div class="day-photo">
+      {% set port_img = (day.port.image if day.port and day.port.image else itin.image) %}
+      <img src="{{ url_for('static', filename=port_img.replace('static/', '')) }}" alt="{{ day.port_name }}">
+    </div>
+    <div class="day-body">
+      <h3>Day {{ day.day }}: {{ day.port_name }}</h3>
+      {% if day.arrive or day.depart %}
+      <div class="day-times">
+        {% if day.arrive %}Arrive {{ day.arrive }}{% endif %}
+        {% if day.arrive and day.depart %} - {% endif %}
+        {% if day.depart %}Departs {{ day.depart }}{% endif %}
+      </div>
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+{% if booking.status == 'confirmed' %}
+<section class="section">
+  <h2 class="section-head">Shore Excursions Booked</h2>
+  {% if booking.excursions %}
+  <table class="data-table" style="max-width:1160px;margin:0 auto;">
+    <thead><tr><th>Excursion</th><th>Port</th><th>Guests</th><th>Price</th></tr></thead>
+    <tbody>
+      {% for be in booking.excursions %}
+      <tr>
+        <td><a href="{{ url_for('excursion_detail', port_slug=be.excursion.port_slug, exc_slug=be.excursion.slug) }}">{{ be.excursion.title }}</a></td>
+        <td>{{ be.excursion.port_slug.replace('-', ' ').title() }}</td>
+        <td>{{ be.guests }}</td>
+        <td>${{ '%.2f' % be.price }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-center muted">No excursions booked on this cruise yet.</p>
+  {% endif %}
+</section>
+
+<section class="section">
+  <h2 class="section-head">Add Shore Excursions</h2>
+  <div class="feature-grid" style="grid-template-columns:repeat(4,1fr);">
+    {% for exc in offered %}
+    <div class="feature-card">
+      <img src="{{ url_for('static', filename=exc.image.replace('static/', '')) }}" alt="{{ exc.title }}">
+      <div class="fc-body">
+        <h4><a href="{{ url_for('excursion_detail', port_slug=exc.port_slug, exc_slug=exc.slug) }}">{{ exc.title }}</a></h4>
+        <div class="small muted">{{ exc.port_slug.replace('-', ' ').title() }}</div>
+        {% if exc.price %}<div class="price-big" style="font-size:18px;">${{ '%.2f' % exc.price }}</div>{% endif %}
+        {% if exc.id in booked_ids %}
+        <span class="badge badge-deal">Added</span>
+        {% else %}
+        <form method="post" action="{{ url_for('add_booking_excursion', booking_number=booking.booking_number) }}" style="margin-top:6px;">
+          <input type="hidden" name="excursion_id" value="{{ exc.id }}">
+          <button class="btn btn-blue btn-small" type="submit">ADD TO BOOKING</button>
+        </form>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

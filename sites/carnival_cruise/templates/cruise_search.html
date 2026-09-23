@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}Cruise Search | Carnival Cruise Line{% endblock %}
+{% block content %}
+<form class="cruise-search-widget" action="{{ url_for('cruise_search') }}" method="get" aria-label="Find a Cruise" style="margin-top:20px;">
+  <div class="search-field">
+    <label for="sw-dest">SAIL TO</label>
+    <select id="sw-dest" name="dest">
+      <option value="">Anywhere</option>
+      {% for code, label in dest_options %}
+      <option value="{{ code }}" {% if code == f.dest %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="search-field">
+    <label for="sw-port">SAIL FROM</label>
+    <select id="sw-port" name="port">
+      <option value="">All Ports</option>
+      {% for code, label in port_options %}
+      <option value="{{ code }}" {% if code == f.port %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="search-field">
+    <label for="sw-dur">DURATION</label>
+    <select id="sw-dur" name="dur">
+      <option value="">Any Length</option>
+      <option value="D1" {% if f.dur == 'D1' %}selected{% endif %}>2 - 5 Days</option>
+      <option value="D2" {% if f.dur == 'D2' %}selected{% endif %}>6 - 9 Days</option>
+      <option value="D3" {% if f.dur == 'D3' %}selected{% endif %}>10+ Days</option>
+    </select>
+  </div>
+  <div class="search-field">
+    <label for="sw-ship">SHIP</label>
+    <select id="sw-ship" name="shipcode">
+      <option value="">All Ships</option>
+      {% for code, label in ship_options %}
+      <option value="{{ code }}" {% if code == f.shipcode %}selected{% endif %}>{{ label }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div class="search-field">
+    <label for="sw-guests">GUESTS</label>
+    <select id="sw-guests" name="numadults">
+      {% for n in range(1, 9) %}
+      <option value="{{ n }}" {% if n == f.numadults %}selected{% endif %}>{{ n }} Guest{{ 's' if n > 1 }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <button class="btn btn-red" type="submit">SEARCH CRUISES</button>
+</form>
+
+<div class="results-count">
+  <h1>{{ total }} Cruise Results</h1>
+  <span class="results-note">*Starting from price in USD. Taxes and fees are included.</span>
+</div>
+
+<form class="filters-bar" method="get" action="{{ url_for('cruise_search') }}">
+  {% for key, val in request.args.items() %}
+    {% if key not in ('sort', 'page') %}
+    <input type="hidden" name="{{ key }}" value="{{ val }}">
+    {% endif %}
+  {% endfor %}
+  <span class="muted">Sort By:</span>
+  <select name="sort" onchange="this.form.submit()">
+    <option value="fromprice" {% if f.sort == 'fromprice' %}selected{% endif %}>Price - Low to High</option>
+    <option value="-fromprice" {% if f.sort == '-fromprice' %}selected{% endif %}>Price - High to Low</option>
+    <option value="duration" {% if f.sort == 'duration' %}selected{% endif %}>Duration - Short to Long</option>
+    <option value="-duration" {% if f.sort == '-duration' %}selected{% endif %}>Duration - Long to Short</option>
+  </select>
+</form>
+
+{% for itin in items %}
+<article class="result-card">
+  <div class="result-photo">
+    <img src="{{ url_for('static', filename=itin.image.replace('static/', '')) }}" alt="{{ itin.title }}">
+    <button class="fav-btn {% if itin.id in saved_ids %}saved{% endif %}" data-itinerary="{{ itin.id }}"
+            aria-label="Save {{ itin.title }}" type="button">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s-7-4.6-9.5-9C.6 8.6 2.6 5 6 5c2 0 3.4 1.2 4 2.2h4c.6-1 2-2.2 4-2.2 3.4 0 5.4 3.6 3.5 7-2.5 4.4-9.5 9-9.5 9z"/></svg>
+    </button>
+  </div>
+  <div class="result-body">
+    <h2 class="result-title"><a href="{{ itin.url_path }}?itinportcode={{ itin.departure_port.code }}" style="color:inherit">{{ itin.title }}</a></h2>
+    <div class="result-ship">{{ itin.ship.name }}</div>
+    <div class="result-route">{{ itin.route_display }}</div>
+    <div class="result-meta">
+      <span>{{ itin.dur }} Day{{ 's' if itin.dur > 1 }}</span>
+      <span>Sails from {{ itin.departure_port.name }}</span>
+      <span>{{ itin.region_name }}</span>
+    </div>
+    <button class="btn btn-blue btn-small show-dates-btn" data-target="dates-{{ itin.id }}"
+            data-label="SHOW {{ itin.sailing_count }} DATE{{ 's' if itin.sailing_count != 1 }}" type="button">
+      SHOW {{ itin.sailing_count }} DATE{{ 's' if itin.sailing_count != 1 }}
+    </button>
+    <div id="dates-{{ itin.id }}" style="display:none;margin-top:12px;">
+      <table class="sailings-table">
+        <thead><tr><th>Dates</th><th>Days</th><th>Interior</th><th>Ocean View</th><th>Balcony</th><th>Suite</th><th></th></tr></thead>
+        <tbody>
+          {% for s in itin.sailings[:12] %}
+          <tr>
+            <td>{{ s.dep_arr }} {{ s.year }}</td>
+            <td>{{ s.dep_arr_days }}</td>
+            <td class="price-cell">{{ '$%d' % s.interior if s.interior else 'Sold Out' }}</td>
+            <td class="price-cell">{{ '$%d' % s.oceanview if s.oceanview else 'Sold Out' }}</td>
+            <td class="price-cell">{{ '$%d' % s.balcony if s.balcony else 'Sold Out' }}</td>
+            <td class="price-cell">{{ '$%d' % s.suite if s.suite else 'Sold Out' }}</td>
+            <td><a class="btn btn-red btn-small" href="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=s.sailing_id, sailDate=s.departure_date, numGuests=f.numadults) }}">START BOOKING</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="result-price-box">
+    <div class="price-from">From*</div>
+    <div class="price-big">${{ itin.from_price }}</div>
+    <div class="price-note">average per person,<br>2 person room</div>
+    <a class="btn btn-blue btn-small" href="{{ itin.url_path }}?itinportcode={{ itin.departure_port.code }}">View Itinerary</a>
+  </div>
+</article>
+{% else %}
+<div class="section text-center">
+  <h2>No cruises matched your search.</h2>
+  <p class="muted">Try removing a filter or searching a different destination.</p>
+  <a class="btn btn-blue" href="{{ url_for('cruise_search') }}">View all cruises</a>
+</div>
+{% endfor %}
+
+{% if total > per_page %}
+<div class="pagination">
+  {% if page > 1 %}
+  <a href="{{ url_for('cruise_search') }}{{ merge_query(request.args, page=page - 1) }}">&laquo; Previous</a>
+  {% endif %}
+  {% set pages = ((total + per_page - 1) // per_page) %}
+  {% for p in range(1, pages + 1) %}
+    {% if p == page %}
+    <span class="current">{{ p }}</span>
+    {% elif p <= 3 or p > pages - 3 or (p > page - 3 and p < page + 3) %}
+    <a href="{{ url_for('cruise_search') }}{{ merge_query(request.args, page=p) }}">{{ p }}</a>
+    {% endif %}
+  {% endfor %}
+  {% if page < pages %}
+  <a href="{{ url_for('cruise_search') }}{{ merge_query(request.args, page=page + 1) }}">Next &raquo;</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endblock %}
