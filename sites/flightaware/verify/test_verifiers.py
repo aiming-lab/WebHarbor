@@ -428,6 +428,21 @@ def _extra_user_row(db):
     con.close()
 
 
+# Synthetic component fixtures; actual browser evidence is reviewed separately.
+ORIGINAL_HONEST = dict(HONEST)
+for number, components in json.loads((VERIFY / 'review_components.json').read_text()).items():
+    HONEST[int(number)] = {
+        'steps': [step for component in components for step in ORIGINAL_HONEST[component]['steps']],
+        'answer': '\n'.join(ORIGINAL_HONEST[component]['answer'] for component in components),
+    }
+for spec in HONEST.values():
+    spec['steps'] = [(url, action, params, text or {
+        '/live/airport/KBOS/departures': 'RPA5597 E75S Jacksonville 08:58a',
+        '/live/airport/KJFK/arrivals': 'AAL954 B772 Ministro Pistarini',
+        '/live/airport/KJFK/enroute': 'UAE203 A388 Dubai 08:58a',
+        '/live/airport/EGLL/departures': 'VIR208 B789 Incheon 01:58p',
+    }.get(url.replace(BASE, '').rstrip('/'), '')) for url, action, params, text in spec['steps']]
+
 HONEST_MUTATIONS = {7: _add_bob_baw117, 8: _delete_bob_aal954, 23: _add_carol_route}
 
 
@@ -484,9 +499,10 @@ class VerifierContract(unittest.TestCase):
         self.assertTrue((VERIFY / "grade.py").is_file())
 
     # ------------------------------------------------- ground truth vs seed DB
-    def test_seed_md5(self):
-        import hashlib
-        self.assertEqual(hashlib.md5(SEED.read_bytes()).hexdigest(), SEED_MD5)
+    def test_reviewed_seed_contents(self):
+        from composed_grade import fixture_hashes
+        expected = json.loads((VERIFY / 'reviewed_seed.json').read_text())
+        self.assertEqual(fixture_hashes(SEED), expected)
 
     def test_ground_truth_matches_seed_db(self):
         con = sqlite3.connect(f"file:{SEED}?mode=ro", uri=True)

@@ -111,7 +111,7 @@ def run_load_errors():
 
 
 def step_urls(traj):
-    return [s.get("url", "") for s in traj.get("steps", [])]
+    return [s[k] for s in traj.get("steps", []) for k in ("url", "url_before", "url_after") if s.get(k)]
 
 
 def url_path(url):
@@ -142,17 +142,10 @@ def navigated_query(traj, path, **params):
     for url in step_urls(traj):
         if (url_path(url).rstrip("/") or "/") != want:
             continue
-        query = url_query(url)
-        got = {}
-        for chunk in query.split("&"):
-            if "=" in chunk:
-                k, v = chunk.split("=", 1)
-                got[k] = v.replace("+", " ")
-        missing = [k for k in params if k not in got]
-        if missing:
-            continue
-        if all((v.casefold() == got[k].casefold()) if isinstance(v, str)
-               else got[k].casefold() in {s.casefold() for s in v}
+        from urllib.parse import parse_qs
+        got = parse_qs(url_query(url), keep_blank_values=True)
+        if all(len(got.get(k, [])) == 1 and
+               (got[k][0].casefold() == v.casefold() if isinstance(v, str) else got[k][0].casefold() in {x.casefold() for x in v})
                for k, v in params.items()):
             return True
     return False
@@ -195,6 +188,22 @@ def allowed_hosts():
 
 def origin_ok(traj, extra_hosts=()):
     """(ok, note): every URL in the trajectory must belong to a local mirror origin."""
+    from urllib.parse import urlsplit
+    try:
+        initial = urlsplit(traj.get("start_url", ""))
+        expected = (initial.scheme, initial.hostname, initial.port)
+        if initial.scheme not in {"http", "https"} or not initial.hostname:
+            return False, "missing or invalid start origin"
+        for step in traj.get("steps", []):
+            for field in ("url", "url_after", "url_before"):
+                url = step.get(field)
+                if field != "url" and (not url or url == "about:blank"):
+                    continue
+                parsed = urlsplit(url or "")
+                if (parsed.scheme, parsed.hostname, parsed.port) != expected:
+                    return False, "recorded URL does not match start origin"
+    except (ValueError, TypeError):
+        return False, "invalid trajectory URL"
     allowed = allowed_hosts() | {h.lower() for h in extra_hosts}
     allowed_bare = {bare for bare in (_host_only(h) for h in allowed) if bare}
     seen = []
@@ -247,16 +256,16 @@ def png_size(path):
     if not path:
         return None
     try:
-        data = Path(path).read_bytes()
-    except OSError:
+        from PIL import Image
+        with Image.open(path) as im:
+            if im.format != "PNG":
+                return None
+            im.verify()
+        with Image.open(path) as im:
+            im.load()
+            return im.size
+    except (OSError, ValueError, SyntaxError, TypeError):
         return None
-    if len(data) < 33 or data[:8] != PNG_SIGNATURE or data[12:16] != b"IHDR":
-        return None
-    width = int.from_bytes(data[16:20], "big")
-    height = int.from_bytes(data[20:24], "big")
-    if width <= 0 or height <= 0:
-        return None
-    return width, height
 
 
 def screenshot_ok(path, min_w=200, min_h=120, min_bytes=2000):
@@ -278,22 +287,18 @@ def screenshot_ok(path, min_w=200, min_h=120, min_bytes=2000):
 
 
 def shot_at(traj, url_substr, min_w=200, min_h=120, min_bytes=2000):
-    """Screenshot bound to a step whose url contains `url_substr` (before-frame first)."""
-    tried = []
+    """Bind each frame to its own before/after page, including redirects."""
+    from urllib.parse import urlsplit
     for step in traj.get("steps", []):
-        if url_substr not in (step.get("url") or ""):
-            continue
-        for field in ("screenshot_before", "screenshot_after"):
-            path = _shot(traj, step.get(field))
-            if not path:
+        for frame, url_field in (("screenshot_after", "url_after"),
+                                 ("screenshot_before", "url_before")):
+            url = step.get(url_field, step.get("url", ""))
+            if url_substr not in urlsplit(url or "").path:
                 continue
-            ok, note = screenshot_ok(path, min_w, min_h, min_bytes)
+            ok, note = screenshot_ok(_shot(traj, step.get(frame)), min_w, min_h, min_bytes)
             if ok:
-                return True, f"{url_substr} -> {note}"
-            tried.append(f"{path.name}: {note}")
-    if tried:
-        return False, f"no valid screenshot for {url_substr} ({' ; '.join(tried[:4])})"
-    return False, f"no trajectory step ever recorded a screenshot for {url_substr}"
+                return True, note
+    return False, "no valid screenshot bound to the requested page"
 
 
 def shot_final(traj, min_w=200, min_h=120, min_bytes=2000):
@@ -558,4 +563,6 @@ def parse_args():
         os.environ["WH_SITE"] = args.site
     if args.container:
         os.environ["WH_CONTAINER"] = args.container
+    if bool(args.initial_db) != bool(args.after_db):
+        parser.error("initial.db and after.db must be supplied together")
     return args

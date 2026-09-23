@@ -14,19 +14,19 @@
   <div class="panel">
     <div class="panel-head">Quickly &amp; Easily Track a Flight</div>
     <div class="panel-body">
-      <form action="/live/findflight/" method="get">
+      <form action="/live/form.rvt" method="get">
         <div class="form-row">
           <label>Airline</label>
           <select name="airline">
             <option value="">All Airlines</option>
             {% for op in operators %}
-            <option value="{{ op.name }}">{{ op.name }} ({{ op.code }})</option>
+            <option value="{{ op.code }}">{{ op.name }} ({{ op.code }})</option>
             {% endfor %}
           </select>
         </div>
         <div class="form-row">
           <label>Flight number</label>
-          <input type="text" name="origin" placeholder="e.g. New York">
+          <input type="text" name="flight_number" placeholder="e.g. 1063" required>
         </div>
         <button class="btn-primary" type="submit">Track</button>
       </form>
