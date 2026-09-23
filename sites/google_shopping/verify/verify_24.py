@@ -17,9 +17,9 @@ def run_checks(judge, traj, initial_db, after_db):
     check_trajectory_identity(judge, traj, TASK_ID)
     from reviewed import fact_scope
     from verify_lib import contains_price
-    judge.check("bound_price_cruise", contains_price(fact_scope(answer, 'Cruise'), 48.5), "price belongs to Cruise")
-    judge.check("bound_price_ember", contains_price(fact_scope(answer, 'Ember'), 45), "price belongs to Ember")
-    judge.check("bound_price_strike", contains_price(fact_scope(answer, 'Strike'), 45), "price belongs to Strike")
+    judge.check("bound_price_cruise", contains_price(fact_scope(answer, 'Cruise', ['Cruise', 'Ember', 'Strike']), 48.5), "price belongs to Cruise")
+    judge.check("bound_price_ember", contains_price(fact_scope(answer, 'Ember', ['Cruise', 'Ember', 'Strike']), 45), "price belongs to Ember")
+    judge.check("bound_price_strike", contains_price(fact_scope(answer, 'Strike', ['Cruise', 'Ember', 'Strike']), 45), "price belongs to Strike")
     import re
     judge.check("no_denied_price", not re.search(r"(?:not|instead of|rather than)\s*\$(?:4\.40?|45(?:\.00)?|48\.50?)(?![\d.])", answer, re.I), "requested prices must be asserted")
     # Auth + navigation gates: sign in as carol, open every Syght Glass product page (the
