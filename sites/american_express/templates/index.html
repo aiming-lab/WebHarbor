@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+  <div class="home-grid">
+    <aside class="product-nav" aria-label="Products">
+      <a class="item" href="{{ url_for('cards_index') }}">
+        <span class="glyph">&#9633;</span>
+        <span><b>Credit Cards</b><span>View All Credit Cards</span></span>
+      </a>
+      <a class="item" href="{{ url_for('banking_hysa') }}">
+        <span class="glyph">$</span>
+        <span><b>High Yield Savings</b><span>3.00% APY&sup2; &mdash; no monthly fees</span></span>
+      </a>
+      <a class="item" href="{{ url_for('banking_loans') }}">
+        <span class="glyph">&#402;</span>
+        <span><b>Personal Loans</b><span>Fixed rates from 6.99% APR</span></span>
+      </a>
+      <a class="item" href="{{ url_for('banking_checking') }}">
+        <span class="glyph">&#8962;</span>
+        <span><b>Checking Account</b><span>1.00% APY with Rewards Checking</span></span>
+      </a>
+    </aside>
+    <div class="home-main">
+      <div class="promo-banner">
+        <div class="art">
+          <img src="{{ url_for('static', filename='images/OneSite/All-Cards-Featured-mobile.jpg') }}" alt="American Express Cards">
+        </div>
+        <div>
+          <h3>Apply with Confidence</h3>
+          <p>See if you&rsquo;re approved for a Card without any credit score impact. Your score may be impacted if you are approved and accept the Card.</p>
+          <a class="btn btn-primary" href="{{ url_for('cards_index') }}">Explore Cards</a>
+        </div>
+      </div>
+      <div class="promo-banner" style="background:#0b3059;border-color:#0b3059;color:#fff;">
+        <div>
+          <h3 style="color:#fff;">AMERICAN EXPRESS&reg; REWARDS CHECKING</h3>
+          <p style="color:#cfe0f0;">Head into fall &amp; earn $300 with Amex&reg; Rewards Checking after qualifying actions. Deposit accounts offered by American Express National Bank. Member FDIC. Terms and eligibility apply.</p>
+          <a class="btn btn-primary" href="{{ url_for('banking_checking') }}">Learn More</a>
+        </div>
+        <div class="art">
+          <img src="{{ url_for('static', filename='images/consumer-checking/hero-image-desktop.jpg') }}" alt="Rewards Checking" style="width:230px;border-radius:8px;">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="band">
+  <div class="container">
+    <h2 class="section-title">Featured Cards</h2>
+    <p class="section-sub">Explore the Card that fits the way you travel, dine, and shop.</p>
+    <div class="card-grid">
+      {% for card in featured %}
+      <div class="card-tile">
+        {% if card.featured %}<span class="badge">Featured</span>{% endif %}
+        <a class="art-link" href="{{ url_for('card_detail', slug=card.slug) }}">
+          <img src="{{ url_for('static', filename=card.card_art.replace('static/', '')) }}" alt="{{ card.name }}">
+        </a>
+        <h3><a href="{{ url_for('card_detail', slug=card.slug) }}">{{ card.name }}</a></h3>
+        <p class="fee">Annual Fee: <b>{{ card.annual_fee_text }}</b></p>
+        <ul class="benefits">
+          {% for benefit in card.benefits()[:2] %}<li>{{ benefit }}</li>{% endfor %}
+        </ul>
+        <div class="actions">
+          <a class="btn btn-primary btn-sm" href="{{ url_for('apply_card', slug=card.slug) }}">Apply Now</a>
+          <a class="btn btn-outline btn-sm" href="{{ url_for('card_detail', slug=card.slug) }}">View Details</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p style="margin-top:20px;"><a href="{{ url_for('cards_index') }}">View All Cards &rarr;</a></p>
+  </div>
+</div>
+
+<div class="band-white">
+  <div class="container">
+    <h2 class="section-title">Banking with American Express&reg;</h2>
+    <p class="section-sub">Deposit accounts offered by American Express National Bank. Member FDIC.</p>
+    <div class="card-grid">
+      {% set banking_routes = {'high-yield-savings': 'banking_hysa', 'cd': 'banking_cd', 'checking': 'banking_checking', 'personal-loans': 'banking_loans'} %}
+      {% for product in banking %}
+      <div class="card-tile">
+        <h3><a href="{{ url_for(banking_routes[product.slug]) }}">{{ product.name }}</a></h3>
+        <p class="fee"><b>{{ product.apy_text }}</b></p>
+        <p style="font-size:14px;">{{ product.intro }}</p>
+        <div class="actions">
+          <a class="btn btn-outline btn-sm" href="{{ url_for(banking_routes[product.slug]) }}">Learn More</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="band">
+  <div class="container">
+    <h2 class="section-title">More to Explore</h2>
+    <div class="card-grid">
+      <div class="card-tile">
+        <h3><a href="{{ url_for('rewards_index') }}">Redeem Membership Rewards&reg; Points</a></h3>
+        <p style="font-size:14px;">Redeem points for gift cards, travel, statement credits, and deposits into an American Express Rewards Checking account.</p>
+      </div>
+      <div class="card-tile">
+        <h3><a href="{{ url_for('offers_index') }}">Amex Offers</a></h3>
+        <p style="font-size:14px;">Add offers to your Card to get rewarded on eligible purchases. Enrollment is required and may be limited. Terms apply.</p>
+      </div>
+      <div class="card-tile">
+        <h3><a href="{{ url_for('lounges_index') }}">Airport Lounge Access</a></h3>
+        <p style="font-size:14px;">The Global Lounge Collection&reg; provides access to more than 1,550 airport lounges across 140 countries with eligible Cards.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

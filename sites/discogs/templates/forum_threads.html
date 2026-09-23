@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Discogs Forum - {{ heading }}{% endblock %}
+{% block main_class %}page fr-page{% endblock %}
+{% block content %}
+{% with band_title=heading, icon=True, band_intro=intro, show_tabs=True, tab=tab, query_text=query_text %}{% include "_forum_band.html" %}{% endwith %}
+
+<div class="fr-threads">
+  <div class="fr-thread-row fr-thread-head">
+    <div>Title</div><div class="fr-replies">Replies</div><div>Author</div><div>Forum</div><div>Started</div>
+  </div>
+  {% for t in pag.items %}
+    <div class="fr-thread-row">
+      <div><a href="{{ url_for('thread_view', tid=t.id) }}">{{ t.title }}</a></div>
+      <div class="fr-replies">{{ t.posts.count() - 1 if t.posts.count() else 0 }}</div>
+      <div><a href="{{ url_for('user_profile', username=t.user.username) }}">{{ t.user.username }}</a></div>
+      <div><a href="{{ url_for('forum_view', slug=t.forum.slug) }}">{{ t.forum.name }}</a></div>
+      <div class="muted">{{ t.created_at|relative }}</div>
+    </div>
+  {% else %}
+    <p class="empty">No threads to show.</p>
+  {% endfor %}
+</div>
+{{ m.pagination(pag, request.endpoint, params={'query': query_text or None}) }}
+{% endblock %}

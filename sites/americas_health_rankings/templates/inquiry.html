@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Submit An Inquiry{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <h1>Submit An Inquiry</h1>
+    <p class="section-sub">We appreciate you contacting America’s Health Rankings. Fill out the form below and our team will be in touch.</p>
+    {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+    <form method="post" action="{{ url_for('inquiry') }}">
+      <div class="form-row">
+        <label for="phone">Phone</label>
+        <input id="phone" type="text" name="phone" value="{{ form.get('phone','') }}">
+      </div>
+      <div class="form-row">
+        <label for="name">Your Name</label>
+        <input id="name" type="text" name="your name" value="{{ form.get('your name','') }}" required>
+      </div>
+      <div class="form-row">
+        <label for="email">Email</label>
+        <input id="email" type="email" name="email" value="{{ form.get('email','') }}" required>
+      </div>
+      <div class="form-row">
+        <label for="confirm-email">Confirm Email</label>
+        <input id="confirm-email" type="email" name="confirm email" value="{{ form.get('confirm email','') }}">
+      </div>
+      <div class="form-row">
+        <label for="org">Your Organization</label>
+        <input id="org" type="text" name="your organization" value="{{ form.get('your organization','') }}">
+      </div>
+      <div class="form-row">
+        <label for="comment">Your Comment</label>
+        <textarea id="comment" name="your comment" rows="6" required>{{ form.get('your comment','') }}</textarea>
+      </div>
+      <button class="btn btn-primary" type="submit">Submit</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

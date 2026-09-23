@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_tile.html" import tile with context %}
+{% block content %}
+<section class="hp-cats">
+  <div class="hp-cat">
+    <img src="{{ url_for('static', filename='images/homepage/hp-tile-women.png') }}" alt="Shop women's styles">
+    <a href="/us/women/">SHOP WOMEN'S</a>
+  </div>
+  <div class="hp-cat">
+    <img src="{{ url_for('static', filename='images/homepage/hp-tile-men.png') }}" alt="Shop men's styles">
+    <a href="/us/men/">SHOP MEN'S</a>
+  </div>
+  <div class="hp-cat">
+    <img src="{{ url_for('static', filename='images/homepage/hp-tile-clogs.png') }}" alt="Shop clogs">
+    <a href="/us/clogs-edit/">SHOP CLOGS</a>
+  </div>
+  <div class="hp-cat">
+    <img src="{{ url_for('static', filename='images/homepage/hp-tile-sale.png') }}" alt="Shop sale">
+    <a href="/us/sale/">SHOP SALE</a>
+  </div>
+</section>
+
+<section class="hp-hero">
+  <img src="{{ url_for('static', filename='images/homepage/hp-hero-blair.png') }}" alt="The Blair clog on a wooden floor in sunlight">
+  <div class="hp-hero-copy">
+    <h2>THE BLAIR CLOG</h2>
+    <p>Crossover straps, refined buckles. Blair does clogs differently.</p>
+    <a class="btn" href="/us/styles/blair/">SHOP BLAIR</a>
+    <a class="btn" href="/us/new-arrivals/">SHOP FALL COLLECTION</a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head"><h2>RECOMMENDED FOR YOU</h2></div>
+  <div class="tiles-row">
+    {% for p in recommended %}{{ tile(p) }}{% endfor %}
+  </div>
+</section>
+
+<section class="hp-blue">
+  <p class="kicker">EVERY STYLE. EVERY SEASON.</p>
+  <h2>THE COMPLETE BIRKENSTOCK COLLECTION. ONLY HERE.</h2>
+  <p>24 hours a day. 365 days a year. We're home to the biggest and best selection of BIRKENSTOCK styles anywhere.</p>
+  <a class="btn" href="/us/women/sandals/">SHOP ALL SANDALS</a>
+</section>
+
+<section class="hp-duo">
+  <div class="hp-duo-card">
+    <img src="{{ url_for('static', filename='images/homepage/hp-vip.jpg') }}" alt="BIRKENSTOCK VIP">
+    <div class="hp-duo-card-body">
+      <h3>JOIN BIRKENSTOCK VIP</h3>
+      <p>Earn points and unlock rewards as you go. Start with 25 points when you join today.</p>
+      <a class="btn btn-outline" href="/us/register">SIGN UP</a>
+    </div>
+  </div>
+  <div class="hp-duo-card">
+    <img src="{{ url_for('static', filename='images/homepage/hp-fall-collection.jpg') }}" alt="The fall collection">
+    <div class="hp-duo-card-body">
+      <h3>THE FALL COLLECTION</h3>
+      <p>What to wear next. All-new clogs, richer colors and seasonal textures.</p>
+      <a class="btn btn-outline" href="/us/new-arrivals/">SHOP THE COLLECTION</a>
+    </div>
+  </div>
+</section>
+
+<section class="hp-duo">
+  <div class="hp-duo-card">
+    <img src="{{ url_for('static', filename='images/homepage/hp-at-your-service.png') }}" alt="Fitting service">
+    <div class="hp-duo-card-body">
+      <h3>AT YOUR SERVICE</h3>
+      <p>Get sized, try on styles and find the perfect pair with our virtual fitting tools.</p>
+      <a class="btn btn-outline" href="/us/service/fitting-guide/">FIND YOUR FIT</a>
+    </div>
+  </div>
+  <div class="hp-duo-card">
+    <img src="{{ url_for('static', filename='images/homepage/hp-best-sellers.jpg') }}" alt="Best sellers">
+    <div class="hp-duo-card-body">
+      <h3>STILL THE STANDARD</h3>
+      <p>From Arizona to Boston, iconic pairs people have been coming back to for decades.</p>
+      <a class="btn btn-outline" href="/us/best-sellers/">SHOP BEST SELLERS</a>
+    </div>
+  </div>
+</section>
+
+<section class="hp-authenticity">
+  <img src="{{ url_for('static', filename='images/homepage/hp-authenticity.jpg') }}" alt="BIRKENSTOCK tradition since 1774 seal">
+  <div>
+    <p class="kicker">TRUSTED RETAILERS</p>
+    <h2>WHERE TO BUY AUTHENTIC BIRKENSTOCK&reg; PRODUCTS</h2>
+    <p>Genuine BIRKENSTOCK&reg; products are quality-checked and sold through our official website, BIRKENSTOCK stores and select authorized retailers. Products purchased from other sources may be counterfeit or unauthorized and are not covered by our consumer warranty.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head"><h2>FAN FAVORITES</h2></div>
+  <div class="tiles-row">
+    {% for p in fan_favorites %}{{ tile(p) }}{% endfor %}
+  </div>
+</section>
+
+<section class="hp-ig">
+  <h2>@BIRKENSTOCKUSA</h2>
+  <p>Share your BIRKENSTOCK-Style and inspire others! Just mention @birkenstockusa on Instagram to become part of our highlight gallery.</p>
+  <div class="hp-ig-grid">
+    {% for p in recommended[:6] %}
+    <img src="{{ url_for('static', filename='images/' + p.main_image) }}" alt="{{ p.name }}">
+    {% endfor %}
+  </div>
+  <a href="/us/best-sellers/">View Gallery</a>
+</section>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Cruise Ships | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="crumbs"><a href="/">Home</a> &rsaquo; Explore &rsaquo; Cruise Ships</div>
+<section class="section">
+  <div class="badge badge-deal">CRUISE SHIPS</div>
+  <h1 style="color:var(--navy);text-align:center;max-width:800px;margin:10px auto;">
+    All Carnival cruises go to great spots — what sets each ship apart is how it gets you there.
+    Every one of our ships features its own unique twist on Carnival-style fun.
+  </h1>
+</section>
+<section class="section">
+  <div class="results-count"><h1>{{ ships | length }} Ships in the Fleet</h1><span class="results-note">Find your ship and the cruises it sails.</span></div>
+  {% for ship in ships %}
+  <article class="ship-card">
+    <img src="{{ url_for('static', filename=ship.hero_image.replace('static/', '')) }}" alt="{{ ship.name }}">
+    <div style="flex:1;">
+      <h3><a href="{{ url_for('ship_detail', slug=ship.slug) }}" style="color:inherit">{{ ship.name }}</a></h3>
+      <div class="meta">
+        <strong>Sail To</strong>
+        {% for d in ship.sail_to_list %}{{ d }}{{ ", " if not loop.last }}{% endfor %}
+      </div>
+      <div class="meta">
+        <strong>Sail from</strong>
+        {% for p in ship.sail_from_list %}{{ p }}{{ ", " if not loop.last }}{% endfor %}
+      </div>
+      <div class="meta">
+        <strong>Duration</strong>
+        {% for d in ship.duration_list %}{{ d }}{{ ", " if not loop.last }}{% endfor %}
+      </div>
+    </div>
+    <div>
+      <a class="btn btn-blue btn-small" href="{{ url_for('cruise_search', shipcode=ship.code) }}">SEARCH CRUISES</a>
+    </div>
+  </article>
+  {% endfor %}
+</section>
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% from "_tile.html" import tile with context %}
+{% block title %}Wish List | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>WISH LIST</h1>
+  <p style="color:#494954">{{ items|length }} saved item{{ 's' if items|length != 1 }}</p>
+  {% if items %}
+  <div class="product-grid">
+    {% for wi in items %}
+    <div>
+      {{ tile(wi.product, show_wishlist=False) }}
+      <form method="post" action="/us/wishlist/remove/{{ wi.id }}" style="margin-top:8px">
+        <button type="submit" class="link-btn">Remove from wish list</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-cards">
+    <div class="empty-card">
+      <div class="icon">&#9825;</div>
+      <h3>Your wish list is empty</h3>
+      <p>Save the styles you love and find them here on any device.</p>
+      <a class="btn btn-dark" href="/us/best-sellers/">BROWSE BEST SELLERS</a>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

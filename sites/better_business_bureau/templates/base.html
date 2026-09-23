@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}BBB | Better Business Bureau{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='icons/BBB_PrimaryLogo_Blue_RGB.svg') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="container">
+    <a class="logo-link" href="{{ url_for('index') }}">
+      <img src="{{ url_for('static', filename='icons/BBB_PrimaryLogo_Blue_RGB.svg') }}" alt="Better Business Bureau">
+    </a>
+    <nav class="main-nav">
+      <div class="nav-item" data-nav="consumers">
+        <button class="nav-button" aria-haspopup="true">Consumers
+          <svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="#032160" stroke-width="1.6" fill="none"/></svg>
+        </button>
+        <div class="dropdown">
+          <a href="{{ url_for('get_a_quote') }}">Get a Quote</a>
+          <a href="{{ url_for('leave_a_review') }}">Leave a Review</a>
+          <a href="{{ url_for('file_a_complaint') }}">File a Complaint</a>
+          <a href="{{ url_for('news') }}">Newsroom and Resources</a>
+        </div>
+      </div>
+      <div class="nav-item" data-nav="businesses">
+        <button class="nav-button" aria-haspopup="true">Businesses
+          <svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="#032160" stroke-width="1.6" fill="none"/></svg>
+        </button>
+        <div class="dropdown">
+          <a href="{{ url_for('get_listed') }}">Get Your Business Listed</a>
+          <a href="{{ url_for('get_accredited') }}">BBB Accreditation</a>
+          <a href="{{ url_for('get_accredited') }}#apply">Apply for BBB Accreditation</a>
+          <a href="{{ url_for('news') }}">Newsroom and Resources</a>
+        </div>
+      </div>
+      <div class="nav-item" data-nav="scam">
+        <button class="nav-button" aria-haspopup="true">Scam Tracker
+          <svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="#032160" stroke-width="1.6" fill="none"/></svg>
+        </button>
+        <div class="dropdown">
+          <a href="{{ url_for('scam_report') }}">Report a Scam</a>
+          <a href="{{ url_for('scam_lookup') }}">Look Up a Scam</a>
+          <a href="{{ url_for('scam_dashboard') }}">Heatmap</a>
+          <a href="{{ url_for('scamtracker_home') }}#prevention">Scam Prevention Guide</a>
+        </div>
+      </div>
+      <div class="nav-item" data-nav="about">
+        <button class="nav-button" aria-haspopup="true">About
+          <svg class="chev" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" stroke="#032160" stroke-width="1.6" fill="none"/></svg>
+        </button>
+        <div class="dropdown">
+          <a href="{{ url_for('about') }}">About BBB</a>
+          <a href="{{ url_for('our_impact') }}">Our Impact</a>
+          <a href="{{ url_for('local_bbb') }}">Find Your Local BBB</a>
+        </div>
+      </div>
+    </nav>
+    <div class="utility-links">
+      <span class="lang">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="#53565a" stroke-width="2"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20" stroke="#53565a" stroke-width="2"/></svg>
+        Language
+      </span>
+      {% if current_user.is_authenticated %}
+        <a class="signin" href="{{ url_for('account') }}">
+          <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="#032160"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6" fill="#032160"/></svg>
+          My Account
+        </a>
+      {% else %}
+        <a class="signin" href="{{ url_for('signin') }}">
+          <svg width="13" height="13" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4" fill="#032160"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6" fill="#032160"/></svg>
+          Sign in
+        </a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+{% block searchband %}{% endblock %}
+
+<main id="content">
+<div class="flash-zone">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for cat, msg in messages %}
+      <div class="flash-msg {{ cat }}">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+</div>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div>
+      <img src="{{ url_for('static', filename='icons/BBB_PrimaryLogo_White_RGB.svg') }}" alt="Better Business Bureau">
+      <div class="social">
+        <a href="https://x.com/bbb_us" rel="noreferrer" aria-label="our Twitter (opens in a new tab)"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M18.9 1.2h3.7l-8.1 9.3L24 22.8h-7.5l-5.9-7.7-6.7 7.7H.2l8.7-9.9L0 1.2h7.7l5.3 7 6-7zm-1.3 19.4h2.1L6.6 3.3H4.4l13.2 17.3z"/></svg></a>
+        <a href="https://www.linkedin.com/company/better-business-bureau/" rel="noreferrer" aria-label="our LinkedIn (opens in a new tab)"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M20.4 20.5h-3.6v-5.6c0-1.3 0-3-1.9-3s-2.1 1.4-2.1 2.9v5.7H9.1V9h3.4v1.6h.1c.5-.9 1.7-1.9 3.4-1.9 3.6 0 4.3 2.4 4.3 5.5v6.3zM5.3 7.4c-1.2 0-2.1-.9-2.1-2.1s.9-2.1 2.1-2.1 2.1.9 2.1 2.1-.9 2.1-2.1 2.1zM7.1 20.5H3.5V9h3.6v11.5z"/></svg></a>
+        <a href="https://www.facebook.com/BetterBusinessBureau" rel="noreferrer" aria-label="our Facebook (opens in a new tab)"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M22 12c0-5.5-4.5-10-10-10S2 6.5 2 12c0 5 3.7 9.1 8.4 9.9v-7H7.9V12h2.5V9.8c0-2.5 1.5-3.9 3.8-3.9 1.1 0 2.2.2 2.2.2v2.5h-1.3c-1.2 0-1.6.8-1.6 1.6V12h2.7l-.4 2.9h-2.3v7C18.3 21.1 22 17 22 12z"/></svg></a>
+        <a href="https://www.instagram.com/betterbusinessbureau_/" rel="noreferrer" aria-label="our Instagram (opens in a new tab)"><svg width="18" height="18" viewBox="0 0 24 24" fill="#fff" aria-hidden="true"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 3.3.1 4.8 1.7 4.9 4.9.1 1.3.1 1.6.1 4.8s0 3.6-.1 4.9c-.1 3.2-1.7 4.8-4.9 4.9-1.3.1-1.6.1-4.9.1s-3.6 0-4.9-.1c-3.3-.1-4.8-1.7-4.9-4.9-.1-1.3-.1-1.6-.1-4.9s0-3.6.1-4.8C2.3 4 3.9 2.4 7.1 2.3 8.4 2.2 8.8 2.2 12 2.2zm0 3.6a6.2 6.2 0 100 12.4 6.2 6.2 0 000-12.4zm0 10.2a4 4 0 110-8 4 4 0 010 8zm6.4-10.4a1.4 1.4 0 100 2.9 1.4 1.4 0 000-2.9z"/></svg></a>
+      </div>
+    </div>
+    <div>
+      <h4>For Consumers</h4>
+      <ul>
+        <li><a href="{{ url_for('get_a_quote') }}">Get a Quote</a></li>
+        <li><a href="{{ url_for('leave_a_review') }}">Start a Review</a></li>
+        <li><a href="{{ url_for('file_a_complaint') }}">File a Complaint</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>For Businesses</h4>
+      <ul>
+        <li><a href="{{ url_for('get_listed') }}">Get Your Business Listed</a></li>
+        <li><a href="{{ url_for('get_accredited') }}">BBB Accreditation</a></li>
+        <li><a href="{{ url_for('get_accredited') }}#apply">Apply for BBB Accreditation</a></li>
+        <li><a href="{{ url_for('news') }}">Newsroom and Resources</a></li>
+      </ul>
+    </div>
+    <div>
+      <h4>Affiliated Programs</h4>
+      <ul>
+        <li><a href="https://www.bbbmarketplacetrust.org" rel="noreferrer">BBB Institute for Marketplace Trust</a></li>
+        <li><a href="https://give.org" rel="noreferrer">BBB Wise Giving Alliance (Give.org)</a></li>
+        <li><a href="https://bbbprograms.org" rel="noreferrer">BBB National Programs</a></li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer-bar">
+    <div class="container">
+      <div>
+        <a href="{{ url_for('about') }}">About BBB&reg;</a>
+        <a href="{{ url_for('about') }}#terms">Terms of Use</a>
+        <a href="{{ url_for('about') }}#privacy">Privacy Policy</a>
+        <a href="{{ url_for('local_bbb') }}">Contact Us</a>
+      </div>
+      <div class="copyright">&copy; 2026 International Association of Better Business Bureaus, Inc. (IABBB). All rights reserved. All trademarks are property of IABBB.</div>
+    </div>
+  </div>
+</footer>
+
+<div class="cookie-banner" id="cookieBanner" hidden>
+  <div class="container">
+    <p>We use cookies to give users the best content and online experience. By clicking &ldquo;Accept All Cookies&rdquo;, you agree to allow us to use all cookies. Visit our <a href="{{ url_for('about') }}#privacy">Privacy Policy</a> to learn more.</p>
+    <div>
+      <button class="btn btn-primary" id="cookieAccept">Accept All Cookies</button>
+      <a href="{{ url_for('about') }}#privacy" style="margin-left:0.8rem;font-size:0.9rem;">Manage Cookies</a>
+    </div>
+  </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

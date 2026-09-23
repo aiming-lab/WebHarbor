@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+{% block title %}{{ site_name }} | Gaming Unplugged Since 2000{% endblock %}
+{% block content %}
+<div class="home-surface">
+  <nav class="home-tabs" aria-label="Home views">
+    <a class="active" href="{{ url_for('index') }}">Explore</a>
+    {% if current_user.is_authenticated %}
+      <a href="{{ url_for('user_profile', username=current_user.username) }}">Dashboard</a>
+    {% else %}
+      <a href="{{ url_for('login') }}">Dashboard</a>
+    {% endif %}
+  </nav>
+
+  <section class="featured-stories" aria-labelledby="featured-title">
+    <h1 id="featured-title" class="sr-only">Featured Stories</h1>
+    {% set hero = hot_games[0] if hot_games else none %}
+    {% if hero %}
+    <a class="featured-hero" href="{{ hero.detail_url }}">
+      {% if hero.image_filename %}
+        <img src="{{ url_for('static', filename='images/' + hero.image_filename) }}" alt="{{ hero.name }}">
+      {% elif hero.thumb_filename %}
+        <img src="{{ url_for('static', filename='images/' + hero.thumb_filename) }}" alt="{{ hero.name }}">
+      {% endif %}
+      <span class="featured-overlay">DISCOVER<br>YOUR NEXT<br>FAVORITE GAME</span>
+      <strong>{{ hero.name }}{% if hero.year_published %} ({{ hero.year_published }}){% endif %}</strong>
+      <small>Explore one of the community's most talked-about games</small>
+    </a>
+    {% endif %}
+    <div class="featured-list">
+      {% for story in hot_games[1:5] %}
+      <a href="{{ story.detail_url }}">
+        {% if story.thumb_filename %}<img src="{{ url_for('static', filename='images/' + story.thumb_filename) }}" alt="">{% endif %}
+        <span><b>{{ story.name }}</b><small>BoardGameGeek Community</small></span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="home-module" aria-labelledby="hotness-title">
+    <header class="home-module-header">
+      <div><h2 id="hotness-title">The Hotness</h2><p>Top trending games today</p></div>
+      <a href="{{ url_for('hotness') }}">See All ›</a>
+    </header>
+    <div class="card-strip hot-strip">
+      {% for g in hot_games[:8] %}
+      <a class="editorial-card" href="{{ g.detail_url }}">
+        {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">{% endif %}
+        <h3><span>{{ loop.index }}</span> {{ g.name }}</h3>
+        <p>{{ g.short_description[:105] if g.short_description else 'Discover this community favorite and see why players keep talking about it.' }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="home-module" aria-labelledby="countdown-title">
+    <header class="home-module-header">
+      <div><h2 id="countdown-title">Crowdfunding Countdown</h2><p>Projects ending soon</p></div>
+      <a href="{{ url_for('hotness') }}">See All ›</a>
+    </header>
+    <div class="card-strip campaign-strip">
+      {% for g in hot_games[5:11] %}
+      <a class="campaign-card" href="{{ g.detail_url }}">
+        {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">{% endif %}
+        <h3>{{ g.name }}</h3>
+        <small>Ends soon · {{ (g.num_ratings or 0) | thousands }} backers</small>
+        <p>{{ g.short_description[:95] if g.short_description else 'A tabletop project worth a closer look.' }}</p>
+        <span>Visit Project ↗</span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="preview-events" aria-label="Geek preview events">
+    <a href="{{ url_for('browse') }}"><strong>SPIEL</strong><span>GEEKPREVIEW<br><b>SPIEL ESSEN</b><small>Browse featured titles</small></span><i>Browse</i></a>
+    <a href="{{ url_for('browse') }}"><strong>GEN<br>CON</strong><span>GEEKPREVIEW<br><b>GEN CON PREVIEW</b><small>Discover new releases</small></span><i>Browse</i></a>
+  </section>
+
+  <section class="home-module featured-videos" aria-labelledby="videos-title">
+    <header class="home-module-header">
+      <div><h2 id="videos-title">Featured Videos</h2></div>
+      <a href="{{ url_for('forums_index') }}">See All ›</a>
+    </header>
+    <div class="video-grid">
+      {% for g in top_overall[:5] %}
+      <a href="{{ g.detail_url }}">
+        <div>{% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">{% endif %}<span>▶</span></div>
+        <b>{{ g.name }} — How to Play</b><small>BoardGameGeek</small>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="home-ad-break" role="presentation"><span>EXPLORE MORE GAMES</span></div>
+
+  <section class="home-module" aria-labelledby="bestsellers-title">
+    <header class="home-module-header">
+      <div><h2 id="bestsellers-title">Bestsellers</h2><p>Week of Aug 31–Sep 6</p></div>
+      <a href="{{ url_for('browse') }}">See All ›</a>
+    </header>
+    <div class="card-strip ranked-strip">
+      {% for g in top_overall[:10] %}
+      <a class="editorial-card" href="{{ g.detail_url }}">
+        {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">{% endif %}
+        <h3><span>{{ loop.index }}</span> {{ g.name }}</h3>
+        <p>{{ g.short_description[:105] if g.short_description else 'A popular pick from the BoardGameGeek community.' }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="home-module home-community-grid" aria-label="Board gaming community activity">
+    <div class="community-column">
+      <header class="home-module-header">
+        <div><h2>Board Gaming News</h2></div>
+      </header>
+      <div class="compact-feed">
+        {% for t in active_threads[:5] %}
+        <a href="{{ url_for('thread_detail', tid=t.id) }}">
+          {% if t.forum.game and t.forum.game.thumb_filename %}<img src="{{ url_for('static', filename='images/' + t.forum.game.thumb_filename) }}" alt="">{% endif %}
+          <span><b>{{ t.subject }}</b><small>{{ t.author.username }} · {{ t.forum.title }} · ♡ {{ t.num_posts }}</small></span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="community-column">
+      <header class="home-module-header">
+        <div><h2>Hot Discussions</h2></div>
+        <a href="{{ url_for('forums_index') }}">See All ›</a>
+      </header>
+      <div class="compact-feed">
+        {% for t in active_threads[5:10] %}
+        <a href="{{ url_for('thread_detail', tid=t.id) }}">
+          {% if t.forum.game and t.forum.game.thumb_filename %}<img src="{{ url_for('static', filename='images/' + t.forum.game.thumb_filename) }}" alt="">{% endif %}
+          <span><b>{{ t.subject }}</b><small>{{ t.author.username }} · {{ t.forum.title }} · ♡ {{ t.num_posts }}</small></span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="home-module" aria-labelledby="giveaways-title">
+    <header class="home-module-header">
+      <div><h2 id="giveaways-title">Giveaway Contests</h2><p>Answer questions for a chance to win – Sponsored</p></div>
+    </header>
+    <div class="card-strip giveaway-strip">
+      {% for g in hot_games[2:10] %}
+      <a class="giveaway-card" href="{{ g.detail_url }}">
+        <div>{% if g.image_filename %}<img src="{{ url_for('static', filename='images/' + g.image_filename) }}" alt="{{ g.name }} Contest">{% elif g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }} Contest">{% endif %}<strong>WIN THE GAME</strong></div>
+        <h3>{{ g.name }} Contest</h3><small>BoardGameGeek · Ends soon</small>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="home-module" aria-labelledby="played-title">
+    <header class="home-module-header">
+      <div><h2 id="played-title">Most Played Games</h2><p>Month of August</p></div>
+      <a href="{{ url_for('browse') }}">See All ›</a>
+    </header>
+    <div class="card-strip ranked-strip">
+      {% for g in top_overall[5:15] %}
+      <a class="editorial-card" href="{{ g.detail_url }}">
+        {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">{% endif %}
+        <h3><span>{{ loop.index }}</span> {{ g.name }}</h3>
+        <p>{{ g.short_description[:105] if g.short_description else 'Frequently played by the community this month.' }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <div class="home-ad-break home-ad-break-small" role="presentation"><span>BOARD GAME GEEK</span></div>
+
+  <section class="home-module" aria-labelledby="reviews-title">
+    <header class="home-module-header"><div><h2 id="reviews-title">Hot In-Depth Reviews</h2></div></header>
+    <div class="review-feed">
+      {% for review in recent_reviews %}
+      <a href="{{ review.game.detail_url }}">
+        {% if review.game.thumb_filename %}<img src="{{ url_for('static', filename='images/' + review.game.thumb_filename) }}" alt="{{ review.game.name }}">{% endif %}
+        <span><b>{{ review.game.name }} — community review</b><small>by {{ review.user.username }} · rated {{ '%.1f'|format(review.value) }}</small><p>{{ review.review_html|striptags|truncate(115) }}</p></span>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="home-module home-community-grid home-community-grid-three" aria-label="Geek community lists and forums">
+    <div class="community-column">
+      <header class="home-module-header"><div><h2>Hot GeekLists</h2></div><a href="{{ url_for('geeklists_index') }}">See All ›</a></header>
+      <ol class="text-feed">
+        {% for l in recent_lists[:7] %}<li><a href="{{ url_for('geeklist_detail', lid=l.id) }}"><b>{{ l.title }}</b><small>{{ l.author.username }} · {{ l.num_items }} items · ♡ {{ l.num_thumbs }}</small></a></li>{% endfor %}
+      </ol>
+    </div>
+    <div class="community-column">
+      <header class="home-module-header"><div><h2>Blogs</h2></div><a href="{{ url_for('forums_index') }}">See All ›</a></header>
+      <div class="compact-feed compact-feed-text">
+        {% for t in active_threads[2:7] %}<a href="{{ url_for('thread_detail', tid=t.id) }}"><span><b>{{ t.subject }}</b><small>{{ t.author.username }} · Community Blog · ♡ {{ t.num_posts }}</small></span></a>{% endfor %}
+      </div>
+    </div>
+    <div class="community-column">
+      <header class="home-module-header"><div><h2>Game Forums</h2></div><a href="{{ url_for('forums_index') }}">See All ›</a></header>
+      <div class="compact-feed compact-feed-text">
+        {% for t in active_threads[10:15] %}<a href="{{ url_for('thread_detail', tid=t.id) }}"><span><b>{% if t.forum.game %}{{ t.forum.game.name }} – {% endif %}{{ t.subject }}</b><small>{{ t.author.username }} · {{ t.forum.title }} · {{ t.num_posts }} posts</small></span></a>{% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <section class="home-module" aria-labelledby="images-title">
+    <header class="home-module-header">
+      <div><h2 id="images-title">Hot Images</h2><p>The top trending images on BGG today.</p></div>
+      <a href="{{ url_for('browse') }}">See All ›</a>
+    </header>
+    <div class="image-wall">
+      {% for g in top_overall[:12] %}
+      <a href="{{ g.detail_url }}">{% if g.image_filename %}<img src="{{ url_for('static', filename='images/' + g.image_filename) }}" alt="{{ g.name }}">{% elif g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="{{ g.name }}">{% endif %}<span>{{ g.name }}</span></a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="home-module" aria-labelledby="hot-videos-title">
+    <header class="home-module-header"><div><h2 id="hot-videos-title">Hot Videos</h2></div><a href="{{ url_for('forums_index') }}">See All ›</a></header>
+    <div class="video-grid video-grid-wide">
+      {% for g in top_overall[8:18] %}
+      <a href="{{ g.detail_url }}"><div>{% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">{% endif %}<span>▶</span><i>{{ 8 + loop.index }}:{{ '%02d'|format((loop.index * 7) % 60) }}</i></div><b>{{ g.name }} — Review &amp; Playthrough</b><small>BoardGameGeek Community</small></a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="home-module creator-spotlight" aria-labelledby="creator-title">
+    <header class="home-module-header"><div><h2 id="creator-title">Creator Spotlight</h2></div><a href="{{ url_for('forums_index') }}">View Channel ›</a></header>
+    <div class="creator-intro"><span class="creator-avatar">BG</span><div><h3>BoardGameGeek Community</h3><b>Video Channel</b><p>Playthroughs, reviews, tutorials, and tabletop stories from creators across the community.</p></div></div>
+    <div class="video-grid video-grid-wide">
+      {% for g in top_overall[3:13] %}<a href="{{ g.detail_url }}"><div>{% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">{% endif %}<span>▶</span></div><b>{{ g.name }} — Community Spotlight</b><small>{{ loop.index }} days ago</small></a>{% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

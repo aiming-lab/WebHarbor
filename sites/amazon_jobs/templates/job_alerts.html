@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Job alerts | Amazon.jobs{% endblock %}
+{% block content %}
+<div class="container page-content account-page">
+  <div class="account-head">
+    <h1>Job alerts</h1>
+    <p class="account-sub">Get notified when new jobs match your alerts.</p>
+  </div>
+  <div class="alert-create card-panel">
+    <h2>Create a job alert</h2>
+    <form method="post" action="{{ url_for('job_alerts') }}" class="alert-form">
+      <label for="query_text">Keyword
+        <input type="text" id="query_text" name="query_text" value="{{ request.args.get('base_query', '') }}" placeholder="e.g. software engineer">
+      </label>
+      <label for="location_text">Location
+        <input type="text" id="location_text" name="location_text" value="{{ request.args.get('loc_keyword', '') }}" placeholder="e.g. Seattle">
+      </label>
+      <label for="frequency">Frequency
+        <select id="frequency" name="frequency">
+          <option value="Daily">Daily</option>
+          <option value="Weekly" selected>Weekly</option>
+          <option value="Monthly">Monthly</option>
+        </select>
+      </label>
+      <button type="submit" class="btn btn-primary">Create alert</button>
+    </form>
+  </div>
+  {% if alerts %}
+  <div class="alert-list">
+    {% for alert in alerts %}
+    <div class="alert-card">
+      <div class="alert-main">
+        <p class="alert-query">{{ alert.query_text or "Any keyword" }}{% if alert.location_text %} in {{ alert.location_text }}{% endif %}</p>
+        <p class="app-meta">{{ alert.match_count() }} matching job{{ 's' if alert.match_count() != 1 }} | {{ alert.frequency }} | {{ 'Active' if alert.active else 'Paused' }}</p>
+      </div>
+      <div class="alert-actions">
+        <a class="btn btn-secondary btn-small" href="{{ url_for('search', base_query=alert.query_text, loc_keyword=alert.location_text) }}">View matching jobs</a>
+        <form method="post" action="{{ url_for('job_alert_toggle', alert_id=alert.id) }}" class="inline-form">
+          <button type="submit" class="btn btn-secondary btn-small">{{ 'Pause' if alert.active else 'Resume' }}</button>
+        </form>
+        <form method="post" action="{{ url_for('job_alert_delete', alert_id=alert.id) }}" class="inline-form">
+          <button type="submit" class="btn btn-secondary btn-small">Delete</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>No job alerts yet</h2>
+    <p>Create an alert above, or save a search from the results page.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

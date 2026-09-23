@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Amex Offers | Explore Offers &amp; Benefits with American Express®{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Rewards &amp; Benefits &rsaquo; Amex Offers</p>
+  <div class="hero" style="margin-top:12px;border-radius:12px;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">Amex Offers</span>
+        <h1>With Amex Offers, tap into value again and again</h1>
+        <p>Add offers to your Card to get rewarded on eligible purchases. Enrollment is required and may be limited. Terms apply.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="{{ url_for('login', next=url_for('account_offers')) }}">Log In to See More Offers</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band-white">
+    <div class="container">
+      <h2 class="section-title">Featured Amex Offers</h2>
+      <p class="section-sub">These are just a few of the Offers that may be available to eligible Card Members. With so many possibilities, it&rsquo;s easy to get rewarded.</p>
+      <div class="card-grid">
+        {% for offer in offers %}
+        <div class="card-tile">
+          <h3>{{ offer.headline }}</h3>
+          <p style="font-size:14px;">{{ offer.body }}</p>
+          <p style="font-size:13px;color:#5c5f63;">Merchant: <b>{{ offer.merchant }}</b> ({{ offer.domain }}) &middot; Expires {{ offer.expires.strftime('%m/%d/%Y') if offer.expires }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      <p style="margin-top:22px;"><a class="btn btn-primary" href="{{ url_for('login', next=url_for('account_offers')) }}">Log In to Add Offers to Your Card</a></p>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="container">
+      <h2 class="section-title">Easy to add, easy to earn</h2>
+      <div class="two-col">
+        <div class="card-tile">
+          <h3>STEP 1: EXPLORE</h3>
+          <p style="font-size:14px;">Open the American Express&reg; App or log in to your Online Account to view the list of offers available to you.</p>
+        </div>
+        <div class="card-tile">
+          <h3>STEP 2: ADD</h3>
+          <p style="font-size:14px;">Tap the &ldquo;+&rdquo; icon or click &ldquo;Add to Card&rdquo; to add any offer you&rsquo;re interested in to your Card.</p>
+        </div>
+        <div class="card-tile">
+          <h3>STEP 3: EARN</h3>
+          <p style="font-size:14px;">After you add the offer to your eligible Card, simply spend on qualifying purchases to get rewarded.</p>
+        </div>
+        <div class="card-tile">
+          <h3>Amplify your earnings</h3>
+          <p style="font-size:14px;">Eligible Card Members who added Amex Offers to their Card had the potential to earn an average of $155 back in Statement Credits on qualifying purchases in 2024.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

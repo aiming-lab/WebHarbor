@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en-US">
+{% set active = active | default('') %}
+<head>
+    <title>{% block title %}California State Portal{% endblock %} | CA.gov</title>
+    <meta charset="utf-8" />
+    <meta name="Author" content="State of California" />
+    <meta name="Description" content="{% block meta_description %}CA.gov is the official website for the State of California. You can find and access California services, resources, and more.{% endblock %}" />
+    <meta name="robots" content="index, follow" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="HandheldFriendly" content="True" />
+    <meta name="MobileOptimized" content="320" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0" />
+    <meta name="title" content="{% block og_title %}California State Portal | CA.gov{% endblock %}" />
+    {% block allowed_query_params %}{% endblock %}
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:site_name" content="California State Portal" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="{% block og_title2 %}California State Portal | CA.gov{% endblock %}" />
+    <link rel="preload" href="{{ url_for('static', filename='fonts/publicsans-1.woff2') }}" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="{{ url_for('static', filename='fonts/CaGov.woff2') }}" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/cagov-custom.min.css') }}" />
+    <style>
+      /* Directory rows keep their gutters inside narrow viewport containers. */
+      @media (max-width: 991px) {
+        main .container-lg.px-0 > .row { margin-left: 0; margin-right: 0; }
+      }
+    </style>
+    {% block head_extra %}{% endblock %}
+    {% block page_scripts %}{% endblock %}
+    <script src="{{ url_for('static', filename='js/cagov-custom.min.js') }}" defer></script>
+    <script src="{{ url_for('static', filename='js/custom.min.js') }}" type="module" defer></script>
+    <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}" />
+</head>
+<body class="primary">
+<header id="header" class="global-header fixed">
+      <div id="skip-to-content">
+        <a href="#main-content">Skip to Main Content</a>
+      </div>
+      <!-- Utility header structural component -->
+<div class="utility-header d-print-none" data-nosnippet>
+  <div class="container">
+    <div class="flex-row">
+      <div class="social-media-links align-items-start">
+        <div class="official-collapsible-content">
+          <button
+            type="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#collapseOficial"
+            aria-expanded="false"
+            aria-controls="collapseOficial"
+            class="btn-official mt-1 gray-900 color-black-hover">
+            <span class="underline">Official California website</span>
+            <span class="ca-gov-icon-caret-up" aria-hidden="true"></span>
+            <span class="ca-gov-icon-caret-down" aria-hidden="true"></span>
+          </button>
+          <div class="collapse" id="collapseOficial">
+            <div class="font-size-13 gray-900 p-y ps-1 pe-2">
+              <span class="bold">California government websites use .ca.gov </span><br />A .ca.gov website is part of California’s government.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="settings-links ms-auto align-items-start pt-2 line-height-1-6em">
+        <a href="/translate/" class="m-l-0 underline cursor-pointer" lang="es" hreflang="es" translate="no" rel="alternate">Español</a>
+        <a href="/translate/" lang="ko" hreflang="ko" translate="no" rel="alternate" class="underline cursor-pointer">한국어</a>
+        <a href="/translate/" lang="tl" hreflang="tl" translate="no" rel="alternate" class="underline cursor-pointer">Tagalog</a>
+        <a href="/translate/" lang="vi" hreflang="vi" translate="no" rel="alternate" class="underline cursor-pointer">Tiếng Việt</a>
+        <a href="/translate/" lang="zh-hant" hreflang="zh-hant" translate="no" rel="alternate" class="underline cursor-pointer">繁體中文</a>
+        <a class="translate notranslate pos-rel top-minus-2" href="/translate/"><span class="ca-gov-icon-globe" aria-hidden="true"></span><span class="sr-only">Translate</span></a>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- Site header (branding) structural component -->
+<div class="section-default">
+  <div class="branding">
+    <div class="header-organization-banner">
+      <a href="/">
+        <div class="logo-assets">
+          <img src="{{ url_for('static', filename='icons/cagov-logo.svg') }}" class="logo-img" alt="CA.gov official logo" />
+        </div>
+      </a>
+    </div>
+  </div>
+</div>
+<!-- Mobile controls structural compoent -->
+<div class="mobile-controls">
+  <div class="mobile-control-group main-nav-icons">
+    <button id="nav-icon3" class="mobile-control toggle-menu" aria-expanded="false" aria-controls="navigation">
+      <span></span>
+      <span></span>
+      <span></span>
+      <span></span>
+      <span class="sr-only">Menu</span>
+    </button>
+  </div>
+</div>
+<div class="navigation-search full-width-nav container">
+        <div id="head-search" class="search-container featured-search">
+          <div class="d-block d-lg-none">
+            <a href="/" class="drawer-logo-link first-level-link">
+              <img src="{{ url_for('static', filename='icons/cagov-logo.svg') }}" alt="CA.gov official logo" class="drawer-logo mb-4" />
+            </a>
+          </div>
+<!-- Search structural component -->
+<div class="container">
+  <form id="Search" class="pos-rel" action="/search/">
+    <span class="sr-only" id="SearchInput">Custom Google Search</span>
+    <input
+      type="search"
+      name="q"
+      aria-labelledby="SearchInput"
+      placeholder="Search"
+      class="search-textfield" />
+    <button type="submit" class="gsc-search-button">
+      <span class="ca-gov-icon-search" aria-hidden="true"></span>
+      <span class="sr-only">Submit</span>
+    </button>
+    <div class="close-search-btn">
+      <button class="close-search gsc-clear-button border-0 bg-transparent pos-rel" type="reset">
+        <span class="sr-only">Close</span>
+      </button>
+    </div>
+  </form>
+</div>
+</div>
+        <!-- Site navigation structural component -->
+<nav id="navigation" class="main-navigation dropdown" aria-label="Main navigation">
+  <ul id="nav_list" class="top-level-nav">
+    <li class="nav-item">
+      <a class="first-level-link{% block nav_services %}{% endblock %}" href="/services/">Services</a>
+    </li>
+    <li class="nav-item">
+      <a class="first-level-link{% block nav_departments %}{% endblock %}" href="/departments/">Departments</a>
+    </li>
+    <li class="nav-item">
+      <a class="first-level-link{% block nav_about %}{% endblock %}" href="/about-california/">About California</a>
+    </li>
+    <li class="nav-item">
+      <a class="first-level-link{% block nav_support %}{% endblock %}" href="/support/">Get help</a>
+    </li>
+  </ul>
+</nav>
+</div>
+    </header>
+    <!-- Main content -->
+    <div id="main-content" class="main-content">
+      <main>
+        {% block main %}{% endblock %}
+      </main>
+    </div>
+<!--Feedback-->
+<div class="section-understated d-print-none">
+  <div class="container py-4 pb-5">
+    <cagov-feedback data-endpoint-url="/feedback/send">
+  <section aria-label="feedback">
+  <div class="feedback-form cagov-stack">
+    <div class="js-feedback-form feedback-form-question">
+      <h2 class="feedback-form-label" id="feedback-rating">Did you find what you were looking for?</h2>
+      <button class="feedback-form-button js-feedback-yes feedback-yes" id="feedback-yes">Yes</button>
+      <button class="feedback-form-button js-feedback-no feedback-no" id="feedback-no">No</button>
+    </div>
+
+    <div class="feedback-form-thanks js-feedback-thanks" role="alert">Thank you for your feedback!</div>
+
+    <div class="feedback-form-add">
+      <label class="feedback-form-label js-feedback-field-label" for="add-feedback">What was the problem?</label>
+      <div class="feedback-form-add-grid">
+        <textarea name="add-feedback" class="js-add-feedback feedback-form-textarea" id="add-feedback" rows="1" style=""></textarea>
+        <button class="feedback-form-button js-feedback-submit" type="submit" id="feedback-submit">Submit</button>
+      </div>
+    </div>
+
+    <div class="feedback-form-thanks feedback-thanks-add" role="alert">Thank you for your comments!</div>
+  </div>
+  </section></cagov-feedback>
+  </div>
+  <!-- End Section Feedback  -->
+</div>
+<aside class="p-b-md p-t-sm section-standout site-footer d-print-none">
+  <div class="container">
+    <div class="row">
+      <div class="col-md-3">
+        <div class="h4 w-100 brd-bottom brd-highlight p-b" role="heading" aria-level="2">About</div>
+        <a href="/about/about-this-website/" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover">About this website</a>
+        <a href="https://calcareers.ca.gov/" rel="external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">State careers<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+        <a href="https://data.ca.gov/" rel="nofollow external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">California data<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+      </div>
+      <div class="col-md-3">
+        <div class="h4 w-100 brd-bottom brd-highlight p-b" role="heading" aria-level="2">Support</div>
+        <a href="https://www.sco.ca.gov/ppsd_cpod.html" rel="external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">State directory<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+        <a href="/support/technical-help/" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover">Technical help</a>
+        <a href="/contact/" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover">Contact<span class="sr-only"> information</span></a>
+      </div>
+      <div class="col-md-3">
+        <div class="h4 w-100 brd-bottom brd-highlight p-b" role="heading" aria-level="2">Campaigns</div>
+        <a href="https://registertovote.ca.gov/" rel="external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">Register to vote<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+        <a href="https://saveourwater.com/" rel="external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">Save our water<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+        <a href="https://www.caiso.com/informed/Pages/Notifications/Default.aspx" rel="external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">Flex alert<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+      </div>
+      <div class="col-md-3">
+        <div class="h4 w-100 brd-bottom brd-highlight p-b" role="heading" aria-level="2">Alerts</div>
+        <a href="https://www.chp.ca.gov/news-alerts/alerts/amber-alert/" rel="external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">Amber alert<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+        <a href="https://calalerts.org/" rel="external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">Cal alerts<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+        <a href="https://myhazards.caloes.ca.gov/" rel="external" class="d-block no-underline m-y font-size-16 color-white color-highlight-hover underline-hover cagov-external-link">My hazards<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+      </div>
+    </div>
+
+    <a href="/website-accessibility-certification.html" class="no-underline font-size-14 d-block m-t-md color-white color-highlight-hover underline-hover"><span class="ca-gov-icon-certificate" aria-hidden="true"></span>Website Accessibility Certification</a>
+  </div>
+</aside>
+<!-- Global Footer structural component -->
+<footer id="footer" class="global-footer">
+  <div class="container">
+    <div class="d-flex">
+      <a href="/" class="cagov-logo d-print-none">
+        <img src="{{ url_for('static', filename='icons/cagov-logo-flag-gradient.svg') }}" alt="CA.gov icon" style="aspect-ratio:43/27" loading="lazy" />
+      </a>
+      <ul class="footer-links d-print-none">
+        <li><a href="/legal/conditions-of-use/">Conditions of use</a></li>
+        <li><a href="/legal/privacy-policy/">Privacy policy</a></li>
+        <li><a href="/legal/accessibility/"> Accessibility</a></li>
+        <li><a href="/about/sitemap/">Sitemap</a></li>
+      </ul>
+      <p class="text-right copyright">&copy; 2026 State of California</p>
+    </div>
+  </div>
+  <button class="return-top">
+    <span class="sr-only">Back to top</span>
+  </button>
+</footer>
+<div class="de.Alert" aria-live="polite" style="display:none"></div>
+</body>
+</html>

@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Discogs - Music Database and Marketplace{% endblock %}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/discogs.svg') }}">
+</head>
+<body>
+{# ---- Shared inline icons (paths drawn locally; no external assets) ---- #}
+{% set icon_chevron %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 15.4 6.3 9.7a1 1 0 0 1 1.4-1.4L12 12.6l4.3-4.3a1 1 0 1 1 1.4 1.4z"/></svg>{% endset %}
+{% set icon_search %}<svg viewBox="0 0 30 30" aria-hidden="true" focusable="false"><path d="M13 4a9 9 0 1 0 5.6 16l5.2 5.2 1.7-1.7-5.2-5.2A9 9 0 0 0 13 4zm0 2.4a6.6 6.6 0 1 1 0 13.2 6.6 6.6 0 0 1 0-13.2z"/></svg>{% endset %}
+{% set icon_cart %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 18a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm10 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zM3 3h2.6l.7 2H21l-2.4 8.7a1.5 1.5 0 0 1-1.4 1.1H8.3l.5 2H19v2H7.6a1 1 0 0 1-1-.7L4 5H3z"/></svg>{% endset %}
+{% set icon_bars %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>{% endset %}
+{% set icon_close %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m12 13.4 5.3 5.3 1.4-1.4L13.4 12l5.3-5.3-1.4-1.4L12 10.6 6.7 5.3 5.3 6.7 10.6 12l-5.3 5.3 1.4 1.4z"/></svg>{% endset %}
+{% set icon_arrow %}<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M13 5l7 7-7 7-1.4-1.4L16.2 13H4v-2h12.2l-4.6-4.6z"/></svg>{% endset %}
+
+<header class="site-header">
+  <div class="hdr-top">
+    <div class="hdr-wrap">
+      <a href="{{ url_for('index') }}" class="hdr-logo" aria-label="Discogs">
+        <img src="{{ url_for('static', filename='icons/discogs.svg') }}" alt="Discogs" width="128" height="50">
+      </a>
+      <div class="hdr-search-wrap">
+        <form class="hdr-search" action="{{ url_for('search') }}" method="get" role="search" aria-label="Search Discogs">
+          {% set search_type = request.args.get('type', 'all') if request.endpoint == 'search' else 'all' %}
+          <input class="hdr-query" type="text" name="q" value="{{ request.args.get('q','') }}" autocomplete="off"
+                 placeholder="Search artists, albums and more..." aria-label="Search artists, albums and more...">
+          <button class="hdr-search-btn" type="submit" aria-label="Search">{{ icon_search }}</button>
+          <div class="hdr-listbox">
+            <div class="hdr-categories" role="group" aria-label="Select category">
+              {% for value, label in [('all','All'), ('release','Releases'), ('artist','Artists'), ('label','Labels')] %}
+                <label class="hdr-category{% if search_type == value %} selected{% endif %}">
+                  <input type="radio" name="type" value="{{ value }}" {% if search_type == value %}checked{% endif %}>{{ label }}
+                </label>
+              {% endfor %}
+            </div>
+            <a class="hdr-advanced" href="{{ url_for('search') }}">View all results {{ icon_arrow }}</a>
+          </div>
+        </form>
+      </div>
+      <div class="hdr-spacer"></div>
+      <nav class="hdr-user" aria-label="User">
+        <a class="hdr-icon-btn" href="{{ url_for('marketplace') }}" aria-label="Shopping Cart" title="Shopping Cart">{{ icon_cart }}</a>
+        {% if current_user.is_authenticated %}
+          <details class="hdr-dd hdr-dd-right hdr-account">
+            <summary class="hdr-dd-btn hdr-account-btn" aria-haspopup="true">
+              <span class="avatar" style="background: {{ current_user.avatar_color }}">{{ current_user.username[0]|upper }}</span>
+              <span class="hdr-account-name">{{ current_user.username }}</span>{{ icon_chevron }}
+            </summary>
+            <div class="hdr-dd-content" role="menu">
+              <ul class="hdr-dd-group" role="group">
+                <li role="none"><a role="menuitem" href="{{ url_for('user_profile', username=current_user.username) }}">Profile</a></li>
+                <li role="none"><a role="menuitem" href="{{ url_for('user_collection', username=current_user.username) }}">Collection</a></li>
+                <li role="none"><a role="menuitem" href="{{ url_for('user_wantlist', username=current_user.username) }}">Wantlist</a></li>
+                <li role="none"><a role="menuitem" href="{{ url_for('user_lists', username=current_user.username) }}">Lists</a></li>
+                <li role="none"><a role="menuitem" href="{{ url_for('sell') }}">Sell Music</a></li>
+                <li role="none"><a role="menuitem" href="{{ url_for('settings') }}">Settings</a></li>
+                <li role="none">
+                  <form method="post" action="{{ url_for('logout') }}" class="hdr-logout">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" role="menuitem">Log Out</button>
+                  </form>
+                </li>
+              </ul>
+            </div>
+          </details>
+        {% else %}
+          <a class="hdr-entry-btn" href="{{ url_for('login', next=request.full_path.rstrip('?')) }}" aria-label="Sign Up / Log In">Sign Up / Log In</a>
+        {% endif %}
+      </nav>
+      <nav class="hdr-main" aria-label="Main">
+        <button type="button" class="hdr-bars" aria-label="Main Menu" aria-expanded="false" aria-controls="hdr-mobile">{{ icon_bars }}</button>
+      </nav>
+    </div>
+  </div>
+  <div class="hdr-bottom">
+    <div class="hdr-wrap hdr-wrap-bottom">
+      <nav class="hdr-secondary" aria-label="Site menu">
+        {% for group in nav_groups %}
+          <details class="hdr-dd{% if group.align == 'right' %} hdr-dd-right{% endif %}">
+            <summary class="hdr-dd-btn" aria-haspopup="true">{{ group.label }}{{ icon_chevron }}</summary>
+            <div class="hdr-dd-content" role="menu">
+              <ul class="hdr-dd-group" role="group">
+                {% for item in group['items'] %}
+                  <li role="none"><a role="menuitem" href="{{ item.href }}">{{ item.label }}</a></li>
+                {% endfor %}
+              </ul>
+            </div>
+          </details>
+        {% endfor %}
+      </nav>
+    </div>
+  </div>
+  <div class="hdr-mobile" id="hdr-mobile" hidden>
+    <button type="button" class="hdr-mobile-close" aria-label="Main Menu">{{ icon_close }}</button>
+    <nav aria-label="Main menu">
+      {% for group in nav_groups %}
+        <details class="hdr-dd hdr-mdd">
+          <summary class="hdr-dd-btn" aria-haspopup="true">{{ group.label }}{{ icon_chevron }}</summary>
+          <div class="hdr-dd-content" role="menu">
+            <ul class="hdr-dd-group" role="group">
+              {% for item in group['items'] %}
+                <li role="none"><a role="menuitem" href="{{ item.href }}">{{ item.label }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+        </details>
+      {% endfor %}
+      <div class="hdr-mobile-user">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('user_profile', username=current_user.username) }}">{{ current_user.username }}</a>
+          <a href="{{ url_for('user_collection', username=current_user.username) }}">Collection</a>
+          <a href="{{ url_for('user_wantlist', username=current_user.username) }}">Wantlist</a>
+          <a href="{{ url_for('settings') }}">Settings</a>
+          <form method="post" action="{{ url_for('logout') }}" class="hdr-logout">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit">Log Out</button>
+          </form>
+        {% else %}
+          <a class="hdr-entry-btn" href="{{ url_for('login', next=request.full_path.rstrip('?')) }}">Sign Up / Log In</a>
+        {% endif %}
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main class="{% block main_class %}page{% endblock %}">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <ul class="flashes">
+        {% for cat, msg in messages %}
+          <li class="{{ cat }}">{{ msg }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <nav class="ftr-container" aria-label="Footer">
+    <div class="ftr-nav-wrapper">
+      <ul class="ftr-main-list" role="menu">
+        {% for col in footer_columns %}
+          <li role="none">
+            <header class="ftr-col-header"><span>{{ col.title }}</span></header>
+            <ul class="ftr-sub-list" role="group">
+              {% for item in col['items'] %}
+                <li role="none"><a role="menuitem" href="{{ item.href }}"{% if item.dialog %} data-dialog="{{ item.dialog }}"{% endif %}>{{ item.label }}</a></li>
+              {% endfor %}
+            </ul>
+          </li>
+        {% endfor %}
+      </ul>
+      <div class="ftr-social">
+        <ul class="ftr-social-links" role="group" aria-label="Discogs social channels (external links are disabled in this offline mirror)">
+          <li role="none"><a href="#" aria-label="Social Facebook" title="Facebook (external links are disabled in this offline mirror)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 3H13a4 4 0 0 0-4 4v2H7v3h2v9h3v-9h2.6l.4-3h-3V7.3c0-.4.3-.8.8-.8h2.2z"/></svg></a></li>
+          <li role="none"><a href="#" aria-label="Social Instagram" title="Instagram (external links are disabled in this offline mirror)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 7.3a4.7 4.7 0 1 0 0 9.4 4.7 4.7 0 0 0 0-9.4zm0 7.7a3 3 0 1 1 0-6 3 3 0 0 1 0 6zm5-8a1.1 1.1 0 1 1-2.2 0 1.1 1.1 0 0 1 2.2 0zM7.5 2h9A5.5 5.5 0 0 1 22 7.5v9a5.5 5.5 0 0 1-5.5 5.5h-9A5.5 5.5 0 0 1 2 16.5v-9A5.5 5.5 0 0 1 7.5 2zm0 1.8a3.7 3.7 0 0 0-3.7 3.7v9a3.7 3.7 0 0 0 3.7 3.7h9a3.7 3.7 0 0 0 3.7-3.7v-9a3.7 3.7 0 0 0-3.7-3.7z"/></svg></a></li>
+          <li role="none"><a href="#" aria-label="Social YouTube" title="YouTube (external links are disabled in this offline mirror)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22.5 7.2a2.8 2.8 0 0 0-2-2C18.8 4.8 12 4.8 12 4.8s-6.8 0-8.5.4a2.8 2.8 0 0 0-2 2A29 29 0 0 0 1 12a29 29 0 0 0 .5 4.8 2.8 2.8 0 0 0 2 2c1.7.4 8.5.4 8.5.4s6.8 0 8.5-.4a2.8 2.8 0 0 0 2-2A29 29 0 0 0 23 12a29 29 0 0 0-.5-4.8zM9.8 15.1V8.9l5.7 3.1z"/></svg></a></li>
+          <li role="none"><a href="#" aria-label="Social TikTok" title="TikTok (external links are disabled in this offline mirror)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.6 2h-3.2v13.1a2.8 2.8 0 1 1-2.8-2.8c.3 0 .6 0 .9.1V9.2a6 6 0 1 0 5.1 5.9V8.4a7.6 7.6 0 0 0 4.4 1.4V6.6A4.4 4.4 0 0 1 16.6 2z"/></svg></a></li>
+          <li role="none"><a href="#" aria-label="Social Linkedin" title="LinkedIn (external links are disabled in this offline mirror)"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4.8 3.5a1.9 1.9 0 1 1 0 3.8 1.9 1.9 0 0 1 0-3.8zM3.2 9h3.2v11H3.2zm5.4 0h3.1v1.5h.1c.4-.8 1.5-1.7 3.1-1.7 3.3 0 3.9 2.2 3.9 5V20h-3.2v-5.4c0-1.3 0-2.9-1.8-2.9s-2 1.4-2 2.8V20H8.6z"/></svg></a></li>
+          <li role="none"><a href="#" aria-label="Social X" title="X (external links are disabled in this offline mirror)"><svg class="ftr-x" viewBox="0 0 24 24" aria-hidden="true"><path d="M17.8 3h3l-6.6 7.6L22 21h-6.1l-4.8-6.2L5.6 21h-3l7.1-8.1L2 3h6.2l4.3 5.7zm-1 16.2h1.7L7.3 4.7H5.5z"/></svg></a></li>
+        </ul>
+        <form class="ftr-email" data-newsletter action="#" method="get">
+          <h3 class="ftr-form-title" id="newsletter-label">Find music, track trends &amp; stay updated.</h3>
+          <input class="ftr-email-input" type="text" placeholder="Enter email address" aria-labelledby="newsletter-label">
+          <div class="ftr-success" role="status" hidden>Thank you for signing up for our newsletter!</div>
+          <button class="ftr-signup-btn" type="submit">Sign Up</button>
+          <p class="ftr-terms">By entering my email address, I consent to receive communications about music, promotions, and Discogs. Unsubscribe at any time using the “unsubscribe” link in the emails. Learn more about your rights and how Discogs handles your personal data by reviewing the <a href="/legal/privacy-policy">Privacy Policy.</a></p>
+          <ul class="ftr-badges" role="group">
+            <li role="none"><a class="ftr-badge" aria-label="Discogs App: Apple App store link" href="/about/app"><img src="{{ url_for('static', filename='external_cache/homepage/app-store-badge.svg') }}" alt="app-logo"></a></li>
+            <li role="none"><a class="ftr-badge" aria-label="Discogs App: Google Play link" href="/about/app"><img src="{{ url_for('static', filename='external_cache/homepage/google-play-badge.png') }}" alt="android-logo"></a></li>
+          </ul>
+        </form>
+      </div>
+    </div>
+  </nav>
+  <nav class="ftr-banner" aria-label="Legal">
+    <div class="ftr-banner-container">
+      <div class="ftr-banner-buttons-wrapper">
+        <div class="ftr-lang-section">
+          <div class="ftr-lang-select-btn">
+            <div class="ftr-lang-contents">
+              <span class="ftr-globe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm6.9 9h-3a15 15 0 0 0-1.3-5.4A8 8 0 0 1 18.9 11zM12 4c.9 1.2 1.7 3.6 1.9 7h-3.8c.2-3.4 1-5.8 1.9-7zM5.1 11a8 8 0 0 1 4.3-5.4A15 15 0 0 0 8.1 11zm0 2h3a15 15 0 0 0 1.3 5.4A8 8 0 0 1 5.1 13zM12 20c-.9-1.2-1.7-3.6-1.9-7h3.8c-.2 3.4-1 5.8-1.9 7zm2.6-1.6a15 15 0 0 0 1.3-5.4h3a8 8 0 0 1-4.3 5.4z"/></svg></span>
+              <select id="i18n_select" name="language_code" aria-label="Language">
+                {% for code, name in [('de','Deutsch'),('en','English'),('es','Español'),('fr','Français'),('it','Italiano'),('ja','日本語'),('ko','한국어'),('pt_BR','Português (Brasil)'),('ru','Русский')] %}
+                  <option value="{{ code }}" {% if code == 'en' %}selected{% endif %}>{{ name }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ftr-banner-links-wrapper">
+        <ul class="ftr-banner-links" role="group">
+          <li role="none"><div class="ftr-banner-header"><span id="copyright">© {{ now.year }} Discogs®</span></div></li>
+          <li role="none"><a class="ftr-banner-link" href="/legal/cookie-settings"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 10 10 3 3 0 0 1-3-3 3 3 0 0 1-3-3 3 3 0 0 1-3-3 10 10 0 0 0-1-1zm-4 8a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm3 5a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3zm4-2a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3z"/></svg><span>Cookie Settings</span></a></li>
+          <li role="none"><a class="ftr-banner-link" href="/legal/cookie-policy">Cookie Policy</a></li>
+          <li role="none"><a class="ftr-banner-link" href="/legal/terms-of-service">Terms of Service</a></li>
+          <li role="none"><a class="ftr-banner-link" href="/legal/privacy-policy">Privacy Policy</a></li>
+          <li role="none"><a class="ftr-banner-link" href="/legal/california-privacy-notice">California Privacy Notice</a></li>
+          <li role="none"><a class="ftr-banner-link" href="/legal/accessibility-statement">Accessibility Statement</a></li>
+          <li role="none"><a class="ftr-banner-link" href="/legal/impressum">Impressum</a></li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <dialog id="shortcuts-dialog" class="shortcuts-dialog">
+    <div class="shortcuts-dialog-header">
+      <h2 id="shortcuts-dialog-title">Keyboard Shortcuts</h2>
+      <button type="button" class="shortcuts-dialog-close" aria-label="Close">×</button>
+    </div>
+    <div class="shortcuts-dialog-body">
+      <div class="shortcuts-checkbox"><label for="enable-shortcuts"><span>Enable Keyboard Shortcuts:</span></label> <input type="checkbox" id="enable-shortcuts"></div>
+      <div class="shortcuts-columns">
+        <div class="shortcuts-column">
+          <h3>Navigation</h3>
+          <ul class="shortcuts-list">
+            {% for keys, label in [('g f','Go to Forum'),('g g','Go to Groups'),('g d','Go to Dashboard'),('g c','Go to Collection'),('g w','Go to Wantlist'),('g s','Go to Submissions'),('g p','Go to Purchases'),('g i','Go to Inventory'),('g o','Go to Orders'),('g m','Go to Messages'),('g u','Go to User Profile'),('h','Go To Previous Page'),('l','Go To Next Page')] %}
+              <li>{% for k in keys.split(' ') %}<kbd>{{ k }}</kbd>{% endfor %}<span>{{ label }}</span></li>
+            {% endfor %}
+          </ul>
+          <h3>Forum Navigation</h3>
+          <ul class="shortcuts-list">
+            {% for keys, label in [('f r','Go To Recent'),('f p','Go To Posted'),('f s','Go To Started'),('f v','Go To Saved'),('f w','Go To Watched')] %}
+              <li>{% for k in keys.split(' ') %}<kbd>{{ k }}</kbd>{% endfor %}<span>{{ label }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="shortcuts-column">
+          <h3>Actions</h3>
+          <ul class="shortcuts-list">
+            {% for keys, label in [('a c','Add to Collection'),('a w','Add to Wantlist'),('a i','Add to Inventory'),('a l','Add to List'),('r w','Remove Release from Wantlist'),('g e','Go to Edit'),('j','Move Selection Down'),('k','Move Selection Up'),('o','Go to the Selection'),('v','View Images for Release'),('x','Check the Selection'),('/','Focus on Search'),('?','Show this Legend')] %}
+              <li>{% for k in keys.split(' ') %}<kbd>{{ k }}</kbd>{% endfor %}<span>{{ label }}</span></li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+      <p class="shortcuts-note">Keyboard shortcuts are listed for reference; they are not active in this offline mirror.</p>
+    </div>
+  </dialog>
+</footer>
+<script src="{{ url_for('static', filename='js/site.js') }}" defer></script>
+</body>
+</html>

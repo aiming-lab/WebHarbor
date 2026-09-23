@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Transfer money | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Transfer money</h1>
+    <p class="muted">Move money between your Chase accounts or send a payment to one of your cards. Transfers scheduled for a future date can be canceled any time before they post.</p>
+    <div class="form-card form-card--wide">
+      <form method="post" action="{{ url_for('account_transfer') }}">
+        <label for="from_account">From account</label>
+        <select id="from_account" name="from_account" required>
+          {% for val, label in options %}
+          <option value="{{ val }}" {{ 'selected' if form.get('from_account') == val }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <label for="to_account">To account</label>
+        <select id="to_account" name="to_account" required>
+          {% for val, label in options %}
+          <option value="{{ val }}" {{ 'selected' if form.get('to_account') == val }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+        <div class="form-grid-2">
+          <div>
+            <label for="amount">Amount ($)</label>
+            <input id="amount" name="amount" type="text" value="{{ form.get('amount', '') }}" placeholder="250" required>
+          </div>
+          <div>
+            <label for="when">Date</label>
+            <input id="when" name="when" type="text" value="{{ form.get('when', '') }}" placeholder="YYYY-MM-DD">
+          </div>
+        </div>
+        <label for="frequency">Frequency</label>
+        <select id="frequency" name="frequency">
+          <option value="one-time" {{ 'selected' if form.get('frequency') == 'one-time' }}>One-time</option>
+          <option value="weekly" {{ 'selected' if form.get('frequency') == 'weekly' }}>Weekly</option>
+          <option value="monthly" {{ 'selected' if form.get('frequency') == 'monthly' }}>Monthly</option>
+        </select>
+        <label for="memo">Memo (optional)</label>
+        <input id="memo" name="memo" type="text" value="{{ form.get('memo', '') }}" placeholder="Autosave to savings">
+        <div class="form-actions">
+          <button class="btn btn--green" type="submit">Schedule transfer</button>
+          <a href="{{ url_for('account_transfers') }}">View all transfers</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

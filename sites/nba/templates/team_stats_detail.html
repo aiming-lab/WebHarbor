@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}{{ team.full_name }} Stats - NBA{% endblock %}
+{% block content %}
+<section class="team-header" style="--team: {{ team.color }}">
+  <img src="{{ team.logo }}" alt="">
+  <div>
+    <span class="kicker">{{ team.conference }} · {{ team.division }}</span>
+    <h1>{{ team.full_name }} Stats</h1>
+    <p>{{ team.arena }} · Coach {{ team.coach }}</p>
+    <div class="tab-row team-tabs">
+      <a href="{{ url_for('team_detail', slug=team.slug) }}">Profile</a>
+      <a href="{{ url_for('team_roster', slug=team.slug) }}">Roster</a>
+      <a href="{{ url_for('team_schedule', slug=team.slug) }}">Schedule</a>
+      <a class="active" href="{{ url_for('team_stats_detail', slug=team.slug) }}">Stats</a>
+      <a href="{{ url_for('tickets', team=team.slug) }}">Tickets</a>
+    </div>
+  </div>
+</section>
+<section class="content-block">
+  <div class="stat-tile-grid">
+    <div class="stat-tile"><span>Record</span><strong>{{ team.wins }}-{{ team.losses }}</strong></div>
+    <div class="stat-tile"><span>Win Pct</span><strong>{{ "%.3f"|format(team.win_pct) }}</strong></div>
+    <div class="stat-tile"><span>Point Diff</span><strong>{{ team.point_diff|signed }}</strong></div>
+    <div class="stat-tile"><span>Last 10</span><strong>{{ team.last_ten }}</strong></div>
+  </div>
+  <div class="split-layout content-block inset">
+    <main>
+      <div class="section-title"><h2>Player Leaders</h2><a href="{{ url_for('player_stats', team=team.slug) }}">League Table</a></div>
+      <table class="data-table">
+        <thead><tr><th>Player</th><th>No.</th><th>Pos</th><th>PTS</th><th>REB</th><th>AST</th><th>STL</th><th>BLK</th></tr></thead>
+        <tbody>
+          {% for player in players %}
+            <tr>
+              <td><a class="player-cell" href="{{ url_for('player_detail', slug=player.slug) }}"><img src="{{ player.image }}" alt="">{{ player.name }}</a></td>
+              <td>{{ player.jersey }}</td><td>{{ player.position }}</td><td>{{ "%.1f"|format(player.ppg) }}</td><td>{{ "%.1f"|format(player.rpg) }}</td><td>{{ "%.1f"|format(player.apg) }}</td><td>{{ "%.1f"|format(player.spg) }}</td><td>{{ "%.1f"|format(player.bpg) }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </main>
+    <aside class="portal-rail">
+      <section class="rail-card"><h2>Team Splits</h2><a class="headline" href="{{ url_for('standings') }}"><span>Home</span>{{ team.home_record }}</a><a class="headline" href="{{ url_for('standings') }}"><span>Road</span>{{ team.road_record }}</a><a class="headline" href="{{ url_for('standings', section='margins') }}"><span>PPG / OPPG</span>{{ "%.1f"|format(team.ppg) }} / {{ "%.1f"|format(team.oppg) }}</a></section>
+      <section class="rail-card"><h2>Games</h2>{% for game in games[:5] %}<a class="headline" href="{{ url_for('game_detail', game_id=game.id) }}"><span>{{ game.status }}</span>{{ game.away_team.abbreviation }} at {{ game.home_team.abbreviation }}</a>{% endfor %}</section>
+    </aside>
+  </div>
+</section>
+{% endblock %}

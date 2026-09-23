@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Gift Cards - Bandcamp{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Bandcamp</p>
+            <h1>Gift cards</h1>
+            <p>Give the gift of independent music. Denominations are shown in USD.</p>
+        </div>
+    </div>
+    <div class="gift-grid">
+        {% for amount in denominations %}
+            <article class="gift-card gift-{{ amount }}">
+                <strong>${{ amount }}</strong>
+                <span>Bandcamp gift card</span>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="editorial-panel">
+        <div class="section-head compact"><h2>Redeem a gift card</h2></div>
+        <form method="post" action="{{ url_for('gift_cards') }}" class="gift-form">
+            <label>Gift card code
+                <input type="text" name="code" placeholder="BC-GC-XXXX-XXXX" required>
+            </label>
+            <button class="button-primary" type="submit">Redeem</button>
+        </form>
+        <p class="summary-mini">Card purchases are simulated in this offline mirror; redeem codes use the BC-GC-XXXX-XXXX format.</p>
+    </div>
+</section>
+{% endblock %}

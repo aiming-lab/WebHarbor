@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Sign in | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-head">
+    <h1>Welcome to Birkenstock</h1>
+  </div>
+  <div class="auth-cols">
+    <div class="auth-col">
+      <h2>ALREADY A CUSTOMER</h2>
+      <p class="sub">Use your account for faster checkout and easy order tracking.</p>
+      <form method="post" class="login-form" action="/us/login/{% if next %}?next={{ next | urlencode }}{% endif %}">
+        <p class="req-note">Required fields *</p>
+        <div class="field">
+          <label for="email">Email address*</label>
+          <input type="email" id="email" name="email" required autocomplete="email">
+        </div>
+        <div class="field">
+          <label for="password">Password*</label>
+          <input type="password" id="password" name="password" required autocomplete="current-password">
+        </div>
+        <div class="login-row">
+          <label class="checkbox-row"><input type="checkbox" name="remember"> Save log-in</label>
+          <a href="/us/service/#password">Forgot password?</a>
+        </div>
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <button type="submit" class="btn btn-dark btn-wide">LOG IN</button>
+      </form>
+    </div>
+    <div class="auth-col">
+      <h2>JOIN BIRKENSTOCK VIP</h2>
+      <ul class="vip-points">
+        <li>Earn points, unlock rewards and access more as you go.</li>
+        <li>Sign up today and get 25 points toward your first reward.</li>
+      </ul>
+      <a class="btn btn-outline btn-wide" href="/us/register">JOIN NOW</a>
+      <p class="captcha-note">This site is protected by reCAPTCHA and the Google <a href="/us/policies/privacy/">Privacy Policy</a> and <a href="/us/policies/terms/">Terms of Service</a> apply.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

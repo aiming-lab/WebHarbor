@@ -1,0 +1,459 @@
+[
+  {
+    "user": "bob.c@test.com",
+    "text": "Search separately for \"R.I.P. Normal Flagship Phones but Why?\" and \"Top 17 New Technology Trends That Will Define 2026\". Open both watch pages, compare their durations, save the longer video to Watch Later, and confirm it in that list.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('can-this-studio-camera-beat-a-flagship-phone','three-display-calibrators-tested-back-to-back')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/watch/can-this-studio-camera-beat-a-flagship-phone",
+      "/watch/three-display-calibrators-tested-back-to-back"
+    ],
+    "queries": [
+      [
+        "/results",
+        "search_query",
+        "flagship"
+      ],
+      [
+        "/results",
+        "search_query",
+        "technology"
+      ]
+    ],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--0"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Open Watch Later and compare the watch-page durations of the saved flagship-phones video and Ibiza Summer Mix. Remove the shorter of those two from Watch Later, keep the longer one, and revisit Watch Later to check the result.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('can-this-studio-camera-beat-a-flagship-phone','rainy-city-vinyl-mix-for-late-work')  ORDER BY duration_seconds ASC LIMIT 1",
+        "operation": "remove"
+      }
+    ],
+    "paths": [
+      "/feed/watch-later",
+      "/watch/can-this-studio-camera-beat-a-flagship-phone",
+      "/watch/rainy-city-vinyl-mix-for-late-work"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--1"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Open the AI Uncovered channel and inspect its public playlists and uploads. Open its most-viewed upload, subscribe to the channel and save that upload to Watch Later. Confirm the saved video and the new channel subscription on your account page.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE channel_id=(SELECT id FROM channels WHERE name='AI Uncovered') ORDER BY views DESC LIMIT 1",
+        "operation": "add"
+      },
+      {
+        "table": "subscriptions",
+        "query": "SELECT id FROM channels WHERE name='AI Uncovered'",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/channel/frame-by-frame",
+      "/watch/inside-the-tiny-pc-that-replaced-my-laptop",
+      "/feed/watch-later"
+    ],
+    "queries": [
+      [
+        "/channel/frame-by-frame",
+        "tab",
+        "playlists"
+      ]
+    ],
+    "confirm": "/account",
+    "id": "YouTube--2"
+  },
+  {
+    "user": "david.k@test.com",
+    "text": "Search for Ibiza Summer Mix 2026, open the Magic Club result and then the same channel\u2019s Best Acoustic Covers of Popular Songs 2026 video. Compare the watch-page durations, save the longer video to Watch Later, and confirm it there.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('rainy-city-vinyl-mix-for-late-work','loft-session-midnight-rhodes-and-tape-echo')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/watch/rainy-city-vinyl-mix-for-late-work",
+      "/watch/loft-session-midnight-rhodes-and-tape-echo",
+      "/channel/night-shift-jazz"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--3"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "From the Music category, compare the Magic Club duration cards. Find its longest upload that is under 45 minutes, open it, save it to Watch Later, and confirm it in that list.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE channel_id=(SELECT id FROM channels WHERE name='Magic Club') AND duration_seconds<2700 ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [],
+    "queries": [
+      [
+        "/",
+        "category",
+        "Music"
+      ]
+    ],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--4"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Open Watch Later and identify the saved Gaming video. From the Gaming category compare the channel\u2019s uploads by views. Replace the saved gaming video with that channel\u2019s most-viewed upload, preserving the saved travel video, and confirm the resulting Watch Later list.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('which-stealth-build-survives-nightmare-mode')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "remove"
+      },
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('speedrunning-the-archive-ruins-in-18-minutes','which-stealth-build-survives-nightmare-mode','five-open-world-settings-that-still-feel-new','best-controller-settings-for-faster-aiming')  ORDER BY views DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/feed/watch-later",
+      "/channel/pixel-quest",
+      "/watch/which-stealth-build-survives-nightmare-mode",
+      "/watch/speedrunning-the-archive-ruins-in-18-minutes"
+    ],
+    "queries": [
+      [
+        "/",
+        "category",
+        "Gaming"
+      ]
+    ],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--5"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Check Watch Later, then open your subscriptions feed and the Magic Club channel. Compare its upload durations and save its longest video that is not already in Watch Later. Revisit Watch Later to confirm the addition while keeping your existing saves.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE channel_id=(SELECT id FROM channels WHERE name='Magic Club') AND id NOT IN (SELECT video_id FROM watch_later WHERE user_id=:user) ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/feed/watch-later",
+      "/feed/subscriptions",
+      "/channel/night-shift-jazz"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--6"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Open /playlist/after-hours-mix and compare all three item durations. Open and save each video lasting at least 20 minutes but less than one hour to Watch Later. Confirm that both qualifying items were added and your earlier saves remain.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT v.id FROM videos v JOIN playlist_videos pv ON pv.video_id=v.id JOIN playlists p ON p.id=pv.playlist_id WHERE p.slug='after-hours-mix' AND v.duration_seconds>=1200 AND v.duration_seconds<3600",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/playlist/after-hours-mix"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--7"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Search for New York City walk - Explore Manhattan and open it. Visit its channel and compare its duration with the London City Walk upload. Save the longer video to Watch Later and subscribe to its channel. Confirm the saved video and subscription on your account page.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('the-quiet-coffee-streets-of-kyoto-at-dawn','how-to-pack-one-bag-for-a-rainy-spring-city')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add"
+      },
+      {
+        "table": "subscriptions",
+        "query": "SELECT id FROM channels WHERE name='Walking OZ'",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/watch/the-quiet-coffee-streets-of-kyoto-at-dawn",
+      "/watch/how-to-pack-one-bag-for-a-rainy-spring-city",
+      "/channel/window-seat",
+      "/feed/watch-later"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "YouTube--8"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Starting in Science, open Level 1 to 100 Science Experiments and Level 1 to 100 Science Gadgets. Check that comments are enabled on both and compare their views. Save the less-viewed video to Watch Later and confirm it there.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('why-lunar-dust-destroys-precision-hardware','how-quantum-sensors-read-invisible-changes') AND comments_enabled=1 ORDER BY views ASC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/watch/why-lunar-dust-destroys-precision-hardware",
+      "/watch/how-quantum-sensors-read-invisible-changes"
+    ],
+    "queries": [
+      [
+        "/",
+        "category",
+        "Science"
+      ]
+    ],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--9"
+  },
+  {
+    "user": "david.k@test.com",
+    "text": "Open Liked videos and find the liked technology upload. Open it, move it to Watch Later, and remove your Like. Check both feeds to confirm that it is saved for later but no longer liked.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT v.id FROM videos v JOIN user_likes l ON l.video_id=v.id WHERE l.user_id=:user AND v.category='Technology'",
+        "operation": "add"
+      },
+      {
+        "table": "user_likes",
+        "query": "SELECT v.id FROM videos v JOIN user_likes l ON l.video_id=v.id WHERE l.user_id=:user AND v.category='Technology'",
+        "operation": "remove"
+      }
+    ],
+    "paths": [
+      "/feed/liked",
+      "/watch/can-this-studio-camera-beat-a-flagship-phone"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--10"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Open the Hafu Go channel and compare the views on Level 1 to 100 Science Gadgets and I Tested Every Science Gadget on Amazon. Open both watch pages, Like the less-viewed video, and confirm it in Liked videos while retaining earlier likes.",
+    "operations": [
+      {
+        "table": "user_likes",
+        "query": "SELECT id FROM videos WHERE slug IN ('how-quantum-sensors-read-invisible-changes','building-a-tabletop-gravity-wave-demo')  ORDER BY views ASC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/channel/quantum-lab",
+      "/watch/how-quantum-sensors-read-invisible-changes",
+      "/watch/building-a-tabletop-gravity-wave-demo"
+    ],
+    "queries": [],
+    "confirm": "/feed/liked",
+    "id": "YouTube--11"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Search for Tajio\u2019s Ultimate Grand Line Curry Cook-off and open the cookingWITHfred result. Compare it with that channel\u2019s Pasta recipe video, checking likes and whether comments are enabled. Save the one with comments enabled and more than 20,000 likes to Watch Later, then confirm it there.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('freezer-dumplings-with-a-restaurant-finish','the-crispy-chili-oil-noodles-i-make-weekly') AND comments_enabled=1 AND likes>20000 ORDER BY likes DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/watch/freezer-dumplings-with-a-restaurant-finish",
+      "/watch/the-crispy-chili-oil-noodles-i-make-weekly",
+      "/channel/pantry-notes"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--12"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Open Watch Later and the saved Madrid city walk. Compare its displayed duration with the same channel\u2019s New York City walk. Replace the shorter Madrid save with the longer New York walk, preserve the cooking save, and verify Watch Later.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('a-weekend-rail-journey-across-northern-spain')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "remove"
+      },
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('a-weekend-rail-journey-across-northern-spain','the-quiet-coffee-streets-of-kyoto-at-dawn')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/feed/watch-later",
+      "/channel/window-seat",
+      "/watch/a-weekend-rail-journey-across-northern-spain",
+      "/watch/the-quiet-coffee-streets-of-kyoto-at-dawn"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--13"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Open MrBeast Gaming and find its highest-viewed upload. Check that it appears in Trending, then open it, Like it and subscribe to the channel. Confirm the Like in Liked videos and the subscription on your account page.",
+    "operations": [
+      {
+        "table": "user_likes",
+        "query": "SELECT id FROM videos WHERE slug IN ('speedrunning-the-archive-ruins-in-18-minutes','which-stealth-build-survives-nightmare-mode','five-open-world-settings-that-still-feel-new','best-controller-settings-for-faster-aiming')  ORDER BY views DESC LIMIT 1",
+        "operation": "add"
+      },
+      {
+        "table": "subscriptions",
+        "query": "SELECT id FROM channels WHERE name='MrBeast Gaming'",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/channel/pixel-quest",
+      "/feed/trending",
+      "/feed/liked"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "YouTube--14"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Search for technology trends 2026 and open the AI Uncovered result. Compare its watch-page duration and comment availability with R.I.P. Normal Flagship Phones but Why?. Like the shorter video with comments enabled, then verify it in Liked videos.",
+    "operations": [
+      {
+        "table": "user_likes",
+        "query": "SELECT id FROM videos WHERE slug IN ('three-display-calibrators-tested-back-to-back','can-this-studio-camera-beat-a-flagship-phone') AND comments_enabled=1 ORDER BY duration_seconds ASC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/watch/three-display-calibrators-tested-back-to-back",
+      "/watch/can-this-studio-camera-beat-a-flagship-phone"
+    ],
+    "queries": [
+      [
+        "/results",
+        "search_query",
+        "technology"
+      ]
+    ],
+    "confirm": "/feed/liked",
+    "id": "YouTube--15"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Open Watch Later and inspect the saved Gaming and Madrid travel videos on their watch pages. Compare their views, remove only the higher-viewed one from Watch Later, and return to confirm the lower-viewed video remains.",
+    "operations": [
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('which-stealth-build-survives-nightmare-mode','a-weekend-rail-journey-across-northern-spain')  ORDER BY views DESC LIMIT 1",
+        "operation": "remove"
+      }
+    ],
+    "paths": [
+      "/feed/watch-later",
+      "/watch/which-stealth-build-survives-nightmare-mode",
+      "/watch/a-weekend-rail-journey-across-northern-spain"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--16"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Check Liked videos, then browse the Gaming category and MrBeast Gaming channel. Compare the views of uploads you have not liked yet. Open and Like the most-viewed remaining upload, then verify that Liked videos contains it alongside your previous Like.",
+    "operations": [
+      {
+        "table": "user_likes",
+        "query": "SELECT id FROM videos WHERE channel_id=(SELECT id FROM channels WHERE name='MrBeast Gaming') AND id NOT IN (SELECT video_id FROM user_likes WHERE user_id=:user) ORDER BY views DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/feed/liked",
+      "/channel/pixel-quest"
+    ],
+    "queries": [
+      [
+        "/",
+        "category",
+        "Gaming"
+      ]
+    ],
+    "confirm": "/feed/liked",
+    "id": "YouTube--17"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Find Top 17 New Technology Trends That Will Define 2026 and open its watch page. Add the comment \"Insightful breakdown of trend priorities.\", save the video to Watch Later, then verify the exact new comment and the saved video in Watch Later.",
+    "operations": [
+      {
+        "table": "comments",
+        "query": "SELECT id FROM videos WHERE slug IN ('three-display-calibrators-tested-back-to-back')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add",
+        "body": "Insightful breakdown of trend priorities."
+      },
+      {
+        "table": "watch_later",
+        "query": "SELECT id FROM videos WHERE slug IN ('three-display-calibrators-tested-back-to-back')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/watch/three-display-calibrators-tested-back-to-back"
+    ],
+    "queries": [],
+    "confirm": "/feed/watch-later",
+    "id": "YouTube--18"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Find R.I.P. Normal Flagship Phones but Why? and open its watch page. Add the comment \"Great teardown on battery tradeoffs.\", Like the video, then verify the exact new comment and the video in Liked videos.",
+    "operations": [
+      {
+        "table": "comments",
+        "query": "SELECT id FROM videos WHERE slug IN ('can-this-studio-camera-beat-a-flagship-phone')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add",
+        "body": "Great teardown on battery tradeoffs."
+      },
+      {
+        "table": "user_likes",
+        "query": "SELECT id FROM videos WHERE slug IN ('can-this-studio-camera-beat-a-flagship-phone')  ORDER BY duration_seconds DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/watch/can-this-studio-camera-beat-a-flagship-phone"
+    ],
+    "queries": [],
+    "confirm": "/feed/liked",
+    "id": "YouTube--19"
+  }
+]

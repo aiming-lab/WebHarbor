@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Scam Heatmap | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('scamtracker_home') }}">BBB Scam Tracker</a><span>/</span>
+    <span>Scam Heatmap</span>
+  </nav>
+
+  <h1 style="color:#032160;letter-spacing:1px;font-size:1.6rem;">SCAM TRACKER</h1>
+  <h2 style="color:#032160;font-size:2.2rem;margin-bottom:.4rem;">Heatmap</h2>
+  <p style="max-width:820px;color:#53565a;">Scam reports in this snapshot, grouped by location. Totals and loss percentages describe the selected period; median loss uses reports with a positive loss. Click a location to explore its reports.</p>
+
+  <div class="scam-stats">
+    <div class="stat-card">
+      <div class="label">REPORTS</div>
+      <div class="value">{{ '{:,}'.format(stats.reports) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">MEDIAN LOSS</div>
+      <div class="value">${{ '{:,}'.format(stats.median_loss) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">% OF SCAMS REPORTING LOSSES</div>
+      <div class="value">{{ stats.pct_loss }}%</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">LOCATIONS REPORTING</div>
+      <div class="value">{{ stats.locations }}</div>
+    </div>
+  </div>
+
+  <div class="pill-row" aria-label="Period">
+    <span>PERIOD</span>
+    <a href="{{ url_for('scam_dashboard', period='30d', metric=metric) }}" {% if period == '30d' %}class="active"{% endif %}>Last 30 days</a>
+    <a href="{{ url_for('scam_dashboard', period='90d', metric=metric) }}" {% if period == '90d' %}class="active"{% endif %}>Last 90 days</a>
+    <a href="{{ url_for('scam_dashboard', period='12m', metric=metric) }}" {% if period == '12m' %}class="active"{% endif %}>Last 12 months</a>
+    <a href="{{ url_for('scam_dashboard', period='all', metric=metric) }}" {% if period == 'all' %}class="active"{% endif %}>All time</a>
+  </div>
+  <div class="pill-row" aria-label="Metric">
+    <span>METRIC</span>
+    <a href="{{ url_for('scam_dashboard', period=period, metric='losses') }}" {% if metric == 'losses' %}class="active"{% endif %}>Total losses</a>
+    <a href="{{ url_for('scam_dashboard', period=period, metric='reports') }}" {% if metric == 'reports' %}class="active"{% endif %}>Total reports</a>
+    <a href="{{ url_for('scam_dashboard', period=period, metric='median') }}" {% if metric == 'median' %}class="active"{% endif %}>Median reported loss</a>
+  </div>
+
+  <div class="side-card">
+    <h3>Scam Reports by location</h3>
+    <p style="font-size:.85rem;color:#53565a;text-align:right;">Click any location to drill down</p>
+    <svg viewBox="192 9 1028 746" style="width:100%;height:auto;" role="img" aria-label="United States scam heatmap">
+      {% for st, d in us_paths.items() %}
+      <a href="{{ url_for('scam_lookup', state=st) }}">
+        <path d="{{ d }}" fill="{{ fills.get(st, '#eaebea') }}" stroke="#fff" stroke-width="0.7">
+          <title>{{ st }}{% if st in labels %} — {{ labels[st] }}{% endif %}</title>
+        </path>
+      </a>
+      {% endfor %}
+    </svg>
+    <div class="heat-legend">
+      <span>Low</span><span class="ramp"></span><span>High</span>
+      <span style="margin-left:.6rem;">&middot; colored by {{ 'total losses' if metric == 'losses' else ('total reports' if metric == 'reports' else 'median reported loss') }}</span>
+    </div>
+    <p style="font-size:.85rem;color:#53565a;">Click any location to drill down into its reports.</p>
+    <label style="font-size:.85rem;font-weight:700;color:#032160;display:block;margin-top:.8rem;">Jump to location</label>
+    <form method="get" action="{{ url_for('scam_lookup') }}" style="display:flex;gap:.5rem;">
+      <select name="state" class="sort-select" style="flex:1;">
+        <option value="">All locations</option>
+        {% for st in by_state | sort %}<option value="{{ st }}">{{ st }}</option>{% endfor %}
+      </select>
+      <button class="btn btn-primary" type="submit" style="padding:.45rem 1rem;">Go</button>
+    </form>
+  </div>
+
+  <div class="side-card">
+    <h3>Location breakdown</h3>
+    <table class="state-rank">
+      <tr><th>Location</th><th>Reports</th><th>Total losses</th><th>% reporting losses</th></tr>
+      {% for st, rec in by_state.items() | sort(attribute='1.reports', reverse=True) %}
+      <tr><td><a href="{{ url_for('scam_lookup', state=st) }}">{{ st }}</a></td>
+      <td>{{ rec.reports }}</td><td>${{ '{:,.0f}'.format(rec.losses) }}</td>
+      <td>{{ '{:.0f}'.format(100.0 * rec.lost_reports / rec.reports) if rec.reports else 0 }}%</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="side-card">
+    <h3>Top scam types this period</h3>
+    <table class="state-rank">
+      <tr><th>Scam type</th><th>Reports</th></tr>
+      {% for t, c in top_types %}
+      <tr><td>{{ t }}</td><td>{{ c }}</td></tr>
+      {% endfor %}
+    </table>
+  </div>
+
+  <div class="side-card">
+    <h3>How to use</h3>
+    <p style="font-size:.92rem;">Click any location on the map (or pick from the list) to drill down into reports, total losses, the share of reports that lost money, and the top scam types for that region.</p>
+    <p style="font-size:.92rem;"><b>Tip:</b> switch the metric pills to recolor the map by total losses, reports, or median reported loss. Period pills change the reporting window.</p>
+  </div>
+
+  <p style="font-size:.85rem;color:#53565a;max-width:820px;">BBB Scam Tracker Heatmap was created with financial support from JPMorganChase. JPMorgan Chase &amp; Co. and its affiliates are not responsible for, nor provide or endorse third party products, services or other content.</p>
+</div>
+{% endblock %}

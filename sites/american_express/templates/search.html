@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Search | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Search</p>
+  <h1 class="section-title" style="margin-top:8px;">Search</h1>
+  <form method="get" action="{{ url_for('search') }}" class="filter-row" style="margin-top:16px;">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search Cards, banking products, and offers"
+           style="flex:1 1 380px;padding:11px 16px;border:1px solid #9aa5ad;border-radius:999px;font-size:15px;">
+    <button class="btn btn-primary" type="submit">Search</button>
+  </form>
+
+  {% if q %}
+    {% set total = (cards|length) + (banking|length) + (offers|length) %}
+    <p class="section-sub">{{ total }} result{{ 's' if total != 1 }} for &ldquo;{{ q }}&rdquo;</p>
+
+    {% if cards %}
+    <h2 class="section-title" style="font-size:20px;">Cards ({{ cards|length }})</h2>
+    <div class="card-grid" style="margin-bottom:30px;">
+      {% for card in cards %}
+      <div class="card-tile">
+        <a class="art-link" href="{{ url_for('card_detail', slug=card.slug) }}">
+          <img src="{{ url_for('static', filename=card.card_art.replace('static/', '')) }}" alt="{{ card.name }}">
+        </a>
+        <h3><a href="{{ url_for('card_detail', slug=card.slug) }}">{{ card.name }}</a></h3>
+        <p class="fee">Annual Fee: <b>{{ card.annual_fee_text }}</b></p>
+        <p style="font-size:13px;color:#5c5f63;">{{ card.rewards_summary }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if banking %}
+    <h2 class="section-title" style="font-size:20px;">Banking ({{ banking|length }})</h2>
+    <div class="card-grid" style="margin-bottom:30px;">
+      {% for product in banking %}
+      <div class="card-tile">
+        <h3>{{ product.name }}</h3>
+        <p class="fee"><b>{{ product.apy_text }}</b></p>
+        <p style="font-size:14px;">{{ product.intro }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if offers %}
+    <h2 class="section-title" style="font-size:20px;">Amex Offers ({{ offers|length }})</h2>
+    <div class="card-grid" style="margin-bottom:30px;">
+      {% for offer in offers %}
+      <div class="card-tile">
+        <h3>{{ offer.headline }}</h3>
+        <p style="font-size:14px;">{{ offer.body }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if total == 0 %}
+    <div class="card-tile">
+      <h3>No results found for &ldquo;{{ q }}&rdquo;</h3>
+      <p style="font-size:14px;">Try searching for a Card name (for example, &ldquo;Platinum&rdquo;), a banking product (for example, &ldquo;savings&rdquo;), or an offer merchant.</p>
+    </div>
+    {% endif %}
+  {% else %}
+    <p class="section-sub">Search across Cards, banking products, and Amex Offers.</p>
+  {% endif %}
+</div>
+{% endblock %}

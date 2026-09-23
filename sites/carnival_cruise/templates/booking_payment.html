@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Payment | Carnival Cruise Line{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="step-strip" aria-label="Booking steps">
+    <a class="step-pill done" href="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=sailing.sailing_id, numGuests=num_guests) }}">1. Select Stateroom</a><span class="step-arrow">&#8250;</span>
+    <a class="step-pill done" href="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=sailing.sailing_id, numGuests=num_guests, roomType=room_type, step='guests') }}">2. Guest Details</a><span class="step-arrow">&#8250;</span>
+    <span class="step-pill active">3. Payment</span><span class="step-arrow">&#8250;</span>
+    <span class="step-pill">4. Confirmation</span>
+  </div>
+
+  <div class="itin-summary" style="margin-top:0;">
+    <div class="sum-main">
+      <h1>{{ itin.title | upper }}</h1>
+      <div class="result-ship">{{ itin.ship.name }}</div>
+      <div class="sum-dates">{{ sailing.dep_arr }} ({{ sailing.dep_arr_days }})</div>
+      <div class="sum-route">{{ room_type | capitalize }} stateroom &middot; {{ num_guests }} guest{{ 's' if num_guests > 1 }}
+        {% if session.get('booking_lead') %} &middot; Lead guest: {{ session.get('booking_lead') }}{% endif %}</div>
+    </div>
+    <div class="itin-price">
+      {% set rt_price = sailing.room_price(room_type) %}
+      <div class="price-from">Total Due</div>
+      <div class="price-big">${{ '%.2f' % ((rt_price or sailing.lowest) * num_guests) }}</div>
+      <div class="price-note">${{ '%d' % rt_price }} per person &times; {{ num_guests }}</div>
+    </div>
+  </div>
+
+  <div class="form-card" style="margin-top:26px;">
+    <h2>Payment Details</h2>
+    {% if not current_user.is_authenticated %}
+    <p class="flash flash-error" style="background:#FDECEF;border:1px solid #F5C9D2;color:#9B1C2C;padding:10px;border-radius:8px;font-size:14px;">
+      Please <a href="{{ url_for('login', next=request.full_path) }}">log in</a> or
+      <a href="{{ url_for('register') }}">create an account</a> to complete your booking.
+    </p>
+    {% endif %}
+    <form method="post" action="{{ url_for('booking', embkCode=itin.departure_port.code, itinCode=itin.code, durDays=itin.dur, shipCode=itin.ship.code, sailingID=sailing.sailing_id, numGuests=num_guests, roomType=room_type, step='payment') }}">
+      <div class="form-row">
+        <div>
+          <label for="card_type">Card Type</label>
+          <select id="card_type" name="card_type">
+            <option>Visa</option>
+            <option>Mastercard</option>
+          </select>
+        </div>
+        <div>
+          <label for="card_number">Card Number</label>
+          <input id="card_number" name="card_number" inputmode="numeric" required>
+        </div>
+      </div>
+      <label for="holder_name">Name on Card</label>
+      <input id="holder_name" name="holder_name" required
+             value="{{ current_user.full_name if current_user.is_authenticated else '' }}">
+      <div class="form-row">
+        <div>
+          <label for="exp_month">Exp. Month</label>
+          <input id="exp_month" name="exp_month" inputmode="numeric" placeholder="MM" required>
+        </div>
+        <div>
+          <label for="exp_year">Exp. Year</label>
+          <input id="exp_year" name="exp_year" inputmode="numeric" placeholder="YYYY" required>
+        </div>
+      </div>
+      <button class="btn btn-red btn-block" type="submit">COMPLETE BOOKING</button>
+      <div class="form-hint" style="margin-top:8px;">
+        Financing Powered by Flex Pay available at checkout — as low as $0 down + interest-free payments.
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

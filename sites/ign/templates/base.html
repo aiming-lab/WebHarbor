@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}IGN{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ign.css') }}">
+  <script defer src="{{ url_for('static', filename='js/ign.js') }}"></script>
+</head>
+<body id="top">
+  <div class="shell">
+    <aside class="rail {{ 'rail-subnav' if subnav is defined else '' }}" aria-label="IGN navigation">
+      {% if subnav is defined %}
+        <a class="subnav-back" href="{{ url_for('index') }}"><span>‹</span> HOME</a>
+        <nav class="subnav-menu" aria-label="{{ subnav.title }}">
+          <h2>{{ subnav.title }}</h2>
+          {% for item in subnav.links %}
+            <a class="{{ 'active' if item.key == subnav.active else '' }}" href="{{ item.href }}">{{ item.label }}</a>
+          {% endfor %}
+        </nav>
+      {% else %}
+        <a class="brand" href="{{ url_for('index') }}" aria-label="IGN home">
+          <span class="brand-word">IGN</span><span class="brand-dpad">✣</span>
+        </a>
+
+        <nav class="side-nav">
+          <a class="{{ 'active' if request.endpoint == 'index' else '' }}" href="{{ url_for('index') }}"><span>⌂</span>Home</a>
+          <a class="{{ 'active' if request.endpoint == 'search' else '' }}" href="{{ url_for('search') }}"><span>⌕</span>Search</a>
+          <a class="{{ 'active' if request.endpoint in ['reviews'] else '' }}" href="{{ url_for('reviews') }}"><span>▧</span>Reviews</a>
+          <a class="{{ 'active' if request.endpoint in ['news'] else '' }}" href="{{ url_for('news') }}"><span>▯</span>News</a>
+          <a class="{{ 'active' if request.endpoint in ['wikis', 'guide_detail'] else '' }}" href="{{ url_for('wikis') }}"><span>◎</span>Guides</a>
+          <a class="{{ 'active' if request.endpoint == 'maps' else '' }}" href="{{ url_for('maps') }}"><span>▥</span>Interactive Maps</a>
+          <a class="{{ 'active' if request.endpoint == 'playlist' else '' }}" href="{{ url_for('playlist') if current_user.is_authenticated else url_for('login') }}"><span>▤</span>Playlist</a>
+          <a class="{{ 'active' if request.endpoint == 'discover' else '' }}" href="{{ url_for('discover') }}"><span>◫</span>Discover</a>
+          <a class="{{ 'active' if request.endpoint == 'store' else '' }}" href="{{ url_for('store') }}"><span>□</span>Store</a>
+          <a class="{{ 'active' if request.endpoint == 'rewards' else '' }}" href="{{ url_for('rewards') }}"><span>✤</span>Rewards</a>
+          <a class="{{ 'active' if request.endpoint == 'videos' else '' }}" href="{{ url_for('videos') }}"><span>▷</span>Videos</a>
+          <a class="{{ 'active' if request.endpoint == 'privacy_policy' else '' }}" href="{{ url_for('privacy_policy') }}"><span>▣</span>Privacy Policy</a>
+          <a class="{{ 'active' if request.endpoint == 'terms_of_use' else '' }}" href="{{ url_for('terms_of_use') }}"><span>⚖</span>Terms of Use</a>
+          <a class="{{ 'active' if request.endpoint == 'follow_ign' else '' }}" href="{{ url_for('follow_ign') }}"><span>◌</span>More</a>
+          <a class="back-top-main" href="#top"><span>↑</span>Back To Top</a>
+        </nav>
+      {% endif %}
+
+      <div class="rail-login">
+        {% if current_user.is_authenticated %}
+          <a class="user-chip" href="{{ url_for('account') }}">
+            <span class="mini-avatar">✣</span>
+            <strong>{{ current_user.username }}</strong>
+          </a>
+          <a class="bell-chip" href="{{ url_for('alerts') }}" aria-label="Alerts">●</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Join for free or log in</a>
+        {% endif %}
+      </div>
+    </aside>
+
+    <main class="page">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+          <div class="flash-stack">
+            {% for category, message in messages %}
+              <div class="flash {{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</body>
+</html>

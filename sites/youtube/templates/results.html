@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Search · YouTube{% endblock %}
+{% block content %}
+<header class="section-header">
+  <h1>Search results</h1>
+  <p>{{ videos|length }} videos for “{{ search_query or 'all videos' }}”{% if selected_category != 'All' %} in {{ selected_category }}{% endif %}.</p>
+</header>
+<div class="chip-row compact">
+  {% for category in nav_categories %}
+    <a class="chip {% if category == selected_category %}active{% endif %}" href="{{ url_for('results', search_query=search_query, category=category, filter=active_filter) }}">{{ category }}</a>
+  {% endfor %}
+</div>
+<div class="chip-row compact">
+  {% for option in filter_options %}
+    <a class="chip {% if option == active_filter %}active{% endif %}" href="{{ url_for('results', search_query=search_query, category=selected_category, filter=option) }}">{{ option }}</a>
+  {% endfor %}
+</div>
+<section class="results-list">
+  {% for video in videos %}
+    <article class="result-row">
+      <a class="result-thumb" href="{{ url_for('watch', slug=video.slug) }}"><img src="{{ video.thumbnail_path }}" alt="{{ video.title }} thumbnail"></a>
+      <div class="result-copy">
+        <a class="video-title large" href="{{ url_for('watch', slug=video.slug) }}">{{ video.title }}</a>
+        <p class="video-subtitle">{{ video.relative_date }}</p>
+        <p class="video-subtitle"><a href="{{ url_for('channel', slug=video.channel.slug) }}">{{ video.channel.name }}</a></p>
+        <p class="result-description">{{ video.description }}</p>
+      </div>
+    </article>
+  {% else %}
+    <p class="empty-state">No videos matched this search. Try a broader query.</p>
+  {% endfor %}
+</section>
+{% endblock %}

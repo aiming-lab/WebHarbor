@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Cruises | Carnival Cruise Deals: Caribbean, The Bahamas, Alaska, and Mexico{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/ccl-logo-primary.svg') }}">
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to Main Content</a>
+<div class="important-notice">
+  <svg class="notice-icon" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2 1 21h22L12 2zm1 14h-2v2h2v-2zm0-7h-2v5h2V9z"/></svg>
+  <strong>IMPORTANT NOTICE</strong>
+  <span>Get important information on a privacy event that may impact you.</span>
+  <button class="notice-close" aria-label="Close notice" onclick="this.parentElement.style.display='none'">&times;</button>
+</div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo" href="{{ url_for('index') }}" aria-label="Carnival Home Page">
+      <img src="{{ url_for('static', filename='icons/ccl-logo-primary.svg') }}" alt="Carnival Cruise Line" width="180" height="44">
+    </a>
+    <nav class="main-nav" aria-label="Main">
+      <div class="nav-item has-menu">
+        <a href="{{ url_for('cruise_search') }}">Plan a Cruise</a>
+      </div>
+      <div class="nav-item"><a href="{{ url_for('ships_index') }}">Our Ships</a></div>
+      <div class="nav-item has-menu">
+        <a href="{{ url_for('destination_detail', slug='bahamas-cruises') }}">Destinations</a>
+        <div class="nav-menu">
+          {% for d in dests %}
+          <a href="{{ url_for('destination_detail', slug=d.slug) }}">{{ d.name }} Cruises</a>
+          {% endfor %}
+        </div>
+      </div>
+      <div class="nav-item"><a href="{{ url_for('cruise_deals') }}">Deals</a></div>
+      <div class="nav-item"><a href="{{ url_for('info_carnival_rewards') }}">Carnival Rewards</a></div>
+      <div class="nav-item"><a href="{{ url_for('manage_bookings') }}">Manage Bookings</a></div>
+    </nav>
+    <div class="header-actions">
+      <form class="header-search" action="{{ url_for('global_search') }}" method="get" role="search">
+        <input type="search" name="q" placeholder="Search" aria-label="Search the site" value="{{ request.args.get('q', '') }}">
+        <button type="submit" aria-label="Search">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="#0057B8" d="M15.5 14h-.79l-.28-.27a6.5 6.5 0 1 0-.7.7l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14z"/></svg>
+        </button>
+      </form>
+      {% if current_user.is_authenticated %}
+      <a class="login-btn logged-in" href="{{ url_for('account') }}">
+        <span class="user-dot" aria-hidden="true"></span> {{ current_user.first_name }}
+      </a>
+      {% else %}
+      <a class="login-btn" href="{{ url_for('login') }}">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="#fff" d="M12 12a5 5 0 1 0-5-5 5 5 0 0 0 5 5zm0 2c-4 0-8 2-8 5v1h16v-1c0-3-4-5-8-5z"/></svg>
+        Log In
+      </a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<main id="main">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-zone" aria-live="polite">
+      {% for category, msg in messages %}
+      <div class="flash flash-{{ category }}">{{ msg }}</div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<section class="callus-bar">
+  <div class="callus-inner">
+    <div class="callus-left"><strong>Call Us</strong> <span>{{ phone_number }}</span></div>
+    <div class="callus-right">United States</div>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="footer-cols">
+    {% for col in footer_columns %}
+    <div class="footer-col">
+      <h4>{{ col.heading }}</h4>
+      {% for label, href in col.links %}
+      <a href="{{ href }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="footer-bottom">
+    <div class="social">
+      <a href="#" aria-label="Facebook"><img src="{{ url_for('static', filename='icons/facebook.svg') }}" alt="Facebook" width="28" height="28"></a>
+      <a href="#" aria-label="X"><img src="{{ url_for('static', filename='icons/twitter-x.svg') }}" alt="X" width="28" height="28"></a>
+      <a href="#" aria-label="Instagram"><img src="{{ url_for('static', filename='icons/instagram.svg') }}" alt="Instagram" width="28" height="28"></a>
+      <a href="#" aria-label="TikTok"><img src="{{ url_for('static', filename='icons/tiktok.svg') }}" alt="TikTok" width="28" height="28"></a>
+      <a href="#" aria-label="Pinterest"><img src="{{ url_for('static', filename='icons/pinterest.svg') }}" alt="Pinterest" width="28" height="28"></a>
+      <a href="#" aria-label="YouTube"><img src="{{ url_for('static', filename='icons/youtube.svg') }}" alt="YouTube" width="28" height="28"></a>
+      <a href="#" aria-label="Threads"><img src="{{ url_for('static', filename='icons/threads.svg') }}" alt="Threads" width="28" height="28"></a>
+    </div>
+    <div class="footer-links">
+      {% for label, href in footer_bottom_links %}
+      <a href="{{ href }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+    <div class="footer-brand">
+      <img src="{{ url_for('static', filename='icons/carnival-is-calling-footer-logo.svg') }}" alt="Carnival is calling" width="111" height="42">
+    </div>
+    <div class="copyright">&copy; 2026 Carnival Corporation Ltd. All rights reserved.<br>
+      *All taxes and fees are included. <a href="{{ url_for('info_help') }}">View terms and conditions</a></div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/site.js') }}"></script>
+</body>
+</html>

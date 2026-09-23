@@ -1,0 +1,79 @@
+{% macro release_card(r) %}
+  <a class="release-card" href="{{ url_for('release_detail', rid=r.discogs_id or r.id) }}">
+    <span class="thumb"><img src="{{ r.cover_url }}" alt="{{ r.title }}" loading="lazy"></span>
+    <div class="title">{{ r.title }}</div>
+    <div class="artist">{{ r.display_artist }}</div>
+    <div class="meta">{{ r.year or '' }} · {{ r.primary_format or '' }}{% if r.country %} · {{ r.country }}{% endif %}</div>
+    {% if r.lowest_price %}<div class="price">from {{ r.lowest_price|price('USD') }}</div>{% endif %}
+  </a>
+{% endmacro %}
+
+{# Homepage carousel card: same fields and order as the live release carousel cards. #}
+{% macro carousel_card(r) %}
+  <li class="rc-slide">
+    <section class="rc-card">
+      <a class="rc-cover" href="{{ url_for('release_detail', rid=r.discogs_id or r.id) }}" aria-label="{{ r.display_artist }} – {{ r.title }}">
+        <img src="{{ r.cover_url }}" alt="{{ r.title }}" loading="lazy">
+      </a>
+      <div class="rc-body">
+        <a class="rc-t" href="{{ url_for('release_detail', rid=r.discogs_id or r.id) }}">{{ r.title }}</a><br>
+        <a class="rc-a" href="{{ url_for('artist_detail', aid=r.artist.id, slug=r.artist.slug) }}">{{ r.display_artist }}</a>
+        <div class="rc-meta-block">
+          <span class="rc-meta">{{ r.year or '' }}</span>
+          <span class="rc-meta">{{ r.genre_str }}{% if r.style_str %}, {{ r.style_str }}{% endif %}</span>
+          <span class="rc-meta">{{ r.format_description or r.primary_format }}</span>
+          {% if r.num_for_sale and r.lowest_price %}
+            <span class="rc-meta">{{ r.num_for_sale }} {{ 'copy' if r.num_for_sale == 1 else 'copies' }} from ${{ '%.2f'|format(r.lowest_price) }}</span>
+          {% endif %}
+        </div>
+      </div>
+    </section>
+  </li>
+{% endmacro %}
+
+{% macro carousel(title, releases, anchor) %}
+  <div class="release-carousel" id="{{ anchor }}">
+    <div class="rc-header"><h2 class="rc-title"><span>{{ title }}</span></h2></div>
+    <div class="rc-swiper">
+      <ul class="rc-track">
+        {% for r in releases %}{{ carousel_card(r) }}{% endfor %}
+      </ul>
+      <div class="rc-pagination" role="group" aria-label="Carousel pages"></div>
+    </div>
+    <button type="button" class="rc-btn rc-prev" aria-label="Previous slide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a1 1 0 0 1 0 1.4L10.4 12l4.3 4.3a1 1 0 1 1-1.4 1.4l-5-5a1 1 0 0 1 0-1.4l5-5a1 1 0 0 1 1.4 0z"/></svg></button>
+    <button type="button" class="rc-btn rc-next" aria-label="Next slide"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.3 6.3a1 1 0 0 1 1.4 0l5 5a1 1 0 0 1 0 1.4l-5 5a1 1 0 1 1-1.4-1.4l4.3-4.3-4.3-4.3a1 1 0 0 1 0-1.4z"/></svg></button>
+  </div>
+{% endmacro %}
+
+{% macro avatar(u, size='sm') %}
+  <span class="avatar{% if size == 'md' %} avatar-md{% endif %}"
+        style="background: {{ u.avatar_color }}">{{ u.username[0]|upper }}</span>
+{% endmacro %}
+
+{% macro pagination(pag, endpoint, params=None) %}
+  {% set params = params or {} %}
+  {% if pag.pages > 1 %}
+  <nav class="pagination">
+    {% if pag.page > 1 %}
+      <a href="{{ url_for(endpoint, page=pag.page-1, **params) }}">‹ Prev</a>
+    {% endif %}
+    {% for p in range(1, pag.pages + 1) %}
+      {% if p == pag.page %}
+        <span class="current">{{ p }}</span>
+      {% elif p <= 3 or p > pag.pages - 3 or (p >= pag.page - 1 and p <= pag.page + 1) %}
+        <a href="{{ url_for(endpoint, page=p, **params) }}">{{ p }}</a>
+      {% elif p == 4 or p == pag.pages - 3 %}
+        <span>…</span>
+      {% endif %}
+    {% endfor %}
+    {% if pag.page < pag.pages %}
+      <a href="{{ url_for(endpoint, page=pag.page+1, **params) }}">Next ›</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+{% endmacro %}
+
+{% macro stars(rating, count=None) %}
+  <span style="color: #ff8c00; font-weight: 600;">{{ rating|stars }}</span>
+  {% if rating %}<span class="muted">{{ '%.2f'|format(rating) }}{% if count %} ({{ count }}){% endif %}</span>{% endif %}
+{% endmacro %}

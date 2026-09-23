@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Cart - Bandcamp Mirror{% endblock %}
+{% block content %}
+<section class="container section-block cart-layout">
+    <div class="cart-items">
+        <div class="section-head compact"><h1>Cart</h1></div>
+        {% for item in items %}
+            <article class="cart-item">
+                <img src="{{ url_for('static', filename=item.image_path()) }}" alt="{{ item.title() }}">
+                <div class="cart-copy">
+                    <h2>{{ item.title() }}</h2>
+                    <p>{{ item.artist_name() }}</p>
+                    <p>{{ item.variant_label() }}</p>
+                </div>
+                <form method="post" action="{{ url_for('cart_update', item_id=item.id) }}" class="qty-form">
+                    <input type="number" name="quantity" min="1" value="{{ item.quantity }}">
+                    <button class="button-secondary" type="submit">Update</button>
+                </form>
+                <strong>{{ item.line_total()|money }}</strong>
+                <form method="post" action="{{ url_for('cart_remove', item_id=item.id) }}">
+                    <button class="button-secondary" type="submit">Remove</button>
+                </form>
+            </article>
+        {% else %}
+            <div class="empty-panel"><p>Your cart is empty.</p></div>
+        {% endfor %}
+    </div>
+    <aside class="purchase-panel">
+        <h2>Summary</h2>
+        <div class="summary-row"><span>Subtotal</span><strong>{{ summary.subtotal|money }}</strong></div>
+        <div class="summary-row"><span>Shipping</span><strong>{{ summary.shipping|money }}</strong></div>
+        <div class="summary-row"><span>Tax</span><strong>{{ summary.tax|money }}</strong></div>
+        <div class="summary-row total"><span>Total</span><strong>{{ summary.total|money }}</strong></div>
+        <a class="button-primary full" href="{{ url_for('checkout') }}">Proceed to checkout</a>
+    </aside>
+</section>
+{% endblock %}

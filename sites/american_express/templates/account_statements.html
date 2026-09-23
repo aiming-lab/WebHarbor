@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Statements &amp; Activity | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-grid">
+    <aside class="account-side">
+      <a href="{{ url_for('account_home') }}">Account Home</a>
+      <a class="active" href="{{ url_for('account_statements') }}">Statements &amp; Activity</a>
+      <a href="{{ url_for('account_payments') }}">Make a Payment</a>
+      <a href="{{ url_for('account_rewards') }}">Rewards &amp; Benefits</a>
+      <a href="{{ url_for('account_offers') }}">Amex Offers</a>
+      <a href="{{ url_for('account_benefits') }}">Card Benefits</a>
+      <a href="{{ url_for('account_profile') }}">Profile</a>
+    </aside>
+    <div class="account-main">
+      <h1 class="section-title">Statements &amp; Activity</h1>
+      <p class="section-sub">View statements for all of your Cards.</p>
+      <table class="data">
+        <thead>
+          <tr><th>Card</th><th>Statement Period</th><th class="num">Closing Balance</th><th class="num">Minimum Payment</th><th>Due Date</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for s in statements %}
+          {% set uc = user_cards.get(s.user_card_id) %}
+          <tr>
+            <td>{{ uc.card.name }} ({{ uc.last4 }})</td>
+            <td>{{ s.period_start.strftime('%m/%d/%Y') }} &ndash; {{ s.period_end.strftime('%m/%d/%Y') }}</td>
+            <td class="num">${{ '{:,.2f}'.format(s.closing_balance) }}</td>
+            <td class="num">${{ '{:,.2f}'.format(s.min_payment) }}</td>
+            <td>{{ s.due_date.strftime('%m/%d/%Y') }}</td>
+            <td><span class="pill {{ 'paid' if s.payment_status == 'Paid' else 'due' }}">{{ s.payment_status }}</span></td>
+            <td><a href="{{ url_for('account_statement_detail', statement_id=s.id) }}">View</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

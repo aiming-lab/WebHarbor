@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sign In | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="container">
+  <form class="form-card" method="post" action="{{ url_for('signin', next=request.args.get('next', '')) }}">
+    <h1>Access Your BBB Account</h1>
+    <p class="hint">Sign in or register for an Account to manage your business or personal interactions with BBB.</p>
+    <div class="form-row">
+      <label for="email">Email address <span class="req">*</span></label>
+      <input type="email" id="email" name="email" placeholder="you@example.com">
+    </div>
+    <div class="form-row">
+      <label for="password">Password <span class="req">*</span></label>
+      <input type="password" id="password" name="password">
+    </div>
+    <button class="btn btn-primary" type="submit">Sign In</button>
+    <p style="margin-top:1rem;">New to BBB? <a href="{{ url_for('register') }}">Register for an account</a></p>
+    <p style="font-size:.9rem;color:#53565a;">Local BBB: BBB Great West + Pacific &middot; <a href="{{ url_for('local_bbb') }}">Change</a></p>
+  </form>
+</div>
+{% endblock %}

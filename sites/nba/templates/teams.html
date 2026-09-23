@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Teams - NBA{% endblock %}
+{% block content %}
+<section class="page-hero compact">
+  <div><span class="kicker">Teams</span><h1>NBA Teams</h1><p>Profiles, schedules, rosters, stats, and ticket links grouped by division.</p></div>
+</section>
+<section class="content-block">
+  {% for division in division_order %}
+    <div class="division-section">
+      <div class="section-title"><h2>{{ division }}</h2><span>{{ 'Eastern Conference' if division in ['Atlantic','Central','Southeast'] else 'Western Conference' }}</span></div>
+      <div class="team-grid">
+        {% for team in divisions.get(division, []) %}
+          {% include "_components/team_card.html" %}
+        {% endfor %}
+      </div>
+    </div>
+  {% endfor %}
+</section>
+{% endblock %}

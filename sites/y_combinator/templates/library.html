@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}YC Startup Library | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell page-head">
+    <h1>YC Startup Library</h1>
+    <form action="{{ url_for('library') }}" method="GET" style="margin-top:16px;max-width:420px">
+        <input type="text" name="q" value="{{ q }}" placeholder="Search the library"
+               style="width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;font-family:inherit">
+    </form>
+</div>
+<div class="shell">
+    {% if results is not none %}
+        <p class="result-count">{{ results|length }} result{{ '' if results|length == 1 else 's' }} for “{{ q }}”</p>
+        <div class="card-list">
+            {% for article in results %}
+            <article class="card">
+                {% if article.thumbnail %}<img src="{{ url_for('static', filename='images/' + article.thumbnail) }}" alt="">{% endif %}
+                <div>
+                    <h3><a href="{{ url_for('library_detail', slug=article.slug) }}">{{ article.title }}</a></h3>
+                    <p class="muted">{% if article.series %}{{ article.series }} · {% endif %}{{ article.author }}</p>
+                    <p>{{ article.description }}</p>
+                </div>
+            </article>
+            {% else %}
+            <p>Nothing in the library matches that search.</p>
+            {% endfor %}
+        </div>
+    {% else %}
+        {% for carousel in carousels %}
+        <section class="carousel">
+            <h2>{{ carousel.name }}</h2>
+            {% if carousel.description %}<p class="muted">{{ carousel.description }}</p>{% endif %}
+            <p class="muted" style="font-size:.85rem">{{ carousel.articles|length }} in this collection</p>
+            <div class="carousel-row">
+                {% for article in carousel.articles %}
+                <article class="article-card">
+                    {% if article.thumbnail %}<img src="{{ url_for('static', filename='images/' + article.thumbnail) }}" alt="">{% endif %}
+                    <div class="body">
+                        <h3><a href="{{ url_for('library_detail', slug=article.slug) }}">{{ article.title }}</a></h3>
+                        <p class="muted" style="font-size:.82rem">{{ article.author }}{% if article.duration_label %} · {{ article.duration_label }}{% endif %}</p>
+                    </div>
+                </article>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    {% endif %}
+</div>
+{% endblock %}

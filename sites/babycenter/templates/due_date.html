@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Due Date Calculator{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Calculator</div><h1>Due Date Calculator</h1></div></section>
+<section class="form-panel">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>First day of last period <input type="date" name="last_period" required></label>
+    <label>Cycle length <input type="number" name="cycle" min="20" max="45" placeholder="28" required></label>
+    <button type="submit">Calculate</button>
+  </form>
+  {% if result %}
+    <div class="result-card"><span>Estimated due date</span><strong>{{ result.due.strftime("%B %d, %Y") }}</strong><p>Pregnancy age as of {{ reference_date }}: week {{ result.age[0] }} + {{ result.age[1] }} days. The nearest sourced guide is week {{ result.week }}; not every week has a guide.</p><a href="{{ url_for('week_detail', week=result.week) }}">Open week {{ result.week }}</a></div>
+  {% endif %}
+</section>
+{% endblock %}

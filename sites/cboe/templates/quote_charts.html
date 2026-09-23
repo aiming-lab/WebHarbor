@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ sym.ticker }} - Delayed Quotes{% endblock %}
+{% block content %}
+<div class="quote-shell">
+  <div class="quote-head">
+    <h1>{{ sym.ticker }} - Quotes Dashboard</h1>
+    <div class="quote-tabs">
+      <a class="qt {% if tab == 'dashboard' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}">Dashboard</a>
+      <a class="qt {% if tab == 'charts' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/chart">Charts</a>
+      <a class="qt {% if tab == 'options' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/quote_table">Options</a>
+      <a class="qt {% if tab == 'metrics' %}active{% endif %}" href="/delayed_quotes/{{ sym.ticker }}/metrics">Metrics</a>
+    </div>
+    <p class="market-data-note">Market data provided by Cboe</p>
+  </div>
+
+  <div class="quote-overview">
+    <div class="overview-panel wide">
+      <h2 class="instrument-name">{{ sym.name }} ({{ sym.display_symbol }})</h2>
+      <div class="ov-price-row">
+        <span class="ov-last">{{ fmt_num(quote.current_price) }}</span>
+        <span class="ov-change {% if quote.price_change > 0 %}up{% elif quote.price_change < 0 %}down{% endif %}">
+          {{ "%+0.2f"|format(quote.price_change) }} ({{ "%+.4f"|format(quote.price_change_percent) }}%)
+        </span>
+      </div>
+      <table class="ov-table two-col">
+        <tr><td>Open</td><td class="mono">{{ fmt_num(quote.open) }}</td><td>Bid</td><td class="mono">{{ fmt_num(quote.bid) }}</td></tr>
+        <tr><td>High</td><td class="mono">{{ fmt_num(quote.high) }}</td><td>Ask</td><td class="mono">{{ fmt_num(quote.ask) }}</td></tr>
+        <tr><td>Low</td><td class="mono">{{ fmt_num(quote.low) }}</td><td>Volume</td><td class="mono">{{ fmt_int(quote.volume) }}</td></tr>
+        <tr><td>Previous Close</td><td class="mono">{{ fmt_num(quote.prev_day_close) }}</td><td>IV30</td><td class="mono">{{ "%.3f"|format(quote.iv30) }}</td></tr>
+        <tr><td>Annual High</td><td class="mono">{{ fmt_num(quote.annual_high) }}</td><td>Annual Low</td><td class="mono">{{ fmt_num(quote.annual_low) }}</td></tr>
+      </table>
+      <div class="big-chart">{{ svg }}</div>
+      <p class="chart-caption">Intraday chart for {{ sym.display_symbol }}, one-minute delayed bars captured {{ quote.last_trade_time }} ET.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

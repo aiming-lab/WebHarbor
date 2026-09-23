@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ category.label }}{% endblock %}
+{% block content %}
+<div class="landing-hero">
+  <div class="container hero-content">
+    <p class="hero-kicker">{{ count }} open jobs</p>
+    <h1>{{ category.label }}</h1>
+    <p class="hero-desc">{{ category.hero_desc }}</p>
+  </div>
+</div>
+<div class="container landing-sections">
+  {% for section in category.sections() %}
+  <div class="landing-copy">
+    {% if section.heading %}<h2 class="section-heading-left">{{ section.heading }}</h2>{% endif %}
+    {% for para in section.paragraphs %}
+    <p>{{ para }}</p>
+    {% endfor %}
+  </div>
+  {% endfor %}
+  {% if category.voices() %}
+  <div class="voices-band">
+    <h2 class="section-heading">Voices of Amazonians</h2>
+    <div class="voices-grid">
+      {% for voice in category.voices() %}
+      <div class="voice-card">
+        <blockquote>{{ voice.quote }}</blockquote>
+        <p class="voice-name">{{ voice.name }}</p>
+        <p class="voice-title">{{ voice.title }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+  {% if category.talent().heading %}
+  <div class="talent-band">
+    <div class="container">
+      <h2>{{ category.talent().heading }}</h2>
+      <p>{{ category.talent().body }}</p>
+      <a class="talent-btn" href="{{ url_for('register') }}">Subscribe to interest list</a>
+      <p class="talent-legal">Opt in to receive email newsletters from Amazon. Unsubscribe at any time. For more details, check out our Privacy and Data policies.</p>
+    </div>
+  </div>
+  {% endif %}
+</div>
+<div class="container">
+{% include "_search_results.html" %}
+</div>
+{% endblock %}

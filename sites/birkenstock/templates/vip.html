@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}VIP ACCESS | BIRKENSTOCK United States{% endblock %}
+{% block content %}
+<div class="prose-page">
+  <h1>BIRKENSTOCK VIP</h1>
+  <img src="{{ url_for('static', filename='images/homepage/hp-vip.jpg') }}" alt="BIRKENSTOCK VIP" style="margin:18px 0">
+  <p>Introducing BIRKENSTOCK VIP: earn points &amp; unlock rewards. It's free to join, and you start with <strong>25 points</strong> the moment you create your account.</p>
+
+  <h2>Earn more as a VIP</h2>
+  <table>
+    <thead><tr><th>Tier</th><th>Lifetime spend</th><th>Benefits</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>ESSENTIAL</td>
+        <td>Sign up &ndash; $199</td>
+        <td>Free ground shipping on full-price orders &middot; Extra 15% off Last Chance styles &middot; One-time 10% off full-price order &middot; Access to VIP-only styles &middot; First look at new arrivals &middot; Early access to sales</td>
+      </tr>
+      <tr>
+        <td>CLASSIC</td>
+        <td>$200 &ndash; $699</td>
+        <td>Free ground shipping on every order &middot; Extra 15% off Last Chance styles &middot; Exclusive gifts with purchase &middot; Birthday reward &middot; Anniversary reward &middot; Access to VIP bundles</td>
+      </tr>
+      <tr>
+        <td>PREMIUM</td>
+        <td>$700 &ndash; $1,499</td>
+        <td>Reduced expedited shipping rates on every eligible order &middot; Extra 15% off Last Chance styles &middot; Exclusive gifts with purchase &middot; Birthday reward &middot; Anniversary reward &middot; Access to premium VIP bundles &middot; Special offer on exclusive styles</td>
+      </tr>
+      <tr>
+        <td>ICON</td>
+        <td>$1,500+</td>
+        <td>Free expedited shipping on every eligible order &middot; Extra 15% off Last Chance styles &middot; Exclusive gifts with purchase &middot; Birthday reward &middot; Anniversary reward &middot; Access to exclusive in-store events &middot; Private in-store shopping experiences</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>How to earn points</h2>
+  <table>
+    <thead><tr><th>Activity</th><th>Points</th></tr></thead>
+    <tbody>
+      <tr><td>Sign up for BIRKENSTOCK VIP</td><td>25 points</td></tr>
+      <tr><td>Every purchase</td><td>1 point per $1</td></tr>
+      <tr><td>Leave a review</td><td>25 points</td></tr>
+      <tr><td>Add a photo to your review</td><td>10 points</td></tr>
+      <tr><td>Follow us on Instagram</td><td>25 points</td></tr>
+      <tr><td>Follow us on Facebook</td><td>25 points</td></tr>
+      <tr><td>Follow us on TikTok</td><td>25 points</td></tr>
+      <tr><td>Subscribe for email</td><td>25 points</td></tr>
+      <tr><td>Invite a friend who joins and makes a purchase</td><td>75 points</td></tr>
+    </tbody>
+  </table>
+
+  <h2>How to redeem points</h2>
+  <p><strong>300 points = $10 off your purchase</strong> (minimum $100 order). Log in and apply your reward at checkout.</p>
+  <p>Birthday rewards start with Classic status. Points expire one year from the date they are earned. It may take up to seven business days for points to be credited to your account.</p>
+
+  {% if not current_user.is_authenticated %}
+  <p><a class="btn btn-dark" href="/us/register">JOIN NOW</a></p>
+  {% else %}
+  <p><a class="btn btn-dark" href="/us/account/">VIEW MY ACCOUNT</a></p>
+  {% endif %}
+</div>
+{% endblock %}

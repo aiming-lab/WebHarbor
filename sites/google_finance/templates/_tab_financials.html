@@ -1,0 +1,81 @@
+{% set INCOME_FIELDS = [
+     ('revenue', 'Revenue', 'big'),
+     ('cost_of_revenue', 'Cost of revenue', 'big'),
+     ('gross_profit', 'Gross profit', 'big'),
+     ('operating_expense', 'Operating expense', 'big'),
+     ('operating_income', 'Operating income', 'big'),
+     ('net_income', 'Net income', 'big'),
+     ('net_profit_margin', 'Net profit margin', 'pct'),
+     ('eps', 'Earnings per share', 'money'),
+     ('ebitda', 'EBITDA', 'big'),
+     ('effective_tax_rate', 'Effective tax rate', 'pct')] %}
+{% set BALANCE_FIELDS = [
+     ('cash_and_short_term_investments', 'Cash and short-term investments', 'big'),
+     ('total_assets', 'Total assets', 'big'),
+     ('total_liabilities', 'Total liabilities', 'big'),
+     ('total_equity', 'Total equity', 'big'),
+     ('price_to_book', 'Price to book', 'num'),
+     ('return_on_assets', 'Return on assets', 'pct'),
+     ('return_on_capital', 'Return on capital', 'pct')] %}
+{% set CASH_FIELDS = [
+     ('net_income', 'Net income', 'big'),
+     ('cash_from_operations', 'Cash from operations', 'big'),
+     ('cash_from_investing', 'Cash from investing', 'big'),
+     ('cash_from_financing', 'Cash from financing', 'big'),
+     ('net_change_in_cash', 'Net change in cash', 'big'),
+     ('free_cash_flow', 'Free cash flow', 'big')] %}
+{% set FIELDS = INCOME_FIELDS if statement == 'income'
+                else BALANCE_FIELDS if statement == 'balance' else CASH_FIELDS %}
+
+<div class="fin-tabs">
+  {% for key, label in [('income','Income statement'), ('balance','Balance sheet'), ('cashflow','Cash flow')] %}
+    <a href="{{ url_for('quote', symbol=inst.slug, tab='financials', statement=key, period=period, range=rng) }}"
+       class="{{ 'on' if key == statement }}">{{ label }}</a>
+  {% endfor %}
+</div>
+<div class="fin-tabs">
+  {% for key, label in [('quarterly','Quarterly'), ('annual','Annual')] %}
+    <a href="{{ url_for('quote', symbol=inst.slug, tab='financials', statement=statement, period=key, range=rng) }}"
+       class="{{ 'on' if key == period }}">{{ label }}</a>
+  {% endfor %}
+</div>
+
+{% if fin_rows %}
+  {% if statement == 'income' and fin_chart %}
+    {{ bar_chart_svg(fin_chart.labels, fin_chart.series) }}
+  {% endif %}
+
+  <p class="fin-note">All values in USD. {{ period|capitalize }} figures for
+    {{ inst.name }} ({{ inst.display_symbol }}).</p>
+
+<div class="table-wrap">
+  <table class="q-table">
+      <thead>
+        <tr>
+          <th>{{ 'Quarter ending' if period == 'quarterly' else 'Year' }}</th>
+          {% for r in fin_rows %}<th>{{ r.period_label }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for key, label, style in FIELDS %}
+          <tr>
+            <td>{{ label }}</td>
+            {% for r in fin_rows %}
+              {% set v = r.items().get(key) %}
+              <td>
+                {%- if v is none %}—
+                {%- elif style == 'big' %}{{ fmt_big(v) }}
+                {%- elif style == 'pct' %}{{ '{:.2f}%'.format(v) }}
+                {%- elif style == 'money' %}{{ '${:,.2f}'.format(v) }}
+                {%- else %}{{ '{:,.2f}'.format(v) }}{% endif -%}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+</div>
+{% else %}
+  <p class="empty-state">No {{ statement }} statement is published for
+    {{ inst.name }}.</p>
+{% endif %}

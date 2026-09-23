@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}The Options Institute Classes{% endblock %}
+{% block content %}
+<div class="oi-shell">
+  <section class="oi-hero slim">
+    <div class="oi-hero-copy">
+      <img class="oi-logo" src="{{ url_for('static', filename='images/misc/Cboe_OI_Blue.png') }}" alt="Options Institute logo">
+      <h1>Virtual &amp; In-Person Classes</h1>
+      <p>Expert-led classes covering concepts, strategies, and real-world applications through virtual and in-person sessions.</p>
+    </div>
+    <img class="oi-hero-img" src="{{ url_for('static', filename='images/heros/Hero-OI-Classes-desktop.png') }}" alt="Classes hero">
+  </section>
+
+  <section class="oi-section">
+    <div class="classes-toolbar">
+      <h2>Filter Classes</h2>
+      <form class="class-filters" method="get" action="/optionsinstitute/classes">
+        <div class="cf-group"><label>Instructor</label>
+          <select name="instructor">
+            <option value="">All instructors</option>
+            {% for v in facets.get('instructor', []) %}<option value="{{ v }}" {% if filters.instructor == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="cf-group"><label>Course Level</label>
+          <select name="level">
+            <option value="">All levels</option>
+            {% for v in facets.get('courselevel', []) %}<option value="{{ v }}" {% if filters.level == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="cf-group"><label>Language</label>
+          <select name="language">
+            <option value="">All languages</option>
+            {% for v in facets.get('language', []) %}<option value="{{ v }}" {% if filters.language == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="cf-group"><label>Region</label>
+          <select name="region">
+            <option value="">All regions</option>
+            {% for v in facets.get('region', []) %}<option value="{{ v }}" {% if filters.region == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="cf-group"><label>Format</label>
+          <select name="format">
+            <option value="">All formats</option>
+            {% for v in facets.get('format', []) %}<option value="{{ v }}" {% if filters.format == v %}selected{% endif %}>{{ v }}</option>{% endfor %}
+          </select>
+        </div>
+        <button class="btn-solid" type="submit">Apply</button>
+        <a class="btn-link" href="/optionsinstitute/classes">Clear All</a>
+      </form>
+    </div>
+
+    <h3 class="classes-sub">All Upcoming Classes</h3>
+    <div class="class-list">
+      {% for klass in classes %}
+        <article class="class-card">
+          <div class="class-main">
+            <p class="oi-series">{{ klass.series or 'Options Institute Class' }}</p>
+            <h3>{{ klass.title }}</h3>
+            <p class="class-desc">{{ klass.description|striptags|truncate(420) }}</p>
+            <dl class="oi-meta wide-meta">
+              <div><dt>Date</dt><dd>{{ klass.date }}</dd></div>
+              <div><dt>Time</dt><dd>{{ klass.time }}</dd></div>
+              <div><dt>Format</dt><dd>{{ klass.format }}</dd></div>
+              <div><dt>Level</dt><dd>{{ klass.level }}</dd></div>
+              <div><dt>Language</dt><dd>{{ klass.language }}</dd></div>
+              <div><dt>Region</dt><dd>{{ klass.region }}</dd></div>
+            </dl>
+            {% if klass.instructor %}
+              <p class="class-instructor">Instructor: <strong>{{ klass.instructor }}</strong>{% if klass.instructor_title %} &mdash; {{ klass.instructor_title }}{% endif %}</p>
+            {% endif %}
+          </div>
+          <div class="class-actions">
+            {% if current_user.is_authenticated %}
+              {% if klass.id in registered %}
+                <span class="registered-badge">Registered</span>
+              {% else %}
+                <form method="post" action="/account/classes/register">
+                  <input type="hidden" name="class_id" value="{{ klass.id }}">
+                  <button class="btn-solid" type="submit">Register Now</button>
+                </form>
+              {% endif %}
+            {% else %}
+              <a class="btn-solid" href="/account/login?next=/optionsinstitute/classes">Sign in to Register</a>
+            {% endif %}
+          </div>
+        </article>
+      {% else %}
+        <p class="empty-note">No classes match the selected filters.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="oi-portal-band">
+    <div class="portal-copy">
+      <h2>Ready to level up? Sign-up for our free Learning Portal.</h2>
+      <p>The Options Institute Learning Portal gives you on demand courses, learning paths, and expert instruction -- so you can go from option basics to advanced strategies at your own pace.</p>
+    </div>
+    <img class="portal-img" src="{{ url_for('static', filename='images/banners/banner-OI-portal-desktop.png') }}" alt="Learning Portal">
+  </section>
+</div>
+{% endblock %}

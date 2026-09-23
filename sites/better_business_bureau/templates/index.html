@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <video autoplay muted loop playsinline poster="{{ url_for('static', filename='images/hero/hero_poster_960.webp') }}" id="heroVideo">
+    <source src="{{ url_for('static', filename='images/hero/hero_video.mp4') }}" type="video/mp4">
+  </video>
+  <div class="hero-overlay"></div>
+  <div class="hero-text">TRUST,<br>BUILT LOCALLY.<span class="tm">&trade;</span></div>
+  <div class="hero-dots">
+    <span class="dot active"></span><span class="dot"></span><span class="dot"></span>
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <button class="hero-pause" id="heroPause" aria-label="Pause video">&#10074;&#10074;</button>
+  </div>
+</section>
+
+<section class="intro-band">
+  <div class="container">
+    <h2>The Better Business Bureau is built on clarity, credibility, and trust</h2>
+    <a class="btn btn-outline" href="{{ url_for('about') }}">Allow us to introduce ourselves &rarr;</a>
+  </div>
+</section>
+
+<section class="geo-search-band">
+  <div class="container">
+    <div class="geo-search-card">
+      <form action="{{ url_for('search') }}" method="get">
+        <div>
+          <label for="find_text">Find</label>
+          <div class="geo-input-wrapper">
+            <span class="icon"><svg width="14" height="14" viewBox="0 0 512 512" aria-hidden="true"><path d="M505 442.7L405.3 343c-4.5-4.5-10.6-7-17-7H372c27.6-35.3 44-79.7 44-128C416 93.1 322.9 0 208 0S0 93.1 0 208s93.1 208 208 208c48.3 0 92.7-16.4 128-44v16.3c0 6.4 2.5 12.5 7 17l99.7 99.7c9.4 9.4 24.6 9.4 33.9 0l28.3-28.3c9.4-9.4 9.4-24.6.1-34zM208 336c-70.7 0-128-57.2-128-128 0-70.7 57.2-128 128-128 70.7 0 128 57.2 128 128 0 70.7-57.2 128-128 128z" fill="#989a9c"/></svg></span>
+            <input id="find_text" name="find_text" placeholder="businesses, category" autocomplete="off">
+          </div>
+        </div>
+        <div>
+          <label for="find_loc">Near</label>
+          <div class="geo-input-wrapper">
+            <span class="icon"><svg width="14" height="14" viewBox="0 0 384 512" aria-hidden="true"><path d="M172.3 501.7C55 381 0 279.4 0 192C0 86 86 0 192 0s192 86 192 192c0 87.4-55 189-172.3 309.7-12.3 15.3-35.1 15.3-47.4 0z" fill="#989a9c"/><circle cx="192" cy="192" r="72" fill="#fff"/></svg></span>
+            <input id="find_loc" name="find_loc" value="Redmond, WA" autocomplete="off">
+          </div>
+        </div>
+        <button class="btn btn-yellow" type="submit">Search</button>
+      </form>
+    </div>
+    <div class="geo-find-heading">Find a business<br>you can trust.</div>
+  </div>
+</section>
+
+<section class="accred-band">
+  <div class="container">
+    <div class="copy">
+      <div class="kicker">FOR BUSINESSES</div>
+      <h2>Apply for Accreditation</h2>
+      <p>Apply for BBB Accreditation and show customers that your company operates honestly and with integrity.</p>
+      <a class="btn btn-primary" href="{{ url_for('get_accredited') }}#apply">Apply for accreditation</a>
+    </div>
+    <img class="badge" src="{{ url_for('static', filename='icons/Accredited_Business_Seal_NoRating_RGB.svg') }}" alt="BBB Accredited Business seal with A+ rating">
+  </div>
+</section>
+
+<section class="ai-band">
+  <div class="container">
+    <img src="{{ url_for('static', filename='icons/BBB_AIHub_Lockup_NoCity_RGB.png') }}" alt="BBB AI Hub">
+    <div class="copy">
+      <div class="kicker" style="color:#0077bf;font-weight:700;font-size:.85rem;letter-spacing:1px;">COMMUNITY RESOURCES</div>
+      <h2>Learn to use AI with confidence</h2>
+      <p>Free workshops, courses, and easy-to-follow guidance to use AI safely and with confidence. Open to everyone in our community.</p>
+      <a class="btn btn-primary" href="{{ url_for('news') }}">Visit the BBB AI Hub</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

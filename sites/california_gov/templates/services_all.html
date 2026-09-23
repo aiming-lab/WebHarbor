@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}All services{% endblock %}
+{% block nav_services %} active{% endblock %}
+{% block allowed_query_params %}    <meta name="allowed-query-params" content="q" />
+{% endblock %}
+{% block page_scripts %}
+    <script src="{{ url_for('static', filename='js/data_service.min.js') }}" defer></script>
+{% endblock %}
+{% block main %}
+<div class="section-understated lineart bg-s1" style="background: url('{{ url_for('static', filename='images/lineart/services-lineart.svg') }}') no-repeat right / auto;">
+  <div class="container p-y-md">
+<nav aria-label="You are here" class="breadcrumbs">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li class="active">All services</li>
+  </ol>
+</nav>
+<h1 class="m-t-0 color-p2-darker">All services</h1>
+  </div>
+</div>
+
+<div class="container-lg p-b-lg pt-lg-5 px-0">
+  <div class="row">
+    <div class="col-12 col-lg-3 pb-lg-5 sticky-6 h-100 p-b-md">
+<details class="side-navigation-toggle" aria-label="Toggle side navigation" aria-expanded="false" aria-controls="side-nav-content">
+  <summary><span class="container d-block"> Services </span></summary>
+</details>
+<div class="container" id="side-nav-content">
+  <nav class="side-navigation sticky-6">
+    <a href="javascript:;" aria-hidden="true" class="d-none">All services</a>
+    <ul class="list-navigation">
+      <li><a href="/services/">Services<span class="sr-only">landing page</span></a></li>
+      <li><a href="/services/all/" class="active landing" aria-current="page" tabindex="-1">All services</a></li>
+      <li><a href="/services/list/">Services list</a></li>
+      <li><a href="/topics/">Topics</a></li>
+    </ul>
+  </nav>
+</div>
+</div>
+    <div class="col-12 col-lg-9">
+      <div class="container">
+        {% with noun="services", singular="service", autofocus=True %}{% include "_directory_filter.html" %}{% endwith %}
+        <cagovhome-filterlist
+          data-search-input-id="searchbox"
+          data-result-count-query=".items-count"
+          data-filter-storage-key="service"
+          data-row-filter-key="ServiceId"
+          data-filter-trigger-selector='input[name="AgencyTags"]'
+          role="list">
+        {% for service in services %}
+          <div data-row-key="{{ service.id }}" class="pos-rel" role="listitem">
+            <h2 class="lead bold m-t-0 m-b">
+              <a href="{{ service_url(service) }}">{{ service.name }}</a>
+            </h2>
+            <p class="font-size-14 bold m-t-sm">by {{ service.department.short_name }}</p>
+            {% if service.description %}<p class="service-description">{{ service.description }}</p>{% endif %}
+            <div class="d-flex flex-column flex-sm-row align-items-start align-items-sm-center gap-3">
+              {% if service.launch_url is not none %}
+              <a class="btn btn-outline-primary btn-lg m-r-sm"{% if service.launch_url and service.launch_url.startswith("https://www.ca.gov/") %} data-cagov-external="skip"{% endif %} href="{{ service.launch_url }}">
+                Launch service<span class="sr-only">: {{ service.name }}</span></a>
+              {% endif %}
+              <p class="font-size-13 ms-sm-auto"><em>Last updated {{ service.last_updated }}</em></p>
+            </div>
+            {% if service.topics %}
+            <p class="font-size-14 m-t-md">
+              Topics: {% for t in service.topic_rows %}<a href="{{ topic_url(t) }}" class="py-1">{{ t.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+            </p>
+            {% endif %}
+            <hr class="m-y-md" />
+          </div>
+        {% endfor %}
+        </cagovhome-filterlist>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

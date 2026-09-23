@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}{{ left.name }} vs {{ right.name }}{% endblock %}
+{% block content %}
+<section class="versus-hero">
+  <div>
+    <img class="entity-image entity-image--{{ left.category.slug }}"
+         src="{{ url_for('static', filename='images/products/' ~ left.slug ~ '.webp') }}"
+         alt="{{ left.name }}" width="960" height="720">
+    <h1>{{ left.name }}</h1>
+    <span class="score-ring {{ 'win' if winner.slug == left.slug }}">{{ left.score }}</span>
+  </div>
+  <div class="versus-rule">vs</div>
+  <div>
+    <img class="entity-image entity-image--{{ right.category.slug }}"
+         src="{{ url_for('static', filename='images/products/' ~ right.slug ~ '.webp') }}"
+         alt="{{ right.name }}" width="960" height="720">
+    <h1>{{ right.name }}</h1>
+    <span class="score-ring {{ 'win' if winner.slug == right.slug }}">{{ right.score }}</span>
+  </div>
+</section>
+
+<section class="ruling winner-band">
+  <span class="eyebrow">The ruling</span>
+  <p>Get the <strong>{{ winner.name }}</strong>. It wins with a {{ winner.score }} Versus Score
+     and leads in {{ areas_led }} of {{ areas_total }} areas.</p>
+  <form method="post" action="{{ url_for('save_comparison', left=left.slug, right=right.slug) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button type="submit">Save comparison</button>
+  </form>
+</section>
+
+<section class="compare-table-wrap">
+  <h2 class="eyebrow">Biggest differences</h2>
+  <table class="compare-table">
+    <thead>
+      <tr><th>Signal</th><th>{{ left.name }}</th><th>{{ right.name }}</th><th>Margin</th></tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <th>{{ row.label }}</th>
+          <td data-label="{{ left.name }}" class="{{ 'lead' if row.leader == 'left' }}">{{ row.left }}{{ row.unit }}</td>
+          <td data-label="{{ right.name }}" class="{{ 'lead' if row.leader == 'right' }}">{{ row.right }}{{ row.unit }}</td>
+          <td data-label="Margin" class="margin">{% if row.margin is not none %}+{{ row.margin }}{{ row.unit }}{% else %}N/A{% endif %}</td>
+        </tr>
+      {% endfor %}
+      <tr><th>Pros</th><td data-label="{{ left.name }}">{{ left.pros }}</td><td data-label="{{ right.name }}">{{ right.pros }}</td><td data-label="Margin" class="margin">N/A</td></tr>
+      <tr><th>Cons</th><td data-label="{{ left.name }}">{{ left.cons }}</td><td data-label="{{ right.name }}">{{ right.cons }}</td><td data-label="Margin" class="margin">N/A</td></tr>
+    </tbody>
+  </table>
+</section>
+{% endblock %}

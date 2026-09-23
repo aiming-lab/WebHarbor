@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ inventory_labels[inventory_type] }} - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section alt">
+  <div class="wrap">
+    <p class="eyebrow">Explore</p>
+    <h1>{{ inventory_labels[inventory_type] }}</h1>
+    <p class="muted">Search, compare, save, and reserve {{ inventory_labels[inventory_type].lower() }} from the local Recreation.gov mirror.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="wrap">
+    <div class="section-head">
+      <h2>{{ results|length }} options</h2>
+      <a class="btn secondary" href="{{ url_for('search', inventory_type=inventory_type, available='1') }}">Show available only</a>
+    </div>
+    <div class="cards">
+      {% for facility in results %}
+        {% include "_facility_card.html" %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Account alerts | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Account alerts</h1>
+    <p class="muted">Choose how Chase notifies you about activity on your accounts. Alerts are delivered by mobile push notification or email.</p>
+
+    <div class="form-card">
+      <h2 style="margin-top:0;">Add an alert</h2>
+      <form method="post" action="{{ url_for('account_alerts') }}">
+        <input type="hidden" name="action" value="add">
+        <div class="form-grid-2">
+          <div>
+            <label for="alert_type">Alert type</label>
+            <select id="alert_type" name="alert_type" required>
+              {% for slug, label in type_labels.items() %}
+              <option value="{{ slug }}">{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div>
+            <label for="channel">Delivery</label>
+            <select id="channel" name="channel">
+              <option value="mobile">Mobile push</option>
+              <option value="email">Email</option>
+            </select>
+          </div>
+        </div>
+        <label for="threshold">Threshold amount ($) — for large transaction and low balance alerts</label>
+        <input id="threshold" name="threshold" type="text" placeholder="200">
+        <div class="hint">For example, alert me about transactions above $200, or when a balance drops below $300.</div>
+        <div class="form-actions">
+          <button class="btn btn--green" type="submit">Save alert</button>
+        </div>
+      </form>
+    </div>
+
+    <h2>Your alerts</h2>
+    <div class="compare-grid">
+    <table class="data">
+      <tr><th>Alert</th><th>Delivery</th><th>Threshold</th><th>Status</th><th></th></tr>
+      {% for a in alerts %}
+      <tr>
+        <td>{{ a.type_label }}</td>
+        <td>{{ 'Mobile push' if a.channel == 'mobile' else 'Email' }}</td>
+        <td class="num">{{ a.threshold|usd2 if a.threshold else '—' }}</td>
+        <td>{{ 'Active' if a.enabled else 'Paused' }}</td>
+        <td>
+          <form method="post" action="{{ url_for('account_alerts') }}" style="display:inline;">
+            <input type="hidden" name="action" value="toggle">
+            <input type="hidden" name="alert_id" value="{{ a.id }}">
+            <button class="btn btn--outline btn--sm" type="submit">{{ 'Pause' if a.enabled else 'Resume' }}</button>
+          </form>
+          <form method="post" action="{{ url_for('account_alerts') }}" style="display:inline;">
+            <input type="hidden" name="action" value="delete">
+            <input type="hidden" name="alert_id" value="{{ a.id }}">
+            <button class="btn btn--danger btn--sm" type="submit">Remove</button>
+          </form>
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5"><div class="empty-state">No alerts yet — add one above.</div></td></tr>
+      {% endfor %}
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

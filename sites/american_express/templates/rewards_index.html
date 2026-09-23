@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Redeem Membership Rewards® Points | Amex US{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Rewards &amp; Benefits &rsaquo; Membership Rewards</p>
+  <div class="hero" style="margin-top:12px;border-radius:12px;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">Membership Rewards&reg; Program</span>
+        <h1>Redeem Membership Rewards Points</h1>
+        <p>You&rsquo;re already earning points on eligible purchases, now learn how to redeem them for gift cards, travel, and so much more.</p>
+        <div class="cta-row">
+          <a class="btn btn-primary" href="{{ url_for('login', next=url_for('account_rewards')) }}">Log In to Redeem Now</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="band-white">
+    <div class="container">
+      <h2 class="section-title">Shopping Is Easy with Points</h2>
+      <div class="benefit-grid">
+        {% for option in options %}
+        <div class="benefit-cell" style="align-items:center;">
+          <span class="glyph">&#9733;</span>
+          <span>
+            <b style="display:block;margin-bottom:4px;color:#003a63;">{{ option.name }}</b>
+            {{ option.description }}
+            <span style="display:block;margin-top:6px;font-size:13px;color:#5c5f63;">{{ option.points_per_unit|int }} points &rarr; {{ option.unit_label }}</span>
+          </span>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="container">
+      <h2 class="section-title">Use Points Across Your Finances</h2>
+      <p class="section-sub">Redemption values and options may vary by Card. Terms apply.</p>
+      <p><a href="{{ url_for('login', next=url_for('account_rewards')) }}">Log in to see your points balance and redeem &rarr;</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

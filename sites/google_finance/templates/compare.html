@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import logo %}
+{% block title %}Compare instruments - Google Finance{% endblock %}
+{% block content %}
+<h1 class="section-title">Compare</h1>
+
+<div class="panel">
+  <form method="get" class="form-inline">
+    <div class="form-row" style="flex:1;min-width:280px">
+      <label for="cmp">Tickers, comma separated</label>
+      <input id="cmp" name="tickers" value="{{ raw }}" placeholder="AAPL, MSFT, NVDA">
+    </div>
+    <button class="btn-blue" type="submit">Compare</button>
+  </form>
+</div>
+
+{% if rows %}
+  {% set FIELDS = [('Price','price'),('Change','change'),('% Change','change_pct'),
+                   ('Open','day_open'),('Day high','day_high'),('Day low','day_low'),
+                   ('Previous close','prev_close'),('52-wk high','wk52_high'),
+                   ('52-wk low','wk52_low'),('Mkt cap','mkt_cap'),('Volume','volume'),
+                   ('Avg. vol','avg_volume'),('P/E ratio','pe_ratio'),('EPS','eps'),
+                   ('Beta','beta'),('Dividend yield','dividend_yield'),
+                   ('Shares outstanding','shares_outstanding')] %}
+<div class="table-wrap">
+  <table class="q-table">
+      <thead>
+        <tr><th>Metric</th>
+          {% for i in rows %}
+            <th><a href="{{ url_for('quote', symbol=i.slug) }}">{{ i.ticker }}</a></th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for label, key in FIELDS %}
+          <tr>
+            <td>{{ label }}</td>
+            {% for i in rows %}
+              {% set v = i.quote[key] %}
+              <td>
+                {%- if v is none %}—
+                {%- elif key in ['mkt_cap','volume','avg_volume','shares_outstanding'] %}{{ fmt_big(v) }}
+                {%- elif key in ['change_pct','dividend_yield'] %}{{ '{:.2f}%'.format(v) }}
+                {%- elif key in ['pe_ratio','beta'] %}{{ '{:,.2f}'.format(v) }}
+                {%- elif key == 'change' %}{{ '{:+,.2f}'.format(v) }}
+                {%- else %}{{ pv(i, v) }}{% endif -%}
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        <tr>
+          <td>Sector</td>
+          {% for i in rows %}<td>{{ i.sector or '—' }}</td>{% endfor %}
+        </tr>
+      </tbody>
+  </table>
+</div>
+{% else %}
+  <p class="empty-state">Enter two or more tickers to compare them side by side.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Checkout - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="wrap two-col">
+    <div>
+      <h1>Checkout</h1>
+      {% for item in items %}
+        <div class="cart-row"><div><strong>{{ item.facility.name }}</strong><br>{{ (item.start_date, item.end_date)|trip_window }}</div><strong>${{ "%.0f"|format(item.total) }}</strong></div>
+      {% endfor %}
+    </div>
+    <form method="post" class="booking-box">
+      <h2>Total: ${{ "%.0f"|format(total) }}</h2>
+      {% if addresses %}<p>Address: {{ addresses[0].street }}, {{ addresses[0].city }}</p>{% endif %}
+      {% if payments %}<p>Payment: {{ payments[0].card_type }} ending {{ payments[0].last4 }}</p>{% endif %}
+      <label><input type="checkbox" required> I agree to the facility rules and cancellation policy.</label>
+      <button class="btn" type="submit" style="width:100%; margin-top:12px;">Book Now</button>
+    </form>
+  </div>
+</section>
+{% endblock %}

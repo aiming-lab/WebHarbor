@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile{% endblock %}
+{% block content %}
+<div class="auth-form">
+  <h1 style="font-family:'Galindo',cursive;font-weight:400;color:var(--purple);text-align:center;font-size:32px;margin:6px 0 10px;">Edit My Profile</h1>
+  <form method="post" action="{{ url_for('account_edit') }}">
+    <label for="display_name">Your Name</label>
+    <input type="text" id="display_name" name="display_name" value="{{ current_user.display_name }}" required maxlength="80">
+    <label for="current_password">Current Password (required to save)</label>
+    <input type="password" id="current_password" name="current_password" required autocomplete="current-password">
+    <label for="new_password">New Password (leave blank to keep current)</label>
+    <input type="password" id="new_password" name="new_password" minlength="8" autocomplete="new-password">
+    <button type="submit">Save Changes</button>
+  </form>
+  <div class="alt-link"><a href="{{ url_for('account') }}" style="color:var(--teal);font-weight:700;">Back to My Progress</a></div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Transactions | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Transactions</h1>
+    <p class="muted">Filter by account, category, keyword or date range. Money out shows spending; money in shows deposits and credits.</p>
+    <form method="get" action="{{ url_for('account_transactions') }}" class="filter-bar">
+      <div class="field">
+        <label for="account">Account</label>
+        <select id="account" name="account">
+          <option value="">All accounts</option>
+          {% for val, label in options %}
+          <option value="{{ val }}" {{ 'selected' if acct == val }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="category">Category</label>
+        <select id="category" name="category">
+          <option value="">All categories</option>
+          {% for slug, label in category_labels.items() %}
+          <option value="{{ slug }}" {{ 'selected' if cat == slug }}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="q">Keyword</label>
+        <input id="q" name="q" type="text" value="{{ q }}" placeholder="Search merchant">
+      </div>
+      <div class="field" style="min-width:130px;">
+        <label for="start">From</label>
+        <input id="start" name="start" type="text" value="{{ start }}" placeholder="2026-08-01">
+      </div>
+      <div class="field" style="min-width:130px;">
+        <label for="end">To</label>
+        <input id="end" name="end" type="text" value="{{ end }}" placeholder="2026-09-22">
+      </div>
+      <div class="field">
+        <label>&nbsp;</label>
+        <button class="btn btn--blue btn--sm" type="submit">Apply filters</button>
+      </div>
+    </form>
+
+    <p class="result-summary">
+      Showing {{ txns|length }} transactions{% if q %} matching “{{ q }}”{% endif %} —
+      Money out: <strong>{{ total_out|usd2 }}</strong> ·
+      Money in: <strong>{{ total_in|usd2 }}</strong>
+    </p>
+    <div class="compare-grid">
+    <table class="data">
+      <tr><th>Date</th><th>Description</th><th>Category</th><th>Status</th><th class="right">Amount</th></tr>
+      {% for t in txns %}
+      <tr>
+        <td class="num">{{ t.posted.strftime('%b %d, %Y') }}</td>
+        <td>{{ t.description }}</td>
+        <td>{{ category_labels.get(t.category, t.category) }}</td>
+        <td>{{ 'Pending' if t.pending else 'Posted' }}</td>
+        <td class="right num {{ 'amount-credit' if t.amount < 0 else 'amount-debit' }}">
+          {{ '-' if t.amount < 0 }}{{ t.amount if t.amount > 0 else -t.amount|usd2 }}
+        </td>
+      </tr>
+      {% else %}
+      <tr><td colspan="5"><div class="empty-state">No transactions match your filters.</div></td></tr>
+      {% endfor %}
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

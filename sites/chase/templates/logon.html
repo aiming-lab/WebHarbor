@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Sign in | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section logon-grid">
+    <div>
+      <h1>Sign in to your Chase account</h1>
+      <p class="muted">Access your accounts, transactions, statements, rewards and alerts in one place.</p>
+      <div class="kv"><h4>WHAT YOU CAN DO ONLINE</h4>
+        <ul class="earn-list small">
+          <li>Check balances and review up to 90 days of transaction history</li>
+          <li>Transfer money between your Chase accounts or to a card</li>
+          <li>Pay your credit cards and manage automatic payments</li>
+          <li>Redeem Ultimate Rewards® points for cash back or travel</li>
+          <li>Manage account alerts and your Credit Journey® score</li>
+        </ul>
+      </div>
+      <div class="notice">Demo benchmark accounts are available: sign in with <strong>alice.j@test.com</strong> (password <strong>TestPass123!</strong>) and similar addresses for bob.c, carol.d and david.k.</div>
+    </div>
+    <div class="login-card">
+      <h2>Sign in</h2>
+      <form method="post" action="{{ url_for('logon') }}{% if request.args.get('next') %}?next={{ request.args.get('next') }}{% endif %}">
+        <label for="email">Username</label>
+        <input id="email" name="email" type="text" value="{{ email }}" autocomplete="username" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" required>
+        <div class="login-row">
+          <label><input type="checkbox"> Remember username</label>
+        </div>
+        <button class="btn btn--blue btn--block" type="submit">Sign in</button>
+        <div class="login-links">
+          <a href="{{ url_for('register') }}">Not enrolled? Sign Up Now.</a>
+          <span class="small muted">Forgot username/password? Call 1-800-935-9935.</span>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

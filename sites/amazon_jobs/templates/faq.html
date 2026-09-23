@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}FAQ | Amazon.jobs{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Frequently asked questions</h1>
+  </div>
+</div>
+<div class="container page-content narrow">
+  {% for section, items in sections %}
+  <h2 class="section-heading">{{ section }}</h2>
+  <div class="faq-list">
+    {% for item in items %}
+    <details class="faq-item">
+      <summary>{{ item.question }}</summary>
+      <div class="faq-answer">{{ item.answer }}</div>
+    </details>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

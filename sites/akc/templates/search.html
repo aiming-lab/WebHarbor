@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><span>Search results{% if query %} for {{ query }}{% endif %}</span></nav>
+<section class="search-heading">
+  <form class="filter-bar search-form" action="{{ url_for('search') }}">
+    <input name="q" value="{{ query }}" aria-label="Search results" placeholder="Search results{% if query %} for “{{ query }}”{% endif %}">
+    <button type="submit">Search</button>
+  </form>
+</section>
+{% if query %}
+<section class="search-results-layout search-results-only">
+  <div class="search-columns">
+    {% set result_count = breed_results|length + article_results|length + event_results|length %}
+    <h2>{{ result_count }} {{ "result" if result_count == 1 else "results" }} for “{{ query }}”</h2>
+    <section>
+      <h3>Breeds</h3>
+      {% for breed in breed_results %}
+        <a class="mini-result" href="{{ url_for('breed_detail', slug=breed.slug) }}"><strong>{{ breed.name }}</strong><small>{{ breed.group }} · {{ breed.temperament }}</small></a>
+      {% else %}<p class="empty-state">No breed results.</p>{% endfor %}
+    </section>
+    <section>
+      <h3>Expert Advice</h3>
+      {% for article in article_results %}
+        <a class="mini-result search-feature-result" href="{{ url_for('article_detail', slug=article.slug) }}">
+          <img src="{{ url_for('static', filename='images/akc-home/agility-search.jpg') }}" alt="Dog competing in agility">
+          <span><small>{{ article.category }}</small><strong>{{ article.title }}</strong><span>{{ article.summary }}</span></span>
+        </a>
+      {% else %}<p class="empty-state">No advice results.</p>{% endfor %}
+    </section>
+    <section>
+      <h3>Sports &amp; Events</h3>
+      {% for event in event_results %}
+        <a class="mini-result" href="{{ url_for('event_detail', slug=event.slug) }}"><strong>{{ event.title }}</strong><small>{{ event.city }}, {{ event.state }} · {{ event.event_type }}</small></a>
+      {% else %}<p class="empty-state">No event results.</p>{% endfor %}
+    </section>
+  </div>
+</section>
+<section class="search-discovery section">
+  <div class="section-head"><h2>Explore More From AKC</h2></div>
+  <div class="search-discovery-grid"><a href="{{ url_for('breeds') }}"><img src="{{ url_for('static', filename='images/breeds/golden-retriever.jpg') }}" alt="Dog breeds"><strong>Find the right breed</strong><span>Explore breed traits, size, and owner-fit signals.</span></a><a href="{{ url_for('articles') }}"><img src="{{ url_for('static', filename='images/akc-home/expert-advice-feature.jpg') }}" alt="Expert advice"><strong>Read expert advice</strong><span>Get practical guidance for everyday dog care.</span></a><a href="{{ url_for('events') }}"><img src="{{ url_for('static', filename='images/akc-home/agility-search.jpg') }}" alt="Dog sports"><strong>Discover sports and events</strong><span>Find activities and events for your dog.</span></a></div>
+</section>
+{% endif %}
+{% endblock %}

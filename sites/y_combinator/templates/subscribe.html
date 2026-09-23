@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Subscribe to YC’s Newsletter | Y Combinator{% endblock %}
+
+{% block content %}
+<div class="shell detail">
+    <h1>Subscribe to YC’s Newsletter</h1>
+    <p class="lede">Keep up with the latest news, launches, jobs and events from the YC community.</p>
+    {% if current_user.is_authenticated and current_user.newsletter %}
+        <p>You are subscribed as {{ current_user.email }}.</p>
+    {% else %}
+        <form method="POST">
+            <button class="button" type="submit">Subscribe</button>
+        </form>
+        {% if not current_user.is_authenticated %}<p class="muted">Sign in to subscribe.</p>{% endif %}
+    {% endif %}
+</div>
+{% endblock %}

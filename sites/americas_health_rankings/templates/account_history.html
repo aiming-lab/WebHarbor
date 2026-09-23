@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Browsing History{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>Browsing History</h1>
+  <p class="section-sub">Pages you visited while logged in.</p>
+</div>
+<div class="container" style="padding-bottom:60px">
+  <table class="data-table">
+    <thead><tr><th>Page</th><th>Visited</th></tr></thead>
+    <tbody>
+      {% for h in history %}
+      <tr>
+        <td><a href="{{ h.url }}">{{ h.title }}</a></td>
+        <td>{{ h.visited_at.strftime('%B %d, %Y %I:%M %p') }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="2">No browsing history yet.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

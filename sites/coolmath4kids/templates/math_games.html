@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }}{% endblock %}
+{% block content %}
+<div class="section-header">
+  <img class="title-icon-left" src="/static/images/theme/title-icon1.svg" alt="">
+  <h2>{{ heading }}</h2>
+  <img class="title-icon-right" src="/static/images/theme/title-icon2.svg" alt="">
+</div>
+
+<div class="filter-row">
+  <span class="filter-label">By Topic:</span>
+  {% for t in TOPICS %}
+  <a href="{{ url_for('game_detail', ident=t.slug) }}" {% if active_topic == t.slug %}class="is-active"{% endif %}>{{ t.name }}</a>
+  {% endfor %}
+</div>
+<div class="filter-row">
+  <span class="filter-label">By Grade:</span>
+  {% for g in GRADES %}
+  <a href="{{ url_for('game_detail', ident=g.slug) }}" {% if active_grade == g.slug %}class="is-active"{% endif %}>{{ g.name }}</a>
+  {% endfor %}
+</div>
+
+<div class="games-grid">
+  {% for g in games %}
+  <div class="views-row">
+    <div class="views-field views-field-field-thumbnail">
+      <div class="field-content">
+        <a href="{{ url_for('game_detail', ident=g.slug) }}">
+          <img class="game-thumb" src="/static/images/games/landing/{{ g.slug }}.png" width="337" height="214" alt="{{ g.title }}">
+        </a>
+      </div>
+    </div>
+    <div class="views-field views-field-title">
+      <span class="field-content">
+        <a href="{{ url_for('game_detail', ident=g.slug) }}" class="term-icon">
+          <span class="term-icon op-{{ g.topic or 'none' }}"></span>{{ g.title }}
+        </a>
+      </span>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

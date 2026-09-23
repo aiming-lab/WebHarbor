@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}{{ uc.card.name }} Activity | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-grid">
+    <aside class="account-side">
+      <a href="{{ url_for('account_home') }}">Account Home</a>
+      <a href="{{ url_for('account_statements') }}">Statements &amp; Activity</a>
+      <a href="{{ url_for('account_payments') }}">Make a Payment</a>
+      <a href="{{ url_for('account_rewards') }}">Rewards &amp; Benefits</a>
+      <a href="{{ url_for('account_offers') }}">Amex Offers</a>
+      <a href="{{ url_for('account_benefits') }}">Card Benefits</a>
+      <a href="{{ url_for('account_profile') }}">Profile</a>
+    </aside>
+    <div class="account-main">
+      <p class="crumb" style="padding-top:0;"><a href="{{ url_for('account_home') }}">&larr; Account Home</a></p>
+      <h1 class="section-title">{{ uc.card.name }}</h1>
+      <p class="section-sub">Card ending {{ uc.last4 }} &middot; opened {{ uc.opened_date.strftime('%B %Y') }}</p>
+
+      <div class="summary-row">
+        <div class="summary-card">
+          <div class="k">Current Balance</div>
+          <div class="v">${{ '{:,.2f}'.format(uc.current_balance) }}</div>
+          <div class="s">Credit limit ${{ '{:,.0f}'.format(uc.credit_limit) }}</div>
+        </div>
+        <div class="summary-card">
+          <div class="k">Available Credit</div>
+          <div class="v">${{ '{:,.2f}'.format(uc.available_credit()) }}</div>
+        </div>
+        <div class="summary-card">
+          <div class="k">{{ uc.card.program }} Balance</div>
+          <div class="v">{{ '{:,}'.format(uc.points_balance) }}</div>
+        </div>
+      </div>
+
+      <h2 class="section-title" style="font-size:20px;">Recent Activity</h2>
+      <table class="data">
+        <thead>
+          <tr><th>Date</th><th>Merchant</th><th>Category</th><th class="num">Amount</th><th>Status</th><th class="num">Points</th></tr>
+        </thead>
+        <tbody>
+          {% for t in transactions %}
+          <tr>
+            <td>{{ t.date.strftime('%m/%d/%Y') }}</td>
+            <td>{{ t.merchant }}</td>
+            <td>{{ t.category }}</td>
+            <td class="num">${{ '{:,.2f}'.format(t.amount) }}</td>
+            <td>{{ t.status }}</td>
+            <td class="num">{{ '{:,}'.format(t.points_earned) if t.points_earned else '' }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <h2 class="section-title" style="font-size:20px;margin-top:30px;">Statements</h2>
+      <table class="data">
+        <thead>
+          <tr><th>Statement Period</th><th class="num">Closing Balance</th><th class="num">Minimum Payment</th><th>Due Date</th><th>Status</th><th></th></tr>
+        </thead>
+        <tbody>
+          {% for s in statements %}
+          <tr>
+            <td>{{ s.period_start.strftime('%m/%d/%Y') }} &ndash; {{ s.period_end.strftime('%m/%d/%Y') }}</td>
+            <td class="num">${{ '{:,.2f}'.format(s.closing_balance) }}</td>
+            <td class="num">${{ '{:,.2f}'.format(s.min_payment) }}</td>
+            <td>{{ s.due_date.strftime('%m/%d/%Y') }}</td>
+            <td><span class="pill {{ 'paid' if s.payment_status == 'Paid' else 'due' }}">{{ s.payment_status }}</span></td>
+            <td><a href="{{ url_for('account_statement_detail', statement_id=s.id) }}">View</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

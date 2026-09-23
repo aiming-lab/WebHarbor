@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign In &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Sign in to PhET</h1>
+  <p class="auth-sub">Sign in to save simulations, write notes, and access teacher resources.</p>
+
+  <form method="post" action="{{ url_for('login') }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label>
+      Email
+      <input type="email" name="email" required autofocus autocomplete="email">
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required autocomplete="current-password">
+    </label>
+    <button type="submit" class="btn btn-primary btn-block">Sign in</button>
+  </form>
+
+  <p class="auth-foot">
+    Don't have an account? <a href="{{ url_for('register') }}">Create one now</a>.
+  </p>
+</div>
+{% endblock %}

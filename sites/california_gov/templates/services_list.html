@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Services list{% endblock %}
+{% block nav_services %} active{% endblock %}
+{% block page_scripts %}
+    <script src="{{ url_for('static', filename='js/data_service.min.js') }}" defer></script>
+{% endblock %}
+{% block main %}
+<div class="section-understated lineart bg-s1" style="background: url('{{ url_for('static', filename='images/lineart/services-lineart.svg') }}') no-repeat right / auto;">
+  <div class="container p-y-md">
+<nav aria-label="You are here" class="breadcrumbs">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li class="active">Services list</li>
+  </ol>
+</nav>
+<h1 class="m-t-0 color-p2-darker">Services list</h1>
+  </div>
+</div>
+
+<div class="container-lg p-b-lg pt-lg-5 px-0">
+  <div class="row">
+    <div class="col-12 col-lg-3 pb-lg-5 sticky-6 h-100 p-b-md">
+<details class="side-navigation-toggle" aria-label="Toggle side navigation" aria-expanded="false" aria-controls="side-nav-content">
+  <summary><span class="container d-block"> Services </span></summary>
+</details>
+<div class="container" id="side-nav-content">
+  <nav class="side-navigation sticky-6">
+    <a href="javascript:;" aria-hidden="true" class="d-none">Services list</a>
+    <ul class="list-navigation">
+      <li><a href="/services/">Services <span class="sr-only">landing page</span></a></li>
+      <li><a href="/services/all/">All services</a></li>
+      <li><a href="/services/list/" class="active landing" aria-current="page" tabindex="-1">Services list</a></li>
+      <li><a href="/topics/">Topics</a></li>
+    </ul>
+  </nav>
+</div>
+</div>
+    <div class="col-12 col-lg-9">
+      <div class="container">
+        {% with noun="services", singular="service", autofocus=True %}{% include "_directory_filter.html" %}{% endwith %}
+        <cagovhome-filterlist
+          data-search-input-id="searchbox"
+          data-result-count-query=".items-count"
+          data-filter-storage-key="service"
+          data-row-filter-key="ServiceId"
+          data-filter-trigger-selector='input[name="AgencyTags"]'
+          role="list">
+        {% set ns = namespace(letter='') %}
+        {% for service in services %}
+        {% set letter = service.name[0] | upper %}
+        {% if letter != ns.letter %}
+        {% if ns.letter %}
+              </ul>
+            </div>
+            <hr />
+          </div>
+        {% endif %}
+          <div class="row" role="listitem">
+            <div class="col-lg-1">
+              <h3 class="m-t-0" lang="en" translate="no">{{ letter }}</h3>
+            </div>
+            <div class="col-lg-11">
+              <ul>
+        {% set ns.letter = letter %}
+        {% endif %}
+                <li data-row-key="{{ service.id }}">
+                  <a href="{{ service_url(service) }}">{{ service.name }}</a>
+                </li>
+        {% if loop.last %}
+              </ul>
+            </div>
+          </div>
+        {% endif %}
+        {% endfor %}
+        </cagovhome-filterlist>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

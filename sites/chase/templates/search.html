@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Search | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Search chase.com</h1>
+    <form method="get" action="{{ url_for('search') }}" class="locator-form" style="max-width:560px;">
+      <input name="q" type="text" value="{{ q }}" placeholder="Search cards, accounts, articles and locations">
+      <button class="btn btn--blue" type="submit">Search</button>
+    </form>
+
+    {% if q %}
+    <p class="result-summary">{{ total }} results for “{{ q }}” across cards, accounts, articles and locations.</p>
+
+    {% if cards %}
+    <h2>Credit cards</h2>
+    {% for c in cards %}
+    <div class="branch-card">
+      <div>
+        <h3><a href="{{ url_for('credit_card_detail', slug=c.slug) }}">{{ c.name }}</a></h3>
+        <p class="small muted" style="margin:4px 0;">{{ c.glance[:200] }}</p>
+        <p class="small">{{ c.apr[:90] }} · {{ c.fee_text }}</p>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if products %}
+    <h2>Banking accounts</h2>
+    {% for p in products %}
+    <div class="branch-card">
+      <div>
+        <h3><a href="{{ url_for('checking_detail', slug=p.slug) if p.product_type == 'checking' else url_for('savings_detail', slug=p.slug) if p.product_type == 'savings' else url_for('cds') }}">{{ p.name }}</a></h3>
+        <p class="small muted" style="margin:4px 0;">{{ p.tagline }}</p>
+        <p class="small">{{ p.fee_text }}</p>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if articles %}
+    <h2>Education Center articles</h2>
+    {% for a in articles %}
+    <div class="branch-card">
+      <div>
+        <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+        <p class="small muted" style="margin:4px 0;">{{ a.category }} · {{ a.minutes }} min read · {{ a.insight_list[0] if a.insight_list else a.body[:140] }}</p>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if branches %}
+    <h2>Branches &amp; ATMs</h2>
+    {% for b in branches %}
+    <div class="branch-card">
+      <div>
+        <h3><a href="{{ url_for('branch_detail', branch_id=b.id) }}">{{ b.name }}</a></h3>
+        <p class="small muted" style="margin:4px 0;">{{ b.address1 }}, {{ b.city }}, {{ b.state }} {{ b.zip }}</p>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if not total %}
+    <div class="empty-state">
+      <p>No results for “{{ q }}”. Try a different term, like “Sapphire”, “savings”, “HELOC” or a city name.</p>
+    </div>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

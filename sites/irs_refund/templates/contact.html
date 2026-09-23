@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Contact Demo Support{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Contact</p>
+  <h1>Contact the local demo support queue.</h1>
+  <p>This form is for benchmark practice only. It does not send messages to the live IRS.</p>
+</section>
+
+<div class="two-column">
+  <section>
+    <form class="form-card" method="post">
+      <div class="form-grid">
+        <label class="field">
+          <span>Name</span>
+          <input name="name" type="text" value="{{ form_data.name }}" required>
+        </label>
+        <label class="field">
+          <span>Email</span>
+          <input name="email" type="email" value="{{ form_data.email }}" required>
+        </label>
+        <label class="field field--full">
+          <span>Topic</span>
+          <input name="topic" type="text" value="{{ form_data.topic }}" placeholder="Identity delay, paper check, amended return">
+        </label>
+        <label class="field field--full">
+          <span>Message</span>
+          <textarea name="message" rows="6" required>{{ form_data.message }}</textarea>
+        </label>
+      </div>
+      <div class="form-actions">
+        <button class="button" type="submit">Send demo request</button>
+      </div>
+      {% if submitted %}
+        <p class="support-copy">The request was saved only for the current local session feedback flow.</p>
+      {% endif %}
+    </form>
+  </section>
+  <aside>
+    <article class="faq-card">
+      <h2>Safe reminder</h2>
+      <p>Never send real taxpayer identifiers or live refund details through this local demo form.</p>
+    </article>
+    <article class="faq-card">
+      <h2>Suggested topics</h2>
+      <p>Identity verification checklist, amended returns, paper-check timing, split deposit, notice-code explanations.</p>
+    </article>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}YouTube{% endblock %}
+{% block content %}
+<div class="chip-row">
+  {% for category in nav_categories %}
+    <a class="chip {% if category == selected_category %}active{% endif %}" href="{{ url_for('index', category=category) }}">{{ category }}</a>
+  {% endfor %}
+</div>
+<section class="video-grid">
+  {% for video in videos %}
+    {% include '_video_card.html' %}
+  {% endfor %}
+</section>
+{% endblock %}

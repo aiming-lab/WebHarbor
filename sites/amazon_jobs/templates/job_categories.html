@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Job categories{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <p class="hero-kicker">{{ total_open }} open jobs</p>
+    <h1>Job categories</h1>
+  </div>
+</div>
+<div class="container page-content">
+  <h2 class="section-heading">Browse jobs by category</h2>
+  <div class="text-card-grid">
+    {% for cat in categories %}
+    <a class="text-card" href="{{ url_for('job_category_detail', slug=cat.slug) }}">
+      <h3>{{ cat.label }}</h3>
+      <p class="count">{{ counts[cat.slug] }} open jobs</p>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

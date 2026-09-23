@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block title %}Explore Health Measures | AHR{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>Health Measures</h1>
+  <p class="section-sub">America’s Health Rankings measures are drawn from the America’s Health Rankings model of population health, which is a framework for understanding how various factors affect health. Measures are grouped into categories and subcategories to help users understand and compare state-level health data.</p>
+</div>
+<div class="container" style="padding-bottom: 60px">
+  <h2 style="font-size:20px">Search For Measures By Name:</h2>
+  <form class="dir-controls" method="get" action="{{ url_for('measures_directory') }}">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search measures...">
+    <select name="category" onchange="this.form.submit()">
+      <option value="">Category</option>
+      {% for t in tree %}<option value="{{ t.category.name }}" {% if category == t.category.name %}selected{% endif %}>{{ t.category.name }}</option>{% endfor %}
+    </select>
+    <a class="btn btn-outline btn-sm" href="{{ url_for('measures_directory') }}">Clear</a>
+  </form>
+
+  {% for t in tree %}
+  <details class="dir-cat" open="{{ 'true' if expanded else 'false' }}">
+    <summary style="cursor:pointer;font-weight:800;color:#003c71;padding:6px 0">
+      {{ t.category.name }}
+    </summary>
+    <div class="dir-measures">
+      {% for m in t.measures %}
+      <a href="{{ url_for('measure_detail', slug=m.slug) }}">{{ m.display_name }} ›</a>
+      {% endfor %}
+    </div>
+  </details>
+  {% else %}
+  <p style="margin-top:20px">No measures matched your search.</p>
+  {% endfor %}
+  <p style="margin-top:18px;color:#666;font-size:13.5px">{{ total }} measures across {{ tree | length }} categories.</p>
+</div>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block searchbar %}{% endblock %}
+{% block title %}Create account | Amazon.jobs{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <h1>Create an account</h1>
+    <p class="auth-hint">Share your resume and basic info to get personalized job recommendations and more.</p>
+    <form method="post" action="{{ url_for('register') }}" class="auth-form">
+      <label for="name">Full name <span class="req">*</span></label>
+      <input type="text" id="name" name="name" required value="{{ form.get('name', '') }}" autocomplete="name">
+      <label for="email">Email <span class="req">*</span></label>
+      <input type="email" id="email" name="email" required value="{{ form.get('email', '') }}" autocomplete="email">
+      <label for="password">Password <span class="req">*</span></label>
+      <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
+      <p class="auth-hint">Password must be at least 8 characters.</p>
+      <button type="submit" class="btn btn-primary btn-block">Create account</button>
+    </form>
+    <p class="auth-alt">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+  </div>
+  <div class="auth-footer">
+    <span>Language:</span>
+    <span>English</span>
+    <a href="{{ url_for('faq') }}">FAQ</a>
+    <div class="auth-legal">
+      <p>Amazon is an equal opportunity employer and does not discriminate on the basis of protected veteran status, disability, or other legally protected status.</p>
+      <p>&copy; 1996-2026, Amazon.com, Inc. or its affiliates</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

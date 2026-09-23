@@ -1,0 +1,37 @@
+<!doctype html>
+{# Standalone shell for the account chooser. The real accounts.google.com step
+   leaves the app entirely — no product header, no rails — so mirroring it
+   inside the Finance shell would be wrong, and it also gives an agent a clear
+   "I have navigated away and come back" boundary. #}
+<html lang="en" data-theme="{{ theme }}" data-colors="{{ colors }}">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Sign in - Google Accounts{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.png') }}" sizes="32x32">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="auth-page">
+  <main class="auth-page-main">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="flashes auth-flashes">
+          {% for cat, msg in messages %}
+            <div class="flash flash-{{ cat }}">{{ msg }}</div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="auth-page-footer">
+    <span>English (United States)</span>
+    <nav>
+      <a href="{{ url_for('index') }}">Help</a>
+      <a href="{{ url_for('index') }}">Privacy</a>
+      <a href="{{ url_for('index') }}">Terms</a>
+    </nav>
+  </footer>
+</body>
+</html>

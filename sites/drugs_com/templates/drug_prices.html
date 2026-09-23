@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name }} Generated Price Fixture | {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a> <span class="sep">&rsaquo;</span> <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> <span class="sep">&rsaquo;</span> <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|title }}</a> <span class="sep">&rsaquo;</span> <span class="current">Generated prices</span></nav>
+<div class="drug-page-type-tabs">
+  <span class="drug-page-type-tab active">Consumer section</span>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-detail">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a><a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a><a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a><a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a><a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+  <h1 class="is-148">Generated {{ drug.generic_name|title }} Price Fixture</h1>
+  <section class="is-197"><strong>Benchmark limitation:</strong> Every value, label, trend, savings percentage, and identifier on this page is generated deterministically for interface evaluation. Nothing is a current pharmacy price, average, quotation, insurance benefit, discount, coupon, purchase offer, or clinical statement.</section>
+
+  <section class="is-151">
+    <h2>Local demo identifier</h2>
+    <p>This non-redeemable identifier exists only to exercise show/hide behavior.</p>
+    <button class="is-159 js-required-control" id="get-coupon-btn" type="button" aria-controls="coupon-result" aria-expanded="false">Show demo identifier</button>
+    <noscript><p><strong>Non-redeemable demo identifier:</strong> {{ price_data.coupon_code }}</p></noscript>
+    <div class="is-160" id="coupon-result" hidden><strong>Non-redeemable demo identifier: <span class="is-161">{{ price_data.coupon_code }}</span></strong></div>
+  </section>
+
+  <h2 class="is-162">Generated quantity tables</h2>
+  <p class="is-163">Select a quantity to inspect deterministic generated values.</p>
+  <div class="is-164" id="qty-tabs" role="tablist" aria-label="Generated quantity">
+    {% for q in price_data.quantities %}<button type="button" class="qty-tab is-165" role="tab" id="qty-tab-{{ q }}" aria-controls="qty-panel-{{ q }}" aria-selected="{{ 'true' if loop.first else 'false' }}" tabindex="{{ '0' if loop.first else '-1' }}" data-qty="{{ q }}">{{ q }} units</button>{% endfor %}
+  </div>
+  <noscript><style>#qty-tabs{display:none}.price-qty-panel{display:block!important}</style><p class="muted">All quantity tables are shown because JavaScript is disabled.</p></noscript>
+
+  {% for q in price_data.quantities %}
+  <section class="qty-panel price-qty-panel" id="qty-panel-{{ q }}" role="tabpanel" aria-labelledby="qty-tab-{{ q }}" data-qty="{{ q }}"{% if not loop.first %} hidden{% endif %}>
+    <h3>{{ q }} generated units</h3>
+    <div class="table-scroll" role="region" aria-label="Generated {{ q }}-unit values" tabindex="0">
+    <table class="is-166">
+      <thead><tr><th>Generated comparator</th><th>Value per unit</th><th>{{ q }}-unit value</th><th>Demo flag</th><th>Generated difference</th></tr></thead>
+      <tbody>{% for row in price_data.prices_by_qty[q] %}<tr><td><strong>Comparator {{ loop.index }}</strong></td><td>${{ '%.2f' % row.unit_price }}</td><td><strong>${{ '%.2f' % row.supply_price }}</strong></td><td>{{ 'Yes' if row.coupon else 'No' }}</td><td>{{ row.savings_pct }}%</td></tr>{% endfor %}</tbody>
+    </table>
+    </div>
+  </section>
+  {% endfor %}
+
+  <section>
+    <h2>Generated twelve-period trend</h2>
+    <p class="muted">The period labels and values below are synthetic; they are not historical data.</p>
+    {% set base = price_data.base_retail %}{% set periods = range(1,13) %}{% set deltas = [-6,-4,-2,1,3,2,5,4,2,-1,-3,0] %}
+    <div class="table-scroll" role="region" aria-label="Generated twelve-period trend" tabindex="0"><table><thead><tr><th>Period</th><th>Generated value</th><th>Generated change</th></tr></thead><tbody>{% for p in periods %}{% set d = deltas[loop.index0] %}<tr><td>{{ p }}</td><td>${{ '%.2f' % (base * (1 + d / 100.0)) }}</td><td>{% if d > 0 %}+{% endif %}{{ d }}%</td></tr>{% endfor %}</tbody></table></div>
+  </section>
+
+  <h2 class="is-198">Related local fixture pages</h2>
+  <ul class="is-199"><li><a href="{{ url_for('drug_detail', slug=drug.slug) }}">Drug record</a></li><li><a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage fixture</a></li><li><a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side-effect fixture</a></li><li><a href="{{ url_for('drug_images', slug=drug.slug) }}">Synthetic descriptor diagrams</a></li></ul>
+</article>
+</div>
+{{ drug_status_sidebar(drug) }}
+</div>
+<script>
+(function(){
+  var couponButton=document.getElementById('get-coupon-btn'), couponResult=document.getElementById('coupon-result');
+  if(couponButton&&couponResult){couponButton.addEventListener('click',function(){couponResult.hidden=false;couponButton.setAttribute('aria-expanded','true');});}
+  var tabs=Array.prototype.slice.call(document.querySelectorAll('#qty-tabs [role="tab"]')), panels=Array.prototype.slice.call(document.querySelectorAll('.price-qty-panel'));
+  function activate(tab){tabs.forEach(function(t){var on=t===tab;t.setAttribute('aria-selected',on?'true':'false');t.tabIndex=on?0:-1;});panels.forEach(function(p){p.hidden=p.id!==tab.getAttribute('aria-controls');});}
+  tabs.forEach(function(tab,index){tab.addEventListener('click',function(){activate(tab);});tab.addEventListener('keydown',function(e){if(e.key!=='ArrowRight'&&e.key!=='ArrowLeft')return;e.preventDefault();var next=(index+(e.key==='ArrowRight'?1:-1)+tabs.length)%tabs.length;tabs[next].focus();activate(tabs[next]);});});
+})();
+</script>
+{% endblock %}

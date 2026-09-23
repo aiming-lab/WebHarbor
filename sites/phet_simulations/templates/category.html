@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ subject.name }} Simulations &middot; {{ site_title }}{% endblock %}
+{% block content %}
+<header class="category-header" style="--tile-color: {{ subject.color }}">
+  <h1>{{ subject.name }}</h1>
+  <p>{{ subject.description }}</p>
+  <p class="category-count">{{ sims|length }} simulation{{ '' if sims|length == 1 else 's' }} in this category.</p>
+</header>
+
+{% if sims %}
+  <div class="sim-grid">
+    {% for sim in sims %}
+      {% include "_sim_card.html" %}
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="empty-state">No simulations available in this category yet.</p>
+{% endif %}
+{% endblock %}

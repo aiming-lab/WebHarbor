@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Credit Cards - Compare &amp; Apply Online - American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="hero" style="margin-top:24px;border-radius:12px;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">Personal Cards</span>
+        <h1>American Express Credit Cards</h1>
+        <p>Browse all Cards and find the one that fits the way you travel, dine, and shop. Apply with confidence &mdash; see if you&rsquo;re approved with no credit score impact.</p>
+      </div>
+      <div class="hero-art">
+        <img src="{{ url_for('static', filename='images/OneSite/All-Cards-Featured-mobile.jpg') }}" alt="American Express Cards">
+      </div>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <span class="label">Filter by</span>
+    <a class="chip {{ 'active' if filter_slug == 'all' }}" href="{{ url_for('cards_index', filter='all') }}">All Cards</a>
+    <a class="chip {{ 'active' if filter_slug == 'featured' }}" href="{{ url_for('cards_index', filter='featured') }}">Featured</a>
+    {% for category in categories %}
+    <a class="chip {{ 'active' if filter_slug == category.slug }}" href="{{ url_for('cards_index', filter=category.slug) }}">{{ category.filter_label or category.name }}</a>
+    {% endfor %}
+  </div>
+
+  <p class="section-sub">{{ cards|length }} {{ 'Card' if cards|length == 1 else 'Cards' }}</p>
+
+  <div class="card-grid">
+    {% for card in cards %}
+    <div class="card-tile">
+      {% if card.featured %}<span class="badge">Featured</span>{% endif %}
+      <a class="art-link" href="{{ url_for('card_detail', slug=card.slug) }}">
+        <img src="{{ url_for('static', filename=card.card_art.replace('static/', '')) }}" alt="{{ card.name }}">
+      </a>
+      <h3><a href="{{ url_for('card_detail', slug=card.slug) }}">{{ card.name }}</a></h3>
+      <p class="fee">Annual Fee: <b>{{ card.annual_fee_text }}</b></p>
+      <ul class="benefits">
+        {% for benefit in card.benefits()[:3] %}<li>{{ benefit }}</li>{% endfor %}
+      </ul>
+      <div class="actions">
+        <a class="btn btn-primary btn-sm" href="{{ url_for('apply_card', slug=card.slug) }}">Apply Now</a>
+        <a class="btn btn-outline btn-sm" href="{{ url_for('card_detail', slug=card.slug) }}">View Details</a>
+        <label class="compare-check">
+          <input type="checkbox" data-compare-slug="{{ card.slug }}" onchange="updateCompare(this)"> Add to Compare
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  <p style="margin-top:24px;"><a id="compare-link" class="btn btn-quiet" href="{{ url_for('cards_index') }}">Compare Selected Cards (0)</a></p>
+</div>
+
+<script>
+function updateCompare(box) {
+  const picked = Array.from(document.querySelectorAll('input[data-compare-slug]:checked'))
+    .map(el => el.dataset.compareSlug);
+  const link = document.getElementById('compare-link');
+  if (picked.length >= 2) {
+    link.href = '{{ url_for("compare_cards") }}?cards=' + picked.join(',');
+    link.textContent = 'Compare Selected Cards (' + picked.length + ')';
+  } else {
+    link.href = '{{ url_for("cards_index") }}';
+    link.textContent = 'Compare Selected Cards (' + picked.length + ')';
+  }
+}
+</script>
+{% endblock %}

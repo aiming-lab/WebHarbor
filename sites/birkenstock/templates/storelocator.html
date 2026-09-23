@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Find a Store | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="prose-page">
+  <nav class="crumbs" style="padding:0 0 10px"><a href="/us/">Home</a><span>|</span>Store Locator</nav>
+  <h1>Store Locator</h1>
+  <form class="locator-search" method="get" action="/us/storelocator/">
+    <input type="search" name="q" value="{{ q }}" placeholder="city (and state) or zipcode" aria-label="city (and state) or zipcode">
+    <button type="submit" class="btn btn-dark" aria-label="Search stores">SEARCH</button>
+  </form>
+  <p class="locator-meta">{% if q %}{{ total }} stores match &ldquo;{{ q }}&rdquo;{% else %}{{ total }} stores{% endif %} &middot; showing {{ stores|length }}</p>
+  <ul class="store-list">
+    {% for s in stores %}
+    <li><span class="city">{{ s.city }}</span><span class="addr">{{ s.address }}</span></li>
+    {% endfor %}
+  </ul>
+  <div class="pager">
+    {% if page > 1 %}<a href="/us/storelocator/?{% if q %}q={{ q | urlencode }}&{% endif %}page={{ page - 1 }}">&laquo; Previous</a>{% endif %}
+    <span class="current">{{ page }}</span>
+    {% if page * per_page < total %}<a href="/us/storelocator/?{% if q %}q={{ q | urlencode }}&{% endif %}page={{ page + 1 }}">Next &raquo;</a>{% endif %}
+  </div>
+  <p class="locator-meta" style="margin-top:16px">Looking for a specific city? <a href="/us/storelocator/">View all stores</a></p>
+</div>
+{% endblock %}

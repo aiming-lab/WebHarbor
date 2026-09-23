@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Chase Savings Accounts: Compare & Apply Today | Chase{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Chase Savings℠</h1>
+    <p class="muted">Savings made simple — our most popular savings account to help you reach your goals. $0 Monthly Service Fee for account owners under 25.</p>
+    <div class="chip-row">
+      <a class="chip chip--active" href="{{ url_for('savings') }}">Savings</a>
+      <a class="chip" href="{{ url_for('cds') }}">CDs</a>
+      <a class="chip" href="{{ url_for('checking') }}">Checking</a>
+    </div>
+  </div>
+</div>
+<div class="container">
+  {% for p in products %}
+  <div class="card-row card-row--deposit">
+    <div>
+      <div class="card-row__name"><a href="{{ url_for('savings_detail', slug=p.slug) }}" style="text-decoration:none;color:inherit;">{{ p.name }}</a></div>
+      <p class="muted" style="margin:0 0 10px;">{{ p.tagline }}</p>
+      <ul class="small" style="margin:0;padding-left:18px;color:#414042;">
+        {% for f in feats[p.id][:3] %}<li>{{ f }}</li>{% endfor %}
+      </ul>
+    </div>
+    <div>
+      <div class="kv"><h4>Monthly Service Fee</h4><p>{{ p.fee_text }}</p></div>
+      <div class="kv"><h4>Interest</h4><p class="small">{{ p.apy_text }}</p></div>
+    </div>
+    <div class="card-row__actions">
+      <a class="btn btn--green" href="{{ url_for('savings_detail', slug=p.slug) }}">Open now</a>
+      <a class="btn btn--outline" href="{{ url_for('savings_detail', slug=p.slug) }}">More details</a>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="card-row card-row--deposit">
+    <div>
+      <div class="card-row__name">Chase Certificate of Deposit</div>
+      <p class="muted" style="margin:0 0 10px;">Get a guaranteed rate with a CD, regardless of changes in the market.</p>
+      <ul class="small" style="margin:0;padding-left:18px;color:#414042;">
+        <li>Choose from 6 to 60 month terms</li>
+        <li>$1,000 minimum opening deposit</li>
+        <li>Existing Chase checking or savings customers can open online</li>
+      </ul>
+    </div>
+    <div>
+      <div class="kv"><h4>Rates</h4><p class="small">Term-dependent APYs — see current CD rates.</p></div>
+    </div>
+    <div class="card-row__actions">
+      <a class="btn btn--green" href="{{ url_for('cds') }}">See details</a>
+    </div>
+  </div>
+
+  <div class="section">
+    <h2>Tools and resources to help strengthen your savings strategy</h2>
+    <div class="trio">
+      <div class="trio-card"><div class="trio-card__body"><h4>Manage your budget</h4><p>Learn household budgeting basics in the Education Center.</p><a href="{{ url_for('education', category='budgeting-saving') }}">View our savings resources</a></div></div>
+      <div class="trio-card"><div class="trio-card__body"><h4>Grow your savings</h4><p>Understand the different types of savings accounts.</p><a href="{{ url_for('article_detail', slug='types-of-savings-accounts') }}">Read more</a></div></div>
+      <div class="trio-card"><div class="trio-card__body"><h4>Find a banker near you</h4><p>Meet with a banker at a Chase branch to talk through your goals.</p><a href="{{ url_for('locator') }}">Find a branch</a></div></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

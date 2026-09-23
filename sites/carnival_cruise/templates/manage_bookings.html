@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Manage My Cruises | Carnival Cruise Line{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="results-count">
+    <h1>Manage My Cruises</h1>
+    <span class="results-note">View, update or add fun to your bookings.</span>
+  </div>
+  {% for b in bookings %}
+  <article class="result-card">
+    <div class="result-photo">
+      <img src="{{ url_for('static', filename=b.itinerary.image.replace('static/', '')) }}" alt="{{ b.itinerary.title }}">
+    </div>
+    <div class="result-body">
+      <h2 class="result-title">{{ b.itinerary.title }}</h2>
+      <div class="result-ship">{{ b.itinerary.ship.name }}</div>
+      <div class="result-route">Booking {{ b.booking_number }} &middot; {{ b.sailing.dep_arr }} ({{ b.sailing.dep_arr_days }})</div>
+      <div class="result-meta">
+        <span>{{ b.room_category }}</span>
+        <span>Cabin {{ b.cabin_number }}</span>
+        <span>{{ b.guests }} guest{{ 's' if b.guests > 1 }}</span>
+        <span>${{ '%.2f' % b.total_price }}</span>
+        {% if b.status == 'cancelled' %}<span class="soldout">Cancelled</span>{% endif %}
+      </div>
+    </div>
+    <div class="result-price-box">
+      {% if b.status == 'confirmed' %}
+      <a class="btn btn-blue btn-small" href="{{ url_for('manage_booking_detail', booking_number=b.booking_number) }}">Manage Booking</a>
+      {% else %}
+      <span class="small muted">Cancelled</span>
+      {% endif %}
+    </div>
+  </article>
+  {% else %}
+  <div class="text-center" style="padding:40px 0;">
+    <h2>No bookings found.</h2>
+    <p class="muted">Book a cruise to see it here.</p>
+    <a class="btn btn-blue" href="{{ url_for('cruise_search') }}">Find a cruise</a>
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

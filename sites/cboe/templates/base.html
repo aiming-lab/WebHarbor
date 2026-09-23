@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Cboe Global Markets{% endblock %} | Cboe</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='fonts/fonts.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="logo" aria-label="Cboe">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 303.4 100.2" height="40" width="120" aria-hidden="true">
+        <path class="logo-fill" d="M135,33.7h-1.5c-7.4,0-13.8,2.1-19,6V9.4h-12.3v89.7h10.7l0.8-5.1c5.2,4.2,12,6.3,19.9,6.3h0.2 c9-0.1,16.7-3.2,22.2-9c5.6-6,8.6-14.4,8.6-24.3C164.7,47.3,153.1,34.4,135,33.7L135,33.7z M134.1,89.8h-0.5 c-10.8,0-17.4-8.7-17.4-22.8s6.7-22.8,17.6-22.8h1.1c10.1,0.6,16.3,9.2,16.3,22.7C151.1,80.8,144.6,89.5,134.1,89.8z M199.1,33.7 c-9.1,0-16.9,3.1-22.5,9.1S168,57.2,168,67.1c0,20.3,9.9,33.4,31.2,33.4c9.1,0,16.9-3.1,22.5-9c5.6-6,8.6-14.4,8.6-24.3 C230.3,46.8,218,33.7,199.1,33.7L199.1,33.7z M199.1,89.8c-10.8,0-17.4-8.7-17.4-22.8s6.7-22.8,17.6-22.8c10.8,0,17.4,8.7,17.4,22.8 S209.9,89.8,199.1,89.8z M246.8,70.1c0.1,12.9,6.7,19.7,18.7,19.7c11.8,0,18.7-6.5,19.3-7.2l5.3,8.7c0,0-8.5,9-26.2,9 s-30.3-12.2-30.3-33.1c0-21.1,13.2-33.4,30.3-33.4c17.2,0,27.3,12.9,27.3,31.2l-0.1,5.1H246.8L246.8,70.1z M263.5,43.6 c-11.2,0-16.1,9.2-16.7,17h32.1C278.9,51.9,274.6,43.6,263.5,43.6z"></path>
+        <path class="logo-green" d="M78.8,39.6l-8-8l3.5-3.6l4.5-4.5l8.1,8.1L78.8,39.6z M78.8,16.3l-8-8l4.6-4.6l3.4-3.5l8.1,8.1L78.8,16.3z M90.5,28l-8.1-8.1l4.5-4.4l3.6-3.6l8,8L90.5,28z"></path>
+        <path class="logo-fill" d="M43.3,88c-18,0-29.7-14.5-29.7-35.7s12.3-35.7,30.1-35.7c13.1,0,18.9,6.6,23.4,11.4l8-8.1 C70.9,15.5,62.4,4.8,43.3,4.8C19.8,4.8-0.4,22.5-0.4,52.4c0,30,18.1,47.8,43.1,47.8c18.6,0,28.7-9.8,32.6-14.9L67,77 C63.4,81.2,55.6,88,43.3,88z"></path>
+      </svg>
+    </a>
+    <nav class="main-nav" aria-label="Main">
+      <a href="/markets/us/options/">Markets</a>
+      <a href="/search?q=market+data">Data</a>
+      <a href="/tradable-products/product-list">Products</a>
+      <a href="/insights/">Insights &amp; Education</a>
+      <a href="/about/">About Us</a>
+    </nav>
+    <div class="header-actions">
+      <a href="/search" class="search-icon" aria-label="Search">
+        <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg>
+      </a>
+      {% if current_user.is_authenticated %}
+        <a href="/account" class="btn-outline">{{ current_user.display_name }}</a>
+        <a href="/account/logout" class="btn-link">Log Out</a>
+      {% else %}
+        <a href="/account/login" class="btn-outline">Sign In</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+{% block breadcrumb %}{% endblock %}
+
+<main>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flashes">
+        {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-pattern footer-pattern-left" aria-hidden="true"></div>
+  <div class="footer-pattern footer-pattern-right" aria-hidden="true"></div>
+  <div class="footer-inner">
+    <div class="footer-brand">
+      <svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 303.4 100.2" height="36" width="108" aria-hidden="true">
+        <path class="logo-fill" d="M135,33.7h-1.5c-7.4,0-13.8,2.1-19,6V9.4h-12.3v89.7h10.7l0.8-5.1c5.2,4.2,12,6.3,19.9,6.3h0.2 c9-0.1,16.7-3.2,22.2-9c5.6-6,8.6-14.4,8.6-24.3C164.7,47.3,153.1,34.4,135,33.7L135,33.7z M134.1,89.8h-0.5 c-10.8,0-17.4-8.7-17.4-22.8s6.7-22.8,17.6-22.8h1.1c10.1,0.6,16.3,9.2,16.3,22.7C151.1,80.8,144.6,89.5,134.1,89.8z M199.1,33.7 c-9.1,0-16.9,3.1-22.5,9.1S168,57.2,168,67.1c0,20.3,9.9,33.4,31.2,33.4c9.1,0,16.9-3.1,22.5-9c5.6-6,8.6-14.4,8.6-24.3 C230.3,46.8,218,33.7,199.1,33.7L199.1,33.7z M199.1,89.8c-10.8,0-17.4-8.7-17.4-22.8s6.7-22.8,17.6-22.8c10.8,0,17.4,8.7,17.4,22.8 S209.9,89.8,199.1,89.8z M246.8,70.1c0.1,12.9,6.7,19.7,18.7,19.7c11.8,0,18.7-6.5,19.3-7.2l5.3,8.7c0,0-8.5,9-26.2,9 s-30.3-12.2-30.3-33.1c0-21.1,13.2-33.4,30.3-33.4c17.2,0,27.3,12.9,27.3,31.2l-0.1,5.1H246.8L246.8,70.1z M263.5,43.6 c-11.2,0-16.1,9.2-16.7,17h32.1C278.9,51.9,274.6,43.6,263.5,43.6z"></path>
+        <path class="logo-green" d="M78.8,39.6l-8-8l3.5-3.6l4.5-4.5l8.1,8.1L78.8,39.6z M78.8,16.3l-8-8l4.6-4.6l3.4-3.5l8.1,8.1L78.8,16.3z M90.5,28l-8.1-8.1l4.5-4.4l3.6-3.6l8,8L90.5,28z"></path>
+        <path class="logo-fill" d="M43.3,88c-18,0-29.7-14.5-29.7-35.7s12.3-35.7,30.1-35.7c13.1,0,18.9,6.6,23.4,11.4l8-8.1 C70.9,15.5,62.4,4.8,43.3,4.8C19.8,4.8-0.4,22.5-0.4,52.4c0,30,18.1,47.8,43.1,47.8c18.6,0,28.7-9.8,32.6-14.9L67,77 C63.4,81.2,55.6,88,43.3,88z"></path>
+      </svg>
+      <p class="copyright">&copy;2026 Cboe Exchange, Inc.<br>All rights reserved.</p>
+      <div class="social-icons">
+        <a href="https://www.linkedin.com/company/cboe" aria-label="LinkedIn Page"><img src="{{ url_for('static', filename='icons/linkedin-icon.svg') }}" alt="LinkedIn Page" width="24" height="24"></a>
+        <a href="http://www.x.com/cboe" aria-label="X Page"><img src="{{ url_for('static', filename='icons/x-icon-cboe-com.svg') }}" alt="X Page" width="24" height="24"></a>
+        <a href="https://www.instagram.com/cboeglobalmarkets" aria-label="Instagram Page"><img src="{{ url_for('static', filename='icons/instagram-icon.svg') }}" alt="Instagram Page" width="24" height="24"></a>
+        <a href="https://www.youtube.com/user/cboetv" aria-label="YouTube Page"><img src="{{ url_for('static', filename='icons/youtube-icon.svg') }}" alt="YouTube Page" width="24" height="24"></a>
+        <a href="https://www.facebook.com/pages/cboe-chicago-board-options-exchange/177809058917950?ref=ts" aria-label="Facebook Page"><img src="{{ url_for('static', filename='icons/facebook-icon.svg') }}" alt="Facebook Page" width="24" height="24"></a>
+        <a href="/insights/" aria-label="Insights feed"><img src="{{ url_for('static', filename='icons/rss-icon.svg') }}" alt="Insights feed" width="24" height="24"></a>
+      </div>
+    </div>
+    <div class="footer-cols">
+      <div class="footer-col">
+        <h4>About</h4>
+        <a href="/about/">About Us</a>
+        <a href="/about/hours">Hours &amp; Holidays</a>
+        <a href="/about/global-trading-hours">Global Trading Hours</a>
+        <a href="/optionsinstitute">The Options Institute</a>
+        <a href="/insights/">Insights</a>
+        <a href="/insights/todays-market-take">Today's Market Take</a>
+      </div>
+      <div class="footer-col">
+        <h4>Markets &amp; Data</h4>
+        <a href="/markets/us/options/">U.S. Options</a>
+        <a href="/markets/us/options/market-statistics/daily">Daily Market Statistics</a>
+        <a href="/delayed_quotes/SPX">SPX Delayed Quotes</a>
+        <a href="/delayed_quotes/VIX">VIX Delayed Quotes</a>
+        <a href="/tradable-products/product-list">Tradable Products</a>
+        <a href="/search">Search</a>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <a href="/about/">Disclaimers</a>
+        <a href="/about/">Privacy Statement</a>
+        <a href="/about/">Terms &amp; Conditions</a>
+        <a href="/about/">Use of Content</a>
+        <a href="/about/">Your Privacy Choices</a>
+        <a href="/about/">Do Not Sell or Share My Personal Information</a>
+      </div>
+    </div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/site.js') }}"></script>
+</body>
+</html>

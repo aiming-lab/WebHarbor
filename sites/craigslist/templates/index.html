@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block body_class %}home-page{% endblock %}
+{% block content %}
+<div class="cl-home">
+<aside class="home-sidebar"><h1>☮ craigslist</h1><p><a href="{{ url_for('post_listing') }}">✎ post an ad</a></p>
+<form class="home-search" action="{{ url_for('search') }}"><input name="q" placeholder="search craigslist" aria-label="Search craigslist"><button>search</button></form>
+<p class="snapshot-note">SF bay area<br>Offline snapshot: {{ snapshot_date }}</p>
+<ul class="home-info">{% for page in ['help','safety','privacy','about'] %}<li><a href="{{ url_for('information',page=page) }}">{{ page }}</a></li>{% endfor %}</ul></aside>
+<section><nav class="home-region"><h2>SF bay area</h2><div class="sublinks">{% for region in regions %}<a title="{{ region }}" href="{{ url_for('search',area=region) }}">{{ region }}</a>{% endfor %}</div></nav>
+<div class="home-categories">{% for group in category_groups() %}<section><h3><a href="{{ url_for('search',section=group.slug) }}">{{ group.name }}</a></h3><ul>{% for cat in group.categories %}<li><a href="{{ url_for('category_search',category_slug=cat.slug) }}">{{ cat.name }}</a><small>{{ counts.get(cat.slug,0) }}</small></li>{% endfor %}</ul></section>{% endfor %}</div>
+<p class="snapshot-note">This local snapshot contains selected public listings. The original photos and wording are preserved; availability is historical. Account activity stays in this demo.</p></section>
+</div>
+{% endblock %}

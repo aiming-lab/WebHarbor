@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Explore Amex Global Lounge Collection® | Amex US{% endblock %}
+{% block content %}
+<div class="container">
+  <p class="crumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Travel &rsaquo; Airport Lounge Access by Card</p>
+  <div class="hero" style="margin-top:12px;border-radius:12px;">
+    <div class="inner">
+      <div class="hero-copy">
+        <span class="eyebrow">Global Lounge Collection&reg;</span>
+        <h1>Enjoy access to more than 1,550 airport lounges across 140 countries</h1>
+        <p>including flagship locations through The Centurion&reg; Network. Lounge access is a benefit of eligible American Express Cards.</p>
+      </div>
+      <div class="hero-art">
+        <img src="{{ url_for('static', filename='images/featured-benefits/GlobalLoungeCollection.jpg') }}" alt="Global Lounge Collection" style="max-height:320px;border-radius:10px;">
+      </div>
+    </div>
+  </div>
+
+  <div class="band-white">
+    <div class="container">
+      <h2 class="section-title">Lounge Access by Card</h2>
+      <p class="section-sub">The Cards below include airport lounge access through the Global Lounge Collection&reg;.</p>
+      <div class="card-grid">
+        {% for card in lounge_cards %}
+        <div class="card-tile">
+          <a class="art-link" href="{{ url_for('card_detail', slug=card.slug) }}">
+            <img src="{{ url_for('static', filename=card.card_art.replace('static/', '')) }}" alt="{{ card.name }}">
+          </a>
+          <h3><a href="{{ url_for('card_detail', slug=card.slug) }}">{{ card.name }}</a></h3>
+          <p class="fee">Annual Fee: <b>{{ card.annual_fee_text }}</b></p>
+          <ul class="benefits">
+            {% for benefit in card.benefits() %}
+              {% if 'lounge' in benefit.lower() or 'Centurion' in benefit %}
+              <li>{{ benefit }}</li>
+              {% endif %}
+            {% endfor %}
+          </ul>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  <div class="band">
+    <div class="container">
+      <h2 class="section-title">The Centurion&reg; Lounge Network</h2>
+      <p>At The Centurion Lounge, we&rsquo;re committed to providing an exceptional experience and an escape at the airport. Enjoy exemplary service, innovative amenities with your needs in mind, and an expertly curated selection of food and drinks, all inspired by the location. Complimentary for eligible Card Members.</p>
+      <h2 class="section-title" style="margin-top:30px;">Featured Airports</h2>
+      <div class="two-col">
+        <div class="card-tile"><h3>John F. Kennedy Int&rsquo;l Airport (JFK)</h3><p style="font-size:14px;">New York</p></div>
+        <div class="card-tile"><h3>London Heathrow Airport (LHR)</h3><p style="font-size:14px;">London</p></div>
+        <div class="card-tile"><h3>Hong Kong Int&rsquo;l Airport (HKG)</h3><p style="font-size:14px;">Hong Kong</p></div>
+        <div class="card-tile"><h3>San Francisco Int&rsquo;l Airport (SFO)</h3><p style="font-size:14px;">San Francisco</p></div>
+        <div class="card-tile"><h3>Miami Int&rsquo;l Airport (MIA)</h3><p style="font-size:14px;">Miami</p></div>
+        <div class="card-tile"><h3>Hartsfield&ndash;Jackson Atlanta Int&rsquo;l Airport (ATL)</h3><p style="font-size:14px;">Atlanta</p></div>
+      </div>
+      <p style="font-size:13px;color:#5c5f63;margin-top:16px;">*As of 01/2026</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

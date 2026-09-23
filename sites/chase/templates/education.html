@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Personal Banking Education and Resources | Chase{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Chase Education Center</h1>
+    <p class="muted">Discover how financial resources like a savings or checking account can help achieve financial stability and independence.</p>
+    <div class="chip-row">
+      <a class="chip {{ 'chip--active' if not active }}" href="{{ url_for('education') }}">All topics</a>
+      {% for slug, label in categories %}
+      <a class="chip {{ 'chip--active' if active == slug }}" href="{{ url_for('education', category=slug) }}">{{ label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+<div class="container">
+  <section class="section">
+    <p class="result-summary">{{ articles|length }} articles{% if active %} in {{ categories[0][1] if active == categories[0][0] else (categories|selectattr('0', 'equalto', active)|list|first)[1] if (categories|selectattr('0', 'equalto', active)|list) else '' }}{% endif %}.</p>
+    <div class="article-grid">
+      {% for a in articles %}
+      <div class="article-card">
+        {% if a.hero %}<img src="{{ url_for('static', filename='images/' + a.hero) }}" alt="{{ a.title }}">{% else %}
+        <img src="{{ url_for('static', filename='banners/popular-topics-bento.jpg') }}" alt="{{ a.title }}">{% endif %}
+        <div class="article-card__body">
+          <div class="article-card__kicker">{{ a.category }} · {{ a.minutes }} min read</div>
+          <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+          <p>{{ a.insight_list[0] if a.insight_list else (a.body[:140] + '…') }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

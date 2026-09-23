@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Mortgage Loans | Chase Home Lending{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Chase Home Lending</h1>
+    <p class="muted">Buying a house, refinancing, or tapping your home equity — see today's rates and calculate your payment.</p>
+    <div class="chip-row">
+      <a class="chip chip--active" href="{{ url_for('mortgage') }}">Overview</a>
+      <a class="chip" href="{{ url_for('mortgage_rates') }}">Mortgage rates</a>
+      <a class="chip" href="{{ url_for('mortgage_calculator') }}">Calculators</a>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <section class="section">
+    <div class="trio">
+      <div class="trio-card">
+        <div class="trio-card__band trio-card__band--blue"><h3>Buy a home</h3></div>
+        <div class="trio-card__body">
+          <h4>Get preapproved before you shop</h4>
+          <p>See how much you may be able to borrow, lock your rate, and shop with confidence.</p>
+          <a class="btn btn--blue" href="{{ url_for('mortgage_rates') }}">Get started</a>
+        </div>
+      </div>
+      <div class="trio-card">
+        <div class="trio-card__band trio-card__band--navy"><h3>Refinance</h3></div>
+        <div class="trio-card__body">
+          <h4>Lower your payment or your term</h4>
+          <p>Refinancing may reduce your monthly payment or help you pay off your loan sooner.</p>
+          <a class="btn btn--blue" href="{{ url_for('mortgage_calculator') }}">Calculate payments</a>
+        </div>
+      </div>
+      <div class="trio-card">
+        <div class="trio-card__band trio-card__band--blue"><h3>Home equity</h3></div>
+        <div class="trio-card__body">
+          <h4>Use your home's equity</h4>
+          <p>A home equity line of credit (HELOC) lets you borrow against the value of your home.</p>
+          <a class="btn btn--blue" href="{{ url_for('article_detail', slug='heloc-draw-period') }}">Learn about HELOCs</a>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="section section--soft">
+    <h2>Learn about mortgages</h2>
+    <div class="article-grid">
+      <div class="article-card">
+        <img src="{{ url_for('static', filename='images/articles/loan-amortization-seo-loan-amortization.jpg') }}" alt="Amortized loans">
+        <div class="article-card__body"><div class="article-card__kicker">Financing a home</div>
+          <h3><a href="{{ url_for('article_detail', slug='loan-amortization') }}">Understanding amortized loans</a></h3>
+          <p>How amortization works and how to calculate mortgage payments.</p></div>
+      </div>
+      <div class="article-card">
+        <img src="{{ url_for('static', filename='images/articles/bridge-loan-vs-heloc-seo-bridge-loan-vs-heloc.jpg') }}" alt="Bridge loan vs HELOC">
+        <div class="article-card__body"><div class="article-card__kicker">Financing a home</div>
+          <h3><a href="{{ url_for('article_detail', slug='bridge-loan-vs-heloc') }}">Bridge loan vs. HELOC</a></h3>
+          <p>The differences between these two ways to tap home equity.</p></div>
+      </div>
+      <div class="article-card">
+        <img src="{{ url_for('static', filename='images/articles/how-to-buy-a-home-hero.jpg') }}" alt="Buying a home">
+        <div class="article-card__body"><div class="article-card__kicker">Managing your mortgage</div>
+          <h3><a href="{{ url_for('article_detail', slug='escrow-refund') }}">Escrow refund: what it is</a></h3>
+          <p>Why you might receive an escrow refund and how it works.</p></div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

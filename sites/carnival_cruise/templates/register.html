@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Create Account | Carnival Cruise Line{% endblock %}
+{% block content %}
+<div class="form-card">
+  <h1>Create Your Account</h1>
+  <p class="muted small">Join Carnival Rewards and get more of what you love with Carnival.</p>
+  <form method="post" action="{{ url_for('register') }}">
+    <label for="first_name">First Name</label>
+    <input id="first_name" name="first_name" type="text" required autocomplete="given-name">
+    <label for="last_name">Last Name</label>
+    <input id="last_name" name="last_name" type="text" required autocomplete="family-name">
+    <label for="email">Email Address</label>
+    <input id="email" name="email" type="email" required autocomplete="email">
+    <label for="phone">Phone Number</label>
+    <input id="phone" name="phone" type="tel" autocomplete="tel">
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" required minlength="8" autocomplete="new-password">
+    <div class="form-hint">At least 8 characters.</div>
+    <label for="confirm">Confirm Password</label>
+    <input id="confirm" name="confirm" type="password" required autocomplete="new-password">
+    <button class="btn btn-red btn-block" type="submit">CREATE ACCOUNT</button>
+  </form>
+  <p class="small" style="margin-top:16px;">Already have an account? <a href="{{ url_for('login') }}">Log in</a></p>
+</div>
+{% endblock %}

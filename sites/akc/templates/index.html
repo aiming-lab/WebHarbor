@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}American Kennel Club{% endblock %}
+{% block content %}
+<section class="home-breed-search">
+  <label for="home-breed-select">Search for a Breed</label>
+  <select id="home-breed-select" aria-label="Search for a Breed" onchange="if(this.value) window.location.href=this.value">
+    <option value="">Select a Breed</option>
+    {% for breed in featured %}
+      <option value="{{ url_for('breed_detail', slug=breed.slug) }}">{{ breed.name }}</option>
+    {% endfor %}
+  </select>
+</section>
+
+<section class="home-hero">
+  <aside class="home-hero-aside">
+    <img src="{{ url_for('static', filename='images/akc-home/brand-aside.webp') }}" alt="A dog relaxing with its owner">
+    <h2>At AKC, we know<br>and love all dogs.</h2>
+    <form action="{{ url_for('search') }}">
+      <input name="q" aria-label="How can we help?" placeholder="How can we help?">
+      <button type="submit" aria-label="Search">⌕</button>
+    </form>
+  </aside>
+
+  <div class="home-hero-field">
+    <h1>Everything We Do, We Do for Dogs</h1>
+    <div class="home-hero-links">
+      <a class="home-entry entry-register" href="{{ url_for('register') }}">
+        <img src="{{ url_for('static', filename='images/akc-home/register-today.webp') }}" alt="">
+        <span><b aria-hidden="true">＋</b> Register Today</span>
+      </a>
+      <a class="home-entry entry-training" href="{{ url_for('articles') }}">
+        <img src="{{ url_for('static', filename='images/akc-home/training.webp') }}" alt="">
+        <span><b aria-hidden="true">＋</b> Training</span>
+      </a>
+      <a class="home-entry entry-puppies" href="{{ url_for('breeds') }}">
+        <img src="{{ url_for('static', filename='images/akc-home/find-puppies.webp') }}" alt="">
+        <span><b aria-hidden="true">＋</b> Find Puppies</span>
+      </a>
+      <a class="home-entry entry-shop" href="{{ url_for('breeds') }}">
+        <img src="{{ url_for('static', filename='images/akc-home/shop.webp') }}" alt="">
+        <span><b aria-hidden="true">＋</b> Shop New Products</span>
+      </a>
+      <a class="home-entry entry-tv" href="{{ url_for('articles') }}">
+        <img src="{{ url_for('static', filename='images/akc-home/akc-tv.webp') }}" alt="">
+        <span><b aria-hidden="true">＋</b> AKC TV</span>
+      </a>
+      <a class="home-entry entry-insurance" href="{{ url_for('articles') }}">
+        <img src="{{ url_for('static', filename='images/akc-home/pet-insurance.webp') }}" alt="AKC Pet Insurance">
+        <span><b aria-hidden="true">＋</b> Learn about Pet Insurance</span>
+      </a>
+      <a class="home-entry entry-sports" href="{{ url_for('events') }}">
+        <img src="{{ url_for('static', filename='images/akc-home/sports.webp') }}" alt="">
+        <span><b aria-hidden="true">＋</b> Sports &amp; Events</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="registration-callout">
+  <div>
+    <h2>Declare Your Love and Register with the AKC</h2>
+    <p>Your dog is more than a pet — they’re family. Registering with the AKC means celebrating that bond while supporting great work for dogs everywhere.</p>
+    <a class="button primary" href="{{ url_for('register') }}">Make It Official Today</a>
+  </div>
+</section>
+
+<section class="section story-section">
+  <div class="section-head centered"><h2>Top Stories</h2></div>
+  <div class="story-grid">
+    {% for article in articles %}
+      <article class="story-card">
+        <a href="{{ url_for('article_detail', slug=article.slug) }}">
+          <img src="{{ url_for('static', filename='images/breeds/' ~ featured[loop.index0].slug ~ '.jpg') }}" alt="">
+          <small>{{ article.category }}</small>
+          <h3>{{ article.title }}</h3>
+        </a>
+      </article>
+    {% endfor %}
+    <article class="story-card">
+      <a href="{{ url_for('articles', category='Safety') }}"><img src="{{ url_for('static', filename='images/breeds/chihuahua.jpg') }}" alt="Small dog"><small>Safety</small><h3>Can Small Dogs Play With Large Dogs?</h3></a>
+    </article>
+  </div>
+</section>
+
+<section class="home-tv-band" aria-label="AKC TV">
+  <div class="home-tv-mark">AKC<span>tv</span></div>
+  <div><strong>24/7 Network for dog lovers</strong><p>The digital network for all things dog.</p></div>
+  <div class="home-tv-actions"><a href="{{ url_for('articles') }}">Watch Now</a><a href="{{ url_for('articles') }}">Roku</a><a href="{{ url_for('articles') }}">Apple TV</a><a href="{{ url_for('articles') }}">Amazon fireTV</a></div>
+</section>
+
+<section class="section latest-section">
+  <div class="section-head centered"><h2>Latest Stories</h2></div>
+  <div class="latest-story-grid">
+    {% for article in articles %}
+      <article><img src="{{ url_for('static', filename=loop.cycle('images/akc-home/expert-advice-feature.jpg', 'images/breeds/beagle.jpg', 'images/akc-home/agility-search.jpg')) }}" alt=""><small>{{ article.category }}</small><a href="{{ url_for('article_detail', slug=article.slug) }}"><h3>{{ article.title }}</h3></a><p>{{ article.summary }}</p></article>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="home-breed-tools">
+  <div>
+    <small>Breed Of The Day</small>
+    <a href="{{ url_for('breed_detail', slug=featured[0].slug) }}">{{ featured[0].name }}</a>
+  </div>
+  <div>
+    <h2>Find The Right Breed</h2>
+    <nav>
+      <a href="{{ url_for('breeds') }}">Explore Breeds</a>
+      <a href="{{ url_for('breed_selector') }}">Find Your Match</a>
+      <a href="{{ url_for('compare') }}">Compare Breeds</a>
+      <a href="{{ url_for('breeds') }}">Browse All Breeds</a>
+    </nav>
+  </div>
+</section>
+
+<section class="mission-band">
+  <div><h2>AKC Cares</h2></div>
+  <p>The AKC is dedicated to advancing canine health, responsible dog ownership, training, and the activities that help dogs and their people thrive together.</p>
+  <a class="button light-button" href="{{ url_for('articles') }}">Learn More</a>
+</section>
+
+<section class="care-detail-section" aria-label="AKC Cares">
+  <article><h3>AKC Canine Health Foundation</h3><p>Advancing research and treatment for diseases in all dogs.</p><a href="{{ url_for('articles') }}">Learn more about AKC Cares</a></article>
+  <article><h3>Rescue Network</h3><p>Supporting responsible rescue and rehoming across the country.</p><a href="{{ url_for('articles') }}">Learn about rescue</a></article>
+  <article><h3>AKC Reunite</h3><p>Helping lost pets find their way home through trusted recovery services.</p><a href="{{ url_for('articles') }}">Learn about AKC Reunite</a></article>
+  <article><h3>AKC Humane Fund</h3><p>Promoting responsible ownership and humane care for every dog.</p><a href="{{ url_for('articles') }}">Learn about the Humane Fund</a></article>
+  <article><h3>Museum of the Dog</h3><p>Celebrating the history, art, and enduring bond between people and dogs.</p><a href="{{ url_for('articles') }}">Visit the Museum of the Dog</a></article>
+  <article><h3>Protecting Your Rights</h3><p>Advocating for dogs, owners, and the future of responsible ownership.</p><a href="{{ url_for('articles') }}">Learn about advocacy</a></article>
+</section>
+
+<section class="section sports-section">
+  <div class="section-head centered"><h2>Sports &amp; Events</h2></div>
+  <div class="event-preview-grid">
+    {% for event in events %}
+      <a href="{{ url_for('event_detail', slug=event.slug) }}">
+        <small>{{ event.event_type }}</small>
+        <h3>{{ event.title }}</h3>
+        <p>{{ event.city }}, {{ event.state }} · {{ event.starts_on.strftime("%B %d") }}</p>
+      </a>
+    {% endfor %}
+    <a href="{{ url_for('events') }}"><small>Fast CAT</small><h3>Fast CAT</h3><p>Find a nearby event and discover the fun of timed canine sports.</p></a>
+  </div>
+  <p class="centered-action"><a class="button primary" href="{{ url_for('events') }}">Find Events Near You</a></p>
+</section>
+{% endblock %}
