@@ -330,6 +330,29 @@ def contains_phrase(text, phrase):
     return _affirmative_search(pattern, normalize_text(text))
 
 
+def contains_phrase_loose(text, phrase):
+    """Like contains_phrase but also tolerant of interleaved punctuation
+    ('Subject: Serenity', 'Safeguard / Iron Will', 'Dragon's Rage', 'Ruined King: Gameplay')."""
+    words = [re.escape(w) for w in normalize_text(phrase).replace("-", " ").replace("_", " ").replace(":", " ").split()]
+    if not words:
+        return False
+    pattern = r"(?<!\w)" + r"[\s_\-:,.!?()/|&'\";]*".join(words) + r"(?!\w)"
+    return _affirmative_search(pattern, normalize_text(text))
+
+
+def near_any(text, name, tokens, radius=140):
+    """True when every token occurs within +/-radius characters of some
+    whole-word occurrence of `name` (entity-scoped deterministic matching)."""
+    t = normalize_text(text)
+    pat = r"(?<!\w)" + re.escape(normalize_text(name)) + r"(?!\w)"
+    wanted = [normalize_text(x) for x in tokens]
+    for m in re.finditer(pat, t):
+        window = t[max(0, m.start() - radius): m.end() + radius]
+        if all(tok and tok in window for tok in wanted):
+            return True
+    return False
+
+
 def phrases_in_order(text, phrases):
     """Each phrase present (contains_phrase semantics) AND appearing left-to-right."""
     normalized = normalize_text(text)
@@ -634,6 +657,61 @@ def bookmarks_of(db_path, user_id):
 def user_row(db_path, user_id):
     rows = db_query(db_path, "SELECT * FROM users WHERE id = ?", (user_id,))
     return dict(rows[0]) if rows else None
+
+
+def fav_triples(db_path, user_id=None):
+    """Sorted identity rows (user_id, champion_id, added_date) of favorite_champions."""
+    if user_id is None:
+        return sorted(tuple(r) for r in db_query(
+            db_path, "SELECT user_id, champion_id, added_date FROM favorite_champions"))
+    return sorted(tuple(r) for r in db_query(
+        db_path, "SELECT user_id, champion_id, added_date FROM favorite_champions WHERE user_id = ?",
+        (user_id,)))
+
+
+def bm_triples(db_path, user_id=None):
+    """Sorted identity rows (user_id, article_id, added_date) of bookmark_articles."""
+    if user_id is None:
+        return sorted(tuple(r) for r in db_query(
+            db_path, "SELECT user_id, article_id, added_date FROM bookmark_articles"))
+    return sorted(tuple(r) for r in db_query(
+        db_path, "SELECT user_id, article_id, added_date FROM bookmark_articles WHERE user_id = ?",
+        (user_id,)))
+
+
+def user_triples(db_path):
+    """Sorted identity rows (id, username, email) of users."""
+    return sorted(tuple(r) for r in db_query(
+        db_path, "SELECT id, username, email FROM users"))
+
+
+def check_set_delta(judge, before, after, expected_added, expected_removed, label, detail=""):
+    """Exact-set delta check: added/removed sets must equal the expectation exactly."""
+    got_added = [t for t in after if t not in before]
+    got_removed = [t for t in before if t not in after]
+    ok = sorted(got_added) == sorted(expected_added) and sorted(got_removed) == sorted(expected_removed)
+    return judge.check(label, ok,
+                       f"expected added={sorted(expected_added)} removed={sorted(expected_removed)}; "
+                       f"observed added={got_added} removed={got_removed}{(' ' + detail) if detail else ''}")
+
+
+def check_favorites_delta(judge, initial_db, after_db, added=(), removed=(), label="favorites_delta_exact"):
+    return check_set_delta(judge, fav_triples(initial_db), fav_triples(after_db),
+                           added, removed, label)
+
+
+def check_bookmarks_delta(judge, initial_db, after_db, added=(), removed=(), label="bookmarks_delta_exact"):
+    return check_set_delta(judge, bm_triples(initial_db), bm_triples(after_db),
+                           added, removed, label)
+
+
+def check_user_profile_delta(judge, initial_db, after_db, user_id, expected_changes,
+                              label="profile_delta_exact"):
+    """Exactly `expected_changes` {column: (before, after)} on one user row and no other edits."""
+    before, after = user_row(initial_db, user_id), user_row(after_db, user_id)
+    diffs = {k: (before[k], after[k]) for k in before if before[k] != after[k]}
+    return judge.check(label, diffs == expected_changes,
+                       f"expected={expected_changes}, observed={diffs}")
 
 
 # ---------------------------------------------------------------- judge harness
