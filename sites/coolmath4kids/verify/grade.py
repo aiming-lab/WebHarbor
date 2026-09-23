@@ -105,6 +105,13 @@ def stateful_rows(j, init_db, after_db, table):
 
 
 def others_unchanged(j, init_db, after_db, ignore):
+    before, after = rows(init_db), rows(after_db)
+    if before is not None and after is not None:
+        for table in ignore - {"favorites"}:
+            old = {row["id"]: row for row in before[table]}
+            current = {row["id"]: row for row in after[table]}
+            j.check("preserve_existing_" + table, all(current.get(k) == v for k, v in old.items()),
+                    "all existing rows retained exactly")
     changed = tables_unchanged(init_db, after_db, ignore=ignore)
     j.check("db_other_tables_unchanged", changed == [],
             f"changed tables: {changed}" if changed else
@@ -460,12 +467,14 @@ def t23(j, traj, init_db, after_db):
     j.check("nav_account", navigated_path(traj, "/account"),
             "the My Progress page must be opened")
     answer = final_answer(traj)
+    clauses = re.split(r"[;\n]|,\s+(?:and\s+)?|\band\b|(?<=[.!?])\s+", answer, flags=re.I)
     for rng, score in CAROL_DIVISION:
-        j.check(f"answer_range_{rng.replace('-', '_')}", affirms(answer, rng),
-                f"expected range {rng!r}")
-        j.check(f"answer_score_{score.replace('-', '_')}",
-                affirm_number(answer, int(score)),
-                f"expected score {score} for {rng}")
+        fraction = "9/10" if score == "90" else "10/10"
+        ok = any(affirms(clause, rng) and
+                 (re.search(r"(?<!\d)" + score + r"\s*%", clause) or
+                  re.search(r"(?<!\d)" + fraction.replace("/", r"\s*(?:/|out of)\s*") + r"(?!\d)", clause))
+                 for clause in clauses)
+        j.check("answer_score_for_" + rng, ok, "score bound to its numbers range")
     readonly_gate(j, init_db, after_db)
 
 
@@ -482,7 +491,7 @@ def t24(j, traj, init_db, after_db):
     j.check("answer_facts_score",
             affirm_number(answer, DAVID_BEST_PLAY[1]) and affirm_number(answer, DAVID_BEST_PLAY[2]),
             f"expected {DAVID_BEST_PLAY[1]} of {DAVID_BEST_PLAY[2]} facts")
-    j.check("answer_position", affirmed_place(answer) == DAVID_BEST_PLAY[3],
+    j.check("answer_position", any(affirmed_place(clause) == DAVID_BEST_PLAY[3] for clause in re.split(r"(?<=[.!?])\s+|\n", answer) if re.search(r"finishing|best game result|finished", clause, re.I)),
             f"expected finishing place {DAVID_BEST_PLAY[3]}")
     readonly_gate(j, init_db, after_db)
 
@@ -492,6 +501,13 @@ def _favorites_after(j, init_db, after_db, user_id):
     if not ok:
         return None
     before, after = rows(init_db), rows(after_db)
+    old = {r["id"]: r for r in before["favorites"]}
+    current = {r["id"]: r for r in after["favorites"]}
+    removed = [old[k] for k in old.keys() - current.keys()]
+    allowed = {"tugboat-addition"} if user_id == ALICE else {"meteor-multiplication", "tractor-multiplication"}
+    exact = len(removed) == 1 and removed[0]["user_id"] == user_id and removed[0]["game_slug"] in allowed
+    exact = exact and current.keys() <= old.keys() and all(old[k] == v for k, v in current.items())
+    j.check("db_exact_favorite_removal", exact, "only the requested favorite removed; every other row preserved")
     return [f.get("game_slug") for f in after["favorites"] if f.get("user_id") == user_id]
 
 
@@ -591,7 +607,7 @@ TASKS = {0: t00, 1: t01, 2: t02, 3: t03, 4: t04, 5: t05, 6: t06, 7: t07,
          29: t29, 30: t30, 31: t31}
 
 
-def grade(number):
+def grade(number, emit=True):
     args = parse_args()
     traj = load_run(args.run_dir)
     j = Judge(f"Coolmath4Kids--{number}", no_llm=args.no_llm)
@@ -616,4 +632,6 @@ def grade(number):
     init_db = resolve_db(args.initial_db, args.container, "instance_seed")
     after_db = resolve_db(args.after_db, args.container, "instance")
     TASKS[number](j, traj, init_db, after_db)
-    j.emit()
+    if emit:
+        j.emit()
+    return j
