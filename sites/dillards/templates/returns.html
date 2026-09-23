@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Returns | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; Returns</div>
+  <div class="content-page">
+    <h1>Return Policy</h1>
+    {% if page %}
+      {% set d = page.payload() %}
+      {% if d.get('sections') %}
+        {% for heading, body in d['sections'] %}
+          <h2>{{ heading }}</h2>
+          <p>{{ body }}</p>
+        {% endfor %}
+      {% endif %}
+    {% else %}
+      <p>Merchandise may be returned within 30 days of purchase with the original receipt or gift receipt. Sale merchandise with "Additional 50% Off" markdowns is final sale.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ query }} - Google Shopping{% endblock %}
+{% block content %}
+<div class="search-layout">
+  <aside class="filters">
+    <h3>Filters</h3>
+    <form method="get" action="{{ url_for('search') }}">
+      <input type="hidden" name="q" value="{{ query }}">
+      <input type="hidden" name="sort" value="{{ sort }}">
+      {% if source %}<input type="hidden" name="source" value="{{ source }}">{% endif %}
+      <div class="group">
+        <h4>Department</h4>
+        {% for d in all_departments %}
+        <label><input type="radio" name="department" value="{{ d.name }}" {% if department == d.name %}checked{% endif %} onchange="this.form.submit()"> {{ d.name }}</label>
+        {% endfor %}
+        <a class="clear" href="{{ url_for('search', q=query) }}">Clear</a>
+      </div>
+      <div class="group">
+        <h4>Store</h4>
+        {% for m in all_merchants %}
+        <label><input type="radio" name="store" value="{{ m }}" {% if store == m %}checked{% endif %} onchange="this.form.submit()"> {{ m }}</label>
+        {% endfor %}
+      </div>
+      <div class="group">
+        <h4>Price</h4>
+        <label>Min ($): <input type="number" step="0.01" min="0" name="price_min" value="{{ price_min }}" style="width:90px"></label>
+        <label>Max ($): <input type="number" step="0.01" min="0" name="price_max" value="{{ price_max }}" style="width:90px"></label>
+        <button class="explore-btn" type="submit" style="padding:6px 14px">Apply price</button>
+      </div>
+      <div class="group">
+        <h4>Rating</h4>
+        {% for r in ['4', '3'] %}
+        <label><input type="radio" name="rating" value="{{ r }}" {% if min_rating == r %}checked{% endif %} onchange="this.form.submit()"> {{ r }} stars &amp; up</label>
+        {% endfor %}
+      </div>
+    </form>
+  </aside>
+
+  <div class="results">
+    <div class="resultbar">
+      <span class="count">{{ products|length }} results for &ldquo;{{ query }}&rdquo;</span>
+      <form method="get" action="{{ url_for('search') }}" id="sortform">
+        <input type="hidden" name="q" value="{{ query }}">
+        {% if department %}<input type="hidden" name="department" value="{{ department }}">{% endif %}
+        {% if store %}<input type="hidden" name="store" value="{{ store }}">{% endif %}
+        {% if price_min %}<input type="hidden" name="price_min" value="{{ price_min }}">{% endif %}
+        {% if price_max %}<input type="hidden" name="price_max" value="{{ price_max }}">{% endif %}
+        {% if min_rating %}<input type="hidden" name="rating" value="{{ min_rating }}">{% endif %}
+        <select name="sort" onchange="document.getElementById('sortform').submit()">
+          <option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Sort by relevance</option>
+          <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Price: low to high</option>
+          <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Price: high to low</option>
+          <option value="discount" {% if sort == 'discount' %}selected{% endif %}>Biggest discount</option>
+        </select>
+      </form>
+    </div>
+
+    {% if products %}
+    <div class="result-grid">
+      {% for p in products %}
+      <a class="pcard" href="{{ url_for('product', upstream_id=p.upstream_id) }}">
+        <div class="tile">
+          {% if p.discount_pct %}<span class="badge">{{ p.discount_pct }}% OFF</span>{% endif %}
+          <img src="{{ url_for('static', filename='images/' + p.image) }}" alt="{{ p.title }}">
+        </div>
+        <div class="caption">
+          <div class="title">{{ p.title }}</div>
+          <div class="meta">
+            <span class="merchant">
+              {% if p.merchant_favicon %}<img src="{{ url_for('static', filename='images/' + p.merchant_favicon) }}" alt="">{% endif %}
+              {{ p.merchant_name }}
+            </span>
+            <span class="dot">&middot;</span>
+            <span class="pricegroup">
+              <span class="price">{{ p.price_display }}</span>
+              {% if p.was_display %}<span class="was">{{ p.was_display }}</span>{% endif %}
+            </span>
+          </div>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <h1>Nothing to see here</h1>
+      <p>Browse the rest of Google Shopping</p>
+      <a class="home-btn" href="{{ url_for('index') }}">Go to Shopping home</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

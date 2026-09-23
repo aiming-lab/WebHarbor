@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Shop By Brand | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; Shop By Brand</div>
+  <div class="page-head"><h1>Shop By Brand</h1></div>
+  <div class="brand-letter-grid">
+    {% for letter, brands in by_letter %}
+      <h2>{{ letter }}</h2>
+      {% for brand in brands %}
+        <a href="/brand/{{ brand.slug }}">{{ brand.name }}</a>
+      {% endfor %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

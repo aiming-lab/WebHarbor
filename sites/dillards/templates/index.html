@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Dillard's | Clothing, Shoes, Accessories, Cosmetics, Kids, Home{% endblock %}
+{% block content %}
+<div class="container">
+
+  <section class="hero-carousel">
+    {% for block in hero %}
+      {% set d = block.payload() %}
+      <div class="hero-slide{% if loop.first %} active{% endif %}"{% if not loop.first %} style="display:none"{% endif %}>
+        <a href="{{ d.link or '#' }}"><img src="/static/images/home/{{ d.image }}" alt="{{ d.alt }}"></a>
+      </div>
+    {% endfor %}
+  </section>
+
+  {% set grouped = [] %}
+  {% for block in blocks %}
+    {% set d = block.payload() %}
+    {% if d.get('group_start') %}
+      {% set _ = grouped.append({'head': d, 'tiles': []}) %}
+    {% elif d.get('tile') and grouped %}
+      {% set _ = grouped[-1]['tiles'].append(d) %}
+    {% elif d.get('tile') %}
+      {% set _ = grouped.append({'head': None, 'tiles': [d]}) %}
+    {% endif %}
+  {% endfor %}
+
+  {% for group in grouped %}
+    <section class="editorial-section">
+      {% if group.head %}
+        <h2>{{ group.head.heading }}</h2>
+        {% if group.head.subtitle %}<p class="subtitle">{{ group.head.subtitle }}</p>{% endif %}
+      {% endif %}
+      {% if group.tiles|length == 1 %}
+        <div class="tiles-row">
+          {% for t in group.tiles %}
+            <a class="tile" href="{{ t.link }}">
+              <img src="/static/images/home/{{ t.image }}" alt="{{ t.alt }}">
+            </a>
+          {% endfor %}
+        </div>
+      {% elif group.tiles|length == 4 %}
+        <div class="editorial-grid">
+          {% for t in group.tiles %}
+            <a class="tile" href="{{ t.link }}">
+              <img src="/static/images/home/{{ t.image }}" alt="{{ t.alt }}">
+              <span class="tile-label">{{ t.label }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% elif group.tiles|length == 2 %}
+        <div class="tiles-row">
+          {% for t in group.tiles %}
+            <a class="tile" href="{{ t.link }}"><img src="/static/images/home/{{ t.image }}" alt="{{ t.alt }}"></a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="editorial-grid">
+          {% for t in group.tiles %}
+            <a class="tile" href="{{ t.link }}">
+              <img src="/static/images/home/{{ t.image }}" alt="{{ t.alt }}">
+              <span class="tile-label">{{ t.label }}</span>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+  {% endfor %}
+
+  <section class="credit-banner">
+    <a href="/c/DillardsCard"><img src="/static/images/home/creditcard-banner.jpg" alt="Earn 10% Off with the Dillard's Credit Card"></a>
+  </section>
+
+  {% if feature_products %}
+  <section class="editorial-section">
+    <div class="section-head">SHOP NEW ARRIVALS</div>
+    <div class="section-sub">Fresh styles land at Dillard's every week.</div>
+    <div class="rail-row">
+      {% for product in feature_products %}
+        <div class="product-card">
+          <a class="card-img" href="{{ product.url }}"><img src="/static/images/{{ product.main_image }}" alt="{{ product.full_name }}"></a>
+          <a class="brand-name" href="{{ product.brand.url }}">{{ product.brand.name }}</a>
+          <a class="product-name" href="{{ product.url }}">{{ product.short_name or product.name }}</a>
+          <div class="price">${{ '%.2f'|format(product.price() or 0) }}</div>
+          {% if product.review_count %}
+            <div class="stars">{% for i in range((product.rating|stars)['full']) %}&#9733;{% endfor %}{% if (product.rating|stars)['half'] %}&#189;{% endif %} <span class="review-count">({{ product.review_count }})</span></div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

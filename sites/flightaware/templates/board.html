@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}{{ airport.name }} ({{ airport.iata or airport.code }}/{{ airport.code }}) {{ board_name }} - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">{{ airport.name | upper }}{% if airport.city %} ({{ airport.city | upper }}, {{ (airport.region or airport.country) | upper }}){% endif %} {{ airport.iata or airport.code }}</div>
+
+<div class="tab-bar">
+  <a href="/resources/airport/{{ airport.code }}/weather">OVERVIEW AND FBOS</a>
+  <a class="active" href="/live/airport/{{ airport.code }}">FLIGHT TRACKER</a>
+  <a href="/resources/airport/{{ airport.code }}/weather">WEATHER</a>
+  <a href="/resources/airport/{{ airport.code }}/map">MAP &amp; DIAGRAM</a>
+  <a href="/resources/airport/{{ airport.code }}/map">IFR PLATES</a>
+  <a href="/resources/airport/{{ airport.code }}/map">VFR SECTIONAL</a>
+  <a href="/resources/airport/{{ airport.code }}/remarks">REMARKS</a>
+  <a href="/about/">BUY DATA</a>
+</div>
+
+<div class="panel">
+  <div class="panel-head">{{ board_name }} at {{ airport.name }} ({{ airport.code }})</div>
+  <div class="table-scroll"><table class="data">
+    <tr>
+      <th>Ident</th><th>Type</th>
+      <th>{{ 'From' if board in ('arrivals', 'enroute') else 'To' }}</th>
+      <th>Depart</th><th>Arrive</th>
+    </tr>
+    {% for row in rows %}
+    <tr>
+      <td class="ident">{% if row.ident in page_idents %}<a href="/live/flight/{{ row.ident }}">{{ row.ident }}</a>{% else %}{{ row.ident }}{% endif %}</td>
+      <td>{{ row.aircraft_type }}</td>
+      <td>{{ row.other_label }}</td>
+      <td>{{ row.dep_text }}</td>
+      <td>{{ row.arr_text }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No flights to display.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+<div class="small muted">Showing {{ rows|length }} flights. Boards update continuously; this view reflects the {{ mirror_date_text }} snapshot.</div>
+{% endblock %}

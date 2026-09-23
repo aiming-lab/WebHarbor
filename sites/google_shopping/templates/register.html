@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Create your account - Google Shopping{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <img class="gmark" src="{{ url_for('static', filename='icons/googleg_standard_color_128dp.png') }}" alt="Google">
+  <h1>Create your account</h1>
+  <div class="sub">to continue to Google Shopping</div>
+  {% if error == 'exists' %}
+  <div class="auth-error">That email is already registered. Sign in instead.</div>
+  {% elif error == 'missing' %}
+  <div class="auth-error">Fill in every field to continue.</div>
+  {% endif %}
+  <form method="post" action="{{ url_for('register') }}">
+    <input type="text" name="name" placeholder="Your name" required>
+    <input type="email" name="email" placeholder="Email" required autocomplete="username">
+    <input type="password" name="password" placeholder="Password" required autocomplete="new-password">
+    <button class="submit" type="submit">Next</button>
+  </form>
+  <a class="alt" href="{{ url_for('login') }}">Sign in instead</a>
+</div>
+{% endblock %}

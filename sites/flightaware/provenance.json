@@ -1,0 +1,81 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-22",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the flightaware.com mirror: live tracker surface, airport activity boards (arrivals/departures/enroute/scheduled, login-gated exactly like upstream), flight detail and history pages, Flight Finder, fleet and aircraft-type browsers, worldwide delays, MiseryMap, cancellation statistics, aviation photo community, Squawks headlines, and the authenticated account area with flight status alerts. Route patterns and page structure follow the upstream site."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time and boot-time seeder. All content rows come from the tracked _seed_*.py snapshots; benchmark users use a frozen bcrypt hash so the SQLite seed is byte-reproducible on every build."
+  },
+  {
+   "path": "_seed_airports.py",
+   "classification": "captured-upstream-content",
+   "scope": "16 major airports captured from live /live/airport/<code> pages and /resources/airport/<code>/weather + remarks pages on 2026-09-22 (names, cities, regions, timezone labels, current conditions and temperatures, FAA A/FD remarks tables), plus 379 airports referenced by the activity boards with the exact name+code labels the boards display."
+  },
+  {
+   "path": "_seed_boards.py",
+   "classification": "captured-upstream-content",
+   "scope": "1,262 rows captured verbatim from the inline ARRIVALS / DEPARTURES / EN ROUTE-SCHEDULED ARRIVALS / SCHEDULED DEPARTURES boards of 16 airports on 2026-09-22 (idents, aircraft type codes, origin/destination labels, displayed times in their local timezone labels, board order)."
+  },
+  {
+   "path": "_seed_flights.py",
+   "classification": "captured-upstream-content",
+   "scope": "1,228 dated flight instances from the airport boards plus 498 historical/upcoming rows captured from live flight detail and history pages on 2026-09-22: origin/destination, displayed times, gates and terminals, status lines, filed routes, speeds and altitudes for the 75 detail-enriched idents, and per-ident multi-day schedules."
+  },
+  {
+   "path": "_seed_airlines.py",
+   "classification": "captured-upstream-content",
+   "scope": "136 airline codes observed on the boards with their public ICAO/IATA identities and names (cross-checked against the airline lines shown on the flight detail pages)."
+  },
+  {
+   "path": "_seed_types.py",
+   "classification": "captured-upstream-content",
+   "scope": "76 aircraft type codes observed on the boards with their public type names (cross-checked against the 'Aircraft Type' lines shown on the flight detail pages)."
+  },
+  {
+   "path": "_seed_photos.py",
+   "classification": "captured-upstream-content",
+   "scope": "79 aviation photo records captured from flightaware.com photo pages on 2026-09-22: titles, aircraft types, registrations, photographers, vote counts and averages, view counts, submission ages, photo descriptions, ranking sequences and viewer comments."
+  },
+  {
+   "path": "_seed_squawks.py",
+   "classification": "captured-upstream-content",
+   "scope": "14 Squawks captured from the flightaware.com squawk lists on 2026-09-22: titles, summaries, source domains, submitters, vote counts and member comment counts."
+  },
+  {
+   "path": "_seed_stats.py",
+   "classification": "captured-upstream-content",
+   "scope": "Worldwide airport delay entries, the four daily delay/cancellation totals and the 283-row by-airline / by-origin / by-destination cancellation tables captured from /live/airport/delays/ and /live/cancelled/ on 2026-09-22."
+  },
+  {
+   "path": "static/images/photos/",
+   "classification": "captured-upstream-media",
+   "scope": "79 real aviation photos downloaded from photos.flightaware.com retriever URLs on 2026-09-22; each file's byte length and SHA-256 are pinned in asset_inventory.json together with its source URL."
+  },
+  {
+   "path": "static/images/maps/",
+   "classification": "captured-upstream-media",
+   "scope": "4 map renders captured from the live flightaware.com map elements on 2026-09-22 (live tracker, worldwide delays, JFK area, MiseryMap); source pages recorded in asset_inventory.json."
+  },
+  {
+   "path": "static/icons/",
+   "classification": "captured-upstream-media",
+   "scope": "FlightAware header logos, favicon and homepage hero backgrounds downloaded from flightaware.com image URLs on 2026-09-22."
+  },
+  {
+   "path": "templates/",
+   "classification": "mirror-code",
+   "scope": "28 Jinja2 templates reproducing the classic FlightAware page structure: utility bar, search header with dropdown, six-section nav menus, board tables, flight detail layout, photo gallery, squawk cards and footer, styled with the site palette captured from the upstream CSS (header gradient #267BAE→#3A5F97, accent #ED8000, link #3860be)."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "30 contributor tasks across flight detail, login-gated boards, history, delays/cancellations, MiseryMap, photos, squawks, fleet/type browsing, flight finder and account alert CRUD; no answer keys."
+  }
+ ]
+}

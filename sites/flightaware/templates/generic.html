@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title | default('FlightAware') }}{% endblock %}
+{% block content %}
+<div class="page-title-bar">{{ page_title | default('FLIGHTAWARE') }}</div>
+<div class="panel">
+  <div class="panel-head">{{ page_head | default(page_title) }}</div>
+  <div class="panel-body">{{ page_body | nl2br }}</div>
+  {% if marketing_links %}
+  <h3 class="subsection">Explore</h3>
+  <ul>
+    {% for href, label in marketing_links %}<li><a href="{{ href }}">{{ label }}</a></li>{% endfor %}
+  </ul>
+  {% endif %}
+</div>
+{% endblock %}

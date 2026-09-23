@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Recent Photo Comments - FlightAware{% endblock %}
+{% block content %}
+<div class="tab-bar">
+  <a href="/photos/">FEATURED</a>
+  <a href="/photos/all/sort/votes">ALL PHOTOS</a>
+  <a class="active" href="/photos/recentcomments.rvt">RECENT COMMENTS</a>
+  <a href="/photos/crowdsource">COMMUNITY TAGGING</a>
+</div>
+<div class="panel">
+  <div class="panel-head">Recent Comments</div>
+  <div class="panel-body">
+    {% for c in comments %}
+    <div style="border-top:1px solid #eef2f6;padding:8px 0;">
+      <b>{{ c.author }}</b> <span class="small muted">{{ c.when_text }}</span> on
+      <a href="{{ c.photo.href }}">{{ c.photo.title }}</a>
+      <div>{{ c.text | nl2br }}</div>
+    </div>
+    {% else %}
+    <div>No recent comments.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

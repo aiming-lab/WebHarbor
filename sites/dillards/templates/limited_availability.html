@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Limited Availability | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; Limited Availability</div>
+  <div class="page-head"><h1>Limited Availability</h1><div class="items-count">Only a few left - shop these favorites before they're gone.</div></div>
+  <div class="product-grid">
+    {% for product in products %}
+      <div class="product-card">
+        <a class="card-img" href="{{ product.url }}"><img src="/static/images/{{ product.main_image }}" alt="{{ product.full_name }}"></a>
+        <a class="brand-name" href="{{ product.brand.url }}">{{ product.brand.name }}</a>
+        <a class="product-name" href="{{ product.url }}">{{ product.short_name or product.name }}</a>
+        <div class="price">${{ '%.2f'|format(product.price() or 0) }}</div>
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

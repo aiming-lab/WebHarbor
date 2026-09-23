@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="auth-card">
+  <img class="auth-mark" src="{{ url_for('static', filename='icons/che_square_logo.svg') }}" alt="The Chronicle of Higher Education">
+  <h1>Sign in to your account</h1>
+  <p class="auth-sub">Sign in to access Chronicle job listings, saved jobs, applications, and career tools.</p>
+  <form method="post" action="/logon{% if PipelinedPage %}?PipelinedPage={{ PipelinedPage | urlencode }}{% endif %}">
+    <label for="email">Email address <span class="form-required">*</span></label>
+    <input id="email" type="email" name="email" value="{{ request.form.get('email', '') }}">
+    <label for="password">Password <span class="form-required">*</span></label>
+    <input id="password" type="password" name="password">
+    <input class="btn-apply" type="submit" value="Sign in">
+  </form>
+  <p class="auth-alt">Don&rsquo;t have an account? <a href="/register">Sign up</a></p>
+</div>
+{% endblock %}

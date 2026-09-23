@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="results-heading">
+  <h1>Career resources</h1>
+</div>
+<p class="results-sub">News and advice for every stage of an academic career, from The Chronicle of Higher Education.</p>
+<div class="articles-grid">
+  {% for article in articles %}
+  <article class="article-tile">
+    {% if article.image_path %}<a href="/career-resources/{{ article.slug }}/"><img src="{{ article.image_path }}" alt=""></a>{% endif %}
+    <div class="article-tile__body">
+      <p class="article-tile__kicker" style="margin:0">{{ article.kicker or "Career advice" }}</p>
+      <h2><a href="/career-resources/{{ article.slug }}/">{{ article.title }}</a></h2>
+      <p>{{ article.teaser }}</p>
+      <p class="byline">{% if article.author %}By {{ article.author }}{% if article.date_label %} &bull; {{ article.date_label }}{% endif %}{% else %}The Chronicle{% endif %}</p>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

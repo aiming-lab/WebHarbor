@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Airline/Fleet Flight Tracker (all flights with maps) - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">BROWSE BY OPERATOR</div>
+<div class="panel">
+  <div class="panel-head">All airborne aircraft, by operator <span class="more">{{ airlines|length }} operators</span></div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Operator</th><th>Code</th><th>Flights (today)</th></tr>
+    {% for a in airlines %}
+    <tr>
+      <td><a href="/live/fleet/{{ a.code }}">{{ a.name }}</a></td>
+      <td>{{ a.code }}{% if a.iata %} ({{ a.iata }}){% endif %}</td>
+      <td>{{ a.flights_count }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endblock %}

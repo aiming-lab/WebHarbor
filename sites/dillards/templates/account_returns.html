@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Returns | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/account">My Dillard's Account</a> &rsaquo; Returns</div>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <a href="/account">My Dillard's Account</a>
+      <a href="/account/orders">Order History</a>
+      <a href="/account/returns" class="active">Returns</a>
+      <a href="/account/paybill">Pay My Bill</a>
+      <a href="/account/wishlist">My Wish List</a>
+      <a href="/account/profile">Profile &amp; Settings</a>
+      <a href="/account/addresses">Address Book</a>
+    </aside>
+    <section class="panel">
+      <h2>Returns</h2>
+      {% if returns_ %}
+        <table>
+          <tr><th>Requested</th><th>Order #</th><th>Item</th><th>Reason</th><th>Method</th><th>Status</th><th>Credit</th></tr>
+          {% for r in returns_ %}
+            <tr>
+              <td>{{ r.created.strftime('%B %d, %Y') }}</td>
+              <td><a href="/account/orders/{{ r.order_id }}">{{ r.order.order_number }}</a></td>
+              <td>{{ r.order_item.product_name }}</td>
+              <td>{{ r.reason }}</td>
+              <td>{{ r.method }}</td>
+              <td>{{ r.status }}</td>
+              <td class="num">${{ '%.2f'|format(r.credit_issued) }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p class="muted">You have no returns on file.</p>
+      {% endif %}
+      <p style="margin-top:16px;">To start a return, open an eligible order from your <a href="/account/orders">Order History</a>.</p>
+    </section>
+  </div>
+</div>
+{% endblock %}
