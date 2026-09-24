@@ -30,7 +30,7 @@ sys.path.insert(0, str(ROOT))
 os.environ.setdefault("WEBHARBOR_MIRROR_DB",
                       str(ROOT / "instance_seed" / "marriott.db"))
 
-WEB = "http://localhost:40104/"
+WEB = "http://localhost:40086/"
 UPSTREAM = "https://www.marriott.com/"
 
 tasks = []

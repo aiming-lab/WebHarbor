@@ -169,7 +169,7 @@ def main() -> None:
             continue
         assert set(row) == {"web_name", "id", "ques", "web", "upstream_url"}, row.keys()
         n = int(row["id"].rsplit("--", 1)[1])
-        assert row["web"] == "http://localhost:40104/", row["web"]
+        assert row["web"] == "http://localhost:40086/", row["web"]
         addition = (f', "verifier_path": "{VERIFY.format(n=n)}", '
                     f'"judge_rubric": {json.dumps(RUBRICS[n], ensure_ascii=False)}}}')
         assert stripped.endswith("}")
