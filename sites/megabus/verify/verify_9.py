@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--9.
 
-Traveling Albany -> New York on October 3rd, returning October 4th. Which bus
-company operates the most stops listed under Albany, NY, how many Albany stops
-does it serve, and what are they named? Then check the October 3rd Albany ->
-New York schedule: how many services run, what does the first departure cost,
-and where does it board in Albany? How many services make the return trip on
-October 4th?
-
-Frozen ground truth (seed DB): Albany, NY (id 89) stops page (/stops/albany):
-Adirondack Trailways serves 3 stops — "Adirondack Trailways Bus Stop at
-Albany - 66 Green Street", "Adirondack Trailways Bus Stop at Albany (Airport)
-- 737 Albany Shaker Rd.", "Adirondack Trailways Bus Stop at Albany (SUNY) -
-1400 Washington Ave". (The fourth Albany stop, Rensselaer Station, carries no
-carrier label.) ALB->NY 2026-10-03 = 11 services, all at $32.06; the first
-departure 04:10 boards at the Adirondack Trailways Bus Stop at Albany - 66
-Green Street. NY->ALB 2026-10-04 = 23 services.
+I'm traveling from Albany to New York on October 3rd and returning October 4th. First check the bus stops page: which company operates the most stops listed under Albany, NY, how many Albany stops does it serve, and what are they named? Then check the October 3rd schedule from Albany to New York: how many services run, what does the first departure cost, and where does it board in Albany? And how many services make the return trip on October 4th?
 """
 from verify_lib import (check_read_only, check_trajectory_identity, check_visited_path,
                         contains_amount, contains_count, contains_phrase, contains_time,

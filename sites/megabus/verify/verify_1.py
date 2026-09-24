@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--1.
 
-Weekend in Washington from New York: leave Friday Oct 2, return Sunday Oct 4,
-one traveler. Find the cheapest departure on each leg; report both fares, the
-combined total including the booking fee, and the total travel time of the
-outbound departure you would take. Check whether leaving Thursday October 1st
-or returning Monday October 5th would be cheaper, and report those fares too.
-Do NOT complete checkout.
-
-Frozen ground truth (seed DB): NY->WDC 2026-10-02 cheapest = $44.99 (19
-services); WDC->NY 2026-10-04 cheapest = $49.99. Combined with the $3.99
-booking fee: 44.99 + 49.99 + 3.99 = $98.97. The outbound (cheapest $44.99)
-departures run 4h20m-6h20m (21:30 dep is 4h20m / 260 min); any duration of a
-$44.99 outbound departure (260-380 min) is accepted. Ribbon days: NY->WDC
-2026-10-01 cheapest = $39.99 (cheaper than Friday); WDC->NY 2026-10-05
-cheapest = $35.99 (cheaper than Sunday).
+I'm planning a weekend in Washington from New York: leave Friday October 2nd and come back Sunday October 4th, one traveler. Find the cheapest departure on each leg and report both fares, the combined total including the booking fee, and the total travel time of the outbound departure you would take. Check whether leaving Thursday October 1st or returning Monday October 5th would be cheaper, and report those fares too. Do not complete the checkout.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_duration, final_answer, navigated_journeys,

@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--2.
 
-Create a new megabus account (Jordan Reyes, jordan.reyes@example.com,
-BookBus2026!) then book the cheapest Boston→New York bus on October 3rd for one
-traveler as that account and pay; report the order reference.
-
-Frozen ground truth (seed DB): BOS→NY 2026-10-03 cheapest = 06:00 departure @
-$34.99 (06:00 and 06:30 both 34.99). Signed-in checkout: booking fee $3.99;
-total = 34.99 + 3.99 = $38.98. The added user row must carry the exact first/
-last name and email; the added booking is matched by email + total + journey
-and the answer must quote the created reference.
+Create a new megabus account with the first name Jordan, last name Reyes, email jordan.reyes@example.com and password BookBus2026!. Then book the cheapest bus from Boston to New York on October 3rd for one traveler as that account and pay with any valid card. Report the order reference shown on the confirmation page.
 """
 from verify_lib import (Judge, added_bookings, added_users, booking_journeys_of,
                         check_only_tables_changed, check_trajectory_identity,

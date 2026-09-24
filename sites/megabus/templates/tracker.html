@@ -13,7 +13,7 @@
         <select class="form-control" id="originId" name="originId" required>
           <option value="">Choose a city</option>
           {% for c in origins %}
-            <option value="{{ c.id }}">{{ c.name }}</option>
+            <option value="{{ c.id }}" {% if request.form.get("originId") == c.id|string %}selected{% endif %}>{{ c.name }}</option>
           {% endfor %}
         </select>
       </div>
@@ -28,7 +28,7 @@
       <div class="col-md-6">
         <label class="field-label" for="departureDate">Travel date</label>
         <input class="form-control" type="date" id="departureDate" name="departureDate"
-               min="2026-09-23" max="2026-12-31" value="2026-10-03" required>
+               min="2026-09-23" max="2026-12-31" value="{{ request.form.get('departureDate', '2026-10-03') }}" required>
       </div>
     </div>
     <button type="submit" class="btn btn-primary mt-2">Check services</button>
@@ -36,6 +36,7 @@
 
   {% if results %}
     <h2 class="section-title">Services on this route</h2>
+    <div class="table-wrap" role="region" aria-label="Bus services" tabindex="0">
     <table class="table">
       <tr><th>Departs</th><th>Arrives</th><th>Status</th><th></th></tr>
       {% for j in results %}
@@ -54,6 +55,7 @@
         </tr>
       {% endfor %}
     </table>
+    </div>
   {% endif %}
 
   {% if journey and status %}
@@ -87,10 +89,12 @@
           (data.cities || []).forEach(function (c) {
             var o = document.createElement('option');
             o.value = c.id; o.textContent = c.name;
+            if (String(c.id) === {{ request.form.get('destinationId', '')|tojson }}) o.selected = true;
             dest.appendChild(o);
           });
         });
     });
+    if (origin.value) origin.dispatchEvent(new Event('change'));
   })();
 </script>
 {% endblock %}

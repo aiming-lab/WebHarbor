@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--11.
 
-Compare Oct 3 morning departures to Washington from New York, Philadelphia AND
-Baltimore: which city has the earliest first departure after 6:00am, what does
-that ticket cost per traveler, how long does that journey take, and how many
-services run from each city that day?
-
-Frozen ground truth (seed DB): NY->WDC 10-03 first after 06:00 = 06:30 ->
-13:40 @ $39.99 (7h10m / 430 min), 13 services; PHL->WDC 10-03 first after
-06:00 = 07:00 -> 10:40 @ $31.98 (3h40m / 220 min), 5 services; BAL->WDC
-10-03 first after 06:00 = 06:50 -> 08:15 @ $19.99 (1h25m / 85 min), 24
-services. New York has the earliest first departure (06:30).
+I can start my trip to Washington on the morning of October 3rd from New York, Philadelphia or Baltimore. Compare the three routes: which city has the earliest first departure after 6:00am, what does that ticket cost per traveler, and how long does that journey take? Also report how many services run from each city that day.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_count, contains_duration, contains_phrase, contains_time,

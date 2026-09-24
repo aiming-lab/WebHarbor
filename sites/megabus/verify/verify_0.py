@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--0.
 
-Book the cheapest morning bus from Baltimore to New York on October 3rd for two
-travelers as a guest checkout (cousins.trip@example.com), applying the
-promotion code advertised on the fare finder page, pay, and report the order
-reference and the total charged.
-
-Frozen ground truth (seed DB): cheapest morning (06:00–11:59) BAL→NY 10-03
-departure = 08:35 @ $43.99 (also 09:00 and 11:00 @ 43.99; the 01:40/01:10
-overnight services are not morning). Two travelers: fare 2 × 43.99 = 87.98;
-EMAIL5 (the only advertised code, disclosed on /fare-finder) takes $5.00 off
-orders over $15.00; booking fee $3.99; total = 87.98 − 5.00 + 3.99 = $86.97.
-The booking reference is random (uuid4) so the verifier matches the ADDED
-booking row by email + total + journey, and requires the agent's reference to
-identify that row.
+My cousin and I want to spend October 3rd in New York. Book us the cheapest morning bus from Baltimore to New York that day for two travelers, as a guest checkout with the email cousins.trip@example.com. Before paying, find the promotion code currently advertised on the fare finder page and apply it in the basket. Pay with any valid card and report the order reference and the total you were charged.
 """
 from verify_lib import (Judge, added_bookings, booking_journeys_of, check_only_tables_changed,
                         check_trajectory_identity, check_visited_path, contains_amount,

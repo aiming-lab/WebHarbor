@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--3.
 
-Log in as bob.c@test.com; check how many afternoon departures run PHL->WDC on
-2026-10-10; move booking M2V6YH (PHL->WDC 10-06 07:00) to the cheapest
-afternoon departure on October 10th; report the afternoon count, the new
-departure time, the amendment fee, the fare difference charged and the
-booking's new total shown on the booking page.
-
-Frozen ground truth (seed DB): PHL->WDC 2026-10-10 afternoon (12:00+) has
-exactly ONE departure: 17:15 -> 21:05 @ $31.98 (all 10-10 services are 31.98,
-so the fare difference for 2 travelers = 2x31.98 - 2x31.98 = $0.00); amendment
-fee $7.50; booking total goes 67.95 -> 75.45 (shown as Total paid on the
-booking page). The booking_journeys row for M2V6YH must now point at the
-17:15 10-10 journey.
+My Philadelphia-to-Washington plans have moved to October 10th. Sign in as Bob Chen (bob.c@test.com / TestPass123!), compare that afternoon's departures, and move booking M2V6YH from October 6th to the cheapest afternoon option on October 10th. Tell me how many afternoon options there were, the new departure time, and the amendment fee, fare difference and revised booking total.
 """
 from verify_lib import (booking_by_reference, booking_journeys_of, check_only_tables_changed,
                         check_signed_in_as, check_trajectory_identity, check_visited_path,

@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--7.
 
-From the Boston to New York route guide: the fastest travel time, how many
-services run per day, and at which named locations the bus boards in Boston
-and drops off in New York. Then check the October 3rd schedule from Boston to
-New York: first departure of the day and its fare. And the October 4th
-schedule from New York to Boston: how many services run and the cheapest fare.
-
-The guide is reachable via the home page's Top bus routes chips or the route
-guides index; the guide page itself is the gated surface.
-
-Frozen ground truth (seed DB): route guide slug boston-to-new-york-bus —
-fastest time 4 hours 20 minutes; up to 37 services per day. Boston boarding:
-Peter Pan Bus Lines bus stop at Boston (South Station) - 700 Atlantic Avenue.
-New York drop-off: Port Authority Bus Terminal. BOS->NY 2026-10-03 first
-departure = 06:00 @ $34.99. NY->BOS 2026-10-04 = 19 services, cheapest fare
-$44.99.
+I keep hearing the Boston to New York megabus is convenient. From the route guide for that trip: what is the fastest travel time, how many services run per day, and at which named locations does the bus board in Boston and drop off in New York? Then check the October 3rd schedule from Boston to New York and report the first departure of the day and its fare. I'd return the next day: check the October 4th schedule from New York to Boston and report how many services run and the cheapest fare.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, check_visited_path,
                         contains_amount, contains_count, contains_duration, contains_phrase,

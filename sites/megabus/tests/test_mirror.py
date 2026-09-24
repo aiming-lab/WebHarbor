@@ -181,14 +181,16 @@ def test_manage_booking_lookup_and_guard():
 
 
 def test_manage_booking_cancel():
+    client.post('/journey-planner/manage-booking', data={'reference':'B7L2MX','email':'carol.d@test.com'})
     r = client.post('/journey-planner/manage-booking/cancel',
                     data={'reference': 'B7L2MX'})
-    assert r.status_code == 302
+    assert r.status_code == 409  # already cancelled in the seed
     body = get('/journey-planner/manage-booking?ref=B7L2MX').get_data(as_text=True)
     assert 'cancelled' in body
 
 
 def test_manage_booking_change_guard():
+    client.post('/journey-planner/manage-booking', data={'reference':'M2V6YH','email':'bob.c@test.com'})
     r = client.post('/journey-planner/manage-booking/change',
                     data={'reference': 'M2V6YH', 'bj': '4',
                           'new_journey_id': 'x-bogus'})
@@ -256,3 +258,32 @@ def test_404_pages():
     assert get('/route-guides/nope').status_code == 404
     assert get('/city-guides/nope').status_code == 404
     assert get('/stops/nope').status_code == 404
+
+
+def test_reference_only_access_is_rejected():
+    anonymous=app.test_client()
+    assert anonymous.get('/journey-planner/manage-booking?ref=M2V6YH').status_code==403
+    assert anonymous.get('/journey-planner/confirmation/M2V6YH').status_code==403
+    assert anonymous.post('/journey-planner/manage-booking/cancel',data={'reference':'M2V6YH'}).status_code==403
+    assert anonymous.get('/journey-planner/manage-booking/change?ref=M2V6YH&bj=4').status_code==403
+
+
+def test_owner_of_seeded_guest_booking_has_access():
+    owner=app.test_client()
+    owner.post('/account-management/login',data={'email':'alice.j@test.com','password':'TestPass123!'})
+    assert owner.get('/journey-planner/manage-booking?ref=AEG7CWY').status_code==200
+    assert owner.get('/journey-planner/manage-booking?ref=M2V6YH').status_code==403
+
+
+def test_logout_and_login_redirect_guard():
+    owner=app.test_client()
+    response=owner.post('/account-management/login?next=//example.org',data={'email':'alice.j@test.com','password':'TestPass123!'})
+    assert response.headers['Location']=='/account-management'
+    assert owner.get('/account-management/logout').status_code==405
+
+
+def test_double_cancellation_does_not_issue_another_refund():
+    owner=app.test_client()
+    owner.post('/journey-planner/manage-booking',data={'reference':'W9C4FJ','email':'carol.d@test.com'})
+    assert owner.post('/journey-planner/manage-booking/cancel',data={'reference':'W9C4FJ'}).status_code==302
+    assert owner.post('/journey-planner/manage-booking/cancel',data={'reference':'W9C4FJ'}).status_code==409

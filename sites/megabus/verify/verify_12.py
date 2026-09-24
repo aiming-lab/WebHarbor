@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--12.
 
-On Oct 3 New York->Boston: how many services run across the whole day, how
-many involve a connection, the cheapest fare on the results page, and the
-departure times of the two morning departures that require a connection; open
-the first morning connection's journey details to name where it boards in New
-York. Compare the reverse direction the same day (Boston->New York): how many
-services run, how many involve a connection, and the cheapest fare.
-
-Frozen ground truth (seed DB): NY->BOS 2026-10-03 = 15 services total; 6 are
-connecting services (route BZ06-BZ03 via Providence: 06:30, 09:00, 10:30 —
-each with a 44.99 and a 59.99 variant); cheapest fare $44.99. The two MORNING
-connecting departure times are 06:30 and 09:00. The 06:30 one-stop boards at
-the Port Authority Bus Terminal For Peter Pan (Gates 69-75) in New York.
-BOS->NY 2026-10-03 = 18 services, 7 of them connections, cheapest fare
-$34.99.
+On October 3rd from New York to Boston: how many services run across the whole day, how many of them involve a connection, and what is the cheapest fare shown on the results page? Also report the departure times of the two morning departures that require a connection, and open the first one's journey details to name where it boards in New York. Compare the reverse direction the same day: how many services run from Boston to New York, how many involve a connection, and what is the cheapest fare?
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_count, contains_phrase, contains_time, final_answer,
