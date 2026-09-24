@@ -1,0 +1,550 @@
+{
+  "0": {
+    "prompt": "I am choosing an eye-care practice from Dr. Bryan Sires, Dr. Janet Chieh and Dr. Loren Vesselle. Compare their listed specialties, hospital affiliations and full office addresses so I can judge which location fits my plans.",
+    "paths": [
+      "/doctor/dr-bryan-sires-xy9bc",
+      "/doctor/dr-janet-chieh-yrxtb",
+      "/doctor/dr-loren-vesselle-y5y7y"
+    ],
+    "facts": [
+      {
+        "entity": "Bryan\\s+Sires",
+        "patterns": [
+          "Ophthalmology",
+          "Swedish\\s+Cherry\\s+Hill\\s+Campus",
+          "1110\\s+112th\\s+Ave\\s+NE\\s+Ste\\s+150",
+          "Bellevue",
+          "WA",
+          "98004"
+        ]
+      },
+      {
+        "entity": "Janet\\s+Chieh",
+        "patterns": [
+          "Ophthalmology",
+          "Virginia\\s+Mason\\s+Medical\\s+Center",
+          "1100\\s+9th\\s+Ave",
+          "Seattle",
+          "WA",
+          "98101"
+        ]
+      },
+      {
+        "entity": "Loren\\s+Vesselle",
+        "patterns": [
+          "Ophthalmology",
+          "Virginia\\s+Mason\\s+Medical\\s+Center",
+          "1100\\s+9th\\s+Ave",
+          "Seattle",
+          "WA",
+          "98101"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "1": {
+    "prompt": "I am considering Dr. Philip Young, Dr. William P Schmitt, MD and Dr. James Schlenker, MD for a surgical consultation. Compare the education entries and hospital affiliations on their profiles before I choose whom to contact.",
+    "paths": [
+      "/doctor/dr-philip-young-xn3gw",
+      "/doctor/dr-william-p-schmitt-3nncj",
+      "/doctor/dr-james-schlenker-xqmts"
+    ],
+    "facts": [
+      {
+        "entity": "Philip\\s+Young",
+        "patterns": [
+          "Lsu\\s+Health\\s+Sciences\\s+Center\\s+Shreveport\\s+School\\s+Of\\s+Medicine",
+          "Tulane\\s+University\\s+School\\s+Of\\s+Medicine",
+          "University\\s+Of\\s+Southern\\s+California\\s+Keck\\s+School\\s+Of\\s+Medicine",
+          "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
+          "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics"
+        ]
+      },
+      {
+        "entity": "William\\s+P\\s+Schmitt",
+        "patterns": [
+          "University\\s+Of\\s+Washington\\s+Medical\\s+Center,\\s+Seattle,\\s+2017",
+          "Grand\\s+Rapids\\s+Medical\\s+Education\\s+Partners/michigan\\s+State\\s+University,\\s+2016",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      },
+      {
+        "entity": "James\\s+Schlenker",
+        "patterns": [
+          "University\\s+Of\\s+Pennsylvania\\s+Perelman\\s+School\\s+Of\\s+Medicine",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "2": {
+    "prompt": "I want to keep Dr. Janet Chieh as an eye-care option. Check her rating, review count and hospital affiliation, then save her to Bob\u2019s list if she has at least 100 reviews and a displayed rating of 4.9 or better. Use bob.c@test.com / TestPass123!.",
+    "paths": [
+      "/doctor/dr-janet-chieh-yrxtb"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "saved_doctors",
+        "values": {
+          "user_id": 2,
+          "doctor_id": 83
+        },
+        "ignore": [
+          "id",
+          "saved_at"
+        ]
+      }
+    }
+  },
+  "3": {
+    "prompt": "I need an allergy consultation in Bellevue rather than Salem. Compare Dr. Kevin Dooms and Dr. Douglas Skarada, then request the Bellevue option for Bob Chen on 2026-11-18 with reason \u201cAllergy consultation\u201d. Use bob.c@test.com / TestPass123!.",
+    "paths": [
+      "/doctor/dr-douglas-skarada-xs6f2",
+      "/doctor/dr-kevin-dooms-y2n6c"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "appointments",
+        "values": {
+          "user_id": 2,
+          "doctor_id": 109,
+          "patient_name": "Bob Chen",
+          "reason": "Allergy consultation",
+          "preferred_date": "2026-11-18",
+          "status": "requested"
+        },
+        "ignore": [
+          "id",
+          "created_at"
+        ]
+      }
+    }
+  },
+  "4": {
+    "prompt": "From the Cardiology directory, identify the three doctors with the most reviews. Compare their displayed ratings and hospital affiliations to help me choose a well-reviewed cardiologist.",
+    "paths": [
+      "/doctor/dr-joan-woo-xsybq",
+      "/doctor/dr-srinidhi-jayadevappa-meera-xylwhcb",
+      "/doctor/dr-eathar-razak-2syhf"
+    ],
+    "facts": [
+      {
+        "entity": "Joan\\s+Woo",
+        "patterns": [
+          "\\b34\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}34\\b",
+          "\\b4\\.9\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.9\\b",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      },
+      {
+        "entity": "Srinidhi\\s+Jayadevappa\\s+Meera",
+        "patterns": [
+          "\\b32\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}32\\b",
+          "\\b4\\.7\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.7\\b",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      },
+      {
+        "entity": "Eathar\\s+Razak",
+        "patterns": [
+          "26\\s*reviews?",
+          "5\\.0\\s*stars?",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "5": {
+    "prompt": "I am deciding among Dr. Tracie Chong, Dr. Ravi Krishnan and Dr. Suseela Narra for dermatology care. Compare their ratings, review counts and full office addresses so I can weigh patient feedback against location.",
+    "paths": [
+      "/doctor/dr-tracie-chong-ghs8r",
+      "/doctor/dr-ravi-krishnan-3ypt2",
+      "/doctor/dr-suseela-narra-25cgr"
+    ],
+    "facts": [
+      {
+        "entity": "Tracie\\s+Chong",
+        "patterns": [
+          "\\b4\\.8\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.8\\b",
+          "\\b73\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}73\\b",
+          "1100\\s+9th\\s+Ave",
+          "Seattle",
+          "WA",
+          "98101"
+        ]
+      },
+      {
+        "entity": "Ravi\\s+Krishnan",
+        "patterns": [
+          "\\b4\\.8\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.8\\b",
+          "\\b66\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}66\\b",
+          "1100\\s+9th\\s+Ave",
+          "Seattle",
+          "WA",
+          "98101"
+        ]
+      },
+      {
+        "entity": "Suseela\\s+Narra",
+        "patterns": [
+          "\\b4\\.2\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.2\\b",
+          "\\b51\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}51\\b",
+          "1100\\s+9th\\s+Ave",
+          "Seattle",
+          "WA",
+          "98101"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "6": {
+    "prompt": "For kidney care in Bellevue, compare Dr. Lin Li, Dr. Philip King and Dr. Annemarie Dooley. Give their review counts, full office addresses and hospital affiliations so I can decide which practice to contact.",
+    "paths": [
+      "/doctor/dr-lin-li-gcmy3",
+      "/doctor/dr-philip-king-2try3",
+      "/doctor/dr-annemarie-dooley-y5d4w"
+    ],
+    "facts": [
+      {
+        "entity": "Lin\\s+Li",
+        "patterns": [
+          "\\b1\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}1\\b",
+          "1370\\s+116th\\s+Ave\\s+NE\\s+Ste\\s+209",
+          "Bellevue",
+          "WA",
+          "98004",
+          "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
+          "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics"
+        ]
+      },
+      {
+        "entity": "Philip\\s+King",
+        "patterns": [
+          "\\b4\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}4\\b",
+          "2015\\s+116th\\s+Ave\\s+NE",
+          "Bellevue",
+          "WA",
+          "98004",
+          "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
+          "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics",
+          "Skagit\\s+Valley\\s+Hospital"
+        ]
+      },
+      {
+        "entity": "Annemarie\\s+Dooley",
+        "patterns": [
+          "5\\s*reviews?",
+          "1370\\s+116th\\s+Ave\\s+NE\\s+Ste\\s+209",
+          "Bellevue",
+          "WA",
+          "98004",
+          "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
+          "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "7": {
+    "prompt": "Alice no longer needs her pending follow-up consultation with Dr. Gary Mak. Cancel that request and leave her confirmed appointment unchanged. Use alice.j@test.com / TestPass123!.",
+    "paths": [
+      "/account"
+    ],
+    "facts": [],
+    "state": {
+      "update": {
+        "table": "appointments",
+        "id": 2,
+        "values": {
+          "status": "cancelled"
+        }
+      }
+    }
+  },
+  "8": {
+    "prompt": "Clean up Alice\u2019s saved doctors: find the saved urologist, check the profile to confirm the specialty, and remove that doctor from her list while keeping the other saved doctors. Use alice.j@test.com / TestPass123!.",
+    "paths": [
+      "/doctor/dr-zachary-panfili-y9qk8mz"
+    ],
+    "facts": [],
+    "state": {
+      "delete": {
+        "table": "saved_doctors",
+        "id": 3
+      }
+    }
+  },
+  "9": {
+    "prompt": "Prepare a visit brief for Bob\u2019s existing appointment: report its status, reason and preferred date, together with the doctor\u2019s specialty and full office address. Use bob.c@test.com / TestPass123!.",
+    "paths": [
+      "/account",
+      "/doctor/dr-nancy-mora-becerra-3mxsy"
+    ],
+    "facts": [
+      {
+        "entity": "appointment",
+        "patterns": [
+          "confirmed",
+          "New\\s+patient\\s+visit",
+          "2026\\-06\\-20"
+        ]
+      },
+      {
+        "entity": "Nancy\\s+Mora\\s+Becerra",
+        "patterns": [
+          "Endocrinology,\\s+Diabetes\\s+\\&\\s+Metabolism",
+          "125\\s+16th\\s+Ave\\s+E",
+          "Seattle",
+          "WA",
+          "98112"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "10": {
+    "prompt": "Carol\u2019s second-opinion request was cancelled. Request a new appointment with the same doctor for Carol Davis on 2026-11-20, with reason \u201cSecond opinion\u201d, and retain the cancelled request as history. Use carol.d@test.com / TestPass123!.",
+    "paths": [
+      "/doctor/dr-nyle-hendrickson-3n9ht"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "appointments",
+        "values": {
+          "user_id": 3,
+          "doctor_id": 167,
+          "patient_name": "Carol Davis",
+          "reason": "Second opinion",
+          "preferred_date": "2026-11-20",
+          "status": "requested"
+        },
+        "ignore": [
+          "id",
+          "created_at"
+        ]
+      }
+    }
+  },
+  "11": {
+    "prompt": "David no longer needs the appointment he requested for persistent symptoms. Find that request and cancel it without changing other account information. Use david.k@test.com / TestPass123!.",
+    "paths": [
+      "/account"
+    ],
+    "facts": [],
+    "state": {
+      "update": {
+        "table": "appointments",
+        "id": 5,
+        "values": {
+          "status": "cancelled"
+        }
+      }
+    }
+  },
+  "12": {
+    "prompt": "Save Dr. Janet Chieh to Bob\u2019s doctor shortlist so he can return to her profile later; keep his existing saved doctors. Use bob.c@test.com / TestPass123!.",
+    "paths": [
+      "/doctor/dr-janet-chieh-yrxtb"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "saved_doctors",
+        "values": {
+          "user_id": 2,
+          "doctor_id": 83
+        },
+        "ignore": [
+          "id",
+          "saved_at"
+        ]
+      }
+    }
+  },
+  "13": {
+    "prompt": "Request an appointment with Dr. Kevin Dooms for Carol Davis on 2026-11-15, with reason \u201cRoutine follow-up\u201d, and check that it appears in her appointment requests. Use carol.d@test.com / TestPass123!.",
+    "paths": [
+      "/doctor/dr-kevin-dooms-y2n6c"
+    ],
+    "facts": [],
+    "state": {
+      "add": {
+        "table": "appointments",
+        "values": {
+          "user_id": 3,
+          "doctor_id": 109,
+          "patient_name": "Carol Davis",
+          "reason": "Routine follow-up",
+          "preferred_date": "2026-11-15",
+          "status": "requested"
+        },
+        "ignore": [
+          "id",
+          "created_at"
+        ]
+      }
+    }
+  },
+  "14": {
+    "prompt": "Post David\u2019s five-star review of Dr. Bryan Sires: \u201cThorough and easy to talk to, highly recommend.\u201d Check that the review is visible on the profile. Use david.k@test.com / TestPass123!.",
+    "paths": [
+      "/doctor/dr-bryan-sires-xy9bc"
+    ],
+    "facts": [],
+    "state": {
+      "review": {
+        "table": "doctors",
+        "entity_id": 87,
+        "fk": "doctor_id",
+        "values": {
+          "doctor_id": 87,
+          "author_name": "David Kim",
+          "rating": 5,
+          "body": "Thorough and easy to talk to, highly recommend."
+        }
+      }
+    }
+  },
+  "15": {
+    "prompt": "I am comparing allergy specialists Dr. Kevin Dooms, Dr. Douglas Skarada and Dr. Jon Welch. Report each displayed rating and review count, together with education and hospital affiliations to put the feedback in context. Identify the highest-rated doctor and the rating gap over the runner-up.",
+    "paths": [
+      "/doctor/dr-kevin-dooms-y2n6c",
+      "/doctor/dr-douglas-skarada-xs6f2",
+      "/doctor/dr-jon-welch-2n57n"
+    ],
+    "facts": [
+      {
+        "entity": "Kevin\\s+Dooms",
+        "patterns": [
+          "\\b4\\.7\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.7\\b",
+          "\\b153\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}153\\b",
+          "University\\s+Of\\s+Wisconsin\\s+Hospital\\s+And\\s+Clinics",
+          "University\\s+Of\\s+Washington\\s+School\\s+Of\\s+Medicine",
+          "Swedish\\s+Edmonds\\s+Campus",
+          "Swedish\\s+First\\s+Hill\\s+Campus"
+        ]
+      },
+      {
+        "entity": "Douglas\\s+Skarada",
+        "patterns": [
+          "\\b4\\.5\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.5\\b",
+          "\\b136\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}136\\b",
+          "American\\s+Rhinology\\s+Society",
+          "American\\s+Academy\\s+Of\\s+Otolaryngic\\s+Allergy",
+          "Washington\\s+University\\s+School\\s+Of\\s+Medicine",
+          "Duke\\s+University\\s+School\\s+Of\\s+Medicine",
+          "Howard\\s+Hughes\\s+Research\\s+Fellowship\\s+2\\s+Years",
+          "Salem\\s+Hospital"
+        ]
+      },
+      {
+        "entity": "difference|higher",
+        "patterns": [
+          "0\\.2\\s*stars?"
+        ]
+      },
+      {
+        "entity": "Jon\\s+Welch",
+        "patterns": [
+          "4\\.0\\s*stars?",
+          "4\\s*reviews?",
+          "West\\s+Virginia\\s+University\\s+Hospitals",
+          "MultiCare\\s+Tacoma\\s+General\\s+Hospital",
+          "Seattle\\s+Children's\\s+Hospital"
+        ]
+      }
+    ],
+    "state": {},
+    "answer_patterns": [
+      "Dooms(?:,?\\s*MD)?\\s+(?:has|is)\\s+(?:the\\s+)?highest"
+    ],
+    "answer_forbidden": [
+      "(?:Skarada|Welch)(?:,?\\s*MD)?\\s+(?:has|is)\\s+(?:the\\s+)?highest"
+    ]
+  },
+  "16": {
+    "prompt": "I prefer a urologist with substantial patient feedback over a perfect score based on just a couple of reviews. Compare Dr. Paul Kozlowski, Dr. Jasmir Nayak and Dr. Christian Kuhr: report their displayed ratings, review counts and hospital affiliations.",
+    "paths": [
+      "/doctor/dr-paul-kozlowski-xfh8t",
+      "/doctor/dr-jasmir-nayak-xylqlgd",
+      "/doctor/dr-christian-kuhr-xntld"
+    ],
+    "facts": [
+      {
+        "entity": "Paul\\s+Kozlowski",
+        "patterns": [
+          "\\b4\\.9\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}4\\.9\\b",
+          "\\b87\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}87\\b",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      },
+      {
+        "entity": "Jasmir\\s+Nayak",
+        "patterns": [
+          "\\b5\\.0\\s*(?:stars?|/\\s*5|out of\\s*5)\\b|(?:rating|rated)\\D{0,12}5\\.0\\b",
+          "\\b2\\s*(?:patient\\s+)?reviews?\\b|review\\s*count\\D{0,8}2\\b",
+          "none\\s+listed|no\\s+.*listed"
+        ]
+      },
+      {
+        "entity": "Christian\\s+Kuhr",
+        "patterns": [
+          "4\\.9\\s*stars?",
+          "31\\s*reviews?",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      }
+    ],
+    "state": {}
+  },
+  "17": {
+    "prompt": "Use the specialty directory to assess Dr. Lauren Haggerty, Dr. Annemarie Dooley and Dr. Lin Li as kidney-care options. Compare their full office addresses and hospital affiliations so I can choose between the three practices.",
+    "paths": [
+      "/doctor/dr-lauren-haggerty-xynrx2j",
+      "/doctor/dr-annemarie-dooley-y5d4w",
+      "/doctor/dr-lin-li-gcmy3"
+    ],
+    "facts": [
+      {
+        "entity": "Lauren\\s+Haggerty",
+        "patterns": [
+          "33501\\s+1st\\s+Way\\s+S",
+          "Federal\\s+Way",
+          "WA",
+          "98003",
+          "Virginia\\s+Mason\\s+Medical\\s+Center"
+        ]
+      },
+      {
+        "entity": "Annemarie\\s+Dooley",
+        "patterns": [
+          "1370\\s+116th\\s+Ave\\s+NE\\s+Ste\\s+209",
+          "Bellevue",
+          "WA",
+          "98004",
+          "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
+          "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics"
+        ]
+      },
+      {
+        "entity": "Lin\\s+Li",
+        "patterns": [
+          "1370\\s+116th\\s+Ave\\s+NE\\s+Ste\\s+209",
+          "Bellevue",
+          "WA",
+          "98004",
+          "Evergreenhealth\\s+Medical\\s+Center\\-Kirkland",
+          "Overlake\\s+Medical\\s+Center\\s+\\&\\s+Clinics"
+        ]
+      }
+    ],
+    "state": {}
+  }
+}

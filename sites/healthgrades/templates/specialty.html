@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}{{ specialty.name }} Doctors | Healthgrades{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <div class="category-header">
+        <h1 class="page-title">{{ specialty.name }} Doctors</h1>
+        <form class="sort-form" method="get">
+            <label for="sort">Sort</label>
+            <select name="sort" id="sort" onchange="this.form.submit()">
+                <option value="" {% if not current_sort %}selected{% endif %}>Name</option>
+                <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest Rated</option>
+                <option value="reviews" {% if current_sort == 'reviews' %}selected{% endif %}>Most Reviewed</option>
+            </select>
+        </form>
+    </div>
+    <p class="result-count">{{ doctors|length }} doctor{{ 's' if doctors|length != 1 else '' }}</p>
+    <div class="doctor-grid">
+        {% for doctor in doctors %}
+            {% include '_doctor_card.html' %}
+        {% else %}
+        <p>No doctors found in this specialty.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,70 @@
+{% macro form_fields(form) %}
+<div class="form-row">
+  <div class="form-field {% if form.first_name.errors %}has-err{% endif %}">
+    <label>First name <span class="req">*</span></label>
+    {{ form.first_name(class="form-control") }}
+    {% for e in form.first_name.errors %}<span class="err">{{ e }}</span>{% endfor %}
+  </div>
+  <div class="form-field {% if form.last_name.errors %}has-err{% endif %}">
+    <label>Last name <span class="req">*</span></label>
+    {{ form.last_name(class="form-control") }}
+    {% for e in form.last_name.errors %}<span class="err">{{ e }}</span>{% endfor %}
+  </div>
+</div>
+<div class="form-row">
+  <div class="form-field {% if form.email.errors %}has-err{% endif %}">
+    <label>Email <span class="req">*</span></label>
+    {{ form.email(class="form-control") }}
+    {% for e in form.email.errors %}<span class="err">{{ e }}</span>{% endfor %}
+  </div>
+  <div class="form-field">
+    <label>Phone</label>
+    {{ form.phone(class="form-control") }}
+  </div>
+</div>
+<div class="form-row">
+  <div class="form-field">
+    <label>Job title</label>
+    {{ form.job_title(class="form-control") }}
+  </div>
+  <div class="form-field {% if form.organization.errors %}has-err{% endif %}">
+    <label>Organization <span class="req">*</span></label>
+    {{ form.organization(class="form-control") }}
+    {% for e in form.organization.errors %}<span class="err">{{ e }}</span>{% endfor %}
+  </div>
+</div>
+<div class="form-row">
+  <div class="form-field {% if form.organization_type.errors %}has-err{% endif %}">
+    <label>Organization type <span class="req">*</span></label>
+    {{ form.organization_type() }}
+    {% for e in form.organization_type.errors %}<span class="err">{{ e }}</span>{% endfor %}
+  </div>
+  <div class="form-field">
+    <label>Country</label>
+    {{ form.country() }}
+  </div>
+</div>
+<div class="form-field">
+  <label>State</label>
+  {{ form.state() }}
+</div>
+<div class="form-field {% if form.needs.errors %}has-err{% endif %}">
+  <label>Which best describes your needs <span class="req">*</span></label>
+  {{ form.needs() }}
+  {% for e in form.needs.errors %}<span class="err">{{ e }}</span>{% endfor %}
+</div>
+<div class="form-field {% if form.message.errors %}has-err{% endif %}">
+  <label>How can we help? <span class="req">*</span></label>
+  {{ form.message(class="form-control", rows="4") }}
+  {% for e in form.message.errors %}<span class="err">{{ e }}</span>{% endfor %}
+</div>
+<div class="form-field">
+  <label>How did you hear about us?</label>
+  {{ form.heard() }}
+</div>
+<div class="consent-row">
+  {{ form.consent() }}
+  <label for="{{ form.consent.id }}">I agree to receive marketing communications from Instructure and understand I can opt out at any time.</label>
+</div>
+{% for e in form.consent.errors %}<span class="err" style="color:var(--red);font-size:13px;display:block;margin-top:-12px;margin-bottom:12px;">{{ e }}</span>{% endfor %}
+{% endmacro %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Latest News | Instructure{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>The latest updates from across the learnosphere.</h1>
+    <p>Explore the latest news in education and edtech—plus Instructure product updates, upcoming events, and other cool stuff for interesting people.</p>
+  </div>
+</section>
+
+<section class="container" style="padding: 40px 0 70px;">
+  <div class="hub-layout">
+    <aside class="filters-card">
+      <form method="get" action="/news">
+        <div class="filters-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+          <input type="text" name="hubs_search" value="{{ query }}" placeholder="Search..." maxlength="128">
+        </div>
+        <div class="filter-group">
+          <div class="legend-label"><span>Region</span><span class="chev">▾</span></div>
+          <div class="filter-options">
+            {% for r in EVENT_REGION_FILTERS %}
+            <label><input type="radio" name="region" value="{{ r }}" {% if region == r %}checked{% endif %}> {{ r }}</label>
+            {% endfor %}
+            <label><input type="radio" name="region" value="" {% if not region %}checked{% endif %}> Any region</label>
+          </div>
+        </div>
+        <div class="filter-group">
+          <div class="legend-label"><span>Product Category</span><span class="chev">▾</span></div>
+          <div class="filter-options">
+            <label><input type="checkbox" disabled> {{ PRODUCT_FILTERS[0] }}</label>
+            <label class="muted" style="font-size: 13px;">All products included in search</label>
+          </div>
+        </div>
+        <div style="padding: 12px 20px;">
+          <button class="btn btn-primary btn-sm" type="submit">Filter Results</button>
+          <a class="btn btn-outline btn-sm" href="/news">Clear All</a>
+        </div>
+      </form>
+    </aside>
+
+    <div>
+      <h2 style="font-size:1.9rem;">Instructure in the News</h2>
+      <div class="results-count">{{ rows|length }} result{{ 's' if rows|length != 1 else '' }}</div>
+      <div class="news-list">
+        {% for n in rows %}
+        <a class="news-item" href="{{ n.external_url }}" target="_blank" rel="noopener">
+          <div class="date">{{ n.news_date }}</div>
+          <div class="title">{{ n.title }}</div>
+          <div class="outlet">{{ n.outlet }}</div>
+          <div class="details">{{ n.region }} <span class="dot">•</span> {{ n.spokesperson }}</div>
+        </a>
+        {% else %}
+        <div class="no-results"><h2>No results found</h2><p class="muted">Try a different search or region.</p></div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

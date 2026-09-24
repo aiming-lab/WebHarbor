@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+{% block title %}{{ vehicle.title }} Price, Reviews, Pictures | Kelley Blue Book{% endblock %}
+{% block content %}
+<div class="page-inner vehicle-detail">
+    <div class="breadcrumb">
+        <a href="{{ url_for('make_page', slug=vehicle.make_slug) }}">{{ vehicle.make_name }}</a> / {{ vehicle.title }}
+    </div>
+
+    <div class="vehicle-detail-grid">
+        <div class="vehicle-gallery">
+            {% set gallery = vehicle.gallery_images|from_json %}
+            {% if gallery %}
+                <img class="gallery-main" id="gallery-main" src="{{ url_for('static', filename=gallery[0]) }}" alt="{{ vehicle.title }}">
+                {% if gallery|length > 1 %}
+                <div class="gallery-thumbs">
+                    {% for img in gallery %}
+                    <img src="{{ url_for('static', filename=img) }}" alt="" onclick="document.getElementById('gallery-main').src=this.src">
+                    {% endfor %}
+                </div>
+                {% endif %}
+            {% else %}
+                <div class="vehicle-card-img-placeholder large" role="img" aria-label="Photo unavailable">Photo unavailable</div>
+            {% endif %}
+        </div>
+
+        <div class="vehicle-info">
+            <h1>{{ vehicle.title }}</h1>
+            {% if vehicle.review_count %}
+            <div class="rating-line">★ {{ '%.1f'|format(vehicle.rating) }} Consumer Rating <span class="muted">(based on {{ vehicle.review_count }} reviews)</span></div>
+            {% else %}
+            <div class="rating-line muted">No reviews yet</div>
+            {% endif %}
+            <div class="price-line">
+                {% if vehicle.min_price is none %}Price unavailable
+            {% elif vehicle.min_price == vehicle.max_price %}Starting at ${{ '{:,.0f}'.format(vehicle.min_price) }}
+                {% else %}${{ '{:,.0f}'.format(vehicle.min_price) }} &ndash; ${{ '{:,.0f}'.format(vehicle.max_price) }}{% endif %}
+            </div>
+
+            <div class="pros-cons">
+                {% set pros = vehicle.pros|from_json %}
+                {% set cons = vehicle.cons|from_json %}
+                {% if pros %}
+                <div class="pros">
+                    <h4>Pros</h4>
+                    <ul>{% for p in pros %}<li>{{ p }}</li>{% endfor %}</ul>
+                </div>
+                {% endif %}
+                {% if cons %}
+                <div class="cons">
+                    <h4>Cons</h4>
+                    <ul>{% for c in cons %}<li>{{ c }}</li>{% endfor %}</ul>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="vehicle-actions">
+                {% if current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('save_vehicle', slug=vehicle.slug) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+                    <button type="submit" class="btn-secondary">{{ '♥ Saved' if is_saved else '♡ Save Vehicle' }}</button>
+                </form>
+                {% else %}
+                <a href="{{ url_for('login', next=request.path) }}" class="btn-secondary">♡ Save Vehicle</a>
+                {% endif %}
+                <form method="post" action="{{ url_for('compare_add', slug=vehicle.slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token_value }}"><button class="btn-secondary">Add to Compare</button></form>
+            </div>
+        </div>
+
+        <div class="vehicle-quote-cta">
+            {% if current_user.is_authenticated and vehicle.trims %}
+            <form method="post" action="{{ url_for('request_quote', slug=vehicle.slug) }}" class="quote-form">
+                {{ quote_form.hidden_tag() }}
+                <h3>Get a Free Price Quote</h3>
+                <div class="form-row">
+                    {{ quote_form.trim_name.label }}
+                    <select name="trim_name" id="trim_name">
+                        {% for t in vehicle.trims %}<option value="{{ t.name }}">{{ t.name }}</option>{% endfor %}
+                    </select>
+                </div>
+                <div class="form-row">{{ quote_form.zip_code.label }} {{ quote_form.zip_code(placeholder='ZIP code') }}</div>
+                <button type="submit" class="btn-primary full-width">GET MY QUOTE</button>
+            </form>
+            {% elif not vehicle.trims %}
+            <p>No archived styles available for a quote.</p>
+            {% else %}
+            <a href="{{ url_for('login', next=request.path) }}" class="btn-primary full-width">SIGN IN FOR A QUOTE</a>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if vehicle.trims %}
+    {% set spec_labels = vehicle.spec_labels|from_json %}
+    <section class="detail-block">
+        <h3>{{ vehicle.title }} Styles</h3><p class="muted">Archived style prices and specifications. Missing values are unavailable; FAQ sticker and Fair Purchase prices may reflect a different snapshot.</p>
+        <div class="trims-table-wrap">
+            <table class="trims-table">
+                <thead>
+                    <tr><th>Style</th><th>Price</th>{% for label in spec_labels %}<th>{{ label }}</th>{% endfor %}</tr>
+                </thead>
+                <tbody>
+                    {% for t in vehicle.trims %}
+                    <tr>
+                        <td>{{ t.name }}</td>
+                        <td>{% if t.price is not none %}${{ '{:,.0f}'.format(t.price) }}{% else %}Not available{% endif %}</td>
+                        {% for val in t.specs|from_json %}<td>{{ val }}</td>{% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% endif %}
+
+    {% if vehicle.faqs %}
+    <section class="detail-block faq-section">
+        <h3>FAQs</h3>
+        {% for qa in vehicle.faqs %}
+        <div class="faq-item">
+            <div class="faq-q">{{ qa.question }}</div>
+            <div class="faq-a">{{ qa.answer }}</div>
+        </div>
+        {% endfor %}
+    </section>
+    {% endif %}
+
+    {% if related %}
+    <section class="vehicle-section">
+        <h2>More {{ vehicle.make_name }} Vehicles</h2>
+        <div class="vehicle-grid">
+            {% for vehicle in related %}
+                {% include '_vehicle_card.html' %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

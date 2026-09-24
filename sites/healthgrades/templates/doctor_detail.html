@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% block title %}{{ doctor.name }} | {{ doctor.specialty_name }} | Healthgrades{% endblock %}
+{% block content %}
+<div class="page-inner doctor-detail">
+    <div class="breadcrumb">
+        <a href="{{ url_for('specialty_page', slug=doctor.specialty_slug) }}">{{ doctor.specialty_name }}</a> / {{ doctor.name }}
+    </div>
+
+    <div class="doctor-header">
+        <div class="doctor-header-img">
+            {% if doctor.image %}
+            <img src="{{ url_for('static', filename=doctor.image) }}" alt="{{ doctor.name }}">
+            {% else %}
+            <div class="doctor-card-img-placeholder large">{{ doctor.name[:1] }}</div>
+            {% endif %}
+        </div>
+        <div class="doctor-header-info">
+            <h1>{{ doctor.name }}</h1>
+            <p class="specialty-line">{{ doctor.specialty_name }}</p>
+            {% if doctor.review_count %}
+            <div class="rating-line">★ {{ '%.1f'|format(doctor.rating) }} Star Rating <span class="muted">({{ doctor.review_count }} reviews)</span></div>
+            {% else %}
+            <div class="rating-line muted">No reviews yet</div>
+            {% endif %}
+            <p class="loc-line">{{ doctor.street_address }}, {{ doctor.city }}, {{ doctor.state }} {{ doctor.zip_code }}</p>
+            <div class="doctor-actions">
+                {% if current_user.is_authenticated %}
+                <form method="post" action="{{ url_for('save_doctor', slug=doctor.slug) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+                    <button type="submit" class="btn-secondary">{{ '♥ Saved' if is_saved else '♡ Save Doctor' }}</button>
+                </form>
+                {% else %}
+                <a href="{{ url_for('login', next=request.path) }}" class="btn-secondary">♡ Save Doctor</a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="doctor-header-cta">
+            {% if current_user.is_authenticated %}
+            <form method="post" action="{{ url_for('request_appointment', slug=doctor.slug) }}" class="appt-form">
+                {{ appt_form.hidden_tag() }}
+                <h3>Request an Appointment</h3>
+                <div class="form-row">{{ appt_form.patient_name.label }} {{ appt_form.patient_name() }}</div>
+                <div class="form-row">{{ appt_form.reason.label }} {{ appt_form.reason() }}</div>
+                <div class="form-row">{{ appt_form.preferred_date.label }} {{ appt_form.preferred_date(placeholder='YYYY-MM-DD') }}</div>
+                <button type="submit" class="btn-primary full-width">REQUEST APPOINTMENT</button>
+            </form>
+            {% else %}
+            <a href="{{ url_for('login', next=request.path) }}" class="btn-primary full-width">SIGN IN TO BOOK</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="detail-block">
+        <h3>About</h3>
+        <p>{{ doctor.description }}</p>
+    </div>
+
+    {% set hospitals = doctor.hospital_names|from_json %}
+    {% if hospitals %}
+    <div class="detail-block">
+        <h3>Affiliated Hospitals</h3>
+        <ul>
+            {% for h in hospitals %}<li>{{ h }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    {% set education = doctor.education|from_json %}
+    {% if education %}
+    <div class="detail-block">
+        <h3>Education</h3>
+        <ul>
+            {% for e in education %}<li>{{ e }}</li>{% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <section class="reviews-section">
+        <h2>Patient Reviews ({{ reviews|length }})</h2>
+        {% if current_user.is_authenticated %}
+        <form method="post" action="{{ url_for('add_review', slug=doctor.slug) }}" class="review-form">
+            {{ review_form.hidden_tag() }}
+            <div class="form-row">{{ review_form.rating.label }} {{ review_form.rating(min=1, max=5) }}</div>
+            <div class="form-row">{{ review_form.body.label }} {{ review_form.body(rows=3) }}</div>
+            <button type="submit" class="btn-secondary">Submit Review</button>
+        </form>
+        {% endif %}
+        {% for r in reviews %}
+        <div class="review-item">
+            <div class="review-stars">{{ '★' * r.rating }}{{ '☆' * (5 - r.rating) }}</div>
+            <p class="review-body">{{ r.body }}</p>
+            <div class="review-meta">{{ r.author_name }} &middot; {{ r.created_at.strftime('%Y-%m-%d') }}</div>
+        </div>
+        {% else %}
+        <p class="muted">No reviews yet.</p>
+        {% endfor %}
+    </section>
+
+    {% if related %}
+    <section class="doctor-section">
+        <h2>Other {{ doctor.specialty_name }} Doctors</h2>
+        <div class="doctor-grid">
+            {% for doctor in related %}
+                {% include '_doctor_card.html' %}
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+</div>
+{% endblock %}

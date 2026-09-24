@@ -1,0 +1,36 @@
+{% extends 'base.html' %}
+{% block title %}Checkout | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">Checkout</h1>
+    <div class="checkout-grid">
+        <form method="post" class="checkout-form">
+            {{ form.hidden_tag() }}
+            <h3>Shipping Address</h3>
+            <div class="form-row">{{ form.name.label }} {{ form.name() }}</div>
+            <div class="form-row">{{ form.address.label }} {{ form.address() }}</div>
+            <div class="form-row">{{ form.city.label }} {{ form.city() }}</div>
+            <div class="form-row">{{ form.state.label }} {{ form.state() }}</div>
+            <div class="form-row">{{ form.zip_code.label }} {{ form.zip_code() }}</div>
+            <h3>Payment</h3>
+            <div class="form-row">{{ form.card_number.label }} {{ form.card_number(placeholder='4111 1111 1111 1111') }}</div>
+            <div class="form-row">{{ form.card_exp.label }} {{ form.card_exp(placeholder='MM/YY') }}</div>
+            <div class="form-row">{{ form.card_cvv.label }} {{ form.card_cvv(placeholder='123') }}</div>
+            <button type="submit" class="btn-primary full-width">PLACE ORDER</button>
+        </form>
+        <div class="checkout-summary">
+            <h3>Order Summary</h3>
+            {% for item in items %}
+            <div class="checkout-item">
+                <span>{{ item.variant.product.name }} ({{ item.variant.color }}/{{ item.variant.size }}) &times; {{ item.quantity }}</span>
+                <span>${{ '%.2f'|format(item.variant.price * item.quantity) }}</span>
+            </div>
+            {% endfor %}
+            <div class="checkout-item"><span>Subtotal</span><span>${{ '%.2f'|format(subtotal) }}</span></div>
+            <div class="checkout-item"><span>Shipping</span><span>${{ '%.2f'|format(shipping) }}</span></div>
+            <div class="checkout-item"><span>Tax</span><span>${{ '%.2f'|format(tax) }}</span></div>
+            <div class="checkout-item order-total"><span>Total</span><span>${{ '%.2f'|format(total) }}</span></div>
+        </div>
+    </div>
+</div>
+{% endblock %}

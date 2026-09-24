@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Search | Instructure{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>Search Results</h1>
+    <form class="search-form" method="get" action="/search" style="margin-top: 20px;">
+      <input type="text" name="srch" value="{{ query }}" placeholder="Search..." maxlength="128">
+      <button class="btn btn-primary" type="submit">Apply</button>
+    </form>
+  </div>
+</section>
+
+<section class="container" style="padding: 30px 0 70px;">
+  {% if query %}
+  <div class="results-count">{{ results|length }} result{{ 's' if results|length != 1 else '' }} for “{{ query }}”</div>
+  <div class="search-results">
+    {% for r in results %}
+    <div class="search-row">
+      <div>
+        <div class="kind">{{ r.kind }}</div>
+        {% if r.date %}<div class="date">{{ r.date }}</div>{% endif %}
+      </div>
+      <div>
+        {% set item = r.item %}
+        {% if r.kind == 'Events' %}
+        <h3><a href="/listed-event/{{ item.slug }}">{{ item.title }}</a></h3>
+        <p class="snippet">{{ item.event_type }} • {{ item.event_date }}</p>
+        {% elif r.kind == 'In the News' %}
+        <h3><a href="{{ item.external_url }}" target="_blank" rel="noopener">{{ item.title }}</a></h3>
+        <p class="snippet">{{ item.outlet }} • {{ item.spokesperson }}</p>
+        {% elif r.kind == 'Careers' %}
+        <h3><a href="/about/careers">{{ item.title }}</a></h3>
+        <p class="snippet">{{ item.department }} • {{ item.location }}{% if item.comp %} • {{ item.comp }}{% endif %}</p>
+        {% else %}
+        <h3><a href="{{ item.href() }}">{{ item.title }}</a></h3>
+        <p class="snippet">{{ (item.snippet or item.intro or '')[:220] }}</p>
+        <a class="learn" style="font-weight:700; font-size:14.5px;" href="{{ item.href() }}">Learn More <span class="chev" style="color:var(--blue);">›</span></a>
+        {% endif %}
+      </div>
+    </div>
+    {% else %}
+    <div class="no-results">
+      <h2>No Search Results</h2>
+      <p>Can't find what you're looking for? Maybe our <a href="/resources" style="color: var(--blue); font-weight:700;">resource library</a> can help!</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="no-results">
+    <h2>Search Instructure.com</h2>
+    <p class="muted">Enter a keyword above to search case studies, ebooks, blogs, webinars, events, and more.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

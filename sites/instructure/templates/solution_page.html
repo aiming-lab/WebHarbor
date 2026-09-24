@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ s.name }} | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <span class="kicker">Solutions</span>
+        <h1>{{ s.name }}</h1>
+        <p class="lede">{{ s.tagline }}</p>
+        <div class="ctas">
+          <a class="btn btn-outline-light" href="{{ url_for('request_demo') }}">Book a demo</a>
+        </div>
+      </div>
+      <div>
+        <img class="heroimg" src="{{ s.hero_image }}" alt="{{ s.name }}">
+      </div>
+    </div>
+  </div>
+</section>
+<section class="container section">
+  <div class="prose">
+    {% for block in (s.blocks or []) %}
+      {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+      {% elif block.kind == 'h3' %}<h3>{{ block.text }}</h3>
+      {% elif block.kind == 'li' %}<li>{{ block.text }}</li>
+      {% else %}<p>{{ block.text }}</p>{% endif %}
+    {% endfor %}
+  </div>
+  {% if s.product_list %}
+  <h2 style="margin: 40px 0 24px;">Products that power this solution</h2>
+  <div class="block-cards">
+    {% for ps in s.product_list %}
+    <a class="block-card" href="/{{ ps }}" style="text-decoration:none; color:inherit;">
+      <h3>{{ ps.split('/')[-1].replace('-', ' ').title() }}</h3>
+      <span class="pill">Learn more</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="cta-band">
+    <h2>Let’s build your {{ s.name | lower }} strategy</h2>
+    <a class="btn btn-outline-light" href="{{ url_for('request_demo') }}">Book a meeting</a>
+  </div>
+</section>
+{% endblock %}
