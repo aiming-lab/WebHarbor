@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Marriott Bonvoy Resorts{% endblock %}
+{% block content %}
+<div class="container content-page">
+  <h1>Marriott Bonvoy Resorts</h1>
+  <p>Resort, beach and island escapes in our catalog — book directly with member rates.</p>
+  {% for group in groups %}
+  <section class="dest-state">
+    <h2>{{ group.city }}</h2>
+    <div class="results-list">
+      {% for h in group.hotels %}
+      <article class="hotel-card">
+        <a class="card-media" href="{{ h.detail_path }}">
+          {% if h.hero_image %}<img src="{{ h.hero_image }}" alt="{{ h.name }}">{% else %}<div class="media-empty">No photo</div>{% endif %}
+        </a>
+        <div class="card-body">
+          <p class="card-brand">{{ h.brand.name }}</p>
+          <h2 class="card-title"><a href="{{ h.detail_path }}">{{ h.name }}</a></h2>
+          <p class="card-location">{{ h.city }}{% if h.state %}, {{ h.state }}{% endif %}</p>
+          <p class="card-desc">{{ h.short_description or '' }}</p>
+        </div>
+        <div class="card-cta">
+          <p class="card-price"><span class="price-value">${{ '{:,}'.format(h.base_rate or 0) }}</span><span class="price-unit">/ night</span></p>
+          <a class="btn-find btn-small" href="/reservation/availabilitySearch.mi?propertyCode={{ h.marsha }}&fromDate={{ reference_date.strftime('%m/%d/%Y') }}&toDate={{ (reference_date + timedelta(days=1)).strftime('%m/%d/%Y') }}">View Rates</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

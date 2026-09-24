@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Gallery | {{ hotel.name }}{% endblock %}
+{% block content %}
+<div class="hotel-page container">
+  <nav class="hotel-nav" aria-label="Hotel sections">
+    <a href="{{ hotel.detail_path }}">Overview</a>
+    <a href="{{ hotel.path_for('rooms') }}">Rooms &amp; Suites</a>
+    <a href="{{ hotel.path_for('reviews') }}">Ratings &amp; Reviews</a>
+    <a class="active" href="{{ hotel.path_for('photos') }}">Gallery</a>
+  </nav>
+  <header class="hotel-header">
+    <div>
+      <p class="hotel-brand-line">{{ hotel.brand.name }}</p>
+      <h1>{{ hotel.name }} — Gallery</h1>
+    </div>
+  </header>
+  <div class="photo-grid">
+    {% for img in images %}
+    <figure class="photo-cell">
+      <img src="{{ img.path }}" alt="{{ img.alt or hotel.name }}">
+      <figcaption>{{ img.alt }}{% if img.category != 'gallery' %} · {{ img.category }}{% endif %}</figcaption>
+    </figure>
+    {% else %}
+    <p class="empty-state">Photos are coming soon for this property.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

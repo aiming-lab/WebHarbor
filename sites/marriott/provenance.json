@@ -1,0 +1,81 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-23",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the marriott.com mirror: the destination/hotel search (scored token search with brand/price/rating/amenity filters and recommended/price/rating/distance sorts), hotel detail pages (overview with gallery, amenities, room table; rooms & rates with date windows; BazaarVoice-style reviews with star filtering and pagination; photo gallery), the reservation flow (availability → guest info + payment validation → confirmation → lookup by confirmation number + last name → cancel), the Marriott Bonvoy account domain (sign-in, registration, profile, payment methods, saved hotels, trips), and the marketing surfaces (offers, brands, loyalty program, credit cards, careers). Route and URL shapes follow the live site (default.mi, sign-in.mi, /en-us/hotels/<marsha>-<slug>/overview/, /reservation/availabilitySearch.mi, /loyalty/myAccount.mi etc.)."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time/boot-time seeder. All content rows come from the tracked source_data/ snapshots; benchmark users share one frozen bcrypt digest so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0)."
+  },
+  {
+   "path": "source_data/destinations.json",
+   "classification": "captured-upstream-content",
+   "scope": "Frozen snapshot of the live site's destination pages (https://www.marriott.com/en-us/destinations/<country>/<state>/<city>.mi) as served on 2026-09-23: per destination the server-rendered properties list — each hotel's marsha code, title, brand, one-line description, distance from the destination center, real cache.marriott.com rendition URLs, guest-rating badge, review count and the live site's own quoted nightly USD rate (priceValue) for the SSR snapshot dates — plus the destination's hero imagery and geo coordinates. Since the editorial-copy pass it also carries each destination page's own intro paragraph and the five Explore tab-container sections (Nature / Culture / Climate / Transport / Kids) extracted verbatim from the captured renders by scripts_dev/extract_dest_copy.py."
+  },
+  {
+   "path": "source_data/hotel_details.json",
+   "classification": "captured-upstream-content",
+   "scope": "Per-hotel detail captured from the live site's own /en-us/hotels/<marsha>-<slug>/overview/ and /rooms/ pages: the schema.org JSON-LD Hotel blob (name, description, postal address, telephone, check-in/check-out times, amenity list), the rendered gallery (cache.marriott.com renditions with alt text), and the rooms-page room imagery (real room photos with the live site's own captions). For properties whose live overview page sits behind Akamai behavioral interstitials, the same JSON-LD fields come from that page's snapshots in the Internet Archive Wayback Machine (scripts_dev/harvest_hotels_wayback.py, raw id_ mode), and each record carries its wayback timestamp; gallery captures are capped at twelve images per property to keep the asset bundle bounded."
+  },
+  {
+   "path": "source_data/hotel_reviews.json",
+   "classification": "captured-upstream-content",
+   "scope": "Guest reviews captured from BazaarVoice — the exact reviews provider marriott.com's /en-us/hotels/<marsha>-<slug>/reviews/ pages load their data from (api.bazaarvoice.com, client marriott-2, passkey as used by the live page): each hotel's average rating, total review count, star distribution, per-review subratings (cleanliness/service/value) and the most recent individual reviews with author nickname, rating, title, body, submission date and management responses."
+  },
+  {
+   "path": "source_data/site_content.json",
+   "classification": "captured-upstream-content",
+   "scope": "Brand taxonomy and blurbs captured from https://www.marriott.com/brands.mi and the offer cards captured from https://www.marriott.com/offers.mi (title, blurb, brand, book-by dates, stay windows, and each offer card's real tile image URL)."
+  },
+  {
+   "path": "asset_inventory.json",
+   "classification": "asset-manifest",
+   "scope": "Per-file inventory (bytes, SHA-256, upstream source URL) for every managed image under static/images/; enforced by the image build's check_asset_inventory.py gate."
+  },
+  {
+   "path": "static/images/",
+   "classification": "captured-upstream-content",
+   "scope": "Real imagery served by cache.marriott.com: per-hotel gallery photos and room photos (the 800px renditions the live site itself serves), destination hero images, offer tile images, and the live homepage hero. No placeholders or third-party stock imagery."
+  },
+  {
+   "path": "static/icons/",
+   "classification": "captured-upstream-chrome",
+   "scope": "Site chrome served by cache.marriott.com: the Marriott Bonvoy logo, the favicon, and the Swiss 721 webfonts the live site's global stylesheet loads."
+  },
+  {
+   "path": "static/css/site.css",
+   "classification": "mirror-code",
+   "scope": "Hand-written stylesheet reproducing the live site's design tokens captured on 2026-09-22: Swiss 721 typography, #1c1c1c ink, #d0021b brand red, #f4f4f4 surfaces, 2px-radius controls, pill buttons, hotel-card grid, rating badges, and responsive breakpoints."
+  },
+  {
+   "path": "room types / nightly rates",
+   "classification": "environment-native-derived",
+   "scope": "Rates on the live site are dynamic; the mirror pins each hotel's base nightly rate to the real USD priceValue the live site quoted on its SSR snapshot date (frozen at 2026-09-23). Per-hotel room-type inventories are environment-native: tiers follow Marriott's standard room-type conventions, are priced deterministically off the hotel's real captured base rate, and carry the real room photos from the live site's rooms pages. Documented as derived (not scraped verbatim) in NOTICE.md."
+  },
+  {
+   "path": "benchmark users / trips / cards",
+   "classification": "benchmark-fixture",
+   "scope": "The four standard WebHarbor benchmark accounts (alice.j@test.com, bob.c@test.com, carol.d@test.com, david.k@test.com / TestPass123!) with pre-seeded trips, saved hotels and payment methods, using the frozen password digest defined by the seed-database skill."
+  },
+  {
+   "path": "scripts_dev/",
+   "classification": "mirror-code",
+   "scope": "Resumable capture pipeline hitting the live site's own public surfaces: harvest_destinations.py (destination pages, incl. a WebKit engine that passes Akamai's behavioral interstitial), harvest_hotels.py (hotel overview/rooms pages), harvest_reviews.py (BazaarVoice), harvest_assets.py (image downloads + inventory build)."
+  },
+  {
+   "path": "source_data/hotel_products.json",
+   "classification": "captured-upstream-content",
+   "scope": "Per-hotel product stats captured from the same BazaarVoice reviews provider the live hotel review pages load (api.bazaarvoice.com, client marriott-2): the Marriott-authored hotel description shown on the live reviews page, recommendation counts, and review-date range. Used as the description/amenity evidence chain in the seed builder."
+  },
+  {
+   "path": "source_data/help_content.json",
+   "classification": "captured-upstream-content",
+   "scope": "The Global Reservation Numbers page (https://www.marriott.com/help/global-phone-reservation-numbers.mi): 11 brand direct reservation lines and 83 country toll-free/toll rows, captured 2026-09-23 from the web.archive.org snapshot 20260910142125 (the live URL sits behind an Akamai edge that returns 403 to offline harvesters; the archived page text carries the full real content). Rendered verbatim at /help/global-phone-reservation-numbers.mi."
+  }
+ ]
+}

@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+{% block title %}Hotels in {{ destination or 'All Destinations' }} | Marriott Bonvoy{% endblock %}
+{% block content %}
+<div class="container search-page">
+  <div class="search-header">
+    <h1>Hotels in {{ destination if matched_destination else (destination or 'all destinations') }}</h1>
+    <p class="search-summary">
+      {{ total }} hotel{{ 's' if total != 1 else '' }} found
+      {% if matched_destination %}in {{ matched_destination.display_name }}{% endif %}
+      · {{ nights }} night{{ 's' if nights != 1 else '' }}
+      · {{ from_date.strftime('%b %d, %Y') }} → {{ to_date.strftime('%b %d, %Y') }}
+    </p>
+  </div>
+
+  <form class="filter-bar" method="get" action="/search/findHotels.mi">
+    <input type="hidden" name="destinationAddress" value="{{ destination }}">
+    <input type="hidden" name="fromDate" value="{{ from_date.strftime('%m/%d/%Y') }}">
+    <input type="hidden" name="toDate" value="{{ to_date.strftime('%m/%d/%Y') }}">
+    <input type="hidden" name="numAdultsPerRoom" value="{{ adults }}">
+    <input type="hidden" name="roomCount" value="{{ rooms }}">
+    {% if use_points %}<input type="hidden" name="useRewardsPoints" value="true">{% endif %}
+    <div class="filter-field">
+      <label for="brand">Brand</label>
+      <select id="brand" name="brand">
+        <option value="">All brands</option>
+        {% for b in all_brands %}
+        <option value="{{ b.code }}" {% if brand_code == b.code %}selected{% endif %}>{{ b.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="maxPrice">Max {{ 'points' if use_points else 'price' }} per night</label>
+      <input id="maxPrice" name="maxPrice" type="number" min="1"
+             value="{{ maxPrice if maxPrice else '' }}" placeholder="No limit">
+    </div>
+    <div class="filter-field">
+      <label for="minRating">Guest rating</label>
+      <select id="minRating" name="minRating">
+        <option value="">Any rating</option>
+        <option value="4.5" {% if min_rating == '4.5' %}selected{% endif %}>4.5+</option>
+        <option value="4" {% if min_rating == '4' %}selected{% endif %}>4.0+</option>
+        <option value="3.5" {% if min_rating == '3.5' %}selected{% endif %}>3.5+</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="amenity">Amenity</label>
+      <select id="amenity" name="amenity">
+        <option value="">Any amenity</option>
+        <option value="Pool" {% if amenity == 'Pool' %}selected{% endif %}>Pool</option>
+        <option value="Fitness Center" {% if amenity == 'Fitness Center' %}selected{% endif %}>Fitness Center</option>
+        <option value="Spa" {% if amenity == 'Spa' %}selected{% endif %}>Spa</option>
+        <option value="Restaurant On-Site" {% if amenity == 'Restaurant On-Site' %}selected{% endif %}>Restaurant On-Site</option>
+        <option value="Complimentary Wi-Fi" {% if amenity == 'Complimentary Wi-Fi' %}selected{% endif %}>Complimentary Wi-Fi</option>
+        <option value="Meeting Space" {% if amenity == 'Meeting Space' %}selected{% endif %}>Meeting Space</option>
+      </select>
+    </div>
+    <div class="filter-field">
+      <label for="sortBy">Sort by</label>
+      <select id="sortBy" name="sortBy">
+        <option value="recommended" {% if sort == 'recommended' %}selected{% endif %}>Recommended</option>
+        <option value="price" {% if sort == 'price' %}selected{% endif %}>Price (low to high)</option>
+        <option value="rating" {% if sort == 'rating' %}selected{% endif %}>Guest rating</option>
+        <option value="distance" {% if sort == 'distance' %}selected{% endif %}>Distance from destination</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button type="submit" class="btn-secondary">Apply Filters</button>
+      <a href="/search/findHotels.mi?destinationAddress={{ destination }}" class="link-reset">Reset</a>
+    </div>
+  </form>
+
+  {% if results %}
+  <div class="results-list">
+    {% for h in results %}
+    <article class="hotel-card">
+      <a class="card-media" href="{{ h.detail_path }}">
+        {% if h.hero_image %}<img src="{{ h.hero_image }}" alt="{{ h.name }}">{% else %}<div class="media-empty">No photo</div>{% endif %}
+      </a>
+      <div class="card-body">
+        <p class="card-brand">{{ h.brand.name }}</p>
+        <h2 class="card-title"><a href="{{ h.detail_path }}">{{ h.name }}</a></h2>
+        <p class="card-location">
+          {{ h.city }}{% if h.state %}, {{ h.state }}{% endif %}
+          {% if h.distance_miles is not none %} · {{ h.distance_text }}{% endif %}
+        </p>
+        <div class="card-rating">
+          {% if h.rating_avg %}
+          <span class="rating-badge rating-{{ h.rating_stars }}">{{ '%.1f' % h.rating_avg }}</span>
+          <span class="rating-label">{{ h.rating_stars }}-star · {{ h.review_count }} reviews</span>
+          {% else %}
+          <span class="rating-label">No reviews yet</span>
+          {% endif %}
+        </div>
+        <p class="card-desc">{{ h.short_description or '' }}</p>
+      </div>
+      <div class="card-cta">
+        <p class="card-price">
+          {% if use_points %}
+          <span class="price-value">{{ '{:,}'.format(h.points_rate or 0) }}</span>
+          <span class="price-unit">points / night</span>
+          {% else %}
+          <span class="price-value">${{ '{:,}'.format(h.base_rate or 0) }}</span>
+          <span class="price-unit">/ night</span>
+          {% endif %}
+        </p>
+        <a class="btn-find btn-small" href="/reservation/availabilitySearch.mi?propertyCode={{ h.marsha }}&fromDate={{ from_date.strftime('%m/%d/%Y') }}&toDate={{ to_date.strftime('%m/%d/%Y') }}&numberOfRooms={{ rooms }}&numberOfAdults={{ adults }}">View Rates</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>No hotels matched your search</h2>
+    <p>Try a different destination or remove some filters.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
