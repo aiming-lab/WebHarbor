@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}{{ art.title }} | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--news">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <header id="odx-content-header" class="odx-content__header">
+                    <div class="odx-title">
+                        <h1 class="odx-content__title">{{ art.title }}</h1>
+                        <div class="odx-content__summary">
+                            {{ art.published }} &middot; {{ art.source }}
+                        </div>
+                    </div>
+                </header>
+
+                {% if art.image %}
+                <figure class="odx-content__image-container">
+                    <img src="{{ art.image }}" alt="{{ art.title }}" class="img-responsive odx-content__image">
+                </figure>
+                {% endif %}
+
+                <section id="js-odx-content__body" class="odx-content-section odx-content-section__body odx-content__body">
+                    {{ art.body_html | mirror_wps | safe }}
+                </section>
+
+                <section class="odx-content-section">
+                    <p><a href="{{ url_for('all_news') }}"><i class="fas fa-arrow-left" aria-hidden="true"></i> All News</a></p>
+                </section>
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">More news</h2>
+                        <ul class="list-unstyled">
+                            {% for o in others %}
+                            <li class="margin-bottom-xs"><a href="{{ o.path }}">{{ o.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                    <section class="odx-content-section">
+                        <h2 class="odx-bold">Share this</h2>
+                        <p>Follow state agencies for the latest news and events.</p>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

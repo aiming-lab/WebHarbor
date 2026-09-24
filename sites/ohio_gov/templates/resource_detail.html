@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}{{ res.title }} | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--resource">
+    <header id="odx-content-header" class="odx-content__header">
+        <div class="odx-title">
+            <h1 class="odx-content__title">{{ res.title }}</h1>
+            {% if res.summary %}
+            <div class="odx-content__summary">{{ res.summary }}</div>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="row">
+        <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+            {% if res.image %}
+            <figure class="odx-content__image-container">
+                <img src="{{ res.image }}" alt="{{ res.title }}" class="img-responsive odx-content__image">
+            </figure>
+            {% endif %}
+
+            <section id="js-odx-content__body" class="odx-content-section odx-content-section__body odx-content__body">
+                {{ res.body_html | mirror_wps | safe }}
+                {% if not res.body_html %}
+                <p>{{ res.summary }}</p>
+                {% endif %}
+            </section>
+
+            {% if res.slug == 'prevent-and-report-scams' %}
+            <section class="odx-content-section">
+                <div class="odx-site-alert-wrapper">
+                    <div class="odx-ads-item__content">
+                        <div class="odx-ads-item__main">
+                            <p class="odx-ads-item__title">
+                                <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                                Ready to report a scam?
+                            </p>
+                            <p class="odx-ads-item__summary">
+                                Think you&rsquo;ve been scammed, targeted by scammers, or spotted something suspicious?
+                                <a href="{{ url_for('report_scam') }}">File a consumer complaint with the Ohio Attorney General&rsquo;s office</a>
+                                using the online report form &mdash; no OHID sign-in needed.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            {% endif %}
+
+            {% if res.categories %}
+            <section class="odx-content-section">
+                <p>
+                    {% for cat in res.categories %}
+                    <span class="label label-default margin-right-xs">{{ cat }}</span>
+                    {% endfor %}
+                </p>
+            </section>
+            {% endif %}
+
+            <section class="odx-content-section">
+                <h2>Related resources</h2>
+                <ul>
+                    {% for r in same_cat %}
+                    <li><a href="{{ r.path }}">{{ r.title }}</a></li>
+                    {% else %}
+                    <li>Browse the {{ AUDIENCE_LABELS.get(res.audience, 'site') }} section for more resources.</li>
+                    {% endfor %}
+                </ul>
+            </section>
+        </div>
+
+        <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+            <aside class="odx-content-column odx-content-column--right">
+                {% if res.launch_url %}
+                <section class="odx-content-section margin-bottom-sm">
+                    <div class="odx-external-link margin-bottom-sm">
+                        <a href="{{ res.launch_url }}" class="odx-external-link__button btn-block btn btn-primary" target="_blank">
+                            <span class="uppercase"> Launch <i class="fas fa-external-link-square-alt" aria-hidden="true"></i> </span>
+                            <p class="odx-external-link__title"> {{ res.title }} </p>
+                        </a>
+                    </div>
+                </section>
+                {% endif %}
+
+                <section class="odx-content-section margin-bottom-sm">
+                    <div class="odx-save-resource margin-bottom-sm">
+                        <form method="post" action="{{ url_for('toggle_saved', resource_id=res.id) }}">
+                            {% if current_user.is_authenticated %}
+                            <button class="btn btn-secondary btn-block" type="submit">
+                                <i class="far {{ 'fas' if saved else 'far' }} fa-bookmark" aria-hidden="true"></i>
+                                {{ 'Saved — remove from my resources' if saved else 'Save to my resources' }}
+                            </button>
+                            {% else %}
+                            <a class="btn btn-secondary btn-block" href="{{ url_for('login', next=res.path) }}">
+                                <i class="far fa-bookmark" aria-hidden="true"></i>
+                                Sign in with OHID to save
+                            </a>
+                            {% endif %}
+                        </form>
+                    </div>
+                </section>
+
+                <section class="odx-content-section margin-bottom-sm">
+                    <h2 class="odx-bold">Resource Details</h2>
+                    <dl class="dl-horizontal">
+                        {% if res.published %}
+                        <dt>Published</dt><dd>{{ res.published }}</dd>
+                        {% endif %}
+                        <dt>Section</dt><dd><a href="{{ url_for('landing', audience=res.audience) }}">{{ AUDIENCE_LABELS.get(res.audience, res.audience) }}</a></dd>
+                        {% if res.categories %}
+                        <dt>Topics</dt><dd>{{ res.categories | join(', ') }}</dd>
+                        {% endif %}
+                    </dl>
+                </section>
+
+                {% if related %}
+                <section class="odx-content-section margin-bottom-sm">
+                    <h2 class="odx-bold">Related Agencies &amp; Programs</h2>
+                    <ul class="list-unstyled">
+                        {% for a in related %}
+                        <li class="margin-bottom-xs">
+                            <a href="{{ url_for('state_directory') }}?q={{ a.name | urlencode }}">{{ a.name }}</a>
+                            {% if a.contact_url %} &middot; <a href="{{ a.contact_url }}" target="_blank">{{ a.contact_method or 'contact form' }}</a>{% endif %}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+                {% endif %}
+
+                <section class="odx-content-section">
+                    <h2 class="odx-bold">Share this</h2>
+                    <p><a href="{{ url_for('ohio_assistant') }}">Ask the Ohio Assistant</a> about this resource.</p>
+                </section>
+            </aside>
+        </div>
+    </div>
+</article>
+{% endblock %}

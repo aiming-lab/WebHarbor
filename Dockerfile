@@ -270,8 +270,14 @@ RUN cd /opt/WebSyn/marriott && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && \
     rm -rf instance __pycache__
 
+# Ohio.gov ships upstream-sourced media and rebuilds its deterministic SQLite
+# seed from the tracked data snapshot.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohio_gov && \
+    cd /opt/WebSyn/ohio_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40086
+EXPOSE 8101 40000-40114
 
 CMD ["/opt/websyn_start.sh"]
