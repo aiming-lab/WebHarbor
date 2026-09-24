@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Pay premiums | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container" style="padding-top:30px">
+  <div class="my-layout">
+    <div class="my-content" style="grid-column:1/-1;max-width:820px">
+      <h1>Pay your Medicare premiums</h1>
+      <p class="lede">Your Medicare Part B premium bills.</p>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}<div class="flash-band">{% for m in messages %}<div class="flash-msg">{{ m }}</div>{% endfor %}</div>{% endif %}
+      {% endwith %}
+      {% for bill in bills %}
+      <div class="my-panel">
+        <div class="spread">
+          <div>
+            <h2 style="margin-bottom:4px">{{ bill.plan }} premium</h2>
+            <p class="small muted">Due date: {{ bill.due_date }}{% if bill.paid_date %} · Paid {{ bill.paid_date }}{% endif %}</p>
+          </div>
+          <div>
+            <p style="margin:0;font-size:22px;font-weight:700;color:var(--color-heading)">{{ bill.amount }}</p>
+            <p style="margin:0"><span class="pill {{ 'pill--due' if bill.status == 'Due' else 'pill--paid' }}">{{ bill.status }}</span></p>
+          </div>
+        </div>
+        {% if bill.status == 'Due' %}
+        <form action="{{ url_for('premium_pay', bill_id=bill.id) }}" method="post" style="margin-top:12px">
+          <div class="field" style="max-width:420px">
+            <label for="method-{{ bill.id }}">Pay with</label>
+            <select id="method-{{ bill.id }}" name="method" required>
+              {% for m in methods %}<option value="{{ m.label }}">{{ m.label }}{% if m.is_default %} (default){% endif %}</option>{% endfor %}
+            </select>
+          </div>
+          <button class="btn btn--solid btn--small" type="submit">Pay {{ bill.amount }}</button>
+        </form>
+        {% else %}
+        <p class="small muted">Paid with {{ bill.method }}.</p>
+        {% endif %}
+      </div>
+      {% endfor %}
+      <p class="small muted">
+        The standard Part B premium in 2026 is $202.90 per month. See the
+        <a href="{{ url_for('costs_page') }}">Medicare costs</a> page for premium and deductible amounts.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

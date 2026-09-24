@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Search for medical equipment & suppliers | Medicare{% endblock %}
+{% block content %}
+<section class="home-hero">
+  <div class="ds-container">
+    <div class="home-hero__inner">
+      <div>
+        <h1 class="home-hero__title" style="font-size:42px">Find equipment &amp; suppliers near you</h1>
+        <p class="home-hero__text">
+          Need Part B to cover equipment? <a href="{{ url_for('coverage_search', q='durable medical equipment') }}">See what's covered.</a><br>
+          Contact suppliers for details.
+        </p>
+        <form action="{{ url_for('dme_results') }}" method="get" class="coverage-search" style="margin-top:18px;background:#fff">
+          <div class="field">
+            <label for="dme-zip">ZIP CODE</label>
+            <input id="dme-zip" type="text" name="location" inputmode="numeric" pattern="[0-9]{5}" placeholder="00000" required>
+          </div>
+          <div class="field">
+            <label for="dme-eq">EQUIPMENT (optional)</label>
+            <input id="dme-eq" type="text" name="equipment" placeholder="Enter equipment, like 'oxygen' or 'walkers'">
+          </div>
+          <button class="btn btn--solid" type="submit">Search</button>
+        </form>
+        <p class="small muted" style="margin-top:12px">
+          Need help getting started? <a href="{{ url_for('dme_directory') }}">Browse the A-Z equipment directory.</a>
+        </p>
+      </div>
+      <div class="home-hero__image">
+        <img src="{{ url_for('static', filename='images/dme_landing_photo.jpeg') }}" alt="A person using a walker with a caregiver">
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section ds-container">
+  <h2>Browse equipment &amp; supplies A-Z</h2>
+  <nav class="letter-nav" aria-label="Equipment directory letters">
+    {% for l in letters %}
+    <a href="{{ url_for('dme_directory', letter=l) }}">{{ l }}</a>
+    {% endfor %}
+  </nav>
+  <p class="small muted">Learn more about the <a href="{{ url_for('coverage_search', q='durable medical equipment') }}">data sources for this tool</a>.</p>
+</section>
+{% endblock %}

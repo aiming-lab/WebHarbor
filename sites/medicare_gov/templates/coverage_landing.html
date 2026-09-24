@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}What's covered? | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li>What's covered?</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>What's covered?</h1>
+    <p class="lede">Find your item, test, or service</p>
+  </div>
+
+  <section class="coverage-search">
+    <form action="{{ url_for('coverage_search') }}" method="get" role="search">
+      <div class="coverage-search__row">
+        <label class="visually-hidden" for="coverage-q" style="position:absolute;left:-9999px;">Find your item, test, or service</label>
+        <input id="coverage-q" type="text" name="q" placeholder="Enter your item, test, or service (like 'mammogram' or 'flu vaccine')" required>
+        <button class="btn btn--solid" type="submit">Search</button>
+      </div>
+    </form>
+    <p class="coverage-search__help">
+      Ask your doctor or healthcare provider how much your test, item, or service will cost.
+    </p>
+  </section>
+
+  <section class="section">
+    <div class="spread">
+      <h2 style="margin:0">Other ways to search</h2>
+    </div>
+    <div class="card-grid" style="margin-top:18px">
+      <div class="list-card">
+        <h3>Browse alphabetically</h3>
+        <p>See all covered items, tests, and services from A to Z.</p>
+        <a class="btn btn--solid btn--small card-cta" href="{{ url_for('coverage_alpha') }}">Find alphabetically</a>
+      </div>
+      <div class="list-card">
+        <h3>Find popular topics</h3>
+        <p>Explore common coverage topics like diabetes services, vaccines, and eye care.</p>
+        <a class="btn btn--solid btn--small card-cta" href="{{ url_for('coverage_popular') }}">Popular topics</a>
+      </div>
+      <div class="list-card">
+        <h3>What's covered?</h3>
+        <p>Medicare covers services like screenings, shots/vaccines, and medically necessary supplies.</p>
+        <a class="btn btn--outline btn--small card-cta" href="{{ url_for('coverage_popular') }}">See topics</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--soft">
+    <div class="spread"><h2 style="margin:0">Find popular topics</h2></div>
+    <div class="card-grid" style="margin-top:18px">
+      {% for group in topics[:3] %}
+      <div class="list-card">
+        <h3>{{ group.name }}</h3>
+        <p class="small muted">{{ group.blurb }}</p>
+        <a class="btn btn--outline btn--small card-cta" href="{{ url_for('coverage_popular') }}#{{ group.slug }}">See all</a>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

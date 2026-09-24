@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}{{ provider.name }} | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('care_compare_home') }}">Find care providers</a></li><li>{{ label }}</li><li>{{ provider.name }}</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="content-page">
+    <p class="small muted"><a href="{{ url_for('care_compare_search', type=provider.provider_type, loc=provider.search_city) }}">← Back to results</a></p>
+    <h1>{{ provider.name }}</h1>
+    <p class="lede">{{ label }}</p>
+
+    <div class="card-grid" style="margin-top:22px">
+      <div class="list-card">
+        <h3>Address &amp; phone</h3>
+        <p>
+          {% if provider.address2 %}{{ provider.address2 }}<br>{% endif %}
+          {{ provider.address1 }}<br>
+          {{ provider.city }}, {{ provider.state }} {{ provider.zip }}<br>
+          <strong>{{ provider.phone }}</strong>
+        </p>
+        {% if provider.distance is not none %}
+        <p class="small muted">{{ provider.distance }} miles from the search location ({{ provider.search_city }}).</p>
+        {% endif %}
+      </div>
+      <div class="list-card">
+        <h3>Specialties</h3>
+        {% if provider.specialty_list %}
+        <ul>{% for s in provider.specialty_list %}<li>{{ s }}</li>{% endfor %}</ul>
+        {% else %}
+        <p class="muted">No specialty information reported.</p>
+        {% endif %}
+      </div>
+    </div>
+
+    {% set d = provider.detail_map %}
+    {% if provider.provider_type == 'Physician' %}
+    <section class="detail-section">
+      <h2>Clinician details</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><th>Credential</th><td>{{ d.get('credential') or 'Not reported' }}</td></tr>
+          <tr><th>Sex</th><td>{{ 'Female' if d.get('gender') == 'F' else ('Male' if d.get('gender') == 'M' else 'Not reported') }}</td></tr>
+          <tr><th>Medical school</th><td>{{ d.get('medical_school') or 'Not reported' }}</td></tr>
+          <tr><th>Graduation year</th><td>{{ d.get('graduation_year') or 'Not reported' }}</td></tr>
+          <tr><th>Group practice</th><td>{{ d.get('group') or 'Not reported' }}</td></tr>
+          <tr><th>Accepts Medicare assignment</th><td>{{ 'Yes' if d.get('accepts_assignment') else 'No' if d.get('accepts_assignment') is not none else 'Not reported' }}</td></tr>
+          <tr><th>Telehealth services</th><td>{{ 'Yes' if d.get('telehealth') else 'No' }}</td></tr>
+          <tr><th>Online booking</th><td>{{ 'Yes' if d.get('online_booking') else 'No' }}</td></tr>
+          <tr><th>Board certifications</th><td>{{ d.get('board_certifications') | join(', ') if d.get('board_certifications') else 'None reported' }}</td></tr>
+        </tbody>
+      </table>
+    </section>
+    {% elif provider.provider_type == 'Hospital' %}
+    <section class="detail-section">
+      <h2>Hospital details</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><th>Hospital type</th><td>{{ d.get('hospital_type') or 'Not reported' }}</td></tr>
+          <tr><th>Ownership</th><td>{{ d.get('ownership') or 'Not reported' }}</td></tr>
+          <tr><th>Emergency services</th><td>{{ 'Yes' if d.get('emergency_services') else 'No' }}</td></tr>
+          <tr><th>Overall rating</th><td>{{ d.get('overall_rating') or 'Not Available' }} out of 5</td></tr>
+          <tr><th>Mortality measures</th><td>{{ d.get('mortality_measures') or 'Not Available' }}</td></tr>
+          <tr><th>Readmission measures</th><td>{{ d.get('readmission_measures') or 'Not Available' }}</td></tr>
+          <tr><th>Safety measures</th><td>{{ d.get('safety_measures') or 'Not Available' }}</td></tr>
+          <tr><th>Patient experience measures</th><td>{{ d.get('patient_experience_measures') or 'Not Available' }}</td></tr>
+          <tr><th>Timely &amp; effective care measures</th><td>{{ d.get('timely_care_measures') or 'Not Available' }}</td></tr>
+          <tr><th>Birthing-friendly designation</th><td>{{ 'Meets criteria' if d.get('birthing_friendly') else 'Not designated' }}</td></tr>
+        </tbody>
+      </table>
+    </section>
+    {% elif provider.provider_type == 'NursingHome' %}
+    <section class="detail-section">
+      <h2>Nursing home details</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><th>Ownership</th><td>{{ d.get('ownership') or 'Not reported' }}</td></tr>
+          <tr><th>Overall rating</th><td>{{ d.get('overall_rating') or 'Not Available' }} out of 5</td></tr>
+          <tr><th>Health inspection rating</th><td>{{ d.get('health_inspection_rating') or 'Not Available' }} out of 5</td></tr>
+          <tr><th>Staffing rating</th><td>{{ d.get('staffing_rating') or 'Not Available' }} out of 5</td></tr>
+          <tr><th>Quality measure rating</th><td>{{ d.get('qm_rating') or 'Not Available' }} out of 5</td></tr>
+          <tr><th>Certified beds</th><td>{{ d.get('beds') or 'Not reported' }}</td></tr>
+        </tbody>
+      </table>
+    </section>
+    {% elif provider.provider_type == 'HomeHealth' %}
+    <section class="detail-section">
+      <h2>Home health details</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><th>Date certified</th><td>{{ d.get('date_certified') or 'Not reported' }}</td></tr>
+          <tr><th>Quality of patient care rating</th><td>{{ d.get('quality_rating') or 'Not Available' }}</td></tr>
+          <tr><th>Offers nursing care</th><td>{{ 'Yes' if d.get('offers_nursing') else 'No' }}</td></tr>
+          <tr><th>Offers physical therapy</th><td>{{ 'Yes' if d.get('offers_physical_therapy') else 'No' }}</td></tr>
+          <tr><th>Offers occupational therapy</th><td>{{ 'Yes' if d.get('offers_occupational_therapy') else 'No' }}</td></tr>
+          <tr><th>Offers speech pathology</th><td>{{ 'Yes' if d.get('offers_speech_pathology') else 'No' }}</td></tr>
+          <tr><th>Offers medical social services</th><td>{{ 'Yes' if d.get('offers_medical_social') else 'No' }}</td></tr>
+          <tr><th>Offers home health aide</th><td>{{ 'Yes' if d.get('offers_home_health_aide') else 'No' }}</td></tr>
+        </tbody>
+      </table>
+    </section>
+    {% elif provider.provider_type == 'Hospice' %}
+    <section class="detail-section">
+      <h2>Hospice details</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><th>Ownership</th><td>{{ d.get('ownership') or 'Not reported' }}</td></tr>
+          <tr><th>Certification date</th><td>{{ d.get('certification_date') or 'Not reported' }}</td></tr>
+          <tr><th>Quality rating</th><td>{{ d.get('quality_rating') or 'Not Available' }}</td></tr>
+        </tbody>
+      </table>
+    </section>
+    {% elif provider.provider_type == 'DialysisFacility' %}
+    <section class="detail-section">
+      <h2>Dialysis facility details</h2>
+      <table class="data-table">
+        <tbody>
+          <tr><th>Chain organization</th><td>{{ d.get('chain_organization') or 'Independent' }}</td></tr>
+          <tr><th>Stations</th><td>{{ d.get('stations') or 'Not reported' }}</td></tr>
+          <tr><th>Late shift</th><td>{{ 'Yes' if d.get('late_shift') else 'No' }}</td></tr>
+          <tr><th>Offers hemodialysis</th><td>{{ 'Yes' if d.get('offers_hemodialysis') else 'No' }}</td></tr>
+          <tr><th>Offers peritoneal dialysis</th><td>{{ 'Yes' if d.get('offers_peritoneal') else 'No' }}</td></tr>
+          <tr><th>Offers home hemodialysis training</th><td>{{ 'Yes' if d.get('offers_home_training') else 'No' }}</td></tr>
+          <tr><th>Date certified</th><td>{{ d.get('date_certified') or 'Not reported' }}</td></tr>
+          <tr><th>Five-star rating</th><td>{{ d.get('five_star') or 'Not Available' }}</td></tr>
+        </tbody>
+      </table>
+    </section>
+    {% else %}
+    <section class="detail-section">
+      <h2>Facility details</h2>
+      <table class="data-table">
+        <tbody>
+          {% for key, value in d.items() %}
+          <tr><th>{{ key.replace('_', ' ') | title }}</th><td>{{ value if value is not string else value }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+    {% endif %}
+
+    <p class="small muted">
+      Information shown reflects the data Medicare publishes about this provider. Contact the
+      provider directly for the most current details.
+    </p>
+  </div>
+</div>
+{% endblock %}

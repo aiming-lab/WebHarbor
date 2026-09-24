@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Welcome to Medicare | Medicare{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+<a class="skip-link" href="#main-content">Skip to main content</a>
+
+<section class="gov-banner" aria-label="An official website of the United States government">
+  <div class="ds-container">
+    <div class="gov-banner__inner">
+      <img alt="U.S. flag" width="16" height="11" src="{{ url_for('static', filename='icons/us-flag.png') }}">
+      <p>An official website of the United States government</p>
+      <button class="gov-banner__button" aria-expanded="false" aria-controls="gov-banner-how">Here's how you know</button>
+    </div>
+    <div class="gov-banner__detail" id="gov-banner-how" hidden>
+      <div class="gov-banner__detail-item">
+        <img alt="" width="40" height="40" src="{{ url_for('static', filename='icons/icon-dot-gov.svg') }}">
+        <p><strong>Official websites use .gov</strong><br>A <strong>.gov</strong> website belongs to an official government organization in the United States.</p>
+      </div>
+      <div class="gov-banner__detail-item">
+        <img alt="" width="40" height="40" src="{{ url_for('static', filename='icons/icon-https.svg') }}">
+        <p><strong>Secure .gov websites use HTTPS</strong><br>A <strong>lock</strong> or <strong>https://</strong> means you've safely connected to a .gov website. Share sensitive information only on official, secure websites.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<header class="site-header">
+  <div class="ds-container">
+    <div class="utility-bar">
+      <a class="utility-bar__es" href="https://es.medicare.gov/">Cambiar a español</a>
+      <nav class="utility-bar__nav" aria-label="Account">
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('dashboard') }}">My Medicare</a>
+          <a href="{{ url_for('logout') }}">Log out</a>
+        {% else %}
+          <a href="{{ url_for('login') }}">Log in</a>
+        {% endif %}
+      </nav>
+    </div>
+    <div class="main-bar">
+      <a class="logo" href="{{ url_for('home') }}" aria-label="Medicare.gov home">
+        <img src="{{ url_for('static', filename='images/medicare_logo_green.svg') }}" alt="Medicare.gov" width="170" height="25">
+      </a>
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <div class="nav-item">
+          <a href="{{ url_for('basics_landing') }}">Basics</a>
+          <ul class="nav-dropdown">
+            <li><a href="{{ url_for('content_page', slug='get-started-with-medicare') }}">Get started with Medicare</a></li>
+            <li><a href="{{ url_for('costs_page') }}">Medicare costs</a></li>
+            <li><a href="{{ url_for('content_page', slug='your-medicare-rights') }}">Your Medicare rights</a></li>
+            <li><a href="{{ url_for('content_page', slug='reporting-medicare-fraud-and-abuse') }}">Reporting fraud &amp; abuse</a></li>
+            <li><a href="{{ url_for('content_page', slug='end-stage-renal-disease') }}">End-Stage Renal Disease</a></li>
+            <li><a href="{{ url_for('content_page', slug='report-a-death') }}">Reporting a death</a></li>
+          </ul>
+        </div>
+        <div class="nav-item">
+          <a href="{{ url_for('health_drug_plans') }}">Health &amp; Drug Plans</a>
+          <ul class="nav-dropdown">
+            <li><a href="{{ url_for('plan_landing') }}">Find health &amp; drug plans</a></li>
+            <li><a href="{{ url_for('content_page', slug='end-stage-renal-disease') }}">Medicare Advantage &amp; other health plans</a></li>
+            <li><a href="{{ url_for('dme_home') }}">Medicare Supplement Insurance (Medigap)</a></li>
+            <li><a href="{{ url_for('coverage_home') }}">Drug coverage (Part D)</a></li>
+          </ul>
+        </div>
+        <div class="nav-item">
+          <a href="{{ url_for('care_compare_home') }}">Providers &amp; Services</a>
+          <ul class="nav-dropdown">
+            <li><a href="{{ url_for('care_compare_home') }}">Find care providers</a></li>
+            <li><a href="{{ url_for('dme_home') }}">Find medical equipment &amp; suppliers</a></li>
+            <li><a href="{{ url_for('providers_services') }}">What Original Medicare covers</a></li>
+          </ul>
+        </div>
+        <div class="nav-item">
+          <a href="{{ url_for('coverage_home') }}">What Medicare Covers</a>
+          <ul class="nav-dropdown">
+            <li><a href="{{ url_for('coverage_alpha') }}">Find your item, test, or service</a></li>
+            <li><a href="{{ url_for('coverage_popular') }}">Popular topics</a></li>
+          </ul>
+        </div>
+        <div class="nav-item">
+          <a href="{{ url_for('sitemap') }}">Site map</a>
+        </div>
+      </nav>
+      <a class="chat-button" href="{{ url_for('talk_to_someone') }}">
+        <span class="chat-icon" aria-hidden="true"></span> Chat
+      </a>
+    </div>
+  </div>
+</header>
+
+{% block breadcrumb %}{% endblock %}
+
+<main id="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="ds-container">
+    <div class="footer-grid">
+      <div>
+        <h2>Site Menu</h2>
+        <ul>
+          <li><a href="{{ url_for('health_drug_plans') }}">Health &amp; drug plans</a></li>
+          <li><a href="{{ url_for('basics_landing') }}">Medicare basics</a></li>
+          <li><a href="{{ url_for('care_compare_home') }}">Providers &amp; services</a></li>
+          <li><a href="{{ url_for('coverage_home') }}">What Medicare covers</a></li>
+          <li><a href="{{ url_for('sitemap') }}">Site map</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>Take Action</h2>
+        <ul>
+          <li><a href="{{ url_for('plan_landing') }}">Find health &amp; drug plans</a></li>
+          <li><a href="{{ url_for('care_compare_home') }}">Find care providers</a></li>
+          <li><a href="{{ url_for('dme_home') }}">Find medical equipment &amp; suppliers</a></li>
+          <li><a href="{{ url_for('publications_home') }}">Find publications</a></li>
+          <li><a href="{{ url_for('content_page', slug='your-medicare-rights') }}">Your Medicare rights</a></li>
+          <li><a href="{{ url_for('talk_to_someone') }}">Talk to someone</a></li>
+        </ul>
+      </div>
+      <div>
+        <h2>CMS &amp; HHS Websites</h2>
+        <ul>
+          <li><a href="https://www.healthcare.gov/">HealthCare.gov</a></li>
+          <li><a href="https://www.cms.gov/">CMS.gov</a></li>
+          <li><a href="https://www.hhs.gov/">HHS.gov</a></li>
+          <li><a href="https://www.usa.gov/">USA.gov</a></li>
+        </ul>
+        <h2>Helpful Links</h2>
+        <ul>
+          <li><a href="{{ url_for('publications_home') }}">Medicare &amp; You handbook</a></li>
+          <li><a href="{{ url_for('talk_to_someone') }}">Contact Medicare</a></li>
+          <li><a href="{{ url_for('content_page', slug='reporting-medicare-fraud-and-abuse') }}">Report fraud</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-note">
+      <p>A federal government website managed and paid for by the U.S. Centers for Medicare &amp; Medicaid Services. 7500 Security Boulevard, Baltimore, MD 21244.</p>
+      <ul class="footer-links">
+        <li><a href="{{ url_for('content_page', slug='your-medicare-rights') }}">About Medicare</a></li>
+        <li><a href="#">Nondiscrimination / Accessibility</a></li>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Linking Policy</a></li>
+        <li><a href="#">Using this site</a></li>
+        <li><a href="#">Plain Writing</a></li>
+      </ul>
+    </div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/site.js') }}"></script>
+</body>
+</html>

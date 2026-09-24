@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Order {{ pub.title }} | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('publications_home') }}">Publications</a></li><li>Order print</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="content-page" style="max-width:720px">
+    <h1>Order print copies of {{ pub.title }}</h1>
+    <p class="lede">Product # {{ pub.product_number }} · {{ pub.category }}</p>
+    <p>{{ pub.summary }}</p>
+    {% if not pub.orderable %}
+    <div class="inline-alert"><span class="inline-alert__icon">i</span><p>This product isn't available to order right now. Learn how to order publications in accessible formats.</p></div>
+    {% else %}
+    <form action="{{ url_for('publication_order', product_number=pub.product_number) }}" method="post" class="login-form-card" style="max-width:none;margin:20px 0">
+      <div class="field">
+        <label for="order-format">Format</label>
+        <select id="order-format" name="format">
+          <option value="Standard Print">Standard Print</option>
+          <option value="Large Print">Large Print</option>
+          <option value="Braille">Braille</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="order-qty">Quantity (limit 5)</label>
+        <select id="order-qty" name="quantity">
+          <option value="1">1 copy</option>
+          <option value="2">2 copies</option>
+          <option value="3">3 copies</option>
+          <option value="4">4 copies</option>
+          <option value="5">5 copies</option>
+        </select>
+      </div>
+      {% if current_user.is_authenticated %}
+      <p class="form-note">We'll ship to your mailing address on file:
+        {% set addr = current_user.current_address %}
+        {% if addr %}{{ addr.line1 }}, {{ addr.city }} {{ addr.state }} {{ addr.zip }}{% endif %}
+      </p>
+      {% else %}
+      <div class="form-grid">
+        <div class="field"><label for="order-line1">Street address</label><input id="order-line1" type="text" name="line1" required></div>
+        <div class="field"><label for="order-city">City</label><input id="order-city" type="text" name="city" required></div>
+        <div class="field"><label for="order-state">State</label><input id="order-state" type="text" name="state" maxlength="2" required></div>
+        <div class="field"><label for="order-zip">ZIP code</label><input id="order-zip" type="text" name="zip" required></div>
+      </div>
+      {% endif %}
+      <button class="btn btn--solid" type="submit">Place order</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

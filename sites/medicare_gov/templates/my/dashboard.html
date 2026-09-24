@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}My Medicare | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container" style="padding-top:30px">
+  <div class="my-layout">
+    <aside class="my-nav">
+      <ul>
+        <li><a class="active" href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li><a href="{{ url_for('claims') }}">Claims &amp; appeals</a></li>
+        <li><a href="{{ url_for('premiums') }}">Pay premiums</a></li>
+        <li><a href="{{ url_for('messages') }}">Messages {% if unread %}<span class="pill pill--new">{{ unread }} new</span>{% endif %}</a></li>
+        <li><a href="{{ url_for('account_settings') }}">Account settings</a></li>
+        <li><a href="{{ url_for('replace_card') }}">Get my Medicare card</a></li>
+      </ul>
+    </aside>
+    <div class="my-content">
+      <h1>Welcome back, {{ current_user.display_name.split(' ')[0] }}</h1>
+      <p class="lede">Medicare Number: {{ current_user.medicare_number }}</p>
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}<div class="flash-band">{% for m in messages %}<div class="flash-msg flash-msg--ok">{{ m }}</div>{% endfor %}</div>{% endif %}
+      {% endwith %}
+
+      <div class="my-tiles">
+        <a class="my-tile" href="{{ url_for('claims') }}">
+          <h3>Claims &amp; appeals</h3>
+          <p>Check the status of your claims and see what Medicare has paid.</p>
+          <span class="go">View claims →</span>
+        </a>
+        <a class="my-tile" href="{{ url_for('premiums') }}">
+          <h3>Pay your premium</h3>
+          <p>{% if due_bills %}You have {{ due_bills|length }} premium bill{{ 's' if due_bills|length != 1 else '' }} due.{% else %}All your premium bills are paid.{% endif %}</p>
+          <span class="go">Pay premiums →</span>
+        </a>
+        <a class="my-tile" href="{{ url_for('messages') }}">
+          <h3>Messages</h3>
+          <p>{% if unread %}You have {{ unread }} unread message{{ 's' if unread != 1 else '' }}.{% else %}You're all caught up.{% endif %}</p>
+          <span class="go">Open messages →</span>
+        </a>
+        <a class="my-tile" href="{{ url_for('account_settings') }}">
+          <h3>Account settings</h3>
+          <p>Manage your mailing address, phone, and personal information.</p>
+          <span class="go">Manage →</span>
+        </a>
+      </div>
+
+      <div class="my-panel">
+        <h2>Your Medicare coverage</h2>
+        <table class="data-table">
+          <tbody>
+            <tr><th>Medicare Part A (Hospital Insurance)</th><td>Effective {{ current_user.part_a_effective }}</td></tr>
+            <tr><th>Medicare Part B (Medical Insurance)</th><td>Effective {{ current_user.part_b_effective }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="my-panel">
+        <h2>Need to order a replacement card?</h2>
+        <p class="small">If your Medicare card is lost, damaged, or stolen, you can order a free replacement.</p>
+        <a class="btn btn--outline btn--small" href="{{ url_for('replace_card') }}">Replace my card</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

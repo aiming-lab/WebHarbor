@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Welcome to Medicare | Medicare{% endblock %}
+{% block content %}
+<section class="home-hero">
+  <div class="ds-container">
+    <div class="home-hero__inner">
+      <div>
+        <h1 class="home-hero__title">Welcome to Medicare</h1>
+        <p class="home-hero__text">
+          Medicare is health insurance for people 65 or older who meet citizenship or residency
+          requirements. You may be eligible to get Medicare earlier if you have a disability,
+          End-Stage Renal Disease (ESRD), or ALS.
+        </p>
+        <div class="home-hero__actions">
+          <a class="btn btn--solid" href="{{ url_for('content_page', slug='get-started-with-medicare') }}">Get started with Medicare</a>
+          <a class="btn btn--outline" href="{{ url_for('login') }}">Log in</a>
+        </div>
+      </div>
+      <div class="home-hero__image">
+        <img src="{{ url_for('static', filename='images/home_hero.png.webp') }}" alt="A smiling older adult sitting at a table">
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="ds-container quick-tasks">
+  <h2>Quick tasks</h2>
+  <ul class="quick-tasks__grid">
+    <li class="quick-tasks__item"><a href="{{ url_for('login') }}">Log in/create account</a></li>
+    <li class="quick-tasks__item"><a href="{{ url_for('plan_landing') }}">Find health &amp; drug plans</a></li>
+    <li class="quick-tasks__item"><a href="{{ url_for('care_compare_home') }}">Find care providers</a></li>
+    <li class="quick-tasks__item"><a href="{{ url_for('premiums') if current_user.is_authenticated else url_for('login') }}">Pay your premium</a></li>
+    <li class="quick-tasks__item"><a href="{{ url_for('content_page', slug='reporting-medicare-fraud-and-abuse') }}">Report fraud</a></li>
+    <li class="quick-tasks__item"><a href="{{ url_for('login') }}">Replace your card</a></li>
+  </ul>
+</section>
+
+<section class="section ds-container">
+  <div class="card-grid">
+    <article class="m-card">
+      <div class="m-card__image"><img src="{{ url_for('static', filename='images/home_card_glp1.jpg.webp') }}" alt="A doctor talking with a patient"></div>
+      <div class="m-card__body">
+        <h3>Coverage of GLP-1 drugs for weight loss</h3>
+        <p>Find out when Medicare Part D covers GLP-1 drugs, and how obesity medicine coverage works.</p>
+        <a class="btn btn--solid btn--small" href="{{ url_for('coverage_search', q='obesity') }}">Learn more</a>
+      </div>
+    </article>
+    <article class="m-card">
+      <div class="m-card__image"><img src="{{ url_for('static', filename='images/home_card_diabetes.jpg.webp') }}" alt="Two adults preparing healthy food"></div>
+      <div class="m-card__body">
+        <h3>Diabetes prevention starts here!</h3>
+        <p>Learn about the Medicare Diabetes Prevention Program — a free lifestyle change program.</p>
+        <a class="btn btn--solid btn--small" href="{{ url_for('coverage_search', q='diabetes prevention') }}">Get started</a>
+      </div>
+    </article>
+    <article class="m-card">
+      <div class="m-card__image"><img src="{{ url_for('static', filename='images/home_card_apps.jpg.webp') }}" alt="A person using a tablet"></div>
+      <div class="m-card__body">
+        <h3>Take control of your health data with Medicare's app library</h3>
+        <p>Browse apps that can help you manage your health alongside your Medicare coverage.</p>
+        <a class="btn btn--solid btn--small" href="{{ url_for('coverage_home') }}">Browse apps</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<div class="inline-alert">
+  <span class="inline-alert__icon" aria-hidden="true">i</span>
+  <p><strong>Notice:</strong> Your data privacy is important to us. See our
+     <a href="#">data privacy policy</a> for how Medicare.gov protects your information.</p>
+</div>
+
+<section class="email-signup">
+  <div class="ds-container">
+    <div class="email-signup__inner">
+      <h2>Important updates, straight to your inbox</h2>
+      <p>Get reminders about Open Enrollment, ways to save costs, and more.</p>
+      <form action="{{ url_for('email_signup') }}" method="post">
+        <input type="hidden" name="next" value="{{ url_for('home') }}">
+        <label class="visually-hidden" for="home-email" style="position:absolute;left:-9999px;">Enter your email address</label>
+        <input id="home-email" type="email" name="email" placeholder="Enter your email address" required>
+        <button class="btn btn--solid" type="submit">Sign up</button>
+      </form>
+      <p class="consent">By checking this box, you consent to our <a href="#">data privacy policy</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
