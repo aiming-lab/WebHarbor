@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Health & drug plans | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li>Health &amp; drug plans</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Health &amp; drug plans</h1>
+    <p class="lede">
+      Medicare health plans are generally offered by private companies approved by Medicare.
+      Learn about your options for health and drug coverage.
+    </p>
+  </div>
+  <section class="section">
+    <div class="card-grid">
+      {% for card in cards %}
+      <article class="m-card">
+        <div class="m-card__body">
+          <h3>{{ card.title }}</h3>
+          <p>{{ card.text }}</p>
+          <a class="btn btn--solid btn--small" href="{{ card.href }}">{{ card.cta }}</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

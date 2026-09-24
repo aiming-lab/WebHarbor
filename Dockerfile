@@ -231,15 +231,6 @@ RUN cd /opt/WebSyn/imgur && rm -rf instance instance_seed && \
     mkdir -p instance_seed && cp instance/imgur.db instance_seed/imgur.db && \
     rm -rf instance __pycache__
 
-
-# Marriott's seed is rebuilt deterministically from the tracked source
-# snapshots (PYTHONHASHSEED=0, frozen reference date; see
-# .build-generated-seed); its real upstream imagery ships via the asset bundle.
-RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/marriott
-RUN cd /opt/WebSyn/marriott && rm -rf instance instance_seed && \
-    PYTHONHASHSEED=0 python3 seed_data.py && \
-    rm -rf instance __pycache__
-
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
@@ -270,8 +261,17 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/landwatch && \
     cd /opt/WebSyn/landwatch && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/medicare_gov && \
+    cd /opt/WebSyn/medicare_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40104
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/marriott
+RUN cd /opt/WebSyn/marriott && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    rm -rf instance __pycache__
+
+EXPOSE 8101 40000-40086
 
 CMD ["/opt/websyn_start.sh"]

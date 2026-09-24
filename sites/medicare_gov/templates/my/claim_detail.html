@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Claim details | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container" style="padding-top:30px">
+  <div class="my-layout">
+    <div class="my-content" style="grid-column:1/-1;max-width:760px">
+      <p class="small muted"><a href="{{ url_for('claims') }}">← Back to claims</a></p>
+      <h1>Claim details</h1>
+      <div class="my-panel">
+        <h2>{{ claim.description }}</h2>
+        <table class="data-table">
+          <tbody>
+            <tr><th>Service date</th><td>{{ claim.service_date }}</td></tr>
+            <tr><th>Category</th><td>{{ claim.category }}</td></tr>
+            <tr><th>Provider</th><td>{{ claim.provider_name }}, {{ claim.provider_city }}</td></tr>
+            <tr><th>Amount billed to Medicare</th><td>{{ claim.billed }}</td></tr>
+            <tr><th>Medicare approved &amp; paid</th><td>{{ claim.medicare_paid }}</td></tr>
+            <tr><th>You may be billed</th><td>{{ claim.you_owed }}</td></tr>
+            <tr><th>Status</th><td>{{ claim.status }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="my-panel">
+        <h2>What this means</h2>
+        <p class="small">
+          This claim was billed to Medicare for {{ claim.billed }}. Medicare paid
+          {{ claim.medicare_paid }} directly to the provider. Your share is {{ claim.you_owed }}
+          — if you have supplemental coverage (like Medigap), it may pay part or all of this amount.
+        </p>
+        <p class="small muted">
+          Check your Medicare Summary Notice for the official record of this claim. If you
+          didn't get this service, report possible fraud at
+          <a href="{{ url_for('content_page', slug='reporting-medicare-fraud-and-abuse') }}">Reporting Medicare fraud &amp; abuse</a>.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

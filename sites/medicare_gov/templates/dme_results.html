@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Supplier results | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('dme_home') }}">Medical equipment &amp; suppliers</a></li><li>Results</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>{% if equipment %}Suppliers near you that carry “{{ equipment }}”{% else %}Showing all suppliers for your area{% endif %}</h1>
+    <p class="lede">Showing {{ suppliers|length }} supplier{{ 's' if suppliers|length != 1 else '' }}{% if location %} for ZIP code {{ location }}{% endif %}</p>
+  </div>
+
+  <section class="coverage-search" style="max-width:760px">
+    <form action="{{ url_for('dme_results') }}" method="get" class="form-grid">
+      <div class="field">
+        <label for="dme-zip">ZIP CODE</label>
+        <input id="dme-zip" type="text" name="location" value="{{ location }}" inputmode="numeric" required>
+      </div>
+      <div class="field">
+        <label for="dme-eq">EQUIPMENT (optional)</label>
+        <input id="dme-eq" type="text" name="equipment" value="{{ equipment }}" placeholder="Add item">
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end">
+        <button class="btn btn--solid" type="submit">Search these results</button>
+      </div>
+    </form>
+  </section>
+
+  <div class="sortbar">
+    <p style="margin:0"><strong>Sort by: Distance (closest to farthest)</strong></p>
+  </div>
+
+  {% if suppliers %}
+  <p class="small muted">
+    All suppliers must deliver all equipment and supplies except items labeled
+    “Blood Glucose Monitors and Supplies (Non-Mail Order).” Contact suppliers for details.
+  </p>
+  {% endif %}
+
+  {% for sup in suppliers %}
+  <article class="result-card">
+    <div class="rank">{{ loop.index }}.</div>
+    <div>
+      <h3>{{ sup.name }}</h3>
+      <p class="meta">
+        {{ sup.address1 }}{% if sup.address2 %}, {{ sup.address2 }}{% endif %}<br>
+        {{ sup.city }}, {{ sup.state }} {{ sup.zip }}<br>
+        {{ sup.phone }}
+      </p>
+      <div class="chip-row">
+        {% for s in sup.supply_list[:4] %}<span class="chip">{{ s }}</span>{% endfor %}
+        {% if sup.supply_list | length > 4 %}<span class="chip">+{{ sup.supply_list | length - 4 }} more</span>{% endif %}
+      </div>
+    </div>
+    <div class="side">
+      {% if sup._distance is defined %}<p class="distance">{{ '%.1f' % (sup._distance or 0) }} mi</p>{% endif %}
+      <p class="meta">
+        {% if sup.medicare_assignment %}
+        <span class="pill pill--paid">Accepts assignment</span>
+        {% else %}
+        <span class="pill pill--due">May not accept assignment</span>
+        {% endif %}
+      </p>
+    </div>
+  </article>
+  {% else %}
+  <p>
+    {% if not zip_known %}
+      We couldn't find suppliers for ZIP code “{{ location }}”. Try one of these areas:
+      {% for z in ['62701', '43215', '85004', '33130', '80204', '98101', '02108', '77002'] %}
+        <a href="{{ url_for('dme_results', location=z) }}">{{ z }}</a>{{ ',' if not loop.last }}
+      {% endfor %}
+    {% elif equipment %}
+      No suppliers near {{ location }} carry “{{ equipment }}”. Try another term or
+      <a href="{{ url_for('dme_directory') }}">browse the A-Z equipment directory</a>.
+    {% else %}
+      Enter a ZIP code to search for suppliers.
+    {% endif %}
+  </p>
+  {% endfor %}
+
+  <p class="small muted" style="margin-top:24px">
+    Learn more about the <a href="{{ url_for('coverage_search', q='durable medical equipment') }}">data sources for this tool</a>.
+  </p>
+</div>
+{% endblock %}
