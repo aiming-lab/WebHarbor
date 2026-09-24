@@ -29,6 +29,7 @@ def app(tmp_path):
         import importlib
         import app as app_module
         importlib.reload(app_module)
+        app_module.app.config["CSRF_ENABLED"] = False
         yield app_module.app
     finally:
         os.environ.pop("MEDICARE_GOV_DB_PATH", None)

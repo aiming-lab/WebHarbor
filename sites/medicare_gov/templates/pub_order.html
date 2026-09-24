@@ -12,7 +12,7 @@
     {% if not pub.orderable %}
     <div class="inline-alert"><span class="inline-alert__icon">i</span><p>This product isn't available to order right now. Learn how to order publications in accessible formats.</p></div>
     {% else %}
-    <form action="{{ url_for('publication_order', product_number=pub.product_number) }}" method="post" class="login-form-card" style="max-width:none;margin:20px 0">
+    <form action="{{ url_for('publication_order', product_number=pub.product_number) }}" method="post" class="login-form-card" style="max-width:none;margin:20px 0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="field">
         <label for="order-format">Format</label>
         <select id="order-format" name="format">

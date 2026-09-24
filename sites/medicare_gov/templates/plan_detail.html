@@ -4,9 +4,10 @@
 <div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('plan_landing') }}">Find health &amp; drug plans</a></li><li>{{ plan.name }}</li></ol></nav></div>
 {% endblock %}
 {% block content %}
+<div class="ds-container"><p class="small muted">Offline demonstration: plan names and prices are a fixed sample catalog, not current plan offers.</p></div>
 <div class="ds-container">
   <div class="content-page">
-    <p class="small muted"><a href="{{ url_for('plan_search', zip='62701', plan_choice='health' if plan.plan_type != 'Medicare drug plan' else 'drug') }}">← Back to plan results</a></p>
+    <p class="small muted"><a href="{{ local_path(request.args.get('back'), url_for('plan_landing')) }}">← Back to plan results</a></p>
     <h1>{{ plan.name }}</h1>
     <p class="lede">{{ plan.insurer }} · {{ plan.plan_kind }} · {{ plan.county }} County, {{ plan.state }}</p>
     <div class="badges" style="margin:14px 0">

@@ -520,3 +520,21 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 15px; marg
 .muted { color: var(--color-muted); }
 .small { font-size: 13.5px; }
 .spread { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+
+/* Anchor open menus to the whole navigation strip on narrow screens. */
+@media (max-width: 560px) {
+  .primary-nav { position: relative; }
+  .primary-nav .nav-item { position: static; }
+  .primary-nav .nav-dropdown { left: 0; right: 0; width: 100%; min-width: 0; }
+  .my-content { min-width: 0; }
+}
+/* Keep responsive navigation overrides after the desktop defaults. */
+@media (max-width: 900px) {
+  .primary-nav { flex: 1 1 100%; margin-left: 0; gap: 0 18px; }
+}
+@media (max-width: 560px) {
+  .logo img { height: 30px; }
+  .primary-nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
+  .nav-item > a { font-size: 14px; padding: 8px 2px; }
+  .chat-button { padding: 7px 12px; }
+}

@@ -2,17 +2,17 @@
 {% macro render_blocks(blocks) %}
   {% for block in blocks %}
     {% if block.t == 'heading' %}
-      {% if block.level <= 2 %}<h2>{{ block.text }}</h2>{% elif block.level == 3 %}<h3>{{ block.text }}</h3>{% else %}<h4>{{ block.text }}</h4>{% endif %}
+      {% if block.level <= 2 %}<h2>{{ block.text | display_text }}</h2>{% elif block.level == 3 %}<h3>{{ block.text | display_text }}</h3>{% else %}<h4>{{ block.text | display_text }}</h4>{% endif %}
     {% elif block.t == 'para' %}
-      <p>{{ block.text }}</p>
+      <p>{{ block.text | display_text }}</p>
     {% elif block.t == 'alert' %}
-      <div class="alert">{{ block.text }}</div>
+      <div class="alert">{{ block.text | display_text }}</div>
     {% elif block.t == 'ul' %}
-      <ul>{% for item in block['items'] %}<li>{{ item.text }}</li>{% endfor %}</ul>
+      <ul>{% for item in block['items'] %}<li>{{ item.text | display_text }}</li>{% endfor %}</ul>
     {% elif block.t == 'ol' %}
-      <ol>{% for item in block['items'] %}<li>{{ item.text }}</li>{% endfor %}</ol>
+      <ol>{% for item in block['items'] %}<li>{{ item.text | display_text }}</li>{% endfor %}</ol>
     {% elif block.t == 'li' %}
-      <p>{{ block.text }}</p>
+      <p>{{ block.text | display_text }}</p>
     {% elif block.t == 'image' %}
       {% if block.src and (block.src.endswith('.webp') or block.src.endswith('.jpg') or block.src.endswith('.png')) %}
         <img class="content-image" src="{{ block.src }}" alt="{{ block.alt }}">

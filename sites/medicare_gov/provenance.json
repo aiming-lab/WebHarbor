@@ -1,56 +1,67 @@
 {
- "schema_version": 1,
- "snapshot_date": "2026-09-23",
- "records": [
-  {
-   "path": "app.py",
-   "classification": "mirror-code",
-   "scope": "Flask application implementing the medicare.gov mirror: homepage, Medicare basics section, the 'What's covered?' coverage database with scored token-overlap search and A-Z browse, 2026 costs tables, the care-compare provider directory (10 provider categories), the DME supplier directory with ZIP + equipment search, a simplified plan finder, the publications catalog with search and print ordering, the talk-to-someone contact surfaces, and the signed-in MyMedicare area (dashboard, claims, premium payment, messages, account settings, replacement card). Route patterns and page structure follow the upstream site."
-  },
-  {
-   "path": "seed_data.py",
-   "classification": "mirror-code",
-   "scope": "Deterministic build-time/boot-time seeder. All content rows come from the tracked source_data.json snapshot (arrays pre-sorted by the build script); benchmark users use a frozen scrypt hash so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0). Every seed function early-returns on a populated database, keeping /reset/medicare_gov byte-identical."
-  },
-  {
-   "path": "source_data.json",
-   "classification": "captured-upstream-content",
-   "scope": "Normalized snapshot of the public medicare.gov surfaces, captured with a Playwright-driven Chromium on 2026-09-23 (scripts_dev/build_source_data.py): 165 coverage-database items from https://www.medicare.gov/jsonapi/staticcontent/coverage?limit=all&lang=en (titles, summaries, cost lines, and the Description / Coverage details / Who's eligible / Costs / How often / Where you get it / Provider requirements HTML sections, with upstream absolute medicare.gov links rewritten to mirror-relative paths and external links rendered as plain text); 3,121 provider records from https://www.medicare.gov/api/care-compare/provider (POST) across 10 provider types and 8 metro areas (names, addresses, phones, specialties, ratings and type-specific details as the upstream tool displays them); 472 DME supplier records from https://www.medicare.gov/api/procedure-price-lookup/api/v1/dme/suppliers/search/location for 8 ZIP codes with per-ZIP distances and ranks; the 79-category DME equipment taxonomy from the same API's dmepos_tax_abc endpoint; 84 publication records (titles, categories, product numbers, summaries, thumbnails, PDF file names, order status) from the Drupal publications search pages; and the 2026 Medicare cost amounts (Part A and Part B premiums/deductibles/coinsurance, IRMAA brackets, Medicare Advantage / Part D / Medigap cost language) from https://www.medicare.gov/basics/costs/medicare-costs."
-  },
-  {
-   "path": "source_data.json (content_pages)",
-   "classification": "captured-upstream-content",
-   "scope": "Structured blocks (headings, paragraphs, lists, accordions) extracted from the upstream Drupal pages captured on 2026-09-23 (scripts_dev/extract_content.py): get-started-with-medicare and its before-65 / after-65 paths, your-medicare-rights plus its three sub-pages, reporting-medicare-fraud-and-abuse, end-stage-renal-disease, children-and-end-stage-renal-disease, report-a-death, using-medicare/your-medicare-card, and talk-to-someone. All page copy is the upstream text; the Medicare.gov layout (cards, accordions, contact blocks) renders it in the mirror's templates."
-  },
-  {
-   "path": "seed_data.py (PLAN_CATALOG)",
-   "classification": "modeled-catalog",
-   "scope": "The simplified plan finder's 55 Medicare Advantage / Part D plan rows are fictional-but-realistic fixture data: plan names and benefit structures follow the public 2026 designs of the insurers that actually sell plans in the listed counties (Aetna, Humana, UnitedHealthcare, Blue Cross Blue Shield, Cigna, Wellcare, Kaiser Permanente, Anthem, Devoted, Molina, and the county-specific plans like KelseyCare and Tufts). They exist so the plan-finder flow has a deterministic catalog; the upstream plan-compare API was not scraped."
-  },
-  {
-   "path": "seed_data.py (benchmark users)",
-   "classification": "fixture-data",
-   "scope": "The four benchmark accounts (alice.j/bob.c/carol.d/david.k @test.com, password TestPass123!) and their claims, premium bills, payment methods, messages, mailing addresses, and login history are fictional fixture data created for this benchmark environment. Claim rows reference real harvested Springfield providers and real covered service names."
-  },
-  {
-   "path": "static/images/",
-   "classification": "captured-upstream-media",
-   "scope": "105 real medicare.gov media files downloaded from the upstream pages on 2026-09-23 with a Playwright-driven browser: the green Medicare.gov logo, the homepage hero portrait, the three homepage initiative photos, the plan-compare and care-compare and DME-directory hero photos, the four login-partner logos (ID.me, CLEAR, Login.gov, Medicare.gov), the coverage-section photos, the get-started path photos, the talk-to-someone photo, and 84 publication cover thumbnails. Each file's byte length and SHA-256 together with its source URL are pinned in asset_inventory.json."
-  },
-  {
-   "path": "static/icons/",
-   "classification": "captured-upstream-media",
-   "scope": "Small UI icons committed with the code: the U.S. flag PNG and the dot-gov / https SVGs decoded from the upstream gov-banner's inline data URIs, plus the site favicon captured from https://www.medicare.gov/images/favicon.ico."
-  },
-  {
-   "path": "tasks.jsonl",
-   "classification": "benchmark-tasks",
-   "scope": "30 contributor tasks (web_name, id, ques, web, upstream_url only). Every read-only task is anchored on a page-specific fact from the captured snapshot (coverage conditions and frequencies, 2026 cost amounts, provider attributes, supplier lists, plan premiums, publication product numbers, account fixtures); the stateful tasks drive real form flows (premium payment, address change, replacement card, publication ordering). No answer material lives in this file."
-  },
-  {
-   "path": "NOTICE.md",
-   "classification": "legal-notice",
-   "scope": "medicare.gov content is a U.S. Government work in the public domain (17 U.S.C. § 105); CMS asks that reuse credit Medicare.gov."
+  "schema_version": 1,
+  "snapshot_date": "2026-09-23",
+  "records": [
+    {
+      "path": "app.py",
+      "classification": "mirror-code",
+      "scope": "Flask application implementing the medicare.gov mirror: homepage, Medicare basics section, the 'What's covered?' coverage database with scored token-overlap search and A-Z browse, 2026 costs tables, the care-compare provider directory (10 provider categories), the DME supplier directory with ZIP + equipment search, a simplified plan finder, the publications catalog with search and print ordering, the talk-to-someone contact surfaces, and the signed-in MyMedicare area (dashboard, claims, premium payment, messages, account settings, replacement card). Route patterns and page structure follow the upstream site."
+    },
+    {
+      "path": "seed_data.py",
+      "classification": "mirror-code",
+      "scope": "Deterministic build-time/boot-time seeder. All content rows come from the tracked source_data.json snapshot (arrays pre-sorted by the build script); benchmark users use a frozen scrypt hash so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0). Every seed function early-returns on a populated database, keeping /reset/medicare_gov byte-identical."
+    },
+    {
+      "path": "source_data.json",
+      "classification": "captured-upstream-content",
+      "scope": "Normalized snapshot of the public medicare.gov surfaces, captured with a Playwright-driven Chromium on 2026-09-23 (scripts_dev/build_source_data.py): 165 coverage-database items from https://www.medicare.gov/jsonapi/staticcontent/coverage?limit=all&lang=en (titles, summaries, cost lines, and the Description / Coverage details / Who's eligible / Costs / How often / Where you get it / Provider requirements HTML sections, with upstream absolute medicare.gov links rewritten to mirror-relative paths and external links rendered as plain text); 3,121 provider records from https://www.medicare.gov/api/care-compare/provider (POST) across 10 provider types and 8 metro areas (names, addresses, phones, specialties, ratings and type-specific details as the upstream tool displays them); 472 DME supplier records from https://www.medicare.gov/api/procedure-price-lookup/api/v1/dme/suppliers/search/location for 8 ZIP codes with per-ZIP distances and ranks; the 79-category DME equipment taxonomy from the same API's dmepos_tax_abc endpoint; 84 publication records (titles, categories, product numbers, summaries, thumbnails, PDF file names, order status) from the Drupal publications search pages; and the 2026 Medicare cost amounts (Part A and Part B premiums/deductibles/coinsurance, IRMAA brackets, Medicare Advantage / Part D / Medigap cost language) from https://www.medicare.gov/basics/costs/medicare-costs."
+    },
+    {
+      "path": "source_data.json (content_pages)",
+      "classification": "captured-upstream-content",
+      "scope": "Structured blocks (headings, paragraphs, lists, accordions) extracted from the upstream Drupal pages captured on 2026-09-23 (scripts_dev/extract_content.py): get-started-with-medicare and its before-65 / after-65 paths, your-medicare-rights plus its three sub-pages, reporting-medicare-fraud-and-abuse, end-stage-renal-disease, children-and-end-stage-renal-disease, report-a-death, using-medicare/your-medicare-card, and talk-to-someone. All page copy is the upstream text; the Medicare.gov layout (cards, accordions, contact blocks) renders it in the mirror's templates."
+    },
+    {
+      "path": "seed_data.py (PLAN_CATALOG)",
+      "classification": "modeled-catalog",
+      "scope": "The simplified plan finder's 55 Medicare Advantage / Part D plan rows are fictional-but-realistic fixture data: plan names and benefit structures follow the public 2026 designs of the insurers that actually sell plans in the listed counties (Aetna, Humana, UnitedHealthcare, Blue Cross Blue Shield, Cigna, Wellcare, Kaiser Permanente, Anthem, Devoted, Molina, and the county-specific plans like KelseyCare and Tufts). They exist so the plan-finder flow has a deterministic catalog; the upstream plan-compare API was not scraped."
+    },
+    {
+      "path": "seed_data.py (benchmark users)",
+      "classification": "fixture-data",
+      "scope": "The four benchmark accounts (alice.j/bob.c/carol.d/david.k @test.com, password TestPass123!) and their claims, premium bills, payment methods, messages, mailing addresses, and login history are fictional fixture data created for this benchmark environment. Claim rows reference real harvested Springfield providers and real covered service names."
+    },
+    {
+      "path": "static/images/",
+      "classification": "captured-upstream-media",
+      "scope": "105 real medicare.gov media files downloaded from the upstream pages on 2026-09-23 with a Playwright-driven browser: the green Medicare.gov logo, the homepage hero portrait, the three homepage initiative photos, the plan-compare and care-compare and DME-directory hero photos, the four login-partner logos (ID.me, CLEAR, Login.gov, Medicare.gov), the coverage-section photos, the get-started path photos, the talk-to-someone photo, and 84 publication cover thumbnails. Each file's byte length and SHA-256 together with its source URL are pinned in asset_inventory.json."
+    },
+    {
+      "path": "static/icons/",
+      "classification": "captured-upstream-media",
+      "scope": "Small UI icons committed with the code: the U.S. flag PNG and the dot-gov / https SVGs decoded from the upstream gov-banner's inline data URIs, plus the site favicon captured from https://www.medicare.gov/images/favicon.ico."
+    },
+    {
+      "path": "tasks.jsonl",
+      "classification": "benchmark-tasks",
+      "scope": "30 contributor tasks (web_name, id, ques, web, upstream_url only). Every read-only task is anchored on a page-specific fact from the captured snapshot (coverage conditions and frequencies, 2026 cost amounts, provider attributes, supplier lists, plan premiums, publication product numbers, account fixtures); the stateful tasks drive real form flows (premium payment, address change, replacement card, publication ordering). No answer material lives in this file."
+    },
+    {
+      "path": "NOTICE.md",
+      "classification": "legal-notice",
+      "scope": "medicare.gov content is a U.S. Government work in the public domain (17 U.S.C. \u00a7 105); CMS asks that reuse credit Medicare.gov."
+    }
+  ],
+  "review_204": {
+    "task_count": 15,
+    "task_design": "Coherent outcome-oriented instructions, reviewer rubrics and deterministic contracts.",
+    "upstream_checks": [
+      "https://www.medicare.gov/coverage/walkers",
+      "https://www.medicare.gov/coverage/blood-sugar-monitors",
+      "https://www.medicare.gov/coverage/blood-sugar-test-strips",
+      "https://www.medicare.gov/basics/costs/medicare-costs"
+    ],
+    "asset_changes": "None; original PR #125 bundle retained unchanged."
   }
- ]
 }

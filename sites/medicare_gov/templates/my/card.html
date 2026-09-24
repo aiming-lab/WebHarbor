@@ -16,7 +16,7 @@
         <p class="mc-name">{{ current_user.display_name }}</p>
         <p class="mc-meta">Part A effective {{ current_user.part_a_effective }} · Part B effective {{ current_user.part_b_effective }}</p>
       </div>
-      <form action="{{ url_for('replace_card') }}" method="post" class="login-form-card" style="max-width:none;margin:0">
+      <form action="{{ url_for('replace_card') }}" method="post" class="login-form-card" style="max-width:none;margin:0"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <div class="field">
           <label>Why do you need a replacement card?</label>
           <div><input type="radio" id="rc-lost" name="reason" value="lost" required> <label for="rc-lost" style="display:inline;font-weight:400">My card was lost</label></div>
