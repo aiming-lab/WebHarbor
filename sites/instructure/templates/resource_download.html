@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}Download {{ res.title }} | Instructure{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1 style="font-size: 2.2rem;">Download</h1>
+    <p>{{ res.title }}</p>
+  </div>
+</section>
+<section class="container">
+  <div class="gate-form">
+    <h3>Just a few quick details</h3>
+    <p class="hint">Tell us a little about yourself and we'll email your copy of “{{ res.title }}” right away.</p>
+    <form method="post" action="{{ url_for('resource_download_submit', seg=res.route_seg, slug=res.slug) }}" novalidate>
+      {{ form.hidden_tag() }}
+      <div class="form-row">
+        <div class="form-field {% if form.first_name.errors %}has-err{% endif %}">
+          <label>First name <span class="req">*</span></label>
+          {{ form.first_name(class="form-control") }}
+          {% for e in form.first_name.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-field {% if form.last_name.errors %}has-err{% endif %}">
+          <label>Last name <span class="req">*</span></label>
+          {{ form.last_name(class="form-control") }}
+          {% for e in form.last_name.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field {% if form.email.errors %}has-err{% endif %}">
+          <label>Email <span class="req">*</span></label>
+          {{ form.email(class="form-control") }}
+          {% for e in form.email.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label>Phone</label>
+          {{ form.phone(class="form-control") }}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field">
+          <label>Job title</label>
+          {{ form.job_title(class="form-control") }}
+        </div>
+        <div class="form-field {% if form.organization.errors %}has-err{% endif %}">
+          <label>Organization <span class="req">*</span></label>
+          {{ form.organization(class="form-control") }}
+          {% for e in form.organization.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-field {% if form.organization_type.errors %}has-err{% endif %}">
+          <label>Organization type <span class="req">*</span></label>
+          {{ form.organization_type() }}
+          {% for e in form.organization_type.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-field">
+          <label>Country</label>
+          {{ form.country() }}
+        </div>
+      </div>
+      <div class="form-field {% if form.needs.errors %}has-err{% endif %}">
+        <label>Which best describes your needs <span class="req">*</span></label>
+        {{ form.needs() }}
+        {% for e in form.needs.errors %}<span class="err">{{ e }}</span>{% endfor %}
+      </div>
+      <div class="form-field {% if form.message.errors %}has-err{% endif %}">
+        <label>How can we help? <span class="req">*</span></label>
+        {{ form.message(class="form-control", rows="4") }}
+        {% for e in form.message.errors %}<span class="err">{{ e }}</span>{% endfor %}
+      </div>
+      <div class="consent-row">
+        {{ form.consent() }}
+        <label for="{{ form.consent.id }}">I agree to receive marketing communications from Instructure and understand I can opt out at any time.</label>
+      </div>
+      {% for e in form.consent.errors %}<span class="err" style="color:var(--red);font-size:13px;">{{ e }}</span>{% endfor %}
+      <div class="form-footer">
+        <button class="btn btn-primary" type="submit">Submit</button>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Saved Vehicles | Kelley Blue Book{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">Saved Vehicles</h1>
+    <div class="vehicle-grid">
+        {% for item in saved %}
+            {% set vehicle = item.vehicle %}
+            {% include '_vehicle_card.html' %}
+        {% else %}
+        <p>You haven't saved any vehicles yet. <a href="{{ url_for('index') }}">Browse vehicles</a>.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}My Orders – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <nav class="account-nav">
+    <a href="/account">Dashboard</a>
+    <a class="active" href="/account/orders">Orders</a>
+    <a href="/account/addresses">Addresses</a>
+    <a href="/account/payment">Payment methods</a>
+    <a href="/account/profile">Profile</a>
+    <a href="/account/password">Password</a>
+  </nav>
+  <div class="account-main">
+    <h1>Your Orders</h1>
+    {% if user.orders %}
+    <div class="table-scroll"><table class="order-table">
+      <thead>
+        <tr><th>Order</th><th>Date</th><th>Payment</th><th>Total</th><th>Status</th></tr>
+      </thead>
+      <tbody>
+        {% for order in user.orders %}
+        <tr>
+          <td><a href="/account/orders/{{ order.order_number }}" style="text-decoration:underline">{{ order.order_number }}</a></td>
+          <td>{{ order.created_at.strftime('%B %d, %Y') }}</td>
+          <td>{{ order.payment_label }}</td>
+          <td>{{ order.total|money }}</td>
+          <td><span class="status-chip status-{{ order.status }}">{{ order.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    {% else %}
+    <p>You haven't placed any orders yet. <a href="/collections/all-wine" style="color:var(--bright-red);text-decoration:underline">Start shopping</a>.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

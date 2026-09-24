@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Payment Methods – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <nav class="account-nav">
+    <a href="/account">Dashboard</a>
+    <a href="/account/orders">Orders</a>
+    <a href="/account/addresses">Addresses</a>
+    <a class="active" href="/account/payment">Payment methods</a>
+    <a href="/account/profile">Profile</a>
+    <a href="/account/password">Password</a>
+  </nav>
+  <div class="account-main">
+    <h1>Payment Methods</h1>
+    {% if errors %}<div class="form-error">{{ errors.values()|list|first }}</div>{% endif %}
+    {% if user.payment_methods %}
+    <table class="order-table">
+      <thead><tr><th>Card</th><th>Expires</th><th>Default</th><th></th></tr></thead>
+      <tbody>
+        {% for m in user.payment_methods %}
+        <tr>
+          <td>{{ m.brand }} ending in {{ m.last4 }} · {{ m.holder }}</td>
+          <td>{{ '%02d'|format(m.exp_month) }}/{{ m.exp_year }}</td>
+          <td>{{ 'Yes' if m.is_default else '—' }}</td>
+          <td>
+            <form method="post" action="/account/payment" onsubmit="return confirm('Remove this card?')">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="payment_id" value="{{ m.id }}">
+              <button style="color:var(--bright-red);border:0;background:none;text-decoration:underline;cursor:pointer;font-size:13.5px" type="submit">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p>No cards saved yet.</p>
+    {% endif %}
+    <h2 style="font-size:20px;margin-top:30px">Add a new card</h2>
+    <form method="post" action="/account/payment" style="max-width:560px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="add">
+      <div class="form-grid">
+        <div class="field full"><label for="card_number">Card number</label><input id="card_number" name="card_number" inputmode="numeric" required></div>
+        <div class="field full"><label for="card_holder">Name on card</label><input id="card_holder" name="card_holder" required></div>
+        <div class="field"><label for="exp_month">Expiration month</label>
+          <select id="exp_month" name="exp_month" required>
+            <option value="">MM</option>
+            {% for i in range(1, 13) %}<option value="{{ '%02d'|format(i) }}">{{ '%02d'|format(i) }}</option>{% endfor %}
+          </select></div>
+        <div class="field"><label for="exp_year">Expiration year</label>
+          <select id="exp_year" name="exp_year" required>
+            <option value="">YYYY</option>
+            {% for y in range(2026, 2037) %}<option value="{{ y }}">{{ y }}</option>{% endfor %}
+          </select></div>
+      </div>
+      <label style="display:flex;gap:8px;align-items:center;margin-top:12px;font-size:14px">
+        <input type="checkbox" name="is_default"> Set as default card
+      </label>
+      <button class="btn-primary" type="submit" style="margin-top:16px;max-width:240px">Save Card</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

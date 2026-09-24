@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+{% block title %}{{ r.title }} | Instructure{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="page-crumb"><a href="{{ url_for('resources_hub') }}">Resources</a><span class="sep">»</span>{{ type_labels.get(r.type, r.type) if type_labels is defined else r.type }}</div>
+
+  {% if r.type == 'webinar' %}
+  <div class="mhero" style="background:none; padding:0;">
+    <div class="gate-wrap" style="margin-top:0;">
+      <div>
+        <h1>{{ r.title }}</h1>
+        {% if r.published %}<p style="margin-top:14px; font-weight:700;">{{ r.published }}</p>{% endif %}
+        {% if r.webinar_time %}<p style="font-weight:700;">{{ r.webinar_time }}</p>{% endif %}
+        <div class="prose" style="margin-top:22px;">
+          {% for block in r.body %}
+            {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+            {% elif block.kind == 'h3' %}<h3>{{ block.text }}</h3>
+            {% else %}<p>{{ block.text }}</p>{% endif %}
+          {% endfor %}
+        </div>
+      </div>
+      {% if unlocked %}
+      <div class="gate-form" style="text-align:center;">
+        <h3>Watch the webinar</h3>
+        <p class="sub">You're registered for this on-demand webinar.</p>
+        {% if r.hero_image %}<img src="{{ r.hero_image }}" alt="{{ r.title }}" style="border-radius:14px; margin-bottom:18px;">{% endif %}
+        <a class="btn btn-primary" href="{{ r.pdf_file or '#' }}" target="_blank" rel="noopener" style="width:auto;">Watch now</a>
+        {% if r.speakers %}
+        <div style="margin-top:26px; text-align:left;">
+          <h3 style="font-size:17px;">Featured Speakers</h3>
+          {% for s in r.speakers %}
+          <div style="display:flex; gap:14px; align-items:center; margin-top:16px;">
+            {% if s.photo %}<img src="{{ s.photo }}" alt="{{ s.name }}" style="width:64px; height:64px; border-radius:50%; object-fit:cover;">{% endif %}
+            <div><strong>{{ s.name }}</strong><br><span style="color:#b8cbdc; font-size:13.5px;">{{ s.role }}</span></div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      {% else %}
+      <form class="gate-form" method="post" action="/resources/{{ seg }}/{{ r.slug }}/gate">
+        <h3>Watch the webinar</h3>
+        <p class="sub">Fill out the form to access this on-demand webinar.</p>
+        <label>*First Name</label><input type="text" name="first_name" required>
+        <label>*Last Name</label><input type="text" name="last_name" required>
+        <label>*Email Address</label><input type="email" name="email" required>
+        <label>*Phone Number</label><input type="text" name="phone_number">
+        <label>*Job Title</label><input type="text" name="job_title">
+        <label>*School / Organization</label><input type="text" name="organization" required>
+        <label>*Organization Type</label>
+        <select name="organization_type" required>
+          <option value="">- Select -</option>
+          <option>Business</option><option>Government</option>
+          <option>Higher Ed</option><option>K12</option><option>EdTech</option>
+        </select>
+        <label>*Country</label>
+        <select name="country" required>
+          <option value="">- Select -</option>
+          <option>United States</option><option>Canada</option><option>United Kingdom</option>
+          <option>Australia</option><option>Netherlands</option><option>Other</option>
+        </select>
+        <button class="btn" type="submit">Submit</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+
+  {% if r.bullets %}
+  <section class="section tight">
+    <h2 style="margin-bottom: 20px;">What we’ll cover:</h2>
+    <ul class="prose" style="margin-top:0;">
+      {% for b in r.bullets %}<li>{{ b }}</li>{% endfor %}
+    </ul>
+    {% if r.speakers and not unlocked %}
+    <div class="related-row" style="margin-top:30px;">
+      {% for s in r.speakers %}
+      <div class="block-card" style="text-align:center;">
+        {% if s.photo %}<img src="{{ s.photo }}" alt="{{ s.name }}" style="width:110px; height:110px; border-radius:50%; object-fit:cover; margin:0 auto 12px;">{% endif %}
+        <h3>{{ s.name }}</h3>
+        <p>{{ s.role }}</p>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  {% endif %}
+
+  {% else %}
+
+  <div class="detail-head">
+    <h1>{{ r.title }}</h1>
+    {% if r.published %}<p style="color:var(--muted); margin-top:10px; font-weight:600;">{{ r.published }}</p>{% endif %}
+  </div>
+
+  <div class="gate-wrap">
+    <div>
+      <div class="prose" style="margin-top:0;">
+        {% for block in r.body %}
+          {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+          {% elif block.kind == 'h3' %}<h3>{{ block.text }}</h3>
+          {% else %}<p>{{ block.text }}</p>{% endif %}
+        {% endfor %}
+      </div>
+      {% if r.table %}
+      <h3 style="margin-top:26px;">{{ r.table.headers|join(' · ') if r.table.headers else '' }}</h3>
+      <table class="data-table">
+        <thead><tr>{% for h in r.table.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in r.table.rows %}
+          <tr>{% for cell in row %}<td>{{ cell }}</td>{% endfor %}</tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% endif %}
+      {% if r.bullets %}
+      <ul class="prose" style="margin-top:10px;">
+        {% for b in r.bullets %}<li>{{ b }}</li>{% endfor %}
+      </ul>
+      {% endif %}
+      {% if r.speakers %}
+      <div class="related-row" style="margin-top:30px;">
+        {% for s in r.speakers %}
+        <div class="block-card" style="text-align:center;">
+          {% if s.photo %}<img src="{{ s.photo }}" alt="{{ s.name }}" style="width:110px; height:110px; border-radius:50%; object-fit:cover; margin:0 auto 12px;">{% endif %}
+          <h3>{{ s.name }}</h3>
+          <p>{{ s.role }}</p>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div>
+      {% if unlocked %}
+      <div class="gate-form" style="text-align:center;">
+        <h3>Access granted</h3>
+        <p class="sub">Thanks for your interest—your access to this {{ type_labels.get(r.type, r.type) if type_labels is defined else r.type }} is unlocked.</p>
+        {% if r.pdf_file %}
+        <a class="btn btn-primary" href="{{ r.pdf_file }}" style="width:auto; margin: 0 auto 16px;" target="_blank" rel="noopener">Download</a>
+        {% endif %}
+        {% if r.hero_image %}<img src="{{ r.hero_image }}" alt="{{ r.title }}" style="border-radius:14px;">{% endif %}
+      </div>
+      {% else %}
+      <form class="gate-form" method="post" action="/resources/{{ seg }}/{{ r.slug }}/gate">
+        <h3>{{ 'Register to watch' if r.type == 'video' else 'Get the full ' + (type_labels.get(r.type, r.type) if type_labels is defined else r.type) }}</h3>
+        <p class="sub">Fill out the form for instant access.</p>
+        <label>*First Name</label><input type="text" name="first_name" required>
+        <label>*Last Name</label><input type="text" name="last_name" required>
+        <label>*Email Address</label><input type="email" name="email" required>
+        {% if r.form_kind == 'long' %}
+        <label>*Organization Type</label>
+        <select name="organization_type" required>
+          <option value="">Select...</option>
+          <option>Business</option><option>Government</option>
+          <option>Higher Ed</option><option>K12</option><option>EdTech</option>
+        </select>
+        {% endif %}
+        <button class="btn" type="submit">Submit</button>
+      </form>
+      {% endif %}
+      <div class="doc-viewer" style="margin-top:20px;">
+        <img class="doc-cover" src="{{ r.hero_image }}" alt="{{ r.title }}">
+      </div>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="save-bar">
+    <form method="post" action="/resources/{{ seg }}/{{ r.slug }}/save">
+      <input type="hidden" name="next" value="{{ resource_url(r) }}">
+      <button class="btn {{ 'btn-outline' if saved else 'btn-navy' }}" type="submit">{{ '★ Saved — remove' if saved else '☆ Save for later' }}</button>
+    </form>
+    {% if not current_user.is_authenticated %}<span style="color:var(--muted); font-size:14px;"><a href="{{ url_for('login') }}">Log in</a> to keep a list of saved resources.</span>{% endif %}
+  </div>
+
+  {% if r.topic_list %}
+  <div class="topics-row">
+    <span class="lbl">Discover More Topics:</span>
+    {% for t in r.topic_list %}
+    <a class="topic-pill" href="{{ url_for('search', keys=t) }}">{{ t }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <section class="section">
+    <h2 style="margin-bottom: 24px;">Related Content</h2>
+    <div class="related-row">
+      {% for x in related %}
+      <a class="res-card" href="{{ resource_url(x) }}">
+        <img class="cover" src="{{ x.hero_image or x.card_image }}" alt="{{ x.title }}">
+        <div class="body">
+          <span class="cat">{{ type_labels.get(x.type, x.type) if type_labels is defined else x.type }}</span>
+          <h3>{{ x.title }}</h3>
+          <span class="more">Read More &gt;</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}
