@@ -13,6 +13,19 @@ from verify_lib import (check_trajectory_identity, check_signed_in_as, final_ans
 
 
 def chunks(text):
+    # Labeled markdown tables are ordinary user-facing answers. Expand headers
+    # into their row cells before sentence-level relationship checks.
+    lines=text.splitlines(); expanded=[]; headers=None
+    for line in lines:
+        if '|' in line:
+            cells=[c.strip() for c in line.strip().strip('|').split('|')]
+            if all(re.fullmatch(r'[: -]+', c or '-') for c in cells):continue
+            if headers is None:headers=cells;continue
+            expanded.append(cells[0]+': '+ '; '.join(h+': '+v for h,v in zip(headers[1:],cells[1:])))
+        else:
+            headers=None;expanded.append(line)
+    text='\n'.join(expanded)
+    text=re.sub(r'\bno (monthly premium|premium|medical deductible|deductible)\b',r'\1 $0',text,flags=re.I)
     text = text.replace('’', "'").replace('–', '-').replace('—', '-')
     text = re.sub(r'\b([A-Z])\.(?=\s+[A-Z])', r'\1', text)
     return [s.casefold() for s in re.split(r'\n|(?<=[.!?])\s+(?=[A-Z])', text)]
@@ -43,9 +56,29 @@ def metric(label,n):
     return '(?:'+label+r')\s*(?:is|of|:|=|costs|was)?\s*'+m+'|'+m+r'\s*(?:(?:per|a|each)\s+(?:month|year)\s+)?(?:'+label+')'
 
 
+
+def currency_consistent(text,subject,label,expected):
+    found=[]
+    for clause in chunks(text):
+        if not re.search(subject,clause,re.I):continue
+        for m in re.finditer('(?:'+label+r')\s*(?:is|of|:|=|costs|was)?\s*\$\s*([0-9][0-9,]*(?:\.[0-9]{1,2})?)',clause,re.I):
+            found.append(float(m[1].replace(',','')))
+    return all(abs(n-expected)<.001 for n in found)
+
 def check_answers(judge,i,a):
     def f(label,subject,pattern,negative=False):
         judge.check('answer_'+label,has(a,subject,pattern,allow_negative=negative),label)
+    if i in (1,14):
+        for subject,label,n in [(r'part a','deductible',1736),(r'part b','deductible',283)]:
+            judge.check('consistent_'+subject, currency_consistent(a,subject,label,n),'Reject contradictory amounts for this deductible')
+    if i==5:
+        for subject,p,d,l in [('aetna',0,0,6700),('blue cross',54,199,7550)]:
+            for label,n in [('premium',p),('deductible',d),('limit',l)]:
+                judge.check('consistent_'+subject+label,currency_consistent(a,subject,label,n),'Reject contradictory plan costs')
+    if i==7:
+        for subject,paid,owed in [('colonoscopy',1736,0),('test strips',77.12,19.28)]:
+            for label,n in [('paid',paid),('billed',owed)]:
+                judge.check('consistent_'+subject+label,currency_consistent(a,subject,label,n),'Reject contradictory claim amounts')
     if i==0:
         f('monitor_part_b',r'monitor',r'part b');f('strips_part_b',r'(?:strips|both)',r'part b')
         f('home_prescription',r'monitor',r'prescrib.{0,50}(?:home|house)|home.{0,50}prescrib')
