@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--20.
 
-Boarding my first megabus tomorrow (September 24th) from New York to Boston.
-Search the help center: what does a passenger show the driver when boarding,
-where does the reservation number come from, and how early should you be at
-the stop? Cite where each answer comes from. Check tomorrow's schedule: first
-departure, its fare, and where it boards in New York.
-
-Frozen ground truth (seed DB): "What do I give the driver when boarding the
-bus?" (help/traveling-on-the-bus): passengers must present a valid reservation
-number provided at the time of purchase. "What is my reservation number?"
-(same topic): the reservation number is obtained from the confirmation page
-displayed after finalizing the purchase (a copy is also emailed). "What do I
-need to know about boarding the bus?"
-(help/customers-with-special-requirements): arrive at least 15 minutes prior
-to the scheduled departure. NY->BOS 2026-09-24 first departure = 06:15 ->
-11:10 @ $53.99, boarding at the Port Authority Bus Terminal.
+I'm taking my first Megabus trip from New York to Boston on September 24, 2026. Find that day's first departure, its fare and boarding location, then help me prepare to board: explain what I must show the driver, where to find the reservation number, how early to arrive, and whether I may bring food. Identify the help pages supporting your advice.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, check_visited_path,
                         contains_amount, contains_count, contains_phrase, contains_time,

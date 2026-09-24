@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--8.
 
-First megabus trip New York -> Philadelphia on October 3rd, returning October
-4th, general seating. Check both days' schedules: first departure after
-6:00am each way with its fare. From the help center: the luggage allowance
-for a general seating ticket, the exact condition for bicycles (size and
-weight limits), and what happens if you miss your scheduled departure.
-
-Frozen ground truth (seed DB): NY->PHL 2026-10-03 first after 06:00 = 06:30
-@ $25.99; PHL->NY 2026-10-04 first after 06:00 = 06:30 @ $25.99. FAQ "What can
-I bring with me?" (traveling-on-the-bus): one (1) piece of luggage and one
-(1) carry-on bag with general seating tickets. Bicycle condition ("Can I take
-my bicycles...?"): only inside a case that does not exceed the luggage
-allowance — max 62 inches total exterior dimensions (L+W+H) and max 50
-pounds. "What if I miss my schedule departure?": no refunds or credits are
-given, but reservations can be changed on the website up until 6 hours prior
-to departure.
+I'm taking my first megabus trip from New York to Philadelphia on October 3rd and returning October 4th, with a general seating ticket. Check both days' schedules and report the first departure after 6:00am each way with its fare. I'm also packing: find the official help answer about what luggage I can bring and quote the allowance, the exact condition under which megabus carries bicycles including the size and weight limits, and what happens if I miss my scheduled departure.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, check_visited_path,
                         contains_amount, contains_count, contains_phrase, contains_time,

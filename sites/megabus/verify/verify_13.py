@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--13.
 
-Find the cheapest one-stop journey from New York to Boston departing 9:00am on
-Oct 3; which city does it connect through, its total travel time, and how does
-its fare compare with the 9:15am direct service? Open the one-stop's journey
-details: where does it board in New York and where does the connecting leg
-depart? What is the last departure from Boston to New York that day, and what
-does it cost?
-
-Frozen ground truth (seed DB): the 9:00am one-stop is journey
-+104435650-104215033 (route BZ06-BZ03): 09:00 -> 14:35, 5h35m / 335 min,
-$44.99, connecting through Providence. It boards at the Port Authority Bus
-Terminal For Peter Pan (Gates 69-75) in New York; the connecting leg departs
-the Providence Bus Terminal (1 Peter Pan Way). The 9:15am direct (PP01) is
-09:15 -> 13:35, 4h20m, also $44.99 — the fares are the same. The last
-BOS->NY departure on 2026-10-03 is 18:30 @ $34.99.
+Find the cheapest one-stop journey from New York to Boston departing at 9:00am on October 3rd. Which city does it connect through, what is the total travel time, and how does its fare compare with the 9:15am direct service on the same page? Open the one-stop's journey details and report where it boards in New York and where the connecting leg departs. I must be back in New York that evening: what is the last departure from Boston to New York that day, and what does it cost?
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_duration, contains_phrase, contains_time, final_answer,

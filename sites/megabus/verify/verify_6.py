@@ -1,22 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--6.
 
-Use the fare finder to list the three cheapest destinations reachable from
-Philadelphia with their starting fares; which of those three is fastest to
-reach and how long does that trip take? Then use the journey planner to check
-October 3rd departures to the cheapest destination: report the cheapest
-morning departure, its fare, and where it boards in Philadelphia. Finally,
-does the fare finder's starting fare for Washington match that route's
-cheapest October 3rd fare?
-
-Frozen ground truth (seed DB): fare-finder origin Philadelphia, PA (id 127):
-1) Baltimore, MD from $15.99 (fastest 1h45m / 105 min); 2) New York, NY from
-$19.99 (fastest 1h50m / 110 min); 3) Washington, DC from $31.98 (fastest
-3h25m / 205 min). Baltimore is the fastest of the three at 1h45m. PHL->BAL
-2026-10-03 cheapest morning (06:00-11:59) departure = 07:00 @ $15.99, boarding
-at the Peter Pan Bus Lines / Trailways bus stop at Philadelphia - 1001
-Filbert Street. PHL->WDC 2026-10-03 cheapest fare = $31.98, which MATCHES
-the fare finder's starting fare for Washington.
+Help me choose a low-cost day trip from Philadelphia on October 3rd. Compare the fare finder's three cheapest destinations by starting fare and travel time, then check the cheapest destination's actual morning departures that day. Recommend a departure, including its fare and boarding location, and explain which of the three destinations is quickest to reach.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_any, contains_duration, contains_phrase, contains_time,
@@ -59,15 +44,6 @@ def run_checks(judge, traj, initial_db, after_db):
                 f"expected the morning departure fare ${MORNING_FARE}")
     judge.check("answer_boarding_stop", contains_phrase(answer, BOARDING_KEY),
                 "expected the Philadelphia boarding stop 1001 Filbert Street")
-    # Washington starting-fare vs 10-03 cheapest comparison
-    judge.check("visited_phl_wdc_1003_results",
-                navigated_journeys(traj, PHL_ID, WDC_ID, "2026-10-03"),
-                "required: journeys PHL->Washington on 2026-10-03")
-    judge.check("answer_wdc_fares_match",
-                contains_amount(answer, WDC_1003_CHEAPEST)
-                and (contains_any(answer, ["match", "same", "identical", "equal", "yes"])),
-                "expected: the fare finder's Washington starting fare $31.98 matches the "
-                "cheapest October 3rd fare $31.98")
     check_read_only(judge, initial_db, after_db)
 
 

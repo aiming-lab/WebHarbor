@@ -8,6 +8,7 @@ upstream site on 2026-09-23.
 """
 import json
 import os
+import secrets
 import re
 import uuid
 from datetime import date, datetime, timedelta
@@ -20,11 +21,12 @@ from flask_login import (LoginManager, UserMixin, current_user,
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import CSRFProtect
 from werkzeug.utils import secure_filename
+from urllib.parse import urlsplit
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__, instance_path=os.path.join(BASE_DIR, 'instance'))
-app.config['SECRET_KEY'] = 'megabus-mirror-dev-secret-key'
+app.config["SECRET_KEY"] = os.environ.get("MEGABUS_SECRET_KEY") or secrets.token_hex(32)
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     'MEGABUS_DB_URI',
     f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'megabus.db')}")
@@ -504,6 +506,21 @@ app.jinja_env.filters['mdlite'] = mdlite
 
 # ---------------------------------------------------------------- routes --
 
+def local_target(value, fallback):
+    target = urlsplit(value or '')
+    return value if value and value.startswith('/') and not value.startswith('//') and not target.netloc and not target.scheme and '\\' not in value else fallback
+
+
+def booking_access(booking):
+    return ((current_user.is_authenticated and (booking.user_id == current_user.id or (booking.user_id is None and booking.email.casefold() == current_user.email.casefold())))
+            or booking.reference in session.get('verified_bookings', []))
+
+
+def require_booking_access(booking):
+    if not booking_access(booking):
+        abort(403)
+
+
 @app.route('/')
 def home():
     hero_routes = [
@@ -734,6 +751,8 @@ def checkout_payment():
     items = get_basket()
     if not items:
         return redirect(url_for('home'))
+    if not session.get('checkout_names') or not session.get('checkout_email'):
+        return redirect(url_for('checkout_passengers'))
     form_data = {}
     if request.method == 'POST':
         card_name = request.form.get('card_name', '').strip()
@@ -748,6 +767,8 @@ def checkout_payment():
             errors.append('Enter a valid card number (13-19 digits).')
         if not re.fullmatch(r'(0[1-9]|1[0-2])/\d{2}', expiry):
             errors.append('Enter the expiry date as MM/YY.')
+        if re.fullmatch(r'(0[1-9]|1[0-2])/\d{2}', expiry) and (2000 + int(expiry[3:]), int(expiry[:2])) < (MIRROR_TODAY.year, MIRROR_TODAY.month):
+            errors.append('This card has expired.')
         if not re.fullmatch(r'\d{3,4}', cvv):
             errors.append('Enter the 3 or 4 digit security code.')
         if not zip_code:
@@ -780,8 +801,11 @@ def checkout_payment():
             for item in items:
                 db.session.delete(item)
             db.session.commit()
+            session['verified_bookings'] = list(set(session.get('verified_bookings', []) + [reference]))
             session.pop('promo_code', None)
             session.pop('sms_updates', None)
+            session.pop('checkout_names', None)
+            session.pop('checkout_email', None)
             return redirect(url_for('checkout_confirmation', ref=reference))
     totals = basket_totals(items, applied_promo(), session.get('sms_updates'))
     entries = []
@@ -796,6 +820,7 @@ def checkout_payment():
 @app.route('/journey-planner/confirmation/<ref>')
 def checkout_confirmation(ref):
     booking = Booking.query.filter_by(reference=ref).first_or_404()
+    require_booking_access(booking)
     entries = []
     for bj in booking.journeys:
         j = Journey.query.get(bj.journey_id)
@@ -828,6 +853,9 @@ def manage_booking():
         if not booking:
             not_found = True
     if booking:
+        if request.method == 'POST':
+            session['verified_bookings'] = list(set(session.get('verified_bookings', []) + [booking.reference]))
+        require_booking_access(booking)
         for bj in booking.journeys:
             j = Journey.query.get(bj.journey_id)
             if j:
@@ -840,6 +868,9 @@ def manage_booking():
 def manage_booking_cancel():
     ref = request.form.get('reference', '').strip().upper()
     booking = Booking.query.filter_by(reference=ref).first_or_404()
+    require_booking_access(booking)
+    if booking.status != 'confirmed':
+        abort(409)
     booking.status = 'cancelled'
     db.session.commit()
     flash(f'Booking {booking.reference} was cancelled. A refund credit will be '
@@ -852,6 +883,9 @@ def manage_booking_change():
     ref = request.args.get('ref') or request.form.get('reference', '')
     bj_id = request.args.get('bj', type=int) or request.form.get('bj', type=int)
     booking = Booking.query.filter_by(reference=(ref or '').strip().upper()).first_or_404()
+    require_booking_access(booking)
+    if booking.status != 'confirmed':
+        abort(409)
     bj = BookingJourney.query.get(bj_id) if bj_id else None
     if not bj or bj.booking_id != booking.id:
         abort(404)
@@ -863,7 +897,7 @@ def manage_booking_change():
         new_j = Journey.query.get(new_journey_id) if new_journey_id else None
         if not new_j or new_j.origin_city_id != j.origin_city_id \
                 or new_j.dest_city_id != j.dest_city_id \
-                or new_j.id == j.id:
+                or new_j.id == j.id or new_j.departure_date < MIRROR_TODAY.isoformat():
             flash('Choose a departure for the same route from the list of available days.', 'error')
         else:
             fare_delta = round(new_j.price * bj.passengers - bj.price, 2)
@@ -879,7 +913,8 @@ def manage_booking_change():
     available = (Journey.query
                  .filter(Journey.origin_city_id == j.origin_city_id,
                          Journey.dest_city_id == j.dest_city_id,
-                         Journey.departure_date != j.departure_date)
+                         Journey.id != j.id,
+                         Journey.departure_date >= MIRROR_TODAY.isoformat())
                  .order_by(Journey.departure_date, Journey.dep_time).all())
     return render_template('manage_change.html', booking=booking, bj=bj, journey=j,
                            available=available)
@@ -1183,14 +1218,14 @@ def newsletter_signup():
         db.session.add(NewsletterSignup(email=email))
         db.session.commit()
         flash('You are on the list! Watch your inbox for megabus deals.', 'success')
-    return redirect(request.form.get('next') or url_for('home'))
+    return redirect(local_target(request.form.get('next'), url_for('home')))
 
 
 # --------------------------------------------------------------- account --
 
 @app.route('/account-management/login', methods=['GET', 'POST'])
 def account_login():
-    next_url = request.args.get('next') or url_for('account_overview')
+    next_url = local_target(request.args.get('next'), url_for('account_overview'))
     if current_user.is_authenticated:
         return redirect(next_url)
     if request.method == 'POST':
@@ -1232,10 +1267,11 @@ def account_register():
     return render_template('account_register.html')
 
 
-@app.route('/account-management/logout')
+@app.route('/account-management/logout', methods=['POST'])
 @login_required
 def account_logout():
     logout_user()
+    session.clear()
     return redirect(url_for('home'))
 
 

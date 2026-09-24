@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--10.
 
-From the Toronto city guide, list the top five things to do. Then check Oct 4
-departures New York->Toronto: report the cheapest fare and how many departures
-offer it that day. Check the Oct 5 return schedule Toronto->New York: how many
-services run and the cheapest fare.
-
-Frozen ground truth (seed DB): Toronto guide top five — Distillery District,
-CN Tower, Hockey Hall of Fame, Toronto Zoo, ferry to the Toronto Islands.
-NY->TOR 2026-10-04 has 3 departures (05:15, 17:15, 20:00), all at $80.05, so
-the cheapest fare is offered by 3 departures. TOR->NY 2026-10-05 has 2
-departures (08:00, 20:00), both at $80.05 (cheapest $80.05).
+I want to visit Toronto by bus. From the Toronto city guide, list the top five things to do that the guide recommends. Then check October 4th departures from New York to Toronto: report the cheapest fare and how many departures offer it that day. I'd come home on October 5th: check the return schedule from Toronto to New York and report how many services run and the cheapest fare.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, check_visited_path,
                         contains_amount, contains_count, contains_phrase, final_answer,

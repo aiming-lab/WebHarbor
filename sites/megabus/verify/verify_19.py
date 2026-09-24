@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--19.
 
-Book the cheapest Toronto→Montreal bus on Oct 3 for one traveler as a guest
-checkout (yuki.tanaka@example.com), enable text message travel updates in the
-basket, pay, and report the order reference and total broken down by fare,
-booking fee and SMS fee.
-
-Frozen ground truth (seed DB): Toronto, ON (145) → Montreal-West Island, QC
-(279) 2026-10-03 cheapest = $71.99 (07:00 and 07:30 departures). Guest
-checkout with SMS updates: fare 71.99 + booking fee 3.99 + SMS fee 0.25 =
-$76.23. The added booking row must have sms_updates=1, email
-yuki.tanaka@example.com, total 76.23; basket consumed; nothing else changes.
+Book the cheapest bus from Toronto to Montreal on October 3rd for one traveler as a guest checkout with the email yuki.tanaka@example.com. Enable text message travel updates in the basket and pay with any valid card. Report the order reference and the total charged, broken down by fare, booking fee and SMS fee.
 """
 from verify_lib import (Judge, added_bookings, booking_journeys_of, check_only_tables_changed,
                         check_trajectory_identity, check_visited_path, contains_amount,

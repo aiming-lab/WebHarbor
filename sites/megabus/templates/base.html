@@ -33,7 +33,7 @@
       <a href="{{ url_for('manage_booking') }}" data-testid="navbar-changetrip">Change trip</a>
       {% if current_user.is_authenticated %}
         <a href="{{ url_for('account_overview') }}">My account</a>
-        <a href="{{ url_for('account_logout') }}">Log out</a>
+        <form action="{{ url_for('account_logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="nav-logout" type="submit">Log out</button></form>
       {% else %}
         <a href="{{ url_for('account_login') }}">Log in/Sign up</a>
       {% endif %}

@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--4.
 
-Log in as carol.d@test.com; check the tracker for her confirmed NY->TOR booking
-on 2026-10-04 (is the 5:15pm departure delayed?); then look up W9C4FJ under
-Change trip, cancel it, and report the exact confirmation message including
-what happens to the money, plus the total the cancelled booking shows under
-her past and cancelled trips.
-
-Frozen ground truth (seed DB): carol has two Toronto-touching bookings —
-W9C4FJ (NY->TOR 2026-10-04 17:15, confirmed, total 84.29) and B7L2MX (NY->TOR
-2026-10-04 20:00, already cancelled, total 84.04). Only W9C4FJ is the
-cancellable confirmed one. The tracker shows the 2026-10-04 NY->TOR services
-(05:15, 17:15, 20:00) all On time — the 5:15pm departure is NOT delayed. The
-flash message reads: "Booking W9C4FJ was cancelled. A refund credit will be
-emailed to you within 5-7 business days." The DB status must flip to
-cancelled; B7L2MX must remain untouched.
+Carol wants to cancel her New York-to-Toronto trip on October 4th. Sign in as carol.d@test.com (password TestPass123!), check whether the tracker reports a delay for her 5:15pm departure, then cancel booking W9C4FJ through Change trip. Confirm it appears among her cancelled trips, and explain the refund message and the total attached to the cancelled booking.
 """
 from verify_lib import (booking_by_reference, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_amount,

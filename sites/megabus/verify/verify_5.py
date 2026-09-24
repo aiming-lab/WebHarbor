@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--5.
 
-Under Change trip, look up H3P8KS with david.k@test.com; report the route,
-travel date, number of travelers and total paid. Then open the departure
-schedule for the same route and date: earlier/later vs the 12:10pm service,
-the per-traveler fare on that schedule, and where the booked departure boards
-(journey details). Finally use the price ribbon to say whether October 10th
-is the cheapest of October 8th, 9th and 10th for this route.
-
-Frozen ground truth (seed DB): H3P8KS = Washington, DC -> New York, NY on
-2026-10-10, departing 06:10 -> 11:10, 3 travelers, total paid $199.21 (fare
-3 x 64.99 = 194.97 + 3.99 fee + 0.25 SMS). The same-day schedule shows the
-booked 06:10 departure at $64.99 per traveler, boarding at Washington Union
-Station (50 Massachusetts Ave NE); 06:10 leaves EARLIER than the 12:10pm
-service. Price ribbon WDC->NY: 2026-10-08 from $35.99, 2026-10-09 from
-$49.99, 2026-10-10 from $49.99 — October 10th is NOT the cheapest of the
-three (October 8th at $35.99 is).
+Under Change trip, look up the booking with reference H3P8KS and the email david.k@test.com. Report the route, travel date, number of travelers and total paid. Then open the departure schedule for the same route and date: say whether the booked departure leaves earlier or later than the 12:10pm service, report the per-traveler fare shown on that schedule, and open the booked departure's journey details to name where it boards. Finally, use the price ribbon to say whether October 10th is the cheapest of October 7th, 8th, 9th and 10th for this route.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_count, contains_phrase, contains_time, final_answer,

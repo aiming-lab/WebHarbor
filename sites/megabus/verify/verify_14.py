@@ -1,20 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--14.
 
-Check the tracker for New York->Philadelphia on the morning of Oct 3: which
-departure is delayed, by how many minutes, and when is it now expected to
-arrive? Open its live position and report where the bus is. Check the service
-alerts: does the Philadelphia alert affect her arrival? Then check the same
-day's schedule: what time is the next departure after the delayed one and
-what does it cost? What would the cheapest October 4th fare be if she rebooks?
-
-Frozen ground truth (seed DB): the tracker has exactly one tracked status —
-journey 102247484 (NY->PHL 2026-10-03 08:45 -> 10:45, route PP04), state
-"Delayed", 15 minutes, currently "Departed New York, NY - Port Authority Bus
-Terminal". With the 15-minute delay the arrival becomes 11:00am. The
-Philadelphia alert moves the DEPARTING stop 5-12 October 2026; arrivals are
-not affected. The next NY->PHL departure after 08:45 on 10-03 is 09:45 @
-$25.99. NY->PHL 2026-10-04 cheapest fare = $25.99.
+My friend takes the megabus from New York to Philadelphia on the morning of October 3rd and says the tracker shows a problem. Check the tracker for that route and date: which departure is delayed, by how many minutes, and when is it now expected to arrive? Open its live position and report where the bus is. Check the service alerts: does the Philadelphia alert affect her arrival? Then check the same day's schedule: what time is the next departure after the delayed one and what does it cost? What would the cheapest October 4th fare be if she rebooks?
 """
 from verify_lib import (check_read_only, check_trajectory_identity, check_visited_path,
                         contains_amount, contains_count, contains_phrase, contains_time,

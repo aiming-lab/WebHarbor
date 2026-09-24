@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
 """Verify Megabus--16.
 
-Log in as Alice Johnson; list her upcoming trips (routes, dates, departure
-times, totals); for the two-traveler trip report the per-traveler fare shown
-on the departure schedule for that route and date; open the AEG7CWY booking
-under Change trip to confirm its total; check the tracker: is her 5:30am
-departure currently on time? State which booking has the larger total.
-
-Frozen ground truth (seed DB): alice has two confirmed upcoming trips —
-AEG7CWY: Philadelphia, PA -> New York, NY, 2026-10-03, 05:30 -> 07:30, 2
-travelers, total $56.22 (booking_journeys price 51.98 -> per-traveler fare
-$25.99, shown on the PHL->NY 2026-10-03 schedule card); K4N2WZ: New York, NY
--> Washington, DC, 2026-10-03, 09:30 -> 14:20, 1 traveler, total $43.98.
-AEG7CWY has the larger total. The tracker shows the 05:30 PHL->NY departure
-On time (no tracked delay for that journey).
+Log in as Alice Johnson (email: alice.j@test.com, password: TestPass123!). List her upcoming trips: routes, dates, departure times and totals. For the trip with two travelers, also report the per-traveler fare shown on the departure schedule for that route and date. Open that booking under Change trip to confirm its total, and check the tracker: is her 5:30am departure currently on time? State which of the two bookings has the larger total.
 """
 from verify_lib import (check_read_only, check_signed_in_as, check_trajectory_identity,
                         check_visited_path, contains_amount, contains_phrase,

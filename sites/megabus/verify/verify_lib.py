@@ -610,7 +610,26 @@ def check_read_only(judge, initial_db, after_db):
 
 
 def check_only_tables_changed(judge, initial_db, after_db, allowed):
+    check_precise_delta(judge, initial_db, after_db, allowed)
     others = tuple(t for t in TABLES if t not in set(allowed))
     changed = changed_tables(initial_db, after_db, others)
     return judge.check("no_collateral_writes", not changed,
                        f"tables_outside_allowed={list(others)!r}, changed={changed!r}")
+
+
+def check_precise_delta(judge, initial_db, after_db, allowed):
+    """Preserve existing rows/cells even inside tables touched by a task."""
+    task = int(judge.task_id.rsplit('--', 1)[1])
+    for table in allowed:
+        before = {r['id']: dict(r) for r in db_query(initial_db, f'SELECT * FROM {table}')}
+        after = {r['id']: dict(r) for r in db_query(after_db, f'SELECT * FROM {table}')}
+        for key, row in before.items():
+            fields = set()
+            if task == 3 and table == 'bookings' and row.get('reference') == 'M2V6YH': fields = {'total'}
+            if task == 3 and table == 'booking_journeys' and row.get('booking_id') == 4: fields = {'journey_id', 'price'}
+            if task == 4 and table == 'bookings' and row.get('reference') == 'W9C4FJ': fields = {'status'}
+            if task == 17 and table == 'users' and row.get('email') == 'carol.d@test.com': fields = {'last_name', 'phone'}
+            judge.check(f'preserve_{table}_{key}', key in after and all(after[key].get(k)==v for k,v in row.items() if k not in fields), 'Only requested fields of the target record may change')
+        added = set(after)-set(before)
+        expected = 1 if ((task in (0,2,19) and table in ('bookings','booking_journeys')) or (task==2 and table=='users') or (task==18 and table=='basket_items')) else 0
+        judge.check(f'exact_added_{table}', len(added)==expected, f'expected {expected} added rows, found {len(added)}')
