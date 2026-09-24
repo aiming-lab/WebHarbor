@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Account – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Sign In</h1>
+  {% if errors.get('form') %}<div class="form-error">{{ errors['form'] }}</div>{% endif %}
+  <form method="post" action="/login{% if request.args.get('next') %}?next={{ request.args.get('next')|urlencode }}{% endif %}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label for="email">Email</label>
+      <input id="email" name="email" type="email" required></div>
+    <div class="field"><label for="password">Password</label>
+      <input id="password" name="password" type="password" required></div>
+    <button class="btn-primary" type="submit">Sign In</button>
+  </form>
+  <p class="auth-alt">New customer? <a href="/register">Create an account</a></p>
+  <p class="auth-alt"><a href="/order-status">Check your order status</a></p>
+</div>
+{% endblock %}
