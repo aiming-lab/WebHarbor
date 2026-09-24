@@ -26,7 +26,7 @@ from typing import Any
 
 VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
-BASE = "http://localhost:40110"
+BASE = "http://localhost:40087"
 PASSWORD = "TestPass123!"
 CONTAINER = "wh-megabus-audit"
 CACHE = Path(tempfile.gettempdir()) / "megabus_verify_tests_seed.db"
