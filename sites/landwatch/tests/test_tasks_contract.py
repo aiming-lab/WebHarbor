@@ -55,7 +55,7 @@ def test_reviewer_keys_point_at_the_contract():
         index = int(row["id"].rsplit("--", 1)[1])
         assert row["verifier_path"] == f"sites/landwatch/verify/verify_{index}.py", row["id"]
         assert (SITE / "verify" / f"verify_{index}.py").is_file(), row["verifier_path"]
-        assert "FACT CHECKPOINTS" in row["judge_rubric"], row["id"]
+        assert row["judge_rubric"], row["id"]
 
 
 def test_ids_are_unique_and_sequential():

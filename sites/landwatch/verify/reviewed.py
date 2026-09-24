@@ -100,7 +100,7 @@ def review(judge,traj,a,b,original):
         judge.check('new_account',not ur and not uc and len(ua)==1 and ua[0]['id']==5 and ua[0]['email']=='new.landbuyer@test.com' and ua[0]['name']=='Alex Morgan' and ua[0]['password_hash']==stable_password_hash('LandBuyer2026!'),'exact new buyer identity')
     ia,ir,ic=delta(a,b,'inquiries')
     email='alice.j@test.com' if i==10 else 'new.landbuyer@test.com'
-    judge.check('one_soil_inquiry',not ir and not ic and len(ia)==1 and ia[0]['user_id']==user and ia[0]['pid']==427843237 and ia[0]['email']==email and bool(re.search(r'\bsoil\b',ia[0]['message'],re.I)),'one inquiry on the selected farmland, preserving prior inquiries')
+    judge.check('one_soil_inquiry',not ir and not ic and len(ia)==1 and ia[0]['user_id']==user and ia[0]['pid']==427843237 and ia[0]['email']==email and ia[0]['name']==('Alice Johnson' if i==10 else 'Alex Morgan') and ia[0]['agent_id'] in (None, listings[427843237]['broker_id']) and bool(re.search(r'\bsoil\b',ia[0]['message'],re.I)),'one inquiry on the selected farmland, preserving prior inquiries')
     if i==10:judge.check('inquiry_new_phone',len(ia)==1 and ia[0]['phone']=='(512) 555-0164','inquiry uses new contact number')
     for value in ['Devin Dye',email,'soil']:judge.check('inquiry_answer_'+value,contains_phrase(answer,value),'recipient, reply email and inquiry topic')
     if i==10:judge.check('answer_phone','512' in answer and '555' in answer and '0164' in answer,'updated contact number')

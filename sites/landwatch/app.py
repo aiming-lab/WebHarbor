@@ -216,7 +216,7 @@ class Listing(db.Model):
 
     def card_photo(self) -> str:
         ids = self.image_ids_list()
-        return self.photo_path(ids[0]) if ids else ""
+        return self.photo_path(ids[0]) if ids else "/static/icons/photo-unavailable.svg"
 
     @property
     def price_display(self) -> str:
@@ -389,6 +389,13 @@ class Inquiry(db.Model):
     message = db.Column(db.Text)
     created_at = db.Column(db.String(30))
     agent_id = db.Column(db.Integer)
+
+    @property
+    def sender_name(self):
+        if self.user_id and self.name == self.recipient_name:
+            user = db.session.get(User, self.user_id)
+            return user.name if user else self.name
+        return self.name
 
     @property
     def recipient_name(self):
