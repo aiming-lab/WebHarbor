@@ -267,8 +267,15 @@ class Agent(db.Model):
     @property
     def price_range_display(self) -> str:
         if self.price_min is None or self.price_max is None:
-            return ""
-        return f"{short_money(self.price_min)} - {short_money(self.price_max)}"
+            return "Price not disclosed"
+        low, high = self.price_min, self.price_max
+        if low <= 2:
+            prices = [p for (p,) in db.session.query(Listing.price).filter(
+                Listing.broker_id == self.account_id, Listing.price > 2).all()]
+            if not prices:
+                return "Price not disclosed"
+            low, high = min(prices), max(prices)
+        return f"{short_money(low)} - {short_money(high)}"
 
     @property
     def acre_range_display(self) -> str:
@@ -689,6 +696,9 @@ class SearchContext:
                                   Listing.state_slug == self.region.state_slug)
         if self.price_bucket:
             _, _, lo, hi = self.price_bucket
+            # Upstream uses 1/2 for undisclosed auction prices. They cannot
+            # satisfy an asking-price budget.
+            query = query.filter(Listing.price > 2)
             if lo is not None:
                 query = query.filter(Listing.price >= lo)
             if hi is not None:
@@ -731,9 +741,9 @@ class SearchContext:
         if order == "newest":
             return query.order_by(Listing.insert_date.desc(), Listing.pid.asc())
         if order == "price_asc":
-            return query.order_by(Listing.price.asc(), Listing.pid.asc())
+            return query.order_by((Listing.price.is_(None) | (Listing.price <= 2)).asc(), Listing.price.asc(), Listing.pid.asc())
         if order == "price_desc":
-            return query.order_by(Listing.price.desc(), Listing.pid.asc())
+            return query.order_by((Listing.price.is_(None) | (Listing.price <= 2)).asc(), Listing.price.desc(), Listing.pid.asc())
         return query.order_by(Listing.sort_rank.asc(), Listing.pid.asc())
 
     # -- display helpers ----------------------------------------------------

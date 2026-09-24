@@ -42,3 +42,15 @@ def test_local_gallery_and_proposed_use(client):
     assert b'3 available pictures' in page.data
     assert b'>Agriculture</span>' in page.data
     assert b'Auction' in page.data and b'price not disclosed' in page.data
+
+
+def test_undisclosed_prices_do_not_satisfy_budget_or_sort_first(client):
+    html = client.get('/land?priceMin=0&priceMax=50000&sort=price-low').get_data(as_text=True)
+    assert 'Auction — price not disclosed' not in html
+    from app import SearchContext, app, Listing
+    with app.test_request_context('/land?sort=price-low'):
+        context = SearchContext()
+        context.sort = 'price-low'
+        ordered = context.sorted(context.filtered()).all()
+        assert ordered[0].price > 2
+        assert ordered[-1].price is None or ordered[-1].price <= 2
