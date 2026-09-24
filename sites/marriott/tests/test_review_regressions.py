@@ -108,3 +108,10 @@ def test_search_context_survives_overview_and_room_tabs(fresh):
     soup = BeautifulSoup(fresh.get(link).data, 'html.parser')
     rooms = next(a['href'] for a in soup.select('.hotel-nav a') if 'rooms/' in a['href'])
     assert 'fromDate=10%2F30%2F2026' in rooms and 'adults=2' in rooms
+
+
+def test_spa_filter_does_not_match_meeting_space(fresh):
+    from bs4 import BeautifulSoup
+    soup = BeautifulSoup(fresh.get('/search/findHotels.mi?destinationAddress=Chicago&amenity=Spa').data, 'html.parser')
+    names = [a.get_text(strip=True) for a in soup.select('.card-title a')]
+    assert names == ['JW Marriott Chicago']

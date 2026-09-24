@@ -914,10 +914,11 @@ def search_results():
             hotels = hotels.filter(Hotel.rating_avg >= float(min_rating))
         except ValueError:
             pass
-    if amenity:
-        hotels = hotels.filter(Hotel.amenities.ilike(f'%{amenity}%'))
-
     rows = hotels.all()
+    if amenity:
+        # Match amenity words, not substrings such as Spa inside Meeting Space.
+        pattern = re.compile(r"\b" + re.escape(amenity) + r"\b", re.IGNORECASE)
+        rows = [hotel for hotel in rows if any(pattern.search(value) for value in hotel.amenity_list)]
 
     if sort == "price":
         rows = sorted(rows, key=lambda h: ((h.points_rate if use_points else h.base_rate) or 10 ** 9, h.name))
