@@ -2,9 +2,12 @@
 
 Contract rebuilt for the depth-review redesign of PR #196: the 30 shallow
 tasks (and their grading contract) are retired; this directory grades the new
-16 deep functional-chain tasks (`MacysWineShop--0` … `--15`, five-key
-tasks.jsonl rows; `--14`/`--15` are the two KEEP tasks from the review, their
-verifiers adapted in substance unchanged). The harness lineage is the hardened
+16 deep functional-chain tasks (`MacysWineShop--0` … `--15`, seven-key
+tasks.jsonl rows — the five-key task definition plus the appended
+`verifier_path`/`judge_rubric` grading keys, per the round-2 re-review F1
+fix; `--14`/`--15` are the two KEEP tasks from the review, their verifiers
+adapted in substance unchanged, with --14 hardened per the round-2 F2
+finding). The harness lineage is the hardened
 WebHarbor verifier suite (merriam_webster → instructure → the first macys
 review contract); the frozen-seed contract is unchanged.
 
@@ -61,6 +64,10 @@ review contract); the frozen-seed contract is unchanged.
 - wrong-answer FAIL ×16.
 - homepage-shortcut FAIL ×16 (correct answer, homepage-only navigation).
 - read-only tamper FAIL (task 14 mutated after-DB).
+- task-14 adversarial negatives FAIL (round-2 F2): a walk truncated at the
+  sign-out (no re-login), an answer claiming the re-login failed, an answer
+  claiming a different change-target password, and a phrase-preserving
+  answer with a fabricated monetary claim.
 - stateful mismatch FAIL ×15 (claimed success, unchanged DB) and wrong-state
   FAIL (wrong product / wrong address / wrong quantity deltas).
 - package tampering FAIL (task_id mismatch, off-site URL, missing screenshot,

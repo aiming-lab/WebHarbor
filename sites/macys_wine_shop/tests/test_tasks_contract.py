@@ -1,10 +1,13 @@
-"""Contract tests for macys_wine_shop tasks.jsonl (contributor five-key schema).
+"""Contract tests for macys_wine_shop tasks.jsonl (seven-key grading rows).
 
-Per the depth-review redesign: a contributor's tasks.jsonl carries ONLY the
-task definition per row — web_name, id, ques, web, upstream_url (five keys, no
-answer key; the reviewer's grading contract appends verifier_path/judge_rubric
-later, if it chooses to). The redesigned set is 16 deep functional-chain tasks
-(MacysWineShop--0..--15), sequential ids, one row per task.
+Per the round-2 depth re-review (F1): every tasks.jsonl row carries the
+contributor task definition AND the grading contract — web_name, id, ques,
+web, upstream_url (five keys, no answer key) plus the two appended grading
+keys verifier_path + judge_rubric, in the repo-wide seven-key convention
+(imgur/chase). The five-key prefix stays byte-identical; the two grading
+keys are string-appended (never answer keys). The redesigned set is 16 deep
+functional-chain tasks (MacysWineShop--0..--15), sequential ids, one row per
+task, each row wired to its own deterministic verifier.
 """
 import json
 from pathlib import Path
@@ -13,10 +16,11 @@ SITE = Path(__file__).resolve().parent.parent
 TASKS = SITE / "tasks.jsonl"
 
 REQUIRED_KEYS = {"web_name", "id", "ques", "web", "upstream_url"}
-GRADING_KEYS = {"verifier_path", "judge_rubric"}  # appended by the reviewer contract
+GRADING_KEYS = {"verifier_path", "judge_rubric"}  # appended grading contract
 ALLOWED_KEYS = REQUIRED_KEYS | GRADING_KEYS
 FORBIDDEN_KEYS = {"answer", "answers", "expected", "solution"}
 LOGIN_EMAILS = ("alice.j@test.com", "bob.c@test.com", "carol.d@test.com", "david.k@test.com")
+REPO_ROOT = SITE.parents[1]
 
 
 def read_rows():
@@ -42,12 +46,33 @@ def test_rows_have_exactly_the_basic_keys():
         assert not leaked, f"row {index} leaks answer keys: {leaked}"
 
 
-def test_grading_keys_are_all_or_nothing():
-    """verifier_path/judge_rubric are appended to every row or to none."""
+def test_grading_keys_on_every_row():
+    """The 7-key contract: verifier_path/judge_rubric appended to ALL 16 rows
+    (round-2 re-review F1 — five-key rows break the scoring pipeline: agent_demo
+    reads judge_rubric/verifier_path straight from the row)."""
     rows = read_rows()
     with_grading = [r for r in rows if GRADING_KEYS <= set(r)]
-    assert len(with_grading) in (0, len(rows)), \
+    assert len(with_grading) == len(rows) == 16, \
         f"grading keys appended to only {len(with_grading)} of {len(rows)} rows"
+    for index, row in enumerate(rows):
+        assert row["verifier_path"] == f"sites/macys_wine_shop/verify/verify_{index}.py", \
+            row["verifier_path"]
+        assert isinstance(row["judge_rubric"], str) and len(row["judge_rubric"]) >= 80, \
+            f"row {index} carries no substantive judge_rubric"
+
+
+def test_verifier_path_wires_row_to_matching_verifier():
+    """verifier_path points at a tracked verifier whose TASK_ID is the row id."""
+    import re
+
+    rows = read_rows()
+    for index, row in enumerate(rows):
+        verifier = REPO_ROOT / row["verifier_path"]
+        assert verifier.is_file(), f"missing verifier for row {index}: {verifier}"
+        text = verifier.read_text(encoding="utf-8")
+        task_ids = re.findall(r'^TASK_ID = "(MacysWineShop--\d+)"', text, re.M)
+        assert task_ids == [row["id"]], \
+            f"verifier for row {index} declares TASK_ID={task_ids!r}, row id={row['id']!r}"
 
 
 def test_sequential_ids():
