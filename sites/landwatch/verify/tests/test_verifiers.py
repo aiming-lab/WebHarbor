@@ -132,13 +132,18 @@ HONEST = {
                ("/hunting-property/acres-under-10", "click", {"selector": ".lw-facet-item a"}),
                ("/hunting-property/acres-under-10/with-residence", "click",
                 {"selector": ".lw-facet-item a"}),
+               ("/hunting-property/acres-under-10/with-residence?sort=price-low", "click",
+                {"selector": "[data-sort=price-low]"}),
                ("/hunting-property/acres-under-10/beds-over-4/with-residence", "click",
                 {"selector": ".lw-facet-item a"}),
                ("/hunting-property/acres-under-10/beds-over-4/with-residence?sort=newest",
                 "click", {"selector": "[data-sort=newest]"})],
-        "Hunting Land narrows from 176 listings to 6 after the 0 - 10 Acres layer, 3 after "
-        "the Residence: Yes layer, and 1 after the 4+ Bedrooms layer. Sorted by newest, the "
-        "most recently listed property is 'Cannon Falls Oasis' at $1,399,000 in MN.", []),
+        "Hunting Land narrows from 176 listings to 6 after the 0 - 10 Acres layer and to "
+        "3 after the Residence: Yes layer. With those two filters stacked and sorted "
+        "Price: Low to High, the cheapest property is 'Private Log Home & Workshop' at "
+        "$640,000 in Albemarle County, VA. Adding the 4+ Bedrooms filter leaves 1 "
+        "listing. Sorted by newest, the most recently listed property is 'Cannon Falls "
+        "Oasis' at $1,399,000 in MN.", []),
     5: (None, [("/colorado-land-for-sale", "click", {}),
                ("/colorado-land-for-sale?sort=acres-high", "click", {"selector": "[data-sort=acres-high]"}),
                (DETAIL_3DM, "click", {"selector": ".lw-result-title a"}),
@@ -280,7 +285,9 @@ WRONG = {
        "Tract' at $1,080,000. Undeveloped $50-99K: 4 listings, the cheapest 'Jaz Meadows' "
        "at $70,000 in Navarro. The Texas track costs less.",
     4: "Hunting Land: 6 listings after 0 - 10 Acres, 4 after Residence: Yes, and 2 after 4+ "
-       "Bedrooms. The newest listing is 'Cannon Falls Retreat' at $1,390,000 in Wisconsin.",
+       "Bedrooms. The cheapest under the stacked filters is 'Hunt, Fish, Boat, Hike!!' at "
+       "$749,000 in Missoula County, MT. The newest listing is 'Cannon Falls Retreat' at "
+       "$1,390,000 in Wisconsin.",
     5: "Colorado's largest is '3D Mountain Ranch': 11,000 Acres at $6,500,000; Type row: "
        "Farms and Ranches and Recreational Property. Second-largest: 'Ragged Spur Ranch' "
        "at 3,700 Acres. Montana: 'Montana Legacy Ranch' (11,700 Acres) and 'Mullendore "
