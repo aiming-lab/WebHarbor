@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Marriott--16.
-
-Open the rooms page of The Westin New York Grand Central: report the name, square
-footage, bed setup, and nightly rate of its largest room type by size, and how
-many room types the hotel lists in total. Then, for 11/13/2026-11/15/2026, book
-that largest room type for guest Robin Stone with Visa 4000056655665556 exp
-02/2029 and report the total and the confirmation number.
-
-Frozen ground truth (seed DB): The Westin New York Grand Central (marsha NYCZW)
-lists 5 room types; the largest by size = Premium Suite, 1 King Bed, High Floor
-(720 sq ft, 1 king bed + sofa bed, $1,175/night); 2 nights -> $2,350 total.
-"""
+"""I need the most spacious room at The Westin New York Grand Central for November 13–15, 2026. Compare the room sizes and reserve the largest for Robin Stone (robin.stone@example.com), using Visa 4000056655665556 expiring 02/2029. Report its room name, size, bed setup, nightly rate, total and confirmation number."""
 from verify_lib import (Judge, added_reservation_matching, check_answer_conf_matches_added_reservation,
                         check_only_tables_changed, check_trajectory_identity, contains_amount,
                         contains_count, contains_phrase, final_answer, navigated_confirmation,
@@ -41,11 +30,10 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected the bed setup '1 king bed + sofa bed'")
     judge.check("answer_nightly_rate", contains_amount(answer, 1175),
                 "expected the $1,175/night rate")
-    judge.check("answer_room_type_count", contains_count(answer, 5),
-                "expected 5 room types in total")
     judge.check("answer_total", contains_amount(answer, 2350),
                 "expected booking total $2,350 (2 nights x $1,175)")
     added = added_reservation_matching(after_db, initial_db,
+                                       user_id=None, rooms=1, adults=1, children=0,
                                        hotel_name=HOTEL, room_name=ROOM,
                                        guest_first_name="Robin", guest_last_name="Stone",
                                        guest_email="robin.stone@example.com",

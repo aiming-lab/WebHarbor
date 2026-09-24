@@ -30,6 +30,7 @@
           <td>{{ 'Yes' if pm.is_default else 'No' }}</td>
           <td>
             <form method="post" action="/loyalty/myAccount/paymentMethods/remove/{{ pm.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button type="submit" class="btn-secondary btn-small">Remove</button>
             </form>
           </td>
@@ -46,6 +47,7 @@
   <section class="account-section">
     <h2>Add a Card</h2>
     <form method="post" class="auth-form auth-inline">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <div class="form-row">
         <div class="field"><label for="card_type">Card type</label>
           <select id="card_type" name="card_type">

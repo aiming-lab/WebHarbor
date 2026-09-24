@@ -56,6 +56,7 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_total", contains_amount(answer, 720),
                 "expected booking total $720 (2 nights x $360)")
     added = added_reservation_matching(after_db, initial_db,
+                                       user_id=None, rooms=1, adults=2, children=0,
                                        hotel_name=HOTEL, room_name="Guest Room, 1 King Bed",
                                        guest_first_name="Alex", guest_last_name="Foley",
                                        guest_email="alex.foley@example.com",

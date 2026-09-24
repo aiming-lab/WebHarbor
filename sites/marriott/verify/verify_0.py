@@ -39,6 +39,7 @@ def run_checks(judge, traj, initial_db, after_db):
     # DB after-state: exactly one reservation added for the right hotel/room/dates/
     # guest/total, and nothing else changed
     added = added_reservation_matching(after_db, initial_db,
+                                       user_id=None, rooms=1, adults=2, children=0,
                                        hotel_name=HOTEL,
                                        room_name="Guest Room, 1 King Bed",
                                        guest_first_name="Jordan", guest_last_name="Ellis",

@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
-"""Verify Marriott--10.
-
-Sign in as alice.j@test.com. From the saved hotels, remove the property located
-in Austin; search New York City hotels and save The Times Square EDITION to the
-list; sign out and sign back in; report the final names in the saved hotels list,
-in the order shown.
-
-Frozen ground truth (seed DB): alice's seed saved hotels = Aloft by Marriott
-Austin Downtown (the Austin one), Moxy Atlanta Downtown, The Ritz-Carlton,
-Atlanta; after the task the list = The Times Square EDITION (saved 2026-09-21,
-sorted first), then Moxy Atlanta Downtown, then The Ritz-Carlton, Atlanta.
-"""
+"""Sign in as alice.j@test.com (password TestPass123!). I've changed my travel plans from Austin to New York. Replace the Austin property on my saved hotels list with The Times Square EDITION, keeping my other saved hotels. Tell me which hotels are on my updated list."""
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, final_answer,
                         input_texts, navigated_find_hotels, navigated_hotel_overview,
-                        phrases_in_order, run_verifier, favorites_of, table_delta)
+                        contains_phrase, phrases_in_order, run_verifier, favorites_of, table_delta)
 
 TASK_ID = "Marriott--10"
 FINAL_ORDER = ["The Times Square EDITION", "Moxy Atlanta Downtown", "The Ritz-Carlton, Atlanta"]
@@ -30,14 +19,8 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("visited_edition_page", navigated_hotel_overview(traj, "the-times-square-edition"),
                 "required: The Times Square EDITION overview page (to save it)")
     email_fills = input_texts(traj)
-    judge.check("signed_out_and_back_in",
-                email_fills.count("alice.j@test.com") >= 2
-                and sum(1 for s in (traj.get("steps") or [])
-                        if isinstance(s, dict) and "sign-in.mi" in str(s.get("url", ""))) >= 2,
-                "required: the account signed in twice (sign out + sign back in): "
-                f"email_fills={email_fills!r}")
     # answer: the three final names in the saved-list order
-    judge.check("answer_final_names_in_order", phrases_in_order(answer, FINAL_ORDER),
+    judge.check("answer_final_names_in_order", all(contains_phrase(answer, name) for name in FINAL_ORDER),
                 f"expected the final saved list in order: {' | '.join(FINAL_ORDER)}")
     # DB after-state: favorites = -Aloft Austin +The Times Square EDITION
     favs = favorites_of(after_db, "alice.j@test.com")

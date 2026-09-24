@@ -31,7 +31,7 @@
     <div class="filter-field">
       <label for="maxPrice">Max {{ 'points' if use_points else 'price' }} per night</label>
       <input id="maxPrice" name="maxPrice" type="number" min="1"
-             value="{{ maxPrice if maxPrice else '' }}" placeholder="No limit">
+             value="{{ max_price if max_price else '' }}" placeholder="No limit">
     </div>
     <div class="filter-field">
       <label for="minRating">Guest rating</label>
@@ -65,7 +65,7 @@
     </div>
     <div class="filter-actions">
       <button type="submit" class="btn-secondary">Apply Filters</button>
-      <a href="/search/findHotels.mi?destinationAddress={{ destination }}" class="link-reset">Reset</a>
+      <a href="{{ url_for('search_results', destinationAddress=destination, fromDate=from_date|fmtdate, toDate=to_date|fmtdate, numAdultsPerRoom=adults, roomCount=rooms, useRewardsPoints='true' if use_points else 'false') }}" class="link-reset">Reset</a>
     </div>
   </form>
 
@@ -73,12 +73,12 @@
   <div class="results-list">
     {% for h in results %}
     <article class="hotel-card">
-      <a class="card-media" href="{{ h.detail_path }}">
+      <a class="card-media" href="{{ stay_url(h.detail_path) }}">
         {% if h.hero_image %}<img src="{{ h.hero_image }}" alt="{{ h.name }}">{% else %}<div class="media-empty">No photo</div>{% endif %}
       </a>
       <div class="card-body">
         <p class="card-brand">{{ h.brand.name }}</p>
-        <h2 class="card-title"><a href="{{ h.detail_path }}">{{ h.name }}</a></h2>
+        <h2 class="card-title"><a href="{{ stay_url(h.detail_path) }}">{{ h.name }}</a></h2>
         <p class="card-location">
           {{ h.city }}{% if h.state %}, {{ h.state }}{% endif %}
           {% if h.distance_miles is not none %} · {{ h.distance_text }}{% endif %}
@@ -103,7 +103,7 @@
           <span class="price-unit">/ night</span>
           {% endif %}
         </p>
-        <a class="btn-find btn-small" href="/reservation/availabilitySearch.mi?propertyCode={{ h.marsha }}&fromDate={{ from_date.strftime('%m/%d/%Y') }}&toDate={{ to_date.strftime('%m/%d/%Y') }}&numberOfRooms={{ rooms }}&numberOfAdults={{ adults }}">View Rates</a>
+        <a class="btn-find btn-small" href="/reservation/availabilitySearch.mi?propertyCode={{ h.marsha }}&fromDate={{ from_date.strftime('%m/%d/%Y') }}&toDate={{ to_date.strftime('%m/%d/%Y') }}&numberOfRooms={{ rooms }}&numberOfAdults={{ adults }}&useRewardsPoints={{ 'true' if use_points else 'false' }}">View Rates</a>
       </div>
     </article>
     {% endfor %}

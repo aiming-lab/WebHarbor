@@ -37,7 +37,7 @@
           <td><a href="{{ r.hotel.detail_path }}">{{ r.hotel.name }}</a></td>
           <td>{{ r.checkin.strftime('%m/%d/%Y') }} → {{ r.checkout.strftime('%m/%d/%Y') }}</td>
           <td>{{ r.room_type.name }}</td>
-          <td>${{ '{:,}'.format(r.total_rate) }}</td>
+          <td>{{ '{:,}'.format(r.total_rate) ~ ' points' if r.points_redeemed else '$' ~ '{:,}'.format(r.total_rate) }}</td>
           <td><span class="status-chip status-{{ r.status }}">{{ r.status }}</span></td>
         </tr>
         {% endfor %}
@@ -62,7 +62,7 @@
           <td><a href="{{ r.hotel.detail_path }}">{{ r.hotel.name }}</a></td>
           <td>{{ r.checkin.strftime('%m/%d/%Y') }} → {{ r.checkout.strftime('%m/%d/%Y') }}</td>
           <td>{{ r.room_type.name }}</td>
-          <td>${{ '{:,}'.format(r.total_rate) }}</td>
+          <td>{{ '{:,}'.format(r.total_rate) ~ ' points' if r.points_redeemed else '$' ~ '{:,}'.format(r.total_rate) }}</td>
           <td><span class="status-chip status-{{ r.status }}">{{ r.status }}</span></td>
         </tr>
         {% endfor %}

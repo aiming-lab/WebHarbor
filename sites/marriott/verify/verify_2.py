@@ -34,6 +34,7 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_hotel_name", contains_phrase(answer, "Magnolia Hotel Denver"),
                 "expected the hotel name: Magnolia Hotel Denver, a Tribute Portfolio Hotel")
     added = added_reservation_matching(after_db, initial_db,
+                                       user_id=None, rooms=1, adults=1, children=0,
                                        hotel_name=HOTEL,
                                        room_name="Guest Room, 1 King Bed",
                                        guest_first_name="Priya", guest_last_name="Nair",

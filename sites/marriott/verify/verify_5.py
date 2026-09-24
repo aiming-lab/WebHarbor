@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Marriott--5.
-
-Sign in as alice.j@test.com. Reservation ACCEDGHDDR under guest Alice Johnson:
-from the trips page, open that reservation's hotel page and report its listed
-check-in time. Then look the reservation up on Find My Reservation and report the
-hotel, room type, check-in date, and total. Finally cancel it and look it up again
-to report the status shown.
-
-Frozen ground truth (seed DB): ACCEDGHDDR = Courtyard by Marriott Atlanta Downtown
-(marsha ATLDO), Guest Room, 1 King Bed, check-in 11/02/2026 -> 11/04/2026, total
-$290, check-in time 16:00 (rendered "4:00 pm"); cancel flips status to canceled.
-"""
+"""Sign in as alice.j@test.com (password TestPass123!). My Atlanta trip under Alice Johnson, confirmation ACCEDGHDDR, has fallen through. Find that reservation and cancel it, leaving my other trips unchanged. Tell me which hotel, room and check-in date you canceled, the reservation total, and whether the cancellation is confirmed."""
 from verify_lib import (Judge, canceled_among, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_amount, navigated_to_path_any,
                         contains_any, contains_date_phrase, contains_phrase, contains_slash_date,
@@ -29,13 +18,7 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("visited_account_trips",
                 navigated_to_path_any(traj, ["/loyalty/myAccount.mi", "/account"]),
                 "required: the account/trips page (either route alias)")
-    judge.check("visited_hotel_page", navigated_hotel_overview(traj, "courtyard-atlanta-downtown"),
-                "required: the reservation hotel's overview page (courtyard-atlanta-downtown)")
-    judge.check("visited_lookup_twice", navigated_to(traj, "/reservation/lookupReservation.mi", times=2),
-                "required: Find My Reservation opened at least twice (lookup + re-check after cancel)")
     # answer: check-in time + lookup facts + post-cancel status
-    judge.check("answer_checkin_time", contains_time(answer, 4, "00", "pm"),
-                "expected check-in time 4:00 pm")
     judge.check("answer_hotel", contains_phrase(answer, "Courtyard by Marriott Atlanta Downtown"),
                 "expected the hotel name")
     judge.check("answer_room_type", contains_phrase(answer, "Guest Room, 1 King Bed"),

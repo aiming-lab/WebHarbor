@@ -52,7 +52,7 @@
         <p class="room-price">${{ '{:,}'.format(r.base_rate) }} <span>/ night</span></p>
         <p class="room-points">or {{ '{:,}'.format(r.points_rate or 0) }} Bonvoy points / night</p>
         <p class="room-total">${{ '{:,}'.format(r.base_rate * nights * rooms_count) }} total</p>
-        <a class="btn-find" href="/reservation/reservationGateway.mi?propertyCode={{ hotel.marsha }}&roomId={{ r.id }}&fromDate={{ from_date.strftime('%m/%d/%Y') }}&toDate={{ to_date.strftime('%m/%d/%Y') }}&rooms={{ rooms_count }}&adults={{ adults }}">Book This Room</a>
+        <a class="btn-find" href="/reservation/reservationGateway.mi?propertyCode={{ hotel.marsha }}&roomId={{ r.id }}&fromDate={{ from_date.strftime('%m/%d/%Y') }}&toDate={{ to_date.strftime('%m/%d/%Y') }}&rooms={{ rooms_count }}&adults={{ adults }}&rateOption={{ 'points' if request.args.get('useRewardsPoints') == 'true' else 'cash' }}">Book This Room</a>
       </div>
     </article>
     {% endfor %}

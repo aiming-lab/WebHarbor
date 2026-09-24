@@ -58,7 +58,7 @@ def test_task_web_urls_point_at_the_declared_port():
         if not line.strip():
             continue
         row = json.loads(line)
-        assert row["web"] == "http://localhost:40104/", row["web"]
+        assert row["web"] == "http://localhost:40086/", row["web"]
         assert row["upstream_url"] == "https://www.marriott.com/", row["upstream_url"]
 
 

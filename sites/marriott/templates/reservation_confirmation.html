@@ -22,7 +22,7 @@
         <li><span>Points redeemed</span><strong>{{ '{:,}'.format(reservation.points_redeemed) }} pts</strong></li>
         <li class="stay-total"><span>Total (points)</span><strong>{{ '{:,}'.format(reservation.total_rate) }} pts</strong></li>
         {% else %}
-        <li class="stay-total"><span>Total</span><strong>${{ '{:,}'.format(reservation.total_rate) }}</strong></li>
+        <li class="stay-total"><span>Total</span><strong>{{ '{:,}'.format(reservation.total_rate) ~ ' points' if reservation.points_redeemed else '$' ~ '{:,}'.format(reservation.total_rate) }}</strong></li>
         {% endif %}
       </ul>
     </div>

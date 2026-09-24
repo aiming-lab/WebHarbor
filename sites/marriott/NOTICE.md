@@ -68,3 +68,7 @@ accounts defined in the seed-database skill.
 the live site (they are resumable and share a page cache under
 `scraped_data/`). After a refresh, regenerate the seed with
 `PYTHONHASHSEED=0 python3 seed_data.py` (or via the image build).
+
+## Reviewer corrections
+
+The header uses a readable text wordmark. The supplied logo image is a Bonvoy Escapes campaign graphic, not the main site wordmark; it is retained as source material but no longer displayed in the header. Direct upstream homepage and brands requests returned HTTP 403 during review. The existing captured hotel and brand snapshots remain the basis for the offline catalog. Room inventory and all bookings are explicitly labeled as sample data in the UI.

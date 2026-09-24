@@ -18,6 +18,7 @@ import secrets
 import string
 from datetime import datetime, date, timedelta
 from pathlib import Path
+from urllib.parse import urlsplit, urlencode
 
 from flask import (
     Flask, render_template, request, redirect, url_for, flash,
@@ -31,12 +32,13 @@ from flask_login import (
 from flask_bcrypt import Bcrypt
 from sqlalchemy import or_, and_, func
 
-BASE_DIR = Path(__file__).parent
+BASE_DIR = Path(__file__).resolve().parent
 INSTANCE = BASE_DIR / "instance"
 INSTANCE.mkdir(exist_ok=True)
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "marriott-mirror-bonvoy-dev-key"
+app.config["SECRET_KEY"] = os.environ.get("FLASK_SECRET_KEY") or secrets.token_hex(32)
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 # The container always runs against instance/marriott.db; the test suite
 # points this at a scratch copy so its write paths never touch the seed.
 _DB_PATH = os.environ.get("WEBHARBOR_MIRROR_DB") or str(INSTANCE / "marriott.db")
@@ -67,6 +69,12 @@ MARRIOTT_NAV = [
 # =====================================================================
 # MODELS
 # =====================================================================
+
+class SiteContent(db.Model):
+    __tablename__ = "site_content"
+    key = db.Column(db.String(80), primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+
 
 class Brand(db.Model):
     __tablename__ = "brands"
@@ -469,12 +477,51 @@ def amenity_groups(hotel):
     return {k: v for k, v in groups.items() if v}
 
 
+def safe_return(target, fallback):
+    if target and target.startswith("/") and not target.startswith("//") and "\\" not in target:
+        parsed = urlsplit(target)
+        if not parsed.netloc and not parsed.scheme and not any(ord(c) < 32 for c in target):
+            return target
+    return fallback
+
+
+def csrf_token():
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_urlsafe(32)
+    return session["csrf_token"]
+
+
+@app.before_request
+def protect_forms():
+    if request.method == "POST":
+        expected = session.get("csrf_token", "")
+        observed = request.form.get("csrf_token", "")
+        if not expected or not secrets.compare_digest(expected, observed):
+            abort(400, "This form has expired. Reload the page and try again.")
+
+
+def stay_url(path):
+    args = request.args
+    params = {
+        "fromDate": args.get("fromDate"), "toDate": args.get("toDate"),
+        "rooms": args.get("rooms") or args.get("roomCount") or args.get("numberOfRooms"),
+        "adults": args.get("adults") or args.get("numAdultsPerRoom") or args.get("numberOfAdults"),
+        "useRewardsPoints": args.get("useRewardsPoints"),
+    }
+    query = urlencode({k: v for k, v in params.items() if v})
+    return path + (("&" if "?" in path else "?") + query if query else "")
+
+
 @app.context_processor
 def inject_globals():
     footer_destinations = Destination.query.order_by(
         Destination.hotel_count.desc(), Destination.city).limit(14).all()
     return {
         "nav": MARRIOTT_NAV,
+        "csrf_token": csrf_token,
+        "stay_url": stay_url,
+        "stay_from_date": parse_date(request.args.get("fromDate")) or default_dates()[0],
+        "stay_to_date": parse_date(request.args.get("toDate")) or default_dates()[1],
         "reference_date": MIRROR_REFERENCE_DATE,
         "footer_destinations": footer_destinations,
         "timedelta": timedelta,
@@ -524,8 +571,8 @@ def sign_in():
         if user and bcrypt.check_password_hash(user.password_hash, password):
             login_user(user)
             target = request.args.get("next")
-            if target and target.startswith("/"):
-                return redirect(target)
+            if target:
+                return redirect(safe_return(target, url_for("account")))
             return redirect(url_for("account"))
         flash("The email or password you entered is incorrect. Please try again.", "error")
     return render_template("sign_in.html")
@@ -574,7 +621,7 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/logoff")
+@app.route("/logoff", methods=["POST"])
 @login_required
 def logoff():
     logout_user()
@@ -625,7 +672,9 @@ def account_payments():
             holder = request.form.get("holder_name", "").strip()
             exp_month = parse_int(request.form.get("exp_month"))
             exp_year = parse_int(request.form.get("exp_year"))
-            if not holder or not exp_month or not exp_year or not 1 <= exp_month <= 12:
+            if (not holder or not exp_month or not exp_year or not 1 <= exp_month <= 12
+                    or (exp_year, exp_month) < (MIRROR_REFERENCE_DATE.year, MIRROR_REFERENCE_DATE.month)
+                    or exp_year > MIRROR_REFERENCE_DATE.year + 20):
                 flash("Please complete the cardholder name and expiration date.", "error")
             else:
                 db.session.add(PaymentMethod(
@@ -649,7 +698,13 @@ def account_payments():
 @login_required
 def payment_delete(pm_id):
     pm = PaymentMethod.query.filter_by(id=pm_id, user_id=current_user.id).first_or_404()
+    was_default = pm.is_default
     db.session.delete(pm)
+    db.session.flush()
+    if was_default:
+        replacement = PaymentMethod.query.filter_by(user_id=current_user.id).order_by(PaymentMethod.id).first()
+        if replacement:
+            replacement.is_default = True
     db.session.commit()
     flash("Payment method removed.", "success")
     return redirect(url_for("account_payments"))
@@ -659,7 +714,7 @@ def payment_delete(pm_id):
 @app.route("/account/saved")
 @login_required
 def account_saved():
-    favs = Favorite.query.filter_by(user_id=current_user.id).order_by(Favorite.saved_on.desc()).all()
+    favs = Favorite.query.filter_by(user_id=current_user.id).order_by(Favorite.saved_on.desc(), Favorite.id).all()
     return render_template("account_saved.html", favorites=favs)
 
 
@@ -672,7 +727,7 @@ def saved_add(hotel_id):
         db.session.add(Favorite(user_id=current_user.id, hotel_id=hotel.id, saved_on=date(2026, 9, 21)))
         db.session.commit()
         flash(f"{hotel.name} has been saved to your list.", "success")
-    return redirect(request.form.get("next") or request.referrer or url_for("account_saved"))
+    return redirect(safe_return(request.form.get("next") or request.referrer, url_for("account_saved")))
 
 
 @app.route("/saved/remove/<int:hotel_id>", methods=["POST"])
@@ -683,7 +738,7 @@ def saved_remove(hotel_id):
         db.session.delete(fav)
         db.session.commit()
         flash("Hotel removed from your saved list.", "success")
-    return redirect(request.form.get("next") or request.referrer or url_for("account_saved"))
+    return redirect(safe_return(request.form.get("next") or request.referrer, url_for("account_saved")))
 
 
 # =====================================================================
@@ -742,7 +797,7 @@ def terms_of_use():
 
 @app.route("/help/global-phone-reservation-numbers.mi")
 def global_reservation_numbers():
-    help_doc = json.loads((BASE_DIR / "source_data" / "help_content.json").read_text())
+    help_doc = json.loads(db.session.get(SiteContent, "help_numbers").content)
     return render_template("help_numbers.html",
                            brand_lines=help_doc["brand_lines"],
                            country_rows=help_doc["country_rows"])
@@ -865,7 +920,7 @@ def search_results():
     rows = hotels.all()
 
     if sort == "price":
-        rows = sorted(rows, key=lambda h: (h.base_rate or 10 ** 9))
+        rows = sorted(rows, key=lambda h: ((h.points_rate if use_points else h.base_rate) or 10 ** 9, h.name))
     elif sort == "rating":
         rows = sorted(rows, key=lambda h: (-(h.rating_avg or 0), h.name))
     elif sort == "distance":
@@ -1002,7 +1057,17 @@ def reservation_gateway():
             errors.append("Please enter the guest's first and last name.")
         if not re.match(r"[^@]+@[^@]+\.[^@]+", guest_email):
             errors.append("Please enter a valid email address.")
+        if not hotel.is_bookable:
+            errors.append("This hotel is not available for reservations.")
+        if not 1 <= rooms_count <= 3 or not 1 <= adults <= room.max_occupancy:
+            errors.append("Choose 1 to 3 rooms and a guest count within the room capacity.")
+        if from_date < MIRROR_REFERENCE_DATE:
+            errors.append("Choose a check-in date on or after the catalog date.")
+        if any(not parse_date(request.form.get(k)) for k in ("fromDate", "toDate")):
+            errors.append("Enter valid check-in and check-out dates.")
         if rate_option == "points":
+            if not room.points_rate or room.points_rate <= 0:
+                errors.append("This room does not offer a points rate.")
             if not current_user.is_authenticated:
                 errors.append("Please sign in to your Marriott Bonvoy account to redeem points.")
             elif member_points < total_points:
@@ -1014,7 +1079,9 @@ def reservation_gateway():
                 errors.append("Please enter a valid credit card number (15 or 16 digits).")
             exp_month = parse_int(request.form.get("exp_month"))
             exp_year = parse_int(request.form.get("exp_year"))
-            if not exp_month or not exp_year or not 1 <= exp_month <= 12:
+            if (not exp_month or not exp_year or not 1 <= exp_month <= 12
+                    or (exp_year, exp_month) < (MIRROR_REFERENCE_DATE.year, MIRROR_REFERENCE_DATE.month)
+                    or exp_year > MIRROR_REFERENCE_DATE.year + 20):
                 errors.append("Please enter the card's expiration date.")
         if (to_date - from_date).days <= 0:
             errors.append("Your check-out date must be after your check-in date.")
@@ -1044,8 +1111,14 @@ def reservation_gateway():
             )
             db.session.add(resv)
             if rate_option == "points":
-                current_user.points -= redeem
+                debited = User.query.filter(User.id == current_user.id, User.points >= redeem).update(
+                    {"points": User.points - redeem}, synchronize_session=False)
+                if not debited:
+                    db.session.rollback()
+                    flash("Your points balance changed. Please choose another rate.", "error")
+                    return redirect(request.url)
             db.session.commit()
+            session["reservation_access"] = list(dict.fromkeys(session.get("reservation_access", []) + [conf]))[-30:]
             return redirect(url_for("reservation_confirmation", confirmation_number=conf))
 
     return render_template("reservation_gateway.html", hotel=hotel, room=room,
@@ -1060,6 +1133,9 @@ def reservation_confirmation():
     conf = (request.args.get("confirmationNumber")
             or request.args.get("confirmation_number", ""))
     resv = Reservation.query.filter_by(confirmation_number=conf).first_or_404()
+    if not ((current_user.is_authenticated and resv.user_id == current_user.id)
+            or conf in session.get("reservation_access", [])):
+        abort(404)
     return render_template("reservation_confirmation.html", reservation=resv)
 
 
@@ -1092,11 +1168,15 @@ def cancel_reservation():
     if resv is None or resv.guest_last_name.lower() != last_name:
         flash("We couldn't find a reservation with that confirmation number and last name.", "error")
         return redirect(url_for("lookup_reservation"))
-    resv.status = "canceled"
-    if resv.points_redeemed and resv.user_id:
+    # Atomically claim the transition so repeated or concurrent submissions
+    # cannot refund a redemption more than once.
+    changed = Reservation.query.filter_by(id=resv.id, status="confirmed").update(
+        {"status": "canceled"}, synchronize_session=False)
+    if changed and resv.points_redeemed and resv.user_id:
         owner = db.session.get(User, resv.user_id)
         if owner:
-            owner.points += resv.points_redeemed
+            User.query.filter_by(id=owner.id).update(
+                {"points": User.points + resv.points_redeemed}, synchronize_session=False)
     db.session.commit()
     flash(f"Reservation {resv.confirmation_number} has been canceled.", "success")
     return redirect(url_for("lookup_reservation",
