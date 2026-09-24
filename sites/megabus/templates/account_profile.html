@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}My details | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>My details</h1>
+    <div class="panel" style="max-width:520px">
+      <form action="{{ url_for('account_profile') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row">
+          <div class="col-md-6">
+            <label class="field-label" for="first_name">First name</label>
+            <input class="form-control" type="text" id="first_name" name="first_name"
+                   value="{{ current_user.first_name }}" required>
+          </div>
+          <div class="col-md-6">
+            <label class="field-label" for="last_name">Last name</label>
+            <input class="form-control" type="text" id="last_name" name="last_name"
+                   value="{{ current_user.last_name }}" required>
+          </div>
+        </div>
+        <div class="mb-1 mt-1">
+          <label class="field-label" for="phone">Mobile number</label>
+          <input class="form-control" type="tel" id="phone" name="phone"
+                 value="{{ current_user.phone }}" placeholder="555-010-2233">
+        </div>
+        <div class="mb-1">
+          <label class="field-label">Email address</label>
+          <input class="form-control" type="email" value="{{ current_user.email }}" disabled>
+        </div>
+        <button class="btn btn-primary" type="submit">Save changes</button>
+      </form>
+    </div>
+    <p class="mt-2"><a href="{{ url_for('account_overview') }}">Back to my account</a></p>
+  </div>
+</div>
+{% endblock %}

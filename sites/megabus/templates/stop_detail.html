@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}{{ city.name }} bus stops | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>{{ city.name }} bus stops</h1>
+    <p>Services sold through megabus.com use the following stops in
+      {{ city.city_only }}. Please check your ticket for the correct boarding location.</p>
+    {% for s in stops %}
+      <div class="city-line">
+        {% if s.carrier %}<b>{{ s.carrier }}</b> — {% endif %}
+        <span class="stopname">{{ s.name }}</span>
+      </div>
+    {% else %}
+      <p>No stop details are listed for this city. Check your ticket for boarding information.</p>
+    {% endfor %}
+    <p class="mt-2"><a href="{{ url_for('stops_index') }}">All bus stops</a> ·
+      <a href="{{ url_for('home') }}">Book a trip</a></p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Change your trip | megabus{% endblock %}
+{% block content %}
+<div class="container-md checkout-wrap">
+  <h1>Change your trip</h1>
+  <p>Booking <b>{{ booking.reference }}</b> — currently
+    {{ journey.origin.name }} to {{ journey.destination.name }} on
+    {{ journey.departure_date }} at {{ journey.dep_label }} ({{ journey.duration_label }}).</p>
+  <div class="notice info">Changing a ticket carries a {{ AMENDMENT_FEE }} amendment fee plus any fare difference.</div>
+
+  <h2>Choose a new departure</h2>
+  {% if available %}
+    <form action="{{ url_for('manage_booking_change') }}" method="post" class="pay-section">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="reference" value="{{ booking.reference }}">
+      <input type="hidden" name="bj" value="{{ bj.id }}">
+      <div class="table-wrap">
+      <table class="table">
+        <tr><th></th><th>Date</th><th>Departs</th><th>Arrives</th><th>Duration</th><th>Fare per traveler</th></tr>
+        {% for j in available %}
+          <tr>
+            <td><input type="radio" name="new_journey_id" value="{{ j.id }}" required
+                       data-price="{{ j.price }}" id="j{{ j.id }}"></td>
+            <td><label for="j{{ j.id }}">{{ j.departure_date }}</label></td>
+            <td>{{ j.dep_label }}</td>
+            <td>{{ j.arr_label }}</td>
+            <td>{{ j.duration_label }}</td>
+            <td>{{ '%.2f'|format(j.price) }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block mt-2">Confirm change</button>
+    </form>
+  {% else %}
+    <p>No alternative departures are available for this route. Please check other dates on the
+      <a href="{{ url_for('journey_results', originId=journey.origin_city_id, destinationId=journey.dest_city_id, departureDate=journey.departure_date, totalPassengers=bj.passengers) }}">journey planner</a>.</p>
+  {% endif %}
+  <p class="mt-2"><a href="{{ url_for('manage_booking', ref=booking.reference) }}">Back to booking</a></p>
+</div>
+{% endblock %}
