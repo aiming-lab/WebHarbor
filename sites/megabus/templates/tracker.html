@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}Track my bus | megabus{% endblock %}
+{% block content %}
+<div class="container-md">
+  <h1>Track my bus</h1>
+  <p>See where your bus is right now. Pick the route and travel date you want to check.</p>
+
+  <form action="{{ url_for('track_bus') }}" method="post" class="pay-section" style="max-width:640px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="row">
+      <div class="col-md-6">
+        <label class="field-label" for="originId">Leaving from</label>
+        <select class="form-control" id="originId" name="originId" required>
+          <option value="">Choose a city</option>
+          {% for c in origins %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-md-6">
+        <label class="field-label" for="destinationId">Going to</label>
+        <select class="form-control" id="destinationId" name="destinationId" required>
+          <option value="">Choose a city</option>
+        </select>
+      </div>
+    </div>
+    <div class="row mt-1">
+      <div class="col-md-6">
+        <label class="field-label" for="departureDate">Travel date</label>
+        <input class="form-control" type="date" id="departureDate" name="departureDate"
+               min="2026-09-23" max="2026-12-31" value="2026-10-03" required>
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Check services</button>
+  </form>
+
+  {% if results %}
+    <h2 class="section-title">Services on this route</h2>
+    <table class="table">
+      <tr><th>Departs</th><th>Arrives</th><th>Status</th><th></th></tr>
+      {% for j in results %}
+        <tr>
+          <td>{{ j.dep_label }}</td>
+          <td>{{ j.arr_label }}</td>
+          <td>
+            {% set st = status_map.get(j.id) %}
+            {% if st and st.delay_min %}
+              <span class="tracker-status delayed"><span class="dot"></span>{{ st.state }} ({{ st.delay_min }} min)</span>
+            {% else %}
+              <span class="tracker-status"><span class="dot"></span>On time</span>
+            {% endif %}
+          </td>
+          <td><a href="{{ url_for('track_bus', journeyId=j.id) }}">Live position</a></td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+
+  {% if journey and status %}
+    <div class="basket-ticket">
+      <h2 style="margin-top:0">Bus on {{ journey.origin.name }} → {{ journey.destination.name }},
+        {{ journey.departure_date }} {{ journey.dep_label }}</h2>
+      <p class="tracker-status delayed" style="font-size:1.2rem">
+        <span class="dot"></span>
+        {% if status.delay_min %}Delayed by {{ status.delay_min }} minutes{% else %}{{ status.state }}{% endif %}
+      </p>
+      <p>{{ status.current_stop }}</p>
+      <p class="text-grey">Scheduled arrival at {{ journey.destination.name }}:
+        {{ journey.arr_label }}{% if est_arr %} — now estimated around {{ fmt_time(est_arr) }}{% endif %}
+      </p>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+  (function () {
+    var origin = document.getElementById('originId');
+    var dest = document.getElementById('destinationId');
+    if (!origin || !dest) return;
+    origin.addEventListener('change', function () {
+      dest.innerHTML = '<option value="">Choose a city</option>';
+      if (!origin.value) return;
+      fetch('/journey-planner/api/destination-cities?originCityId=' + origin.value)
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+          (data.cities || []).forEach(function (c) {
+            var o = document.createElement('option');
+            o.value = c.id; o.textContent = c.name;
+            dest.appendChild(o);
+          });
+        });
+    });
+  })();
+</script>
+{% endblock %}

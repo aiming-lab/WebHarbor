@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Megabus | Low cost bus tickets to more than 500 cities{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+</head>
+<body>
+<header class="mb-navbar">
+  <div class="container-md">
+    <a class="brand" href="/" data-testid="home-link" aria-label="Megabus home">
+      <span class="sr-only">Megabus</span>
+      <svg width="190" height="27" viewBox="0 0 155 22" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Megabus">
+        <rect width="155" height="22" fill="#001779"></rect>
+        <text x="6" y="16.4" font-family="Arial, Helvetica, sans-serif" font-size="14.5" font-weight="700" letter-spacing="0.4" fill="#ffffff">megabus</text>
+        <rect x="130" y="3.4" width="17" height="15.2" fill="none" stroke="#f9be2c" stroke-width="1.6"></rect>
+        <text x="133" y="14.8" font-family="Arial, Helvetica, sans-serif" font-size="9.5" font-weight="700" fill="#f9be2c">US</text>
+      </svg>
+    </a>
+    <nav class="mb-nav-links">
+      <span class="nav-drop">
+        <a href="#" aria-haspopup="true">Explore ▾</a>
+        <span class="nav-drop-menu">
+          <a href="{{ url_for('stops_index') }}" data-testid="navbar-busstops">Bus stops</a>
+          <a href="{{ url_for('route_map') }}" data-testid="navbar-routemap">Route map</a>
+          <a href="{{ url_for('fare_finder') }}" data-testid="navbar-farefinder">Fare finder</a>
+          <a href="{{ url_for('service_alerts') }}" data-testid="navbar-servicealerts">Service alerts</a>
+          <a href="{{ url_for('track_bus') }}" data-testid="navbar-trackmybus">Track my bus</a>
+          <a href="{{ url_for('help_index') }}" data-testid="navbar-help">Help</a>
+        </span>
+      </span>
+      <a href="{{ url_for('manage_booking') }}" data-testid="navbar-changetrip">Change trip</a>
+      {% if current_user.is_authenticated %}
+        <a href="{{ url_for('account_overview') }}">My account</a>
+        <a href="{{ url_for('account_logout') }}">Log out</a>
+      {% else %}
+        <a href="{{ url_for('account_login') }}">Log in/Sign up</a>
+      {% endif %}
+      <a class="basket-chip" href="{{ url_for('basket_page') }}">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 7h12l-1.2 12H7.2z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>
+    Basket
+  </a>
+    </nav>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="container-md">
+      {% for category, message in messages %}
+        <div class="notice {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="mb-footer">
+  <div class="container-md">
+    <div class="row">
+      <div class="col-md-4">
+        <h3>Explore Megabus</h3>
+        <ul>
+          <li><a href="{{ url_for('about_us') }}">About Megabus</a></li>
+          <li><a href="{{ url_for('media') }}">Media</a></li>
+          <li><a href="{{ url_for('city_guides_index') }}">City guides</a></li>
+          <li><a href="{{ url_for('employment') }}">Employment</a></li>
+          <li><a href="{{ url_for('partners') }}">Partners</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h3>Accessibility</h3>
+        <ul>
+          <li><a href="{{ url_for('contact_us') }}">Contact Us</a></li>
+          <li><a href="{{ url_for('webchat') }}">Chat With Us</a></li>
+          <li><a href="{{ url_for('disabilities') }}">Customers with disabilities</a></li>
+          <li><a href="{{ url_for('privacy_policy') }}">Privacy policy</a></li>
+          <li><a href="{{ url_for('accessibility') }}">Using this website</a></li>
+          <li><a href="{{ url_for('terms') }}">Terms and conditions</a></li>
+        </ul>
+      </div>
+      <div class="col-md-4">
+        <h3>Our Companies in North America</h3>
+        <ul>
+          <li><a href="https://www.coachusa.com/">Coach USA</a></li>
+          <li><a href="https://www.coachcanada.com/">Coach Canada</a></li>
+        </ul>
+        <h3>Search</h3>
+        <form action="{{ url_for('site_search') }}" method="get" class="help-search">
+          <input class="form-control" type="text" name="q" placeholder="Search megabus.com" aria-label="Search megabus.com">
+          <button class="btn btn-primary" type="submit">Search</button>
+        </form>
+      </div>
+    </div>
+    <div class="footer-logos">
+      <img src="{{ url_for('static', filename='images/footer/US_Home_Footer_WorldPay.jpg') }}" alt="WorldPay">
+      <img src="{{ url_for('static', filename='images/footer/US_Home_Footer_AmericanExpress.jpg') }}" alt="American Express">
+      <img src="{{ url_for('static', filename='images/footer/US_Home_Footer_MasterCard.jpg') }}" alt="MasterCard">
+      <img src="{{ url_for('static', filename='images/footer/visa-transparent.png') }}" alt="Visa">
+      <img src="{{ url_for('static', filename='images/footer/footer-discover.jpg') }}" alt="Discover">
+      <img src="{{ url_for('static', filename='images/footer/footer-dinersclub.jpg') }}" alt="Diners Club">
+      <img src="{{ url_for('static', filename='images/footer/googlepay_mark_800_gray.png') }}" alt="Google Pay">
+      <img src="{{ url_for('static', filename='images/footer/bbb-blue-seal.png') }}" alt="BBB Accredited Business">
+    </div>
+    <div class="footer-social">
+      <img src="{{ url_for('static', filename='icons/facebook.svg') }}" alt="Facebook">
+      <img src="{{ url_for('static', filename='icons/instagram.svg') }}" alt="Instagram">
+      <img src="{{ url_for('static', filename='icons/twitter.svg') }}" alt="X">
+      <img src="{{ url_for('static', filename='icons/footer-apple-dark.svg') }}" alt="Download on the App Store">
+      <img src="{{ url_for('static', filename='icons/footer-google-dark.svg') }}" alt="Get it on Google Play">
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 megabus</span>
+      <a href="{{ url_for('terms') }}">Terms</a>
+      <a href="{{ url_for('privacy_policy') }}">Privacy</a>
+      <a href="{{ url_for('accessibility') }}">Accessibility</a>
+    </div>
+  </div>
+</footer>
+<script src="{{ url_for('static', filename='js/planner.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>
