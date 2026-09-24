@@ -7,10 +7,8 @@
     <p style="color:var(--ink-2);">Enter your order number and the ZIP code of your shipping address to see your order status.</p>
     <form method="post" action="/orders" class="auth-form" style="max-width:460px;margin-top:14px;">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
-      <label>Order Number</label>
-      <input type="text" name="order_number" placeholder="e.g. JCP1234567" value="{{ request.form.get('order_number','') }}">
-      <label>Billing / Shipping ZIP Code</label>
-      <input type="text" name="zip" placeholder="5-digit ZIP code" value="{{ request.form.get('zip','') }}">
+      <label for="order_lookup-field-1">Order Number</label><input id="order_lookup-field-1" type="text" name="order_number" placeholder="e.g. JCP1234567" value="{{ request.form.get('order_number','') }}">
+      <label for="order_lookup-field-2">Billing / Shipping ZIP Code</label><input id="order_lookup-field-2" type="text" name="zip" placeholder="5-digit ZIP code" value="{{ request.form.get('zip','') }}">
       <button type="submit" class="btn-primary" style="max-width:220px;">Track Order</button>
     </form>
 

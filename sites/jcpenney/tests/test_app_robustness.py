@@ -146,8 +146,10 @@ def test_guest_cart_add_update_remove(client):
         product = Product.query.filter_by(ppid="ppr5008618161").first() or \
             Product.query.order_by(Product.sort).first()
         ppid = product.ppid
+        color = product.colors[0].color
+        size = next(s['size'] for s in product.colors[0].sizes if s['available'])
     csrf = get_csrf(client)
-    response = client.post("/cart/add", data={"ppid": ppid, "quantity": "2", "_csrf": csrf},
+    response = client.post("/cart/add", data={"ppid": ppid, "color": color, "size": size, "quantity": "2", "_csrf": csrf},
                            follow_redirects=True)
     assert response.status_code == 200
     body = response.get_data(as_text=True)
@@ -168,9 +170,11 @@ def test_login_merges_guest_bag(alice):
         from app import Product
         product = Product.query.order_by(Product.sort).first()
         ppid = product.ppid
+        color = product.colors[0].color
+        size = next(s['size'] for s in product.colors[0].sizes if s['available'])
     # alice already has 2 seeded bag items; add one more through the session
     csrf = get_csrf(alice)
-    response = alice.post("/cart/add", data={"ppid": ppid, "quantity": "1", "_csrf": csrf},
+    response = alice.post("/cart/add", data={"ppid": ppid, "color": color, "size": size, "quantity": "1", "_csrf": csrf},
                           follow_redirects=True)
     assert response.status_code == 200
     body = response.get_data(as_text=True)
@@ -229,6 +233,8 @@ def test_wishlist_toggle_and_page(alice):
         from app import Product
         product = Product.query.order_by(Product.sort).first()
         ppid = product.ppid
+        color = product.colors[0].color
+        size = next(s['size'] for s in product.colors[0].sizes if s['available'])
     csrf = get_csrf(alice)
     response = alice.post(f"/wishlist/toggle/{ppid}", data={"next": "/cart", "_csrf": csrf},
                           follow_redirects=True)

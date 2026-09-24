@@ -127,7 +127,10 @@ def navigated_to(traj, substr, times=1):
 
 
 def final_answer(traj):
-    return str(traj.get("final_answer") or "").strip()
+    # Reference identifiers/annotations are not assertions of a requested fact.
+    text = str(traj.get("final_answer") or "").strip()
+    text = re.sub(r"(?m)^\s*[-*]\s*", "", text)
+    return re.sub(r"\([^)]*\b(?:reference|ref\.?|sku)\b[^)]*\)", "", text, flags=re.I)
 
 
 def normalized_url_path(url):
@@ -874,7 +877,8 @@ def run_verifier(task_id, run_checks):
     initial_db, after_db = resolve_snapshots(args, task_id)
     judge = Judge(task_id, no_llm=args.no_llm)
     try:
-        run_checks(judge, traj, initial_db, after_db)
+        from reviewed import review
+        review(judge, traj, initial_db, after_db, run_checks)
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()
