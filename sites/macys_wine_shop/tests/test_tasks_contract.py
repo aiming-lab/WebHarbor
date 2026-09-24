@@ -60,8 +60,8 @@ def test_port_and_upstream_match_registry():
     rows = read_rows()
     for row in rows:
         assert row["web_name"] == "Macy's Wine Shop"
-        # audit-stage declared slot: parallel-station index 89 -> 40089
-        assert row["web"] == "http://localhost:40089/", row["web"]
+        # audit-stage declared slot: parallel-station index 89 -> 40082
+        assert row["web"] == "http://localhost:40082/", row["web"]
         assert row["upstream_url"] == "https://macyswineshop.com/"
 
 

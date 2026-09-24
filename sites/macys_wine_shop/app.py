@@ -68,6 +68,8 @@ US_STATES = [
 ]
 
 BOTTLE_STATES = set(s for s, _ in US_STATES)
+# Source: https://macyswineshop.com/pages/shipping-policy (2026-09-23).
+EXCLUDED_WINE_STATES = {"AK", "AR", "DE", "HI", "MS", "RI", "SD", "UT"}
 
 
 def _ensure_dirs() -> None:
@@ -254,6 +256,10 @@ class Product(db.Model, TimestampMixin):
         return load_json(self.awards, [])
 
     def shippable_to(self, state: str) -> bool:
+        if self.product_type == "Gift Card":
+            return True
+        if state in EXCLUDED_WINE_STATES:
+            return False
         if not state:
             return True
         states = load_json(self.available_states, [])
@@ -288,10 +294,13 @@ class ProductVariant(db.Model, TimestampMixin):
                                    order_by="CaseBottle.number")
 
     def shippable_to(self, state: str) -> bool:
-        if not state:
+        if self.product.product_type == "Gift Card":
             return True
+        if state in EXCLUDED_WINE_STATES:
+            return False
         states = load_json(self.available_states, [])
-        return not states or state in states
+        return not state or not states or state in states
+
 
 
 class ProductImage(db.Model, TimestampMixin):
@@ -493,7 +502,7 @@ def csrf_token():
 
 
 def validate_csrf():
-    token = request.form.get("csrf_token", "")
+    token = request.form.get("csrf_token", "") or request.headers.get("X-CSRF-Token", "")
     if not token or token != session.get("csrf_token"):
         abort(400, "Invalid or missing CSRF token.")
 
@@ -501,10 +510,6 @@ def validate_csrf():
 @app.before_request
 def csrf_guard():
     if request.method == "POST":
-        # session-cart mechanics keep their own keys; everything else is guarded
-        if request.endpoint in ("age_confirm", "age_reject", "cart_add", "cart_update",
-                                "cart_remove", "newsletter_signup"):
-            return
         validate_csrf()
 
 
@@ -530,10 +535,10 @@ def cart_items():
 
 def cart_summary():
     items = cart_items()
-    bottles = sum(i.quantity * (i.variant.bottle_count or 1) for i in items)
+    bottles = sum(i.quantity * i.variant.bottle_count for i in items)
     subtotal = sum(i.quantity * i.variant.price for i in items)
-    shipping = 0.0 if (bottles >= FREE_SHIPPING_BOTTLES or not items) else SHIPPING_FEE
-    processing = PROCESSING_FEE if items else 0.0
+    shipping = 0.0 if (bottles >= FREE_SHIPPING_BOTTLES or not bottles) else SHIPPING_FEE
+    processing = PROCESSING_FEE if bottles else 0.0
     return {
         "items": items,
         "count": len(items),
@@ -543,7 +548,7 @@ def cart_summary():
         "processing": processing,
         "total": subtotal + shipping + processing,
         "bottles_short": max(0, FREE_SHIPPING_BOTTLES - bottles),
-        "meets_minimum": bottles >= MIN_CHECKOUT_BOTTLES,
+        "meets_minimum": bool(items) and (bottles == 0 or bottles >= MIN_CHECKOUT_BOTTLES),
     }
 
 
@@ -833,7 +838,7 @@ def cart_add():
         row = CartItem.query.filter_by(user_id=current_user.id,
                                         variant_id=variant.id).first()
         if row:
-            row.quantity += quantity
+            row.quantity = min(24, row.quantity + quantity)
         else:
             row = CartItem(user_id=current_user.id, variant_id=variant.id,
                            quantity=quantity)
@@ -843,7 +848,7 @@ def cart_add():
         row = CartItem.query.filter_by(session_key=key, user_id=None,
                                        variant_id=variant.id).first()
         if row:
-            row.quantity += quantity
+            row.quantity = min(24, row.quantity + quantity)
         else:
             row = CartItem(session_key=key, variant_id=variant.id, quantity=quantity)
             db.session.add(row)
@@ -921,6 +926,9 @@ def checkout_information():
             errors["state"] = "Select a state we can ship to."
         if not re.match(r"^\d{5}(-\d{4})?$", form.get("zip_code", "")):
             errors["zip_code"] = "Enter a valid ZIP code."
+        if any(not item.variant.shippable_to(form.get("state", ""))
+               for item in summary["items"]):
+            errors["state"] = "Wine in your cart cannot ship to this state. Choose an eligible delivery address."
         if not errors:
             session["checkout_info"] = form
             return redirect(url_for("checkout_payment"))
@@ -991,6 +999,9 @@ def checkout_review():
     disclosures = StateDisclosure.query.filter_by(state=state) \
         .order_by(StateDisclosure.display_priority).all()
     errors = {}
+    if any(not item.variant.available or not item.variant.shippable_to(state)
+           for item in summary["items"]):
+        errors["shipping"] = "An item is unavailable or cannot ship to your delivery state. Return to your cart or update your address."
     if request.method == "POST":
         if request.form.get("age_confirmed") != "on":
             errors["age"] = "Please confirm you are 21 years of age or older."
@@ -1040,12 +1051,16 @@ def _place_order(summary, info, payment):
     db.session.commit()
     session.pop("checkout_info", None)
     session.pop("checkout_payment", None)
+    session["last_order"] = order.order_number
     return order
 
 
 @app.route("/checkout/confirmation/<order_number>")
 def checkout_confirmation(order_number):
     order = Order.query.filter_by(order_number=order_number).first_or_404()
+    if not ((current_user.is_authenticated and order.user_id == current_user.id)
+            or session.get("last_order") == order_number):
+        abort(404)
     return render_template("confirmation.html", order=order,
                            show_age_gate=False)
 
@@ -1077,8 +1092,11 @@ def login():
         if user and user.password_hash == stable_password_hash(password):
             login_user(user)
             merge_session_cart()
-            target = request.args.get("next")
-            return redirect(target or url_for("account"))
+            target = request.args.get("next", "")
+            if not (target.startswith("/") and not target.startswith("//")
+                    and "\\" not in target and not any(ord(c) < 32 for c in target)):
+                target = url_for("account")
+            return redirect(target)
         errors["form"] = "Incorrect email or password. Please try again."
     return render_template("login.html", errors=errors,
                            show_age_gate=age_gate_needed())

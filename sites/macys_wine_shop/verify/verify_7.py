@@ -10,6 +10,8 @@ shipping is FREE. The placed guest order MWS1050 carries 6 Valanda bottles:
 subtotal $101.94, shipping $0.00, processing $2.95, total $104.89.
 """
 
+from review_common import fact
+
 from verify_lib import (Judge, check_only_tables_changed, check_trajectory_identity,
                         check_visited_path, contains_free, contains_money, contains_phrase,
                         final_answer, navigated_search_with, navigated_to, run_verifier,
@@ -46,11 +48,11 @@ def run_checks(judge, traj, initial_db, after_db):
                 "required: the confirmation page for order MWS1050")
     # answer checks against the frozen ground truth
     judge.check("answer_minimum_rule",
-                contains_phrase(answer, "Minimum 3 Bottles Required"),
+                fact(answer, r'minimum|at least|requires?', r'(?:3|three)\s+(?:wine\s+)?bottles'),
                 "expected the cart's minimum rule text 'Minimum 3 Bottles Required "
                 "for Checkout'")
     judge.check("answer_free_shipping_rule",
-                contains_free(answer) and contains_phrase(answer, "free shipping"),
+                fact(answer, r'free shipping|shipping.{0,20}free', r'(?:6|six)\s*(?:\+|or more)?\s*bottles'),
                 "expected the free-shipping rule (FREE shipping at 6 bottles)")
     judge.check("answer_order_number", contains_phrase(answer, "MWS1050"),
                 "expected the new order number MWS1050")

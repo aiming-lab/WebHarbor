@@ -228,7 +228,7 @@ def seed_products(source: dict) -> None:
                 compare_at_price=vrow.get("compare_at_price") or 0.0,
                 sku=vrow.get("sku") or "",
                 available=bool(vrow.get("available")),
-                bottle_count=vrow.get("bottle_count") or 1,
+                bottle_count=0 if product.product_type == "Gift Card" else (vrow.get("bottle_count") or 1),
                 position=vrow.get("position") or 0,
                 available_states=json.dumps(vrow.get("available_states") or []),
                 gift_amount=vrow.get("gift_amount") or 0.0,

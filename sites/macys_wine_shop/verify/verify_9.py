@@ -63,7 +63,7 @@ def run_checks(judge, traj, initial_db, after_db):
             "SELECT 1 FROM collection_products cp JOIN collections c ON c.id = cp.collection_id "
             "JOIN products p ON p.id = cp.product_id WHERE c.handle = ? AND p.handle = ?",
             (SPARKLING_COLLECTION, row["product_handle"]))
-        sparkling_ok = (bool(in_collection) and int(row["quantity"]) == 2
+        sparkling_ok = (bool(in_collection) and int(row["quantity"]) == 3
                         and float(row["unit_price"]) <= 30.0)
     ok_items = (len(items_added) == 2 and len(gc_rows) == 1
                 and int(gc_rows[0]["quantity"]) == 1
@@ -75,7 +75,7 @@ def run_checks(judge, traj, initial_db, after_db):
                 f"{[r['product_title'] for r in items_added]!r}")
     if ok_items:
         spark_unit = float(other_rows[0]["unit_price"])
-        expected_total = round(100.0 + 2 * spark_unit + 14.95 + 2.95, 2)
+        expected_total = round(100.0 + 3 * spark_unit + 14.95 + 2.95, 2)
     else:
         spark_unit, expected_total = 0.0, 0.0
     ok_orders = (len(orders_added) == 1 and orders_added[0]["order_number"] == "MWS1050"
@@ -87,13 +87,9 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected exactly one added guest order row MWS1050 (3 'bottles', "
                 "shipping 14.95, total = 100 + 2*price + 17.90)")
     # answer checks against the frozen ground truth
-    judge.check("answer_giftcard_counted",
-                contains_any(answer, ("counted", "counts", "count"))
-                and contains_phrase(answer, "gift card"),
-                "expected the answer to state whether the gift card counted toward the minimum")
-    judge.check("answer_minimum_rule",
-                contains_phrase(answer, "Minimum 3 Bottles"),
-                "expected the cart's 'Minimum 3 Bottles Required for Checkout' rule reported")
+    import re
+    judge.check("gift_card_not_a_bottle", bool(re.search(r"gift card.{0,50}(?:does not|doesn't|did not|didn't|doesn’t|not count|zero|0 bottles)", answer, re.I)), "gift cards do not satisfy the wine-bottle minimum")
+    judge.check("minimum_three_wine_bottles", bool(re.search(r"(?:minimum.{0,20}(?:3|three)|(?:3|three).{0,20}(?:minimum|wine bottles|bottles))", answer, re.I)), "three actual wine bottles")
     judge.check("answer_giftcard_amount", contains_money(answer, 100.00),
                 "expected the $100.00 gift card in the answer")
     judge.check("answer_sparkling_named",
