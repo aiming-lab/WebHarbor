@@ -15,10 +15,11 @@ Midseason and Mythics 2023-04-28 — the oldest). After saving Patch 26.19 Notes
 bookmark row added (Patch 26.19 Notes, article id 133) and one removed
 ('/dev: Midseason and Mythics', article id 80) for david.
 """
-from verify_lib import (check_bookmarks_delta, check_only_tables_changed,
-                        check_signed_in_as, check_trajectory_identity,
-                        contains_count, contains_phrase, contains_phrase_loose,
-                        final_answer, navigated_to_path, run_verifier)
+from verify_lib import (bound_count, check_bookmarks_delta,
+                        check_only_tables_changed, check_signed_in_as,
+                        check_trajectory_identity, contains_phrase,
+                        contains_phrase_loose, final_answer, navigated_to_path,
+                        run_verifier)
 
 TASK_ID = "League of Legends--14"
 EMAIL = "david.k@test.com"
@@ -26,6 +27,8 @@ ADDED = (4, 133, "2026-09-22")
 REMOVED = (4, 80, "2026-09-22")
 PATCH_2619 = "/news/game-updates/league-of-legends-patch-26-19-notes/"
 MIDSEASON = "/news/dev/dev-midseason-and-mythics/"
+SAVED_ANCHOR = "26.19"      # the save: counts after it belong to the after-save state
+REMOVED_ANCHOR = "Midseason"  # the removal: counts after it belong to the after-removal state
 
 
 def run_checks(judge, traj, initial_db, after_db):
@@ -45,13 +48,15 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_saved_patch_title",
                 contains_phrase(answer, "League of Legends Patch 26.19 Notes"),
                 "expected 'League of Legends Patch 26.19 Notes' named as saved")
-    judge.check("answer_after_save_5", contains_count(answer, 5),
-                "expected 5 saved articles reported after the save")
+    judge.check("answer_after_save_5",
+                bound_count(answer, 5, SAVED_ANCHOR, [REMOVED_ANCHOR]),
+                "expected 5 saved articles attached to the after-save state")
     judge.check("answer_removed_title",
                 contains_phrase_loose(answer, "Midseason and Mythics"),
                 "expected '/dev: Midseason and Mythics' named as removed")
-    judge.check("answer_after_removal_4", contains_count(answer, 4),
-                "expected 4 saved articles reported after the removal")
+    judge.check("answer_after_removal_4",
+                bound_count(answer, 4, REMOVED_ANCHOR, [SAVED_ANCHOR]),
+                "expected 4 saved articles attached to the after-removal state")
 
     check_bookmarks_delta(judge, initial_db, after_db, added=[ADDED], removed=[REMOVED])
     check_only_tables_changed(judge, initial_db, after_db, {"bookmark_articles"})

@@ -16,15 +16,17 @@ Frozen ground truth (seed DB):
   * Database delta: exactly two favorite_champions rows added — (alice, Yone)
     and (bob, Milio) — and nothing else.
 """
-from verify_lib import (champion_named, check_favorites_delta,
-                        check_only_tables_changed, check_trajectory_identity,
-                        contains_count, contains_phrase, entered_identity,
-                        final_answer,
+from verify_lib import (bound_count, bound_phrase, champion_named,
+                        check_favorites_delta, check_only_tables_changed,
+                        check_trajectory_identity, contains_phrase,
+                        entered_identity, final_answer,
                         navigated_champion, navigated_to_path, run_verifier)
 
 TASK_ID = "League of Legends--13"
 ALICE = "alice.j@test.com"
 BOB = "bob.c@test.com"
+ALICE_NAME = "alice"
+BOB_NAME = "bob"
 ADDED = [(1, 162, "2026-09-22"), (2, 84, "2026-09-22")]
 BOB_SEEDED = ["Anivia", "Annie", "Cho'Gath", "Renata Glasc", "Viego"]
 
@@ -45,23 +47,33 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("visited_account", navigated_to_path(traj, "/account"),
                 "required: /account (bob's unaffected favorites verified there)")
 
-    judge.check("answer_alice_total_6", contains_count(answer, 6),
-                "expected alice's new total of 6 favorites reported")
+    judge.check("answer_alice_total_6",
+                bound_count(answer, 6, ALICE_NAME, [BOB_NAME], mode="after", allow_misbound=True),
+                "expected alice's new total of 6 favorites attached to alice")
     judge.check("answer_yone_named", champion_named(answer, "Yone"),
                 "expected Yone named as alice's addition")
-    judge.check("answer_bob_unchanged_5", contains_count(answer, 5),
-                "expected bob's unaffected 5 favorites reported")
+    judge.check("answer_yone_is_alices",
+                bound_phrase(answer, "Yone", ALICE_NAME, [BOB_NAME], allow_misbound=True),
+                "expected Yone attached to alice's account")
+    judge.check("answer_bob_unchanged_5",
+                bound_count(answer, 5, BOB_NAME, [ALICE_NAME], mode="after", allow_misbound=True),
+                "expected bob's unaffected 5 favorites attached to bob")
     judge.check("answer_bob_seeded_names",
-                all(champion_named(answer, n) for n in BOB_SEEDED),
-                f"expected bob's seeded favorites named: {BOB_SEEDED}")
+                all(bound_phrase(answer, n, BOB_NAME, [ALICE_NAME], mode="after", allow_misbound=True)
+                    for n in BOB_SEEDED),
+                f"expected bob's seeded favorites attached to bob: {BOB_SEEDED}")
     judge.check("answer_yone_absence",
                 contains_phrase(answer, "not") or contains_phrase(answer, "without")
                 or contains_phrase(answer, "no Yone") or contains_phrase(answer, "absent"),
                 "expected the answer to state Yone is not among bob's favorites")
-    judge.check("answer_bob_final_6", contains_count(answer, 6),
-                "expected bob's final total of 6 favorites reported")
+    judge.check("answer_bob_final_6",
+                bound_count(answer, 6, BOB_NAME, [ALICE_NAME], mode="after", allow_misbound=True),
+                "expected bob's final total of 6 favorites attached to bob")
     judge.check("answer_milio_named", champion_named(answer, "Milio"),
                 "expected Milio named as bob's addition")
+    judge.check("answer_milio_is_bobs",
+                bound_phrase(answer, "Milio", BOB_NAME, [ALICE_NAME], allow_misbound=True),
+                "expected Milio attached to bob's account")
 
     check_favorites_delta(judge, initial_db, after_db, added=ADDED)
     check_only_tables_changed(judge, initial_db, after_db, {"favorite_champions"})

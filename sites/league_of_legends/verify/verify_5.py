@@ -15,12 +15,12 @@ Thresh, Twisted Fate.
   * carol_d (id 3) gains exactly one favorite row (Fiora, champion id 35)
     -> 6 favorites total.
 """
-from verify_lib import (champion_count_named, champion_named,
+from verify_lib import (bound_phrase, champion_count_named, champion_named,
                         check_favorites_delta, check_only_tables_changed,
                         check_signed_in_as, check_trajectory_identity,
-                        contains_count, contains_phrase_loose, final_answer,
+                        contains_count, final_answer,
                         navigated_champion, navigated_champions_listing,
-                        navigated_to_path_any, near_any, run_verifier)
+                        navigated_to_path_any, phrase_excluded_from, run_verifier)
 
 TASK_ID = "League of Legends--5"
 EMAIL = "carol.d@test.com"
@@ -56,11 +56,22 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected 10 Pulsefire holder cards reported")
     judge.check("answer_all_holders_named", champion_count_named(answer, HOLDERS) == 10,
                 f"expected all ten holders named: {HOLDERS}")
-    judge.check("answer_high_trio", all(champion_count_named(answer, [n]) >= 1 for n in HIGH_TRIO),
-                f"expected Ekko, Riven and Twisted Fate identified as High difficulty")
-    judge.check("answer_low_holder_fiora", near_any(answer, "Fiora", ["Low"], radius=200),
+    for name in HIGH_TRIO:
+        judge.check(f"answer_high_{name.split()[0].lower()}",
+                    bound_phrase(answer, "High", name, ["Fiora"], mode="after",
+                                 allow_misbound=True),
+                    f"expected {name} identified as High difficulty")
+    judge.check("answer_low_holder_fiora",
+                bound_phrase(answer, "Low", "Fiora", HIGH_TRIO, allow_misbound=True),
                 "expected Fiora identified as the Low-difficulty holder")
-    judge.check("answer_pulsefire_fiora_skin", contains_phrase_loose(answer, "Pulsefire Fiora"),
+    judge.check("answer_fiora_not_high",
+                phrase_excluded_from(answer, "High", "Fiora", HIGH_TRIO),
+                "expected no High-difficulty claim attached to Fiora")
+    judge.check("answer_trio_not_low",
+                all(phrase_excluded_from(answer, "Low", name, ["Fiora"])
+                    for name in HIGH_TRIO),
+                "expected no Low-difficulty claim attached to the High trio")
+    judge.check("answer_pulsefire_fiora_skin", champion_named(answer, "Pulsefire Fiora"),
                 "expected the skin 'Pulsefire Fiora' named from her page")
     judge.check("answer_added_fiora", champion_named(answer, "Fiora"),
                 "expected Fiora named as the added pick")

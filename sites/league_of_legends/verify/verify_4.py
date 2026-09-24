@@ -17,10 +17,10 @@ Frozen ground truth (seed DB):
   * alice_j (id 1) gains exactly one favorite row (Viego, champion id 152)
     -> 6 favorites total.
 """
-from verify_lib import (champion_named, check_favorites_delta,
+from verify_lib import (bound_count, bound_date, bound_phrase,
+                        champion_named, check_favorites_delta,
                         check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_count,
-                        contains_iso_date, contains_phrase,
                         contains_phrase_loose, final_answer, navigated_champion,
                         navigated_to_path, navigated_to_path_any,
                         navigated_search_with, run_verifier)
@@ -46,25 +46,28 @@ def run_checks(judge, traj, initial_db, after_db):
                 navigated_to_path_any(traj, ["/account", "/account/favorites"]),
                 "required: /account or /account/favorites")
 
-    judge.check("answer_champion_cards_60", contains_count(answer, 60),
-                "expected 60 champion cards reported for the query")
-    judge.check("answer_news_results_29", contains_count(answer, 29),
-                "expected 29 news results reported for the query")
+    judge.check("answer_champion_cards_60",
+                bound_count(answer, 60, ["champion", "champions"], ["news"]),
+                "expected 60 champion cards reported, attached to the champion results")
+    judge.check("answer_news_results_29",
+                bound_count(answer, 29, ["news"], ["champion", "champions"]),
+                "expected 29 news results reported, attached to the news results")
     judge.check("answer_viego_identified", champion_named(answer, "Viego"),
                 "expected Viego identified as the first champion result")
-    judge.check("answer_viego_epithet", contains_phrase(answer, "The Ruined King"),
-                "expected Viego's epithet 'The Ruined King' confirmed")
+    judge.check("answer_viego_epithet", bound_phrase(answer, "The Ruined King", "Viego", mode="after"),
+                "expected Viego's epithet 'The Ruined King' attached to Viego")
     judge.check("answer_article_title",
                 contains_phrase_loose(answer, "Ruined King Gameplay Deep Dive"),
                 "expected 'Ruined King: Gameplay Deep Dive' as the top news result")
-    judge.check("answer_article_date", contains_iso_date(answer, "2020-12-11"),
-                "expected the article's 2020-12-11 date")
+    judge.check("answer_article_date",
+                bound_date(answer, "2020-12-11", "Ruined King Gameplay Deep Dive", ["Viego"], mode="after"),
+                "expected the article's 2020-12-11 date attached to its title")
     judge.check("answer_passive_semantics",
-                contains_phrase_loose(answer, "Sovereign's Domination") and
-                contains_phrase(answer, "wraith"),
-                "expected Sovereign's Domination possession of defeated enemies' wraiths")
-    judge.check("answer_harrowed_path", contains_phrase_loose(answer, "Harrowed Path"),
-                "expected Viego's E 'Harrowed Path'")
+                bound_phrase(answer, "Sovereign's Domination", "passive", ["E"], mode="after") and
+                bound_phrase(answer, "wraith", "Sovereign's Domination", ["Harrowed Path"], mode="after"),
+                "expected the Sovereign's Domination wraith possession attached to the passive")
+    judge.check("answer_harrowed_path", bound_phrase(answer, "Harrowed Path", "E", ["passive"], mode="after"),
+                "expected Viego's E 'Harrowed Path' attached to the E slot")
     judge.check("answer_added_viego", champion_named(answer, "Viego"),
                 "expected Viego named as the added pick")
     judge.check("answer_new_total_6", contains_count(answer, 6),

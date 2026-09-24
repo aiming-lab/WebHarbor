@@ -19,10 +19,11 @@ Frozen ground truth (seed DB):
   * Database delta: exactly one new users row (id 5, fresh username/email),
     one favorite_champions row and one bookmark_articles row for that user.
 """
-from verify_lib import (check_only_tables_changed, check_trajectory_identity,
-                        contains_count, contains_phrase, entered_identity,
-                        fav_triples, bm_triples, final_answer, navigated_champion,
-                        navigated_to_path, run_verifier, SEED_USERS, table_delta)
+from verify_lib import (bound_phrase, check_only_tables_changed,
+                        check_trajectory_identity, contains_count,
+                        contains_phrase, entered_identity, fav_triples, bm_triples,
+                        final_answer, navigated_champion, navigated_to_path,
+                        run_verifier, SEED_USERS, table_delta)
 
 TASK_ID = "League of Legends--11"
 MILIO = (5, 84, "2026-09-22")
@@ -48,10 +49,14 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("entered_rookie_summoner", entered_identity(traj, "HarborRookie"),
                 "expected 'HarborRookie' in an input step")
 
-    judge.check("answer_summoner_name", contains_phrase(answer, "HarborRookie"),
-                "expected the summoner name 'HarborRookie' reported")
-    judge.check("answer_region_euw", contains_phrase(answer, "EUW"),
-                "expected the region EUW reported")
+    judge.check("answer_summoner_name",
+                bound_phrase(answer, "HarborRookie", "summoner", ["region"], mode="after",
+                             optional_owner=True),
+                "expected the summoner name 'HarborRookie' attached to the summoner field")
+    judge.check("answer_region_euw",
+                bound_phrase(answer, "EUW", "region", ["summoner"], mode="after",
+                             optional_owner=True),
+                "expected the region EUW attached to the region field")
     judge.check("answer_favorites_total_1", contains_count(answer, 1),
                 "expected 1 favorite champion reported")
     judge.check("answer_saved_total_1", contains_phrase(answer, "1 saved") or

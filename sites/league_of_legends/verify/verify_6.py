@@ -15,13 +15,14 @@ Frozen ground truth (seed DB):
   * david_k (id 4) gains exactly one favorite row (Aatrox, champion id 1)
     -> 6 favorites total.
 """
-from verify_lib import (champion_named, check_favorites_delta,
+from verify_lib import (bound_date, bound_phrase, bound_stem,
+                        champion_named, check_favorites_delta,
                         check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_count,
-                        contains_decimal_sequence, contains_iso_date,
-                        contains_phrase, contains_phrase_loose, final_answer,
-                        navigated_champion, navigated_patch_notes,
-                        navigated_to_path, navigated_to_path_any, run_verifier)
+                        contains_decimal_sequence, contains_phrase,
+                        final_answer, navigated_champion, navigated_patch_notes,
+                        navigated_to_path, navigated_to_path_any, phrases_in_order,
+                        run_verifier)
 
 TASK_ID = "League of Legends--6"
 EMAIL = "david.k@test.com"
@@ -49,24 +50,30 @@ def run_checks(judge, traj, initial_db, after_db):
 
     judge.check("answer_patch_2619_title", contains_phrase(answer, "League of Legends Patch 26.19 Notes"),
                 "expected the 26.19 patch title")
-    judge.check("answer_patch_2619_date", contains_iso_date(answer, "2026-09-22"),
-                "expected the 26.19 date 2026-09-22")
+    judge.check("answer_patch_2619_date",
+                bound_date(answer, "2026-09-22", "26.19", ["26.18"], mode="after"),
+                "expected the 26.19 date 2026-09-22 attached to the 26.19 patch")
     judge.check("answer_patch_2618_title", contains_phrase(answer, "League of Legends Patch 26.18 Notes"),
                 "expected the 26.18 patch title")
-    judge.check("answer_patch_2618_date", contains_iso_date(answer, "2026-09-09"),
-                "expected the 26.18 date 2026-09-09")
+    judge.check("answer_patch_2618_date",
+                bound_date(answer, "2026-09-09", "26.18", ["26.19"], mode="after"),
+                "expected the 26.18 date 2026-09-09 attached to the 26.18 patch")
     judge.check("answer_old_cooldown_ladder",
                 contains_count(answer, 20) and contains_count(answer, 16),
                 "expected the old 20/18/16/14/12 cooldown values")
     judge.check("answer_new_cooldown_ladder",
                 contains_decimal_sequence(answer, NEW_COOLDOWNS),
                 "expected the new cooldown ladder 18/16.5/15/13.5/12")
-    judge.check("answer_w_name", contains_phrase_loose(answer, "Infernal Chains"),
-                "expected the W ability 'Infernal Chains'")
-    judge.check("answer_e_name", contains_phrase_loose(answer, "Umbral Dash"),
-                "expected the E ability 'Umbral Dash'")
-    judge.check("answer_e_heal_semantics", contains_phrase(answer, "heal"),
-                "expected the E healing effect reported")
+    judge.check("answer_old_before_new_ladder",
+                phrases_in_order(answer, ["20", "14", "16.5", "13.5"]),
+                "expected the old cooldown ladder quoted before the new one")
+    judge.check("answer_w_name", bound_phrase(answer, "Infernal Chains", "W", ["E"], mode="after"),
+                "expected the W ability 'Infernal Chains' attached to the W slot")
+    judge.check("answer_e_name", bound_phrase(answer, "Umbral Dash", "E", ["W"], mode="after"),
+                "expected the E ability 'Umbral Dash' attached to the E slot")
+    judge.check("answer_e_heal_semantics",
+                bound_stem(answer, "heal", "Umbral Dash", ["Infernal Chains"], mode="after"),
+                "expected the healing effect attached to Umbral Dash")
     judge.check("answer_added_aatrox", champion_named(answer, "Aatrox"),
                 "expected Aatrox named as the added pick")
     judge.check("answer_new_total_6", contains_count(answer, 6),

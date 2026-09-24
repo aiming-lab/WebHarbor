@@ -19,12 +19,11 @@ Frozen ground truth (seed DB):
   * bob_c (id 2) gains exactly one favorite row (Nasus, champion id 90)
     -> 6 favorites total.
 """
-from verify_lib import (champion_named, check_favorites_delta,
+from verify_lib import (bound_phrase, champion_named, check_favorites_delta,
                         check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_count,
-                        contains_phrase, contains_phrase_loose, final_answer,
-                        navigated_champion, navigated_patch_notes,
-                        navigated_to_path, navigated_to_path_any, near_any,
+                        final_answer, navigated_champion, navigated_patch_notes,
+                        navigated_to_path, navigated_to_path_any, phrases_in_order,
                         run_verifier)
 
 TASK_ID = "League of Legends--7"
@@ -56,19 +55,30 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected Nasus identified as adjusted in both patches")
     judge.check("answer_identifies_poppy", champion_named(answer, "Poppy"),
                 "expected Poppy identified as adjusted in both patches")
-    judge.check("answer_nasus_roles", near_any(answer, "Nasus", ["Fighter", "Tank"]),
-                "expected Nasus's roles Fighter/Tank")
-    judge.check("answer_poppy_roles", near_any(answer, "Poppy", ["Tank", "Fighter"]),
-                "expected Poppy's roles Tank/Fighter")
+    judge.check("answer_nasus_roles",
+                bound_phrase(answer, "Fighter", "Nasus", ["Poppy"], mode="after", allow_misbound=True) and
+                bound_phrase(answer, "Tank", "Nasus", ["Poppy"], mode="after", allow_misbound=True),
+                "expected Nasus's roles Fighter/Tank attached to Nasus")
+    judge.check("answer_poppy_roles",
+                bound_phrase(answer, "Tank", "Poppy", ["Nasus"], mode="after", allow_misbound=True) and
+                bound_phrase(answer, "Fighter", "Poppy", ["Nasus"], mode="after", allow_misbound=True),
+                "expected Poppy's roles Tank/Fighter attached to Poppy")
     judge.check("answer_both_medium",
-                near_any(answer, "Nasus", ["Medium"]) and near_any(answer, "Poppy", ["Medium"]),
+                bound_phrase(answer, "Medium", "Nasus", ["Poppy"], mode="after", allow_misbound=True) and
+                bound_phrase(answer, "Medium", "Poppy", ["Nasus"], mode="after", allow_misbound=True),
                 "expected both champions rated Medium difficulty")
-    judge.check("answer_q_ability", contains_phrase_loose(answer, "Siphoning Strike"),
-                "expected Nasus's Q 'Siphoning Strike'")
+    judge.check("answer_q_ability", bound_phrase(answer, "Siphoning Strike", "Nasus", ["Poppy"], mode="after"),
+                "expected Nasus's Q 'Siphoning Strike' attached to Nasus")
     judge.check("answer_stack_values",
                 contains_count(answer, 3) and contains_count(answer, 12)
                 and contains_count(answer, 4) and contains_count(answer, 10),
                 "expected the stack values 3->12 and 4->10 quoted")
+    judge.check("answer_stack_pairs_in_order",
+                phrases_in_order(answer, ["3", "12"]) and phrases_in_order(answer, ["4", "10"]),
+                "expected each base stack quoted before its increased-to value")
+    judge.check("answer_stack_ladder_order",
+                phrases_in_order(answer, ["3", "4"]),
+                "expected the old base (3) quoted before the new base (4)")
     judge.check("answer_added_nasus", champion_named(answer, "Nasus"),
                 "expected Nasus named as the added pick")
     judge.check("answer_new_total_6", contains_count(answer, 6),

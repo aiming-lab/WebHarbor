@@ -15,12 +15,12 @@ Frozen ground truth (seed DB):
   * The teleport pick is Ezreal; bob_c (id 2) gains exactly one favorite row
     (Ezreal, champion id 33) -> 6 favorites total.
 """
-from verify_lib import (champion_named, check_favorites_delta,
+from verify_lib import (bound_phrase, champion_named, check_favorites_delta,
                         check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_count,
-                        contains_phrase, contains_phrase_loose, final_answer, navigated_champion,
+                        final_answer, navigated_champion,
                         navigated_champions_listing, navigated_to_path_any,
-                        near_any, run_verifier)
+                        run_verifier)
 
 TASK_ID = "League of Legends--1"
 EMAIL = "bob.c@test.com"
@@ -44,16 +44,21 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected Ezreal named as the added pick")
     judge.check("answer_new_total_6", contains_count(answer, 6),
                 "expected the account's new total of 6 favorites")
-    judge.check("answer_ezreal_e", contains_phrase_loose(answer, "Arcane Shift"),
-                "expected Ezreal's E 'Arcane Shift'")
-    judge.check("answer_lucian_e", contains_phrase_loose(answer, "Relentless Pursuit"),
-                "expected Lucian's E 'Relentless Pursuit'")
-    judge.check("answer_lucian_cooldown_trigger", contains_phrase(answer, "Lightslinger"),
-                "expected Lightslinger named as what reduces Lucian's E cooldown")
-    judge.check("answer_ezreal_roles", near_any(answer, "Ezreal", ["Marksman", "Mage"]),
-                "expected Ezreal's roles Marksman/Mage near his name")
-    judge.check("answer_lucian_roles", near_any(answer, "Lucian", ["Marksman", "Assassin"]),
-                "expected Lucian's roles Marksman/Assassin near his name")
+    judge.check("answer_ezreal_e", bound_phrase(answer, "Arcane Shift", "Ezreal", ["Lucian"], mode="after"),
+                "expected Ezreal's E 'Arcane Shift' attached to Ezreal")
+    judge.check("answer_lucian_e", bound_phrase(answer, "Relentless Pursuit", "Lucian", ["Ezreal"], mode="after"),
+                "expected Lucian's E 'Relentless Pursuit' attached to Lucian")
+    judge.check("answer_lucian_cooldown_trigger",
+                bound_phrase(answer, "Lightslinger", "Lucian", ["Ezreal"], mode="after"),
+                "expected Lightslinger attached to Lucian as what reduces his E cooldown")
+    judge.check("answer_ezreal_roles",
+                bound_phrase(answer, "Mage", "Ezreal", ["Lucian"], mode="after") and
+                bound_phrase(answer, "Marksman", "Ezreal", ["Lucian"], mode="after", allow_misbound=True),
+                "expected Ezreal's roles Marksman/Mage attached to Ezreal")
+    judge.check("answer_lucian_roles",
+                bound_phrase(answer, "Assassin", "Lucian", ["Ezreal"], mode="after") and
+                bound_phrase(answer, "Marksman", "Lucian", ["Ezreal"], mode="after", allow_misbound=True),
+                "expected Lucian's roles Marksman/Assassin attached to Lucian")
 
     check_favorites_delta(judge, initial_db, after_db, added=[EZREAL])
     check_only_tables_changed(judge, initial_db, after_db, {"favorite_champions"})

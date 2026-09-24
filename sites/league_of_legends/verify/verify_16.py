@@ -18,10 +18,10 @@ Frozen ground truth (seed DB / tracked How To Play copy):
   * Miss Fortune has more skins -> she is the pick; carol_d (id 3) gains
     exactly one favorite row (Miss Fortune, champion id 85) -> 6 favorites.
 """
-from verify_lib import (champion_named, check_favorites_delta,
-                        check_only_tables_changed, check_signed_in_as,
-                        check_trajectory_identity, contains_count,
-                        contains_phrase, contains_phrase_loose, final_answer,
+from verify_lib import (bound_count, bound_phrase, champion_named,
+                        check_favorites_delta, check_only_tables_changed,
+                        check_signed_in_as, check_trajectory_identity,
+                        contains_count, contains_phrase, final_answer,
                         navigated_champion, navigated_champions_listing,
                         navigated_to_path, navigated_to_path_any, run_verifier)
 
@@ -59,14 +59,16 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_protection_rationale",
                 contains_phrase(answer, "protected") or contains_phrase(answer, "protection"),
                 "expected the early-protection rationale")
-    judge.check("answer_mf_ultimate", contains_phrase_loose(answer, "Bullet Time"),
-                "expected Miss Fortune's ultimate 'Bullet Time'")
-    judge.check("answer_ashe_ultimate", contains_phrase_loose(answer, "Enchanted Crystal Arrow"),
-                "expected Ashe's ultimate 'Enchanted Crystal Arrow'")
-    judge.check("answer_mf_skins_24", contains_count(answer, 24),
-                "expected Miss Fortune's 24 skins")
-    judge.check("answer_ashe_skins_21", contains_count(answer, 21),
-                "expected Ashe's 21 skins")
+    judge.check("answer_mf_ultimate", bound_phrase(answer, "Bullet Time", "Miss Fortune", ["Ashe"], mode="after"),
+                "expected Miss Fortune's ultimate 'Bullet Time' attached to Miss Fortune")
+    judge.check("answer_ashe_ultimate", bound_phrase(answer, "Enchanted Crystal Arrow", "Ashe", ["Miss Fortune"], mode="after"),
+                "expected Ashe's ultimate 'Enchanted Crystal Arrow' attached to Ashe")
+    judge.check("answer_mf_skins_24",
+                bound_count(answer, 24, "Miss Fortune", ["Ashe"], mode="after"),
+                "expected Miss Fortune's 24 skins attached to Miss Fortune")
+    judge.check("answer_ashe_skins_21",
+                bound_count(answer, 21, "Ashe", ["Miss Fortune"], mode="after"),
+                "expected Ashe's 21 skins attached to Ashe")
     judge.check("answer_added_missfortune", champion_named(answer, "Miss Fortune"),
                 "expected Miss Fortune named as the added pick")
     judge.check("answer_new_total_6", contains_count(answer, 6),

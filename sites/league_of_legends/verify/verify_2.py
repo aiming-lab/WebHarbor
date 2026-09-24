@@ -16,10 +16,10 @@ Frozen ground truth (seed DB):
   * Miss Fortune is the pick; david_k (id 4) gains exactly one favorite row
     (Miss Fortune, champion id 85) -> 6 favorites total.
 """
-from verify_lib import (champion_named, check_favorites_delta,
+from verify_lib import (bound_count, bound_phrase, bound_phrase_any,
+                        champion_named, check_favorites_delta,
                         check_only_tables_changed, check_signed_in_as,
-                        check_trajectory_identity, contains_any,
-                        contains_count, contains_phrase_loose, final_answer,
+                        check_trajectory_identity, contains_count, final_answer,
                         navigated_champion, navigated_champions_listing,
                         navigated_to_path_any, phrases_in_order, run_verifier)
 
@@ -49,18 +49,22 @@ def run_checks(judge, traj, initial_db, after_db):
 
     judge.check("answer_top_five_in_order", phrases_in_order(answer, TOP_FIVE),
                 f"expected the first five in order: {TOP_FIVE}")
-    judge.check("answer_mf_ultimate", contains_phrase_loose(answer, "Bullet Time"),
-                "expected Miss Fortune's ultimate 'Bullet Time'")
-    judge.check("answer_lux_ultimate", contains_phrase_loose(answer, "Final Spark"),
-                "expected Lux's ultimate 'Final Spark'")
-    judge.check("answer_mf_skin_count_24", contains_count(answer, 24),
-                "expected Miss Fortune's 24 skins")
-    judge.check("answer_lux_skin_count_23", contains_count(answer, 23),
-                "expected Lux's 23 skins")
-    judge.check("answer_mf_nonbase_skin", contains_any(answer, MF_NONBASE),
-                "expected one non-base Miss Fortune skin named")
-    judge.check("answer_lux_nonbase_skin", contains_any(answer, LUX_NONBASE),
-                "expected one non-base Lux skin named")
+    judge.check("answer_mf_ultimate", bound_phrase(answer, "Bullet Time", "Miss Fortune", ["Lux"], mode="after"),
+                "expected Miss Fortune's ultimate 'Bullet Time' attached to Miss Fortune")
+    judge.check("answer_lux_ultimate", bound_phrase(answer, "Final Spark", "Lux", ["Miss Fortune"], mode="after"),
+                "expected Lux's ultimate 'Final Spark' attached to Lux")
+    judge.check("answer_mf_skin_count_24",
+                bound_count(answer, 24, "Miss Fortune", ["Lux"], mode="after"),
+                "expected Miss Fortune's 24 skins attached to Miss Fortune")
+    judge.check("answer_lux_skin_count_23",
+                bound_count(answer, 23, "Lux", ["Miss Fortune"], mode="after"),
+                "expected Lux's 23 skins attached to Lux")
+    judge.check("answer_mf_nonbase_skin",
+                bound_phrase_any(answer, MF_NONBASE, "Bullet Time", ["Final Spark"], mode="after"),
+                "expected one non-base Miss Fortune skin attached to Miss Fortune's ultimate")
+    judge.check("answer_lux_nonbase_skin",
+                bound_phrase_any(answer, LUX_NONBASE, "Final Spark", ["Bullet Time"], mode="after"),
+                "expected one non-base Lux skin attached to Lux's ultimate")
     judge.check("answer_added_missfortune", champion_named(answer, "Miss Fortune"),
                 "expected Miss Fortune named as the added pick")
     judge.check("answer_new_total_6", contains_count(answer, 6),

@@ -12,6 +12,12 @@ closed. No LLM: snapshots are seed copies mutated through sqlite, trajectories
 are hand-written in the agent_demo/agent.py shape. The honest answers below are
 the values the live DOM walk extracts (wh-lol-depth-upgrade-evidence/runs/);
 the verifiers hardcode the same ground truth.
+
+Subject binding (r2 re-review blocking finding): multi-entity comparison facts
+swapped between the compared subjects — every token present, each attached to
+the wrong entity — MUST FAIL for every task (test_swapped_facts_fail), and the
+verify_lib binding helpers carry their own unit tests
+(test_bound_* / test_stem_* / test_state_count_segment_*).
 """
 from __future__ import annotations
 
@@ -24,8 +30,11 @@ from pathlib import Path
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from _support import (BASE, RunBuilder, _acquire_seed, build_run, copy_db,  # noqa: E402
-                      mutate_db, noop_run, run_verifier)
+from _support import (BASE, RunBuilder, VERIFY_DIR, _acquire_seed, build_run,  # noqa: E402
+                      copy_db, mutate_db, noop_run, run_verifier)
+
+sys.path.insert(0, str(VERIFY_DIR))
+import verify_lib as vl  # noqa: E402
 
 
 SEED = _acquire_seed()
@@ -902,3 +911,181 @@ def test_stateful_collateral_writes_fail(tmp):
            "VALUES (3, 1, '2026-09-22')"])
     verdict = run_verifier(9, run, SEED, after)
     assert verdict.get("pass") is False
+
+
+# ------------------------------------------------------- subject binding (r2 fix)
+# The r2 re-review blocking finding: answers that swap the compared subjects'
+# facts (every token present, each bound to the wrong entity) were accepted by
+# global token-in-answer checks. The reworked verifiers bind every multi-entity
+# comparison fact to its subject; these tests lock that contract in place.
+
+def test_bound_phrase_binds_fact_to_owner():
+    ok = "Hwei's W is 'Subject: Serenity' and Renata's W is 'Bailout'."
+    assert vl.bound_phrase(ok, "Subject Serenity", "Hwei", ["Renata"], mode="after")
+    swapped = "Hwei's W is 'Bailout' and Renata's W is 'Subject: Serenity'."
+    assert not vl.bound_phrase(swapped, "Subject Serenity", "Hwei", ["Renata"],
+                               mode="after")
+    # mode='near' binds by proximity in either direction
+    assert vl.bound_count("Hwei has 4 skins and Renata has 6.", 4, "Hwei", ["Renata"])
+    assert not vl.bound_count("Hwei has 6 skins and Renata has 4.", 4, "Hwei",
+                              ["Renata"])
+
+
+def test_bound_phrase_absent_fact_and_optional_owner():
+    assert not vl.bound_phrase("Hwei's W is a mystery.", "Subject Serenity",
+                               "Hwei", ["Renata"])
+    # only_if_present: an answer that never characterises the fact is not penalised
+    assert vl.bound_phrase("Hwei's W is a mystery.", "Subject Serenity", "Hwei",
+                           ["Renata"], only_if_present=True)
+    # optional_owner: with no owner label to bind to, presence alone is enough
+    assert vl.bound_phrase("The profile shows EUW.", "EUW", "region", ["summoner"],
+                           optional_owner=True)
+
+
+def test_bound_date_binds_to_subject():
+    ok = ("'Patch 26.19 Notes' (2026-09-22) and 'Patch 26.18 Notes' (2026-09-09).")
+    assert vl.bound_date(ok, "2026-09-22", "26.19", ["26.18"], mode="after")
+    swapped = ("'Patch 26.19 Notes' (2026-09-09) and 'Patch 26.18 Notes' (2026-09-22).")
+    assert not vl.bound_date(swapped, "2026-09-22", "26.19", ["26.18"], mode="after")
+    # any accepted date form binds the same way
+    assert vl.bound_date("The retrospective (August 22, 2024) reported it.",
+                         "2024-08-22", "retrospective", ["announcement"], mode="after")
+
+
+def test_stem_matching_accepts_natural_word_forms():
+    # r2 finding 1: whole-word gates false-negatived natural honest forms
+    assert vl.contains_stem("delays an ally's death", "delay")
+    assert vl.contains_stem("delaying their death", "delay")
+    assert vl.contains_stem("Aatrox heals himself", "heal")
+    assert vl.contains_stem("both values persisted", "persist")
+    assert not vl.contains_stem("unrelated text", "delay")
+    assert vl.bound_stem("Her W 'Bailout' delays an ally's death.", "delay",
+                         "Bailout", ["Hostile Takeover"], mode="after")
+    assert not vl.bound_stem("Her R 'Hostile Takeover' delays an ally's death.",
+                             "delay", "Bailout", ["Hostile Takeover"], mode="after")
+
+
+def test_bound_phrase_any_and_phrase_exclusion():
+    skins = ["Cowgirl Miss Fortune", "Waterloo Miss Fortune"]
+    ok = ("Miss Fortune's ultimate is 'Bullet Time'; one non-base skin is "
+          "'Cowgirl Miss Fortune'.")
+    assert vl.bound_phrase_any(ok, skins, "Bullet Time", ["Final Spark"], mode="after")
+    swapped = "Lux's ultimate is 'Final Spark'; one non-base skin is 'Cowgirl Miss Fortune'."
+    assert not vl.bound_phrase_any(swapped, skins, "Bullet Time", ["Final Spark"],
+                                    mode="after")
+    # negative half: a fact owned by rivals must never be attributed to the owner
+    ok = ("Fiora is the Low-difficulty holder; Ekko, Riven and Twisted Fate are High.")
+    assert vl.phrase_excluded_from(ok, "High", "Fiora", ["Ekko", "Riven",
+                                   "Twisted Fate"])
+    assert not vl.phrase_excluded_from("Fiora is a High-difficulty holder.", "High",
+                                       "Fiora", ["Ekko", "Riven", "Twisted Fate"])
+
+
+def test_state_count_segment_binds_lists_to_states():
+    ok = ("After removing Trundle the page showed 4 remaining: Jarvan IV, Rell, "
+          "Udyr, and Zac. After removing Zac, 3 left: Jarvan IV, Rell, Udyr.")
+    assert vl.state_count_segment(ok, 4, "Trundle", ["Zac"], must_contain=["Zac"],
+                                  mode="after")
+    assert vl.state_count_segment(ok, 3, "Zac", ["Trundle"], forbid_after=["Zac"],
+                                  mode="after")
+    swapped = ("After removing Trundle the page showed 3 remaining: Jarvan IV, "
+               "Rell, Udyr. After removing Zac, 4 left: Jarvan IV, Rell, Udyr, and Zac.")
+    assert not vl.state_count_segment(swapped, 4, "Trundle", ["Zac"],
+                                      must_contain=["Zac"], mode="after")
+    assert not vl.state_count_segment(swapped, 3, "Zac", ["Trundle"],
+                                      forbid_after=["Zac"], mode="after")
+
+
+def test_name_spans_join_tolerant():
+    assert vl.bound_count("Miss  Fortune has 24 skins.", 24, "Miss Fortune")
+    assert vl.bound_count("LeeSin has 20 skins.", 20, "Lee Sin")
+    # punctuation-tolerant titled subject: the year binds to the full title
+    assert vl.bound_count("The Ruined King: Gameplay Deep Dive (2020-12-11).",
+                          2020, "Ruined King Gameplay Deep Dive", mode="after")
+
+
+def _swap_simultaneous(text, pairs):
+    """Swap every a <-> b pair simultaneously (placeholder-safe): each a
+    occurrence becomes b and each b occurrence becomes a, so every token stays
+    present and only the subject binding flips (the r2 false-positive shape)."""
+    for i, (a, b) in enumerate(pairs):
+        assert a in text, f"swap source missing: {a!r}"
+        text = text.replace(a, f"\x00{i}A\x00")
+    for i, (a, b) in enumerate(pairs):
+        assert b in text, f"swap target missing: {b!r}"
+        text = text.replace(b, f"\x00{i}B\x00")
+    for i, (a, b) in enumerate(pairs):
+        text = text.replace(f"\x00{i}A\x00", b)
+        text = text.replace(f"\x00{i}B\x00", a)
+    return text
+
+
+# per-task swapped-fact answers: simultaneous a<->b swaps (simple cases) or
+# ordered (old -> new) replacements (complex clause rewrites), applied to the
+# HONEST answer. Every one of these was a false positive against the old
+# global token checks (r2 adversarial replay) and MUST now FAIL.
+SWAP_SIMULTANEOUS = {
+    0: [("Subject: Serenity", "Bailout"), ("Spiraling Despair", "Hostile Takeover")],
+    1: [("Arcane Shift", "Relentless Pursuit")],
+    2: [("Bullet Time", "Final Spark"), ("24 skins", "23 skins")],
+    3: [("Fighter, Medium difficulty", "Fighter / Assassin, High")],
+    6: [("2026-09-22", "2026-09-09")],
+    9: [("Safeguard / Iron Will", "Dragon's Rage")],
+    10: [("2024-02-29", "2024-04-11")],
+    11: [("HarborRookie", "EUW")],
+    13: [("Yone", "Milio")],
+    14: [("5 saved articles", "4 saved articles")],
+    15: [("RadiantViper", "EUW")],
+    16: [("Bullet Time", "Enchanted Crystal Arrow"), ("24 skins", "21 skins")],
+    17: [("19 skins", "20 skins")],
+}
+SWAP_REPLACEMENTS = {
+    4: [("60 champion cards and 29 news results",
+         "29 champion cards and 60 news results")],
+    5: [("With the High difficulty filter the Pulsefire holders are Ekko, Riven,"
+         " and Twisted Fate; Ekko's champion page confirms the High difficulty"
+         " rating. With the Low difficulty filter, only Fiora remains.",
+         "With the High difficulty filter, only Fiora remains. With the Low"
+         " difficulty filter the Pulsefire holders are Ekko, Riven, and Twisted"
+         " Fate; Ekko's champion page confirms the High difficulty rating.")],
+    7: [("'Stacks: 3, increased to 12 on champions / large minions / monsters =>"
+         " 4, increased to 10 on champions / large minions / monsters.'",
+         "'Stacks: 4, increased to 10 on champions / large minions / monsters =>"
+         " 3, increased to 12 on champions / large minions / monsters.'")],
+    8: [("'Previously on Star Guardian' (2022-07-09), the story so far of the Star"
+         " Guardian universe, and 'The Council Archives Primer' (2021-11-08), an"
+         " invitation to wander the stacks of the Council Archives and explore"
+         " the history of Piltover and beyond.",
+         "'Previously on Star Guardian' (2022-07-09), a primer on the Council"
+         " Archives, and 'The Council Archives Primer' (2021-11-08), a Star"
+         " Guardian story recap.")],
+    12: [("the favorites page showed 4 remaining: Jarvan IV, Rell, Udyr, and Zac."
+          " After removing Zac as well, the account has 3 favorite champions"
+          " left: Jarvan IV, Rell, and Udyr.",
+          "the favorites page showed 3 remaining: Jarvan IV, Rell, and Udyr."
+          " After removing Zac as well, the account has 4 favorite champions"
+          " left: Jarvan IV, Rell, Udyr, and Zac.")],
+}
+
+
+def _swapped_answer(n):
+    answer = HONEST[n][1]
+    for old, new in SWAP_REPLACEMENTS.get(n, []):
+        assert old in answer, f"T{n}: replacement source missing: {old!r}"
+        answer = answer.replace(old, new)
+    return _swap_simultaneous(answer, SWAP_SIMULTANEOUS.get(n, []))
+
+
+@pytest.mark.parametrize("n", range(18))
+def test_swapped_facts_fail(n, tmp):
+    """Honest trajectory + compliant after-DB + the two subjects' facts swapped
+    in the answer MUST FAIL (r2 blocking finding regression gate)."""
+    steps, _ = HONEST[n]
+    run = tmp / f"swapped_{n}"
+    build_run(run, f"League of Legends--{n}", steps, _swapped_answer(n))
+    if n in STATEFUL:
+        after = mutate_db(SEED, tmp / f"after_swapped_{n}.db", COMPLIANT_AFTER_SQL[n])
+    else:
+        after = copy_db(SEED, tmp / f"after_swapped_{n}.db")
+    verdict = run_verifier(n, run, SEED, after)
+    assert verdict.get("pass") is False, json.dumps(verdict, indent=1)

@@ -13,11 +13,11 @@ Rell, Trundle, Udyr, Zac). After removing Trundle: Jarvan IV, Rell, Udyr, Zac
 exactly two favorite_champions rows removed for carol (Trundle id 140, Zac
 id 167) and nothing else.
 """
-from verify_lib import (champion_named, check_favorites_delta,
+from verify_lib import (bound_phrase, champion_named, check_favorites_delta,
                         check_only_tables_changed, check_signed_in_as,
-                        check_trajectory_identity, contains_count,
-                        final_answer, navigated_champion,
-                        navigated_to_path, navigated_to_path_any, run_verifier)
+                        check_trajectory_identity, final_answer, navigated_champion,
+                        navigated_to_path, navigated_to_path_any, run_verifier,
+                        state_count_segment)
 
 TASK_ID = "League of Legends--12"
 EMAIL = "carol.d@test.com"
@@ -41,17 +41,26 @@ def run_checks(judge, traj, initial_db, after_db):
 
     judge.check("answer_removed_trundle", champion_named(answer, "Trundle"),
                 "expected Trundle named as removed")
-    judge.check("answer_after_first_4", contains_count(answer, 4),
-                "expected 4 favorites after the first removal")
+    judge.check("answer_after_first_4",
+                state_count_segment(answer, 4, "Trundle", ["Zac"], must_contain=["Zac"],
+                                    mode="after"),
+                "expected 4 favorites attached to the after-Trundle state, with Zac still listed")
     for name in REMAIN_FIRST:
+        rivals = [r for r in ("Zac",) if r != name]
         judge.check(f"answer_first_remaining_{name.split()[0].lower()}",
-                    champion_named(answer, name),
+                    champion_named(answer, name) and
+                    bound_phrase(answer, name, "Trundle", rivals, mode="after",
+                                 allow_misbound=True),
                     f"expected {name} reported among the favorites remaining after the first removal")
-    judge.check("answer_final_3", contains_count(answer, 3),
-                "expected 3 favorites at the end")
+    judge.check("answer_final_3",
+                state_count_segment(answer, 3, "Zac", ["Trundle"], forbid_after=["Zac"],
+                                    mode="after"),
+                "expected 3 favorites attached to the after-Zac state, without Zac in its list")
     for name in REMAIN_FINAL:
         judge.check(f"answer_final_remaining_{name.split()[0].lower()}",
-                    champion_named(answer, name),
+                    champion_named(answer, name) and
+                    bound_phrase(answer, name, "Zac", ["Trundle"], mode="after",
+                                 allow_misbound=True),
                     f"expected {name} reported among the final favorites")
 
     check_favorites_delta(judge, initial_db, after_db, removed=REMOVED)

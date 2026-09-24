@@ -16,12 +16,12 @@ champion cards:
 Aatrox is 'the Darkin Blade'; carol_d (id 3) gains exactly one favorite row
 (Aatrox, champion id 1) -> 6 favorites total.
 """
-from verify_lib import (champion_named, check_favorites_delta,
+from verify_lib import (bound_phrase, champion_named, check_favorites_delta,
                         check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_count,
-                        contains_phrase_loose, final_answer, navigated_champion,
+                        final_answer, navigated_champion,
                         navigated_champions_listing, navigated_to_path_any,
-                        near_any, run_verifier)
+                        run_verifier)
 
 TASK_ID = "League of Legends--3"
 EMAIL = "carol.d@test.com"
@@ -32,6 +32,17 @@ DARKIN = [
     ("naafiri", "Naafiri", "the Hound of a Hundred Bites", "Hound of a Hundred Bites"),
     ("varus", "Varus", "the Arrow of Retribution", "Arrow of Retribution"),
     ("zaahen", "Zaahen", "The Unsundered", "Unsundered"),
+]
+# per-champion roles/difficulty ground truth (seed DB): (name, [roles], difficulty).
+# Unique tokens (Medium, High, Marksman, Mage) bind strictly; tokens shared by
+# several champions (Fighter, Assassin, Low) bind existentially so an honest
+# survey that lists every champion back-to-back still passes.
+ROSTER_FACTS = [
+    ("Aatrox", ["Fighter"], "Medium"),
+    ("Kayn", ["Fighter", "Assassin"], "High"),
+    ("Naafiri", ["Assassin", "Fighter"], "Low"),
+    ("Varus", ["Marksman", "Mage"], "Low"),
+    ("Zaahen", ["Fighter"], "Low"),
 ]
 
 
@@ -49,17 +60,36 @@ def run_checks(judge, traj, initial_db, after_db):
                 navigated_to_path_any(traj, ["/account", "/account/favorites"]),
                 "required: /account or /account/favorites")
 
+    others = lambda name: [n for _, n, _, _ in DARKIN if n != name]  # noqa: E731
+    # tokens carried by exactly one champion bind strictly; tokens shared by
+    # several champions bind existentially so an honest survey that lists every
+    # champion back-to-back still passes
+    token_holders = {}
+    for name, roles, _ in ROSTER_FACTS:
+        for token in roles:
+            token_holders.setdefault(token, set()).add(name)
+    diff_holders = {}
+    for name, _, difficulty in ROSTER_FACTS:
+        diff_holders.setdefault(difficulty, set()).add(name)
     for slug, name, epithet, short in DARKIN:
         judge.check(f"answer_names_{slug}", champion_named(answer, name),
                     f"expected {name} named")
-        judge.check(f"answer_epithet_{slug}", contains_phrase_loose(answer, short),
-                    f"expected {name}'s epithet {epithet!r}")
-    judge.check("answer_aatrox_roles_difficulty",
-                near_any(answer, "Aatrox", ["Fighter", "Medium"]),
-                "expected Aatrox's Fighter role and Medium difficulty")
-    judge.check("answer_kayn_difficulty_high",
-                near_any(answer, "Kayn", ["High"]),
-                "expected Kayn rated High difficulty")
+        judge.check(f"answer_epithet_{slug}",
+                    bound_phrase(answer, short, name, others(name)),
+                    f"expected {name}'s epithet {epithet!r} attached to {name}")
+    for name, roles, difficulty in ROSTER_FACTS:
+        rivals = others(name)
+        for role in roles:
+            strict = len(token_holders[role]) == 1
+            judge.check(f"answer_role_{name}_{role.lower()}",
+                        bound_phrase(answer, role, name, rivals, mode="after",
+                                     allow_misbound=not strict),
+                        f"expected {name}'s {role} role attached to {name}")
+        strict = len(diff_holders[difficulty]) == 1
+        judge.check(f"answer_difficulty_{name.lower()}",
+                    bound_phrase(answer, difficulty, name, rivals, mode="after",
+                                 allow_misbound=not strict),
+                    f"expected {name}'s {difficulty} difficulty attached to {name}")
     judge.check("answer_added_aatrox", champion_named(answer, "Aatrox"),
                 "expected Aatrox named as the added pick")
     judge.check("answer_new_total_6", contains_count(answer, 6),

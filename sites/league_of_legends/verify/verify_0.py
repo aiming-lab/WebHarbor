@@ -15,11 +15,12 @@ Frozen ground truth (seed DB):
   * Renata Glasc has more skins -> she is the pick; alice_j (id 1) gains exactly
     one favorite row (Renata Glasc, champion id 109) -> 6 favorites total.
 """
-from verify_lib import (champion_named, check_favorites_delta,
+from verify_lib import (bound_count, bound_phrase, bound_stem,
+                        champion_named, check_favorites_delta,
                         check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_count,
-                        contains_phrase, contains_phrase_loose, final_answer,
-                        navigated_champion, navigated_champions_listing,
+                        final_answer, navigated_champion,
+                        navigated_champions_listing,
                         navigated_to_path_any, run_verifier)
 
 TASK_ID = "League of Legends--0"
@@ -44,22 +45,26 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected Renata Glasc named as the added pick")
     judge.check("answer_new_total_6", contains_count(answer, 6),
                 "expected the account's new total of 6 favorites")
-    judge.check("answer_hwei_skins_4", contains_count(answer, 4),
-                "expected Hwei's 4 skins reported")
-    judge.check("answer_renata_skins_6", contains_count(answer, 6),
-                "expected Renata Glasc's 6 skins reported")
-    judge.check("answer_hwei_w", contains_phrase_loose(answer, "Subject Serenity"),
-                "expected Hwei's W 'Subject: Serenity'")
-    judge.check("answer_hwei_r", contains_phrase_loose(answer, "Spiraling Despair"),
-                "expected Hwei's R 'Spiraling Despair'")
-    judge.check("answer_renata_w", contains_phrase_loose(answer, "Bailout"),
-                "expected Renata's W 'Bailout'")
-    judge.check("answer_renata_r", contains_phrase_loose(answer, "Hostile Takeover"),
-                "expected Renata's R 'Hostile Takeover'")
-    judge.check("answer_berserk_semantics", contains_phrase(answer, "Berserk"),
-                "expected the Hostile Takeover Berserk effect")
-    judge.check("answer_death_delay_semantics", contains_phrase(answer, "delay"),
-                "expected the Bailout death-delay effect")
+    judge.check("answer_hwei_skins_4", bound_count(answer, 4, "Hwei", ["Renata"]),
+                "expected Hwei's 4 skins reported, attached to Hwei")
+    judge.check("answer_renata_skins_6", bound_count(answer, 6, "Renata", ["Hwei"]),
+                "expected Renata Glasc's 6 skins reported, attached to Renata")
+    judge.check("answer_hwei_w", bound_phrase(answer, "Subject Serenity", "Hwei", ["Renata"], mode="after"),
+                "expected Hwei's W 'Subject: Serenity' attached to Hwei")
+    judge.check("answer_hwei_r", bound_phrase(answer, "Spiraling Despair", "Hwei", ["Renata"], mode="after"),
+                "expected Hwei's R 'Spiraling Despair' attached to Hwei")
+    judge.check("answer_renata_w", bound_phrase(answer, "Bailout", "Renata", ["Hwei"], mode="after"),
+                "expected Renata's W 'Bailout' attached to Renata")
+    judge.check("answer_renata_r", bound_phrase(answer, "Hostile Takeover", "Renata", ["Hwei"], mode="after"),
+                "expected Renata's R 'Hostile Takeover' attached to Renata")
+    judge.check("answer_berserk_semantics",
+                bound_phrase(answer, "Berserk", "Hostile Takeover",
+                             ["Subject Serenity", "Spiraling Despair", "Bailout"], mode="after"),
+                "expected the Berserk effect attached to Hostile Takeover")
+    judge.check("answer_death_delay_semantics",
+                bound_stem(answer, "delay", "Bailout",
+                           ["Hostile Takeover", "Subject Serenity", "Spiraling Despair"], mode="after"),
+                "expected the death-delay effect attached to Bailout")
 
     check_favorites_delta(judge, initial_db, after_db, added=[RENATA])
     check_only_tables_changed(judge, initial_db, after_db, {"favorite_champions"})

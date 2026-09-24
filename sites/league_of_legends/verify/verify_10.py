@@ -17,10 +17,10 @@ Frozen ground truth (seed DB):
   * alice_j (id 1) gains exactly one bookmark row (Retrospective, article id 108)
     -> 5 saved articles total.
 """
-from verify_lib import (champion_named, check_bookmarks_delta,
-                        check_only_tables_changed, check_signed_in_as,
-                        check_trajectory_identity, contains_any,
-                        contains_count, contains_iso_date, contains_phrase,
+from verify_lib import (bound_count, bound_date, champion_named,
+                        check_bookmarks_delta, check_only_tables_changed,
+                        check_signed_in_as, check_trajectory_identity,
+                        contains_any, contains_count, contains_phrase,
                         contains_phrase_loose, final_answer, navigated_search_with,
                         navigated_to_path, navigated_to_path_any, run_verifier)
 
@@ -30,6 +30,9 @@ RETROSPECTIVE_BM = (1, 108, "2026-09-22")
 VANGUARD_ANNOUNCE = "/news/dev/dev-vanguard-x-lol/"
 VANGUARD_TLDW = "/news/dev/tl-dw-gameplay-vanguard-more-dev-update/"
 VANGUARD_RETRO = "/news/dev/dev-vanguard-x-lol-retrospective/"
+TLDW_TITLE = "TL;DW"
+ANNOUNCE_TITLE = "Vanguard x LoL"
+RETRO_TITLE = "Retrospective"
 
 
 def run_checks(judge, traj, initial_db, after_db):
@@ -56,20 +59,24 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_tldw_title",
                 contains_phrase_loose(answer, "TL;DW Gameplay, Vanguard & More Dev Update"),
                 "expected the TL;DW article titled")
-    judge.check("answer_tldw_date", contains_iso_date(answer, "2024-02-29"),
-                "expected the TL;DW date 2024-02-29")
+    judge.check("answer_tldw_date",
+                bound_date(answer, "2024-02-29", TLDW_TITLE, [ANNOUNCE_TITLE, RETRO_TITLE], mode="after"),
+                "expected the TL;DW date 2024-02-29 attached to the TL;DW article")
     judge.check("answer_announce_title", contains_phrase(answer, "/dev: Vanguard x LoL") or
                 contains_phrase_loose(answer, "dev Vanguard x LoL"),
                 "expected '/dev: Vanguard x LoL' titled")
-    judge.check("answer_announce_date", contains_iso_date(answer, "2024-04-11"),
-                "expected the announcement date 2024-04-11")
+    judge.check("answer_announce_date",
+                bound_date(answer, "2024-04-11", ANNOUNCE_TITLE, [TLDW_TITLE, RETRO_TITLE], mode="after"),
+                "expected the announcement date 2024-04-11 attached to the announcement")
     judge.check("answer_retro_title",
                 contains_phrase_loose(answer, "Vanguard x LoL Retrospective"),
                 "expected the retrospective titled")
-    judge.check("answer_retro_date", contains_iso_date(answer, "2024-08-22"),
-                "expected the retrospective date 2024-08-22")
-    judge.check("answer_banned_175k", contains_count(answer, 175000),
-                "expected over 175,000 banned accounts reported")
+    judge.check("answer_retro_date",
+                bound_date(answer, "2024-08-22", RETRO_TITLE, [TLDW_TITLE, ANNOUNCE_TITLE], mode="after"),
+                "expected the retrospective date 2024-08-22 attached to the retrospective")
+    judge.check("answer_banned_175k",
+                bound_count(answer, 175000, RETRO_TITLE, [TLDW_TITLE, ANNOUNCE_TITLE], mode="after"),
+                "expected over 175,000 banned accounts attached to the retrospective")
     judge.check("answer_scripting_below_1pct",
                 contains_any(answer, ["below 1%", "under 1%", "less than 1%",
                                       "1 in every 200", "1 in 200"]),

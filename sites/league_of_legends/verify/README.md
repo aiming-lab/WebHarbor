@@ -13,7 +13,16 @@ file.
 - `verify_lib.py` validates the current task wording and ID, completion, local
   origin, decodable screenshots, and SQLite schema/seed identity (frozen-seed
   hash gates), and exposes the exact-set favorites/bookmarks delta helpers and
-  entity-scoped `near_any`/`contains_phrase_loose` matchers.
+  entity-scoped matchers: `near_any`/`contains_phrase_loose` proximity checks
+  plus the subject-binding gates (`bound_phrase`/`bound_phrase_any`/
+  `bound_count`/`bound_date`/`bound_stem`, `phrase_excluded_from`,
+  `state_count_segment`). Every multi-entity comparison fact — ability names,
+  skin counts, dates, lists, account counts, summoner/region values — must be
+  attached to the subject it belongs to: an occurrence nearer a rival subject
+  is a misbinding, and a swapped-facts answer (every token present, each bound
+  to the wrong entity) fails. Stem matching (`contains_stem`/`bound_stem`)
+  accepts natural word forms (delay/delays/delaying, heal/heals/healing,
+  persist/persisted) so honest phrasings are not penalised.
 - `verify_0.py` through `verify_17.py` are the per-task entrypoints. Each
   hardcodes its frozen ground truth, gates the on-site navigation the task
   names (anti knowledge-shortcut), checks the answer deterministically, and
@@ -25,11 +34,15 @@ file.
   verifies it on-site.
 - `tests/` contains synthetic honest-pass fixtures plus adversarial controls:
   no-op runs, wrong answers, homepage-only shortcuts, mutated read-only
-  databases, state mismatches (no delta), wrong deltas, collateral writes and
-  package tampering. These fixtures are grading tests, not browser completion
-  evidence; the live honest walkthroughs live in the review evidence runs.
-  The checkout seed is preferred; environment overrides are supported by
-  `_support.py` (`LOL_TEST_SEED_DB`, `WH_CONTAINER`).
+  databases, state mismatches (no delta), wrong deltas, collateral writes,
+  package tampering, and — since the r2 re-review binding fix — unit tests for
+  the subject-binding helpers plus a per-task swapped-facts regression gate
+  (`test_swapped_facts_fail`: honest trajectory, compliant after-DB, the two
+  subjects' facts exchanged in the answer — must FAIL for all 18 tasks).
+  These fixtures are grading tests, not browser completion evidence; the live
+  honest walkthroughs live in the review evidence runs. The checkout seed is
+  preferred; environment overrides are supported by `_support.py`
+  (`LOL_TEST_SEED_DB`, `WH_CONTAINER`).
 
 Run from the repository with the agent_demo dependencies installed:
 

@@ -16,13 +16,12 @@ Frozen ground truth (seed DB):
   * bob_c (id 2) gains one favorite row (Lee Sin, champion id 71) -> 6
     favorites, and one bookmark row (article id 82) -> 5 saved articles.
 """
-from verify_lib import (champion_named, check_bookmarks_delta,
+from verify_lib import (bound_phrase, champion_named, check_bookmarks_delta,
                         check_favorites_delta, check_only_tables_changed,
                         check_signed_in_as, check_trajectory_identity,
-                        contains_count, contains_phrase,
-                        contains_phrase_loose, final_answer, navigated_champion,
-                        navigated_search_with, navigated_to_path,
-                        navigated_to_path_any, run_verifier)
+                        contains_count, contains_phrase, final_answer,
+                        navigated_champion, navigated_search_with,
+                        navigated_to_path, navigated_to_path_any, run_verifier)
 
 TASK_ID = "League of Legends--9"
 EMAIL = "bob.c@test.com"
@@ -55,11 +54,13 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected 2 matching champion cards reported")
     judge.check("answer_leesin_named", champion_named(answer, "Lee Sin"),
                 "expected Lee Sin named as the updated champion")
-    judge.check("answer_w_ability", contains_phrase_loose(answer, "Safeguard") and
-                contains_phrase_loose(answer, "Iron Will"),
-                "expected the W 'Safeguard / Iron Will'")
-    judge.check("answer_r_ability", contains_phrase_loose(answer, "Dragon's Rage"),
-                "expected the R \"Dragon's Rage\"")
+    judge.check("answer_w_ability",
+                bound_phrase(answer, "Safeguard", "W", ["R"], mode="after", allow_misbound=True) and
+                bound_phrase(answer, "Iron Will", "W", ["R"], mode="after", allow_misbound=True),
+                "expected the W 'Safeguard / Iron Will' attached to the W slot")
+    judge.check("answer_r_ability",
+                bound_phrase(answer, "Dragon's Rage", "R", ["W"], mode="after", allow_misbound=True),
+                "expected the R \"Dragon's Rage\" attached to the R slot")
     judge.check("answer_favorites_total_6", contains_count(answer, 6),
                 "expected the account's new total of 6 favorites")
     judge.check("answer_saved_total_5", contains_count(answer, 5),
