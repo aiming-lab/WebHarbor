@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Order History | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="account-layout">
+    <nav class="account-nav">
+      <a href="/account/dashboard">My Dashboard</a>
+      <a href="/account/dashboard/profile">My Profile</a>
+      <a href="/account/dashboard/orders" class="active">Order History</a>
+      <a href="/account/dashboard/wishlist">Wish List</a>
+      <a href="/account/dashboard/rewards">JCPenney Rewards</a>
+    </nav>
+    <div class="panel">
+      <h1>Order History</h1>
+      {% for order in orders %}
+        <div class="order-row">
+          <div>
+            <div class="onum">Order {{ order.order_number }}</div>
+            <div class="order-items-preview">
+              {% for item in order.items[:2] %}{{ item.product_name }}{% if not loop.last %}, {% endif %}{% endfor %}
+              {% if order.items|length > 2 %} +{{ order.items|length - 2 }} more{% endif %}
+            </div>
+          </div>
+          <div style="font-size:12.5px;color:var(--ink-2);">
+            Placed {{ order.placed_at.strftime('%B %-d, %Y') }}<br>
+            Total {{ order.total|currency }}
+          </div>
+          <div>
+            <span class="status-chip {{ order.status|lower }}">{{ order.status }}</span><br>
+            <a href="/orders/{{ order.order_number }}" style="font-size:12.5px;color:var(--jcp-red);">View details</a>
+          </div>
+        </div>
+      {% else %}
+        <p style="color:var(--ink-2);">You haven't placed any orders yet. <a href="/" style="color:var(--jcp-red);">Start shopping</a>.</p>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

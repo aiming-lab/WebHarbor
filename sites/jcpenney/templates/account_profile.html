@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+{% block title %}My Profile | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="account-layout">
+    <nav class="account-nav">
+      <a href="/account/dashboard">My Dashboard</a>
+      <a href="/account/dashboard/profile" class="active">My Profile</a>
+      <a href="/account/dashboard/orders">Order History</a>
+      <a href="/account/dashboard/wishlist">Wish List</a>
+      <a href="/account/dashboard/rewards">JCPenney Rewards</a>
+    </nav>
+    <div class="panel">
+      <h1>My Profile</h1>
+
+      <h2 style="font-size:17px;margin:18px 0 10px;">Personal Information</h2>
+      <form method="post" action="/account/dashboard/profile" class="auth-form" style="max-width:480px;">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="profile">
+        <div class="field-row">
+          <div class="field"><label>First Name</label><input type="text" name="first_name" value="{{ current_user.first_name }}"></div>
+          <div class="field"><label>Last Name</label><input type="text" name="last_name" value="{{ current_user.last_name }}"></div>
+        </div>
+        <div class="field"><label>Email</label><input type="email" value="{{ current_user.email }}" disabled></div>
+        <div class="field"><label>Phone</label><input type="text" name="phone" value="{{ current_user.phone }}"></div>
+        <button type="submit" class="btn-primary" style="max-width:220px;">Save Changes</button>
+      </form>
+
+      <h2 style="font-size:17px;margin:26px 0 10px;">Saved Addresses</h2>
+      {% for address in addresses %}
+        <div class="order-row">
+          <div>
+            <strong>{{ address.first_name }} {{ address.last_name }}</strong>
+            {% if address.is_default %}<span class="status-chip" style="background:#f2f2f2;">Default</span>{% endif %}
+            <div class="order-items-preview">{{ address.one_line }}{% if address.phone %} &middot; {{ address.phone }}{% endif %}</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:center;">
+            {% if not address.is_default %}
+              <form method="post" action="/account/dashboard/profile">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <input type="hidden" name="action" value="address_default">
+                <input type="hidden" name="address_id" value="{{ address.id }}">
+                <button type="submit" class="link-btn">Make Default</button>
+              </form>
+            {% endif %}
+            <form method="post" action="/account/dashboard/profile">
+              <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="address_delete">
+              <input type="hidden" name="address_id" value="{{ address.id }}">
+              <button type="submit" class="link-btn">Remove</button>
+            </form>
+          </div>
+          <div></div>
+        </div>
+      {% else %}
+        <p style="color:var(--ink-2);font-size:13.5px;">No saved addresses yet.</p>
+      {% endfor %}
+
+      <h3 style="font-size:15px;margin:16px 0 8px;">Add an Address</h3>
+      <form method="post" action="/account/dashboard/profile" style="max-width:480px;">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="address_add">
+        <div class="field-row">
+          <div class="field"><label>Label</label><input type="text" name="label" placeholder="e.g. Home, Brother"></div>
+        <div class="field"><label>First Name</label><input type="text" name="first_name"></div>
+          <div class="field"><label>Last Name</label><input type="text" name="last_name"></div>
+        </div>
+        <div class="field"><label>Address Line 1</label><input type="text" name="line1"></div>
+        <div class="field"><label>Address Line 2 (optional)</label><input type="text" name="line2"></div>
+        <div class="field-row">
+          <div class="field"><label>City</label><input type="text" name="city"></div>
+          <div class="field"><label>State</label><input type="text" name="state" placeholder="e.g. WA"></div>
+          <div class="field"><label>ZIP</label><input type="text" name="zip" placeholder="5 digits"></div>
+        </div>
+        <div class="field"><label>Phone</label><input type="text" name="phone"></div>
+        <div class="checkbox-row"><input type="checkbox" name="is_default" id="ad-default"><label for="ad-default">Make this my default address</label></div>
+        <button type="submit" class="btn-primary" style="max-width:220px;margin-top:8px;">Add Address</button>
+      </form>
+
+      <h2 style="font-size:17px;margin:30px 0 10px;">Payment Methods</h2>
+      {% for payment in payments %}
+        <div class="order-row">
+          <div>
+            <strong>{{ payment.label }}</strong>
+            <div class="order-items-preview">Expires {{ '%02d'|format(payment.exp_month) }}/{{ payment.exp_year }}{% if payment.cardholder %} &middot; {{ payment.cardholder }}{% endif %}</div>
+          </div>
+          <div></div>
+          <form method="post" action="/account/dashboard/profile">
+            <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <input type="hidden" name="action" value="payment_delete">
+            <input type="hidden" name="payment_id" value="{{ payment.id }}">
+            <button type="submit" class="link-btn">Remove</button>
+          </form>
+        </div>
+      {% else %}
+        <p style="color:var(--ink-2);font-size:13.5px;">No saved payment methods yet.</p>
+      {% endfor %}
+
+      <h3 style="font-size:15px;margin:16px 0 8px;">Add a Payment Method</h3>
+      <form method="post" action="/account/dashboard/profile" style="max-width:480px;">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="payment_add">
+        <div class="field"><label>Card Type</label>
+          <select name="card_type">
+            <option>Visa</option><option>Mastercard</option><option>American Express</option>
+            <option>Discover</option><option>JCPenney Credit Card</option>
+          </select>
+        </div>
+        <div class="field"><label>Card Number</label><input type="text" name="card_number" placeholder="Enter card number"></div>
+        <div class="field-row">
+          <div class="field"><label>Exp. Month</label><input type="text" name="exp_month" placeholder="MM"></div>
+          <div class="field"><label>Exp. Year</label><input type="text" name="exp_year" placeholder="YYYY"></div>
+        </div>
+        <div class="field"><label>Name on Card</label><input type="text" name="cardholder"></div>
+        <div class="checkbox-row"><input type="checkbox" name="is_default" id="pm-default"><label for="pm-default">Make this my default payment method</label></div>
+        <button type="submit" class="btn-primary" style="max-width:220px;margin-top:8px;">Save Card</button>
+      </form>
+
+      <h2 style="font-size:17px;margin:30px 0 10px;">Change Password</h2>
+      <form method="post" action="/account/dashboard/profile" class="auth-form" style="max-width:480px;">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="password">
+        <div class="field"><label>Current Password</label><input type="password" name="current_password"></div>
+        <div class="field"><label>New Password</label><input type="password" name="new_password"></div>
+        <button type="submit" class="btn-primary" style="max-width:220px;">Update Password</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Create Account | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1>Create Account</h1>
+      <form class="auth-form" method="post" action="/register">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="field-row">
+          <div>
+            <label for="first_name">First Name</label>
+            <input type="text" id="first_name" name="first_name" value="{{ form.get('first_name','') }}" required>
+          </div>
+          <div>
+            <label for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" value="{{ form.get('last_name','') }}" required>
+          </div>
+        </div>
+        <label for="email">Email Address</label>
+        <input type="email" id="email" name="email" value="{{ form.get('email','') }}" required>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+        <p class="fine" style="font-size:11.5px;color:#767676;">Must be at least 8 characters long.</p>
+        <label for="confirm_password">Confirm Password</label>
+        <input type="password" id="confirm_password" name="confirm_password" required>
+        <button type="submit">Create Account</button>
+      </form>
+    </div>
+    <div class="auth-side">
+      <h2>Already have an account?</h2>
+      <p>Sign in to track orders, see your wish list, and check your JCPenney Rewards.</p>
+      <a class="btn-primary" style="display:inline-block;text-align:center;margin-top:10px;" href="/signin">Sign In</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

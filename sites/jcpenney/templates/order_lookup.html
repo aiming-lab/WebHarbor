@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Track Orders | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-narrow" style="max-width:640px;">
+    <h1>Track Your Order</h1>
+    <p style="color:var(--ink-2);">Enter your order number and the ZIP code of your shipping address to see your order status.</p>
+    <form method="post" action="/orders" class="auth-form" style="max-width:460px;margin-top:14px;">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label>Order Number</label>
+      <input type="text" name="order_number" placeholder="e.g. JCP1234567" value="{{ request.form.get('order_number','') }}">
+      <label>Billing / Shipping ZIP Code</label>
+      <input type="text" name="zip" placeholder="5-digit ZIP code" value="{{ request.form.get('zip','') }}">
+      <button type="submit" class="btn-primary" style="max-width:220px;">Track Order</button>
+    </form>
+
+    {% if error %}<p style="color:var(--jcp-red);margin-top:16px;">{{ error }}</p>{% endif %}
+
+    {% if order %}
+      <div class="summary-box" style="position:static;margin-top:26px;">
+        <h2>Order {{ order.order_number }}</h2>
+        <div class="summary-row"><span>Status</span><span>{{ order.status }}</span></div>
+        <div class="summary-row"><span>Placed</span><span>{{ order.placed_at.strftime('%B %-d, %Y') }}</span></div>
+        <div class="summary-row"><span>Items</span><span>{{ order.items|length }}</span></div>
+        <div class="summary-row"><span>Total</span><span>{{ order.total|currency }}</span></div>
+        {% if order.tracking_number %}
+        <div class="summary-row"><span>Tracking</span><span>{{ order.carrier }} {{ order.tracking_number }}</span></div>
+        {% endif %}
+        <p style="font-size:12.5px;color:var(--ink-2);margin-top:8px;">
+          Items:
+          {% for item in order.items %}{{ item.product_name }} ({{ item.quantity }}){% if not loop.last %}, {% endif %}{% endfor %}
+        </p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}JCPenney: Clothing, Bed &amp; Bath, Home Decor, Jewelry &amp; Beauty{% endblock %}</title>
+  <link rel="icon" href="/static/icons/favicon.ico">
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+<div class="promo-strip" role="region" aria-label="promotions">
+  <div class="promo-window">
+    {% set promo_items = [
+      ("The Bridal Event", "Up to 40% Off + Extra 40% Off w/ coupon", "/g/jewelry-and-watches/all-modern-bride"),
+      ("The Watch Event", "Up to 60% Off w/ coupon", "/g/jewelry-and-watches/all-watches"),
+      ("Customer Appreciation Days", "Extra 30% off w/ coupon", "/m/jcpenney-coupons"),
+      ("Up To 40% Off", "Save on fall finds for your home with coupon", "/g/home-store/all-bedding"),
+      ("Get A $10 CashPass", "When you join JCPenney Rewards Access", "/rewards"),
+    ] %}
+    {% for headline, sub, link in promo_items %}
+    <div class="promo-slide{% if loop.first %} active{% endif %}">
+      <strong>{{ headline }}</strong>
+      <span>{{ sub }} <a href="{{ link }}">Shop Now</a></span>
+    </div>
+    {% endfor %}
+  </div>
+  <div class="promo-dots" aria-hidden="true">
+    {% for headline, sub, link in promo_items %}<span class="dot{% if loop.first %} on{% endif %}"></span>{% endfor %}
+  </div>
+  <a class="a11y-link" href="/m/customer-service">Enable Accessibility</a>
+</div>
+
+<header class="site-header">
+  <div class="header-main">
+    <a class="logo" href="/" aria-label="JCPenney home">
+      <img src="/static/icons/jcp-logo.svg" alt="JCPenney" width="112" height="36" onerror="this.outerHTML='<span class=\'logo-fallback\'>JCPenney</span>'">
+    </a>
+    <form class="search-bar" action="/search" method="get" role="search">
+      <input type="text" name="q" placeholder="What can we help you find?" aria-label="Search JCPenney" value="{{ request.args.get('q','') }}">
+      <button type="submit" aria-label="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4"><circle cx="10.5" cy="10.5" r="7"></circle><path d="M16 16l6.5 6.5"></path></svg>
+      </button>
+    </form>
+    <div class="header-tools">
+      <a class="store-block" href="/stores">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.6"><path d="M3 9l1.5-5h15L21 9M3 9v11h18V9M3 9h18M9 20v-6h6v6"></path></svg>
+        <span class="store-text">
+          <span class="store-name">{{ store_name }}</span>
+          <span class="store-city">{{ store_city }}</span>
+        </span>
+      </a>
+      <a class="account-block" href="{% if current_user.is_authenticated %}/account/dashboard{% else %}/signin{% endif %}">
+        <span class="acct-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.6"><circle cx="12" cy="8" r="4"></circle><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"></path></svg>
+          <span class="acct-dot" aria-hidden="true"></span>
+        </span>
+        <span class="store-text">
+          <span class="store-name">My Account</span>
+          <span class="store-city">{% if current_user.is_authenticated %}Sign Out{% else %}Sign In{% endif %}</span>
+        </span>
+      </a>
+      <a class="cart-block" href="/cart" aria-label="My Bag">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.7"><path d="M3 4h2l2.4 12.2a2 2 0 002 1.8h8.9a2 2 0 002-1.6L22 8H6"></path><circle cx="9.5" cy="20.5" r="1.4"></circle><circle cx="17.5" cy="20.5" r="1.4"></circle></svg>
+        {% if cart_count %}<span class="bag-count">{{ cart_count }}</span>{% endif %}
+      </a>
+      {% if current_user.is_authenticated %}
+      <form action="/logout" method="post" class="inline-form logout-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <button type="submit" class="linklike">Sign Out</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+  <nav class="dept-nav" aria-label="departments">
+    <a href="/g/new-and-trending">New &amp; Trending</a>
+    {% for dept in nav_departments if dept.slug not in ('clearance-shop-all-products', 'new-and-trending') %}
+      <div class="dept-item">
+        <a href="/g/{{ dept.slug }}">{{ dept.name }}</a>
+        {% set subs = nav_subcategories_global(dept) %}
+        {% if subs %}
+        <div class="mega-menu">
+          <div class="mega-col">
+            <a class="mega-head" href="/g/{{ dept.slug }}">Shop All {{ dept.name }}</a>
+            {% for sub in subs %}
+              <a href="/g/{{ sub.slug }}">{{ sub.name }}</a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    {% endfor %}
+    <a href="/g/clearance-shop-all-products">Sale</a>
+  </nav>
+</header>
+
+<main>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <div class="flash-bar" role="status">
+        {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-top">
+    <div class="footer-col">
+      <h4>Account &amp; Customer Service</h4>
+      <a href="/orders">Track My Order</a>
+      <a href="/account/dashboard">My JCP.com Account</a>
+      <a href="/rewards">JCPenney Rewards</a>
+      <a href="/m/customer-service">Contact Us</a>
+      <a href="/m/customer-service/returns">Return Policy</a>
+      <a href="/m/customer-service/shipping-information">Shipping Information</a>
+      <a href="/m/customer-service/synchrony-pay-later">Synchrony Pay Later</a>
+      <a href="/m/customer-service/product-recalls">Recalls</a>
+      <a href="/gift-cards">Gift Cards</a>
+      <a href="/m/customer-service/rebates">Rebates</a>
+      <a href="/m/customer-service">Servicio Al Cliente</a>
+    </div>
+    <div class="footer-col">
+      <h4>JCP Credit Card</h4>
+      <a href="/m/customer-service/credit-card">Pay Bill &amp; Manage Account</a>
+      <a href="/m/customer-service/credit-card">Apply For JCP Credit Card</a>
+      <a href="/m/customer-service/credit-card">Credit Card Benefits</a>
+      <h4 class="mt">Stores &amp; Services</h4>
+      <a href="/stores">Find A Store</a>
+      <a href="/m/curbside-pickup">Curbside Pickup</a>
+      <a href="/m/jcpenney-coupons">Weekly Ad</a>
+      <a href="/m/customer-service">JCP Salon</a>
+      <a href="/m/customer-service">Portraits</a>
+      <a href="/m/customer-service">Optical</a>
+      <a href="/m/customer-service">Kids Zone</a>
+      <a href="/m/customer-service">In-Home Custom Window</a>
+    </div>
+    <div class="footer-col">
+      <h4>About Us</h4>
+      <a href="/m/customer-service/company-info">Business to Business</a>
+      <a href="/m/customer-service/company-info">Careers</a>
+      <a href="/m/customer-service/company-info">Company Info</a>
+      <a href="/m/customer-service/company-info">Newsroom</a>
+      <a href="/m/customer-service/company-info">Corporate Responsibility</a>
+      <a href="/m/customer-service/company-info">JCPenney Giving</a>
+      <a href="/g/new-and-trending">Shop by Brand</a>
+      <a href="/m/customer-service">Site Map</a>
+    </div>
+    <div class="footer-col footer-signup">
+      <h4>Be the first to know about the latest deals and more</h4>
+      <form class="signup-form" method="post" action="/m/customer-service">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="text" name="email" placeholder="Phone Number or Email" aria-label="Phone Number or Email">
+        <button type="submit">Sign Up</button>
+      </form>
+      <p class="fine">*Text Alerts: Message and data rates may apply. <a href="/m/customer-service">See Details</a></p>
+      <div class="app-row">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="1.6"><rect x="7" y="2" width="10" height="20" rx="2"></rect><path d="M11 18h2"></path></svg>
+        <span>Download Our App</span>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="socials" aria-label="social media">
+      <span aria-hidden="true">Facebook</span><span aria-hidden="true">Pinterest</span>
+      <span aria-hidden="true">Instagram</span><span aria-hidden="true">YouTube</span>
+    </div>
+    <div class="legal-links">
+      <a href="/m/customer-service">Privacy Policy</a>
+      <a href="/m/customer-service">Your Privacy Choices</a>
+      <a href="/m/customer-service">CA Supply Chain Act</a>
+      <a href="/m/customer-service">Accessibility Statement</a>
+      <a href="/m/customer-service">Terms &amp; Conditions</a>
+      <a href="/m/customer-service">Ad Choices</a>
+    </div>
+    <p class="copyright">&copy; 2026 Penney IP LLC</p>
+  </div>
+</footer>
+<script>
+(function () {
+  var slides = document.querySelectorAll('.promo-slide');
+  var dots = document.querySelectorAll('.promo-dots .dot');
+  if (slides.length < 2) return;
+  var index = 0;
+  function show(next) {
+    slides[index].classList.remove('active');
+    if (dots[index]) dots[index].classList.remove('on');
+    index = next % slides.length;
+    slides[index].classList.add('active');
+    if (dots[index]) dots[index].classList.add('on');
+  }
+  setInterval(function () { show(index + 1); }, 5000);
+  dots.forEach(function (dot, i) {
+    dot.addEventListener('click', function () { show(i); });
+  });
+})();
+</script>
+</body>
+</html>
