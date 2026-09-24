@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token_value }}">
+    <title>{% block title %}Healthgrades - Find a Doctor{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='4' fill='%23001e62'/><text x='16' y='23' text-anchor='middle' font-size='18' font-family='Arial' font-weight='700' fill='white'>H</text></svg>">
+</head>
+<body>
+    <header class="site-header">
+        <div class="header-inner">
+            <a href="{{ url_for('index') }}" class="logo">healthgrades<span class="logo-dot">.</span></a>
+            <form class="search-form" action="{{ url_for('search') }}" method="get">
+                <input type="text" name="q" aria-label="Search" placeholder="Doctor, condition, specialty" value="{{ request.args.get('q', '') }}" autocomplete="off">
+                <button type="submit" aria-label="Search">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </button>
+            </form>
+            <div class="header-links">
+                <a href="{{ url_for('specialties_index') }}">Specialties</a>
+                <a href="{{ url_for('saved_doctors') if current_user.is_authenticated else url_for('login') }}">Saved</a>
+                <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}" class="account-link">
+                    {% if current_user.is_authenticated %}{{ current_user.name.split()[0] }}{% else %}Sign In{% endif %}
+                </a>
+            </div>
+        </div>
+        <div class="header-sub">
+            <div class="header-sub-inner">
+                {% for s in top_specialties %}
+                <a href="{{ url_for('specialty_page', slug=s.slug) }}">{{ s.name }}</a>
+                {% endfor %}
+                <a href="{{ url_for('specialties_index') }}">All Specialties</a>
+            </div>
+        </div>
+    </header>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash-msg flash-{{ category }}">
+                <span>{{ message }}</span>
+                <button class="close-btn" onclick="this.parentElement.remove()" aria-label="Close">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="site-footer">
+        <div class="footer-cols">
+            <div class="footer-col">
+                <h4>For Patients</h4>
+                <ul>
+                    <li><a href="{{ url_for('specialties_index') }}">Find a Doctor</a></li>
+                    <li><a href="{{ url_for('index') }}">Find a Hospital</a></li>
+                    <li><span>Health A-Z</span></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Company</h4>
+                <ul>
+                    <li><span>About Us</span></li>
+                    <li><span>Contact Us</span></li>
+                    <li><span>Careers</span></li>
+                </ul>
+            </div>
+            <div class="footer-col">
+                <h4>Account</h4>
+                <ul>
+                    <li><a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}">My Account</a></li>
+                    <li><a href="{{ url_for('saved_doctors') if current_user.is_authenticated else url_for('login') }}">Saved Doctors</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            &copy; 2026 Healthgrades Mirror (Educational Reproduction) · Built with Flask · Not affiliated with Healthgrades Operating Company.
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

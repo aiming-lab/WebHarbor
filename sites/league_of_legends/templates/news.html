@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{% if category %}{{ category.title }}{% else %}News{% endif %} - League of Legends{% endblock %}
+{% block content %}
+
+<section class="masthead">
+  <div class="masthead-kicker">League of Legends</div>
+  <h1>{% if category %}{{ category.title }}{% else %}News{% endif %}</h1>
+  {% if category and category.description %}
+  <p class="masthead-sub">{{ category.description }}</p>
+  {% else %}
+  <p class="masthead-sub">The definitive source on all updates coming to the game.</p>
+  {% endif %}
+</section>
+
+<div class="category-strip">
+  <a class="filter-chip {% if not category %}active{% endif %}" href="{{ url_for('news') }}">All</a>
+  {% for machine_name, title in nav_categories %}
+  <a class="filter-chip {% if category and category.machine_name == machine_name %}active{% endif %}" href="{{ url_for('news_category', machine_name=machine_name) }}">{{ title }}</a>
+  {% endfor %}
+</div>
+
+<div class="roster-count">
+  {{ total }} article{% if total != 1 %}s{% endif %}{% if category %} in {{ category.title }}{% endif %}
+</div>
+
+<div class="news-grid">
+  {% for article in articles %}
+  <a class="article-card" href="{{ article.path }}"{% if article.is_external %} target="_blank" rel="noopener"{% endif %}>
+    <div class="card-media">
+      {% if article.card_url %}<img src="{{ article.card_url }}" alt="{{ article.title }}" loading="lazy">{% endif %}
+      {% if article.is_external %}<span class="card-ext"></span>{% endif %}
+    </div>
+    <div class="card-meta">
+      <span class="card-cat">{{ article.category.title|upper }}</span>
+      <span class="card-divider">|</span>
+      <span class="card-date">{{ article.publish_date|daymonth }}</span>
+    </div>
+    <div class="card-title">{{ article.title }}</div>
+    <div class="card-desc">{{ article.summary }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+<div class="news-pager">
+  {% if page > 1 %}
+  <a href="?page={{ page - 1 }}">&laquo; Newer</a>
+  {% endif %}
+  <span class="total">Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}
+  <a href="?page={{ page + 1 }}">Older &raquo;</a>
+  {% endif %}
+</div>
+
+{% endblock %}
