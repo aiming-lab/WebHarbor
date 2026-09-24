@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Store Pickup : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Store Pickup</h1>
+  <div class="checkout-steps">
+    <span class="done">How to get it</span><span class="current">Pickup details</span><span>Payment</span><span>Review</span>
+  </div>
+  <div class="form-card wide">
+    <form method="POST" action="/checkout/pickup">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <label>Select your pickup store <span class="req">*</span></label>
+        <select name="store_id">
+          {% for store in stores %}
+          <option value="{{ store.id }}" {% if (state.store_id or (selected_store and selected_store.id)) == store.id %}selected{% endif %}>{{ store.label() }} — {{ store.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="two-col">
+        <div class="form-row">
+          <label>Full name <span class="req">*</span></label>
+          <input type="text" name="contact_name" value="{{ state.contact_name or (current_user.display_name if current_user.is_authenticated else '') }}" required>
+        </div>
+        <div class="form-row">
+          <label>Email <span class="req">*</span></label>
+          <input type="email" name="contact_email" value="{{ state.contact_email or (current_user.email if current_user.is_authenticated else '') }}" required>
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Phone (10 digits)</label>
+        <input type="tel" name="contact_phone" value="{{ state.contact_phone or (current_user.phone if current_user.is_authenticated else '') }}" placeholder="555-555-1234">
+        <div class="form-hint">We'll text you when your order is ready for pickup.</div>
+      </div>
+      <button class="btn btn-primary" type="submit">Continue to Payment</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

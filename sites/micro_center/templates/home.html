@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Micro Center - Computer & Electronics Retailer - Shop Now{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="heroStrip">
+    <h1>Build Your Dream PC. Stocked Deep. Priced Right.</h1>
+    <p>Thousands of PC parts, laptops, and electronics — with 18-minute in-store pickup at your local Micro Center.</p>
+    <a class="btn btn-primary" href="/site/products/computer-parts.aspx">Shop PC Parts</a>
+    <a class="btn btn-secondary" href="/site/products/computers.aspx">Shop Computers</a>
+  </div>
+
+  <div class="section-head">
+    <h2>Most Popular Categories</h2>
+    <span class="small muted">Shop all departments</span>
+  </div>
+  <div class="home-grid">
+    {% for slug, label, blurb in [
+      ('laptops-notebooks', 'Laptops/Notebooks', 'Gaming, business, and everyday laptops from every major brand.'),
+      ('desktop-computers', 'Desktops', 'Prebuilt gaming PCs, PowerSpec systems, and all-in-ones.'),
+      ('computer_monitors', 'Monitors', 'From value 1080p panels to 4K OLED gaming displays.'),
+      ('computer-processors', 'Processors/CPUs', 'AMD Ryzen and Intel Core desktop processors in stock.'),
+      ('graphics-cards', 'Graphics Cards', 'NVIDIA GeForce RTX and AMD Radeon GPUs.'),
+      ('motherboards', 'Motherboards', 'Intel and AMD boards for every build and budget.'),
+      ('computer-memory', 'Computer Memory', 'DDR4 and DDR5 desktop, laptop, and server memory.'),
+      ('drives-and-storage', 'Drives & Storage', 'NVMe SSDs, SATA drives, and external storage.'),
+      ('computer-cases', 'Computer Cases', 'Tempered glass, airflow, and small-form-factor cases.'),
+      ('power-supplies', 'Power Supplies', '80 PLUS certified PSUs from 450W to 1600W.'),
+      ('cpu-coolers', 'Air & Water Cooling', 'Air coolers and AIO liquid coolers.'),
+      ('headphones', 'Headphones & Earbuds', 'Over-ear, on-ear, and true wireless audio.'),
+      ('keyboards-mice', 'Keyboards & Mice', 'Mechanical keyboards and precision gaming mice.'),
+      ('tvs', 'TVs', 'OLED, QLED, and big-screen 4K smart TVs.') ] %}
+    <a class="cat-tile" href="/site/products/{{ slug }}.aspx">
+      <h4>{{ label }}</h4>
+      <p>{{ blurb }}</p>
+      <span class="small">Shop now &rsaquo;</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  {% if top_deals %}
+  <div class="section-head">
+    <h2>Top Deals</h2>
+    <a href="/site/content/top-deals.aspx" class="small">View all top deals &rsaquo;</a>
+  </div>
+  <div class="card-grid">
+    {% for product in top_deals[:8] %}
+    <div class="product-card">
+      <a class="pc-image" href="{{ product.detail_url() }}"><img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}" loading="lazy"></a>
+      <div class="pc-name"><a href="{{ product.detail_url() }}">{{ product.name }}</a></div>
+      <div class="pc-price"><span class="cur">$</span>{{ "%.2f"|format(product.price) }}</div>
+      {% if product.original_price and product.original_price > product.price %}
+      <div class="was-price small">was <strike>${{ "%.2f"|format(product.original_price) }}</strike></div>
+      {% endif %}
+      <span class="pill pill-deal">Top Deal</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if open_box %}
+  <div class="section-head">
+    <h2>Open Box Savings</h2>
+    <a href="/site/products/open-box.aspx" class="small">Shop open box &rsaquo;</a>
+  </div>
+  <div class="card-grid">
+    {% for product in open_box[:4] %}
+    <div class="product-card">
+      <a class="pc-image" href="{{ product.detail_url() }}"><img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}" loading="lazy"></a>
+      <div class="pc-name"><a href="{{ product.detail_url() }}">{{ product.name }}</a></div>
+      <span class="pill pill-openbox">Open Box</span>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -272,6 +272,6 @@ RUN cd /opt/WebSyn/marriott && rm -rf instance instance_seed && \
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40086
+EXPOSE 8101 40000-40112
 
 CMD ["/opt/websyn_start.sh"]

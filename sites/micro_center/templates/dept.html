@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ dept.name }} | Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="crumbs"><a href="/">Home</a> &rsaquo; {{ dept.name }}</div>
+  <h1 class="mt0">{{ dept.name }}</h1>
+  {% if dept.blurb %}<p class="muted">{{ dept.blurb }}</p>{% endif %}
+
+  {% if children %}
+  <div class="section-head"><h2>Shop by Category</h2></div>
+  <div class="home-grid">
+    {% for child in children %}
+    <a class="cat-tile" href="/search/search_results.aspx?fq=category:{{ child.name|replace(' ', '+')|replace('&', '%26')|replace('/', '%2F') }}">
+      <h4>{{ child.name }}</h4>
+      <span class="small">Browse &rsaquo;</span>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div class="section-head"><h2>Popular in {{ dept.name }}</h2></div>
+  <div class="card-grid">
+    {% for product in products %}
+    <div class="product-card">
+      <a class="pc-image" href="{{ product.detail_url() }}"><img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}" loading="lazy"></a>
+      <div class="pc-name"><a href="{{ product.detail_url() }}">{{ product.name }}</a></div>
+      <div class="pc-price"><span class="cur">$</span>{{ "%.2f"|format(product.price) }}</div>
+      <div class="rating-line small"><span class="stars">{{ product.rating|stars }}</span> <span class="muted">({{ product.review_count }})</span></div>
+      <a class="btn btn-secondary" href="{{ product.detail_url() }}">View Details</a>
+    </div>
+    {% else %}
+    <p class="muted">No products yet in this department.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
