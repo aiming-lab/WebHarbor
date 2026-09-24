@@ -124,7 +124,10 @@ def navigated_any(traj, substrs):
 
 
 def final_answer(traj):
-    return str(traj.get("final_answer") or "").strip()
+    # Reference identifiers/annotations are not assertions of a requested fact.
+    text = str(traj.get("final_answer") or "").strip()
+    text = re.sub(r"(?m)^\s*[-*]\s*", "", text)
+    return re.sub(r"\([^)]*\b(?:reference|ref\.?|sku)\b[^)]*\)", "", text, flags=re.I)
 
 
 def final_url(traj):

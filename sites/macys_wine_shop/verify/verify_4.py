@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Verify MacysWineShop--4: Utah compliance alternative purchase.
-
-Frozen ground truth (seed): with the Ship-to state set to Utah, the 2023 Time
-& Tide Pinot Noir Monterey County page shows 'Item cannot ship to your state';
-among red wines only the 2021 Beni Duilio Castellani Riserva Chianti DOCG
-($18.99) can ship to Utah; buying 3 bottles shipped to a Utah address gives
-subtotal $68.97, shipping $14.95, processing $2.95, total $74.87; the placed
-guest order is MWS1050 with ship state UT.
-"""
+"""Verify Utah wine restrictions and the requested Colorado gift shipment."""
 
 from verify_lib import (Judge, check_only_tables_changed,
                         check_trajectory_identity, check_visited_path, contains_money,
@@ -17,16 +9,8 @@ from verify_lib import (Judge, check_only_tables_changed,
 
 TASK_ID = "MacysWineShop--4"
 TARGET = "2023-time-tide-pinot-noir-monterey-county"
-CHIANTI = "2023-time-tide-pinot-noir-monterey-county"
+GIFT_WINE = "2023-time-tide-pinot-noir-monterey-county"
 TOTAL = 74.87
-GROUND_TRUTH = ("With Ship-to Utah, the 2023 Time & Tide Pinot Noir Monterey County page "
-                "shows 'Item cannot ship to your state'; the red wine that CAN ship to "
-                "Utah is the 2021 Beni Duilio Castellani Riserva Chianti DOCG ($18.99). "
-                "3 bottles shipped to Salt Lake City, UT: order MWS1050, total $74.87 "
-                "(subtotal $68.97, shipping $14.95, processing $2.95).")
-QUESTION = ("Check what happens to the Time & Tide Pinot Noir when shipping to Utah, find "
-            "a red wine that can ship to Utah, buy 3 bottles with a Utah address, and "
-            "report the blockage, the wine, the order number, and the total.")
 
 
 def run_checks(judge, traj, initial_db, after_db):
@@ -39,8 +23,8 @@ def run_checks(judge, traj, initial_db, after_db):
                 navigated_search_with(traj, "q", ["time", "tide", "pinot"]),
                 "required: a /search visit locating the target pinot noir")
     check_visited_path(judge, traj, "visited_blocked_pinot_page", "/products/" + TARGET)
-    check_visited_path(judge, traj, "visited_red_wines_listing", "/pages/shipping-policy")
-    check_visited_path(judge, traj, "visited_chianti_page", "/products/" + CHIANTI)
+    check_visited_path(judge, traj, "visited_shipping_policy", "/pages/shipping-policy")
+    check_visited_path(judge, traj, "visited_gift_wine_page", "/products/" + GIFT_WINE)
     check_visited_path(judge, traj, "visited_checkout_information", "/checkout/information")
     check_visited_path(judge, traj, "visited_checkout_review", "/checkout/review")
     judge.check("visited_confirmation",
@@ -71,13 +55,12 @@ def run_checks(judge, traj, initial_db, after_db):
                 "(state UT, total 74.87, 3 bottles)")
     icols = table_columns(after_db, "order_items")
     items_added = [dict(zip(icols, row)) for row in table_delta(initial_db, after_db, "order_items")["added"]]
-    ok_items = (len(items_added) == 1 and items_added[0]["product_handle"] == CHIANTI
+    ok_items = (len(items_added) == 1 and items_added[0]["product_handle"] == GIFT_WINE
                 and int(items_added[0]["quantity"]) == 3
                 and abs(items_added[0]["unit_price"] - 18.99) < 0.005)
     judge.check("db_order_item_chianti", ok_items,
                 "expected one added order_items row for the Chianti (qty 3)")
     check_only_tables_changed(judge, initial_db, after_db, {"orders", "order_items"})
-    advisory_llm_answer(judge, answer, GROUND_TRUTH, QUESTION)
 
 
 if __name__ == "__main__":

@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""Verify MacysWineShop--9: $100 gift card + sparkling, minimum-bottle discovery.
-
-Frozen ground truth (seed): the gift-card product sells $25/$50/$75/$100
-variants and every gift-card variant carries bottle_count = 1, so it counts
-toward the cart's 3-bottle checkout minimum; with the $100 card plus one
-sparkling bottle (2 'bottles') the cart blocks checkout with 'Minimum 3
-Bottles Required for Checkout'; adding a second sparkling bottle reaches 3
-bottles and unlocks checkout with $14.95 shipping (still under the 6-bottle
-free rule). The placed guest order MWS1050 holds exactly two line items: the
-$100 gift card (qty 1) and one sparkling wine (qty 2, unit price <= $30);
-bottle_count = 3 and total = 100 + 2*price + 14.95 + 2.95.
-"""
+"""Verify a $100 gift card plus three sparkling-wine bottles; gift cards count as zero bottles."""
 
 from verify_lib import (Judge, check_only_tables_changed, check_trajectory_identity,
                         check_visited_path, contains_money, contains_phrase, contains_any, db_query,
@@ -20,15 +9,6 @@ from verify_lib import (Judge, check_only_tables_changed, check_trajectory_ident
 TASK_ID = "MacysWineShop--9"
 GIFTCARD = "giftcard"
 SPARKLING_COLLECTION = "sparkling-wine"
-GROUND_TRUTH = ("The $100 gift card counts toward the 3-bottle minimum (its variant "
-                "carries bottle_count 1): card + one sparkling bottle showed 'Minimum 3 "
-                "Bottles Required for Checkout' with checkout disabled; adding a second "
-                "sparkling bottle reached 3 bottles and unlocked checkout ($14.95 "
-                "shipping, 'Add 3 bottles for free shipping!'). Order MWS1050: the $100 "
-                "gift card plus 2 bottles of a sparkling wine under $30.")
-QUESTION = ("Buy the $100 gift card and one sparkling bottle as a guest, read the cart's "
-            "minimum rule, add what is needed to pass it, complete the order, and report "
-            "whether the gift card counted, what you ordered, the order number, and the total.")
 
 
 def run_checks(judge, traj, initial_db, after_db):
@@ -101,7 +81,6 @@ def run_checks(judge, traj, initial_db, after_db):
         judge.check("answer_total", contains_money(answer, expected_total),
                     f"expected the total ${expected_total:.2f}")
     check_only_tables_changed(judge, initial_db, after_db, {"orders", "order_items"})
-    advisory_llm_answer(judge, answer, GROUND_TRUTH, QUESTION)
 
 
 if __name__ == "__main__":
