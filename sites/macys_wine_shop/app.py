@@ -483,6 +483,12 @@ def paragraphs_filter(value):
     return [re.sub(r"<[^>]+>", " ", p).strip() for p in parts if p.strip()]
 
 
+@app.template_filter("articlehtml")
+def articlehtml_filter(value):
+    from article_html import article_html
+    return Markup(article_html(value))
+
+
 @app.template_filter("safehtml")
 def safehtml_filter(value):
     return Markup(value or "")
