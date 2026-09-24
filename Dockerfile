@@ -270,8 +270,15 @@ RUN cd /opt/WebSyn/marriott && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && \
     rm -rf instance __pycache__
 
+# nfl: deterministic seed from the tracked upstream snapshots + asset gate.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/nfl
+RUN cd /opt/WebSyn/nfl && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/nfl.db instance_seed/nfl.db && \
+    rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40086
+EXPOSE 8101 40000-40115
 
 CMD ["/opt/websyn_start.sh"]

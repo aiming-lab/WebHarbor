@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}2026 NFL Division Standings{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>2026 NFL DIVISION STANDINGS</h1>
+  <p class="page-sub">Through Week {{ current_week - 1 }} of the 2026 regular season</p>
+</div>
+{% for conf, rows in [('AFC', afc), ('NFC', nfc)] %}
+<section class="panel">
+  <h2 class="panel-title">{{ conf }} PLAYOFF RACE</h2>
+  <table class="data-table">
+    <thead>
+      <tr><th>#</th><th>Team</th><th>W</th><th>L</th><th>T</th><th>PCT</th><th>PF</th><th>PA</th></tr>
+    </thead>
+    <tbody>
+      {% for t in rows %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td class="team-cell"><img src="{{ t.logo }}" alt=""> <a href="{{ url_for('team_detail', slug=t.slug) }}">{{ t.full_name }}</a></td>
+        <td>{{ t.wins }}</td><td>{{ t.losses }}</td><td>{{ t.ties }}</td>
+        <td>{{ t.pct }}</td><td>{{ t.points_for }}</td><td>{{ t.points_against }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endfor %}
+<div class="divisions-grid">
+  {% for (conf, div), rows in divisions.items() %}
+  <section class="panel">
+    <h2 class="panel-title">{{ div.upper() }}</h2>
+    <table class="data-table">
+      <thead>
+        <tr><th>Team</th><th>W</th><th>L</th><th>T</th><th>PCT</th><th>PF</th><th>PA</th></tr>
+      </thead>
+      <tbody>
+        {% for t in rows %}
+        <tr>
+          <td class="team-cell"><img src="{{ t.logo }}" alt=""> <a href="{{ url_for('team_detail', slug=t.slug) }}">{{ t.full_name }}</a></td>
+          <td>{{ t.wins }}</td><td>{{ t.losses }}</td><td>{{ t.ties }}</td>
+          <td>{{ t.pct }}</td><td>{{ t.points_for }}</td><td>{{ t.points_against }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

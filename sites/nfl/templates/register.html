@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Create Account | NFL.com{% endblock %}
+{% block content %}
+<div class="auth-page">
+  <section class="panel auth-panel">
+    <h1>CREATE ACCOUNT</h1>
+    <p class="fine-print">Create an NFL.com account to personalize your experience and subscribe to NFL+.</p>
+    <form method="post" class="checkout-form" action="{{ url_for('register', next=request.args.get('next','')) }}">
+      <label>Name
+        <input type="text" name="display_name" required value="{{ form.get('display_name','') }}" placeholder="Your name">
+      </label>
+      <label>Email
+        <input type="email" name="email" required value="{{ form.get('email','') }}" placeholder="you@example.com">
+      </label>
+      <label>Password
+        <input type="password" name="password" required placeholder="At least 8 characters">
+      </label>
+      <label>Favorite team
+        <select name="favorite_team">
+          <option value="">Pick later</option>
+          {% for t in all_teams %}
+          <option value="{{ t.abbr }}" {{ 'selected' if form.get('favorite_team') == t.abbr else '' }}>{{ t.full_name }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <button class="btn btn-red" type="submit">Create Account</button>
+    </form>
+    <p class="fine-print">Already have an account? <a href="{{ url_for('login', next=request.args.get('next','')) }}">Sign in</a></p>
+  </section>
+</div>
+{% endblock %}

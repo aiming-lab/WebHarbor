@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>EDIT PROFILE</h1>
+  <p class="page-sub">Update your NFL.com account preferences</p>
+</div>
+<section class="panel">
+  <form method="post" class="checkout-form" action="{{ url_for('account_edit') }}">
+    <label>Display name
+      <input type="text" name="display_name" required value="{{ current_user.display_name }}">
+    </label>
+    <label>Favorite team
+      <select name="favorite_team">
+        <option value="">No favorite team</option>
+        {% for t in all_teams %}
+        <option value="{{ t.abbr }}" {{ 'selected' if current_user.favorite_team == t.abbr else '' }}>{{ t.full_name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="check-label">
+      <input type="checkbox" name="newsletter" {{ 'checked' if current_user.newsletter else '' }}>
+      Send me the NFL newsletter
+    </label>
+    <label>New password (leave blank to keep current)
+      <input type="password" name="new_password" placeholder="At least 8 characters">
+    </label>
+    <div class="cta-row">
+      <button class="btn btn-red" type="submit">Save Changes</button>
+      <a class="btn btn-outline" href="{{ url_for('account') }}">Cancel</a>
+    </div>
+  </form>
+</section>
+{% endblock %}

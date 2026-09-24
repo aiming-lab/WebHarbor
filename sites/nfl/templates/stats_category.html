@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}2026 NFL {{ label }} Statistics Leaders | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>2026 NFL {{ label | upper }} LEADERS</h1>
+  <p class="page-sub">Aggregated player statistics · 2026 Regular Season</p>
+</div>
+<div class="channel-tabs">
+  {% for slug, name in stat_categories %}
+  <a class="channel-tab {{ 'active' if slug == category else '' }}" href="{{ url_for('stats_category', category=slug) }}">{{ name }}</a>
+  {% endfor %}
+</div>
+<section class="panel">
+  <div class="table-scroll">
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Player</th><th>Team</th>
+          {% for c in columns %}<th>{{ c }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for l in leaders %}
+        <tr>
+          <td>{{ l.rank }}</td>
+          <td>
+            {% if l.player_slug %}<a href="{{ url_for('player_detail', slug=l.player_slug) }}">{{ l.player_name }}</a>
+            {% else %}{{ l.player_name }}{% endif %}
+          </td>
+          <td>{{ l.team_abbr }}</td>
+          {% for c in columns %}<td>{{ l.stat_map[c] }}</td>{% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}
