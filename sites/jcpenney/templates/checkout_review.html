@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Review Order | JCPenney Checkout{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="steps">
+    <span class="step done">&#10003; Shipping</span>
+    <span class="step done">&#10003; Payment</span>
+    <span class="step active">3. Review</span>
+  </div>
+  <div class="checkout-layout">
+    <div>
+      <h1 style="font-size:22px;margin-bottom:14px;">Review Your Order</h1>
+      <div class="info-grid">
+        <div>
+          <h2 style="font-size:16px;">Ship To</h2>
+          <p style="font-size:13.5px;color:var(--ink-2);">
+            {{ shipping.first_name }} {{ shipping.last_name }}<br>
+            {{ shipping.line1 }}{% if shipping.line2 %}<br>{{ shipping.line2 }}{% endif %}<br>
+            {{ shipping.city }}, {{ shipping.state }} {{ shipping.zip }}<br>
+            {% if shipping.phone %}{{ shipping.phone }}{% endif %}
+          </p>
+          <a class="link-btn" href="/checkout/shipping">Edit address</a>
+        </div>
+        <div>
+          <h2 style="font-size:16px;">Payment</h2>
+          <p style="font-size:13.5px;color:var(--ink-2);">{{ payment.card_type }} ending in {{ payment.last4 }}</p>
+          <a class="link-btn" href="/checkout/payment">Edit payment</a>
+        </div>
+      </div>
+      <h2 style="font-size:16px;margin-bottom:8px;">Items ({{ items|length }})</h2>
+      {% for item in items %}
+        <div class="cart-line">
+          <img src="{{ item.product.primary_image }}" alt="{{ item.product.name }}">
+          <div class="cl-info">
+            <div class="cl-name">{{ item.product.name }}</div>
+            <div class="cl-variant">{{ item.product.brand }}{% if item.color %} &middot; Color: {{ item.color }}{% endif %}{% if item.size %} &middot; Size: {{ item.size }}{% endif %}</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-weight:700;">{{ item.line_total|currency }}</div>
+            <div style="font-size:12px;color:#767676;">Qty {{ item.quantity }}</div>
+          </div>
+        </div>
+      {% endfor %}
+      <form method="post" action="/checkout/review">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <div class="field" style="max-width:420px;">
+          <label for="checkout_review-field-1">Coupon Code (optional)</label><input id="checkout_review-field-1" type="text" name="coupon_code" placeholder="e.g. SAVE30">
+        </div>
+        <div class="field" style="max-width:420px;">
+          <label for="checkout_review-field-2">Gift Message (optional)</label><input id="checkout_review-field-2" type="text" name="gift_message" maxlength="280">
+        </div>
+        <button type="submit" class="btn-primary" style="margin-top:10px;">Place Order</button>
+      </form>
+    </div>
+    <aside class="summary-box">
+      <h2>Order Summary</h2>
+      <div class="summary-row"><span>Subtotal</span><span>{{ totals.subtotal|currency }}</span></div>
+      {% if totals.discount %}<div class="summary-row"><span>Discount</span><span>-{{ totals.discount|currency }}</span></div>{% endif %}
+      <div class="summary-row"><span>Shipping</span><span>{{ totals.shipping|currency if totals.shipping else 'FREE' }}</span></div>
+      <div class="summary-row"><span>Estimated Tax</span><span>${{ "%.2f"|format(totals.tax) }}</span></div>
+      <div class="summary-row total"><span>Estimated Total</span><span>{{ totals.total|currency }}</span></div>
+      <p class="fine" style="font-size:11.5px;color:#767676;">By placing your order, you agree to JCPenney&rsquo;s <a href="/m/customer-service">Terms &amp; Conditions</a>.</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

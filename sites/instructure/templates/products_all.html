@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}All Products | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <h1>One ecosystem. Everything learning.</h1>
+    <p class="lede">Canvas, Mastery, and Parchment—together with platform enhancements like Impact, LearnPlatform, Intelligent Insights, and IgniteAI—cover teaching, assessment, and credentials for every learner.</p>
+  </div>
+</section>
+<section class="container section">
+  {% for p in products if not p.parent_slug %}
+  <div style="margin-bottom: 60px;">
+    <h2><a href="/{{ p.slug }}" style="color:inherit;">{{ p.name }}</a></h2>
+    <p class="lede" style="margin: 10px 0 26px;">{{ p.tagline }}</p>
+    <div class="block-cards">
+      <a class="block-card" href="/{{ p.slug }}" style="text-decoration:none; color:inherit;">
+        <h3>{{ p.name }}</h3>
+        <p>{{ p.description }}</p>
+        <span class="pill">Learn more</span>
+      </a>
+      {% for sub in products if sub.parent_slug == p.slug %}
+      <a class="block-card" href="/{{ sub.slug }}" style="text-decoration:none; color:inherit;">
+        <h3>{{ sub.name }}</h3>
+        <p>{{ sub.tagline }}</p>
+        <span class="pill">Learn more</span>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+  <div>
+    <h2>Platform Enhancements</h2>
+    <p class="lede" style="margin: 10px 0 26px;">AI, insights, analytics, and adoption tooling across the Instructure platform.</p>
+    <div class="block-cards">
+      {% for slug in ['impact', 'learnplatform', 'intelligent-insights', 'igniteai'] %}
+      {% for p in products if p.slug == slug %}
+      <a class="block-card" href="/{{ p.slug }}" style="text-decoration:none; color:inherit;">
+        <h3>{{ p.name }}</h3>
+        <p>{{ p.tagline }}</p>
+        <span class="pill">Learn more</span>
+      </a>
+      {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

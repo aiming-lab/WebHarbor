@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }} | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <h1>{{ p.name }}</h1>
+        <p class="lede">{{ p.tagline }}</p>
+        <div class="ctas">
+          <a class="btn btn-outline-light" href="{{ url_for('request_demo') }}">Book a demo</a>
+        </div>
+      </div>
+      <div>
+        <img class="heroimg" src="{{ p.hero_image }}" alt="{{ p.name }}">
+      </div>
+    </div>
+  </div>
+</section>
+<section class="container section">
+  <div class="prose">
+    {% for block in (p.blocks or []) %}
+      {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+      {% elif block.kind == 'h3' %}<h3>{{ block.text }}</h3>
+      {% elif block.kind == 'li' %}<li>{{ block.text }}</li>
+      {% else %}<p>{{ block.text }}</p>{% endif %}
+    {% endfor %}
+  </div>
+  {% if p.stats %}
+  <div class="stats-grid">
+    {% for s in p.stats %}
+    <div class="stat-card">
+      <div class="num"><span class="countup" data-count="{{ s.number }}" data-prefix="{{ s.prefix or '' }}" data-suffix="{{ s.suffix or '' }}">0</span></div>
+      <h3>{{ s.heading }}</h3>
+      <p>{{ s.text }}</p>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="cta-band">
+    <h2>See {{ p.name }} in action</h2>
+    <p class="lede" style="color:#b8cbdc; margin: 14px auto 0;">The best way to know if {{ p.name }} is right for you is to see it for yourself.</p>
+    <a class="btn btn-outline-light" href="{{ url_for('request_demo') }}">Book a meeting</a>
+  </div>
+</section>
+{% endblock %}

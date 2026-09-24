@@ -1,0 +1,71 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-22",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the leagueoflegends.com mirror: riotbar navigation, homepage hero and role/mode sections, the 173-champion roster with search/role/difficulty filters and sort, champion detail pages (abilities tab with ability art, Available Skins carousel), the News hub with category pages and paginated article grid, full article pages including patch-notes rich text, a patch-notes listing, the How To Play overview, the PBE page, the League of Legends Classic surface (the /classic/ landing page with its upstream sections — what-is features, teaser, featured news, Return to the Rift, you-choose, Riot Account, FAQ, newsletter and final CTA — and /classic/champions/ with the 68-champion classic tile grid linking to the mirror's champion pages), site-wide scored search, and the Riot-account surface (signup, login, account dashboard, favorite champions, saved articles, profile editing). Route and URL patterns and page structure follow the upstream site."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time and boot-time seeder. Champion/ability/skin/article rows come from the tracked source_data.json snapshot; benchmark-user favorites and bookmarks are generated with random.Random(42) and a stable sha256 password hash so the SQLite seed is byte-reproducible on every build."
+  },
+  {
+   "path": "source_data.json",
+   "classification": "captured-upstream-content",
+   "scope": "Tracked snapshot of the live site's structured data, harvested 2026-09-22 via Playwright from the Next.js __NEXT_DATA__ payloads the live pages serve: 173 champions (names, epithets, roles, difficulty, lore), 865 abilities (slot, name, description), 2118 skins (names), 270 internal news articles (titles, summaries, authors, tags, publish dates, full rich-text bodies including 16 patch-notes articles), 154 external news link cards, and 10 news categories. Release ordering uses Riot's numeric champion keys extracted from the upstream ability-video URLs."
+  },
+  {
+   "path": "static/images/champions/ (HF-managed)",
+   "classification": "source-backed-media-inventory",
+   "scope": "2291 real images: 173 champion portraits exactly as the roster grid renders them (cmsassets.rgpub.io sanity images at the w=312 size the live grid requests) and 2118 champion/skin splash arts (ddragon.leagueoflegends.com/cdn/img/champion/splash). Per-file byte counts, SHA-256 digests and source URLs are recorded in asset_inventory.json. Three Fiddlesticks carousel entries referenced by the live site (Fiddlesticks_27/37/46) 403 upstream even on leagueoflegends.com and are omitted rather than shipped broken."
+  },
+  {
+   "path": "static/images/abilities/ (HF-managed)",
+   "classification": "source-backed-media-inventory",
+   "scope": "1716 real images: 865 ability icons (ddragon /img/passive and /img/spell) and 851 ability preview stills (the video poster frames from lol.dyn.riotcdn.net the upstream ability media panel plays). Fourteen ability preview URLs 404 upstream (e.g. ryze/vladimir/volibear passives); those media panels fall back to the ability icon."
+  },
+  {
+   "path": "static/images/news/ (HF-managed)",
+   "classification": "source-backed-media-inventory",
+   "scope": "3530 real images: 270 article masthead banners (cmsassets at the w=1440 size the live article masthead requests), 424 grid card images (h=240 w=427 crop, as rendered by the live news grids, including the 154 external link cards), and 2836 inline body images from the article rich-text bodies (cmsassets.rgpub.io illustrations, ddragon/am-a.akamaihd.net champion and spell icons, and the animated GIFs the live articles embed). Inline bodies were rewritten to the local copies; every file lists its exact upstream URL in asset_inventory.json. Three inline URLs are dead upstream (the 2018 LPP-LBChroma.jpg that 400s and two nexus.leagueoflegends.com WordPress uploads that now return an HTML error page) and were dropped from their article bodies together with their img tags."
+  },
+  {
+   "path": "static/images/site/ (HF-managed)",
+   "classification": "source-backed-media-inventory",
+   "scope": "42 real site-chrome and landing images: the League of Legends logo and hero backdrops, the six champion role tiles and four game-mode tiles from the homepage, the skins promo art, the How To Play section art (nexus/turret/jungle/lane/ability tiles, champion tiles), the ESRB rating mark and the Riot fist mark."
+  },
+  {
+   "path": "static/images/classic/ (HF-managed)",
+   "classification": "source-backed-media-inventory",
+   "scope": "98 real images for the League of Legends Classic surface: 30 landing-page assets (hero backdrop, what-is features, teaser stills, featured-news card crops, section backdrops and ornaments, newsletter art and video still, final-CTA art) fetched from cmsassets.rgpub.io at the exact sizes the upstream classic page requests, and 68 champion tile portraits from ddragon's mode/classic tile set (Jade_<Champion> renditions) as the upstream /classic/champions/ grid renders them. Per-file byte counts, SHA-256 digests and source URLs are recorded in asset_inventory.json."
+  },
+  {
+   "path": "static/css/site.css + templates/",
+   "classification": "adapted-visual-structure",
+   "scope": "Original Jinja templates and CSS implementing the leagueoflegends.com visual system (riotbar black #111111 with Inter-style nav, LoL navy #0A1428 palette, gold #C8AA6E accents, Beaufort-style italic uppercase mastheads, card grids, patch-notes tables) without copying the upstream stylesheet or fonts."
+  },
+  {
+   "path": "scraped_data/ (not shipped)",
+   "classification": "captured-upstream-content",
+   "scope": "Build-time only (gitignored, dockerignored): Playwright captures of the live leagueoflegends.com pages (homepage, roster, 173 champion pages, news hub and category pages, 270 article pages, how-to-play), the harvest/download scripts, and the download manifest that records every upstream source URL."
+  },
+  {
+   "path": "scripts_dev/ (not shipped)",
+   "classification": "build-tooling",
+   "scope": "Harvest pipeline scripts: harvest.py (Playwright recon + structured extraction), fetch_images.py (upstream image downloader + manifest writer), build_source_data.py (source_data.json builder with inline-image rewriting). Not part of the runtime mirror."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "30 contributor-defined benchmark tasks over the mirror's roster filters, champion detail facts, skin catalogs, patch notes, news categories, site search, and the seeded benchmark users' account state."
+  },
+  {
+   "path": "NOTICE.md",
+   "classification": "attribution-notice",
+   "scope": "Mirror scope, provenance summary and takedown contact for Riot Games and partner marks."
+  }
+ ]
+}

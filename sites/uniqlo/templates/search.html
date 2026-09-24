@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}"{{ query }}" | Search | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">Search results for "{{ query }}"</h1>
+    <p class="result-count">{{ results|length }} item{{ 's' if results|length != 1 else '' }}</p>
+    <div class="product-grid">
+        {% for product in results %}
+            {% include '_product_card.html' %}
+        {% else %}
+        <p>No results found. Try a different search.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

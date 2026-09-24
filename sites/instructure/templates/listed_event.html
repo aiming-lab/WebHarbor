@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ ev.title }} | Instructure{% endblock %}
+{% block content %}
+<section class="container" style="padding-top: 44px;">
+  <div class="breadcrumb"><a href="/events">Events</a> <span>›</span> <span>{{ ev.title }}</span></div>
+  <div style="display:grid; grid-template-columns: 1.4fr 1fr; gap: 44px; align-items: center; padding: 30px 0;">
+    <div>
+      <div class="kicker" style="color: var(--blue); font-weight:700; margin-bottom: 8px;">{{ ev.event_type }} <span style="color: var(--muted); font-weight:400;">•</span> {{ ev.event_date }}</div>
+      <h1 style="font-size: 2.4rem;">{{ ev.title }}</h1>
+      <p class="muted">Connect with the Instructure team and fellow educators at this event.</p>
+      {% if ev.external_url %}
+      <a class="btn btn-primary" href="{{ ev.external_url }}" target="_blank" rel="noopener">Learn More</a>
+      {% endif %}
+    </div>
+    <div class="detail-hero-img" style="margin: 0;">
+      {% if ev.img %}<img src="{{ ev.img|img }}" alt="{{ ev.title }}">{% endif %}
+    </div>
+  </div>
+</section>
+
+<section class="detail-related">
+  <div class="container">
+    <h2>On-demand webinars</h2>
+    <div class="card-grid">
+      {% for row in webinars %}{% set r = row %}{% include "_resource_card.html" %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

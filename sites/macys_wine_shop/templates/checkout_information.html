@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}Checkout – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="checkout-layout">
+  <div class="checkout-steps">
+    <span class="{{ 'active' if step == 'information' else 'done' }}">Information</span>
+    <span class="{{ 'active' if step == 'payment' else ('done' if step == 'review' else '') }}">Shipping &amp; Payment</span>
+    <span class="{{ 'active' if step == 'review' else '' }}">Review &amp; Place Order</span>
+  </div>
+
+  <div class="checkout-card">
+    <h2>Contact &amp; Shipping Address</h2>
+    {% if errors %}<div class="form-error">{{ errors.values()|list|first }}</div>{% endif %}
+    <form method="post" action="/checkout/information">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if current_user.is_authenticated and current_user.addresses %}
+      <div class="field" style="margin-bottom:16px">
+        <label for="address_id">Ship to a saved address</label>
+        <select id="address_id" name="address_id" onchange="this.form.submit()">
+          <option value="">— Enter a new address —</option>
+          {% for a in current_user.addresses %}
+          <option value="{{ a.id }}">{{ a.full_name }}, {{ a.line1 }}, {{ a.city }}, {{ a.state }} {{ a.zip_code }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="form-grid">
+        <div class="field full"><label for="email">Email</label>
+          <input id="email" name="email" type="email" value="{{ form.get('email', '') }}" required>
+          {% if errors.get('email') %}<div class="err">{{ errors['email'] }}</div>{% endif %}</div>
+        <div class="field full"><label for="ship_to_name">Recipient name</label>
+          <input id="ship_to_name" name="ship_to_name" value="{{ form.get('ship_to_name', '') }}" required>
+          {% if errors.get('ship_to_name') %}<div class="err">{{ errors['ship_to_name'] }}</div>{% endif %}</div>
+        <div class="field full"><label for="address_line1">Street address</label>
+          <input id="address_line1" name="address_line1" value="{{ form.get('address_line1', '') }}" required>
+          {% if errors.get('address_line1') %}<div class="err">{{ errors['address_line1'] }}</div>{% endif %}</div>
+        <div class="field full"><label for="address_line2">Apartment, suite, etc. (optional)</label>
+          <input id="address_line2" name="address_line2" value="{{ form.get('address_line2', '') }}"></div>
+        <div class="field"><label for="city">City</label>
+          <input id="city" name="city" value="{{ form.get('city', '') }}" required>
+          {% if errors.get('city') %}<div class="err">{{ errors['city'] }}</div>{% endif %}</div>
+        <div class="field"><label for="state">State</label>
+          <select id="state" name="state" required>
+            <option value="">Select state</option>
+            {% for abbr, name in us_states %}
+            <option value="{{ abbr }}" {% if form.get('state') == abbr %}selected{% endif %}>{{ abbr }} — {{ name }}</option>
+            {% endfor %}
+          </select>
+          {% if errors.get('state') %}<div class="err">{{ errors['state'] }}</div>{% endif %}</div>
+        <div class="field"><label for="zip_code">ZIP code</label>
+          <input id="zip_code" name="zip_code" value="{{ form.get('zip_code', '') }}" required>
+          {% if errors.get('zip_code') %}<div class="err">{{ errors['zip_code'] }}</div>{% endif %}</div>
+        <div class="field"><label for="phone">Phone (for delivery updates)</label>
+          <input id="phone" name="phone" value="{{ form.get('phone', '') }}"></div>
+      </div>
+      <p style="font-size:13.5px;color:var(--ada-gray)">Wine shipments require an adult signature on delivery.</p>
+      <button class="btn-primary" type="submit" style="margin-top:16px">Continue to payment</button>
+    </form>
+  </div>
+
+  <aside class="cart-side" style="max-width:420px;flex:none">
+    <h2>Order Summary</h2>
+    {% for item in summary['items'] %}
+    <div style="display:flex;justify-content:space-between;font-size:14px;padding:6px 0">
+      <span>{{ item.variant.product.title }} × {{ item.quantity }}</span>
+      <span>{{ (item.quantity * item.variant.price)|money }}</span>
+    </div>
+    {% endfor %}
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>{{ summary['subtotal']|money }}</span></div>
+      <div class="row"><span>Shipping</span><span>{{ summary['shipping']|money if summary['shipping'] else 'FREE' }}</span></div>
+      <div class="row"><span>Processing</span><span>{{ summary['processing']|money }}</span></div>
+      <div class="row total"><span>Total</span><span>{{ summary['total']|money }}</span></div>
+    </div>
+  </aside>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Support FAQ | Canvas{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>Canvas Support FAQs</h1>
+    <p>Below you'll find answers to commonly asked support questions and other inquiries you might have. We also invite you to visit our troubleshooting guide with answers to the top support questions or to visit our Community with step-by-step guidance and resources based on role.</p>
+    <div style="display:flex; gap: 14px; margin-top: 18px; flex-wrap: wrap;">
+      <a class="btn btn-primary" href="https://community.canvaslms.com/t5/Troubleshooting/tkb-p/Troubleshooting" target="_blank" rel="noopener">Troubleshooting Guide</a>
+      <a class="btn btn-outline-light" href="https://community.canvaslms.com/" target="_blank" rel="noopener">Ask Our Community</a>
+    </div>
+  </div>
+</section>
+
+<section class="container" style="padding: 44px 0 70px; max-width: 900px;">
+  {% for cat, items in categories.items() %}
+  <div class="faq-category">
+    <h2>{{ cat }}</h2>
+    {% for item in items %}
+    <div class="faq-item">
+      <button class="q" type="button">{{ item.question }} <span class="chev">▾</span></button>
+      <div class="a">{{ item.answer }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</section>
+{% endblock %}

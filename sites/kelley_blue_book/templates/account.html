@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}My Account | Kelley Blue Book{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">My Account</h1>
+    <div class="account-grid">
+        <div class="account-card">
+            <h3>Profile</h3>
+            <p>{{ current_user.name }}</p>
+            <p>{{ current_user.email }}</p>
+            <p>{{ current_user.phone }}</p>
+            <p>ZIP: {{ current_user.zip_code }}</p>
+            <a href="{{ url_for('edit_profile') }}" class="btn-secondary">Edit Profile</a>
+        </div>
+        <div class="account-card">
+            <h3>Quick Links</h3>
+            <ul class="account-links">
+                <li><a href="{{ url_for('saved_vehicles') }}">Saved Vehicles ({{ saved|length }})</a></li>
+                <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>Price Quote Requests</h2>
+    <div class="table-scroll"><table class="order-table">
+        <thead><tr><th>Vehicle</th><th>Trim</th><th>ZIP</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+            {% for q in quotes %}
+            <tr>
+                <td><a href="{{ url_for('vehicle_detail', slug=q.vehicle.slug) }}">{{ q.vehicle.title }}</a></td>
+                <td>{{ q.trim_name }}</td>
+                <td>{{ q.zip_code }}</td>
+                <td><span class="status-badge status-{{ q.status }}">{{ q.status }}</span></td>
+                <td>
+                    {% if q.status == 'pending' %}
+                    <form method="post" action="{{ url_for('cancel_quote', quote_id=q.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+                        <button type="submit" class="btn-link">Cancel</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5">No quote requests yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% endblock %}

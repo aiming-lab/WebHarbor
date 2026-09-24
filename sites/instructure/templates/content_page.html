@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title if page else 'Instructure' }} | Instructure{% endblock %}
+{% block content %}
+<section class="container section">
+  {% if page %}
+  <div class="prose" style="margin-top:0;">
+    <h1>{{ page.title }}</h1>
+    {% for block in page.blocks %}
+      {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+      {% elif block.kind == 'h3' %}<h3>{{ block.text }}</h3>
+      {% elif block.kind == 'li' %}<li>{{ block.text }}</li>
+      {% else %}<p>{{ block.text }}</p>{% endif %}
+    {% endfor %}
+  </div>
+  {% else %}
+  <h1>Content coming soon</h1>
+  {% endif %}
+  {% if posts is defined and posts %}
+  <div class="res-grid" style="margin-top:40px;">
+    {% for r in posts %}
+    <a class="res-card" href="{{ resource_url(r) }}">
+      <img class="cover" src="{{ r.hero_image or r.card_image }}" alt="{{ r.title }}">
+      <div class="body">
+        <span class="cat">AI Resources</span>
+        <h3>{{ r.title }}</h3>
+        <span class="more">Read More &gt;</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

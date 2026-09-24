@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Your Bag | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="gallery-title" style="padding-top:16px;">
+    <h1>Your Bag</h1>
+  </div>
+  <div class="cart-layout">
+    <div class="cart-lines">
+      {% if items %}
+        {% for item in items %}
+          <div class="cart-line">
+            <a href="/p/{{ item.product.slug }}/{{ item.product.ppid }}">
+              <img src="{{ item.product.primary_image }}" alt="{{ item.product.name }}">
+            </a>
+            <div class="cl-info">
+              <div class="cl-name"><a href="/p/{{ item.product.slug }}/{{ item.product.ppid }}">{{ item.product.name }}</a></div>
+              <div class="cl-variant">
+                {{ item.product.brand }}
+                {% if item.color %} &middot; Color: {{ item.color }}{% endif %}
+                {% if item.size %} &middot; Size: {{ item.size }}{% endif %}
+              </div>
+              <div class="card-price" style="margin:4px 0 8px;">{{ item.line_total|currency }}</div>
+              <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:center;">
+                <form class="qty-form" method="post" action="/cart/update/{{ item.id }}">
+                  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                  <label style="font-size:12px;color:#767676;">Qty</label>
+                  <select name="quantity" onchange="this.form.submit()">
+                    {% for n in range(1, 21) %}
+                      <option value="{{ n }}" {% if n == item.quantity %}selected{% endif %}>{{ n }}</option>
+                    {% endfor %}
+                  </select>
+                </form>
+                <form method="post" action="/cart/remove/{{ item.id }}">
+                  <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                  <button type="submit" class="link-btn">Remove</button>
+                </form>
+              </div>
+            </div>
+            <div style="text-align:right;font-weight:700;">{{ item.line_total|currency }}</div>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="empty-note">
+          <h2>Start with an Empty Cart, Finish in Style</h2>
+          <p>Sign in to see items you may have added to your cart.</p>
+          <p>
+            <a class="btn-link" href="/m/jcpenney-coupons">View Today's Coupons</a>
+            <a class="btn-link" style="background:#fff;color:var(--ink);border:1px solid var(--ink);" href="/g/clearance-shop-all-products">Shop Today's Deals</a>
+          </p>
+        </div>
+      {% endif %}
+    </div>
+    <aside class="summary-box">
+      <h2>Order Summary</h2>
+      <div class="summary-row"><span>Subtotal</span><span>{{ totals.subtotal|currency }}</span></div>
+      {% if totals.discount %}<div class="summary-row"><span>Discount</span><span>-{{ totals.discount|currency }}</span></div>{% endif %}
+      <div class="summary-row"><span>Shipping</span><span>{{ totals.shipping|currency if totals.shipping else 'FREE' }}</span></div>
+      <div class="summary-row"><span>Estimated Tax</span><span>${{ "%.2f"|format(totals.tax) }}</span></div>
+      <div class="summary-row total"><span>Estimated Total</span><span>{{ totals.total|currency }}</span></div>
+      {% if items %}
+        <a class="btn-primary checkout-btn" style="display:block;text-align:center;margin-top:12px;" href="/checkout">Secure Checkout</a>
+      {% endif %}
+      <p class="fine" style="font-size:11.5px;color:#767676;">Free shipping on orders $75 and over. Same Day Pickup available on eligible items.</p>
+    </aside>
+  </div>
+
+  <h2 class="section-head">Recommended for you</h2>
+  <div class="card-grid">
+    {% for product in recommended[:4] %}
+      {% include "_product_card.html" %}
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}
