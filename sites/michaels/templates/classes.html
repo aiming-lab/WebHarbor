@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}Discover Michaels' Live Online and On-Demand Art &amp; Craft Classes | Michaels{% endblock %}
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a> &rsaquo; <span>Classes</span></nav>
+<h1>Learn With Michaels: Your Hub for Online Art &amp; Craft Classes</h1>
+<p class="page-sub">Join live-streamed sessions where professional instructors guide you in real time, or explore the pre-recorded video library at your own pace.</p>
+<section class="home-section">
+  <div class="section-head"><h2>Live Learning</h2><a href="/classes">Take this LIVE class next</a></div>
+  <div class="class-strip">
+    {% for c in live %}
+    <article class="class-card">
+      {% if c.image %}<img src="{{ url_for('static', filename='images/' + c.image) }}" alt="{{ c.title }}">{% endif %}
+      <span class="class-kind">Live Learning</span>
+      <span class="class-title">{{ c.title }}</span>
+      <span class="class-meta">{{ c.platform }}</span>
+      <span class="class-meta">{{ c.date }} &middot; {{ c.time_text }}</span>
+      <span class="class-meta">Hosted by {{ c.host }}</span>
+      <form action="/classes/register" method="post" class="class-register-form">
+        <input type="hidden" name="class_id" value="{{ c.id }}">
+        <input type="hidden" name="next" value="/classes">
+        <button type="submit" class="btn-secondary">Register</button>
+      </form>
+    </article>
+    {% else %}
+    <p>No live classes match this filter.</p>
+    {% endfor %}
+  </div>
+</section>
+<section class="home-section">
+  <div class="section-head"><h2>Explore videos and live classes by category</h2></div>
+  <div class="subcat-row">
+    <a class="subcat-chip {% if not category %}active{% endif %}" href="/classes">Explore All</a>
+    {% for cat in categories %}
+    <a class="subcat-chip {% if category == cat %}active{% endif %}" href="/classes?category={{ cat | urlencode }}">{{ cat }}</a>
+    {% endfor %}
+  </div>
+</section>
+<section class="home-section">
+  <div class="section-head"><h2>New Tutorials</h2><a href="/classes">View all</a></div>
+  <div class="tutorial-grid">
+    {% for t in tutorials %}
+    <article class="tutorial-card">
+      {% if t.image %}<img src="{{ url_for('static', filename='images/' + t.image) }}" alt="{{ t.title }}">{% endif %}
+      {% if t.is_new %}<span class="new-badge">New</span>{% endif %}
+      <span class="class-title">{{ t.title }}</span>
+      <span class="class-meta">{{ t.duration }} &middot; {{ t.category }}</span>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+<section class="home-section">
+  <h2>Why Take a Live Arts &amp; Craft Class?</h2>
+  <ul class="why-list">
+    <li><strong>Expert-Led Instruction:</strong> Learn directly from experienced artists and makers.</li>
+    <li><strong>Ask Questions in Real Time:</strong> Get feedback and tips as you craft.</li>
+    <li><strong>New Classes Added Regularly:</strong> Explore fresh projects and seasonal crafts all year round.</li>
+    <li><strong>Join from Anywhere:</strong> Enjoy hands-on fun from the comfort of your home.</li>
+  </ul>
+</section>
+{% endblock %}

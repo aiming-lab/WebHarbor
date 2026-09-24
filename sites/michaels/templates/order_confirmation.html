@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Order Confirmation | Michaels{% endblock %}
+{% block content %}
+<div class="confirmation">
+  <h1>Thank you! Your order is confirmed.</h1>
+  <p class="order-number">Order <strong>{{ order.order_number }}</strong> &middot; Placed {{ order.placed_at }}</p>
+  <p>Status: <strong>{{ order.status }}</strong> &middot; {{ order.delivery_method }}</p>
+  <div class="order-box">
+    {% for item in order.items %}
+    <div class="review-item">
+      <span>{{ item.qty }} &times; {{ item.name }}{% if item.color %} ({{ item.color }}){% endif %}</span>
+      <span>${{ '%.2f' % (item.unit_price * item.qty) }}</span>
+    </div>
+    {% endfor %}
+    <div class="sum-row"><span>Subtotal</span><span>${{ '%.2f' % order.subtotal }}</span></div>
+    {% if order.discount %}<div class="sum-row discount"><span>Promo {{ order.promo_code }}</span><span>-${{ '%.2f' % order.discount }}</span></div>{% endif %}
+    <div class="sum-row"><span>Shipping</span><span>{{ 'FREE' if order.shipping == 0 else '$%.2f' % order.shipping }}</span></div>
+    <div class="sum-row"><span>Tax</span><span>${{ '%.2f' % order.tax }}</span></div>
+    <div class="sum-row total"><span>Order Total</span><span>${{ '%.2f' % order.total }}</span></div>
+  </div>
+  <p class="checkout-review-method">{{ order.address_line }}</p>
+  <p class="review-item">Paid with {{ order.card_brand }} ending in {{ order.card_last4 }}</p>
+  <a class="btn-primary" href="{{ url_for('account') }}">View My Orders</a>
+</div>
+{% endblock %}
