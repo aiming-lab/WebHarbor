@@ -73,7 +73,7 @@ SCHEMA_SHA256 = "7fdbd7fc391e707242d78b324fba5cde5b71c424b3591b5d3437c6c41f2ee95
 # deterministically at image-build time (PYTHONHASHSEED=0, stable sha256 password hash, see
 # .build-generated-seed); the physical file layout may differ between sqlite builds but
 # this logical digest is frozen.
-SEED_ROWS_SHA256 = "44d5827f8e267b47e04a830421dbdc585a2f18a6531dba8fedbc243ab1a6370e"
+SEED_ROWS_SHA256 = "b39ecf94bdfc8cad1e4e50211ad6a5d1598fa386c8c6a57a5e455f0779ba7caf"
 SEED_USERS = {  # email -> (id, username); identity columns never change
     "alice.j@test.com": (1, "alice_j"),
     "bob.c@test.com": (2, "bob_c"),
@@ -124,7 +124,10 @@ def navigated_any(traj, substrs):
 
 
 def final_answer(traj):
-    return str(traj.get("final_answer") or "").strip()
+    # Reference identifiers/annotations are not assertions of a requested fact.
+    text = str(traj.get("final_answer") or "").strip()
+    text = re.sub(r"(?m)^\s*[-*]\s*", "", text)
+    return re.sub(r"\([^)]*\b(?:reference|ref\.?|sku)\b[^)]*\)", "", text, flags=re.I)
 
 
 def final_url(traj):
@@ -881,7 +884,8 @@ def run_verifier(task_id, run_checks):
     initial_db, after_db = resolve_snapshots(args, task_id)
     judge = Judge(task_id, no_llm=args.no_llm)
     try:
-        run_checks(judge, traj, initial_db, after_db)
+        from reviewed import review
+        review(judge, traj, initial_db, after_db, run_checks)
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()

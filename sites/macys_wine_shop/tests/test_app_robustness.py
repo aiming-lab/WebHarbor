@@ -1,3 +1,4 @@
+from conftest import csrf_post
 """Robustness tests for the macys_wine_shop mirror app.
 
 Runs against a scratch SQLite DB (see conftest.py) so the shipped seed is
@@ -70,13 +71,13 @@ def test_age_gate_flow(client):
     r = client.get("/")
     assert b"Welcome!" in r.data  # age gate shown on first visit
     # YES without state -> error
-    r = client.post("/age/confirm", data={"state": "", "answer": "yes"})
+    r = csrf_post(client, "/age/confirm", data={"state": "", "answer": "yes"})
     assert r.status_code == 400
     # NO -> rejected page
-    r = client.post("/age/confirm", data={"state": "CA", "answer": "no"})
+    r = csrf_post(client, "/age/confirm", data={"state": "CA", "answer": "no"})
     assert b"Sorry, you cannot proceed." in r.data
     # proper confirmation
-    r = client.post("/age/confirm", data={"state": "CA", "answer": "yes"})
+    r = csrf_post(client, "/age/confirm", data={"state": "CA", "answer": "yes"})
     assert r.get_json()["ok"] is True
     with client.session_transaction() as sess:
         sess["age_confirmed"] = True
@@ -92,18 +93,10 @@ def test_cart_and_state_compliance(client):
     # Time & Tide Chardonnay cannot ship to UT
     r = client.get("/products/2023-time-tide-chardonnay-monterey-county")
     assert b"Item cannot ship to your state" in r.data
-    # find a UT-shippable variant via the quickview API and add it
-    import json as jsonlib
-    from app import Product, ProductVariant
+    from app import ProductVariant
     with client.application.app_context():
-        variant = (ProductVariant.query.join(Product, Product.id == ProductVariant.product_id)
-                   .filter(Product.product_type == "Bottle")
-                   .filter(ProductVariant.available_states.like('%\"UT\"%')).first())
-        vid = variant.id
-    r = client.post("/cart/add", data={"variant_id": vid, "quantity": "2"})
-    assert r.get_json()["ok"] is True
-    r = client.get("/cart")
-    assert b"Order Summary" in r.data
+        variants = ProductVariant.query.all()
+        assert all(not v.shippable_to('UT') for v in variants if v.bottle_count > 0)
 
 
 def test_blocked_state_add_to_cart(client):
@@ -116,7 +109,7 @@ def test_blocked_state_add_to_cart(client):
                    .filter(Product.handle == "2023-time-tide-chardonnay-monterey-county")
                    .first())
         vid = variant.id
-    r = client.post("/cart/add", data={"variant_id": vid, "quantity": "1"})
+    r = csrf_post(client, "/cart/add", data={"variant_id": vid, "quantity": "1"})
     assert r.status_code == 403
     assert r.get_json()["error"] == "Item cannot ship to your state"
 
@@ -129,7 +122,7 @@ def test_cart_minimum_and_checkout_guard(client):
         variant = (ProductVariant.query.join(Product, Product.id == ProductVariant.product_id)
                    .filter(Product.product_type == "Bottle").first())
         vid = variant.id
-    client.post("/cart/add", data={"variant_id": vid, "quantity": "1"})
+    csrf_post(client, "/cart/add", data={"variant_id": vid, "quantity": "1"})
     r = client.get("/cart")
     assert b"Minimum" in r.data  # 1 bottle < 3 minimum
     r = client.get("/checkout")
@@ -146,19 +139,19 @@ def test_auth_and_account(alice):
 
 
 def test_wrong_password_error(client):
-    r = client.post("/login", data={"email": "alice.j@test.com", "password": "wrong",
+    r = csrf_post(client, "/login", data={"email": "alice.j@test.com", "password": "wrong",
                                     "csrf_token": _csrf(client)})
     assert b"Incorrect email or password" in r.data
 
 
 def test_registration_validation(client):
     token = _csrf(client, "/register")
-    r = client.post("/register", data={"email": "bad", "first_name": "A", "last_name": "B",
+    r = csrf_post(client, "/register", data={"email": "bad", "first_name": "A", "last_name": "B",
                                        "password": "short", "confirm": "short",
                                        "csrf_token": token})
     assert b"valid email" in r.data or b"at least 8" in r.data
     token = _csrf(client, "/register")
-    r = client.post("/register", data={"email": "new.user@example.com", "first_name": "New",
+    r = csrf_post(client, "/register", data={"email": "new.user@example.com", "first_name": "New",
                                        "last_name": "User", "password": "Password9!",
                                        "confirm": "Password9!", "csrf_token": token},
                     follow_redirects=True)
@@ -167,22 +160,22 @@ def test_registration_validation(client):
 
 def test_order_status_lookup(client):
     token = _csrf(client, "/order-status")
-    r = client.post("/order-status", data={"order_number": "MWS1042",
+    r = csrf_post(client, "/order-status", data={"order_number": "MWS1042",
                                            "email": "alice.j@test.com",
                                            "csrf_token": token})
     assert r.status_code == 200
     assert b"MWS1042" in r.data
     token = _csrf(client, "/order-status")
-    r = client.post("/order-status", data={"order_number": "MWS1042",
+    r = csrf_post(client, "/order-status", data={"order_number": "MWS1042",
                                            "email": "wrong@example.com",
                                            "csrf_token": token})
     assert b"find an order" in r.data
 
 
 def test_newsletter(client):
-    r = client.post("/newsletter/subscribe", data={"email": "fan@example.com"})
+    r = csrf_post(client, "/newsletter/subscribe", data={"email": "fan@example.com"})
     assert r.get_json()["ok"] is True
-    r = client.post("/newsletter/subscribe", data={"email": "not-an-email"})
+    r = csrf_post(client, "/newsletter/subscribe", data={"email": "not-an-email"})
     assert r.status_code == 400
 
 

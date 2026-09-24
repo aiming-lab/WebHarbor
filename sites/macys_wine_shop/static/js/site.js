@@ -5,6 +5,16 @@
 
 (function () {
   "use strict";
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = function (url, options) {
+    options = options || {};
+    const target = new URL(url, location.href);
+    if (target.origin === location.origin && (options.method || "GET").toUpperCase() === "POST") {
+      options.headers = new Headers(options.headers || {});
+      options.headers.set("X-CSRF-Token", document.querySelector('meta[name="csrf-token"]').content);
+    }
+    return originalFetch(url, options);
+  };
 
   // ---------- notifications ----------
   window.notify = function (message, kind) {
@@ -59,7 +69,7 @@
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
         body: "state=" + encodeURIComponent(sel.value),
-      });
+      }).then(function (response) { if (response.ok) window.location.reload(); });
     });
   });
 

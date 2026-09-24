@@ -75,3 +75,12 @@ def carol(app):
 def david(app):
     """A test client signed in as david.k@test.com."""
     return _login(app, "david.k@test.com")
+
+
+def csrf_post(client, path, **kwargs):
+    """Submit a functional test request with the same token a browser receives."""
+    import re
+    html = client.get('/').get_data(as_text=True)
+    token = re.search(r'<meta name="csrf-token" content="([^"]+)"', html).group(1)
+    kwargs['headers'] = {**kwargs.get('headers', {}), 'X-CSRF-Token': token}
+    return client.post(path, **kwargs)
