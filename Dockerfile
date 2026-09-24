@@ -279,6 +279,6 @@ RUN cd /opt/WebSyn/megabus && rm -rf instance instance_seed && \
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40110
+EXPOSE 8101 40000-40087
 
 CMD ["/opt/websyn_start.sh"]
