@@ -1,27 +1,7 @@
 #!/usr/bin/env python3
-"""Verify Michaels--9 (round-2 redesign).
+"""Verify Michaels--9.
 
-Grandma Rose only shops in stores and wants 30% off one regular-price item:
-find her coupon on the Savings page (expiry date, where it's valid). When does
-the Buy One Get One frames promo end? List the categories GETMY30's Savings
-card excludes. Then check the Coupon Policy page: how many coupons of that
-type may she use per day, and can she stack GETMY30 on top of the in-store
-coupon? Sign in as Bob, apply GETMY30 to his cart, and report the discount
-and total.
-
-Frozen ground truth (seed DB): the in-store coupon "30% OFF Any One Regular
-Price Item", In-Store Only, valid 2026-09-18 - 2026-09-24, limit one coupon
-per customer per day. The BOGO frames promo (BUY 1, GET 1 FREE Wall & Tabletop
-Frames by Studio Decor) runs 2026-09-21 - 2026-09-26, so it ends 2026-09-26.
-GETMY30 (online only, valid 2026-09-14 - 2026-10-03) excludes sale & clearance,
-tech, Cricut, LEGO, Sizzix, Splendid, Simply Tidy, Brother & Janome machines
-and more. Policy: AORPI/A2RPI/ERPP coupons are limited to one coupon per
-product and one coupon of each type per day. Stacking: NO — the in-store coupon
-is valid in store only while GETMY30 is online only, so they cannot be combined.
-Bob's seed cart subtotal is $23.99 (letter B $6.99 + 2 x display board $5.99 +
-wafers $4.99); GETMY30 takes off $7.19 (30%), so the cart shows discount
--$7.19 and order total $24.31 (16.77 + 5.99 shipping + 1.55 tax). Applying a
-promo code is session state only — the DB stays untouched (read-only task).
+Bob is deciding whether to buy his craft supplies online or use the in-store 30%-off coupon. Check the Savings page and Coupon Policy: explain when and where that coupon is valid, its daily limit, which categories GETMY30 excludes, and whether the offers can be combined. Sign in as bob.c@test.com (password TestPass123!), apply GETMY30 to his current cart and report the discount and total, leaving the order unplaced.
 """
 from verify_lib import (Judge, answer_is_negative, check_read_only, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_all,
@@ -49,8 +29,6 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_expiry", contains_phrase(answer, "2026-09-24"),
                 "expected expiry 2026-09-24")
     # answer: BOGO frames promo end date + GETMY30 excluded categories
-    judge.check("answer_bogo_frames_end", contains_phrase(answer, "2026-09-26"),
-                "expected the BOGO frames promo end date 2026-09-26")
     judge.check("answer_getmy30_exclusions",
                 contains_all(answer, ["Cricut", "LEGO", "Sizzix", "Simply Tidy"]),
                 "expected GETMY30 exclusions incl. Cricut, LEGO, Sizzix, Simply Tidy")

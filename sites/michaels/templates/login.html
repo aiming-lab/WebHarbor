@@ -3,7 +3,7 @@
 {% block content %}
 <div class="auth-box">
   <h1>Sign In or Create An Account</h1>
-  <form method="post" class="auth-form">
+  <form method="post" class="auth-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
     <label>Email<input type="email" name="email" required placeholder="Enter your Email"></label>
     <label>Password<input type="password" name="password" required></label>

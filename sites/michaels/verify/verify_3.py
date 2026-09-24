@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--3.
 
-Alice needs an expense-report summary of her Michaels pickup order that used a
-30% off promo code: the order number, its current status, each item with its
-color and quantity, and exactly how the promo discount applied (subtotal,
-discount, shipping, tax, total, card, store).
-
-Frozen ground truth (seed DB): order MI2609180101002 (alice, 2026-09-18,
-Delivered, Pickup, Visa ****4242, GETMY30): 6 x 6"x20yd. Tulle Fabric
-(White) @4.99 = $29.94 subtotal; 30% off = $8.98 discount; FREE shipping
-(pickup); tax 9.25% of $20.96 = $1.94; total $22.90. Store: Parkway
-Supercenter, 17400 Southcenter Pkwy, Tukwila, WA 98188.
+Alice needs an expense-report summary of her Michaels pickup order that used a 30% off promo code. Prepare the summary: the order number, its current status, each item with its color and quantity, and exactly how the promo discount, shipping, and tax add up to the order total. Also state which store the pickup was scheduled at. Sign in as alice.j@test.com with password TestPass123!.
 """
 from verify_lib import (Judge, check_read_only, check_signed_in_as, check_trajectory_identity,
                         check_visited_path, contains_all, contains_amount, contains_any,

@@ -32,6 +32,7 @@ class MichaelsMirrorTests(unittest.TestCase):
         spec.loader.exec_module(cls.mod)
         cls.app = cls.mod.app
         cls.app.config['TESTING'] = True
+        cls.app.config['WTF_CSRF_ENABLED'] = False
 
     @classmethod
     def tearDownClass(cls):

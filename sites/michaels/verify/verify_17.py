@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--17.
 
-Carol heard the single (non-multipack) Level 3 Gallery Wrapped Heavy Duty Canvas
-is for serious painters. Using only its product page: does the description
-confirm archival-quality natural cotton and gesso priming? What is the price of
-the largest size, and which aisle is it in at her store? Then add the largest
-size to Carol's cart and report the new subtotal.
-
-Frozen ground truth (seed DB): description confirms "archival-quality natural
-cotton ... gesso primed". Largest size 48" x 48" = $109.99 (sku 10472520);
-fulfillment note "Available at Parkway Supercenter, 98188 | Aisle 14".
-Carol's seed cart $44.41 + $109.99 = new subtotal $154.40.
+Carol heard the single (non-multipack) Level 3 Gallery Wrapped Heavy Duty Canvas is for serious painters. Using only its product page: does the description confirm archival-quality natural cotton and gesso priming? What is the largest size sold and its exact price? Which aisle at Parkway Supercenter stocks it? Then add the largest size to Carol's cart (carol.d@test.com / TestPass123!) and report the new cart subtotal.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_amount,

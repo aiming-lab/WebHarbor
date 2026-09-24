@@ -4,7 +4,7 @@
 <h1>Checkout</h1>
 <div class="checkout-layout">
   <section class="checkout-steps">
-    <form method="post" class="checkout-form">
+    <form method="post" class="checkout-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="step" value="details">
       <h2>1. Delivery</h2>
       <div class="radio-row">
@@ -34,7 +34,7 @@
       <button type="submit" class="btn-primary">Review Order</button>
     </form>
     {% if method %}
-    <form method="post" class="checkout-form">
+    <form method="post" class="checkout-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="step" value="place">
       <h2>3. Review &amp; Place Order</h2>
       <p class="checkout-review-method">{{ method }}{% if session.get('checkout_address') %} &middot; shipping to selected address{% else %} &middot; pickup at {{ home_store.name }}{% endif %}</p>

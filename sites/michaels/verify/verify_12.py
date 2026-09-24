@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--12.
 
-David wants to show his team where their display board order stands: find his
-most recent order and report its order number, current status, the item with
-its color and quantity, and the card that was charged. Then start a reorder of
-that display board in White and report the updated cart total.
-
-Frozen ground truth (seed DB): david's most recent order MI2609220404001
-(2026-09-22, Processing, Pickup, Visa ****4242, total $6.54): 1 x 36" x 48"
-Corrugated Tri-Fold Display Board (Black) @5.99. Reorder in White -> new cart
-row; david's seed cart $17.97 + $5.99 = $23.96 subtotal; shipping $5.99;
-tax $2.22; cart total $32.17.
+David wants to show his team where their display board order stands. Find his most recent order and report its order number, current status, the item with its color and quantity, and the card that was charged. Then start a reorder: add the same display board to his cart but in White this time, and report the updated cart total shown on the cart page. Sign in as david.k@test.com with password TestPass123!.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_all,

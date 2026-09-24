@@ -11,7 +11,7 @@
       <li><a href="{{ url_for('account_payment') }}">Payment Methods</a></li>
       <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
       <li><a href="{{ url_for('account_registrations') }}">Class Registrations</a></li>
-      <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+      <li><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign Out</button></form></li>
     </ul>
   </aside>
   <section class="account-main">
@@ -21,7 +21,7 @@
       <div><strong>{{ a.label }}</strong></div>
       <div>{{ a.line1 }}{% if a.line2 %}, {{ a.line2 }}{% endif %}</div>
       <div>{{ a.city }}, {{ a.state }} {{ a.zip_code }}</div>
-      <form action="{{ url_for('account_addresses') }}" method="post">
+      <form action="{{ url_for('account_addresses') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="action" value="delete">
         <input type="hidden" name="id" value="{{ a.id }}">
         <button type="submit" class="link-btn">Remove</button>
@@ -29,7 +29,7 @@
     </article>
     {% endfor %}
     <h2>Add a new address</h2>
-    <form method="post" class="profile-form">
+    <form method="post" class="profile-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="add">
       <label>Label<input type="text" name="label" value="Home"></label>
       <label>Street address<input type="text" name="line1" required></label>

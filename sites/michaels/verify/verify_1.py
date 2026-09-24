@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--1.
 
-David wants the Buy One Get One FREE mix & match frame promo: find two qualifying
-Studio Decor shadow boxes or display cases he likes, add both to david.k@test.com's
-cart, complete the order with store pickup and his saved Discover card, and report
-the BOGO discount amount, the order number and the order total.
-
-Frozen ground truth (seed DB): Flat White Deep Profile Shadow Box $17.49 + Mini
-Helmet Display Case $12.49 (both promo_type b1g1_free). David's seed cart
-(6" Glitter Tulle @4.99 + 2x 8x10 Double Mat @6.49 = $17.97). Subtotal $47.95;
-BOGO free discount = cheaper unit $12.49 (mix & match, sorted desc, every 2nd
-free); pickup -> no shipping; tax 9.25% of $35.46 = $3.28; total $38.74.
-Order number MI26092304002 (user 04, 2nd order). Discover ****6442, pickup at
-445 N Canyons Pkwy, Livermore, CA 94551 (david's home store).
+David wants matching displays for his sports memorabilia: the 10-inch square Flat White Deep Profile Shadow Box and the Mini Helmet Display Case by Studio Décor. Check that both qualify for the Buy One Get One FREE frame promotion, then order one of each for store pickup using his saved Discover card (david.k@test.com / TestPass123!). Keep the items already in the cart as part of this order. Report the discount, order number and total.
 """
 from verify_lib import (Judge, added_order_matching, check_answer_order_matches_added_order,
                         check_only_tables_changed, check_signed_in_as, check_trajectory_identity,

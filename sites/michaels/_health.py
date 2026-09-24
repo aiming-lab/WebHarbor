@@ -1,9 +1,10 @@
 """Per-site health probe for the Michaels mirror (end-to-end)."""
 import sqlite3
+from pathlib import Path
 
 
 def health():
-    db_path = "instance/michaels.db"
+    db_path = Path(__file__).resolve().parent / "instance" / "michaels.db"
     conn = sqlite3.connect(db_path)
     try:
         counts = {}

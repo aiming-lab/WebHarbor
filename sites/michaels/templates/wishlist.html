@@ -19,7 +19,7 @@
       </div>
       <div class="card-price"><span class="price">${{ '%.2f' % p.price_low }}</span>
         {% if p.price_high != p.price_low %}<span class="price-range"> - ${{ '%.2f' % p.price_high }}</span>{% endif %}</div>
-      <form action="/wishlist/remove" method="post" class="wishlist-remove-form">
+      <form action="/wishlist/remove" method="post" class="wishlist-remove-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="item_id" value="{{ item.id }}">
         <button type="submit" class="link-btn">Remove from wishlist</button>
       </form>
