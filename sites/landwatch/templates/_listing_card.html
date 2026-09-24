@@ -1,0 +1,83 @@
+{% macro listing_card(listing, agent=None, wide=False) %}
+{% set photos = [listing.card_photo()] %}
+{% for image_id in listing.image_ids_list()[1:3] %}{% set _ = photos.append(listing.photo_path(image_id)) %}{% endfor %}
+{% if wide %}
+<div class="lw-result" data-card-photos='{{ photos | tojson }}'>
+  <div class="lw-result-head">
+    <div>
+      <div class="lw-result-title"><a href="{{ listing.detail_path() }}">{{ listing.title or listing.street }}</a></div>
+      <div class="lw-result-location">{{ listing.location_line }}</div>
+    </div>
+    <button class="lw-card-fav lw-result-fav" data-favorite-pid="{{ listing.pid }}" aria-label="Save to favorites" type="button">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.7-10-9.3C.6 8 2.4 4.5 6 4.5c2.2 0 3.6 1.2 6 3.8 2.4-2.6 3.8-3.8 6-3.8 3.6 0 5.4 3.5 4 7.2C19.5 16.3 12 21 12 21z"/></svg>
+    </button>
+  </div>
+  <div class="lw-result-photo">
+    <a href="{{ listing.detail_path() }}"><img src="{{ listing.card_photo() }}" alt="{{ listing.image_alt or ('Land for sale in ' ~ listing.county ~ ', ' ~ listing.state) }}"></a>
+    <div class="lw-card-badges">
+      {% if listing.has_video %}<span class="lw-badge">VIDEO</span>{% endif %}
+      {% if listing.has_custom_map %}<span class="lw-badge">MAP</span>{% endif %}
+      {% if listing.has_video and listing.video_url %}<span class="lw-badge">3D TOURS</span>{% endif %}
+      {% if listing.is_auction %}<span class="lw-badge lw-badge-auction">AUCTION</span>{% endif %}
+    </div>
+    {% if listing.is_auction and listing.auction_start %}<span class="lw-auction-countdown">Auction: {{ listing.auction_start[:10] }}</span>{% endif %}
+    <div class="lw-card-photo-nav">
+      <button type="button" data-card-prev aria-label="Previous photo">&#8249;</button>
+      <button type="button" data-card-next aria-label="Next photo">&#8250;</button>
+    </div>
+  </div>
+  <div class="lw-result-body">
+    <div class="lw-card-price">{{ listing.price_display }} <span class="lw-acres">&bull; {{ listing.acres_display }}</span></div>
+    {% if listing.beds or listing.baths or listing.sqft %}
+    <div class="lw-result-sub">{{ listing.beds or 0 }} beds &bull; {{ listing.baths or 0 }} baths{% if listing.sqft %} &bull; {{ listing.sqft_display }}{% endif %}</div>
+    {% endif %}
+    {% if listing.description_short %}<div class="lw-result-desc">{{ listing.description_short }}</div>{% endif %}
+    <div class="lw-result-agent">
+      {% set portrait = agent.portrait_path() if agent else agent_portrait(listing.broker_id) %}
+      {% if portrait %}<img src="{{ portrait }}" alt="{{ listing.broker_name }}">{% endif %}
+      <div>
+        <div class="lw-card-agent-name">{{ listing.broker_name }}</div>
+        <div class="lw-card-agent-company">{{ listing.broker_company }}</div>
+      </div>
+      <a class="lw-btn lw-btn-outline-dark" href="{{ listing.detail_path() }}#contact">Contact</a>
+    </div>
+  </div>
+</div>
+{% else %}
+<div class="lw-card">
+  <div class="lw-card-photo" data-card-photos='{{ photos | tojson }}'>
+    <a href="{{ listing.detail_path() }}"><img src="{{ listing.card_photo() }}" alt="{{ listing.image_alt or ('Land for sale in ' ~ listing.county ~ ', ' ~ listing.state) }}"></a>
+    <div class="lw-card-badges">
+      {% if listing.has_video %}<span class="lw-badge">VIDEO</span>{% endif %}
+      {% if listing.has_custom_map %}<span class="lw-badge">MAP</span>{% endif %}
+      {% if listing.is_auction %}<span class="lw-badge lw-badge-auction">AUCTION</span>{% endif %}
+    </div>
+    <button class="lw-card-fav" data-favorite-pid="{{ listing.pid }}" aria-label="Save to favorites" type="button">
+      <svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.7-10-9.3C.6 8 2.4 4.5 6 4.5c2.2 0 3.6 1.2 6 3.8 2.4-2.6 3.8-3.8 6-3.8 3.6 0 5.4 3.5 4 7.2C19.5 16.3 12 21 12 21z"/></svg>
+    </button>
+    <div class="lw-card-photo-nav">
+      <button type="button" data-card-prev aria-label="Previous photo">&#8249;</button>
+      <button type="button" data-card-next aria-label="Next photo">&#8250;</button>
+    </div>
+  </div>
+  <div class="lw-card-body">
+    <div class="lw-card-price">{{ listing.price_display }} <span class="lw-acres">&bull; {{ listing.acres_display }}</span></div>
+    {% if listing.beds or listing.baths or listing.sqft %}
+      <div class="lw-card-location">{{ listing.beds or 0 }} beds &bull; {{ listing.baths or 0 }} baths{% if listing.sqft %} &bull; {{ listing.sqft_display }}{% endif %}</div>
+    {% endif %}
+    <div class="lw-card-location">{{ listing.location_line }}</div>
+    <div class="lw-card-agent">
+      {% if listing.broker_name %}
+        {% set portrait = agent_portrait(listing.broker_id) %}
+        {% if portrait %}<img src="{{ portrait }}" alt="{{ listing.broker_name }}">{% endif %}
+        <div>
+          <div class="lw-card-agent-name">{{ listing.broker_name }}</div>
+          <div class="lw-card-agent-company">{{ listing.broker_company }}</div>
+        </div>
+      {% endif %}
+      <a class="lw-btn lw-btn-outline" href="{{ listing.detail_path() }}#contact">Contact</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endmacro %}

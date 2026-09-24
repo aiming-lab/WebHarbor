@@ -257,8 +257,12 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/jcpenney && \
     cd /opt/WebSyn/jcpenney && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/landwatch && \
+    cd /opt/WebSyn/landwatch && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40083
+EXPOSE 8101 40000-40084
 
 CMD ["/opt/websyn_start.sh"]

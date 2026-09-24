@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+{% from "_listing_card.html" import listing_card %}
+{% block title %}{{ ctx.h1() }}, {{ total }} Properties for Sale | LandWatch{% endblock %}
+
+{% block content %}
+<div class="lw-search-row">
+  <form class="lw-searchbar" action="/search" method="get" autocomplete="off">
+    <div class="lw-searchbar-field">
+      <svg class="lw-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      {% set chips = ctx.chips() %}
+      {% if chips %}
+        {% for chip in chips %}<span class="lw-chip">{{ chip.label }} <a href="{{ chip.href }}" aria-label="Remove {{ chip.label }}">&times;</a></span>{% endfor %}
+      {% endif %}
+      <input type="text" name="q" placeholder="Enter a city, county, or state" aria-label="Enter a city, county, or state" data-suggest-input>
+      <div class="lw-suggest hidden"></div>
+    </div>
+    <button class="lw-btn lw-btn-primary" type="submit">Search</button>
+  </form>
+  <button class="lw-btn lw-btn-outline-dark lw-btn-icon" type="button" id="lw-filter-btn" aria-label="Filter">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M7 12h10M10 18h4"/></svg>
+    Filter
+    {% set n_active = (1 if ctx.price_bucket else 0) + (1 if ctx.acres_bucket else 0) + (1 if ctx.county else 0) + (1 if ctx.city else 0) + (1 if ctx.owner_financing else 0) + (1 if ctx.has_video else 0) %}
+    {% if n_active %}<span class="lw-filter-badge">{{ n_active }}</span>{% endif %}
+  </button>
+  <button class="lw-btn lw-btn-outline-dark" type="button" data-save-search>Save Search</button>
+</div>
+
+<div class="lw-results-head">
+  <h1>{{ ctx.h1() }} - {{ from_n }}-{{ to_n }} of {{ total }} Listings</h1>
+  <div class="lw-results-tools">
+    <button class="lw-tool" type="button">
+      <img src="/static/icons/map-white.svg" alt="" width="15" height="15" style="filter: brightness(0) invert(0);">
+      Map <span class="lw-new">NEW</span>
+    </button>
+    <div class="lw-sort-wrap">
+      <button class="lw-tool" type="button" data-sort-button aria-haspopup="true">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 4v16m0 0-4-4m4 4 4-4M17 20V4m0 0-4 4m4-4 4 4"/></svg>
+        Sort
+      </button>
+      <div class="lw-sort-menu hidden">
+        <button type="button" data-sort="default" class="{{ 'active' if ctx.sort == 'default' }}">Default</button>
+        <button type="button" data-sort="acres-low" class="{{ 'active' if ctx.sort == 'acres-low' }}">Acres: Small to Large</button>
+        <button type="button" data-sort="acres-high" class="{{ 'active' if ctx.sort == 'acres-high' }}">Acres: Large to Small</button>
+        <button type="button" data-sort="newest" class="{{ 'active' if ctx.sort == 'newest' }}">Newest</button>
+        <button type="button" data-sort="price-low" class="{{ 'active' if ctx.sort == 'price-low' }}">Price: Low to High</button>
+        <button type="button" data-sort="price-high" class="{{ 'active' if ctx.sort == 'price-high' }}">Price: High to Low</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="lw-layout">
+  <aside class="lw-side">
+    {% set chips = ctx.chips() %}
+    {% if chips %}
+    <div class="lw-facet-card lw-active-filters">
+      <h3>Active Filters</h3>
+      <div style="font-size: 12px; color: #757575; margin-bottom: 6px;">Remove</div>
+      <div class="lw-active-chip">
+        {% for chip in chips %}<span class="lw-chip">{{ chip.label }} <a href="{{ chip.href }}">&times;</a></span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if facets.regions %}
+    <div class="lw-facet-card">
+      <h3>Region Map <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        {% for row in facets.regions %}
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('region', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if facets.counties %}
+    <div class="lw-facet-card">
+      <h3>County <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        {% for row in facets.counties %}
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('county', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if facets.cities %}
+    <div class="lw-facet-card">
+      <h3>City <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        {% for row in facets.cities %}
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('city', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
+    <div class="lw-facet-card">
+      <h3>Price <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        {% for row in facets.price %}
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('price', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+      <form class="lw-custom-range" method="get" action="{{ ctx.base_path() }}">
+        <span>Custom Price</span>
+        <input type="text" name="priceMin" placeholder="Min" aria-label="Min price">
+        <span>&ndash;</span>
+        <input type="text" name="priceMax" placeholder="Max" aria-label="Max price">
+        <button class="lw-btn lw-btn-outline" type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="lw-facet-card">
+      <h3>Parcel Size <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        {% for row in facets.acres %}
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('acres', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+      <form class="lw-custom-range" method="get" action="{{ ctx.base_path() }}">
+        <span>Custom Size (Acres)</span>
+        <input type="text" name="acresMin" placeholder="Min" aria-label="Min acres">
+        <span>&ndash;</span>
+        <input type="text" name="acresMax" placeholder="Max" aria-label="Max acres">
+        <button class="lw-btn lw-btn-outline" type="submit">Add</button>
+      </form>
+    </div>
+
+    <div class="lw-facet-card">
+      <h3>Property Types <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        {% for row in facets.types %}
+        <div class="lw-facet-item"><a class="lw-facet-check" href="{{ ctx.facet_path('category', row['slug']) }}"><span class="lw-checkbox"></span>{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="lw-facet-card">
+      <h3>Residence <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('residence', 'with-residence') }}">Yes</a><span class="lw-facet-count">{{ facets.residence.yes }}</span></div>
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('residence', 'no-residence') }}">No</a><span class="lw-facet-count">{{ facets.residence.no }}</span></div>
+      </div>
+    </div>
+
+    <div class="lw-facet-card">
+      <h3>Bedrooms <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        {% for row in facets.beds %}
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('beds', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="lw-facet-card">
+      <h3>Bathrooms <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        {% for row in facets.baths %}
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('baths', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="lw-facet-card">
+      <h3>Sale Type <span class="lw-collapse">&minus;</span></h3>
+      <div class="lw-facet-list">
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('sale', 'for-sale') }}">For Sale</a><span class="lw-facet-count">{{ facets.sale.for_sale }}</span></div>
+        <div class="lw-facet-item"><a href="{{ ctx.facet_path('sale', 'auctions') }}">Auction</a><span class="lw-facet-count">{{ facets.sale.auction }}</span></div>
+      </div>
+    </div>
+  </aside>
+
+  <div class="lw-results-col">
+    {% if listings %}
+      {% for listing in listings %}{{ listing_card(listing, wide=True) }}{% endfor %}
+      {% if pages > 1 %}
+      <div class="lw-pagination">
+        {% if ctx.page > 1 %}<a href="{{ ctx.path_for(page=ctx.page - 1) }}">&#8249; Previous</a>{% endif %}
+        {% for p in range(1, pages + 1) %}
+          {% if p == ctx.page %}<span class="active">{{ p }}</span>
+          {% else %}<a href="{{ ctx.path_for(page=p) }}">{{ p }}</a>{% endif %}
+        {% endfor %}
+        {% if ctx.page < pages %}<a href="{{ ctx.path_for(page=ctx.page + 1) }}">Next &#8250;</a>{% endif %}
+      </div>
+      {% endif %}
+    {% else %}
+      <div class="lw-404">
+        <h2>No listings match this search</h2>
+        <p>Try removing some filters, or <a href="/land">browse all land for sale</a>.</p>
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
