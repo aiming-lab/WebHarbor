@@ -1,23 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--9.
 
-PS5 storage: compare the two 4TB solid-state drives on the compare page and
-identify the one explicitly compatible with the PlayStation 5. Set the store
-to the Texas Micro Center that has it in stock, add two to the cart, and
-report its capacity, price, and storage interface. Also add the cheapest 4TB
-internal hard drive and report the final subtotal.
-
-Frozen ground truth (seed DB): the two 4TB SSDs are the Professional 4TB
-PRO-BLADE SSD Mag (676677, $429.99) and the 4TB PCIe Gen 4 x4 NVMe M.2
-Internal SSD w/ Heatsink - Playstation 5 Compatible (674530, $459.99). The
-PS5-compatible one is 674530; the only Texas store stocking it is Houston
-(141) — Dallas and Austin do not. Cheapest 4TB internal hard drive = Purple
-4TB 5400 RPM SATA III Surveillance Internal CMR (672227, $104.99). Subtotal =
-2 x 459.99 + 104.99 = $1,024.97.
-
-Guest (session) cart/store, so the DB stays read-only; the proof is the
-navigation (both SSD PDPs, compare page, Houston store surface, HDD PDP,
-cart) plus the quoted facts.
+My brother and I each need a 4TB SSD for a PlayStation 5. Compare the two 4TB solid-state drives on the compare page, choose the one explicitly compatible with the PS5, and set the store to the Texas location where it is in stock. Add two to the cart without checking out, and report the drive's capacity, interface, price and final subtotal.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_phrase, final_answer, navigated_search_with,
@@ -31,7 +15,7 @@ PS5_PRICE = 459.99
 CAPACITY = "4tb"
 INTERFACE_TOKENS = ("pcie gen 4", "nvme")
 HDD_PID = 672227
-SUBTOTAL = 1024.97
+SUBTOTAL = 919.98
 HOUSTON_SURFACES = ("/store/155", "/site/stores/default.aspx", "/stores")
 
 
@@ -50,8 +34,6 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("visited_houston_store_surface",
                 navigated_to_path_any(traj, list(HOUSTON_SURFACES)),
                 f"required_any_of={HOUSTON_SURFACES!r} (Houston selection surface)")
-    judge.check("visited_hdd_page", navigated_to_product(traj, HDD_PID),
-                f"required_product_id={HDD_PID} (Purple 4TB internal HDD)")
     judge.check("visited_cart", navigated_to_path(traj, "/cart"),
                 "required_path=/cart")
     judge.check("answer_quotes_capacity", contains_phrase(answer, CAPACITY),

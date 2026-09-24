@@ -1,22 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--5.
 
-Log in as carol.d@test.com. Shop for a wireless mechanical keyboard under
-$130: compare the two cheapest candidates and add the better-rated one to the
-list; then remove the list's two most expensive items. Report which keyboard
-was kept and its price, how many items are on the list now, and their names.
-
-Frozen ground truth (seed DB): the two cheapest wireless mechanical keyboards
-under $130 are the C75 Cake Meow Wireless Mechanical Keyboard - Pink (702087,
-$91.99, 4.7 stars) and the Retro 87-Key Wireless RGB Mechanical Gaming
-Keyboard - Xbox Edition (690495, $119.99, 3.7 stars); the better-rated one is
-the C75 Cake Meow. Carol's seed list: GT 730 (641955), Inland Power Strip
-VPR 500 (652834), Combo Touch (661201, $159.99), Corsair RM850e (664900,
-$103.99). After adding the C75 and removing the two most expensive (Combo
-Touch + RM850e), the list is exactly {GT 730, Power Strip, C75 Cake Meow}.
-
-The compare page is used while signed in, so compare_items rows may be added
-for carol; any compare rows in the after-DB must belong to her.
+Carol needs a wireless mechanical keyboard under $130. Sign in as carol.d@test.com (password TestPass123!), compare the two cheapest candidates and save the better-rated one to her list, keeping her existing saved items. Tell her which keyboard you chose, its price and rating, and how many items are now saved.
 """
 from verify_lib import (check_signed_in_as, check_only_tables_changed,
                         check_trajectory_identity, contains_amount, contains_count,
@@ -28,7 +13,7 @@ EMAIL = "carol.d@test.com"
 KEPT_PID = 702087
 KEPT_PRICE = 91.99
 OTHER_CANDIDATE = 690495
-EXPECTED_LIST = {641955, 652834, 702087}
+EXPECTED_LIST = {641955, 652834, 661201, 664900, 702087}
 
 
 def run_checks(judge, traj, initial_db, after_db):
@@ -52,11 +37,8 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected_token='c75'")
     judge.check("answer_quotes_kept_price", contains_amount(answer, KEPT_PRICE),
                 f"expected_price={KEPT_PRICE}")
-    judge.check("answer_quotes_list_count", contains_count(answer, 3),
-                "expected_count=3")
-    judge.check("answer_names_remaining_items",
-                contains_phrase(answer, "gt 730") and contains_phrase(answer, "power strip"),
-                "expected_tokens=['gt 730', 'power strip']")
+    judge.check("answer_quotes_list_count", contains_count(answer, 5),
+                "expected_count=5")
     rows = db_query(after_db, "SELECT product_id FROM list_items WHERE user_id = 3")
     listed = {r["product_id"] for r in rows}
     judge.check("list_final_state_as_specified", listed == EXPECTED_LIST,

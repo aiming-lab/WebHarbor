@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--2.
 
-Find the open-box laptop whose Excellent condition saves the most versus
-buying new, plus the runner-up. Report each one's name with its new and
-Excellent-condition prices, every open-box condition and price offered for
-the winner, how many stores have the winner in stock, and whether it is in
-stock at the Cambridge, MA store.
-
-Frozen ground truth (seed DB): among the 11 open-box laptops the biggest
-Excellent savings is the Dell Precision 7780 Mobile Workstation 17.3"
-(671164): new $3,219.99, Excellent $2,720.96 (saves $499.03), also offered
-Satisfactory $2,714.66; in stock at 23 of 30 stores; OUT of stock at
-Cambridge (121). Runner-up: Microsoft Surface Laptop (Wi-Fi) 7th Edition
-ZGQ-00001 (681059): new $1,399.99, Excellent $1,019.01 (saves $380.98).
-The Precision 3680 desktop has larger savings but is not a laptop (near-miss).
+Micro Center sells open-box laptops at a discount. Find the open-box laptop whose Excellent condition saves the most versus buying new, and the runner-up. Report each one's name with its new and Excellent-condition prices, every open-box condition and price offered for the winner, how many stores have the winner in stock, and whether it is in stock at the Cambridge, MA store.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_any, contains_count, contains_phrase, final_answer,

@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--0.
 
-Log in as alice.j@test.com, set the store to Rockville, MD, find a laptop under
-$600 that is in stock there, and complete an in-store pickup order. Report the
-order number and the total.
-
-Frozen ground truth (seed DB): the laptops priced under $600 with Rockville
-(store 085) "in stock" rows are product_ids {676305: 399.99, 676307: 499.99,
-678641: 499.99, 683766: 559.60, 677547: 599.99, 678424: 599.99}. Alice's seed
-cart (Smart Glove 21.99 + iFixit Pro Toolkit 79.99 + PLA+ Yellow 18.99) is part
-of the checkout, so the total is read from the placed order, not recomputed from
-the laptop alone. Any one of the six laptops is accepted; the order must be a
-pickup order for alice containing at least one of them, internally consistent
-(subtotal = sum(items); tax = 7.25%; total = subtotal + tax), and the answer
-must quote the order number and the order's total.
-
-NOTE (review finding, non-verifiable): the checkout payment POST ignores the
-saved card_id and always requires a typed 16-digit card, so the task's "with
-the saved Visa card" clause cannot be honored by the mirror; this verifier
-deliberately does not gate on the saved card.
+I'm finishing Alice's pending pickup order and need to add a laptop for her daughter's first week at college. Sign in as alice.j@test.com (password TestPass123!), set the store to Rockville, MD, and choose a laptop under $600 that is in stock there. Keep her existing cart items that are available at Rockville, removing any that are out of stock, and complete the pickup order with her saved Visa. Report the order number and the total for the whole order.
 """
 from verify_lib import (added_orders, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_amount, contains_phrase,

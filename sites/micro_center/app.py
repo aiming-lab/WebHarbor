@@ -33,7 +33,7 @@ from sqlalchemy import or_
 
 SITE_SLUG = "micro_center"
 SITE_NAME = "Micro Center"
-SITE_PORT = 40112
+SITE_PORT = 40089
 BENCHMARK_PASSWORD = "TestPass123!"
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
@@ -62,7 +62,7 @@ def _ensure_dirs() -> None:
 _ensure_dirs()
 
 app = Flask(__name__, instance_path=str(INSTANCE_DIR))
-app.config["SECRET_KEY"] = "micro-center-demo-session-key"
+app.config["SECRET_KEY"] = os.environ.get("MICRO_CENTER_SECRET_KEY") or secrets.token_hex(32)
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{RUNTIME_DB_PATH}"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
@@ -1247,6 +1247,13 @@ def checkout_shipping():
             "state": form_str("state"),
             "zip": form_str("zip"),
         }
+        if not all([address["full_name"], address["line1"], address["city"],
+                    address["state"], address["zip"]]):
+            flash_message("Fill in all required address fields.", "error")
+            return redirect("/checkout/shipping")
+        if not re.fullmatch(r"\d{5}(-\d{4})?", address["zip"]):
+            flash_message("Enter a valid 5-digit ZIP code.", "error")
+            return redirect("/checkout/shipping")
         if current_user.is_authenticated and form_str("save_address") == "on":
             row = Address(user_id=current_user.id, label="Shipping",
                           full_name=address["full_name"], line1=address["line1"],
@@ -1255,13 +1262,6 @@ def checkout_shipping():
                           phone=form_str("phone"))
             db.session.add(row)
             db.session.commit()
-        if not all([address["full_name"], address["line1"], address["city"],
-                    address["state"], address["zip"]]):
-            flash_message("Fill in all required address fields.", "error")
-            return redirect("/checkout/shipping")
-        if not re.fullmatch(r"\d{5}(-\d{4})?", address["zip"]):
-            flash_message("Enter a valid 5-digit ZIP code.", "error")
-            return redirect("/checkout/shipping")
         speed = form_str("speed", "standard")
         shipping_fee = {"standard": 0.0, "twoday": 12.99, "nextday": 24.99}.get(speed, 0.0)
         state.update({"address": address, "shipping_speed": speed,
@@ -1356,6 +1356,7 @@ def checkout_review():
         validate_csrf()
         order = place_order(rows, state)
         if order:
+            session['confirmed_orders'] = list(set(session.get('confirmed_orders', []) + [order.order_number]))
             clear_checkout_state()
             return redirect(f"/checkout/confirmation?order={order.order_number}")
         flash_message("Could not place the order. Please review your cart.",
@@ -1369,6 +1370,18 @@ def checkout_review():
 def place_order(rows: list[tuple[Product, int]],
                 state: dict[str, Any]) -> Order | None:
     if not rows:
+        return None
+    if state.get('method') not in {'pickup', 'shipping'} or not state.get('card_last4'):
+        return None
+    if state['method'] == 'pickup':
+        if not state.get('store_id') or not state.get('contact_name') or '@' not in state.get('contact_email', ''):
+            return None
+        for product, qty in rows:
+            stock = StoreStock.query.filter_by(product_id=product.product_id, store_id=state['store_id']).first()
+            if not stock or stock.status != 'in stock' or stock.qty < qty:
+                flash_message(f'{product.name} is unavailable in the requested quantity at this store.', 'error')
+                return None
+    elif not all(state.get('address', {}).get(k) for k in ('full_name','line1','city','state','zip')):
         return None
     user_id = current_user.id if current_user.is_authenticated else 0
     totals = cart_totals(rows)
@@ -1406,6 +1419,9 @@ def checkout_confirmation():
     order = Order.query.filter_by(order_number=order_number).first()
     if not order:
         abort(404)
+    if not ((current_user.is_authenticated and order.user_id == current_user.id)
+            or order.order_number in session.get('confirmed_orders', [])):
+        abort(403)
     return render_template("checkout_confirmation.html", order=order)
 
 # ---------------------------------------------------------------------------
@@ -1631,7 +1647,7 @@ def account_order_cancel(order_number: str):
                                   user_id=current_user.id).first()
     if not order:
         abort(404)
-    if order.status in ("Delivered", "Picked Up", "Cancelled"):
+    if order.status not in ("Processing", "Preparing to Ship", "Ready for Pickup"):
         flash_message("This order can no longer be cancelled online.", "error")
         return redirect(f"/account/orders/{order.order_number}")
     order.status = "Cancelled"

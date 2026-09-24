@@ -27,7 +27,7 @@ VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
 sys.path.insert(0, str(VERIFY_DIR))
 
-BASE = "http://localhost:40112"
+BASE = "http://localhost:40089"
 PASSWORD = "TestPass123!"
 CONTAINER = "wh-mc-review"
 CACHE = Path(tempfile.gettempdir()) / "mc_verify_tests_seed.db"

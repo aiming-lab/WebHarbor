@@ -410,6 +410,10 @@ def ensure_seed_data(force: bool, runtime_db_path: Path, seed_db_path: Path,
             db.drop_all()
             db.create_all()
             _populate_all()
+            from app import Order
+            pending = Order.query.filter_by(order_number="MC2608231112").first()
+            if pending and pending.status == "Shipped":
+                pending.status = "Preparing to Ship"
             db.session.commit()
             db.session.remove()
             if runtime_db_path.exists():

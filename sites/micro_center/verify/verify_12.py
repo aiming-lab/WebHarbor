@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--12.
 
-Set the Yonkers, NY store as your store and report its Sunday hours. Find a
-wireless mouse under $40 rated at least 4 stars that is in stock there;
-compare the qualifying models, then put two of the cat-themed one in the
-cart. Report the cheapest qualifying mouse's price, how many units of it
-Yonkers has left, how many stores nationwide stock it, and the cart subtotal.
-
-Frozen ground truth (seed DB): Yonkers is store 105, Sunday hours
-"11:00 AM - 6:00 PM". Qualifying mice (wireless, under $40, >= 4 stars, in
-stock at Yonkers): Logitech M190 Full-Size Wireless Mouse - Charcoal (627261,
-$17.99, 4.6 stars, only 3 left at Yonkers, in stock at 26 of 30 stores), Cat
-Theme Wireless Mouse - Fortune (697541, $24.99, 4.3 stars), M1 Wireless
-Bluetooth Optical Mouse - Silver (610382, $29.99, 4.5 stars). The M185
-($17.99, 3.7 stars) is a near-miss below the rating bar. Two Cat Theme mice
-in the cart: subtotal $49.98.
-
-Guest (session) cart/store, so the DB stays read-only; the proof is the
-navigation (Yonkers store surface, search, both PDPs, compare page, cart)
-plus the quoted facts.
+My local Micro Center is the Yonkers, NY store — set it as your store and report its Sunday hours. I need a wireless mouse under $40 rated at least 4 stars that is in stock there. Compare the qualifying models, then put two of the cat-themed one in the cart for my daughters. Report the cheapest qualifying mouse's price, how many units of it Yonkers has left, how many stores nationwide stock it, and the cart subtotal.
 """
 import re
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,

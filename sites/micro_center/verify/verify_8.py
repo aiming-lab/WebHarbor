@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--8.
 
-Without signing in, buy two of the cheapest 120mm case fans and ship them to
-Dana Chen, 350 Fifth Avenue, New York, NY 10118 with two-day shipping; report
-the order number and the total including shipping.
-
-Frozen ground truth (seed DB): the cheapest 120mm case fan is the Advance
-CF-12LB Long Life Bearing 120mm Case Fan (325743, $7.99). Two of them subtotal
-$15.98, tax (7.25%) is $1.16, two-day shipping is $12.99, so the order total
-is exactly $30.13. The order must be a guest (user_id=0) shipping order whose
-ship_to carries Dana Chen / 350 Fifth Avenue.
+Without signing in, buy two of the cheapest 120mm case fans on the site and have them shipped to Dana Chen, 350 Fifth Avenue, New York, NY 10118 with two-day shipping. Pay with any 16-digit card number. Report the order number and the total including shipping.
 """
 from verify_lib import (added_orders, check_only_tables_changed,
                         check_trajectory_identity, contains_amount, contains_phrase,

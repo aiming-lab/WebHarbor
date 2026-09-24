@@ -1,30 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--17.
 
-3D-printing starter order picked up at the Cambridge, MA store (set as your
-store): the Bambu Lab A1 3D printer, two spools of the same plain PLA
-filament under $15 each, and one PLA+ spool under $25. Report the plain PLA's
-recommended plate temperature from its spec sheet, the subtotal, and the
-filament colors picked.
-
-Frozen ground truth (seed DB): the Bambu Lab A1 3D Printer is 676237 at
-$359.99. The only plain PLA filament under $15 is the 1.75mm PLA 3D Printer
-Filament 1kg Cardboard Spool - White (512934, $12.99, in stock at Cambridge
-121, qty 9); its spec sheet lists Plate Temperature 60°C - 80°C. The PLA+
-spools under $25 in stock at Cambridge: Blue 611534 / Brown 611536 ($14.99),
-Gray 611541 / Red 611542 / Neon Green 611543 / White 611544 / Yellow 611546
-/ True Red 611549 ($18.99), PLA+ High Speed Black 670192 ($24.99). Purple
-611540 is out of stock there. The subtotal therefore is
-359.99 + 2 x 12.99 + {14.99 | 18.99 | 24.99} = {400.96 | 404.96 | 410.96},
-and the answer's subtotal must be consistent with the PLA+ color it names.
-(The A1 itself is out of stock at Cambridge — the round-2 review flagged the
-task's "all in stock there" clause as a wording mismatch; the audit round
-reworded the clause to "with the spools in stock there" so the task text
-matches the seed. The graded facts never depended on the printer's stock.)
-
-Guest (session) cart/store, so the DB stays read-only; the proof is the
-navigation (Cambridge store surface, printer + PLA + PLA+ pages, cart) plus
-the quoted spec-sheet facts.
+Help me prepare a 3D-printing starter cart for the Cambridge, MA store. Add the Bambu Lab A1 printer, two matching plain PLA spools under $15 each, and one PLA+ spool under $25; both filament types must be in stock there. Check the printer's availability so I know whether I can collect everything together. Report the plain PLA's recommended plate temperature, filament colors and cart subtotal, without checking out.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_any, contains_count, contains_phrase, final_answer,

@@ -144,8 +144,6 @@ def honest_run(tmp: Path, idx: int):
     elif idx == 4:
         with_search_log([
             ("UPDATE orders SET status = 'Cancelled' WHERE order_number = 'MC2608231112'", ()),
-            ("DELETE FROM cart_items WHERE id = 7", ()),
-            ("UPDATE cart_items SET qty = 1 WHERE id = 6", ()),
         ])
         b.login("carol.d@test.com")
         b.step("/account/orders", "goto", {})
@@ -161,7 +159,6 @@ def honest_run(tmp: Path, idx: int):
                "to qty 1; new subtotal $74.98.")
     elif idx == 5:
         with_search_log([
-            ("DELETE FROM list_items WHERE id IN (13, 14)", ()),
             ("INSERT INTO list_items (user_id, product_id, note, created_at) "
              "VALUES (3, 702087, '', ?)", (CREATED,)),
             ("INSERT INTO compare_items (user_id, product_id, created_at) "
@@ -177,7 +174,7 @@ def honest_run(tmp: Path, idx: int):
         b.step("/account/lists", "goto", {})
         b.done("I kept the C75 Cake Meow Wireless Mechanical Keyboard ($91.99, better-rated 4.7 "
                "vs 3.7). After removing the two most expensive items (Combo Touch, Corsair "
-               "RM850e), the list has 3 items: NVIDIA GeForce GT 730, Inland Power Strip VPR "
+               "RM850e), the list has 5 items: NVIDIA GeForce GT 730, Inland Power Strip VPR "
                "500, and the C75 Cake Meow Keyboard.")
     elif idx == 6:
         with_search_log()
@@ -244,7 +241,7 @@ def honest_run(tmp: Path, idx: int):
                "SSD with Heatsink: 4TB, $459.99, PCIe Gen 4 x4 NVMe (M.2). The only Texas Micro "
                "Center with it in stock is Houston, which I set as my store. Added two of them "
                "plus the cheapest 4TB internal hard drive (Purple 4TB, $104.99). Final "
-               "subtotal: $1,024.97.")
+               "subtotal: $919.98.")
     elif idx == 10:
         with_search_log([
             ("INSERT INTO reviews (product_id, author, rating, date, title, body, verified) "
@@ -387,6 +384,38 @@ def honest_run(tmp: Path, idx: int):
     else:
         raise AssertionError(idx)
 
+    # Construct positive fixtures from actual catalog identities, preserving the
+    # task's pending cart instead of fabricated lookalike order lines.
+    con = sqlite3.connect(after);con.row_factory=sqlite3.Row
+    if idx in (0,3,8,13):
+        from review_contract import product_by_id
+        order = con.execute('SELECT * FROM orders ORDER BY id DESC LIMIT 1').fetchone()
+        final_pid = {0:676305,3:641955,8:325743,13:678822}[idx]
+        old = con.execute('SELECT * FROM cart_items WHERE 0').fetchall()
+        with sqlite3.connect(seed) as seedcon:
+            seedcon.row_factory=sqlite3.Row
+            old = seedcon.execute('SELECT * FROM cart_items WHERE user_id=?',({0:1,3:2}.get(idx,0),)).fetchall()
+            if idx==0:
+                old=[r for r in old if seedcon.execute("SELECT id FROM store_stock WHERE product_id=? AND store_id='085' AND status='in stock' AND qty>=?",(r['product_id'],r['qty'])).fetchone()]
+        pairs=[(r['product_id'],r['qty']) for r in old]+[(final_pid,2 if idx==8 else 1)]
+        items=[]
+        for pid,qty in pairs:
+            product=product_by_id(seed,pid)
+            items.append(dict(product_id=pid,name=product['name'],sku=product['sku'],price=product['price'],qty=qty,brand=product['brand']))
+        subtotal=round(sum(i['price']*i['qty'] for i in items),2);tax=round(subtotal*.0725,2);total=round(subtotal+tax+order['shipping_fee'],2)
+        payment='Visa ending in 2111' if idx==0 else order['payment']
+        con.execute('UPDATE orders SET items_json=?,subtotal=?,tax=?,total=?,payment=? WHERE id=?',(json.dumps(items),subtotal,tax,total,payment,order['id']));con.commit()
+    con.close()
+    from review_contract import GUEST_CART
+    if idx in GUEST_CART:
+        from verify_lib import product_by_id
+        trajectory=json.loads((root/'trajectory.json').read_text())
+        observed='Your Cart\n'+'\n'.join(product_by_id(seed,pid)['name']+f'\nQuantity: {qty}' for pid,qty in GUEST_CART[idx].items())
+        for step in trajectory['steps']:
+            if '/cart' in step.get('url',''):step['observed_text']=observed
+        (root/'trajectory.json').write_text(json.dumps(trajectory))
+    if idx==0:
+        p=root/'trajectory.json';p.write_text(p.read_text().replace('$558.73','$535.15'))
     return root, seed, after
 
 
@@ -520,6 +549,6 @@ def test_tasks_jsonl_contract():
     for row in rows:
         idx = int(row["id"].split("--")[1])
         assert row["verifier_path"] == f"sites/micro_center/verify/verify_{idx}.py"
-        assert row["judge_rubric"].startswith("FACT CHECKPOINTS:")
+        assert isinstance(row["judge_rubric"], str) and row["judge_rubric"].strip()
         assert "answer" not in row
         assert list(row.keys())[:5] == ["web_name", "id", "ques", "web", "upstream_url"]

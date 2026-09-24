@@ -1,22 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--15.
 
-Set up a home office for under $350 total: pick a keyboard, a mouse, a
-monitor, and a USB hub from Micro Center stock, all in stock at the Brooklyn,
-NY store (set as your store). Add the cheapest qualifying combination of all
-four to the cart and report the subtotal plus the name and price of each item.
-
-Frozen ground truth (seed DB): Brooklyn is store 115. Cheapest qualifying
-items in stock there: C75 Cake Meow Wireless Mechanical Keyboard (702087,
-$91.99), Official Raspberry Pi Optical USB Mouse (613558, $7.99), Acer 22CV1Q
-21.5" FHD 100Hz LED Monitor (667603, $69.99), 4-Port USB 3.0 Type-A HUB
-(612948, $11.99). Subtotal = $181.96. Near-misses excluded by name: the
-$17.99 monitor stand / paper holder (not monitors) and the $99.99 keyboard
-tray (not a keyboard).
-
-Guest (session) cart/store, so the DB stays read-only; the proof is the
-navigation (Brooklyn store surface, the four searches, the four pinned PDPs,
-cart) plus the quoted prices.
+Set up a home office for under $350 total: pick a keyboard, a mouse, a monitor, and a USB hub from Micro Center stock. I'll pick everything up at the Brooklyn, NY store — set it as your store and make sure each item you choose is in stock there. Add the cheapest qualifying combination of all four to your cart and report the subtotal plus the name and price of each item.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         final_answer, navigated_search_with, navigated_to_path,

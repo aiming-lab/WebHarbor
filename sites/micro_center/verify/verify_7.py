@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--7.
 
-Log in as alice.j@test.com; update the profile phone to 919-555-0142 and add a
-new default shipping address (Dana Johnson, 730 Memorial Drive, Apt 5B,
-Cambridge, MA 02139, phone 617-555-8890). Report which address is now default.
-
-Frozen ground truth (seed DB): alice starts with one address (77 Massachusetts
-Apt 4, default). After the task her profile phone must be 919-555-0142, the new
-address row must exist with is_default=1, the old address must have
-is_default=0, and the answer must name Dana Johnson's address as the default.
+Log in as alice.j@test.com (password TestPass123!). I've moved — update the phone number on the profile to 919-555-0142 and add a new default shipping address: Dana Johnson, 730 Memorial Drive, Apt 5B, Cambridge, MA 02139, phone 617-555-8890. Report which address is now the default.
 """
 from verify_lib import (addresses_of, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_phrase, final_answer,
