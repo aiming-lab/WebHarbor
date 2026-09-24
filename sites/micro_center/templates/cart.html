@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Your Cart : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Your Cart</h1>
+  <div class="cart-layout">
+    <section>
+      {% for product, qty in rows %}
+      <div class="cart-item">
+        <a href="{{ product.detail_url() }}"><img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}"></a>
+        <div>
+          <div class="ci-name"><a href="{{ product.detail_url() }}">{{ product.brand }} {{ product.name }}</a></div>
+          <div class="ci-sku">SKU: {{ '%06d'|format(product.sku) }} &middot; {{ product|stock_label(selected_store) }}</div>
+          <div class="small">${{ "%.2f"|format(product.price) }} each</div>
+        </div>
+        <div class="t-right">
+          <form method="POST" action="/cart/update/{{ product.product_id }}" class="form-inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="number" name="qty" value="{{ qty }}" min="0" max="10" style="width:64px">
+            <button class="btn btn-secondary" type="submit">Update</button>
+          </form>
+          <form method="POST" action="/cart/remove/{{ product.product_id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-link" type="submit">Remove</button>
+          </form>
+          <div class="our-price">${{ "%.2f"|format(product.price * qty) }}</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state">
+        <h2>Your cart is empty</h2>
+        <p><a href="/">Continue shopping</a></p>
+      </div>
+      {% endfor %}
+
+      {% if stock_warnings %}
+      <div class="flash flash-error">
+        <b>Attention:</b> these items are out of stock at your store:
+        {% for name in stock_warnings %}{{ name }}{% if not loop.last %}; {% endif %}{% endfor %}
+      </div>
+      {% endif %}
+    </section>
+
+    <aside class="summary-box">
+      <h3>Order Summary</h3>
+      <div class="summary-row"><span>Subtotal</span><span>${{ "%.2f"|format(totals.subtotal) }}</span></div>
+      <div class="summary-row"><span>Estimated Tax</span><span>${{ "%.2f"|format(totals.tax) }}</span></div>
+      <div class="summary-row total"><span>Estimated Total</span><span>${{ "%.2f"|format(totals.total) }}</span></div>
+      {% if rows %}
+      <a class="btn btn-primary" href="/checkout" style="width:100%;margin-top:10px">Proceed to Checkout</a>
+      <p class="small muted" style="margin-top:8px">Pickup in 18 minutes at your local store, or have it shipped.</p>
+      {% endif %}
+    </aside>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% block title %}Payment : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Payment</h1>
+  <div class="checkout-steps">
+    <span class="done">How to get it</span><span class="done">Details</span><span class="current">Payment</span><span>Review</span>
+  </div>
+  <div class="form-card wide">
+    <form method="POST" action="/checkout/payment">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if cards %}
+      <div class="form-row">
+        <label>Saved payment methods</label>
+        <select name="card_id" id="cardIdSelect">
+          <option value="">Use a new card</option>
+          {% for card in cards %}
+          <option value="{{ card.id }}" {% if state.card_id == card.id %}selected{% endif %}>{{ card.display() }} (exp {{ card.exp_month }}/{{ card.exp_year }})</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="two-col" id="manualCardFields">
+        <div class="form-row">
+          <label>Card type</label>
+          <select name="card_brand">
+            <option>Visa</option><option>Mastercard</option><option>American Express</option><option>Discover</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>Card number <span class="req">*</span></label>
+          <input type="text" name="card_number" inputmode="numeric" maxlength="19" placeholder="4242 4242 4242 4242" required>
+        </div>
+      </div>
+      <div class="two-col" id="manualExpFields">
+        <div class="form-row">
+          <label>Expiration month <span class="req">*</span></label>
+          <input type="text" name="exp_month" maxlength="2" placeholder="12" required>
+        </div>
+        <div class="form-row">
+          <label>Expiration year <span class="req">*</span></label>
+          <input type="text" name="exp_year" maxlength="4" placeholder="2028" required>
+        </div>
+      </div>
+      <div class="form-row" id="cvvField">
+        <label>Security code (CVV) <span class="req">*</span></label>
+        <input type="password" name="cvv" maxlength="4" placeholder="123" required>
+        <div class="form-hint">This is a benchmark mirror — do not enter a real card number.</div>
+      </div>
+      {% if current_user.is_authenticated %}
+      <div class="form-row">
+        <label class="small" id="saveCardRow"><input type="checkbox" name="save_card"> Save this card to my account</label>
+      </div>
+      {% endif %}
+      <button class="btn btn-primary" type="submit">Continue to Review</button>
+    </form>
+  </div>
+</div>
+<script>
+  // Selecting a saved card skips manual card entry: the card number,
+  // expiration and CVV inputs are not submitted and must not block the
+  // browser's required-field validation.
+  (function () {
+    var select = document.getElementById('cardIdSelect');
+    if (!select) { return; }
+    var manual = document.getElementById('manualCardFields');
+    var expRow = document.getElementById('manualExpFields');
+    var cvvRow = document.getElementById('cvvField');
+    var saveRow = document.getElementById('saveCardRow');
+    function toggle() {
+      var saved = select.value !== '';
+      [manual, expRow, cvvRow, saveRow].forEach(function (row) {
+        if (!row) { return; }
+        row.querySelectorAll('input, select').forEach(function (field) {
+          field.disabled = saved;
+        });
+        row.style.display = saved ? 'none' : '';
+      });
+    }
+    select.addEventListener('change', toggle);
+    toggle();
+  })();
+</script>
+{% endblock %}

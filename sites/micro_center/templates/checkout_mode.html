@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Checkout : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Checkout</h1>
+  <div class="checkout-steps">
+    <span class="current">How to get it</span><span>Details</span><span>Payment</span><span>Review</span>
+  </div>
+  <div class="form-card">
+    <h2>How would you like to get your items?</h2>
+    <form method="POST" action="/checkout/mode">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="radio-card {% if state.method != 'shipping' %}selected{% endif %}">
+        <input type="radio" name="method" value="pickup" {% if state.method != 'shipping' %}checked{% endif %}>
+        <div>
+          <b>Store Pickup</b> — free, ready in 18 minutes at your local Micro Center.
+          <div class="small muted">We'll email you when your order is ready.</div>
+        </div>
+      </label>
+      <label class="radio-card {% if state.method == 'shipping' %}selected{% endif %}">
+        <input type="radio" name="method" value="shipping" {% if state.method == 'shipping' %}checked{% endif %}>
+        <div>
+          <b>Ship to Me</b> — standard shipping is free on eligible orders.
+          <div class="small muted">Usually ships in 5-7 business days.</div>
+        </div>
+      </label>
+      <button class="btn btn-primary" type="submit">Continue</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -284,8 +284,11 @@ RUN cd /opt/WebSyn/michaels && rm -rf instance instance_seed && \
     mkdir -p instance_seed && cp instance/michaels.db instance_seed/michaels.db && \
     rm -rf instance __pycache__
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/micro_center
+RUN python3 /opt/WebSyn/micro_center/migrate_seed.py
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40088
+EXPOSE 8101 40000-40089
 
 CMD ["/opt/websyn_start.sh"]

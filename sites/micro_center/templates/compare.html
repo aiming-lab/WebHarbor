@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Compare Products : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Compare Products</h1>
+  <p class="small muted">You may compare up to 4 items at a time.</p>
+  {% if products %}
+  <div class="compare-table">
+    <table>
+      <tr>
+        <th class="row-label">Product</th>
+        {% for product in products %}
+        <th>
+          <div class="ch-item">
+            <a href="{{ product.detail_url() }}"><img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}" style="height:80px"></a>
+            <div><a href="{{ product.detail_url() }}">{{ product.brand }} {{ product.name }}</a></div>
+            <form method="POST" action="/compare/remove/{{ product.product_id }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="next" value="/endeca/CompareV2.aspx">
+              <button class="btn btn-link" type="submit">Remove</button>
+            </form>
+          </div>
+        </th>
+        {% endfor %}
+      </tr>
+      <tr>
+        <th class="row-label">Price</th>
+        {% for product in products %}<td class="our-price">${{ "%.2f"|format(product.price) }}</td>{% endfor %}
+      </tr>
+      <tr>
+        <th class="row-label">Rating</th>
+        {% for product in products %}<td>{{ product.rating|stars }} ({{ product.review_count }})</td>{% endfor %}
+      </tr>
+      {% for key in spec_keys %}
+      <tr>
+        <th class="row-label">{{ key }}</th>
+        {% for product in products %}
+        <td>{{ table[product.product_id][key] }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+      <tr>
+        <th class="row-label">Add to Cart</th>
+        {% for product in products %}
+        <td>
+          <form method="POST" action="/cart/add/{{ product.product_id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="/cart">
+            <button class="btn btn-primary" type="submit">Add to Cart</button>
+          </form>
+        </td>
+        {% endfor %}
+      </tr>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>No items to compare</h2>
+    <p>Add items to compare from any search results page or product page.</p>
+    <a class="btn btn-primary" href="/">Start Shopping</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

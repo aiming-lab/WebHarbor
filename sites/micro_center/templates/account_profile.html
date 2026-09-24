@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Profile : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Account Profile</h1>
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section>
+      <div class="form-card wide" style="margin:0">
+        <form method="POST" action="/account/profile">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-row">
+            <label>Display name <span class="req">*</span></label>
+            <input type="text" name="display_name" value="{{ current_user.display_name }}" required>
+          </div>
+          <div class="form-row">
+            <label>Email</label>
+            <input type="email" value="{{ current_user.email }}" disabled>
+          </div>
+          <div class="form-row">
+            <label>Phone</label>
+            <input type="tel" name="phone" value="{{ current_user.phone }}" placeholder="555-555-1234">
+          </div>
+          <button class="btn btn-primary" type="submit">Save Changes</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

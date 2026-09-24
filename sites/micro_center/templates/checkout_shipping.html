@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Shipping : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Shipping Address</h1>
+  <div class="checkout-steps">
+    <span class="done">How to get it</span><span class="current">Shipping details</span><span>Payment</span><span>Review</span>
+  </div>
+  <div class="form-card wide">
+    <form method="POST" action="/checkout/shipping">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <label>Full name <span class="req">*</span></label>
+        <input type="text" name="full_name" value="{{ default_address.full_name if default_address else (state.address.full_name if state.address else '') }}" required>
+      </div>
+      <div class="form-row">
+        <label>Street address <span class="req">*</span></label>
+        <input type="text" name="line1" value="{{ default_address.line1 if default_address else (state.address.line1 if state.address else '') }}" required>
+      </div>
+      <div class="form-row">
+        <label>Apt / Suite / Unit</label>
+        <input type="text" name="line2" value="{{ default_address.line2 if default_address else (state.address.line2 if state.address else '') }}">
+      </div>
+      <div class="two-col">
+        <div class="form-row">
+          <label>City <span class="req">*</span></label>
+          <input type="text" name="city" value="{{ default_address.city if default_address else (state.address.city if state.address else '') }}" required>
+        </div>
+        <div class="form-row">
+          <label>State <span class="req">*</span></label>
+          <input type="text" name="state" value="{{ default_address.state if default_address else (state.address.state if state.address else '') }}" required maxlength="2" placeholder="NC">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>ZIP code <span class="req">*</span></label>
+        <input type="text" name="zip" value="{{ default_address.zip_code if default_address else (state.address.zip if state.address else '') }}" required>
+      </div>
+      <div class="form-row">
+        <label>Shipping speed</label>
+        <select name="speed">
+          <option value="standard" {% if state.shipping_speed != 'twoday' and state.shipping_speed != 'nextday' %}selected{% endif %}>Standard (5-7 business days) — Free</option>
+          <option value="twoday" {% if state.shipping_speed == 'twoday' %}selected{% endif %}>Two-Day — $12.99</option>
+          <option value="nextday" {% if state.shipping_speed == 'nextday' %}selected{% endif %}>Next-Day — $24.99</option>
+        </select>
+      </div>
+      {% if current_user.is_authenticated %}
+      <div class="form-row">
+        <label class="small"><input type="checkbox" name="save_address" checked> Save this address to my account</label>
+      </div>
+      {% endif %}
+      <button class="btn btn-primary" type="submit">Continue to Payment</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
