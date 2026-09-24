@@ -72,6 +72,7 @@
       <img src="/static/icons/Call.svg" alt="" width="15" height="15"> {{ agent.phone }}
     </div>
     <form class="lw-contact-form" method="post" action="/contact-agent/{{ agent.account_id }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="text" name="name" placeholder="Name" aria-label="Name" required>
       <input type="email" name="email" placeholder="Email Address" aria-label="Email Address" required>
       <textarea name="message" placeholder="Write a message..." aria-label="Message" required></textarea>

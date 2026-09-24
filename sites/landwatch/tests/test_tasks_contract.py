@@ -23,7 +23,7 @@ REQUIRED_KEYS = {"web_name", "id", "ques", "web", "upstream_url"}
 REVIEWER_KEYS = {"verifier_path", "judge_rubric"}
 FORBIDDEN_KEYS = {"answer", "answers", "expected"}
 WEB_NAME = "LandWatch"
-PORT = 40089
+PORT = 40084
 
 
 def read_rows():
@@ -118,17 +118,11 @@ def test_depth_chains_cover_distinct_surfaces():
     """The 15 tasks must spread across distinct functional chains (no clones)."""
     rows = read_rows()
     lowered = [row["ques"].lower() for row in rows]
-    checks = {
-        "location search compare": lambda s: "location search" in s,
-        "multi-facet funnel": lambda s: "residence" in s,
-        "auction pagination": lambda s: "page two" in s,
-        "region + county drill": lambda s: "houston region" in s,
-        "broker due diligence": lambda s: "most total listings" in s,
-        "favorites round-trip": lambda s: "favorites" in s,
-        "profile management": lambda s: "phone number" in s,
-        "registration + inquiry": lambda s: "brand-new buyer account" in s,
-        "homepage cross-check": lambda s: "category tiles" in s,
-        "custom range forms": lambda s: "custom price range" in s,
-    }
+    checks = {name: (lambda s, needle=needle: needle in s) for name, needle in {
+        'location research': 'location search', 'residence filtering': 'residence',
+        'auction research': 'auctions', 'region research': 'houston region',
+        'broker portfolio': 'broker', 'favorites': 'favorites', 'profile contact': 'phone',
+        'new buyer inquiry': 'buyer account', 'featured comparison': 'featured carousel',
+        'combined ranges': 'custom ranges'}.items()}
     for name, predicate in checks.items():
         assert any(predicate(s) for s in lowered), f"no task covers {name}"

@@ -71,7 +71,7 @@
         </div>
         <button class="lw-gallery-all" type="button">
           <span class="lw-play">&#9654;</span>
-          View all {{ listing.image_count }} pictures
+          View all {{ listing.image_ids_list() | length }} available pictures
         </button>
       </div>
       <div class="lw-gallery-thumbs">
@@ -144,7 +144,7 @@
     <div class="lw-provided">
       {% if agent.portrait_path() %}<img src="{{ agent.portrait_path() }}" alt="{{ agent.name }}">{% endif %}
       <div>
-        <div class="lw-card-agent-name">{{ agent.name }}</div>
+        <div class="lw-card-agent-name"><a href="{{ agent.profile_path() }}">{{ agent.name }}</a></div>
         <div class="lw-card-agent-company">{{ agent.company }}</div>
         {% if agent.city %}<div class="lw-card-agent-company">{{ agent.city }}{% if agent.state_code %}, {{ agent.state_code }}{% endif %}</div>{% endif %}
       </div>
@@ -169,7 +169,7 @@
     <div class="lw-agent-panel-head">
       {% if agent.portrait_path() %}<img src="{{ agent.portrait_path() }}" alt="{{ agent.name }}">{% endif %}
       <div>
-        <div class="lw-agent-panel-name">{{ agent.name }}</div>
+        <div class="lw-agent-panel-name"><a href="{{ agent.profile_path() }}">{{ agent.name }}</a></div>
         <div class="lw-agent-panel-company">{{ agent.company }}</div>
       </div>
     </div>
@@ -185,6 +185,7 @@
     </div>
     {% endif %}
     <form class="lw-contact-form" method="post" action="/contact/{{ listing.pid }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="text" name="name" placeholder="Name" aria-label="Name" required>
       <input type="email" name="email" placeholder="Email Address" aria-label="Email Address" required>
       <input type="tel" name="phone" placeholder="Phone Number" aria-label="Phone Number">

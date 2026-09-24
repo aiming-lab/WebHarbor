@@ -2,6 +2,15 @@
    saved searches, sort menu, gallery, carousel scrolling. */
 (function () {
   "use strict";
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = function (url, options) {
+    options = options || {};
+    if (new URL(url, location.href).origin === location.origin && (options.method || "GET").toUpperCase() === "POST") {
+      options.headers = new Headers(options.headers || {});
+      options.headers.set("X-CSRF-Token", document.querySelector('meta[name="csrf-token"]').content);
+    }
+    return originalFetch(url, options);
+  };
 
   function $(sel, root) { return (root || document).querySelector(sel); }
   function $all(sel, root) { return Array.from((root || document).querySelectorAll(sel)); }

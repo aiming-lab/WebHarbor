@@ -102,7 +102,9 @@
         <div class="lw-facet-item"><a href="{{ ctx.facet_path('price', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
         {% endfor %}
       </div>
-      <form class="lw-custom-range" method="get" action="{{ ctx.base_path() }}">
+      {% set range_path, range_params = ctx.range_form("price_bucket") %}
+      <form class="lw-custom-range" method="get" action="{{ range_path }}">
+        {% for key, value in range_params %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
         <span>Custom Price</span>
         <input type="text" name="priceMin" placeholder="Min" aria-label="Min price">
         <span>&ndash;</span>
@@ -118,7 +120,9 @@
         <div class="lw-facet-item"><a href="{{ ctx.facet_path('acres', row['slug']) }}">{{ row.label }}</a><span class="lw-facet-count">{{ row.count }}</span></div>
         {% endfor %}
       </div>
-      <form class="lw-custom-range" method="get" action="{{ ctx.base_path() }}">
+      {% set range_path, range_params = ctx.range_form("acres_bucket") %}
+      <form class="lw-custom-range" method="get" action="{{ range_path }}">
+        {% for key, value in range_params %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
         <span>Custom Size (Acres)</span>
         <input type="text" name="acresMin" placeholder="Min" aria-label="Min acres">
         <span>&ndash;</span>

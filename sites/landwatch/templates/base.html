@@ -1,6 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Land for Sale, Farms and Ranches for Sale | LandWatch{% endblock %}</title>
@@ -61,7 +62,7 @@
       <button class="lw-btn lw-btn-outline-dark lw-hero-outline" type="button">Add a Listing</button>
       {% if current_user %}
         <a class="lw-login-link" href="/account">{{ current_user.short_name }}</a>
-        <a class="lw-login-sub" href="/log-out">Log out</a>
+        <form method="post" action="/log-out"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="lw-btn lw-btn-outline">Log out</button></form>
       {% else %}
         <a class="lw-login-link" href="/log-in">Log in</a>
       {% endif %}

@@ -9,6 +9,8 @@ NOTICE.md); every seed function early-returns on a populated DB so
 from __future__ import annotations
 
 import hashlib
+import secrets
+from urllib.parse import urlsplit, urlencode
 import hmac
 import json
 import os
@@ -203,7 +205,8 @@ class Listing(db.Model):
         return load_json(self.activities, [])
 
     def proposed_use_list(self) -> list[str]:
-        return load_json(self.proposed_use, [])
+        value = load_json(self.proposed_use, [])
+        return [value] if isinstance(value, str) else value
 
     def image_ids_list(self) -> list[int]:
         return load_json(self.image_ids, [])
@@ -217,7 +220,7 @@ class Listing(db.Model):
 
     @property
     def price_display(self) -> str:
-        return money(self.price)
+        return "Auction — price not disclosed" if self.is_auction else (money(self.price) if self.price and self.price > 2 else "Price not disclosed")
 
     @property
     def acres_display(self) -> str:
@@ -385,6 +388,13 @@ class Inquiry(db.Model):
     phone = db.Column(db.String(30))
     message = db.Column(db.Text)
     created_at = db.Column(db.String(30))
+    agent_id = db.Column(db.Integer)
+
+    @property
+    def recipient_name(self):
+        listing = db.session.get(Listing, self.pid) if self.pid else None
+        agent = db.session.get(Agent, self.agent_id) if self.agent_id else None
+        return (listing.broker_name if listing else None) or (agent.name if agent else None) or "Listing agent"
 
 
 class Session(db.Model):
@@ -400,8 +410,7 @@ class Session(db.Model):
 
 def create_session(user_id: int) -> str:
     user = User.query.get(user_id)
-    token = hashlib.sha256(
-        f"{PASSWORD_NAMESPACE}:session:{user_id}:{user.email}".encode("utf-8")).hexdigest()
+    token = secrets.token_hex(32)
     if Session.query.get(token) is None:
         db.session.add(Session(token=token, user_id=user_id, created_at=now_iso()))
         db.session.commit()
@@ -856,6 +865,13 @@ class SearchContext:
             path += "?" + "&".join(f"{k}={v}" for k, v in params.items())
         return path
 
+    def range_form(self, field):
+        """Retain every other facet and query setting in a custom-range GET form."""
+        clone = self.clone_without(field)
+        parts = urlsplit(clone.path_for())
+        from urllib.parse import parse_qsl
+        return parts.path, parse_qsl(parts.query)
+
     def clone_without(self, field: str) -> "SearchContext":
         clone = SearchContext()
         clone.__dict__.update(self.__dict__)
@@ -889,12 +905,10 @@ class SearchContext:
             for s, l, lo, hi in PRICE_BUCKETS:
                 if s == slug:
                     clone.price_bucket = (s, l, lo, hi)
-            clone.acres_bucket = None
         elif kind == "acres":
             for s, l, lo, hi in ACRES_BUCKETS:
                 if s == slug:
                     clone.acres_bucket = (s, l, lo, hi)
-            clone.price_bucket = None
         elif kind == "beds":
             clone.beds_min = int(slug.removeprefix("beds-over-"))
         elif kind == "baths":
@@ -1184,6 +1198,10 @@ def find_agent():
                                    Agent.account_id).all()
     if state:
         agents = [a for a in agents if a.state_code == state]
+    query = (request.args.get("q") or "").strip().casefold()
+    if query:
+        agents = [a for a in agents if query in
+                  f"{a.name} {a.company} {a.city} {a.state_code}".casefold()]
     states = [row[0] for row in (Agent.query.with_entities(Agent.state_code)
                                 .distinct().order_by(Agent.state_code).all()
                                 if Agent.query.count() else [])]
@@ -1222,6 +1240,10 @@ def search():
     for state, slug in (Listing.query.with_entities(Listing.state, Listing.state_slug)
                         .distinct().all()):
         candidates.append({"label": state, "url": f"/{slug}"})
+    exact = [c for c in candidates if c["label"].casefold() == query.casefold()]
+    if exact:
+        return redirect(sorted(exact, key=lambda c: c["url"])[0]["url"])
+    candidates.sort(key=lambda c: c["url"])
     scored = token_scores(query, [c["label"] for c in candidates])
     best = None
     best_score = 0
@@ -1270,6 +1292,27 @@ def suggest():
 # routes — auth
 # ---------------------------------------------------------------------------
 
+def csrf_token():
+    from flask import session
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_hex(32)
+    return session["csrf_token"]
+
+
+@app.context_processor
+def csrf_context():
+    return {"csrf_token": csrf_token}
+
+
+@app.before_request
+def csrf_guard():
+    from flask import session
+    if request.method == "POST":
+        token = request.form.get("csrf_token") or request.headers.get("X-CSRF-Token", "")
+        if not token or not secrets.compare_digest(token, session.get("csrf_token", "")):
+            abort(400, "Invalid or missing CSRF token.")
+
+
 @app.route("/log-in", methods=["GET", "POST"])
 def log_in():
     if request.method == "GET":
@@ -1310,7 +1353,7 @@ def register():
     return response
 
 
-@app.route("/log-out")
+@app.route("/log-out", methods=["POST"])
 def log_out():
     token = request.cookies.get("lw_session")
     if token:
@@ -1387,7 +1430,8 @@ def save_search():
     payload = request.get_json(silent=True) or request.form
     url = (payload.get("url") or "").strip()
     name = (payload.get("name") or "").strip()
-    if not url or not url.startswith("/") or len(url) > 300:
+    if (not url or not url.startswith("/") or url.startswith("//")
+            or "\\" in url or any(ord(c) < 32 for c in url) or len(url) > 300):
         return jsonify({"ok": False, "reason": "invalid-url"}), 400
     db.session.add(SavedSearch(user_id=user.id, name=name or "Land search", url=url,
                                created_at=now_iso()))
@@ -1429,13 +1473,15 @@ def contact_agent(account_id):
     message = (request.form.get("message") or "").strip()
     user = current_user()
     errors = []
-    if not message:
-        errors.append("Message is required.")
+    if not name:
+        errors.append("Name is required.")
+    if not message or len(message) > 2000:
+        errors.append("Enter a message of 1–2,000 characters.")
     if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", email or ""):
         errors.append("A valid email address is required.")
     if errors:
         return render_template("contact_error.html", listing=agent, errors=errors), 400
-    db.session.add(Inquiry(user_id=user.id if user else None, pid=None, name=name or agent.name,
+    db.session.add(Inquiry(user_id=user.id if user else None, pid=None, agent_id=agent.account_id, name=name,
                            email=email, message=message, created_at=now_iso()))
     db.session.commit()
     flash("Your message has been sent to the agent.", "ok")
@@ -1457,6 +1503,8 @@ def contact(pid):
         errors.append("Name is required.")
     if not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+", email or ""):
         errors.append("A valid email address is required.")
+    if not message:
+        errors.append("Message is required.")
     if message and len(message) > 2000:
         errors.append("Message must be 2,000 characters or fewer.")
     if errors:

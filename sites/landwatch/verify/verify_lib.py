@@ -64,7 +64,7 @@ SEED_COUNTS = {"listings": 436, "agents": 313, "regions": 29, "counties": 318,
                "category_tiles": 8, "static_pages": 1, "users": 4, "favorites": 18,
                "saved_searches": 7, "inquiries": 3, "sessions": 0}
 # sha256 over sqlite_master (type, name, tbl_name, sql) of the frozen seed.
-SCHEMA_SHA256 = "bbe897be6ae092da71f358f23f59cb0953c8854ba0403e65d8f9a7ae919aae93"
+SCHEMA_SHA256 = "ab858e24aecf2ae9dc2b1a63fda2b3bd0ec0d08a0737fb96385f4f67476a047f"
 # sha256 over every seed row (table-scanonical, ORDER BY all columns). The seed is rebuilt
 # deterministically at image-build time (PYTHONHASHSEED=0, frozen password hashes, see
 # .build-generated-seed); the physical file layout may differ between sqlite builds but
@@ -74,7 +74,7 @@ SCHEMA_SHA256 = "bbe897be6ae092da71f358f23f59cb0953c8854ba0403e65d8f9a7ae919aae9
 # /hunting-property/price-100000-249999, /colorado-land-for-sale/acres-over-100 ->
 # /colorado-land-for-sale/acres-101-200) were repaired; saved-search NAMES (which the
 # task-10 ground truth checks) are unchanged, so only this rows digest moves.
-SEED_ROWS_SHA256 = "b9eec956df41929be0b24afcfd323af2a221d716823c4c5b3dc98d3b9db99ad4"
+SEED_ROWS_SHA256 = "9c80b8350247aba0bd535ecfae7be613bb7bf212c769e0612394415d7dec7733"
 SEED_USERS = {  # email -> (id, name); identity columns never change
     "alice.j@test.com": (1, "Alice Johnson"),
     "bob.c@test.com": (2, "Bob Chen"),
@@ -833,7 +833,8 @@ def run_verifier(task_id, run_checks):
     initial_db, after_db = resolve_snapshots(args, task_id)
     judge = Judge(task_id, no_llm=args.no_llm)
     try:
-        run_checks(judge, traj, initial_db, after_db)
+        from reviewed import review
+        review(judge, traj, initial_db, after_db, run_checks)
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()
