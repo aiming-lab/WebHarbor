@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Verify JCPenney--7."""
 
+from review_common import amount
 from verify_lib import (Judge, check_read_only, check_signed_in_as, check_trajectory_identity,
                         check_visited_path, check_only_tables_changed, contains_all, contains_any,
                         contains_amount, contains_count, contains_date_phrase, contains_money,
@@ -33,26 +34,17 @@ def run_checks(judge, traj, initial_db, after_db):
                 any(normalized_url_path(u).startswith("/checkout/confirmation/")
                     for u in site_urls(traj)),
                 "required: /checkout/confirmation/<order-number>")
-    # Frozen ground truth (seed DB): the GOSHOP15 coupon card advertises "$10 off
-    # your $50 purchase" (minimum purchase $50.00, excludes gift cards) but the
-    # checkout applies the seeded 15% off. carol's seeded bag holds the Maya
-    # Brooke Embellished Jacket Dress ($78.39); + two Luxury 1000tc sheet sets
-    # ($41.99 each) = subtotal $162.37 (>= the $50 minimum); GOSHOP15 (15%) =
-    # $24.36 — which does NOT equal the advertised flat $10; subtotal >= $75 so
-    # shipping is free; tax $11.39; total $149.40.
+    # GOSHOP15 is the advertised fixed $10 discount on a purchase of $50+.
+    # Carol's dress and two sheet sets total $162.37 before the discount;
+    # tax is $12.57 and the final order is $164.94 with free standard shipping.
     judge.check("answer_advertised_terms",
-                contains_all(answer, ["$10"]) and
-                (contains_phrase(answer, "50") or contains_phrase(answer, "$50")),
+                bool(_re.search(amount(10), answer)) and bool(_re.search(amount(50), answer)),
                 "expected the advertised $10-off-$50 terms restated")
-    judge.check("answer_applied_discount", contains_amount(answer, 24.36),
-                "expected the applied GOSHOP15 discount $24.36")
-    judge.check("answer_mismatch_verdict",
-                contains_any(answer, ["does not match", "doesn't match", "not match",
-                                      "mismatch", "does not equal", "doesn't equal",
-                                      "differs from", "not the advertised", "inconsistent"]),
-                "expected the verdict that the applied discount does not match the advertised $10")
-    judge.check("answer_total", contains_amount(answer, 149.40),
-                "expected the order total $149.40")
+    judge.check("answer_applied_discount", contains_amount(answer, 10.00),
+                "expected the applied GOSHOP15 discount $10.00")
+    judge.check("answer_matches_offer", contains_any(answer,["matches", "matched", "same as", "consistent"]), "the applied $10 discount matches the offer")
+    judge.check("answer_total", contains_amount(answer, 164.94),
+                "expected the order total $164.94")
     # --- DB after-state: one new order + its items, carol's one bag row removed.
     check_only_tables_changed(judge, initial_db, after_db,
                               ("orders", "order_items", "cart_items"))
@@ -72,10 +64,10 @@ def run_checks(judge, traj, initial_db, after_db):
                     f"coupon_code={row.get('coupon_code')!r}")
         judge.check("order_row_amounts",
                     abs(row.get("subtotal", 0) - 162.37) < 0.005
-                    and abs(row.get("discount", 0) - 24.36) < 0.005
+                    and abs(row.get("discount", 0) - 10.00) < 0.005
                     and abs(row.get("shipping", 0) - 0.0) < 0.005
-                    and abs(row.get("tax", 0) - 11.39) < 0.005
-                    and abs(row.get("total", 0) - 149.4) < 0.005,
+                    and abs(row.get("tax", 0) - 12.57) < 0.005
+                    and abs(row.get("total", 0) - 164.94) < 0.005,
                     f"subtotal={row.get('subtotal')}, discount={row.get('discount')}, "
                     f"shipping={row.get('shipping')}, tax={row.get('tax')}, "
                     f"total={row.get('total')}")

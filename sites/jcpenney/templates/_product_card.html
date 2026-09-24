@@ -7,7 +7,7 @@
         <div class="noimg"></div>
       {% endif %}
     </a>
-    <button class="wish-heart" type="button" title="Add to wish list"
+    <button class="wish-heart" type="button" title="{{ 'Remove from wish list' if request.path.endswith('/wishlist') else 'Add to wish list' }}"
             onclick="document.getElementById('wish-{{ product.ppid }}').submit();">&#9825;</button>
     <form id="wish-{{ product.ppid }}" method="post" action="/wishlist/toggle/{{ product.ppid }}">
       <input type="hidden" name="_csrf" value="{{ csrf_token() }}">

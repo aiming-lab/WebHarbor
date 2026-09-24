@@ -42,12 +42,12 @@
           <label><input type="checkbox" data-filter="rating" value="3"> 3 stars &amp; up</label>
         </div>
       </div>
-      {% if all_brands|length > 1 %}
+      {% if all_brands|length > 1 or filter_state.brands %}
       <div class="filter-group">
         <h4>Brand</h4>
         <div class="opts">
           {% for b in all_brands|sort %}
-            <label><input type="checkbox" data-filter="brand" value="{{ b.lower() }}"> {{ b }}</label>
+            <label><input type="checkbox" data-filter="brand" value="{{ b.lower() }}" {% if b.lower() in filter_state.brands %}checked{% endif %}> {{ b }}</label>
           {% endfor %}
         </div>
       </div>
@@ -57,7 +57,7 @@
         <h4>Color Family</h4>
         <div class="opts">
           {% for c in all_colors|sort %}
-            <label><input type="checkbox" data-filter="color" value="{{ c.lower() }}"> {{ c|title }}</label>
+            <label><input type="checkbox" data-filter="color" value="{{ c.lower() }}" {% if c.lower() in filter_state.colors %}checked{% endif %}> {{ c|title }}</label>
           {% endfor %}
         </div>
       </div>
@@ -68,7 +68,7 @@
         <h4>Size Range</h4>
         <div class="opts">
           {% for s in all_sizes if s %}
-            <label><input type="checkbox" data-filter="size" value="{{ s.lower() }}"> {{ s }}</label>
+            <label><input type="checkbox" data-filter="size" value="{{ s.lower() }}" {% if s.lower() in filter_state.sizes %}checked{% endif %}> {{ s }}</label>
           {% endfor %}
         </div>
       </div>

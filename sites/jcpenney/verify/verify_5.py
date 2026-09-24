@@ -43,7 +43,7 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_total", contains_amount(answer, 93.50),
                 "expected the order total $93.50")
     # --- DB after-state: one new order + two new order_items, carol's one bag
-    # row removed, exactly one wish-list row removed (the SJB crew neck tee).
+    # row removed, exactly one wish-list row removed (the purchased Biolage shampoo).
     check_only_tables_changed(judge, initial_db, after_db,
                               ("orders", "order_items", "cart_items", "wishlist_items"))
     d_orders = table_delta(initial_db, after_db, "orders")
@@ -101,9 +101,9 @@ def run_checks(judge, traj, initial_db, after_db):
         cols = [r["name"] for r in db_query(initial_db, "PRAGMA table_info(wishlist_items)")]
         row = dict(zip(cols, d_wish["removed"][0]))
         judge.check("removed_wishlist_row",
-                    row.get("user_id") == 3 and row.get("product_id") == 8,
+                    row.get("user_id") == 3 and row.get("product_id") == 129,
                     f"removed wishlist row user_id={row.get('user_id')}, "
-                    f"product_id={row.get('product_id')} (expected carol / SJB crew neck tee)")
+                    f"product_id={row.get('product_id')} (expected carol / purchased Biolage shampoo)")
 
 
 if __name__ == "__main__":

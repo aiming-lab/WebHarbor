@@ -627,12 +627,21 @@ def _session_cart_items() -> list:
     return items
 
 
+def coupon_discount(coupon, subtotal):
+    """Apply the archived offer's actual terms, including fixed-dollar offers."""
+    if not coupon or subtotal < coupon.min_purchase:
+        return 0.0
+    if coupon.code == "GOSHOP15":
+        return min(10.0, subtotal)
+    return round(subtotal * coupon.discount_percent / 100, 2)
+
+
 def cart_totals(cart_items: list) -> dict[str, float]:
     subtotal = round(sum(item.line_total for item in cart_items), 2)
     coupon = Coupon.query.filter_by(code=request.args.get("code", "")).first()
     discount = 0.0
-    if coupon and coupon.discount_percent and subtotal >= coupon.min_purchase:
-        discount = round(subtotal * coupon.discount_percent / 100, 2)
+    if coupon:
+        discount = coupon_discount(coupon, subtotal)
     shipping = 0.0 if subtotal >= 75 or not cart_items else 8.95
     tax = round((subtotal - discount) * 0.0825, 2)
     total = round(subtotal - discount + shipping + tax, 2)
@@ -992,7 +1001,8 @@ def signin():
         merge_session_cart_into_user()
         merge_session_wishlist_into_user()
         next_url = request.args.get("next") or request.form.get("next")
-        if next_url and next_url.startswith("/"):
+        if (next_url and next_url.startswith("/") and not next_url.startswith("//")
+                and "\\" not in next_url and not any(ord(c) < 32 for c in next_url)):
             return redirect(next_url)
         return redirect(url_for("account_dashboard"))
     return render_template("signin.html", email="")
@@ -1152,8 +1162,8 @@ def account_profile():
                 db.session.commit()
                 flash("Your password has been updated.")
             return redirect(url_for("account_profile"))
-    addresses = Address.query.filter_by(user_id=current_user.id).order_by(Address.id).all()
-    payments = PaymentMethod.query.filter_by(user_id=current_user.id).order_by(PaymentMethod.id).all()
+    addresses = Address.query.filter_by(user_id=current_user.id).order_by(Address.is_default.desc(), Address.id).all()
+    payments = PaymentMethod.query.filter_by(user_id=current_user.id).order_by(PaymentMethod.is_default.desc(), PaymentMethod.id).all()
     return render_template("account_profile.html", addresses=addresses, payments=payments)
 
 
@@ -1226,10 +1236,13 @@ def cart_add():
     color = request.form.get("color", "")
     size = request.form.get("size", "")
     quantity = form_integer("quantity", default=1, minimum=1, maximum=10)
-    if color and size:
-        match = any(c.color == color for c in product.colors)
-        if not match:
-            abort(400, "Invalid product selection.")
+    if product.colors:
+        selected = next((c for c in product.colors if c.color == color), None)
+        if selected is None:
+            abort(400, "Select an available color.")
+        if selected.sizes and not any(str(s["size"]) == size and s.get("available")
+                                      for s in selected.sizes):
+            abort(400, "Select an available size.")
     if current_user.is_authenticated:
         existing = CartItem.query.filter_by(
             user_id=current_user.id, product_id=product.id,
@@ -1319,7 +1332,7 @@ def checkout_shipping():
     items = get_cart_items()
     if not items:
         return redirect(url_for("cart_page"))
-    addresses = Address.query.filter_by(user_id=current_user.id).order_by(Address.id).all()
+    addresses = Address.query.filter_by(user_id=current_user.id).order_by(Address.is_default.desc(), Address.id).all()
     if request.method == "POST":
         choice = request.form.get("address_id", "new").strip()
         if choice != "new":
@@ -1347,6 +1360,9 @@ def checkout_shipping():
                               line2=request.form.get("line2", "").strip(),
                               city=city, state=state, zip=zip_code,
                               phone=request.form.get("phone", "").strip())
+        if request.form.get("method", "standard") != "standard":
+            flash("Please use standard shipping for this order.")
+            return redirect(url_for("checkout_shipping"))
         state = checkout_state()
         state["shipping"] = {
             "first_name": address.first_name, "last_name": address.last_name,
@@ -1368,7 +1384,7 @@ def checkout_payment():
         return redirect(url_for("cart_page"))
     if "shipping" not in checkout_state():
         return redirect(url_for("checkout_shipping"))
-    payments = PaymentMethod.query.filter_by(user_id=current_user.id).order_by(PaymentMethod.id).all()
+    payments = PaymentMethod.query.filter_by(user_id=current_user.id).order_by(PaymentMethod.is_default.desc(), PaymentMethod.id).all()
     if request.method == "POST":
         choice = request.form.get("payment_choice", "new").strip()
         if choice != "new":
@@ -1417,7 +1433,7 @@ def checkout_review():
         coupon = Coupon.query.filter_by(code=coupon_code).first() if coupon_code else None
         subtotal = totals["subtotal"]
         if coupon and subtotal >= coupon.min_purchase:
-            totals["discount"] = round(subtotal * coupon.discount_percent / 100, 2)
+            totals["discount"] = coupon_discount(coupon, subtotal)
             # estimated tax applies to the discounted subtotal (same convention
             # as the bag page's ?code= coupon path)
             totals["tax"] = round((subtotal - totals["discount"]) * 0.0825, 2)
@@ -1427,9 +1443,13 @@ def checkout_review():
             flash(f"Coupon {coupon_code} requires a minimum purchase of "
                   f"${coupon.min_purchase:.0f}.")
             return redirect(url_for("checkout_review"))
+        if coupon_code and not coupon:
+            flash("That coupon code is not recognized. Please correct it or leave it blank.")
+            return redirect(url_for("checkout_review"))
         shipping = state["shipping"]
         payment = state["payment"]
-        order_number = "JCP" + datetime.now().strftime("%H%M%S") + f"{current_user.id:03d}"
+        # Sequence avoids collisions when two checkouts occur in the same second.
+        order_number = f"JCP{(db.session.query(db.func.max(Order.id)).scalar() or 0) + 1:06d}{current_user.id:03d}"
         order = Order(
             order_number=order_number,
             user_id=current_user.id,
