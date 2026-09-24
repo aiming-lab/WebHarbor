@@ -33,7 +33,7 @@ from sqlalchemy import or_
 
 SITE_SLUG = "micro_center"
 SITE_NAME = "Micro Center"
-SITE_PORT = 40112
+SITE_PORT = 40089
 BENCHMARK_PASSWORD = "TestPass123!"
 BASE_DIR = Path(__file__).resolve().parent
 INSTANCE_DIR = BASE_DIR / "instance"
