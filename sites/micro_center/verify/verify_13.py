@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--13.
 
-Pick up a 65-inch TV at the Chicago Micro Center today, ideally under $450;
-check availability there, then complete an in-store pickup order for the
-cheapest qualifying TV as a guest, and report the order number and total.
-
-Frozen ground truth (seed DB): the only 65-inch TV under $450 with a Chicago
-(store 151) "in stock" row is the 65UT7570PUB 65" Class 4K Ultra HD Smart LED
-TV (678822, $399.99). Guest pickup order total = 399.99 * 1.0725 = $428.99.
+I want to pick up a 65-inch TV at the Chicago Micro Center today, ideally under $450. Check what is available there, then complete an in-store pickup order for the cheapest qualifying TV as a guest with your own contact details, and report the order number and total.
 """
 from verify_lib import (added_orders, check_only_tables_changed,
                         check_trajectory_identity, contains_amount, contains_phrase,

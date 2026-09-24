@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--10.
 
-Log in as david.k@test.com and review BOTH items from the recent pickup
-order: a 4-star review for the networking device titled 'Solid purchase'
-saying it arrived quickly and works well, and a 3-star review for the other
-item titled 'Does the job' saying it is basic but handy. Report the order
-number, the pickup store it was ordered from, and each product's review count
-after posting.
-
-Frozen ground truth (seed DB): the order is MC2609071148 (Ready for Pickup,
-store 101 = Tustin, CA) with two items: UniFi Gateway Lite (675726, seed
-review_count 183) and Plastic Scraper Handle & Plastic Razor Blades 30-Piece
-(673901, seed review_count 119). After both reviews: 675726 -> 184 reviews,
-673901 -> 120 reviews. The app recalculates the product rating from the
-reviews table (which double-counts the new row because the pending insert is
-flushed into the query); the observed live values are 4.6 and 4.4, pinned
-here exactly.
+Log in as david.k@test.com (password TestPass123!) and review both items from your recent pickup order: a 4-star review for the networking device titled 'Solid purchase' saying it arrived quickly and works well, and a 3-star review for the other item titled 'Does the job' saying it is basic but handy. Report the order number, the pickup store it was ordered from, and each product's review count after posting.
 """
 from verify_lib import (check_signed_in_as, check_only_tables_changed,
                         check_trajectory_identity, contains_count, contains_phrase,

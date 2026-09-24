@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--11.
 
-Log in as alice.j@test.com. Add a Mastercard ending in 5678 (expiring 05/2029)
-and an American Express ending in 9012 (expiring 11/2027), make the
-Mastercard the default, then remove the old Mastercard. Report how many
-payment methods are saved now, which one is the default, and which card was
-removed.
-
-Frozen ground truth (seed DB): alice starts with Visa 2111 (default) and
-Mastercard 2777. After the task she must have exactly 3 cards — Visa 2111,
-Mastercard 5678 (exp 05/2029, the default), American Express 9012 (exp
-11/2027) — and the old Mastercard 2777 must be gone.
+Log in as alice.j@test.com (password TestPass123!). I got two new cards: add a Mastercard ending in 5678, expiring 05/2029, and an American Express ending in 9012, expiring 11/2027. Make the Mastercard the default, then remove the old Mastercard I no longer use. Report how many payment methods are saved now, which one is the default, and which card you removed.
 """
 from verify_lib import (check_signed_in_as, check_only_tables_changed,
                         check_trajectory_identity, contains_count, contains_phrase,

@@ -1,26 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--16.
 
-Two AM5 rigs: mine with the cheapest 32GB DDR5-6000 RGB kit, my friend's with
-the cheapest 32GB DDR5-6000 kit regardless of lighting; both near Rockville,
-MD (set as your store). Compare the three cheapest RGB kits on the compare
-page, open my kit's page, and report its CAS latency, memory timings, and
-voltage from its spec sheet, plus how many stores have it in stock. Confirm
-both kits are in stock at Rockville, add both to the cart, and report the
-subtotal.
-
-Frozen ground truth (seed DB): the cheapest 32GB DDR5-6000 RGB kit is the
-Lexar ARES RGB 32GB (2 x 16GB) DDR5-6000 CL30 (685119, $94.99) — spec sheet:
-CAS Latency 30, Memory Latency Timings 30-36-36-68, Voltage 1.35V; in stock
-at 25 of 30 stores and at Rockville (085, qty 2). The three cheapest RGB kits
-(ARES 685119, Trident Z5 Royal Neo 689353 $145.99, T-FORCE DELTA RGB 650520
-$399.99) go on the compare page; the VENGEANCE RGB 64GB kit is a 64GB
-near-miss. The cheapest plain 32GB DDR5-6000 kit is the Ripjaws S5 (664095,
-$82.99), in stock at Rockville (qty 1). Subtotal = 94.99 + 82.99 = $177.98.
-
-Guest (session) cart/store, so the DB stays read-only; the proof is the
-navigation (Rockville store surface, search, compare page, both PDPs, cart)
-plus the quoted spec-sheet facts.
+I'm building two AM5 rigs: mine with the cheapest 32GB DDR5-6000 RGB kit, my friend's with the cheapest 32GB DDR5-6000 kit regardless of lighting. We're both near the Rockville, MD store — set it as your store first. Compare the three cheapest RGB kits on the compare page, open my kit's page, and report its CAS latency, memory timings, and voltage from its spec sheet, plus how many stores have it in stock. Confirm both kits are in stock at Rockville, add both to your cart, and report the subtotal.
 """
 import re
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,

@@ -64,7 +64,7 @@ SEED_COUNTS = {"addresses": 4, "brands": 0, "cart_items": 10, "categories": 40,
 SCHEMA_SHA256 = "6540fdcfdec1391a67fcfc28603366b9186a4d15f2a66c00634f481bdaa436d1"
 # sha256 over every seed row (table-canonical, ORDER BY all columns). The seed
 # ships prebuilt in the pinned asset archive (byte-identical on reset).
-SEED_ROWS_SHA256 = "8327edf030603fc094afac9ca2b5d5003812dd7c57b36ed1433efa13ed0610f7"
+SEED_ROWS_SHA256 = "e60b7a14bb22b71864f26bf6de30141c051a652fa917534198bdc948e0c3b1dd"
 SEED_USERS = {  # email -> (id, display name); identity columns never change
     "alice.j@test.com": (1, "Alice Johnson"),
     "bob.c@test.com": (2, "Bob Chen"),
@@ -524,6 +524,8 @@ def run_verifier(task_id, run_checks):
     judge = Judge(task_id, no_llm=args.no_llm)
     try:
         run_checks(judge, traj, initial_db, after_db)
+        from review_contract import check_review_contract
+        check_review_contract(judge, traj, initial_db, after_db)
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()

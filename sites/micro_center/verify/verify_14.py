@@ -1,24 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--14.
 
-Create a Micro Center Insider account with the email frank.m@test.com and
-password BenchMark123!. Find the Bambu Lab A1 3D printer, add it to the list,
-and put it in the cart to see the estimated total with tax. Also add a spool
-of PLA filament under $15 and a spool of PLA+ under $20, both in stock at the
-Cambridge, MA store, to the list. Report the list's item count, the printer's
-price, and the filament colors picked.
-
-Frozen ground truth (seed DB): the Bambu Lab A1 3D Printer is 676237 at
-$359.99 (the A1 mini Combo 674680 at $329.99 is a near-miss). The only plain
-PLA filament under $15 in stock at Cambridge (121) is the 1.75mm PLA 3D
-Printer Filament 1kg Cardboard Spool - White (512934, $12.99, Cambridge qty
-9). The PLA+ spools under $20 in stock at Cambridge: Blue 611534 / Brown
-611536 ($14.99) and Gray 611541 / Red 611542 / Neon Green 611543 / White
-611544 / Yellow 611546 / True Red 611549 ($18.99); Purple 611540 is out of
-stock there (near-miss). Expected DB delta: users +1 (frank.m@test.com),
-list_items +3 for the new user (676237 + 512934 + one valid PLA+), cart_items
-+1 (the A1). The answer must report 3 list items, the $359.99 price, the
-White PLA color, and the color of the PLA+ actually added.
+Create a new Micro Center Insider account with the email frank.m@test.com and password BenchMark123!, using your own name. Then find the Bambu Lab A1 3D printer, add it to your list, and put it in your cart to see the estimated total with tax. Also add a spool of PLA filament under $15 and a spool of PLA+ under $20, both in stock at the Cambridge, MA store, to your list. Report the list's item count, the printer's price, and the filament colors you picked.
 """
 from verify_lib import (check_only_tables_changed, check_trajectory_identity,
                         contains_amount, contains_count, contains_phrase, db_query,

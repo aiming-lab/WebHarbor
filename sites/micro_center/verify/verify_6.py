@@ -1,21 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--6.
 
-Dual 27-inch monitors: use the site's compare page to compare the two
-cheapest 27-inch monitors and report which one has the higher refresh rate
-and how many stores have each in stock. Set Rockville, MD as the store, add
-the higher-refresh-rate monitor at quantity 2, and report whether it is in
-stock there plus the subtotal and estimated tax.
-
-Frozen ground truth (seed DB): the two cheapest 27" monitors are the 27CL1
-Gbi 27" FHD 120Hz (683850, $89.99; in stock at 24 of 30 stores; in stock at
-Rockville 085) and the 27MQ450-B.AUS 27" FHD 75Hz (664856, $119.99; in stock
-at 25 of 30 stores). The higher refresh rate is 120Hz on the 27CL1. Cart with
-qty 2: subtotal $179.98, estimated tax $13.05 (7.25%).
-
-Guest (session) cart and store selection, so the DB stays read-only; the
-proof is the navigation (both PDPs, compare page, Rockville store surface,
-cart) plus the quoted facts.
+I want dual 27-inch monitors on my desk. Use the site's compare page to compare the two cheapest 27-inch monitors and report which one has the higher refresh rate and how many stores have each in stock. I'll pick them up at my local Rockville, MD store — set it as your store, add the higher-refresh-rate monitor at quantity 2, and report whether it is in stock there plus the subtotal and estimated tax.
 """
 from verify_lib import (check_read_only, check_trajectory_identity, contains_amount,
                         contains_count, contains_phrase, final_answer, navigated_search_with,

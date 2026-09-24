@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Micro Center--3.
 
-Find a graphics card that is in stock at BOTH the Dallas (131) and Houston (155)
-Micro Center stores, then place a pickup reservation for it at the Dallas store
-as bob.c@test.com and report the order number.
-
-Frozen ground truth (seed DB): the actual graphics cards (GeForce/Radeon) with
-"in stock" rows at BOTH stores are hardcoded below (22 cards, cheapest GT 730
-$79.99). Any one of them is accepted. Bob's seed cart (Smart Business Pack
-29.99 + Wireless Mouse M185 17.99) joins the checkout, so only the order
-number is pinned; the order must be a pickup order for bob at store 131
-containing at least one of the qualifying cards.
+Two family members in Texas want the same graphics card for a build this weekend. Find a graphics card in stock at both Dallas and Houston, then add one to Bob's pending order and complete pickup checkout at Dallas (bob.c@test.com / TestPass123!). Keep his existing cart items and report the order number.
 """
 from verify_lib import (added_orders, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_phrase, final_answer,
