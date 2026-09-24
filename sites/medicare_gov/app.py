@@ -17,6 +17,9 @@ from __future__ import annotations
 import json
 import os
 import re
+import secrets
+import hmac
+from urllib.parse import urlsplit
 from datetime import date, datetime, timedelta
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
@@ -35,7 +38,9 @@ os.makedirs(os.path.join(BASE_DIR, "instance"), exist_ok=True)
 app = Flask(__name__, instance_path=os.path.join(BASE_DIR, "instance"))
 DB_PATH = os.environ.get("MEDICARE_GOV_DB_PATH") or f"sqlite:///{BASE_DIR}/instance/medicare_gov.db"
 app.config["SQLALCHEMY_DATABASE_URI"] = DB_PATH
-app.config["SECRET_KEY"] = "webharbor-medicare-gov-dev-key"
+app.config["SECRET_KEY"] = os.environ.get("MEDICARE_GOV_SECRET_KEY") or secrets.token_hex(32)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
 app.config["MAX_CONTENT_LENGTH"] = 4 * 1024 * 1024
 
 db = SQLAlchemy(app)
@@ -43,10 +48,39 @@ login_manager = LoginManager(app)
 login_manager.login_view = "login"
 login_manager.login_message = ""
 
+
+def local_path(value, fallback="/"):
+    parts = urlsplit(value or "")
+    if (parts.scheme or parts.netloc or not (value or "").startswith("/")
+            or value.startswith("//") or "\\" in value or any(ord(c) < 32 for c in value)):
+        return fallback
+    return value
+
+
+def csrf_token():
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_hex(32)
+    return session["csrf_token"]
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+app.jinja_env.globals["local_path"] = local_path
+
+
+@app.before_request
+def protect_forms():
+    if request.method == "POST" and app.config.get("CSRF_ENABLED", True):
+        expected = session.get("csrf_token", "")
+        supplied = request.form.get("csrf_token", "")
+        if not expected or not hmac.compare_digest(expected, supplied):
+            abort(400, "Invalid form token. Reload the form and try again.")
+
 # The snapshot instant this mirror freezes. All "due in N days" /
 # "past-due" behaviours are computed against this constant, never the wall
 # clock, so every reset serves the same deterministic state.
 MIRROR_REFERENCE_DATE = date(2026, 9, 23)
+
+US_STATES = set("AL AK AZ AR CA CO CT DE DC FL GA HI ID IL IN IA KS KY LA ME MD MA MI MN MS MO MT NE NV NH NJ NM NY NC ND OH OK OR PA RI SC SD TN TX UT VT VA WA WV WI WY AS GU MP PR VI".split())
 
 STOP_WORDS = {
     "the", "a", "an", "in", "on", "at", "to", "for", "of", "and", "or",
@@ -678,6 +712,10 @@ def care_compare_search():
     keyword = (request.args.get("q") or "").strip()
     if provider_type not in PROVIDER_TYPE_LABELS:
         provider_type = "Physician"
+    sort = request.args.get("sort", "closest")
+    if sort not in {"closest", "name"}:
+        sort = "closest"
+    page = max(1, request.args.get("page", 1, type=int))
     providers = []
     city = None
     total = 0
@@ -707,12 +745,15 @@ def care_compare_search():
                     or (r.detail_map.get("group") or "").lower().find(needle) >= 0
                 ]
             rows.sort(key=lambda r: ((r.distance if r.distance is not None else 999), r.name.casefold()))
+            if sort == "name":
+                rows.sort(key=lambda r: r.name.casefold())
             total = len(rows)
-            providers = rows[:60]
+            page = min(page, max(1, (total + 59) // 60))
+            providers = rows[(page-1)*60:page*60]
     return render_template(
         "care_compare_search.html", provider_type=provider_type,
         location=location, keyword=keyword, providers=providers,
-        total=total, city=city)
+        total=total, city=city, sort=sort, page=page, pages=max(1, (total+59)//60))
 
 
 @app.route("/care-compare/provider/<int:provider_row_id>")
@@ -786,21 +827,25 @@ def plan_landing():
 
 @app.route("/plan-compare/search", methods=["GET", "POST"])
 def plan_search():
-    zip_code = (request.values.get("zip") or "").strip()[:5]
+    zip_code = (request.values.get("zip") or "").strip()
+    if zip_code and not re.fullmatch(r"\d{5}", zip_code):
+        abort(400, "Enter a 5-digit ZIP code.")
     plan_choice = request.values.get("plan_choice") or request.values.get("type") or "health"
     county_name = request.values.get("county") or ""
     county_zip = CountyZip.query.filter_by(zip=zip_code).first() if zip_code else None
     counties = []
     plans = []
     if county_zip is not None:
-        same_county = CountyZip.query.filter_by(county=county_zip.county, state=county_zip.state).all()
+        same_county = CountyZip.query.filter_by(zip=zip_code).all()
         counties = sorted({(c.county, c.state) for c in same_county})
         target = county_zip.county
         if county_name:
+            if (county_name, county_zip.state) not in counties:
+                abort(400, "Choose a county for this ZIP code.")
             target = county_name
         want_type = ("Medicare drug plan" if plan_choice == "drug"
                      else "Medicare Advantage")
-        plans = Plan.query.filter_by(county=target, plan_type=want_type).all()
+        plans = Plan.query.filter_by(county=target, state=county_zip.state, plan_type=want_type).all()
         plans.sort(key=lambda p: (-float(p.rating or 0), p.name.casefold()))
     return render_template(
         "plan_results.html", zip_code=zip_code, plan_choice=plan_choice,
@@ -862,31 +907,46 @@ def publication_order(product_number):
         if not pub.orderable:
             flash("This product isn't available to order right now.")
             return redirect(url_for("publication_order", product_number=product_number))
-        quantity = request.form.get("quantity", "1")
         try:
-            quantity = max(1, min(5, int(quantity)))
+            quantity = int(request.form.get("quantity", "1"))
         except ValueError:
-            quantity = 1
-        if current_user.is_authenticated:
-            address = current_user.current_address
-            order = PubOrder(
-                user_id=current_user.id, publication_id=pub.id,
-                quantity=quantity, format=request.form.get("format", "Standard Print"),
-                ship_line1=address.line1 if address else request.form.get("line1", ""),
-                ship_city=address.city if address else request.form.get("city", ""),
-                ship_state=address.state if address else request.form.get("state", ""),
-                ship_zip=address.zip if address else request.form.get("zip", ""),
-                created_at=MIRROR_REFERENCE_DATE.isoformat())
-            db.session.add(order)
-            db.session.commit()
-            return render_template("pub_order_confirm.html", pub=pub, order=order)
-        return render_template("pub_order_confirm.html", pub=pub, order=None)
+            abort(400, "Choose a quantity from 1 to 5.")
+        format_ = request.form.get("format", "Standard Print")
+        if not 1 <= quantity <= 5 or format_ not in {"Standard Print", "Large Print", "Braille"}:
+            abort(400, "Choose a valid quantity and print format.")
+        address = current_user.current_address if current_user.is_authenticated else None
+        fields = {key: (getattr(address, key) if address else request.form.get(key, "")).strip()
+                  for key in ("line1", "city", "state", "zip")}
+        fields["state"] = fields["state"].upper()
+        if (len(fields["line1"]) < 4 or not fields["city"] or fields["state"] not in US_STATES
+                or not re.fullmatch(r"\d{5}(?:-\d{4})?", fields["zip"])):
+            abort(400, "Enter a complete US mailing address.")
+        order = PubOrder(user_id=current_user.id if current_user.is_authenticated else None,
+                         publication_id=pub.id, quantity=quantity, format=format_,
+                         ship_line1=fields["line1"], ship_city=fields["city"],
+                         ship_state=fields["state"], ship_zip=fields["zip"],
+                         created_at=MIRROR_REFERENCE_DATE.isoformat())
+        db.session.add(order)
+        db.session.commit()
+        session["publication_orders"] = (session.get("publication_orders", []) + [order.id])[-30:]
+        return redirect(url_for("publication_confirmation", order_id=order.id))
     if not pub.orderable:
         # no order form for products marked "isn't available to order"
         flash("This product isn't available to order right now.")
         return redirect(url_for("publications_search", q=pub.title))
     return render_template("pub_order.html", pub=pub)
 
+
+
+@app.route("/publication-orders/<int:order_id>")
+def publication_confirmation(order_id):
+    order = db.session.get(PubOrder, order_id)
+    if order is None or not (
+        (order.user_id is not None and current_user.is_authenticated and order.user_id == current_user.id)
+        or (order.user_id is None and order.id in session.get("publication_orders", []))
+    ):
+        abort(404)
+    return render_template("pub_order_confirm.html", pub=order.publication, order=order)
 
 # ---------------------------------------------------------------------------
 # email signup
@@ -898,7 +958,7 @@ def email_signup():
     if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
         flash("Please enter a valid email address.")
         next_url = request.form.get("next") or url_for("home")
-        return redirect(next_url)
+        return redirect(local_path(next_url))
     if not SubscriberEmail.query.filter_by(email=email).first():
         db.session.add(SubscriberEmail(email=email, created_at=MIRROR_REFERENCE_DATE.isoformat()))
         db.session.commit()
@@ -936,7 +996,7 @@ def identity_partner(partner):
     return render_template("identity_partner.html", partner=partner)
 
 
-@app.route("/account/logout")
+@app.route("/account/logout", methods=["POST"])
 def logout():
     logout_user()
     return redirect(url_for("home"))
@@ -970,7 +1030,7 @@ def claim_detail(claim_id):
 @login_required
 def premiums():
     bills = PremiumBill.query.filter_by(user_id=current_user.id).order_by(PremiumBill.due_date).all()
-    methods = PaymentMethod.query.filter_by(user_id=current_user.id).all()
+    methods = PaymentMethod.query.filter_by(user_id=current_user.id).order_by(PaymentMethod.is_default.desc(), PaymentMethod.id).all()
     return render_template("my/premiums.html", bills=bills, methods=methods)
 
 
@@ -980,6 +1040,9 @@ def premium_pay(bill_id):
     bill = db.session.get(PremiumBill, bill_id)
     if bill is None or bill.user_id != current_user.id:
         abort(404)
+    if bill.status != "Due":
+        flash("This premium has already been paid.")
+        return redirect(url_for("premiums"))
     method = request.form.get("method")
     method_row = PaymentMethod.query.filter_by(user_id=current_user.id, label=method).first()
     if method_row is None:
@@ -1032,7 +1095,7 @@ def change_address():
         errors.append("Enter a street address.")
     if not city:
         errors.append("Enter a city.")
-    if len(state) != 2:
+    if state not in US_STATES:
         errors.append("Enter a 2-letter state.")
     if not re.match(r"^\d{5}(-\d{4})?$", zip_code):
         errors.append("Enter a 5-digit ZIP code.")

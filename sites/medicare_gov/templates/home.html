@@ -75,7 +75,7 @@
     <div class="email-signup__inner">
       <h2>Important updates, straight to your inbox</h2>
       <p>Get reminders about Open Enrollment, ways to save costs, and more.</p>
-      <form action="{{ url_for('email_signup') }}" method="post">
+      <form action="{{ url_for('email_signup') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="next" value="{{ url_for('home') }}">
         <label class="visually-hidden" for="home-email" style="position:absolute;left:-9999px;">Enter your email address</label>
         <input id="home-email" type="email" name="email" placeholder="Enter your email address" required>

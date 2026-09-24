@@ -13,6 +13,7 @@
   <section class="coverage-search">
     <h2>Search for publications</h2>
     <form action="{{ url_for('publications_search') }}" method="get" class="form-grid" style="margin-top:12px">
+      <div class="field"><label for="pub-query">Title or product number</label><input id="pub-query" name="q" type="search"></div>
       <div class="field">
         <label for="pub-cat">Category</label>
         <select id="pub-cat" name="category">
@@ -66,7 +67,7 @@
         <p class="summary">{{ pub.summary }}</p>
         <div class="actions">
           <a class="btn btn--outline btn--small" href="{{ url_for('publication_order', product_number=pub.product_number) }}">Order Print</a>
-          <a class="btn btn--ghost btn--small" href="{{ url_for('publications_search', q=pub.title) }}">Open PDF</a>
+          <a class="btn btn--ghost btn--small" href="{{ url_for('publications_search', q=pub.title) }}">Publication details</a>
         </div>
       </div>
     </div>
@@ -82,7 +83,7 @@
     <div class="email-signup__inner">
       <h2>Important updates, straight to your inbox</h2>
       <p>Get reminders about Open Enrollment, ways to save costs, and more.</p>
-      <form action="{{ url_for('email_signup') }}" method="post">
+      <form action="{{ url_for('email_signup') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="next" value="{{ url_for('publications_home') }}">
         <input type="email" name="email" placeholder="Enter your email address" required aria-label="Enter your email address">
         <button class="btn btn--solid" type="submit">Sign up</button>

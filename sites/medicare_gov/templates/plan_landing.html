@@ -1,6 +1,7 @@
 {% extends "base.html" %}
 {% block title %}Find the plan that works for you | Medicare{% endblock %}
 {% block content %}
+<div class="ds-container"><p class="small muted">Offline demonstration: plan names and prices are a fixed sample catalog, not current plan offers.</p></div>
 <section class="home-hero">
   <div class="ds-container">
     <div class="home-hero__inner">
@@ -18,7 +19,7 @@
             <label for="plan-choice">What type of plan do you want to find?</label>
             <select id="plan-choice" name="plan_choice">
               <option value="health">Medicare health plans (Medicare Advantage)</option>
-              <option value="drug">Medicare drug plans (Part D)</option>
+              <option value="drug" {{ 'selected' if request.args.get('plan_choice') == 'drug' else '' }}>Medicare drug plans (Part D)</option>
             </select>
           </div>
           <button class="btn btn--solid" type="submit">Continue</button>
@@ -44,7 +45,7 @@
     <div class="list-card">
       <h3>Don't have a Medicare account?</h3>
       <p>You'll need to answer a few questions before we show you plans. These questions help us give you better cost estimates, but won't change which plans you see.</p>
-      <a class="btn btn--outline btn--small card-cta" href="{{ url_for('plan_search', zip='62701') }}">Find plans without logging in</a>
+      <a class="btn btn--outline btn--small card-cta" href="{{ url_for('plan_landing') + '#plan-zip' }}">Find plans without logging in</a>
     </div>
     <div class="list-card">
       <h3>Medicare Advantage vs Original Medicare</h3>

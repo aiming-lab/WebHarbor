@@ -37,7 +37,7 @@
       <nav class="utility-bar__nav" aria-label="Account">
         {% if current_user.is_authenticated %}
           <a href="{{ url_for('dashboard') }}">My Medicare</a>
-          <a href="{{ url_for('logout') }}">Log out</a>
+          <form action="{{ url_for('logout') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn btn--ghost" type="submit">Log out</button></form>
         {% else %}
           <a href="{{ url_for('login') }}">Log in</a>
         {% endif %}
@@ -63,9 +63,9 @@
           <a href="{{ url_for('health_drug_plans') }}">Health &amp; Drug Plans</a>
           <ul class="nav-dropdown">
             <li><a href="{{ url_for('plan_landing') }}">Find health &amp; drug plans</a></li>
-            <li><a href="{{ url_for('content_page', slug='end-stage-renal-disease') }}">Medicare Advantage &amp; other health plans</a></li>
-            <li><a href="{{ url_for('dme_home') }}">Medicare Supplement Insurance (Medigap)</a></li>
-            <li><a href="{{ url_for('coverage_home') }}">Drug coverage (Part D)</a></li>
+            <li><a href="{{ url_for('plan_landing') }}">Medicare Advantage &amp; other health plans</a></li>
+            <li><a href="{{ url_for('publications_search', q='Choosing a Medigap Policy') }}">Medicare Supplement Insurance (Medigap)</a></li>
+            <li><a href="{{ url_for('plan_search', plan_choice='drug') }}">Drug coverage (Part D)</a></li>
           </ul>
         </div>
         <div class="nav-item">
