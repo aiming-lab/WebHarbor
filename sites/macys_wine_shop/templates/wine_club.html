@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Macy's Wine Club – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="page-layout">
+  <div class="confirmation-hero" style="padding:26px 0 6px">
+    <h1>Wine Club: Join Free &amp; Get Exclusive Member Benefits</h1>
+    <p style="color:var(--dark-gray)">Get your first 12 bottles for $99.99 with free shipping!<br>No commitment or fees. Skip or cancel anytime.</p>
+  </div>
+
+  <h2 class="section-heading">What's inside your first box</h2>
+  <p class="section-sub">Expert pairing ideas and serving tips included with every shipment. Plus surprises all year long.</p>
+
+  <h2 class="section-heading">Choose Your Wine Case</h2>
+  <div class="club-tabs">
+    <button class="selected" data-club-tab="mixed" type="button">Mixed</button>
+    <button data-club-tab="reds" type="button">All Reds</button>
+    <button data-club-tab="whites" type="button">All Whites</button>
+  </div>
+  {% set includes = {"mixed": "includes: 12 unique wines, 1 bottle each",
+                     "reds": "includes: 6 unique red wines, 2 bottles each",
+                     "whites": "includes: 6 unique white wines, 2 bottles each"} %}
+  {% for key in ["mixed", "reds", "whites"] %}
+  <div class="club-card" data-club-panel="{{ key }}" style="{{ '' if loop.first else 'display:none' }}">
+    <p class="club-includes">{{ includes[key]|replace('includes: ', '') }}</p>
+    <h2>12-Bottle {{ 'Mixed' if key == 'mixed' else ('All Reds' if key == 'reds' else 'All Whites') }} Intro Case</h2>
+    <div class="club-price">$99.99</div>
+    <p class="club-includes">Shipping <strong>FREE</strong> · Processing $2.95</p>
+    <div class="totals" style="border-top:1px solid var(--gainsboro);padding-top:12px;margin-top:8px">
+      <div class="row total"><span>Subtotal</span><span>$102.94</span></div>
+    </div>
+    <a class="btn-primary" href="/collections/shop-all-wine-sets" style="margin-top:16px">Browse one-time wine cases</a>
+    <p style="font-size:13px;color:var(--ada-gray);margin-top:12px">Free Shipping · Fast Delivery · Satisfaction Guaranteed</p>
+  </div>
+  {% endfor %}
+
+  <h2 class="section-heading" style="margin-top:50px">Frequently Asked Questions</h2>
+  <div style="max-width:800px;margin:0 auto;text-align:left">
+    <details class="faq-item"><summary>Do I have to join long-term?</summary><div class="faq-body">Membership is designed to be flexible. Enjoy exclusive wine selections delivered throughout the year, with the freedom to manage your membership whenever you need.</div></details>
+    <details class="faq-item"><summary>How much is the first shipment?</summary><div class="faq-body">Your introductory shipment includes 12 carefully selected bottles for just $99.99 + applicable tax, with free shipping. After your first shipment, your membership renews quarterly at $149.99 + applicable tax, with free shipping. It's the perfect way to discover exceptional wines and experience the benefits of membership.</div></details>
+    <details class="faq-item"><summary>What happens after the first shipment?</summary><div class="faq-body">After your introductory shipment, you'll continue receiving 12 bottles approximately every 13 weeks as part of your ongoing membership. Each shipment is $149.99 plus applicable tax, billed when your order ships.</div></details>
+    <details class="faq-item"><summary>Can I choose the type of wine?</summary><div class="faq-body">Yes, you can choose: Mixed (12 unique wines, 1 bottle each), All Reds or All Whites (6 unique wines, 2 bottles each).</div></details>
+    <details class="faq-item"><summary>How often will I get wine?</summary><div class="faq-body">Shipments arrive approximately every 13 weeks, making it easy to enjoy new selections throughout the year.</div></details>
+    <details class="faq-item"><summary>Can I skip or cancel shipments?</summary><div class="faq-body">Absolutely! Shipments can be skipped or canceled anytime. The club is designed to work around your schedule, so you always have control over what and when you receive.</div></details>
+    <details class="faq-item"><summary>What if I don't like a wine?</summary><div class="faq-body">We want every shipment to be enjoyable. If you have questions or concerns about a wine you've received, please contact Customer Support at (855) 966-2224 and we'll be happy to help.</div></details>
+    <details class="faq-item"><summary>Is shipping included?</summary><div class="faq-body">Yes. Shipping is included for all club shipments, delivered to your home or to a convenient pickup location. The wines arrive safely and ready to enjoy.</div></details>
+    <details class="faq-item"><summary>Can this offer be combined with other promotions?</summary><div class="faq-body">The Wine Club offer may not be combined with other offers and the membership is limited to one per household.</div></details>
+    <details class="faq-item"><summary>How can I skip or cancel my membership?</summary><div class="faq-body">You may skip a shipment or cancel at any time by contacting Customer Support at (855) 966-2224 or by logging into your account to manage your club preferences.</div></details>
+  </div>
+</div>
+<script>
+(function () {
+  var tabs = document.querySelectorAll("[data-club-tab]");
+  tabs.forEach(function (tab) {
+    tab.addEventListener("click", function () {
+      tabs.forEach(function (t) { t.classList.toggle("selected", t === tab); });
+      document.querySelectorAll("[data-club-panel]").forEach(function (panel) {
+        panel.style.display = panel.getAttribute("data-club-panel") === tab.getAttribute("data-club-tab") ? "block" : "none";
+      });
+    });
+  });
+})();
+</script>
+{% endblock %}

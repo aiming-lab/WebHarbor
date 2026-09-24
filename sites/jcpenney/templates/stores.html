@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Find a Store | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-narrow">
+    <h1>JCPenney Stores</h1>
+    <form method="get" action="/stores" style="display:flex;flex-wrap:wrap;gap:10px;max-width:640px;margin:14px 0;">
+      <input type="text" name="q" placeholder="City, State, or ZIP" value="{{ query }}" style="flex:1;border:1px solid var(--line);padding:11px 12px;">
+      <select name="state" style="border:1px solid var(--line);padding:11px;">
+        <option value="">All states</option>
+        {% for state in state_counts|sort %}
+          <option value="{{ state }}" {% if state == state_filter %}selected{% endif %}>{{ state }} ({{ state_counts[state] }})</option>
+        {% endfor %}
+      </select>
+      <select name="service" style="border:1px solid var(--line);padding:11px;">
+        <option value="">All services</option>
+        <option value="Curbside Pick up" {% if service == 'Curbside Pick up' %}selected{% endif %}>Curbside Pickup</option>
+        <option value="Salon" {% if service == 'Salon' %}selected{% endif %}>Salon</option>
+        <option value="Portrait" {% if service == 'Portrait' %}selected{% endif %}>Portrait Studio</option>
+        <option value="Optical" {% if service == 'Optical' %}selected{% endif %}>Optical</option>
+      </select>
+      <button type="submit" class="btn-primary">Search</button>
+    </form>
+
+    <p style="color:var(--ink-2);">{{ total }} Stores in the U.S.A. &middot; showing {{ stores|length }}</p>
+
+    {% for store in stores %}
+      <div class="store-row">
+        <div>
+          <h3><a href="/stores/{{ store.number }}">{{ store.name }}</a></h3>
+          <div class="addr">{{ store.street }}<br>{{ store.city }}, {{ store.state }} {{ store.zip }}</div>
+          <div class="addr">Store Phone: {{ store.phone }}</div>
+        </div>
+        <div class="addr">
+          {% if store.google_rating %}
+            <span style="color:#d53a34;">{{ store.google_rating|stars }}</span>
+            {{ store.google_rating }} out of 5.0 ({{ store.google_reviews }} Google Reviews)
+          {% endif %}
+          <div style="margin-top:6px;">
+            {% for dept in store.departments %}<span class="status-chip" style="background:#f2f2f2;">{{ dept }}</span> {% endfor %}
+          </div>
+        </div>
+        <div>
+          <a class="btn-link" href="/stores/{{ store.number }}">Store Details</a>
+        </div>
+      </div>
+    {% endfor %}
+
+    <h2 style="font-size:17px;margin-top:26px;">Stores by State</h2>
+    <div class="state-grid">
+      {% for state in state_counts|sort %}
+        <a href="/stores?state={{ state }}">{{ US_STATE_NAME().get(state, state) }} ({{ state_counts[state] }})</a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}My Account – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <nav class="account-nav">
+    <a class="active" href="/account">Dashboard</a>
+    <a href="/account/orders">Orders</a>
+    <a href="/account/addresses">Addresses</a>
+    <a href="/account/payment">Payment methods</a>
+    <a href="/account/profile">Profile</a>
+    <a href="/account/password">Password</a>
+    <form method="post" action="/logout" style="margin-top:14px">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn-secondary" type="submit">Sign Out</button>
+    </form>
+  </nav>
+  <div class="account-main">
+    <h1>Hello, {{ user.display_name }}!</h1>
+    <p style="color:var(--dark-gray)">From your account dashboard you can view your recent orders, manage your shipping addresses, and update your payment methods.</p>
+    <div class="checkout-review-grid" style="margin-top:24px">
+      <div class="col">
+        <h3>Recent orders</h3>
+        {% if user.orders %}
+        {% for order in user.orders[:3] %}
+        <p style="font-size:14.5px">
+          <a href="/account/orders/{{ order.order_number }}" style="text-decoration:underline">{{ order.order_number }}</a>
+          — {{ order.created_at.strftime('%B %d, %Y') }} — {{ order.total|money }}
+          <span class="status-chip status-{{ order.status }}">{{ order.status }}</span>
+        </p>
+        {% endfor %}
+        {% else %}
+        <p>You haven't placed any orders yet.</p>
+        {% endif %}
+      </div>
+      <div class="col">
+        <h3>Default shipping address</h3>
+        {% set addr = (user.addresses|selectattr('is_default')|list) or user.addresses %}
+        {% if addr %}
+        <p>{{ addr[0].full_name }}<br>{{ addr[0].line1 }}<br>{{ addr[0].city }}, {{ addr[0].state }} {{ addr[0].zip_code }}</p>
+        {% else %}
+        <p>No addresses saved yet. <a href="/account/addresses" style="text-decoration:underline">Add one</a>.</p>
+        {% endif %}
+      </div>
+      <div class="col">
+        <h3>Wine Club</h3>
+        <p>Join the Macy's Wine Club and get 12 expertly-curated wines for $99.99.</p>
+        <a href="/pages/wine-club" style="color:var(--bright-red);text-decoration:underline;font-size:14px">Explore Clubs</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

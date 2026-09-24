@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% from "_listing_card.html" import listing_card %}
+{% block body_class %}lw-home{% endblock %}
+{% block header_class %}lw-header-hero{% endblock %}
+{% block logo %}<img src="/static/icons/lw-logo-white.svg" alt="LandWatch" width="168" height="36">{% endblock %}
+
+{% block pre_content %}
+<section class="lw-hero">
+  <picture>
+    <source media="(max-width: 400px)" srcset="/static/images/home/LW-Hero-375.webp">
+    <source media="(max-width: 600px)" srcset="/static/images/home/LW-Hero-600.webp">
+    <source media="(max-width: 900px)" srcset="/static/images/home/LW-Hero-900.webp">
+    <img class="lw-hero-img" src="/static/images/home/LW-Hero-1600.webp" alt="Rural land with fields, trees and a homesite at golden hour">
+  </picture>
+  <div class="lw-hero-overlay"></div>
+  <div class="lw-hero-content">
+    <h1>Search Land for Sale</h1>
+    <p>Find farms, ranches, hunting land and rural property across the United States</p>
+    <form class="lw-searchbar" action="/search" method="get" autocomplete="off">
+      <div class="lw-searchbar-field">
+        <svg class="lw-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" name="q" placeholder="City, County or State" aria-label="City, County or State" data-suggest-input>
+        <div class="lw-suggest hidden"></div>
+      </div>
+      <button class="lw-btn lw-btn-primary" type="submit">Search</button>
+    </form>
+    <div class="lw-hero-buttons">
+      <button class="lw-btn lw-btn-dark" type="button" onclick="window.location='/sitemap'">
+        <img src="/static/icons/map-white.svg" alt="" width="16" height="16"> Search by State
+      </button>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block content %}
+<section class="lw-section">
+  <div class="lw-section-head">
+    <h2>Land for Sale in the United States</h2>
+  </div>
+  <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 10px;">
+    <button type="button" data-carousel-prev aria-label="Scroll left">&#8249;</button>
+    <button type="button" data-carousel-next aria-label="Scroll right">&#8250;</button>
+  </div>
+  <div class="lw-carousel" data-carousel>
+    {% for listing in featured %}{{ listing_card(listing) }}{% endfor %}
+  </div>
+</section>
+
+<section class="lw-section" style="padding-top: 6px;">
+  <div style="display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 10px;">
+    <button type="button" data-carousel-prev aria-label="Scroll left">&#8249;</button>
+    <button type="button" data-carousel-next aria-label="Scroll right">&#8250;</button>
+  </div>
+  <div class="lw-carousel lw-carousel-4" data-carousel>
+    {% for tile in tiles %}
+      <a class="lw-tile" href="/{{ tile.slug }}">
+        <img src="/static/images/property-types/{{ tile.image }}" alt="{{ tile.label }}">
+        <div class="lw-tile-overlay"></div>
+        <div class="lw-tile-text">
+          <h3>{{ tile.label }}</h3>
+          <p>{{ tile.count_line }}</p>
+        </div>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="lw-promo">
+  <div class="lw-promo-inner">
+    <div class="lw-promo-left">
+      <p class="lw-promo-copy">List your property on the Land.com Network, the #1 rural real estate listing service provider.</p>
+      <a class="lw-btn lw-btn-primary" href="https://land.com/addlisting/?siteId=1113" rel="noopener noreferrer" target="_blank">Post your listing</a>
+    </div>
+    <div class="lw-member-box">
+      As a member of the Land.com Network, LandWatch is an online leader in rural properties and land for sale, including hunting land, timberland, farms for sale, ranches for sale, development sites and homesites for vacation, recreation, or investment purposes.
+    </div>
+  </div>
+</section>
+
+<section class="lw-section" style="max-width: 1440px;">
+  <div class="lw-section-head" style="text-align: left;">
+    <h2 style="font-size: 22px;">Popular States</h2>
+  </div>
+  <div class="lw-popular-states">
+    {% for state, slug, count in top_states %}
+      <a class="lw-chip-static" style="display: block; text-align: center; padding: 14px 10px;" href="/{{ slug }}">
+        {{ state }}<br><span style="font-size: 12px; color: #757575;">{{ count }} Listings</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

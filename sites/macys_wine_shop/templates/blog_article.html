@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="article-layout">
+  <p style="font-size:14px"><a href="/blogs/wine-101" style="text-decoration:underline">← Back to Wine 101</a></p>
+  <h1>{{ article.title }}</h1>
+  {% if article.image_path %}<img class="article-hero" src="/static/images/{{ article.image_path }}" alt="{{ article.title }}">{% endif %}
+  <div class="article-body">{{ article.content_html|articlehtml }}</div>
+  <h2 style="margin-top:36px">Keep Reading</h2>
+  <div class="blog-grid" style="padding:0">
+    {% for a in related %}
+    <article class="blog-card">
+      <a href="/blogs/wine-101/{{ a.handle }}">
+        {% if a.image_path %}<img src="/static/images/{{ a.image_path }}" alt="{{ a.title }}">{% endif %}
+      </a>
+      <h3><a href="/blogs/wine-101/{{ a.handle }}">{{ a.title }}</a></h3>
+    </article>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

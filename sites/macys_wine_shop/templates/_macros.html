@@ -1,0 +1,64 @@
+{% macro card(p, state) %}
+<div class="product-card">
+  {% set v = p.first_variant %}
+  {% set blocked = state and not p.shippable_to(state) %}
+  <div class="imgwrap {{ 'state-blocked' if blocked }}">
+    {% if p.on_sale %}<span class="badge-sale">SALE</span>{% endif %}
+    {% if p.pct_off %}
+    <span class="badge-off" style="left: {{ 64 if p.on_sale else 10 }}px">{{ p.pct_off }}% off</span>
+    {% endif %}
+    {% if blocked %}
+    <div class="state-note">Item cannot ship to your state</div>
+    {% endif %}
+    <a href="/products/{{ p.handle }}" aria-label="{{ p.title }}">
+      {% if p.first_image %}<img src="{{ p.first_image.path }}" alt="{{ p.first_image.alt or p.title }}" loading="lazy">{% endif %}
+    </a>
+    {% if v %}
+    <button class="quickview-btn" data-quickview="{{ v.id }}" type="button">Quick View +</button>
+    {% endif %}
+  </div>
+  <h3><a href="/products/{{ p.handle }}">{{ p.title }}</a></h3>
+  <div class="card-rating">
+    {% if p.rating_count %}
+    <span class="stars">{{ p.rating_average|stars }}</span> {{ p.rating_average|round(1) }} ({{ p.rating_count }})
+    {% else %}
+    <span style="color:var(--ada-gray)">No reviews yet</span>
+    {% endif %}
+  </div>
+  <div class="card-price">
+    {% if p.is_pack %}
+      {# upstream pack cards quote the lowest true per-bottle price
+         (min(price / bottle_count) across pack sizes), e.g. "From $11.99
+         Per Bottle" for the Golden State case, plus a size list line like
+         "6 or 12 Pack" (reviewer finding F5) #}
+      {% set ns = namespace(minpb=none) %}
+      {% for vv in p.variants %}
+        {% set this_pb = (vv.price / (vv.bottle_count or 1)) %}
+        {% if ns.minpb is none or this_pb < ns.minpb %}{% set ns.minpb = this_pb %}{% endif %}
+      {% endfor %}
+      From <span class="sale">{{ ns.minpb|money }}</span>
+      <span class="per">Per Bottle</span>
+      {% set sizes = (p.variants | map(attribute='bottle_count') | unique | sort | list) %}
+      <div class="per" style="font-size:13px;color:var(--ada-gray)">{{ sizes|join(' or ') }} Pack</div>
+    {% else %}
+      {% if p.on_sale %}
+        <span class="sale">{{ p.price|money }}</span>
+        {% if p.compare_at_price > p.price %}<span class="strike">{{ p.compare_at_price|money }}</span>{% endif %}
+      {% else %}
+        {{ p.price|money }}
+      {% endif %}
+    {% endif %}
+  </div>
+  <div class="card-cta">
+    {% if v and not blocked and v.available %}
+      {% if p.is_pack %}
+      <a class="btn-secondary" href="/products/{{ p.handle }}">View Options</a>
+      {% else %}
+      <button class="btn-secondary" data-add-to-cart data-variant-id="{{ v.id }}" type="button">Add to Cart</button>
+      {% endif %}
+    {% else %}
+      <button class="btn-secondary" disabled type="button">Unavailable</button>
+    {% endif %}
+  </div>
+</div>
+{% endmacro %}

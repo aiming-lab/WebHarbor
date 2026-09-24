@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_number }} – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <nav class="account-nav">
+    <a href="/account">Dashboard</a>
+    <a class="active" href="/account/orders">Orders</a>
+    <a href="/account/addresses">Addresses</a>
+    <a href="/account/payment">Payment methods</a>
+    <a href="/account/profile">Profile</a>
+    <a href="/account/password">Password</a>
+  </nav>
+  <div class="account-main">
+    <p style="font-size:14px"><a href="/account/orders" style="text-decoration:underline">← Back to orders</a></p>
+    <h1>Order {{ order.order_number }}</h1>
+    <p style="color:var(--dark-gray)">Placed {{ order.created_at.strftime('%B %d, %Y') }} · <span class="status-chip status-{{ order.status }}">{{ order.status }}</span></p>
+    <div class="table-scroll"><table class="order-table" style="margin-top:14px">
+      <thead><tr><th>Item</th><th>Qty</th><th>Price</th></tr></thead>
+      <tbody>
+        {% for item in order.items %}
+        <tr>
+          <td><a href="/products/{{ item.product_handle }}" style="text-decoration:underline">{{ item.product_title }}</a>{% if item.variant_title and item.variant_title != 'Default Title' %} ({{ item.variant_title }}){% endif %}</td>
+          <td>{{ item.quantity }}</td>
+          <td>{{ (item.unit_price * item.quantity)|money }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table></div>
+    <div class="cart-side" style="max-width:400px;margin-top:22px">
+      <h2>Summary</h2>
+      <div class="totals">
+        <div class="row"><span>Subtotal</span><span>{{ order.subtotal|money }}</span></div>
+        <div class="row"><span>Shipping</span><span>{{ order.shipping|money if order.shipping else 'FREE' }}</span></div>
+        <div class="row"><span>Processing</span><span>{{ order.processing|money }}</span></div>
+        <div class="row total"><span>Total</span><span>{{ order.total|money }}</span></div>
+      </div>
+      <p style="font-size:14px;color:var(--dark-gray);margin-top:14px">
+        <b>Ship to:</b> {{ order.ship_to_name }}, {{ order.address_line1 }}, {{ order.city }}, {{ order.state }} {{ order.zip_code }}<br>
+        <b>Payment:</b> {{ order.payment_label }}
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

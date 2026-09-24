@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_number }} | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-narrow" style="max-width:980px;">
+    <div class="crumbs"><a href="/account/dashboard/orders">Order History</a> &rsaquo; <span>{{ order.order_number }}</span></div>
+    <h1>Order {{ order.order_number }}</h1>
+    <p style="color:var(--ink-2);">Placed {{ order.placed_at.strftime('%B %-d, %Y at %-I:%M %p') }} &middot; {{ order.status }}</p>
+
+    <div class="tracking-timeline">
+      {% for step in order.STATUS_FLOW %}
+        <div class="tracking-step {% if loop.index0 <= order.status_index %}done{% endif %}">
+          {{ step }}
+          {% if loop.index0 <= order.status_index %}
+            <div class="t-date">
+              {% if loop.index0 == 0 %}{{ order.placed_at.strftime('%b %-d') }}
+              {% elif order.delivered_at and loop.index0 == 3 %}{{ order.delivered_at.strftime('%b %-d') }}
+              {% else %}{{ (order.placed_at + timedelta(days=loop.index0)).strftime('%b %-d') }}{% endif %}
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+
+    <div class="info-grid">
+      <div>
+        <h2 style="font-size:16px;">Shipping Address</h2>
+        <p style="font-size:13.5px;color:var(--ink-2);">
+          {{ order.ship_name }}<br>
+          {{ order.ship_address }}<br>
+          {{ order.ship_city }}, {{ order.ship_state }} {{ order.ship_zip }}<br>
+          {% if order.ship_phone %}{{ order.ship_phone }}{% endif %}
+        </p>
+      </div>
+      <div>
+        <h2 style="font-size:16px;">Payment</h2>
+        <p style="font-size:13.5px;color:var(--ink-2);">
+          {{ order.payment_type }} ending in {{ order.payment_last4 }}<br>
+          Total {{ order.total|currency }}
+        </p>
+        {% if order.tracking_number %}
+        <h2 style="font-size:16px;margin-top:14px;">Tracking</h2>
+        <p style="font-size:13.5px;color:var(--ink-2);">{{ order.carrier }} &middot; {{ order.tracking_number }}</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <h2 style="font-size:16px;">Items ({{ order.items|length }})</h2>
+    {% for item in order.items %}
+      <div class="cart-line">
+        <img src="{{ item.image_file }}" alt="{{ item.product_name }}">
+        <div class="cl-info">
+          <div class="cl-name">{{ item.product_name }}</div>
+          <div class="cl-variant">{{ item.brand }}{% if item.color %} &middot; Color: {{ item.color }}{% endif %}{% if item.size %} &middot; Size: {{ item.size }}{% endif %}</div>
+          <div style="font-size:12.5px;color:#767676;">Qty {{ item.quantity }} &times; {{ item.unit_price|currency }}</div>
+        </div>
+        <div style="text-align:right;font-weight:700;">{{ (item.unit_price * item.quantity)|currency }}</div>
+      </div>
+    {% endfor %}
+
+    <div class="summary-box" style="max-width:420px;position:static;margin-top:16px;">
+      <div class="summary-row"><span>Subtotal</span><span>{{ order.subtotal|currency }}</span></div>
+      {% if order.discount %}<div class="summary-row"><span>Discount{% if order.coupon_code %} ({{ order.coupon_code }}){% endif %}</span><span>-{{ order.discount|currency }}</span></div>{% endif %}
+      <div class="summary-row"><span>Shipping</span><span>{{ order.shipping|currency if order.shipping else 'FREE' }}</span></div>
+      <div class="summary-row"><span>Tax</span><span>{{ order.tax|currency }}</span></div>
+      <div class="summary-row total"><span>Total</span><span>{{ order.total|currency }}</span></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

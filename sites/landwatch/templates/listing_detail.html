@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% from "_listing_card.html" import listing_card %}
+{% block title %}{{ listing.street }}, {{ listing.city }}, {{ listing.state_code }} {{ listing.zip }} | LandWatch{% endblock %}
+{% block description %}View {{ listing.acres_display }} priced at {{ listing.price_display }} in {{ listing.city }}, {{ listing.county }}, {{ listing.state_code }}. Browse photos, see details, and contact the seller.{% endblock %}
+
+{% block extra_head %}
+<script type="application/ld+json" id="breadcrumbSchema">{"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+{"@type":"ListItem","position":1,"item":{"@id":"/","name":"Home"}},
+{"@type":"ListItem","position":2,"item":{"@id":"/land","name":"United States Land for Sale"}},
+{"@type":"ListItem","position":3,"item":{"@id":"/{{ listing.state_slug }}","name":"{{ listing.state }} Land for Sale"}},
+{"@type":"ListItem","position":4,"item":{"@id":"/{{ listing.state_slug }}/{{ listing.county_slug }}","name":"{{ listing.county }} Land for Sale"}}]}</script>
+{% endblock %}
+
+{% block content %}
+<div class="lw-search-row" style="padding-top: 6px; padding-bottom: 6px;">
+  <button class="lw-back-btn" type="button" onclick="history.back()" aria-label="Go back">&#8592;</button>
+  <form class="lw-searchbar" action="/search" method="get" autocomplete="off">
+    <div class="lw-searchbar-field">
+      <svg class="lw-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" name="q" placeholder="Enter a city, county, or state" aria-label="Enter a city, county, or state" data-suggest-input>
+      <div class="lw-suggest hidden"></div>
+    </div>
+    <button class="lw-btn lw-btn-primary" type="submit">Search</button>
+  </form>
+</div>
+
+<div class="lw-detail-strip">
+  <div class="lw-detail-strip-inner">
+    <div>
+      <div class="lw-detail-status">
+        <span class="dot {{ 'sold' if listing.status == 'Sold' else ('under' if listing.status == 'Under Contract' else '') }}"></span>
+        {{ listing.status }}
+      </div>
+      <div class="lw-detail-price">{{ listing.price_display }}</div>
+      <div class="lw-detail-address">{{ listing.street }}, {{ listing.city }}, {{ listing.state_code }} {{ listing.zip }}</div>
+      <div class="lw-detail-address">({{ listing.county }})</div>
+    </div>
+    <div class="lw-facts">
+      <div class="lw-fact-row"><span class="lw-fact-label">Size:</span><span>{{ listing.acres_display }}</span></div>
+      <div class="lw-fact-row"><span class="lw-fact-label">Type:</span><span>{{ listing.property_types_label or listing.property_types }}</span></div>
+      <div class="lw-fact-row"><span class="lw-fact-label">Home:</span><span>
+        {% if listing.beds or listing.baths or listing.sqft %}
+          {{ listing.beds or 0 }} Beds - {{ listing.baths or 0 }} Baths{% if listing.half_baths %} - {{ listing.half_baths }} Half Baths{% endif %}{% if listing.sqft %} - {{ listing.sqft_display }}{% endif %}
+        {% else %}No House{% endif %}
+      </span></div>
+    </div>
+    <div class="lw-detail-actions">
+      <div class="lw-action-links">
+        <button type="button" data-favorite-pid="{{ listing.pid }}">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7.5-4.7-10-9.3C.6 8 2.4 4.5 6 4.5c2.2 0 3.6 1.2 6 3.8 2.4-2.6 3.8-3.8 6-3.8 3.6 0 5.4 3.5 4 7.2C19.5 16.3 12 21 12 21z"/></svg>
+          Save
+        </button>
+        <button type="button" onclick="navigator.clipboard && navigator.clipboard.writeText(window.location.href)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 4h6v6M20 4 10 14M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg>
+          Share
+        </button>
+      </div>
+      <a class="lw-btn lw-btn-primary" href="#contact">Contact</a>
+    </div>
+  </div>
+</div>
+
+<div class="lw-detail-layout">
+  <div>
+    <div class="lw-gallery" data-gallery='{{ listing.image_ids_list()[:6] | map("string") | list | tojson }}'>
+      <div class="lw-gallery-main">
+        <img src="{{ listing.photo_path(listing.image_ids_list()[0]) }}" alt="Land for sale in {{ listing.county }}, {{ listing.state }}">
+        <div class="lw-gallery-nav">
+          <button type="button" data-gallery-prev aria-label="Previous photo">&#8249;</button>
+          <button type="button" data-gallery-next aria-label="Next photo">&#8250;</button>
+        </div>
+        <button class="lw-gallery-all" type="button">
+          <span class="lw-play">&#9654;</span>
+          View all {{ listing.image_ids_list() | length }} available pictures
+        </button>
+      </div>
+      <div class="lw-gallery-thumbs">
+        {% for image_id in listing.image_ids_list()[1:6] %}
+        <img src="{{ listing.photo_path(image_id) }}" alt="Photo {{ loop.index + 1 }}" class="{{ 'active' if loop.index == 0 }}">
+        {% endfor %}
+      </div>
+    </div>
+
+    {% if listing.title %}<h1 class="lw-detail-title">{{ listing.title }}</h1>{% endif %}
+    {% if listing.description_short %}<p class="lw-detail-lede">{{ listing.description_short }}</p>{% endif %}
+
+    {% if listing.highlights_list() %}
+    <h2 class="lw-h2">Highlights</h2>
+    <div class="lw-highlights">
+      {% for item in listing.highlights_list() %}<div class="lw-highlight">{{ item }}</div>{% endfor %}
+    </div>
+    {% endif %}
+
+    <h2 class="lw-h2">Description</h2>
+    <div class="lw-detail-desc">{{ listing.description_full or listing.description_short }}</div>
+
+    {% if listing.activities_list() or listing.proposed_use_list() %}
+    <h2 class="lw-h2">Amenities</h2>
+    {% if listing.activities_list() %}
+    <div class="lw-amenity-group">
+      <h4>Activities</h4>
+      <div class="lw-chips">
+        {% for item in listing.activities_list() %}<span class="lw-chip-static">{{ item }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% if listing.proposed_use_list() %}
+    <div class="lw-amenity-group">
+      <h4>Proposed Use</h4>
+      <div class="lw-chips">
+        {% for item in listing.proposed_use_list() %}<span class="lw-chip-static">{{ item }}</span>{% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    <div class="lw-research">
+      <h3>From elevation to risk assessment</h3>
+      <p>Search for detailed parcel information including; Elevation &amp; Vegetation Maps, Ownership Information, Detailed Parcel Information, Crop History Map, Soil Survey Productivity Data, and more.</p>
+      <a class="lw-btn lw-btn-outline-dark" href="https://www.acrevalue.com/" rel="noopener noreferrer" target="_blank">Research Parcel Information</a>
+    </div>
+
+    <div class="lw-map-box">
+      <img src="/static/icons/placeholder-map.jpg" alt="Map of the property area">
+      <div class="lw-map-bar">
+        <span>Map</span>
+        <a rel="noopener noreferrer" target="_blank" href="https://www.google.com/maps?q={{ listing.latitude }},{{ listing.longitude }}">Show Google Map</a>
+      </div>
+    </div>
+
+    <h2 class="lw-h2">Directions</h2>
+    <div class="lw-detail-desc" style="font-size: 14px;">Contact the listing agent for directions and showing instructions.</div>
+
+    {% if listing.property_website or listing.listing_level_title %}
+    <h2 class="lw-h2">Resources</h2>
+    <div class="lw-resource-list">
+      {% if listing.property_website %}<a href="{{ listing.property_website }}" rel="noopener noreferrer" target="_blank">Property Website</a>{% endif %}
+      {% if listing.listing_level_title %}<span style="font-size: 13px; color: #757575;">Listing level: {{ listing.listing_level_title }}</span>{% endif %}
+    </div>
+    {% endif %}
+
+    {% if agent %}
+    <h2 class="lw-h2">Provided By</h2>
+    <div class="lw-provided">
+      {% if agent.portrait_path() %}<img src="{{ agent.portrait_path() }}" alt="{{ agent.name }}">{% endif %}
+      <div>
+        <div class="lw-card-agent-name"><a href="{{ agent.profile_path() }}">{{ agent.name }}</a></div>
+        <div class="lw-card-agent-company">{{ agent.company }}</div>
+        {% if agent.city %}<div class="lw-card-agent-company">{{ agent.city }}{% if agent.state_code %}, {{ agent.state_code }}{% endif %}</div>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+
+    {% if more %}
+    <h2 class="lw-h2">More by {{ listing.broker_name }}</h2>
+    <div class="lw-listings-grid" style="grid-template-columns: repeat(3, 1fr);">
+      {% for item in more %}{{ listing_card(item) }}{% endfor %}
+    </div>
+    {% endif %}
+
+    <h2 class="lw-h2">Recently Viewed</h2>
+    <div class="lw-listings-grid" style="grid-template-columns: repeat(4, 1fr);">
+      {% for item in recent %}{{ listing_card(item) }}{% endfor %}
+    </div>
+  </div>
+
+  <aside class="lw-agent-panel" id="contact">
+    {% if agent %}
+    <div class="lw-agent-panel-head">
+      {% if agent.portrait_path() %}<img src="{{ agent.portrait_path() }}" alt="{{ agent.name }}">{% endif %}
+      <div>
+        <div class="lw-agent-panel-name"><a href="{{ agent.profile_path() }}">{{ agent.name }}</a></div>
+        <div class="lw-agent-panel-company">{{ agent.company }}</div>
+      </div>
+    </div>
+    <div class="lw-agent-panel-phone">
+      <img src="/static/icons/Call.svg" alt="" width="15" height="15"> {{ listing.broker_phone or agent.phone }}
+    </div>
+    {% else %}
+    <div class="lw-agent-panel-head">
+      <div>
+        <div class="lw-agent-panel-name">{{ listing.broker_name }}</div>
+        <div class="lw-agent-panel-company">{{ listing.broker_company }}</div>
+      </div>
+    </div>
+    {% endif %}
+    <form class="lw-contact-form" method="post" action="/contact/{{ listing.pid }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="name" placeholder="Name" aria-label="Name" required>
+      <input type="email" name="email" placeholder="Email Address" aria-label="Email Address" required>
+      <input type="tel" name="phone" placeholder="Phone Number" aria-label="Phone Number">
+      <textarea name="message" placeholder="Message" aria-label="Message"></textarea>
+      <label class="lw-check"><input type="checkbox" checked> Yes, I'd like to periodically receive information about the land market.</label>
+      <button class="lw-btn lw-btn-primary" type="submit">Send Message</button>
+      <p class="lw-consent">By clicking the button, you agree to our <a href="/terms-conditions">Terms of Use</a> and Privacy Policy.</p>
+    </form>
+  </aside>
+</div>
+{% endblock %}
