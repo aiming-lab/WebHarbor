@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{% if q %}Search: {{ q }} | megabus{% else %}Search | megabus{% endif %}{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Search megabus.com</h1>
+    <form action="{{ url_for('site_search') }}" method="get" class="help-search">
+      <input class="form-control" type="text" name="q" value="{{ q }}" placeholder="Search FAQs, guides, cities and stops">
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+    {% if q %}
+      <p class="text-grey">{{ total }} result{{ 's' if total != 1 }} for "{{ q }}"</p>
+
+      {% if faq_hits %}
+        <h2 class="section-title">Help &amp; FAQs</h2>
+        {% for f in faq_hits %}
+          <div class="city-line"><a href="{{ url_for('help_index') }}">{{ f.question }}</a></div>
+        {% endfor %}
+      {% endif %}
+      {% if route_hits %}
+        <h2 class="section-title">Route guides</h2>
+        {% for g in route_hits %}
+          <div class="city-line"><a href="{{ url_for('route_guide_detail', slug=g.slug) }}">{{ g.title }}</a></div>
+        {% endfor %}
+      {% endif %}
+      {% if guide_hits %}
+        <h2 class="section-title">City guides</h2>
+        {% for g in guide_hits %}
+          <div class="city-line"><a href="{{ url_for('city_guide_detail', slug=g.slug) }}">{{ g.title or g.page_title }}</a></div>
+        {% endfor %}
+      {% endif %}
+      {% if city_hits %}
+        <h2 class="section-title">Cities</h2>
+        {% for c in city_hits %}
+          <div class="city-line"><a href="{{ url_for('stop_detail', slug=c.slug) }}">{{ c.name }}</a></div>
+        {% endfor %}
+      {% endif %}
+      {% if stop_hits %}
+        <h2 class="section-title">Bus stops</h2>
+        {% for s in stop_hits[:12] %}
+          <div class="city-line"><span class="stopname">{{ s.name }}</span></div>
+        {% endfor %}
+      {% endif %}
+      {% if not total %}
+        <p>No results. Try a different search.</p>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
