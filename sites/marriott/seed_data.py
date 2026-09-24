@@ -485,6 +485,8 @@ def build_seed(db):
             site_order=o.get("order", order),
         ))
 
+    from app import SiteContent
+    db.session.add(SiteContent(key="help_numbers", content=(SOURCE / "help_content.json").read_text()))
     db.session.commit()
 
 

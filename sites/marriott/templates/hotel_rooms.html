@@ -3,10 +3,10 @@
 {% block content %}
 <div class="hotel-page container">
   <nav class="hotel-nav" aria-label="Hotel sections">
-    <a href="{{ hotel.detail_path }}">Overview</a>
-    <a class="active" href="{{ hotel.path_for('rooms') }}">Rooms &amp; Suites</a>
-    <a href="{{ hotel.path_for('reviews') }}">Ratings &amp; Reviews</a>
-    <a href="{{ hotel.path_for('photos') }}">Gallery</a>
+    <a href="{{ stay_url(hotel.detail_path) }}">Overview</a>
+    <a class="active" href="{{ stay_url(hotel.path_for('rooms')) }}">Rooms &amp; Suites</a>
+    <a href="{{ stay_url(hotel.path_for('reviews')) }}">Ratings &amp; Reviews</a>
+    <a href="{{ stay_url(hotel.path_for('photos')) }}">Gallery</a>
   </nav>
   <header class="hotel-header">
     <div>
@@ -45,8 +45,9 @@
     {% for r in rooms %}
     <article class="room-card">
       <div class="room-media">
-        {% if r.image_path %}<img src="{{ r.image_path }}" alt="{{ r.name }} at {{ hotel.name }}">
-        {% else %}<div class="media-empty">Room photo coming soon</div>{% endif %}
+        {% if r.image_path %}<img src="{{ r.image_path }}" alt="Property photo: {{ hotel.name }}">
+        {% else %}<div class="media-empty">Property photo unavailable</div>{% endif %}
+        <span class="property-photo-caption">Property photo · sample room details</span>
       </div>
       <div class="room-body">
         <h2>{{ r.name }}</h2>
@@ -64,7 +65,7 @@
         <p class="room-price">${{ '{:,}'.format(r.base_rate) }} <span>/ night</span></p>
         <p class="room-points">or {{ '{:,}'.format(r.points_rate or 0) }} Bonvoy points / night</p>
         <p class="room-total">${{ '{:,}'.format(r.base_rate * nights * rooms_count) }} total</p>
-        <a class="btn-find" href="/reservation/reservationGateway.mi?propertyCode={{ hotel.marsha }}&roomId={{ r.id }}&fromDate={{ from_date.strftime('%m/%d/%Y') }}&toDate={{ to_date.strftime('%m/%d/%Y') }}&rooms={{ rooms_count }}&adults={{ adults }}">Book This Room</a>
+        <a class="btn-find" href="/reservation/reservationGateway.mi?propertyCode={{ hotel.marsha }}&roomId={{ r.id }}&fromDate={{ from_date.strftime('%m/%d/%Y') }}&toDate={{ to_date.strftime('%m/%d/%Y') }}&rooms={{ rooms_count }}&adults={{ adults }}&rateOption={{ 'points' if request.args.get('useRewardsPoints') == 'true' else 'cash' }}">Book This Room</a>
       </div>
     </article>
     {% endfor %}

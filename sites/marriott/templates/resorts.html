@@ -10,12 +10,12 @@
     <div class="results-list">
       {% for h in group.hotels %}
       <article class="hotel-card">
-        <a class="card-media" href="{{ h.detail_path }}">
+        <a class="card-media" href="{{ stay_url(h.detail_path) }}">
           {% if h.hero_image %}<img src="{{ h.hero_image }}" alt="{{ h.name }}">{% else %}<div class="media-empty">No photo</div>{% endif %}
         </a>
         <div class="card-body">
           <p class="card-brand">{{ h.brand.name }}</p>
-          <h2 class="card-title"><a href="{{ h.detail_path }}">{{ h.name }}</a></h2>
+          <h2 class="card-title"><a href="{{ stay_url(h.detail_path) }}">{{ h.name }}</a></h2>
           <p class="card-location">{{ h.city }}{% if h.state %}, {{ h.state }}{% endif %}</p>
           <p class="card-desc">{{ h.short_description or '' }}</p>
         </div>

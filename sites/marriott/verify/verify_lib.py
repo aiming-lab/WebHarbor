@@ -61,18 +61,18 @@ DEFAULT_CONTAINER = os.environ.get("WH_CONTAINER", "wh-marriott-review")
 
 # ---------------------------------------------------------------- frozen seed contract
 TABLES = ("brands", "destinations", "favorites", "hotel_images", "hotels", "offers",
-          "payment_methods", "reservations", "reviews", "room_types", "users")
+          "payment_methods", "reservations", "reviews", "room_types", "site_content", "users")
 SEED_COUNTS = {"brands": 31, "destinations": 20, "favorites": 12, "hotel_images": 2436,
                "hotels": 235, "offers": 8, "payment_methods": 4, "reservations": 11,
-               "reviews": 6538, "room_types": 1175, "users": 4}
+               "reviews": 6538, "room_types": 1175, "users": 4, "site_content": 1}
 # sha256 over sqlite_master (type, name, tbl_name, sql) of instance_seed/marriott.db.
-SCHEMA_SHA256 = "718698ab6a0b73efefe6c3d769171cf1ec5ffcd9e9be117bab4019603ff93898"
+SCHEMA_SHA256 = "c6fdc430af9d729789d17fb8b4dc846329267fde85aacea80d7dd6d4035b5ef1"
 # sha256 over every seed row (table-canonical, ORDER BY all columns). The seed is
 # rebuilt deterministically at image-build time (PYTHONHASHSEED=0, frozen bcrypt
 # digest, MIRROR_REFERENCE_DATE-pinned fixture dates — see .build-generated-seed);
 # a clean in-container rebuild reproduces the shipped seed byte-for-byte
 # (md5 9d60b205d4efeaf5969ad0e45748adb3).
-SEED_ROWS_SHA256 = "b0cc7deb5d9c41ce7914e36a3ce56e68bdbbfe0b1c0d6225a7f936f6a9b4c146"
+SEED_ROWS_SHA256 = "2633a91e22c76beb02c61e3408c776404d028305147fe487d5edb7399c758f4c"
 SEED_USERS = {  # email -> (id, first_name, last_name); identity columns never change
     "alice.j@test.com": (1, "Alice", "Johnson"),
     "bob.c@test.com": (2, "Bob", "Chen"),
@@ -81,7 +81,7 @@ SEED_USERS = {  # email -> (id, first_name, last_name); identity columns never c
 }
 DEMO_PASSWORD = "TestPass123!"
 INPUT_ACTIONS = {"input", "type", "fill", "input_text", "type_text"}
-CONFIRMATION_RE = re.compile(r"\b(?=[A-Z0-9]*[A-Z])(?=[A-Z0-9]*[0-9])[A-Z0-9]{10}\b")
+CONFIRMATION_RE = re.compile(r"\b[A-Z0-9]{10}\b")
 
 
 # ---------------------------------------------------------------- trajectory
@@ -612,6 +612,9 @@ def added_reservation_matching(after_db, initial_db, **expected):
     (hotel name, room name, guest, dates, total...). Returns the full row or None."""
     initial_ids = {r["id"] for r in reservations_of(initial_db)}
     added = [r for r in reservations_of(after_db) if r["id"] not in initial_ids]
+    delta = table_delta(initial_db, after_db, "reservations")
+    if len(added) != 1 or delta["changed"] or delta["removed"]:
+        return None
     for r in added:
         row = dict(r)
         row["hotel_name"] = hotel_by_name(after_db, "")  # placeholder replaced below
@@ -634,7 +637,9 @@ def canceled_among(initial_db, after_db, conf_number):
     seed, after = seed_rows.get(conf_number), after_rows.get(conf_number)
     if not seed or not after:
         return False
-    return seed["status"] == "confirmed" and after["status"] == "canceled"
+    expected = {k: dict(v) for k, v in seed_rows.items()}
+    expected[conf_number]["status"] = "canceled"
+    return seed["status"] == "confirmed" and after_rows == expected
 
 
 # ---------------------------------------------------------------- judge harness
@@ -833,6 +838,9 @@ def run_verifier(task_id, run_checks):
     judge = Judge(task_id, no_llm=args.no_llm)
     try:
         run_checks(judge, traj, initial_db, after_db)
+        from reviewed_contract import check_precise_state, check_answer_relations
+        check_precise_state(judge, traj, initial_db, after_db)
+        check_answer_relations(judge, traj)
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()

@@ -21,17 +21,20 @@
   <div class="main-nav">
     <div class="container nav-inner">
       <a href="/" class="brand-logo" aria-label="Marriott Bonvoy home">
-        <img src="/static/icons/marriott-bonvoy-logo.png" alt="Marriott Bonvoy">
+        <span class="brand-wordmark">MARRIOTT<br><strong>BONVOY</strong></span>
       </a>
       <nav aria-label="Primary">
         {% for item in nav %}
         <a class="nav-link" href="{{ item.href }}">{{ item.label }}</a>
         {% endfor %}
       </nav>
+      <details class="mobile-menu"><summary>Menu</summary><nav aria-label="Mobile navigation">
+        {% for item in nav %}<a href="{{ item.href }}">{{ item.label }}</a>{% endfor %}
+      </nav></details>
       <div class="nav-account">
         {% if current_user.is_authenticated %}
         <a href="/loyalty/myAccount.mi" class="nav-link nav-acct">My Account</a>
-        <a href="/logoff" class="nav-link">Sign Out</a>
+        <form method="post" action="/logoff" class="logout-form nav-link"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign Out</button></form>
         {% else %}
         <a href="/sign-in.mi" class="nav-link">Sign In or Join</a>
         {% endif %}
@@ -51,6 +54,7 @@
 {% endwith %}
 
 <main id="main">
+<p class="mirror-notice">Offline booking demo · fixed sample rates and room inventory · no real reservations or charges.</p>
 {% block content %}{% endblock %}
 </main>
 

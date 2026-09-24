@@ -1,23 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Marriott--20.
-
-On the Our Brands page, report how many brands belong to the longer stays
-category and list their names; then search New York City hotels for
-12/05/2026-12/07/2026 filtered to the Residence Inn brand: visit each property's
-page to report its listed check-in time and its average rating, and its rooms
-page for the nightly rate and Bonvoy points rate of its cheapest room type;
-report which of them is cheaper per night.
-
-Frozen ground truth (seed DB): the longer stays category has exactly 5 brands =
-Residence Inn, TownePlace Suites, Element Hotels, Marriott Vacation Club,
-Apartments by Marriott Bonvoy; the NYC Residence Inn filter returns exactly 2
-properties — Residence Inn by Marriott New York Manhattan/Midtown East (marsha
-NYCHA, check-in 4:00 pm, average 4.5, cheapest room Guest Room, 1 King Bed at
-$540/night, 54,000 points/night) and Residence Inn by Marriott New York
-Manhattan/Times Square (marsha NYCRI, check-in 4:00 pm, average 4.0, cheapest
-room at $460/night, 46,000 points/night); the Times Square property is cheaper
-per night.
-"""
+"""I'm choosing a Residence Inn in New York City for December 5–7, 2026. Compare the properties available under that brand, including each one's check-in time, guest rating, and cheapest room's cash and points rates. Recommend the property with the lower nightly cash rate and explain the difference so I can choose how to pay."""
 from verify_lib import (Judge, check_read_only, check_trajectory_identity, check_visited_path,
                         contains_amount, contains_count, contains_phrase, contains_time,
                         final_answer, navigated_find_hotels, navigated_hotel_overview,
@@ -35,7 +17,6 @@ TIMES_SQ = ("Residence Inn by Marriott New York Manhattan/Times Square", "NYCRI"
 def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_trajectory_identity(judge, traj, TASK_ID)
-    check_visited_path(judge, traj, "visited_brands_page", "/brands.mi")
     judge.check("visited_nyc_residence_inn_search",
                 navigated_find_hotels(traj, "New York", {"brand": "RZ2"}),
                 "required: /search/findHotels.mi destinationAddress=New York&brand=RZ2 (Residence Inn)")
@@ -45,10 +26,6 @@ def run_checks(judge, traj, initial_db, after_db):
         judge.check(f"visited_{marsha}_rooms", navigated_hotel_tab(traj, "rooms", slug),
                     f"required: {name} rooms page (cheapest room rate + points)")
     # answer facts
-    judge.check("answer_longer_stays_count", contains_count(answer, 5),
-                "expected 5 brands in the longer stays category")
-    judge.check("answer_longer_stays_names", phrases_in_order(answer, LONGER_STAYS),
-                "expected the 5 longer-stays brand names")
     judge.check("answer_checkin_times", contains_time(answer, 4, "00", "pm"),
                 "expected the listed check-in time 4:00 pm (both properties)")
     judge.check("answer_midtown_avg", contains_amount(answer, MIDTOWN[3]),

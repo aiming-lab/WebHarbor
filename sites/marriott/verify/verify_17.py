@@ -1,19 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Marriott--17.
-
-New York City work trip 10/30/2026-11/01/2026, torn between The Lexington Hotel,
-Autograph Collection and The Westin New York Grand Central: visit both hotels'
-reviews pages and report each hotel's average rating, total review count, and
-1-star review count; report which hotel has the lower share of 1-star reviews;
-sign in as alice.j@test.com and save that hotel to the saved list; report the
-confirmation message shown.
-
-Frozen ground truth (seed DB): The Lexington (marsha NYCLX) — average 3.7,
-4,354 reviews, 739 one-star (17.0% share); The Westin New York Grand Central
-(marsha NYCZW) — average 3.9, 3,997 reviews, 509 one-star (12.7% share); the Westin
-has the lower 1-star share and is the one to save; saving flashes
-"The Westin New York Grand Central has been saved to your list.".
-"""
+"""For my New York work trip, help me choose between The Lexington Hotel, Autograph Collection and The Westin New York Grand Central based on guest reviews. Compare each hotel's average rating, review count and share of one-star reviews. Sign in as alice.j@test.com (password TestPass123!) and save the hotel with the lower one-star share. Explain the comparison and confirm which hotel you saved."""
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, contains_amount, contains_phrase, db_query,
                         final_answer, navigated_find_hotels, navigated_hotel_tab,
@@ -54,9 +40,6 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_lower_share_verdict", contains_phrase(answer, "Westin New York Grand Central"),
                 "the lower 1-star share belongs to The Westin New York Grand Central "
                 "(509/3,997 = 12.7% vs 739/4,354 = 17.0%)")
-    judge.check("answer_save_message",
-                contains_phrase(answer, "The Westin New York Grand Central has been saved to your list."),
-                "expected the exact save confirmation message")
     # DB after-state: exactly one favorite added (alice x The Westin — never another hotel)
     delta = table_delta(initial_db, after_db, "favorites")
     judge.check("one_favorite_added",

@@ -66,7 +66,7 @@ def book_sql(db: Path, conf: str, marsha_hotel: str, room: str, first: str, last
             f"guest_first_name, guest_last_name, guest_email, checkin, checkout, adults, children, "
             f"rooms, nightly_rate, total_rate, points_redeemed, status, special_requests, created_at) "
             f"VALUES ('{conf}', {uid if uid else 'NULL'}, {hid}, {rid}, '{first}', '{last}', "
-            f"'{email}', '{checkin}', '{checkout}', 1, 0, 1, {nightly}, {total}, {points}, "
+            f"'{email}', '{checkin}', '{checkout}', {4 if first == 'Dana' else 2 if first in {'Jordan', 'Sam', 'Alex'} else 1}, 0, 1, {nightly}, {total}, {points}, "
             f"'confirmed', NULL, '{CREATED}')", ())
 
 
@@ -390,7 +390,7 @@ def stateful_statements(index: int, db: Path, variant: str = "ok"):
                              user_email="bob.c@test.com")]
         return [book_sql(db, "RT07TEST01", "AC Hotel Atlanta Downtown",
                          "Guest Room, 1 King Bed", "Bob", "Chen",
-                         "bob.c@test.com", "2026-10-18", "2026-10-20", 170, 340,
+                         "bob.c@test.com", "2026-10-19", "2026-10-21", 170, 340,
                          user_email="bob.c@test.com")]
     if index == 8:
         if variant == "wrong_city":
@@ -402,12 +402,11 @@ def stateful_statements(index: int, db: Path, variant: str = "ok"):
         stmts = [("DELETE FROM payment_methods WHERE user_id = (SELECT id FROM users WHERE email = 'carol.d@test.com') AND last_four = '3007'", ()),
                  ("INSERT INTO payment_methods (user_id, card_type, last_four, holder_name, exp_month, "
                   "exp_year, is_default, added_on) VALUES ((SELECT id FROM users WHERE email = "
-                  "'carol.d@test.com'), 'Visa', '4444', 'Carol Davis', 9, 2029, 0, '2026-09-20')", ())]
-        stmts.append(("UPDATE users SET phone = '+1 312-555-0188' WHERE email = 'carol.d@test.com'", ()))
+                  "'carol.d@test.com'), 'Visa', '4444', 'Carol Davis', 9, 2029, 1, '2026-09-20')", ())]
         if variant == "wrong_card":
             stmts[1] = ("INSERT INTO payment_methods (user_id, card_type, last_four, holder_name, exp_month, "
                         "exp_year, is_default, added_on) VALUES ((SELECT id FROM users WHERE email = "
-                        "'carol.d@test.com'), 'Mastercard', '4444', 'Carol Davis', 9, 2029, 0, '2026-09-20')", ())
+                        "'carol.d@test.com'), 'Mastercard', '4444', 'Carol Davis', 9, 2029, 1, '2026-09-20')", ())
         return stmts
     if index == 10:
         edition = hotel_id(db, "The Times Square EDITION")
@@ -687,3 +686,25 @@ def test_unavailable_db_fails_closed(tmp_path, seed):
                         "--initial_db", "/nonexistent/x.db"], capture_output=True, text=True)
     result = json.loads(r.stdout)
     assert result["pass"] is False and result.get("infra_error") is True
+
+
+_original_honest_answer = honest_answer
+
+def honest_answer(index):
+    answer = _original_honest_answer(index)
+    replacements = {
+        7: "AC Hotel Atlanta Downtown booked for 10/19/2026 to 10/21/2026. Total $340, confirmation RT07TEST01.",
+        8: "Your profile contact details have been updated.",
+        9: "Amex removed. One card remains: Visa ending 4444, expiring 09/2029.",
+        15: "JW Marriott Chicago, brand JW Marriott. Guest Room, 2 Double Beds sleeps 4 at $335 per night, $670 total.",
+        19: "Chicago has 1 Courtyard: Courtyard by Marriott Chicago Downtown/River North at $265 per night. Orlando has 1 Courtyard: Courtyard by Marriott Orlando Downtown at $160 per night. Orlando is cheaper.",
+    }
+    return replacements.get(index, answer)
+
+_original_honest_steps = honest_steps
+
+def honest_steps(index, db):
+    steps = _original_honest_steps(index, db)
+    if index == 15:
+        steps.append((hotel_path("CHIJW", "rooms"), "goto", {}))
+    return steps

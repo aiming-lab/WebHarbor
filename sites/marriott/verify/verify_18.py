@@ -65,6 +65,7 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("david_points_debited", david and david["points"] == 157400,
                 f"expected david points=157400, observed={david and david['points']}")
     added = added_reservation_matching(after_db, initial_db,
+                                       user_id=4, rooms=1, adults=1, children=0,
                                        hotel_name=WES[0], room_name=ROOM,
                                        guest_first_name="David", guest_last_name="Kim",
                                        guest_email="david.k@test.com",

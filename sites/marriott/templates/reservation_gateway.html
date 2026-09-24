@@ -21,6 +21,7 @@
 
       <h2>Guest Information</h2>
       <form method="post" action="/reservation/reservationGateway.mi" class="booking-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="propertyCode" value="{{ hotel.marsha }}">
         <input type="hidden" name="roomId" value="{{ room.id }}">
         <input type="hidden" name="fromDate" value="{{ from_date.strftime('%m/%d/%Y') }}">
@@ -80,9 +81,15 @@
             var isPoints = points && points.value === 'points';
             pay.style.display = isPoints ? 'none' : '';
             pay.querySelectorAll('input').forEach(function (i) { i.disabled = isPoints; });
+            var total = document.getElementById('selected-rate-total');
+            if (total) {
+              total.querySelector('span').textContent = isPoints ? 'Total (points)' : 'Total';
+              total.querySelector('strong').textContent = isPoints ? ({{ total_points | tojson }}).toLocaleString() + ' pts' : '$' + ({{ total_cash | tojson }}).toLocaleString();
+            }
           }
           radios.forEach(function (r) { r.addEventListener('change', refresh); });
           refresh();
+          document.addEventListener('DOMContentLoaded', refresh);
         })();
       </script>
     </div>
@@ -98,9 +105,9 @@
         <li><span>Nightly rate</span><strong>${{ '{:,}'.format(room.base_rate) }}</strong></li>
         <li><span>Points/night</span><strong>{{ '{:,}'.format(room.points_rate or 0) }} pts</strong></li>
         {% if rate_option == 'points' %}
-        <li class="stay-total"><span>Total (points)</span><strong>{{ '{:,}'.format(total_points) }} pts</strong></li>
+        <li class="stay-total" id="selected-rate-total" aria-live="polite"><span>Total (points)</span><strong>{{ '{:,}'.format(total_points) }} pts</strong></li>
         {% else %}
-        <li class="stay-total"><span>Total</span><strong>${{ '{:,}'.format(total_cash) }}</strong></li>
+        <li class="stay-total" id="selected-rate-total" aria-live="polite"><span>Total</span><strong>${{ '{:,}'.format(total_cash) }}</strong></li>
         {% endif %}
       </ul>
       <p class="stay-tax-note">Taxes and fees are due at the property.</p>

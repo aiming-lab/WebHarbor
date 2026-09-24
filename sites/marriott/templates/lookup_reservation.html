@@ -5,6 +5,7 @@
   <h1>Find My Reservation</h1>
   <p class="lookup-sub">Enter your confirmation number and the last name on the reservation.</p>
   <form method="post" class="lookup-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <div class="form-row">
       <div class="field"><label for="confirmationNumber">Confirmation number</label>
         <input id="confirmationNumber" name="confirmationNumber" type="text" placeholder="e.g. 4KJ92P0M1B" required></div>
@@ -26,10 +27,11 @@
       <li><span>Check-in</span><strong>{{ reservation.checkin.strftime('%a, %b %d, %Y') }}</strong></li>
       <li><span>Check-out</span><strong>{{ reservation.checkout.strftime('%a, %b %d, %Y') }}</strong></li>
       <li><span>Room type</span><strong>{{ reservation.room_type.name }}</strong></li>
-      <li class="stay-total"><span>Total</span><strong>${{ '{:,}'.format(reservation.total_rate) }}</strong></li>
+      <li class="stay-total"><span>Total</span><strong>{{ '{:,}'.format(reservation.total_rate) ~ ' points' if reservation.points_redeemed else '$' ~ '{:,}'.format(reservation.total_rate) }}</strong></li>
     </ul>
     {% if reservation.status == 'confirmed' %}
     <form method="post" action="/reservation/cancel.mi" class="cancel-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="confirmationNumber" value="{{ reservation.confirmation_number }}">
       <input type="hidden" name="lastName" value="{{ reservation.guest_last_name }}">
       <button type="submit" class="btn-danger">Cancel This Reservation</button>

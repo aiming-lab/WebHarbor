@@ -3,10 +3,10 @@
 {% block content %}
 <div class="hotel-page container">
   <nav class="hotel-nav" aria-label="Hotel sections">
-    <a class="active" href="{{ hotel.detail_path }}">Overview</a>
-    <a href="{{ hotel.path_for('rooms') }}">Rooms &amp; Suites</a>
-    <a href="{{ hotel.path_for('reviews') }}">Ratings &amp; Reviews</a>
-    <a href="{{ hotel.path_for('photos') }}">Gallery</a>
+    <a class="active" href="{{ stay_url(hotel.detail_path) }}">Overview</a>
+    <a href="{{ stay_url(hotel.path_for('rooms')) }}">Rooms &amp; Suites</a>
+    <a href="{{ stay_url(hotel.path_for('reviews')) }}">Ratings &amp; Reviews</a>
+    <a href="{{ stay_url(hotel.path_for('photos')) }}">Gallery</a>
   </nav>
 
   <header class="hotel-header">
@@ -57,13 +57,13 @@
               <td>{{ r.max_occupancy }}</td>
               <td>{{ r.size_sqft }} sq ft</td>
               <td class="room-rate">${{ '{:,}'.format(r.base_rate) }}/night</td>
-              <td><a class="btn-small btn-find" href="/reservation/reservationGateway.mi?propertyCode={{ hotel.marsha }}&roomId={{ r.id }}&fromDate={{ reference_date.strftime('%m/%d/%Y') }}&toDate={{ (reference_date + timedelta(days=1)).strftime('%m/%d/%Y') }}">Book</a></td>
+              <td><a class="btn-small btn-find" href="{{ stay_url(url_for('reservation_gateway', propertyCode=hotel.marsha, roomId=r.id)) }}">Book</a></td>
             </tr>
             {% endfor %}
           </tbody>
         </table>
         </div>
-        <p><a class="link-more" href="{{ hotel.path_for('rooms') }}">View All Rooms &amp; Suites →</a></p>
+        <p><a class="link-more" href="{{ stay_url(hotel.path_for('rooms')) }}">View All Rooms &amp; Suites →</a></p>
       </section>
 
       <section class="hotel-section">
@@ -90,16 +90,17 @@
           <input type="hidden" name="propertyCode" value="{{ hotel.marsha }}">
           <div class="field">
             <label>Check-in</label>
-            <input type="date" name="fromDate" value="{{ reference_date.strftime('%Y-%m-%d') }}">
+            <input type="date" name="fromDate" value="{{ stay_from_date.strftime('%Y-%m-%d') }}">
           </div>
           <div class="field">
             <label>Check-out</label>
-            <input type="date" name="toDate" value="{{ (reference_date + timedelta(days=1)).strftime('%Y-%m-%d') }}">
+            <input type="date" name="toDate" value="{{ stay_to_date.strftime('%Y-%m-%d') }}">
           </div>
           <button class="btn-find btn-block" type="submit">View Rates</button>
         </form>
         {% if current_user.is_authenticated %}
         <form method="post" action="/saved/add/{{ hotel.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="next" value="{{ hotel.detail_path }}">
           <button class="btn-secondary btn-block" type="submit">Save Hotel</button>
         </form>

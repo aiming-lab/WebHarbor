@@ -40,6 +40,17 @@ def app(_scratch_db):
 def client(app):
     app.config["TESTING"] = True
     with app.test_client() as client:
+        original_post = client.post
+        def post_with_token(*args, **kwargs):
+            # Simulate submission of a rendered form, while dedicated security
+            # tests use a raw client to exercise missing/invalid tokens.
+            client.get("/sign-in.mi")
+            with client.session_transaction() as state:
+                token = state["csrf_token"]
+            data = dict(kwargs.pop("data", {}) or {})
+            data.setdefault("csrf_token", token)
+            return original_post(*args, data=data, **kwargs)
+        client.post = post_with_token
         yield client
 
 

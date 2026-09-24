@@ -29,6 +29,7 @@
       <div class="card-cta">
         <p class="card-price"><span class="price-value">${{ '{:,}'.format(f.hotel.base_rate or 0) }}</span><span class="price-unit">/ night</span></p>
         <form method="post" action="/saved/remove/{{ f.hotel.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
           <input type="hidden" name="next" value="/loyalty/myAccount/savedHotels.mi">
           <button type="submit" class="btn-secondary btn-small">Remove</button>
         </form>
