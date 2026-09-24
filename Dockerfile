@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 82 Flask mirror sites + control plane on :8101.
+# 85 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -245,22 +245,28 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/league_of_legends && \
     cd /opt/WebSyn/league_of_legends && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
 
-# Medicare.gov ships its real upstream imagery via the pinned asset bundle and
-# rebuilds its deterministic SQLite seed from the tracked source snapshot
-# (see sites/medicare_gov/.build-generated-seed).
-RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/medicare_gov && \
-    test -n "$(ls -A /opt/WebSyn/medicare_gov/static/images)" && \
-    test -f /opt/WebSyn/medicare_gov/.build-generated-seed
-RUN cd /opt/WebSyn/medicare_gov && rm -rf instance instance_seed && \
-    PYTHONHASHSEED=0 python3 seed_data.py && \
-    rm -rf instance __pycache__
-
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/macys_wine_shop && \
+    cd /opt/WebSyn/macys_wine_shop && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/jcpenney && \
+    cd /opt/WebSyn/jcpenney && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/landwatch && \
+    cd /opt/WebSyn/landwatch && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/medicare_gov && \
+    cd /opt/WebSyn/medicare_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40103
+EXPOSE 8101 40000-40085
 
 CMD ["/opt/websyn_start.sh"]

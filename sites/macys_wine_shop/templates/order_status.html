@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Order Status – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Check Your Order Status</h1>
+  {% if error %}<div class="form-error">{{ error }}</div>{% endif %}
+  <form method="post" action="/order-status">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field"><label for="order_number">Order number</label>
+      <input id="order_number" name="order_number" placeholder="e.g. MWS1042" required></div>
+    <div class="field"><label for="email">Email used on the order</label>
+      <input id="email" name="email" type="email" required></div>
+    <button class="btn-primary" type="submit">Find My Order</button>
+  </form>
+  {% if order %}
+  <div style="margin-top:24px;border-top:1px solid var(--gainsboro);padding-top:20px">
+    <h2 style="font-size:19px;margin:0 0 6px">Order {{ order.order_number }}</h2>
+    <p style="color:var(--dark-gray);font-size:14.5px">
+      Placed {{ order.created_at.strftime('%B %d, %Y') }} · Status: <span class="status-chip status-{{ order.status }}">{{ order.status }}</span><br>
+      Total: {{ order.total|money }} · {{ order.bottle_count }} bottles<br>
+      Ship to: {{ order.ship_to_name }}, {{ order.city }}, {{ order.state }} {{ order.zip_code }}
+    </p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Payment | JCPenney Checkout{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="steps">
+    <span class="step done">&#10003; Shipping</span>
+    <span class="step active">2. Payment</span>
+    <span class="step">3. Review</span>
+  </div>
+  <div class="checkout-layout">
+    <div>
+      <h1 style="font-size:22px;margin-bottom:14px;">Payment Method</h1>
+      <form method="post" action="/checkout/payment">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        {% if payments %}
+          {% for payment in payments %}
+            <label class="addr-option {% if loop.first %}selected{% endif %}">
+              <input type="radio" name="payment_choice" value="{{ payment.id }}" {% if loop.first %}checked{% endif %}>
+              <div>
+                <strong>{{ payment.card_type }} ending in {{ payment.last4 }}</strong>
+                <div class="addr">Expires {{ '%02d'|format(payment.exp_month) }}/{{ payment.exp_year }}</div>
+              </div>
+            </label>
+          {% endfor %}
+        {% endif %}
+        <label class="addr-option">
+          <input type="radio" name="payment_choice" value="new" {% if not payments %}checked{% endif %}>
+          <div><strong>Use a new card</strong></div>
+        </label>
+        <div id="new-card" {% if payments %}style="display:none;"{% endif %}>
+          <div class="field"><label for="checkout_payment-field-1">Card Type</label><select id="checkout_payment-field-1" name="card_type">
+              <option>Visa</option>
+              <option>Mastercard</option>
+              <option>American Express</option>
+              <option>Discover</option>
+              <option>JCPenney Credit Card</option>
+            </select>
+          </div>
+          <div class="field"><label for="checkout_payment-field-2">Card Number</label><input id="checkout_payment-field-2" type="text" name="card_number" placeholder="Enter card number"></div>
+          <div class="field-row">
+            <div class="field"><label for="checkout_payment-field-3">Exp. Month</label><input id="checkout_payment-field-3" type="text" name="exp_month" placeholder="MM"></div>
+            <div class="field"><label for="checkout_payment-field-4">Exp. Year</label><input id="checkout_payment-field-4" type="text" name="exp_year" placeholder="YYYY"></div>
+          </div>
+          <div class="field"><label for="checkout_payment-field-5">Name on Card</label><input id="checkout_payment-field-5" type="text" name="cardholder"></div>
+        </div>
+        <button type="submit" class="btn-primary" style="margin-top:14px;width:100%;">Continue to Review</button>
+      </form>
+    </div>
+    <aside class="summary-box">
+      <h2>Order Summary</h2>
+      {% for item in items %}
+        <div class="summary-row"><span>{{ item.product.name[:38] }}{% if item.product.name|length > 38 %}&hellip;{% endif %} &times; {{ item.quantity }}</span><span>{{ item.line_total|currency }}</span></div>
+      {% endfor %}
+    </aside>
+  </div>
+</div>
+<script>
+document.querySelectorAll('input[name=payment_choice]').forEach(function (radio) {
+  radio.addEventListener('change', function () {
+    document.getElementById('new-card').style.display = radio.value === 'new' ? 'block' : 'none';
+    document.querySelectorAll('.addr-option').forEach(function (opt) { opt.classList.remove('selected'); });
+    radio.closest('.addr-option').classList.add('selected');
+  });
+});
+</script>
+{% endblock %}

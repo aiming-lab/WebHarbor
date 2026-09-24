@@ -95,8 +95,8 @@ All registered websites and their default ports, in registration order from left
 | FlightAware | 40072 | Chronicle Jobs | 40073 | Dillard's | 40074 |
 | Google Shopping | 40075 | Imgur | 40076 | Instructure | 40077 |
 | League of Legends | 40078 | Healthgrades | 40079 | Kelley Blue Book | 40080 |
-| UNIQLO | 40081 | | | | |
-| Medicare.gov | 40103 | | | | |
+| UNIQLO | 40081 | Macy's Wine Shop | 40082 | JCPenney | 40083 |
+| LandWatch | 40084 | Medicare.gov | 40085 |  |  |
 
 ## 🤝 Contribute
 
