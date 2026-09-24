@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--11.
 
-David is styling a wedding arch on a tight budget and wants filler bushes he
-can pick up today: find the cheapest floral item available for Store Pickup,
-add three of them to his cart (david.k@test.com), and report the item name,
-the price each, and the new subtotal.
-
-Frozen ground truth (seed DB): cheapest floral item with pickup availability =
-15" Mauve & Pale Pink Dahlia Mix Bush by Ashland, $5.19. Three = $15.57.
-David's seed cart ($17.97) + $15.57 = new subtotal $33.54.
+David is styling a wedding arch on a tight budget and wants filler bushes he can pick up today. Find the cheapest floral item available for Store Pickup, add three of them to his cart (david.k@test.com / TestPass123!), and report the item name, its price each, and the new cart subtotal. Leave the order unplaced.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_amount,

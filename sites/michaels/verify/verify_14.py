@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--14.
 
-Bob's twins want the National Geographic Metal Detector Starter Kit and the
-Snap Circuits Explorer 100 Experiments for their birthday. Michaels is running
-a Buy One Get One 50% off mix & match promo on these. Add both to Bob's cart
-(bob.c@test.com) and report the BOGO discount line and the new order total
-shown in the cart summary.
-
-Frozen ground truth (seed DB): Metal Detector $50.99 + Snap Circuits $33.74
-(both promo_type b1g1_50). Bob's seed cart $23.96 + $84.73 = $108.69
-subtotal; BOGO 50% discount = 50% of the cheaper unit $33.74 = $16.87;
-$91.82 >= $49 -> free shipping; tax 9.25% = $8.49; order total $100.31.
+Bob's twins want the National Geographic™ Metal Detector Starter Kit and the Snap Circuits® Explorer 100 Experiments for their birthday. Michaels is running a Buy One Get One 50% off mix & match promo on these. Add both to Bob's cart (bob.c@test.com / TestPass123!) and report the Buy One Get One discount line and the new order total. Do not check out.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_amount,

@@ -12,7 +12,7 @@
     <div class="coupon-meta">{{ 'In-Store Only' if c.channel == 'instore' else ('Online Only' if c.channel == 'online' else 'Online &amp; In-Store') }} &middot; Valid {{ c.valid_from }} - {{ c.valid_to }}</div>
     <p class="coupon-desc">{{ c.description }}</p>
     {% if c.code %}
-    <form action="/cart/coupon" method="post">
+    <form action="/cart/coupon" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="code" value="{{ c.code }}">
       <button type="submit" class="btn-primary">Apply to cart ({{ c.code }})</button>
     </form>

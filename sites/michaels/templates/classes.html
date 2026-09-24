@@ -15,7 +15,7 @@
       <span class="class-meta">{{ c.platform }}</span>
       <span class="class-meta">{{ c.date }} &middot; {{ c.time_text }}</span>
       <span class="class-meta">Hosted by {{ c.host }}</span>
-      <form action="/classes/register" method="post" class="class-register-form">
+      <form action="/classes/register" method="post" class="class-register-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="hidden" name="class_id" value="{{ c.id }}">
         <input type="hidden" name="next" value="/classes">
         <button type="submit" class="btn-secondary">Register</button>

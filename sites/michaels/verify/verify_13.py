@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--13.
 
-Carol is decorating the gym for the fall festival. On the 6" Glitter Tulle by
-Celebrate It Occasions product page: list every color it comes in and the
-price per roll. Add three Fuchsia rolls to Carol's cart (carol.d@test.com),
-apply the online 30% off code, and report the discount amount and the new
-order total shown in the cart summary.
-
-Frozen ground truth (seed DB): 10 colors (Fuchsia, Pink, Purple, White/Gold,
-Turquoise, Silver, Iridescent White, Red, Neon Orange, Neon Pink), $4.99 per
-roll. Carol's seed cart $44.41 + 3 x $4.99 = $59.38 subtotal; GETMY30 30% off
-= $17.81; $41.57 < $49 -> shipping $5.99; tax 9.25% = $3.85; total $51.41.
+Carol is decorating the gym for the fall festival. On the 6" Glitter Tulle by Celebrate It® Occasions™ product page, list every color it comes in and the price per roll. Add three Fuchsia rolls to Carol's cart (carol.d@test.com / TestPass123!), apply the online 30% off code, and report the discount amount and the new order total shown in the cart summary.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_amount,

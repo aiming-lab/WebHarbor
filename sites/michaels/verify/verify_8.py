@@ -1,15 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--8.
 
-Michaels sells canvas multipacks: a 5 Pack of 16" x 20" Super Value Canvas and
-a 10 Pack of 8" x 10" Super Value Canvas, both by Artist's Loft. Work out which
-pack gives more canvas area per dollar and show the math briefly. Then raise
-the 5 pack in alice's cart to 2 packs total and report the new subtotal.
-
-Frozen ground truth (seed DB): both packs $12.99. 5 Pack = 5 x (16 x 20) =
-1,600 sq in -> 123.2 sq in/$; 10 Pack = 10 x (8 x 10) = 800 sq in -> 61.6
-sq in/$. The 5 Pack wins. Alice's seed cart $57.34 + 1 more 5 Pack ($12.99)
-= new subtotal $70.33.
+Michaels sells canvas multipacks: a 5 Pack of 16" x 20" Super Value Canvas and a 10 Pack of 8" x 10" Super Value Canvas, both by Artist's Loft®. Work out which pack gives more canvas area per dollar and show the math briefly. Then add the better-value pack to Alice's cart (alice.j@test.com / TestPass123!) without checking out, and report which pack won.
 """
 from verify_lib import (Judge, cart_qty_change, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_amount,

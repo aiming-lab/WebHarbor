@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--7.
 
-Create a new Michaels account for Priya (priya.k@example.com, strong password),
-add a Visa card ending 6621 expiring 09/2027 to her account, put the 500yd.
-Textured Curling Ribbon by Celebrate It and any lined journal from Papercraft
-into her cart, apply the online 30% off code, complete the order with store
-pickup, and report the order number and total.
-
-Frozen ground truth (seed DB): ribbon $6.49 + journal $2.39 = $8.88 subtotal;
-GETMY30 30% off = $2.66; pickup -> free; tax 9.25% of $6.22 = $0.58; total
-$6.80. Order MI26092305001 (user 05, 1st order). New user priya.k@example.com
-("Priya K"), payment card Visa ****6621 exp 09/2027.
+Your friend Priya is finally setting up a crafts corner. Create a new Michaels account for her (priya.k@example.com, choose a strong password), add a Visa card ending 6621 expiring 09/2027 to her account, then put the 500yd. Textured Curling Ribbon by Celebrate It™ and the Back to School 6" x 8" Lined Journal with Elastic Closure by Recollections into her cart. Apply the online 30% off code and complete the order with store pickup. Report the order number and total.
 """
 from verify_lib import (Judge, added_order_matching, check_answer_order_matches_added_order,
                         check_only_tables_changed, check_trajectory_identity,
@@ -51,7 +42,7 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected order total $6.80")
     # DB after-state: new user + card + order + items
     user = user_by_email(after_db, EMAIL)
-    judge.check("user_created", user is not None and user["name"] == "Priya K",
+    judge.check("user_created", user is not None and user["name"].split()[0].casefold() == "priya",
                 f"expected new user {EMAIL}; found={user!r}")
     from verify_lib import cards_of as _cards_of
     cards = _cards_of(after_db, EMAIL) if user else []

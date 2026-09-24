@@ -50,7 +50,7 @@
       </div>
     </div>
     {% endif %}
-    <form class="pdp-actions" action="/cart/add" method="post">
+    <form class="pdp-actions" action="/cart/add" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="slug" value="{{ p.slug }}">
       <input type="hidden" name="variant_sku" id="pdp-variant-input" value="{{ vs[0].sku if vs else '' }}">
       <input type="hidden" name="color" id="pdp-color-input" value="{{ vs[0].color if vs else '' }}">
@@ -60,7 +60,7 @@
       </label>
       <button type="submit" class="btn-primary">Add to Cart</button>
     </form>
-    <form action="/wishlist/add" method="post" class="pdp-wishlist-form">
+    <form action="/wishlist/add" method="post" class="pdp-wishlist-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="slug" value="{{ p.slug }}">
       <input type="hidden" name="next" value="/product/{{ p.slug }}">
       <button type="submit" class="btn-secondary">Save to Wishlist</button>

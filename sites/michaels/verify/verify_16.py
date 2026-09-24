@@ -1,14 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--16.
 
-Bob is upgrading his craft room and comparing Cricut bundles: compare the
-Cricut Joy 2 in Jade Green & Essential Bundle with the Cricut Explore 5 in
-Teal & Essential Bundle — report each price and rating. Then add the one with
-the higher rating to Bob's cart and report the new cart subtotal.
-
-Frozen ground truth (seed DB): Cricut Joy 2 $139.00, rating 4.7 (129
-reviews); Cricut Explore 5 $249.00, rating 4.2 (116). The Joy 2 has the
-higher rating. Bob's seed cart $23.96 + $139.00 = new subtotal $162.96.
+Bob is upgrading his craft room and comparing Cricut bundles. Compare the Cricut Joy™ 2 in Jade Green & Essential Bundle with the Cricut Explore® 5 in Teal & Essential Bundle — report each price and rating. Then add the one with the higher rating to Bob's cart (bob.c@test.com / TestPass123!) and report the subtotal shown in the cart. Leave it unplaced.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_all,

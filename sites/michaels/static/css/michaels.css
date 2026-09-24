@@ -358,3 +358,16 @@ img { max-width: 100%; display: block; }
 .policy-page li { font-size: 13.5px; color: #3d3d3d; margin: 5px 0; }
 .wishlist-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
 .wishlist-remove-form { margin-top: 8px; }
+
+/* Keep cart controls usable on narrow screens. */
+.cart-layout > *, .checkout-layout > * { min-width: 0; }
+@media (max-width: 600px) {
+  .cart-row { grid-template-columns: 70px minmax(0, 1fr); gap: 12px; }
+  .cart-img { max-width: 70px; }
+  .cart-info { min-width: 0; overflow-wrap: anywhere; }
+  .cart-qty { grid-column: 2; }
+  .cart-price { grid-column: 2; }
+  .coupon-form input { min-width: 0; width: 100%; }
+  .coupon-form label { flex-basis: 100%; }
+  .checkout-layout input, .checkout-layout select { max-width: 100%; }
+}

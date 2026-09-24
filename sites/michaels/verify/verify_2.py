@@ -1,19 +1,7 @@
 #!/usr/bin/env python3
-"""Verify Michaels--2 (round-2 redesign).
+"""Verify Michaels--2.
 
-Bob is prepping a school craft fair: his cart needs a rework — the corrugated
-display board is already covered (remove it), he needs the letter S, not B
-(swap in a 13" White MDF Uppercase Letter S), and the candy wafers go up to
-4 bags. With the final cart set, report each remaining item with its unit
-price, the new subtotal, and the new order total.
-
-Frozen ground truth (seed DB): bob's seed cart = 13" White MDF Uppercase
-Letter 'B' @6.99 + 2x 36"x48" Corrugated Tri-Fold Display Board (Black) @5.99
-+ Melt Craft Vanilla Candy Wafers @4.99. After the rework the cart holds
-exactly: 13" White MDF Uppercase Letter 'S' (sku 10281322, same $6.99 as B)
-qty 1 + wafers qty 4. New subtotal = 6.99 + 4 x 4.99 = $26.95; shipping $5.99
-(under $49); tax 9.25% = $2.49; order total $35.43 (money ground truth
-unchanged from round 1 — S and B share the letter price).
+Bob is prepping a school craft fair (bob.c@test.com / TestPass123!). His cart needs a rework: the corrugated display board is already covered — remove it. He needs the letter S, not B — swap in a 13" White MDF Uppercase Letter S. Then raise the candy wafers to 4 bags. With the final cart set, report each remaining item with its unit price, the new subtotal, and the new order total.
 """
 from verify_lib import (Judge, cart_of, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_amount,

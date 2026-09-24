@@ -9,6 +9,7 @@ site (see source_data.json provenance).
 """
 import json
 import os
+import secrets
 import re
 from datetime import datetime, date
 
@@ -18,16 +19,20 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import (LoginManager, UserMixin, login_user, logout_user,
                          login_required, current_user)
 from flask_bcrypt import Bcrypt
+from flask_wtf import CSRFProtect
+from urllib.parse import urlsplit
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'michaels-mirror-dev-secret-key'
+app.config["SECRET_KEY"] = os.environ.get("MICHAELS_SECRET_KEY") or secrets.token_hex(32)
 app.config['SQLALCHEMY_DATABASE_URI'] = f"sqlite:///{os.path.join(BASE_DIR, 'instance', 'michaels.db')}"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 os.makedirs(os.path.join(BASE_DIR, 'instance'), exist_ok=True)
 
+csrf = CSRFProtect(app)
+app.config["WTF_CSRF_TIME_LIMIT"] = None
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
@@ -456,6 +461,11 @@ def inject_globals():
 # Public routes
 # ---------------------------------------------------------------------------
 
+def local_target(value, fallback):
+    target = urlsplit(value or '')
+    return value if value and value.startswith('/') and not value.startswith('//') and not target.netloc and not target.scheme and '\\' not in value else fallback
+
+
 @app.route('/')
 def index():
     banners = sorted(os.listdir(os.path.join(BASE_DIR, 'static', 'images', 'banners')))
@@ -626,7 +636,7 @@ def login():
             login_user(user)
             _apply_pending_cart_add()
             next_url = request.args.get('next') or request.form.get('next') or url_for('index')
-            return redirect(next_url)
+            return redirect(local_target(next_url, url_for('index')))
         flash('Invalid email or password.', 'error')
     return render_template('login.html')
 
@@ -651,7 +661,7 @@ def register():
     return render_template('register.html')
 
 
-@app.route('/logout')
+@app.route('/logout', methods=['POST'])
 @login_required
 def logout():
     logout_user()
@@ -704,7 +714,7 @@ def cart_add():
                                 variant_sku=variant_sku, color=color, qty=qty))
     db.session.commit()
     flash(f'Added to cart: {p.name}', 'success')
-    return redirect(request.form.get('next') or url_for('cart'))
+    return redirect(local_target(request.form.get('next'), url_for('cart')))
 
 
 def _apply_pending_cart_add():
@@ -815,9 +825,11 @@ def checkout():
             session['checkout_address'] = request.form.get('address_id', '')
             session['checkout_card'] = request.form.get('card_id', '')
             errors = []
-            if method == 'Ship' and not session['checkout_address']:
+            if method not in {'Ship', 'Pickup'}:
+                errors.append('Choose shipping or store pickup.')
+            if method == 'Ship' and not Address.query.filter_by(id=request.form.get('address_id', type=int), user_id=current_user.id).first():
                 errors.append('Please choose a shipping address.')
-            if not session['checkout_card']:
+            if not PaymentCard.query.filter_by(id=request.form.get('card_id', type=int), user_id=current_user.id).first():
                 errors.append('Please choose a payment method.')
             if errors:
                 for e in errors:
@@ -831,6 +843,10 @@ def checkout():
             card_id = session.get('checkout_card', '')
             address = Address.query.filter_by(id=int(address_id or 0), user_id=current_user.id).first() if address_id else None
             card = PaymentCard.query.filter_by(id=int(card_id or 0), user_id=current_user.id).first() if card_id else None
+            if method not in {'Ship', 'Pickup'} or (method == 'Ship' and not address):
+                flash('Please choose your shipping address or store pickup.', 'error')
+                session.pop('checkout_method', None)
+                return redirect(url_for('checkout'))
             if not card:
                 flash('Please choose a payment method.', 'error')
                 return redirect(url_for('checkout'))
@@ -992,7 +1008,7 @@ def wishlist_add():
         flash(f'Saved to wishlist: {p.name}', 'success')
     else:
         flash('That item is already on your wishlist.', 'info')
-    return redirect(request.form.get('next') or url_for('wishlist'))
+    return redirect(local_target(request.form.get('next'), url_for('wishlist')))
 
 
 @app.route('/wishlist/remove', methods=['POST'])
@@ -1193,6 +1209,12 @@ def store_locator():
             if ql in hay:
                 stores.append(s)
     return render_template('store_locator.html', stores=stores, q=q)
+
+
+@app.route('/store-locator/<int:number>')
+def store_detail(number):
+    store = Store.query.filter_by(number=number).first_or_404()
+    return render_template('store_detail.html', s=store)
 
 
 # ---------------------------------------------------------------------------

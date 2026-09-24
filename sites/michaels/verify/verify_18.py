@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--18.
 
-Alice's kids each want a Halloween paint-by-number kit: compare the 11" x 14"
-Cat in Library Paint-by-Number Kit with the Light Up Black Cat
-Paint-by-Number Acrylic Surface Kit — look at both rating and price. Add two
-of the higher-rated one to Alice's cart, apply the online 30% off code, and
-report the discount amount and the new order total.
-
-Frozen ground truth (seed DB): Cat in Library $6.99, rating 4.3 (6 reviews);
-Light Up Black Cat $5.99, rating 4.5 (6). The Light Up Black Cat is higher
-rated. Alice's seed cart $57.34 + 2 x $5.99 = $69.32 subtotal; GETMY30 30%
-off = $20.80; $48.52 < $49 -> shipping $5.99; tax 9.25% = $4.49;
-total $59.00.
+Alice's kids each want a Halloween paint-by-number kit. Compare the 11" x 14" Cat in Library Paint-by-Number Kit with the Light Up Black Cat Paint-by-Number Acrylic Surface Kit — look at both rating and price. Add two of the higher-rated one to Alice's cart (alice.j@test.com / TestPass123!), apply the online 30% off code, and report the discount amount and new order total.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_amount,

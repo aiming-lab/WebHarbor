@@ -1,13 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--4.
 
-Carol's art co-op wants reliability data: compare the rating breakdowns of the
-Artist's Loft Level 3 Gallery Wrapped Heavy Duty Canvas and the Level 1 Back
-Stapled Canvas on their reviews pages (5-star count, 1-star count, average).
-
-Frozen ground truth (seed DB, upstream Bazaarvoice aggregates):
-Level 3 (10472532): 5-star 14,630 / 1-star 244 / average 4.8 (16,705 reviews).
-Level 1 (10672808): 5-star 7,028 / 1-star 142 / average 4.7 (8,708 reviews).
+Carol's art co-op is buying canvases in bulk and wants reliability data before choosing. Compare the rating breakdowns of the Artist's Loft® Level 3 Gallery Wrapped Heavy Duty Canvas and the Level 1 Back Stapled Canvas on their reviews pages. For each product, report the number of 5-star ratings and 1-star ratings, and recommend which one looks more consistent with its average rating.
 """
 from verify_lib import (Judge, check_read_only, check_trajectory_identity, contains_all,
                         contains_count, contains_phrase, final_answer, navigated_product,

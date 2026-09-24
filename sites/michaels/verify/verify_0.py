@@ -1,18 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--0.
 
-Alice needs two 16" x 20" canvases: compare the single (non-multipack) Artist's
-Loft Level 3 Gallery Wrapped Heavy Duty Canvas with the Level 1 Back Stapled
-Canvas at that size (price + rating), buy two of the cheaper one for alice.j@test.com
-with the online 30% off promo code, shipping home, Visa ending 4242, and report
-the order number and order total.
-
-Frozen ground truth (seed DB): Level 3 16"x20" = $32.99 (rating 4.8, 16705
-reviews); Level 1 16"x20" = $15.99 (rating 4.7, 8708) — Level 1 is cheaper.
-Alice's seed cart (L3 4"x4" x2 @7.49, 5 Pack 16x20 @12.99, Double Mat x3 @9.79
-= $57.34) plus 2 x $15.99 = subtotal $89.32; GETMY30 30% off = -$26.80;
-$62.52 >= $49 free shipping; tax 9.25% = $5.78; total $68.30. Order number
-MI26092301003 (pinned date 2026-09-23, user 01, 3rd order).
+Alice is restocking her studio and needs two 16" x 20" canvases. Compare the single (non-multipack) Artist's Loft® Level 3 Gallery Wrapped Heavy Duty Canvas with the Level 1 Back Stapled Canvas at that size, including price and rating. Buy two of the cheaper 16" x 20" canvas for Alice (alice.j@test.com / TestPass123!) with the online 30% off promo code from the Savings page, shipping to her home address, paying with her saved Visa ending 4242. Keep the items already in the cart as part of this order. Report the order number and the order total.
 """
 from verify_lib import (Judge, added_order_matching, check_answer_order_matches_added_order,
                         check_only_tables_changed, check_signed_in_as, check_trajectory_identity,

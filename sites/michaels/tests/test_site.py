@@ -32,6 +32,7 @@ class MichaelsMirrorTests(unittest.TestCase):
         spec.loader.exec_module(cls.mod)
         cls.app = cls.mod.app
         cls.app.config['TESTING'] = True
+        cls.app.config['WTF_CSRF_ENABLED'] = False
 
     @classmethod
     def tearDownClass(cls):
@@ -219,7 +220,7 @@ class MichaelsMirrorTests(unittest.TestCase):
         for row in rows:
             self.assertTrue(required <= set(row), f'missing keys {required - set(row)}')
             self.assertTrue(set(row) <= (required | grading), f'unexpected keys {set(row) - required - grading}')
-            self.assertEqual(row['web'], 'http://localhost:40111/')
+            self.assertEqual(row['web'], 'http://localhost:40088/')
             self.assertLessEqual(len(row['ques'].split()), 100)
             self.assertNotIn('answer', row)
 

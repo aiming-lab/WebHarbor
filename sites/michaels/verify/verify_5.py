@@ -1,23 +1,13 @@
 #!/usr/bin/env python3
-"""Verify Michaels--5 (round-2 redesign).
+"""Verify Michaels--5.
 
-Carol's scout troop near Cary, NC: check the Michaels store in Cary — report
-its Sunday hours, its phone number, whether it offers balloon inflation and
-custom framing — cross-check the New Hope Commons store in Durham (same
-balloon service? its Sunday hours?) — then list every other North Carolina
-Michaels location that also offers balloon inflation.
-
-Frozen ground truth (seed DB, upstream store-locator facts): Cary store #2122
-"Crossroads Plaza", 340 Crossroads Blvd, Cary, NC 27518-6895, phone
-(919) 851-6001, Sunday 10:00 AM - 07:00 PM, services include balloon inflation
-and custom framing. Durham New Hope Commons store #9502 also offers balloon
-inflation, Sunday 10:00 AM - 07:00 PM. Other NC balloon-inflation stores:
-Park Road Shopping Center (Charlotte), RAL-DURHAM~NORTH, NC (Durham),
-Park West Village (Morrisville).
+Help Carol plan a Sunday trip for her scout troop's fundraiser: they need balloon inflation and custom framing for a poster near Cary, NC. Compare the Crossroads Plaza and New Hope Commons stores, including their Sunday hours and whether each offers both services; include the Cary store's phone number. Identify the other North Carolina locations with balloon inflation as backup options.
 """
+import re
+
 from verify_lib import (Judge, check_read_only, check_trajectory_identity, contains_all,
                         contains_any, contains_count, contains_phrase, final_answer,
-                        navigated_store_locator_query, norm, phrases_in_order,
+                        navigated_store_locator_query, navigated_to_path, norm, phrases_in_order,
                         run_verifier)
 
 TASK_ID = "Michaels--5"
@@ -31,13 +21,9 @@ def _mentions(text, phrase, times):
 def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_trajectory_identity(judge, traj, TASK_ID)
-    # navigation gates: the store locator queried for Cary AND Durham AND NC
-    judge.check("locator_cary_query", navigated_store_locator_query(traj, "Cary"),
-                "required: /store-locator?q=Cary")
-    judge.check("locator_durham_query", navigated_store_locator_query(traj, "Durham"),
-                "required: /store-locator?q=Durham (New Hope Commons cross-check)")
-    judge.check("locator_nc_query", navigated_store_locator_query(traj, "NC"),
-                "required: /store-locator?q=NC")
+    # Any locator search is valid; inspect both store-detail surfaces.
+    judge.check("cary_detail", navigated_to_path(traj, "/store-locator/2122"), "Cary store details")
+    judge.check("durham_detail", navigated_to_path(traj, "/store-locator/9502"), "New Hope Commons store details")
     # answer: Cary store facts (its hours must be attributed — the task asks for
     # BOTH stores' Sunday hours, so the range must appear for each of them)
     judge.check("answer_cary_name", contains_phrase(answer, "Crossroads Plaza"),
@@ -45,8 +31,8 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_cary_phone", contains_phrase(answer, "(919) 851-6001") or
                 contains_all(answer, ["919", "851", "6001"]),
                 "expected phone (919) 851-6001")
-    judge.check("answer_sunday_hours", contains_all(answer, ["10:00 AM", "07:00 PM"]),
-                "expected Sunday hours 10:00 AM - 07:00 PM")
+    hours = re.findall(r"10(?::00)?\s*a\.?m\.?.{0,60}?0?7(?::00)?\s*p\.?m", answer, re.I)
+    judge.check("answer_sunday_hours", bool(hours), "Sunday 10am–7pm, accepting equivalent formatting")
     judge.check("answer_balloon_inflation", contains_phrase(answer, "balloon inflation"),
                 "expected: balloon inflation offered")
     judge.check("answer_custom_framing", contains_phrase(answer, "custom framing"),
@@ -57,11 +43,8 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected the New Hope Commons store in Durham named")
     judge.check("answer_nhc_balloon", contains_phrase(answer, "balloon inflation"),
                 "expected: New Hope Commons also offers balloon inflation")
-    judge.check("answer_nhc_sunday",
-                phrases_in_order(answer, ["New Hope Commons", "10:00 AM", "07:00 PM"]) or
-                (_mentions(answer, "10:00 AM", 2) and _mentions(answer, "07:00 PM", 2)),
-                "expected the Sunday hours 10:00 AM - 07:00 PM reported for the New Hope "
-                "Commons store too (attributed to it, or stated for both stores)")
+    judge.check("answer_nhc_sunday", len(hours) >= 2 or (bool(hours) and "both" in answer.lower()),
+                "Report Sunday hours for both locations, individually or together")
     # answer: the other NC balloon-inflation stores (all three others)
     for name in ("Park Road Shopping Center", "RAL-DURHAM~NORTH, NC", "Park West Village"):
         judge.check(f"answer_other_{name[:12].replace(' ', '_').replace(',', '')}",

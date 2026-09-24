@@ -1,17 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--15.
 
-The Johnsons are moving to West Seattle: update Alice's profile phone number to
-(206) 555-0102 and add a new shipping address 2201 Alki Ave SW, Seattle, WA
-98116 labeled "Beach House". Then order the 8" x 12" Black Collection Display
-Box shipped there, paid with her Mastercard ending 5309, and report the order
-total.
-
-Frozen ground truth (seed DB): display box $13.49. Alice's seed cart $57.34 +
-$13.49 = $70.83 subtotal; no promo; $70.83 >= $49 -> free shipping; tax 9.25%
-= $6.55; total $77.38. Order MI26092301003 (user 01, 3rd order), Ship to
-2201 Alki Ave SW, Seattle, WA 98116, Mastercard ****5309. Phone updated to
-(206) 555-0102.
+The Johnsons are moving to West Seattle. Update Alice's profile phone number to (206) 555-0102 and add a new shipping address: 2201 Alki Ave SW, Seattle, WA 98116, labeled "Beach House". Then order the 8" x 12" Black Collection Display Box by Studio Décor® shipped to that new address with her Mastercard ending 5309. Keep the items already in the cart as part of this order. Report the order total. Use alice.j@test.com / TestPass123!.
 """
 from verify_lib import (Judge, added_order_matching, check_answer_order_matches_added_order,
                         check_only_tables_changed, check_signed_in_as, check_trajectory_identity,

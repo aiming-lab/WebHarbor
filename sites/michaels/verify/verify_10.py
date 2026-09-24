@@ -1,16 +1,7 @@
 #!/usr/bin/env python3
 """Verify Michaels--10.
 
-Carol (carol.d@test.com) is switching from canvas painting to ribbon crafts:
-remove every canvas item from her wishlist, then save the 6" Glitter Tulle in
-Fuchsia and the 1/4" x 10yd. Grosgrain Ribbon by Celebrate It Classic, and
-report how many items the wishlist shows now.
-
-Frozen ground truth (seed DB): carol's seed wishlist = 6 Pack 12x16 Super
-Value Canvas, 6 Pack 10x20 Super Value Canvas Pack, 20x30 White Foam Board,
-6 Pack 14x14 Super Value Canvas. Remove the 3 canvas items, keep the foam
-board, add the glitter tulle (product 114) + grosgrain ribbon (product 42)
--> 3 items.
+Carol (carol.d@test.com / TestPass123!) is switching from canvas painting to ribbon crafts. Remove every canvas item from her wishlist, then save the 6" Glitter Tulle and the 1/4" x 10yd. Grosgrain Ribbon by Celebrate It® Classic in any color to it. Report how many items her wishlist holds now.
 """
 from verify_lib import (Judge, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_count,
