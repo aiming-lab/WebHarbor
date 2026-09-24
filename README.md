@@ -34,7 +34,7 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 54 sites today, scaling to 100+ together
+- **Community-driven** — 86 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
@@ -42,10 +42,10 @@ Build this checkout to run its registered web environments (published image tags
 
 ```bash
 ./scripts/build.sh webharbor:dev
-docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40081:40000-40081 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40085:40000-40085 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40081` to explore 82 local mirrors. The table below lists every site in port order.
+Then point your agent at `http://localhost:40000` through `http://localhost:40085` to explore 86 local mirrors. The table below lists every site in port order.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
