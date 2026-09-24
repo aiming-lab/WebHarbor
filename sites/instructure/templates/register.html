@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Create Account | Instructure{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="form-card">
+    <div class="account-panel">
+      <h2>Create your Instructure account</h2>
+      <p class="muted">Save resources, register for webinars, and keep your details up to date.</p>
+      <form method="post" action="/register" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="form-field {% if form.display_name.errors %}has-err{% endif %}">
+          <label>Full name <span class="req">*</span></label>
+          {{ form.display_name(class="form-control") }}
+          {% for e in form.display_name.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-field {% if form.email.errors %}has-err{% endif %}">
+          <label>Email <span class="req">*</span></label>
+          {{ form.email(class="form-control") }}
+          {% for e in form.email.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-row">
+          <div class="form-field {% if form.password.errors %}has-err{% endif %}">
+            <label>Password <span class="req">*</span></label>
+            {{ form.password(class="form-control") }}
+            {% for e in form.password.errors %}<span class="err">{{ e }}</span>{% endfor %}
+          </div>
+          <div class="form-field {% if form.confirm.errors %}has-err{% endif %}">
+            <label>Confirm password <span class="req">*</span></label>
+            {{ form.confirm(class="form-control") }}
+            {% for e in form.confirm.errors %}<span class="err">{{ e }}</span>{% endfor %}
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Job title</label>
+            {{ form.job_title(class="form-control") }}
+          </div>
+          <div class="form-field">
+            <label>Organization</label>
+            {{ form.organization(class="form-control") }}
+          </div>
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-top: 8px;">Create Account</button>
+      </form>
+      <p style="margin-top: 22px; margin-bottom: 0;">Already have an account? <a href="/login" style="color: var(--blue); font-weight: 700;">Sign in</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

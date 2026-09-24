@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Press Releases | Instructure{% endblock %}
+{% block content %}
+<section class="container section">
+  <h1>Press Releases</h1>
+  <p class="lede" style="margin: 14px 0 34px;">Official announcements from the Instructure newsroom.</p>
+  <div class="job-list" style="border:none;">
+    {% for pr in items %}
+    <a class="job-row" style="grid-template-columns: 160px 3fr;" href="{{ url_for('press_release_detail', slug=pr.slug) }}">
+      <span class="meta">{{ pr.published }}</span>
+      <h3>{{ pr.title }}</h3>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

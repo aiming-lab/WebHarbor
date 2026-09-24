@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}League of Legends{% endblock %}
+{% block content %}
+
+<section class="home-hero">
+  <div class="home-hero-inner">
+    <img class="home-logo-img" src="{{ url_for('static', filename='images/site/home_logo.png') }}" alt="League of Legends">
+    <p class="home-tagline">League of Legends &mdash; A 5v5 MOBA where teams battle to destroy the enemy Nexus</p>
+    <a class="btn-gold" href="{{ url_for('signup') }}">Play For Free</a>
+  </div>
+</section>
+
+<section>
+  <div class="section-header">
+    <h2>Featured News</h2>
+  </div>
+  <div class="home-news">
+    {% for article in latest[:3] %}
+    <a class="article-card" href="{{ article.path }}"{% if article.is_external %} target="_blank" rel="noopener"{% endif %}>
+      <div class="card-media">
+        {% if article.card_url %}<img src="{{ article.card_url }}" alt="{{ article.title }}" loading="lazy">{% endif %}
+        {% if article.is_external %}<span class="card-ext"></span>{% endif %}
+      </div>
+      <div class="card-meta">
+        <span class="card-cat">{{ article.category.title|upper }}</span>
+        <span class="card-divider">|</span>
+        <span class="card-date">{{ article.publish_date|daymonth }}</span>
+      </div>
+      <div class="card-title">{{ article.title }}</div>
+      <div class="card-desc">{{ article.summary }}</div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section>
+  <div class="section-header">
+    <h2>Champion</h2>
+    <p>Whether you like to dive straight into the fray, support your teammates, or something in between, there&rsquo;s a spot for you on the Rift.</p>
+  </div>
+  <div class="role-tabs">
+    <div class="role-tab-strip">
+      <button class="role-tab active" data-role-panel="assassins">Assassins</button>
+      <button class="role-tab" data-role-panel="fighters">Fighters</button>
+      <button class="role-tab" data-role-panel="mages">Mages</button>
+      <button class="role-tab" data-role-panel="marksmen">Marksmen</button>
+      <button class="role-tab" data-role-panel="supports">Supports</button>
+      <button class="role-tab" data-role-panel="tanks">Tanks</button>
+    </div>
+    <div class="role-tab-panel active" data-role-panel-body="assassins">
+      <div class="role-art"><img src="{{ url_for('static', filename='images/site/home_champion_assassins.png') }}" alt="Akali"></div>
+      <div class="role-copy">
+        <h3>Akali</h3>
+        <div class="role-sub">The Rogue Assassin</div>
+        <a class="btn-ghost" href="{{ url_for('champion_detail', slug='akali') }}">View Champion</a>
+      </div>
+    </div>
+    <div class="role-tab-panel" data-role-panel-body="fighters" style="display:none">
+      <div class="role-art"><img src="{{ url_for('static', filename='images/site/home_champion_fighters.png') }}" alt="Yasuo"></div>
+      <div class="role-copy">
+        <h3>Yasuo</h3>
+        <div class="role-sub">The Unforgiven</div>
+        <a class="btn-ghost" href="{{ url_for('champion_detail', slug='yasuo') }}">View Champion</a>
+      </div>
+    </div>
+    <div class="role-tab-panel" data-role-panel-body="mages" style="display:none">
+      <div class="role-art"><img src="{{ url_for('static', filename='images/site/home_champion_mages.png') }}" alt="Lux"></div>
+      <div class="role-copy">
+        <h3>Lux</h3>
+        <div class="role-sub">The Lady of Luminosity</div>
+        <a class="btn-ghost" href="{{ url_for('champion_detail', slug='lux') }}">View Champion</a>
+      </div>
+    </div>
+    <div class="role-tab-panel" data-role-panel-body="marksmen" style="display:none">
+      <div class="role-art"><img src="{{ url_for('static', filename='images/site/home_champion_marksmen.png') }}" alt="Jinx"></div>
+      <div class="role-copy">
+        <h3>Jinx</h3>
+        <div class="role-sub">The Loose Cannon</div>
+        <a class="btn-ghost" href="{{ url_for('champion_detail', slug='jinx') }}">View Champion</a>
+      </div>
+    </div>
+    <div class="role-tab-panel" data-role-panel-body="supports" style="display:none">
+      <div class="role-art"><img src="{{ url_for('static', filename='images/site/home_champion_supports.png') }}" alt="Thresh"></div>
+      <div class="role-copy">
+        <h3>Thresh</h3>
+        <div class="role-sub">The Chain Warden</div>
+        <a class="btn-ghost" href="{{ url_for('champion_detail', slug='thresh') }}">View Champion</a>
+      </div>
+    </div>
+    <div class="role-tab-panel" data-role-panel-body="tanks" style="display:none">
+      <div class="role-art"><img src="{{ url_for('static', filename='images/site/home_champion_tanks.png') }}" alt="Leona"></div>
+      <div class="role-copy">
+        <h3>Leona</h3>
+        <div class="role-sub">The Radiant Dawn</div>
+        <a class="btn-ghost" href="{{ url_for('champion_detail', slug='leona') }}">View Champion</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="skins-promo">
+  <div class="promo-item">
+    <img src="{{ url_for('static', filename='images/site/home_promo_item.png') }}" alt="Skins">
+  </div>
+  <div class="promo-copy">
+    <div class="promo-super">Slay With</div>
+    <h2>Style</h2>
+    <p>Make it personal by changing up the look of your favorite champions with skins.</p>
+    <a class="btn-gold" href="{{ url_for('champions') }}">Browse Champions</a>
+  </div>
+</section>
+
+<section>
+  <div class="section-header">
+    <div class="masthead-kicker">Multiple Ways To</div>
+    <h2>Play</h2>
+    <p>Whether you like to dive straight into the fray, support your teammates, or something in between, there&rsquo;s a spot for you on the Rift.</p>
+  </div>
+  <div class="mode-tabs">
+    <div class="mode-grid">
+      <div class="mode-card mode-wide" style="background:
+        linear-gradient(rgba(1,10,19,.05), rgba(1,10,19,.6)),
+        url('{{ url_for('static', filename='images/site/home_play_summoner_s_rift.jpg') }}') center/cover">
+        <h3>Summoner's Rift</h3>
+        <div class="mode-sub">The Most Popular Game Mode</div>
+        <p>Clear your lane, dive into epic 5v5 team fights, and destroy the enemy nexus before they destroy yours.</p>
+      </div>
+      <div class="mode-card mode-wide" style="background:
+        linear-gradient(rgba(1,10,19,.05), rgba(1,10,19,.6)),
+        url('{{ url_for('static', filename='images/site/home_play_aram.jpg') }}') center/cover">
+        <h3>ARAM</h3>
+        <div class="mode-sub">All Random, All Mid</div>
+        <p>Battle across an icy bridge as your team of random champions charge toward the enemy Nexus in this chaotically fun 5v5 game mode.</p>
+      </div>
+      <div class="mode-card mode-wide" style="background:
+        linear-gradient(rgba(1,10,19,.05), rgba(1,10,19,.6)),
+        url('{{ url_for('static', filename='images/site/home_play_aram_mayhem.jpg') }}') center/cover">
+        <h3>ARAM: Mayhem</h3>
+        <div class="mode-sub">All Mayhem, All The Time</div>
+        <p>Upgrade your ARAM experience with chaotic augments that drastically shift how you play the game.</p>
+      </div>
+      <div class="mode-card mode-wide" style="background:
+        linear-gradient(rgba(1,10,19,.05), rgba(1,10,19,.6)),
+        url('{{ url_for('static', filename='images/site/home_play_teamfight_tactics.jpg') }}') center/cover">
+        <h3>Teamfight Tactics</h3>
+        <div class="mode-sub">A Free-For-All War For Supremacy</div>
+        <p>Assemble a squad of champions that battle on your behalf. Outlast all seven of your opponents and become the last person standing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="home-cta">
+  <h2>Play For Free</h2>
+  <a class="btn-gold" href="{{ url_for('signup') }}">Play For Free</a>
+</div>
+
+<script>
+(function () {
+  var strip = document.querySelector('.role-tab-strip');
+  if (!strip) return;
+  strip.addEventListener('click', function (event) {
+    var tab = event.target.closest('.role-tab');
+    if (!tab) return;
+    var key = tab.getAttribute('data-role-panel');
+    strip.querySelectorAll('.role-tab').forEach(function (el) { el.classList.remove('active'); });
+    tab.classList.add('active');
+    document.querySelectorAll('[data-role-panel-body]').forEach(function (panel) {
+      panel.style.display = panel.getAttribute('data-role-panel-body') === key ? 'grid' : 'none';
+    });
+  });
+})();
+</script>
+
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}My Account | Healthgrades{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">My Account</h1>
+    <div class="account-grid">
+        <div class="account-card">
+            <h3>Profile</h3>
+            <p>{{ current_user.name }}</p>
+            <p>{{ current_user.email }}</p>
+            <p>{{ current_user.phone }}</p>
+            <p>{{ current_user.city }}, {{ current_user.state }} {{ current_user.zip_code }}</p>
+            <a href="{{ url_for('edit_profile') }}" class="btn-secondary">Edit Profile</a>
+        </div>
+        <div class="account-card">
+            <h3>Quick Links</h3>
+            <ul class="account-links">
+                <li><a href="{{ url_for('saved_doctors') }}">Saved Doctors ({{ saved|length }})</a></li>
+                <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <h2>Appointment Requests</h2>
+    <div class="table-scroll"><table class="order-table">
+        <thead><tr><th>Doctor</th><th>Reason</th><th>Preferred Date</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+            {% for appt in appointments %}
+            <tr>
+                <td><a href="{{ url_for('doctor_detail', slug=appt.doctor.slug) }}">{{ appt.doctor.name }}</a></td>
+                <td>{{ appt.reason }}</td>
+                <td>{{ appt.preferred_date }}</td>
+                <td><span class="status-badge status-{{ appt.status }}">{{ appt.status }}</span></td>
+                <td>
+                    {% if appt.status == 'requested' %}
+                    <form method="post" action="{{ url_for('cancel_appointment', appt_id=appt.id) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token_value }}">
+                        <button type="submit" class="btn-link">Cancel</button>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5">No appointment requests yet.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table></div>
+</div>
+{% endblock %}

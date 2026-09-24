@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}{{ r.title }} | Instructure{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="page-crumb">
+    <a href="{{ url_for('blog_list') }}">Blog</a><span class="sep">»</span>{% if r.published %}{{ r.published }}{% endif %}
+  </div>
+  <div class="detail-head">
+    <h1>{{ r.title }}</h1>
+    {% if r.author_name %}
+    <div class="detail-meta">
+      {% if r.author_image %}<img class="avatar" src="{{ r.author_image }}" alt="{{ r.author_name }}">{% endif %}
+      <div class="by">{{ r.author_name }}{% if r.author_role %}<small>{{ r.author_role }}</small>{% endif %}</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="detail-hero">
+    <img src="{{ r.hero_image }}" alt="{{ r.hero_alt or r.title }}">
+    {% if r.category_tag %}<span class="tag-pill">{{ r.category_tag }}</span>{% endif %}
+  </div>
+
+  <div class="prose">
+    {% for block in r.body %}
+      {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+      {% elif block.kind == 'h3' %}<h3>{{ block.text }}</h3>
+      {% elif block.kind == 'li' %}<li>{{ block.text }}</li>
+      {% else %}<p>{{ block.text }}</p>{% endif %}
+    {% endfor %}
+  </div>
+
+  {% if r.author_name and r.author_bio %}
+  <div class="author-card">
+    {% if r.author_image %}<img src="{{ r.author_image }}" alt="{{ r.author_name }}">{% endif %}
+    <div>
+      <h3>About the Author</h3>
+      <h3 style="font-size:17px;">{{ r.author_name }}</h3>
+      <div class="role">{{ r.author_role or '' }}</div>
+      <p>{{ r.author_bio }}</p>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="save-bar">
+    <form method="post" action="/resources/blog/{{ r.slug }}/save">
+      <input type="hidden" name="next" value="{{ resource_url(r) }}">
+      <button class="btn {{ 'btn-outline' if saved else 'btn-navy' }}" type="submit">{{ '★ Saved — remove' if saved else '☆ Save this article' }}</button>
+    </form>
+    {% if current_user.is_authenticated %}{% else %}<span style="color:var(--muted); font-size:14px;"><a href="{{ url_for('login') }}">Log in</a> to save resources to your account.</span>{% endif %}
+  </div>
+
+  {% if r.topic_list %}
+  <div class="topics-row">
+    <span class="lbl">Discover More Topics:</span>
+    {% for t in r.topic_list %}
+    <a class="topic-pill" href="{{ url_for('blog_list', q=t) }}">{{ t }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <section class="section">
+    <h2 style="margin-bottom: 24px;">Related Content</h2>
+    <div class="related-row">
+      {% for x in related %}
+      <a class="res-card" href="{{ resource_url(x) }}">
+        <img class="cover" src="{{ x.hero_image or x.card_image }}" alt="{{ x.title }}">
+        <div class="body">
+          <span class="cat">{{ type_labels.get(x.type, x.type) if type_labels is defined else x.type }}</span>
+          <h3>{{ x.title }}</h3>
+          <span class="more">Read More &gt;</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="section tight">
+    <div class="cta-band">
+      <h2>Like what you learned?</h2>
+      <p class="lede" style="color:#b8cbdc; margin: 12px auto 20px;">Stay in the know by subscribing to monthly recaps of our news feed.</p>
+      <form method="post" action="{{ url_for('newsletter_subscribe') }}" style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <input type="hidden" name="source" value="blog:{{ r.slug }}">
+        <input type="email" name="email" required placeholder="*Email Address" style="font-family:var(--font); padding:12px 18px; border-radius:100px; border:none; min-width:300px;">
+        <button class="btn btn-outline-light" type="submit">Submit</button>
+      </form>
+    </div>
+  </section>
+</section>
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Company Overview | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <div class="grid">
+      <div>
+        <h1>We do education, and education only.</h1>
+        <p class="lede">The makers of Canvas LMS, Instructure is an education technology company dedicated to elevating teaching and learning everywhere.</p>
+        <div class="ctas"><a class="btn btn-outline-light" href="{{ url_for('careers') }}">Join our crew</a></div>
+      </div>
+      <div><img class="heroimg" src="/static/images/page-about-hero.jpg" alt="Instructure team"></div>
+    </div>
+  </div>
+</section>
+<section class="container section">
+  <div class="prose" style="margin-top:0;">
+    {% if page %}
+    {% for block in page.blocks %}
+      {% if block.kind == 'h2' %}<h2>{{ block.text }}</h2>
+      {% elif block.kind == 'h3' %}<h3>{{ block.text }}</h3>
+      {% else %}<p>{{ block.text }}</p>{% endif %}
+    {% endfor %}
+    {% endif %}
+  </div>
+  <h2 style="margin: 44px 0 26px;">Leadership</h2>
+  <div class="leader-grid">
+    {% for l in leaders[:4] %}
+    <div class="leader-card">
+      {% if l.photo %}<img src="{{ l.photo }}" alt="{{ l.name }}">{% endif %}
+      <h3>{{ l.name }}</h3>
+      <div class="role">{{ l.role }}</div>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="margin-top:30px;"><a class="btn btn-outline" href="{{ url_for('leadership') }}">Meet the full team</a></div>
+</section>
+{% endblock %}
