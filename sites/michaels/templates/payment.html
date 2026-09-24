@@ -1,0 +1,51 @@
+{% extends 'base.html' %}
+{% block title %}Payment Methods | Michaels{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <aside class="account-nav">
+    <h2>My Account</h2>
+    <ul>
+      <li><a href="{{ url_for('account') }}">Orders</a></li>
+      <li><a href="{{ url_for('account_profile') }}">Profile</a></li>
+      <li><a href="{{ url_for('account_addresses') }}">Addresses</a></li>
+      <li><a class="active" href="{{ url_for('account_payment') }}">Payment Methods</a></li>
+      <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
+      <li><a href="{{ url_for('account_registrations') }}">Class Registrations</a></li>
+      <li><a href="{{ url_for('logout') }}">Sign Out</a></li>
+    </ul>
+  </aside>
+  <section class="account-main">
+    <h1>Payment Methods</h1>
+    {% for c in cards %}
+    <article class="address-card">
+      <div><strong>{{ c.label }}</strong> &mdash; {{ c.brand }} ending in {{ c.last4 }}</div>
+      <div>Expires {{ '%02d' % c.exp_month }}/{{ c.exp_year }}</div>
+      <form action="{{ url_for('account_payment') }}" method="post">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" value="{{ c.id }}">
+        <button type="submit" class="link-btn">Remove</button>
+      </form>
+    </article>
+    {% endfor %}
+    <h2>Add a new card</h2>
+    <form method="post" class="profile-form">
+      <input type="hidden" name="action" value="add">
+      <div class="form-row">
+        <label>Brand
+          <select name="brand">
+            <option>Visa</option><option>Mastercard</option>
+            <option>Amex</option><option>Discover</option>
+          </select>
+        </label>
+        <label>Card number<input type="text" name="number" inputmode="numeric" required></label>
+      </div>
+      <label>Label<input type="text" name="label" value="Personal"></label>
+      <div class="form-row">
+        <label>Exp. month<input type="number" name="exp_month" min="1" max="12" value="8"></label>
+        <label>Exp. year<input type="number" name="exp_year" min="2026" max="2035" value="2027"></label>
+      </div>
+      <button type="submit" class="btn-primary">Add card</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

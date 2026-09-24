@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Wishlist | Michaels{% endblock %}
+{% block content %}
+<h1>Wishlist</h1>
+{% if items %}
+<div class="wishlist-grid">
+  {% for item in items %}
+  <article class="product-card wishlist-card">
+    {% set p = item.product %}
+    {% set imgs = p.image_list() %}
+    <a class="card-img" href="/product/{{ p.slug }}">
+      {% if imgs %}<img src="{{ url_for('static', filename='images/' + imgs[0]) }}" alt="{{ p.name }}" loading="lazy">{% endif %}
+    </a>
+    <div class="card-body">
+      <a class="card-name" href="/product/{{ p.slug }}">{{ p.name }}</a>
+      <div class="card-rating">
+        <span class="stars">{% for i in range(5) %}<span class="star {% if p.rating >= i + 0.75 %}on{% endif %}">&#9733;</span>{% endfor %}</span>
+        <span class="rating-count">({{ p.review_count }})</span>
+      </div>
+      <div class="card-price"><span class="price">${{ '%.2f' % p.price_low }}</span>
+        {% if p.price_high != p.price_low %}<span class="price-range"> - ${{ '%.2f' % p.price_high }}</span>{% endif %}</div>
+      <form action="/wishlist/remove" method="post" class="wishlist-remove-form">
+        <input type="hidden" name="item_id" value="{{ item.id }}">
+        <button type="submit" class="link-btn">Remove from wishlist</button>
+      </form>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state"><h2>Your wishlist is empty</h2><p><a href="/">Continue shopping</a></p></div>
+{% endif %}
+{% endblock %}

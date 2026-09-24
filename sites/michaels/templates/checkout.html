@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Checkout | Michaels{% endblock %}
+{% block content %}
+<h1>Checkout</h1>
+<div class="checkout-layout">
+  <section class="checkout-steps">
+    <form method="post" class="checkout-form">
+      <input type="hidden" name="step" value="details">
+      <h2>1. Delivery</h2>
+      <div class="radio-row">
+        <label><input type="radio" name="delivery_method" value="Ship" {% if method != 'Pickup' %}checked{% endif %}> Ship to Me</label>
+        <label><input type="radio" name="delivery_method" value="Pickup" {% if method == 'Pickup' %}checked{% endif %}> Store Pickup ({{ home_store.name }})</label>
+      </div>
+      <div id="ship-addresses">
+        <h3>Shipping address</h3>
+        {% for a in addresses %}
+        <label class="radio-row">
+          <input type="radio" name="address_id" value="{{ a.id }}" {% if loop.first %}checked{% endif %}>
+          <span><strong>{{ a.label }}</strong> &mdash; {{ a.line1 }}{% if a.line2 %}, {{ a.line2 }}{% endif %}, {{ a.city }}, {{ a.state }} {{ a.zip_code }}</span>
+        </label>
+        {% else %}
+        <p>No saved address. <a href="{{ url_for('account_addresses') }}">Add one</a></p>
+        {% endfor %}
+      </div>
+      <h2>2. Payment</h2>
+      {% for c in cards %}
+      <label class="radio-row">
+        <input type="radio" name="card_id" value="{{ c.id }}" {% if loop.first %}checked{% endif %}>
+        <span>{{ c.brand }} ending in {{ c.last4 }} ({{ '%02d' % c.exp_month }}/{{ c.exp_year }})</span>
+      </label>
+      {% else %}
+      <p>No saved card. <a href="{{ url_for('account_payment') }}">Add one</a></p>
+      {% endfor %}
+      <button type="submit" class="btn-primary">Review Order</button>
+    </form>
+    {% if method %}
+    <form method="post" class="checkout-form">
+      <input type="hidden" name="step" value="place">
+      <h2>3. Review &amp; Place Order</h2>
+      <p class="checkout-review-method">{{ method }}{% if session.get('checkout_address') %} &middot; shipping to selected address{% else %} &middot; pickup at {{ home_store.name }}{% endif %}</p>
+      {% for item in s.rows %}
+      <div class="review-item">
+        <span>{{ item.qty }} &times; {{ item.product.name }}{% if item.color %} ({{ item.color }}){% endif %}</span>
+        <span>${{ '%.2f' % (item.product.price_for(item.variant_sku) * item.qty) }}</span>
+      </div>
+      {% endfor %}
+      <div class="sum-row"><span>Subtotal</span><span>${{ '%.2f' % s.subtotal }}</span></div>
+      {% if s.bogo_discount %}<div class="sum-row discount"><span>Buy One Get One mix &amp; match</span><span>-${{ '%.2f' % s.bogo_discount }}</span></div>{% endif %}
+      {% if s.code_discount %}<div class="sum-row discount"><span>Promo {{ s.code }}</span><span>-${{ '%.2f' % s.code_discount }}</span></div>{% endif %}
+      <div class="sum-row"><span>Shipping</span><span>{{ 'FREE' if (method == 'Pickup' or s.shipping == 0) else '$%.2f' % s.shipping }}</span></div>
+      <div class="sum-row"><span>Tax</span><span>${{ '%.2f' % s.tax }}</span></div>
+      <div class="sum-row total"><span>Order Total</span><span>${{ '%.2f' % s.total }}</span></div>
+      <button type="submit" class="btn-primary">Place Order</button>
+    </form>
+    {% endif %}
+  </section>
+  <aside class="order-summary">
+    <h2>Order Summary</h2>
+    {% for item in s.rows %}
+    <div class="review-item">
+      <span>{{ item.qty }} &times; {{ item.product.name }}</span>
+      <span>${{ '%.2f' % (item.product.price_for(item.variant_sku) * item.qty) }}</span>
+    </div>
+    {% endfor %}
+    <div class="sum-row"><span>Subtotal</span><span>${{ '%.2f' % s.subtotal }}</span></div>
+    {% if s.discount %}<div class="sum-row discount"><span>Promo {{ s.code }}</span><span>-${{ '%.2f' % s.discount }}</span></div>{% endif %}
+    <div class="sum-row"><span>Shipping</span><span>{{ 'FREE' if s.shipping == 0 else '$%.2f' % s.shipping }}</span></div>
+    <div class="sum-row"><span>Tax</span><span>${{ '%.2f' % s.tax }}</span></div>
+    <div class="sum-row total"><span>Order Total</span><span>${{ '%.2f' % s.total }}</span></div>
+  </aside>
+</div>
+{% endblock %}

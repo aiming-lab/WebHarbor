@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% block title %}{{ p.name }} | Michaels{% endblock %}
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a> &rsaquo;
+  {% if top_slug %}<a href="/shop/{{ top_slug }}">{{ top_slug.replace('-',' ').title() }}</a> &rsaquo;{% endif %}
+  <span>{{ p.name }}</span>
+</nav>
+<div class="pdp-layout">
+  <section class="pdp-gallery">
+    {% set imgs = p.image_list() %}
+    <div class="pdp-main-img">
+      <img id="pdp-main" src="{{ url_for('static', filename='images/' + (imgs[0] if imgs else '')) }}" alt="{{ p.name }}">
+    </div>
+    {% if imgs|length > 1 %}
+    <div class="pdp-thumbs">
+      {% for img in imgs %}
+      <button class="pdp-thumb" data-src="{{ url_for('static', filename='images/' + img) }}">
+        <img src="{{ url_for('static', filename='images/' + img) }}" alt="View image {{ loop.index }}">
+      </button>
+      {% endfor %}
+    </div>
+    {% endif %}
+  </section>
+  <section class="pdp-info">
+    <h1>{{ p.name }}</h1>
+    <a class="pdp-rating-link" href="/product/{{ p.slug }}/reviews">
+      <span class="stars">
+        {% for i in range(5) %}<span class="star {% if p.rating >= i + 0.75 %}on{% endif %}">&#9733;</span>{% endfor %}
+      </span>
+      {{ p.rating or 0.0 }} ({{ p.review_count }})
+    </a>
+    {% if p.brand %}<div class="pdp-brand">by {{ p.brand }}</div>{% endif %}
+    <div class="pdp-price">
+      <span class="pdp-price-main" id="pdp-price">${{ '%.2f' % (vs[0].price if vs else p.price_low) }}</span>
+      {% if p.price_high != p.price_low %}<span class="pdp-price-range" id="pdp-price-range"> - ${{ '%.2f' % p.price_high }}</span>{% endif %}
+      {% if p.unit_price %}<span class="pdp-unit">{{ p.unit_price }}</span>{% endif %}
+    </div>
+    {% if p.promo_text %}<div class="pdp-promo">{{ p.promo_text }}</div>{% endif %}
+    {% set vs = p.variants_sorted() %}
+    {% if p.colors() %}
+    <div class="pdp-variants">
+      <span class="filter-label">{{ p.variant_label() }}: <span id="pdp-color-label">{{ vs[0].color if vs else p.color }}</span></span>
+      <div class="swatches">
+        {% for v in vs %}
+        <button type="button" class="swatch {% if loop.first %}active{% endif %}"
+                data-price="{{ '%.2f' % v.price }}" data-sku="{{ v.sku }}" data-color="{{ v.color }}"
+                title="{{ v.color }}">{{ v.color }}</button>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+    <form class="pdp-actions" action="/cart/add" method="post">
+      <input type="hidden" name="slug" value="{{ p.slug }}">
+      <input type="hidden" name="variant_sku" id="pdp-variant-input" value="{{ vs[0].sku if vs else '' }}">
+      <input type="hidden" name="color" id="pdp-color-input" value="{{ vs[0].color if vs else '' }}">
+      <input type="hidden" name="next" value="/product/{{ p.slug }}">
+      <label class="qty-label">Qty
+        <input type="number" name="qty" value="1" min="1" max="99" aria-label="Quantity">
+      </label>
+      <button type="submit" class="btn-primary">Add to Cart</button>
+    </form>
+    <form action="/wishlist/add" method="post" class="pdp-wishlist-form">
+      <input type="hidden" name="slug" value="{{ p.slug }}">
+      <input type="hidden" name="next" value="/product/{{ p.slug }}">
+      <button type="submit" class="btn-secondary">Save to Wishlist</button>
+    </form>
+    <div class="fulfillment">
+      <h3>How you'll get it:</h3>
+      <div class="fulfill-row">
+        <div class="fulfill-option">
+          <strong>Store Pickup</strong>
+          <span class="fulfill-sub">Pickup &middot; Get it Today &middot; Free</span>
+          <span class="fulfill-note">Available at {{ home_store.name }}, {{ home_store.zip[:5] }} | {{ p.aisle|capitalize }}</span>
+        </div>
+        <div class="fulfill-option">
+          <strong>Shipping</strong>
+          <span class="fulfill-sub">Get it {{ reference_date.strftime('%b. %-d') }}-{{ reference_date.strftime('%b. %-d') }}</span>
+          <span class="fulfill-note">Free on Orders $49+</span>
+        </div>
+        <div class="fulfill-option">
+          <strong>Delivery</strong>
+          <span class="fulfill-sub">As soon as Tomorrow</span>
+          <span class="fulfill-note">From $7.99</span>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<section class="pdp-lower">
+  <div class="pdp-tabs">
+    <h2 id="description">Description</h2>
+    <p class="pdp-description">{{ p.description or 'See details in store.' }}</p>
+    {% set details = p.details | from_json %}
+    {% if details %}
+    <h2>Details</h2>
+    <ul class="pdp-details">
+      {% for d in details %}<li>{{ d }}</li>{% endfor %}
+    </ul>
+    {% endif %}
+    <h2 id="shipping">Shipping &amp; Returns</h2>
+    <p class="pdp-description">Free shipping on orders $49+. Most orders ship within 2 business days. Returns accepted within 60 days with receipt; custom-cut material and seasonal items may be excluded.</p>
+    <h2 id="reviews">Reviews</h2>
+    <div class="review-summary">
+      <div class="review-score">
+        <span class="review-avg">{{ '%.1f' % (p.rating or 0) }}</span>
+        <span class="stars">{% for i in range(5) %}<span class="star {% if p.rating >= i + 0.75 %}on{% endif %}">&#9733;</span>{% endfor %}</span>
+        <a href="/product/{{ p.slug }}/reviews">{{ p.review_count }} reviews</a>
+      </div>
+      <div class="review-list">
+        {% for r in p.reviews[:3] %}
+        <article class="review">
+          <div class="review-head">
+            <span class="stars">{% for i in range(5) %}<span class="star {% if r.rating >= i + 0.75 %}on{% endif %}">&#9733;</span>{% endfor %}</span>
+            <strong>{{ r.title }}</strong>
+          </div>
+          <p>{{ r.text }}</p>
+          <div class="review-meta">{{ r.author }} &middot; {{ r.date }}{% if r.verified %} &middot; Verified Purchaser{% endif %} &middot; {{ r.helpful_count }} found this helpful</div>
+        </article>
+        {% else %}
+        <p class="review-meta">Be the first to review this product.</p>
+        {% endfor %}
+        {% if p.reviews %}<a class="reviews-link" href="/product/{{ p.slug }}/reviews">See all {{ p.review_count }} reviews</a>{% endif %}
+      </div>
+    </div>
+    <h2>Questions &amp; Answers</h2>
+    <div class="qa-list">
+      {% for q in p.questions[:4] %}
+      <article class="qa">
+        <p class="qa-q"><strong>Q:</strong> {{ q.text }}</p>
+        <p class="qa-meta">Asked by {{ q.author }} on {{ q.date }} &middot; {{ q.answer_count }} answer{{ 's' if q.answer_count != 1 }}</p>
+      </article>
+      {% else %}
+      <p class="qa-meta">No questions yet. Ask the first one.</p>
+      {% endfor %}
+    </div>
+  </div>
+  {% if related %}
+  <div class="pdp-related">
+    <h2>You May Also Like</h2>
+    <div class="product-grid">
+      {% for p in related %}
+        {% include '_product_card.html' %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</section>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  var swatches = document.querySelectorAll('.swatch');
+  var priceEl = document.getElementById('pdp-price');
+  var rangeEl = document.getElementById('pdp-price-range');
+  var colorLabel = document.getElementById('pdp-color-label');
+  var skuInput = document.getElementById('pdp-variant-input');
+  var colorInput = document.getElementById('pdp-color-input');
+  swatches.forEach(function (s) {
+    s.addEventListener('click', function () {
+      swatches.forEach(function (x) { x.classList.remove('active'); });
+      s.classList.add('active');
+      if (priceEl) { priceEl.textContent = '$' + s.dataset.price; }
+      if (rangeEl) { rangeEl.style.display = 'none'; }
+      if (colorLabel) { colorLabel.textContent = s.dataset.color; }
+      if (skuInput) { skuInput.value = s.dataset.sku; }
+      if (colorInput) { colorInput.value = s.dataset.color; }
+    });
+  });
+  var thumbs = document.querySelectorAll('.pdp-thumb');
+  var main = document.getElementById('pdp-main');
+  thumbs.forEach(function (t) {
+    t.addEventListener('click', function () {
+      if (main) { main.src = t.dataset.src; }
+    });
+  });
+});
+</script>
+{% endblock %}

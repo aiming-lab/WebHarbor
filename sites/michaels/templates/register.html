@@ -1,0 +1,15 @@
+{% extends 'base.html' %}
+{% block title %}Sign In or Create An Account | Michaels{% endblock %}
+{% block content %}
+<div class="auth-box">
+  <h1>Create an Account</h1>
+  <form method="post" class="auth-form">
+    <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+    <label>Name<input type="text" name="name" required></label>
+    <label>Email<input type="email" name="email" required placeholder="Enter your Email"></label>
+    <label>Password (8+ characters)<input type="password" name="password" required minlength="8"></label>
+    <button type="submit" class="btn-primary">Create Account</button>
+  </form>
+  <p>Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+</div>
+{% endblock %}
