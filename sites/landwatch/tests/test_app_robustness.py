@@ -1,3 +1,4 @@
+from conftest import csrf_post
 """Functional robustness checks for the LandWatch mirror (Flask test client).
 
 Model access goes through the `lw` fixture (the reloaded app module bound to
@@ -136,10 +137,10 @@ def test_listing_detail_canonical_redirect(client, app, lw):
 
 def test_contact_form_validation_and_persistence(client, app, lw):
     listing = first_listing(app, lw)
-    bad = client.post(f"/contact/{listing["pid"]}",
+    bad = csrf_post(client, f"/contact/{listing["pid"]}",
                       data={"name": "", "email": "nope", "message": "hi"})
     assert bad.status_code == 400
-    ok = client.post(f"/contact/{listing["pid"]}",
+    ok = csrf_post(client, f"/contact/{listing["pid"]}",
                      data={"name": "Test Buyer", "email": "buyer@example.com",
                            "message": "Interested in access roads."},
                      follow_redirects=True)
@@ -151,14 +152,14 @@ def test_contact_form_validation_and_persistence(client, app, lw):
 
 
 def test_register_login_logout_flow(client, app, lw):
-    response = client.post("/register", data={
+    response = csrf_post(client, "/register", data={
         "email": "new.user@test.com", "password": "Passw0rd!",
         "name": "New User"}, follow_redirects=True)
     assert response.status_code == 200
     with app.app_context():
         assert lw.User.query.filter_by(email="new.user@test.com").first() is not None
-    client.get("/log-out")
-    response = client.post("/log-in", data={
+    csrf_post(client, "/log-out")
+    response = csrf_post(client, "/log-in", data={
         "email": "new.user@test.com", "password": "Passw0rd!"},
         follow_redirects=True)
     assert response.status_code == 200
@@ -166,38 +167,38 @@ def test_register_login_logout_flow(client, app, lw):
 
 
 def test_bad_login_rejected(client):
-    response = client.post("/log-in", data={
+    response = csrf_post(client, "/log-in", data={
         "email": "alice.j@test.com", "password": "WrongPass1!"})
     assert response.status_code == 401
     assert b"Invalid email or password" in response.data
 
 
 def test_register_validates_input(client):
-    bad = client.post("/register", data={"email": "broken", "password": "short"})
+    bad = csrf_post(client, "/register", data={"email": "broken", "password": "short"})
     assert bad.status_code == 400
-    dup = client.post("/register", data={"email": "alice.j@test.com",
+    dup = csrf_post(client, "/register", data={"email": "alice.j@test.com",
                                         "password": "Passw0rd!"})
     assert dup.status_code == 409
 
 
 def test_favorite_requires_login(client, app, lw):
     listing = first_listing(app, lw)
-    response = client.post(f"/favorite/{listing["pid"]}")
+    response = csrf_post(client, f"/favorite/{listing["pid"]}")
     assert response.status_code == 401
 
 
 def test_favorite_toggle_and_account(alice, app, lw):
     listing = first_listing(app, lw)
-    response = alice.post(f"/favorite/{listing["pid"]}")
+    response = csrf_post(alice, f"/favorite/{listing["pid"]}")
     assert response.get_json() == {"ok": True, "saved": True}
     html = alice.get("/account").get_data(as_text=True)
     assert listing["price_display"] in html
-    response = alice.post(f"/favorite/{listing["pid"]}")
+    response = csrf_post(alice, f"/favorite/{listing["pid"]}")
     assert response.get_json() == {"ok": True, "saved": False}
 
 
 def test_saved_search_flow(alice):
-    response = alice.post("/save-search",
+    response = csrf_post(alice, "/save-search",
                          json={"url": "/texas-land-for-sale/price-over-1000000",
                                "name": "Texas $1M+"})
     assert response.get_json()["ok"] is True

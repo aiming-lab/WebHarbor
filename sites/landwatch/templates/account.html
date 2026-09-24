@@ -20,6 +20,7 @@
               <span style="font-size: 13px; color: #757575;">{{ listing.location_line }}</span>
               <span style="font-size: 14px; font-weight: 700;">{{ listing.price_display }} &bull; {{ listing.acres_display }}</span>
               <form method="post" action="/remove-favorite/{{ listing.pid }}" style="margin-top: 6px;">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                 <button class="lw-btn lw-btn-outline" type="submit">Remove</button>
               </form>
             </div>
@@ -36,6 +37,7 @@
           <div class="lw-saved-row">
             <a href="{{ row.url }}">{{ row.name }}</a>
             <form method="post" action="/remove-saved-search/{{ row.id }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
               <button class="lw-btn lw-btn-outline" type="submit">Remove</button>
             </form>
           </div>
@@ -50,7 +52,7 @@
           {% for row in inquiries %}
           <div class="lw-saved-row">
             <div>
-              <div>To: {{ row.name }} &mdash; {{ row.email }}</div>
+              <div>To: {{ row.recipient_name }}<br>From: {{ row.sender_name }} &mdash; {{ row.email }}<br>Phone: {{ row.phone or 'Not provided' }}</div>
               <div style="color: #757575; font-size: 13px;">{{ row.message[:160] }}{% if row.message | length > 160 %}&hellip;{% endif %}</div>
               <div style="color: #999; font-size: 12px;">{{ row.created_at }}</div>
             </div>
@@ -69,7 +71,7 @@
         <p style="font-size: 13px; color: #757575;">{{ user.email }}</p>
         {% if user.phone %}<p style="font-size: 13px; color: #757575;">{{ user.phone }}</p>{% endif %}
         <a class="lw-btn lw-btn-outline-dark" style="width: 100%; margin-top: 10px;" href="/account/edit">Edit profile</a>
-        <a class="lw-btn lw-btn-outline" style="width: 100%; margin-top: 8px;" href="/log-out">Log out</a>
+        <form method="post" action="/log-out"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="lw-btn lw-btn-outline">Log out</button></form>
       </div>
     </div>
   </div>

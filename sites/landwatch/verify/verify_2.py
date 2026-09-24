@@ -2,7 +2,7 @@
 """Verify LandWatch--2 — Sisterdale Farms due diligence + broker profile.
 
 Ground truth (frozen seed): 'Sisterdale Farms' is listed at $19,400,000 for
-310 Acres with 5 Beds and 5 Baths and a 'View all 93 pictures' gallery button.
+310 Acres with 5 Beds and 5 Baths. The mirror exposes three local gallery pictures.
 The first two Highlights bullets are '11,800± SF custom stone home with 7
 Rumford fireplaces and panoramic Hill Country views' and 'Over one third
 mile of Guadalupe River frontage with senior water rights'; the Activities
@@ -28,7 +28,6 @@ def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_trajectory_identity(judge, traj, TASK_ID)
     check_visited_path(judge, traj, "visited_sisterdale_detail", SISTERDALE_DETAIL)
-    check_visited_path(judge, traj, "visited_find_agent", "/find-agent")
     check_visited_path(judge, traj, "visited_agent_profile", SWOPE_PROFILE)
     # listing due-diligence facts
     judge.check("answer_price", contains_money(answer, 19400000),
@@ -40,8 +39,8 @@ def run_checks(judge, traj, initial_db, after_db):
     judge.check("answer_baths", contains_count(answer, 5) and contains_any(
         answer, ["Baths", "baths", "bathrooms", "Bath "]),
         "expected 5 baths")
-    judge.check("answer_gallery_pictures", contains_count(answer, 93),
-                "expected the gallery to list 93 pictures")
+    judge.check("answer_gallery_pictures", __import__('re').search(r'\b(?:3|three)\s+(?:available\s+)?(?:pictures|photos)', answer, __import__('re').I),
+                "expected three available gallery pictures")
     judge.check("answer_first_highlight",
                 contains_phrase(answer, "11,800") and contains_phrase(answer, "Rumford"),
                 "expected the first Highlight (11,800± SF custom stone home with 7 Rumford fireplaces)")

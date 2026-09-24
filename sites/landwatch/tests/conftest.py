@@ -42,7 +42,7 @@ def client(app):
 
 def _login(app, email):
     client = app.test_client()
-    response = client.post("/log-in", data={"email": email, "password": "TestPass123!"},
+    response = csrf_post(client, "/log-in", data={"email": email, "password": "TestPass123!"},
                           follow_redirects=True)
     assert response.status_code == 200
     return client
@@ -52,3 +52,12 @@ def _login(app, email):
 def alice(app):
     """A test client signed in as alice.j@test.com."""
     return _login(app, "alice.j@test.com")
+
+
+def csrf_post(client, path, **kwargs):
+    """Submit a functional test request with the same token a browser receives."""
+    import re
+    html = client.get('/').get_data(as_text=True)
+    token = re.search(r'<meta name="csrf-token" content="([^"]+)"', html).group(1)
+    kwargs['headers'] = {**kwargs.get('headers', {}), 'X-CSRF-Token': token}
+    return client.post(path, **kwargs)
