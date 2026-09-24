@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Our Customers | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <h1>Our Customers</h1>
+    <p class="lede">See who’s transforming teaching and learning through future-ready technology.</p>
+  </div>
+</section>
+<section class="container section">
+  <div class="res-grid">
+    {% for r in cases %}
+    <a class="res-card" href="{{ resource_url(r) }}">
+      <img class="cover" src="{{ r.hero_image or r.card_image }}" alt="{{ r.title }}">
+      <div class="body">
+        <span class="cat">Case Studies</span>
+        <h3>{{ r.title }}</h3>
+        <p>{{ r.excerpt }}</p>
+        <span class="more">Read On</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

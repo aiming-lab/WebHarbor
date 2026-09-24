@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}{{ champion.name }} - Champions - League of Legends{% endblock %}
+{% block content %}
+
+<section class="champ-masthead">
+  <div class="splash" style="background-image:url('{{ champion.splash_url }}')"></div>
+  <div class="champ-copy">
+    <div class="champ-epithet">{{ champion.epithet }}</div>
+    <h1>{{ champion.name }}</h1>
+    <p class="champ-lore">{{ champion.lore|inlinehtml }}</p>
+    <div class="champ-info-cards">
+      <div class="info-card">
+        <div class="info-label">Role</div>
+        <div class="info-value">{{ champion.role_list|join(' / ') }}</div>
+      </div>
+      <div class="info-card">
+        <div class="info-label">Difficulty</div>
+        <div class="difficulty-pips">
+          <span class="{% if champion.difficulty_value and champion.difficulty_value >= 1 %}on{% endif %}"></span>
+          <span class="{% if champion.difficulty_value and champion.difficulty_value >= 2 %}on{% endif %}"></span>
+          <span class="{% if champion.difficulty_value and champion.difficulty_value >= 3 %}on{% endif %}"></span>
+          <span class="pip-label">{{ champion.difficulty_name }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="champ-action-row">
+      {% if current_user.is_authenticated %}
+      <form method="post" action="{{ url_for('champion_favorite', slug=champion.slug) }}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button class="btn-ghost" type="submit">{% if is_favorite %}Remove from Favorites{% else %}Add to Favorites{% endif %}</button>
+      </form>
+      {% else %}
+      <a class="btn-ghost" href="{{ url_for('login', next=request.path) }}">Sign in to Favorite</a>
+      {% endif %}
+      <a class="btn-dark" href="{{ url_for('champions') }}">All Champions</a>
+    </div>
+  </div>
+</section>
+
+<section class="champ-section">
+  <h2>Abilities</h2>
+  <div class="ability-strip" id="ability-strip">
+    {% for ability in abilities %}
+    <button type="button" class="ability-slot{% if loop.first %} active{% endif %}" data-ability="{{ loop.index }}">
+      <img src="{{ ability.icon_url }}" alt="{{ ability.name }}">
+      <div class="slot-key">{{ ability.slot }}</div>
+      <div class="slot-name">{{ ability.name }}</div>
+    </button>
+    {% endfor %}
+  </div>
+  {% for ability in abilities %}
+  <div class="ability-panel" data-ability-panel="{{ loop.index }}" {% if not loop.first %}style="display:none"{% endif %}>
+    <div>
+      <h3>{{ ability.name }}</h3>
+      <div class="ability-sub">{{ ability.slot_label }}</div>
+      <p class="ability-desc">{{ ability.description }}</p>
+    </div>
+    <div class="ability-media">
+      {% if ability.poster %}
+      <img src="{{ ability.poster_url }}" alt="{{ ability.name }} preview">
+      {% else %}
+      <img src="{{ ability.icon_url }}" alt="{{ ability.name }} icon">
+      {% endif %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<section class="champ-section">
+  <h2>Available Skins</h2>
+</section>
+<div class="skin-carousel">
+  <div class="skin-stage">
+    <img id="skin-stage-img" src="{{ skins[0].splash_url }}" alt="{{ skins[0].name }}">
+    <div class="skin-name" id="skin-stage-name">{{ skins[0].name }}</div>
+  </div>
+  <div class="skin-strip" id="skin-strip">
+    {% for skin in skins %}
+    <button type="button" class="skin-thumb{% if loop.first %} active{% endif %}" data-skin-splash="{{ skin.splash_url }}" data-skin-name="{{ skin.name }}">
+      <img src="{{ skin.splash_url }}" alt="{{ skin.name }}" loading="lazy">
+      <div class="skin-label">{{ skin.name }}</div>
+    </button>
+    {% endfor %}
+  </div>
+</div>
+
+<script>
+(function () {
+  var strip = document.getElementById('ability-strip');
+  if (strip) {
+    strip.addEventListener('click', function (event) {
+      var slot = event.target.closest('.ability-slot');
+      if (!slot) return;
+      var index = slot.getAttribute('data-ability');
+      strip.querySelectorAll('.ability-slot').forEach(function (el) { el.classList.remove('active'); });
+      slot.classList.add('active');
+      document.querySelectorAll('[data-ability-panel]').forEach(function (panel) {
+        panel.style.display = panel.getAttribute('data-ability-panel') === index ? 'grid' : 'none';
+      });
+    });
+  }
+  var skinStrip = document.getElementById('skin-strip');
+  if (skinStrip) {
+    skinStrip.addEventListener('click', function (event) {
+      var thumb = event.target.closest('.skin-thumb');
+      if (!thumb) return;
+      skinStrip.querySelectorAll('.skin-thumb').forEach(function (el) { el.classList.remove('active'); });
+      thumb.classList.add('active');
+      document.getElementById('skin-stage-img').src = thumb.getAttribute('data-skin-splash');
+      document.getElementById('skin-stage-name').textContent = thumb.getAttribute('data-skin-name');
+    });
+  }
+})();
+</script>
+
+{% endblock %}

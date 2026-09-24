@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Kelley Blue Book | New and Used Car Price Values{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-inner">
+        <h1>Kelley Knows Cars.</h1>
+        <p>From values to reviews, we've got it all.</p>
+        <form class="hero-search-form" action="{{ url_for('search') }}" method="get">
+            <input type="text" name="q" placeholder="Search by make, model, or year" autocomplete="off">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+</section>
+
+<section class="make-tiles">
+    {% for m in top_makes %}
+    <a href="{{ url_for('make_page', slug=m.slug) }}" class="make-tile">{{ m.name }}</a>
+    {% endfor %}
+</section>
+
+<section class="vehicle-section">
+    <h2>Top Rated Vehicles</h2>
+    <div class="vehicle-grid">
+        {% for vehicle in top_rated %}
+            {% include '_vehicle_card.html' %}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="vehicle-section">
+    <h2>Explore More Vehicles</h2>
+    <div class="vehicle-grid">
+        {% for vehicle in featured %}
+            {% include '_vehicle_card.html' %}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

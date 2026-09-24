@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Create Account – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="auth-card">
+  <h1>Create Account</h1>
+  <form method="post" action="/register">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:0 14px">
+      <div class="field"><label for="first_name">First name</label>
+        <input id="first_name" name="first_name" required>
+        {% if errors.get('name') %}<div class="err">{{ errors['name'] }}</div>{% endif %}</div>
+      <div class="field"><label for="last_name">Last name</label>
+        <input id="last_name" name="last_name" required></div>
+    </div>
+    <div class="field"><label for="email">Email</label>
+      <input id="email" name="email" type="email" required>
+      {% if errors.get('email') %}<div class="err">{{ errors['email'] }}</div>{% endif %}</div>
+    <div class="field"><label for="password">Password (min 8 characters)</label>
+      <input id="password" name="password" type="password" required>
+      {% if errors.get('password') %}<div class="err">{{ errors['password'] }}</div>{% endif %}</div>
+    <div class="field"><label for="confirm">Confirm password</label>
+      <input id="confirm" name="confirm" type="password" required>
+      {% if errors.get('confirm') %}<div class="err">{{ errors['confirm'] }}</div>{% endif %}</div>
+    <p style="font-size:12.5px;color:var(--ada-gray)">By creating an account you confirm you are 21 years of age or older.</p>
+    <button class="btn-primary" type="submit">Create Account</button>
+  </form>
+  <p class="auth-alt">Already have an account? <a href="/login">Sign in</a></p>
+</div>
+{% endblock %}

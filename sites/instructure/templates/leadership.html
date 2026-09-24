@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Leadership | Instructure{% endblock %}
+{% block content %}
+<section class="container section">
+  <h1>Leadership</h1>
+  <p class="lede" style="margin: 16px 0 44px;">Instructure wouldn’t be the top education technology company it is today without our 1,800+ employees or the leadership and vision of the Instructure executive team. Meet the brains (and headshots and corporate bios) of the folks leading our mission.</p>
+  <div class="leader-grid">
+    {% for l in leaders %}
+    <div class="leader-card">
+      {% if l.photo %}<img src="{{ l.photo }}" alt="{{ l.name }}">{% endif %}
+      <h3>{{ l.name }}</h3>
+      <div class="role">{{ l.role }}</div>
+      {% if l.bio %}<p style="color:var(--muted); font-size:13.5px; margin-top:10px;">{{ l.bio[:180] }}{% if l.bio|length > 180 %}…{% endif %}</p>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

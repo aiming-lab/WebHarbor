@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}JCPenney {{ store.mall }}, {{ store.city }} {{ store.state }} | Store #{{ store.number }}{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-narrow" style="max-width:980px;">
+    <div class="crumbs"><a href="/stores">Stores</a> &rsaquo; <span>{{ store.city }}, {{ store.state }}</span></div>
+    <div class="store-detail">
+      <h1>{{ store.name }}</h1>
+      <p style="color:var(--ink-2);">
+        {{ store.street }}<br>{{ store.city }}, {{ store.state }} {{ store.zip }} US<br>
+        STORE: {{ store.phone }}
+      </p>
+      {% if store.google_rating %}
+      <p><span style="color:#d53a34;">{{ store.google_rating|stars }}</span> {{ store.google_rating }} out of 5.0 ({{ store.google_reviews }} Google Reviews)</p>
+      {% endif %}
+      <p><a class="btn-link" href="/stores">Get Directions</a> <a class="btn-link" style="background:#fff;color:var(--ink);border:1px solid var(--ink);" href="/m/jcpenney-coupons">View Store Ad</a></p>
+    </div>
+
+    <div class="info-grid">
+      <div>
+        <h2 style="font-size:17px;">Store Hours</h2>
+        <table class="hours-table">
+          {% for code, span in store.hours.items() %}
+            <tr><td>{{ {'Mo':'Mon','Tu':'Tue','We':'Wed','Th':'Thur','Fr':'Fri','Sa':'Sat','Su':'Sun'}.get(code, code) }}</td><td>{{ span }}</td></tr>
+          {% endfor %}
+        </table>
+      </div>
+      <div>
+        <h2 style="font-size:17px;">Departments</h2>
+        <p style="font-size:13.5px;color:var(--ink-2);">{% for dept in store.departments %}{{ dept }}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+        <h2 style="font-size:17px;margin-top:16px;">Services</h2>
+        <p style="font-size:13.5px;color:var(--ink-2);">{% for s in store.services %}{{ s }}{% if not loop.last %} &middot; {% endif %}{% endfor %}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

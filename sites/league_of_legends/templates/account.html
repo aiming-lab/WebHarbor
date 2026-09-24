@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}My Account - League of Legends{% endblock %}
+{% block content %}
+
+<section class="masthead">
+  <div class="masthead-kicker">Riot Account</div>
+  <h1>My Account</h1>
+</section>
+
+<div class="account-shell">
+  <div class="account-grid">
+    <div class="account-card">
+      <h2>{{ current_user.display_name }}</h2>
+      <div class="account-kv">
+        <div class="k">Summoner Name</div>
+        <div class="v">{{ current_user.summoner_name or '—' }}</div>
+      </div>
+      <div class="account-kv">
+        <div class="k">Region</div>
+        <div class="v">{{ current_user.region or '—' }}</div>
+      </div>
+      <div class="account-kv">
+        <div class="k">Email</div>
+        <div class="v">{{ current_user.email }}</div>
+      </div>
+      <div class="account-kv">
+        <div class="k">Joined</div>
+        <div class="v">{{ current_user.joined_date }}</div>
+      </div>
+      <div class="account-nav">
+        <a href="{{ url_for('account_profile') }}">Edit Profile</a>
+        <a href="{{ url_for('account_favorites') }}">Favorite Champions ({{ favorites|length }})</a>
+        <a href="{{ url_for('account_bookmarks') }}">Saved Articles ({{ bookmarks|length }})</a>
+        <form method="post" action="{{ url_for('logout') }}">
+          <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+          <button class="btn-dark" type="submit" style="width:100%">Sign Out</button>
+        </form>
+      </div>
+    </div>
+    <div>
+      <div class="account-section">
+        <h3>Favorite Champions</h3>
+        {% if favorites %}
+        <div class="mini-grid">
+          {% for champion in favorites %}
+          <a class="mini-card" href="{{ url_for('champion_detail', slug=champion.slug) }}">
+            <img src="{{ champion.portrait_url }}" alt="{{ champion.name }}">
+            <div class="mini-title">{{ champion.name }}</div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-note">No favorite champions yet. Open a champion page and add them to your favorites.</div>
+        {% endif %}
+      </div>
+      <div class="account-section" style="margin-top:26px">
+        <h3>Saved Articles</h3>
+        {% if bookmarks %}
+        <div class="mini-grid">
+          {% for article in bookmarks %}
+          <a class="mini-card" href="{{ article.path }}">
+            <div class="mini-art">
+              {% if article.card_url %}<img src="{{ article.card_url }}" alt="{{ article.title }}">{% endif %}
+            </div>
+            <div class="mini-title">{{ article.title }}</div>
+          </a>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-note">No saved articles yet. Open a news article and save it to your bookmarks.</div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}Compare Cars | Kelley Blue Book{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">Compare Vehicles</h1>
+    {% if vehicles %}
+    <div class="trims-table-wrap">
+        <table class="trims-table compare-table">
+            <thead>
+                <tr><th></th>{% for v in vehicles %}<th><a href="{{ url_for('vehicle_detail', slug=v.slug) }}">{{ v.title }}</a></th>{% endfor %}</tr>
+            </thead>
+            <tbody>
+                <tr><td>Archived Style Price</td>{% for v in vehicles %}<td>{% if v.min_price is not none %}${{ '{:,.0f}'.format(v.min_price) }}{% else %}Not available{% endif %}</td>{% endfor %}</tr>
+                <tr><td>Consumer Rating</td>{% for v in vehicles %}<td>{% if v.review_count %}★ {{ '%.1f'|format(v.rating) }} ({{ v.review_count }}){% else %}No reviews{% endif %}</td>{% endfor %}</tr>
+                <tr><td>Available Styles</td>{% for v in vehicles %}<td>{{ v.trims|length }} trims</td>{% endfor %}</tr>
+            <tr><td>Remove</td>{% for v in vehicles %}<td><form method="post" action="{{ url_for('compare_remove', slug=v.slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token_value }}"><button class="btn-secondary">Remove {{ v.title }}</button></form></td>{% endfor %}</tr></tbody>
+        </table>
+    </div>
+    {% else %}
+    <p>No vehicles selected. Open a vehicle page and click "Compare" to add it here.</p>
+    {% endif %}
+</div>
+{% endblock %}

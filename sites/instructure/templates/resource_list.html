@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} | Instructure{% endblock %}
+{% block content %}
+<section class="container" style="padding: 44px 24px 0;">
+  <div class="page-crumb"><a href="{{ url_for('resources_hub') }}">Resources</a><span class="sep">»</span>{{ label }}</div>
+  <h1>{{ label }}</h1>
+  <p class="lede" style="margin-top:14px;">Practical guidance and insight from Instructure and the educators we serve.</p>
+
+  <div class="list-toolbar">
+    <form class="search-box" method="get" action="">
+      {% if audience %}<input type="hidden" name="audience" value="{{ audience }}">{% endif %}
+      <input type="search" name="q" value="{{ query }}" placeholder="Search {{ label|lower }}">
+      <button type="submit">🔍</button>
+    </form>
+    <div class="filter-pills">
+      <a class="filter-pill{% if not audience %} active{% endif %}" href="{{ url_for(request.endpoint, q=query) }}">All</a>
+      {% for a in audiences %}
+      <a class="filter-pill{% if audience == a %} active{% endif %}" href="{{ url_for(request.endpoint, q=query, audience=a) }}">{{ a }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if query %}
+  <p style="color:var(--muted); margin-bottom: 18px;">{{ total }} result{{ 's' if total != 1 }} for “{{ query }}”</p>
+  {% endif %}
+
+  <div class="res-grid">
+    {% for r in items %}
+    <a class="res-card" href="{{ resource_url(r) }}">
+      <img class="cover" src="{{ r.hero_image or r.card_image }}" alt="{{ r.hero_alt or r.title }}">
+      <div class="body">
+        <span class="cat">{{ type_labels.get(r.type, r.type) }}</span>
+        <h3>{{ r.title }}</h3>
+        <p>{{ r.excerpt }}</p>
+        <span class="more">Read On</span>
+      </div>
+    </a>
+    {% endfor %}
+    {% if not items %}
+    <p style="grid-column:1/-1;">No results found. Try a different search.</p>
+    {% endif %}
+  </div>
+
+  {% if pages > 1 %}
+  <nav class="pager" aria-label="Pagination">
+    {% for p in range(1, pages + 1) %}
+      {% if p == page %}
+      <span class="cur">{{ p }}</span>
+      {% else %}
+      <a href="{{ url_for(request.endpoint, page=p, q=query, audience=audience) }}">{{ p }}</a>
+      {% endif %}
+    {% endfor %}
+  </nav>
+  {% endif %}
+</section>
+{% endblock %}

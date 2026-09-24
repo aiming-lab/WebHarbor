@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}My Account | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="account-layout">
+    <nav class="account-nav">
+      <a href="/account/dashboard" class="active">My Dashboard</a>
+      <a href="/account/dashboard/profile">My Profile</a>
+      <a href="/account/dashboard/orders">Order History</a>
+      <a href="/account/dashboard/wishlist">Wish List</a>
+      <a href="/account/dashboard/rewards">JCPenney Rewards</a>
+      <a href="/orders">Track an Order</a>
+      <a href="/m/jcpenney-coupons">Coupons</a>
+      <a href="/gift-cards">Gift Cards</a>
+    </nav>
+    <div class="panel">
+      <h1>Hello, {{ current_user.first_name }}</h1>
+      <p style="color:var(--ink-2);margin-bottom:18px;">
+        {{ current_user.rewards_status }}{% if current_user.rewards_member %} &middot; {{ current_user.rewards_points }} reward points{% endif %}
+      </p>
+
+      <h2 style="font-size:17px;">Recent Orders</h2>
+      {% for order in orders[:3] %}
+        <div class="order-row">
+          <div>
+            <div class="onum">Order {{ order.order_number }}</div>
+            <div class="order-items-preview">
+              {% for item in order.items[:2] %}{{ item.product_name }}{% if not loop.last %}, {% endif %}{% endfor %}
+              {% if order.items|length > 2 %} +{{ order.items|length - 2 }} more{% endif %}
+            </div>
+          </div>
+          <div style="font-size:12.5px;color:var(--ink-2);">
+            Placed {{ order.placed_at.strftime('%B %-d, %Y') }}<br>
+            Total {{ order.total|currency }}
+          </div>
+          <div>
+            <span class="status-chip {{ order.status|lower }}">{{ order.status }}</span><br>
+            <a href="/orders/{{ order.order_number }}" style="font-size:12.5px;color:var(--jcp-red);">View details</a>
+          </div>
+        </div>
+      {% else %}
+        <p style="color:var(--ink-2);font-size:13.5px;">You haven't placed any orders yet. <a href="/" style="color:var(--jcp-red);">Start shopping</a>.</p>
+      {% endfor %}
+
+      <h2 style="font-size:17px;margin-top:24px;">Your Wish List ({{ wishlist|length }})</h2>
+      {% if wishlist %}
+        <div class="card-grid">
+          {% for item in wishlist[:4] %}
+            {% set product = item.product %}
+            {% include "_product_card.html" %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color:var(--ink-2);font-size:13.5px;">Your wish list is empty.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Wish List | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="account-layout">
+    <nav class="account-nav">
+      <a href="/account/dashboard">My Dashboard</a>
+      <a href="/account/dashboard/profile">My Profile</a>
+      <a href="/account/dashboard/orders">Order History</a>
+      <a href="/account/dashboard/wishlist" class="active">Wish List</a>
+      <a href="/account/dashboard/rewards">JCPenney Rewards</a>
+    </nav>
+    <div class="panel">
+      <h1>Wish List</h1>
+      {% if items %}
+        <div class="card-grid">
+          {% for item in items %}
+            {% set product = item.product %}
+            {% include "_product_card.html" %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="color:var(--ink-2);">Your wish list is empty. Tap the heart on any product to save it here.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

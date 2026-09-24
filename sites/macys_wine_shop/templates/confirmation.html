@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_number }} Confirmed – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="confirmation-hero">
+  <h1>Thank you for your order!</h1>
+  <p>Order <strong>{{ order.order_number }}</strong> is confirmed. A confirmation email is on its way to <strong>{{ order.email }}</strong>.</p>
+</div>
+<div class="checkout-layout">
+  <div class="checkout-card">
+    <h2>Order {{ order.order_number }}</h2>
+    <table class="order-items-review">
+      {% for item in order.items %}
+      <tr>
+        <td>{{ item.product_title }}{% if item.variant_title and item.variant_title != 'Default Title' %} ({{ item.variant_title }}){% endif %}</td>
+        <td style="text-align:center">× {{ item.quantity }}</td>
+        <td style="text-align:right">{{ (item.unit_price * item.quantity)|money }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="checkout-review-grid" style="margin-top:22px">
+      <div class="col">
+        <h3>Ship to</h3>
+        <p>{{ order.ship_to_name }}<br>{{ order.address_line1 }}{% if order.address_line2 %}<br>{{ order.address_line2 }}{% endif %}<br>{{ order.city }}, {{ order.state }} {{ order.zip_code }}</p>
+      </div>
+      <div class="col">
+        <h3>Payment</h3>
+        <p>{{ order.payment_label }}</p>
+        <h3 style="margin-top:14px">Status</h3>
+        <p><span class="status-chip status-{{ order.status }}">{{ order.status }}</span></p>
+      </div>
+      <div class="col">
+        <h3>Total</h3>
+        <p><strong>{{ order.total|money }}</strong><br>
+        Subtotal {{ order.subtotal|money }} · Shipping {{ order.shipping|money if order.shipping else 'FREE' }} · Processing {{ order.processing|money }}</p>
+      </div>
+    </div>
+    <p style="font-size:13.5px;color:var(--ada-gray)">An adult signature (21+) is required on delivery. Expect your wine in 2-3 business days.</p>
+  </div>
+  <div style="text-align:center;padding-bottom:60px">
+    <a class="btn-primary" style="max-width:280px;display:inline-flex" href="/collections/all-wine">Continue Shopping</a>
+  </div>
+</div>
+{% endblock %}

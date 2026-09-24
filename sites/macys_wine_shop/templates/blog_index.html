@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Wine 101 – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="search-head">
+  <h1>Wine 101</h1>
+  <p class="section-sub">Your handy guide to the world of wine. Plus, recipes, podcast episodes, and more!</p>
+</div>
+<div class="blog-grid">
+  {% for a in articles %}
+  <article class="blog-card">
+    <a href="/blogs/wine-101/{{ a.handle }}">
+      {% if a.image_path %}<img src="/static/images/{{ a.image_path }}" alt="{{ a.title }}">{% endif %}
+    </a>
+    <h3><a href="/blogs/wine-101/{{ a.handle }}">{{ a.title }}</a></h3>
+    {% if a.excerpt %}<p>{{ a.excerpt }}</p>{% endif %}
+  </article>
+  {% endfor %}
+</div>
+{% endblock %}

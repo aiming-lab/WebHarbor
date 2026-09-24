@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmed | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-narrow">
+    <h1>Thank you for your order!</h1>
+    <p style="font-size:15px;">Your order has been placed. A confirmation email is on its way to <strong>{{ order.email }}</strong>.</p>
+    <div class="summary-box" style="max-width:520px;position:static;margin:22px 0;">
+      <h2>Order {{ order.order_number }}</h2>
+      <div class="summary-row"><span>Status</span><span>{{ order.status }}</span></div>
+      <div class="summary-row"><span>Placed</span><span>{{ order.placed_at.strftime('%B %-d, %Y') }}</span></div>
+      <div class="summary-row"><span>Total</span><span>{{ order.total|currency }}</span></div>
+      <div class="summary-row"><span>Payment</span><span>{{ order.payment_type }} ending in {{ order.payment_last4 }}</span></div>
+    </div>
+    <h2>Items</h2>
+    {% for item in order.items %}
+      <div class="cart-line">
+        <img src="{{ item.image_file }}" alt="{{ item.product_name }}">
+        <div class="cl-info">
+          <div class="cl-name">{{ item.product_name }}</div>
+          <div class="cl-variant">{{ item.brand }}{% if item.color %} &middot; Color: {{ item.color }}{% endif %}{% if item.size %} &middot; Size: {{ item.size }}{% endif %}</div>
+        </div>
+        <div style="text-align:right;">{{ (item.unit_price * item.quantity)|currency }}<br><span style="font-size:12px;color:#767676;">Qty {{ item.quantity }}</span></div>
+      </div>
+    {% endfor %}
+    <p style="margin-top:24px;">
+      <a class="btn-link" href="/orders/{{ order.order_number }}">Track This Order</a>
+      <a class="btn-link" style="background:#fff;color:var(--ink);border:1px solid var(--ink);" href="/">Continue Shopping</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

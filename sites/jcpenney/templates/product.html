@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}{{ product.name }} | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="crumbs">
+    <a href="/">JCPenney</a> &rsaquo;
+    {% if product.category %}
+      {% if product.category.parent %}
+        <a href="/g/{{ product.category.parent.slug }}">{{ product.category.parent.name }}</a> &rsaquo;
+      {% endif %}
+      <a href="/g/{{ product.category.slug }}">{{ product.category.name }}</a> &rsaquo;
+    {% endif %}
+    <span>{{ product.name[:44] }}</span>
+  </div>
+
+  <div class="pdp-wrap">
+    <div class="thumb-rail">
+      {% for image in product.images %}
+        <button type="button" class="{% if loop.first %}active{% endif %}" data-main="/static/images/products/{{ product.ppid }}/{{ image.filename }}">
+          <img src="/static/images/products/{{ product.ppid }}/{{ image.filename }}" alt="{{ image.alt }}">
+        </button>
+      {% endfor %}
+    </div>
+    <div class="pdp-main">
+      <div class="pdp-main-img">
+        <img id="pdp-main" src="{{ product.primary_image }}" alt="{{ product.name }}">
+      </div>
+      {% if product.sold_recently %}
+        <span class="sold-note">{{ product.sold_recently }} sold in last 24 hours</span>
+      {% endif %}
+    </div>
+
+    <div class="pdp-buy">
+      <div class="pdp-rating">
+        <span class="stars">{{ product.rating|stars }}</span>
+        <a href="#reviews">{{ product.review_count }} Reviews</a>
+        <span>&middot;</span>
+        <a href="#reviews">Ask a Question</a>
+        <span style="margin-left:auto;color:#767676">{{ product.ppid }}</span>
+      </div>
+      <div class="pdp-brand"><a href="/search?q={{ product.brand|urlencode }}">{{ product.brand }}</a></div>
+      <h1>{{ product.name }}</h1>
+
+      <div class="pdp-price-block">
+        <div class="pdp-price">
+          {% if product.price != product.price_max %}{{ product.price|currency }} - {{ product.price_max|currency }}
+          {% else %}{{ product.price|currency }}{% endif %}
+          {% if product.coupon_code %}<span class="with-code">with code {{ product.coupon_code }}</span>{% endif %}
+        </div>
+        {% if product.original_price > product.price %}
+          <div>
+            <span class="card-original">
+              {% if product.original_price != product.original_price_max %}
+                {{ product.original_price|currency }} - {{ product.original_price_max|currency }}
+              {% else %}{{ product.original_price|currency }}{% endif %}
+            </span>
+            <span class="pdp-off">{{ product.discount_percent }}% off</span>
+          </div>
+        {% endif %}
+      </div>
+
+      <form method="post" action="/cart/add" class="buy-form">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <input type="hidden" name="ppid" value="{{ product.ppid }}">
+        <div class="option-group" id="color-group">
+          <h4>Color <span class="selected" id="color-label"></span></h4>
+          <div class="color-swatches">
+            {% for color in product.colors %}
+              <span class="color-swatch {% if loop.first %}active{% endif %} {% if not color.swatch_file %}noimg{% endif %}"
+                    role="button" data-color="{{ color.color }}"
+                    title="{{ color.color }}"
+                    {% if color.swatch_file %}style="background-image:url(/static/images/swatches/{{ product.ppid }}/{{ color.swatch_file }})"{% endif %}></span>
+            {% endfor %}
+          </div>
+          <input type="hidden" name="color" id="color-input" value="{{ product.colors[0].color if product.colors else '' }}">
+        </div>
+        <div class="option-group">
+          <h4>Size <span class="selected">(choose a size)</span></h4>
+          <div class="size-pills" id="size-group">
+            {% set first_color = product.colors[0] if product.colors else None %}
+            {% if first_color %}
+              {% for size in first_color.sizes %}
+                <span class="size-pill {% if not size.available %}out{% endif %}" data-size="{{ size.size }}">
+                  {{ size.size }}
+                </span>
+              {% endfor %}
+            {% endif %}
+          </div>
+          <input type="hidden" name="size" id="size-input" value="">
+          <p class="fine" style="font-size:11.5px;color:#767676;margin:6px 0 0;">Size Range: {{ product.size_range }}</p>
+        </div>
+        <div class="buy-row">
+          <select class="qty-select" name="quantity" aria-label="Quantity">
+            {% for n in range(1, 11) %}<option value="{{ n }}">{{ n }}</option>{% endfor %}
+          </select>
+          <button type="submit" class="btn-add-to-cart">Add to Cart</button>
+          <button type="submit" class="btn-wish" formaction="/wishlist/toggle/{{ product.ppid }}" title="Add to wish list">&#9825;</button>
+        </div>
+      </form>
+
+      <div class="delivery-box">
+        <div><strong>Same Day Pick Up</strong> &mdash; Need it right away? Confirm availability &amp; buy online, pick it up at your store.</div>
+        <div><strong>Convenient Shipping Options</strong> &mdash; Not available at your store? We can ship to you directly or to your favorite JCP location.</div>
+        <div><strong>Easy Returns</strong> &mdash; Shop with confidence. Read our full, common sense returns policy.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pdp-sections">
+    <div class="pdp-desc">
+      <h2>Product Details</h2>
+      {% for paragraph in product.description|desc_paragraphs %}
+        <p>{{ paragraph }}</p>
+      {% endfor %}
+      <ul class="bullet-list">
+        {% for bullet in product.bullets %}
+          <li>{{ bullet.description }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div>
+      <h2>Specifications</h2>
+      <table class="spec-table">
+        <tr><td>Brand</td><td>{{ product.brand }}</td></tr>
+        <tr><td>Item Type</td><td>{{ product.item_type }}</td></tr>
+        <tr><td>Product Type</td><td>{{ product.product_type }}</td></tr>
+        <tr><td>Occasion</td><td>{{ product.occasion }}</td></tr>
+        <tr><td>Material</td><td>{{ product.material }}</td></tr>
+        <tr><td>Fiber Content</td><td>{{ product.fiber_content }}</td></tr>
+        <tr><td>Care</td><td>{{ product.care }}</td></tr>
+        <tr><td>Size Range</td><td>{{ product.size_range }}</td></tr>
+        <tr><td>Product Number</td><td>{{ product.ppid }}</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="reviews-wrap" id="reviews">
+    <h2>Reviews ({{ product.review_count }})</h2>
+    <div class="rating-snapshot">
+      <div class="rating-snap">
+        <h3>Rating Snapshot</h3>
+        <p style="font-size:12px;color:var(--ink-2);">Select a row below to filter reviews.</p>
+        {% for stars in [5, 4, 3, 2, 1] %}
+          <div class="snap-row">
+            <span>{{ stars }} stars</span>
+            <div class="snap-bar"><span style="width: {{ (rating_breakdown[stars] / [product.review_count, 1]|max * 100)|round|int }}%"></span></div>
+            <span>{{ rating_breakdown[stars] }}</span>
+          </div>
+        {% endfor %}
+      </div>
+      <div>
+        <h3>Overall Rating</h3>
+        <div class="overall-num">{{ '%.1f'|format(product.rating) if product.rating else '0.0' }}</div>
+        <span class="stars" style="color:#d53a34;font-size:18px;">{{ product.rating|stars }}</span>
+        <p style="font-size:13px;"><a href="#reviews">{{ product.review_count }} Review{{ 's' if product.review_count != 1 }}</a></p>
+      </div>
+      <div>
+        <h3>Review this Product</h3>
+        <p style="font-size:12px;color:var(--ink-2);">Adding a review will require a valid email for verification</p>
+      </div>
+    </div>
+
+    <div class="review-list">
+      {% for review in reviews %}
+        <div class="review-item">
+          <div class="rv-head">{{ review.headline or 'Review' }}</div>
+          <div class="rv-meta">
+            <span class="stars" style="color:#d53a34;">{{ review.rating|stars }}</span>
+            &middot; {{ review.review_date.strftime('%B %-d, %Y') }} &middot; {{ review.author }}
+            {% if review.location %} &middot; {{ review.location }}{% endif %}
+            {% if review.verified %} &middot; Verified Purchaser{% endif %}
+          </div>
+          <div class="rv-body">{{ review.body }}</div>
+        </div>
+      {% else %}
+        <p class="rv-body">No written reviews yet.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% if related %}
+    <h2 class="section-head">You may also like</h2>
+    <div class="card-grid">
+      {% for product in related[:4] %}
+        {% include "_product_card.html" %}
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+<script>
+(function () {
+  const colorInput = document.getElementById('color-input');
+  const sizeInput = document.getElementById('size-input');
+  const label = document.getElementById('color-label');
+  document.querySelectorAll('.color-swatch').forEach(function (sw) {
+    sw.addEventListener('click', function () {
+      document.querySelectorAll('.color-swatch').forEach(function (s) { s.classList.remove('active'); });
+      sw.classList.add('active');
+      colorInput.value = sw.dataset.color;
+      if (label) { label.textContent = '- ' + sw.dataset.color; }
+    });
+  });
+  document.querySelectorAll('.size-pill:not(.out)').forEach(function (pill) {
+    pill.addEventListener('click', function () {
+      document.querySelectorAll('.size-pill').forEach(function (p) { p.classList.remove('selected'); });
+      pill.classList.add('selected');
+      sizeInput.value = pill.dataset.size;
+    });
+  });
+  document.querySelectorAll('.thumb-rail button').forEach(function (button) {
+    button.addEventListener('click', function () {
+      document.getElementById('pdp-main').src = button.dataset.main;
+      document.querySelectorAll('.thumb-rail button').forEach(function (b) { b.classList.remove('active'); });
+      button.classList.add('active');
+    });
+  });
+  if (label && colorInput.value) { label.textContent = '- ' + colorInput.value; }
+})();
+</script>
+{% endblock %}

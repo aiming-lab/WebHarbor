@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Meet Our Experts | About Us | Instructure{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>Guiding learners, educators, and Instructure toward the future.</h1>
+  </div>
+</section>
+
+<section class="section-soft section">
+  <div class="container">
+    <h3 class="text-center" style="max-width: 70ch; margin: 0 auto 40px; font-size: 1.25rem; font-weight: 500; color: var(--body);">
+      Instructure wouldn't be the top education technology company it is today without our 1,800+ employees or the leadership and vision of the Instructure executive team. Meet the brains (and headshots and corporate bios) of the folks leading our mission.
+    </h3>
+    <h2 class="text-center">Executive leadership</h2>
+    <div class="leader-grid" style="margin-top: 30px;">
+      {% for l in leaders %}
+      <div class="leader-card">
+        <div class="headshot">{% if l.card_img %}<img src="{{ l.card_img|img }}" alt="{{ l.name }}">{% endif %}</div>
+        <h3>{{ l.name }}</h3>
+        <div class="role">{{ l.title }}</div>
+        <button class="more" type="button" data-modal-open="leader-modal-{{ l.id }}">More</button>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% for l in leaders %}
+<div class="modal-overlay" id="leader-modal-{{ l.id }}">
+  <div class="modal-card">
+    <button class="close" type="button" aria-label="Close modal">×</button>
+    <div class="modal-grid">
+      <div class="photo">{% if l.modal_img %}<img src="{{ l.modal_img|img }}" alt="{{ l.name }}">{% endif %}</div>
+      <div>
+        <h3>{{ l.name }}</h3>
+        <div class="role">{{ l.title }}</div>
+        <div class="bio"><p>{{ l.bio }}</p></div>
+        {% if l.linkedin %}<a class="linkedin" href="{{ l.linkedin }}" target="_blank" rel="noopener">LinkedIn</a>{% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}JCPenney Coupons &amp; Promo Codes{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-narrow">
+    <h1>JCPenney Coupons &amp; Promo Codes</h1>
+    <p style="color:var(--ink-2);">Today's coupons, valid at jcp.com. Apply a code at checkout or in store.</p>
+    <div class="coupon-grid">
+      {% for coupon in coupons %}
+        <div class="coupon-card">
+          <div class="code">{{ coupon.code }}</div>
+          <h3>{{ coupon.title }}</h3>
+          <p>{{ coupon.description }}</p>
+          <p style="margin-top:8px;">
+            {% if coupon.min_purchase %}Minimum purchase {{ coupon.min_purchase|currency }}. {% endif %}
+            {% if coupon.valid_through %}Valid through {{ coupon.valid_through }}. {% endif %}
+            {% if coupon.exclusions %}{{ coupon.exclusions }}{% endif %}
+          </p>
+        </div>
+      {% else %}
+        <p>No active coupons right now &mdash; check back soon.</p>
+      {% endfor %}
+    </div>
+    <h2>How to use a coupon code</h2>
+    <p>1. Add items to your bag.<br>
+       2. During checkout, enter the coupon code in the Coupon Code field on the Review step.<br>
+       3. Your discount applies to eligible items immediately.</p>
+  </div>
+</div>
+{% endblock %}

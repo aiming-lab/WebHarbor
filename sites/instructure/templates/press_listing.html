@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Press Releases | Instructure{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>Press Releases</h1>
+    <p>Official announcements and company news from Instructure, the makers of Canvas LMS.</p>
+  </div>
+</section>
+
+<section class="container" style="padding: 40px 0 70px;">
+  <div class="hub-layout">
+    <aside class="filters-card">
+      <form method="get" action="/news/public-relations">
+        <div class="filters-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+          <input type="text" name="hubs_search" value="{{ query }}" placeholder="Search..." maxlength="128">
+        </div>
+      </form>
+    </aside>
+    <div>
+      <h2 style="font-size:1.9rem;">Press Releases</h2>
+      <div class="results-count">{{ total }} result{{ 's' if total != 1 else '' }}</div>
+      {% for r in rows %}
+      <div class="press-item">
+        <div class="date">{{ r.publish_date }}</div>
+        <div class="title"><a href="{{ url_for('press_detail', slug=r.slug) }}">{{ r.title }}</a></div>
+        <a class="learn" style="font-weight:700; font-size:14.5px;" href="{{ url_for('press_detail', slug=r.slug) }}">Read More <span class="chev" style="color:var(--blue);">›</span></a>
+      </div>
+      {% endfor %}
+      {% if total_pages > 1 %}
+      <nav class="pagination">
+        {% if page > 1 %}<a href="?page={{ page - 1 }}{% if query %}&amp;hubs_search={{ query }}{% endif %}">‹</a>{% endif %}
+        {% for n in range(1, total_pages + 1) %}
+          {% if n == page %}<span class="is-current">{{ n }}</span>
+          {% elif n > page - 3 and n < page + 3 or n == 1 or n == total_pages %}
+            <a href="?page={{ n }}{% if query %}&amp;hubs_search={{ query }}{% endif %}">{{ n }}</a>
+          {% elif n == page - 3 or n == page + 3 %}<span>…</span>{% endif %}
+        {% endfor %}
+        {% if page < total_pages %}<a href="?page={{ page + 1 }}{% if query %}&amp;hubs_search={{ query }}{% endif %}">›</a>{% endif %}
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}
