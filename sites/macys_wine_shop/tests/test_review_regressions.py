@@ -51,3 +51,10 @@ def test_confirmation_is_private(client, alice):
 def test_csrf_covers_cart_and_state(client):
     assert client.post('/cart/add', data={}).status_code == 400
     assert client.post('/ship-state', data={'state': 'CA'}).status_code in (400, 404)
+
+
+def test_article_keeps_policy_prose_without_upstream_scripts(client):
+    html = client.get('/blogs/wine-101/a-guide-to-wine-storage-temperatures').get_data(as_text=True)
+    assert '55' in html and '60' in html and 'Cabernet Sauvignon' in html
+    assert 'gorgias.chat' not in html and 'window.shopUrl' not in html
+    assert 'NewsletterKlaviyo' not in html
