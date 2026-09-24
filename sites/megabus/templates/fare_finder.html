@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Fare finder | megabus{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <img src="{{ url_for('static', filename='images/fare-finder/US_FareFinder_Hero_Chuck.jpg') }}" alt="Megabus fare finder">
+  <div class="hero-text"><h1>Fare finder</h1></div>
+</div>
+<div class="content-main">
+  <div class="container-md">
+    <h2>Got a thirst for travel but unsure where to go?</h2>
+    <p>Our fare finder tool will inspire you with a list of low-cost destinations.
+      Pick where you are leaving from to see the best fares we found.</p>
+
+    {% if not origin %}
+      <form action="{{ url_for('fare_finder_search') }}" method="get" class="pay-section" style="max-width:520px">
+        <label class="field-label" for="originId">Where are you leaving from?</label>
+        <select class="form-control" id="originId" name="originId" required>
+          <option value="">Pick an origin</option>
+          {% for c in origins %}
+            <option value="{{ c.id }}">{{ c.name }}</option>
+          {% endfor %}
+        </select>
+        <button type="submit" class="btn btn-primary mt-2">Show destinations</button>
+      </form>
+    {% else %}
+      <p>Leaving from <b>{{ origin.name }}</b> ·
+        <a href="{{ url_for('fare_finder_search', edit='true', originId=origin.id) }}">change origin</a></p>
+      {% if edit == 'true' %}
+        <form action="{{ url_for('fare_finder_search') }}" method="get" class="pay-section" style="max-width:520px">
+          <label class="field-label" for="originId2">Where are you leaving from?</label>
+          <select class="form-control" id="originId2" name="originId" required>
+            {% for c in origins %}
+              <option value="{{ c.id }}" {{ 'selected' if c.id == origin.id }}>{{ c.name }}</option>
+            {% endfor %}
+          </select>
+          <button type="submit" class="btn btn-primary mt-2">Show destinations</button>
+        </form>
+      {% endif %}
+
+      {% if fares %}
+        <h2 class="section-title">Low-cost destinations from {{ origin.city_only }}</h2>
+        {% for f in fares %}
+          <div class="fare-row">
+            <a class="fare-dest" href="{{ url_for('journey_results', originId=origin.id, destinationId=f.dest.id, departureDate='2026-10-03', totalPassengers=1) }}">{{ f.dest.name }}</a>
+            <span class="text-grey">from {{ (f.duration // 60) }}h {{ '%02d'|format(f.duration % 60) }}m · up to {{ f.per_day }} departures a day</span>
+            <span class="fare-price">from {{ '%.2f'|format(f.price) }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endif %}
+
+    <div class="notice info mt-3">
+      <b>Deals in your inbox:</b> join the megabus mailing list and we will send you
+      low-fare alerts. New subscribers get <b>$5.00 off</b> their next booking over
+      $15.00 with redemption code <b>EMAIL5</b> — apply it in the basket before you pay.
+      <form action="{{ url_for('newsletter_signup') }}" method="post" class="mt-1" style="display:flex;gap:8px;max-width:420px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ url_for('fare_finder') }}">
+        <input class="form-control" type="email" name="email" placeholder="you@example.com" required>
+        <button class="btn btn-primary" type="submit">Sign up</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

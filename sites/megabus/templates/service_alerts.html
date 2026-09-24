@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Service alerts | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Service Alerts</h1>
+    {% if alerts %}
+      <div class="alerts-list">
+        {% for a in alerts %}
+          <div class="alert-card {{ a.severity }}">
+            <b>{{ a.title }}</b>
+            {% if a.route_name %}<span class="date"> · route {{ a.route_name }}</span>{% endif %}
+            <span class="date"> — published {{ a.published_on }}</span>
+            <p>{{ a.body }}</p>
+          </div>
+        {% endfor %}
+      </div>
+      <p class="all-normal">All other services are running normally</p>
+    {% else %}
+      <p class="all-normal">All services are running normally</p>
+    {% endif %}
+    <p class="mt-2"><a href="{{ url_for('home') }}">Back to booking</a></p>
+  </div>
+</div>
+{% endblock %}
