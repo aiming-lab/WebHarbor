@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ destination.city }} Hotels | Marriott Bonvoy{% endblock %}
+{% block content %}
+<div class="container destination-page">
+  <div class="destination-hero">
+    {% if destination.hero_image %}<img src="{{ destination.hero_image }}" alt="{{ destination.destination_name or destination.city }}">{% endif %}
+    <div class="destination-hero-body">
+      <h1>Hotels in {{ destination.city }}{% if destination.state_abbr %}, {{ destination.state_abbr }}{% endif %}</h1>
+      <p>{{ destination.hotel_count }} Marriott Bonvoy hotels</p>
+    </div>
+  </div>
+
+  {% if destination.intro %}
+  <p class="destination-intro">{{ destination.intro }}</p>
+  {% endif %}
+
+  <form class="inline-search" method="get" action="/search/findHotels.mi">
+    <div class="field field-dest">
+      <label for="destinationAddress">Destination</label>
+      <input id="destinationAddress" name="destinationAddress" type="text"
+             value="{{ destination.city }}{% if destination.state %}, {{ destination.state }}{% endif %}">
+    </div>
+    <div class="field field-date">
+      <label for="fromDate">Check-in</label>
+      <input id="fromDate" name="fromDate" type="date" value="{{ reference_date.strftime('%Y-%m-%d') }}">
+    </div>
+    <div class="field field-date">
+      <label for="toDate">Check-out</label>
+      <input id="toDate" name="toDate" type="date" value="{{ (reference_date + timedelta(days=1)).strftime('%Y-%m-%d') }}">
+    </div>
+    <div class="filter-actions"><button type="submit" class="btn-find">Search Hotels</button></div>
+  </form>
+
+  <h2 class="section-title">{{ destination.city }} Marriott Bonvoy Hotels</h2>
+  <div class="results-list">
+    {% for h in hotels %}
+    <article class="hotel-card">
+      <a class="card-media" href="{{ h.detail_path }}">
+        {% if h.hero_image %}<img src="{{ h.hero_image }}" alt="{{ h.name }}">{% else %}<div class="media-empty">No photo</div>{% endif %}
+      </a>
+      <div class="card-body">
+        <p class="card-brand">{{ h.brand.name }}</p>
+        <h3 class="card-title"><a href="{{ h.detail_path }}">{{ h.name }}</a></h3>
+        <p class="card-location">{{ h.city }}{% if h.state %}, {{ h.state }}{% endif %}
+          {% if h.distance_miles is not none %} · {{ h.distance_text }}{% endif %}</p>
+        <div class="card-rating">
+          {% if h.rating_avg %}
+          <span class="rating-badge rating-{{ h.rating_stars }}">{{ '%.1f' % h.rating_avg }}</span>
+          <span class="rating-label">{{ h.review_count }} reviews</span>
+          {% endif %}
+        </div>
+        <p class="card-desc">{{ h.short_description or '' }}</p>
+      </div>
+      <div class="card-cta">
+        <p class="card-price"><span class="price-value">${{ '{:,}'.format(h.base_rate or 0) }}</span><span class="price-unit">/ night</span></p>
+        <a class="btn-find btn-small" href="/reservation/availabilitySearch.mi?propertyCode={{ h.marsha }}&fromDate={{ reference_date.strftime('%m/%d/%Y') }}&toDate={{ (reference_date + timedelta(days=1)).strftime('%m/%d/%Y') }}">View Rates</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% if destination.explore_sections %}
+  <section class="destination-explore">
+    <h2 class="section-title">Explore {{ destination.city }}</h2>
+    {% for sec in destination.explore_sections %}
+    <div class="explore-section">
+      <h3 class="explore-heading">{{ sec.label }}</h3>
+      {% for para in sec.paragraphs %}<p>{{ para }}</p>{% endfor %}
+    </div>
+    {% endfor %}
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

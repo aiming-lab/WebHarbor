@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Rooms &amp; Suites | {{ hotel.name }}{% endblock %}
+{% block content %}
+<div class="hotel-page container">
+  <nav class="hotel-nav" aria-label="Hotel sections">
+    <a href="{{ hotel.detail_path }}">Overview</a>
+    <a class="active" href="{{ hotel.path_for('rooms') }}">Rooms &amp; Suites</a>
+    <a href="{{ hotel.path_for('reviews') }}">Ratings &amp; Reviews</a>
+    <a href="{{ hotel.path_for('photos') }}">Gallery</a>
+  </nav>
+  <header class="hotel-header">
+    <div>
+      <p class="hotel-brand-line">{{ hotel.brand.name }}</p>
+      <h1>{{ hotel.name }}</h1>
+      <p class="hotel-address-line">{% if hotel.address_line %}{{ hotel.address_line }}, {% endif %}{{ hotel.city }}{% if hotel.state %}, {{ hotel.state }}{% endif %}</p>
+    </div>
+  </header>
+
+  <form class="date-picker-bar" method="get" action="{{ hotel.path_for('rooms') }}">
+    <div class="field field-date">
+      <label>Check-in</label>
+      <input type="date" name="fromDate" value="{{ from_date.strftime('%Y-%m-%d') }}">
+    </div>
+    <div class="field field-date">
+      <label>Check-out</label>
+      <input type="date" name="toDate" value="{{ to_date.strftime('%Y-%m-%d') }}">
+    </div>
+    <div class="field field-rooms">
+      <label>Rooms</label>
+      <input type="number" name="rooms" min="1" max="3" value="{{ rooms_count }}">
+    </div>
+    <div class="field field-rooms">
+      <label>Adults / room</label>
+      <input type="number" name="adults" min="1" max="4" value="{{ adults }}">
+    </div>
+    <div class="filter-actions"><button type="submit" class="btn-find">View Rates</button></div>
+  </form>
+
+  <p class="rooms-stay-window">
+    Showing rates for {{ from_date.strftime('%b %d, %Y') }} → {{ to_date.strftime('%b %d, %Y') }}
+    ({{ nights }} night{{ 's' if nights != 1 else '' }})
+  </p>
+
+  <div class="rooms-list">
+    {% for r in rooms %}
+    <article class="room-card">
+      <div class="room-media">
+        {% if r.image_path %}<img src="{{ r.image_path }}" alt="{{ r.name }} at {{ hotel.name }}">
+        {% else %}<div class="media-empty">Room photo coming soon</div>{% endif %}
+      </div>
+      <div class="room-body">
+        <h2>{{ r.name }}</h2>
+        <ul class="room-specs">
+          <li>{{ r.bed_description }}</li>
+          <li>Sleeps {{ r.max_occupancy }}</li>
+          <li>{{ r.size_sqft }} sq ft{% if r.view %} · {{ r.view }}{% endif %}</li>
+        </ul>
+        <p class="room-desc">{{ r.description }}</p>
+        <ul class="room-features">
+          {% for f in r.feature_list %}<li>{{ f }}</li>{% endfor %}
+        </ul>
+      </div>
+      <div class="room-cta">
+        <p class="room-price">${{ '{:,}'.format(r.base_rate) }} <span>/ night</span></p>
+        <p class="room-points">or {{ '{:,}'.format(r.points_rate or 0) }} Bonvoy points / night</p>
+        <p class="room-total">${{ '{:,}'.format(r.base_rate * nights * rooms_count) }} total</p>
+        <a class="btn-find" href="/reservation/reservationGateway.mi?propertyCode={{ hotel.marsha }}&roomId={{ r.id }}&fromDate={{ from_date.strftime('%m/%d/%Y') }}&toDate={{ to_date.strftime('%m/%d/%Y') }}&rooms={{ rooms_count }}&adults={{ adults }}">Book This Room</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

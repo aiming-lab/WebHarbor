@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Payment Methods | Marriott Bonvoy{% endblock %}
+{% block content %}
+<div class="container account-page">
+  <h1>Payment Methods</h1>
+  <p class="lookup-sub">Cards stored on your Marriott Bonvoy® account.</p>
+
+  <nav class="account-nav">
+    <a href="/loyalty/myAccount.mi">My Account</a>
+    <a href="/loyalty/myAccount/profile.mi">Profile</a>
+    <a href="/loyalty/myAccount/paymentMethods.mi">Payment Methods</a>
+    <a href="/loyalty/myAccount/savedHotels.mi">Saved Hotels</a>
+    <a href="/reservation/lookupReservation.mi">Find a Reservation</a>
+  </nav>
+
+
+  <section class="account-section">
+    <h2>Your Cards</h2>
+    {% if current_user.payment_methods %}
+    <div class="table-wrap">
+      <table class="trips-table">
+      <thead><tr><th>Card</th><th>Cardholder</th><th>Expires</th><th>Added</th><th>Default</th><th></th></tr></thead>
+      <tbody>
+        {% for pm in current_user.payment_methods %}
+        <tr>
+          <td>{{ pm.card_type }} ending in {{ pm.last_four }}</td>
+          <td>{{ pm.holder_name }}</td>
+          <td>{{ '%02d' % pm.exp_month }}/{{ pm.exp_year }}</td>
+          <td>{{ pm.added_on.strftime('%m/%d/%Y') if pm.added_on }}</td>
+          <td>{{ 'Yes' if pm.is_default else 'No' }}</td>
+          <td>
+            <form method="post" action="/loyalty/myAccount/paymentMethods/remove/{{ pm.id }}">
+              <button type="submit" class="btn-secondary btn-small">Remove</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="empty-state">You have no saved cards.</p>
+    {% endif %}
+  </section>
+
+  <section class="account-section">
+    <h2>Add a Card</h2>
+    <form method="post" class="auth-form auth-inline">
+      <div class="form-row">
+        <div class="field"><label for="card_type">Card type</label>
+          <select id="card_type" name="card_type">
+            <option>Visa</option><option>Mastercard</option><option>Amex</option>
+          </select></div>
+        <div class="field"><label for="card_number">Card number</label>
+          <input id="card_number" name="card_number" type="text" inputmode="numeric" placeholder="0000 0000 0000 0000" required></div>
+      </div>
+      <div class="field"><label for="holder_name">Cardholder name</label>
+        <input id="holder_name" name="holder_name" type="text" required></div>
+      <div class="form-row">
+        <div class="field"><label for="exp_month">Exp. month</label>
+          <input id="exp_month" name="exp_month" type="number" min="1" max="12" required></div>
+        <div class="field"><label for="exp_year">Exp. year</label>
+          <input id="exp_year" name="exp_year" type="number" min="2026" max="2040" required></div>
+      </div>
+      <button type="submit" class="btn-find">Add Card</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

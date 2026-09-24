@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Our Brands | Marriott Bonvoy{% endblock %}
+{% block content %}
+<div class="container brands-page">
+  <h1>Our Brands</h1>
+  <p class="offers-sub">30 extraordinary brands. Over 9,000 destinations. One rewarding program.</p>
+  {% for cat, members in groups %}
+  <section class="brand-section">
+    <h2 class="brand-cat-title">{{ members[0].category_label }}</h2>
+    <p class="brand-cat-blurb">
+      {% if cat == 'luxury' %}Hotels that define their destinations with impeccable service and refined experiences.
+      {% elif cat == 'distinctive' %}A curated ensemble of iconic hotels that truly define their destinations.
+      {% elif cat == 'premium' %}Thoughtfully designed hotels with elevated dining, fitness and meeting experiences.
+      {% elif cat == 'select' %}Modern, consistent, and recognizable hotels for every kind of stay.
+      {% elif cat == 'longer_stays' %}Spacious studios, apartments, and homes perfectly designed for longer stays.
+      {% else %}Independent hotels and residences with the quality and trust of Marriott Bonvoy.{% endif %}
+    </p>
+    <div class="brand-grid">
+      {% for b in members %}
+      <article class="brand-tile">
+        <h3>{{ b.name }}</h3>
+        <p>{{ b.blurb }}</p>
+        <p class="brand-count">{{ b.hotels | length }} hotel{{ 's' if b.hotels|length != 1 else '' }} in our catalog</p>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

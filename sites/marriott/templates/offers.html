@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Special Offers | Marriott Bonvoy{% endblock %}
+{% block content %}
+<div class="container offers-page">
+  <h1>Special Offers</h1>
+  <p class="offers-sub">Marriott Bonvoy member-exclusive rates, packages, and limited-time savings.</p>
+  <div class="offer-cards offers-grid">
+    {% for o in offers %}
+    <a class="offer-card" href="{{ o.cta_href or '/search/findHotels.mi' }}">
+      <div class="offer-media">{% if o.image_path %}<img src="{{ o.image_path }}" alt="{{ o.title }}">{% endif %}</div>
+      <div class="offer-body">
+        <p class="offer-tag">{{ o.brand.name if o.brand else 'Marriott Bonvoy' }}</p>
+        <h2>{{ o.title }}</h2>
+        <p>{{ o.blurb }}</p>
+        <ul class="offer-validity">
+          {% if o.book_by %}<li>Book by {{ o.book_by }}</li>{% endif %}
+          {% if o.stay_dates %}<li>Stay: {{ o.stay_dates }}</li>{% endif %}
+        </ul>
+        <span class="offer-cta">{{ o.cta_label }} →</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

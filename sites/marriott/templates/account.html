@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+{% block title %}My Account | Marriott Bonvoy{% endblock %}
+{% block content %}
+<div class="container account-page">
+  <div class="account-header">
+    <div>
+      <h1>Hello, {{ current_user.first_name }}</h1>
+      <p class="account-member">
+        Marriott Bonvoy® {{ current_user.member_tier }} member
+        · Member #{{ current_user.member_number }}
+        · Joined {{ current_user.joined_on.strftime('%B %Y') if current_user.joined_on }}
+      </p>
+    </div>
+    <div class="account-points">
+      <p class="points-value">{{ current_user.points_formatted }}</p>
+      <p class="points-label">Bonvoy Points</p>
+    </div>
+  </div>
+
+  <nav class="account-nav">
+    <a href="/loyalty/myAccount/profile.mi">Profile</a>
+    <a href="/loyalty/myAccount/paymentMethods.mi">Payment Methods</a>
+    <a href="/loyalty/myAccount/savedHotels.mi">Saved Hotels</a>
+    <a href="/reservation/lookupReservation.mi">Find a Reservation</a>
+  </nav>
+
+  <section class="account-section">
+    <h2>Upcoming Trips</h2>
+    {% if upcoming %}
+    <div class="table-wrap">
+      <table class="trips-table">
+      <thead><tr><th>Confirmation</th><th>Hotel</th><th>Dates</th><th>Room</th><th>Total</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for r in upcoming %}
+        <tr>
+          <td><a href="/reservation/lookupReservation.mi">{{ r.confirmation_number }}</a></td>
+          <td><a href="{{ r.hotel.detail_path }}">{{ r.hotel.name }}</a></td>
+          <td>{{ r.checkin.strftime('%m/%d/%Y') }} → {{ r.checkout.strftime('%m/%d/%Y') }}</td>
+          <td>{{ r.room_type.name }}</td>
+          <td>${{ '{:,}'.format(r.total_rate) }}</td>
+          <td><span class="status-chip status-{{ r.status }}">{{ r.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="empty-state">You have no upcoming trips. <a href="/search/findHotels.mi">Find a hotel</a> to book your next stay.</p>
+    {% endif %}
+  </section>
+
+  <section class="account-section">
+    <h2>Past Stays</h2>
+    {% if past %}
+    <div class="table-wrap">
+      <table class="trips-table">
+      <thead><tr><th>Confirmation</th><th>Hotel</th><th>Dates</th><th>Room</th><th>Total</th><th>Status</th></tr></thead>
+      <tbody>
+        {% for r in past %}
+        <tr>
+          <td>{{ r.confirmation_number }}</td>
+          <td><a href="{{ r.hotel.detail_path }}">{{ r.hotel.name }}</a></td>
+          <td>{{ r.checkin.strftime('%m/%d/%Y') }} → {{ r.checkout.strftime('%m/%d/%Y') }}</td>
+          <td>{{ r.room_type.name }}</td>
+          <td>${{ '{:,}'.format(r.total_rate) }}</td>
+          <td><span class="status-chip status-{{ r.status }}">{{ r.status }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="empty-state">No past stays yet.</p>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

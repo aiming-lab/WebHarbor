@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}Reviews of {{ hotel.name }}{% endblock %}
+{% block content %}
+<div class="hotel-page container">
+  <nav class="hotel-nav" aria-label="Hotel sections">
+    <a href="{{ hotel.detail_path }}">Overview</a>
+    <a href="{{ hotel.path_for('rooms') }}">Rooms &amp; Suites</a>
+    <a class="active" href="{{ hotel.path_for('reviews') }}">Ratings &amp; Reviews</a>
+    <a href="{{ hotel.path_for('photos') }}">Gallery</a>
+  </nav>
+  <header class="hotel-header">
+    <div>
+      <p class="hotel-brand-line">{{ hotel.brand.name }}</p>
+      <h1>Ratings &amp; Reviews for {{ hotel.name }}</h1>
+    </div>
+    <div class="hotel-header-rating">
+      {% if hotel.rating_avg %}
+      <span class="rating-badge rating-{{ hotel.rating_stars }}">{{ '%.1f' % hotel.rating_avg }}</span>
+      <p>{{ hotel.review_count }} reviews</p>
+      {% else %}
+      <span class="rating-badge">—</span>
+      <p>No ratings yet</p>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="reviews-columns">
+    <aside class="reviews-side">
+      <h2>Rating Snapshot</h2>
+      <p class="snapshot-note">Select a row below to filter reviews.</p>
+      <ul class="rating-bars">
+        {% for stars in [5,4,3,2,1] %}
+        <li>
+          <a class="rating-bar-row" href="?stars={{ stars }}">
+            <span>{{ stars }}☆ stars</span>
+            <span class="bar"><span class="bar-fill rating-{{ stars }}" style="width: {{ (dist.get(stars, 0) * 100 / (hotel.review_count or 1))|round|int }}%"></span></span>
+            <span class="bar-count">{{ dist.get(stars, 0) }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+      {% if stars %}
+      <p class="filter-active">Filtered to {{ stars }}-star reviews · <a href="{{ hotel.path_for('reviews') }}">clear filter</a></p>
+      {% endif %}
+      {% if subs %}
+      <h2>Average Customer Ratings</h2>
+      <ul class="sub-ratings">
+        {% for label, info in subs.items() %}
+        <li><span>{{ info.label or label }}</span><strong>{{ '%.1f' % info.avg if info.avg is not none else '—' }}</strong></li>
+        {% endfor %}
+      </ul>
+      {% endif %}
+    </aside>
+
+    <div class="reviews-main">
+      <h2>{{ total }} Review{{ 's' if total != 1 else '' }}</h2>
+      {% for r in reviews %}
+      <article class="review-item">
+        <header>
+          <span class="review-stars" aria-label="{{ r.rating }} out of 5 stars">
+            {% for _ in range(5) %}{% if loop.index <= r.rating %}★{% else %}☆{% endif %}{% endfor %}
+          </span>
+          <span class="review-title">{{ r.title }}</span>
+        </header>
+        <p class="review-meta">
+          By {{ r.author }}{% if r.author_location %} · {{ r.author_location }}{% endif %}
+          · {{ r.reviewed_on.strftime('%B %d, %Y') }}
+          {% if r.trip_type %} · {{ r.trip_type }}{% endif %}
+        </p>
+        <p class="review-body">{{ r.body }}</p>
+        {% if r.management_response %}
+        <div class="mgmt-response">
+          <strong>Hotel Response:</strong> {{ r.management_response }}
+        </div>
+        {% endif %}
+      </article>
+      {% else %}
+      <p class="empty-state">No reviews match this filter yet.</p>
+      {% endfor %}
+
+      <nav class="pagination" aria-label="Reviews pages">
+        {% if page > 1 %}
+        <a href="?page={{ page - 1 }}{% if stars %}&stars={{ stars }}{% endif %}">← Previous</a>
+        {% endif %}
+        <span>Page {{ page }} of {{ ((total - 1) // per_page) + 1 if total else 1 }}</span>
+        {% if page * per_page < total %}
+        <a href="?page={{ page + 1 }}{% if stars %}&stars={{ stars }}{% endif %}">Next →</a>
+        {% endif %}
+      </nav>
+    </div>
+  </div>
+</div>
+{% endblock %}
