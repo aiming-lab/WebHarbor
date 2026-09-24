@@ -70,3 +70,9 @@ def test_repeat_payment_preserves_existing_bill(app,client):
     client.post(f'/my/premiums/pay/{bid}',data={'method':'Bank account ending 4821'})
     with app.app_context():
         row=PremiumBill.query.filter_by(id=bid).first();assert (row.paid_date,row.method)==before
+
+
+def test_enrollment_path_is_readable(client):
+    body=client.get('/basics/get-started-with-medicare/before-65').text
+    assert "automatically" in body and "4 months" in body
+    assert r'\u2019' not in body

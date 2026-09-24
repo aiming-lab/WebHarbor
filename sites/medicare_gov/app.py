@@ -501,6 +501,12 @@ def load_user(user_id):
     return db.session.get(User, int(user_id))
 
 
+@app.template_filter("display_text")
+def display_text(value):
+    # Repair double-escaped punctuation in the captured editorial blocks only.
+    return re.sub(r"\\u(201[89cd34]|00a0)", lambda m: chr(int(m[1], 16)), str(value or ""))
+
+
 @app.template_filter("strip_tags")
 def _strip_tags_filter(value):
     return strip_tags(value)

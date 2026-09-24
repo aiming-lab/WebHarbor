@@ -156,7 +156,7 @@ PATHS={
 9:['/my/account-settings','/my/account-settings/get-my-medicare-card'],
 10:['/publication-ordering/11931','/publication-ordering/02110'],11:['/publication-ordering/11525'],
 12:['/my/messages/3'],13:['/coverage/hospice-care','/care-compare/provider/1459'],
-14:['/basics/get-started-with-medicare','/basics/costs/medicare-costs','/talk-to-someone']}
+14:['/basics/get-started-with-medicare/before-65','/basics/costs/medicare-costs','/talk-to-someone']}
 
 
 def dbrows(path,table):
