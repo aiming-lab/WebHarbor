@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Find an OhioMeansJobs Center | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Find an OhioMeansJobs Center</h1>
+    <p>Hands-on, practical support for job seekers, employers, &amp; young people. As a job seeker, you can get help finding a job, plus access to the internet, computers, and workshops. Services and availability vary by location.</p>
+  </div>
+</div>
+<div class="container" style="padding-top:20px">
+  <div class="county-layout">
+    <aside class="refine">
+      <h3>Search for Services by County</h3>
+      <div class="facet">
+        <form method="get" action="{{ url_for('local_help') }}">
+          <label for="county" style="font-size:13px;font-weight:600;color:#0A305F">County of Residence</label>
+          <select id="county" name="county" onchange="this.form.submit()" style="width:100%;padding:8px;border:1px solid #9db8d9;border-radius:3px">
+            <option value="">All counties</option>
+            {% for c in counties %}
+              <option value="{{ c }}" {% if selected == c %}selected{% endif %}>{{ c }}</option>
+            {% endfor %}
+          </select>
+          <noscript><button class="btn small" type="submit" style="margin-top:8px">Filter</button></noscript>
+        </form>
+      </div>
+      <div class="facet">
+        <strong>Found {{ centers|length }} locations</strong>
+      </div>
+    </aside>
+    <section>
+      {% for c in centers %}
+        <div class="center-card">
+          <h3>{{ c.name }}</h3>
+          <div class="addr">{{ c.address }}</div>
+        </div>
+      {% else %}
+        <div class="empty-note">No centers match that county.</div>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

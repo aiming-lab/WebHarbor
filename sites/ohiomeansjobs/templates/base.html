@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}OhioMeansJobs | Ohio.gov{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/omj.css') }}">
+  <link rel="icon" type="image/png" href="{{ url_for('static', filename='images/logo/omj-logo.png') }}">
+</head>
+<body>
+<a class="skip-link" href="#main-content">Skip to Main Content</a>
+
+<div class="gov-banner">
+  <div class="container">
+    <span class="flag">&#9873;</span>
+    <span>An official State of Ohio site.</span>
+    <a href="{{ url_for('help_article', slug='common-questions') }}">Here&rsquo;s how you know</span></a>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="container inner">
+    <a class="brand" href="{{ url_for('home') }}">
+      <img src="{{ url_for('static', filename='images/logo/omj-logo.png') }}" alt="Ohio Means Jobs">
+    </a>
+    <form class="header-search" action="{{ url_for('site_search') }}" method="get" role="search">
+      <input type="text" name="q" placeholder="Search" aria-label="Search in our portal">
+      <button type="submit">Search</button>
+    </form>
+    <nav class="header-links" aria-label="Account">
+      {% if current_user.is_authenticated %}
+        <span>Hi, {{ current_user.first_name }}!</span>
+        <a href="{{ url_for('account_profile') }}">My Profile</a>
+        <a href="{{ url_for('account_logout') }}">Sign Out</a>
+      {% else %}
+        <a href="{{ url_for('account_login') }}">Log In</a>
+        <a href="{{ url_for('account_register') }}">Sign Up</a>
+      {% endif %}
+    </nav>
+  </div>
+</header>
+
+<nav class="primary-nav" aria-label="Primary">
+  <div class="container">
+    <ul>
+      <li><a href="{{ url_for('home') }}" class="{{ 'active' if request.path == '/' }}">Home</a></li>
+      <li><a href="{{ url_for('job_seekers') }}" class="{{ 'active' if request.path.startswith('/job-seekers') }}">For Job Seekers</a></li>
+      <li><a href="{{ url_for('for_employers') }}" class="{{ 'active' if request.path.startswith('/for-employers') }}">For Employers</a></li>
+      <li><a href="{{ url_for('for_students') }}" class="{{ 'active' if request.path.startswith('/for-students') }}">For Students</a></li>
+      <li><a href="{{ url_for('news_events') }}" class="{{ 'active' if request.path.startswith('/news-and-events') }}">News and Events</a></li>
+      <li><a href="{{ url_for('help_center') }}" class="{{ 'active' if request.path.startswith('/help-center') }}">Help Center</a></li>
+    </ul>
+  </div>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  <div class="container">
+    {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+{% endwith %}
+
+<main id="main-content">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="cols">
+      <div>
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="{{ url_for('account_profile') }}">My Profile</a></li>
+          <li><a href="{{ url_for('news_events') }}">Get News</a></li>
+          <li><a href="{{ url_for('local_help') }}">Find a Job Center</a></li>
+          <li><a href="{{ url_for('help_center') }}">Help Center</a></li>
+          <li><a href="{{ url_for('contact_us') }}">Contact Us</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>For Job Seekers</h4>
+        <ul>
+          <li><a href="{{ url_for('jobs_search') }}">Find a Job</a></li>
+          <li><a href="{{ url_for('build_your_career') }}">Build Your Career</a></li>
+          <li><a href="{{ url_for('practice_your_skills') }}">Practice Your Skills</a></li>
+          <li><a href="{{ url_for('learn_about_benefits') }}">Learn About Benefits</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>For Employers</h4>
+        <ul>
+          <li><a href="{{ url_for('for_employers') }}">Login or Sign Up</a></li>
+          <li><a href="{{ url_for('employer_resources') }}">Resources For Employers</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>For Students</h4>
+        <ul>
+          <li><a href="{{ url_for('for_students') }}">Explore Careers</a></li>
+          <li><a href="{{ url_for('career_quiz_intro') }}">Career Profile Quiz</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="baseline">
+      <div>
+        <span>Powered by</span>
+        <a href="{{ url_for('help_center') }}">Privacy Notice and Policies</a> &middot;
+        <a href="{{ url_for('help_center') }}">Accessibility</a> &middot;
+        <a href="{{ url_for('news_events') }}">Ohio Checkbook</a>
+      </div>
+      <div class="social">
+        <span>facebook icon &middot; x icon &middot; linkedin icon &middot; youtube icon</span>
+      </div>
+    </div>
+  </div>
+  <div class="partner-line container">A proud partner of the American Job Center network.</div>
+</footer>
+
+<script>
+document.addEventListener('click', function (ev) {
+  var link = ev.target.closest('.actions-link');
+  if (link) {
+    var wrap = link.closest('.actions-wrap');
+    document.querySelectorAll('.actions-wrap.open').forEach(function (w) {
+      if (w !== wrap) w.classList.remove('open');
+    });
+    if (wrap) wrap.classList.toggle('open');
+  } else if (!ev.target.closest('.list-row__actions-content')) {
+    document.querySelectorAll('.actions-wrap.open').forEach(function (w) { w.classList.remove('open'); });
+  }
+});
+</script>
+</body>
+</html>

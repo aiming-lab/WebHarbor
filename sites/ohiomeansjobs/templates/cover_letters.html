@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}My Cover Letters | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:22px">
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section class="content-page">
+      <h1 style="font-size:26px">My Cover Letters</h1>
+      <p>You can save {{ max_letters }} different cover letters when you create a free account. Attach one whenever you apply.</p>
+
+      {% for letter in letters %}
+        <div class="form-card" style="margin-bottom:14px">
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+            <h3 style="margin:0">{{ letter.name }}</h3>
+            <form method="post" action="{{ url_for('account_cover_letters') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="action" value="delete">
+              <input type="hidden" name="id" value="{{ letter.id }}">
+              <button class="btn small danger" type="submit">Delete</button>
+            </form>
+          </div>
+          <p style="white-space:pre-wrap;font-size:14px;color:#444">{{ letter.body }}</p>
+          <div class="hint">Last updated {{ letter.updated_at.strftime('%Y-%m-%d') }}</div>
+        </div>
+      {% else %}
+        <div class="empty-note">No cover letters yet.</div>
+      {% endfor %}
+
+      {% if letters|length < max_letters %}
+        <div class="form-card">
+          <h2>Add a cover letter</h2>
+          <form method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="form-row">
+              <label for="name">Name</label>
+              <input type="text" id="name" name="name" required>
+            </div>
+            <div class="form-row">
+              <label for="body">Body</label>
+              <textarea id="body" name="body" required></textarea>
+            </div>
+            <button class="btn" type="submit">Save cover letter</button>
+          </form>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}
