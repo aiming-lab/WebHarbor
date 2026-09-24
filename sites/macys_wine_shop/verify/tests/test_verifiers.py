@@ -8,11 +8,15 @@ the Wine Club comparison, the gift-card minimum discovery, and both KEEP
 tasks); a no-op run (homepage only, empty answer, clean DB) MUST FAIL; a wrong
 answer MUST FAIL; a shortcut (correct answer, homepage-only navigation) MUST
 FAIL for every task (all 16 required surfaces reach beyond the homepage).
-Read-only task 14 MUST FAIL on a mutated after-DB. Every stateful task MUST
-FAIL on a state mismatch (claimed success, unchanged DB); selected tasks MUST
-FAIL on wrong-state deltas (wrong product, wrong ship state, wrong quantity).
-Package tampering (task_id mismatch, off-site URLs, missing screenshots,
-non-done trajectory, tampered seed, unavailable DB) MUST fail closed.
+read-only task 14 MUST FAIL on a mutated after-DB, and (round-2 F2) on the
+adversarial negatives a truncated re-login walk or a lying answer used to
+pass: truncated no-relogin walk, failed-relogin claim, wrong-password
+claim, and fabricated money claim all MUST FAIL. Every stateful task MUST
+FAIL on a state mismatch (claimed success, unchanged DB); selected tasks
+MUST FAIL on wrong-state deltas (wrong product, wrong ship state, wrong
+quantity). Package tampering (task_id mismatch, off-site URLs, missing
+screenshots, non-done trajectory, tampered seed, unavailable DB) MUST fail
+closed.
 
 No docker, no LLM: snapshots are seed copies mutated through sqlite (the exact
 allowed after-state per task), trajectories are hand-written in the
@@ -633,6 +637,93 @@ def test_readonly_task_mutated_after_db_fail(tmp_path):
     verdict = run_verifier(n, run_dir, initial, after)
     assert verdict["pass"] is False
     assert verdict["reason"] == "read_only_db_unchanged"
+
+
+# ------------------------------------------- task-14 adversarial negatives (round-2 F2)
+def _task14_walk(root: Path, *, relogin: bool = True, answer: str | None = None) -> Path:
+    """The honest task-14 chain; `relogin=False` truncates at the sign-out
+    (the round-2 re-review's 17/21-step probe), answer overrides the report."""
+    b = RunBuilder(root, "MacysWineShop--14")
+    b.login(CAROL)
+    b.step("/account/password", "fill",
+           {"text": PASSWORD, "selector": "input[name=current_password]"})
+    b.step("/account/password", "fill",
+           {"text": "AutumnCellar77!", "selector": "input[name=new_password]"})
+    b.step("/account/password", "fill",
+           {"text": "AutumnCellar77!", "selector": "input[name=confirm_password]"})
+    b.step("/account/password", "click", {"selector": "button[type=submit]"})
+    b.step("/account/password", "fill",
+           {"text": "AutumnCellar77!", "selector": "input[name=current_password]"})
+    b.step("/account/password", "fill",
+           {"text": PASSWORD, "selector": "input[name=new_password]"})
+    b.step("/account/password", "fill",
+           {"text": PASSWORD, "selector": "input[name=confirm_password]"})
+    b.step("/account/password", "click", {"selector": "button[type=submit]"})
+    b.step("/account", "goto", {})
+    b.step("/account", "click", {"selector": "form[action='/logout'] button"},
+           url_after="/")
+    if relogin:
+        b.step("/login", "fill", {"text": CAROL, "selector": "input[name=email]"})
+        b.step("/login", "fill", {"text": PASSWORD, "selector": "input[name=password]"})
+        b.step("/login", "click", {"selector": "button[type=submit]"}, url_after="/account")
+    b.done(answer if answer is not None else honest_answer(14))
+    return b.write()
+
+
+def test_task14_truncated_no_relogin_fail(tmp_path):
+    """17/21-step truncation (no re-login) + failure report MUST FAIL at the
+    re-login navigation gate."""
+    run_dir = _task14_walk(tmp_path / "t14a", relogin=False,
+                           answer=("Password change to AutumnCellar77! confirmed: 'Password "
+                                   "changed successfully.'. Reverted to the original "
+                                   "password. Signed out, but could NOT sign back in with "
+                                   "the original password — re-login FAILED."))
+    initial = copy_db(tmp_path / "init.db")
+    after = copy_db(tmp_path / "after.db")
+    verdict = run_verifier(14, run_dir, initial, after)
+    assert verdict["pass"] is False, json.dumps(verdict, indent=1)
+    assert verdict["reason"] == "relogin_navigation"
+
+
+def test_task14_failed_relogin_claim_fail(tmp_path):
+    """Full walk + an answer claiming the re-login FAILED MUST FAIL at the
+    answer success gate."""
+    run_dir = _task14_walk(tmp_path / "t14b", relogin=True,
+                           answer=("Password change to AutumnCellar77! confirmed: 'Password "
+                                   "changed successfully.'. Reverted. Signed out and could "
+                                   "NOT sign back in — re-login FAILED."))
+    initial = copy_db(tmp_path / "init.db")
+    after = copy_db(tmp_path / "after.db")
+    verdict = run_verifier(14, run_dir, initial, after)
+    assert verdict["pass"] is False, json.dumps(verdict, indent=1)
+    assert verdict["reason"] == "answer_relogin_succeeded"
+
+
+def test_task14_wrong_password_claim_fail(tmp_path):
+    """An answer claiming the change target was a different password MUST
+    FAIL at the password-claims gate."""
+    run_dir = _task14_walk(tmp_path / "t14c", relogin=True,
+                           answer=("Password change to WinterCellar99! confirmed: 'Password "
+                                   "changed successfully.'. Reverted to the original "
+                                   "password. Signed out and signed back in with the "
+                                   "original password — succeeded."))
+    initial = copy_db(tmp_path / "init.db")
+    after = copy_db(tmp_path / "after.db")
+    verdict = run_verifier(14, run_dir, initial, after)
+    assert verdict["pass"] is False, json.dumps(verdict, indent=1)
+    assert verdict["reason"] == "answer_password_claims_match_contract"
+
+
+def test_task14_fabricated_money_claim_fail(tmp_path):
+    """A phrase-preserving honest answer with a fabricated total appended
+    MUST FAIL at the money gate (the password chain shows no prices)."""
+    run_dir = _task14_walk(tmp_path / "t14d", relogin=True,
+                           answer=honest_answer(14) + " Total was $99.99.")
+    initial = copy_db(tmp_path / "init.db")
+    after = copy_db(tmp_path / "after.db")
+    verdict = run_verifier(14, run_dir, initial, after)
+    assert verdict["pass"] is False, json.dumps(verdict, indent=1)
+    assert verdict["reason"] == "answer_money_claim_rejected"
 
 
 # ------------------------------------------------------------------ state mismatch FAIL
