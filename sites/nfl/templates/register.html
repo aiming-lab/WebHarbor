@@ -5,7 +5,7 @@
   <section class="panel auth-panel">
     <h1>CREATE ACCOUNT</h1>
     <p class="fine-print">Create an NFL.com account to personalize your experience and subscribe to NFL+.</p>
-    <form method="post" class="checkout-form" action="{{ url_for('register', next=request.args.get('next','')) }}">
+    <form method="post" class="checkout-form" action="{{ url_for('register', next=request.args.get('next','')) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label>Name
         <input type="text" name="display_name" required value="{{ form.get('display_name','') }}" placeholder="Your name">
       </label>

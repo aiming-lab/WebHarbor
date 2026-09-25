@@ -524,6 +524,15 @@ def parse_args():
     return sap.parse_args(VerifyArgs)
 
 
+
+def check_account_field_delta(judge, task_id, initial_db, after_db):
+    allowed = {"NFL--2": {3: {"newsletter"}}, "NFL--12": {4: {"favorite_team"}}}.get(task_id, {})
+    before = {r["id"]: r for r in db_query(initial_db, "SELECT * FROM users")}
+    after = {r["id"]: r for r in db_query(after_db, "SELECT * FROM users")}
+    for key, row in before.items():
+        changes = {col for col, value in row.items() if after.get(key, {}).get(col) != value}
+        judge.check(f"user_{key}_fields", changes <= allowed.get(key, set()), f"Changed user fields: {changes}")
+
 def run_verifier(task_id, run_checks):
     """Standard main(): load the run, resolve + validate snapshots, run the task
     checks, fail closed on error."""
@@ -536,6 +545,7 @@ def run_verifier(task_id, run_checks):
     judge = Judge(task_id, no_llm=args.no_llm)
     try:
         run_checks(judge, traj, initial_db, after_db)
+        check_account_field_delta(judge, task_id, initial_db, after_db)
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()

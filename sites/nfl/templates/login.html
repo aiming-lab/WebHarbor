@@ -5,7 +5,7 @@
   <section class="panel auth-panel">
     <h1>SIGN IN</h1>
     <p class="fine-print">Sign in to your NFL.com account to manage your NFL+ subscription, favorite team and newsletter preferences.</p>
-    <form method="post" class="checkout-form" action="{{ url_for('login', next=request.args.get('next','')) }}">
+    <form method="post" class="checkout-form" action="{{ url_for('login', next=request.args.get('next','')) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <label>Email
         <input type="email" name="email" required value="{{ form.get('email','') }}" placeholder="you@example.com">
       </label>

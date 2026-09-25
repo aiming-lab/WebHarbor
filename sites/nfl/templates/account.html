@@ -21,7 +21,7 @@
     </dl>
     <div class="cta-row">
       <a class="btn btn-outline btn-sm" href="{{ url_for('account_edit') }}">Edit Profile</a>
-      <a class="btn btn-outline btn-sm" href="{{ url_for('logout') }}">Sign Out</a>
+      <form class="logout-form" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign out</button></form>
     </div>
   </section>
 
@@ -35,7 +35,7 @@
       <div><dt>Started</dt><dd>{{ sub.started_at.strftime('%B %-d, %Y') }}</dd></div>
       <div><dt>Renews</dt><dd>{{ sub.renews_at.strftime('%B %-d, %Y') }}</dd></div>
     </dl>
-    <form method="post" action="{{ url_for('cancel_subscription') }}">
+    <form method="post" action="{{ url_for('cancel_subscription') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <button class="btn btn-outline btn-sm" type="submit">Cancel Subscription</button>
     </form>
     {% else %}

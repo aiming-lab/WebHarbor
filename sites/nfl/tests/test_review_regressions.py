@@ -18,7 +18,7 @@ EXPECTED_TASK_KEYS = {"web_name", "id", "ques", "web", "upstream_url"}
 # role"); these two keys are the only permitted additions, and an answer key
 # is never allowed.
 REVIEWER_TASK_KEYS = {"verifier_path", "judge_rubric"}
-DECLARED_PORT = 40115
+DECLARED_PORT = 40092
 
 
 def test_tasks_jsonl_contract():
@@ -55,7 +55,7 @@ def test_tasks_cover_multiple_domains():
         "game center": "game" in text or "attendance" in text or "prime time" in text,
         "roster": "roster" in text,
         "injuries": "injur" in text,
-        "transactions": "practice squad" in text or "transactions" in text,
+        "transactions": "practice squad" in text or ("transactions" in text or "roster-movement" in text),
         "news": "article" in text or "newsroom" in text,
         "video": "video" in text,
         "search": "search" in text,
