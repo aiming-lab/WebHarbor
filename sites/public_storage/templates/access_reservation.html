@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Your Reservation | Public Storage{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Your Reservation</h1>
+    <p style="font-size:14px; color: var(--ps-gray);">Enter the reservation code from your confirmation together with the email address you used when holding the unit.</p>
+    <form method="post" action="/access-reservation">
+      <div class="form-field">
+        <label for="acc-code">Reservation Code</label>
+        <input type="text" id="acc-code" name="code" value="{{ code }}" placeholder="PS-0000000" required>
+      </div>
+      <div class="form-field">
+        <label for="acc-email">Email</label>
+        <input type="email" id="acc-email" name="email" value="{{ email }}" required>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Find My Reservation</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

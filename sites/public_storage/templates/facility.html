@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ facility.city }}, {{ facility.state }}, Self-Storage Near {{ facility.address }} | {{ facility.phone }} | Public Storage®{% endblock %}
+{% block metadesc %}Call or book online at Public Storage near {{ facility.address }}, {{ facility.city }}, {{ facility.state }}, to get your 1st month's rent for only $1 — limited time only.{% endblock %}
+{% block content %}
+<div class="fac-hero">
+  <div class="fac-hero-inner">
+    <div class="fac-photo">
+      {% set photos = facility.photo_list %}
+      {% if photos %}
+      <img src="/{{ photos[0] }}" alt="Public Storage {{ facility.address }}">
+      {% if photos|length > 1 %}
+      <div class="photo-strip">
+        {% for p in photos[1:5] %}
+        <img src="/{{ p }}" alt="Public Storage facility photo {{ loop.index + 1 }}">
+        {% endfor %}
+      </div>
+      {% endif %}
+      {% endif %}
+    </div>
+    <div class="fac-info">
+      <h1>Public Storage Self-Storage Units at {{ facility.address }}, {{ facility.city }}, {{ facility.state }}</h1>
+      <div class="addr-line"><strong>Address</strong><br>{{ facility.address }}<br>{{ facility.city }}, {{ facility.state }} {{ facility.zip }}</div>
+      <div class="phone-line"><strong>Phone</strong> {{ facility.phone }}</div>
+      <div class="rating-row">
+        <span class="stars">★★★★★</span>
+        <strong>{{ '%.1f'|format(facility.rating) }}</strong>
+        <span class="count">{{ facility.review_count }} Reviews</span>
+      </div>
+      <div class="fc-badges">
+        {% for badge in facility.badge_list %}
+        <span class="badge">{{ badge }}</span>
+        {% endfor %}
+      </div>
+      <div class="hours-row">
+        <div class="hours-col">
+          <h3>Access Hours</h3>
+          {% for day, hours in (facility.access_hours_map or {}).items() %}
+          <div class="hours-line">{{ day }}: {{ hours }}</div>
+          {% else %}
+          <div class="hours-line">See property for access hours.</div>
+          {% endfor %}
+        </div>
+        <div class="hours-col">
+          <h3>Office Hours</h3>
+          {% for day, hours in (facility.office_hours_map or {}).items() %}
+          <div class="hours-line">{{ day }}: {{ hours }}</div>
+          {% else %}
+          <div class="hours-line">See property for office hours.</div>
+          {% endfor %}
+        </div>
+      </div>
+      {% if current_user.is_authenticated %}
+      <form method="post" action="/myaccount/saved/{{ facility.id }}" style="margin-top:14px;">
+        <input type="hidden" name="next" value="{{ facility.detail_url }}">
+        <button class="btn btn-outline btn-sm" type="submit">Save this location to your account</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if show_units %}
+<div class="unit-section">
+  <h2>Explore our {{ facility.city }}, {{ facility.state }} Storage Units at {{ facility.address }}</h2>
+  <div class="admin-fee-banner">All new rentals subject to one-time $29 admin fee unless the unit's promotion waives it.</div>
+
+  {% for cat, units in units_by_cat.items() %}
+    {% if units %}
+    <h3 style="margin-top:22px;">{{ cat }} Storage Units</h3>
+    {% for unit in units %}
+    <div class="unit-row">
+      <div class="ur-size">
+        <div class="cat">{{ unit.category }}</div>
+        <div class="dims">{{ unit.dims }}</div>
+        <a class="sg-link" href="/size-guide">Size Guide</a>
+      </div>
+      <div class="ur-urgency">{{ unit.urgency or '' }}</div>
+      <div class="ur-features">
+        <ul>
+          {% for feature in unit.feature_list %}
+          <li>{{ feature }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="ur-pricing">
+        <div class="instore">Monthly Rent In Store <s>${{ '%d'|format(unit.list_price) }}</s></div>
+        <div class="webprice">${{ '%d'|format(unit.web_price) }}<small>/mo</small></div>
+        <div class="online-only">Online only price</div>
+        {% if unit.promo %}<div class="ur-promo">{{ unit.promo }}</div>{% endif %}
+      </div>
+      <div class="ur-actions">
+        <a class="btn btn-hold btn-block" href="/reservation/hold/{{ unit.unit_id }}">Hold Now (No Obligation)</a>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+  {% endfor %}
+</div>
+{% endif %}
+
+<div class="fac-cols">
+  <div class="fac-main-col">
+    <div class="fac-amenities">
+      <h3>Storage Facility Features</h3>
+      <ul class="amenity-list">
+        {% for amenity in facility.amenity_list %}
+        <li>{{ amenity }}</li>
+        {% endfor %}
+        <li>Small, Medium &amp; Large Storage Units</li>
+        <li>Indoor &amp; Outdoor Storage Units</li>
+      </ul>
+      <div class="security-note">
+        <h3>Some of Our Top-Tier Security Features</h3>
+        <p>Electronic gates, cameras, passcode entry &amp; well-lit hallways.</p>
+      </div>
+    </div>
+
+    <div class="faq-section" style="padding-left:0; padding-right:0;">
+      <h2>Self Storage FAQs</h2>
+      {% for faq in faqs %}
+      <div class="faq-item">
+        <h3>{{ faq.question }}</h3>
+        <p>{{ faq.answer }}</p>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="reviews-section" style="padding-left:0; padding-right:0;">
+      <h2>Customer Reviews</h2>
+      {% for review in reviews %}
+      <div class="review">
+        <div class="r-head">
+          <span class="r-author">{{ review.author }}</span>
+          <span class="stars">{% for _ in range(review.rating) %}★{% endfor %}</span>
+          <span class="r-date">{{ review.date }}</span>
+        </div>
+        <div class="r-body">{{ review.body }}</div>
+      </div>
+      {% else %}
+      <p>No reviews yet for this location.</p>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="fac-nearby">
+    <h3>Storage Near {{ facility.city }}, {{ facility.state }} {{ facility.zip }}</h3>
+    <p>Convenient Self Storage Near You in {{ facility.city }}</p>
+    {% for other in nearby %}
+    <a class="nearby-card" href="{{ other.detail_url }}">
+      <div class="addr">{{ other.address }}</div>
+      <div class="fc-city">{{ other.city }}, {{ other.state }} {{ other.zip }}</div>
+      <div class="dist">From ${{ other.cheapest_unit().web_price|round|int }}/mo</div>
+    </a>
+    {% endfor %}
+    <a class="btn btn-outline btn-sm" href="{{ facility.city_url }}">See all {{ facility.city }} locations</a>
+  </div>
+</div>
+{% endblock %}

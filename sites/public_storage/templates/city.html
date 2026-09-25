@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}Cheap Self Storage Units near {{ city }},{{ state }} | Public Storage®{% endblock %}
+{% block content %}
+<div class="results-wrap">
+  <div class="results-head">
+    <h1>Self Storage Units Near You in {{ city }}, {{ state }}</h1>
+  </div>
+
+  <div class="city-stats">
+    <div class="city-stat">
+      <div class="label">Average Cost of a Storage Unit in {{ city }}, {{ state }}</div>
+      <div class="value">{% if avg is not none %}${{ avg }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="city-stat">
+      <div class="label">Cheapest Unit Currently Listed</div>
+      <div class="value">{% if cheapest is not none %}From ${{ '%d'|format(cheapest) }}{% else %}—{% endif %}</div>
+    </div>
+    <div class="city-stat">
+      <div class="label">Locations in {{ city }}</div>
+      <div class="value">{{ facilities|length }}</div>
+    </div>
+  </div>
+
+  {% for facility in facilities %}
+  <div class="facility-card">
+    <div class="fc-head">
+      <div class="fc-rank">{{ loop.index }}</div>
+      <div class="fc-main">
+        <a class="fc-addr" href="{{ facility.detail_url }}">{{ facility.address }},</a>
+        <span class="fc-city">{{ facility.city }}, {{ facility.state }} {{ facility.zip }}</span>
+        <div class="fc-badges">
+          {% for badge in facility.badge_list %}
+          <span class="badge">{{ badge }}</span>
+          {% endfor %}
+        </div>
+        <div class="fc-rating">
+          <span class="stars">★★★★★</span>
+          <strong>{{ '%.1f'|format(facility.rating) }}</strong>
+          <span class="count">{{ facility.review_count }} Reviews</span>
+        </div>
+      </div>
+      <div class="fc-distance">From ${{ facility.cheapest_unit().web_price|round|int }}/mo</div>
+    </div>
+    <div class="see-all">
+      <a href="{{ facility.detail_url }}">See all units at this facility</a>
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="faq-section" style="padding: 10px 0;">
+    <h2>Self storage in {{ city }}, {{ state }}</h2>
+    <p>Public Storage has {{ facilities|length }} location{{ '' if facilities|length == 1 else 's' }} serving {{ city }} and the surrounding neighborhoods. Every rental is month-to-month with no long-term commitment, and reservations are always free with no obligation.</p>
+    <p>Unit availability, features and pricing vary by property. Climate-controlled units, drive-up access and vehicle spaces are offered at select locations — check each facility's unit list for details, and look for the 24/7 Access Available badge if you need extended gate hours.</p>
+  </div>
+</div>
+{% endblock %}

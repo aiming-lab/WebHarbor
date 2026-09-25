@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Reservation {{ reservation.code }} | Public Storage{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="max-width:640px;">
+  <div class="auth-card">
+    <h1>Reservation {{ reservation.code }}</h1>
+    <span class="status-pill status-{{ reservation.status }}">{{ reservation.status|upper }}</span>
+    <div class="hold-summary" style="margin-top:16px;">
+      <div class="kv"><span class="k">Facility</span><span class="v">{{ reservation.facility.address }}, {{ reservation.facility.city }}, {{ reservation.facility.state }} {{ reservation.facility.zip }}</span></div>
+      <div class="kv"><span class="k">Unit</span><span class="v">{{ reservation.unit.category }} {{ reservation.unit.dims }}</span></div>
+      <div class="kv"><span class="k">Online price</span><span class="v">${{ '%d'|format(reservation.unit.web_price) }}/mo</span></div>
+      {% if reservation.unit.promo %}<div class="kv"><span class="k">Promotion</span><span class="v">{{ reservation.unit.promo }}</span></div>{% endif %}
+      <div class="kv"><span class="k">Held for</span><span class="v">{{ reservation.holder_name }} ({{ reservation.holder_email }})</span></div>
+      <div class="kv"><span class="k">Contact phone</span><span class="v">{{ reservation.holder_phone }}</span></div>
+      <div class="kv"><span class="k">Move-in date</span><span class="v">{{ reservation.move_in_date }}</span></div>
+      <div class="kv"><span class="k">Placed on</span><span class="v">{{ reservation.created_at }}</span></div>
+    </div>
+    {% if reservation.status == 'held' %}
+    <form method="post" action="/reservation/cancel/{{ reservation.code }}">
+      <input type="hidden" name="email" value="{{ reservation.holder_email }}">
+      <button class="btn btn-outline btn-block" type="submit">Cancel Reservation</button>
+    </form>
+    <p style="font-size:13px; color: var(--ps-gray); margin-top:10px;">Cancelling is free — holds carry no payment and no obligation.</p>
+    {% else %}
+    <p style="font-size:14px; color: var(--ps-gray);">This reservation has been cancelled. Holds are free, so you can reserve another unit any time.</p>
+    <a class="btn btn-primary" href="/find-storage">Find another unit</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

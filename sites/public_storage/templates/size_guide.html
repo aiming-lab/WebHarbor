@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Self-Storage Unit Size Guide | Public Storage{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <h1>Storage Size Guide</h1>
+  <p class="lede">Not sure which storage unit fits your needs? We've got you. This self-storage guide helps you visualize the perfect size, features and packing style for your belongings.</p>
+  <p style="color: var(--ps-gray); font-size: 13px;">Sizes are approximate and may vary by facility.</p>
+
+  <div class="size-nav">
+    <a href="/size-guide/locker-storage-unit/locker-storage-unit.html">Lockers — A Few Things</a>
+    <a href="/size-guide/5x5-storage-unit/5x5-storage-unit.html">5'x5' — Large Closet</a>
+    <a href="/size-guide/5x10-storage-unit/5x10-storage-unit.html">5'x10' — One Room</a>
+    <a href="/size-guide/5x15-storage-unit/5x15-storage-unit.html">5'x15' — Two Rooms</a>
+    <a href="/size-guide/10x10-storage-unit/10x10-storage-unit.html">10'x10' — Three Rooms</a>
+    <a href="/size-guide/10x15-storage-unit/10x15-storage-unit.html">10'x15' — Four Rooms</a>
+    <a href="/size-guide/10x20-storage-unit/10x20-storage-unit.html">10'x20' — Five Rooms</a>
+    <a href="/size-guide/10x25-storage-unit/10x25-storage-unit.html">10'x25' — Six Rooms+</a>
+    <a href="/size-guide/vehicle-storage-unit-20-feet/vehicle-storage-unit-20-feet.html">Up to 20' — Most Cars</a>
+    <a href="/size-guide/vehicle-storage-unit-35-feet/vehicle-storage-unit-35-feet.html">Up to 35' — Most RVs and Boats</a>
+    <a href="/size-guide/vehicle-storage-unit-50-feet/vehicle-storage-unit-50-feet.html">Up to 50' — Oversize Vehicles</a>
+  </div>
+
+  <h2>Unit Size Comparison Chart</h2>
+  <table class="chart-table">
+    <thead>
+      <tr><th>Unit Size</th><th>Square Feet</th><th>Cubic Feet</th><th>Fits the Contents Of</th></tr>
+    </thead>
+    <tbody>
+      {% for row in chart %}
+      <tr>
+        <td>{{ row.size }}</td>
+        <td>{{ row.sqft }}</td>
+        <td>{{ row.cubic }}</td>
+        <td>{{ row.fits }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <h2>The right size for your things</h2>
+  <div class="size-card-grid">
+    {% for card in size_cards %}
+    <div class="size-card">
+      <img src="/{{ card.image }}" alt="{{ card.label }} storage unit">
+      <h3>{{ card.label }}</h3>
+      <div class="blurb">{{ card.blurb }}</div>
+      <ul>
+        {% for item in card.right_for %}
+        <li>{{ item }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2>Storage Tips</h2>
+  <p><strong>Tips for Picking a Size</strong></p>
+  <div class="tips-grid">
+    {% for tip in tips %}
+    <div class="tip">
+      <h3>{{ tip.title }}</h3>
+      <p>{{ tip.body }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

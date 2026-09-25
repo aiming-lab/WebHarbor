@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}How Can We Help? | Public Storage Help Center{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <h1>How Can We Help?</h1>
+  <p class="lede">Browse help topics about reservations, move-in, billing, unit sizes, security and your account.</p>
+  <div class="help-grid" style="margin-top:26px;">
+    {% for topic in topics %}
+    <a class="help-card" href="/help/{{ topic.slug }}" style="text-decoration:none;">
+      <h3>{{ topic.label }}</h3>
+      <p>{{ topic.summary }}</p>
+      <span style="color:#2661BD; font-size:14px; font-weight:600;">Read more →</span>
+    </a>
+    {% endfor %}
+  </div>
+  <div style="margin-top:34px; background:var(--ps-light); border-radius:6px; padding:22px;">
+    <h3 style="margin-top:0;">Still need help?</h3>
+    <p>Call us at <strong>800-688-8057</strong> or visit the <a href="/contact-us/contact-us.html">Contact Us</a> page.</p>
+  </div>
+</div>
+{% endblock %}

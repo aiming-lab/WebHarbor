@@ -1,0 +1,199 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="hero">
+  <div class="hero-inner">
+    <h1>Skip the counter &amp; go straight to your space.</h1>
+    <p class="hero-sub">Save up to</p>
+    <p class="save-upto"><span class="off40">40% OFF</span></p>
+    <p class="easy-rental">Easy Online Rental</p>
+    <form class="search-form" action="/self-storage-search" method="get" role="search">
+      <div class="field">
+        <label for="home-location">Address, City or Zip</label>
+        <input type="text" id="home-location" name="location" placeholder="Address, City or Zip" required>
+      </div>
+      <div class="field">
+        <label for="home-type">Storage Type</label>
+        <select id="home-type" name="type">
+          <option value="">Select</option>
+          <option value="IsStorageUnit">Storage Units</option>
+          <option value="IsVehicleUnit">Vehicle Units</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="home-size">Size</label>
+        <select id="home-size" name="sz">
+          <option value="">All Sizes</option>
+          <option value="Small">Small</option>
+          <option value="Medium">Medium</option>
+          <option value="Large">Large</option>
+          <option value="Up to 20'">Up to 20'</option>
+          <option value="Up to 35'">Up to 35'</option>
+          <option value="Up to 50'">Up to 50'</option>
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+  </div>
+</section>
+
+<div class="promo-strip">
+  <div class="promo-items">
+    <span>$1 First Month Rent Where Available</span>
+    <span>All Rentals Month to Month</span>
+    <span>Complete Your Storage Rental Online in Minutes</span>
+    <span>Over 4,600 Locations Nationwide</span>
+    <span>Trusted Nationwide Since 1972</span>
+    <span>Convenient Access Hours</span>
+  </div>
+</div>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Storage Types</h2>
+    <p>Pick the space that fits what you're storing — from a few boxes to the whole house, plus your car, RV or boat.</p>
+  </div>
+  <div class="type-cards">
+    <a class="type-card" href="/self-storage">
+      <img src="/static/images/dwstatic/self-storage.png" alt="Self Storage">
+      <div class="tc-body"><div class="tc-title">Self Storage</div>
+        <p>Month-to-month units in every size, from lockers to 10'x25' spaces.</p></div>
+    </a>
+    <a class="type-card" href="/business-storage">
+      <img src="/static/images/dwstatic/business-storage.png" alt="Business Storage">
+      <div class="tc-body"><div class="tc-title">Business Storage</div>
+        <p>Inventory, equipment, records and supplies — storage that works like a second location.</p></div>
+    </a>
+    <a class="type-card" href="/climate-controlled-storage">
+      <img src="/static/images/dwstatic/climate-controlled-storage.png" alt="Climate-Controlled Storage">
+      <div class="tc-body"><div class="tc-title">Climate-Controlled Storage</div>
+        <p>Spaces kept within a moderate temperature range for sensitive belongings.</p></div>
+    </a>
+    <a class="type-card" href="/vehicle-car-rv-storage">
+      <img src="/static/images/dwstatic/vehicle-car-rv-storage.png" alt="Vehicle Storage">
+      <div class="tc-body"><div class="tc-title">Vehicle Storage</div>
+        <p>Enclosed, covered and uncovered parking for cars, RVs, boats and trailers.</p></div>
+    </a>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Just think of us as an extension of your home.</h2>
+    <p>With more locations nationwide than any other self-storage company, we're always just around the corner. Here are some locations:</p>
+  </div>
+  <div class="nearby-grid">
+    {% for facility in nearby %}
+    <a class="nearby-card" href="{{ facility.detail_url }}">
+      <div class="rating-row">
+        <span class="stars">★★★★★</span>
+        <strong>{{ '%.1f'|format(facility.rating) }}</strong>
+        <span class="count">{{ facility.review_count }} Reviews</span>
+      </div>
+      <div class="addr">{{ facility.address }}</div>
+      <div class="fc-city">{{ facility.city }} {{ facility.state }} {{ facility.zip }}</div>
+      <div class="dist">From ${{ facility.cheapest_unit().web_price|round|int }}/mo</div>
+    </a>
+    {% endfor %}
+  </div>
+  <p style="text-align:center; margin-top:22px;">
+    <a class="btn btn-outline" href="/find-storage">Find Storage Near You</a>
+  </p>
+</section>
+
+<section class="section" style="background: var(--ps-light);">
+  <div class="section-head">
+    <h2>Here's how the self-storage process works.</h2>
+  </div>
+  <div class="process-grid">
+    <div class="process-step">
+      <div class="num">1</div>
+      <h3>Get Started</h3>
+      <p>Find a location. Start by searching for storage near you. With thousands of locations nationwide, we're always just around the corner.</p>
+    </div>
+    <div class="process-step">
+      <div class="num">2</div>
+      <h3>Reserve your unit</h3>
+      <p>Reserve your unit for free with no obligation, and complete your rental online to save time on move-in day.</p>
+    </div>
+    <div class="process-step">
+      <div class="num">3</div>
+      <h3>Move in</h3>
+      <p>Find your space and move on in! (Pro tip: Download the Public Storage app to make move-in a breeze with easy gate access and more!)</p>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>After 50 years, you learn what people want.</h2>
+  </div>
+  <div class="bullets-grid">
+    <div class="bullet">Free reservations</div>
+    <div class="bullet">No long-term commitment</div>
+    <div class="bullet">Convenient access hours</div>
+    <div class="bullet">Trusted Nationwide Since 1972</div>
+    <div class="bullet">Climate-controlled units</div>
+    <div class="bullet">Variety of unit sizes</div>
+  </div>
+</section>
+
+<section class="section" style="background: var(--ps-light);">
+  <div class="section-head">
+    <h2>Having trouble imagining what a 5'x5' looks like?</h2>
+    <p>We'll help you find the right size self-storage unit so you can make sure you're getting the most for your money.</p>
+  </div>
+  <p style="text-align:center;">
+    <a class="btn btn-primary" href="/size-guide">View the Size Guide</a>
+  </p>
+</section>
+
+<section class="section">
+  <div class="section-head">
+    <h2>THE MOST LOCATIONS NATIONWIDE</h2>
+    <p>That means you can pick up your surfboard for the morning swell and return it by noon.</p>
+  </div>
+  <div style="text-align:center;">
+    <img src="/static/images/dwstatic/most-location-desktop.png" alt="Public Storage locations across the United States" style="max-width:720px; width:100%;">
+  </div>
+</section>
+
+<section class="section" style="background: var(--ps-light);">
+  <div class="section-head">
+    <h2>What's it like to store with us? Ask them.</h2>
+  </div>
+  <div class="testimonial-grid">
+    <div class="testimonial">
+      <img src="/static/images/dwstatic/eva-f.jpg" alt="Eva F.">
+      <div class="who">Eva F.</div>
+      <div class="quote">"eRental made it possible to search for a unit and complete my transaction remotely while out of town."</div>
+    </div>
+    <div class="testimonial">
+      <img src="/static/images/dwstatic/charles-k.jpg" alt="Charles K.">
+      <div class="who">Charles K.</div>
+      <div class="quote">"I filled it out (eRental) in the parking lot and got a spot in like 10 minutes."</div>
+    </div>
+    <div class="testimonial">
+      <img src="/static/images/dwstatic/gary-g.jpg" alt="Gary G.">
+      <div class="who">Gary G.</div>
+      <div class="quote">"Company reputation is excellent. Location is ideal for my needs. Easy contactless eRental process, end to end."</div>
+    </div>
+  </div>
+  <p style="text-align:center; color: var(--ps-gray); font-size: 12.5px; margin-top:14px;">
+    Testimonials provided by actual Public Storage customers. Images are stock photography and not of the actual persons providing the testimonial.
+  </p>
+</section>
+
+<section class="section">
+  <div class="app-banner">
+    <img src="/static/images/dwstatic/feature-desktop.png" alt="Public Storage app" style="max-width:300px; width:100%;">
+    <div>
+      <h3>Manage your space with your phone.</h3>
+      <ul>
+        <li>Open Gates &amp; Doors</li>
+        <li>Pay Bills</li>
+        <li>Manage Your Account</li>
+      </ul>
+    </div>
+  </div>
+</section>
+{% endblock %}

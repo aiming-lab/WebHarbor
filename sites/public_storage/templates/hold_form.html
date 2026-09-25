@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Hold Your Unit | Public Storage{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="max-width:560px;">
+  <div class="auth-card">
+    <h1>Hold Now (No Obligation)</h1>
+    <div class="hold-summary">
+      <div class="kv"><span class="k">Facility</span><span class="v">{{ facility.address }}, {{ facility.city }}, {{ facility.state }} {{ facility.zip }}</span></div>
+      <div class="kv"><span class="k">Unit</span><span class="v">{{ unit.category }} {{ unit.dims }}</span></div>
+      <div class="kv"><span class="k">Features</span><span class="v">{{ unit.feature_list|join(', ') }}</span></div>
+      <div class="kv"><span class="k">Online price</span><span class="v">${{ '%d'|format(unit.web_price) }}/mo</span></div>
+      {% if unit.promo %}<div class="kv"><span class="k">Promotion</span><span class="v">{{ unit.promo }}</span></div>{% endif %}
+    </div>
+    <p style="font-size:14px; color: var(--ps-gray);">A reservation holds this unit for you for seven days with no payment and no obligation. Complete your rental online or at the property before the hold expires.</p>
+    <form method="post" action="/reservation/hold/{{ unit.unit_id }}">
+      <div class="form-field">
+        <label for="hold-move-in">Move-in Date</label>
+        <input type="text" id="hold-move-in" name="moveInDate" value="{{ move_in_default }}" placeholder="MM/DD/YYYY" required>
+        <div class="form-hint">Format MM/DD/YYYY. Move-in date cannot be in the past.</div>
+      </div>
+      <div class="form-field">
+        <label for="hold-name">Your Name</label>
+        <input type="text" id="hold-name" name="holderName" value="{{ current_user.full_name if current_user.is_authenticated else '' }}" placeholder="First and last name" required>
+      </div>
+      <div class="form-field">
+        <label for="hold-email">Email</label>
+        <input type="email" id="hold-email" name="holderEmail" value="{{ current_user.email if current_user.is_authenticated else '' }}" required>
+        <div class="form-hint">Your reservation code goes to this email.</div>
+      </div>
+      <div class="form-field">
+        <label for="hold-phone">Phone Number</label>
+        <input type="tel" id="hold-phone" name="holderPhone" value="{{ current_user.phone if current_user.is_authenticated else '' }}" placeholder="(555) 555-1234" required>
+      </div>
+      <button class="btn btn-hold btn-block" type="submit">Hold This Unit</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}{{ card.label if card else slug }} FAQ | Public Storage{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <h1>{{ card.label if card else slug }} FAQ</h1>
+  {% if card %}
+  <p class="lede">{{ card.blurb }} {{ card.desc }}</p>
+  <img src="/{{ card.image }}" alt="{{ card.label }} storage unit" style="max-width:350px; border-radius:6px; margin-bottom:18px;">
+  {% endif %}
+
+  <div class="size-nav">
+    <a href="/size-guide/locker-storage-unit/locker-storage-unit.html" class="{{ 'active' if slug == 'locker-storage-unit' }}">Lockers</a>
+    <a href="/size-guide/5x5-storage-unit/5x5-storage-unit.html" class="{{ 'active' if slug == '5x5-storage-unit' }}">5'x5'</a>
+    <a href="/size-guide/5x10-storage-unit/5x10-storage-unit.html" class="{{ 'active' if slug == '5x10-storage-unit' }}">5'x10'</a>
+    <a href="/size-guide/5x15-storage-unit/5x15-storage-unit.html" class="{{ 'active' if slug == '5x15-storage-unit' }}">5'x15'</a>
+    <a href="/size-guide/10x10-storage-unit/10x10-storage-unit.html" class="{{ 'active' if slug == '10x10-storage-unit' }}">10'x10'</a>
+    <a href="/size-guide/10x15-storage-unit/10x15-storage-unit.html" class="{{ 'active' if slug == '10x15-storage-unit' }}">10'x15'</a>
+    <a href="/size-guide/10x20-storage-unit/10x20-storage-unit.html" class="{{ 'active' if slug == '10x20-storage-unit' }}">10'x20'</a>
+    <a href="/size-guide/10x25-storage-unit/10x25-storage-unit.html" class="{{ 'active' if slug == '10x25-storage-unit' }}">10'x25'</a>
+    <a href="/size-guide/vehicle-storage-unit-20-feet/vehicle-storage-unit-20-feet.html" class="{{ 'active' if slug == 'vehicle-storage-unit-20-feet' }}">Up to 20'</a>
+    <a href="/size-guide/vehicle-storage-unit-35-feet/vehicle-storage-unit-35-feet.html" class="{{ 'active' if slug == 'vehicle-storage-unit-35-feet' }}">Up to 35'</a>
+    <a href="/size-guide/vehicle-storage-unit-50-feet/vehicle-storage-unit-50-feet.html" class="{{ 'active' if slug == 'vehicle-storage-unit-50-feet' }}">Up to 50'</a>
+  </div>
+
+  {% for faq in faqs %}
+  <div class="faq-item">
+    <h2 style="font-size:1.15rem;">{{ faq.question }}</h2>
+    <p>{{ faq.answer }}</p>
+  </div>
+  {% else %}
+  <p>FAQs for this size are coming soon. See the <a href="/size-guide">size guide</a> for the comparison chart.</p>
+  {% endfor %}
+
+  {% if card %}
+  <h2>The right size for:</h2>
+  <ul>
+    {% for item in card.right_for %}
+    <li>{{ item }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <p style="margin-top:28px;"><strong>Does this size sound like the right fit?</strong></p>
+  <p>Find a storage unit with similar dimensions near you now.</p>
+  <p><a class="btn btn-primary" href="/find-storage">Find a Unit</a></p>
+  <p style="color: var(--ps-gray); font-size: 12.5px; margin-top:22px;">Friendly Reminder: As with all our spaces, sizes are approximate—please check your Rental Agreement for what can be stored.</p>
+</div>
+{% endblock %}

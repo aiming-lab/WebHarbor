@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Public Storage - Self-Storage Units/Spaces Near You{% endblock %}</title>
+  <meta name="description" content="{% block metadesc %}Public Storage is the leading provider of storage units for your personal, business and vehicle needs with thousands of locations nationwide.{% endblock %}">
+  <link rel="icon" href="/static/icons/ps-favicon-150x150.svg">
+  <link rel="stylesheet" href="/static/css/site.css">
+</head>
+<body>
+<a href="#maincontent" class="skip">Skip to main content</a>
+<a href="#footercontent" class="skip">Skip to footer content</a>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="logo-home" href="/" title="Public Storage Home" aria-label="Go to Public Storage Home page">
+      <img src="/static/icons/ps-logo-brand.svg" alt="Public Storage Home" width="100" height="53">
+    </a>
+    <nav class="main-nav" aria-label="Public Storage main menu">
+      <ul>
+        <li><a href="/find-storage" title="Find Storage">Find Storage</a></li>
+        <li class="has-flyout">
+          <a href="/size-guide" title="Size Guide">Size Guide</a>
+          <div class="flyout size-flyout">
+            <div class="flyout-cols">
+              <div class="flyout-col">
+                <a href="/size-guide/locker-storage-unit/locker-storage-unit.html">Lockers</a>
+                <a href="/size-guide/5x5-storage-unit/5x5-storage-unit.html">5'x5'</a>
+                <a href="/size-guide/5x10-storage-unit/5x10-storage-unit.html">5'x10'</a>
+                <a href="/size-guide/5x15-storage-unit/5x15-storage-unit.html">5'x15'</a>
+                <a href="/size-guide/10x10-storage-unit/10x10-storage-unit.html">10'x10'</a>
+              </div>
+              <div class="flyout-col">
+                <a href="/size-guide/10x15-storage-unit/10x15-storage-unit.html">10'x15'</a>
+                <a href="/size-guide/10x20-storage-unit/10x20-storage-unit.html">10'x20'</a>
+                <a href="/size-guide/10x25-storage-unit/10x25-storage-unit.html">10'x25'</a>
+                <a href="/size-guide/vehicle-storage-unit-20-feet/vehicle-storage-unit-20-feet.html">Up to 20'</a>
+                <a href="/size-guide/vehicle-storage-unit-35-feet/vehicle-storage-unit-35-feet.html">Up to 35'</a>
+                <a href="/size-guide/vehicle-storage-unit-50-feet/vehicle-storage-unit-50-feet.html">Up to 50'</a>
+              </div>
+            </div>
+          </div>
+        </li>
+        <li class="has-flyout">
+          <a href="/self-storage" title="Storage Types">Storage Types</a>
+          <div class="flyout types-flyout">
+            <div class="flyout-cols">
+              <div class="flyout-col">
+                <a href="/self-storage">Self Storage</a>
+                <a href="/self-storage/24-hour-storage">24 Hour Self Storage</a>
+                <a href="/business-storage">Business Storage</a>
+                <a href="/vehicle-car-rv-storage">Vehicle &amp; RV Storage</a>
+              </div>
+              <div class="flyout-col">
+                <a href="/boat-storage">Boat Storage</a>
+                <a href="/climate-controlled-storage">Climate Controlled Storage</a>
+                <a href="/self-storage/drive-up-storage">Drive Up Access Storage</a>
+                <a href="/indoor-storage">Indoor Storage</a>
+              </div>
+            </div>
+          </div>
+        </li>
+      </ul>
+    </nav>
+    <div class="header-right">
+      <a class="header-phone" href="tel:800-688-8057">800-688-8057</a>
+      <a class="btn btn-primary btn-sm" href="/simplified/bill-pay/login">Pay Bill</a>
+      <div class="account-links">
+        {% if current_user.is_authenticated %}
+          <a href="/myaccount">My Account</a>
+          <a href="/access-reservation">Your Reservation</a>
+          <a href="/logout">Log Out</a>
+        {% else %}
+          <a href="/lease/sign-elease">Log In</a>
+          <a href="/myaccount/identity/create-account">Create an Account</a>
+          <a href="/access-reservation">Your Reservation</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes" role="alert">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main id="maincontent">
+{% block content %}{% endblock %}
+</main>
+
+<footer id="footercontent" class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-cols">
+      <div class="footer-col">
+        <h3>Storage Types</h3>
+        <a href="/self-storage">Self Storage</a>
+        <a href="/self-storage/24-hour-storage">24 Hour Self Storage</a>
+        <a href="/business-storage">Business Storage</a>
+        <a href="/vehicle-car-rv-storage">Vehicle &amp; RV Storage</a>
+        <a href="/boat-storage">Boat Storage</a>
+        <a href="/climate-controlled-storage">Climate Controlled Storage</a>
+        <a href="/self-storage/drive-up-storage">Drive Up Access Storage</a>
+        <a href="/indoor-storage">Indoor Storage</a>
+      </div>
+      <div class="footer-col">
+        <h3>Support</h3>
+        <a href="/contact-us/contact-us.html">Contact Us</a>
+        <a href="/help/">Help Center</a>
+        <a href="/blog">Blog</a>
+        <a href="/storage-solutions/storage-faqs">Storage FAQs</a>
+        <a href="/storage-solutions/storage-deals">Storage Deals</a>
+        <a href="/simplified/bill-pay/login">Pay Bill</a>
+        <a href="/access-reservation">Your Reservation</a>
+      </div>
+      <div class="footer-col">
+        <h3>Company Info</h3>
+        <a href="/our-story/our-story.html">Our Story</a>
+        <a href="/why-public-storage.html">Why Public Storage</a>
+        <a href="/storage-solutions/security-features">Security Features</a>
+        <a href="/storage-solutions/military-storage">Military Storage</a>
+        <a href="/storage-solutions/seasonal-storage">Seasonal Storage</a>
+        <a href="/storage-solutions/decluttering">Decluttering</a>
+        <a href="/storage-solutions/living-abroad">Living Abroad</a>
+      </div>
+      <div class="footer-col">
+        <h3>Size Guide</h3>
+        <a href="/size-guide">Storage Size Guide</a>
+        <a href="/size-guide/5x5-storage-unit/5x5-storage-unit.html">5'x5' Storage Units</a>
+        <a href="/size-guide/5x10-storage-unit/5x10-storage-unit.html">5'x10' Storage Units</a>
+        <a href="/size-guide/10x10-storage-unit/10x10-storage-unit.html">10'x10' Storage Units</a>
+        <a href="/size-guide/10x20-storage-unit/10x20-storage-unit.html">10'x20' Storage Units</a>
+        <a href="/size-guide/vehicle-storage-unit-35-feet/vehicle-storage-unit-35-feet.html">RV &amp; Boat Storage</a>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <p>Public Storage is the leading provider of storage units for your personal, business and vehicle needs with thousands of locations nationwide. We offer a wide variety of units and sizes available with no obligation and no long-term commitment. Call today at 800-688-8057 for a free reservation and get your first month's rent for just $1.</p>
+      <p class="trademark">PUBLIC STORAGE, PS, and the Orange Door Trade Dress are trademarks or registered trademarks of Public Storage in the United States and/or other countries.</p>
+      <p class="fineprint">Prices, promotions and availability are as captured on the mirror snapshot date and subject to change. This site is an offline benchmark mirror of publicstorage.com.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
