@@ -1,0 +1,92 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-09-23",
+  "upstream": "https://new.mta.info/",
+  "records": [
+    {
+      "path": "app.py",
+      "classification": "mirror-code",
+      "scope": "Flask application implementing the new.mta.info mirror: the service status board (subway lines with per-line alert pages, LIRR and Metro-North branch status), the planned service changes browser (mode/time/route filters), elevator & escalator status with per-station search and alternative-route guidance, real GTFS timetables for the subway, LIRR and Metro-North (weekday/Saturday/Sunday, both directions, printable PDF timetables), station pages with accessibility notes and elevator inventories, the railroad fare finder (LIRR zone-pair and Metro-North zone fares by ticket type), the fares & tolls content pages, guides (airports, stadiums, bikes, pets, weather), agency/transparency/careers content, press releases and projects, the lost & found claim intake with reference tracking, the feedback intake with case tracking, Access-A-Ride booking, OMNY tap history with fare-cap progress, and the account domain (register/login, favorites, service-alert subscriptions)."
+    },
+    {
+      "path": "seed_data.py",
+      "classification": "mirror-code",
+      "scope": "Deterministic build-time/boot-time seeder. All rows come from the tracked source_data/ snapshots; the benchmark password digest is frozen so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0, see the Dockerfile build step). Heavy GTFS tables are bulk-loaded with raw sqlite3 executemany. Every seed function early-returns on a populated database, keeping /reset/mta byte-identical."
+    },
+    {
+      "path": "source_data/gtfs/ (subway.zip, lirr.zip, metro_north.zip)",
+      "classification": "captured-upstream-content",
+      "scope": "The MTA's public GTFS static feeds (web.mta.info/developers), captured 2026-09-23. They provide the 26 subway routes, 496 subway station complexes, 75 free-transfer pairs, 127 LIRR stations and 114 Metro-North stations, plus the full trip and stop_time tables (84,656 trips / 1.55M stop times) that back every timetable page."
+    },
+    {
+      "path": "source_data/subway.json, lirr.json, metro_north.json",
+      "classification": "captured-upstream-content",
+      "scope": "Normalized station/route reference data derived from the GTFS feeds by scripts_dev/harvest_gtfs.py: names, coordinates, boroughs, served lines, LIRR/Metro-North fare zones and station URL slugs."
+    },
+    {
+      "path": "source_data/service_alerts.json",
+      "classification": "captured-upstream-content",
+      "scope": "The MTA's live GTFS-realtime service-alerts feed (web.mta.info/developers, Dataservice endpoint), captured 2026-09-23: 391 active and planned alerts across subway, bus, LIRR and Metro-North with the upstream header/description HTML, affected routes and time windows. These drive the status board, per-line alert pages, station alert sections and the planned-service-changes browser."
+    },
+    {
+      "path": "source_data/elevators.json",
+      "classification": "captured-upstream-content",
+      "scope": "The MTA's elevator-and-escalator equipment registry and outage feeds (the NYCT ENE feeds served from data.ny.gov / mta.info), captured 2026-09-23: 707 elevators/escalators with ADA flags, serving descriptions and alternative-route guidance, plus 76 current and upcoming outages with reasons and estimated return times."
+    },
+    {
+      "path": "source_data/railroad_fares.json (+ railroad_fares_raw.json, fare_docs/)",
+      "classification": "captured-upstream-content",
+      "scope": "The official LIRR and Metro-North fare charts served from new.mta.info /document/ endpoints, captured 2026-09-23 and parsed by scripts_dev/harvest_fares.py (zone-pair price matrix for the LIRR, per-zone Grand Central prices for Metro-North Harlem/Hudson and New Haven, per-station Hoboken/Penn Station prices for Port Jervis and Pascack Valley). 925 fare rows across nine ticket types back the fare finder."
+    },
+    {
+      "path": "source_data/accessible_stations.json",
+      "classification": "captured-upstream-content",
+      "scope": "The MTA Accessible Stations page (https://new.mta.info/accessibility/stations, page header updated 2026-09-14), captured 2026-09-23 by scripts_dev/harvest_accessibility.py: every ADA-accessible station per agency (150 subway entries by borough, 120 LIRR entries by branch, 87 Metro-North entries by line) with the upstream line icons used to disambiguate same-named stations and the partial-accessibility notes ('downtown only', 'L N Q R W only; 4 5 6 are not accessible'). The GTFS feeds carry no wheelchair flags, so this snapshot is the source of the stations.wheelchair and stations.access_note columns."
+    },
+    {
+      "path": "source_data/content.json",
+      "classification": "captured-upstream-content",
+      "scope": "Structured blocks (headings, prose, lists, tables, link cards, images with resolved absolute URLs) for 253 server-rendered new.mta.info pages captured 2026-09-23 with a Playwright-profile browser (scripts_dev/harvest_content.py + content_extract.py): the fares & tolls section (subway/bus fares, reduced fares, tap-and-ride, LIRR/Metro-North fares, tolls by vehicle type, Congestion Relief Zone, 2025 fare changes, pre-tax benefits, ticket refunds), accessibility and Access-A-Ride, the eight guides plus the per-airport and per-stadium sub-pages, about/transparency (executive leadership, board members, meeting calendar), safety, careers, climate, lost & found (per agency), contact, agencies (NYCT, LIRR, Metro-North, Bridges & Tunnels, media relations, arts), doing business, procurement and the legal pages. All page copy is upstream text."
+    },
+    {
+      "path": "source_data/projects.json",
+      "classification": "captured-upstream-content",
+      "scope": "The 19 MTA capital-project microsites under new.mta.info/project/ (Interborough Express, Penn Station Access, station accessibility upgrades, CBDTP, 42 St Connection, East Side Access, Rutgers Tunnel, Fulton Transit Center, the bus-network redesigns, CBTC, the renewed Astoria line, 168 St interim bus terminal, 68 St-Hunter College accessibility), captured 2026-09-23 with their full text flow and resolved image URLs."
+    },
+    {
+      "path": "source_data/press_releases.json",
+      "classification": "captured-upstream-content",
+      "scope": "44 press releases from the new.mta.info /press-release listing (JS-rendered Drupal view, driven with a WebKit-profile browser) and the G-line service-changes article, captured 2026-09-23: titles, dates, full body blocks and images."
+    },
+    {
+      "path": "static/images/ and static/external_cache/timetables/",
+      "classification": "captured-upstream-media",
+      "scope": "256 real mta.info media files downloaded 2026-09-23 (scripts_dev/harvest_assets.py and the document/map fetch steps): 132 page images (hero banners, guide photos for the airports/stadiums/bikes/pets/riding guides, project photos, press-release photos, leadership headshots, OMNY photos), 46 printable PDF timetables (every subway line including the SIR, the Z line and the three shuttles, all LIRR branches, all Metro-North lines), 14 printable map PDFs, and 64 official document PDFs (budget books, capital program reports, financial statements, bond resolutions, TAB forms, open-data reports) exactly as served by new.mta.info. Each file's byte length and SHA-256 together with its source URL are pinned in asset_inventory.json. Two oversized bus-network-redesign plan PDFs (164 MB / 85 MB) and one upstream-403 department page are deliberately not carried; their link text renders as plain text (medicare_gov external-link precedent). Each file's byte length and SHA-256 together with its source URL are pinned in asset_inventory.json."
+    },
+    {
+      "path": "static/css/, static/fonts/, static/icons/",
+      "classification": "captured-upstream-media",
+      "scope": "Small UI chrome committed with the code: the site's compiled CSS (site.css, bullets.css) and the MTA theme webfonts (mta-icons, mta-regular, helvetica-bold, fontawesome) captured from the upstream theme, plus the favicon."
+    },
+    {
+      "path": "seed_data.py (benchmark users)",
+      "classification": "fixture-data",
+      "scope": "The four benchmark accounts (alice.j/bob.c/carol.d/david.k @test.com, password TestPass123!) and their OMNY tap history, favorite lines, alert subscriptions, lost-property claims, feedback cases and Access-A-Ride trips are fictional fixture data created for this benchmark environment. Claim/case/trip references (LF-26094217, CS-26093118, AAR-26093354, ...) follow the upstream reference format but the records are fixtures."
+    },
+    {
+      "path": "tasks.jsonl",
+      "classification": "benchmark-tasks",
+      "scope": "20 contributor tasks (web_name, id, ques, web, upstream_url only). Every read-only task is anchored on a page-specific fact from the captured snapshot (timetable departures from the frozen GTFS, fare-table prices parsed from the official PDFs, outage windows and reasons from the ENE feeds, planned-change windows from the alerts feed, accessibility notes from the accessible-stations snapshot, account fixtures); the stateful tasks drive real form flows (lost-property claims, feedback cases, Access-A-Ride booking, favorites and subscription management, account registration). No answer material lives in this file."
+    },
+    {
+      "path": "scripts_dev/",
+      "classification": "mirror-code",
+      "scope": "The build-time harvest pipeline (tracked for reproducibility, excluded from the docker image): page capture with a browser-profile fetcher that retries through Akamai interstitials, GTFS/feed normalization, fare-PDF parsing, the accessible-stations harvester, asset download with the inventory manifest, and the Playwright walkthrough spot-check driver used to verify tasks end-to-end."
+    },
+    {
+      "path": "NOTICE.md",
+      "classification": "legal-notice",
+      "scope": "Records that MTA site content is New York State public-authority material mirrored for offline benchmarking; the benchmark fixtures are fictional."
+    }
+  ]
+}

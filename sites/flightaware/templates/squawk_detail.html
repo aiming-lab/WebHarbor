@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}{{ squawk.title }} - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">SQUAWK</div>
+<div class="squawk-card" style="display:block;">
+  <div class="body" style="padding:14px;">
+    <div style="font-size:18px;font-weight:bold;color:#1f4a75;">{{ squawk.title }}</div>
+    <div class="small muted" style="margin:4px 0;">
+      Submitted {{ squawk.submitted_text }} by {{ squawk.submitter }} &middot; {{ squawk.source_label }}
+    </div>
+    <div class="vote-widget" style="margin:8px 0;"><span class="n">{{ squawk.votes or 0 }}</span><br><span class="small">Votes</span></div>
+    <p>{{ squawk.summary }}</p>
+    <div class="small"><a href="{{ squawk.source_url or '#' }}">Read the full story at {{ squawk.source_label }}</a> &middot; {{ squawk.comment_count }} member comments</div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Comments</div>
+  <div class="panel-body">
+    <div class="small muted">Please <a href="{{ url_for('login') }}">log in</a> or <a href="{{ url_for('register') }}">register</a> to post a comment.</div>
+    {% for c in squawk.comments %}
+    <div style="border-top:1px solid #eef2f6;padding:8px 0;">
+      <b>{{ c.author }}</b> <span class="small muted">{{ c.when_text }}</span>
+      <div>{{ c.text | nl2br }}</div>
+    </div>
+    {% else %}
+    <div class="small muted">No comments yet.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

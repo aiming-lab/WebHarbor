@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Review this Product | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <h1>Review this Product</h1>
+    <p><a href="{{ product.url }}">{{ product.full_name }}</a></p>
+    {% if errors %}
+      <ul class="errors">{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+    {% endif %}
+    <form method="post" action="{{ product.url }}/reviews/new">
+      <div class="field">
+        <label>Overall Rating</label>
+        <select name="rating">
+          <option value="">Select a rating</option>
+          <option value="5">5 out of 5 stars</option>
+          <option value="4">4 out of 5 stars</option>
+          <option value="3">3 out of 5 stars</option>
+          <option value="2">2 out of 5 stars</option>
+          <option value="1">1 out of 5 stars</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Name</label>
+        <input type="text" name="author" placeholder="Your name">
+      </div>
+      <div class="field">
+        <label>Title</label>
+        <input type="text" name="title" placeholder="Review title">
+      </div>
+      <div class="field">
+        <label>Review</label>
+        <textarea name="body" rows="6" placeholder="Tell us what you think about this product."></textarea>
+      </div>
+      <button class="btn-primary" type="submit">Submit Review</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

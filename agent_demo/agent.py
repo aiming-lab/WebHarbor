@@ -64,6 +64,8 @@ Valid actions and their params:
   scroll      {"down": <bool>, "pages": <float>}
   navigate    {"url": "<str>"}
   go_back     {}
+  dropdown_options {"index": <int>}
+  select_dropdown {"index": <int>, "text": "<visible option text>"}
   done        {"text": "<final answer or summary>", "success": <bool>}
 
 Rules:
@@ -227,9 +229,14 @@ async def run(args):
                 "step": step_idx,
                 "url": state.url,
                 "title": state.title,
+                # Persist the same observed DOM that the agent receives. Site
+                # verifiers can bind account/result evidence to this step's URL.
+                "page_text": dom_text,
                 "thought": thought,
                 "action": name,
                 "params": params,
+                "observed_text": dom_text,
+                "observed_text_before": dom_text,
                 "screenshot_before": f"step_{step_idx:03d}.png",
                 "screenshot_after": f"step_{step_idx + 1:03d}.png",
             }
@@ -242,6 +249,10 @@ async def run(args):
                 trajectory["final_answer"] = params.get("text", "")
                 trajectory["success_self_report"] = bool(params.get("success", False))
                 final_state = await browser.get_browser_state_summary(include_screenshot=True)
+                trajectory["final_url"] = final_state.url
+                trajectory["final_observed_text"] = final_state.dom_state.llm_representation()
+                step_log["observed_text_after"] = trajectory["final_observed_text"]
+                step_log["url_after"] = final_state.url
                 save_screenshot_b64(final_state.screenshot, shots / f"step_{step_idx + 1:03d}.png")
                 break
 
@@ -258,6 +269,8 @@ async def run(args):
                 print(f"[step {step_idx}] action failed: {e}", file=sys.stderr)
 
             state = await browser.get_browser_state_summary(include_screenshot=True)
+            step_log["observed_text_after"] = state.dom_state.llm_representation()
+            step_log["url_after"] = state.url
             save_screenshot_b64(state.screenshot, shots / f"step_{step_idx + 1:03d}.png")
         else:
             trajectory["termination_reason"] = "max_steps"

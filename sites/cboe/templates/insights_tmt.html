@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Today's Market Take{% endblock %}
+{% block content %}
+<div class="insights-shell">
+  <section class="page-hero dark-hero">
+    <h1>Today's Market Take</h1>
+    <p class="hero-sub">JJ Kinahan's daily market commentary on what is moving and why.</p>
+  </section>
+
+  <section class="insights-section">
+    <div class="section-head-row"><h2>Daily Market Commentary</h2></div>
+    <div class="article-list">
+      {% for article in daily %}
+        <article class="article-card row-card">
+          <div class="row-main">
+            <p class="card-cat"><a href="/insights/categories/todaysmarkettake/">Daily Market Commentary</a></p>
+            <h3><a href="/insights/posts/{{ article.slug }}/">{{ article.title }}</a></h3>
+            <p class="card-author">By {{ article.author_name }}{% if article.date %} &middot; {{ article.date }}{% endif %}</p>
+            <p class="card-desc">{{ article.excerpt() }}</p>
+            <a class="card-more" href="/insights/posts/{{ article.slug }}/">Read More</a>
+          </div>
+          <div class="row-icon" aria-hidden="true">
+            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><line x1="8" y1="13" x2="16" y2="13"></line><line x1="8" y1="17" x2="13" y2="17"></line></svg>
+          </div>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="insights-section alt">
+    <div class="section-head-row"><h2>Behind the Insights</h2></div>
+    <div class="author-panel">
+      {% if author %}
+        <div class="author-info">
+          <h3>{{ author.name }}</h3>
+          <p class="author-title">{{ author.title }}</p>
+          <p class="author-bio">{{ author.bio }}</p>
+        </div>
+      {% else %}
+        <div class="author-info">
+          <h3>JJ Kinahan</h3>
+          <p class="author-title">Senior Vice President, Head of Retail Expansion and Alternative Investment Products</p>
+          <p class="author-bio">JJ Kinahan brings more than three decades of trading and markets experience to his role at Cboe.</p>
+        </div>
+      {% endif %}
+      <div class="subscribe-panel">
+        <h3>Get timely market insights to sharpen your trading edge</h3>
+        <p>Subscribe now to Today's Market Take for daily analysis on derivatives markets and more.</p>
+        <form class="subscribe-form" method="post" action="/subscribe">
+          <input type="hidden" name="next" value="/insights/todays-market-take">
+          <input type="text" name="first_name" placeholder="First Name" required>
+          <input type="text" name="last_name" placeholder="Last Name" required>
+          <input type="email" name="email" placeholder="Email" required>
+          <select name="country"><option value="United States">United States</option><option value="Canada">Canada</option><option value="United Kingdom">United Kingdom</option><option value="Other">Other</option></select>
+          <select name="trader_type"><option>Individual investor</option><option>Financial advisor</option><option>Institutional investor</option><option>Active trader</option></select>
+          <label class="check"><input type="checkbox" name="prefs" value="Today's Market Take" checked> Today's Market Take</label>
+          <label class="check"><input type="checkbox" name="prefs" value="Derivatives Research"> Derivatives Research</label>
+          <label class="check"><input type="checkbox" name="prefs" value="Products"> Products</label>
+          <button class="btn-solid" type="submit">Subscribe</button>
+        </form>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

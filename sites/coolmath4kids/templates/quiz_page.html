@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}{{ op_name }} Quiz{% endblock %}
+{% block content %}
+<div class="breadcrumb-links">
+  <a href="{{ url_for('quizzes_index') }}">Quizzes</a> <span class="sep">/</span> {{ op_name }}
+</div>
+
+<div class="quiz-frame">
+  <div class="quiz-panel">
+    <div class="quiz-op-header">
+      {% for key, label in [('addition', '+'), ('subtraction', '−'), ('multiplication', '×'), ('division', '÷')] %}
+      {% set active = 'addition' if operation == 'addition' else operation %}
+      <span class="op-badge" style="background:
+        {%- if operation == key -%}var(--coral)
+        {%- else -%}#9fd4dc; color:#1d324a{%- endif -%};">{{ label }}</span>
+      {% endfor %}
+    </div>
+    <div class="game-header {{ operation }}" style="border-radius:10px;padding:10px 0;">
+      <img class="subject-image" src="/static/images/quiz/subject-headers/{{ operation }}.png" alt="{{ op_name }}">
+    </div>
+    <div id="screen1">
+      <div class="quiz-config">
+        <div class="range box">
+          <h2>Numbers Covered</h2>
+          <select id="range" aria-label="Select Covered Numbers" name="range" form="quizStartForm">
+            {% for r in ranges %}<option value="{{ r }}" {% if loop.first %}selected{% endif %}>{{ r }}</option>{% endfor %}
+          </select>
+        </div>
+        <div class="questions box">
+          <h2>Total Questions</h2>
+          <select id="questions" aria-label="Select Total Questions" name="questions" form="quizStartForm">
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+            <option value="30">30</option>
+          </select>
+        </div>
+        <div class="time-per-question box">
+          <h2>Time Per Question</h2>
+          <select id="timePerQuestion" aria-label="Select Time Per Question" name="time" form="quizStartForm">
+            <option value="30" selected>30 Sec.</option>
+            <option value="15">15 Sec.</option>
+            <option value="5">5 Sec.</option>
+            <option value="unlimited">Unlimited</option>
+          </select>
+        </div>
+      </div>
+      <div class="startquiz-area">
+        <form id="quizStartForm" method="post" action="{{ url_for('quiz_start', operation=operation) }}">
+          <input id="startquiz" type="submit" value="Start the Quiz">
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+{% from '_planner.html' import planner %}
+{% block content %}
+<div class="home-hero">
+  <img src="{{ url_for('static', filename='images/home/front-page-hero-image-2026_autumn-1.jpg') }}"
+       alt="Travelers boarding a blue megabus at a city stop">
+  <div class="hero-overlay"></div>
+</div>
+<div class="container-md">
+  {{ planner() }}
+</div>
+
+<section class="container-md mt-3">
+  <h2 class="section-title">Top bus routes</h2>
+  <p class="text-grey">Discover our most popular bus routes and book your next trip today.</p>
+  <div class="route-chip-grid">
+    {% for slug, title, live in top_routes %}
+      <a class="route-chip" href="{{ url_for('route_guide_detail', slug=slug) if live else url_for('route_guides_index') }}">{{ title }}</a>
+    {% endfor %}
+  </div>
+  <p class="mt-2"><a class="btn btn-outline" href="{{ url_for('route_guides_index') }}">All route guides</a></p>
+</section>
+
+<div class="home-band mt-3">
+  <div class="container-md">
+    <div>
+      <h3 class="text-white" style="margin:0 0 6px">Download the Megabus App</h3>
+      <p style="margin:0;color:#dcd9f8">Tap here to book bus tickets, live-track your bus and board with your phone.</p>
+    </div>
+    <div>
+      <a href="{{ url_for('megabus_app') }}"><img class="app-badge" src="{{ url_for('static', filename='icons/footer-apple-dark.svg') }}" alt="Download on the App Store"></a>
+      <a href="{{ url_for('megabus_app') }}"><img class="app-badge" src="{{ url_for('static', filename='icons/footer-google-dark.svg') }}" alt="Get it on Google Play"></a>
+    </div>
+  </div>
+</div>
+
+<section class="container-md mt-3">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="teaser">
+        <img src="{{ url_for('static', filename='images/home/website_track-your-bus.jpg') }}" alt="A megabus on the highway">
+        <div class="teaser-body">
+          <h3>Track my bus</h3>
+          <p>See where your bus is right now and get an estimated arrival time.</p>
+          <a href="{{ url_for('track_bus') }}">Check my bus →</a>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="teaser">
+        <img src="{{ url_for('static', filename='images/fare-finder/US_FareFinder_Hero_Chuck.jpg') }}" alt="Megabus travel assistant Chuck">
+        <div class="teaser-body">
+          <h3>Fare finder</h3>
+          <p>Not sure where to go? Find low-cost destinations from your city in one list.</p>
+          <a href="{{ url_for('fare_finder') }}">Try the fare finder →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="container-md mt-3 mb-3">
+  <h2 class="section-title">Service alerts</h2>
+  {% if alerts %}
+    <div class="alerts-list">
+      {% for a in alerts %}
+        <div class="alert-card {{ a.severity }}">
+          <b>{{ a.title }}</b>
+          <span class="date"> — published {{ a.published_on }}</span>
+          <p>{{ a.body }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="all-normal">All services are running normally</p>
+  {% endif %}
+  <p><a href="{{ url_for('service_alerts') }}">See all service alerts</a></p>
+</section>
+{% endblock %}

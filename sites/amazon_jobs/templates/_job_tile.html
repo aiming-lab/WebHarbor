@@ -1,0 +1,33 @@
+<div class="job-tile">
+  <div class="job" data-job-id="{{ job.job_id }}">
+    <div class="job-row-top">
+      <div class="job-info">
+        <h3 class="job-title">
+          <a href="{{ url_for('job_detail', job_id=job.job_id, slug=job.slug) }}" class="job-link">{{ job.title }}</a>
+        </h3>
+        <div class="location-and-id">
+          <ul class="location-id-list">
+            <li class="text-nowrap">{{ job.location_card() }}</li>
+            <li aria-hidden="true">|</li>
+            <li>Job ID: {{ job.job_id }}</li>
+          </ul>
+        </div>
+      </div>
+      <div class="job-dates">
+        <span class="posting-date">Posted {{ job.posted_date_label() }}</span>
+        <p class="meta time-elapsed">{{ job.updated_label() }}</p>
+      </div>
+    </div>
+    <div class="job-description-preview">
+      <div class="qualifications-preview">
+        Basic qualifications:
+        <ul>
+          {% for qual in job.quals_list(job.basic_qualifications)[:4] %}
+          <li>{{ qual }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+      <a href="{{ url_for('job_detail', job_id=job.job_id, slug=job.slug) }}" class="read-more">...Read more</a>
+    </div>
+  </div>
+</div>

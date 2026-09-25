@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}Passenger details | megabus{% endblock %}
+{% block content %}
+<div class="container-md checkout-wrap">
+  <h1>Passenger details</h1>
+  <div class="checkout-steps">
+    <span class="step">1. Basket</span> <span>›</span>
+    <span class="step">2. Sign in / guest</span> <span>›</span>
+    <span class="step active">3. Passenger details</span> <span>›</span>
+    <span class="step">4. Payment</span>
+  </div>
+
+  {% for e in entries %}
+    <div class="basket-ticket">
+      <div class="journey-summary">
+        <div class="journey-times">
+          <span>{{ e.journey.dep_label }}</span><span class="arrow">→</span><span>{{ e.journey.arr_label }}</span>
+        </div>
+      </div>
+      <div class="journey-meta">
+        {{ e.journey.origin.name }} to {{ e.journey.destination.name }} — {{ e.journey.departure_date }},
+        {{ e.journey.duration_label }}, {{ e.item.passengers }} traveler{{ 's' if e.item.passengers != 1 }}
+      </div>
+    </div>
+  {% endfor %}
+
+  <form action="{{ url_for('checkout_passengers') }}" method="post" class="pay-section">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Lead passenger</h2>
+    <div class="row">
+      <div class="col-md-2">
+        <label class="field-label" for="title_1">Title</label>
+        <select class="form-control" id="title_1" name="title_1">
+          <option>Mr</option><option>Mrs</option><option>Ms</option>
+          <option>Miss</option><option>Dr</option>
+        </select>
+      </div>
+      <div class="col-md-5">
+        <label class="field-label" for="first_name_1">First name</label>
+        <input class="form-control" type="text" id="first_name_1" name="first_name_1" required>
+      </div>
+      <div class="col-md-5">
+        <label class="field-label" for="last_name_1">Last name</label>
+        <input class="form-control" type="text" id="last_name_1" name="last_name_1" required>
+      </div>
+    </div>
+    {% if total_passengers > 1 %}
+      <h2>Additional travelers</h2>
+      {% for i in range(2, total_passengers + 1) %}
+        <div class="row mt-1">
+          <div class="col-md-2">
+            <label class="field-label" for="title_{{ i }}">Title</label>
+            <select class="form-control" id="title_{{ i }}" name="title_{{ i }}">
+              <option>Mr</option><option>Mrs</option><option>Ms</option>
+              <option>Miss</option><option>Dr</option>
+            </select>
+          </div>
+          <div class="col-md-5">
+            <label class="field-label" for="first_name_{{ i }}">Traveler {{ i }} first name</label>
+            <input class="form-control" type="text" id="first_name_{{ i }}" name="first_name_{{ i }}">
+          </div>
+          <div class="col-md-5">
+            <label class="field-label" for="last_name_{{ i }}">Traveler {{ i }} last name</label>
+            <input class="form-control" type="text" id="last_name_{{ i }}" name="last_name_{{ i }}">
+          </div>
+        </div>
+      {% endfor %}
+    {% endif %}
+    <h2 class="mt-2">Contact details</h2>
+    <div class="row">
+      <div class="col-md-6">
+        <label class="field-label" for="email">Email address (tickets are sent here)</label>
+        <input class="form-control" type="email" id="email" name="email" value="{{ checkout_email }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="field-label" for="phone">Mobile number (optional)</label>
+        <input class="form-control" type="tel" id="phone" name="phone" placeholder="e.g. 555-010-2233">
+      </div>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block mt-2">Continue to payment</button>
+  </form>
+</div>
+{% endblock %}

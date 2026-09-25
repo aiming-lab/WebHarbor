@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Car Payment Calculator | Chase{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Car payment calculator</h1>
+    <p class="muted">Estimate your monthly auto loan payment and total cost.</p>
+  </div>
+</div>
+<div class="container">
+  <section class="section">
+    <div class="form-card">
+      <form method="post" action="{{ url_for('auto_calculator') }}">
+        <label for="vehicle_price">Vehicle price</label>
+        <input id="vehicle_price" name="vehicle_price" type="text" value="{{ form.get('vehicle_price', '') }}" placeholder="30000" required>
+        <label for="down_payment">Down payment</label>
+        <input id="down_payment" name="down_payment" type="text" value="{{ form.get('down_payment', '') }}" placeholder="2000">
+        <label for="trade_in">Trade-in value</label>
+        <input id="trade_in" name="trade_in" type="text" value="{{ form.get('trade_in', '') }}" placeholder="0">
+        <div class="form-grid-2">
+          <div>
+            <label for="term_months">Term (months)</label>
+            <select id="term_months" name="term_months">
+              <option value="36" {{ 'selected' if form.get('term_months') == '36' }}>36 months</option>
+              <option value="48" {{ 'selected' if form.get('term_months') == '48' }}>48 months</option>
+              <option value="60" {{ 'selected' if not form.get('term_months') or form.get('term_months') == '60' }}>60 months</option>
+              <option value="72" {{ 'selected' if form.get('term_months') == '72' }}>72 months</option>
+            </select>
+          </div>
+          <div>
+            <label for="apr">APR (%)</label>
+            <input id="apr" name="apr" type="text" value="{{ form.get('apr', '') }}" placeholder="6.09" required>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn--green" type="submit">Calculate payment</button>
+          <a href="{{ url_for('auto_rates') }}">See current rates</a>
+        </div>
+      </form>
+    </div>
+
+    {% if result %}
+    <div class="acct-panel" style="margin-top:26px;">
+      <div class="acct-panel__head"><h2>Your estimated payment</h2></div>
+      <div class="acct-panel__body">
+        <div class="stat-row">
+          <div class="stat"><div class="num">{{ result.monthly|usd2 }}</div><div class="lbl">monthly payment</div></div>
+          <div class="stat"><div class="num">{{ result.financed|usd0 }}</div><div class="lbl">amount financed</div></div>
+          <div class="stat"><div class="num">{{ result.total|usd2 }}</div><div class="lbl">total paid over {{ result.term }} months</div></div>
+        </div>
+        <p class="small muted">Based on a vehicle price of {{ result.price|usd0 }}{% if result.down %} with {{ result.down|usd0 }} down{% endif %}{% if result.trade %} and a {{ result.trade|usd0 }} trade-in{% endif %}, at {{ result.apr }}% APR for {{ result.term }} months. Taxes and fees not included.</p>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

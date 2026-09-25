@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} | Petfinder{% endblock %}
+{% block content %}
+<section class="guide-hero">
+  <p class="eyebrow">PETFINDER</p>
+  <h1>{{ title }}</h1>
+  <p>{{ summary }}</p>
+</section>
+<section class="article-detail info-page">
+  <p>{{ summary }}</p>
+  {% if slug == "sitemap" %}
+    <div class="info-actions">
+      <a class="button" href="{{ url_for('listings') }}">Browse pets</a>
+      <a class="button secondary-button" href="{{ url_for('guides') }}">Read adoption guides</a>
+    </div>
+  {% elif slug == "mobile-app" %}
+    <p>This offline review build keeps the experience local, so it does not open an external app store.</p>
+  {% else %}
+    <p>For pet-specific questions, contact the shelter or rescue shown on that pet's profile.</p>
+  {% endif %}
+  <a class="back-link" href="{{ url_for('index') }}">← Back to Petfinder</a>
+</section>
+{% endblock %}

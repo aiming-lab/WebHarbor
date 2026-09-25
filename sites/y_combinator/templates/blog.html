@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% import "_pagination.html" as pager %}
+{% block title %}Y Combinator Blog{% endblock %}
+
+{% block content %}
+<div class="shell page-head"><h1>YC Blog</h1></div>
+<div class="shell">
+    <div class="card-list">
+        {% for post in posts %}
+        <article class="card">
+            {% if post.feature_image %}<img src="{{ url_for('static', filename='images/' + post.feature_image) }}" alt="">{% endif %}
+            <div>
+                <h3><a href="{{ url_for('blog_detail', slug=post.slug) }}">{{ post.title }}</a></h3>
+                <p class="muted">
+                    {% if post.published_at %}{{ post.published_at[:10] }}{% endif %}
+                    {% if post.author %} · {{ post.author }}{% endif %}
+                    {% if post.reading_time %} · {{ post.reading_time }} min read{% endif %}
+                    {% if post.tag %} · {{ post.tag }}{% endif %}
+                </p>
+                <p>{{ post.excerpt }}</p>
+            </div>
+        </article>
+        {% endfor %}
+    </div>
+    {{ pager.render(page_info, 'blog', {}) }}
+</div>
+{% endblock %}

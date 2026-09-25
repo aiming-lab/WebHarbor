@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+{% block title %}Search | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--search">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">Search</h1>
+                        </div>
+                    </header>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <section class="odx-content-section odx-content-section--component-1">
+        <div class="container">
+            <div id="searchHeader">
+                <h2>
+                    <span class="multilingual">Search results for:</span>
+                    <span id="search-query-text">{{ q if q else '*' }}</span>
+                </h2>
+            </div>
+            <div id="searchResults">
+                <div id="search-results-container" class="search-results-container">
+                    <h2 class="search-count odx-bold" style="font-size: 1.2em">
+                        <span class="multilingual">Found</span> {{ total }}
+                        <span class="multilingual">{{ tab }}</span>
+                    </h2>
+
+                    <ul class="nav nav-tabs margin-bottom-sm" role="tablist">
+                        {% for t in ['Resources', 'News', 'FAQs', 'Agencies', 'Licenses'] %}
+                        <li class="{{ 'active' if tab == t else '' }}">
+                            <a href="{{ url_for('search', search_query=q, t=t) }}">{{ t }} ({{ counts[t] }})</a>
+                        </li>
+                        {% endfor %}
+                    </ul>
+
+                    <div class="search-results">
+                        {% for item in items %}
+                        <div class="search-result-item odx-search-result">
+                            <div class="ohio-card">
+                                <section class="ohio-card-content">
+                                    <div class="search-result-title">
+                                        {% if kind == 'resource' %}
+                                        <a class="ohio-card-wrapper-anchor" href="{{ item.path }}">
+                                            <h3 class="ohio-card-content-header">{{ item.title }}</h3>
+                                        </a>
+                                        {% elif kind == 'news' %}
+                                        <a class="ohio-card-wrapper-anchor" href="{{ item.path }}">
+                                            <h3 class="ohio-card-content-header">{{ item.title }}</h3>
+                                        </a>
+                                        {% elif kind == 'faq' %}
+                                        <a class="ohio-card-wrapper-anchor" href="{{ url_for('faq_category', cat=item.category_slug) }}">
+                                            <h3 class="ohio-card-content-header">{{ item.question }}</h3>
+                                        </a>
+                                        {% elif kind == 'agency' %}
+                                        <a class="ohio-card-wrapper-anchor" href="{{ url_for('state_directory', q=item.name) }}">
+                                            <h3 class="ohio-card-content-header">{{ item.name }}</h3>
+                                        </a>
+                                        {% else %}
+                                        <a class="ohio-card-wrapper-anchor" href="{{ url_for('licenses_page', q=item.name) }}">
+                                            <h3 class="ohio-card-content-header">{{ item.name }}</h3>
+                                        </a>
+                                        {% endif %}
+                                    </div>
+                                    {% if kind == 'resource' %}
+                                    <div class="search-result-summary">{{ item.search_summary or item.summary }}</div>
+                                    <div class="search-result-link">
+                                        <a class="search-result-link__anchor" href="{{ item.path }}">ohio.gov{{ item.path }}</a>
+                                    </div>
+                                    <div class="search-result-date">
+                                        <span class="multilingual">{{ item.search_date or '' }}</span>
+                                    </div>
+                                    {% elif kind == 'news' %}
+                                    <div class="search-result-summary">{{ item.summary }}</div>
+                                    <div class="search-result-link">
+                                        <a class="search-result-link__anchor" href="{{ item.path }}">ohio.gov{{ item.path }}</a>
+                                    </div>
+                                    <div class="search-result-date">
+                                        <span class="multilingual">Published on {{ item.published }}</span>
+                                    </div>
+                                    {% elif kind == 'faq' %}
+                                    <div class="search-result-summary">{{ item.answer_html | striptags | truncate(160) }}</div>
+                                    <div class="search-result-date">
+                                        <span>Help Center &middot; Frequently Asked Questions</span>
+                                    </div>
+                                    {% elif kind == 'agency' %}
+                                    <div class="search-result-summary">{{ item.contact_method or 'State agency' }} &middot; {{ item.url }}</div>
+                                    <div class="search-result-date"><span>State Directory</span></div>
+                                    {% else %}
+                                    <div class="search-result-summary">{{ item.agency }}</div>
+                                    <div class="search-result-date"><span>Licenses &amp; Permits</span></div>
+                                    {% endif %}
+                                </section>
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="search-result-item odx-search-result">
+                            <div class="ohio-card">
+                                <section class="ohio-card-content">
+                                    <h3 class="ohio-card-content-header">No results</h3>
+                                    <div class="search-result-summary">Try different keywords, or ask the Ohio Assistant.</div>
+                                </section>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    {% if pages > 1 %}
+                    <div class="pagination-container">
+                        <div class="odx-pagination">
+                            {% for p in range(1, pages + 1) %}
+                            <a class="{{ 'active' if p == page else '' }}" href="{{ url_for('search', search_query=q, t=tab, page=p) }}">{{ p }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                <h2 style="font-size: 1.1em">For more results, try the&nbsp;<a href="{{ url_for('ohio_assistant') }}">Ohio Assistant</a>.</h2>
+            </div>
+        </div>
+    </section>
+</article>
+{% endblock %}

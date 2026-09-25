@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb">
+    <a href="{{ url_for('education') }}">Education center</a> /
+    <a href="{{ url_for('education', category=article.category_slug) }}">{{ article.category }}</a> /
+    {{ article.title }}
+  </div>
+  <article class="article-body section">
+    <div class="article-card__kicker">{{ article.category }} · Time to read: {{ article.minutes }} min</div>
+    <h1>{{ article.title }}</h1>
+    {% if article.hero %}
+    <img src="{{ url_for('static', filename='images/' + article.hero) }}" alt="{{ article.title }}" style="width:100%;border-radius:6px;margin:14px 0 8px;">
+    {% endif %}
+    {% if article.insight_list %}
+    <div class="insights">
+      <h3 style="margin-top:0;">Quick insights</h3>
+      <ul class="small" style="margin:0;padding-left:18px;">
+        {% for i in article.insight_list %}<li style="margin-bottom:8px;">{{ i }}</li>{% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+    <div class="prose">
+      {% for para in article.body.split('\n') %}
+        {% if para.strip() %}<p>{{ para.strip() }}</p>{% endif %}
+      {% endfor %}
+    </div>
+    <div class="disclosure">
+      This article is for informational and educational purposes only and should not be construed as professional advice. Snapshot captured from chase.com on {{ mirror_date }} as part of the WebHarbor offline benchmark environment.
+    </div>
+    {% if related %}
+    <section class="section">
+      <h2>Related articles</h2>
+      <div class="article-grid">
+        {% for ra in related %}
+        <div class="article-card">
+          {% if ra.hero %}<img src="{{ url_for('static', filename='images/' + ra.hero) }}" alt="{{ ra.title }}">{% endif %}
+          <div class="article-card__body">
+            <div class="article-card__kicker">{{ ra.category }}</div>
+            <h3><a href="{{ url_for('article_detail', slug=ra.slug) }}">{{ ra.title }}</a></h3>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </section>
+    {% endif %}
+  </article>
+</div>
+{% endblock %}

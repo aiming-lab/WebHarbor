@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Statements | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Card statements</h1>
+    <p class="muted">Monthly statements for your credit cards, with the balance and points earned in each period.</p>
+    <div class="compare-grid">
+    <table class="data">
+      <tr><th>Card</th><th>Period</th><th>Closed</th><th>Payment due</th><th class="right">Balance</th><th class="right">Points earned</th><th></th></tr>
+      {% for c, s in statements %}
+      <tr>
+        <td>{{ c.card.name }} ...{{ c.masked }}</td>
+        <td>{{ s.period_label }}</td>
+        <td class="num">{{ s.close_date.strftime('%b %d, %Y') if s.close_date }}</td>
+        <td class="num">{{ s.payment_due.strftime('%b %d, %Y') if s.payment_due }}</td>
+        <td class="right num">{{ s.balance|usd2 }}</td>
+        <td class="right num">{{ '{:,}'.format(s.points_earned) }}</td>
+        <td><a class="btn btn--outline btn--sm" href="{{ url_for('account_statement_detail', statement_id=s.id) }}">View statement</a></td>
+      </tr>
+      {% else %}
+      <tr><td colspan="7"><div class="empty-state">No statements available.</div></td></tr>
+      {% endfor %}
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ project.title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('projects_index') }}">Projects</a> › {{ project.title }}</div>
+  <h1>{{ project.title }}</h1>
+</div>
+<div class="card blocks">
+  {% for b in (project.blocks | fromjson) %}
+    {% if b['type'] == 'h2' %}<h2>{{ b['text'] }}</h2>
+    {% elif b['type'] == 'h3' %}<h3>{{ b['text'] }}</h3>
+    {% elif b['type'] == 'h4' %}<h4>{{ b['text'] }}</h4>
+    {% elif b['type'] == 'prose' %}<div class="prose-block">{{ b['text'] }}</div>
+    {% elif b['type'] == 'list' %}<ul>{% for item in b['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% elif b['type'] == 'table' %}
+      <table class="data">
+        {% for row in b['rows'] %}<tr>{% if loop.first %}{% for c in row %}<th>{{ c }}</th>{% endfor %}{% else %}{% for c in row %}<td>{{ c }}</td>{% endfor %}{% endif %}</tr>{% endfor %}
+      </table>
+    {% elif b['type'] == 'image' %}
+      {% set img_file = resolve_asset(b['src']) %}
+      {% if img_file %}
+      <img src="{{ url_for('static', filename='images/' ~ img_file) }}" alt="{{ b['alt'] }}">
+      {% endif %}
+    {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

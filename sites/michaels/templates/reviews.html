@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Reviews: {{ p.name }} | Michaels{% endblock %}
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a> &rsaquo; <a href="/product/{{ p.slug }}">{{ p.name }}</a> &rsaquo; <span>Reviews</span>
+</nav>
+<h1>{{ p.name }}</h1>
+<a class="pdp-rating-link" href="/product/{{ p.slug }}">
+  <span class="stars">{% for i in range(5) %}<span class="star {% if p.rating >= i + 0.75 %}on{% endif %}">&#9733;</span>{% endfor %}</span>
+  {{ '%.1f' % (p.rating or 0) }} ({{ p.review_count }} reviews)
+</a>
+<div class="reviews-page">
+  <aside class="review-filter">
+    <h3>Rating breakdown</h3>
+    <div class="dist-bars">
+      {% set real = p.dist() %}
+      {% for stars in [5, 4, 3, 2, 1] %}
+      <div class="dist-row">
+        <a class="filter-chip {% if rating_filter == stars|string %}active{% endif %}" href="/product/{{ p.slug }}/reviews?rating={{ stars }}">{{ stars }} star</a>
+        <span class="dist-count">{{ real.get(stars, dist[stars]) }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    <a class="filter-chip {% if not rating_filter %}active{% endif %}" href="/product/{{ p.slug }}/reviews">All shown reviews ({{ p.reviews|length }})</a>
+  </aside>
+  <div class="review-list">
+    {% for r in reviews %}
+    <article class="review">
+      <div class="review-head">
+        <span class="stars">{% for i in range(5) %}<span class="star {% if r.rating >= i + 0.75 %}on{% endif %}">&#9733;</span>{% endfor %}</span>
+        <strong>{{ r.title }}</strong>
+      </div>
+      <p>{{ r.text }}</p>
+      <div class="review-meta">{{ r.author }} &middot; {{ r.date }}{% if r.verified %} &middot; Verified Purchaser{% endif %} &middot; {{ r.helpful_count }} found this helpful</div>
+    </article>
+    {% else %}
+    <p>No reviews match this filter.</p>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

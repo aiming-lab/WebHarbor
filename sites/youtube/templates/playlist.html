@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}{{ playlist.title }}{% endblock %}
+{% block content %}
+<header class="section-header">
+  <h1>{{ playlist.title }}</h1>
+  <p>{{ playlist.description }}</p>
+</header>
+<section class="playlist-list">
+  {% for item in items %}
+    <article class="playlist-row">
+      <span class="playlist-position">{{ item.position }}</span>
+      <div>
+        <a class="video-title" href="{{ url_for('watch', slug=item.video.slug) }}">{{ item.video.title }}</a>
+        <p class="video-subtitle">{{ item.video.channel.name }} · {{ item.video.duration }}</p>
+      </div>
+    </article>
+  {% endfor %}
+</section>
+{% endblock %}

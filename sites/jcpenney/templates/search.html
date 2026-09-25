@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}{{ query }} | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="search-crumbs">Search Results for &ldquo;{{ query }}&rdquo;</div>
+  <div class="gallery-title">
+    <h1>{{ query }}</h1>
+    <span class="count">{{ result_count }} results</span>
+  </div>
+  <div class="gallery-layout">
+    <aside class="filters">
+      <div class="filter-group">
+        <h4>Deals &amp; Promotions</h4>
+        <div class="opts">
+          <label><input type="checkbox" data-filter="deals" value="sale"> Sale</label>
+          <label><input type="checkbox" data-filter="deals" value="clearance"> Clearance</label>
+          <label><input type="checkbox" data-filter="deals" value="new"> New Arrivals</label>
+        </div>
+      </div>
+      <div class="filter-group">
+        <h4>Price</h4>
+        <div class="opts">
+          <label><input type="checkbox" data-filter="price" value="0-25"> Under $25</label>
+          <label><input type="checkbox" data-filter="price" value="25-50"> $25 - $50</label>
+          <label><input type="checkbox" data-filter="price" value="50-100"> $50 - $100</label>
+          <label><input type="checkbox" data-filter="price" value="100-1000"> $100 &amp; over</label>
+        </div>
+      </div>
+    </aside>
+    <div class="gallery-main">
+      <div class="gallery-toolbar">
+        <span class="count">{{ result_count }} results</span>
+        <div class="sort-control">
+          <label for="sortBy">Sort By</label>
+          <select id="sortBy" onchange="applySort(this.value)">
+            <option value="featured" {% if sort_key == 'featured' %}selected{% endif %}>Featured</option>
+            <option value="price_low" {% if sort_key == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+            <option value="price_high" {% if sort_key == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+            <option value="rating" {% if sort_key == 'rating' %}selected{% endif %}>Top Rated</option>
+          </select>
+        </div>
+      </div>
+      {% if products %}
+        <div class="card-grid">
+          {% for product in products %}
+            {% include "_product_card.html" %}
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="empty-note">
+          <h2>No results for &ldquo;{{ query }}&rdquo;</h2>
+          <p>Check your spelling or try a different search.</p>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+<script>
+function applySort(value) {
+  const params = new URLSearchParams(window.location.search);
+  params.set('sortBy', value);
+  window.location.search = params.toString();
+}
+document.querySelectorAll('.filters input[type=checkbox]').forEach(function (box) {
+  box.addEventListener('change', function () {
+    const key = box.dataset.filter;
+    const values = Array.from(document.querySelectorAll('input[data-filter=' + key + ']:checked'))
+      .map(function (b) { return b.value; });
+    const params = new URLSearchParams(window.location.search);
+    if (key === 'price') {
+      params.delete('minPrice'); params.delete('maxPrice');
+      values.forEach(function (v) {
+        const pair = v.split('-');
+        const curMin = params.get('minPrice');
+        const curMax = params.get('maxPrice');
+        params.set('minPrice', curMin ? Math.min(Number(curMin), pair[0]) : pair[0]);
+        params.set('maxPrice', curMax ? Math.max(Number(curMax), pair[1]) : pair[1]);
+      });
+    } else {
+      params.set(key, values.join('|'));
+    }
+    window.location.search = params.toString();
+  });
+});
+</script>
+{% endblock %}

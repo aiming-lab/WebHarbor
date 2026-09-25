@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Feedback cases{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › My MTA › Feedback cases</div>
+  <h1>Your feedback cases</h1>
+</div>
+<ul class="account-nav">
+  <li><a href="{{ url_for('account_home') }}">Overview</a></li>
+  <li><a href="{{ url_for('account_favorites') }}">Favorites</a></li>
+  <li><a href="{{ url_for('account_subscriptions') }}">Alert subscriptions</a></li>
+  <li><a href="{{ url_for('account_omny') }}">OMNY</a></li>
+  <li><a href="{{ url_for('account_claims') }}">Lost &amp; Found claims</a></li>
+  <li><a href="{{ url_for('account_aar') }}">Access-A-Ride trips</a></li>
+  <li class="active"><a href="{{ url_for('account_cases') }}">Feedback cases</a></li>
+</ul>
+<div class="card">
+  {% for c in user.cases %}
+  <div class="rail-item">
+    <a href="{{ url_for('case_status', ref=c.case_ref) }}"><span class="rail-title">{{ c.case_ref }} — {{ c.subject }}</span></a>
+    <span class="rail-status">{{ c.status }}</span>
+  </div>
+  {% else %}
+  <p>You have no feedback cases. <a href="{{ url_for('feedback_form') }}">Send feedback</a>.</p>
+  {% endfor %}
+</div>
+{% endblock %}

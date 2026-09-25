@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Your Shopping Cart – MacysWine Shop{% endblock %}
+{% block content %}
+<div style="max-width:1280px;margin:0 auto;padding:26px 48px">
+  <h1 style="font-size:30px">Your Cart</h1>
+</div>
+<div class="cart-layout">
+  <div class="cart-main">
+    {% if not summary['items'] %}
+    <p style="color:var(--dark-gray)">Your cart is currently empty.</p>
+    <p><a class="btn-primary" style="max-width:230px;display:inline-flex" href="/collections/all-wine">Continue Shopping</a></p>
+    {% else %}
+    <table class="cart-table">
+      <thead>
+        <tr><th>Product</th><th>Quantity</th><th style="text-align:right">Subtotal</th></tr>
+      </thead>
+      <tbody>
+        {% for item in summary['items'] %}
+        {% set p = item.variant.product %}
+        <tr>
+          <td>
+            <div class="cart-item-cell">
+              {% if p.first_image %}<img src="{{ p.first_image.path }}" alt="{{ p.title }}">{% endif %}
+              <div>
+                <h3><a href="/products/{{ p.handle }}">{{ p.title }}</a></h3>
+                {% if p.is_pack %}<div class="variant">{{ item.variant.label }} · {{ item.variant.bottle_count }} bottles</div>{% endif %}
+                <form method="post" action="/cart/remove/{{ item.id }}" style="margin-top:8px">
+                  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                  <input type="hidden" name="quantity" value="0">
+                  <button class="remove" type="submit">Remove</button>
+                </form>
+              </div>
+            </div>
+          </td>
+          <td>
+            <form class="cart-qty" method="post" action="/cart/update/{{ item.id }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="quantity" value="{{ item.quantity - 1 }}" data-qty-for="dec-{{ item.id }}">
+              <button type="submit" formaction="/cart/update/{{ item.id }}" aria-label="Decrease">−</button>
+            </form>
+            <form class="cart-qty" method="post" action="/cart/update/{{ item.id }}" style="display:inline-flex">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="text" name="quantity" value="{{ item.quantity }}" style="width:40px;text-align:center;border:1px solid var(--gainsboro);padding:9px 4px" aria-label="Quantity">
+              <button type="submit" aria-label="Update">OK</button>
+            </form>
+            <form class="cart-qty" method="post" action="/cart/update/{{ item.id }}" style="display:inline-flex">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="quantity" value="{{ item.quantity + 1 }}">
+              <button type="submit" aria-label="Increase">+</button>
+            </form>
+          </td>
+          <td style="text-align:right">{{ (item.quantity * item.variant.price)|money }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+
+  {% if summary['items'] %}
+  <aside class="cart-side">
+    <h2>Order Summary</h2>
+    <div class="free-ship-note">
+      {% if summary['bottles_short'] > 0 %}
+        Add <strong>{{ summary['bottles_short'] }} bottle{{ '' if summary['bottles_short'] == 1 else 's' }}</strong> for free shipping!
+      {% else %}
+        <strong>Free Shipping unlocked!</strong>
+      {% endif %}
+    </div>
+    <div class="totals">
+      <div class="row"><span>Subtotal</span><span>{{ summary['subtotal']|money }}</span></div>
+      <div class="row"><span>Shipping</span><span>{{ summary['shipping']|money if summary['shipping'] else 'FREE' }}</span></div>
+      <div class="row"><span>Processing</span><span>{{ summary['processing']|money }}</span></div>
+      <div class="row total"><span>Total</span><span>{{ summary['total']|money }}</span></div>
+    </div>
+    {% if not summary['meets_minimum'] %}
+    <p class="min-note">Minimum {{ 3 }} Bottles Required for Checkout</p>
+    <button class="btn-primary" disabled>Checkout</button>
+    {% else %}
+    <a class="btn-primary" href="/checkout" style="display:flex">Checkout</a>
+    {% endif %}
+    <p class="continue-link"><a href="/collections/all-wine">Continue Shopping</a></p>
+  </aside>
+  {% endif %}
+</div>
+{% endblock %}

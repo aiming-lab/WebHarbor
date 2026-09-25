@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Order {{ order.order_number }} | Michaels{% endblock %}
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="{{ url_for('account') }}">My Account</a> &rsaquo; <span>{{ order.order_number }}</span>
+</nav>
+<h1>Order {{ order.order_number }}</h1>
+<p>Placed {{ order.placed_at }} &middot; Status: <strong>{{ order.status }}</strong></p>
+<div class="order-box">
+  <h2>Items</h2>
+  {% for item in order.items %}
+  <div class="review-item">
+    <span>{{ item.qty }} &times; {{ item.name }}{% if item.color %} ({{ item.color }}){% endif %}</span>
+    <span>${{ '%.2f' % (item.unit_price * item.qty) }}</span>
+  </div>
+  {% endfor %}
+  <h2>Summary</h2>
+  <div class="sum-row"><span>Subtotal</span><span>${{ '%.2f' % order.subtotal }}</span></div>
+  {% if order.discount %}<div class="sum-row discount"><span>Promo {{ order.promo_code }}</span><span>-${{ '%.2f' % order.discount }}</span></div>{% endif %}
+  <div class="sum-row"><span>Shipping</span><span>{{ 'FREE' if order.shipping == 0 else '$%.2f' % order.shipping }}</span></div>
+  <div class="sum-row"><span>Tax</span><span>${{ '%.2f' % order.tax }}</span></div>
+  <div class="sum-row total"><span>Order Total</span><span>${{ '%.2f' % order.total }}</span></div>
+</div>
+<div class="order-box">
+  <h2>Delivery</h2>
+  <p>{{ order.delivery_method }} &mdash; {{ order.address_line }}</p>
+  <h2>Payment</h2>
+  <p>{{ order.card_brand }} ending in {{ order.card_last4 }}</p>
+</div>
+{% endblock %}

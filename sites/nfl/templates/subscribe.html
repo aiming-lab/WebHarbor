@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Checkout - {{ plan.title }} | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>CHECKOUT: {{ plan.title | upper }}</h1>
+  <p class="page-sub">${{ '%.2f' | format(plan.amount) }} per {{ plan.cycle }} · billing to {{ current_user.email }}</p>
+</div>
+
+<div class="two-col">
+  <section class="panel">
+    <h2 class="panel-title">PAYMENT METHOD</h2>
+    <form method="post" class="checkout-form" action="{{ url_for('plus_subscribe', code=plan.code) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Cardholder name
+        <input type="text" name="cardholder" required value="{{ form.get('cardholder','') }}" placeholder="Name on card">
+      </label>
+      <label>Card number
+        <input type="text" name="card_number" required value="{{ form.get('card_number','') }}" placeholder="4242 4242 4242 4242" inputmode="numeric" autocomplete="cc-number">
+      </label>
+      <div class="form-row">
+        <label>Expiration month
+          <input type="text" name="exp_month" required value="{{ form.get('exp_month','') }}" placeholder="MM" inputmode="numeric">
+        </label>
+        <label>Expiration year
+          <input type="text" name="exp_year" required value="{{ form.get('exp_year','') }}" placeholder="YYYY" inputmode="numeric">
+        </label>
+        <label>Security code
+          <input type="text" name="cvv" required value="{{ form.get('cvv','') }}" placeholder="CVV" inputmode="numeric">
+        </label>
+      </div>
+      <button class="btn btn-red" type="submit">Pay ${{ '%.2f' | format(plan.amount) }} per {{ plan.cycle }}</button>
+      <p class="fine-print">Visa, Mastercard, American Express and Discover accepted. Your subscription renews automatically until cancelled.</p>
+    </form>
+  </section>
+
+  <section class="panel order-summary">
+    <h2 class="panel-title">ORDER SUMMARY</h2>
+    <dl class="info-list">
+      <div><dt>Plan</dt><dd>{{ plan.title }}</dd></div>
+      <div><dt>Billing cycle</dt><dd>{{ 'Monthly' if plan.cycle == 'month' else 'Annual' }}</dd></div>
+      <div><dt>Price</dt><dd>${{ '%.2f' | format(plan.amount) }}</dd></div>
+      <div><dt>Includes</dt><dd>{{ plan.blurb }}</dd></div>
+    </dl>
+  </section>
+</div>
+{% endblock %}

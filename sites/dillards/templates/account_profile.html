@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Profile &amp; Settings | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/account">My Dillard's Account</a> &rsaquo; Profile &amp; Settings</div>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <a href="/account">My Dillard's Account</a>
+      <a href="/account/orders">Order History</a>
+      <a href="/account/returns">Returns</a>
+      <a href="/account/paybill">Pay My Bill</a>
+      <a href="/account/wishlist">My Wish List</a>
+      <a href="/account/profile" class="active">Profile &amp; Settings</a>
+      <a href="/account/addresses">Address Book</a>
+    </aside>
+    <section class="panel">
+      <h2>Profile &amp; Settings</h2>
+      <form method="post" action="/account/profile" style="max-width: 460px;">
+        <div class="field">
+          <label>First Name</label>
+          <input type="text" name="first_name" value="{{ current_user.first_name }}">
+        </div>
+        <div class="field">
+          <label>Last Name</label>
+          <input type="text" name="last_name" value="{{ current_user.last_name }}">
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="email" value="{{ current_user.email }}" disabled>
+        </div>
+        <div class="field">
+          <label>Phone</label>
+          <input type="text" name="phone" value="{{ current_user.phone }}">
+        </div>
+        <div class="field">
+          <label>Preferred Store</label>
+          <select name="preferred_store">
+            <option value="">Select a store</option>
+            {% for store in stores %}
+              <option value="{{ store.identifier }}" {% if current_user.preferred_store and store.store_name in current_user.preferred_store %}selected{% endif %}>{{ store.store_name }} - {{ store.city }}, {{ store.state_abrev }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <button class="btn-primary" type="submit">Save Changes</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

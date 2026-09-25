@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('schedules_hub') }}">Schedules</a> › {{ label }}</div>
+  <h1>
+    {% if extra.get('route') %}
+      <span class="line line-{{ extra.route.id }}">{{ extra.route.id }}</span> {{ extra.route.name }}
+    {% else %}
+      {{ label }}
+    {% endif %}
+  </h1>
+</div>
+
+<div class="card">
+  {% if extra.get('route') and extra.route.desc %}
+    <p>{{ extra.route.desc }}</p>
+  {% endif %}
+  {% if extra.get('rail') %}
+    <p><a href="{{ url_for('rail_fare_finder') }}">See fares for this trip</a> — pick your origin and destination stations.</p>
+  {% endif %}
+
+  <div class="filters">
+    <form method="get" action="">
+      <label for="day">Service day</label>
+      <select name="day" id="day">
+        {% for d in ['weekday', 'saturday', 'sunday'] %}
+        <option value="{{ d }}" {% if d == day %}selected{% endif %}>{{ d | capitalize }}</option>
+        {% endfor %}
+      </select>
+      <label for="direction" style="margin-left:14px">Direction</label>
+      <select name="direction" id="direction">
+        {% for d in directions %}
+        <option value="{{ d }}" {% if d == direction %}selected{% endif %}>
+          {% if agency == 'subway' %}{{ 'Downtown & Brooklyn' if d == 1 else 'Uptown & The Bronx' }}{% else %}{{ 'To ' + (label if d == 0 else 'New York City') }}{% endif %}
+        </option>
+        {% endfor %}
+      </select>
+      <button class="btn" type="submit">Update timetable</button>
+    </form>
+  </div>
+
+  {% if pdf_url %}
+    <p><a href="{{ pdf_url }}">Download the printable PDF timetable</a></p>
+  {% endif %}
+
+  {% if rows %}
+  <div class="timetable-wrap">
+    <table class="timetable">
+      <thead>
+        <tr>
+          <th>Station</th>
+          {% for t in trips %}<th>{{ t.headsign }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for name, times, sid in rows %}
+        <tr>
+          <th><a href="{{ url_for('station_page', sid=sid) }}">{{ name }}</a></th>
+          {% for t in trips %}
+            {% if times.get(t.id) is not none %}
+              <td>{{ times.get(t.id) | fmttimeshort }}</td>
+            {% else %}
+              <td></td>
+            {% endif %}
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <p>No timetable rows are available for this selection.</p>
+  {% endif %}
+</div>
+
+{% if extra.get('stations') %}
+<div class="card">
+  <h2>Stations on this line</h2>
+  <ul>
+    {% for s in extra.stations %}
+    <li><a href="{{ url_for('station_page', sid=s.id) }}">{{ s.name }}</a>{% if s.wheelchair %} ♿{% endif %}</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

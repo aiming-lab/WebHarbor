@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Cboe Tradable Products{% endblock %}
+{% block content %}
+<div class="product-shell">
+  <section class="page-hero dark-hero">
+    <h1>Cboe Products</h1>
+    <p class="hero-sub">One stop for information on the products listed across Cboe markets: index options, volatility products, futures and more.</p>
+  </section>
+
+  <section class="product-section">
+    {% for family, products in families.items() %}
+      <h2 class="family-head">{{ {'sp-500': 'S&P 500 Complex', 'vix': 'VIX Complex'}.get(family, family|title) }}</h2>
+      <div class="product-grid">
+        {% for p in products %}
+          <a class="product-card" href="/tradable-products/{{ p.family }}/{{ p.slug }}">
+            <p class="card-cat">{{ p.eyebrow }}</p>
+            <h3>{{ p.name }}</h3>
+            <p class="card-desc">{{ p.hero_desc|truncate(160) }}</p>
+            <span class="card-more">Learn more</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

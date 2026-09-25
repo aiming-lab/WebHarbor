@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Photo of {{ photo.title }} - FlightAware{% endblock %}
+{% block content %}
+<div class="tab-bar">
+  <a href="/photos/">FEATURED</a>
+  <a class="active" href="/photos/all/sort/votes">ALL PHOTOS</a>
+  <a href="/photos/recentcomments.rvt">RECENT COMMENTS</a>
+  <a href="/photos/crowdsource">COMMUNITY TAGGING</a>
+  <span style="float:right;"><a class="btn-alert" href="/photos/upload">&#8593; Upload Your Photos</a></span>
+</div>
+
+<div class="panel">
+  <div class="panel-head"><a href="/photos/">Return to Browse Photos</a> <span class="more">Upload Your Photos</span></div>
+  <div class="panel-body photo-detail">
+    <div class="votes-line">
+      <span class="vote-widget"><span class="n">{{ photo.votes | commas }}</span><br><span class="small">Votes</span></span>
+      <b>{{ photo.votes | commas }} Votes</b> ({{ photo.vote_average }} Average) and <b>{{ photo.views | commas }} Views</b>
+      &nbsp;|&nbsp; <a href="#">medium</a> / <a href="#">large</a> / <a href="#">full</a>
+    </div>
+    <img class="main" src="/static/images/photos/{{ photo.image_file }}" alt="{{ photo.title }}">
+    <div style="margin-top:10px;">
+      <div style="font-size:16px;font-weight:bold;color:#1f4a75;">{{ photo.title }}</div>
+      <div class="small muted">Submitted {{ photo.submitted_text }} by <a href="#">{{ photo.photographer }}</a></div>
+      {% if photo.description %}
+      <p>{{ photo.description | nl2br }}</p>
+      {% endif %}
+      <div class="small">
+        {% if photo.reg_rank %}{{ photo.reg_rank }} of {{ photo.registration }}{% endif %}
+        {% if photo.type_rank %} &middot; {{ photo.type_rank }} of {{ photo.aircraft_type }}{% endif %}
+        {% if photo.airport_code %} at {{ photo.airport_code }}{% endif %}
+      </div>
+      {% if photo.airline_prefix %}<div class="small">Operator: {{ photo.airline_prefix }}</div>{% endif %}
+    </div>
+  </div>
+</div>
+
+<div class="panel">
+  <div class="panel-head">Comments</div>
+  <div class="panel-body">
+    <div class="small muted">Please <a href="{{ url_for('login') }}">log in</a> or <a href="{{ url_for('register') }}">register</a> to post a comment.</div>
+    {% for c in photo.comments %}
+    <div style="border-top:1px solid #eef2f6;padding:8px 0;">
+      <b>{{ c.author }}</b> <span class="small muted">{{ c.when_text }}</span>
+      <div>{{ c.text | nl2br }}</div>
+    </div>
+    {% else %}
+    <div class="small muted">No comments yet.</div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if same_type %}
+<div class="panel">
+  <div class="panel-head">More {{ photo.aircraft_type }} photos</div>
+  <div class="panel-body photo-grid">
+    {% for p in same_type %}
+    <div class="photo-card">
+      <a href="{{ p.href }}"><img src="/static/images/photos/{{ p.image_file }}" alt="{{ p.title }}"></a>
+      <div class="cap"><div class="t"><a href="{{ p.href }}">{{ p.title }}</a></div><div class="m">{{ p.votes | commas }} votes</div></div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endblock %}

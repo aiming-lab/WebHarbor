@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Amazon locations{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Amazon locations</h1>
+    <p class="hero-intro">At Amazon, we&rsquo;re looking for passionate innovators across the world to create the next best thing for our customers. Explore open roles at each of our locations and apply today.</p>
+  </div>
+</div>
+<div class="container page-content">
+  <h2 class="section-heading">Where we work</h2>
+  {% for region, locs in regions.items() %}
+  <h3 class="region-heading">{{ region }}</h3>
+  <div class="text-card-grid">
+    {% for loc in locs %}
+    <a class="text-card" href="{{ url_for('location_detail', slug=loc.slug) }}">
+      <h3>{{ loc.label }}</h3>
+    </a>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

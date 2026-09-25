@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Sign In | Instructure{% endblock %}
+{% block content %}
+<section class="container">
+  <div class="form-card">
+    <div class="account-panel">
+      <h2>Sign in to your Instructure account</h2>
+      <p class="muted">Save resources, register for webinars, and manage your profile.</p>
+      <form method="post" action="{{ url_for('login', next=request.args.get('next', '')) }}" novalidate>
+        {{ form.hidden_tag() }}
+        <div class="form-field {% if form.email.errors %}has-err{% endif %}">
+          <label>Email <span class="req">*</span></label>
+          {{ form.email(class="form-control") }}
+          {% for e in form.email.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+        <div class="form-field {% if form.password.errors %}has-err{% endif %}">
+          <label>Password <span class="req">*</span></label>
+          {{ form.password(class="form-control") }}
+          {% for e in form.password.errors %}<span class="err">{{ e }}</span>{% endfor %}
+        </div>
+        <button class="btn btn-primary" type="submit" style="margin-top: 8px;">Sign In</button>
+      </form>
+      <p style="margin-top: 22px; margin-bottom: 0;">New here? <a href="/register" style="color: var(--blue); font-weight: 700;">Create an account</a></p>
+    </div>
+  </div>
+</section>
+{% endblock %}

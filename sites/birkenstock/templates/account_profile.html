@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Profile &amp; Addresses | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Profile &amp; Addresses</h1>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <div class="you">
+        <div class="name">{{ current_user.name }}</div>
+        <div class="tier">{{ current_user.vip_tier }} &middot; {{ current_user.vip_points }} points</div>
+      </div>
+      <a href="/us/account/">Overview</a>
+      <a href="/us/account/profile">Profile &amp; Addresses</a>
+      <a href="/us/account/payment">Payment Methods</a>
+      <a href="/us/orders/">Orders</a>
+      <a href="/us/wishlist/">Wish List</a>
+      <a href="/us/logout">Log Out</a>
+    </aside>
+    <section>
+      <form method="post" class="form-card">
+        <div class="field-row">
+          <div class="field">
+            <label for="first_name">First name*</label>
+            <input type="text" id="first_name" name="first_name" value="{{ current_user.first_name }}" required>
+          </div>
+          <div class="field">
+            <label for="last_name">Last name</label>
+            <input type="text" id="last_name" name="last_name" value="{{ current_user.last_name }}">
+          </div>
+        </div>
+        <div class="field">
+          <label for="phone">Phone</label>
+          <input type="tel" id="phone" name="phone" value="{{ current_user.phone }}">
+        </div>
+        <div class="field">
+          <label for="address1">Address line 1</label>
+          <input type="text" id="address1" name="address1" value="{{ current_user.address1 }}">
+        </div>
+        <div class="field">
+          <label for="address2">Address line 2</label>
+          <input type="text" id="address2" name="address2" value="{{ current_user.address2 }}">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="city">City</label>
+            <input type="text" id="city" name="city" value="{{ current_user.city }}">
+          </div>
+          <div class="field">
+            <label for="state">State</label>
+            <input type="text" id="state" name="state" value="{{ current_user.state }}">
+          </div>
+        </div>
+        <div class="field">
+          <label for="zip_code">ZIP code</label>
+          <input type="text" id="zip_code" name="zip_code" value="{{ current_user.zip_code }}">
+        </div>
+        <label class="checkbox-row" style="margin-bottom:14px"><input type="checkbox" name="email_opt_in" {% if current_user.email_opt_in %}checked{% endif %}> Keep me up to date with news and exclusive offers.</label>
+        <button type="submit" class="btn btn-dark">SAVE CHANGES</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

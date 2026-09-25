@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}NFL Football - Official Site of the National Football League | NFL.com{% endblock %}</title>
+  <link rel="icon" href="/static/images/global/shield.svg">
+  <link rel="stylesheet" href="/static/css/main.css">
+</head>
+<body>
+<div class="utility-bar">
+  <div class="utility-inner">
+    <span class="utility-promo">GET MORE FOOTBALL WITH NFL+ PREMIUM</span>
+    <nav class="utility-links">
+      <a href="{{ url_for('plus') }}">NFL+</a>
+      <a href="{{ url_for('videos_index', channel='latest-buzz') }}">NFL REDZONE</a>
+      <a href="{{ url_for('plus') }}">NFL NETWORK</a>
+    </nav>
+    <span class="utility-actions">
+      <a class="btn btn-red btn-sm" href="{{ url_for('plus') }}">Subscribe Now</a>
+      <a class="btn btn-outline btn-sm" href="{{ url_for('plus') }}">Learn More</a>
+    </span>
+  </div>
+</div>
+
+<div class="scores-ribbon" id="scores-ribbon">
+  <a class="ribbon-week" href="{{ url_for('scores', week=current_week) }}">WEEK {{ current_week }}</a>
+  <div class="ribbon-track">
+    {% for g in ribbon_games %}
+    <a class="ribbon-game" href="{{ url_for('game_detail', slug=g.slug) }}">
+      <span class="ribbon-day">{{ g.day_display }}{% if g.time_display %} {{ g.time_display }}{% endif %}</span>
+      <span class="ribbon-teams">
+        <span class="ribbon-team">
+          <img src="{{ g.away.logo }}" alt="{{ g.away.nickname }} logo">
+          <span class="ribbon-abbr">{{ g.away_abbr }}</span>
+          <span class="ribbon-record">{{ g.away.record }}</span>
+        </span>
+        <span class="ribbon-team">
+          <img src="{{ g.home.logo }}" alt="{{ g.home.nickname }} logo">
+          <span class="ribbon-abbr">{{ g.home_abbr }}</span>
+          <span class="ribbon-record">{{ g.home.record }}</span>
+        </span>
+      </span>
+      {% if g.status.startswith('FINAL') %}
+      <span class="ribbon-final">{{ g.status }}</span>
+      {% endif %}
+    </a>
+    {% endfor %}
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="header-inner">
+    <a class="brand" href="{{ url_for('index') }}" aria-label="NFL home">
+      <img src="/static/images/global/shield.svg" alt="NFL shield" class="shield">
+    </a>
+    <nav class="main-nav">
+      <a href="{{ url_for('videos_index') }}" class="nav-link">WATCH</a>
+      <a href="{{ url_for('scores') }}" class="nav-link">GAMES</a>
+      <a href="{{ url_for('news_index') }}" class="nav-link">NEWS</a>
+      <a href="{{ url_for('teams') }}" class="nav-link">TEAMS</a>
+      <a href="{{ url_for('stats_landing') }}" class="nav-link">STATS</a>
+      <a href="{{ url_for('plus') }}" class="nav-link">THE ATHLETIC</a>
+    </nav>
+    <div class="header-right">
+      <form class="header-search" action="{{ url_for('search') }}" method="get">
+        <input type="search" name="q" placeholder="Search NFL.com" aria-label="Search NFL.com" value="{{ request.args.get('q','') }}">
+        <button type="submit" aria-label="Search">⌕</button>
+      </form>
+      <a href="https://www.nflshop.com/" class="nav-link nav-shop">NFL Shop</a>
+      <a href="{{ url_for('teams') }}" class="nav-link">Tickets</a>
+      <a href="{{ url_for('plus') }}" class="nav-link">ESPN Fantasy</a>
+      <a href="{{ url_for('plus') }}" class="nav-link">VIP Experiences</a>
+      {% if current_user.is_authenticated %}
+      <a class="btn btn-red btn-sm" href="{{ url_for('account') }}">Hi, {{ current_user.display_name.split()[0] }}</a>
+      {% else %}
+      <a class="btn btn-red btn-sm" href="{{ url_for('login') }}">Sign In</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+{% block subnav %}{% endblock %}
+
+{% with messages = get_flashed_messages() %}
+{% if messages %}
+<div class="flashes">
+  {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+</div>
+{% endif %}
+{% endwith %}
+
+<main class="page">
+  {% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-col">
+      <h4>AFC</h4>
+      <ul>
+        {% for t in all_teams if t.conference == 'AFC' %}
+        <li><a href="{{ url_for('team_detail', slug=t.slug) }}">{{ t.full_name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>NFC</h4>
+      <ul>
+        {% for t in all_teams if t.conference == 'NFC' %}
+        <li><a href="{{ url_for('team_detail', slug=t.slug) }}">{{ t.full_name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>General &amp; Legal</h4>
+      <ul>
+        <li><a href="#">Privacy Policy</a></li>
+        <li><a href="#">Terms &amp; Conditions</a></li>
+        <li><a href="#">Subscription Terms &amp; Conditions</a></li>
+        <li><a href="#">Accessibility</a></li>
+        <li><a href="#">Ad Choices</a></li>
+        <li><a href="#">Your Privacy Choices</a></li>
+        <li><a href="#">Cookie Settings</a></li>
+        <li><a href="#">Sitemap</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Support</h4>
+      <ul>
+        <li><a href="{{ url_for('plus') }}">NFL+ Help</a></li>
+        <li><a href="#">Careers</a></li>
+        <li><a href="#">Inclusion</a></li>
+        <li><a href="#">In the Community</a></li>
+        <li><a href="#">Inspire Change</a></li>
+        <li><a href="#">Play Football</a></li>
+        <li><a href="#">Play 60</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Media</h4>
+      <ul>
+        <li><a href="#">NFL Communications</a></li>
+        <li><a href="#">Media Guides</a></li>
+        <li><a href="#">Record &amp; Fact Book</a></li>
+        <li><a href="#">Rule Book</a></li>
+        <li><a href="#">Licensing</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Players</h4>
+      <ul>
+        <li><a href="{{ url_for('players_directory') }}">Player Directory</a></li>
+        <li><a href="{{ url_for('injuries') }}">Injuries</a></li>
+        <li><a href="{{ url_for('transactions') }}">Transactions</a></li>
+        <li><a href="#">NFL Health &amp; Safety</a></li>
+        <li><a href="#">NFL Legends Community</a></li>
+      </ul>
+    </div>
+    <div class="footer-col">
+      <h4>Download the App</h4>
+      <ul>
+        <li><a href="{{ url_for('plus') }}">NFL+ App</a></li>
+        <li><a href="{{ url_for('videos_index') }}">NFL Fantasy App</a></li>
+      </ul>
+      <form class="footer-newsletter" method="post" action="{{ url_for('newsletter') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="footer-nl-email">Get the NFL newsletter</label>
+        <input id="footer-nl-email" type="email" name="email" placeholder="Email address" required>
+        <select name="team" aria-label="Favorite team">
+          <option value="">Favorite team (optional)</option>
+          {% for t in all_teams %}
+          <option value="{{ t.abbr }}">{{ t.full_name }}</option>
+          {% endfor %}
+        </select>
+        <button class="btn btn-red btn-sm" type="submit">Sign Up</button>
+      </form>
+    </div>
+  </div>
+  <div class="footer-legal">
+    <p>© 2026 NFL Enterprises LLC. NFL and the NFL shield design are registered trademarks of the National Football League. The team names, logos and uniform designs are registered trademarks of the teams indicated. All other NFL-related trademarks are trademarks of the National Football League. NFL footage © NFL Productions LLC.</p>
+  </div>
+</footer>
+
+<div class="cookie-banner" id="cookie-banner">
+  <p>By clicking any of the buttons in this banner, or by clicking "X" to close the banner, and continuing on the site, you agree to our Terms and Conditions, including the arbitration and class action waiver provisions, and acknowledge our Privacy Policy, including the operation and use of tracking technologies.</p>
+  <div class="cookie-actions">
+    <button class="btn btn-outline btn-sm" id="cookie-reject">Reject Optional Tracking</button>
+    <button class="btn btn-red btn-sm" id="cookie-ack">Acknowledge Tracking</button>
+  </div>
+</div>
+<script>
+  (function () {
+    var banner = document.getElementById('cookie-banner');
+    if (!banner) return;
+    function hide() { banner.classList.add('hidden'); }
+    var ack = document.getElementById('cookie-ack');
+    var rej = document.getElementById('cookie-reject');
+    if (ack) ack.addEventListener('click', hide);
+    if (rej) rej.addEventListener('click', hide);
+  })();
+</script>
+</body>
+</html>

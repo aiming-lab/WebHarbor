@@ -1,0 +1,442 @@
+/* American Express mirror — DLS-inspired styling.
+   Palette and layout cues follow the live americanexpress.com DLS design
+   system (bright blue actions, deep-blue headings, white cards with hairline
+   borders, light-gray section bands). */
+
+:root {
+    --amex-blue: #016fd0;
+    --amex-blue-hover: #015bb0;
+    --amex-deep-blue: #003a63;
+    --amex-navy: #00263e;
+    --amex-link: #0057b8;
+    --amex-gray: #f7f9fa;
+    --amex-gray-2: #f2f5f7;
+    --amex-border: #d6dbde;
+    --amex-text: #2c2c2c;
+    --amex-muted: #5c5f63;
+    --amex-success: #12753c;
+    --amex-error: #b3261e;
+    --amex-gold: #bc945f;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+    margin: 0;
+    padding: 0;
+    font-family: "Benton Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    color: var(--amex-text);
+    background: #fff;
+    font-size: 16px;
+    line-height: 1.5;
+}
+
+a { color: var(--amex-link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.container { max-width: 1160px; margin: 0 auto; padding: 0 24px; }
+
+/* ---------------------------------------------------------------- header */
+.site-header {
+    background: #fff;
+    border-bottom: 1px solid var(--amex-border);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+.site-header .inner {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+    min-height: 64px;
+    flex-wrap: wrap;
+}
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--amex-deep-blue);
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+.brand img { width: 40px; height: 40px; display: block; }
+.main-nav { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.main-nav > a, .main-nav .nav-item > summary {
+    padding: 8px 12px;
+    color: var(--amex-deep-blue);
+    font-weight: 600;
+    font-size: 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    list-style: none;
+}
+.main-nav > a:hover, .main-nav .nav-item > summary:hover { background: var(--amex-gray-2); text-decoration: none; }
+.nav-item { position: relative; }
+.nav-item .dropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: #fff;
+    border: 1px solid var(--amex-border);
+    border-radius: 6px;
+    box-shadow: 0 8px 24px rgba(0,38,62,.12);
+    min-width: 260px;
+    padding: 8px 0;
+    z-index: 60;
+    display: none;
+}
+.nav-item[open] .dropdown, .nav-item:focus-within .dropdown { display: block; }
+.dropdown a {
+    display: block;
+    padding: 8px 18px;
+    color: var(--amex-deep-blue);
+    font-size: 14px;
+}
+.dropdown a:hover { background: var(--amex-gray-2); text-decoration: none; }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.header-right .welcome { font-size: 14px; color: var(--amex-deep-blue); }
+
+/* personal/business tab strip like the live header */
+.tabstrip {
+    background: #fff;
+    border-bottom: 3px solid var(--amex-blue);
+}
+.tabstrip .inner { display: flex; gap: 0; align-items: center; min-height: 44px; }
+.tabstrip .tab {
+    padding: 10px 22px;
+    font-weight: 700;
+    color: var(--amex-deep-blue);
+    font-size: 14px;
+    border-top: 3px solid transparent;
+    margin-top: -3px;
+}
+.tabstrip .tab.active { border-top-color: var(--amex-blue); }
+.tabstrip .fdic {
+    margin-left: auto;
+    font-size: 12px;
+    color: var(--amex-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.tabstrip .fdic img { height: 30px; }
+
+/* ---------------------------------------------------------------- buttons */
+.btn {
+    display: inline-block;
+    padding: 11px 26px;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 15px;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: background .15s ease;
+    text-align: center;
+}
+.btn-primary { background: var(--amex-blue); color: #fff; }
+.btn-primary:hover { background: var(--amex-blue-hover); text-decoration: none; }
+.btn-outline { background: #fff; color: var(--amex-blue); border-color: var(--amex-blue); }
+.btn-outline:hover { background: var(--amex-gray-2); text-decoration: none; }
+.btn-sm { padding: 7px 16px; font-size: 13px; }
+.btn-quiet { background: #e5effa; color: var(--amex-blue); }
+
+/* ---------------------------------------------------------------- flash */
+.flash-zone { max-width: 1160px; margin: 16px auto 0; padding: 0 24px; }
+.flash {
+    padding: 12px 18px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    font-size: 15px;
+}
+.flash.success { background: #e7f4ec; color: var(--amex-success); border: 1px solid #bfe3cc; }
+.flash.error { background: #fdeceb; color: var(--amex-error); border: 1px solid #f2c1bd; }
+.flash.info { background: #e8f1fb; color: var(--amex-deep-blue); border: 1px solid #c6dcf3; }
+
+/* ---------------------------------------------------------------- hero */
+.hero {
+    background: var(--amex-deep-blue);
+    color: #fff;
+    padding: 0;
+}
+.hero .inner { display: flex; align-items: stretch; gap: 32px; padding: 44px 0; flex-wrap: wrap; }
+.hero-copy { flex: 1 1 420px; }
+.hero-copy .eyebrow { color: #9fc7ea; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; font-size: 12px; }
+.hero-copy h1 { color: #fff; font-size: 34px; margin: 10px 0 12px; line-height: 1.2; }
+.hero-copy p { color: #d6e6f4; font-size: 16px; max-width: 560px; }
+.hero-copy .cta-row { display: flex; gap: 14px; margin-top: 20px; flex-wrap: wrap; }
+.hero-art { flex: 0 1 380px; display: flex; align-items: center; justify-content: center; }
+.hero-art img { max-width: 100%; border-radius: 10px; box-shadow: 0 12px 32px rgba(0,0,0,.35); }
+
+.band { background: var(--amex-gray-2); padding: 40px 0; }
+.band-white { background: #fff; padding: 40px 0; }
+
+.section-title { color: var(--amex-deep-blue); font-size: 26px; margin: 0 0 6px; }
+.section-sub { color: var(--amex-muted); margin: 0 0 22px; font-size: 15px; }
+
+/* ---------------------------------------------------------------- product sidebar (home) */
+.home-grid { display: flex; gap: 28px; align-items: flex-start; padding: 32px 0 48px; flex-wrap: wrap; }
+.product-nav {
+    flex: 0 0 280px;
+    background: #fff;
+    border: 1px solid var(--amex-border);
+    border-radius: 10px;
+    overflow: hidden;
+}
+.product-nav .item {
+    display: flex;
+    gap: 14px;
+    align-items: flex-start;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--amex-border);
+    color: var(--amex-deep-blue);
+}
+.product-nav .item:last-child { border-bottom: none; }
+.product-nav .item:hover { background: var(--amex-gray-2); text-decoration: none; }
+.product-nav .glyph {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: #e5effa;
+    color: var(--amex-blue);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700;
+    flex: 0 0 34px;
+}
+.product-nav .item b { display: block; font-size: 15px; }
+.product-nav .item span { font-size: 13px; color: var(--amex-muted); }
+.home-main { flex: 1 1 520px; }
+
+.promo-banner {
+    display: flex;
+    gap: 24px;
+    background: #eaf3fb;
+    border: 1px solid #cfe3f6;
+    border-radius: 10px;
+    padding: 22px 24px;
+    margin-bottom: 22px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.promo-banner h3 { color: var(--amex-deep-blue); margin: 0 0 6px; font-size: 20px; }
+.promo-banner p { margin: 0 0 12px; font-size: 14px; color: var(--amex-text); }
+.promo-banner .art { flex: 0 0 190px; }
+.promo-banner .art img { width: 190px; border-radius: 8px; }
+
+/* ---------------------------------------------------------------- card tiles */
+.card-grid {
+    display: grid;
+    /* min() keeps the column from exceeding the container on narrow phones. */
+    grid-template-columns: repeat(auto-fill, minmax(min(320px, 100%), 1fr));
+    gap: 22px;
+}
+.card-tile {
+    background: #fff;
+    border: 1px solid var(--amex-border);
+    border-radius: 10px;
+    padding: 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: relative;
+}
+.card-tile .art-link { display: block; text-align: center; background: var(--amex-gray); border-radius: 8px; padding: 12px 0; }
+.card-tile .art-link img { width: 240px; max-width: 90%; }
+.card-tile h3 { margin: 0; font-size: 19px; }
+.card-tile h3 a { color: var(--amex-deep-blue); }
+.card-tile .fee { font-size: 15px; color: var(--amex-text); font-weight: 600; }
+.card-tile .fee b { color: var(--amex-deep-blue); }
+.card-tile ul.benefits { margin: 0; padding-left: 18px; color: var(--amex-text); font-size: 14px; }
+.card-tile ul.benefits li { margin-bottom: 6px; }
+.card-tile .actions { display: flex; gap: 10px; margin-top: auto; flex-wrap: wrap; align-items: center; }
+.card-tile .compare-check { font-size: 13px; color: var(--amex-muted); display: inline-flex; gap: 6px; align-items: center; }
+.badge {
+    display: inline-block;
+    background: var(--amex-deep-blue);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    padding: 4px 10px;
+    border-radius: 4px;
+    position: absolute;
+    top: -10px; left: 16px;
+}
+
+/* filter chips */
+.filter-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+    margin: 18px 0 26px;
+}
+.filter-row .label { font-weight: 700; color: var(--amex-deep-blue); margin-right: 4px; }
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 1px solid var(--amex-border);
+    border-radius: 999px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--amex-deep-blue);
+    background: #fff;
+}
+.chip:hover { border-color: var(--amex-blue); text-decoration: none; }
+.chip.active { background: var(--amex-blue); color: #fff; border-color: var(--amex-blue); }
+
+/* ---------------------------------------------------------------- detail page */
+.detail-grid { display: flex; gap: 36px; padding: 36px 0 12px; align-items: flex-start; flex-wrap: wrap; }
+.detail-art { flex: 0 0 340px; text-align: center; }
+.detail-art img { width: 100%; max-width: 330px; border-radius: 10px; box-shadow: 0 10px 26px rgba(0,38,62,.18); }
+.detail-art .cta-col { display: flex; flex-direction: column; gap: 10px; margin-top: 18px; }
+.detail-main { flex: 1 1 420px; }
+.detail-main h1 { color: var(--amex-deep-blue); font-size: 30px; margin: 0 0 6px; }
+.detail-main .fee-line { font-size: 17px; margin-bottom: 18px; }
+.detail-main .fee-line b { color: var(--amex-deep-blue); }
+.offer-box {
+    background: var(--amex-gray-2);
+    border-left: 4px solid var(--amex-blue);
+    border-radius: 6px;
+    padding: 18px 22px;
+    margin: 18px 0;
+}
+.offer-box .offer-tag { font-size: 12px; font-weight: 700; color: var(--amex-blue); letter-spacing: .06em; text-transform: uppercase; }
+.offer-box .offer-headline { color: var(--amex-deep-blue); font-size: 21px; font-weight: 700; margin: 6px 0; }
+.offer-box p { margin: 6px 0 0; font-size: 14px; }
+.benefit-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(300px, 100%), 1fr)); gap: 16px; margin: 16px 0; }
+.benefit-cell {
+    border: 1px solid var(--amex-border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    font-size: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    background: #fff;
+}
+.benefit-cell .glyph {
+    flex: 0 0 34px; width: 34px; height: 34px; border-radius: 50%;
+    background: #e5effa; color: var(--amex-blue);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 12px;
+}
+.rates-table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 15px; }
+.rates-table th, .rates-table td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--amex-border); }
+.rates-table th { color: var(--amex-deep-blue); font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+
+/* ---------------------------------------------------------------- tables */
+table.data { width: 100%; border-collapse: collapse; font-size: 15px; }
+table.data th {
+    text-align: left; color: var(--amex-deep-blue); font-size: 13px;
+    text-transform: uppercase; letter-spacing: .05em;
+    padding: 10px 14px; border-bottom: 2px solid var(--amex-border);
+}
+table.data td { padding: 12px 14px; border-bottom: 1px solid var(--amex-border); }
+table.data tr:hover td { background: var(--amex-gray); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+.positive { color: var(--amex-success); }
+.negative { color: var(--amex-error); }
+
+/* ---------------------------------------------------------------- forms */
+.form-card {
+    background: #fff;
+    border: 1px solid var(--amex-border);
+    border-radius: 10px;
+    padding: 28px;
+    max-width: 560px;
+    margin: 28px auto;
+}
+.form-card h1 { color: var(--amex-deep-blue); margin-top: 0; font-size: 24px; }
+.field { margin-bottom: 18px; }
+.field label { display: block; font-weight: 600; font-size: 14px; color: var(--amex-deep-blue); margin-bottom: 6px; }
+.field input, .field select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #9aa5ad;
+    border-radius: 4px;
+    font-size: 15px;
+    font-family: inherit;
+}
+.field input:focus, .field select:focus { outline: 2px solid var(--amex-blue); border-color: var(--amex-blue); }
+.field .hint { font-size: 12px; color: var(--amex-muted); margin-top: 4px; }
+.form-actions { display: flex; gap: 12px; margin-top: 22px; align-items: center; flex-wrap: wrap; }
+
+/* ---------------------------------------------------------------- account */
+.account-grid { display: flex; gap: 30px; align-items: flex-start; padding: 28px 0 60px; flex-wrap: wrap; }
+.account-side {
+    flex: 0 0 240px;
+    border: 1px solid var(--amex-border);
+    border-radius: 10px;
+    padding: 10px 0;
+    background: #fff;
+}
+.account-side a {
+    display: block;
+    padding: 10px 18px;
+    color: var(--amex-deep-blue);
+    font-weight: 600;
+    font-size: 14px;
+}
+.account-side a:hover { background: var(--amex-gray-2); text-decoration: none; }
+.account-side a.active { border-left: 3px solid var(--amex-blue); background: #eaf3fb; }
+.account-main { flex: 1 1 520px; min-width: 0; }
+.summary-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 24px; }
+.summary-card {
+    flex: 1 1 200px;
+    background: #fff;
+    border: 1px solid var(--amex-border);
+    border-radius: 10px;
+    padding: 18px 20px;
+}
+.summary-card .k { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--amex-muted); font-weight: 700; }
+.summary-card .v { font-size: 24px; font-weight: 700; color: var(--amex-deep-blue); margin-top: 4px; }
+.summary-card .s { font-size: 13px; color: var(--amex-muted); margin-top: 2px; }
+
+/* ---------------------------------------------------------------- footer */
+.site-footer { background: #fff; border-top: 1px solid var(--amex-border); margin-top: 48px; padding: 40px 0 28px; }
+.footer-cols { display: flex; gap: 40px; flex-wrap: wrap; }
+.footer-cols .col { flex: 1 1 180px; }
+.footer-cols h4 { color: var(--amex-deep-blue); font-size: 13px; text-transform: uppercase; letter-spacing: .06em; margin: 0 0 10px; }
+.footer-cols a { display: block; color: var(--amex-text); font-size: 14px; padding: 4px 0; }
+.footer-legal { border-top: 1px solid var(--amex-border); margin-top: 26px; padding-top: 18px; font-size: 12px; color: var(--amex-muted); display: flex; gap: 18px; flex-wrap: wrap; align-items: center; }
+.footer-legal .country { display: inline-flex; gap: 8px; align-items: center; color: var(--amex-deep-blue); font-weight: 600; }
+.footer-legal img { height: 16px; }
+
+/* ---------------------------------------------------------------- misc */
+.crumb { font-size: 13px; color: var(--amex-muted); padding-top: 18px; }
+.crumb a { color: var(--amex-link); }
+.pill { display: inline-block; border-radius: 999px; padding: 2px 10px; font-size: 12px; font-weight: 700; }
+.pill.paid { background: #e7f4ec; color: var(--amex-success); }
+.pill.due { background: #fdf3e3; color: #8a5a00; }
+.pill.added { background: #e8f1fb; color: var(--amex-blue); }
+.pill.status { background: #e5effa; color: var(--amex-deep-blue); }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+@media (max-width: 720px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Small screens: data tables scroll horizontally inside their block box
+   (the anonymous table wrapper preserves the tabular layout), the card-art
+   column of detail pages moves to a full-width row, and grids collapse to the
+   container width. Desktop rendering is unchanged. */
+@media (max-width: 720px) {
+    table.data { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+    .detail-art { flex: 1 1 100%; }
+}
+.faq details {
+    border: 1px solid var(--amex-border);
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-bottom: 10px;
+    background: #fff;
+}
+.faq summary { font-weight: 700; color: var(--amex-deep-blue); cursor: pointer; font-size: 15px; }
+.faq .a { margin-top: 10px; font-size: 14px; color: var(--amex-text); }
+
+@media (max-width: 900px) {
+    .product-nav { flex: 1 1 100%; }
+    .hero-copy h1 { font-size: 26px; }
+}
+
+/* Long confirmation emails must wrap within the narrow form panel. */
+.form-card .rates-table { table-layout: fixed; width: 100%; }
+.form-card .rates-table th, .form-card .rates-table td { overflow-wrap: anywhere; }

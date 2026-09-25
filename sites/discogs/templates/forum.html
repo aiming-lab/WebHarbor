@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Discogs Forum - {{ f.name }}{% endblock %}
+{% block main_class %}page fr-page{% endblock %}
+{% block content %}
+{% with band_title=f.name, band_intro=f.description, show_tabs=True, tab='topics', crumbs=[('Forum', url_for('forum_index')), (f.name, None)], new_thread_url=(url_for('thread_new', slug=f.slug) if current_user.is_authenticated else url_for('login', next=url_for('thread_new', slug=f.slug))) %}{% include "_forum_band.html" %}{% endwith %}
+
+<div class="fr-threads">
+  <div class="fr-thread-row fr-thread-head fr-thread-row-board">
+    <div>Title</div><div class="fr-replies">Replies</div><div>Author</div><div>Started</div>
+  </div>
+  {% for t in pag.items %}
+    <div class="fr-thread-row fr-thread-row-board">
+      <div>
+        {% if t.pinned %}<span title="Pinned">📌</span> {% endif %}
+        {% if t.locked %}<span title="Locked">🔒</span> {% endif %}
+        <a href="{{ url_for('thread_view', tid=t.id) }}">{{ t.title }}</a>
+      </div>
+      <div class="fr-replies">{{ t.posts.count() - 1 }}</div>
+      <div><a href="{{ url_for('user_profile', username=t.user.username) }}">{{ t.user.username }}</a></div>
+      <div class="muted">{{ t.created_at|relative }}</div>
+    </div>
+  {% else %}
+    <p class="empty">No threads yet — start one!</p>
+  {% endfor %}
+</div>
+{{ m.pagination(pag, 'forum_view', params={'slug': f.slug}) }}
+{% endblock %}

@@ -1,0 +1,54 @@
+<article class="product-card" data-ppid="{{ product.ppid }}">
+  <div class="card-img">
+    <a href="/p/{{ product.slug }}/{{ product.ppid }}" aria-label="{{ product.name }}">
+      {% if product.primary_image %}
+        <img src="{{ product.primary_image }}" alt="{{ product.name }}" loading="lazy">
+      {% else %}
+        <div class="noimg"></div>
+      {% endif %}
+    </a>
+    <button class="wish-heart" type="button" title="{{ 'Remove from wish list' if request.path.endswith('/wishlist') else 'Add to wish list' }}"
+            onclick="document.getElementById('wish-{{ product.ppid }}').submit();">&#9825;</button>
+    <form id="wish-{{ product.ppid }}" method="post" action="/wishlist/toggle/{{ product.ppid }}">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <input type="hidden" name="next" value="{{ request.path }}">
+    </form>
+    <a class="quick-add" href="/p/{{ product.slug }}/{{ product.ppid }}">Quick Add</a>
+  </div>
+  <div class="card-info">
+    {% for badge in product.badges if badge in ('NEW_BADGE',) %}
+      <span class="badge badge-new">New!</span>
+    {% endfor %}
+    {% for badge in product.badges if badge in ('ONLY_AT_JCP',) %}
+      <span class="badge badge-onlyatjcp">Only at JCPenney</span>
+    {% endfor %}
+    {% if product.is_clearance %}
+      <span class="badge badge-clearance">Clearance</span>
+    {% endif %}
+    <div class="card-brand">{{ product.brand }}</div>
+    <div class="card-name"><a href="/p/{{ product.slug }}/{{ product.ppid }}">{{ product.name }}</a></div>
+    <div class="card-price">
+      {% if product.price != product.price_max %}{{ product.price|currency }} - {{ product.price_max|currency }}
+      {% else %}{{ product.price|currency }}{% endif %}
+      {% if product.coupon_code %}<span class="with-code">with code {{ product.coupon_code }}</span>{% endif %}
+    </div>
+    {% if product.original_price > product.price %}
+      <div class="card-original">
+        {% if product.original_price != product.original_price_max %}
+          {{ product.original_price|currency }} - {{ product.original_price_max|currency }}
+        {% else %}{{ product.original_price|currency }}{% endif %}
+      </div>
+    {% endif %}
+    {% if product.rating %}
+      <div class="card-rating"><span class="stars">{{ product.rating|stars }}</span> ({{ product.review_count }})</div>
+    {% endif %}
+    <div class="swatch-row">
+      {% for color in product.colors[:5] %}
+        {% if color.swatch_file %}
+          <span class="swatch" title="{{ color.color }}"
+                style="background-image:url(/static/images/swatches/{{ product.ppid }}/{{ color.swatch_file }})"></span>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</article>

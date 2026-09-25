@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Compare Chase Credit Cards{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="{{ url_for('credit_cards') }}">Credit Cards home</a> / Compare</div>
+  <h1 class="page-title">Compare cards</h1>
+  {% if cards %}
+  <div class="compare-grid">
+    <table class="compare">
+      <tr>
+        <th></th>
+        {% for c in cards %}<th><img src="{{ url_for('static', filename='images/' + c.card_art) }}" alt="{{ c.name }}" style="width:120px;"><br><a href="{{ url_for('credit_card_detail', slug=c.slug) }}">{{ c.name }}</a></th>{% endfor %}
+      </tr>
+      <tr><th>New cardmember offer</th>{% for c in cards %}<td>{{ c.offer or '—' }}</td>{% endfor %}</tr>
+      <tr><th>At a glance</th>{% for c in cards %}<td>{{ c.glance }}</td>{% endfor %}</tr>
+      <tr><th>Purchase APR</th>{% for c in cards %}<td>{{ c.apr }}</td>{% endfor %}</tr>
+      <tr><th>Intro APR</th>{% for c in cards %}<td>{{ c.intro_apr or 'No intro APR offer' }}</td>{% endfor %}</tr>
+      <tr><th>Annual fee</th>{% for c in cards %}<td>{{ c.fee_text }}</td>{% endfor %}</tr>
+      <tr><th>Network</th>{% for c in cards %}<td>{{ c.network }}</td>{% endfor %}</tr>
+      <tr><th>Earn rewards</th>{% for c in cards %}<td class="small">{% for e in earns[c.id] %}{{ e }}<br>{% else %}See Pricing &amp; Terms.{% endfor %}</td>{% endfor %}</tr>
+      <tr><th></th>{% for c in cards %}<td><a class="btn btn--blue btn--sm" href="{{ url_for('credit_card_apply', slug=c.slug) }}">Apply now</a></td>{% endfor %}</tr>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <p>No cards selected for comparison.</p>
+    <p><a class="btn btn--blue" href="{{ url_for('credit_cards') }}">Browse credit cards</a></p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

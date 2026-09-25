@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Order confirmation | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="content-page" style="max-width:720px">
+    <h1>Thanks — your order is on its way</h1>
+    {% if order %}
+    <div class="inline-alert flash-msg flash-msg--ok" style="max-width:none">
+      <p>We received your order for {{ order.quantity }} cop{{ 'y' if order.quantity == 1 else 'ies' }} of
+      <strong>{{ pub.title }}</strong> (Product # {{ pub.product_number }}), format {{ order.format }}.
+      It will ship to {{ order.ship_line1 }}, {{ order.ship_city }} {{ order.ship_state }} {{ order.ship_zip }}.
+      Allow 2-4 weeks for delivery.</p>
+    </div>
+    {% else %}
+    <div class="inline-alert flash-msg flash-msg--ok" style="max-width:none">
+      <p>We received your request for <strong>{{ pub.title }}</strong> (Product # {{ pub.product_number }}).
+      Orders ship within 2-4 weeks. <a href="{{ url_for('login') }}">Log in</a> next time to use your saved mailing address.</p>
+    </div>
+    {% endif %}
+    <p><a class="btn btn--outline btn--small" href="{{ url_for('publications_home') }}">Back to publications</a></p>
+  </div>
+</div>
+{% endblock %}

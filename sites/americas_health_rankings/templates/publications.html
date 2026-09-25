@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+{% block title %}Publications | AHR{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>Publications</h1>
+  <p class="section-sub">America’s Health Rankings publishes flagship reports, spotlights and articles that translate the data into action.</p>
+</div>
+<div class="container" style="padding-bottom:60px">
+  {% if page %}{{ page.html | safe }}{% endif %}
+
+  <h2 style="font-size:22px;margin-top:30px">Newest Reports</h2>
+  <div class="pub-grid three" style="margin-top:16px">
+    {% for r in reports[:3] %}
+    <div class="report-card">
+      <span class="pub-tag">Report</span>
+      <h3><a href="{{ url_for('report_page', slug=r.slug) }}">{{ r.title }}</a></h3>
+      <div class="published">Published {{ r.published }}</div>
+      <p>{{ r.excerpt }}</p>
+      <a href="{{ url_for('report_page', slug=r.slug) }}">View Report ›</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  <h2 style="font-size:22px;margin-top:34px">Latest Articles</h2>
+  <div class="pub-grid two" style="margin-top:16px">
+    {% for a in articles[:4] %}
+    <div class="pub-card">
+      <span class="pub-tag">Article</span>
+      <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+      <div class="pub-meta">By {{ a.author_name }}{% if a.published %} · {{ a.published }}{% endif %}</div>
+      <p class="pub-desc">{{ a.excerpt }}</p>
+      <a class="pub-link" href="{{ url_for('article_detail', slug=a.slug) }}">View Article ›</a>
+    </div>
+    {% endfor %}
+  </div>
+  <div style="margin-top:22px">
+    <a class="btn btn-outline" href="{{ url_for('reports_archive') }}">View Report Archive ›</a>
+    <a class="btn btn-outline" style="margin-left:8px" href="{{ url_for('articles_list') }}">See All Articles ›</a>
+  </div>
+</div>
+{% endblock %}

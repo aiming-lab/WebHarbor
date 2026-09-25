@@ -1,0 +1,113 @@
+{% extends "base.html" %}
+{% block title %}My OHID Account | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--account">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">My OHID Account</h1>
+                            <div class="odx-content__summary">Signed in as {{ current_user.display_name or current_user.username }} ({{ current_user.email }})</div>
+                        </div>
+                    </header>
+                </section>
+
+                <section class="odx-content-section">
+                    <h2>Profile</h2>
+                    <dl class="dl-horizontal">
+                        <dt>Username</dt><dd>{{ current_user.username }}</dd>
+                        <dt>Display name</dt><dd>{{ current_user.display_name or '—' }}</dd>
+                        <dt>Email</dt><dd>{{ current_user.email }}</dd>
+                        <dt>Phone</dt><dd>{{ current_user.phone or '—' }}</dd>
+                        <dt>Address</dt>
+                        <dd>
+                            {% if current_user.address_line1 %}
+                            {{ current_user.address_line1 }}, {{ current_user.city }}, {{ current_user.state }} {{ current_user.zip }}
+                            {% else %}
+                            &mdash;
+                            {% endif %}
+                        </dd>
+                    </dl>
+                    <p><a class="btn btn-secondary btn-sm" href="{{ url_for('account_edit') }}">Edit profile</a></p>
+                </section>
+
+                <section class="odx-content-section">
+                    <h2>Saved resources</h2>
+                    {% if saved %}
+                    <table class="table table-striped">
+                        <thead><tr><th>Resource</th><th>Section</th><th></th></tr></thead>
+                        <tbody>
+                        {% for sr, r in saved %}
+                        <tr>
+                            <td><a href="{{ r.path }}">{{ r.title }}</a></td>
+                            <td>{{ r.audience | capitalize }}</td>
+                            <td>
+                                <form method="post" action="{{ url_for('toggle_saved', resource_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <button class="btn btn-sm btn-secondary" type="submit">Remove</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>You have not saved any resources yet. Use the "Save to my resources" button on any resource page.</p>
+                    {% endif %}
+                </section>
+
+                <section class="odx-content-section">
+                    <h2>Alert subscriptions</h2>
+                    {% if subs %}
+                    <ul>
+                        {% for s in subs %}
+                        <li>{{ s.alert_type }} &mdash; {{ s.email }}</li>
+                        {% endfor %}
+                    </ul>
+                    {% else %}
+                    <p>No alert subscriptions yet. <a href="{{ url_for('alerts') }}">Subscribe to alerts</a>.</p>
+                    {% endif %}
+                </section>
+
+                {% if guides %}
+                <section class="odx-content-section">
+                    <h2>Ohio Travel Guide requests</h2>
+                    <ul>
+                        {% for g in guides %}
+                        <li>2026 Ohio Travel Guide ({{ g.format }}) &mdash; mailed to {{ g.address_line1 }}, {{ g.city }}, {{ g.state }} {{ g.zip }}</li>
+                        {% endfor %}
+                    </ul>
+                </section>
+                {% endif %}
+
+                {% if reports %}
+                <section class="odx-content-section">
+                    <h2>Consumer complaints</h2>
+                    <ul>
+                        {% for rep in reports %}
+                        <li>{{ rep.scam_type }} filed {{ rep.created_at.strftime('%B %d, %Y') }}</li>
+                        {% endfor %}
+                    </ul>
+                </section>
+                {% endif %}
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section">
+                        <h2 class="odx-bold">Account</h2>
+                        <ul class="list-unstyled">
+                            <li class="margin-bottom-xs"><a href="{{ url_for('account_edit') }}">Edit profile</a></li>
+                            <li class="margin-bottom-xs"><a href="{{ url_for('alerts') }}">Alerts &amp; subscriptions</a></li>
+                            <li class="margin-bottom-xs"><a href="{{ url_for('travel_guide') }}">Request the Travel Guide</a></li>
+                            <li class="margin-bottom-xs"><a href="{{ url_for('report_scam') }}">Report a scam</a></li>
+                            <li class="margin-bottom-xs"><form method="post" action="{{ url_for('logout') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="" style="font:inherit;cursor:pointer">Sign out</button></form></li>
+                        </ul>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

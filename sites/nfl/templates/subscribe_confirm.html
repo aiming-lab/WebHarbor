@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmation - {{ order.plan_title }} | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>THANK YOU FOR SUBSCRIBING</h1>
+  <p class="page-sub">Your {{ order.plan_title }} subscription is active.</p>
+</div>
+<section class="panel order-summary">
+  <h2 class="panel-title">ORDER CONFIRMATION</h2>
+  <dl class="info-list">
+    <div><dt>Order reference</dt><dd class="strong">{{ order.order_ref }}</dd></div>
+    <div><dt>Plan</dt><dd>{{ order.plan_title }}</dd></div>
+    <div><dt>Billing cycle</dt><dd>{{ 'Monthly' if order.cycle == 'month' else 'Annual' }}</dd></div>
+    <div><dt>Price</dt><dd>${{ '%.2f' | format(order.amount) }}</dd></div>
+    <div><dt>Tax</dt><dd>${{ '%.2f' | format(order.tax) }}</dd></div>
+    <div><dt>Total charged</dt><dd class="strong">${{ '%.2f' | format(order.total) }}</dd></div>
+    <div><dt>Card</dt><dd>•••• {{ order.card_last4 }}</dd></div>
+    <div><dt>Cardholder</dt><dd>{{ order.cardholder }}</dd></div>
+  </dl>
+  <div class="cta-row">
+    <a class="btn btn-red" href="{{ url_for('account') }}">Go to My Account</a>
+    <a class="btn btn-outline" href="{{ url_for('index') }}">Back to NFL.com</a>
+  </div>
+</section>
+{% endblock %}

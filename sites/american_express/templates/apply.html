@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Apply for the {{ card.name }} | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="form-card">
+    <p class="crumb" style="padding:0;"><a href="{{ url_for('card_detail', slug=card.slug) }}">&larr; Back to {{ card.name }}</a></p>
+    <h1>Apply for the {{ card.name }}</h1>
+    <p style="font-size:14px;color:#5c5f63;">Annual Fee: {{ card.annual_fee_text }} &middot; {{ card.apr_text }}</p>
+    <p style="font-size:14px;">Apply and find out your welcome offer: {{ card.welcome_headline }}</p>
+    <form method="post" action="{{ url_for('apply_card', slug=card.slug) }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="applicant_name">Full legal name</label>
+        <input id="applicant_name" name="applicant_name" required maxlength="120" value="{{ form.get('applicant_name', '') }}">
+      </div>
+      <div class="field">
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="email" required maxlength="140" value="{{ form.get('email', '') }}">
+      </div>
+      <div class="field">
+        <label for="phone">Phone (optional)</label>
+        <input id="phone" name="phone" maxlength="20" value="{{ form.get('phone', '') }}">
+      </div>
+      <div class="field">
+        <label for="employment_status">Employment status</label>
+        <select id="employment_status" name="employment_status" required>
+          <option value="">Select&hellip;</option>
+          <option {% if form.get('employment_status') == 'Employed full-time' %}selected{% endif %}>Employed full-time</option>
+          <option {% if form.get('employment_status') == 'Employed part-time' %}selected{% endif %}>Employed part-time</option>
+          <option {% if form.get('employment_status') == 'Self-employed' %}selected{% endif %}>Self-employed</option>
+          <option {% if form.get('employment_status') == 'Student' %}selected{% endif %}>Student</option>
+          <option {% if form.get('employment_status') == 'Retired' %}selected{% endif %}>Retired</option>
+          <option {% if form.get('employment_status') == 'Not currently employed' %}selected{% endif %}>Not currently employed</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="annual_income">Annual income before taxes (USD)</label>
+        <input id="annual_income" name="annual_income" required inputmode="decimal" value="{{ form.get('annual_income', '') }}">
+        <div class="hint">Include salary, wages, and other income you can use to repay.</div>
+      </div>
+      <div class="field">
+        <label for="residence_type">Residence type</label>
+        <select id="residence_type" name="residence_type" required>
+          <option value="">Select&hellip;</option>
+          <option {% if form.get('residence_type') == 'Rent' %}selected{% endif %}>Rent</option>
+          <option {% if form.get('residence_type') == 'Own' %}selected{% endif %}>Own</option>
+          <option {% if form.get('residence_type') == 'Live with family' %}selected{% endif %}>Live with family</option>
+          <option {% if form.get('residence_type') == 'Other' %}selected{% endif %}>Other</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="submit">Submit Application</button>
+        <span style="font-size:12px;color:#5c5f63;">Apply with confidence &mdash; your credit score is not impacted when you apply.</span>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

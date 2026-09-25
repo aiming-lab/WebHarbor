@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}America’s Health Rankings | AHR{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/ahr.css') }}">
+</head>
+<body class="ahr-body">
+<header class="site-header">
+  <div class="header-top">
+    <div class="container header-top-inner">
+      <a class="logo" href="{{ url_for('index') }}">
+        <img src="{{ url_for('static', filename='images/images/logo/ahr-logo-dark.svg') }}" alt="America's Health Rankings, United Health Foundation Logo">
+      </a>
+      <div class="header-right">
+        <form class="header-search" action="{{ url_for('search') }}" method="get" role="search">
+          <input type="text" name="q" value="{{ request.args.get('q','') }}" placeholder="Search" aria-label="Search">
+          <button type="submit" aria-label="Search">
+            <img src="{{ url_for('static', filename='images/images/icons/search.svg') }}" alt="search">
+          </button>
+        </form>
+        <button type="button" class="survey-banner" id="survey-banner">
+          Please take a quick survey <span class="survey-x" id="survey-x">×</span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <nav class="main-nav" aria-label="Main navigation">
+    <div class="container main-nav-inner">
+      <a href="{{ url_for('index') }}" class="nav-link {% if request.path == '/' %}active{% endif %}">Home</a>
+      <a href="{{ url_for('publications_hub') }}" class="nav-link {% if request.path.startswith('/publications') %}active{% endif %}">Publications</a>
+      <div class="nav-dropdown">
+        <a href="{{ url_for('state_summary', code='ALL') }}" class="nav-link {% if request.path.startswith('/explore') %}active{% endif %}">Explore Data <span class="chev">▾</span></a>
+        <div class="dropdown-menu">
+          <a href="{{ url_for('state_summary', code='ALL') }}">Explore State Data</a>
+          <a href="{{ url_for('measures_directory') }}">Health Measures</a>
+          <a href="{{ url_for('health_topics') }}">Health Topics</a>
+        </div>
+      </div>
+      <div class="nav-dropdown">
+        <a href="{{ url_for('methodology') }}" class="nav-link {% if request.path.startswith('/about') %}active{% endif %}">About Us <span class="chev">▾</span></a>
+        <div class="dropdown-menu">
+          <a href="{{ url_for('methodology') }}">Data Sources &amp; Measures</a>
+          <a href="{{ url_for('inquiry') }}">Contact Us</a>
+          <a href="{{ url_for('faq') }}">FAQs</a>
+        </div>
+      </div>
+      {% if current_user.is_authenticated %}
+      <a href="{{ url_for('account') }}" class="nav-link nav-account">My Account</a>
+      {% else %}
+      <a href="{{ url_for('login') }}" class="nav-link nav-account">Log In</a>
+      {% endif %}
+    </div>
+  </nav>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container flash-wrap">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main id="main-content">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container footer-inner">
+    <div class="footer-col footer-logo">
+      <img src="{{ url_for('static', filename='images/images/ahr-logo-h.png') }}" alt="AHR Logo">
+    </div>
+    <div class="footer-col">
+      <h3>Reports</h3>
+      <a href="{{ url_for('report_page', slug='2025-annual-report') }}">Annual Report</a>
+      <a href="{{ url_for('report_page', slug='2025-health-of-women-and-children-report') }}">Health of Women &amp; Children</a>
+      <a href="{{ url_for('report_page', slug='2026-senior-report') }}">Senior Report</a>
+      <a href="{{ url_for('reports_archive') }}">View Report Archive</a>
+    </div>
+    <div class="footer-col">
+      <h3>Partner With Us</h3>
+      <a href="{{ url_for('inquiry') }}">Contact Us</a>
+      <a href="{{ url_for('faq') }}">FAQs</a>
+      <a href="https://developers.americashealthrankings.org/" target="_blank" rel="noopener">AHR Developers Site ↗</a>
+    </div>
+    <div class="footer-col footer-newsletter">
+      <div class="newsletter-card">
+        <h4>Explore the Data and Stay Tuned for New Insights</h4>
+        <p>Want to be notified of our latest updates? Sign up now</p>
+        <form action="{{ url_for('newsletter_signup') }}" method="post" class="newsletter-form">
+          <label for="nl-name" class="visually-hidden">Name</label>
+          <input id="nl-name" type="text" name="name" placeholder="John Smith" required>
+          <label for="nl-email" class="visually-hidden">Email</label>
+          <input id="nl-email" type="email" name="email" placeholder="johnsmith@gmail.com" required>
+          <button type="submit">Sign Up For Updates ›</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <div class="container footer-bottom-inner">
+      <span>©2026 Copyright United Health Foundation. All Rights Reserved</span>
+      <span class="footer-legal">
+        <a href="https://www.unitedhealthgroup.com/terms-of-use.html" target="_blank" rel="noopener">Terms of Use</a>
+        <a href="https://www.unitedhealthgroup.com/privacy.html" target="_blank" rel="noopener">Privacy Policy</a>
+      </span>
+    </div>
+  </div>
+</footer>
+<script>
+  (function () {
+    var x = document.getElementById('survey-x');
+    var b = document.getElementById('survey-banner');
+    if (x && b) { x.addEventListener('click', function (e) { e.preventDefault(); e.stopPropagation(); b.style.display = 'none'; }); }
+  })();
+</script>
+</body>
+</html>

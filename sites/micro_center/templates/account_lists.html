@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}My Lists : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">My Lists</h1>
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section>
+      <h2>Items saved to your list</h2>
+      {% for item in items %}
+      <div class="cart-item">
+        <a href="{{ item.product.detail_url() }}"><img src="/static/images/products/{{ item.product.primary_image() }}" alt="{{ item.product.name }}"></a>
+        <div>
+          <div class="ci-name"><a href="{{ item.product.detail_url() }}">{{ item.product.brand }} {{ item.product.name }}</a></div>
+          <div class="ci-sku">SKU: {{ '%06d'|format(item.product.sku) }} &middot; saved {{ item.created_at.strftime('%b %d, %Y') }}</div>
+          <div class="small">{{ item.product|stock_label(selected_store) }}</div>
+        </div>
+        <div class="t-right">
+          <div class="our-price">${{ "%.2f"|format(item.product.price) }}</div>
+          <form method="POST" action="/cart/add/{{ item.product.product_id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="next" value="/cart">
+            <button class="btn btn-secondary" type="submit">Add to Cart</button>
+          </form>
+          <form method="POST" action="/list/remove/{{ item.id }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn btn-link" type="submit">Remove</button>
+          </form>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state"><h2>Your list is empty</h2><p>Save products you're interested in from any product page.</p></div>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}

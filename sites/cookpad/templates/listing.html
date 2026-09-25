@@ -1,0 +1,13 @@
+{% extends "base.html" %}{% block title %}{{ category.name if category else ('Recipes by '+author if author else 'Search recipes') }}{% endblock %}{% block content %}
+<div class="page-heading"><p class="breadcrumb"><a href="{{ url_for('index') }}">Home</a> / <a href="{{ url_for('categories_page') }}">Collections</a></p>
+<h1>{{ category.name if category else ('Recipes by '+author if author else ('Recipes for “'+query+'”' if query else 'All recipes')) }}</h1>
+{% if category %}<p>{{ category.description }}</p>{% elif author %}<p>Recipes by this Cookpad author included in the local snapshot.</p>{% endif %}</div>
+<form class="filters" method="get">
+<label>Keywords<input name="q" value="{{ query }}" placeholder="Recipe or ingredient"></label>
+{% if not category %}<label>Collection<select name="category"><option value="">All collections</option>{% for c in categories %}<option value="{{ c.slug }}" {% if selected_category==c.slug %}selected{% endif %}>{{ c.name }}</option>{% endfor %}</select></label>{% endif %}
+<label>Maximum time<select name="max_time"><option value="">Any time</option>{% for n in [15,30,45,60,90] %}<option value="{{ n }}" {% if max_time==n %}selected{% endif %}>{{ n }} minutes</option>{% endfor %}</select></label>
+<label>Sort by<select name="sort"><option value="saved" {% if sort=='saved' %}selected{% endif %}>Most saved</option><option value="time" {% if sort=='time' %}selected{% endif %}>Shortest time</option><option value="name" {% if sort=='name' %}selected{% endif %}>Recipe name</option></select></label><button>Apply filters</button></form>
+<p class="result-count">{{ recipes.total }} recipes{% if max_time %} · Recipes without a supplied time are excluded{% endif %}</p>
+<div class="recipe-grid">{% for recipe in recipes.items %}{% include "_recipe_card.html" %}{% else %}<div class="empty-state"><h2>No matching recipes</h2><p>Try fewer keywords or remove a filter.</p></div>{% endfor %}</div>
+{% if recipes.pages>1 %}<nav class="pagination" aria-label="Results pages">{% for number in range(1,recipes.pages+1) %}<a href="{{ pagination_url(number) }}" {% if number==recipes.page %}aria-current="page"{% endif %}>{{ number }}</a>{% endfor %}</nav>{% endif %}
+{% endblock %}

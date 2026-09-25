@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}JCPenney Rewards{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-narrow">
+    <h1>JCPenney Rewards</h1>
+    <p style="font-size:15px;">It pays to be a JCPenney Rewards member. Earn points on every purchase, unlock members-only coupon events, and collect CashPass rewards to spend like cash.</p>
+
+    {% if member %}
+      <div class="summary-box" style="position:static;margin:18px 0;">
+        <h2>Your Rewards</h2>
+        <div class="summary-row"><span>Membership</span><span>{{ member.rewards_status }}</span></div>
+        <div class="summary-row"><span>Points</span><span>{{ member.rewards_points }}</span></div>
+      </div>
+      {% if member.rewards_member %}
+      <h2>Recent Activity</h2>
+      {% for event in events %}
+        <div class="order-row">
+          <div>{{ event.description }}</div>
+          <div style="font-size:12.5px;color:var(--ink-2);">{{ event.event_date.strftime('%B %-d, %Y') }}</div>
+          <div style="font-weight:700;color:var(--jcp-red);">{{ event.points }} pts</div>
+        </div>
+      {% else %}
+        <p style="color:var(--ink-2);">No rewards activity yet.</p>
+      {% endfor %}
+      {% endif %}
+    {% else %}
+      <h2>Why join?</h2>
+      <ul>
+        <li><strong>Earn faster:</strong> get points on every purchase, and bonus points on shoes, jewelry, and home.</li>
+        <li><strong>Members-only savings:</strong> receive coupon events like Customer Appreciation Days by email.</li>
+        <li><strong>CashPass rewards:</strong> every 200 points becomes a $10 CashPass reward.</li>
+        <li><strong>Birthday gift:</strong> a special offer during your birthday month.</li>
+      </ul>
+      <p><a class="btn-link" href="/signin">Join or Sign In</a></p>
+    {% endif %}
+
+    <h2>How it works</h2>
+    <p>1. Join JCPenney Rewards for free at checkout or online.<br>
+       2. Earn 1 point for every $1 spent, 2 points on shoes, jewelry, and home purchases.<br>
+       3. Collect 200 points to earn a $10 CashPass reward, delivered by email.<br>
+       4. CashPass rewards spend like cash on almost anything in store or at jcp.com.</p>
+    <p style="font-size:12.5px;color:#767676;">Rewards Access membership is required to earn points. See <a href="/m/customer-service" style="color:var(--jcp-red);">Terms &amp; Conditions</a> for details and exclusions.</p>
+  </div>
+</div>
+{% endblock %}

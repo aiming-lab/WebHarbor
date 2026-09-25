@@ -1,0 +1,15 @@
+<div class="account-nav">
+  <a href="/account" class="{% if request.path == '/account' %}active{% endif %}">Account Overview</a>
+  <a href="/account/orders" class="{% if request.path.startswith('/account/orders') %}active{% endif %}">My Orders</a>
+  <a href="/account/lists" class="{% if request.path == '/account/lists' %}active{% endif %}">My Lists</a>
+  <a href="/account/addresses" class="{% if request.path == '/account/addresses' %}active{% endif %}">Address Book</a>
+  <a href="/account/payments" class="{% if request.path == '/account/payments' %}active{% endif %}">Payment Methods</a>
+  <a href="/account/profile" class="{% if request.path == '/account/profile' %}active{% endif %}">Profile</a>
+  {% if current_user.is_benchmark %}
+  <div class="small" style="padding:11px 14px;color:#707070">Insider: {{ current_user.email }}</div>
+  {% endif %}
+  <form method="POST" action="/account/logout" style="padding:0 14px 10px">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <button class="btn btn-secondary" type="submit" style="width:100%">Sign Out</button>
+  </form>
+</div>

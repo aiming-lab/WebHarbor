@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% from "_macros.html" import vcard with context %}
+{% block content %}
+<section class="hero">
+  <div class="container">
+    <h1>Shop for used cars. Then buy online or at a store.</h1>
+    <p>Browse our nationwide inventory of <strong>CarMax Certified</strong> vehicles, get pre-qualified
+       with no impact to your credit, and pick the path that works for you.</p>
+    <form class="hero-search" method="get" action="{{ url_for('cars_index') }}">
+      <input type="text" name="q" placeholder="Search make, model, or features (e.g. 'Honda Civic Sport')" autocomplete="off">
+      <button type="submit" class="btn btn-primary">Search 50,000+ cars</button>
+    </form>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2>Shop by body style</h2>
+    <div class="grid grid-6">
+      {% for b, n in body_styles %}
+        <a class="kpi" style="text-align:center;text-decoration:none;color:inherit"
+           href="{{ url_for('cars_index', body_style=b) }}">
+          <div class="v" style="font-size:18px">{{ b }}</div>
+          <div class="l">{{ n }} cars</div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if featured %}
+<section class="section section-soft">
+  <div class="container">
+    <h2>Featured CarMax Certified vehicles</h2>
+    <div class="grid grid-4">
+      {% for v in featured %}{{ vcard(v) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container">
+    <h2>Shop by make</h2>
+    <div class="grid grid-6">
+      {% for make, slug, n in popular_makes %}
+        <a class="kpi" style="text-align:center;text-decoration:none;color:inherit"
+           href="{{ url_for('cars_make', make=slug) }}">
+          <div class="v" style="font-size:18px">{{ make }}</div>
+          <div class="l">{{ n }} in stock</div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+{% if new_arrivals %}
+<section class="section section-soft">
+  <div class="container">
+    <h2>New arrivals this week</h2>
+    <div class="grid grid-4">
+      {% for v in new_arrivals %}{{ vcard(v) }}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="container">
+    <div class="grid grid-3">
+      <div class="callout">
+        <h3 style="margin-top:0">Sell us your car</h3>
+        <p>Real, upfront offer in under 2 minutes. Good for 7 days.</p>
+        <a class="btn btn-primary" href="{{ url_for('sell_my_car') }}">Get my offer</a>
+      </div>
+      <div class="callout" style="background:#e8f1fb;border-left-color:var(--cmx-blue)">
+        <h3 style="margin-top:0">Pre-qualify in 5 minutes</h3>
+        <p>Shop with personalized monthly payments. No impact to credit.</p>
+        <a class="btn btn-secondary" href="{{ url_for('pre_qual') }}">Get pre-qualified</a>
+      </div>
+      <div class="callout" style="background:#fff;border:1px solid var(--cmx-border);border-left:4px solid var(--cmx-yellow)">
+        <h3 style="margin-top:0">MaxCare extended warranty</h3>
+        <p>Plans up to 60 months / 100,000 miles. 24/7 roadside.</p>
+        <a class="btn btn-outline" href="{{ url_for('maxcare_plans') }}">See plans</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if article_strip %}
+<section class="section section-soft">
+  <div class="container">
+    <h2>Research &amp; advice</h2>
+    <div class="grid grid-3">
+      {% for a in article_strip %}
+      <a href="{{ url_for('article_detail', slug=a.slug) }}" class="vcard" style="text-decoration:none;color:inherit">
+        <div class="vcard-img">
+          <img src="{{ a.hero_image or '/static/images/_pending.svg' }}" alt="{{ a.title }}"
+               onerror="this.src='/static/images/_pending.svg'">
+        </div>
+        <div class="vcard-body">
+          <h3 class="vcard-title">{{ a.title }}</h3>
+          <p style="font-size:13px;color:var(--cmx-text-light)">{{ a.summary }}</p>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}

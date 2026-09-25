@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Licenses &amp; Permits | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--resource">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <header id="odx-content-header" class="odx-content__header">
+                    <div class="odx-title">
+                        <h1 class="odx-content__title">Licenses &amp; Permits</h1>
+                        <div class="odx-content__summary">
+                            Find the state agency that issues the professional or occupational license you need, and how to contact them.
+                        </div>
+                    </header>
+                </header>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section">
+                    <form class="form-inline margin-bottom-sm" method="get" action="{{ url_for('licenses_page') }}">
+                        <div class="form-group">
+                            <label for="q">Search</label>
+                            <input type="text" id="q" class="form-control" name="q" value="{{ q }}" placeholder="Search by profession, e.g. electrician">
+                        </div>
+                        <div class="form-group margin-left-xs">
+                            <label for="agency">Agency</label>
+                            <select id="agency" name="agency" class="form-control">
+                                <option value="">All agencies</option>
+                                {% for a in agencies %}
+                                <option value="{{ a }}" {{ 'selected' if a == agency else '' }}>{{ a }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-sm margin-left-xs" type="submit">Search</button>
+                    </form>
+
+                    <h2 class="odx-bold">Showing {{ items | length }} of {{ total }} licenses</h2>
+
+                    <div class="table-responsive">
+                        <table id="js-licenses-table" class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>License or Permit</th>
+                                    <th>Agency</th>
+                                    <th>Contact</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for l in items %}
+                                <tr>
+                                    <td><a href="{{ l.url }}" target="_blank">{{ l.name }}</a></td>
+                                    <td><a href="{{ l.agency_url }}" target="_blank">{{ l.agency }}</a></td>
+                                    <td>{% if l.contact_url %}<a href="{{ l.contact_url }}" target="_blank">{{ l.contact_label or 'contact form' }}</a>{% else %}&mdash;{% endif %}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {% if pages > 1 %}
+                    <div class="pagination-container">
+                        <div class="odx-pagination">
+                            {% for p in range(1, pages + 1) %}
+                            <a class="{{ 'active' if p == page else '' }}" href="{{ url_for('licenses_page', q=q, agency=agency, page=p) }}">{{ p }}</a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </section>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

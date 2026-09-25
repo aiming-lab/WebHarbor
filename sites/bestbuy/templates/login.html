@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Sign in · Best Buy Demo{% endblock %}
+{% block body_class %}identity-page{% endblock %}
+{% block content %}
+  <section class="shell page-section auth-layout identity-layout">
+    <div class="panel identity-card">
+      <h1>Sign in to your account</h1>
+      <form method="post" class="auth-form">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label>Email Address
+          <input type="email" name="email" required>
+        </label>
+        <label>Password
+          <input type="password" name="password" required>
+        </label>
+        <button class="button" type="submit">Sign in</button>
+      </form>
+      <p class="identity-terms">By continuing or signing in, you agree this is a local benchmark simulation. No real Best Buy account is contacted.</p>
+      <p class="auth-note">Demo password: <strong>{{ benchmark_password }}</strong></p>
+      <hr>
+      <p><strong>Don't have a benchmark account?</strong> <a href="{{ url_for('register') }}">Create an account</a></p>
+    </div>
+  </section>
+{% endblock %}

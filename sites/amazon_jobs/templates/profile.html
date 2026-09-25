@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}My profile | Amazon.jobs{% endblock %}
+{% block content %}
+<div class="container page-content account-page">
+  <div class="account-head">
+    <h1>My profile</h1>
+    <p class="account-sub">The details recruiters see when you apply to a role.</p>
+  </div>
+  <div class="profile-grid">
+    <div class="profile-main">
+      <div class="profile-card">
+        <h2>Basic information</h2>
+        <dl class="profile-fields">
+          <div><dt>Display name</dt><dd>{{ user.display_name }}</dd></div>
+          <div><dt>First name</dt><dd>{{ user.first_name or "—" }}</dd></div>
+          <div><dt>Last name</dt><dd>{{ user.last_name or "—" }}</dd></div>
+          <div><dt>Email</dt><dd>{{ user.email }}</dd></div>
+          <div><dt>Phone</dt><dd>{{ user.phone or "—" }}</dd></div>
+        </dl>
+      </div>
+      <div class="profile-card">
+        <h2>Location</h2>
+        <dl class="profile-fields">
+          <div><dt>City</dt><dd>{{ user.city or "—" }}</dd></div>
+          <div><dt>State</dt><dd>{{ user.state or "—" }}</dd></div>
+          <div><dt>Country</dt><dd>{{ user.country or "—" }}</dd></div>
+        </dl>
+      </div>
+      <div class="profile-card">
+        <h2>Professional details</h2>
+        <dl class="profile-fields">
+          <div><dt>Headline</dt><dd>{{ user.headline or "—" }}</dd></div>
+          <div><dt>LinkedIn URL</dt><dd>{{ user.linkedin_url or "—" }}</dd></div>
+          <div><dt>Member since</dt><dd>{{ user.created_at.strftime('%B %-d, %Y') }}</dd></div>
+        </dl>
+      </div>
+    </div>
+    <div class="profile-side">
+      <a class="side-link" href="{{ url_for('profile_edit') }}">Edit profile</a>
+      <a class="side-link" href="{{ url_for('account_applications') }}">My applications</a>
+      <a class="side-link" href="{{ url_for('job_alerts') }}">Job alerts</a>
+      <a class="side-link" href="{{ url_for('communication_preferences') }}">Settings</a>
+      <a class="side-link" href="{{ url_for('logout') }}">Sign out</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

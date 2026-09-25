@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Radio - Bandcamp{% endblock %}
+{% block content %}
+<section class="container section-block">
+    <div class="section-head">
+        <div>
+            <p class="eyebrow">Bandcamp Radio</p>
+            <h1>Shows</h1>
+            <p>Weekly sets and genre spotlights from the mirror catalog.</p>
+        </div>
+    </div>
+    <div class="radio-shows">
+        {% for genre in shows %}
+            <article class="radio-show">
+                <h3><a href="{{ url_for('discover', genre=genre.slug) }}">{{ genre.name|capitalize }} Weekly</a></h3>
+                <p>{{ genre.description }}</p>
+            </article>
+        {% endfor %}
+    </div>
+</section>
+
+<section class="container section-block">
+    <div class="section-head compact"><h2>Latest episodes</h2></div>
+    <div class="radio-episodes">
+        {% for album in episodes %}
+            <div class="radio-episode">
+                <img src="{{ url_for('static', filename=album.cover_image) }}" alt="{{ album.title }}" loading="lazy">
+                <div>
+                    <strong><a href="{{ url_for('album_page', slug=album.slug) }}">{{ album.title }}</a></strong>
+                    <span>{{ album.artist.name }} / {{ album.primary_genre.name }}</span>
+                    <button class="preview-toggle" type="button" data-preview-target="radio-{{ album.id }}">Play</button>
+                    <div id="radio-{{ album.id }}" class="preview-panel">
+                        <div class="wave"><span></span><span></span><span></span><span></span><span></span></div>
+                        <p>{{ album.title }} — full set in the mirror player.</p>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

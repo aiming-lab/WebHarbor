@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Chase.com{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/logo_chase.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body>
+<div class="topbar">
+  <div class="container">
+    <a class="skip" href="#main">Skip to main content</a>
+    <span>Investing and insurance products: Not FDIC insured · Not bank guaranteed · May lose value</span>
+  </div>
+</div>
+
+<header class="site-header">
+  <div class="audience-row">
+    <div class="container">
+      <nav class="audience-tabs" aria-label="Audience">
+        <a href="{{ url_for('index') }}" class="active">Personal</a>
+        <a href="{{ url_for('index') }}">Business</a>
+        <a href="{{ url_for('index') }}">Commercial</a>
+      </nav>
+      <div class="utility-links">
+        <a href="{{ url_for('customer_service') }}">Customer service</a>
+        <a href="{{ url_for('locator') }}">Find ATM or branch</a>
+        <a href="{{ url_for('search') }}">Search</a>
+        {% if current_user.is_authenticated %}
+          <a href="{{ url_for('account') }}">My accounts</a>
+          <a href="{{ url_for('logout') }}">Sign out</a>
+        {% else %}
+          <a class="btn btn--blue btn--sm" href="{{ url_for('logon') }}">Sign in</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="container brand-row">
+    <a class="brand" href="{{ url_for('index') }}">
+      <img class="octagon" src="{{ url_for('static', filename='icons/logo_chase_headerfooter.svg') }}" alt="Chase logo">
+      CHASE
+    </a>
+    <nav class="main-nav" aria-label="Products">
+      <a href="{{ url_for('checking') }}">Checking</a>
+      <a href="{{ url_for('savings') }}">Savings &amp; CDs</a>
+      <a href="{{ url_for('credit_cards') }}">Credit cards</a>
+      <a href="{{ url_for('mortgage') }}">Home loans</a>
+      <a href="{{ url_for('auto') }}">Auto</a>
+      <a href="{{ url_for('education') }}">Education &amp; goals</a>
+      <a href="{{ url_for('customer_service') }}">Support</a>
+    </nav>
+    <div class="signin-cta">
+      <a class="btn btn--blue btn--sm" href="{{ url_for('credit_cards') }}">Explore cards</a>
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flashes">
+      {% for category, message in messages %}
+        <div class="flash flash--{{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-cta">
+    <div class="container">
+      <h2>We're here to help you manage your money today and tomorrow</h2>
+      <p class="small" style="margin:0;">Checking Accounts · Savings Accounts &amp; CDs · Credit Cards · Mortgages &amp; Home Equity · Auto · Chase for Business · Investing by J.P. Morgan</p>
+    </div>
+  </div>
+  <div class="container">
+    <div class="footer-cols">
+      <div>
+        <h4>Chase banking</h4>
+        <ul>
+          <li>Choose the checking account that works best for you. See our Chase Total Checking® offer for new customers.</li>
+          <li>Make purchases with your debit card, and bank from almost anywhere by phone, tablet or computer and more than 14,000 ATMs and nearly 4,700 branches.</li>
+          <li><a href="{{ url_for('checking') }}">Checking accounts</a></li>
+          <li><a href="{{ url_for('savings') }}">Savings accounts &amp; CDs</a></li>
+          <li><a href="{{ url_for('cds') }}">Certificates of Deposit</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Credit Cards</h4>
+        <ul>
+          <li>Choose from our Chase credit cards to help you buy what you need. Many offer rewards that can be redeemed for cash back or travel-related perks.</li>
+          <li><a href="{{ url_for('credit_cards') }}">Explore all credit cards</a></li>
+          <li><a href="{{ url_for('credit_cards_category', cat='travel') }}">Travel cards</a></li>
+          <li><a href="{{ url_for('credit_cards_category', cat='cash-back') }}">Cash back cards</a></li>
+          <li><a href="{{ url_for('credit_cards_category', cat='business') }}">Business cards</a></li>
+          <li><a href="{{ url_for('credit_journey') }}">Free credit score with Credit Journey</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Mortgages &amp; Home Equity</h4>
+        <ul>
+          <li>Buy a home, refinance, or manage your mortgage online with Chase.</li>
+          <li><a href="{{ url_for('mortgage_rates') }}">Today's mortgage rates</a></li>
+          <li><a href="{{ url_for('mortgage_calculator') }}">Mortgage calculator</a></li>
+          <li><a href="{{ url_for('education') }}">Home lending education</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Auto</h4>
+        <ul>
+          <li>Apply for auto financing and secure your rate and financing terms for 30 days.</li>
+          <li><a href="{{ url_for('auto_rates') }}">Auto loan rates</a></li>
+          <li><a href="{{ url_for('auto_calculator') }}">Car payment calculator</a></li>
+          <li><a href="{{ url_for('education', category='auto') }}">Auto education center</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <div class="footer-brand">
+        <img src="{{ url_for('static', filename='icons/logo_chase_headerfooter.svg') }}" alt="Chase logo" width="26" height="26">
+        CHASE
+      </div>
+      <p>"Chase," "JPMorgan," "JPMorgan Chase," the JPMorgan Chase logo and the Octagon Symbol are trademarks of JPMorgan Chase Bank, N.A. JPMorgan Chase Bank, N.A. is a registered bank, Member FDIC.</p>
+      <div class="links">
+        <a href="{{ url_for('customer_service') }}">Customer Service</a>
+        <a href="{{ url_for('locator') }}">Find a branch</a>
+        <a href="{{ url_for('education') }}">Education Center</a>
+        <a href="{{ url_for('credit_journey') }}">Credit Journey</a>
+        <a href="{{ url_for('search') }}">Site Search</a>
+        <a href="{{ url_for('index') }}">Privacy</a>
+        <a href="{{ url_for('index') }}">Security</a>
+        <a href="{{ url_for('index') }}">Terms of Use</a>
+        <a href="{{ url_for('index') }}">Accessibility</a>
+        <a href="{{ url_for('index') }}">AdChoices</a>
+      </div>
+      <p>Deposit products and related services are offered by JPMorgan Chase Bank, N.A. Member FDIC. Mirror snapshot {{ mirror_date }} — this is a WebHarbor offline benchmark mirror, not the live chase.com.</p>
+      <p>© {{ current_year }} JPMorgan Chase &amp; Co.</p>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

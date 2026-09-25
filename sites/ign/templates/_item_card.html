@@ -1,0 +1,27 @@
+<article class="item-card {{ 'compact' if compact|default(false) else '' }}">
+  <a class="thumb" href="{{ detail_url(item) }}">
+    {% if item.image_path %}
+      <img src="{{ item.image_path }}" alt="{{ item.title }}">
+    {% endif %}
+    {% if item.score and not (hide_review_scores|default(false) and item.content_type == 'review') %}
+      <span class="score">{{ item.score }}</span>
+    {% elif item.duration %}
+      <span class="duration">{{ item.duration }}</span>
+    {% endif %}
+  </a>
+  <div class="item-copy">
+    <div class="meta-line card-meta">
+      <span>{{ item.pretty_type }}</span>
+      <span>{{ section_label(item.section_slug) }}</span>
+      {% if item.published_at %}<span>{{ item.published_at.strftime('%b %d, %Y') }}</span>{% endif %}
+    </div>
+    <h3><a href="{{ detail_url(item) }}">{{ item.title }}</a></h3>
+    {% if not compact|default(false) and not request.endpoint == 'index' %}
+      <p>{{ item.short_description }}</p>
+    {% endif %}
+    <div class="card-actions">
+      <span>{{ item.comments_count }} comments</span>
+      {% if item.score_label and not (hide_review_scores|default(false) and item.content_type == 'review') %}<span>{{ item.score_label }}</span>{% endif %}
+    </div>
+  </div>
+</article>

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Drugs &amp; Supplements A-Z | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Drugs &amp; Supplements</div>
+  <div class="page-head">
+    <h1>Drugs &amp; Supplements A-Z</h1>
+    <p>Look up uses, dosage, side effects, interactions, and warnings for common medicines.</p>
+  </div>
+
+  <div class="azbar">
+    <a href="{{ url_for('drugs_index') }}" class="{{ 'active' if not current_letter }}">All</a>
+    {% for L in letters %}
+      {% if L in active_letters %}
+      <a href="{{ url_for('drugs_index', letter=L) }}"
+         class="{{ 'active' if current_letter == L }}">{{ L }}</a>
+      {% else %}
+      <span>{{ L }}</span>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="filter-bar">
+    <a href="{{ url_for('drugs_index', letter=current_letter) }}"
+       class="{{ 'active' if not active_category }}">All Categories</a>
+    {% for c in categories %}
+    <a href="{{ url_for('drugs_index', letter=current_letter, category=c) }}"
+       class="{{ 'active' if active_category == c }}">{{ c }}</a>
+    {% endfor %}
+  </div>
+
+  <ul class="item-list">
+    {% for d in drugs %}
+    <li>
+      <span class="item-name"><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.name }}</a></span>
+      <span class="item-meta">{{ d.category }}</span>
+    </li>
+    {% else %}
+    <li class="empty-note">No drugs found{% if current_letter %} under "{{ current_letter }}"{% endif %}.</li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

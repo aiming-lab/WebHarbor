@@ -1,10 +1,21 @@
 # WebHarbor — agent guide
 
+## Control-plane authentication
+
+The current source requires a bearer token of at least 32 characters for control-plane requests. Before the Docker examples below, set:
+
+```bash
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+```
+
+Pass it with `docker run -e WEBSYN_CONTROL_TOKEN`. Site browsing does not require this token; it is removed from site-process environments. Build from this checkout: previously published images may use an older registry/authentication contract.
+
+
 A coding agent (Claude Code, Cursor, Aider, Codex, ...) is reading this. Read once, then act.
 
 ## What it is
 
-31 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
+58 Flask mirror websites (Amazon, GitHub, BBC News, ...) packaged into one Docker image, plus a control plane on `:8101` for resetting per-site state. Used as a deterministic offline environment for web-agent benchmarks. ~3 GB image.
 
 Two repos:
 - **code** (this one) — Flask apps, control plane, scripts.
@@ -42,23 +53,73 @@ scripts/new_site.py
 
 Inside the image, sites live at `/opt/WebSyn/<site>/`. The path predates the rename to webharbor and is kept stable.
 
+## Per-site directory structure
+
+`sites/<site>/` holds code, data, and contract files only:
+
+```
+sites/<site>/
+├── app.py                       routes + SQLAlchemy models
+├── _health.py                   /_health probe
+├── seed_data.py                 tracked build-time seed (or migrate_seed.py / seed_*.py)
+├── requirements.txt             optional site-specific pins
+├── tasks.jsonl                  one row per task: web_name, id, ques, web, upstream_url
+│                                (+ reviewer-added verifier_path and judge_rubric; never an answer key)
+├── templates/  static/          Jinja + css/js/icons; heavy images via the HF archive
+├── instance_seed/<site>.db      seed DB (HF-managed, or build-generated per .build-generated-seed)
+├── verify/                      one deterministic verifier per task + test_verifiers.py
+│                                + shared helpers (verify_lib.py, ground_truth.py)
+│                                + README.md (the per-site verifier contract doc)
+├── tests/                       optional site regression tests
+└── NOTICE.md                    required when the site redistributes third-party media or fonts
+```
+
+Also allowed: data files the app or seed code reads, asset-contract markers
+(`.requires-images`, `.requires-external-cache`, `.build-generated-seed`), asset manifests
+(`asset_inventory.json`, `provenance.json`, ...), and tool scripts the Docker build,
+`scripts/`, the app, the seed chain, or a test actually invokes.
+
+Never commit, anywhere under `sites/<site>/`:
+
+- `README.md`, `CLAUDE.md`, or any other documentation file (the one exception:
+  `verify/README.md`, the per-site verifier contract referenced by the verifiers)
+- integration/review/work reports (`INTEGRATION_REPORT.md`, `PHASE_1_SUMMARY.md`, `TASK_REVIEW.md`, `FIX_REPORT.md`, ...)
+- one-off harvest or generation scripts that nothing in the build, runtime, or tests invokes, and the intermediate files they produced
+- backup or duplicate files
+
+A script that is not imported or executed by the `Dockerfile`, `scripts/`, the app, the
+seed chain, or a test is a work artifact. The only documentation files allowed under
+`sites/<site>/` are `NOTICE.md` (legally required attribution and removal information for
+redistributed third-party material) and `verify/README.md` (the verifier contract).
+
+## Documentation and language rules
+
+- The public root `README.md` changes in exactly one place: the `### Websites` table
+  (website + default port, in registration order). Adding a site appends one row; a port
+  change edits that row. Do not add registry prose, status notes, asset-pin reports, or
+  any other development content to the README, and leave every other section untouched.
+- Per-site operational and provenance detail lives in code, manifests, and `NOTICE.md`;
+  a site directory never carries prose documentation (see "Per-site directory structure").
+- All repository documentation, README content, commit messages, and PR descriptions are
+  written in English.
+
 ## Bring it up
 
 ```bash
 # fresh clone
 ./scripts/fetch_assets.sh                     # pulls assets from HF
 ./scripts/build.sh                            # docker build -t webharbor:dev .
-docker run -d -p 8101:8101 -p 40000-40030:40000-40030 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -d -p 8101:8101 -p 40000-40057:40000-40057 webharbor:dev
 ```
 
 Or use the published image directly:
 
 ```bash
-docker run -d -p 8101:8101 -p 40000-40030:40000-40030 \
+docker run -e WEBSYN_CONTROL_TOKEN -d -p 8101:8101 -p 40000-40057:40000-40057 \
   battalion7244/webharbor:latest
 ```
 
-Sites are on `40000`-`40030` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
+Sites are on `40000`-`40057` in the order declared by `SITES=( ... )` in `websyn_start.sh`. Control plane:
 
 | Method | Path                | Purpose                                   |
 |--------|---------------------|-------------------------------------------|
@@ -121,7 +182,7 @@ uv run python eval_judge.py --run_dir runs/gs0 --verifier True
 uv run python eval_judge.py --run_dir runs/gs0
 ```
 
-The verifier prints JSON `{task_id, pass, reason, evidence[]}` and exits 0/1; the LLM judge writes `eval.json` with `success` / `confidence` / `rationale` / `evidence` (+ `rubric_checkpoints` if a rubric was provided). See `agent_demo/README.md`, `sites/merriam_webster/verify/README.md`, and CONTRIBUTING.md "Reviewer role" for the full grading contract. Grading is driven through `agent_demo/eval_judge.py`, which has two modes: the default LLM-as-judge, and `--verifier True` to run a task's deterministic verifier (the script at its `verifier_path`).
+The verifier prints JSON `{task_id, pass, reason, evidence[]}` and exits 0/1; the LLM judge writes `eval.json` with `success` / `confidence` / `rationale` / `evidence` (+ `rubric_checkpoints` if a rubric was provided). See `agent_demo/README.md` and CONTRIBUTING.md "Reviewer role" for the full grading contract. Grading is driven through `agent_demo/eval_judge.py`, which has two modes: the default LLM-as-judge, and `--verifier True` to run a task's deterministic verifier (the script at its `verifier_path`).
 
 ## Pre-PR checks
 
@@ -135,19 +196,19 @@ python3 -m py_compile sites/<site>/app.py
 ./scripts/build.sh webharbor:dev
 
 # 3. run on alt ports (don't collide with anything you already have running)
-docker run -d --rm --name wh-test \
-  -p 8201:8101 -p 41000-41030:40000-40030 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -d --rm --name wh-test \
+  -p 8201:8101 -p 41000-41057:40000-40057 webharbor:dev
 
 # 4. control plane healthy, all sites alive
-curl -s http://localhost:8201/health | python3 -m json.tool | head
+curl -s -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" http://localhost:8201/health | python3 -m json.tool | head
 
 # 5. every site renders 200
-for p in $(seq 41000 41030); do
+for p in $(seq 41000 41057); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
 # 6. byte-identical reset (the strict invariant)
-curl -X POST http://localhost:8201/reset/<your_site>
+curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8201/reset/<your_site>
 docker exec wh-test md5sum \
   /opt/WebSyn/<your_site>/instance/<your_site>.db \
   /opt/WebSyn/<your_site>/instance_seed/<your_site>.db
@@ -228,6 +289,38 @@ No cross-imports between `sites/<a>/` and `sites/<b>/`. Image runs one Python pr
 | `/reset` returns but DB still dirty | Popen handle leaked; zombie not reaped    | `_site_procs` dict in `control_server.py`  |
 | Byte-identity fails post-reset      | seed not fully idempotent                 | gate every `seed_*()` function             |
 | Image bloats > 4 GB                 | shipped `scraped_data/` or `instance/`    | `.dockerignore`                            |
+
+## PR integration preference
+
+Code and required HF assets must be integrated together (user requirement,
+2026-09-17). Authorization to merge a reviewed code PR includes publishing and
+merging its required asset changes into `ChilleD/WebHarbor`; do not leave its
+asset dependencies on open HF PRs and call the integration complete.
+
+Before merging code, identify its original asset PRs and any locally modified
+bundles. Publish the reviewed replacements when needed, merge the required HF
+PRs in dependency order while preserving unrelated dataset assets, and verify
+the actual HF merge status. Update `.assets-revision` to tested immutable merged
+revisions, then freshly fetch and validate the combined code/assets, including
+the required build and reset checks. An accessible open-PR commit is not a merged
+asset revision. Tracked build-time seed generation/migrations need not cause an
+unnecessary archive rewrite, but their source asset dependencies must be merged.
+If HF integration is blocked, report it before merging code unless the user
+explicitly approves an exception. Docker image publication and deployment remain
+separate stages and are not implied by this requirement.
+
+For stacked contributions, preserve the original PR ancestry and integrate in
+dependency order: original contribution, reviewer continuation, then follow-up
+fixes. Do not replace that sequence with a copied/squashed integration PR unless
+the user explicitly requests it.
+
+If a combined replacement PR has already merged and the original PR history still
+needs integration, the user's preferred future recovery is a revert PR followed
+by the original PRs in dependency order and a new PR reapplying the reviewed fixes.
+Plan and validate the whole sequence, obtain authorization for the rollback/merges,
+and never force-push shared main. History-only reconciliation while retaining the
+replacement is an explicit exception chosen for PRs #35/#88 after #127, not the
+default for future cases (preference recorded 2026-09-17).
 
 ## When you finish
 

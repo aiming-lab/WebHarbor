@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% block title %}Cookpad{% endblock %} · Cookpad</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}"></head>
+<body>
+<aside class="sidebar" id="site-navigation">
+<a class="brand" href="{{ url_for('index') }}"><img src="{{ url_for('static',filename='images/cookpad-logo-circle.png') }}" alt="" width="36" height="36"><img src="{{ url_for('static',filename='images/cookpad-logo-text.png') }}" alt="Cookpad" width="108" height="36"></a>
+<nav aria-label="Main navigation">
+<a href="{{ url_for('search') }}">⌕ <span>Search</span></a>
+<a href="{{ url_for('categories_page') }}">▦ <span>Browse collections</span></a>
+<a href="{{ url_for('recipe_box') }}">▤ <span>Saved Recipes</span></a>
+<a href="{{ url_for('meal_plan') }}">▦ <span>Meal Plan</span></a>
+<a href="{{ url_for('shopping_list') }}">☷ <span>Shopping List</span></a>
+<a href="{{ url_for('help_center') }}">? <span>Help</span></a>
+</nav>
+<div class="sidebar-account">{% if current_user.is_authenticated %}<strong>{{ current_user.display_name }}</strong><p>Your local recipe collection</p><a href="{{ url_for('account') }}">Account</a> · <a href="{{ url_for('logout') }}">Log Out</a>{% else %}<strong>Your Collection</strong><p>Keep the recipes you want to cook. Sign in to save recipes and add your notes.</p><a class="button secondary" href="{{ url_for('login') }}">Log In</a>{% endif %}</div>
+<a class="sidebar-about" href="{{ url_for('about') }}">About this mirror</a>
+</aside>
+<div class="site-shell">
+<header class="site-header"><button class="nav-toggle" aria-label="Menu" aria-controls="site-navigation" aria-expanded="false">☰</button>
+<a class="mobile-brand brand" href="{{ url_for('index') }}"><img src="{{ url_for('static',filename='images/cookpad-logo-text.png') }}" alt="Cookpad" width="96" height="32"></a>
+<form class="nav-search" action="{{ url_for('search') }}"><input name="q" aria-label="Search recipes" placeholder="Search by recipe or ingredients" value="{{ request.args.get('q','') }}"><button aria-label="Search" type="submit">Search</button></form>
+{% if current_user.is_authenticated %}<a class="account-link" href="{{ url_for('account') }}">{{ current_user.display_name }}</a>{% else %}<a class="button secondary account-link" href="{{ url_for('login') }}">Log In</a>{% endif %}</header>
+<main>{% with messages=get_flashed_messages(with_categories=true) %}{% for category,message in messages %}<div role="status" class="flash-msg {{ category }}">{{ message }}</div>{% endfor %}{% endwith %}{% block content %}{% endblock %}</main>
+<footer><strong>Make everyday cooking fun.</strong><p>Recipes and photos from the linked Cookpad sources. An offline snapshot; demo accounts and planning features stay local.</p><a href="{{ url_for('about') }}">Sources &amp; scope</a> · <a href="{{ url_for('help_center') }}">Help</a></footer>
+</div><script src="{{ url_for('static', filename='js/main.js') }}"></script></body></html>

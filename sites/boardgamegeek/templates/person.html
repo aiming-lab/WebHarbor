@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ person.name }} ({{ kind | capitalize }}) | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>{{ person.name }}</h1>
+    <p class="muted">Board game {{ kind }}, {{ games | length }} games on file.</p>
+
+    <p>Sort: <a href="?sort=rank">Rank</a> · <a href="?sort=year">Year</a>
+       · <a href="?sort=average">Avg Rating</a> · <a href="?sort=name">Name</a></p>
+
+    <table class="collection_table">
+      <thead><tr>
+        <th></th><th>Title</th>
+        <th class="collection_bggrating">Year</th>
+        <th class="collection_bggrating">Rank</th>
+        <th class="collection_bggrating">Avg</th>
+      </tr></thead>
+      <tbody>
+        {% for g in games %}
+        <tr>
+          <td class="collection_thumbnail">
+            {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">{% endif %}
+          </td>
+          <td class="collection_objectname">
+            <a class="primary" href="{{ g.detail_url }}">{{ g.name }}</a>
+          </td>
+          <td class="collection_bggrating">{{ g.year_published or '—' }}</td>
+          <td class="collection_bggrating">{{ g.overall_rank or '—' }}</td>
+          <td class="collection_bggrating">{{ g.avg_rating | one_decimal }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

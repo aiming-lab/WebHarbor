@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Plan results | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container"><p class="small muted">Offline demonstration: plan names and prices are a fixed sample catalog, not current plan offers.</p></div>
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>{% if plan_choice == 'drug' %}Medicare drug plans in your area{% else %}Medicare Advantage plans in your area{% endif %}</h1>
+    <p class="lede">
+      {% if county_known %}
+        ZIP code {{ zip_code }} is in {{ county }} County, {{ plans[0].state if plans else '' }}.
+        Showing {{ plans|length }} plan{{ 's' if plans|length != 1 else '' }} for {{ plans[0].year if plans else 2026 }}.
+      {% else %}
+        Enter your ZIP code to find plans in your area.
+      {% endif %}
+    </p>
+  </div>
+
+  <section class="coverage-search" style="max-width:720px">
+    <form action="{{ url_for('plan_search') }}" method="get" class="form-grid">
+      <div class="field">
+        <label for="plan-zip">ZIP code</label>
+        <input id="plan-zip" type="text" name="zip" value="{{ zip_code }}" inputmode="numeric" required>
+      </div>
+      <div class="field">
+        <label for="plan-choice">Plan type</label>
+        <select id="plan-choice" name="plan_choice">
+          <option value="health" {{ 'selected' if plan_choice != 'drug' else '' }}>Medicare health plans (Medicare Advantage)</option>
+          <option value="drug" {{ 'selected' if plan_choice == 'drug' else '' }}>Medicare drug plans (Part D)</option>
+        </select>
+      </div>
+      {% if counties | length > 1 %}
+      <div class="field">
+        <label for="plan-county">County</label>
+        <select id="plan-county" name="county">
+          {% for name, state in counties %}
+          <option value="{{ name }}" {{ 'selected' if name == county else '' }}>{{ name }} County, {{ state }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      {% endif %}
+      <div class="field" style="display:flex;align-items:flex-end">
+        <button class="btn btn--solid" type="submit">Search</button>
+      </div>
+    </form>
+  </section>
+
+  {% if not county_known and zip_code %}
+  <p>We couldn't find plans for ZIP code “{{ zip_code }}”. Try one of these areas:
+    {% for z in ['62701', '43215', '85004', '33130', '80204', '98101', '02108', '77002'] %}
+      <a href="{{ url_for('plan_search', zip=z, plan_choice=plan_choice) }}">{{ z }}</a>{{ ',' if not loop.last }}
+    {% endfor %}
+  </p>
+  {% endif %}
+
+  {% for plan in plans %}
+  <article class="plan-card">
+    <div>
+      <h3><a href="{{ url_for('plan_detail', plan_id=plan.id, back=request.full_path) }}" style="text-decoration:none">{{ plan.name }}</a></h3>
+      <p class="meta">{{ plan.insurer }} · {{ plan.plan_kind }} · {{ plan.year }} coverage · Plan rated {{ plan.rating }} of 5 stars</p>
+      <div class="chip-row">
+        {% for b in plan.benefit_list[:3] %}<span class="chip">{{ b }}</span>{% endfor %}
+        {% if plan.benefit_list | length > 3 %}<span class="chip">+{{ plan.benefit_list | length - 3 }} more</span>{% endif %}
+      </div>
+    </div>
+    <div class="plan-amounts">
+      <div class="amt"><span>Monthly premium</span> <strong>{{ plan.premium }}</strong></div>
+      <div class="amt"><span>Deductible</span> <strong>{{ plan.deductible }}</strong></div>
+      {% if plan.oop_max != 'n/a' %}
+      <div class="amt"><span>Out-of-pocket limit</span> <strong>{{ plan.oop_max }}</strong></div>
+      {% endif %}
+      <a class="btn btn--solid btn--small" style="margin-top:8px" href="{{ url_for('plan_detail', plan_id=plan.id, back=request.full_path) }}">View plan</a>
+    </div>
+  </article>
+  {% else %}
+  {% if county_known %}
+  <p>No plans of this type are available in {{ county }} County. Try the other plan type.</p>
+  {% endif %}
+  {% endfor %}
+
+  <p class="small muted" style="margin-top:22px">
+    Plan costs and benefits shown are for the {{ plans[0].year if plans else 2026 }} coverage year.
+    You must have Medicare Part A and Part B (and keep paying your Part B premium) to join a
+    Medicare Advantage Plan. <a href="{{ url_for('costs_page') }}">Learn about Medicare costs</a>.
+  </p>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Squawks & Headlines - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">SQUAWKS &amp; HEADLINES</div>
+
+<div class="squawk-tabs">
+  <a class="{{ 'active' if order == 'popular' }}" href="/squawks/">POPULAR SQUAWKS</a>
+  <a class="{{ 'active' if order == 'current' }}" href="/squawks/browse/general/24_hours/popular">CURRENT SQUAWKS</a>
+  <a class="{{ 'active' if order == 'new' }}" href="/squawks/new">NEW SQUAWKS</a>
+  <a class="{{ 'active' if order == 'staff_picks' }}" href="/squawks/browse/general/24_hours/staff_picks">STAFF PICKS</a>
+  <a class="{{ 'active' if order == 'most_discussed' }}" href="/squawks/browse/general/24_hours/most_discussed">MOST DISCUSSED</a>
+</div>
+
+<div style="margin-bottom:10px;">
+  <a class="btn-primary" style="font-size:12px;padding:4px 10px;" href="/squawks/search.rvt">Search Squawks &rarr;</a>
+  <a class="btn-alert" href="/squawks/new">Add A Squawk &rarr;</a>
+  <span class="small muted">Sort by: (Recent) (24 hours) (Last Week) (Last Year)</span>
+</div>
+
+{% for s in squawks %}
+<div class="squawk-card">
+  <div class="vote">
+    <div class="n">{{ s.votes or 0 }}</div>
+    <div class="small muted">votes</div>
+  </div>
+  <div class="body">
+    <div class="title"><a href="/squawks/view/1/24_hours/popular/{{ s.sid }}/{{ s.slug }}">{{ s.title }}</a></div>
+    <div>{{ s.summary }} <a href="/squawks/view/1/24_hours/popular/{{ s.sid }}/{{ s.slug }}">More...</a></div>
+    <div class="meta">
+      Submitted {{ s.submitted_text }} by {{ s.submitter }} &middot; {{ s.source_label }}
+    </div>
+    <div class="meta">
+      {% if s.comment_count %}
+        <a href="/squawks/view/1/24_hours/popular/{{ s.sid }}/{{ s.slug }}">{{ s.comment_count }} comments</a>
+      {% else %}
+        <a href="/squawks/view/1/24_hours/popular/{{ s.sid }}/{{ s.slug }}">Post the first comment now!</a>
+      {% endif %}
+    </div>
+  </div>
+  <div class="side">
+    <div>{{ s.submitter }}</div>
+    <div class="small muted">{{ s.submitted_text }}</div>
+  </div>
+</div>
+{% else %}
+<div class="login-note">No squawks to display.</div>
+{% endfor %}
+{% endblock %}

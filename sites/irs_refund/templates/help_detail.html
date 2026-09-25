@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb">
+  <a href="{{ url_for('help_index') }}">Help</a>
+  <span>/</span>
+  <span>{{ article.title }}</span>
+</nav>
+
+<section class="article-shell">
+  <article class="article-body">
+    <p class="eyebrow">{{ article.category }} / {{ article.tax_topic|replace('-', ' ')|title }}</p>
+    <h1>{{ article.title }}</h1>
+    <p class="lede">{{ article.summary }}</p>
+    <div class="prose">
+      <p>{{ article.body }}</p>
+    </div>
+  </article>
+  <aside class="article-side">
+    <article class="faq-card">
+      <h2>Related stage</h2>
+      <p>{{ article.related_stage }}</p>
+    </article>
+    <article class="faq-card">
+      <h2>Safe reminder</h2>
+      <p>This article is for synthetic benchmark workflows only. Do not use it with live taxpayer records.</p>
+    </article>
+    {% for related in related_articles %}
+      <article class="info-card">
+        <span class="info-card__meta">Related article</span>
+        <h3><a href="{{ url_for('help_detail', slug=related.slug) }}">{{ related.title }}</a></h3>
+        <p>{{ related.summary }}</p>
+      </article>
+    {% endfor %}
+  </aside>
+</section>
+{% endblock %}

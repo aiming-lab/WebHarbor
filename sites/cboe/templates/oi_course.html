@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ course.title }}{% endblock %}
+{% block content %}
+<div class="oi-shell">
+  <section class="oi-hero slim">
+    <div class="oi-hero-copy">
+      <img class="oi-logo" src="{{ url_for('static', filename='images/misc/Cboe_OI_Blue.png') }}" alt="Options Institute logo">
+      <h1>{{ course.title }}</h1>
+      <p>{{ course.intro }}</p>
+    </div>
+    {% if course.hero_image %}
+      <img class="oi-hero-img" src="{{ url_for('static', filename='images/' ~ course.hero_image) }}" alt="{{ course.title }}">
+    {% endif %}
+  </section>
+
+  <section class="oi-section">
+    <div class="section-head-row"><h2>{% if course.slug == 'defining-options' %}Definitions{% else %}Course Modules{% endif %}</h2></div>
+    <div class="module-list">
+      {% for module in course.modules() %}
+        {% if module.q %}
+          <details class="module-item">
+            <summary>{{ module.q }}</summary>
+            <p>{{ module.a }}</p>
+          </details>
+        {% else %}
+          <div class="module-item plain">
+            <h3>{{ module.title }}</h3>
+            {% if module.duration %}<p class="module-duration">{{ module.duration }}</p>{% endif %}
+          </div>
+        {% endif %}
+      {% else %}
+        <p class="empty-note">Modules coming soon.</p>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="oi-section alt">
+    <div class="section-head-row"><h2>Explore more</h2></div>
+    <div class="course-grid">
+      <a class="course-card" href="/optionsinstitute/classes">
+        <h3>Classes &amp; Events</h3>
+        <p>Hear from options pros -- classes and events for all experience levels.</p>
+        <span class="card-more">View classes</span>
+      </a>
+      <a class="course-card" href="/optionsinstitute/experts">
+        <h3>Meet Our Experts</h3>
+        <p>Get to know the faculty behind The Options Institute.</p>
+        <span class="card-more">View experts</span>
+      </a>
+      <a class="course-card" href="/optionsinstitute/defining-options">
+        <h3>Options Definitions &amp; Glossary</h3>
+        <p>The essential options definitions and glossary.</p>
+        <span class="card-more">Read glossary</span>
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

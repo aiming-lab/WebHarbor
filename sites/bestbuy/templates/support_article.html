@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section account-layout support-layout">
+    <aside class="account-nav support-nav">
+      <a href="{{ url_for('account') if current_user.is_authenticated else url_for('login') }}">Account</a>
+      <a href="{{ url_for('order_lookup') }}">Purchases</a>
+      <a href="{{ url_for('account_rewards') if current_user.is_authenticated else url_for('login') }}">Points &amp; Rewards</a>
+      <a href="{{ url_for('account_wishlist') if current_user.is_authenticated else url_for('login') }}">Saved Items</a>
+      <a href="{{ url_for('support_page') }}" class="is-active">Support</a>
+    </aside>
+    <div class="article-layout">
+    <article class="panel support-article">
+      <p class="eyebrow">{{ article.topic }}</p>
+      <h1>{{ article.title }}</h1>
+      <p>{{ article.summary }}</p>
+      {% for paragraph in article.body|paragraphs %}
+        <p>{{ paragraph }}</p>
+      {% endfor %}
+      {% if article.upstream_url %}
+        <p><a href="{{ article.upstream_url }}" target="_blank" rel="noreferrer">Reference upstream topic</a></p>
+      {% endif %}
+    </article>
+    <aside class="panel">
+      <h3>Related help</h3>
+      <div class="support-list">
+        {% for related in related_articles %}
+          <a class="support-list__item" href="{{ url_for('support_article_page', article_slug=related.slug) }}">
+            <strong>{{ related.title }}</strong>
+            <p>{{ related.summary }}</p>
+          </a>
+        {% endfor %}
+      </div>
+    </aside>
+    </div>
+  </section>
+{% endblock %}

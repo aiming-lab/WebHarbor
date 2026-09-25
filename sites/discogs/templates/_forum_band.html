@@ -1,0 +1,28 @@
+{# Shared forum header band + tabs (live: dark band with title, intro, search; tabs below). #}
+<div class="fr-band">
+  <div class="fr-band-inner">
+    <div class="fr-band-text">
+      {% if crumbs %}<div class="fr-crumbs">{% for label, href in crumbs %}{% if href %}<a href="{{ href }}">{{ label }}</a>{% else %}{{ label }}{% endif %}{% if not loop.last %} » {% endif %}{% endfor %}</div>{% endif %}
+      <h1 class="fr-h1">{% if icon %}<span class="fr-icon" aria-hidden="true">💬</span>{% endif %}{{ band_title }}</h1>
+      {% if band_intro %}<p class="fr-intro">{{ band_intro }}</p>{% endif %}
+      {% if band_extra %}<div class="fr-band-extra">{{ band_extra }}</div>{% endif %}
+    </div>
+    <div class="fr-band-tools">
+      <form class="fr-search" method="get" action="{{ url_for('forum_search') }}" role="search">
+        <input type="text" name="query" value="{{ query_text or '' }}" placeholder="Search Forum Threads" aria-label="Search Forum Threads">
+        <button type="submit" aria-label="Forum Search"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M13 4a9 9 0 1 0 5.6 16l5.2 5.2 1.7-1.7-5.2-5.2A9 9 0 0 0 13 4zm0 2.4a6.6 6.6 0 1 1 0 13.2 6.6 6.6 0 0 1 0-13.2z"/></svg></button>
+      </form>
+      {% if new_thread_url %}<a class="fr-btn-green" href="{{ new_thread_url }}">+ Add New Thread</a>{% endif %}
+    </div>
+  </div>
+</div>
+{% if show_tabs %}
+<nav class="fr-tabs" aria-label="Forum views">
+  <a href="{{ url_for('forum_index') }}" class="{% if tab == 'topics' %}active{% endif %}">Topics</a>
+  <a href="{{ url_for('forum_recent') }}" class="{% if tab == 'recent' %}active{% endif %}">Recent</a>
+  <a href="{{ url_for('forum_posted') }}" class="{% if tab == 'posted' %}active{% endif %}">Posted</a>
+  <a href="{{ url_for('forum_started') }}" class="{% if tab == 'started' %}active{% endif %}">Started</a>
+  <a href="{{ url_for('forum_saved') }}" class="{% if tab == 'saved' %}active{% endif %}">Saved</a>
+  <a href="{{ url_for('forum_watched') }}" class="{% if tab == 'watched' %}active{% endif %}">Watched</a>
+</nav>
+{% endif %}

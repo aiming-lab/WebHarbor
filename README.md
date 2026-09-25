@@ -1,5 +1,3 @@
-<div align="center">
-
 <h1>⚓ WebHarbor</h1>
 <h3>Docking Real Websites for Evolving GUI Agent Environments</h3>
 
@@ -36,23 +34,24 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 31 sites today, scaling to 100+ together
+- **Community-driven** — 94 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
-One command to run all web environments:
+Build this checkout to run its registered web environments (published image tags may have an older registry):
 
 ```bash
-docker run -p 8101:8101 -p 40000-40030:40000-40030 battalion7244/webharbor:latest
+./scripts/build.sh webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40093:40000-40093 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40030` to explore 31 local mirrors of WebVoyager sites: `Allrecipes, Amazon, Apple, ArXiv, BBC News, Booking, GitHub, Google Flights, Google Maps, Google Search, Hugging Face, Wolfram Alpha, Cambridge Dictionary, Coursera, ESPN, Merriam-Webster, IKEA, Phys.org, Target, TED, Ohio State University, Rotten Tomatoes, Compass, Walmart Careers, FedEx, WebMD Doctor, Healthline, Kaggle, NVIDIA, UC Berkeley, and B&H Photo`.
+Then point your agent at `http://localhost:40000` through `http://localhost:40093` to explore 94 local mirrors. The table below lists every site in port order.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
 ```bash
-curl -X POST http://localhost:8101/reset/amazon          # one site
-curl -X POST http://localhost:8101/reset-all             # all sites in parallel
+curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8101/reset/amazon          # one site
+curl -H "Authorization: Bearer $WEBSYN_CONTROL_TOKEN" -X POST http://localhost:8101/reset-all             # all sites in parallel
 ```
 
 If you prefer to build the image yourself:
@@ -63,152 +62,44 @@ git clone https://github.com/aiming-lab/WebHarbor && cd WebHarbor
 ./scripts/build.sh                                 # docker build -t webharbor:dev .
 ```
 
-### Site registry
+### Websites
 
-This checkout registers **31 sites**. NVIDIA remains at index 28, UC Berkeley
-remains at index 29, and B&H Photo is appended at index 30. Build the image from
-this checkout to use this registry; publishing source does not update the
-published Docker image automatically.
+All registered websites and their default ports, in registration order from left to right across each row. A site's container port is `40000 + index` (see the `SITES` array and `BASE_PORT` in `websyn_start.sh`, and the `EXPOSE` line in the `Dockerfile`).
 
-| Site | Registry position | Container port | Example local review host port |
-| --- | --- | --- | --- |
-| NVIDIA | 28 | 40028 | 48028 |
-| UC Berkeley | 29 | 40029 | 48029 |
-| B&H Photo | 30 | 40030 | 48030 |
-
-`websyn_start.sh`, `control_server.py`, the `Dockerfile` `EXPOSE` line and every
-site's `tasks.jsonl` `web` URL agree on 31 sites and `40000-40030`;
-`scripts/check_site_registry.py` (run by `scripts/check_assets.sh`) fails when they
-drift.
-
-After preparing the candidate assets and building `webharbor:dev`, the local
-review deployment uses:
-
-```bash
-docker run -p 127.0.0.1:48080:8101 -p 127.0.0.1:48000-48030:40000-40030 webharbor:dev
-```
-
-NVIDIA inherits the site contribution from @KaKituken
-([#55](https://github.com/aiming-lab/WebHarbor/pull/55)) and the verifier/rubric
-contribution from @DEM1TASSE
-([#58](https://github.com/aiming-lab/WebHarbor/pull/58)). This is file-level
-integration, not a claim that either PR was merged or that the NVIDIA review has
-passed.
-
-### Asset delivery status
-
-`.assets-revision` pins the merged dataset commit `fa1e8a5b9e8e5d0e42764cd658825f4dea088d8f`
-from [HF asset PR #92](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/92).
-Its complete asset tree matches the tested candidate commit
-`f09e586eec8bf1bca0bc0881e08b77f3c2a5508e`.
-
-This revision adds `bh_photo.tar.gz` and preserves all 32 existing archives from
-`c32018ca3b3d67e7b858b1b85fb101aea5090cd7` byte-for-byte, including Berkeley and
-NVIDIA. It carries 33 archives for 31 registered sites plus the unregistered
-Bandcamp and Drugs.com archives, which `fetch_assets.sh` ignores. A clean asset
-fetch downloaded and extracted all 31 registered sites successfully.
-
-B&H's archive contains images and external cache. The Docker build validates
-its 508 declared assets and generates `instance_seed/bh_photo.db` from the tracked
-catalog. No manually prepared B&H database is required for a fresh build.
-
-The earlier pin `b7e605c0ec5fc47de85b09e7427162cc50e38980` is the squash-merge
-commit of HF dataset PR
-[#85](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/85) on the
-dataset's `main`. It sits on top of PR
-[#84](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/84) and PR
-[#75](https://huggingface.co/datasets/ChilleD/WebHarbor/discussions/75), which
-added the first reviewed NVIDIA bundle.
-
-| Artifact | Members | Bytes | SHA-256 |
-| --- | --- | --- | --- |
-| `nvidia.tar.gz` at the current pin | 37 | 16,340,955 | `617a3e3740ba6706bcab786c8a5c3f9a22ecbb39eff5728ad2c12e4992cb098b` |
-| `berkeley.tar.gz` at the current pin (HF PR #91) | 171 | 6,951,483 | `ab9d2716ae8d06540a181b5e60c37f613d87b103864b467511da546b1b173789` |
-| `bh_photo.tar.gz` at the current pin (HF PR #92) | 511 | 79,658,793 | `867363d5484eb114d647e236991017992d5ac91ae3415996ad43bf654d99bd9a` |
-| previous pin's `nvidia.tar.gz` (HF PR #84, superseded) | 34 | 9,927,312 | `ee8c6ba966e7a8f7fb5ad2d7ff0134ab98e7b80d6cc77f3328217405b8b34e2f` |
-
-PR #85 replaces five product images and adds three dedicated hero images (see
-"Image and verifier follow-up" below). Its archive passes
-`validate_asset_archive.py` (`validated 37 managed members`) and a clean-room
-extract in which all 36 images have distinct SHA-256 values, the seed database is
-byte-identical to the previous pin
-(`2143c954def96cc921760ab2bea79fe119de3d73212d1b01daf6c61792c2b38d`) and every
-`products.image` path resolves.
-
-The revisions rejected in earlier rounds are kept here for the record: the older
-candidate archive from HF PR #38
-(`2707761e4041a492379ea227f09b3bd9ea838a02`, sha256
-`89e0d0d21000bb94acaeaa329fd28a1264afa05f40834c0f3e3cee5c3a2ae9a1`) passes the
-validator but carries a stale seed (the Jetson descriptions lost the kit/module
-identity text, the RTX 5060 Ti is named without `16GB` and its
-`recommended_psu_watts` is 550 while the page's own source note says 600 W), and a
-revision with no `nvidia.tar.gz` cannot prepare this candidate at all.
-
-### Image and verifier follow-up
-
-HF PR #84 replaced twelve product images that were byte-identical duplicates of
-another SKU (RTX 5060/5060 Ti, RTX 5070/5070 Ti, RTX 4070 SUPER/4080 SUPER) or
-depicted something other than the named product. The follow-up round replaced the
-remaining mismatched or near-identical assets with official NVIDIA media, so
-`static/images` now holds 36 files with 36 distinct SHA-256 values and no
-within-page image reuse on `/`, the two series pages or any listing:
-
-- `geforce-rtx-5080.png` and `geforce-rtx-5090.png` use NVIDIA's own per-SKU og
-  renders instead of two crops of one mirror-bundle strip;
-- `geforce-rtx-5070.png`, `rtx-6000-ada.png` and `shield-tv-pro.png` now carry
-  official renders, which brings every product image into a 1.77–1.90 aspect
-  range;
-- `static/images/heroes/*.jpg` adds three dedicated hero images, so the home hero,
-  the 50-series hero and the 40-series hero no longer reuse a product-card file;
-- captions state what each file shows (`dgx-b200`, `h200-tensor-core`, and the two
-  family assets that share one vendor artwork).
-
-The same round closed the 20-task audit's findings in the graders and in the site:
-the T6 phrasing false negative (blocker), the unit-first spec-row phrasing, the
-bare-price and single-product evidence gates, the driver-series evidence scope,
-the newsletter `topic` check, the whole-catalog search scoring, the price-ordered
-series grid, the leaky sort options, the `Email`/`Search` accessible-name
-collisions, and the scroll-hint and footprint defects. The per-item disposition and
-evidence are in `_wh_review_tools/pr107-audit/agent-{a,b,c}/summary.md`,
-`_wh_review_tools/orch/integration/logs/pr107-fixall/{00-issue-list,01-disposition,02-site-reverify,06-images}.md`
-and `review-reports/PR-107-FINAL-AUDIT.md`.
-
-### Scope note: external references
-
-Several pages render links to `nvidia.com`, `marketplace.nvidia.com` and
-`store.nvidia.com` as dated source references. They are labelled as leaving the
-local mirror, no route fetches them (0 external requests over 114 routes at 1440,
-768, 390 and 320 px), and the site verifiers treat any navigation outside the
-mirror's loopback origin as a failure, so a run that follows one fails rather than
-silently grading against an unreachable page.
-
-### Validation record for this review candidate
-
-The commands below are the ones actually run for the review rounds; raw outputs
-live under `/data/zhaoyang-user-projects/websyn/_wh_review_tools/`
-(`pr107-fixes/` for the phase-1/phase-2 review, `pr107-audit/` for the 20-task
-audit, `pr107-fixall/` for the follow-up round).
-
-```bash
-# site suites (the driver suite is skipped unless its explicit input/output paths are set)
-python3 -B sites/nvidia/tests/test_verifiers.py --seed <seed.db> --out <new-dir>   # 316 cases
-WH_CONTAINER=<container> TEST_OUT=<outside-source-dir> python3 -B -m unittest discover -s sites/nvidia/tests
-#   -> 44 tests when DRIVER_TEST_INPUTS is unset (two classes skipped),
-#      73 tests when it is set (29 driver cases included)
-DRIVER_TEST_INPUTS=<dir-with-initial/after.db> DRIVER_TEST_OUT=<new-dir> \
-  python3 -B -m unittest discover -s sites/nvidia/tests -p 'test_driver_qualifier.py'   # 29 tests
-python3 -B sites/nvidia/test_ui_contract.py --output <new-dir>                     # 15 tests
-python3 -B sites/nvidia/tests/test_t7_verifier.py                                   # 23 tests (parser regressions)
-# verifier CLI contract and the mechanical negative-sample matrix
-WH_CONTAINER=<container> TEST_OUT=<dir> python3 -B -m unittest discover -s sites/nvidia/tests -p 'test_verifier_contract.py'   # 11 tests
-./scripts/check_assets.sh                                                          # exit 0, 36 inventoried assets
-```
-
-The earlier draft of this section quoted "44 unit tests pass" for the site suites;
-44 is the count when the driver regression class is skipped, and that class used to
-fail its own `test_other_information_task_not_relaxed` case in the PR head. Both are
-fixed and the current counts are the ones listed above. The GitHub PR description
-itself cannot be edited from this repository.
+| Website | Default port | Website | Default port | Website | Default port |
+| --- | --- | --- | --- | --- | --- |
+| Allrecipes | 40000 | Amazon | 40001 | Apple | 40002 |
+| ArXiv | 40003 | BBC News | 40004 | Booking | 40005 |
+| GitHub | 40006 | Google Flights | 40007 | Google Maps | 40008 |
+| Google Search | 40009 | Hugging Face | 40010 | Wolfram Alpha | 40011 |
+| Cambridge Dictionary | 40012 | Coursera | 40013 | ESPN | 40014 |
+| Merriam-Webster | 40015 | IKEA | 40016 | Phys.org | 40017 |
+| Target | 40018 | TED | 40019 | Ohio State University | 40020 |
+| Rotten Tomatoes | 40021 | Compass | 40022 | Walmart Careers | 40023 |
+| FedEx | 40024 | WebMD Doctor | 40025 | Healthline | 40026 |
+| Kaggle | 40027 | NVIDIA | 40028 | UC Berkeley | 40029 |
+| B&H Photo | 40030 | AccuWeather | 40031 | GOV.UK | 40032 |
+| IMDb | 40033 | NBA | 40034 | Recreation.gov | 40035 |
+| BoardGameGeek | 40036 | CarMax | 40037 | BabyCenter | 40038 |
+| Amtrak | 40039 | Cookpad | 40040 | Craigslist | 40041 |
+| Drugs.com | 40042 | Versus | 40043 | Y Combinator | 40044 |
+| PhET Interactive Simulations | 40045 | Discogs | 40046 | Google Finance | 40047 |
+| Bandcamp | 40048 | Adopt-a-Pet | 40049 | IGN | 40050 |
+| IRS Refund Tracker | 40051 | WineAccess | 40052 | WebMD | 40053 |
+| Petfinder | 40054 | MEGA | 40055 | 4shared | 40056 |
+| 9GAG | 40057 | American Kennel Club | 40058 | Best Buy | 40059 |
+| YouTube | 40060 | Weather | 40061 | Amazon Jobs | 40062 |
+| Cboe | 40063 | Better Business Bureau | 40064 | Birkenstock | 40065 |
+| America’s Health Rankings | 40066 | American Express | 40067 | Carnival Cruise | 40068 |
+| CA.gov | 40069 | Coolmath4Kids | 40070 | Chase | 40071 |
+| FlightAware | 40072 | Chronicle Jobs | 40073 | Dillard's | 40074 |
+| Google Shopping | 40075 | Imgur | 40076 | Instructure | 40077 |
+| League of Legends | 40078 | Healthgrades | 40079 | Kelley Blue Book | 40080 |
+| UNIQLO | 40081 | Macy's Wine Shop | 40082 | JCPenney | 40083 |
+| LandWatch | 40084 | Medicare.gov | 40085 | Marriott | 40086 |
+| Megabus | 40087 | Michaels | 40088 | Micro Center | 40089 |
+| OhioMeansJobs | 40090 | Ohio.gov | 40091 | NFL | 40092 |
+| MTA | 40093 | | | | |
 
 ## 🤝 Contribute
 
@@ -222,7 +113,7 @@ Use a coding agent to build a new mirror (frontend + backend + database + tasks)
 
 1. Browse the [Contribution Track Sheet](https://docs.google.com/spreadsheets/d/1vZsrQjy9nJKze58fx4kbQtFi85NjVXIWCFyu3ShD7gk/edit?gid=0#gid=0) and pick an unclaimed site.
 2. Submit the [Contribution Request Form](https://forms.gle/ngcD1rzAfUEphNmRA) to claim it. We lock the site to prevent duplicate work.
-3. Follow the [Website Contribution Guide](https://aiming-lab.github.io/webharbor.github.io/guide-create.html) and [CONTRIBUTING.md](CONTRIBUTING.md) to build and open a PR. 
+3. Follow the [Website Contribution Guide](https://aiming-lab.github.io/webharbor.github.io/guide-create.html) and [CONTRIBUTING.md](CONTRIBUTING.md) to build and open a PR.
 
 ### 🔍 Track B — Review environments
 
@@ -246,38 +137,9 @@ Any other improvement — bug fixes, UI polish, data enrichment, task suggestion
 | 📊 Contribution Track Sheet | [Google Sheet](https://docs.google.com/spreadsheets/d/1vZsrQjy9nJKze58fx4kbQtFi85NjVXIWCFyu3ShD7gk/edit?gid=0#gid=0) |
 | 📝 Contribution Request Form | [Google Form](https://forms.gle/ngcD1rzAfUEphNmRA) |
 
-## Reset And Smoke Checks
-
-Use the repository reset/smoke checker to verify control-plane resets, homepage
-reachability, and runtime/seed DB parity:
-
-```bash
-python scripts/check_reset_smoke.py --site amazon
-python scripts/check_reset_smoke.py --control-url http://localhost:8101
-python scripts/check_reset_smoke.py --json
-python scripts/check_reset_smoke.py --strict
-```
-
-Reset and homepage checks go over HTTP, so they work from anywhere that can reach the
-control plane. The DB parity check has to read the files the control plane actually
-resets — `/opt/WebSyn/<site>/instance` **inside the deployment**, which is not this
-checkout when the environment runs in Docker. Point the checker at that source:
-
-```bash
-# environment in a container (the usual case)
-python scripts/check_reset_smoke.py --docker-container <container-name>
-
-# sites deployed on this host
-python scripts/check_reset_smoke.py --db-root /opt/WebSyn
-```
-
-Without one of those flags the DB check reports `SKIP` with source `none` rather than
-comparing this checkout's files, and every result names the source it hashed
-(`md5_source`), so a `PASS` always says which DBs it read.
-
 ## Citation
 
-WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`. 
+WebHarbor is initiated by UNC-Chapel Hill and Microsoft, with contributions from the broader community. If you have any questions, please contact us via `webharborcomm at gmail dot com` or `zhaoyang at cs dot unc dot edu`.
 
 ```bibtex
 @misc{webharbor2026,

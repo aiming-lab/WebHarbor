@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }} | Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="crumbs"><a href="/">Home</a> &rsaquo; {{ heading }}</div>
+  <h1 class="mt0">{{ heading }}</h1>
+  <p class="muted">{{ blurb }}</p>
+  {% for product in products %}
+  <article class="product-row">
+    <div class="p-image">
+      <a href="{{ product.detail_url() }}"><img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}" loading="lazy"></a>
+    </div>
+    <div>
+      <p class="p-sku">SKU: {{ '%06d'|format(product.sku) }}</p>
+      <div class="p-name"><a href="{{ product.detail_url() }}">{{ product.brand }} {{ product.name }}</a></div>
+      <div class="rating-line small"><span class="stars">{{ product.rating|stars }}</span> <span class="muted">({{ product.review_count }})</span></div>
+      {% if product.features() %}
+      <ul class="p-feats">{% for feature in product.features()[:3] %}<li>{{ feature }}</li>{% endfor %}</ul>
+      {% endif %}
+      {% if open_box and product.open_box_offers() %}
+      <div class="small">
+        Open Box from
+        {% set prices = product.open_box_offers()|map(attribute='price')|list %}
+        ${{ "%.2f"|format(prices|min) }} &mdash; conditions:
+        {% for offer in product.open_box_offers()[:3] %}{{ offer.condition }}{% if not loop.last %}, {% endif %}{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <div class="p-buy">
+      <div class="our-price"><span class="cur">$</span>{{ "%.2f"|format(product.price) }}</div>
+      {% if product.original_price and product.original_price > product.price %}
+      <div class="was-price">was <strike>${{ "%.2f"|format(product.original_price) }}</strike></div>
+      {% endif %}
+      {% if open_box %}<span class="pill pill-openbox">Open Box</span>{% endif %}
+      {% if product.closeout %}<span class="pill pill-closeout">Closeout</span>{% endif %}
+      <div class="row-actions">
+        <form method="POST" action="/cart/add/{{ product.product_id }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="/cart">
+          <button class="btn btn-primary" type="submit">Add to Cart</button>
+        </form>
+        <a class="btn btn-secondary" href="{{ product.detail_url() }}">Details</a>
+      </div>
+    </div>
+  </article>
+  {% else %}
+  <div class="empty-state"><h2>Nothing here right now</h2><p>Check back soon for new deals.</p></div>
+  {% endfor %}
+</div>
+{% endblock %}

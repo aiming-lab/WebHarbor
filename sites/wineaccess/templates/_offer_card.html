@@ -1,0 +1,32 @@
+<article class="offer-card">
+  <span class="offer-corner" aria-hidden="true"></span>
+  <p class="offer-label">Limited Time Offer</p>
+  <div class="offer-card-top">
+    <a class="offer-image" href="{{ url_for('wine_detail', slug=wine.slug) }}">
+      <img src="{{ url_for('static', filename='images/' ~ wine.image) }}" alt="{{ wine.name }}">
+    </a>
+    <a class="offer-teaser" href="{{ url_for('wine_detail', slug=wine.slug) }}">{{ wine.teaser }}</a>
+  </div>
+  <div class="offer-card-body">
+    <h2><a href="{{ url_for('wine_detail', slug=wine.slug) }}">{{ wine.name }}</a></h2>
+    <div class="offer-price">
+      {% if wine.list_price > wine.price %}<span class="was">${{ '%.0f'|format(wine.list_price) }}</span>{% endif %}
+      <strong>{{ wine.display_price }}</strong>
+      <span>1-11 bottles</span>
+      <a href="{{ url_for('wine_detail', slug=wine.slug) }}">See all prices</a>
+    </div>
+    <div class="offer-actions">
+      <form action="{{ url_for('add_cart', wine_id=wine.id) }}" method="post">
+        <input type="hidden" name="next" value="{{ request.full_path }}">
+        <button type="button" aria-label="Decrease quantity">-</button>
+        <input type="number" name="quantity" min="1" max="24" value="1" aria-label="Quantity for {{ wine.name }}">
+        <button type="button" aria-label="Increase quantity">+</button>
+        <button class="bag-button" type="submit" aria-label="Add {{ wine.name }} to cart">Bag</button>
+      </form>
+      <form action="{{ url_for('add_saved', wine_id=wine.id) }}" method="post">
+        <input type="hidden" name="next" value="{{ request.full_path }}">
+        <button class="heart-button" type="submit" aria-label="Save {{ wine.name }}">Heart</button>
+      </form>
+    </div>
+  </div>
+</article>

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Application received | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>We received your application</h1>
+    <div class="form-card">
+      <p><span class="check-ok">✓</span> Thanks, {{ application.applicant_name }}. Your application for the <strong>{{ card.name }}</strong> has been submitted.</p>
+      <table class="data">
+        <tr><th>Reference number</th><td>{{ application.ref_number }}</td></tr>
+        <tr><th>Card</th><td>{{ card.name }}</td></tr>
+        <tr><th>Status</th><td>{{ application.status }}</td></tr>
+        <tr><th>Submitted</th><td>{{ application.submitted.strftime('%B %d, %Y') }}</td></tr>
+      </table>
+      <p class="small muted" style="margin-top:14px;">We'll review your application and send a decision to your email. Most decisions arrive within 60 seconds; some applications take up to 10 business days.</p>
+      <div class="form-actions">
+        <a class="btn btn--blue" href="{{ url_for('credit_cards') }}">Continue browsing cards</a>
+        <a class="btn btn--outline" href="{{ url_for('index') }}">Back to chase.com</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

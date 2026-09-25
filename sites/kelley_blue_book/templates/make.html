@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}{{ make.name }} Cars, Trucks, and SUVs | Kelley Blue Book{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <div class="category-header">
+        <h1 class="page-title">{{ make.name }} Cars, Trucks, and SUVs</h1>
+        <form class="sort-form" method="get">
+            <label for="sort">Sort</label>
+            <select name="sort" id="sort" onchange="this.form.submit()">
+                <option value="" {% if not current_sort %}selected{% endif %}>Model</option>
+                <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Highest Rated</option>
+            </select>
+        </form>
+    </div>
+    <p class="result-count">{{ vehicles|length }} vehicle{{ 's' if vehicles|length != 1 else '' }}</p>
+    <div class="vehicle-grid">
+        {% for vehicle in vehicles %}
+            {% include '_vehicle_card.html' %}
+        {% else %}
+        <p>No vehicles found for this make.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

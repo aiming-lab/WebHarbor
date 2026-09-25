@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Local Symptom-Label Matcher | {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo;
+  <span>Symptom Checker</span>
+</nav>
+
+<h1>Local Symptom-Label Matcher</h1>
+<p class="muted">Select deterministic fixture labels to exercise filtering. Results are simple local token matches and are not symptom assessment, diagnosis, triage, prevalence, or medical advice.</p>
+
+<div class="two-col">
+  <div class="main-col">
+    <form method="GET" action="{{ url_for('symptom_checker') }}" id="symptom-form">
+      {% for system, symptoms in body_systems %}
+        <section class="is-393">
+          <h2 class="is-394">{{ system }}</h2>
+          <div class="is-053">
+            {% for sym in symptoms %}
+              {% set is_on = sym in selected %}
+              <label class="symptom-chip{% if is_on %} is-selected{% endif %}">
+                <input class="is-395" type="checkbox" name="symptom" value="{{ sym }}" {% if is_on %}checked{% endif %}>
+                {{ sym }}
+              </label>
+            {% endfor %}
+          </div>
+        </section>
+      {% endfor %}
+
+      <div class="is-396">
+        <button type="submit" class="btn btn-primary is-397">Match fixture labels</button>
+        <a href="{{ url_for('symptom_checker') }}" class="btn is-397">Clear all</a>
+        <span class="muted">{{ total_selected }} symptom{{ '' if total_selected == 1 else 's' }} selected</span>
+      </div>
+    </form>
+
+    <section class="is-122">
+      <h2 class="is-398">Matching condition fixtures</h2>
+      {% if total_selected == 0 %}
+        <p class="muted">Select one or more fixture labels to see local token matches.</p>
+      {% elif possible_conditions %}
+        <p class="muted is-064">Showing {{ possible_conditions[:8]|length }} condition fixture{{ '' if possible_conditions[:8]|length == 1 else 's' }} with the largest local token-match counts.</p>
+        <div class="symptom-results-grid">
+          {% for c, hits in possible_conditions[:8] %}
+            <article class="symptom-result-card">
+              <header class="symptom-result-header">
+                <h3 class="symptom-result-name"><a href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a></h3>
+                <span class="symptom-result-hits">{{ hits }} matching symptom{{ '' if hits == 1 else 's' }}</span>
+              </header>
+              {% if c.description %}
+                <p class="symptom-result-desc">{{ (c.description or '')[:200] }}{% if (c.description or '')|length > 200 %}...{% endif %}</p>
+              {% endif %}
+              <p class="symptom-result-footer">
+                <a href="{{ url_for('condition_page', slug=c.slug) }}" class="card-link">View stored relationships &rsaquo;</a>
+              </p>
+            </article>
+          {% endfor %}
+        </div>
+        <p class="symptom-disclaimer-note">A match does not establish a real association or diagnosis.</p>
+      {% else %}
+        <p class="muted">No condition fixture matched the selected local tokens.</p>
+      {% endif %}
+    </section>
+
+    <div class="is-399"><strong>Restriction:</strong> Do not use this matcher for real health or emergency decisions.</div>
+  </div>
+
+  <aside class="sidebar">
+    <h3>Related tools</h3>
+    <ul>
+      <li><a href="{{ url_for('conditions_list') }}">Conditions A-Z</a></li>
+      <li><a href="{{ url_for('side_effects_page') }}">Side Effects Checker</a></li>
+      <li><a href="{{ url_for('interaction_checker') }}">Drug Interaction Checker</a></li>
+      <li><a href="{{ url_for('pill_identifier') }}">Pill Identifier</a></li>
+      <li><a href="{{ url_for('warnings_index') }}">Drug Warnings</a></li>
+    </ul>
+
+    <h3>Browse</h3>
+    <ul>
+      <li><a href="{{ url_for('drug_az') }}">Drugs A-Z</a></li>
+      <li><a href="{{ url_for('drug_classes_list') }}">Drug Classes</a></li>
+      <li><a href="{{ url_for('news_index') }}">Medical News</a></li>
+    </ul>
+  </aside>
+</div>
+{% endblock %}

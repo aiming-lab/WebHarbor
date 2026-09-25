@@ -14,6 +14,7 @@ import argparse
 import ast
 import hashlib
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -23,7 +24,7 @@ from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener, urlopen
 
 
 @dataclass
@@ -350,11 +351,11 @@ def check_db_parity(
             )
         hasher = container_hasher or docker_md5
         try:
-            hashes = hasher(docker_container, [runtime_dir, seed_dir])
+            container_hashes = hasher(docker_container, [runtime_dir, seed_dir])
         except Exception as exc:  # noqa: BLE001 - reported, never raised to the user
             collector.error(f"could not hash DBs in container: {exc}", site=site)
             return DbCheck("FAIL", source, runtime_dir, seed_dir, None, None, str(exc))
-        runtime_hash, seed_hash = hashes.get(runtime_dir), hashes.get(seed_dir)
+        runtime_hash, seed_hash = container_hashes.get(runtime_dir), container_hashes.get(seed_dir)
         if runtime_hash and runtime_hash == seed_hash:
             return DbCheck("PASS", source, runtime_dir, seed_dir, runtime_hash,
                            seed_hash, "runtime DB matches seed DB")
@@ -420,15 +421,27 @@ def check_db_parity(
                    seed_hash, detail)
 
 
+class RejectControlRedirects(HTTPRedirectHandler):
+    """A control response must come from the configured authenticated endpoint."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 def http_request(
     url: str,
     *,
     method: str = "GET",
     timeout: float = 10.0,
+    bearer_token: str | None = None,
 ) -> tuple[bool, int | None, str]:
     request = Request(url, method=method)
+    open_request = urlopen
+    if bearer_token:
+        request.add_unredirected_header("Authorization", f"Bearer {bearer_token}")
+        open_request = build_opener(RejectControlRedirects()).open
     try:
-        with urlopen(request, timeout=timeout) as response:
+        with open_request(request, timeout=timeout) as response:
             body = response.read(512)
             detail = f"HTTP {response.status}"
             if body:
@@ -466,9 +479,12 @@ def build_homepage_url(base_host: str, port: int) -> str:
     return f"http://{host}:{port}/"
 
 
-def check_control_health(control_url: str, timeout: float, collector: Collector) -> ControlCheck:
+def check_control_health(
+    control_url: str, timeout: float, collector: Collector,
+    control_token: str | None = None,
+) -> ControlCheck:
     url = f"{control_url}/health"
-    ok, status_code, detail = http_request(url, timeout=timeout)
+    ok, status_code, detail = http_request(url, timeout=timeout, bearer_token=control_token)
     if ok:
         return ControlCheck(url=url, status="PASS", http_status=status_code, detail=detail)
     if status_code == 404:
@@ -488,6 +504,7 @@ def check_site(
     collector: Collector,
     use_reset_all: bool,
     reset_all_ok: bool,
+    control_token: str | None = None,
     db_root: str | None = None,
     docker_container: str | None = None,
     container_hasher: Any = None,
@@ -507,7 +524,9 @@ def check_site(
             reset_detail = "reset-all failed; per-site reset was not attempted"
     else:
         reset_url = f"{control_url}/reset/{site}"
-        ok, status_code, detail = http_request(reset_url, method="POST", timeout=timeout)
+        ok, status_code, detail = http_request(
+            reset_url, method="POST", timeout=timeout, bearer_token=control_token,
+        )
         if ok:
             reset_status = "PASS"
             reset_code = status_code
@@ -559,6 +578,7 @@ def run_checks(
     *,
     site: str | None = None,
     control_url: str = "http://localhost:8101",
+    control_token: str | None = None,
     base_host: str = "localhost",
     timeout: float = 10.0,
     strict: bool = False,
@@ -590,6 +610,12 @@ def run_checks(
             errors=collector.errors,
             warnings=collector.warnings,
         )
+
+    if control_token is not None and (
+        len(control_token) < 32 or any(not 33 <= ord(c) <= 126 for c in control_token)
+    ):
+        collector.error("WEBSYN_CONTROL_TOKEN must contain at least 32 printable ASCII characters without whitespace")
+        return empty("invalid control token; no requests sent")
 
     try:
         site_map = discover_sites(root)
@@ -623,11 +649,13 @@ def run_checks(
     else:
         filtered_sites = site_map
 
-    control = check_control_health(control_url, timeout, collector)
+    control = check_control_health(control_url, timeout, collector, control_token)
     reset_all_ok = False
     if reset_all:
         reset_all_url = f"{control_url}/reset-all"
-        ok, status_code, detail = http_request(reset_all_url, method="POST", timeout=timeout)
+        ok, status_code, detail = http_request(
+            reset_all_url, method="POST", timeout=timeout, bearer_token=control_token,
+        )
         if ok:
             reset_all_ok = True
         else:
@@ -640,6 +668,7 @@ def run_checks(
             site_slug,
             port,
             control_url=control_url,
+            control_token=control_token,
             base_host=base_host,
             timeout=timeout,
             collector=collector,
@@ -731,7 +760,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--control-url",
         default="http://localhost:8101",
-        help="Control server base URL (default: http://localhost:8101)",
+        help=("Control server base URL (default: http://localhost:8101); "
+              "authentication reads WEBSYN_CONTROL_TOKEN from the environment"),
     )
     parser.add_argument(
         "--base-host",
@@ -782,6 +812,7 @@ def main(
         target_root,
         site=args.site,
         control_url=args.control_url,
+        control_token=os.environ.get("WEBSYN_CONTROL_TOKEN"),
         base_host=args.base_host,
         timeout=args.timeout,
         strict=args.strict,

@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}{{ hotel.name }} | {{ hotel.brand.name }}{% endblock %}
+{% block content %}
+<div class="hotel-page container">
+  <nav class="hotel-nav" aria-label="Hotel sections">
+    <a class="active" href="{{ stay_url(hotel.detail_path) }}">Overview</a>
+    <a href="{{ stay_url(hotel.path_for('rooms')) }}">Rooms &amp; Suites</a>
+    <a href="{{ stay_url(hotel.path_for('reviews')) }}">Ratings &amp; Reviews</a>
+    <a href="{{ stay_url(hotel.path_for('photos')) }}">Gallery</a>
+  </nav>
+
+  <header class="hotel-header">
+    <div>
+      <p class="hotel-brand-line">{{ hotel.brand.name }}</p>
+      <h1>{{ hotel.name }}</h1>
+      <p class="hotel-address-line">
+        {%- if hotel.address_line %}{{ hotel.address_line }}, {% endif -%}
+        {{ hotel.city }}{% if hotel.state %}, {{ hotel.state }}{% endif %}, {{ hotel.country }}{% if hotel.postal_code %} {{ hotel.postal_code }}{% endif %}
+      </p>
+      {% if hotel.phone %}<p class="hotel-phone">{{ hotel.phone }}{% if hotel.fax %} · Fax: {{ hotel.fax }}{% endif %}</p>{% endif %}
+    </div>
+    <div class="hotel-header-rating">
+      {% if hotel.rating_avg %}
+      <span class="rating-badge rating-{{ hotel.rating_stars }}">{{ '%.1f' % hotel.rating_avg }}</span>
+      <p>{{ hotel.rating_stars }}-star · {{ hotel.review_count }} reviews</p>
+      {% endif %}
+    </div>
+  </header>
+
+  <div class="gallery-hero">
+    {% for img in hotel.images[:5] %}
+    <figure class="gallery-cell {{ 'cell-main' if loop.first }}">
+      <img src="{{ img.path }}" alt="{{ img.alt }}">
+    </figure>
+    {% endfor %}
+  </div>
+
+  <div class="hotel-columns">
+    <div class="hotel-main">
+      <section class="hotel-section">
+        <h2>Property Highlights</h2>
+        <p>{{ hotel.description }}</p>
+      </section>
+
+      <section class="hotel-section">
+        <h2>Rooms &amp; Suites</h2>
+        <div class="table-wrap">
+          <table class="room-table">
+          <thead>
+            <tr><th>Room</th><th>Beds</th><th>Sleeps</th><th>Size</th><th>Rate</th><th></th></tr>
+          </thead>
+          <tbody>
+            {% for r in rooms %}
+            <tr>
+              <td class="room-name">{{ r.name }}{% if r.view %}<span class="room-view"> · {{ r.view }}</span>{% endif %}</td>
+              <td>{{ r.bed_description }}</td>
+              <td>{{ r.max_occupancy }}</td>
+              <td>{{ r.size_sqft }} sq ft</td>
+              <td class="room-rate">${{ '{:,}'.format(r.base_rate) }}/night</td>
+              <td><a class="btn-small btn-find" href="{{ stay_url(url_for('reservation_gateway', propertyCode=hotel.marsha, roomId=r.id)) }}">Book</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+        <p><a class="link-more" href="{{ stay_url(hotel.path_for('rooms')) }}">View All Rooms &amp; Suites →</a></p>
+      </section>
+
+      <section class="hotel-section">
+        <h2>Hotel Information</h2>
+        <ul class="info-list">
+          <li><strong>Check-in:</strong> from {{ hotel.checkin_time | fmttime }}</li>
+          <li><strong>Check-out:</strong> until {{ hotel.checkout_time | fmttime }}</li>
+          <li><strong>Address:</strong> {%- if hotel.address_line %} {{ hotel.address_line }}, {% endif -%} {{ hotel.city }}{% if hotel.state %}, {{ hotel.state }}{% endif %} {% if hotel.postal_code %}{{ hotel.postal_code }}{% endif %}</li>
+        </ul>
+        {% for label, items in amenity_groups.items() %}
+        <h3 class="amenity-heading">{{ label }}</h3>
+        <ul class="amenity-list">
+          {% for a in items %}<li>{{ a }}</li>{% endfor %}
+        </ul>
+        {% endfor %}
+      </section>
+    </div>
+
+    <aside class="hotel-side">
+      <div class="booking-box">
+        <p class="booking-price">{{ '${:,}'.format(hotel.base_rate or 0) }} <span>/ night</span></p>
+        <p class="booking-sub">Rates from · 1 room, 1 guest</p>
+        <form method="get" action="/reservation/availabilitySearch.mi">
+          <input type="hidden" name="propertyCode" value="{{ hotel.marsha }}">
+          <div class="field">
+            <label>Check-in</label>
+            <input type="date" name="fromDate" value="{{ stay_from_date.strftime('%Y-%m-%d') }}">
+          </div>
+          <div class="field">
+            <label>Check-out</label>
+            <input type="date" name="toDate" value="{{ stay_to_date.strftime('%Y-%m-%d') }}">
+          </div>
+          <button class="btn-find btn-block" type="submit">View Rates</button>
+        </form>
+        {% if current_user.is_authenticated %}
+        <form method="post" action="/saved/add/{{ hotel.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="{{ hotel.detail_path }}">
+          <button class="btn-secondary btn-block" type="submit">Save Hotel</button>
+        </form>
+        {% else %}
+        <a class="link-more" href="/sign-in.mi">Sign in to save this hotel</a>
+        {% endif %}
+      </div>
+    </aside>
+  </div>
+</div>
+{% endblock %}

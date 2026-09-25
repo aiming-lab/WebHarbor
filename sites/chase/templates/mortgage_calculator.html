@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Mortgage Calculator | Chase{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Mortgage calculator</h1>
+    <p class="muted">Estimate your monthly payment, total interest and total cost.</p>
+  </div>
+</div>
+<div class="container">
+  <section class="section">
+    <div class="form-card">
+      <form method="post" action="{{ url_for('mortgage_calculator') }}">
+        <label for="loan_amount">Loan amount</label>
+        <input id="loan_amount" name="loan_amount" type="text" value="{{ form.get('loan_amount', '') }}" placeholder="350000" required>
+        <label for="term_years">Term (years)</label>
+        <select id="term_years" name="term_years">
+          <option value="10" {{ 'selected' if form.get('term_years') == '10' }}>10 years</option>
+          <option value="15" {{ 'selected' if form.get('term_years') == '15' }}>15 years</option>
+          <option value="20" {{ 'selected' if form.get('term_years') == '20' }}>20 years</option>
+          <option value="30" {{ 'selected' if not form.get('term_years') or form.get('term_years') == '30' }}>30 years</option>
+        </select>
+        <label for="rate">Interest rate (%)</label>
+        <input id="rate" name="rate" type="text" value="{{ form.get('rate', '') }}" placeholder="6.750" required>
+        <div class="form-actions">
+          <button class="btn btn--green" type="submit">Calculate payment</button>
+          <a href="{{ url_for('mortgage_rates') }}">See today's rates</a>
+        </div>
+      </form>
+    </div>
+
+    {% if result %}
+    <div class="acct-panel" style="margin-top:26px;">
+      <div class="acct-panel__head"><h2>Your estimated payment</h2></div>
+      <div class="acct-panel__body">
+        <div class="stat-row">
+          <div class="stat"><div class="num">{{ result.monthly|usd2 }}</div><div class="lbl">monthly payment (principal + interest)</div></div>
+          <div class="stat"><div class="num">{{ result.total|usd2 }}</div><div class="lbl">total paid over {{ result.years }} years</div></div>
+          <div class="stat"><div class="num">{{ result.total_interest|usd2 }}</div><div class="lbl">total interest</div></div>
+        </div>
+        <p class="small muted">Based on a loan of {{ result.loan|usd0 }} at {{ result.rate }}% for {{ result.years }} years. Taxes and insurance are not included.</p>
+      </div>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

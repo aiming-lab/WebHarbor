@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title or page.label }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a>{% if page.path != '/' %} › {{ page.label or page.title }}{% endif %}</div>
+  <h1>{{ page.title }}</h1>
+</div>
+
+<div class="card blocks">
+  {% for b in (page.blocks | fromjson) %}
+    {% if b['type'] == 'h2' %}<h2>{{ b['text'] }}</h2>
+    {% elif b['type'] == 'h3' %}<h3>{{ b['text'] }}</h3>
+    {% elif b['type'] == 'h4' %}<h4>{{ b['text'] }}</h4>
+    {% elif b['type'] == 'prose' %}<div class="prose-block">{{ b['text'] }}</div>
+    {% elif b['type'] == 'list' %}
+      <ul>
+        {% for item in b['items'] %}<li>{{ item }}</li>{% endfor %}
+      </ul>
+    {% elif b['type'] == 'links' %}
+      <ul class="quick-links">
+        {% for l in b['links'] %}{% if l['href'] %}<li><a href="{{ l['href'] }}">{{ l['text'] }}</a></li>{% else %}<li>{{ l['text'] }}</li>{% endif %}{% endfor %}
+      </ul>
+    {% elif b['type'] == 'image' %}
+      {% for im in b['images'] %}
+        {% set img_file = resolve_asset(im['src']) %}
+        {% if img_file %}<img src="{{ url_for('static', filename='images/' ~ img_file) }}" alt="{{ im['alt'] }}">{% endif %}
+      {% endfor %}
+    {% elif b['type'] == 'table' %}
+      <table class="data">
+        {% for row in b['rows'] %}
+          <tr>{% if loop.first %}{% for c in row %}<th>{{ c }}</th>{% endfor %}{% else %}{% for c in row %}<td>{{ c }}</td>{% endfor %}{% endif %}</tr>
+        {% endfor %}
+      </table>
+    {% endif %}
+  {% endfor %}
+  {% set hero_file = resolve_asset(page.hero) %}
+  {% if hero_file %}
+    <img src="{{ url_for('static', filename='images/' ~ hero_file) }}" alt="{{ page.title }}">
+  {% endif %}
+</div>
+{% set related = related_pages(page.path) %}
+{% if related %}<section class="card"><h2>More in this section</h2><ul class="quick-links">
+{% for child in related %}<li><a href="{{ child.path }}">{{ child.label or child.title or child.path }}</a></li>{% endfor %}
+</ul></section>{% endif %}
+{% endblock %}

@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}Sign up | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Create an account</h1>
+    <div class="panel" style="max-width:560px">
+      <form action="{{ url_for('account_register') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="row">
+          <div class="col-md-6">
+            <label class="field-label" for="first_name">First name</label>
+            <input class="form-control" type="text" id="first_name" name="first_name" required>
+          </div>
+          <div class="col-md-6">
+            <label class="field-label" for="last_name">Last name</label>
+            <input class="form-control" type="text" id="last_name" name="last_name" required>
+          </div>
+        </div>
+        <div class="mb-1 mt-1">
+          <label class="field-label" for="email">Email address</label>
+          <input class="form-control" type="email" id="email" name="email" required>
+        </div>
+        <div class="row">
+          <div class="col-md-6">
+            <label class="field-label" for="password">Password (8+ characters)</label>
+            <input class="form-control" type="password" id="password" name="password" minlength="8" required>
+          </div>
+          <div class="col-md-6">
+            <label class="field-label" for="confirm">Confirm password</label>
+            <input class="form-control" type="password" id="confirm" name="confirm" required>
+          </div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block mt-2">Create account</button>
+      </form>
+    </div>
+    <p class="mt-2">Already have an account? <a href="{{ url_for('account_login') }}">Sign in</a></p>
+  </div>
+</div>
+{% endblock %}

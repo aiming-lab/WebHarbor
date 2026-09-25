@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}All Questions | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--landing-page">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">All Questions</h1>
+                        </div>
+                    </header>
+                </section>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <h2>Frequently Asked Questions</h2>
+                <div id="js-faqs-with-pagination" class="odx-ads-container odx-ads-container--two-columns odx-ads-container--image-200-height margin-bottom-xs">
+                    {% for c in cats %}
+                    <div class="odx-ads-item odx-ads-item--large odx-ads-item--stackable odx-ads-item--title-primary-color" style="display: block;">
+                        <a href="{{ url_for('faq_category', cat=c.slug) }}" class="odx-ads-item__link">
+                            <div class="odx-ads-item__content">
+                                <div class="odx-ads-item__main">
+                                    <p class="odx-ads-item__title">{{ c.title }}</p>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Refund Status Help{% endblock %}
+{% block content %}
+<section class="page-header">
+  <p class="eyebrow">Refund overview</p>
+  <h1>Understand each refund stage before you run a synthetic lookup.</h1>
+  <p>The local mirror uses stable demo stages such as Return Received, Refund Approved, Refund Sent, identity verification delays, math review delays, and offset review.</p>
+</section>
+
+<section class="card-grid card-grid--four">
+  {% for item in status_cards %}
+    <article class="status-card">
+      <h2>{{ item.public_label }}</h2>
+      <p>{{ item.explanation }}</p>
+      <p class="status-card__next"><strong>Next step:</strong> {{ item.next_step }}</p>
+    </article>
+  {% endfor %}
+</section>
+
+<section class="two-column">
+  <div>
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Notice codes</p>
+        <h2>Common demo notices</h2>
+      </div>
+      <a href="{{ url_for('notices') }}">Browse all notices</a>
+    </div>
+    <div class="stacked-cards">
+      {% for notice in notices %}
+        <article class="info-card">
+          <span class="info-card__meta">{{ notice.related_stage }}</span>
+          <h3><a href="{{ url_for('notice_detail', code=notice.code) }}">{{ notice.code }} - {{ notice.title }}</a></h3>
+          <p>{{ notice.summary }}</p>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+  <div>
+    <div class="section-heading">
+      <div>
+        <p class="eyebrow">Practice lookup</p>
+        <h2>Start with a public demo case</h2>
+      </div>
+      <a href="{{ url_for('refund_status_start') }}">Open lookup flow</a>
+    </div>
+    <div class="stacked-cards">
+      {% for case in public_cases %}
+        <article class="case-card case-card--compact">
+          <span class="status-chip">{{ case.showcase_label }}</span>
+          <h3>{{ case.profile.full_name }}</h3>
+          <p>{{ case.tax_year }} / {{ case.filing_status.name }} / {{ case.refund_amount|money }}</p>
+          <a class="text-link" href="{{ url_for('refund_status_start', case=case.reference_code) }}">Load this demo case</a>
+        </article>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Profile | Marriott Bonvoy{% endblock %}
+{% block content %}
+<div class="container auth-page">
+  <div class="auth-card auth-wide">
+    <h1>Profile</h1>
+    <p class="auth-sub">Update the personal details on your Marriott Bonvoy® account.</p>
+
+  <nav class="account-nav">
+    <a href="/loyalty/myAccount.mi">My Account</a>
+    <a href="/loyalty/myAccount/profile.mi">Profile</a>
+    <a href="/loyalty/myAccount/paymentMethods.mi">Payment Methods</a>
+    <a href="/loyalty/myAccount/savedHotels.mi">Saved Hotels</a>
+    <a href="/reservation/lookupReservation.mi">Find a Reservation</a>
+  </nav>
+
+    <form method="post" class="auth-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <div class="field"><label for="first_name">First name</label>
+          <input id="first_name" name="first_name" type="text" value="{{ current_user.first_name }}"></div>
+        <div class="field"><label for="last_name">Last name</label>
+          <input id="last_name" name="last_name" type="text" value="{{ current_user.last_name }}"></div>
+      </div>
+      <div class="field"><label for="phone">Phone</label>
+        <input id="phone" name="phone" type="tel" value="{{ current_user.phone or '' }}"></div>
+      <div class="field"><label for="street_address">Street address</label>
+        <input id="street_address" name="street_address" type="text" value="{{ current_user.street_address or '' }}"></div>
+      <div class="form-row">
+        <div class="field"><label for="city">City</label>
+          <input id="city" name="city" type="text" value="{{ current_user.city or '' }}"></div>
+        <div class="field"><label for="state">State / Region</label>
+          <input id="state" name="state" type="text" value="{{ current_user.state or '' }}"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label for="country">Country</label>
+          <input id="country" name="country" type="text" value="{{ current_user.country or '' }}"></div>
+        <div class="field"><label for="postal_code">Postal code</label>
+          <input id="postal_code" name="postal_code" type="text" value="{{ current_user.postal_code or '' }}"></div>
+      </div>
+      <button type="submit" class="btn-find">Save Changes</button>
+      <a class="btn-secondary" href="/loyalty/myAccount.mi">Back to Account</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

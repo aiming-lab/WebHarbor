@@ -183,6 +183,18 @@ def submitted_from_path(trajectory: dict[str, Any], path: str, destination: str 
     return False
 
 
+def clicked_details_from_listing(trajectory: dict[str, Any], listing: str, details: Sequence[str]) -> bool:
+    """Require a click path rooted at the listing, allowing related-detail links."""
+    allowed = {normalized_path(path) for path in details}
+    listing = normalized_path(listing)
+    reached = {listing}
+    for action, current, following in transition_pairs(trajectory):
+        current, following = normalized_path(current), normalized_path(following)
+        if action == 'click' and current in reached and following in allowed:
+            reached.add(following)
+    return allowed <= reached
+
+
 def input_values(trajectory: dict[str, Any], path: str | None = None) -> list[str]:
     values: list[str] = []
     for step in trajectory.get("steps") or []:

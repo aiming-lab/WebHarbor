@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ download.package_name }}{% endblock %}
+{% block content %}
+<section class="detail-layout">
+  <div>
+    <p class="eyebrow">{{ download.product }} / {{ download.platform }}</p>
+    <h1>{{ download.package_name }}</h1>
+    <p>{{ download.notes }}</p>
+    <dl class="info-table">
+      <div><span>Version</span><strong>{{ download.version }}</strong></div>
+      <div><span>Size</span><strong>{{ download.size_mb }} MB</strong></div>
+      <div><span>Architecture</span><strong>{{ download.architecture }}</strong></div>
+      <div><span>Checksum</span><strong>{{ download.checksum }}</strong></div>
+    </dl>
+  </div>
+  <img class="detail-image" src="{{ image_url(download.icon) }}" alt="{{ download.package_name }}">
+</section>
+{% endblock %}

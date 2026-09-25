@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}{% if category_label %}{{ category_label }} Credit Cards{% else %}All Credit Cards{% endif %} | Chase{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>{% if category_label %}{{ category_label }} credit cards{% else %}All credit cards{% endif %}</h1>
+    <p class="muted">Compare Chase credit cards side by side — offers, rewards, APRs and fees all in one place. Select up to three cards to compare.</p>
+    <div class="chip-row">
+      {% for slug, label in chips %}
+        {% if slug == 'all' %}
+          <a class="chip {{ 'chip--active' if active_cat == 'all' }}" href="{{ url_for('credit_cards') }}">{{ label }}</a>
+        {% else %}
+          <a class="chip {{ 'chip--active' if active_cat == slug }}" href="{{ url_for('credit_cards_category', cat=slug) }}">{{ label }}</a>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="container">
+  <p class="result-summary">{{ cards|length }} cards shown{% if category_label %} in {{ category_label }}{% endif %}. Rates and fees reflect the {{ mirror_date }} snapshot; see Pricing &amp; Terms on each card for details.</p>
+  <form id="compare-form" method="get" action="{{ url_for('credit_cards_compare') }}">
+    {% for card in cards %}
+    <div class="card-row">
+      <div class="card-row__art">
+        <a href="{{ url_for('credit_card_detail', slug=card.slug) }}">
+          <img src="{{ url_for('static', filename='images/' + card.card_art) }}" alt="{{ card.name }}">
+        </a>
+      </div>
+      <div>
+        <div class="card-row__name"><a href="{{ url_for('credit_card_detail', slug=card.slug) }}" style="text-decoration:none;color:inherit;">{{ card.name }}</a></div>
+        <div class="card-row__offer">
+          {% if card.offer %}<strong>NEW CARDMEMBER OFFER:</strong> {{ card.offer }}{% else %}{{ card.tagline }}{% endif %}
+        </div>
+        <div class="kv">
+          <h4>AT A GLANCE</h4>
+          <p>{{ card.glance }}</p>
+        </div>
+        <div class="kv">
+          <h4>APR</h4>
+          <p>{{ card.apr }}{% if card.intro_apr %} {{ card.intro_apr }}{% endif %}</p>
+        </div>
+        <div class="kv">
+          <h4>ANNUAL FEE</h4>
+          <p>{{ card.fee_text }}</p>
+        </div>
+        <div class="kv">
+          <h4>CATEGORIES</h4>
+          <p>
+            {% for cat in card.categories.split(',') %}{% if loop.index0 %} · {% endif %}{{ card_categories[cat] }}{% endfor %}
+          </p>
+        </div>
+      </div>
+      <div class="card-row__actions">
+        <a class="btn btn--blue" href="{{ url_for('credit_card_apply', slug=card.slug) }}">Apply now</a>
+        <a class="btn btn--outline" href="{{ url_for('credit_card_detail', slug=card.slug) }}">See details</a>
+        <label class="compare-check">
+          <input type="checkbox" name="compare" value="{{ card.slug }}"
+                 onchange="updateCompare()"> Compare
+        </label>
+      </div>
+    </div>
+    {% endfor %}
+    <input type="hidden" name="cards" id="compare-cards">
+  </form>
+  <div class="section">
+    <a class="btn btn--green" id="compare-btn" href="{{ url_for('credit_cards_compare') }}">Compare selected cards</a>
+  </div>
+</div>
+<script>
+function updateCompare() {
+  const checked = Array.from(document.querySelectorAll('input[name=compare]:checked')).map(e => e.value).slice(0, 3);
+  document.getElementById('compare-cards').value = checked.join(',');
+  document.getElementById('compare-btn').href = '/credit-cards/compare?cards=' + encodeURIComponent(checked.join(','));
+  document.getElementById('compare-btn').textContent = checked.length ? `Compare ${checked.length} selected ${checked.length === 1 ? 'card' : 'cards'}` : 'Compare selected cards';
+}
+</script>
+{% endblock %}

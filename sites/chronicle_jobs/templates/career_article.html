@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} | The Chronicle of Higher Education Jobs{% endblock %}
+{% block content %}
+<article class="article-full">
+  {% if article.image_path %}<img class="hero" src="{{ article.image_path }}" alt="">{% endif %}
+  <p class="kicker" style="margin:0 0 6px">{{ article.kicker or "Career advice" }}</p>
+  <h1>{{ article.title }}</h1>
+  <p class="byline">{% if article.author %}By {{ article.author }}{% if article.date_label %} &bull; {{ article.date_label }}{% endif %}{% endif %}</p>
+  <p class="lede">{{ article.teaser }}</p>
+  <div class="job-prose">
+    <p>This article is part of The Chronicle&rsquo;s career-resources coverage for higher-education professionals.
+    Full stories are available to Chronicle subscribers at
+    <a href="{{ article.source_url }}" rel="noopener">chronicle.com</a>.</p>
+  </div>
+  <div class="alert-cta" style="margin-top:24px">
+    <p>Get careers coverage and matching jobs in your inbox</p>
+    <a href="/newalert">Create job alert</a>
+  </div>
+</article>
+{% endblock %}

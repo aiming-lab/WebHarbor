@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Find a Chase ATM or branch near you | Chase Bank{% endblock %}
+{% block content %}
+<div class="locator-hero">
+  <div class="locator-box">
+    <h1 style="text-align:center;">Find a Chase branch or ATM near you</h1>
+    <form method="get" action="{{ url_for('locator') }}">
+      <label for="q" style="text-align:center;">Search by address, city or ZIP</label>
+      <div class="locator-form">
+        <input id="q" name="q" type="text" value="{{ q }}" placeholder="Search">
+        <button class="btn btn--blue" type="submit">Search</button>
+      </div>
+    </form>
+    <p class="small muted" style="text-align:center;margin-top:16px;">Or search for ATMs internationally — find the closest Chase-compatible ATM wherever your travels take you.</p>
+  </div>
+</div>
+
+<div class="container">
+  {% if searched %}
+  <section class="section">
+    {% if results %}
+    <p class="result-summary">{{ results|length }} locations match “{{ q }}”.</p>
+    {% for b in results[:60] %}
+    <div class="branch-card">
+      <div>
+        <h3><a href="{{ url_for('branch_detail', branch_id=b.id) }}">{{ b.name }}</a>
+          {% if b.loc_type == 'ATM' %}<span class="badge badge--atm">ATM</span>{% else %}<span class="badge">Branch</span>{% endif %}
+          {% if b.atm_24h %}<span class="badge badge--atm">24-hour ATM</span>{% endif %}
+        </h3>
+        <div class="addr">{{ b.address1 }}, {{ b.city }}, {{ b.state }} {{ b.zip }}</div>
+        <div class="phone">{{ b.phone or 'Phone not listed' }}</div>
+        <div class="small muted">{{ b.hours_label() }}</div>
+        {% if b.service_list %}
+        <div style="margin-top:6px;">
+          {% for s in b.service_list %}<span class="badge">{{ s }}</span>{% endfor %}
+        </div>
+        {% endif %}
+      </div>
+      <div class="card-row__actions">
+        <a class="btn btn--outline btn--sm" href="{{ url_for('branch_detail', branch_id=b.id) }}">Branch details</a>
+      </div>
+    </div>
+    {% endfor %}
+    {% if results|length > 60 %}<p class="small muted">Showing the first 60 of {{ results|length }} results — refine your search to see more.</p>{% endif %}
+    {% else %}
+    <div class="empty-state">
+      <p>No locations matched “{{ q }}”. Try a city (e.g. “Chicago”), a state (e.g. “IL”), or a ZIP code (e.g. “10007”).</p>
+      <p><a class="btn btn--blue" href="{{ url_for('locator') }}">Start a new search</a></p>
+    </div>
+    {% endif %}
+  </section>
+  {% else %}
+  <section class="section">
+    <div class="trio">
+      <div class="trio-card"><div class="trio-card__body">
+        <h4>Branches</h4>
+        <p>Nearly 4,700 branches with bankers who can help you open accounts, apply for loans and manage your money.</p>
+      </div></div>
+      <div class="trio-card"><div class="trio-card__body">
+        <h4>ATMs</h4>
+        <p>More than 14,000 ATMs nationwide, including 24-hour locations. Withdraw cash, make deposits and check balances.</p>
+      </div></div>
+      <div class="trio-card"><div class="trio-card__body">
+        <h4>Meet with us</h4>
+        <p>Schedule a meeting with a banker to talk through your goals at a time that works for you.</p>
+        <a class="btn btn--outline" href="{{ url_for('customer_service') }}">Get help</a>
+      </div></div>
+    </div>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}

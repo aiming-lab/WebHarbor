@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}American Express Credit Cards, Rewards &amp; Banking{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/amex-logo-bluebox.svg') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="container inner">
+    <a class="brand" href="{{ url_for('index') }}">
+      <img src="{{ url_for('static', filename='icons/amex-logo-bluebox.svg') }}" alt="American Express">
+    </a>
+    <nav class="main-nav" aria-label="Main">
+      <div class="nav-item">
+        <details>
+          <summary>Cards</summary>
+          <div class="dropdown">
+            <a href="{{ url_for('cards_index') }}">View All Credit Cards</a>
+            <a href="{{ url_for('card_category', slug='travel-rewards') }}">Travel Credit Cards</a>
+            <a href="{{ url_for('card_category', slug='cash-back') }}">Cash Back Credit Cards</a>
+            <a href="{{ url_for('card_category', slug='no-annual-fee') }}">No Annual Fee Credit Cards</a>
+            <a href="{{ url_for('card_detail', slug='platinum') }}">Platinum Card&reg;</a>
+          </div>
+        </details>
+      </div>
+      <div class="nav-item">
+        <details>
+          <summary>Banking</summary>
+          <div class="dropdown">
+            <a href="{{ url_for('banking_hysa') }}">High Yield Savings (HYSA)</a>
+            <a href="{{ url_for('banking_cd') }}">Certificates of Deposit (CD)</a>
+            <a href="{{ url_for('banking_checking') }}">Personal Checking</a>
+            <a href="{{ url_for('banking_loans') }}">Personal Loans</a>
+          </div>
+        </details>
+      </div>
+      <div class="nav-item">
+        <details>
+          <summary>Travel</summary>
+          <div class="dropdown">
+            <a href="{{ url_for('lounges_index') }}">Airport Lounge Access by Card</a>
+            <a href="{{ url_for('rewards_index') }}">How to Book a Trip with Points</a>
+          </div>
+        </details>
+      </div>
+      <div class="nav-item">
+        <details>
+          <summary>Rewards &amp; Benefits</summary>
+          <div class="dropdown">
+            <a href="{{ url_for('rewards_index') }}">Membership Rewards&reg; Program</a>
+            <a href="{{ url_for('benefits_index') }}">View All Benefits</a>
+            <a href="{{ url_for('offers_index') }}">Amex Offers</a>
+          </div>
+        </details>
+      </div>
+      <a href="{{ url_for('search') }}">Search</a>
+    </nav>
+    <div class="header-right">
+      {% if current_user.is_authenticated %}
+        <span class="welcome">Hi, {{ current_user.display_name.split(' ')[0] }}</span>
+        <a class="btn btn-primary btn-sm" href="{{ url_for('account_home') }}">My Account</a>
+        <form method="post" action="{{ url_for('logout') }}" style="display:inline">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <button class="btn btn-outline btn-sm" type="submit">Log Out</button>
+        </form>
+      {% else %}
+        <a class="btn btn-primary btn-sm" href="{{ url_for('login') }}">Log In</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+<div class="tabstrip">
+  <div class="container inner">
+    <span class="tab active">Personal</span>
+    <span class="fdic">FDIC-Insured &mdash; Backed by the full faith and credit of the U.S. Government</span>
+  </div>
+</div>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-zone">
+      {% for category, message in messages %}
+        <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-cols">
+      <div class="col">
+        <h4>About</h4>
+        <a href="{{ url_for('benefits_index') }}">About American Express</a>
+        <a href="{{ url_for('search', q='careers') }}">Careers</a>
+        <a href="{{ url_for('search', q='contact') }}">Contact Us</a>
+      </div>
+      <div class="col">
+        <h4>Products &amp; Services</h4>
+        <a href="{{ url_for('cards_index') }}">Credit Cards</a>
+        <a href="{{ url_for('banking_hysa') }}">Savings Accounts &amp; CDs</a>
+        <a href="{{ url_for('banking_checking') }}">Personal Checking</a>
+        <a href="{{ url_for('banking_loans') }}">Personal Loans</a>
+      </div>
+      <div class="col">
+        <h4>Links You May Like</h4>
+        <a href="{{ url_for('rewards_index') }}">Membership Rewards</a>
+        <a href="{{ url_for('offers_index') }}">Amex Offers</a>
+        <a href="{{ url_for('lounges_index') }}">Airport Lounges</a>
+      </div>
+      <div class="col">
+        <h4>Additional Information</h4>
+        <a href="{{ url_for('search', q='FAQ') }}">Frequently Asked Questions</a>
+        <a href="{{ url_for('card_category', slug='no-annual-fee') }}">No Annual Fee Cards</a>
+        <a href="{{ url_for('card_category', slug='balance-transfer') }}">Balance Transfer Cards</a>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <img src="{{ url_for('static', filename='icons/amex-logo-line.svg') }}" alt="AMERICAN EXPRESS">
+      <span class="country"><img src="{{ url_for('static', filename='icons/flag-us.svg') }}" alt=""> United States &middot; Change Country</span>
+      <span>Terms of Service</span>
+      <span>Privacy Center</span>
+      <span>AdChoices</span>
+      <span>Security Center</span>
+      <span>Card Agreements</span>
+      <span>&copy; 2026 American Express. All rights reserved.</span>
+    </div>
+  </div>
+</footer>
+</body>
+</html>

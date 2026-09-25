@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% block title %}Outage Notification | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--outage">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">Outage Notification</h1>
+                            <div class="odx-content__summary">
+                                Scheduled maintenance and unplanned outages affecting State of Ohio online services.
+                            </div>
+                        </div>
+                    </header>
+                </section>
+
+                <section class="odx-content-section">
+                    {% for a in items %}
+                    <div class="odx-collapsable__container margin-bottom-sm">
+                        <button class="odx-collapsable__title odx-background-color-gray40" type="button" data-toggle="collapse" data-target="#outage-{{ a.id }}" aria-expanded="false" aria-controls="outage-{{ a.id }}">
+                            <i class="odx-collapsable__chevron fa fa-chevron-down"></i>
+                            <div class="odx-bold">{{ a.title }}</div>
+                        </button>
+                        <div class="collapse" id="outage-{{ a.id }}">
+                            <div class="odx-collapsable__body">
+                                {{ a.body_html | safe }}
+                                <p><small>Posted {{ a.published }}</small></p>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <p>No outage notifications at this time.</p>
+                    {% endfor %}
+                </section>
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section">
+                        <h2 class="odx-bold">Get notified</h2>
+                        <p>Subscribe to email alerts on the <a href="{{ url_for('alerts') }}">Alerts</a> page so you know when services come back online.</p>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} | Manipulatives{% endblock %}
+{% block content %}
+<div class="breadcrumb-links">
+  <a href="{{ url_for('manipulatives_index') }}">Manipulatives</a> <span class="sep">/</span> {{ item.title }}
+</div>
+
+<div class="detail-main" style="max-width:1000px;">
+  <h1 style="text-align:left;">{{ item.title | upper }}</h1>
+
+  {% if item.slug == 'ten-frame' %}
+  <div class="manip-workspace" id="tenFrameWorkspace">
+    <div class="manip-toolbar" id="tenFrameToolbar">
+      <span class="tool-btn active" data-frame="10">10 Frame</span>
+      <span class="tool-btn" data-frame="5">5 Frame</span>
+      <span class="tool-btn" data-frame="20">20 Frame</span>
+      <span style="width:1px;height:30px;background:#9fd4dc;"></span>
+      <span class="counter-pick active" data-counter="monsters-blue" style="background-image:url('/static/images/manipulatives/counters/counter-monsters-blue.png');" title="Blue monster counters"></span>
+      <span class="counter-pick" data-counter="monsters-orange" style="background-image:url('/static/images/manipulatives/counters/counter-monsters-orange.png');" title="Orange monster counters"></span>
+      <span class="counter-pick" data-counter="apples-blue" style="background-image:url('/static/images/manipulatives/counters/counter-apple-blue.png');" title="Blue apples"></span>
+      <span class="counter-pick" data-counter="stars-orange" style="background-image:url('/static/images/manipulatives/counters/counter-star-orange.png');" title="Orange stars"></span>
+      <span class="counter-pick" data-counter="cats-blue" style="background-image:url('/static/images/manipulatives/counters/counter-cat-blue.png');" title="Blue cats"></span>
+      <span class="counter-pick" data-counter="cupcakes-orange" style="background-image:url('/static/images/manipulatives/counters/counter-cupcake-orange.png');" title="Orange cupcakes"></span>
+      <span style="width:1px;height:30px;background:#9fd4dc;"></span>
+      <span class="tool-btn" id="startOverBtn">START OVER</span>
+    </div>
+    <div class="ten-frame-grid" id="tenFrameGrid"></div>
+    <div class="manip-status" id="tenFrameStatus">START BY CHOOSING A FRAME — then click cells to place counters.</div>
+  </div>
+  <div class="how-it-works" style="text-align:center;">
+    <img src="/static/images/manipulatives/ten-frame-how-it-works.jpg" alt="How the Ten Frame works" style="max-width:490px;width:100%;border-radius:8px;">
+  </div>
+  {% elif item.slug == 'base-ten-blocks' %}
+  <div class="manip-workspace" id="baseTenWorkspace">
+    <div class="manip-toolbar" id="baseTenToolbar">
+      <span class="tool-btn active" data-block="units">Units</span>
+      <span class="tool-btn" data-block="rods">Rods (10)</span>
+      <span class="tool-btn" data-block="flats">Flats (100)</span>
+      <span style="width:1px;height:30px;background:#9fd4dc;"></span>
+      <span class="tool-btn" id="startOverBtn">START OVER</span>
+    </div>
+    <div class="ten-frame-grid" id="baseTenGrid" style="min-height:260px;"></div>
+    <div class="manip-status" id="baseTenStatus">Click the workspace to place the selected block. Blocks snap to the grid.</div>
+  </div>
+  <div class="how-it-works" style="text-align:center;">
+    <img src="/static/images/manipulatives/base-ten-blocks-how-it-works.jpg" alt="How Base Ten Blocks work" style="max-width:490px;width:100%;border-radius:8px;">
+  </div>
+  {% elif item.slug == 'number-line' %}
+  <div class="manip-workspace" id="numberLineWorkspace">
+    <div class="manip-toolbar" id="numberLineToolbar">
+      <span class="tool-btn active" data-jump="1">Jump 1</span>
+      <span class="tool-btn" data-jump="5">Jump 5</span>
+      <span class="tool-btn" data-jump="10">Jump 10</span>
+      <span style="width:1px;height:30px;background:#9fd4dc;"></span>
+      <span class="tool-btn" id="startOverBtn">START OVER</span>
+    </div>
+    <div class="number-line-canvas" id="numberLineCanvas" style="background:#fff;border-radius:10px;padding:24px;overflow-x:auto;"></div>
+    <div class="manip-status" id="numberLineStatus">Click along the number line to hop the selected jump size. The marker shows your total.</div>
+  </div>
+  <div class="how-it-works" style="text-align:center;">
+    <img src="/static/images/manipulatives/number-line-how-it-works.jpg" alt="How the Number Line works" style="max-width:490px;width:100%;border-radius:8px;">
+  </div>
+  {% else %}
+  <div class="manip-workspace" id="patternWorkspace">
+    <div class="manip-toolbar" id="patternToolbar">
+      <span class="tool-btn active" data-shape="triangle" style="color:#ea6452;">▲ Triangle</span>
+      <span class="tool-btn" data-shape="square" style="color:#ffbe00;">■ Square</span>
+      <span class="tool-btn" data-shape="rhombus" style="color:#2c6792;">◆ Rhombus</span>
+      <span class="tool-btn" data-shape="trapezoid" style="color:#24af0e;">▲ Trapezoid</span>
+      <span class="tool-btn" data-shape="hexagon" style="color:#6c3eee;">⬢ Hexagon</span>
+      <span style="width:1px;height:30px;background:#9fd4dc;"></span>
+      <span class="tool-btn" id="startOverBtn">START OVER</span>
+    </div>
+    <div class="pattern-canvas" id="patternCanvas" style="background:#fff;border-radius:10px;padding:20px;min-height:280px;cursor:crosshair;"></div>
+    <div class="manip-status" id="patternStatus">Choose a shape, then click the board to place it. Fit the pieces together to build patterns.</div>
+  </div>
+  <div class="how-it-works" style="text-align:center;">
+    <img src="/static/images/manipulatives/pattern-blocks-how-it-works.jpg" alt="How Pattern Blocks work" style="max-width:490px;width:100%;border-radius:8px;">
+  </div>
+  {% endif %}
+
+  <div class="about-panel">
+    <div class="about_title">ABOUT {{ item.title | upper }}</div>
+    <div class="about_text">
+      <div class="line_one">{{ item.about }}</div>
+    </div>
+    <div class="other_manipulatives">
+      Our other manipulatives:
+      {% for o in others %}<a href="{{ url_for('manipulative_page', slug=o.slug) }}" class="other_link" style="color:var(--teal);font-weight:700;">{{ o.title }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="/static/js/manipulatives.js"></script>
+{% endblock %}

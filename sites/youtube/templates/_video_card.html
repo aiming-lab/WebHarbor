@@ -1,0 +1,14 @@
+<article class="video-card">
+  <a class="thumb-wrap" href="{{ url_for('watch', slug=video.slug) }}">
+    <img src="{{ video.thumbnail_path }}" alt="{{ video.title }} thumbnail">
+    <span class="duration-pill">{{ video.duration }}</span>
+  </a>
+  <div class="video-meta">
+    <img class="channel-avatar" src="{{ video.channel.avatar_path }}" alt="{{ video.channel.name }} avatar">
+    <div>
+      <a class="video-title" href="{{ url_for('watch', slug=video.slug) }}">{{ video.title }}</a>
+      <a class="video-subtitle" href="{{ url_for('channel', slug=video.channel.slug) }}">{{ video.channel.name }}{% if video.channel.verified %} ✓{% endif %}</a>
+      <p class="video-subtitle">{{ video.view_label }} · {{ video.relative_date }}</p>
+    </div>
+  </div>
+</article>

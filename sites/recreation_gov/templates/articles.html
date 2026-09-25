@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Articles - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section alt">
+  <div class="wrap">
+    <p class="eyebrow">Inspiration &amp; Information</p>
+    <h1>Articles</h1>
+    <p class="muted">Editorial trip-planning guidance, safety information, and destination inspiration tied to recreation inventory.</p>
+  </div>
+</section>
+<section class="section">
+  <div class="wrap article-grid">
+    {% for article in articles %}
+      <a class="article-card" href="{{ article.href }}">
+        <img src="{{ article.image_url }}" alt="">
+        <span>{{ article.kicker }}</span>
+        <strong>{{ article.title }}</strong>
+        <p>{{ article.summary }}</p>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

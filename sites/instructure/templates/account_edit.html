@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Profile Settings | Instructure{% endblock %}
+{% block content %}
+<section class="container section">
+  <h1 style="margin-bottom: 34px;">Profile Settings</h1>
+  <div class="acct-grid">
+    <aside class="acct-nav">
+      <a href="{{ url_for('account') }}">Overview</a>
+      <a href="{{ url_for('account_edit') }}">Profile settings</a>
+      <a href="{{ url_for('logout') }}">Log out</a>
+    </aside>
+    <div class="acct-section">
+      <h2>Edit your details</h2>
+      <form method="post" action="{{ url_for('account_edit') }}">
+        <div class="form-grid">
+          <div class="field"><label>First Name <span class="req">*</span></label>
+            <input type="text" name="first_name" required value="{{ current_user.first_name or '' }}"></div>
+          <div class="field"><label>Last Name <span class="req">*</span></label>
+            <input type="text" name="last_name" required value="{{ current_user.last_name or '' }}"></div>
+          <div class="field full"><label>Email Address <span class="req">*</span></label>
+            <input type="email" name="email" required value="{{ current_user.email }}"></div>
+          <div class="field"><label>Job Title</label>
+            <input type="text" name="job_title" value="{{ current_user.job_title or '' }}"></div>
+          <div class="field"><label>Phone Number</label>
+            <input type="text" name="phone" value="{{ current_user.phone or '' }}"></div>
+          <div class="field"><label>School / Organization <span class="req">*</span></label>
+            <input type="text" name="organization" required value="{{ current_user.organization or '' }}"></div>
+          <div class="field"><label>Organization Type</label>
+            <select name="org_type">
+              <option value="">- Select -</option>
+              {% for o in ['Business','Government','Higher Ed','K12','EdTech'] %}
+              <option {% if current_user.org_type == o %}selected{% endif %}>{{ o }}</option>
+              {% endfor %}
+            </select></div>
+          <div class="field"><label>Country</label>
+            <select name="country">
+              <option value="">- Select -</option>
+              {% for c in ['United States','Canada','United Kingdom','Australia','Netherlands','Other'] %}
+              <option {% if current_user.country == c %}selected{% endif %}>{{ c }}</option>
+              {% endfor %}
+            </select></div>
+        </div>
+        <div class="form-actions"><button class="btn btn-navy" type="submit">Save changes</button></div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

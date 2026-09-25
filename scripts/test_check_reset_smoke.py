@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import sys
 import tempfile
 import textwrap
@@ -91,6 +92,7 @@ def build_repo(
 class _SmokeHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802
         if self.path == "/health":
+            assert isinstance(self.server, ThreadingHTTPServer)
             body = json.dumps(
                 {"ok": True, "sites": {"amazon": {"alive": True, "port": self.server.server_port}}}
             ).encode("utf-8")
@@ -174,6 +176,112 @@ class SmokeServer:
 
 
 class CheckResetSmokeTests(unittest.TestCase):
+    def test_cli_authenticates_control_requests_without_sending_token_to_site(self) -> None:
+        token = "test-control-token-" + "x" * 32
+        seen: list[tuple[str, str | None]] = []
+
+        class AuthHandler(_SmokeHandler):
+            def authorized(self) -> bool:
+                header = self.headers.get("Authorization")
+                seen.append((self.path, header))
+                if self.path != "/" and header != f"Bearer {token}":
+                    self.send_response(401)
+                    self.end_headers()
+                    return False
+                return True
+
+            def do_GET(self) -> None:  # noqa: N802
+                if self.authorized():
+                    super().do_GET()
+
+            def do_POST(self) -> None:  # noqa: N802
+                if self.authorized():
+                    super().do_POST()
+
+        for reset_all in (False, True):
+            with self.subTest(reset_all=reset_all), tempfile.TemporaryDirectory() as tmp:
+                with SmokeServer(AuthHandler) as server:
+                    root = Path(tmp)
+                    build_repo(root, base_port=server.port)
+                    output = io.StringIO()
+                    args = ["--json", "--control-url", f"http://127.0.0.1:{server.port}",
+                            "--base-host", "127.0.0.1", "--db-root", str(root / "sites")]
+                    if reset_all:
+                        args.append("--reset-all")
+                    seen.clear()
+                    with patch.dict(os.environ, {"WEBSYN_CONTROL_TOKEN": token}):
+                        code = smoke.main(args, root=root, stdout=output)
+                    self.assertEqual(code, 0, output.getvalue())
+                    self.assertEqual(json.loads(output.getvalue())["errors"], [])
+                    self.assertIn(("/health", f"Bearer {token}"), seen)
+                    self.assertIn(("/reset-all" if reset_all else "/reset/amazon",
+                                   f"Bearer {token}"), seen)
+                    self.assertIn(("/", None), seen)
+                    self.assertNotIn(token, output.getvalue())
+
+    def test_authenticated_control_redirect_does_not_reach_another_endpoint(self) -> None:
+        received: list[str | None] = []
+
+        class CaptureHandler(_SmokeHandler):
+            def do_GET(self) -> None:  # noqa: N802
+                received.append(self.headers.get("Authorization"))
+                super().do_GET()
+
+        with SmokeServer(CaptureHandler) as destination:
+            class RedirectHandler(_SmokeHandler):
+                def do_GET(self) -> None:  # noqa: N802
+                    self.send_response(302)
+                    self.send_header("Location", f"http://127.0.0.1:{destination.port}/")
+                    self.end_headers()
+
+            with SmokeServer(RedirectHandler) as source:
+                ok, status, _ = smoke.http_request(
+                    f"http://127.0.0.1:{source.port}/health",
+                    bearer_token="test-token-" + "x" * 32,
+                )
+            self.assertFalse(ok)
+            self.assertEqual(status, 302)
+            self.assertEqual(received, [])
+
+    def test_invalid_control_token_fails_without_network_or_secret_output(self) -> None:
+        for token in ("short", "x" * 32 + "\nInjected: header", "非" * 32):
+            with self.subTest(token=token), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                build_repo(root)
+                output = io.StringIO()
+                with patch.dict(os.environ, {"WEBSYN_CONTROL_TOKEN": token}):
+                    with patch.object(smoke, "http_request") as request:
+                        code = smoke.main(["--json"], root=root, stdout=output)
+                self.assertEqual(code, 1)
+                self.assertEqual(json.loads(output.getvalue())["summary"]["sites_checked"], 0)
+                self.assertNotIn(token, output.getvalue())
+                request.assert_not_called()
+
+    def test_wrong_control_token_cannot_report_reset_or_db_success(self) -> None:
+        class DeniedHandler(_SmokeHandler):
+            def do_GET(self) -> None:  # noqa: N802
+                if self.path == "/":
+                    return super().do_GET()
+                self.send_response(401)
+                self.end_headers()
+
+            def do_POST(self) -> None:  # noqa: N802
+                self.send_response(401)
+                self.end_headers()
+
+        with tempfile.TemporaryDirectory() as tmp, SmokeServer(DeniedHandler) as server:
+            root = Path(tmp)
+            build_repo(root, base_port=server.port)
+            result = smoke.run_checks(
+                root, control_url=f"http://127.0.0.1:{server.port}",
+                base_host="127.0.0.1", db_root=str(root / "sites"),
+                control_token="wrong-token-" + "x" * 32,
+            )
+            self.assertEqual(result.exit_code, 1)
+            self.assertEqual(result.control_server.http_status, 401)
+            self.assertEqual(result.site_checks[0].reset_http_status, 401)
+            self.assertEqual(result.site_checks[0].md5_status, "SKIP")
+
     def test_md5_match_passes(self) -> None:
         # A parity verdict needs a reset to be "after", so this runs against a live
         # control plane rather than a dead port.
@@ -542,6 +650,7 @@ class DbSourceTests(unittest.TestCase):
             runtime_db, seed_db, problem = smoke.resolve_db_pair(site_root, "amazon")
 
         self.assertIsNone(problem)
+        assert runtime_db is not None and seed_db is not None
         self.assertEqual(runtime_db.name, "shared.db")
         self.assertEqual(seed_db.name, "shared.db")
 

@@ -1,0 +1,228 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import logo, mini_card, news_item %}
+{% block title %}{{ inst.name }} ({{ inst.ticker }})
+  {%- if inst.kind in ['stock','etf'] %} Stock Price & News{% else %} Price, Real-time Quote & News{% endif %} - Google Finance{% endblock %}
+
+{% block content %}
+<nav class="crumbs">
+  <a href="{{ url_for('index') }}">&larr; Home</a>
+  <span>|</span>
+  <span>{{ inst.display_symbol }}</span>
+</nav>
+
+<div class="q-head">
+  <div class="q-ident">
+    {% if inst.kind in ['stock', 'etf'] %}{{ logo(inst, 34) }}{% endif %}
+    <h1 class="q-name">{{ inst.name }}</h1>
+  </div>
+  {% if current_user.is_authenticated and nav_watchlists %}
+    {# one pill that reports membership and toggles it, like the live control #}
+    <details class="add-menu">
+      <summary class="btn-blue add-pill {{ 'added' if in_lists }}">
+        {% if in_lists %}<b class="tick">&#10003;</b> Added{% else %}+ Add to list{% endif %}
+        <b class="caret">&#9662;</b>
+      </summary>
+      <div class="add-pop">
+        {% for wl in nav_watchlists %}
+          <form method="post" action="{{ url_for('list_toggle', list_id=wl.id) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="slug" value="{{ inst.slug }}">
+            <button type="submit" class="add-row {{ 'on' if wl.id in in_lists }}">
+              <span class="add-check">{{ '✓' if wl.id in in_lists }}</span>
+              <span>{{ wl.name }}</span>
+              <span class="add-count">{{ wl.items|length }}</span>
+            </button>
+          </form>
+        {% endfor %}
+        <a class="add-row add-new" href="{{ url_for('list_new_form') }}">
+          <span class="add-check">+</span><span>New list</span></a>
+      </div>
+    </details>
+  {% else %}
+    <a class="btn-blue" href="{{ url_for('login', next=request.full_path) }}">+ Add to list</a>
+  {% endif %}
+</div>
+
+<div class="q-price-row">
+  <span class="q-price">{{ pv(inst, q.price) }}</span>
+  {# the header change tracks the selected chart range, as on the live site #}
+  {% if move_pct is not none %}
+    <span class="q-move {{ 'up' if move_pct >= 0 else 'down' }}">
+      <span class="arrow-badge {{ 'up' if move_pct >= 0 else 'down' }}"
+            aria-hidden="true">{{ '↑' if move_pct >= 0 else '↓' }}</span>
+      {{ fmt_pct(move_pct) }} ({{ '{:+,.2f}'.format(move_abs) }})
+      <span class="word">{{ move_label }}</span>
+    </span>
+  {% endif %}
+  {% if q.after_price %}
+    <span class="q-after">
+      <span class="ap">{{ fmt_price(q.after_price) }}</span>
+      <span class="am {{ 'up' if q.after_change_pct >= 0 else 'down' }}">
+        <span class="arrow-badge {{ 'up' if q.after_change_pct >= 0 else 'down' }}"
+              aria-hidden="true">{{ '↑' if q.after_change_pct >= 0 else '↓' }}</span>
+        {{ fmt_pct(q.after_change_pct) }} ({{ '{:+,.2f}'.format(q.after_change) }})</span>
+    </span>
+  {% endif %}
+</div>
+<div class="q-stamp">
+  Closed: {{ market_close_label }}<span class="dot">&middot;</span>{{ inst.currency }}
+  {% if q.after_price %}<span class="dot">&middot;</span>After hours {{ after_hours_label }}{% endif %}
+</div>
+
+<div class="chart-wrap">
+  {% set base = {'symbol': inst.slug, 'tab': tab, 'range': rng} %}
+  <div class="chart-toolbar">
+    {# real menus, built from details/summary so they work without JS #}
+    <details class="tb-menu">
+      <summary class="tb-item">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.5 9 11l4 4 8-8.5V19H3z"/></svg>
+        {{ 'Area' if chart_type == 'area' else 'Line' }} <b class="caret">&#9662;</b>
+      </summary>
+      <div class="tb-pop">
+        {% for key, label in [('area','Area'), ('line','Line')] %}
+          <a href="{{ url_for('quote', chart=key, ma=ma|join(','), **base) }}"
+             class="{{ 'on' if chart_type == key }}">{{ label }}</a>
+        {% endfor %}
+      </div>
+    </details>
+
+    <details class="tb-menu">
+      <summary class="tb-item">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 15.5 9 10l3.5 3.5L20.5 5l1.4 1.4-9.4 10-3.5-3.5-4.1 4.1z"/></svg>
+        Compare <b class="caret">&#9662;</b>
+      </summary>
+      <div class="tb-pop">
+        {% for r in related[:4] %}
+          <a href="{{ url_for('compare', tickers=inst.slug ~ ',' ~ r.slug) }}">
+            {{ inst.ticker }} vs {{ r.ticker }}</a>
+        {% endfor %}
+        <a href="{{ url_for('compare', tickers=inst.slug) }}">Compare with…</a>
+      </div>
+    </details>
+
+    <details class="tb-menu">
+      <summary class="tb-item {{ 'on' if ma }}">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20V9h3v11H4m6.5 0V4h3v16h-3m6.5 0v-7h3v7h-3z"/></svg>
+        Indicators{% if ma %} <span class="tb-count">{{ ma|length }}</span>{% endif %}
+        <b class="caret">&#9662;</b>
+      </summary>
+      <div class="tb-pop">
+        {% for w in ma_windows %}
+          {% set nxt = (ma | reject('equalto', w) | list) if w in ma else (ma + [w]) %}
+          <a href="{{ url_for('quote', chart=chart_type, ma=nxt|sort|join(','), **base) }}"
+             class="{{ 'on' if w in ma }}">
+            {{ '✓' if w in ma else '' }} {{ w }}-day moving average</a>
+        {% endfor %}
+        {% if ma %}
+          <a href="{{ url_for('quote', chart=chart_type, **base) }}">Clear indicators</a>
+        {% endif %}
+      </div>
+    </details>
+
+    <span class="tb-item tb-moments {{ 'on' if moment_count }}">
+      <i class="moment-swatch" aria-hidden="true"></i>
+      Key moments{% if moment_count %} <span class="tb-count">{{ moment_count }}</span>{% endif %}
+    </span>
+  </div>
+  {% if overlays %}
+    <div class="ma-legend">
+      {% for ov in overlays %}
+        <span><i style="background: {{ ov.colour }}"></i>{{ ov.label }}</span>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {{ chart_svg(inst, series, (range_pct or 0) >= 0, chart_type, overlays) }}
+  <nav class="range-tabs" aria-label="Chart range">
+    {% for r in range_keys %}
+      <a href="{{ url_for('quote', symbol=inst.slug, tab=tab, range=r,
+                          chart=chart_type, ma=ma|join(',')) }}"
+         class="{{ 'on' if r == rng }}"
+         {% if r in moment_ranges %}data-moments="1"{% endif %}>{{ r }}</a>
+    {% endfor %}
+  </nav>
+</div>
+
+<nav class="q-tabs" aria-label="Quote sections">
+  {% for t in tabs %}
+    <a href="{{ url_for('quote', symbol=inst.slug, tab=t, range=rng) }}"
+       class="{{ 'on' if t == tab }}">{{ t|capitalize }}</a>
+  {% endfor %}
+</nav>
+
+{% if tab == 'overview' %}
+  {% include '_tab_overview.html' %}
+{% elif tab == 'financials' %}
+  {% include '_tab_financials.html' %}
+{% elif tab == 'earnings' %}
+  {% include '_tab_earnings.html' %}
+{% elif tab == 'analysis' %}
+  {% include '_tab_analysis.html' %}
+{% elif tab == 'holdings' %}
+  {% include '_tab_holdings.html' %}
+{% endif %}
+
+{% if related %}
+  <h2 class="section-title">{{ 'Related stocks' if inst.kind in ['stock','etf'] else 'Related assets' }}</h2>
+  <div class="cards-row">
+    {% for r in related %}{{ mini_card(r, spark_svg, fmt_pct) }}{% endfor %}
+  </div>
+{% endif %}
+
+{% if news %}
+  <h2 class="section-title">News stories</h2>
+  <div class="news-grid">
+    {% for a in news %}{{ news_item(a) }}{% endfor %}
+  </div>
+{% endif %}
+
+{% if inst.profile %}
+  <h2 class="section-title">Profile</h2>
+  <div class="profile-text"><p>{{ inst.profile }}</p></div>
+{% endif %}
+
+{% if inst.kind in ['stock', 'etf'] and (inst.ceo or inst.headquarters) %}
+  <h2 class="section-title">About {{ inst.name }}</h2>
+  <div class="about-grid">
+    <div>
+      {% if inst.ceo %}<div class="stat-row"><dt>CEO</dt><dd>{{ inst.ceo }}</dd></div>{% endif %}
+      {% if inst.employees %}<div class="stat-row"><dt>Employees</dt><dd>{{ inst.employees }}</dd></div>{% endif %}
+      {% if inst.founded %}<div class="stat-row"><dt>Founded</dt><dd>{{ inst.founded }}</dd></div>{% endif %}
+    </div>
+    <div>
+      {% if inst.headquarters %}<div class="stat-row"><dt>Headquarters</dt><dd>{{ inst.headquarters }}</dd></div>{% endif %}
+      {% if inst.industry %}<div class="stat-row"><dt>Industry</dt><dd>{{ inst.industry }}</dd></div>{% endif %}
+      <div class="stat-row"><dt>Exchange</dt><dd>{{ inst.exchange or '—' }}</dd></div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}
+
+{% block rail %}
+  <h2 class="rail-panel-title">Research</h2>
+  <div class="rail-sub">Compare</div>
+  <p class="rail-empty">See {{ inst.ticker }} next to its peers on one page.</p>
+  <a class="rail-cta"
+     href="{{ url_for('compare', tickers=([inst.slug] + related[:3]|map(attribute='slug')|list)|join(',')) }}">
+     Compare {{ inst.ticker }}</a>
+
+  {% if inst.kind == 'stock' %}
+    <div class="rail-sub">Sector</div>
+    <ul class="rail-mini">
+      {% for s in sector_indexes if s.sector == inst.sector %}
+        <li><a href="{{ url_for('quote', symbol=s.slug) }}">
+          <span><span class="m-tic">{{ s.ticker }}</span>
+            <span class="m-name">{{ s.industry }}</span></span>
+          <span class="chg {{ 'up' if s.quote.change_pct >= 0 else 'down' }}">{{ fmt_pct(s.quote.change_pct) }}</span>
+        </a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  <div class="rail-sub">Top news</div>
+  <ul class="rail-news">
+    {% for a in rail_news %}
+      <li><a href="{{ url_for('news_detail', slug=a.slug) }}">{{ a.headline }}</a>
+        <span class="meta">{{ a.publisher.name if a.publisher else 'Newswire' }} &middot; {{ a.ago() }}</span></li>
+    {% endfor %}
+  </ul>
+{% endblock %}

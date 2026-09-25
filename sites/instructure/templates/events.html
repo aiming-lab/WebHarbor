@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Events | Instructure{% endblock %}
+{% block content %}
+<section class="mhero">
+  <div class="container">
+    <h1>Events &amp; Webinars</h1>
+    <p class="lede">Wherever learning happens, we’ll be there. Join us at conferences, meetups, and online events around the world.</p>
+  </div>
+</section>
+<section class="container section">
+  <div class="event-grid">
+    {% for e in events %}
+    <div class="event-card">
+      <img src="{{ e.image }}" alt="{{ e.name }}">
+      <div class="body">
+        <span class="kind">{{ e.kind }}{% if e.event_date %} • {{ e.event_date }}{% endif %}</span>
+        <h3>{{ e.name }}</h3>
+        {% if e.location %}<span class="meta">{{ e.location }}</span>{% endif %}
+        <div style="margin-top:10px;">
+        {% if e.is_internal %}
+          <a class="btn btn-outline" href="{{ url_for('event_detail', slug=e.slug) }}">Learn More</a>
+        {% elif e.external_url %}
+          <a class="btn btn-outline" href="{{ e.external_url }}" target="_blank" rel="noopener">Learn More</a>
+        {% endif %}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

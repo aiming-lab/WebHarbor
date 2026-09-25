@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Create an Account{% endblock %}
+{% block content %}
+<div class="auth-form">
+  <h1 style="font-family:'Galindo',cursive;font-weight:400;color:var(--purple);text-align:center;font-size:32px;margin:6px 0 10px;">Create an Account</h1>
+  <p style="text-align:center;color:#456;margin:0 0 8px;">Save favorite games and keep track of your quiz progress.</p>
+  <form method="post" action="{{ url_for('register') }}">
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" required minlength="3" maxlength="32" autofocus>
+    <label for="display_name">Your Name</label>
+    <input type="text" id="display_name" name="display_name" required maxlength="80">
+    <label for="email">Email</label>
+    <input type="email" id="email" name="email" required autocomplete="email">
+    <label for="password">Password (at least 8 characters)</label>
+    <input type="password" id="password" name="password" required minlength="8" autocomplete="new-password">
+    <button type="submit">Create Account</button>
+  </form>
+  <div class="alt-link">Already have an account? <a href="{{ url_for('login') }}" style="color:var(--teal);font-weight:700;">Sign in</a></div>
+</div>
+{% endblock %}

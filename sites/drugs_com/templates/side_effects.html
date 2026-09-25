@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Local Side-Effect Fixture Index | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="side-effects-page">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Side-effect fixtures</span></nav>
+  <h1 class="page-title">Local Side-Effect Fixture Index</h1>
+  <p class="page-subtitle">Search deterministic medication records by stored side-effect text. This index does not establish causality, prevalence, severity, completeness, or medical review.</p>
+
+  <form action="{{ url_for('side_effects_page') }}" method="get" class="side-effects-search" role="search">
+    <label for="se-q">Search stored side-effect text</label>
+    <div><input id="se-q" type="search" name="q" value="{{ query }}" placeholder="Example fixture term: nausea" class="side-effects-search-input"><button type="submit" class="btn btn-primary">Search</button></div>
+  </form>
+
+  {% if query %}
+  <section>
+    <h2>Matches for “{{ query }}”</h2>
+    {% if drugs %}<ul>{% for d in drugs %}<li><a href="{{ url_for('drug_side_effects', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a></li>{% endfor %}</ul>{% else %}<p class="muted">No stored fixture text matched.</p>{% endif %}
+  </section>
+  {% endif %}
+
+  <section>
+    <h2 class="side-effects-h2">Browse fixture terms alphabetically</h2>
+    <div class="se-az-grid">
+      {% for L in letters %}
+        <div id="letter-{{ L }}" class="se-az-card">
+          <h3 class="se-az-card-title">{{ L }}</h3>
+          <ul class="se-az-card-list">{% for name in by_letter[L] %}<li><a href="{{ url_for('side_effects_page', q=name|lower) }}">{{ name }}</a></li>{% endfor %}</ul>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="se-popular-drugs">
+    <h2 class="side-effects-h2">Selected medication fixture text</h2>
+    <div class="table-scroll" role="region" aria-label="Selected stored side-effect fixture text" tabindex="0">
+    <table class="se-popular-table"><thead><tr><th>Medication record</th><th>Stored text excerpt</th></tr></thead><tbody>{% for d in popular %}<tr><td class="se-popular-drug"><a href="{{ url_for('drug_side_effects', slug=d.slug) }}">{{ d.generic_name }}</a></td><td>{{ (d._se_text or '')[:220] }}{% if d._se_text and d._se_text|length > 220 %}&hellip;{% endif %}</td></tr>{% endfor %}</tbody></table>
+    </div>
+  </section>
+
+  <aside class="se-disclaimer"><p><strong>Data limitation:</strong> Do not use these fixtures for adverse-event, emergency, discontinuation, or treatment decisions.</p></aside>
+</div>
+{% endblock %}

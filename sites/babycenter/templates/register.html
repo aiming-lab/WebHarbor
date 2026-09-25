@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Create a profile{% endblock %}
+{% block content %}
+<section class="form-panel auth">
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="eyebrow">Your BabyCenter</div>
+    <h1>Create a profile</h1>
+    <label>Display name <input name="display_name" maxlength="120" autocomplete="name" required></label>
+    <label>Email <input type="email" name="email" autocomplete="email" required></label>
+    <label>Password <input type="password" name="password" minlength="8" autocomplete="new-password" required></label>
+    <label>Estimated due date <input type="date" name="due_date" required></label>
+    <button type="submit">Create profile</button>
+    <p>Already have a profile? <a href="{{ url_for('login') }}">Sign in</a>.</p>
+  </form>
+</section>
+{% endblock %}

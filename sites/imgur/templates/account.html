@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Account Settings - Imgur{% endblock %}
+{% block body %}
+<div class="accountpage">
+  <h2>Account Settings</h2>
+  <div class="accountstats">
+    <div class="stat"><div class="v">{{ profile.username }}</div><div class="k">USERNAME</div></div>
+    <div class="stat"><div class="v">{{ favorite_count }}</div><div class="k">FAVORITES</div></div>
+    <div class="stat"><div class="v">{{ follow_count }}</div><div class="k">FOLLOWING</div></div>
+    <div class="stat"><div class="v">{{ profile.reputation|count }}</div><div class="k">REPUTATION</div></div>
+  </div>
+
+  <div class="panel">
+    <h3>About</h3>
+    <form method="post" action="/account">
+      <input type="hidden" name="action" value="profile">
+      <label for="bio">Bio</label>
+      <textarea id="bio" name="bio" maxlength="500">{{ profile.bio }}</textarea>
+      <button class="btn" type="submit">Save</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Email</h3>
+    <form method="post" action="/account">
+      <input type="hidden" name="action" value="email">
+      <label for="email">Email address</label>
+      <input type="text" id="email" name="email" value="{{ profile.email or '' }}">
+      <button class="btn" type="submit">Save</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Password</h3>
+    <form method="post" action="/account">
+      <input type="hidden" name="action" value="password">
+      <label for="current_password">Current password</label>
+      <input type="password" id="current_password" name="current_password">
+      <label for="new_password">New password</label>
+      <input type="password" id="new_password" name="new_password">
+      <button class="btn" type="submit">Change password</button>
+    </form>
+  </div>
+
+  <div class="panel">
+    <h3>Public profile</h3>
+    <p style="color:#aab2bd;font-size:14px">
+      Your public profile shows your posts, favorites, comments and about section at
+      <a href="/user/{{ profile.username }}" style="color:#1bb76e;font-weight:700">/user/{{ profile.username }}</a>.
+    </p>
+  </div>
+</div>
+{% endblock %}

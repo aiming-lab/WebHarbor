@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}
+  {% if q %}Search: {{ q }} | {{ site_name }}{% else %}Search | {{ site_name }}{% endif %}
+{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main">
+    <h1>Search</h1>
+
+    <form action="{{ url_for('search') }}" method="get" style="margin-bottom: 20px;">
+      <div class="form-row">
+        <div class="field"><label>Query</label><input type="text" name="q" value="{{ q }}"></div>
+        <div class="field"><label>Type</label>
+          <select name="type">
+            <option value="boardgame" {% if tab=='boardgame' %}selected{% endif %}>Games</option>
+            <option value="user" {% if tab=='user' %}selected{% endif %}>Users</option>
+            <option value="geeklist" {% if tab=='geeklist' %}selected{% endif %}>GeekLists</option>
+          </select>
+        </div>
+        <div class="field" style="flex: 0;"><label>&nbsp;</label><button type="submit">Search</button></div>
+      </div>
+    </form>
+
+    {% if q %}
+      <p class="muted">{{ total | thousands }} result{{ '' if total == 1 else 's' }} for <b>{{ q }}</b>.</p>
+
+      {% if tab == 'boardgame' %}
+        <table class="collection_table">
+          <thead><tr>
+            <th></th><th>Title</th>
+            <th class="collection_bggrating">Year</th>
+            <th class="collection_bggrating">Rank</th>
+            <th class="collection_bggrating">Avg</th>
+          </tr></thead>
+          <tbody>
+            {% for g in games %}
+              <tr>
+                <td class="collection_thumbnail">
+                  {% if g.thumb_filename %}<img src="{{ url_for('static', filename='images/' + g.thumb_filename) }}" alt="">{% endif %}
+                </td>
+                <td class="collection_objectname">
+                  <a class="primary" href="{{ g.detail_url }}">{{ g.name }}</a>
+                  {% if g.short_description %}<div class="muted">{{ g.short_description[:140] }}{% if g.short_description | length > 140 %}…{% endif %}</div>{% endif %}
+                </td>
+                <td class="collection_bggrating">{{ g.year_published or '—' }}</td>
+                <td class="collection_bggrating">{{ g.overall_rank or '—' }}</td>
+                <td class="collection_bggrating">{{ g.avg_rating | one_decimal }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% elif tab == 'user' %}
+        <table class="collection_table">
+          <thead><tr><th>Username</th><th>Real Name</th><th>Location</th></tr></thead>
+          <tbody>
+            {% for u in users %}
+            <tr>
+              <td><a href="{{ url_for('user_profile', username=u.username) }}">{{ u.username }}</a></td>
+              <td>{{ u.real_name or '' }}</td>
+              <td class="muted">{{ u.display_location }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% elif tab == 'geeklist' %}
+        <table class="collection_table">
+          <thead><tr><th>List</th><th>Author</th>
+            <th class="collection_bggrating">Items</th>
+            <th class="collection_bggrating">👍</th></tr></thead>
+          <tbody>
+            {% for l in lists %}
+            <tr>
+              <td><a href="{{ url_for('geeklist_detail', lid=l.id) }}">{{ l.title }}</a></td>
+              <td>{{ l.author.username }}</td>
+              <td class="collection_bggrating">{{ l.num_items }}</td>
+              <td class="collection_bggrating">{{ l.num_thumbs }}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
+      <div class="pagination">
+        {% if page > 1 %}<a href="?q={{ q }}&type={{ tab }}&p={{ page-1 }}">‹ Prev</a>{% endif %}
+        <span class="current">Page {{ page }}</span>
+        {% if has_next %}<a href="?q={{ q }}&type={{ tab }}&p={{ page+1 }}">Next ›</a>{% endif %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

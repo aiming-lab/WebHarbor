@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Publication Articles | AHR{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>Publication Articles</h1>
+  <p class="section-sub">Articles and blog posts about best practices for public health professionals and organizations.</p>
+</div>
+<div class="container" style="padding-bottom:60px">
+  <div class="pub-grid two">
+    {% for a in articles %}
+    <div class="pub-card">
+      <span class="pub-tag">Article</span>
+      <h3><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></h3>
+      <div class="pub-meta">By {{ a.author_name }}{% if a.published %} · {{ a.published }}{% endif %}</div>
+      <p class="pub-desc">{{ a.excerpt }}</p>
+      <a class="pub-link" href="{{ url_for('article_detail', slug=a.slug) }}">View Article ›</a>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

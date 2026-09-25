@@ -1,0 +1,24 @@
+# Minimal container test image for the mta site contribution.
+# Builds ONLY the mta site + the control plane (the real image bundles all
+# sites; this one exists to verify this site's container boot semantics:
+# instance_seed -> instance copy at boot, seeding no-op, /reset byte-identity)
+# without fetching the full HF asset tree for every other site.
+FROM python:3.12-slim-bookworm
+
+RUN pip install --no-cache-dir \
+    Flask==3.1.0 Flask-SQLAlchemy==3.1.1 Flask-Login==0.6.3 \
+    Flask-Bcrypt==1.0.1 SQLAlchemy==2.0.36 Werkzeug==3.1.3
+
+RUN mkdir -p /opt/WebSyn
+COPY sites/mta /opt/WebSyn/mta
+COPY control_server.py /opt/control_server.py
+COPY site_runner.py /opt/site_runner.py
+COPY scripts/check_seed_databases.py /opt/check_seed_databases.py
+
+# websyn_start.sh variant that starts only this site (at its real registry
+# port, 40000 + index 86, so the control plane's /reset/mta reaches it)
+RUN printf '#!/bin/bash\nset -e\nif [[ ${#WEBSYN_CONTROL_TOKEN} -lt 32 ]]; then echo "token required" >&2; exit 1; fi\nrm -rf /opt/WebSyn/mta/instance\ncp -a /opt/WebSyn/mta/instance_seed /opt/WebSyn/mta/instance\nexec env -u WEBSYN_CONTROL_TOKEN python3 /opt/site_runner.py mta 40116 > /tmp/websyn_mta.log 2>&1 &\necho "  mta -> port 40116"\nsleep 12\nexec env WEBSYN_CONTROL_TOKEN="$WEBSYN_CONTROL_TOKEN" python3 /opt/control_server.py\n' > /opt/websyn_start.sh \
+    && chmod +x /opt/websyn_start.sh
+
+EXPOSE 8101 40116
+CMD ["/opt/websyn_start.sh"]

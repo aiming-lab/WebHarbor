@@ -1,0 +1,47 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-22",
+ "capture_method": "Headed Chromium (Playwright) rendering plus Chrome-impersonating HTTP fetches against the live dillards.com; rendered DOM, embedded __INITIAL_STATE__ JSON, and JSON-LD were parsed. Scene7 imagery downloaded from dimg.dillards.com at its served resolution (product imagery rejects size parameters, so files are stored as served).",
+ "records": [
+  {
+   "path": "source_data.json",
+   "classification": "source-captured",
+   "source_url": "https://www.dillards.com/",
+   "scope": "Category tree, brand names and About-brand copy, product names, prices, sale (was) prices, per-variant size/color/SKU data, item numbers, descriptions, More Details copy, Dillard's Exclusive flags, review counts and ratings captured from the live site (September 2026). Store names, addresses, phone numbers and coordinates captured from https://www.dillards.com/stores/all. Return policy copy captured from https://www.dillards.com/c/returns. Credit card reward copy captured from https://www.dillards.com/c/DillardsCard."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "source-captured-and-synthetic",
+   "scope": "Catalog rows materialize source_data.json. Benchmark users (alice.j@test.com, bob.c@test.com, carol.d@test.com, david.k@test.com), their orders, addresses, payment methods, card accounts, card transactions, wish lists, shopping bags, return requests, and third-party registries (Emma Walker, Olivia Chen, Sophia Brooks, Nathan Cole) are synthetic benchmark fixtures referencing real seeded products. All dates are pinned constants relative to MIRROR_DATE 2026-09-22."
+  },
+  {
+   "path": "asset_inventory.json",
+   "classification": "source-backed-media-inventory",
+   "scope": "Every HF-managed runtime image has a local byte count, SHA-256, and the exact upstream dimg.dillards.com source URL it was downloaded from."
+  },
+  {
+   "path": "source_data.json (product_reviews)",
+   "classification": "source-captured",
+   "source_url": "https://www.dillards.com/p/",
+   "scope": "Public product review text, authors, dates, and per-star rating snapshots captured from live product pages (September 2026), folded into the tracked source_data.json under product_reviews and materialised into the seed at build time; scraped_data/ is a gitignored build-time capture workspace and is not a seed input."
+  },
+  {
+   "path": "static/icons/dillards-logo.svg",
+   "classification": "source-captured",
+   "source_url": "https://www.dillards.com/",
+   "scope": "The site's inline header logotype vector mark (no fill attributes; scripts stripped and verified absent)."
+  },
+  {
+   "path": "app.py",
+   "classification": "adapted",
+   "source_url": "https://www.dillards.com/",
+   "scope": "Navigation labels, header/footer copy, URL shapes (/c/, /p/, /search-term/, /stores, /registry, /bag) and visual structure are adapted from the source site."
+  },
+  {
+   "path": "templates/",
+   "classification": "adapted",
+   "source_url": "https://www.dillards.com/",
+   "scope": "Page structure and UI copy adapted from the source site's rendered pages; account/checkout/registry flows are functional re-implementations, not captures."
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Reviews for {{ product.full_name }} | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="{{ product.url }}">{{ product.short_name or product.name }}</a> &rsaquo; Reviews</div>
+  <div class="content-page">
+    <h1>Reviews for {{ product.full_name }}</h1>
+    <p><a href="{{ product.url }}/reviews/new">Write a review</a></p>
+
+    <div class="rating-snapshot">
+      <div class="snapshot-rows">
+        <h3>Rating Snapshot</h3>
+        {% for stars in [5, 4, 3, 2, 1] %}
+          <a href="?stars={{ stars }}">
+            {{ stars }} stars
+            <span class="bar"><span style="width: {{ ((breaks.get(stars, 0) / (product.review_count or 1)) * 100)|round }}%"></span></span>
+            {{ breaks.get(stars, 0) }} reviews with {{ stars }} stars.
+          </a>
+        {% endfor %}
+      </div>
+      <div class="overall-rating">
+        <h3>Overall Rating</h3>
+        <div class="big">{{ '%.1f'|format(product.rating or 0) }}</div>
+        <div>{{ product.review_count }} Reviews</div>
+      </div>
+    </div>
+
+    {% if filtered_reviews %}
+      {% for review in filtered_reviews %}
+        <div class="review-row">
+          <div class="review-stars">{% for i in range(review.rating) %}&#9733;{% endfor %}</div>
+          <h4>{{ review.title or review.author }}</h4>
+          <div class="meta">{{ review.author }} &middot; {{ review.date_label }}</div>
+          <p>{{ review.body }}</p>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No reviews match the selected filter.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

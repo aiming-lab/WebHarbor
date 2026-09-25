@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Identity verification | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="content-page" style="max-width:680px;padding-top:30px">
+    <h1>{{ {'id-me': 'ID.me', 'clear': 'CLEAR', 'login-gov': 'Login.gov'}[partner] }}</h1>
+    <div class="inline-alert" style="max-width:none">
+      <span class="inline-alert__icon">i</span>
+      <p>
+        This mirror of Medicare.gov runs offline, so the
+        {{ {'id-me': 'ID.me', 'clear': 'CLEAR', 'login-gov': 'Login.gov'}[partner] }}
+        identity-verification flow isn't available here. Use the
+        <a href="{{ url_for('login') }}#medicare-account">Medicare.gov</a> option to log in
+        with your username and password instead.
+      </p>
+    </div>
+    <p><a class="btn btn--outline btn--small" href="{{ url_for('login') }}">Back to log in options</a></p>
+  </div>
+</div>
+{% endblock %}

@@ -33,18 +33,18 @@ gh pr checkout <pr-number>
 ./scripts/fetch_assets.sh             # pull the pinned HF revision
 ./scripts/build.sh webharbor:dev
 docker run -d --rm --name wh-review \
-  -p 8201:8101 -p 41000-41029:40000-40029 webharbor:dev
+  -p 8201:8101 -p 41000-41046:40000-40046 webharbor:dev
 ```
 
-Confirm the new/changed site is on the expected port (40000 + index). Note: the image now runs 30 sites (40000-40029).
+Confirm the new/changed site is on the expected port (40000 + index). Note: the image now runs 47 sites (40000-40046).
 
 ### Step 2: The mechanical checks (5 minutes)
 
 Run the same Pre-PR checks the contributor was supposed to run.
 
 ```bash
-# 1. all 30 sites return 200
-for p in $(seq 41000 41029); do
+# 1. all 47 sites return 200
+for p in $(seq 41000 41046); do
   curl -so /dev/null -w "$p:%{http_code}\n" http://localhost:$p/
 done
 
@@ -63,6 +63,12 @@ time curl -X POST http://localhost:8201/reset-all
 ```
 
 If any of these fail, request changes; don't bother with the deeper review yet.
+
+Also enforce the repo hygiene rules: no `README.md`, `CLAUDE.md`, reports, or
+unreferenced one-off scripts inside `sites/<site>/` (only code, data, contract files,
+`NOTICE.md`, and the reviewer's `verify/README.md`), and all documentation, commit
+messages, and PR text in English. See AGENTS.md "Per-site directory structure" and
+"Documentation and language rules".
 
 ### Drive review with Playwright — NOT curl
 
@@ -231,7 +237,7 @@ Leave a structured comment on the PR:
 ## Review: <site_name>
 
 ### Mechanical checks: PASS / FAIL
-- [x] All 30 sites return 200
+- [x] All 47 sites return 200
 - [x] Control plane healthy
 - [x] Byte-identical reset (md5 match)
 - [x] Parallel reset <10s

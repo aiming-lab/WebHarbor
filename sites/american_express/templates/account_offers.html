@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Amex Offers | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-grid">
+    <aside class="account-side">
+      <a href="{{ url_for('account_home') }}">Account Home</a>
+      <a href="{{ url_for('account_statements') }}">Statements &amp; Activity</a>
+      <a href="{{ url_for('account_payments') }}">Make a Payment</a>
+      <a href="{{ url_for('account_rewards') }}">Rewards &amp; Benefits</a>
+      <a class="active" href="{{ url_for('account_offers') }}">Amex Offers</a>
+      <a href="{{ url_for('account_benefits') }}">Card Benefits</a>
+      <a href="{{ url_for('account_profile') }}">Profile</a>
+    </aside>
+    <div class="account-main">
+      <h1 class="section-title">Amex Offers</h1>
+      <p class="section-sub">Add offers to your Card to get rewarded on eligible purchases. Enrollment is required and may be limited. Terms apply.</p>
+
+      <div class="card-grid" style="margin-bottom:30px;">
+        {% for offer in offers %}
+        <div class="card-tile">
+          <h3>{{ offer.headline }}</h3>
+          <p style="font-size:14px;">{{ offer.body }}</p>
+          <p style="font-size:13px;color:#5c5f63;">Merchant: <b>{{ offer.merchant }}</b> ({{ offer.domain }}) &middot; Expires {{ offer.expires.strftime('%m/%d/%Y') if offer.expires }}</p>
+          {% set already = false %}
+          {% for uc in user_cards %}
+            {% if (offer.id, uc.id) in enrolled %}
+              {% set already = true %}
+            {% endif %}
+          {% endfor %}
+          <form method="post" action="{{ url_for('account_offers_add') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <input type="hidden" name="offer_id" value="{{ offer.id }}">
+            <div class="field" style="margin-bottom:10px;">
+              <label for="card_{{ offer.id }}">Add to</label>
+              <select id="card_{{ offer.id }}" name="user_card_id" required>
+                {% for uc in user_cards %}
+                <option value="{{ uc.id }}">{{ uc.card.name }} ending {{ uc.last4 }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <button class="btn btn-primary btn-sm" type="submit">Add to Card</button>
+          </form>
+        </div>
+        {% endfor %}
+      </div>
+
+      <h2 class="section-title" style="font-size:20px;">Offers Added to Your Cards</h2>
+      <table class="data">
+        <thead>
+          <tr><th>Offer</th><th>Card</th><th>Added</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for uc in user_cards %}
+            {% for e in uc.owner.enrollments if e.user_card_id == uc.id %}
+            <tr>
+              <td>{{ e.offer.headline }}</td>
+              <td>{{ uc.card.name }} ({{ uc.last4 }})</td>
+              <td>{{ e.added_date.strftime('%m/%d/%Y') }}</td>
+              <td><span class="pill added">{{ e.status }}</span></td>
+            </tr>
+            {% endfor %}
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

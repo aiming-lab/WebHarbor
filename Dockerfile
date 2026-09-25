@@ -1,26 +1,15 @@
 # WebHarbor — slim, self-contained image.
-# 31 Flask mirror sites + control plane on :8101.
+# 85 Flask mirror sites + control plane on :8101.
 
-FROM python:3.12-slim-bookworm
+FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
 ENV PYTHONUNBUFFERED=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     LANG=C.UTF-8
 
-RUN pip3 install --no-cache-dir \
-    Flask==3.1.0 \
-    Flask-SQLAlchemy==3.1.1 \
-    Flask-Login==0.6.3 \
-    Flask-WTF==1.2.2 \
-    Flask-Bcrypt==1.0.1 \
-    bcrypt==5.0.0 \
-    Werkzeug==3.1.3 \
-    Jinja2==3.1.4 \
-    SQLAlchemy==2.0.36 \
-    WTForms==3.2.1 \
-    email-validator==2.2.0 \
-    Pillow==11.0.0
+COPY requirements.lock /opt/requirements.lock
+RUN pip3 install --no-cache-dir --require-hashes -r /opt/requirements.lock
 
 WORKDIR /opt/WebSyn
 
@@ -29,6 +18,11 @@ WORKDIR /opt/WebSyn
 # run scripts/fetch_assets.sh to pull them from Hugging Face first.
 COPY sites/ /opt/WebSyn/
 COPY scripts/check_asset_inventory.py /opt/check_asset_inventory.py
+COPY .assets-revision /opt/.assets-revision
+COPY assets-manifest.json /opt/assets-manifest.json
+COPY scripts/asset_state.py /opt/asset_state.py
+COPY scripts/check_seed_databases.py /opt/check_seed_databases.py
+RUN python3 /opt/asset_state.py verify /opt/WebSyn /opt/.assets-revision /opt/assets-manifest.json
 
 # IKEA's seed is reproducibly materialized from the tracked source catalog so code-only content fixes do not require an asset-repository write. Product images still come from the pinned asset bundle.
 RUN cd /opt/WebSyn/ikea && PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
@@ -70,6 +64,18 @@ RUN cd /opt/WebSyn/healthline && test -f instance_seed/healthline.db && \
     PYTHONHASHSEED=0 python3 migrate_seed.py && \
     python3 prune_unreferenced_images.py --apply && rm -rf instance
 
+# Versus ships source-backed entity imagery from the pinned asset bundle.
+# The generic gate enforces exact coverage, hashes, source URLs and WebP headers.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/versus
+# The seed remains code-generated; the benchmark password hash is frozen so the
+# SQLite output is byte-identical on every build.
+RUN cd /opt/WebSyn/versus && \
+    rm -rf instance instance_seed && \
+    mkdir -p instance_seed && \
+    python3 -c "from app import app" && \
+    cp instance/versus.db instance_seed/versus.db && \
+    rm -rf instance __pycache__
+
 # Berkeley's generated imagery ships in the pinned asset bundle while its SQLite
 # seed stays build-generated from tracked source — see .build-generated-seed. The
 # inventory gate enforces exact coverage + per-file SHA-256 + decode at the planned
@@ -80,6 +86,15 @@ RUN python3 /opt/WebSyn/berkeley/check_generated_assets.py
 # byte-reproducible; websyn_start.sh copies it into instance/ at boot.
 RUN cd /opt/WebSyn/berkeley && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
+# Petfinder generates its reset seed from tracked application data.
+RUN cd /opt/WebSyn/petfinder && rm -rf instance instance_seed && \
+    mkdir -p instance_seed && python3 -c "from app import app" && \
+    cp instance/petfinder.db instance_seed/petfinder.db && rm -rf instance
+
+# AKC ships source-backed imagery and its reviewed frozen SQLite seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/akc && \
+    cd /opt/WebSyn/akc && test -f instance_seed/akc.db && rm -rf instance
 
 COPY websyn_start.sh    /opt/websyn_start.sh
 COPY control_server.py  /opt/control_server.py
@@ -113,6 +128,187 @@ os.makedirs('instance_seed', exist_ok=True); \
 shutil.copy2('instance/bh_photo.db', 'instance_seed/bh_photo.db'); \
 print('B&H Photo seed DB generated at build time.')" && rm -rf instance
 
-EXPOSE 8101 40000-40030
+# AccuWeather uses genuine captured UI assets and freezes its deterministic seed.
+RUN test -n "$(ls -A /opt/WebSyn/accuweather/static/images)" && \
+    cd /opt/WebSyn/accuweather && rm -rf instance instance_seed && python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/accuweather.db', 'instance_seed/accuweather.db'); \
+print('AccuWeather seed DB generated at build time.')" && rm -rf /opt/WebSyn/accuweather/instance
+
+# Upgrade the pinned Recreation.gov seed before it becomes the reset fixture.
+RUN cd /opt/WebSyn/recreation_gov && python3 migrate_seed.py
+
+# Keep the downloaded BabyCenter seed aligned with tracked source corrections.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/babycenter && \
+    python3 /opt/WebSyn/babycenter/migrate_seed.py
+
+# Verify every Cookpad source-backed image before shipping the pinned seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/cookpad
+
+# Craigslist ships its reviewed seed and authentic listing photos/provenance.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/craigslist && \
+    cd /opt/WebSyn/craigslist && python3 -c "import app" && rm -rf instance
+
+# Drugs.com: verify source-backed DailyMed assets and generate the deterministic seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/drugs_com && \
+    cd /opt/WebSyn/drugs_com && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
+# Y Combinator ships upstream-sourced media in the pinned asset bundle and
+# rebuilds its deterministic SQLite seed from the tracked source_data.json.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/y_combinator
+RUN cd /opt/WebSyn/y_combinator && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance
+
+# Adopt-a-Pet builds its synthetic catalog; representative photos come from HF.
+RUN test -n "$(ls -A /opt/WebSyn/adopt_a_pet/static/images)" && \
+    cd /opt/WebSyn/adopt_a_pet && rm -rf instance instance_seed && python3 -c "\
+import app; \
+import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/adopt_a_pet.db', 'instance_seed/adopt_a_pet.db'); \
+print('Adopt-a-Pet seed DB generated at build time.')" && rm -rf /opt/WebSyn/adopt_a_pet/instance
+
+# Preserve the downloaded MEGA archive and migrate its seed at build time.
+RUN cd /opt/WebSyn/mega && python3 migrate_seed.py
+
+# Preserve the original 4shared archive and add deterministic rename history.
+RUN cd /opt/WebSyn/4shared && python3 migrate_seed.py
+
+# Preserve the 9GAG archive; curated benchmark stories have no matching source photos.
+RUN cd /opt/WebSyn/9gag && python3 migrate_seed.py
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/better_business_bureau
+RUN cd /opt/WebSyn/better_business_bureau && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 -c "import app" && \
+    python3 canonicalize_seed.py && \
+    mkdir -p instance_seed && \
+    cp instance/better_business_bureau.db instance_seed/better_business_bureau.db && \
+    rm -rf instance __pycache__ && \
+    echo "Better Business Bureau seed DB generated at build time."
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/american_express && \
+    cd /opt/WebSyn/american_express && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 -c "import app; import os, shutil; \
+os.makedirs('instance_seed', exist_ok=True); \
+shutil.copy2('instance/american_express.db', 'instance_seed/american_express.db'); \
+print('American Express seed DB generated at build time.')" && \
+    rm -rf instance
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/chase
+RUN test -n "$(ls -A /opt/WebSyn/chase/static/images)" && \
+    test -f /opt/WebSyn/chase/.build-generated-seed
+RUN cd /opt/WebSyn/chase && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/flightaware
+RUN test -n "$(ls -A /opt/WebSyn/flightaware/static/images)" && \
+    test -f /opt/WebSyn/flightaware/.build-generated-seed
+RUN cd /opt/WebSyn/flightaware && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/chronicle_jobs
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/dillards && \
+    cd /opt/WebSyn/dillards && rm -rf instance instance_seed && \
+    WEBSYN_SKIP_BOOTSTRAP=1 PYTHONHASHSEED=0 python3 seed_data.py && \
+    rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/google_shopping
+RUN test -n "$(ls -A /opt/WebSyn/google_shopping/static/images)" && \
+    test -f /opt/WebSyn/google_shopping/.build-generated-seed
+RUN cd /opt/WebSyn/google_shopping && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/imgur
+# Imgur's seed is rebuilt deterministically from the tracked source snapshot
+# (PYTHONHASHSEED=0, frozen reference date; see .build-generated-seed); its real
+# upstream imagery ships via the pinned asset bundle.
+RUN cd /opt/WebSyn/imgur && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/imgur.db instance_seed/imgur.db && \
+    rm -rf instance __pycache__
+
+# Fail closed after all registered-site seed migrations/generators.
+RUN cd /opt/WebSyn/youtube && python3 build_seed.py
+RUN cd /opt/WebSyn/weather && python3 build_seed.py
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/instructure
+RUN cd /opt/WebSyn/instructure && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/instructure.db instance_seed/instructure.db && \
+    rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/league_of_legends && \
+    cd /opt/WebSyn/league_of_legends && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+# Fail closed after all registered-site seed migrations/generators.
+RUN cd /opt/WebSyn/youtube && python3 build_seed.py
+RUN cd /opt/WebSyn/weather && python3 build_seed.py
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/macys_wine_shop && \
+    cd /opt/WebSyn/macys_wine_shop && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/jcpenney && \
+    cd /opt/WebSyn/jcpenney && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/landwatch && \
+    cd /opt/WebSyn/landwatch && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/medicare_gov && \
+    cd /opt/WebSyn/medicare_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/marriott
+RUN cd /opt/WebSyn/marriott && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    rm -rf instance __pycache__
+
+# megabus: deterministic seed from tracked source snapshots + asset gate.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/megabus
+RUN cd /opt/WebSyn/megabus && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/megabus.db instance_seed/megabus.db && \
+    rm -rf instance __pycache__
+
+# michaels: deterministic seed from tracked source snapshots + asset gate.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/michaels
+RUN cd /opt/WebSyn/michaels && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/michaels.db instance_seed/michaels.db && \
+    rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/micro_center
+RUN python3 /opt/WebSyn/micro_center/migrate_seed.py
+
+# OhioMeansJobs: source-backed images and deterministic catalog seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohiomeansjobs
+RUN cd /opt/WebSyn/ohiomeansjobs && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__ instance_build
+
+# Ohio.gov: source-backed images and database-backed landing content.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohio_gov
+RUN cd /opt/WebSyn/ohio_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+# nfl: validate source assets and build the deterministic seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/nfl
+RUN cd /opt/WebSyn/nfl && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+# mta: validate source assets and build the deterministic seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/mta
+RUN cd /opt/WebSyn/mta && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_seed_databases.py /opt/WebSyn
+
+EXPOSE 8101 40000-40093
 
 CMD ["/opt/websyn_start.sh"]

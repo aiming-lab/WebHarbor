@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Planned Work{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Planned Work</div>
+  <h1>Planned Work</h1>
+</div>
+<div class="card">
+  <p>Look up current and future subway, bus, Long Island Rail Road, and Metro-North Railroad planned service changes that may affect your travel.</p>
+  <p><a href="{{ url_for('planned_changes') }}">Use the planned service changes lookup &rarr;</a></p>
+</div>
+
+{% for mode, label in [('subway', 'Subway'), ('bus', 'Bus'), ('lirr', 'Long Island Rail Road'), ('mnr', 'Metro-North Railroad')] %}
+<div class="card">
+  <h2>{{ label }} planned work</h2>
+  {% if modes[mode] %}
+  {% for a in modes[mode] %}
+  <div class="alert-entry">
+    <div class="alert-type">{{ a.alert_type }}</div>
+    <div class="dates">
+      {% if a.start_ts %}From {{ MIRROR_NOW.fromtimestamp(a.start_ts).strftime('%-I:%M %p, %B %-d, %Y') }}{% endif %}
+      {% if a.end_ts %} until {{ MIRROR_NOW.fromtimestamp(a.end_ts).strftime('%-I:%M %p, %B %-d, %Y') }}{% endif %}
+    </div>
+    {% if a.header_html %}{{ a.header_html | safe }}{% else %}<p>{{ a.header_text }}</p>{% endif %}
+  </div>
+  {% endfor %}
+  {% else %}
+  <p>No planned work is scheduled at this time.</p>
+  {% endif %}
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Gift Cards | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="page-narrow">
+    <h1>Gift Cards</h1>
+    <p style="color:var(--ink-2);">Give them exactly what they want. JCPenney gift cards never expire and are redeemable in store and at jcp.com.</p>
+
+    <div class="gift-hero">
+      <img class="gift-hero-img" src="/static/images/giftcards/shop-e-gift-cards-mail-a-gift-card-check-your-balance-corporate-non-profit-a5ac9310-53d5-4ee1-8f63-c45fc5a25977.jpg" alt="Shop eGift cards, mail a gift card, check your balance - corporate & non-profit gift cards">
+      <h2 style="margin-bottom:6px;">Shop Gift Cards</h2>
+      <p style="color:var(--ink-2);">Available in any amount from $10 to $500.</p>
+      <div class="gift-card-row">
+        <div class="gift-card">$25 Gift Card</div>
+        <div class="gift-card">$50 Gift Card</div>
+        <div class="gift-card">$100 Gift Card</div>
+        <div class="gift-card">Custom Amount</div>
+      </div>
+      <a class="btn-link" href="/cart">Shop Gifts</a>
+    </div>
+
+    <h2>Check Your Gift Card Balance</h2>
+    <form method="post" action="/gift-cards" class="auth-form" style="max-width:460px;">
+      <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+      <label for="giftcards-field-1">Gift Card Number</label><input id="giftcards-field-1" type="text" name="card_number" placeholder="Enter the number on the back of your card" value="{{ number }}">
+      <button type="submit" class="btn-primary" style="max-width:220px;">Check Balance</button>
+    </form>
+    {% if balance is not none %}
+      <div class="summary-box" style="position:static;margin-top:18px;">
+        <h2>Balance</h2>
+        <div class="summary-row total"><span>Current balance</span><span>${{ '%.2f'|format(balance) }}</span></div>
+      </div>
+    {% endif %}
+
+    <h2>Gift Card Details</h2>
+    <ul>
+      <li>Gift cards never expire.</li>
+      <li>Redeemable at any JCPenney store and at jcp.com.</li>
+      <li>Lost or stolen cards can be replaced with the original receipt.</li>
+      <li>eGift cards are delivered by email within minutes.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

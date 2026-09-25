@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Basics | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li>Basics</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Basics</h1>
+    <p class="lede">Get to know Medicare: how you sign up, what you pay, your rights, and how to report problems.</p>
+  </div>
+</div>
+<section class="section ds-container">
+  <div class="card-grid">
+    {% for card in cards %}
+    <article class="m-card">
+      <div class="m-card__body">
+        <h3>{{ card.title }}</h3>
+        <p>{{ card.text }}</p>
+        <a class="btn btn--solid btn--small" href="{{ card.href }}">{{ card.cta }}</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+<section class="email-signup">
+  <div class="ds-container">
+    <div class="email-signup__inner">
+      <h2>Important updates, straight to your inbox</h2>
+      <p>Get reminders about Open Enrollment, ways to save costs, and more.</p>
+      <form action="{{ url_for('email_signup') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="next" value="{{ url_for('basics_landing') }}">
+        <input type="email" name="email" placeholder="Enter your email address" required aria-label="Enter your email address">
+        <button class="btn btn--solid" type="submit">Sign up</button>
+      </form>
+      <p class="consent">By checking this box, you consent to our <a href="#">data privacy policy</a>.</p>
+    </div>
+  </div>
+</section>
+{% endblock %}
