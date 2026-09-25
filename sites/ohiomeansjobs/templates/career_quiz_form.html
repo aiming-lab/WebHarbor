@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Career Profile Quiz | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container content-page" style="padding-top:20px">
+  <h1>What&rsquo;s Your Career Profile?</h1>
+  <p>Answer all 12 questions, then see which traits describe you best.</p>
+  <form method="post">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    {% for q in questions %}
+      <fieldset class="quiz-q">
+        <legend>{{ loop.index }}. {{ q.text }}</legend>
+        <label><input type="radio" name="q{{ loop.index0 }}" value="1" required> Definitely like me</label>
+        <label><input type="radio" name="q{{ loop.index0 }}" value="0.5"> Somewhat like me</label>
+        <label><input type="radio" name="q{{ loop.index0 }}" value="0"> Not like me</label>
+      </fieldset>
+    {% endfor %}
+    <button class="btn" type="submit">See my career profile</button>
+  </form>
+</div>
+{% endblock %}
