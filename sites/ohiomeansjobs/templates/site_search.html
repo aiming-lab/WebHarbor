@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Site Search | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container content-page" style="padding-top:20px">
+  <h1>Site Search</h1>
+  <form method="get" action="{{ url_for('site_search') }}" class="form-inline" style="margin-bottom:18px">
+    <input type="text" name="q" value="{{ q }}" placeholder="Search in our portal" style="flex:1;padding:10px 12px;border:1px solid #9db8d9;border-radius:3px">
+    <button class="btn" type="submit">Search</button>
+  </form>
+
+  {% if q %}
+    <p>{{ results|length }} result{{ 's' if results|length != 1 }} for &ldquo;{{ q }}&rdquo;</p>
+    {% for kind, title, sub, link in results %}
+      <div class="news-item">
+        <h3><a href="{{ link }}">{{ title }}</a></h3>
+        <div class="meta">{{ kind|capitalize }}</div>
+        <p>{{ sub }}</p>
+      </div>
+    {% else %}
+      <div class="empty-note">No results. Try different keywords.</div>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

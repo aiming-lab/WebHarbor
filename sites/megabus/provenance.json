@@ -1,0 +1,61 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-23",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the us.megabus.com mirror: home journey planner with city autocomplete, journey results with date ribbon and carrier filter, session basket with redemption codes, guest/signed-in checkout (passenger details, simulated payment, confirmation with order reference), manage-booking lookup with cancel and date/time change plus amendment fee, account area (login, register, profile, saved travelers, upcoming/cancelled trips), fare finder, route guides, city guides, bus stops index and per-city stop pages, help FAQ hub with per-topic pages and search, site-wide scored search, service alerts, bus tracker, contact form, newsletter signup, and the static info pages (about, terms, privacy, accessibility, disabilities, employment, partners, media, app, webchat) rendered from captured upstream copy."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time seeder. All content rows come from the tracked source_data_network.json / source_data_journeys.json / source_data_content.json snapshots; benchmark users use a frozen bcrypt hash so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0)."
+  },
+  {
+   "path": "source_data_network.json",
+   "classification": "captured-upstream-content",
+   "scope": "The 753-city network (ids, names, coordinates), 976 bus-stop descriptions and the per-hub destination lists captured from us.megabus.com's JSON APIs (journey-planner/api/origin-cities, destination-cities) and the /stops page on 2026-09-23, plus the site fee constants (booking/amendment/SMS fees) from the site-information API."
+  },
+  {
+   "path": "source_data_journeys.json",
+   "classification": "captured-upstream-content",
+   "scope": "Real journeys (departure/arrival times, durations, fares, route names, carriers, per-leg stop names and stop ids) captured from us.megabus.com's journey-planner/api/journeys endpoint for 114 major route-directions across the 2026-09-24..2026-10-10 window, plus each route's available travel dates from the travel-dates API."
+  },
+  {
+   "path": "source_data_content.json",
+   "classification": "captured-upstream-content",
+   "scope": "72 help FAQ entries across 6 upstream topic pages, 29 city-guide pages and 10 route-guide pages (titles, stats, stop details, per-route FAQs, related routes) extracted from the rendered pages, and the copy of the static info pages (about, terms, privacy, contact, disabilities, employment, partners, media, app); route guides expanded at audit stage to the 575 upstream guide pages reachable within two hops of the upstream /route-guides index (captured 2026-09-24), with Related-routes chips render-filtered to the served set."
+  },
+  {
+   "path": "source_data_content.json (service_alerts, promo_codes)",
+   "classification": "mirror-authored",
+   "scope": "Two service advisories follow the upstream service-alert format (the upstream severe-alerts API returned an empty list on the snapshot date, so the advisories give the alerts page realistic content), and one redemption code (EMAIL5) follows the upstream basket redemption-code flow and is disclosed on the fare-finder page so agents can discover it on-site."
+  },
+  {
+   "path": "static/images/**",
+   "classification": "captured-upstream-media",
+   "scope": "74 media files downloaded from their real us.megabus.com URLs on 2026-09-23: front-page and website hero photography, city-guide and route-guide hero/gallery photography, fare-finder/safety/employment/partners/media teasers, footer payment brand marks, BBB seal, carrier partnership logos (SVG), and FAQ illustrations. Every file's source URL and hash is recorded in asset_inventory.json."
+  },
+  {
+   "path": "static/icons/**",
+   "classification": "captured-upstream-media",
+   "scope": "Small UI chrome SVGs (footer social icons, app-store badges, route-guide feature icons) downloaded from their real us.megabus.com URLs."
+  },
+  {
+   "path": "static/css/main.css, static/js/planner.js, templates/**",
+   "classification": "mirror-code",
+   "scope": "Mirror-authored stylesheet and Jinja templates reproducing the upstream layout and palette (dark blue #001779, purple #5f56c7, yellow #f9be2c), plus the journey-planner autocomplete behaviour against the mirror's own JSON endpoints. No upstream CSS/JS is copied."
+  },
+  {
+   "path": "image_manifest.json, asset_inventory.json",
+   "classification": "mirror-code",
+   "scope": "Download manifest and build-verified inventory (bytes + sha256 + source URL per managed media file) for the asset-integrity gate."
+  },
+  {
+   "path": "scraped_data/",
+   "classification": "build-time-only",
+   "scope": "Raw capture artifacts (API JSON, rendered HTML) used to build the tracked snapshots. Gitignored and dockerignored; never shipped."
+  }
+ ]
+}

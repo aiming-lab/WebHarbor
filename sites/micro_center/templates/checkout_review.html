@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Review Order : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Review Your Order</h1>
+  <div class="checkout-steps">
+    <span class="done">How to get it</span><span class="done">Details</span><span class="done">Payment</span><span class="current">Review</span>
+  </div>
+  <div class="cart-layout">
+    <section>
+      {% for product, qty in summary.rows %}
+      <div class="cart-item">
+        <img src="/static/images/products/{{ product.primary_image() }}" alt="{{ product.name }}">
+        <div>
+          <div class="ci-name">{{ product.brand }} {{ product.name }}</div>
+          <div class="ci-sku">SKU: {{ '%06d'|format(product.sku) }} &times; {{ qty }}</div>
+        </div>
+        <div class="t-right our-price">${{ "%.2f"|format(product.price * qty) }}</div>
+      </div>
+      {% endfor %}
+    </section>
+    <aside class="summary-box">
+      <h3>{% if summary.method == 'pickup' %}Pickup{% else %}Shipping{% endif %}</h3>
+      {% if summary.method == 'pickup' and summary.store %}
+      <p class="small">{{ summary.store.name }}<br>{{ summary.store.address }}<br>{{ summary.store.city }}, {{ summary.store.state }}</p>
+      <p class="small muted">Ready for pickup in 18 minutes once confirmed.<br>Contact: {{ summary.contact_name }} ({{ summary.contact_email }})</p>
+      {% elif summary.address %}
+      <p class="small">{{ summary.address.full_name }}<br>{{ summary.address.line1 }}{% if summary.address.line2 %}, {{ summary.address.line2 }}{% endif %}<br>{{ summary.address.city }}, {{ summary.address.state }} {{ summary.address.zip }}</p>
+      {% endif %}
+      <h3>Payment</h3>
+      <p class="small">{{ summary.payment }}</p>
+      <div class="summary-row"><span>Subtotal</span><span>${{ "%.2f"|format(summary.subtotal) }}</span></div>
+      <div class="summary-row"><span>Tax</span><span>${{ "%.2f"|format(summary.tax) }}</span></div>
+      {% if summary.method == 'shipping' %}
+      <div class="summary-row"><span>Shipping</span><span>${{ "%.2f"|format(summary.shipping_fee) }}</span></div>
+      {% endif %}
+      <div class="summary-row total"><span>Total</span><span>${{ "%.2f"|format(summary.total) }}</span></div>
+      <form method="POST" action="/checkout/review">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-primary" type="submit" style="width:100%;margin-top:10px">Place Order</button>
+      </form>
+    </aside>
+  </div>
+</div>
+{% endblock %}

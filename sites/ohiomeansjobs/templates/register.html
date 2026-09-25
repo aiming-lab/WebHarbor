@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Sign Up | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:26px">
+  <div class="form-card">
+    <h1>Create a free account</h1>
+    <p>Creating a free account is easy. A free account on OhioMeansJobs.com gives you practical tools to find a great job. Save your searches, upload your resume, and get job recommendations.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="two-col">
+        <div class="form-row">
+          <label for="first_name">First name</label>
+          <input type="text" id="first_name" name="first_name" value="{{ form.get('first_name','') }}">
+        </div>
+        <div class="form-row">
+          <label for="last_name">Last name</label>
+          <input type="text" id="last_name" name="last_name" value="{{ form.get('last_name','') }}">
+        </div>
+      </div>
+      <div class="form-row">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" value="{{ form.get('email','') }}" required>
+      </div>
+      <div class="form-row">
+        <label for="zip_code">Zip code</label>
+        <input type="text" id="zip_code" name="zip_code" value="{{ form.get('zip_code','') }}">
+        <div class="hint">You must enter at least the first three digits of your zip code.</div>
+      </div>
+      <div class="two-col">
+        <div class="form-row">
+          <label for="password">Password</label>
+          <input type="password" id="password" name="password" required>
+          <div class="hint">8 to 20 characters long. At least one number. A combination of upper and lower case characters.</div>
+        </div>
+        <div class="form-row">
+          <label for="confirm">Confirm password</label>
+          <input type="password" id="confirm" name="confirm" required>
+        </div>
+      </div>
+      <button class="btn" type="submit">Create account</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

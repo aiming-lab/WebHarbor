@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Your Career Profile | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container content-page" style="padding-top:20px">
+  <h1>Your Career Profile</h1>
+  <p>Based on your answers, your strongest trait is <strong>{{ top }}</strong>.</p>
+
+  <div class="trait-bars">
+    {% for trait, count in scores.items() %}
+      {% set pct = (count * 100 / 2)|round(0, 'floor') %}
+      <div class="bar-row">
+        <div class="bar-label"><span>{{ trait }}</span><span>{{ '%g'|format(count) }}/2</span></div>
+        <div class="bar"><span style="width:{{ pct }}%"></span></div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <h2>What this means</h2>
+  <p>{{ descriptions[top] }}</p>
+
+  <h2>Careers that often fit {{ top }} people</h2>
+  <ul>
+    {% for c in careers[top] %}
+      <li><a href="{{ url_for('jobs_search', tjt=c) }}">{{ c }}</a></li>
+    {% endfor %}
+  </ul>
+
+  <p style="margin-top:20px">
+    <a class="btn" href="{{ url_for('jobs_search', tjt=careers[top][0]) }}">Search {{ careers[top][0] }} jobs</a>
+    <a class="btn secondary" href="{{ url_for('career_quiz') }}">Retake the quiz</a>
+  </p>
+</div>
+{% endblock %}

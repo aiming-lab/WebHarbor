@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Store Locator : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">Micro Center Store Locator</h1>
+  <p class="muted">Select your store to see live inventory, pickup availability, and local pricing.</p>
+  {% for state, stores in by_state.items() %}
+  <div class="state-group">
+    <h3>{{ state }}</h3>
+    {% for store in stores %}
+    <div class="store-card">
+      <div>
+        <div class="st-name">Micro Center - {{ store.city }}</div>
+        <div class="st-addr">{{ store.address }}<br>{{ store.city }}, {{ store.state }} &middot; {{ store.phone }}</div>
+      </div>
+      <div style="text-align:right">
+        <a class="btn btn-secondary" href="/store/{{ store.id }}">Store Details</a>
+        <form method="POST" action="/store/select">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="store_id" value="{{ store.id }}">
+          <input type="hidden" name="next" value="/site/stores/default.aspx">
+          <button class="btn btn-primary" type="submit">Set as My Store</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Make a Plan | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:22px">
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section class="content-page">
+      <h1 style="font-size:26px">Make a Plan</h1>
+      <p>The career plan tool allows you to select tasks and create deadlines to help you move forward in your career.</p>
+
+      <div class="form-card">
+        <h2>Add a task</h2>
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-row">
+            <label for="description">Task</label>
+            <input type="text" id="description" name="description" required>
+          </div>
+          <div class="form-row">
+            <label for="deadline">Deadline</label>
+            <input type="date" id="deadline" name="deadline">
+          </div>
+          <button class="btn" type="submit">Add task</button>
+        </form>
+      </div>
+
+      <h2 style="margin-top:26px">My plan</h2>
+      {% if tasks %}
+        <table class="data">
+          <tr><th>Task</th><th>Deadline</th><th>Status</th><th></th></tr>
+          {% for t in tasks %}
+            <tr>
+              <td>{{ t.description }}</td>
+              <td>{{ t.deadline or '—' }}</td>
+              <td>{{ 'Done' if t.done else 'Open' }}</td>
+              <td>
+                <div class="form-inline">
+                  <form method="post" action="{{ url_for('account_career_plan') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="toggle">
+                    <input type="hidden" name="id" value="{{ t.id }}">
+                    <button class="btn small secondary" type="submit">{{ 'Reopen' if t.done else 'Mark done' }}</button>
+                  </form>
+                  <form method="post" action="{{ url_for('account_career_plan') }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="action" value="delete">
+                    <input type="hidden" name="id" value="{{ t.id }}">
+                    <button class="btn small danger" type="submit">Delete</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <div class="empty-note">No plan tasks yet.</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

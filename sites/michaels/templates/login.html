@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+{% block title %}Sign In or Create An Account | Michaels{% endblock %}
+{% block content %}
+<div class="auth-box">
+  <h1>Sign In or Create An Account</h1>
+  <form method="post" class="auth-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="next" value="{{ request.args.get('next', '') }}">
+    <label>Email<input type="email" name="email" required placeholder="Enter your Email"></label>
+    <label>Password<input type="password" name="password" required></label>
+    <button type="submit" class="btn-primary">Sign In</button>
+  </form>
+  <p>New to Michaels? <a href="{{ url_for('register') }}">Create an account</a></p>
+</div>
+{% endblock %}

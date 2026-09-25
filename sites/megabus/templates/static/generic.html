@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% set titles = {
+  'about_us': 'About Megabus',
+  'terms': 'Terms and conditions',
+  'privacy': 'Privacy policy',
+  'employment': 'Employment opportunities',
+  'partners': 'Partners',
+  'media': 'News media and inquiries',
+  'disabilities': 'Customers with disabilities',
+  'accessibility': 'Using this website',
+  'megabus_app': 'Download the Megabus App',
+  'webchat': 'Chat With Us',
+} %}
+{% block title %}{{ titles.get(slug, 'Megabus') }} | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md prose">
+    {% if page %}
+      {{ page.content | mdlite | safe }}
+    {% else %}
+      <h1>Page not found</h1>
+      <p>The page you are looking for is not part of this mirror.</p>
+    {% endif %}
+    <p class="mt-3"><a href="{{ url_for('home') }}">Back to megabus.com</a></p>
+  </div>
+</div>
+{% endblock %}
