@@ -605,29 +605,23 @@ def honest_run_17(tmp: Path) -> tuple[Path, Path, Path]:
 
 
 def honest_run_18(tmp: Path) -> tuple[Path, Path, Path]:
-    b = build_run(tmp, "honest_18", "NFL--18")
-    b.step("/standings/", "goto", {})
-    for cat in ("passing", "rushing", "receiving", "tackles", "interceptions"):
-        b.step(f"/stats/{cat}/", "goto", {})
-    b.step("/teams/san-francisco-49ers/", "goto", {})
-    b.step("/teams/san-francisco-49ers/schedule/", "goto", {})
-    b.step("/games/cardinals-at-49ers-2026-reg-3/", "click", {"selector": "a"})
-    b.step("/teams/philadelphia-eagles/", "goto", {})
-    b.step("/teams/philadelphia-eagles/schedule/", "goto", {})
-    b.step("/games/eagles-at-bears-2026-reg-3/", "click", {"selector": "a"})
-    b.done("Best point-differential division leader: San Francisco 49ers (NFC West, 2-0, "
-           "62 scored, 20 allowed, +42). Worst: Philadelphia Eagles (NFC East, 48 points for, 42 against, +6, 2-0). Leaders: "
-           "passing Tyler Shough (Saints), rushing Kenneth Walker III (Chiefs), receiving "
-           "Amon-Ra St. Brown (Lions), tackles Anthony Hill Jr. (Titans), interceptions "
-           "Jevon Holland (Giants). Only Walker III plays for a division leader (Chiefs, "
-           "1st AFC West). 49ers: Kyle Shanahan, Levi's Stadium, next game W3 vs the "
-           "Cardinals (SUN 4:05pm, Levi's Stadium). Eagles: Nick Sirianni, Lincoln "
-           "Financial Field, next game W3 at the Bears (MON 8:15pm, Soldier Field).",
-           final_path="/games/eagles-at-bears-2026-reg-3/")
+    b = build_run(tmp, 'honest_18', 'NFL--18')
+    b.step('/standings/', 'goto', {})
+    for cat in ('passing', 'rushing', 'receiving', 'tackles', 'interceptions'):
+        b.step(f'/stats/{cat}/', 'goto', {})
+    b.step('/teams/san-francisco-49ers/', 'goto', {})
+    b.step('/teams/san-francisco-49ers/schedule/', 'goto', {})
+    b.step('/games/cardinals-at-49ers-2026-reg-3/', 'click', {'selector': 'a'})
+    b.step('/teams/philadelphia-eagles/', 'goto', {})
+    b.step('/teams/philadelphia-eagles/schedule/', 'goto', {})
+    b.step('/games/eagles-at-bears-2026-reg-3/', 'click', {'selector': 'a'})
+    b.step('/games/broncos-at-49ers-2026-reg-4/', 'click', {})
+    b.step('/games/rams-at-eagles-2026-reg-4/', 'click', {})
+    b.done("Best point-differential division leader: San Francisco 49ers (NFC West, 2-0, 62 scored, 20 allowed, +42). Worst: Philadelphia Eagles (NFC East, 48 points for, 42 against, +6, 2-0). Leaders: passing Tyler Shough (Saints), rushing Kenneth Walker III (Chiefs), receiving Amon-Ra St. Brown (Lions), tackles Anthony Hill Jr. (Titans), interceptions Jevon Holland (Giants). Only Walker III plays for a division leader (Chiefs, 1st AFC West). 49ers: Kyle Shanahan, Levi's Stadium, next game W3 vs the Cardinals (SUN 4:05pm, Levi's Stadium). Eagles: Nick Sirianni, Lincoln Financial Field, next game W3 at the Bears (MON 8:15pm, Soldier Field). Week 4: 49ers host Broncos on Sunday, October 4, 4:25pm ET at Levi's Stadium. Eagles host Rams on Sunday, October 4, 1:00pm ET at Lincoln Financial Field.", final_path='/games/eagles-at-bears-2026-reg-3/')
     seed = _seed()
-    copy_db(seed, tmp / "honest_18" / "initial.db")
-    copy_db(seed, tmp / "honest_18" / "after.db")
-    return tmp / "honest_18", seed, seed
+    copy_db(seed, tmp / 'honest_18' / 'initial.db')
+    copy_db(seed, tmp / 'honest_18' / 'after.db')
+    return (tmp / 'honest_18', seed, seed)
 
 
 def honest_run_19(tmp: Path) -> tuple[Path, Path, Path]:
