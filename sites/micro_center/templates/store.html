@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Micro Center - {{ store.city }}, {{ store.state }}{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="crumbs"><a href="/site/stores/default.aspx">Store Locator</a> &rsaquo; {{ store.city }}</div>
+  <h1 class="mt0">Micro Center - {{ store.city }}</h1>
+  <div class="account-layout">
+    <div class="surface">
+      <h3>Store Information</h3>
+      <p>{{ store.address }}<br>{{ store.city }}, {{ store.state }}<br>{{ store.phone }}</p>
+      <h4>Hours</h4>
+      <table class="hours-table">
+        {% for row in store.hours_rows() %}
+        <tr><td>{{ row.day }}</td><td>{{ row.hours }}</td></tr>
+        {% endfor %}
+      </table>
+      <form method="POST" action="/store/select" style="margin-top:12px">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="store_id" value="{{ store.id }}">
+        <input type="hidden" name="next" value="/">
+        <button class="btn btn-primary" type="submit">Set as My Store</button>
+      </form>
+    </div>
+    <section>
+      <h2>Recently Restocked at this Store</h2>
+      <div class="card-grid">
+        {% for row in featured %}
+        <div class="product-card">
+          <a class="pc-image" href="{{ row.product.detail_url() }}?storeid={{ store.id }}">
+            <img src="/static/images/products/{{ row.product.primary_image() }}" alt="{{ row.product.name }}" loading="lazy">
+          </a>
+          <div class="pc-name"><a href="{{ row.product.detail_url() }}?storeid={{ store.id }}">{{ row.product.name }}</a></div>
+          <div class="pc-price">${{ "%.2f"|format(row.product.price) }}</div>
+          <span class="pill pill-instock">In Stock Here</span>
+        </div>
+        {% else %}
+        <p class="muted">No recent restocks listed.</p>
+        {% endfor %}
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

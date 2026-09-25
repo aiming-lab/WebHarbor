@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }} | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>{{ title }}</h1>
+    <p><a href="{{ url_for('help_index') }}">All help topics</a></p>
+    <div class="accordion">
+      {% for f in entries %}
+        <details class="card">
+          <summary class="card-heading"><span class="card-title"><a>{{ f.question }}</a></span></summary>
+          <div class="card-body">{{ f.answer }}</div>
+        </details>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

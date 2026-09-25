@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+{% block title %}My Class Registrations | Michaels{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <aside class="account-nav">
+    <h2>My Account</h2>
+    <ul>
+      <li><a href="{{ url_for('account') }}">Orders</a></li>
+      <li><a href="{{ url_for('account_profile') }}">Profile</a></li>
+      <li><a href="{{ url_for('account_addresses') }}">Addresses</a></li>
+      <li><a href="{{ url_for('account_payment') }}">Payment Methods</a></li>
+      <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
+      <li><a class="active" href="{{ url_for('account_registrations') }}">Class Registrations</a></li>
+      <li><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign Out</button></form></li>
+    </ul>
+  </aside>
+  <section class="account-main">
+    <h1>Class Registrations</h1>
+    {% for r in regs %}
+    <article class="address-card">
+      <div><strong>{{ r.class_event.title }}</strong></div>
+      <div>{{ r.class_event.date }} &middot; {{ r.class_event.time_text }}</div>
+      <div>{{ r.class_event.platform }} &middot; Hosted by {{ r.class_event.host }}</div>
+      <div class="review-meta">Registered {{ r.registered_at }} for {{ r.attendee_name }}</div>
+    </article>
+    {% else %}
+    <p>You have no class registrations. <a href="/classes">Browse classes</a></p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}

@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Payment | megabus{% endblock %}
+{% block content %}
+<div class="container-md checkout-wrap">
+  <h1>Payment</h1>
+  <div class="checkout-steps">
+    <span class="step">1. Basket</span> <span>›</span>
+    <span class="step">2. Sign in / guest</span> <span>›</span>
+    <span class="step">3. Passenger details</span> <span>›</span>
+    <span class="step active">4. Payment</span>
+  </div>
+
+  {% for e in entries %}
+    <div class="basket-ticket">
+      <div class="journey-summary">
+        <div class="journey-times">
+          <span>{{ e.journey.dep_label }}</span><span class="arrow">→</span><span>{{ e.journey.arr_label }}</span>
+        </div>
+        <div class="journey-price">{{ '%.2f'|format(e.item.unit_price * e.item.passengers) }}</div>
+      </div>
+      <div class="journey-meta">{{ e.journey.origin.name }} to {{ e.journey.destination.name }} —
+        {{ e.journey.departure_date }}, {{ e.item.passengers }} traveler{{ 's' if e.item.passengers != 1 }}</div>
+    </div>
+  {% endfor %}
+
+  <form action="{{ url_for('checkout_payment') }}" method="post" class="pay-section">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <h2>Card details</h2>
+    <div class="row">
+      <div class="col-md-6">
+        <label class="field-label" for="card_name">Name on card</label>
+        <input class="form-control" type="text" id="card_name" name="card_name"
+               value="{{ form_data.get('card_name', '') }}" required>
+      </div>
+      <div class="col-md-6">
+        <label class="field-label" for="card_number">Card number</label>
+        <input class="form-control" type="text" id="card_number" name="card_number"
+               value="{{ form_data.get('card_number', '') }}"
+               placeholder="1234 5678 9012 3456" inputmode="numeric" required>
+      </div>
+    </div>
+    <div class="row mt-1">
+      <div class="col-md-4">
+        <label class="field-label" for="expiry">Expiry (MM/YY)</label>
+        <input class="form-control" type="text" id="expiry" name="expiry"
+               value="{{ form_data.get('expiry', '') }}" placeholder="08/28" required>
+      </div>
+      <div class="col-md-4">
+        <label class="field-label" for="cvv">Security code</label>
+        <input class="form-control" type="text" id="cvv" name="cvv"
+               value="{{ form_data.get('cvv', '') }}" placeholder="123" inputmode="numeric" required>
+      </div>
+      <div class="col-md-4">
+        <label class="field-label" for="zip">Billing ZIP code</label>
+        <input class="form-control" type="text" id="zip" name="zip"
+               value="{{ form_data.get('zip', '') }}" placeholder="10001" required>
+      </div>
+    </div>
+
+    <div class="basket-summary">
+      <div class="line"><span>Tickets</span><span>{{ '%.2f'|format(totals.fare) }}</span></div>
+      {% if totals.discount %}
+        <div class="line"><span>Promotion applied</span><span>-{{ '%.2f'|format(totals.discount) }}</span></div>
+      {% endif %}
+      <div class="line"><span>Booking fee</span><span>{{ '%.2f'|format(totals.fee) }}</span></div>
+      {% if totals.sms %}
+        <div class="line"><span>Travel updates by text</span><span>{{ '%.2f'|format(totals.sms) }}</span></div>
+      {% endif %}
+      <div class="line total-line"><span>Total to pay</span><span>{{ '%.2f'|format(totals.total) }}</span></div>
+    </div>
+    <button type="submit" class="btn btn-primary btn-block mt-2">Pay ${{ '%.2f'|format(totals.total) }}</button>
+    <p class="text-grey mt-1">Payments on this mirror are simulated. No real card is charged.</p>
+  </form>
+</div>
+{% endblock %}

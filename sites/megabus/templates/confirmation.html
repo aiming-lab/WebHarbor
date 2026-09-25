@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}Booking confirmed | megabus{% endblock %}
+{% block content %}
+<div class="container-md checkout-wrap">
+  <div class="confirmation-hero mt-2">
+    <h2 class="text-white" style="margin:0 0 6px">Your booking is confirmed</h2>
+    <p style="margin:0">Order reference</p>
+    <div class="ref">{{ booking.reference }}</div>
+    <p style="margin:8px 0 0">A confirmation email was sent to {{ booking.email }}</p>
+  </div>
+
+  {% for e in entries %}
+    <div class="basket-ticket">
+      <div class="ticket-top">
+        <span class="text-grey">Ticket {{ loop.index }}/{{ entries|length }}</span>
+      </div>
+      <div class="journey-summary">
+        <div class="journey-times">
+          <span>{{ e.journey.dep_label }}</span><span class="arrow">→</span><span>{{ e.journey.arr_label }}</span>
+        </div>
+        <div class="journey-price">{{ '%.2f'|format(e.bj.price) }}</div>
+      </div>
+      <div class="journey-meta">
+        {{ e.journey.origin.name }} to {{ e.journey.destination.name }} —
+        {{ e.journey.departure_date }}, {{ e.journey.duration_label }},
+        {{ e.bj.passengers }} traveler{{ 's' if e.bj.passengers != 1 }}
+      </div>
+      {% if e.journey.legs %}
+        <div class="journey-leg-stop">{{ e.journey.legs[0].origin_stop }}</div>
+        <div class="journey-leg-stop">{{ e.journey.legs[-1].dest_stop }}</div>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <div class="basket-summary">
+    <div class="line total-line"><span>Total paid</span><span>{{ '%.2f'|format(booking.total) }}</span></div>
+  </div>
+
+  <div class="row mt-2">
+    <div class="col-md-6">
+      <a class="btn btn-outline btn-block" href="{{ url_for('manage_booking', ref=booking.reference) }}">View or change this booking</a>
+    </div>
+    <div class="col-md-6">
+      <a class="btn btn-primary btn-block" href="{{ url_for('home') }}">Book another trip</a>
+    </div>
+  </div>
+  <p class="text-grey mt-2">Keep your order reference safe — you can use it any time under
+    <a href="{{ url_for('manage_booking') }}">Change trip</a> together with your email address.</p>
+</div>
+{% endblock %}

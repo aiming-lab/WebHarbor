@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}My Account | Michaels{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <aside class="account-nav">
+    <h2>My Account</h2>
+    <ul>
+      <li><a class="active" href="{{ url_for('account') }}">Orders</a></li>
+      <li><a href="{{ url_for('account_profile') }}">Profile</a></li>
+      <li><a href="{{ url_for('account_addresses') }}">Addresses</a></li>
+      <li><a href="{{ url_for('account_payment') }}">Payment Methods</a></li>
+      <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
+      <li><a href="{{ url_for('account_registrations') }}">Class Registrations</a></li>
+      <li><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign Out</button></form></li>
+    </ul>
+  </aside>
+  <section class="account-main">
+    <h1>Hi, {{ current_user.name }}</h1>
+    <p>Rewards member since {{ current_user.created_at.strftime('%B %Y') }}</p>
+    <h2>Order History</h2>
+    {% for order in orders %}
+    <article class="order-row">
+      <div class="order-row-head">
+        <span><strong>{{ order.order_number }}</strong> &middot; {{ order.placed_at }}</span>
+        <span class="order-status status-{{ order.status.lower().replace(' ', '-') }}">{{ order.status }}</span>
+      </div>
+      <div class="order-row-items">
+        {% for item in order.items %}
+        <span>{{ item.qty }} &times; {{ item.name }}{% if item.color %} ({{ item.color }}){% endif %}</span>
+        {% endfor %}
+      </div>
+      <div class="order-row-foot">
+        <span>Total ${{ '%.2f' % order.total }} &middot; {{ order.delivery_method }} &middot; {{ order.card_brand }} ****{{ order.card_last4 }}</span>
+        <a href="{{ url_for('account_order', order_number=order.order_number) }}">View order</a>
+      </div>
+    </article>
+    {% else %}
+    <p>You have no orders yet.</p>
+    {% endfor %}
+  </section>
+</div>
+{% endblock %}
