@@ -1,0 +1,6 @@
+{% extends "base.html" %}
+{% block title %}Watch - NBA{% endblock %}
+{% block content %}
+<section class="page-head"><h1>Watch</h1><p>Highlights and video breakdowns seeded as NBA-style story cards.</p><div class="tabs"><a class="active" href="{{ url_for('watch') }}">Highlights</a><a href="{{ url_for('league_pass') }}">League Pass</a><a href="{{ url_for('games') }}">Games</a></div></section>
+<section class="band"><div class="grid cards-4">{% for video in videos %}<a class="card story video" href="{{ url_for('article_detail', slug=video.slug) }}"><img src="{{ video.image }}" alt=""><span>{{ video.category }}</span><h3>{{ video.title }}</h3><p>{{ video.dek }}</p></a>{% endfor %}</div></section>
+{% endblock %}

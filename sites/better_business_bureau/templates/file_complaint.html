@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}File a Complaint | Consumer Complaints | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="container">
+  <form class="form-card" id="goalForm" method="post">
+    <h1>How can we help?</h1>
+    <p class="hint">BBB welcomes the opportunity to assist you with your marketplace issue. Whether you need to file a complaint, post a review, or report a scam, you're in the right place. There are some disputes BBB cannot help with, you can view those at <a href="{{ url_for('about') }}#guidelines">Complaint Acceptance Guidelines</a>.</p>
+
+    <h2 style="font-size:1.2rem;color:#032160;">What best describes your goal?</h2>
+    <label class="radio-option">
+      <input type="radio" name="goal" value="complaint">
+      <span>I want help resolving a problem with a business.</span>
+    </label>
+    <label class="radio-option">
+      <input type="radio" name="goal" value="review">
+      <span>I want to share my experience with a business, and I don't need a resolution.</span>
+    </label>
+    <label class="radio-option">
+      <input type="radio" name="goal" value="scam">
+      <span>I want to alert others about a possible scam, imposter, fraud, or scheme.</span>
+    </label>
+    <label class="radio-option">
+      <input type="radio" name="goal" value="warranty">
+      <span>I want to report a problem with a vehicle warranty dispute.</span>
+    </label>
+  </form>
+
+  <div class="form-card">
+    <h2 style="font-size:1.2rem;color:#032160;">Search for the business you need help with</h2>
+    <form action="{{ url_for('file_a_complaint') }}" method="get" style="display:flex;gap:.8rem;flex-wrap:wrap;">
+      <input type="text" name="find_text" placeholder="Businesses" style="flex:1;min-width:240px;border:1px solid #c8c9c7;border-radius:.25rem;padding:.65rem .8rem;font-family:inherit;">
+      <button class="btn btn-yellow" type="submit">Search</button>
+    </form>
+    {% if find_text is defined and find_text %}
+    {% if rows %}
+    <h3 style="color:#032160;">Select the business</h3>
+    {% for biz in rows %}
+    <div class="article-card">
+      <h3><a href="{{ url_for('file_complaint_form', biz_id=biz.id) }}">{{ biz.name }}</a></h3>
+      <div class="meta">{{ biz.primary_category }} &middot; {{ biz.city }}, {{ biz.state }} &middot; BBB Rating: {{ biz.rating }}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No businesses matched your search. Try a different name.</p>
+    {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Saved Hotels | Marriott Bonvoy{% endblock %}
+{% block content %}
+<div class="container account-page">
+  <h1>Saved Hotels</h1>
+
+  <nav class="account-nav">
+    <a href="/loyalty/myAccount.mi">My Account</a>
+    <a href="/loyalty/myAccount/profile.mi">Profile</a>
+    <a href="/loyalty/myAccount/paymentMethods.mi">Payment Methods</a>
+    <a href="/loyalty/myAccount/savedHotels.mi">Saved Hotels</a>
+    <a href="/reservation/lookupReservation.mi">Find a Reservation</a>
+  </nav>
+
+  {% if favorites %}
+  <div class="results-list">
+    {% for f in favorites %}
+    <article class="hotel-card">
+      <a class="card-media" href="{{ f.hotel.detail_path }}">
+        {% if f.hotel.hero_image %}<img src="{{ f.hotel.hero_image }}" alt="{{ f.hotel.name }}">
+        {% else %}<div class="media-empty">No photo</div>{% endif %}
+      </a>
+      <div class="card-body">
+        <p class="card-brand">{{ f.hotel.brand.name }}</p>
+        <h3 class="card-title"><a href="{{ f.hotel.detail_path }}">{{ f.hotel.name }}</a></h3>
+        <p class="card-location">{{ f.hotel.city }}{% if f.hotel.state %}, {{ f.hotel.state }}{% endif %}</p>
+        <p class="saved-on">Saved {{ f.saved_on.strftime('%m/%d/%Y') if f.saved_on }}</p>
+      </div>
+      <div class="card-cta">
+        <p class="card-price"><span class="price-value">${{ '{:,}'.format(f.hotel.base_rate or 0) }}</span><span class="price-unit">/ night</span></p>
+        <form method="post" action="/saved/remove/{{ f.hotel.id }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="next" value="/loyalty/myAccount/savedHotels.mi">
+          <button type="submit" class="btn-secondary btn-small">Remove</button>
+        </form>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="empty-state">You haven't saved any hotels yet. Save hotels while you search to compare them later.</p>
+  {% endif %}
+</div>
+{% endblock %}

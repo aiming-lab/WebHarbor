@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Applications | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:22px">
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section class="content-page">
+      <h1 style="font-size:26px">Applications</h1>
+      <p>Every job you applied to through OhioMeansJobs, with its current status.</p>
+      {% if applications %}
+        <table class="data">
+          <tr><th>Job</th><th>Company</th><th>Location</th><th>Applied</th><th>Status</th></tr>
+          {% for a in applications %}
+            <tr>
+              <td><a href="{{ url_for('job_detail', jobid=a.job.jobid) }}">{{ a.job.title }}</a></td>
+              <td>{{ a.job.company }}</td>
+              <td>{{ a.job.city }}</td>
+              <td>{{ a.applied_at.strftime('%Y-%m-%d') }}</td>
+              <td>{{ a.status }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <div class="empty-note">No applications yet. Find a job and choose &ldquo;Apply&rdquo;.</div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

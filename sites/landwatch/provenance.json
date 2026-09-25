@@ -1,0 +1,76 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-22",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the landwatch.com mirror: the hero-search homepage with featured carousel and category tiles, state/county/city/region/price/acreage/beds/baths/residence/category/auction search pages at the upstream URL shapes with facet sidebar and sort menu, listing detail pages with gallery/highlights/description/amenities/map/resources and agent contact panel, agent profiles, the find-agent directory, location search with suggestions, and email/password account features (favorites, saved searches, inquiries, profile editing)."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time and boot-time seeder. All content rows come from the tracked source_data.json snapshot; every seed function early-returns on a populated DB and every date is pinned relative to MIRROR_DATE (2026-09-22) so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0). Benchmark users use a frozen password digest."
+  },
+  {
+   "path": "build_inventory.py",
+   "classification": "mirror-code",
+   "scope": "Generates asset_inventory.json: every managed runtime asset with byte length, SHA-256, and its real upstream source URL, cross-checked against the seed DB so no listing photo or agent headshot is missing on disk."
+  },
+  {
+   "path": "source_data.json",
+   "classification": "captured-upstream-content",
+   "scope": "Frozen snapshot of the live landwatch.com as served on 2026-09-22: 436 real listings (titles, addresses, prices, price changes, acreage, beds/baths/sqft, property types, full upstream descriptions, highlights, activities, proposed uses, image ids, auction dates, broker identity, coordinates), 313 broker records, 318 counties, 377 cities, 29 Texas regions with county membership, the category taxonomy, homepage featured entries, and the Terms and Conditions page text. Captured from the site's own ItemList/RealEstateListing structured data and /api/Property/getviewedlistings responses via a real browser session."
+  },
+  {
+   "path": "asset_inventory.json",
+   "classification": "asset-manifest",
+   "scope": "Tracked manifest of every file under static/images: listing photos (assets.landwatch.com resizedimages 690x960 webp), agent headshots (150x150 webp), homepage hero images, and property-type tile images, each with byte length, SHA-256, and the upstream URL it was downloaded from. Enforced by scripts/check_asset_inventory.py at image build time."
+  },
+  {
+   "path": "static/images/",
+   "classification": "captured-upstream-imagery",
+   "scope": "Real browser-visible imagery downloaded from assets.landwatch.com and www.landwatch.com: up to 6 photos per curated listing at the upstream 690x960 rendition, one headshot per broker at 150x150, the four LW-Hero webp renditions and the property-type carousel tiles. No placeholders, no recolors, no AI-generated substitutes."
+  },
+  {
+   "path": "static/icons/",
+   "classification": "captured-upstream-assets",
+   "scope": "Small brand and UI assets downloaded from www.landwatch.com: the LandWatch logo (dark), the white logo (extracted verbatim from the upstream lw-bundle.svg sprite), social icons, utility icons, the favicon, and the map placeholder image."
+  },
+  {
+   "path": "static/fonts/",
+   "classification": "captured-upstream-assets",
+   "scope": "The real web fonts the live site loads from Google Fonts (Open Sans variable latin + italic, Noto Serif variable latin), vendored as woff2 so the offline mirror keeps the upstream typography."
+  },
+  {
+   "path": "static/css/main.css",
+   "classification": "mirror-code",
+   "scope": "Hand-built stylesheet reproducing the live site's look: Open Sans/Noto Serif type scale, #fa6401 orange actions, hero overlay header, search bar with chips and suggestions, facet sidebar, wide result cards, category tiles, promo band, footer, agent panels, auth and account pages."
+  },
+  {
+   "path": "static/js/main.js",
+   "classification": "mirror-code",
+   "scope": "Client behaviors: search modal, autocomplete suggestions via /api/suggest, favorite toggling, save-search, sort menu, photo gallery, card photo carousels, carousel scrolling, facet collapse."
+  },
+  {
+   "path": "templates/",
+   "classification": "mirror-code",
+   "scope": "Jinja templates for the homepage, search results, listing detail, agent profile, find-agent, auth, account, sitemap, static terms page, and error pages, matching the upstream layout and copy."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "30 benchmark task definitions (web_name, id, ques, web, upstream_url only; no answers, no verifier keys). Tasks span search and filters, listing detail facts, auctions, agents, favorites, saved searches, contact, registration, and account management."
+  },
+  {
+   "path": "tests/",
+   "classification": "mirror-code",
+   "scope": "Pytest suite: task-contract checks for tasks.jsonl, seed determinism (byte-identical rebuild, idempotent boot pass, shipped-seed equality), and app robustness (routes, filters, sort orders, auth, favorites, saved searches, contact validation, pagination, 404s)."
+  },
+  {
+   "path": "NOTICE.md",
+   "classification": "mirror-code",
+   "scope": "Mirror notice documenting what is mirrored from landwatch.com, the functional adaptations (email/password auth instead of the upstream OTP/SSO modal, DB-derived counts, description-derived owner-financing flag, snapshot-pinned auction dates), and the content provenance."
+  }
+ ]
+}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Publication search results | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('publications_home') }}">Publications</a></li><li>Publication search results</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Publication search results</h1>
+    <p class="lede">Showing {{ rows|length }} result{{ 's' if rows|length != 1 else '' }}
+      {% if category %} in “{{ category }}”{% endif %}
+      {% if language %} in {{ language }}{% endif %}
+      {% if query %} for “{{ query }}”{% endif %}</p>
+    <p class="small muted">Filters will be applied immediately to search results after making a selection.</p>
+  </div>
+
+  <section class="coverage-search" style="max-width:860px">
+    <form action="{{ url_for('publications_search') }}" method="get" class="form-grid">
+      <div class="field">
+        <label for="pub-cat">Category</label>
+        <select id="pub-cat" name="category">
+          <option value="">- All Categories -</option>
+          {% for c in categories %}<option value="{{ c }}" {{ 'selected' if c == category else '' }}>{{ c }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="pub-lang">Language</label>
+        <select id="pub-lang" name="language">
+          <option value="">All languages</option>
+          {% for l in languages %}<option value="{{ l }}" {{ 'selected' if l == language else '' }}>{{ l }}</option>{% endfor %}
+        </select>
+      </div>
+      <div class="field">
+        <label for="pub-q">Search term</label>
+        <input id="pub-q" type="text" name="q" value="{{ query }}" placeholder="Search by title or product number">
+      </div>
+      <div class="field" style="display:flex;align-items:flex-end">
+        <button class="btn btn--solid" type="submit">Search</button>
+      </div>
+    </form>
+  </section>
+
+  {% for pub in rows %}
+  <div class="pub-card">
+    <div class="pub-card__cover">
+      {% if pub.thumb %}<img src="{{ url_for('static', filename='images/' + pub.thumb) }}" alt="{{ pub.title }} cover">{% endif %}
+    </div>
+    <div>
+      <h3>{{ pub.title }}</h3>
+      <p class="meta">Category: {{ pub.category }} | Product # {{ pub.product_number }}{% if pub.language != 'English' %} | Language: {{ pub.language }}{% endif %}</p>
+      {% if pub.summary %}<p class="summary">{{ pub.summary }}</p>{% endif %}
+      <div class="actions">
+        {% if pub.orderable %}
+        <a class="btn btn--outline btn--small" href="{{ url_for('publication_order', product_number=pub.product_number) }}">Order Print</a>
+        {% else %}
+        <span class="pill pill--due">This product isn't available to order right now.</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <p>No publications match your filters. <a href="{{ url_for('publications_search') }}">Clear all filters</a>.</p>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Open a Chase Certificate of Deposit Account | Chase.com{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Chase Certificate of Deposit (CD)</h1>
+    <p class="muted">Get a guaranteed rate with a CD, regardless of changes in the market. Choose from the terms below — rates as of the {{ mirror_date }} snapshot.</p>
+    <div class="chip-row">
+      <a class="chip" href="{{ url_for('checking') }}">Checking</a>
+      <a class="chip" href="{{ url_for('savings') }}">Savings</a>
+      <a class="chip chip--active" href="{{ url_for('cds') }}">CDs</a>
+    </div>
+  </div>
+</div>
+<div class="container">
+  <section class="section">
+    <h2>Current CD rates and terms</h2>
+    <table class="data rate-table">
+      <tr><th>Term</th><th>Annual Percentage Yield (APY)</th><th>Minimum opening deposit</th></tr>
+      {% for t in terms %}
+      <tr>
+        <td>{{ t.term }}</td>
+        <td class="rate num">{{ '%.2f'|format(t.apy) }}%</td>
+        <td class="num">${{ '%.0f'|format(t.min_deposit) }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <p class="small muted" style="margin-top:12px;">APYs shown reflect the {{ mirror_date }} snapshot and are locked for the full term once the account is opened. Interest is compounded and credited monthly. An early withdrawal penalty applies if you withdraw funds before the maturity date.</p>
+    <p><a class="btn btn--green" href="{{ url_for('logon') }}">Open a CD</a></p>
+  </section>
+
+  <section class="section section--soft">
+    <div class="container">
+      <h2>Certificate of Deposit FAQ</h2>
+      <div class="trio">
+        <div class="trio-card"><div class="trio-card__body">
+          <h4>What is a CD?</h4>
+          <p>A Chase Certificate of Deposit is a savings account that earns a fixed interest rate over a set period of time. Your rate is locked in when you open the account and won't change during the term.</p>
+        </div></div>
+        <div class="trio-card"><div class="trio-card__body">
+          <h4>What is the minimum deposit?</h4>
+          <p>You can open a Chase CD with $1,000 or more. Existing Chase checking or savings customers can open a CD online; new customers can visit a branch.</p>
+        </div></div>
+        <div class="trio-card"><div class="trio-card__body">
+          <h4>What happens at maturity?</h4>
+          <p>At maturity, your CD automatically renews into the same term at the then-current rate unless you make changes during the 10-day grace period after maturity.</p>
+        </div></div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

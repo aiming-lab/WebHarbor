@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}My Account{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>My Account</h1>
+  <p class="section-sub">Signed in as {{ current_user.name }} ({{ current_user.email }})</p>
+</div>
+<div class="container account-grid" style="padding-bottom:60px">
+  <div class="account-card">
+    <h3>Saved Items ({{ bookmarks | length }})</h3>
+    {% for b in bookmarks[:8] %}
+    <div style="padding:6px 0;border-bottom:1px solid #eceef0">
+      <a href="{{ item_url(b) }}">{{ b.title }}</a>
+      <form action="{{ url_for('toggle_bookmark') }}" method="post" style="display:inline">
+        <input type="hidden" name="kind" value="{{ b.kind }}">
+        <input type="hidden" name="slug" value="{{ b.item_slug }}">
+        <input type="hidden" name="title" value="{{ b.title }}">
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button type="submit" style="border:0;background:none;color:#8f2222;cursor:pointer;font-size:12.5px">remove</button>
+      </form>
+    </div>
+    {% else %}
+    <p style="font-size:14px">No saved items yet. Save measures or articles to find them here.</p>
+    {% endfor %}
+    <p style="margin-top:12px"><a href="{{ url_for('account_saved') }}">View all saved items ›</a></p>
+  </div>
+  <div class="account-card">
+    <h3>Account</h3>
+    <p style="font-size:14px"><strong>Name:</strong> {{ current_user.name }}</p>
+    <p style="font-size:14px"><strong>Email:</strong> {{ current_user.email }}</p>
+    <p style="font-size:14px"><strong>Member since:</strong> {{ current_user.created_at.strftime('%B %d, %Y') }}</p>
+    <div style="margin-top:14px">
+      <a class="btn btn-outline btn-sm" href="{{ url_for('account_history') }}">Browsing History</a>
+      <a class="btn btn-outline btn-sm" style="margin-left:6px" href="{{ url_for('logout') }}">Log Out</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Account | {{ site_name }}{% endblock %}
+{% block content %}
+<div class="page single">
+  <div class="main" style="max-width: 700px; margin: 30px auto;">
+    <h1>Account — {{ current_user.username }}</h1>
+    <form method="post">
+      {{ form.hidden_tag() }}
+      <div class="field">{{ form.real_name.label }}{{ form.real_name() }}</div>
+      <div class="form-row">
+        <div class="field">{{ form.country.label }}{{ form.country() }}</div>
+        <div class="field">{{ form.state.label }}{{ form.state() }}</div>
+        <div class="field">{{ form.city.label }}{{ form.city() }}</div>
+      </div>
+      <div class="field">{{ form.about.label }}{{ form.about() }}</div>
+      <button type="submit">Save profile</button>
+      <a class="btn btn-quiet" href="{{ url_for('user_profile', username=current_user.username) }}">Cancel</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

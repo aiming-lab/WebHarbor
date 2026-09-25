@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Search · Best Buy Demo{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% if active_query %}
+      <div class="catalog-layout search-layout">
+        <aside class="filter-card retail-filter">
+          <section>
+            <h3>Get it fast</h3>
+            <label class="checkbox-row"><input type="checkbox"> Pickup · Ready today</label>
+            <label class="checkbox-row"><input type="checkbox"> Shipping · Get it today</label>
+          </section>
+          <section>
+            <h3>Availability</h3>
+            <label class="checkbox-row"><input type="checkbox"> Exclude out of stock items</label>
+          </section>
+          <section>
+            <h3>Price</h3>
+            <div class="filter-form__row"><input type="number" placeholder="Min"><input type="number" placeholder="Max"></div>
+          </section>
+          <section>
+            <h3>Category</h3>
+            <a href="{{ url_for('categories_page') }}">Shop all categories</a>
+          </section>
+        </aside>
+        <div class="search-results">
+          <div class="section-heading search-heading">
+            <h1>“{{ active_query }}” <small>({{ product_results|length }})</small></h1>
+            <label class="sort-control">Sort by:
+              <select><option>Best Match</option><option>Price Low to High</option><option>Top Rated</option></select>
+            </label>
+          </div>
+          {% if product_results %}
+            {% set products = product_results %}
+            {% include "_product_cards.html" %}
+          {% else %}
+            <p>No product matches found.</p>
+          {% endif %}
+          {% if store_results or article_results %}
+            <section class="related-results">
+              <h2>Related results</h2>
+              {% for store in store_results %}<a href="{{ url_for('store_page', store_slug=store.slug) }}">{{ store.name }}</a>{% endfor %}
+              {% for article in article_results %}<a href="{{ url_for('support_article_page', article_slug=article.slug) }}">{{ article.title }}</a>{% endfor %}
+            </section>
+          {% endif %}
+        </div>
+      </div>
+    {% else %}
+      <div class="empty-state">
+        <h3>Search the local retail catalog</h3>
+        <p>Try “OLED laptop”, “pickup”, “protection plan”, or “same-day delivery”.</p>
+      </div>
+    {% endif %}
+  </section>
+{% endblock %}

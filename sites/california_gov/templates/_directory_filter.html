@@ -1,0 +1,36 @@
+{# Upstream directory pages: client-side filtering via the cagovhome-filterlist
+   web component (see static/js/custom.min.js) + window.service/window.agency
+   data (static/js/data_service.min.js, data_agency.min.js). #}
+<h2 class="lead m-t items-count font-weight-500" aria-live="polite" role="region">
+          0 {{ noun }} <span class="sr-only">found</span>
+        </h2>
+        <label class="sr-only" for="searchbox">Search for a {{ singular }}</label>
+        <div class="d-flex m-b">
+          <input type="search" id="searchbox"{% if searchbox_name %} name="q"{% endif %}{% if autofocus %} autofocus{% endif %} placeholder="Search for a {{ singular }}" class="height-50 brd-solid-1 brd-color-light rounded flex-grow-1 {{ 'p-l' if not searchbox_name else 'p-x' }} webkit-appearance-none" />
+        </div>
+
+        <div class="p-b-lg"><cagov-accordion>
+  <details>
+    <summary class="brd-solid-1 brd-gray-200">Filter by topic</summary>
+    <div class="accordion-body topic-filters brd-solid-1 brd-gray-200 p-a">
+      <fieldset>
+        <legend class="m-y font-size-16">
+          Select topics to help you find what you need:
+        </legend>
+        {% for t in filter_topics %}
+        <div class="form-check m-b-sm">
+          <input class="form-check-input" type="checkbox" value="{{ t.name }}" name="AgencyTags" id="chkTopic{{ t.num }}">
+          <label class="form-check-label" for="chkTopic{{ t.num }}">
+            {{ t.name }}
+            <span>({{ t.count }})</span>
+          </label>
+        </div>
+        {% endfor %}
+      </fieldset>
+      <hr />
+      <button type="reset" class="btn btn-sm btn-default js-filter-clear resetSearch d-block" onclick="this.parentElement.querySelectorAll('input:checked').forEach(x => x.click())">
+        Reset
+      </button>
+    </div>
+  </details>
+</cagov-accordion></div>

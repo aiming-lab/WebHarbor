@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Price tracking - Google Shopping{% endblock %}
+{% block content %}
+<div class="list-page-head">
+  <h1>Price tracking</h1>
+  <span class="count">{{ items|length }} tracked item{{ '' if items|length == 1 else 's' }}</span>
+</div>
+{% if items %}
+{% for item in items %}
+<div class="tracked-row">
+  <img src="{{ url_for('static', filename='images/' + item.product.image) }}" alt="">
+  <a class="t-title" href="{{ url_for('product', upstream_id=item.product.upstream_id) }}">{{ item.product.title }}</a>
+  <span class="t-price">{{ item.product.price_display }}</span>
+  <form method="post" action="{{ url_for('untrack_product', product_id=item.product.id) }}">
+    <button class="action-btn on" type="submit">Stop tracking</button>
+  </form>
+</div>
+{% endfor %}
+{% else %}
+<div class="empty-state">
+  <h1>Nothing to see here</h1>
+  <p>Products you track will show up here.</p>
+  <a class="home-btn" href="{{ url_for('index') }}">Go to Shopping home</a>
+</div>
+{% endif %}
+{% endblock %}

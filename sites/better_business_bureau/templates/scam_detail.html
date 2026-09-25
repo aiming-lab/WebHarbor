@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Scam Details | BBB Scam Tracker{% endblock %}
+{% block content %}
+<div class="container">
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <a href="{{ url_for('index') }}">Home</a><span>/</span>
+    <a href="{{ url_for('scamtracker_home') }}">BBB Scam Tracker</a><span>/</span>
+    <a href="{{ url_for('scam_lookup') }}">Search for Scams</a><span>/</span>
+    <span>Scam Details</span>
+  </nav>
+
+  <div class="side-card" style="background:#edebda;border-color:#e6bf51;max-width:860px;">
+    <b>BBB Scam Tracker</b> &middot; <a href="{{ url_for('scam_lookup') }}">Back to search</a>
+    <p style="font-size:.88rem;margin:.4rem 0 0;">This content is based on victim and potential victim accounts. Government agencies and legitimate business names and phone numbers are often used by scam artists to take advantage of people.</p>
+  </div>
+
+  <div style="max-width:860px;overflow-wrap:anywhere;">
+    <h2 class="section-heading" style="margin-top:1.4rem;">Description</h2>
+    <p>{{ report.description }}</p>
+
+    <h2 class="section-heading">Targeted Person's Location</h2>
+    <p>{{ report.target_city }}, {{ report.target_state }}, {{ report.target_country }}{% if report.target_zip %} - {{ report.target_zip }}{% endif %}</p>
+
+    <h2 class="section-heading">Scammer Information</h2>
+    <ul class="detail-list">
+      {% if report.scammer_address %}<li><b>Address:</b> {{ report.scammer_address }}{% if report.scammer_city %}, {{ report.scammer_city }}{% endif %}{% if report.scammer_state %} {{ report.scammer_state }}{% endif %}{% if report.scammer_zip %} {{ report.scammer_zip }}{% endif %}</li>{% endif %}
+      <li><b>Email:</b> {{ report.scammer_email or 'Unknown Email' }}</li>
+      <li><b>Phone:</b> {{ report.scammer_phone or 'Unknown' }}</li>
+      <li><b>URL:</b> {{ report.scammer_url or 'Unknown URL' }}</li>
+    </ul>
+
+    <h2 class="section-heading">Scam Type</h2>
+    <p>{{ report.scam_type }} &middot; <a href="{{ url_for('scam_lookup', scam_type=report.scam_type) }}">Learn More</a></p>
+
+    <h2 class="section-heading">Reported loss</h2>
+    <p>{{ '${:,}'.format(report.dollar_value or 0) }}</p>
+
+    <h2 class="section-heading">Business name</h2>
+    <p>{{ report.scammer_business_name or 'No name' }}</p>
+
+    <h2 class="section-heading">Date Reported</h2>
+    <p>{{ report.date_reported }}</p>
+
+    <h2 class="section-heading">Scam ID</h2>
+    <p>{{ report.scam_id }}</p>
+
+    <div class="side-card" style="margin-top:1.6rem;">
+      <h3>Tell us what happened</h3>
+      <p style="font-size:.92rem;">Your input keeps Scam Tracker accurate and useful for the next person who searches this scam.</p>
+      <div class="scam-cta-row">
+        <a class="btn btn-outline" href="{{ url_for('scam_report') }}">I avoided this scam</a>
+        <a class="btn btn-primary" href="{{ url_for('scam_report') }}">I experienced this scam</a>
+      </div>
+      <p style="font-size:.88rem;margin-top:1rem;">Are you the business named in this report? <a href="{{ url_for('file_a_complaint') }}">Dispute this report.</a></p>
+    </div>
+
+    {% if similar %}
+    <h2 class="section-heading">Similar {{ report.scam_type }} reports</h2>
+    {% for r in similar %}
+    <a class="scam-card" href="{{ url_for('scam_detail', scam_id=r.scam_id) }}">
+      <div class="desc">{{ r.description[:160] }}{% if r.description|length > 160 %}...{% endif %}</div>
+      <div class="meta">
+        <span>Date Reported: {{ r.date_reported }}</span>
+        <span>Location: {{ r.target_city }}, {{ r.target_state }}</span>
+      </div>
+    </a>
+    {% endfor %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

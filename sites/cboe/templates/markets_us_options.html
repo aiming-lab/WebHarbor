@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Cboe Options Exchanges{% endblock %}
+{% block content %}
+<div class="static-shell">
+  <nav class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/markets/us/options/">U.S. Options</a></nav>
+  <section class="page-hero slim-hero">
+    <h1>Cboe Options Exchanges</h1>
+    <p class="hero-sub">Cboe operates four U.S. options exchanges: Cboe Options Exchange, C2 Options Exchange, BZX Options Exchange and EDGX Options Exchange.</p>
+  </section>
+  {% if page %}
+    {% for section in page.sections() %}
+      <section class="static-section {% if loop.index is even %}alt{% endif %}">
+        <h2>{{ section.heading }}</h2>
+        {% for block in section.blocks %}
+          {% if block.type == 'p' %}<p>{{ block.text }}</p>
+          {% elif block.type == 'ul' %}
+            <ul class="static-list">{% for item in block["items"] %}<li>{{ item }}</li>{% endfor %}</ul>
+          {% endif %}
+        {% endfor %}
+      </section>
+    {% endfor %}
+  {% endif %}
+
+  <section class="static-section">
+    <h2>Explore U.S. Options Data</h2>
+    <div class="article-grid">
+      <a class="article-card" href="/markets/us/options/market-statistics/daily">
+        <p class="card-cat">Market Statistics</p>
+        <h3>Daily Market Statistics</h3>
+        <p class="card-desc">Put/call ratios, volume and open interest by product for recent trading days.</p>
+        <span class="card-more">View statistics</span>
+      </a>
+      <a class="article-card" href="/delayed_quotes/SPX/quote_table">
+        <p class="card-cat">Delayed Quotes</p>
+        <h3>SPX Options Chain</h3>
+        <p class="card-desc">The full delayed option chain for SPX with calls and puts.</p>
+        <span class="card-more">Open chain</span>
+      </a>
+      <a class="article-card" href="/tradable-products/product-list">
+        <p class="card-cat">Tradable Products</p>
+        <h3>Product List</h3>
+        <p class="card-desc">Index options, volatility products and futures listed across Cboe markets.</p>
+        <span class="card-more">View products</span>
+      </a>
+    </div>
+  </section>
+</div>
+{% endblock %}

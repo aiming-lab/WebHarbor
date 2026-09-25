@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}MTA projects{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Projects</div>
+  <h1>MTA projects</h1>
+</div>
+<div class="card">
+  <p>The MTA's capital projects rebuild and modernize the transit network.</p>
+</div>
+<div class="card-grid">
+  {% for p in projects %}
+  <div class="news-card">
+    <a href="{{ url_for('project_page', slug=p.slug) }}">{{ p.title }}</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

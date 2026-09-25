@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Create a Registry | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/registry">Registry</a> &rsaquo; Create</div>
+  <div class="form-card">
+    <h1>Create a Registry</h1>
+    {% if error %}<div class="errors">{{ error }}</div>{% endif %}
+    <form method="post" action="/registry/create">
+      <div class="field">
+        <label>Event Type</label>
+        <select name="kind">
+          <option value="wedding">Wedding</option>
+          <option value="baby">Baby</option>
+          <option value="gift">Gift</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Your First Name *</label>
+        <input type="text" name="first_name" required>
+      </div>
+      <div class="field">
+        <label>Your Last Name</label>
+        <input type="text" name="last_name">
+      </div>
+      <div class="field">
+        <label>Partner's First Name (wedding)</label>
+        <input type="text" name="co_first_name">
+      </div>
+      <div class="field">
+        <label>Event Date</label>
+        <input type="date" name="event_date">
+      </div>
+      <button class="btn-primary" type="submit">Create Registry</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

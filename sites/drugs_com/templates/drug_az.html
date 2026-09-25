@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}Drugs & Medications A to Z - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a> &rsaquo; <span>Drugs &amp; Medications A to Z</span>
+</nav>
+
+<div class="row-section split">
+  <div class="az-main">
+    <h1>Drugs &amp; Medications A to Z</h1>
+    <p class="lead">Browse 246 deterministic local medication fixtures for software evaluation. These records are not medical guidance.</p>
+
+    <section class="row-section az-search-section">
+      <h2>Search</h2>
+      <form action="{{ url_for('search') }}" method="get" class="az-search search-bar-top">
+        <input type="search" name="q" placeholder="Search drugs, conditions, or brand names" aria-label="Search" class="search-input-lg">
+        <button type="submit" class="btn btn-primary">Search</button>
+      </form>
+    </section>
+
+    <section class="row-section">
+      <h2>Browse A-Z</h2>
+      <div class="letter-grid wide">
+        {% for L in all_letters %}
+          <a class="letter-btn {% if active_letter and L == active_letter %}active{% endif %}"
+             href="{{ url_for('drug_az') }}?letter={{ L }}">{{ L }}</a>
+        {% endfor %}
+      </div>
+    </section>
+
+    {% if active_letter %}
+      <section class="row-section az-list">
+        <h2>{% if active_letter == '0-9' %}Drugs starting with a number (0-9){% else %}Drugs starting with &ldquo;{{ active_letter }}&rdquo;{% endif %}</h2>
+        {% if drugs %}
+          <ul class="az-name-list">
+            {% for d in drugs %}
+              <li>
+                <a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a>
+                {% if d.brand_names %}<span class="muted"> ({{ d.brand_names|join(', ') }})</span>{% endif %}
+              </li>
+            {% endfor %}
+          </ul>
+        {% else %}
+          <p class="muted">No drugs in our database starting with this letter.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+
+    {% if popular_drugs %}
+      <section class="row-section popular-drugs">
+        <h2>Popular drug searches</h2>
+        <ul class="popular-searches popular-columns">
+          {% for d in popular_drugs %}
+            <li><a href="{{ url_for('drug_detail', slug=d.slug) }}">{{ d.generic_name|capitalize }}</a></li>
+          {% endfor %}
+        </ul>
+      </section>
+    {% endif %}
+
+    <section class="row-section">
+      <h2>Browse drugs by category</h2>
+      <ul class="category-list category-grid">
+        <li><a href="{{ url_for('side_effects_page') }}">Side Effects</a></li>
+        <li><a href="{{ url_for('search') }}?q=dosage">Dosage</a></li>
+        <li><a href="{{ url_for('search') }}?q=pregnancy">Pregnancy Warnings</a></li>
+        <li><a href="{{ url_for('drug_classes_list') }}">Drug Classes</a></li>
+        <li><a href="{{ url_for('interaction_checker') }}">Drug Interactions</a></li>
+        <li><a href="{{ url_for('search') }}?q=availability">Availability</a></li>
+        <li><a href="{{ url_for('search') }}?q=brand+generic">Brand/Generic</a></li>
+        <li><a href="{{ url_for('search') }}?q=manufacturer">Drug Manufacturer</a></li>
+        <li><a href="{{ url_for('search') }}?q=natural">Natural Products</a></li>
+        <li><a href="{{ url_for('search') }}?q=international">International Drug Names</a></li>
+        <li><a href="{{ url_for('search') }}?q=generic">Generic Drug Names</a></li>
+        <li><a href="{{ url_for('search') }}?q=OTC&amp;availability=OTC">OTC Drugs</a></li>
+        <li><a href="{{ url_for('news_index') }}?cat=new-drug-approvals">New Drugs</a></li>
+        <li><a href="{{ url_for('news_index') }}?cat=fda-alerts">FDA Alerts</a></li>
+      </ul>
+    </section>
+
+    <section class="row-section drug-sources">
+      <h2>Local data status</h2>
+      <div class="drug-sources-grid">
+        <div class="source-card"><h3>Tracked source fixtures</h3><p>Medication names, classes, benchmark facts, and interface records are generated from the versioned source included with this environment.</p></div>
+        <div class="source-card"><h3>Deterministic SQLite seed</h3><p>The build recreates the database without live network access and verifies exact row counts, foreign keys, schema constraints, and a version marker.</p></div>
+        <div class="source-card"><h3>Medical-use restriction</h3><p>The local records and simulated reviews/news must not be used for diagnosis, prescribing, treatment, or current regulatory verification.</p></div>
+      </div>
+    </section>
+
+    <section class="row-section drug-sources">
+      <h2>External verification</h2>
+      <div class="drug-sources-grid drug-sources-grid-2col">
+        <div class="source-card"><h3>Current official labeling</h3><p>Use current FDA-approved labeling and DailyMed records when verifying real medication information.</p></div>
+        <div class="source-card"><h3>Qualified clinical guidance</h3><p>Consult a qualified healthcare professional for decisions involving medication use, interactions, dosage, pregnancy, or adverse effects.</p></div>
+      </div>
+    </section>
+  </div>
+
+  <aside class="az-sidebar">
+    <div class="sidebar-box">
+      <h3>Browse by Drug Type</h3>
+      <ul>
+        <li><a href="{{ url_for('search') }}?q=Rx&amp;availability=Rx">Prescription (Rx)</a></li>
+        <li><a href="{{ url_for('search') }}?q=OTC&amp;availability=OTC">Over the Counter (OTC)</a></li>
+      </ul>
+    </div>
+
+    {% if popular_classes %}
+    <div class="sidebar-box">
+      <h3>Popular Drug Classes</h3>
+      <ul>
+        {% for c in popular_classes %}
+          <li><a href="{{ url_for('drug_class_page', slug=c.slug) }}">{{ c.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    {% if popular_conditions %}
+    <div class="sidebar-box">
+      <h3>Popular Conditions</h3>
+      <ul>
+        {% for c in popular_conditions %}
+          <li><a href="{{ url_for('condition_page', slug=c.slug) }}">{{ c.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endif %}
+
+    <div class="sidebar-box newsletter-subscribe-box">
+      <h3>Local newsletter preferences</h3>
+      <p class="muted">Stores selections locally; sends no email.</p>
+      <form action="{{ url_for('newsletter_subscribe') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label class="newsletter-check"><input type="checkbox" name="subs" value="monthly" checked> Monthly newsletter</label>
+        <label class="newsletter-check"><input type="checkbox" name="subs" value="mednews" checked> Daily MedNews</label>
+        <label class="newsletter-check"><input type="checkbox" name="subs" value="fda"> FDA safety alerts</label>
+        <label for="az-newsletter-email">Stored email fixture</label>
+        <input id="az-newsletter-email" type="email" name="email" placeholder="Enter an email fixture" class="newsletter-email-input" required maxlength="254">
+        <button type="submit" class="btn btn-primary newsletter-subscribe-button">Subscribe</button>
+      </form>
+    </div>
+
+    <div class="sidebar-box">
+      <h3>Selected fixture records</h3>
+      <ul>
+        <li><a href="{{ url_for('drug_detail', slug='semaglutide') }}">Semaglutide</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='tirzepatide') }}">Tirzepatide</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='metformin') }}">Metformin</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='lisinopril') }}">Lisinopril</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='ibuprofen') }}">Ibuprofen</a></li>
+        <li><a href="{{ url_for('drug_detail', slug='amoxicillin') }}">Amoxicillin</a></li>
+      </ul>
+    </div>
+
+    <div class="sidebar-box">
+      <h3>Simulated approval category</h3>
+      <p class="muted">No current regulatory status is claimed.</p>
+      <p><a href="{{ url_for('news_category', category='new-drug-approvals') }}" class="more-approvals-link">Open simulated article fixtures &rsaquo;</a></p>
+    </div>
+
+    <div class="sidebar-box">
+      <h3>Simulated article fixtures</h3>
+      <p><a href="{{ url_for('news_index') }}">Browse deterministic simulated articles</a></p>
+    </div>
+  </aside>
+</div>
+{% endblock %}

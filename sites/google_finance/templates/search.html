@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import quote_table, news_item %}
+{% block title %}{{ q }} - Google Finance search{% endblock %}
+
+{% block content %}
+<h1 class="section-title">{% if q %}Results for &ldquo;{{ q }}&rdquo;{% else %}Search{% endif %}</h1>
+
+{% if not q %}
+  <p class="empty-state">Type a ticker, a company name, or a sector into the
+    search box above.</p>
+{% elif results %}
+  <p class="fin-note">{{ results|length }} matching instrument{{ 's' if results|length != 1 }}.</p>
+  {{ quote_table(results, spark_svg, fmt_big, fmt_pct) }}
+{% else %}
+  <p class="empty-state">No instrument matches &ldquo;{{ q }}&rdquo;.</p>
+{% endif %}
+
+{% if news %}
+  <h2 class="section-title">Related news</h2>
+  <div class="news-grid">{% for a in news %}{{ news_item(a) }}{% endfor %}</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Write a Review for {{ biz.name }} | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Write a Review</h1>
+    <p>Share your customer experience with <b>{{ biz.name }}</b> &mdash; {{ biz.primary_category }}, {{ biz.city }}, {{ biz.state }}{% if biz.accredited %} &middot; BBB Accredited{% endif %} &middot; BBB Rating: {{ biz.rating }}</p>
+  </div>
+</div>
+<div class="flash-zone">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for cat, msg in messages %}
+    <div class="flash-msg {{ cat }}">{{ msg }}</div>
+    {% endfor %}
+  {% endwith %}
+</div>
+<div class="container">
+  <form class="form-card" method="post" action="{{ url_for('leave_a_review_form', biz_id=biz.id) }}">
+    <h2 style="color:#032160;">Your customer review</h2>
+    <p class="hint">Describe your experience with {{ biz.name }}. Reviews help other consumers make informed decisions.</p>
+
+    <div class="form-row">
+      <label>Overall rating <span class="req">*</span></label>
+      <div class="star-picker" id="starPicker">
+        <span class="st" data-v="1">&#9733;</span><span class="st" data-v="2">&#9733;</span><span class="st" data-v="3">&#9733;</span><span class="st" data-v="4">&#9733;</span><span class="st" data-v="5">&#9733;</span>
+      </div>
+      <input type="hidden" name="rating" id="ratingInput" value="">
+    </div>
+
+    <div class="form-row">
+      <label for="text">Your experience <span class="req">*</span></label>
+      <textarea id="text" name="text" placeholder="Tell others about your experience with this business..."></textarea>
+    </div>
+
+    <div class="form-row">
+      <label for="author">Your name <span class="req">*</span></label>
+      <input type="text" id="author" name="author" placeholder="First name and last initial, e.g. Jane D.">
+    </div>
+
+    <div class="form-row">
+      <label for="experience_date">Date of experience <span class="req">*</span></label>
+      <input type="date" id="experience_date" name="experience_date">
+    </div>
+
+    <button class="btn btn-primary" type="submit">Submit Review</button>
+    <p class="hint" style="margin-top:1rem;">By submitting, you agree that your review complies with BBB's review guidelines. Reviews containing personal information may be edited before publication.</p>
+  </form>
+</div>
+{% endblock %}

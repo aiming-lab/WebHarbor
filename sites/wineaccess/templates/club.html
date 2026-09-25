@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Wine Clubs - Wine Access{% endblock %}
+{% block content %}
+<section class="hero club-hero">
+  <div class="hero-copy">
+    <p class="eyebrow">Wine Access Clubs</p>
+    <h1>A Club for Every Palate</h1>
+    <p>Expertly curated wines and the stories behind them, delivered to your door.</p>
+    <a class="button primary" href="#clubs">Find Your Club</a>
+  </div>
+  <img src="{{ url_for('static', filename='images/club_wine_display.webp') }}" alt="Wine bottles and wine glass display">
+</section>
+<section id="clubs" class="grid-section">
+  <div class="section-title">
+    <p class="eyebrow">Member Benefits</p>
+    <h2>New bottles, tasting cards, early access</h2>
+  </div>
+  <div class="club-grid">
+    {% for club in clubs %}
+      <article class="club-card">
+        <a href="{{ url_for('club_detail', slug=club.slug) }}">
+          <img src="{{ url_for('static', filename='images/' ~ club.image) }}" alt="{{ club.name }}">
+        </a>
+        <div>
+          <p class="eyebrow">{{ club.tagline }}</p>
+          <h3><a href="{{ url_for('club_detail', slug=club.slug) }}">{{ club.name }}</a></h3>
+          <p>{{ club.description }}</p>
+          <p>{{ club.bottles }} bottles / {{ club.frequency }} / ${{ '%.0f'|format(club.price_per_shipment) }} per shipment</p>
+          <a class="button primary" href="{{ url_for('club_detail', slug=club.slug) }}">View Club</a>
+        </div>
+      </article>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

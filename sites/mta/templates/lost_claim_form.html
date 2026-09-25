@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Report a lost item — {{ label }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('lost_found') }}">Lost &amp; Found</a> › <a href="{{ url_for('lost_found_agency', agency=agency_slug) }}">{{ label }}</a> › Report</div>
+  <h1>Report a lost item — {{ label }}</h1>
+</div>
+<div class="card">
+  {% if errors %}
+  <div class="errors">
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+  </div>
+  {% endif %}
+  <form class="stack" method="post" action="{{ url_for('lost_claim_form', agency=agency_slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="date_lost">Date you lost the item</label>
+    <input type="date" id="date_lost" name="date_lost" value="{{ form.get('date_lost', '') }}" required>
+    <label for="line_route">Line or route</label>
+    <input type="text" id="line_route" name="line_route" value="{{ form.get('line_route', '') }}" placeholder="e.g. 2 train, Babylon Branch, M15 bus" required>
+    <label for="station">Station or stop</label>
+    <input type="text" id="station" name="station" value="{{ form.get('station', '') }}" placeholder="e.g. Penn Station, Times Sq-42 St" required>
+    <label for="item_type">Item type</label>
+    <select id="item_type" name="item_type" required>
+      {% for t in ['Backpack', 'Bag', 'Wallet', 'Phone', 'Laptop', 'Umbrella', 'Jacket', 'Keys', 'Bicycle', 'Book', 'Other'] %}
+      <option value="{{ t }}" {% if form.get('item_type') == t %}selected{% endif %}>{{ t }}</option>
+      {% endfor %}
+    </select>
+    <label for="item_description">Describe the item</label>
+    <textarea id="item_description" name="item_description" placeholder="Color, brand, and any distinguishing details" required>{{ form.get('item_description', '') }}</textarea>
+    <label for="contact_name">Your name</label>
+    <input type="text" id="contact_name" name="contact_name" value="{{ form.get('contact_name', current_user.display_name if current_user.is_authenticated else '') }}" required>
+    <label for="contact_email">Your email</label>
+    <input type="email" id="contact_email" name="contact_email" value="{{ form.get('contact_email', current_user.email if current_user.is_authenticated else '') }}" required>
+    <label for="contact_phone">Your phone (optional)</label>
+    <input type="text" id="contact_phone" name="contact_phone" value="{{ form.get('contact_phone', '') }}">
+    <button class="btn" type="submit">Submit claim</button>
+  </form>
+</div>
+{% endblock %}

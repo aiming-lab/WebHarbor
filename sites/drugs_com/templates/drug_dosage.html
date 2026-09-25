@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|capitalize }} Local Dosage Fixture - {{ site_name }}{% endblock %}
+{% block content %}
+<div class="breadcrumb-row">
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a> &rsaquo; <a href="{{ url_for('drug_az') }}">Drugs A-Z</a> &rsaquo; <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a> &rsaquo; <span>Dosage fixture</span></nav>
+</div>
+<div class="drug-page-type-tabs">
+  <span class="drug-page-type-tab active">Consumer section</span>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+<div class="page-with-sidebar">
+<div class="main-col">
+<article class="drug-detail">
+  <nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#warnings">Warnings</a>
+    <a href="{{ url_for('drug_detail', slug=drug.slug) }}#before-taking">Before taking</a>
+    <a href="{{ url_for('drug_dosage', slug=drug.slug) }}" class="active" aria-current="page">Dosage</a>
+    <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+    <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+    <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+  </nav>
+
+  <header class="drug-header">
+    <h1>{{ drug.generic_name|capitalize }} dosage fixture</h1>
+    <p class="reviewer-line">Fixture date: {{ drug.last_updated.strftime('%b %d, %Y') }}. No author, medical review, or current prescribing status is claimed.</p>
+    {% if drug.drug_class %}<p><strong>Stored class field:</strong> <a href="{{ url_for('drug_class_page', slug=drug.drug_class.slug) }}">{{ drug.drug_class.name }}</a></p>{% endif %}
+  </header>
+
+  <div class="disclaimer-box"><p><strong>Software-evaluation data:</strong> Values on this page are deterministic local fixtures. Do not use them to select a dose, frequency, route, dosage form, or treatment.</p></div>
+
+  <section>
+    <h2>Stored dosage text</h2>
+    {% if rt_dosage or drug.dosage %}
+      {{ (rt_dosage or drug.dosage) | format_drug_text | safe }}
+    {% else %}
+      <p class="muted">No dosage text is stored for this record.</p>
+    {% endif %}
+  </section>
+
+  {% if dosage_rows %}
+  <section>
+    <h2>Structured local examples</h2>
+    <p class="muted">These rows are benchmark examples and are not prescribing instructions.</p>
+    {% for row in dosage_rows %}
+      <h3 id="adult-dose-{{ loop.index }}">{{ row.indication }}</h3>
+      <p>{{ row.adult }}</p>
+    {% endfor %}
+  </section>
+  {% endif %}
+
+  <section>
+    <h2>Data not stored</h2>
+    <p class="muted">This fixture has no verified maximum dose, renal adjustment, hepatic adjustment, geriatric or pediatric recommendation, administration method, missed-dose instruction, overdose symptom list, or storage instruction.</p>
+  </section>
+
+  {% if drug.images %}
+  <section>
+    <h2>Stored pill descriptor fields</h2>
+    <ul>
+      {% set seen = [] %}
+      {% for img in drug.images %}
+        {% set entry = ((img.shape or 'shape not stored') + ('; strength field: ' + img.strength if img.strength else '')).strip() %}
+        {% if entry not in seen %}{% set _ = seen.append(entry) %}<li>{{ entry }}</li>{% endif %}
+      {% endfor %}
+    </ul>
+    <p class="muted">A shape or strength descriptor does not establish a dosage form.</p>
+  </section>
+  {% endif %}
+
+  {% if related_drugs %}
+  <section class="dosage-see-also">
+    <h2>Related local records</h2>
+    <ul>{% for r in related_drugs[:6] %}<li><a href="{{ url_for('drug_detail', slug=r.slug) }}">{{ r.generic_name|capitalize }}</a></li>{% endfor %}</ul>
+  </section>
+  {% endif %}
+
+  <p class="back-to-overview"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&laquo; Back to {{ drug.generic_name|capitalize }} fixture</a></p>
+</article>
+</div>
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

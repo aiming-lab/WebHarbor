@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Make a Payment | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-grid">
+    <aside class="account-side">
+      <a href="{{ url_for('account_home') }}">Account Home</a>
+      <a href="{{ url_for('account_statements') }}">Statements &amp; Activity</a>
+      <a class="active" href="{{ url_for('account_payments') }}">Make a Payment</a>
+      <a href="{{ url_for('account_rewards') }}">Rewards &amp; Benefits</a>
+      <a href="{{ url_for('account_offers') }}">Amex Offers</a>
+      <a href="{{ url_for('account_benefits') }}">Card Benefits</a>
+      <a href="{{ url_for('account_profile') }}">Profile</a>
+    </aside>
+    <div class="account-main">
+      <h1 class="section-title">Make a Payment</h1>
+      <p class="section-sub">Pay your American Express bill from a linked bank account.</p>
+
+      <div class="form-card" style="max-width:620px;margin:0 0 30px;">
+        <form method="post" action="{{ url_for('account_payments') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field">
+            <label for="user_card_id">Card</label>
+            <select id="user_card_id" name="user_card_id" required>
+              {% for uc in user_cards %}
+              <option value="{{ uc.id }}">{{ uc.card.name }} ending {{ uc.last4 }} &mdash; balance ${{ '{:,.2f}'.format(uc.current_balance) }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="bank_account_id">From bank account</label>
+            <select id="bank_account_id" name="bank_account_id" required>
+              {% for bank in bank_accounts %}
+              <option value="{{ bank.id }}">{{ bank.name }} &bull;&bull;&bull;{{ bank.last4 }} ({{ bank.account_type }}){{ ' — default' if bank.is_default }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="field">
+            <label for="amount">Amount (USD)</label>
+            <input id="amount" name="amount" required inputmode="decimal">
+            <div class="hint">Pay at least the minimum payment shown on your statement.</div>
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Schedule Payment</button>
+          </div>
+        </form>
+      </div>
+
+      <h2 class="section-title" style="font-size:20px;">Payment History</h2>
+      <table class="data">
+        <thead>
+          <tr><th>Date</th><th>Card</th><th>Bank Account</th><th class="num">Amount</th><th>Confirmation</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          {% for p in payments %}
+          <tr>
+            <td>{{ p.date.strftime('%m/%d/%Y') }}</td>
+            <td>{{ p.user_card.card.name }} ({{ p.user_card.last4 }})</td>
+            <td>{{ p.bank_account.name if p.bank_account else '' }}</td>
+            <td class="num">${{ '{:,.2f}'.format(p.amount) }}</td>
+            <td>{{ p.confirmation }}</td>
+            <td>{{ p.status }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

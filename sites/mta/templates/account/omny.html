@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}OMNY{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › My MTA › OMNY</div>
+  <h1>OMNY — {{ user.omny_serial }}</h1>
+</div>
+<ul class="account-nav">
+  <li><a href="{{ url_for('account_home') }}">Overview</a></li>
+  <li><a href="{{ url_for('account_favorites') }}">Favorites</a></li>
+  <li><a href="{{ url_for('account_subscriptions') }}">Alert subscriptions</a></li>
+  <li class="active"><a href="{{ url_for('account_omny') }}">OMNY</a></li>
+  <li><a href="{{ url_for('account_claims') }}">Lost &amp; Found claims</a></li>
+  <li><a href="{{ url_for('account_aar') }}">Access-A-Ride trips</a></li>
+  <li><a href="{{ url_for('account_cases') }}">Feedback cases</a></li>
+</ul>
+<div class="card">
+  <h2>This week's fare cap (Sep 21 - Sep 27, 2026)</h2>
+  <p>Tap and ride and you'll only pay for the subway and local bus rides you take up to a cap of <strong>$35.00</strong> in a 7-day period. If you ride express buses, you'll only pay <strong>$67.00</strong> in a 7-day period for subway, local, and express bus rides.</p>
+
+  <h3>Subway + local bus cap</h3>
+  <div class="omny-progress"><div class="fill" style="width: {{ [week.local_total / 35.0 * 100, 100] | min }}%"></div></div>
+  <p><strong>${{ '%.2f' | format(week.local_total) }} of $35.00</strong> ({{ week.local | length }} local rides)</p>
+
+  <h3>Subway + local bus + express bus cap</h3>
+  <div class="omny-progress"><div class="fill" style="width: {{ [week.express_total / 67.0 * 100, 100] | min }}%"></div></div>
+  <p><strong>${{ '%.2f' | format(week.express_total) }} of $67.00</strong> ({{ week.taps | length }} total rides, {{ week.express | length }} express)</p>
+</div>
+
+<div class="card">
+  <h2>Tap history</h2>
+  {% for t in week.taps %}
+  <div class="tap-row">
+    <span>{{ t.tapped_at.strftime('%a, Sep %-d') }}</span>
+    <span>{{ t.tapped_at.strftime('%-I:%M %p') }}</span>
+    <span>{{ t.route }}</span>
+    <span>{{ t.device }}</span>
+    <span class="fare">${{ '%.2f' | format(t.fare) }}</span>
+  </div>
+  {% else %}
+  <p>No taps recorded this week.</p>
+  {% endfor %}
+</div>
+{% endblock %}

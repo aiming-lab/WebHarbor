@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ item.title }} | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container content-page" style="padding-top:18px">
+  <div class="breadcrumb"><a href="{{ url_for('news_events') }}">&lt; Back to News &amp; Events</a></div>
+  <h1>{{ item.title }}</h1>
+  <div class="meta" style="color:#667;font-size:14px;margin-bottom:14px">{{ item.published_date }} &middot; {{ item.topic }}</div>
+  <div class="article-body">
+    {% if item.paragraphs %}
+      {% for p in item.paragraphs %}<p>{{ p }}</p>{% endfor %}
+    {% else %}
+      <p>{{ item.teaser }}</p>
+    {% endif %}
+  </div>
+  <h2>More news</h2>
+  {% for n in more %}
+    <div class="news-item">
+      <h3><a href="{{ url_for('news_detail', slug=n.slug) }}">{{ n.title }}</a></h3>
+      <div class="meta">{{ n.published_date }}</div>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

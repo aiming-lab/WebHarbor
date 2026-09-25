@@ -1,0 +1,91 @@
+{% macro search_band(biz_name='') %}
+<section class="search-band">
+  <div class="container">
+    <form action="{{ url_for('search') }}" method="get">
+      <label for="s_find">Find</label>
+      <input type="text" id="s_find" name="find_text" value="" placeholder="businesses, category">
+      <label for="s_near">Near</label>
+      <input type="text" id="s_near" name="find_loc" value="Redmond, WA" placeholder="city, state or zip">
+      <span class="country"><img src="{{ url_for('static', filename='icons/flag-us-100__100w.png') }}" alt="" width="18"> US</span>
+      <button class="btn btn-yellow" type="submit">Search</button>
+    </form>
+  </div>
+</section>
+{% endmacro %}
+
+{% macro profile_head(biz, active) %}
+<div class="profile-head">
+  <div class="container">
+    <div class="profile-kicker">BUSINESS PROFILE &nbsp;&middot;&nbsp; {{ biz.primary_category }}</div>
+    <div class="profile-title-row">
+      <div>
+        <h1>{{ biz.name }}</h1>
+        <div class="profile-badges">
+          {% if biz.accredited %}
+          <span class="seal"><img src="{{ url_for('static', filename='icons/Accredited_Business_Seal_NoRating_RGB.svg') }}" alt="BBB Accredited Business"></span>
+          <div>
+            <div><a href="{{ url_for('get_accredited') }}">BBB Accredited Business</a></div>
+            <div class="rated">{{ biz.rating }} Rated by BBB</div>
+          </div>
+          {% else %}
+          <div class="rated">BBB Rating: {{ biz.rating }}</div>
+          {% endif %}
+        </div>
+        <div class="profile-actions">
+          <a href="{{ biz.profile_path() }}">Share</a>
+          {% if biz.website %}<a href="{{ biz.website }}" rel="noreferrer">Visit Website</a>{% endif %}
+          {% if biz.phone %}<a href="tel:{{ biz.phone }}">{{ biz.phone }}</a>{% endif %}
+          <a href="{{ url_for('leave_a_review_form', biz_id=biz.id) }}">Write a Review</a>
+          {% if biz.offers_quotes %}<a href="{{ url_for('get_quote_form', biz_id=biz.id) }}">Get a Quote</a>{% endif %}
+          {% if current_user.is_authenticated %}
+          <form method="post" action="{{ url_for('toggle_favorite', biz_id=biz.id) }}" style="display:inline;">
+            <button class="btn btn-outline" type="submit" style="padding:.3rem .9rem;font-size:.85rem;">
+              {% if biz.id in (favorite_ids or []) %}Saved{% else %}Save{% endif %}
+            </button>
+          </form>
+          {% endif %}
+        </div>
+      </div>
+      {% if biz.logo %}
+      <div class="profile-logo">
+        <img src="{{ url_for('static', filename='images/' + biz.logo) }}" alt="{{ biz.name }}">
+      </div>
+      {% endif %}
+    </div>
+    <nav class="profile-tabs">
+      <a href="{{ biz.profile_path() }}" {% if active == 'main' %}class="active"{% endif %}>MAIN</a>
+      <a href="{{ biz.profile_path() }}/customer-reviews" {% if active == 'reviews' %}class="active"{% endif %}>REVIEWS</a>
+      <a href="{{ biz.profile_path() }}/complaints" {% if active == 'complaints' %}class="active"{% endif %}>COMPLAINTS</a>
+    </nav>
+  </div>
+</div>
+{% endmacro %}
+
+{% macro overview_card(biz) %}
+<div class="side-card overview-card">
+  <div class="biz-name">{{ biz.name }}</div>
+  <div class="addr">
+    {% if biz.address %}<p style="margin:.2rem 0;">{{ biz.address }}</p>{% endif %}
+    <p style="margin:.2rem 0;">{{ biz.city }}, {{ biz.state }} {{ biz.zip }}</p>
+  </div>
+  <a class="link" href="https://www.google.com/maps/search/?api=1&query={{ biz.address }} {{ biz.city }} {{ biz.state }}" rel="noreferrer">Get Directions</a>
+</div>
+{% endmacro %}
+
+{% macro accred_card(biz) %}
+<div class="side-card accred-card">
+  {% if biz.accredited %}
+  <p><b>{{ biz.name }}</b> is BBB Accredited.</p>
+  <div class="seal-row">
+    <img src="{{ url_for('static', filename='icons/Accredited_Business_Seal_NoRating_RGB.svg') }}" alt="BBB Accredited Business">
+  </div>
+  <p style="font-size:.9rem;">This business has committed to upholding the <a href="{{ url_for('get_accredited') }}">BBB Standards for Trust</a>.</p>
+  <p><a href="{{ url_for('get_accredited') }}">Why choose a BBB Accredited Business?</a></p>
+  {% endif %}
+  <h3 style="margin-top:.8rem;">BBB Rating</h3>
+  <div class="letter">{{ biz.rating }}</div>
+  {% if biz.rating_reason %}<p style="font-size:.85rem;color:#53565a;">{{ biz.rating_reason }}</p>{% endif %}
+  <p style="font-size:.9rem;"><a href="{{ url_for('get_accredited') }}#ratings">More Information</a></p>
+  <p style="font-size:.9rem;"><a href="{{ url_for('get_accredited') }}#ratings">How are BBB ratings calculated?</a></p>
+</div>
+{% endmacro %}

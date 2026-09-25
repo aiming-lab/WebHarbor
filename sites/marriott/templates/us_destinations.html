@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}United States Destinations{% endblock %}
+{% block content %}
+<div class="container content-page">
+  <h1>Hotels in the United States</h1>
+  <p>Browse Marriott Bonvoy destinations across the United States and jump straight to each city's hotel guide.</p>
+  {% for state, dests in states %}
+  <section class="dest-state">
+    <h2>{{ state }}</h2>
+    <div class="results-list">
+      {% for d in dests %}
+      <article class="hotel-card">
+        <a class="card-media" href="{{ d.page_path }}">
+          {% if d.hero_image %}<img src="{{ d.hero_image }}" alt="{{ d.city }}">{% else %}<div class="media-empty">No photo</div>{% endif %}
+        </a>
+        <div class="card-body">
+          <h2 class="card-title"><a href="{{ d.page_path }}">{{ d.city }}{% if d.state_abbr %}, {{ d.state_abbr }}{% endif %}</a></h2>
+          <p class="card-location">{{ d.destination_name or d.city }}</p>
+          <p class="card-desc">{{ d.intro[:180] }}{% if d.intro and d.intro|length > 180 %}…{% endif %}</p>
+        </div>
+        <div class="card-cta">
+          <p class="card-price"><span class="price-unit">{{ d.hotel_count }} hotel{{ 's' if d.hotel_count != 1 else '' }}</span></p>
+          <a class="btn-find btn-small" href="{{ d.page_path }}">View Hotels</a>
+        </div>
+      </article>
+      {% endfor %}
+    </div>
+  </section>
+  {% endfor %}
+</div>
+{% endblock %}

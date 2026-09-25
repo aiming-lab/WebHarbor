@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Pay card | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Pay your {{ card.card.name }}</h1>
+    <div class="detail-hero detail-hero--pay" style="padding-top:16px;">
+      <div><img src="{{ url_for('static', filename='images/' + card.card.card_art) }}" alt="{{ card.card.name }}" style="width:210px;"></div>
+      <div>
+        <table class="data" style="max-width:420px;">
+          <tr><th>Card</th><td>{{ card.card.name }} ...{{ card.masked }}</td></tr>
+          <tr><th>Current balance</th><td class="num">{{ card.balance|usd2 }}</td></tr>
+          <tr><th>Last statement balance</th><td class="num">{{ card.statement_balance|usd2 }}</td></tr>
+          <tr><th>Available credit</th><td class="num">{{ card.available|usd2 }}</td></tr>
+          <tr><th>Payment due</th><td>{{ card.payment_due.strftime('%B %d, %Y') if card.payment_due }}</td></tr>
+        </table>
+      </div>
+    </div>
+    <div class="form-card form-card--wide">
+      <form method="post" action="{{ url_for('account_pay_card', card_id=card.id) }}">
+        <label for="from_bank">Pay from</label>
+        <select id="from_bank" name="from_bank" required>
+          {% for b in banks %}
+          <option value="{{ b.id }}">{{ b.name }} ...{{ b.masked }} ({{ b.balance|usd2 }} available)</option>
+          {% endfor %}
+        </select>
+        <label for="amount">Payment amount ($)</label>
+        <input id="amount" name="amount" type="text" placeholder="100" required>
+        <div class="hint">Enter the amount you want to pay toward this card.</div>
+        <div class="form-actions">
+          <button class="btn btn--green" type="submit">Send payment</button>
+          <a href="{{ url_for('account') }}">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block title %}{{ a.title }}{% endblock %}
+{% block content %}
+<div class="container" style="max-width:820px;padding-bottom:60px">
+  <div class="page-head">
+    <h1 style="font-size:32px">{{ a.title }}</h1>
+    <p style="color:#666;font-size:14px;margin-top:6px">By {{ a.author_name }}{% if a.published %}, {{ a.published }}{% endif %}</p>
+  </div>
+  {% if a.image_url %}
+  <img style="width:100%;border-radius:8px;margin:14px 0" src="{{ a.image_url | asset_url }}" alt="{{ a.image_alt }}">
+  {% endif %}
+  <article class="report-content">
+    {{ body | safe }}
+  </article>
+  <form action="{{ url_for('toggle_bookmark') }}" method="post" style="margin-top:24px">
+    <input type="hidden" name="kind" value="article">
+    <input type="hidden" name="slug" value="{{ a.slug }}">
+    <input type="hidden" name="title" value="{{ a.title }}">
+    <input type="hidden" name="next" value="{{ request.path }}">
+    {% if current_user.is_authenticated %}
+    <button type="submit" class="btn {{ 'btn-outline' if bookmarked else 'btn-primary' }}">
+      {% if bookmarked %}Saved ✓ (remove){% else %}Save this article{% endif %}</button>
+    {% else %}
+    <a class="btn btn-outline" href="{{ url_for('login', next=request.path) }}">Log in to save</a>
+    {% endif %}
+  </form>
+</div>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="results-heading">
+  <h1>Browse employers</h1>
+</div>
+<p class="results-sub">Employer hubs with {{ employers | length }} profiles. Pick a letter or browse the full list.</p>
+<div class="refine-group" style="max-width:420px">
+  <details open>
+    <summary>By first letter</summary>
+    <ul style="display:flex; flex-wrap:wrap; gap:8px">
+      {% for letter in "ABCDEFGHIJKLMNOPQRSTUVWXYZ" %}
+      <li><a href="?letter={{ letter }}">{{ letter }}</a></li>
+      {% endfor %}
+      <li><a href="/employers/">All</a></li>
+    </ul>
+  </details>
+</div>
+<div class="landing-list" style="margin-top:18px">
+  {% for employer in employers %}
+  <div class="account-item" style="display:flex; gap:14px; align-items:center; flex-wrap:wrap">
+    {% if employer.logo_path %}<img src="{{ employer.logo_path }}" alt="{{ employer.name }} logo" style="max-height:54px; max-width:120px">{% endif %}
+    <div style="flex:1 1 300px">
+      <h3 style="margin:0"><a href="/employer/{{ employer.ref }}/{{ employer.slug }}/">{{ employer.name }}</a></h3>
+      <p class="meta" style="margin:2px 0 0">
+        {% if employer.location %}{{ employer.location }} &bull; {% endif %}{{ employer.job_count }} job opening{{ "s" if employer.job_count != 1 }}
+      </p>
+    </div>
+    <a class="btn-view" href="/employer/{{ employer.ref }}/{{ employer.slug }}/">View profile</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import news_item %}
+{% block title %}{{ a.headline }} - Google Finance{% endblock %}
+
+{% block content %}
+<nav class="crumbs">
+  <a href="{{ url_for('news_index') }}">&larr; News</a>
+  <span>|</span>
+  <span>{{ a.publisher.name if a.publisher else 'Newswire' }}</span>
+</nav>
+
+<article>
+  <h1 class="section-title" style="margin-top:0">{{ a.headline }}</h1>
+  <div class="news-meta">
+    {% if a.publisher and a.publisher.favicon_url %}
+      <img src="{{ a.publisher.favicon_url }}" alt="{{ a.publisher.name }}">
+    {% endif %}
+    <span>{{ a.publisher.name if a.publisher else 'Newswire' }}</span>
+    <span>&middot;</span>
+    <span>{{ a.ago() }}</span>
+    <span>&middot;</span>
+    <span>{{ a.published_at.strftime('%b %-d, %Y') }}</span>
+  </div>
+  <div class="profile-text">
+    {% for para in a.body.split('\n\n') %}<p>{{ para }}</p>{% endfor %}
+  </div>
+</article>
+
+{% if a.links %}
+  <h2 class="section-title">Mentioned in this story</h2>
+<div class="table-wrap">
+  <table class="q-table">
+      <thead><tr><th>Symbol</th><th>Price</th><th>% Change</th></tr></thead>
+      <tbody>
+        {% for l in a.links %}
+          {% set i = l.instrument %}
+          <tr>
+            <td><a href="{{ url_for('quote', symbol=i.slug) }}">{{ i.ticker }} — {{ i.name }}</a></td>
+            <td>{{ pv(i, i.quote.price) }}</td>
+            <td><span class="pill {{ 'up' if i.quote.change_pct >= 0 else 'down' }}">{{ fmt_pct(i.quote.change_pct) }}</span></td>
+          </tr>
+        {% endfor %}
+      </tbody>
+  </table>
+</div>
+{% endif %}
+
+<h2 class="section-title">More stories</h2>
+<div class="news-grid">{% for r in related %}{{ news_item(r) }}{% endfor %}</div>
+{% endblock %}

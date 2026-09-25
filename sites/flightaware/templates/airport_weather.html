@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}{{ airport.name }} Weather ({{ airport.city }}) [{{ airport.code }}{% if airport.iata %}/{{ airport.iata }}{% endif %}] - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">{{ airport.name | upper }}{% if airport.city %} ({{ airport.city | upper }}, {{ (airport.region or airport.country) | upper }}){% endif %} {{ airport.iata or airport.code }} WEATHER</div>
+
+<div class="tab-bar">
+  <a class="active" href="/resources/airport/{{ airport.code }}/weather">OVERVIEW AND FBOS</a>
+  <a href="/live/airport/{{ airport.code }}">FLIGHT TRACKER</a>
+  <a class="active" href="/resources/airport/{{ airport.code }}/weather">WEATHER</a>
+  <a href="/resources/airport/{{ airport.code }}/map">MAP &amp; DIAGRAM</a>
+  <a href="/resources/airport/{{ airport.code }}/remarks">REMARKS</a>
+</div>
+
+<div class="panel">
+  <div class="panel-head">{{ airport.name }} ({{ airport.city }}) Weather <span class="more">{{ airport.code }}{% if airport.iata %} / {{ airport.iata }}{% endif %}</span></div>
+  <div class="panel-body">
+    {% if airport.weather_text %}
+    <div class="kv" style="font-size:14px;">{{ airport.weather_text | nl2br }}</div>
+    {% else %}
+    <div class="kv"><span class="k">Conditions</span>Weather information unavailable for this airport.</div>
+    <div class="kv"><span class="k">Local timezone</span>{{ airport.tz_label or 'n/a' }}</div>
+    {% endif %}
+  </div>
+</div>
+
+{% if taf_rows %}
+<div class="panel">
+  <div class="panel-head">{{ airport.iata or airport.code }} Terminal Area Forecast</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th>Date</th><th>Time (EDT)</th><th>Flight Rules</th><th>Wind Dir.</th><th>Speed</th><th>Type</th><th>Height AGL (ft)</th><th>Visibility</th><th>Remarks</th></tr>
+    {% for r in taf_rows %}
+    <tr>
+      <td>{{ r[0] }}</td>
+      <td>{{ r[1] }}</td>
+      <td>{{ r[2] }}</td>
+      <td>{{ r[3] }}</td>
+      <td>{{ r[4] }}</td>
+      <td>{{ r[5] | safe }}</td>
+      <td>{{ r[6] | safe }}</td>
+      <td>{{ r[7] }}</td>
+      <td>{{ r[8] }}</td>
+    </tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endif %}
+
+<div class="panel">
+  <div class="panel-head">Airport information</div>
+  <div class="panel-body kv">
+    <div><span class="k">Airport name</span>{{ airport.name }}</div>
+    <div><span class="k">Location</span>{{ airport.city }}{% if airport.region %}, {{ airport.region }}{% endif %}</div>
+    <div><span class="k">ICAO / IATA</span>{{ airport.code }}{% if airport.iata %} / {{ airport.iata }}{% endif %}</div>
+    <div><span class="k">Local timezone</span>{{ airport.tz_label or 'n/a' }}</div>
+  </div>
+</div>
+{% endblock %}

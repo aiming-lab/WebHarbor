@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Ultimate Rewards® | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <h1>Chase Ultimate Rewards®</h1>
+    <p class="muted">You have <strong>{{ '{:,}'.format(total_points) }} points</strong> across your cards. Redeem in whole thousands — cash back and statement credits at $0.01 per point, travel at $0.0125 per point, gift cards at $0.008 per point.</p>
+
+    <h2>Redeem points</h2>
+    {% for c in cards %}
+    <div class="acct-panel">
+      <div class="acct-panel__head"><h2>{{ c.card.name }} ...{{ c.masked }}</h2><span class="num">{{ '{:,}'.format(c.points) }} points</span></div>
+      <div class="acct-panel__body">
+        <form method="post" action="{{ url_for('account_rewards') }}" class="filter-bar" style="margin:8px 0;">
+          <input type="hidden" name="card_id" value="{{ c.id }}">
+          <div class="field">
+            <label for="points-{{ c.id }}">Points to redeem</label>
+            <input id="points-{{ c.id }}" name="points" type="text" placeholder="10000">
+          </div>
+          <div class="field">
+            <label for="rtype-{{ c.id }}">Redeem for</label>
+            <select id="rtype-{{ c.id }}" name="redemption_type">
+              <option value="cash back">Cash back ($0.01/pt)</option>
+              <option value="travel">Travel ($0.0125/pt)</option>
+              <option value="statement credit">Statement credit ($0.01/pt)</option>
+              <option value="gift card">Gift card ($0.008/pt)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>&nbsp;</label>
+            <button class="btn btn--green btn--sm" type="submit">Redeem</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+
+    <h2>Redemption history</h2>
+    <div class="compare-grid">
+    <table class="data">
+      <tr><th>Date</th><th>Card</th><th>Points</th><th>Type</th><th class="right">Value</th><th>Description</th></tr>
+      {% for r in redemptions %}
+      <tr>
+        <td class="num">{{ r.date.strftime('%b %d, %Y') }}</td>
+        <td>{{ r.card_account.card.name if r.card_account else '—' }}</td>
+        <td class="num">{{ '{:,}'.format(r.points) }}</td>
+        <td>{{ r.redemption_type|title }}</td>
+        <td class="right num">{{ r.value|usd2 }}</td>
+        <td>{{ r.desc }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="6"><div class="empty-state">No redemptions yet.</div></td></tr>
+      {% endfor %}
+    </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

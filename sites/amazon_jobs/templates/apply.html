@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Apply | {{ job.title }}{% endblock %}
+{% block content %}
+<div class="container page-content narrow">
+  <div class="apply-page">
+    <h1>Apply to this job</h1>
+    {% if existing %}
+    <div class="notice">
+      <p>You already have an application for this job. Track it from <a href="{{ url_for('account_applications') }}">My applications</a>.</p>
+    </div>
+    {% else %}
+    <div class="apply-summary">
+      <h2>{{ job.title }}</h2>
+      <p class="app-meta">{{ job.location_card() }} | Job ID: {{ job.job_id }}</p>
+      <p class="app-meta">Category: {{ job.category }}{% if job.team %} | Team: {{ job.team }}{% endif %}</p>
+      <p class="app-meta">Schedule: {{ job.schedule }} | Role type: {{ job.role_type }}</p>
+    </div>
+    <div class="apply-profile">
+      <h2>Applying as</h2>
+      <p>{{ current_user.display_name }} ({{ current_user.email }})</p>
+      <p>{% if current_user.headline %}{{ current_user.headline }}{% else %}No professional headline on file.{% endif %}</p>
+      <p>{% if current_user.city %}{{ current_user.city }}{% if current_user.state %}, {{ current_user.state }}{% endif %}{% else %}No location on file.{% endif %}</p>
+      <a class="text-link" href="{{ url_for('profile_edit') }}">Edit profile</a>
+    </div>
+    <form method="post" action="{{ url_for('apply_job', job_id=job.job_id) }}">
+      <p class="apply-note">Your profile details and resume link will be shared with the recruiting team. Review everything before you submit.</p>
+      <button type="submit" class="btn btn-primary">Submit application</button>
+      <a class="btn btn-secondary" href="{{ url_for('job_detail', job_id=job.job_id, slug=job.slug) }}">Cancel</a>
+    </form>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

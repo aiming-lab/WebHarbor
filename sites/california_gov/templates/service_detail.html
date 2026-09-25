@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}{{ service.name }}{% endblock %}
+{% block nav_services %} active{% endblock %}
+{% block meta_description %}{{ service.description or service.name }}{% endblock %}
+{% block main %}
+<div class="section-understated">
+  <div class="container p-y-md">
+    <div class="row">
+      <div class="col-lg-7">
+<nav aria-label="You are here" class="breadcrumbs">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li><a href="/services/">Services</a></li>
+    <li class="active">{{ service.name }}</li>
+  </ol>
+</nav>
+<h1 class="m-t-0 color-p2-darker">{{ service.name }}</h1>
+        <p>
+          <a href="{{ department_url(service.department) }}">{{ service.department.short_name }}</a>
+        </p>
+        <p class="m-t-md font-size-13">
+          <em>Last updated {{ service.last_updated }}</em>
+        </p>
+      </div>
+      <div class="col-lg-5">
+        {% if service.image %}
+        <div class="pos-rel">
+          <img src="{{ url_for('static', filename=service.image) }}" loading="lazy" class="rounded-circle service-img width-300 height-300 pos-abs right-sm d-none d-lg-block" alt="" aria-hidden="true">
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="container p-y-md">
+  <div class="row p-y-lg">
+    <div class="col-md-9">
+      {% if service.launch_url is not none %}
+      <a class="btn btn-primary btn-lg m-r-md m-b{% if service.launch_url and not service.launch_url.startswith("https://www.ca.gov/") %} cagov-external-link{% endif %}"{% if service.launch_url and service.launch_url.startswith("https://www.ca.gov/") %} data-cagov-external="skip"{% endif %} href="{{ service.launch_url }}">Launch service{% if service.launch_url and not service.launch_url.startswith("https://www.ca.gov/") %}<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span>{% endif %}</a>
+      {% endif %}
+      {% if service.dept_website %}
+      <a class="btn btn-outline-primary btn-lg m-r-md m-b cagov-external-link" href="{{ service.dept_website }}">Department website<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+      {% endif %}
+      {% if service.contact_url %}
+      <a class="btn btn-outline-primary btn-lg m-r-md m-b cagov-external-link" href="{{ service.contact_url }}">Contact<span class="external-link-icon" aria-hidden="true"></span><span class="sr-only"> (external link)</span></a>
+      {% endif %}
+
+      <hr class="m-t-md">
+
+      <h2 class="m-t-md">Description</h2>
+      <p>{{ service.description }}</p>
+
+      {% if service.phone %}
+      <p class="m-t-md">
+        <span class="bold">Phone:</span>
+        <a href="tel:{{ service.phone_digits }}">{{ service.phone }}</a>
+      </p>
+      {% endif %}
+
+      {% if service.faq_rows %}
+      <h3>Frequently Asked Questions</h3>
+      {% for faq in service.faq_rows %}
+      <cagov-accordion>
+        <details style="height: 50px;">
+          <summary>{{ faq.question }}<div class="cagov-open-indicator" aria-hidden="true"></div></summary>
+          <div class="accordion-body">{{ faq.answer }}</div>
+        </details>
+      </cagov-accordion>
+      {% endfor %}
+      {% endif %}
+
+      {% if service.siblings %}
+      <hr class="m-t-md">
+      <h3>Related services</h3>
+      <p>
+        {% for sibling in service.siblings %}
+        <a href="{{ service_url(sibling) }}" class="btn btn-default btn-sm me-2 my-2">{{ sibling.name }}</a>
+        {% endfor %}
+      </p>
+      {% endif %}
+
+      {% if service.topic_rows %}
+      <h3 class="m-t-md">Topics</h3>
+      <p>
+        {% for t in service.topic_rows %}<a href="{{ topic_url(t) }}">{{ t.name }}</a>{% if not loop.last %}<span class="m-r-sm">, </span>{% endif %}{% endfor %}
+      </p>
+      {% endif %}
+
+      {% if service.keywords %}
+      <h3>Keywords</h3>
+      <p>
+        {% for kw in service.keywords %}<a href="/services/all/?q={{ kw.href }}" rel="nofollow">{{ kw.label }}</a>{% if not loop.last %}<span class="m-r-sm">,</span>
+        {% endif %}{% endfor %}
+      </p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

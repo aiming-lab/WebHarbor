@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Registry Search | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/registry">Registry</a> &rsaquo; Search</div>
+  <div class="content-page">
+    <h1>Find a Registry</h1>
+    <p>Search by first name, last name, or registry number.</p>
+    <form method="get" action="/registry/search" style="max-width: 560px;">
+      <div class="field"><label>First Name</label><input type="text" name="first_name"></div>
+      <div class="field"><label>Last Name</label><input type="text" name="last_name"></div>
+      <div class="field"><label>OR Registry Number</label><input type="text" name="registry_number"></div>
+      <button class="btn-primary" type="submit">Find</button>
+    </form>
+
+    {% if registries %}
+      <h2 style="margin-top: 20px;">Registries Found ({{ registries|length }})</h2>
+      <table>
+        <tr><th>Registry #</th><th>Name</th><th>Event</th><th>Event Date</th><th>Items</th><th></th></tr>
+        {% for registry in registries %}
+          <tr>
+            <td>{{ registry.registry_number }}</td>
+            <td>{{ registry.title() }}</td>
+            <td>{{ registry.kind|capitalize }}</td>
+            <td>{% if registry.event_date %}{{ registry.event_date.strftime('%B %d, %Y') }}{% else %}-{% endif %}</td>
+            <td>{{ registry.items|length }}</td>
+            <td><a href="/registry/{{ registry.registry_number }}">View Registry</a></td>
+          </tr>
+        {% endfor %}
+      </table>
+    {% elif request.args.get('first_name') or request.args.get('last_name') or request.args.get('registry_number') %}
+      <p class="muted" style="margin-top: 14px;">No registries match your search.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

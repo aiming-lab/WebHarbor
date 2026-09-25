@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Long Island Rail Road{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Agencies › Long Island Rail Road</div>
+  <h1>Long Island Rail Road</h1>
+</div>
+<div class="card blocks">
+  {% for b in (page.blocks | fromjson) %}
+    {% if b['type'] == 'h2' %}<h2>{{ b['text'] }}</h2>
+    {% elif b['type'] == 'h3' %}<h3>{{ b['text'] }}</h3>
+    {% elif b['type'] == 'prose' %}<div class="prose-block">{{ b['text'] }}</div>
+    {% elif b['type'] == 'list' %}<ul>{% for item in b['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% elif b['type'] == 'links' %}<ul class="quick-links">{% for l in b['links'] %}<li><a href="{{ l['href'] }}">{{ l['text'] }}</a></li>{% endfor %}</ul>
+    {% endif %}
+  {% endfor %}
+</div>
+<div class="card">
+  <h2>Branch timetables</h2>
+  <p>Regular branch timetables, effective September 8 to November 8, 2026.</p>
+  <ul class="quick-links">
+    {% for slug, name in [('babylon', 'Babylon Branch'), ('far-rockaway', 'Far Rockaway Branch'),
+      ('hempstead', 'Hempstead Branch'), ('long-beach', 'Long Beach Branch'),
+      ('montauk', 'Montauk Branch'), ('oyster-bay', 'Oyster Bay Branch'),
+      ('port-jefferson', 'Port Jefferson Branch'), ('port-washington', 'Port Washington Branch'),
+      ('ronkonkoma', 'Ronkonkoma Branch'), ('west-hempstead', 'West Hempstead Branch'),
+      ('city-zone-manhattan', 'City Terminal Zone - Manhattan'),
+      ('city-zone-brooklyn', 'City Terminal Zone - Brooklyn')] %}
+    <li><a href="{{ url_for('lirr_schedule', branch=slug) }}">{{ name }}</a></li>
+    {% endfor %}
+  </ul>
+  <p><a href="{{ url_for('rail_fare_finder') }}">LIRR fare tables &rarr;</a></p>
+</div>
+{% endblock %}

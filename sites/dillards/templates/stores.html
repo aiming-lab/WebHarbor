@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Store Locator | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; Store Locator</div>
+  <div class="page-head">
+    <h1>Find a Dillard's Store Near You</h1>
+    <div class="items-count">Search by City, State or Zip to find a store, or browse by state. <a href="/stores/all">View All Stores</a></div>
+  </div>
+  <form method="get" action="/stores" class="form-card" style="max-width: 560px; padding-top: 0;">
+    <div class="field">
+      <label>State</label>
+      <select name="state" onchange="this.form.submit()">
+        <option value="">Select a state</option>
+        {% for state, abrev in states %}
+          <option value="{{ abrev }}" {% if selected == abrev %}selected{% endif %}>{{ state }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn-primary" type="submit">Find a Store</button>
+  </form>
+
+  {% if selected and stores %}
+    <h2 style="padding: 8px 0;">Dillard's Stores in {{ selected }}</h2>
+    {% for store in stores %}
+      <div class="store-row">
+        <div>
+          <h3><a href="/stores/{{ store.identifier }}">{{ store.store_name }}</a></h3>
+          <div class="addr">{{ store.address1 }}, {{ store.city }}, {{ store.state_abrev }} {{ store.zipcode }}</div>
+        </div>
+        <div class="phone">{{ store.phone_display() }}</div>
+        <div><a href="/stores/{{ store.identifier }}">Store Details</a></div>
+      </div>
+    {% endfor %}
+  {% endif %}
+</div>
+{% endblock %}

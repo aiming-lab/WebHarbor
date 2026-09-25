@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Worldwide Hotel Telephone Reservations{% endblock %}
+{% block content %}
+<div class="container content-page">
+  <h1>Global Reservation Numbers</h1>
+  <p>Call toll-free (or toll, where noted) to reserve by phone with Marriott Bonvoy.</p>
+
+  <section>
+    <h2>Reservation Lines by Brand</h2>
+    <div class="help-grid">
+      {% for line in brand_lines %}
+      <div class="help-card">
+        <p class="help-brand">{{ line.brand }}</p>
+        <p class="help-phone">{{ line.number }}</p>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section>
+    <h2>Reservation Numbers by Country</h2>
+    <p class="offers-sub">Marriott (Toll-free) and Marriott (Toll) lines listed A–Z by country.</p>
+    <div class="table-wrap">
+      <table class="trips-table help-table">
+      <thead><tr><th>Country</th><th>Line</th><th>Number</th></tr></thead>
+      <tbody>
+        {% for row in country_rows %}
+        <tr>
+          <td>{{ row.country }}</td>
+          <td>{{ row.line }}</td>
+          <td>{{ row.number }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+  </section>
+</div>
+{% endblock %}

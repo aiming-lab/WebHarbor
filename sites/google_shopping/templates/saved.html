@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Saved - Google Shopping{% endblock %}
+{% block content %}
+<div class="list-page-head">
+  <h1>Shopping list</h1>
+  <span class="count">{{ products|length }} saved item{{ '' if products|length == 1 else 's' }}</span>
+</div>
+{% if products %}
+<div class="result-grid">
+  {% for p in products %}
+  <div class="pcard">
+    <a href="{{ url_for('product', upstream_id=p.upstream_id) }}">
+      <div class="tile">
+        {% if p.discount_pct %}<span class="badge">{{ p.discount_pct }}% OFF</span>{% endif %}
+        <img src="{{ url_for('static', filename='images/' + p.image) }}" alt="{{ p.title }}">
+      </div>
+    </a>
+    <div class="caption">
+      <div class="title"><a href="{{ url_for('product', upstream_id=p.upstream_id) }}">{{ p.title }}</a></div>
+      <div class="meta">
+        <span class="merchant">
+          {% if p.merchant_favicon %}<img src="{{ url_for('static', filename='images/' + p.merchant_favicon) }}" alt="">{% endif %}
+          {{ p.merchant_name }}
+        </span>
+        <span class="dot">&middot;</span>
+        <span class="pricegroup"><span class="price">{{ p.price_display }}</span></span>
+      </div>
+      <form method="post" action="{{ url_for('unsave_product', product_id=p.id) }}">
+        <button class="action-btn on" type="submit" style="padding:6px 12px;margin-top:6px">Remove</button>
+      </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <h1>Nothing to see here</h1>
+  <p>Items you save on Google Shopping will show up here.</p>
+  <a class="home-btn" href="{{ url_for('index') }}">Go to Shopping home</a>
+</div>
+{% endif %}
+{% endblock %}

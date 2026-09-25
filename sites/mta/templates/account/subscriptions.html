@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Alert subscriptions{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › My MTA › Alert subscriptions</div>
+  <h1>Your service alert subscriptions</h1>
+</div>
+<ul class="account-nav">
+  <li><a href="{{ url_for('account_home') }}">Overview</a></li>
+  <li><a href="{{ url_for('account_favorites') }}">Favorites</a></li>
+  <li class="active"><a href="{{ url_for('account_subscriptions') }}">Alert subscriptions</a></li>
+  <li><a href="{{ url_for('account_omny') }}">OMNY</a></li>
+  <li><a href="{{ url_for('account_claims') }}">Lost &amp; Found claims</a></li>
+  <li><a href="{{ url_for('account_aar') }}">Access-A-Ride trips</a></li>
+  <li><a href="{{ url_for('account_cases') }}">Feedback cases</a></li>
+</ul>
+<div class="card">
+  <h2>Current subscriptions</h2>
+  <p>Alerts are emailed to {{ user.email }}.</p>
+  {% for s in user.subscriptions %}
+  <div class="rail-item">
+    <span class="rail-title">{{ s.service_id }} ({{ s.service_type }})</span>
+    <form method="post" action="{{ url_for('account_subscriptions') }}" style="margin:0 0 0 auto"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="remove">
+      <input type="hidden" name="service_type" value="{{ s.service_type }}">
+      <input type="hidden" name="service_id" value="{{ s.service_id }}">
+      <button class="btn secondary" type="submit">Unsubscribe</button>
+    </form>
+  </div>
+  {% else %}
+  <p>You don't receive any service alerts yet.</p>
+  {% endfor %}
+</div>
+<div class="card">
+  <h2>Add a subscription</h2>
+  <form class="stack" method="post" action="{{ url_for('account_subscriptions') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="service_type">Service type</label>
+    <select name="service_type" id="service_type">
+      <option value="subway">Subway line</option>
+      <option value="rail">Railroad branch</option>
+      <option value="bus">Bus route</option>
+    </select>
+    <label for="service_id">Service</label>
+    <input type="text" name="service_id" id="service_id" placeholder="e.g. 2, G, Babylon Branch, M15" required>
+    <button class="btn" type="submit">Subscribe</button>
+  </form>
+</div>
+{% endblock %}

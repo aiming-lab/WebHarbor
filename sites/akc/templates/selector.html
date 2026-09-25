@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Breed Selector{% endblock %}
+{% block content %}
+<div class="sponsor-banner"><img src="{{ url_for('static', filename='images/akc-home/pro-plan-logo.png') }}" alt="Purina Pro Plan"></div>
+<section class="selector-intro">
+  <div class="selector-illustration">
+    <img src="{{ url_for('static', filename='images/akc-home/selector-illustration.png') }}" alt="A person walking a dog">
+  </div>
+  <div>
+    <h1>Find the Best Dog<br>Breed for You!</h1>
+    <p>Answer a series of quick questions to help us find your best dog breed matches. We’ll ask about your preferences, needs, and everyday lifestyle.</p>
+    <p>These matches are a great starting point. Meet your favorite breeds in person and talk with people who know them well.</p>
+    <a class="button primary" href="#selector-form">Let's Go</a>
+  </div>
+</section>
+
+<section class="selector-form-section{% if matches %} is-active{% endif %}" id="selector-form">
+  <div class="page-heading centered compact-heading">
+    <h2>Tell us about your life</h2>
+    <p>Adjust the choices below to compare breeds ranked by fit.</p>
+  </div>
+  <form class="quiz-panel" method="get">
+    <label>Home type
+      <select name="home">
+        <option value="apartment" {% if answers.home == 'apartment' %}selected{% endif %}>Apartment or condo</option>
+        <option value="house" {% if answers.home == 'house' %}selected{% endif %}>House with yard</option>
+      </select>
+    </label>
+    <label>Preferred energy level
+      <input type="range" min="1" max="5" value="{{ answers.energy or 3 }}" name="energy">
+    </label>
+    <label>Grooming tolerance
+      <input type="range" min="1" max="5" value="{{ answers.grooming or 3 }}" name="grooming">
+    </label>
+    <label>Good with children importance
+      <input type="range" min="1" max="5" value="{{ answers.children or 4 }}" name="children">
+    </label>
+    <button type="submit">Find Matches</button>
+  </form>
+</section>
+{% if matches %}
+<section class="section">
+  <div class="section-head centered"><h2>Best Matches</h2></div>
+  <div class="card-grid">
+    {% for score, breed in matches %}
+      {% include "_breed_card.html" %}
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+{% endblock %}

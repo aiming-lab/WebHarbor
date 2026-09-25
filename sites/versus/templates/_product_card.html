@@ -1,0 +1,17 @@
+<article class="product-card">
+  <a class="product-art" href="{{ url_for('product_detail', slug=product.slug) }}">
+    <img class="entity-image entity-image--{{ product.category.slug }}"
+         src="{{ url_for('static', filename='images/products/' ~ product.slug ~ '.webp') }}"
+         alt="{{ product.name }}" width="960" height="720" loading="lazy">
+  </a>
+  <div class="product-body">
+    <div class="eyebrow">{{ product.category.name }}</div>
+    <h3><a href="{{ url_for('product_detail', slug=product.slug) }}">{{ product.name }}</a></h3>
+    <p>{{ product.summary }}</p>
+    <dl class="stat-row">
+      <div><dt>Score</dt><dd>{{ product.score }}</dd></div>
+      {% if product.price is not none %}<div><dt>Price</dt><dd>${{ product.price }}</dd></div>{% endif %}
+      {% if product.release_year %}<div><dt>Year</dt><dd>{{ product.release_year }}</dd></div>{% endif %}
+    </dl>
+  </div>
+</article>

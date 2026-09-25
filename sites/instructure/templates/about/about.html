@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Instructure Company Overview | Makers of Canvas & EdTech Innovators{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>We believe learning transforms lives.</h1>
+    <p>As the makers of Canvas LMS, Instructure is an education technology company dedicated to elevating student success, amplifying teaching, and simplifying learning.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Lots of companies have "values." Ours exist beyond this page.</h2>
+    </div>
+    <div class="solutions-grid">
+      <div class="solution-card"><div class="body">
+        <h3>Openness</h3>
+        <p>Open minds open doors. We strive to stay curious, collaborative, and empathetic.</p>
+      </div></div>
+      <div class="solution-card"><div class="body">
+        <h3>Equality</h3>
+        <p>Every learner deserves equal access to opportunity, regardless of circumstance.</p>
+      </div></div>
+      <div class="solution-card"><div class="body">
+        <h3>Trust</h3>
+        <p>Trust is the foundation of every relationship we build—with customers, partners, and each other.</p>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<section class="section-soft section">
+  <div class="container">
+    <div class="section-head">
+      <h2>Meet the team leading our mission</h2>
+    </div>
+    <div class="leader-grid">
+      {% for l in leaders %}
+      <div class="leader-card">
+        <div class="headshot">{% if l.card_img %}<img src="{{ l.card_img|img }}" alt="{{ l.name }}">{% endif %}</div>
+        <h3>{{ l.name }}</h3>
+        <div class="role">{{ l.title }}</div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="text-center" style="margin-top: 34px;">
+      <a class="btn btn-outline" href="/about/leadership">Meet everyone</a>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="final-cta">
+      <h2>Now let's talk about you</h2>
+      <p>We'd love to hear about your current challenges and how we can help you meet your goals.</p>
+      <a class="btn btn-white" href="/request-demo">Start a conversation</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

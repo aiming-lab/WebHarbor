@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Amazon Careers: Impact the Future, Today{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/fonts.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"></head>
+<body>
+<a class="skip-link" href="#main">Skip to main content</a>
+<header class="site-header">
+  <div class="header-inner container">
+    <button type="button" class="hamburger" id="hamburger" aria-label="Open menu" aria-expanded="false">
+      <span class="hamburger-box"><span class="hamburger-line"></span><span class="hamburger-line"></span><span class="hamburger-line"></span></span>
+    </button>
+    <a class="brand" href="{{ url_for('index') }}" aria-label="Amazon Jobs home">
+      <img src="{{ url_for('static', filename='icons/jobs_logo.svg') }}" alt="amazon jobs" class="brand-logo">
+    </a>
+    <nav class="header-links" aria-label="Site sections">
+      <a href="{{ url_for('business_categories') }}">Teams</a>
+      <a href="{{ url_for('locations') }}">Locations</a>
+      <a href="{{ url_for('job_categories') }}">Job categories</a>
+      <a href="{{ url_for('benefits') }}">Benefits</a>
+    </nav>
+    <div class="header-right">
+      {% if current_user.is_authenticated %}
+      <div class="dropdown" id="my-career">
+        <button type="button" class="dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+          My career <span class="caret"></span>
+        </button>
+        <div class="dropdown-menu">
+          <a href="{{ url_for('account_applications') }}">My applications</a>
+          <a href="{{ url_for('profile') }}">My profile</a>
+          <a href="{{ url_for('job_alerts') }}">Job alerts</a>
+          <a href="{{ url_for('communication_preferences') }}">Settings</a>
+          <a href="{{ url_for('logout') }}">Sign out</a>
+        </div>
+      </div>
+      {% else %}
+      <a class="signin-link" href="{{ url_for('login') }}">Sign in</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+<div class="drawer-backdrop" id="drawer-backdrop" hidden></div>
+<aside class="drawer" id="drawer" aria-label="Main menu" hidden>
+  <div class="drawer-head">
+    <img src="{{ url_for('static', filename='icons/jobs_logo.svg') }}" alt="amazon jobs" class="brand-logo">
+    <button type="button" class="drawer-close" id="drawer-close" aria-label="Close menu">&times;</button>
+  </div>
+  <nav class="drawer-nav">
+    <a href="{{ url_for('business_categories') }}">Teams</a>
+    <a href="{{ url_for('locations') }}">Locations</a>
+    <a href="{{ url_for('job_categories') }}">Job categories</a>
+    <a href="{{ url_for('benefits') }}">Benefits</a>
+    <a href="{{ url_for('how_we_hire') }}">How We Hire</a>
+    <a href="{{ url_for('leadership_principles') }}">Leadership principles</a>
+    <a href="{{ url_for('inclusive_experiences') }}">Inclusive experiences</a>
+    <a href="{{ url_for('faq') }}">FAQ</a>
+  </nav>
+</aside>
+
+{% block searchbar %}
+<section class="search-band">
+  <div class="container">
+    <form class="search-form" action="{{ url_for('search') }}" method="get" role="search">
+      <input type="text" name="base_query" class="search-input" id="search_typeahead"
+             placeholder="Search for jobs by title or keyword" aria-label="Search for jobs by title or keyword"
+             value="{{ request.args.get('base_query', '') }}">
+      <div class="location-field">
+        <span class="pin-icon" aria-hidden="true"></span>
+        <input type="text" name="loc_keyword" class="location-input" id="search_location"
+               placeholder="Location" aria-label="Location"
+               value="{{ request.args.get('loc_keyword', '') }}">
+      </div>
+      <button type="submit" class="search-btn" aria-label="Search jobs">
+        <span class="search-glass" aria-hidden="true"></span>
+      </button>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+<main id="main">
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-cta">
+      <div class="footer-cta-text">
+        <h2>Start your Amazon journey</h2>
+        <p>Share your resume and basic info to get personalized job recommendations and more.</p>
+      </div>
+      <a class="footer-cta-btn" href="{{ url_for('register') }}">Create an account</a>
+    </div>
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h3>Find Careers</h3>
+        <a href="{{ url_for('job_categories') }}">Job Categories</a>
+        <a href="{{ url_for('business_categories') }}">Teams</a>
+        <a href="{{ url_for('locations') }}">Locations</a>
+        <a href="{{ url_for('search', base_query='military') }}">Military careers</a>
+        <a href="{{ url_for('search', base_query='hourly') }}">Hourly</a>
+      </div>
+      <div class="footer-col">
+        <h3>Working At Amazon</h3>
+        <a href="{{ url_for('inclusive_experiences') }}">Culture</a>
+        <a href="{{ url_for('benefits') }}">Benefits</a>
+        <a href="{{ url_for('inclusive_experiences') }}">Inclusive experiences</a>
+        <a href="{{ url_for('leadership_principles') }}">Leadership Principles</a>
+      </div>
+      <div class="footer-col">
+        <h3>Help</h3>
+        <a href="{{ url_for('faq') }}">FAQ</a>
+        <a href="{{ url_for('how_we_hire') }}">How We Hire</a>
+        <a href="{{ url_for('account_applications') if current_user.is_authenticated else url_for('login') }}">Application status</a>
+        <a href="{{ url_for('how_we_hire') }}">Accommodations</a>
+      </div>
+    </div>
+    <div class="footer-social">
+      <div class="footer-social-block">
+        <span>JOIN US ON</span>
+        <div class="social-icons">
+          <a href="https://www.facebook.com/InsideAmazon/" aria-label="Join us on facebook" class="cxt-icon-facebook"><span class="sr-only">facebook</span></a>
+          <a href="https://www.linkedin.com/company/amazon" aria-label="Join us on linkedin" class="cxt-icon-linkedin"><span class="sr-only">linkedin</span></a>
+          <a href="https://www.instagram.com/insideamazon/" aria-label="Join us on instagram" class="cxt-icon-instagram"><span class="sr-only">instagram</span></a>
+          <a href="https://twitter.com/amazonnews" aria-label="Join us on twitter" class="cxt-icon-twitter"><span class="sr-only">twitter</span></a>
+        </div>
+      </div>
+      <div class="footer-social-block">
+        <span>DOWNLOAD OUR APP</span>
+        <div class="app-badges">
+          <img src="{{ url_for('static', filename='icons/badge-app-store.svg') }}" alt="Download on the App Store">
+          <img src="{{ url_for('static', filename='icons/badge-google-play.svg') }}" alt="Get it on Google Play">
+        </div>
+      </div>
+    </div>
+    <div class="footer-legal">
+      <p class="eeo">Amazon is an equal opportunity employer and does not discriminate on the basis of protected veteran status, disability, or other legally protected status.</p>
+      <div class="legal-links">
+        <span>&copy; 1996-2026, Amazon.com, Inc. or its affiliates</span>
+      </div>
+    </div>
+  </div>
+</footer>
+<div class="flashes" id="flashes">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}" role="status">{{ message }}</div>
+    {% endfor %}
+  {% endwith %}
+</div>
+<script src="{{ url_for('static', filename='js/site.js') }}"></script>
+</body>
+</html>

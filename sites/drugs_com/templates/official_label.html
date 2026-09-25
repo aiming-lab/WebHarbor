@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}{{ drug.generic_name|capitalize }} — DailyMed source label{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('official_labels') }}">DailyMed source labels</a> / <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|capitalize }}</a></nav>
+<article class="official-label">
+  <h1>{{ drug.generic_name|capitalize }}: DailyMed source label</h1>
+  <p class="label-notice"><strong>External authoritative supplement — not Drugs.com content.</strong> This is a selected product-specific label supplied to DailyMed. Existing catalog, interaction, pill-descriptor, news and review fixtures have not thereby been verified. The text below is extracted from the archived SPL XML; use the original label for its complete formatting and illustrations.</p>
+  <h2>{{ label.title }}</h2>
+  <dl class="label-metadata">
+    <dt>Labeler</dt><dd>{{ label.labelers|join('; ') }}</dd>
+    <dt>Dosage form</dt><dd>{{ label.forms|join('; ') }}</dd>
+    <dt>Route</dt><dd>{{ label.routes|join('; ') }}</dd>
+    <dt>SPL version</dt><dd>{{ label.version }}</dd>
+    <dt>Label effective date</dt><dd>{{ label.effective_date[:4] }}-{{ label.effective_date[4:6] }}-{{ label.effective_date[6:8] }}</dd>
+    <dt>DailyMed publication date</dt><dd>{{ label.published_date }}</dd>
+    <dt>Retrieved</dt><dd>{{ label.retrieved_on }}</dd>
+    <dt>SPL set ID</dt><dd>{{ label.setid }}</dd>
+  </dl>
+  <p><a href="{{ label.source_url }}" rel="noopener noreferrer">Original DailyMed label (online)</a> · <a href="{{ url_for('static', filename=label.xml_path) }}">Archived SPL XML (offline)</a></p>
+  <details><summary>Source integrity</summary><p>Archived XML SHA-256: <code>{{ label.xml_sha256 }}</code></p></details>
+  {% for image in label.images %}
+  <figure class="label-packaging">
+    <img src="{{ url_for('static', filename=image.path) }}" alt="Manufacturer packaging label for {{ label.title }}" width="{{ image.dimensions[0] }}" height="{{ image.dimensions[1] }}">
+    <figcaption>Source-backed packaging label for this specific product, not a pill photograph or identification evidence. <a href="{{ image.source_url }}">Original DailyMed image</a></figcaption>
+  </figure>
+  {% endfor %}
+  <h2>Label sections</h2>
+  <p>Open a section to read its archived text. Tables are rendered as text rows separated by vertical bars; figures remain in the original label.</p>
+  {% for section in label.sections %}
+  <details class="label-section" id="label-section-{{ loop.index }}">
+    <summary>{{ section.title }}</summary>
+    <div class="label-section-text">{{ section.text }}</div>
+  </details>
+  {% endfor %}
+</article>
+{% endblock %}

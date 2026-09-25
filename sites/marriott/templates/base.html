@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en-US">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Marriott Bonvoy Hotels | Book Directly &amp; Get Exclusive Rates{% endblock %}</title>
+  <link rel="icon" href="/static/icons/marriott-apple57.png">
+  <link rel="stylesheet" href="/static/css/site.css">
+</head>
+<body>
+<a href="#main" class="skip-link">Skip to main content</a>
+
+<header class="site-header">
+  <div class="utility-bar">
+    <div class="container utility-inner">
+      <a class="util-link" href="/en-us/destinations/united-states.mi">English</a>
+      <span class="util-sep"></span>
+      <a class="util-link" href="/help/global-phone-reservation-numbers.mi">Help</a>
+    </div>
+  </div>
+  <div class="main-nav">
+    <div class="container nav-inner">
+      <a href="/" class="brand-logo" aria-label="Marriott Bonvoy home">
+        <span class="brand-wordmark">MARRIOTT<br><strong>BONVOY</strong></span>
+      </a>
+      <nav aria-label="Primary">
+        {% for item in nav %}
+        <a class="nav-link" href="{{ item.href }}">{{ item.label }}</a>
+        {% endfor %}
+      </nav>
+      <details class="mobile-menu"><summary>Menu</summary><nav aria-label="Mobile navigation">
+        {% for item in nav %}<a href="{{ item.href }}">{{ item.label }}</a>{% endfor %}
+      </nav></details>
+      <div class="nav-account">
+        {% if current_user.is_authenticated %}
+        <a href="/loyalty/myAccount.mi" class="nav-link nav-acct">My Account</a>
+        <form method="post" action="/logoff" class="logout-form nav-link"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign Out</button></form>
+        {% else %}
+        <a href="/sign-in.mi" class="nav-link">Sign In or Join</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="container">
+    {% for category, message in messages %}
+    <div class="alert {{ 'alert-success' if category == 'success' else 'alert-error' }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main id="main">
+<p class="mirror-notice">Offline booking demo · fixed sample rates and room inventory · no real reservations or charges.</p>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="footer-col">
+        <h4>Marriott Bonvoy</h4>
+        <a href="/loyalty.mi">Marriott Bonvoy Overview</a>
+        <a href="/loyalty.mi#member-benefits">Member Benefits</a>
+        <a href="/loyalty.mi#earn">Earn Points</a>
+        <a href="/loyalty.mi#redeem">Redeem Points</a>
+        <a href="/credit-cards.mi">Marriott Bonvoy Credit Card</a>
+      </div>
+      <div class="footer-col">
+        <h4>Deals &amp; Packages</h4>
+        <a href="/offers.mi">Deals</a>
+        <a href="/search/findHotels.mi">Hotel &amp; Flight Packages</a>
+        <a href="/en-us/resorts.mi">Resorts</a>
+        <a href="/brands.mi">Our Brands</a>
+      </div>
+      <div class="footer-col">
+        <h4>Our Company</h4>
+        <a href="/careers.mi">About Marriott International</a>
+        <a href="/careers.mi">Careers</a>
+        <a href="/careers.mi#investor">Investor Relations</a>
+        <a href="/careers.mi#news">News</a>
+      </div>
+      <div class="footer-col">
+        <h4>Support</h4>
+        <a href="/reservation/lookupReservation.mi">Find My Reservation</a>
+        <a href="/help/global-phone-reservation-numbers.mi">Global Reservation Numbers</a>
+        <a href="/sign-in.mi">Sign In or Join</a>
+      </div>
+    </div>
+    <div class="footer-dest">
+      <h4>Top Destinations</h4>
+      <div class="footer-dest-links">
+        {% for d in footer_destinations %}
+        <a href="{{ d.page_path }}">{{ d.city }} Hotels</a>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="footer-legal">
+      <p>© 1996 – 2026 Marriott International, Inc. All rights reserved. (mirror)</p>
+      <p><a href="/about/privacy.mi">Privacy</a> · <a href="/about/terms-of-use.mi">Terms of Use</a></p>
+    </div>
+  </div>
+</footer>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

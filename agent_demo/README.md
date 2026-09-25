@@ -1,5 +1,16 @@
 # agent_demo
 
+## Control-plane authentication
+
+The current source requires a bearer token of at least 32 characters for control-plane requests. Before the Docker examples below, set:
+
+```bash
+export WEBSYN_CONTROL_TOKEN="$(python3 -c 'import secrets; print(secrets.token_urlsafe(48))')"
+```
+
+Pass it with `docker run -e WEBSYN_CONTROL_TOKEN`. Site browsing does not require this token; it is removed from site-process environments. Build from this checkout: previously published images may use an older registry/authentication contract.
+
+
 Minimal ReAct loop (`agent.py`) + LLM-as-judge grader (`eval_judge.py`) for driving and evaluating an agent on any WebHarbor mirror.
 
 ## Setup
@@ -19,7 +30,7 @@ export OPENAI_BASE_URL=https://api.openai.com/v1   # or your Azure / vLLM endpoi
 
 ## Run a task
 
-WebHarbor must already be running locally (`docker run -p 8101:8101 -p 40000-40023:40000-40023 battalion7244/webharbor:latest`).
+WebHarbor must already be running locally (`docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40046:40000-40046 battalion7244/webharbor:latest`).
 
 Run a single task from a site's `tasks.jsonl`:
 

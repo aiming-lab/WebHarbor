@@ -1,0 +1,12 @@
+{# expects `page` dict, `base_path` and a `page_qs(n)` callable returning the query string #}
+{% if page.pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+  {% if page.page == 1 %}<span class="nav disabled" aria-disabled="true" aria-label="Previous page"><svg class="ic"><use href="#i-chevron-left"/></svg></span>{% else %}<a class="nav" href="{{ base_path }}?{{ page_qs(page.page - 1) }}" aria-label="Previous page"><svg class="ic"><use href="#i-chevron-left"/></svg></a>{% endif %}
+  {% for number in page.numbers %}
+    {% if number is none %}<span class="ellipsis">...</span>
+    {% elif number == page.page %}<span class="current" aria-current="page">{{ number }}</span>
+    {% else %}<a href="{{ base_path }}?{{ page_qs(number) }}">{{ number }}</a>{% endif %}
+  {% endfor %}
+  {% if page.page == page.pages %}<span class="nav disabled" aria-disabled="true" aria-label="Next page"><svg class="ic"><use href="#i-chevron-right"/></svg></span>{% else %}<a class="nav" href="{{ base_path }}?{{ page_qs(page.page + 1) }}" aria-label="Next page"><svg class="ic"><use href="#i-chevron-right"/></svg></a>{% endif %}
+</nav>
+{% endif %}

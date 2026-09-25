@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}GeForce RTX {{ generation }} Series — NVIDIA mirror{% endblock %}
+{% block content %}
+<section class="hero series-hero">
+  <div class="container">
+    <div class="hero-copy">
+      <div class="eyebrow">GeForce RTX {{ generation }} Series</div>
+      <h1>{{ 'Game Changer' if generation == '50' else 'Beyond Fast' }}</h1>
+      <p>{{ 'Blackwell brings neural rendering and AI-powered graphics to gamers and creators.' if generation == '50' else 'Ada Lovelace brings accelerated ray tracing and AI-powered frame generation to gaming and creation.' }}</p>
+      <div class="row"><a class="btn" href="#models">Explore Models</a><a class="btn btn-ghost" href="{{ url_for('buying_options') }}">See All Buying Options</a></div>
+    </div>
+    {% if hero_image %}
+    <figure class="hero-media">
+      <img src="{{ url_for('static', filename=hero_image) }}" alt="{{ hero_caption }}">
+      <figcaption>{{ hero_caption }}; not a photograph of this model.</figcaption>
+    </figure>
+    {% endif %}
+  </div>
+</section>
+<div class="container">
+  <nav class="pills" aria-label="Series sections">
+    <a class="pill" href="#architecture">Architecture</a><a class="pill" href="#technologies">Technologies</a><a class="pill" href="#models">Models &amp; Specs</a><a class="pill" href="#sources">Sources</a>
+    <a class="pill" href="{{ url_for('geforce_series', series_slug='40-series' if generation == '50' else '50-series') }}">Explore RTX {{ '40' if generation == '50' else '50' }} Series</a>
+  </nav>
+  <section class="section" id="architecture">
+    <h2>NVIDIA {{ 'Blackwell' if generation == '50' else 'Ada Lovelace' }} Architecture</h2>
+    <p class="sub">The platform for gamers and creators.</p>
+    <div class="tech-grid">
+      <article class="feature-panel"><h3>{{ 'Fifth-Gen' if generation == '50' else 'Fourth-Gen' }} Tensor Cores</h3><p>{{ 'Fifth-generation Tensor Cores accelerate AI workloads with FP4 and NVIDIA DLSS.' if generation == '50' else 'Fourth-generation Tensor Cores accelerate AI graphics, including NVIDIA DLSS 3.' }}</p></article>
+      <article class="feature-panel"><h3>{{ 'Fourth-Gen' if generation == '50' else 'Third-Gen' }} RT Cores</h3><p>{{ 'Fourth-generation ray tracing cores are built for Mega Geometry.' if generation == '50' else 'Third-generation ray tracing cores accelerate ray-triangle intersections and complex geometry.' }}</p></article>
+      <article class="feature-panel"><h3>{{ 'Neural Shaders' if generation == '50' else 'Shader Execution Reordering' }}</h3><p>{{ 'New streaming multiprocessors are optimized for neural shaders.' if generation == '50' else 'Shader Execution Reordering reorganizes ray tracing workloads for more efficient execution.' }}</p></article>
+    </div>
+  </section>
+  <section class="section" id="technologies">
+    <h2>RTX Technologies</h2>
+    <div class="series-links">
+      <article class="feature-panel"><h3>{{ 'DLSS Multi Frame Generation' if generation == '50' else 'DLSS 3 Frame Generation' }}</h3><p>{{ 'RTX 50 Series supports DLSS 4 Multi Frame Generation in compatible games.' if generation == '50' else 'DLSS 3 uses Tensor Cores and the Optical Flow Accelerator to create additional frames on RTX 40 Series.' }} Performance depends on game support, settings, resolution, and driver version; generated-frame comparisons are not raw hardware speed multipliers.</p></article>
+      <article class="feature-panel"><h3>Play. Create. Stream.</h3><p>Ray tracing for lighting and geometry, NVIDIA Reflex for responsiveness in supported games, and NVIDIA Studio tools for creative workflows.</p><a class="text-link" href="{{ url_for('drivers') }}">Explore the local driver catalog →</a></article>
+    </div>
+    {% if generation == '50' %}<p class="source-note">Version scope: this local summary retains the catalog's DLSS 4 capability baseline. The September 10, 2026 official landing also advertises DLSS 5, and the DLSS page discusses 4.5. These are dated source claims, not a local implementation or a guarantee for every game. Reflex 2 Frame Warp is marked “coming soon” in that snapshot.</p>{% endif %}
+  </section>
+  <section class="section" id="models">
+    <h2>GeForce RTX {{ generation }} Series Models</h2>
+    {% include "_price_note.html" %}
+    <p><a class="text-link" href="{{ url_for('compare') }}">Compare detailed specifications →</a></p>
+    <div class="grid">
+      {% for p in items %}<div class="model-entry">{% include "_product_card.html" %}<a class="btn btn-dark btn-block" href="{{ url_for('where_to_buy', slug=p.slug) }}">{{ p.name }} Buying Options</a></div>{% endfor %}
+    </div>
+  </section>
+  <section class="section" id="sources">
+    <h2>Official Sources — External References</h2>
+    <p>Source snapshot: September 10, 2026. All navigation above stays in the local mirror; these reference links leave it.</p>
+    <ul class="source-list">
+      <li><a href="https://www.nvidia.com/en-us/geforce/graphics-cards/{{ generation }}-series/" rel="noreferrer">NVIDIA GeForce RTX {{ generation }} Series ↗</a></li>
+      {% if generation == '40' %}<li><a href="https://www.nvidia.com/en-us/geforce/ada-lovelace-architecture/" rel="noreferrer">NVIDIA Ada Lovelace architecture ↗</a></li>{% endif %}
+      <li><a href="https://www.nvidia.com/en-us/geforce/technologies/dlss/" rel="noreferrer">NVIDIA DLSS ↗</a></li>
+    </ul>
+  </section>
+</div>
+{% endblock %}

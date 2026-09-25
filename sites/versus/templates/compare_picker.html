@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Compare Products{% endblock %}
+{% block content %}
+<section class="page-heading"><div><div class="eyebrow">Build comparison</div><h1>Compare Products</h1></div></section>
+<form class="compare-picker" action="{{ url_for('compare_picker') }}">
+  <label>First product
+    <select name="left">
+      <option value="">Choose</option>
+      {% for category in categories %}
+        <optgroup label="{{ category.name }}">
+          {% for product in products if product.category_id == category.id %}<option value="{{ product.slug }}" {% if product.slug == left_slug %}selected{% endif %}>{{ product.name }}</option>{% endfor %}
+        </optgroup>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Second product
+    <select name="right">
+      <option value="">Choose</option>
+      {% for category in categories %}
+        <optgroup label="{{ category.name }}">
+          {% for product in products if product.category_id == category.id %}<option value="{{ product.slug }}" {% if product.slug == right_slug %}selected{% endif %}>{{ product.name }}</option>{% endfor %}
+        </optgroup>
+      {% endfor %}
+    </select>
+  </label>
+  <button type="submit">Compare</button>
+  <p class="picker-help">Choose two entries from the same category for the clearest comparison.</p>
+</form>
+{% endblock %}

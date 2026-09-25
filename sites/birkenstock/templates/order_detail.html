@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Order {{ order.order_no }} | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="page">
+  <nav class="crumbs" style="padding:0 0 10px"><a href="/us/orders/">Orders</a><span>|</span>{{ order.order_no }}</nav>
+  <h1>ORDER {{ order.order_no }}</h1>
+  <p style="color:#494954">Placed {{ order.created_at.strftime('%B %d, %Y') }} &middot; <span class="status" style="color:#001489;text-transform:uppercase;letter-spacing:.06em">{{ order.status }}</span></p>
+  <div class="tracking-box">
+    <strong>Tracking</strong>
+    <p>{{ order.shipping_method }} &middot; Tracking number {{ order.tracking_no }}</p>
+    <p style="color:#898992;font-size:12.5px">Transit time varies by location and takes between 2 and 5 business days.</p>
+  </div>
+  <table class="order-items-table">
+    <thead><tr><th>Item</th><th>Color</th><th>Size</th><th>Width</th><th>Qty</th><th>Price</th></tr></thead>
+    <tbody>
+      {% for i in order.items %}
+      <tr>
+        <td>
+          <img src="{{ url_for('static', filename='images/' + i.image) }}" alt="{{ i.name }}" style="width:48px;height:48px;object-fit:contain;background:#f4f4f5;display:inline-block;vertical-align:middle;margin-right:10px">
+          {{ i.name }}
+        </td>
+        <td>{{ i.color }}</td>
+        <td>{{ i.size }}</td>
+        <td>{{ i.width }}</td>
+        <td>{{ i.quantity }}</td>
+        <td>${{ '%.2f' % (i.price * i.quantity) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="cart-layout order-summary-layout">
+    <div class="cs-box">
+      <h2>Ship to</h2>
+      <p>{{ order.ship_name }}<br>{{ order.ship_address1 }}{% if order.ship_address2 %}<br>{{ order.ship_address2 }}{% endif %}<br>{{ order.ship_city }}, {{ order.ship_state }} {{ order.ship_zip }}</p>
+    </div>
+    <aside class="summary">
+      <h2>Summary</h2>
+      <div class="row"><span>Subtotal</span><span>${{ '%.2f' % order.subtotal }}</span></div>
+      <div class="row"><span>Shipping</span><span>{{ '$%.2f' % order.shipping_cost if order.shipping_cost else 'FREE' }}</span></div>
+      <div class="row"><span>Tax</span><span>${{ '%.2f' % order.tax }}</span></div>
+      <div class="row total"><span>Total</span><span>${{ '%.2f' % order.total }}</span></div>
+      <p class="note">Paid with {{ order.payment_label }} ending in {{ order.payment_last_four }}.</p>
+      <p class="note">You earned {{ order.points_earned }} VIP points with this order.</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

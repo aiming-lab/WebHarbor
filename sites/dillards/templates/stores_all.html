@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}All Store Locations | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/stores">Store Locator</a> &rsaquo; All Stores</div>
+  <div class="page-head"><h1>All Dillard's Store Locations</h1></div>
+  {% for state, state_stores in groups %}
+    <h2 style="font-size: 18px; font-weight: 600; padding: 14px 0 4px;">{{ state }}</h2>
+    {% for store in state_stores %}
+      <div class="store-row">
+        <div>
+          <h3><a href="/stores/{{ store.identifier }}">{{ store.store_name }}</a></h3>
+          <div class="addr">{{ store.address1 }}, {{ store.city }}, {{ store.state_abrev }} {{ store.zipcode }}</div>
+        </div>
+        <div class="phone">{{ store.phone_display() }}</div>
+        <div><a href="/stores/{{ store.identifier }}">Store Details</a></div>
+      </div>
+    {% endfor %}
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Page not found{% endblock %}
+{% block main %}
+<div class="container">
+          <!-- Breadcrumbs component -->
+
+<nav aria-label="You are here" class="breadcrumbs">
+  <ol>
+    <li><a href="/">Home</a></li>
+    <li class="active">404</li>
+  </ol>
+</nav>
+
+<div class="row">
+  <div class="col-md-10 p-b-lg mx-auto">
+    <h1 class="m-t-0">We're sorry, that link didn't work.</h1>
+
+    <p class="lead">To find what you need, you can:</p>
+
+    <ul>
+      <li>
+        <a href="/search/?q=" id="search-link"
+          >Search this site for &quot;<span id="search-term"></span>&quot;</a
+        >
+      </li>
+      <li>
+        Browse our
+        <a href="/">homepage</a>
+      </li>
+      <li>Double check that link</li>
+    </ul>
+
+    <img
+      src="/static/images/misc/404.webp"
+      alt="Sad 404 error bear"
+      class="img-fluid m-t-md m-b-md w-50 relative-centered-x" />
+
+    <p class="font-size-14">Error: Page not found (404)</p>
+  </div>
+</div>
+
+<script>
+  (function () {
+    // Purpose: Improve the user experience on 404 pages by turning the invalid URL path
+    // and querystring values into a meaningful search query. Filters out overly long or noisy terms.
+
+    // Path values to an array
+    const rawPathArray = decodeURIComponent(window.location.pathname)
+      .split('/')
+      .map(segment => segment.replace(/\..+$/, '')); // removes trailing file extensions
+    ;
+
+    // Query parameters values to an array
+    const queryParams = new URLSearchParams(window.location.search);
+    const rawQueryArray = Array.from(queryParams.values())
+      .map(val => decodeURIComponent(val));
+
+    const noiseWords = ["index", "default"];
+
+    // Replace all non-alphanumeric characters with spaces, then split
+    const allWords = [...rawPathArray, ...rawQueryArray]
+      .map(word => word.trim())
+      .filter(word => word.length && word.length <= 20 && !noiseWords.includes(word.toLowerCase()));
+
+    // Join into a space-separated search term
+    const searchTerm = allWords.join(', ');
+
+    // Locate the search link and display span in the 404 template
+    const searchLink = document.getElementById('search-link');
+    const searchTermSpan = document.getElementById('search-term');
+
+    // If everything is in place, update the search link and visible term
+    if (searchTerm && searchLink && searchTermSpan) {
+      searchLink.href += encodeURIComponent(searchTerm);
+      searchTermSpan.textContent = searchTerm;
+    }
+  })();
+</script>
+</div>
+        
+{% endblock %}

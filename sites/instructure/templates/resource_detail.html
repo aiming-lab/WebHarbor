@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}{{ res.title }} | Instructure{% endblock %}
+{% block content %}
+
+{% if res.type == 'case_study' and res.logo_img %}
+<section class="container" style="padding-top: 40px;">
+  <div class="case-study-banner">
+    <div class="title-col">
+      {% if res.micro_heading %}<div class="micro">{{ res.micro_heading }}</div>{% endif %}
+      <h1>{{ res.title }}</h1>
+      {{ res.intro | render_rich }}
+    </div>
+    <div class="logo">
+      {% if res.logo_img %}<img src="{{ res.logo_img|img }}" alt="{{ res.title }} logo">{% endif %}
+    </div>
+  </div>
+
+  {% if res.stats %}
+  <div class="stat-bar">
+    {% for s in res.stats %}
+    <div class="stat">
+      {% if s.icon %}<img src="{{ s.icon|img }}" alt="">{% endif %}
+      <span>{{ s.text }}</span>
+    </div>
+    {% if not loop.last %}<div class="stat-line"></div>{% endif %}
+    {% endfor %}
+    {% if res.pdf_url %}
+    <a class="btn btn-primary btn-sm" href="{{ url_for('resource_download', seg=res.route_seg, slug=res.slug) }}">Download</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</section>
+{% else %}
+
+<section class="container detail-header">
+  <div class="kicker">
+    <a href="/resources/{{ res.route_seg }}" style="color: var(--blue); font-weight:700;">{{ res.type_label }}</a>
+    {% if res.publish_date %}<span class="dot">•</span><span>{{ res.publish_date }}</span>{% endif %}
+    {% if res.event_date %}<span class="dot">•</span><span>{{ res.event_date }}</span>{% endif %}
+  </div>
+  <h1>{{ res.title }}</h1>
+  {% if res.author_name %}
+  <div class="detail-author">
+    {% if res.author_img %}<img src="{{ res.author_img|img }}" alt="{{ res.author_name }}">{% endif %}
+    <div>
+      <div class="name">{{ res.author_name }}</div>
+    </div>
+  </div>
+  {% endif %}
+  {% if res.type == 'blog' and res.hero_img %}
+  <div class="detail-hero-img"><img src="{{ res.hero_img|img }}" alt="{{ res.title }}"></div>
+  {% endif %}
+</section>
+{% endif %}
+
+<section class="container">
+  <div class="detail-body">
+    {% if res.type not in ('case_study',) and res.intro and res.type != 'press_release' %}
+      {{ res.intro | render_rich }}
+    {% endif %}
+
+    {% if res.type in ('video', 'webinar') %}
+    <div class="video-frame">
+      <div class="play"><span><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></span></div>
+    </div>
+    {% if res.transcript %}
+    <h2 class="transcript-toggle" style="cursor:pointer;" data-transcript-toggle="transcript-body">
+      <button type="button" style="background:none;border:none;font:inherit;color:var(--blue);font-weight:700;cursor:pointer;display:flex;align-items:center;gap:8px;">
+        <span>Video Transcript</span>
+        <svg width="16" height="9" viewBox="0 0 16 9" fill="none"><path d="M15 1L8 7L1 1" stroke="#0E68B3" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </h2>
+    <div class="transcript-body" id="transcript-body">{{ res.transcript }}</div>
+    {% endif %}
+    {% endif %}
+
+    {% for block in res.body_blocks %}
+      {% if block.heading %}<h2 id="{{ block.heading | slugify }}">{{ block.heading }}</h2>{% endif %}
+      {{ block.html | safe }}
+    {% endfor %}
+
+    {% if res.type in ('ebook', 'research_report') and res.pdf_url %}
+    <div class="download-actions">
+      <a class="btn btn-primary" href="{{ url_for('resource_download', seg=res.route_seg, slug=res.slug) }}">Download</a>
+      <span class="muted" style="font-size: 14px;">Complete the short form to get your copy.</span>
+    </div>
+    {% endif %}
+
+    {% if res.type == 'webinar' %}
+    <div class="download-actions" style="margin-top: 34px;">
+      <form method="post" action="{{ url_for('register_webinar', seg=res.route_seg, slug=res.slug) }}">
+        <input type="hidden" name="next" value="{{ res.href() }}">
+        <button class="btn btn-primary" type="submit">Register for this webinar</button>
+      </form>
+      <form method="post" action="{{ url_for('save_resource', seg=res.route_seg, slug=res.slug) }}">
+        <input type="hidden" name="next" value="{{ res.href() }}">
+        <button class="btn btn-outline" type="submit">Save to my account</button>
+      </form>
+    </div>
+    {% else %}
+    <div class="download-actions" style="margin-top: 34px;">
+      <form method="post" action="{{ url_for('save_resource', seg=res.route_seg, slug=res.slug) }}">
+        <input type="hidden" name="next" value="{{ res.href() }}">
+        <button class="btn btn-outline" type="submit">Save to my account</button>
+      </form>
+    </div>
+    {% endif %}
+
+    {% if res.product_list or res.topic_list %}
+    <div class="tags-row">
+      {% for p in res.product_list %}<span class="tag">{{ p }}</span>{% endfor %}
+      {% for t in res.topic_list %}<span class="tag">{{ t }}</span>{% endfor %}
+      {% for o in res.org_type_list %}<span class="tag">{{ o }}</span>{% endfor %}
+    </div>
+    {% endif %}
+  </div>
+</section>
+
+<section class="detail-related">
+  <div class="container">
+    <h2>More like this</h2>
+    <div class="card-grid">
+      {% for row in related %}{% set r = row %}{% include "_resource_card.html" %}{% endfor %}
+    </div>
+  </div>
+</section>
+{% endblock %}

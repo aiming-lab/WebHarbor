@@ -1,0 +1,401 @@
+[
+  {
+    "user": "david.k@test.com",
+    "text": "Search for Miami and Phoenix separately. Open both location pages and compare current temperature and UV index. Save the city that is both warmer and has the higher UV index, then check your account to confirm the addition without changing existing saves.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('miami-fl','phoenix-az')  ORDER BY c.temperature_f DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/miami-fl",
+      "/weather/phoenix-az"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--0"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Open New York and Chicago and compare their current humidity and wind direction. Save the more humid city, then confirm that city was added to your account and your prior locations remain.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('new-york-ny','chicago-il')  ORDER BY c.humidity DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/new-york-ny",
+      "/weather/chicago-il"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--1"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Search for Reykjavik and Seattle. Open both location pages and their full alerts pages, compare alert severity, and save the city with the more severe warning. Confirm the saved location on your account.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN severe_alerts a ON a.location_id=l.id WHERE l.slug IN ('reykjavik-is','seattle-wa') ORDER BY CASE a.severity WHEN 'Severe' THEN 3 WHEN 'Moderate' THEN 2 ELSE 1 END DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/reykjavik-is",
+      "/weather/seattle-wa",
+      "/weather/reykjavik-is/alerts",
+      "/weather/seattle-wa/alerts"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--2"
+  },
+  {
+    "user": "david.k@test.com",
+    "text": "Compare Seattle and London hourly forecasts at 8 PM, checking both rain probability and temperature. Save the city with the lower rain probability at that hour, then verify your saved list.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN hourly_forecasts c ON c.location_id=l.id WHERE l.slug IN ('seattle-wa','london-uk') AND c.forecast_time='2024-02-15 20:00:00.000000' ORDER BY c.precip_pct ASC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/seattle-wa/hourly",
+      "/weather/london-uk/hourly"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--3"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Open Phoenix and Seattle 10-day forecasts. Compare Tomorrow\u2019s high temperatures and precipitation. Save the warmer city with no rain forecast for Tomorrow, and confirm it on your account.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN daily_forecasts c ON c.location_id=l.id WHERE l.slug IN ('phoenix-az','seattle-wa') AND c.forecast_date='2024-02-16' AND c.precip_pct=0 ORDER BY c.high_f DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/phoenix-az/forecast",
+      "/weather/seattle-wa/forecast"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--4"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Open the London and Tokyo 10-day forecasts and compare the first future day after Today. Save the city with the higher precipitation probability for that day and verify your saved locations.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN daily_forecasts c ON c.location_id=l.id WHERE l.slug IN ('london-uk','tokyo-jp') AND c.forecast_date='2024-02-16' ORDER BY c.precip_pct DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/london-uk/forecast",
+      "/weather/tokyo-jp/forecast"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--5"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Open the full alerts pages for your saved Miami and Seattle locations and compare their expiry dates and times. Make the location whose alert expires first your home location, keep your units unchanged, and open Home to check the selected city.",
+    "operations": [
+      {
+        "table": "users",
+        "query": "SELECT l.id FROM locations l JOIN severe_alerts a ON a.location_id=l.id WHERE l.slug IN ('miami-fl','seattle-wa') ORDER BY a.expires_at ASC LIMIT 1",
+        "operation": "add",
+        "field": "home_location_id"
+      }
+    ],
+    "paths": [
+      "/weather/miami-fl/alerts",
+      "/weather/seattle-wa/alerts",
+      "/account"
+    ],
+    "queries": [],
+    "confirm": "/",
+    "id": "Weather--6"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Check your saved locations, open Seattle and Singapore and compare current conditions and temperatures. Make the cooler saved city your home location, retain metric units and all saves, and open Home to confirm the change.",
+    "operations": [
+      {
+        "table": "users",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('seattle-wa','singapore-sg')  ORDER BY c.temperature_f ASC LIMIT 1",
+        "operation": "add",
+        "field": "home_location_id"
+      }
+    ],
+    "paths": [
+      "/account",
+      "/weather/seattle-wa",
+      "/weather/singapore-sg"
+    ],
+    "queries": [],
+    "confirm": "/",
+    "id": "Weather--7"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Change your preferred units to metric. Open your saved Tokyo and Phoenix locations and compare their current Celsius temperatures. Make the cooler city your home location, retain both saves, and open Home to verify the city and metric display.",
+    "operations": [
+      {
+        "table": "users",
+        "query": "SELECT 1",
+        "operation": "add",
+        "field": "preferred_units",
+        "value": "metric"
+      },
+      {
+        "table": "users",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('tokyo-jp','phoenix-az')  ORDER BY c.temperature_f ASC LIMIT 1",
+        "operation": "add",
+        "field": "home_location_id"
+      }
+    ],
+    "paths": [
+      "/account",
+      "/weather/tokyo-jp",
+      "/weather/phoenix-az"
+    ],
+    "queries": [],
+    "confirm": "/",
+    "id": "Weather--8"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Search for Tokyo and London separately and compare feels-like temperatures and current condition labels on their location pages. Save the city with the warmer feels-like temperature, preserve existing saves, and verify the list on your account.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('tokyo-jp','london-uk')  ORDER BY c.feels_like_f DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/tokyo-jp",
+      "/weather/london-uk"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--9"
+  },
+  {
+    "user": "david.k@test.com",
+    "text": "Open Chicago and New York and compare current temperatures. Save the warmer city and set it as your home location. Keep your other saved places and units unchanged, then open Home to verify the selected city.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('chicago-il','new-york-ny')  ORDER BY c.temperature_f DESC LIMIT 1",
+        "operation": "add"
+      },
+      {
+        "table": "users",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('chicago-il','new-york-ny')  ORDER BY c.temperature_f DESC LIMIT 1",
+        "operation": "add",
+        "field": "home_location_id"
+      }
+    ],
+    "paths": [
+      "/weather/chicago-il",
+      "/weather/new-york-ny",
+      "/account"
+    ],
+    "queries": [],
+    "confirm": "/",
+    "id": "Weather--10"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Open Reykjavik\u2019s radar page and check whether local imagery is available. Use the full alerts pages for Reykjavik and Denver to compare their alert severities, then save the city with the more severe warning and confirm the account list.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN severe_alerts a ON a.location_id=l.id WHERE l.slug IN ('reykjavik-is','denver-co') ORDER BY CASE a.severity WHEN 'Severe' THEN 3 WHEN 'Moderate' THEN 2 ELSE 1 END DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/radar/reykjavik-is",
+      "/weather/reykjavik-is/alerts",
+      "/weather/denver-co/alerts"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--11"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Compare Phoenix and Miami on their location pages, checking air quality and current temperatures. Save the cooler city with Moderate air quality and confirm the addition while retaining your current saves.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('phoenix-az','miami-fl') AND c.air_quality='Moderate' ORDER BY c.temperature_f ASC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/phoenix-az",
+      "/weather/miami-fl"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--12"
+  },
+  {
+    "user": "bob.c@test.com",
+    "text": "Compare New York and Tokyo 10-day forecasts, including Today\u2019s precipitation and Tomorrow\u2019s high. Set the city with the higher Tomorrow high as your home location if it is already saved, keep your other preferences unchanged, and verify Home.",
+    "operations": [
+      {
+        "table": "users",
+        "query": "SELECT l.id FROM locations l JOIN daily_forecasts c ON c.location_id=l.id WHERE l.slug IN ('new-york-ny','tokyo-jp') AND c.forecast_date='2024-02-16' ORDER BY c.high_f DESC LIMIT 1",
+        "operation": "add",
+        "field": "home_location_id"
+      }
+    ],
+    "paths": [
+      "/weather/new-york-ny/forecast",
+      "/weather/tokyo-jp/forecast",
+      "/account"
+    ],
+    "queries": [],
+    "confirm": "/",
+    "id": "Weather--13"
+  },
+  {
+    "user": "david.k@test.com",
+    "text": "Open Miami and Phoenix location pages and their 10-day forecasts. Compare current condition labels and Tomorrow\u2019s precipitation probability, then save the city with the lower rain probability and verify your account list.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN daily_forecasts c ON c.location_id=l.id WHERE l.slug IN ('miami-fl','phoenix-az') AND c.forecast_date='2024-02-16' ORDER BY c.precip_pct ASC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/miami-fl",
+      "/weather/phoenix-az",
+      "/weather/miami-fl/forecast",
+      "/weather/phoenix-az/forecast"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--14"
+  },
+  {
+    "user": "david.k@test.com",
+    "text": "Inspect all your saved locations, open each location page, and compare current temperatures. Make the warmest saved city your home location without removing any saves or changing units, then open Home to check the result.",
+    "operations": [
+      {
+        "table": "users",
+        "query": "SELECT c.location_id FROM current_conditions c JOIN saved_locations s ON s.location_id=c.location_id WHERE s.user_id=:user ORDER BY c.temperature_f DESC LIMIT 1",
+        "operation": "add",
+        "field": "home_location_id"
+      }
+    ],
+    "paths": [
+      "/account",
+      "/weather/chicago-il",
+      "/weather/reykjavik-is",
+      "/weather/san-francisco-ca"
+    ],
+    "queries": [],
+    "confirm": "/",
+    "id": "Weather--15"
+  },
+  {
+    "user": "alice.j@test.com",
+    "text": "Search separately for New York and Miami, open both pages, and compare humidity and UV index. Save the city that has both the higher humidity and higher UV index, then verify it on your account without removing existing saves.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT l.id FROM locations l JOIN current_conditions c ON c.location_id=l.id WHERE l.slug IN ('new-york-ny','miami-fl')  ORDER BY c.humidity DESC LIMIT 1",
+        "operation": "add"
+      }
+    ],
+    "paths": [
+      "/weather/new-york-ny",
+      "/weather/miami-fl"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--16"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Open London and Seattle location pages and their 10-day forecasts. Compare current condition labels and Tomorrow\u2019s rain probability. Make the rainier city your home location, retaining metric units and saved locations, and check Home.",
+    "operations": [
+      {
+        "table": "users",
+        "query": "SELECT l.id FROM locations l JOIN daily_forecasts c ON c.location_id=l.id WHERE l.slug IN ('london-uk','seattle-wa') AND c.forecast_date='2024-02-16' ORDER BY c.precip_pct DESC LIMIT 1",
+        "operation": "add",
+        "field": "home_location_id"
+      }
+    ],
+    "paths": [
+      "/weather/london-uk",
+      "/weather/seattle-wa",
+      "/weather/london-uk/forecast",
+      "/weather/seattle-wa/forecast",
+      "/account"
+    ],
+    "queries": [],
+    "confirm": "/",
+    "id": "Weather--17"
+  },
+  {
+    "user": "david.k@test.com",
+    "text": "Inspect all saved places and open each location page to compare current temperatures. Remove only the coldest saved location. Keep your other saves, home location and units unchanged, then revisit your account to verify the result.",
+    "operations": [
+      {
+        "table": "saved_locations",
+        "query": "SELECT c.location_id FROM current_conditions c JOIN saved_locations s ON s.location_id=c.location_id WHERE s.user_id=:user ORDER BY c.temperature_f ASC LIMIT 1",
+        "operation": "remove"
+      }
+    ],
+    "paths": [
+      "/account",
+      "/weather/chicago-il",
+      "/weather/reykjavik-is",
+      "/weather/san-francisco-ca"
+    ],
+    "queries": [],
+    "confirm": "/account",
+    "id": "Weather--18"
+  },
+  {
+    "user": "carol.d@test.com",
+    "text": "Open every saved location and compare its current UV index. Make the saved city with the highest UV index your home location. Keep metric units and all saved places, then open Home to confirm the change.",
+    "operations": [
+      {
+        "table": "users",
+        "query": "SELECT c.location_id FROM current_conditions c JOIN saved_locations s ON s.location_id=c.location_id WHERE s.user_id=:user ORDER BY c.uv_index DESC LIMIT 1",
+        "operation": "add",
+        "field": "home_location_id"
+      }
+    ],
+    "paths": [
+      "/account",
+      "/weather/miami-fl",
+      "/weather/seattle-wa",
+      "/weather/singapore-sg"
+    ],
+    "queries": [],
+    "confirm": "/",
+    "id": "Weather--19"
+  }
+]

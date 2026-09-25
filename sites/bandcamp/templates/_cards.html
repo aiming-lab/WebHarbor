@@ -1,0 +1,40 @@
+{% macro album_card(album, show_scene=True) %}
+<article class="release-card">
+    <button class="release-cover cover-play" type="button" aria-label="Play {{ album.title }}">
+        <img src="{{ url_for('static', filename=album.cover_image) }}" alt="{{ album.title }} cover" loading="lazy">
+        <span class="format-rail">{{ album.primary_genre.name }}</span>
+        <span class="play-badge">▶</span>
+    </button>
+    <div class="release-meta">
+        <h3><a href="{{ url_for('album_page', slug=album.slug) }}">{{ album.title }}</a></h3>
+        <p class="release-byline">by <a href="{{ url_for('artist_page', slug=album.artist.slug) }}">{{ album.artist.name }}</a></p>
+    </div>
+</article>
+{% endmacro %}
+
+{% macro merch_card(merch) %}
+<article class="merch-card">
+    <a class="merch-cover" href="{{ url_for('merch_page', slug=merch.slug) }}">
+        <img src="{{ url_for('static', filename=merch.image) }}" alt="{{ merch.title }} merch image" loading="lazy">
+    </a>
+    <div class="merch-meta">
+        <h3><a href="{{ url_for('merch_page', slug=merch.slug) }}">{{ merch.title }}</a></h3>
+        <p>{{ merch.artist.name }}</p>
+        <div class="release-bottom">
+            <strong>{{ merch.price|money }}</strong>
+        </div>
+    </div>
+</article>
+{% endmacro %}
+
+{% macro artist_card(artist) %}
+<article class="artist-card">
+    <a class="artist-avatar" href="{{ url_for('artist_page', slug=artist.slug) }}">
+        <img src="{{ url_for('static', filename=artist.avatar_image) }}" alt="{{ artist.name }} avatar" loading="lazy">
+    </a>
+    <div>
+        <h3><a href="{{ url_for('artist_page', slug=artist.slug) }}">{{ artist.name }}</a></h3>
+        <p>{{ artist.primary_genre.name }} / {{ artist.scene.name.split(',')[0] }}</p>
+    </div>
+</article>
+{% endmacro %}

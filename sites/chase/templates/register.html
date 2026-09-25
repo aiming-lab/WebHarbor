@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Enroll in Chase Online | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section" style="display:grid;grid-template-columns:1fr 460px;gap:40px;align-items:start;">
+    <div>
+      <h1>Sign up for Chase online</h1>
+      <p class="muted">Create an online profile to view your accounts, pay cards, transfer money and manage alerts from anywhere.</p>
+      <ul class="earn-list small">
+        <li>See all your Chase checking, savings and credit card accounts in one dashboard</li>
+        <li>Set up automatic payments and scheduled transfers</li>
+        <li>Choose the alerts you want, delivered by mobile push or email</li>
+        <li>Track your free credit score with Chase Credit Journey®</li>
+      </ul>
+      <div class="notice">This is an offline benchmark mirror. Accounts you create here exist only in the mirror environment.</div>
+    </div>
+    <div class="form-card">
+      <h2 style="margin-top:0;">Create your profile</h2>
+      <form method="post" action="{{ url_for('register') }}">
+        <div class="form-grid-2">
+          <div>
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" type="text" value="{{ form.get('first_name', '') }}" required>
+          </div>
+          <div>
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" type="text" value="{{ form.get('last_name', '') }}" required>
+          </div>
+        </div>
+        <label for="email">Email address</label>
+        <input id="email" name="email" type="text" value="{{ form.get('email', '') }}" required>
+        <label for="password">Password</label>
+        <input id="password" name="password" type="password" required>
+        <div class="hint">At least 8 characters.</div>
+        <div class="form-actions">
+          <button class="btn btn--green" type="submit">Create profile</button>
+          <a href="{{ url_for('logon') }}">Sign in instead</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

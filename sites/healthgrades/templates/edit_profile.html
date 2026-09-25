@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile | Healthgrades{% endblock %}
+{% block content %}
+<div class="auth-page">
+    <div class="auth-box">
+        <h1>Edit Profile</h1>
+        <form method="post">
+            {{ form.hidden_tag() }}
+            {% for field in [form.name, form.phone, form.city, form.state, form.zip_code] %}
+            <div class="form-row">{{ field.label }} {{ field() }}</div>
+            {% endfor %}
+            <button type="submit" class="btn-primary full-width">SAVE CHANGES</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

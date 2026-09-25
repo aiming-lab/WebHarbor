@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Search for Scams | BBB Scam Tracker | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Look Up a Scam</h1>
+    <p>Search reports from BBB Scam Tracker to see if others have reported a similar scam.</p>
+  </div>
+</div>
+<div class="container">
+  <form class="lookup-bar" method="get" action="{{ url_for('scam_lookup') }}">
+    <input type="text" name="q" value="{{ q }}" placeholder="Phone number, website, email, business name, scam ID...">
+    <select name="scam_type">
+      <option value="">All Types</option>
+      {% for t in types %}<option value="{{ t }}" {% if t == scam_type %}selected{% endif %}>{{ t }}</option>{% endfor %}
+    </select>
+    <select name="state">
+      <option value="">All states</option>
+      {% for s in states_list %}<option value="{{ s }}" {% if s == state %}selected{% endif %}>{{ s }}</option>{% endfor %}
+    </select>
+    <button class="btn btn-yellow" type="submit">Search</button>
+  </form>
+
+  <div class="filter-panel">
+    <div class="row">
+      <div>
+        <label for="from_date">Date Reported From</label>
+        <input type="date" id="from_date" name="from_date" value="{{ from_date }}" form="lookupFilters">
+      </div>
+      <div>
+        <label for="to_date">Date Reported To</label>
+        <input type="date" id="to_date" name="to_date" value="{{ to_date }}" form="lookupFilters">
+      </div>
+      <div>
+        <label for="min_dollars">Dollars Lost From</label>
+        <input type="text" id="min_dollars" name="min_dollars" value="{{ min_dollars }}" placeholder="$0" form="lookupFilters">
+      </div>
+      <div>
+        <label for="max_dollars">Dollars Lost To</label>
+        <input type="text" id="max_dollars" name="max_dollars" value="{{ max_dollars }}" placeholder="$100,000" form="lookupFilters">
+      </div>
+    </div>
+    <form id="lookupFilters" method="get" action="{{ url_for('scam_lookup') }}">
+      <input type="hidden" name="q" value="{{ q }}">
+      <input type="hidden" name="scam_type" value="{{ scam_type }}">
+      <input type="hidden" name="state" value="{{ state }}">
+      <div class="row" style="align-items:flex-end;">
+        <button class="btn btn-primary" type="submit" style="height:42px;">Apply</button>
+        <a class="btn btn-outline" href="{{ url_for('scam_lookup') }}" style="height:42px;">Clear All</a>
+      </div>
+    </form>
+  </div>
+
+  <div class="results-header">
+    <div class="results-heading">Search Results ({{ '{:,}'.format(total) }})</div>
+  </div>
+
+  {% for r in rows %}
+  <a class="scam-card" href="{{ url_for('scam_detail', scam_id=r.scam_id) }}">
+    <div class="type">{{ r.scam_type }}</div>
+    <div class="desc">{{ r.description[:180] }}{% if r.description|length > 180 %}...{% endif %}</div>
+    <div class="meta">
+      <span>Business name: {{ r.scammer_business_name or 'No name' }}</span>
+      <span>Date Reported: {{ r.date_reported }}</span>
+      <span>Location: {{ r.target_city }}, {{ r.target_state }}{% if r.target_country %}, {{ r.target_country }}{% endif %}</span>
+      <span>Total money lost: {{ '${:,}'.format(r.dollar_value) if r.dollar_value else '$0' }}</span>
+    </div>
+  </a>
+  {% else %}
+  <div class="article-card"><h3>No results</h3><p>No scam reports matched your search. Try fewer filters, or <a href="{{ url_for('scam_report') }}">report this scam</a> so others can find it.</p></div>
+  {% endfor %}
+
+  {% if pages > 1 %}
+  <nav class="pagination" aria-label="Pagination">
+    {% set qp = {'q': q, 'scam_type': scam_type, 'state': state, 'from_date': from_date, 'to_date': to_date, 'min_dollars': min_dollars, 'max_dollars': max_dollars} %}
+    {% if page > 1 %}{% set qa = dict(qp, page=page-1) %}<a href="{{ url_for('scam_lookup', **qa) }}">Previous</a>{% endif %}
+    {% for p in range(1, pages + 1) %}
+      {% if p == page %}<span class="current">{{ p }}</span>
+      {% else %}{% set qa = dict(qp, page=p) %}<a href="{{ url_for('scam_lookup', **qa) }}">{{ p }}</a>{% endif %}
+    {% endfor %}
+    {% if page < pages %}{% set qa = dict(qp, page=page+1) %}<a href="{{ url_for('scam_lookup', **qa) }}">Next</a>{% endif %}
+  </nav>
+  {% endif %}
+</div>
+{% endblock %}

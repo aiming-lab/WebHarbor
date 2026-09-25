@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}{{ team.full_name }} Roster | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ team.full_name | upper }} ROSTER</h1>
+  <p class="page-sub">{{ team.record }} · {{ team.division_ordinal }} {{ team.division }}</p>
+</div>
+
+<form class="filter-bar" method="get" action="{{ url_for('team_roster', slug=team.slug) }}">
+  <label>Position
+    <select name="position">
+      <option value="">All</option>
+      {% for p, _ in counts %}
+      <option value="{{ p }}" {{ 'selected' if pos == p else '' }}>{{ p }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <label>Status
+    <select name="status">
+      <option value="">All</option>
+      {% for s in ['ACT','RES','RSV','NON','DEV','PRA','SUS'] %}
+      <option value="{{ s }}" {{ 'selected' if status == s else '' }}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </label>
+  <button class="btn btn-red btn-sm" type="submit">Apply Filters</button>
+  <a class="btn btn-outline btn-sm" href="{{ url_for('team_roster', slug=team.slug) }}">Clear</a>
+</form>
+
+<section class="panel">
+  <table class="data-table roster-table">
+    <thead>
+      <tr>
+        <th></th>
+        <th>Player</th><th>No.</th><th>Pos</th><th>Status</th><th>Height</th><th>Weight</th><th>Exp</th><th>College</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in players %}
+      <tr>
+        <td class="roster-photo">
+          {% if p.has_headshot %}
+          <a href="{{ url_for('player_detail', slug=p.slug) }}"><img src="{{ p.headshot }}" alt="{{ p.name }}"></a>
+          {% endif %}
+        </td>
+        <td><a href="{{ url_for('player_detail', slug=p.slug) }}">{{ p.name }}</a></td>
+        <td>{{ p.number }}</td>
+        <td>{{ p.pos }}</td>
+        <td>{{ p.status }}</td>
+        <td>{{ p.height_display }}</td>
+        <td>{{ p.weight }}</td>
+        <td>{{ p.experience_display }}</td>
+        <td>{{ p.college }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="9">No players match those filters.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

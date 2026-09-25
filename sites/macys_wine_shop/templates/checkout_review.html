@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Checkout – Review – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="checkout-layout">
+  <div class="checkout-steps">
+    <span class="done">Information</span>
+    <span class="done">Shipping &amp; Payment</span>
+    <span class="active">Review &amp; Place Order</span>
+  </div>
+
+  <div class="checkout-card">
+    <h2>Review your order</h2>
+    <table class="order-items-review">
+      {% for item in summary['items'] %}
+      <tr>
+        <td>{{ item.variant.product.title }}{% if item.variant.product.is_pack %} ({{ item.variant.label }}){% endif %}</td>
+        <td style="text-align:center">× {{ item.quantity }}</td>
+        <td style="text-align:right">{{ (item.quantity * item.variant.price)|money }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    <div class="checkout-review-grid" style="margin-top:22px">
+      <div class="col">
+        <h3>Ship to</h3>
+        <p>{{ info.get('ship_to_name') }}<br>{{ info.get('address_line1') }}{% if info.get('address_line2') %}<br>{{ info.get('address_line2') }}{% endif %}<br>{{ info.get('city') }}, {{ info.get('state') }} {{ info.get('zip_code') }}<br>{{ info.get('email') }}</p>
+      </div>
+      <div class="col">
+        <h3>Payment</h3>
+        <p>{{ payment }}</p>
+      </div>
+      <div class="col">
+        <h3>Total</h3>
+        <p><strong>{{ summary['total']|money }}</strong><br>
+        Subtotal {{ summary['subtotal']|money }} · Shipping {{ summary['shipping']|money if summary['shipping'] else 'FREE' }} · Processing {{ summary['processing']|money }}</p>
+      </div>
+    </div>
+
+    {% if disclosures %}
+    <div class="disclosure-box">
+      {% for d in disclosures %}
+      <h4>{{ d.name }}</h4>
+      <p>{{ d.body_html|safehtml }}</p>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if errors.get('shipping') %}<div class="form-error">{{ errors['shipping'] }}</div>{% endif %}
+    {% if errors.get('age') %}<div class="form-error" style="margin-top:16px">{{ errors['age'] }}</div>{% endif %}
+    <form method="post" action="/checkout/review">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label class="age-check">
+        <input type="checkbox" name="age_confirmed">
+        <span>I confirm that I am 21 years of age or older, and that an adult 21+ will be available to sign for this wine delivery.</span>
+      </label>
+      <button class="btn-primary" type="submit" style="margin-top:18px">Place Order</button>
+      <a href="/cart" style="display:block;text-align:center;margin-top:12px;font-size:14px;text-decoration:underline">Return to cart</a>
+    </form>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}The Options Institute{% endblock %}
+{% block content %}
+<div class="oi-shell">
+  <section class="oi-hero">
+    <div class="oi-hero-copy">
+      <img class="oi-logo" src="{{ url_for('static', filename='images/misc/Cboe_OI_Blue.png') }}" alt="Options Institute logo">
+      <h1>The Options Institute</h1>
+      <p>For 40+ years, The Options Institute has provided expert-led education designed for traders looking to deepen their options understanding.</p>
+      <ul class="oi-bullets">
+        <li>Largest U.S. options exchange and global derivatives innovator</li>
+        <li>50+ years advancing options markets and trading infrastructure</li>
+        <li>Serving institutional and retail investors across global markets</li>
+      </ul>
+    </div>
+    <img class="oi-hero-img" src="{{ url_for('static', filename='images/heros/Hero-OI-Homepage-desktop.png') }}" alt="The Options Institute hero">
+  </section>
+
+  <section class="oi-section">
+    <div class="section-head-row">
+      <h2>Upcoming Classes</h2>
+      <a class="section-more" href="/optionsinstitute/classes">View all classes &gt;</a>
+    </div>
+    <p class="section-blurb">Expert-led classes covering concepts, strategies, and real-world applications through virtual and in-person sessions.</p>
+    <div class="oi-class-grid">
+      {% for klass in classes %}
+        <article class="oi-class-card">
+          <p class="oi-series">{{ klass.series }}</p>
+          <h3>{{ klass.title }}</h3>
+          <dl class="oi-meta">
+            <div><dt>Date</dt><dd>{{ klass.date }}</dd></div>
+            <div><dt>Time</dt><dd>{{ klass.time }}</dd></div>
+            <div><dt>Format</dt><dd>{{ klass.format }}</dd></div>
+            <div><dt>Level</dt><dd>{{ klass.level }}</dd></div>
+          </dl>
+          <a class="card-more" href="/optionsinstitute/classes">Register Now</a>
+        </article>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="oi-section alt">
+    <div class="section-head-row">
+      <h2>Meet Our Experts</h2>
+      <a class="section-more" href="/optionsinstitute/experts">View all experts &gt;</a>
+    </div>
+    <p class="section-blurb">Get to know our faculty: derivatives traders, quantitative analysts, risk managers, market makers, practitioners and academics.</p>
+    <div class="expert-grid">
+      {% for expert in experts %}
+        <div class="expert-card">
+          <div class="expert-diamond">
+            {% if expert.headshot %}
+              <img src="{{ url_for('static', filename='images/' ~ expert.headshot) }}" alt="{{ expert.name }}">
+            {% endif %}
+          </div>
+          <p class="expert-name">{{ expert.name }}</p>
+          <p class="expert-title">{{ expert.title }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <section class="oi-section">
+    <div class="section-head-row">
+      <h2>Courses</h2>
+    </div>
+    <p class="section-blurb">Advance your options knowledge with modular courses, from foundational insights to complex strategies.</p>
+    <div class="course-grid">
+      {# The glossary has its own dedicated card below (linking to its
+         dedicated route), so the course loop skips it to avoid rendering a
+         duplicate card with a second URL for the same page. #}
+      {% for course in courses %}
+        {% if course.slug != 'defining-options' %}
+        <a class="course-card" href="/optionsinstitute/courses/{{ course.slug }}/">
+          <h3>{{ course.title }}</h3>
+          <p>{{ course.intro }}</p>
+          <span class="card-more">Start course</span>
+        </a>
+        {% endif %}
+      {% endfor %}
+      <a class="course-card" href="/optionsinstitute/defining-options">
+        <h3>Options Definitions &amp; Glossary</h3>
+        <p>The essential options definitions and glossary from The Options Institute.</p>
+        <span class="card-more">Read glossary</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="oi-portal-band">
+    <div class="portal-copy">
+      <h2>Ready to level up? Sign-up for our free Learning Portal.</h2>
+      <p>The Options Institute Learning Portal gives you on demand courses, learning paths, and expert instruction -- so you can go from option basics to advanced strategies at your own pace.</p>
+    </div>
+    <img class="portal-img" src="{{ url_for('static', filename='images/banners/banner-OI-portal-desktop.png') }}" alt="Learning Portal">
+  </section>
+</div>
+{% endblock %}

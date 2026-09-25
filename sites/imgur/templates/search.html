@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}{{ q }} Images, Photos, Memes, Gifs, and Pictures | Find the latest on Imgur{% endblock %}
+{% block body %}
+<div class="searchpage">
+  <div class="container searchrow">
+    <form action="/search" method="get">
+      <input type="text" name="q" value="{{ q }}" placeholder="Search imgur">
+    </form>
+  </div>
+  {% if q %}
+  <div class="searchhead">
+    Found <b class="hl">{{ results|length }}</b> results for <a class="hl" href="/search?q={{ q }}">{{ q }}</a>, sorted by
+    <span class="hl">{{ sort_label }}</span> of
+    <span class="hl">{{ window_label }}</span>
+  </div>
+  <div class="searchsub container">
+    <span>advanced search:
+      {% for key, label in [("all", "all time"), ("day", "today"), ("week", "this week"), ("month", "this month"), ("year", "this year")] %}
+      <a href="/search?q={{ q }}&sort={{ sort }}&date={{ key }}" class="hl" style="margin-right:8px">{{ label }}</a>
+      {% endfor %}
+    </span>
+    <span>Today’s most popular posts.</span>
+    <span>
+      <a href="{{ url_for('search', q=q, sort='top', date=window) }}" class="hl" style="margin-right:10px">highest scoring</a>
+      <a href="/search?q={{ q }}&sort=time&date={{ window }}" class="hl" style="margin-right:10px">newest</a>
+      <a href="/search?q={{ q }}&sort=viral&date={{ window }}" class="hl">popularity</a>
+    </span>
+  </div>
+  {% if tag_matches or user_matches %}
+  <div class="searchsub container" style="max-width:1080px">
+    {% for t in tag_matches %}
+      <a href="/t/{{ t.name }}" class="tagpill" style="margin-right:8px"><span class="swatch" style="background: #{{ t.accent }}"></span>{{ t.display_name }}</a>
+    {% endfor %}
+    {% for u in user_matches %}
+      <a href="/user/{{ u.username }}" class="tagpill" style="margin-right:8px">@{{ u.username }}</a>
+    {% endfor %}
+  </div>
+  {% endif %}
+  <div class="searchcards">
+    {% for post in results %}
+    <div class="post">
+      <a class="image-list-link" href="/gallery/{{ post.route_slug() }}">
+        {% if post.cover and post.cover.type == 'video' %}
+          <img src="{{ post.cover.poster_path|asset }}" alt="{{ post.title }}" loading="lazy">
+        {% elif post.cover %}
+          <img src="{{ post.cover.feed_path|asset }}" alt="{{ post.title }}" loading="lazy">
+        {% endif %}
+      </a>
+    </div>
+    {% else %}
+    <div class="emptynote" style="grid-column: 1/-1">No results for “{{ q }}”.</div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="emptynote" style="padding-top:80px">Type something in the search box above.</div>
+  {% endif %}
+</div>
+{% endblock %}

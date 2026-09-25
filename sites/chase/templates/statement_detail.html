@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Statement {{ statement.period_label }} | Chase{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="section">
+    <div class="breadcrumb"><a href="{{ url_for('account_statements') }}">Statements</a> / {{ statement.period_label }}</div>
+    <h1>{{ card.card.name }} — {{ statement.period_label }} statement</h1>
+    <div class="stat-row">
+      <div class="stat"><div class="num">{{ statement.balance|usd2 }}</div><div class="lbl">period balance</div></div>
+      <div class="stat"><div class="num">{{ '{:,}'.format(statement.points_earned) }}</div><div class="lbl">points earned</div></div>
+      <div class="stat"><div class="num">{{ statement.payment_due.strftime('%b %d, %Y') if statement.payment_due }}</div><div class="lbl">payment due date</div></div>
+    </div>
+    <p class="muted small">Period: {{ statement.open_date.strftime('%B %d, %Y') if statement.open_date }} – {{ statement.close_date.strftime('%B %d, %Y') if statement.close_date }} · Card ending {{ card.masked }}</p>
+
+    <h2>Transactions this period</h2>
+    <div class="compare-grid">
+    <table class="data">
+      <tr><th>Date</th><th>Description</th><th>Category</th><th class="right">Amount</th></tr>
+      {% for t in txns %}
+      <tr>
+        <td class="num">{{ t.posted.strftime('%b %d') }}</td>
+        <td>{{ t.description }}</td>
+        <td>{{ t.category|title }}</td>
+        <td class="right num">{{ t.amount|usd2 }}</td>
+      </tr>
+      {% else %}
+      <tr><td colspan="4"><div class="empty-state">No card transactions recorded in this period.</div></td></tr>
+      {% endfor %}
+    </table>
+    </div>
+    <p style="margin-top:20px;"><a class="btn btn--blue" href="{{ url_for('account_pay_card', card_id=card.id) }}">Pay this card</a></p>
+  </div>
+</div>
+{% endblock %}

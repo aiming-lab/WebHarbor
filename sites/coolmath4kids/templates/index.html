@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block content %}
+
+<section class="cm-homepage-mathgames-region">
+  <div class="section-header">
+    <img class="title-icon-left" src="/static/images/theme/title-icon1.svg" alt="">
+    <h2>Math Games</h2>
+    <img class="title-icon-right" src="/static/images/theme/title-icon2.svg" alt="">
+    <div class="header-right"><a class="link-arrow--next" href="{{ url_for('math_games') }}">See all games</a></div>
+  </div>
+  <div class="games-grid">
+    {% for g in featured %}
+    <div class="views-row">
+      <div class="views-field views-field-field-thumbnail">
+        <div class="field-content">
+          <a href="{{ url_for('game_detail', ident=g.slug) }}">
+            <img class="game-thumb" src="/static/images/games/{{ g.slug }}.png" width="337" height="214" alt="{{ g.title }}">
+          </a>
+        </div>
+      </div>
+      <div class="views-field views-field-title">
+        <span class="field-content">
+          <a href="{{ url_for('game_detail', ident=g.slug) }}" class="term-icon">
+            <span class="term-icon op-{{ g.topic or 'none' }}"></span>{{ g.title }}
+          </a>
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="cm-homepage-topics-region">
+  <div class="section-header">
+    <h2>Topics</h2>
+    <div class="header-right"><a class="link-arrow--next" href="{{ url_for('lessons_index') }}">See all Topics</a></div>
+  </div>
+  <div class="cm-homepage-topics-section">
+    {% for t in TOPICS[:4] %}
+    <div class="quiz-item item-{{ t.slug }}">
+      <div class="image"><img src="/static/images/topics/{{ t.slug }}.png" alt="{{ t.name }}"></div>
+      <div class="quiz-content">
+        <h3 class="large">{{ t.name }}</h3>
+        <div class="quiz-btns">
+          <a href="{{ url_for('lessons_topic', topic=t.slug) }}" class="button btn--{{ t.slug }}">Lessons</a>
+          <a href="{{ url_for('quiz_page', operation=t.slug) }}" class="btn--outline button">Quiz</a>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="cm-homepage-manipulatives-region">
+  <div class="section-header"><h2>Manipulatives</h2></div>
+  <div class="games-grid no-icon-card">
+    {% for m in manipulatives %}
+    <div class="views-row">
+      <div class="views-field views-field-field-manipulatives-image">
+        <div class="field-content">
+          <a href="{{ url_for('manipulative_page', slug=m.slug) }}" aria-labelledby="manip-{{ m.slug }}-link">
+            <img class="game-thumb" src="/static/images/manipulatives/{{ m.slug }}.png" alt="">
+          </a>
+        </div>
+      </div>
+      <div class="views-field views-field-title">
+        <span class="field-content">
+          <a href="{{ url_for('manipulative_page', slug=m.slug) }}" id="manip-{{ m.slug }}-link">{{ m.title }}</a>
+        </span>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="cm-homepage-brainteasers-region">
+  <div class="section-header">
+    <h2>Brain Teasers</h2>
+    <div class="header-right"><a class="link-arrow--next" href="{{ url_for('teasers_index') }}">See all Brain Teasers</a></div>
+  </div>
+  <div class="games-grid grid-4 no-icon-card">
+    {% for t in teasers %}
+    <div class="views-row teaser-tile">
+      <div class="cm-home-teaser-image">
+        <a href="{{ url_for('teaser_page', slug=t.slug) }}" aria-labelledby="teaser-{{ t.slug }}-link">
+          <img class="game-thumb" src="/static/images/teasers/{{ t.slug }}.png" alt="">
+        </a>
+      </div>
+      <div class="views-field views-field-field-brain-teaser-headline">
+        <div class="field-content">
+          <div class="cm-home-teaser-title views-field-title">
+            <span class="field-content">
+              <a href="{{ url_for('teaser_page', slug=t.slug) }}" id="teaser-{{ t.slug }}-link">{{ t.title }}</a>
+            </span>
+          </div>
+          {{ t.blurb }}
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

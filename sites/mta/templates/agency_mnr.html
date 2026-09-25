@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Metro-North Railroad{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Agencies › Metro-North Railroad</div>
+  <h1>Metro-North Railroad</h1>
+</div>
+<div class="card blocks">
+  {% for b in (page.blocks | fromjson) %}
+    {% if b['type'] == 'h2' %}<h2>{{ b['text'] }}</h2>
+    {% elif b['type'] == 'h3' %}<h3>{{ b['text'] }}</h3>
+    {% elif b['type'] == 'prose' %}<div class="prose-block">{{ b['text'] }}</div>
+    {% elif b['type'] == 'list' %}<ul>{% for item in b['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% elif b['type'] == 'links' %}<ul class="quick-links">{% for l in b['links'] %}<li><a href="{{ l['href'] }}">{{ l['text'] }}</a></li>{% endfor %}</ul>
+    {% endif %}
+  {% endfor %}
+</div>
+<div class="card">
+  <h2>Line schedules</h2>
+  <p>East of Hudson: effective March 29, 2026. West of Hudson: effective August 30, 2026.</p>
+  <ul class="quick-links">
+    <li><a href="{{ url_for('mnr_schedule', line='hudson') }}">Hudson Line</a></li>
+    <li><a href="{{ url_for('mnr_schedule', line='harlem') }}">Harlem Line</a></li>
+    <li><a href="{{ url_for('mnr_schedule', line='new-haven') }}">New Haven Line</a></li>
+    <li><a href="{{ url_for('mnr_schedule', line='new-canaan') }}">New Canaan Branch</a></li>
+    <li><a href="{{ url_for('mnr_schedule', line='danbury') }}">Danbury Branch</a></li>
+    <li><a href="{{ url_for('mnr_schedule', line='waterbury') }}">Waterbury Branch busing</a></li>
+    <li><a href="{{ url_for('mnr_west_of_hudson', line='port-jervis') }}">Port Jervis Line</a></li>
+    <li><a href="{{ url_for('mnr_west_of_hudson', line='pascack-valley') }}">Pascack Valley Line</a></li>
+  </ul>
+  <p><a href="{{ url_for('rail_fare_finder') }}">Metro-North fare tables &rarr;</a></p>
+</div>
+{% endblock %}

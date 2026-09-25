@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% import "_macros.html" as m %}
+{% block title %}Recently Created Lists | Discogs Lists{% endblock %}
+{% block main_class %}page ls-page{% endblock %}
+{% block content %}
+<div class="ls-hero" style="background-image: url('{{ url_for('static', filename='external_cache/homepage/hero-main.jpg') }}');">
+  <div class="ls-hero-inner">
+    <div>
+      <h1>Recent Lists</h1>
+      <p>Explore lists from the Discogs community. Lists can be about anything–notable album covers, prolific producers, your favorite holiday albums. The possibilities are endless! Lists can contain artists, releases, labels, or even other lists.</p>
+      <a class="ls-hero-link" href="/help">Read More About Creating Lists</a>
+    </div>
+    <div class="ls-hero-actions">
+      {% if current_user.is_authenticated %}
+        <a class="ls-btn-green" href="{{ url_for('user_lists', username=current_user.username) }}">Manage My Lists</a>
+        <a class="ls-btn-green" href="{{ url_for('list_new') }}">+ Create new list</a>
+      {% else %}
+        <a class="ls-btn-green" href="{{ url_for('login', next=url_for('lists_index')) }}">Manage My Lists</a>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+{% if featured %}
+<section class="ls-featured">
+  <h2>Lists We Like</h2>
+  <p class="muted">Here are a few lists we think deserve a mention.</p>
+  <div class="ls-featured-grid">
+    {% for l in featured %}
+      {% set first = l.items.first() %}
+      <a class="ls-featured-card" href="{{ url_for('list_detail', lid=l.id) }}">
+        <span class="ls-featured-cover">{% if first and first.release %}<img src="{{ first.release.cover_url }}" alt="">{% endif %}</span>
+        <span class="ls-featured-title">{{ l.title }}</span>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<form class="ls-search" method="get" action="{{ url_for('lists_index') }}" role="search">
+  <input type="search" name="q" value="{{ search }}" placeholder="Search Lists" aria-label="Search Lists">
+  <button type="submit" aria-label="Search Lists"><svg viewBox="0 0 30 30" aria-hidden="true"><path d="M13 4a9 9 0 1 0 5.6 16l5.2 5.2 1.7-1.7-5.2-5.2A9 9 0 0 0 13 4zm0 2.4a6.6 6.6 0 1 1 0 13.2 6.6 6.6 0 0 1 0-13.2z"/></svg></button>
+</form>
+
+<div class="table-scroll" role="region" aria-label="Lists" tabindex="0">
+<table class="ls-table">
+  <thead><tr><th>List</th><th>User</th><th>Description</th><th>Created</th></tr></thead>
+  <tbody>
+  {% for l in pag.items %}
+    <tr>
+      <td class="ls-col-list"><a href="{{ url_for('list_detail', lid=l.id) }}">{{ l.title }}</a></td>
+      <td class="ls-col-user">{{ m.avatar(l.user) }} <a href="{{ url_for('user_profile', username=l.user.username) }}">{{ l.user.username }}</a></td>
+      <td class="ls-col-desc">{% if l.description %}{{ l.description[:200] }}{% if l.description|length > 200 %} …{% endif %}{% endif %}</td>
+      <td class="ls-col-created">{{ l.created_at|relative }}</td>
+    </tr>
+  {% else %}
+    <tr><td colspan="4"><p class="empty">No public lists match.</p></td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% set first = (pag.page - 1) * pag.per_page + 1 if pag.total else 0 %}
+{% set last = [pag.page * pag.per_page, pag.total]|min %}
+<div class="ls-footer">
+  <span>Showing <strong>{{ first }}-{{ last }}</strong> of {{ pag.total }}</span>
+  <span class="ls-pager">
+    {% if pag.page > 1 %}<a href="{{ url_for('lists_index', page=pag.page-1, q=search or None) }}" aria-label="Previous page">←</a>{% else %}<span class="disabled">←</span>{% endif %}
+    {% if pag.page < pag.pages %}<a href="{{ url_for('lists_index', page=pag.page+1, q=search or None) }}" aria-label="Next page">→</a>{% else %}<span class="disabled">→</span>{% endif %}
+  </span>
+  <span class="ls-show">Show {{ pag.per_page }}</span>
+</div>
+{% endblock %}

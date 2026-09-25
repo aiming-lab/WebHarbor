@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ cat.name }}{% endblock %}
+{% block content %}
+<div class="insights-shell">
+  <section class="page-hero slim-hero">
+    <h1>{{ cat.name }}</h1>
+    <p class="hero-sub">{{ cat.blurb }}</p>
+  </section>
+
+  <div class="cat-layout">
+    <aside class="cat-sidebar">
+      <h3>Categories</h3>
+      {% for c in categories %}
+        <a class="cat-link {% if c.slug == cat.slug %}active{% endif %}" href="/insights/categories/{{ c.slug }}/">{{ c.name }}</a>
+      {% endfor %}
+    </aside>
+    <div class="cat-main">
+      <div class="article-list">
+        {% for article in articles %}
+          <article class="article-card row-card">
+            <div class="row-main">
+              <p class="card-cat"><a href="/insights/categories/{{ cat.slug }}/">{{ cat.name }}</a></p>
+              <h3><a href="/insights/posts/{{ article.slug }}/">{{ article.title }}</a></h3>
+              <p class="card-author">By {{ article.author_name }}{% if article.date %} &middot; {{ article.date }}{% endif %}</p>
+              <p class="card-desc">{{ article.excerpt() }}</p>
+              <a class="card-more" href="/insights/posts/{{ article.slug }}/">Read More</a>
+            </div>
+          </article>
+        {% else %}
+          <p class="empty-note">No articles in this category yet.</p>
+        {% endfor %}
+      </div>
+      <div class="pagination">
+        {% if pagination.has_prev %}
+          <a href="/insights/categories/{{ cat.slug }}/?page={{ pagination.prev_num }}">&lt; Previous</a>
+        {% endif %}
+        <span>Page {{ pagination.page }} of {{ pagination.pages }}</span>
+        {% if pagination.has_next %}
+          <a href="/insights/categories/{{ cat.slug }}/?page={{ pagination.next_num }}">Next &gt;</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

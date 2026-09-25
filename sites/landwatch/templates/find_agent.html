@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Top Local Land Agents &amp; Brokers | LandWatch.com{% endblock %}
+
+{% block content %}
+<div class="lw-fa-head">
+  <h1>Find a Land Specialist</h1>
+  <p>Explore Top Land Brokers &amp; Real Estate Agents Near You</p>
+  <form class="lw-fa-search" method="get" action="/find-agent">
+    <select name="state" aria-label="Location">
+      <option value="">Location</option>
+      {% for code in states %}
+      <option value="{{ code }}" {{ 'selected' if code == current_state }}>{{ code }}</option>
+      {% endfor %}
+    </select>
+    <input type="text" name="q" value="{{ request.args.get('q', '') }}" placeholder="State, County, or City" aria-label="State, County, or City">
+    <button class="lw-btn lw-btn-primary" type="submit">Search</button>
+  </form>
+</div>
+
+<div class="lw-fa-grid">
+  <div style="grid-column: 1 / -1;">
+    <h2 style="font-family: var(--lw-serif); font-size: 22px;">Find Trusted Land Brokers &amp; Real Estate Agents in United States</h2>
+  </div>
+  {% for agent in agents %}
+  <div class="lw-agent-card">
+    {% if agent.portrait_path() %}<img src="{{ agent.portrait_path() }}" alt="{{ agent.name }}">{% endif %}
+    <div>
+      <a class="lw-agent-card-name" href="{{ agent.profile_path() }}">{{ agent.name }}</a>
+      <div class="lw-agent-card-company">{{ agent.company }}</div>
+      <div class="lw-agent-card-stats">
+        <span><b>{{ agent.total_listings }}</b> Total Listings</span>
+        <span><b>{{ agent.price_range_display or '-' }}</b> Price Range</span>
+        <span><b>{{ agent.acre_range_display or '-' }}</b> Acre Range</span>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

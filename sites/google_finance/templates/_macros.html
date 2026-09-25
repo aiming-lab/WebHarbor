@@ -1,0 +1,89 @@
+{# Shared rendering fragments. #}
+
+{% macro logo(inst, size=26) %}
+  {% if inst.logo_url %}
+    <img src="{{ inst.logo_url }}" alt="{{ inst.name }} logo" width="{{ size }}" height="{{ size }}">
+  {% else %}
+    <span class="ph" aria-hidden="true">{{ inst.ticker[:2] }}</span>
+  {% endif %}
+{% endmacro %}
+
+{% macro sym_cell(inst) %}
+  <div class="sym">
+    {{ logo(inst) }}
+    <span>
+      <span class="sym-t">{{ inst.ticker }}</span><br>
+      <span class="sym-n">{{ inst.name }}</span>
+    </span>
+  </div>
+{% endmacro %}
+
+{# A market table. `cols` selects which numeric columns to show. #}
+{% macro quote_table(rows, spark_svg, fmt_big, fmt_pct, cols='default') %}
+<div class="table-wrap">
+  <table class="q-table">
+    <thead>
+      <tr>
+        <th>Symbol</th>
+        <th></th>
+        <th>Price</th>
+        <th>Change</th>
+        <th>% Change</th>
+        {% if cols == 'default' %}<th>Volume</th><th>Mkt cap</th>{% endif %}
+        {% if cols == 'fx' %}<th>Day high</th><th>Day low</th>{% endif %}
+        {% if cols == 'crypto' %}<th>Mkt cap</th>{% endif %}
+      </tr>
+    </thead>
+    <tbody>
+    {% for inst in rows %}
+      {% set q = inst.quote %}
+      <tr>
+        <td><a href="{{ url_for('quote', symbol=inst.slug) }}">{{ sym_cell(inst) }}</a></td>
+        <td>{{ spark_svg(inst, 78, 26) }}</td>
+        <td>{{ '{:,.2f}'.format(q.price) if q.price >= 1 else '{:,.4f}'.format(q.price) }}</td>
+        <td class="{{ 'up' if q.change >= 0 else 'down' }}">{{ '{:+,.2f}'.format(q.change) }}</td>
+        <td><span class="pill {{ 'up' if q.change_pct >= 0 else 'down' }}">{{ fmt_pct(q.change_pct) }}</span></td>
+        {% if cols == 'default' %}
+          <td>{{ fmt_big(q.volume) }}</td>
+          <td>{{ fmt_big(q.mkt_cap) }}</td>
+        {% endif %}
+        {% if cols == 'fx' %}
+          <td>{{ '{:,.4f}'.format(q.day_high) }}</td>
+          <td>{{ '{:,.4f}'.format(q.day_low) }}</td>
+        {% endif %}
+        {% if cols == 'crypto' %}<td>{{ fmt_big(q.mkt_cap) }}</td>{% endif %}
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endmacro %}
+
+{% macro mini_card(inst, spark_svg, fmt_pct) %}
+  {% set q = inst.quote %}
+  <a class="mini-card" href="{{ url_for('quote', symbol=inst.slug) }}">
+    <div class="mc-tic">{{ inst.ticker }}</div>
+    <div class="mc-name">{{ inst.name }}</div>
+    <div class="mc-price">{{ '${:,.2f}'.format(q.price) if q.price >= 1 else '${:,.4f}'.format(q.price) }}</div>
+    <div class="mc-chg {{ 'up' if q.change_pct >= 0 else 'down' }}">
+      {{ fmt_pct(q.change_pct) }}
+      <span class="arrow-badge {{ 'up' if q.change_pct >= 0 else 'down' }}"
+            aria-hidden="true">{{ '↑' if q.change_pct >= 0 else '↓' }}</span>
+    </div>
+    <div class="mc-spark">{{ spark_svg(inst, 168, 54, True) }}</div>
+  </a>
+{% endmacro %}
+
+{% macro news_item(a) %}
+  <div class="news-item">
+    <div class="news-meta">
+      {% if a.publisher and a.publisher.favicon_url %}
+        <img src="{{ a.publisher.favicon_url }}" alt="{{ a.publisher.name }}">
+      {% endif %}
+      <span>{{ a.publisher.name if a.publisher else 'Newswire' }}</span>
+      <span>&middot;</span>
+      <span>{{ a.ago() }}</span>
+    </div>
+    <a class="news-head" href="{{ url_for('news_detail', slug=a.slug) }}">{{ a.headline }}</a>
+  </div>
+{% endmacro %}

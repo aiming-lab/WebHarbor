@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Shop Wine Access{% endblock %}
+{% block content %}
+<section class="store-layout">
+  <aside class="filters">
+    <h2>Shop</h2>
+    <form method="get" action="{{ url_for('store') }}">
+      <label>Search
+        <input name="q" value="{{ query_text }}" placeholder="Cabernet, Burgundy, Napa">
+      </label>
+      <label>Type
+        <select name="type">
+          <option value="">All types</option>
+          {% for t in types %}
+            <option value="{{ t }}" {% if selected.get('type') == t %}selected{% endif %}>{{ t }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Variety
+        <select name="variety">
+          <option value="">All varieties</option>
+          {% for v in varieties %}
+            <option value="{{ v }}" {% if selected.get('variety') == v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Region
+        <input name="region" value="{{ selected.get('region', '') }}" placeholder="Napa, France, Italy">
+      </label>
+      <label>Max price
+        <input name="max_price" value="{{ selected.get('max_price', '') }}" inputmode="decimal">
+      </label>
+      <label>Sort by
+        <select name="sort">
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest</option>
+          <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price low to high</option>
+          <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price high to low</option>
+          <option value="score" {% if sort == 'score' %}selected{% endif %}>Highest score</option>
+        </select>
+      </label>
+      <button type="submit">Apply</button>
+    </form>
+  </aside>
+  <section class="results">
+    <div class="results-head">
+      <div>
+        <p class="eyebrow">Wine Access Store</p>
+        <h1>{% if query_text %}Search: {{ query_text }}{% else %}All Wines{% endif %}</h1>
+      </div>
+      <p>{{ wines|length }} selections</p>
+    </div>
+    <div class="wine-grid list">
+      {% for wine in wines %}
+        {% include "_wine_card.html" %}
+      {% else %}
+        <p>No wines matched those filters. Try a broader search.</p>
+      {% endfor %}
+    </div>
+  </section>
+</section>
+{% endblock %}

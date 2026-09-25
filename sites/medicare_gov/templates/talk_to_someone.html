@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% macro render_blocks(blocks) %}
+  {% for block in blocks %}
+    {% if block.t == 'heading' %}{% if block.level <= 2 %}<h2>{{ block.text }}</h2>{% else %}<h3>{{ block.text }}</h3>{% endif %}
+    {% elif block.t == 'para' %}<p>{{ block.text }}</p>
+    {% elif block.t == 'ul' %}<ul>{% for item in block['items'] %}<li>{{ item.text }}</li>{% endfor %}</ul>
+    {% elif block.t == 'ol' %}<ol>{% for item in block['items'] %}<li>{{ item.text }}</li>{% endfor %}</ol>
+    {% elif block.t == 'alert' %}<div class="alert">{{ block.text }}</div>
+    {% endif %}
+  {% endfor %}
+{% endmacro %}
+{% block title %}Talk to Someone | Contact Medicare | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li>Talk to someone</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="content-page">
+    <h1>Contact Medicare</h1>
+    <p class="lede">Need help beyond what's on Medicare.gov?</p>
+    <p>You can talk or live chat with a real person, 24 hours a day, 7 days a week (except some federal holidays).</p>
+
+    <div class="contact-card" style="max-width:520px;margin:22px 0">
+      <h2 style="margin-top:0">Medicare phone &amp; chat</h2>
+      <span class="big-phone">1-800-MEDICARE</span>
+      <span class="small">(1-800-633-4227)</span>
+      <p class="tty">TTY users can call 1-877-486-2048.</p>
+      <p class="small muted">Medicare.gov offers free, secure online chat. If you have an account, log in before you start your chat.</p>
+      <a class="btn btn--solid btn--small" href="{{ url_for('login') }}">Start a live chat</a>
+    </div>
+
+    <div class="content-blocks">
+      {{ render_blocks(page_blocks) }}
+    </div>
+  </div>
+</div>
+{% endblock %}

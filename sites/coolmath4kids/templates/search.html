@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Search{% endblock %}
+{% block content %}
+<div class="section-header">
+  <img class="title-icon-left" src="/static/images/theme/title-icon1.svg" alt="">
+  <h2>Search</h2>
+  <img class="title-icon-right" src="/static/images/theme/title-icon2.svg" alt="">
+</div>
+
+<div class="search-bar">
+  <form method="get" action="{{ url_for('search') }}" style="display:flex;width:min(600px,90vw);">
+    <input type="text" name="q" value="{{ query }}" placeholder="Search games, lessons, quizzes, brain teasers..." aria-label="Search">
+    <button type="submit">Go</button>
+  </form>
+</div>
+
+{% if query %}
+  <p style="text-align:center;font-weight:600;">{{ results | length }} result{{ '' if results.length == 1 else 's' }} for “{{ query }}”</p>
+
+  {% if games %}
+  <div class="search-result-group">
+    <h3>Math Games</h3>
+    <ul>
+      {% for r in games %}<li><a href="{{ r.url }}">{{ r.title }}</a><span class="kind-tag">game</span></li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if lessons %}
+  <div class="search-result-group">
+    <h3>Lessons</h3>
+    <ul>
+      {% for r in lessons %}<li><a href="{{ r.url }}">{{ r.title }}</a><span class="kind-tag">lesson</span></li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if teasers %}
+  <div class="search-result-group">
+    <h3>Brain Teasers</h3>
+    <ul>
+      {% for r in teasers %}<li><a href="{{ r.url }}">{{ r.title }}</a><span class="kind-tag">brain teaser</span></li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if manips %}
+  <div class="search-result-group">
+    <h3>Manipulatives</h3>
+    <ul>
+      {% for r in manips %}<li><a href="{{ r.url }}">{{ r.title }}</a><span class="kind-tag">manipulative</span></li>{% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if not results %}
+  <p style="text-align:center;">No results found. Try different words, like “addition”, “fractions” or “puzzle”.</p>
+  {% endif %}
+{% else %}
+  <p style="text-align:center;">Type a topic like “addition”, a game name like “Alien Addition”, or a lesson like “Lattice Multiplication”.</p>
+{% endif %}
+{% endblock %}

@@ -51,69 +51,69 @@ def seed():
     # COLLEGES
     # ─────────────────────────────────────────────────────────────────────────
     college_data = [
-        ('Arts and Sciences', 'Dean Patricia Bauer', 1870, 12000, 4000,
+        ('Arts and Sciences', 'Patricia Bauer', 1870, 12000, 4000,
          'The College of Arts and Sciences is the intellectual and academic heart of Ohio State. '
          'It offers over 80 majors and 200 graduate programs spanning the humanities, social sciences, '
          'natural sciences, and mathematics. The college is home to more than 1,400 faculty and serves '
          'roughly 16,000 undergraduate and graduate students.'),
-        ('Fisher College of Business', 'Dean Anil Makhija', 1916, 4500, 1800,
+        ('Fisher College of Business', 'Anil Makhija', 1916, 4500, 1800,
          'Fisher College of Business at Ohio State is consistently ranked among the nation\'s top '
          'business schools. Fisher offers undergraduate, MBA, specialized master\'s, and doctoral '
          'programs that prepare students for leadership in a globally connected marketplace.'),
-        ('Education and Human Ecology', 'Dean Carey Andrzejewski', 1895, 1800, 1200,
+        ('Education and Human Ecology', 'Carey Andrzejewski', 1895, 1800, 1200,
          'The College of Education and Human Ecology prepares leaders in education, human development, '
          'family science, and nutrition. EHE faculty conduct research that improves lives at the '
          'individual, family, community, and policy levels.'),
-        ('Engineering', 'Dean Ayanna Howard', 1870, 8000, 4500,
+        ('Engineering', 'Ayanna Howard', 1870, 8000, 4500,
          'The College of Engineering at Ohio State is one of the largest and most comprehensive '
          'engineering colleges in the United States. With 26 departments and research centers, '
          'it drives economic growth and technological innovation across Ohio and beyond.'),
-        ('Food, Agricultural, and Environmental Sciences', 'Dean Cathann Kress', 1870, 3200, 1200,
+        ('Food, Agricultural, and Environmental Sciences', 'Cathann Kress', 1870, 3200, 1200,
          'CFAES advances knowledge at the intersection of agriculture, food, environment, and human '
          'health. The college operates the Ohio Agricultural Research and Development Center and '
          'the OSU Extension system across all 88 Ohio counties.'),
-        ('Moritz College of Law', 'Dean Wendy Smooth', 1891, 0, 650,
+        ('Moritz College of Law', 'Wendy Smooth', 1891, 0, 650,
          'Moritz College of Law is one of the nation\'s leading law schools, offering the JD degree '
          'and several specialized graduate programs. The college is known for its commitment to public '
          'service, hands-on clinical education, and cutting-edge legal scholarship.'),
-        ('Medicine', 'Dean K. Craig Kent', 1914, 0, 900,
+        ('Medicine', 'K. Craig Kent', 1914, 0, 900,
          'The Ohio State University College of Medicine is one of the largest medical schools in '
          'the United States. Affiliated with the Wexner Medical Center and the James Cancer Hospital, '
          'it is a national leader in medical education, research, and patient care.'),
-        ('Nursing', 'Dean Bernadette Melnyk', 1914, 600, 400,
+        ('Nursing', 'Bernadette Melnyk', 1914, 600, 400,
          'The College of Nursing advances nursing science and prepares professional nurses for '
          'leadership roles in health care. It offers BSN, MS, DNP, and PhD programs and is known '
          'for its focus on wellness, evidence-based practice, and mental health.'),
-        ('Optometry', 'Dean Karla Zadnik', 1914, 200, 250,
+        ('Optometry', 'Karla Zadnik', 1914, 200, 250,
          'The College of Optometry is recognized as one of the finest optometric colleges in the '
          'world. It offers a four-year OD degree program and conducts pioneering research in '
          'myopia, glaucoma, and vision rehabilitation.'),
-        ('Pharmacy', 'Dean Henry Mann', 1885, 300, 350,
+        ('Pharmacy', 'Henry Mann', 1885, 300, 350,
          'The College of Pharmacy prepares pharmacists and pharmaceutical scientists to improve '
          'medication therapy outcomes. Its PharmD program integrates cutting-edge research with '
          'experiential learning at leading clinical sites across Ohio.'),
-        ('Public Health', 'Dean Amy Ferketich', 2012, 0, 600,
+        ('Public Health', 'Amy Ferketich', 2012, 0, 600,
          'The College of Public Health educates future leaders committed to improving the health '
          'of communities locally, nationally, and globally. Degree programs in epidemiology, health '
          'behavior, environmental health, and health services management prepare graduates for '
          'impact in government, industry, and research.'),
-        ('Social Work', 'Dean Tom Gregoire', 1914, 300, 500,
+        ('Social Work', 'Tom Gregoire', 1914, 300, 500,
          'The College of Social Work is dedicated to advancing social and economic justice and '
          'improving quality of life for people across the lifespan. Programs emphasize field '
          'practice, evidence-based interventions, and policy advocacy.'),
-        ('Veterinary Medicine', 'Dean Rustin Moore', 1885, 400, 500,
+        ('Veterinary Medicine', 'Rustin Moore', 1885, 400, 500,
          'The College of Veterinary Medicine is consistently ranked among the top vet schools in '
          'the nation. Its teaching hospital serves tens of thousands of animal patients each year, '
          'and its researchers pioneer breakthroughs in both animal and human health.'),
-        ('John Glenn College of Public Affairs', 'Dean Trevor Brown', 1999, 100, 350,
+        ('John Glenn College of Public Affairs', 'Trevor Brown', 1999, 100, 350,
          'The John Glenn College of Public Affairs trains the next generation of public servants, '
          'policy analysts, and nonprofit leaders. Named for the legendary Ohio astronaut and U.S. '
          'Senator, the college emphasizes ethics, analytical rigor, and civic engagement.'),
-        ('Dentistry', 'Dean Kristin Williams', 1890, 0, 400,
+        ('Dentistry', 'Kristin Williams', 1890, 0, 400,
          'The College of Dentistry provides comprehensive oral health care and trains outstanding '
          'dental professionals. Its clinic serves tens of thousands of patients annually, and its '
          'researchers advance knowledge in oral biology, dental materials, and community oral health.'),
-        ('Graduate School', 'Dean Sean Carson', 1878, 0, 14000,
+        ('Graduate School', 'Sean Carson', 1878, 0, 14000,
          'The Graduate School oversees graduate education across all disciplines at Ohio State. '
          'It supports master\'s, doctoral, and professional degree programs and fosters the '
          'interdisciplinary research enterprise of the university.'),

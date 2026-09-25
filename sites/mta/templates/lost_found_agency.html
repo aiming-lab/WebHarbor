@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} — Lost &amp; Found{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('lost_found') }}">Lost &amp; Found</a> › {{ label }}</div>
+  <h1>{{ label }}</h1>
+</div>
+<div class="card blocks">
+  {% for b in (page.blocks | fromjson) %}
+    {% if b['type'] == 'h2' %}<h2>{{ b['text'] }}</h2>
+    {% elif b['type'] == 'h3' %}<h3>{{ b['text'] }}</h3>
+    {% elif b['type'] == 'prose' %}<div class="prose-block">{{ b['text'] }}</div>
+    {% elif b['type'] == 'list' %}<ul>{% for item in b['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% elif b['type'] == 'links' %}<ul class="quick-links">{% for l in b['links'] %}<li><a href="{{ l['href'] }}">{{ l['text'] }}</a></li>{% endfor %}</ul>
+    {% endif %}
+  {% endfor %}
+</div>
+<div class="card">
+  <h2>File a lost item claim</h2>
+  <p>Report your lost item and we'll search for it. You'll receive a claim reference to track your report.</p>
+  <a class="btn" href="{{ url_for('lost_claim_form', agency=agency_slug) }}">Report a lost item</a>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}Create Profile{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{{ url_for('index') }}">Home</a><span>/</span><span>Registration</span></nav>
+<section class="registration-hero">
+  <img src="{{ url_for('static', filename='images/akc-home/register-hero.jpg') }}" alt="">
+  <div>
+    <h1>Declare Your Love<br>With AKC<br>Registration</h1>
+    <p>You found the one. Make it official with AKC. Celebrate your dog, connect with a supportive community, and enjoy benefits that help you both thrive — all starting at $45.</p>
+    <a class="button primary" href="#registration-form">Register</a>
+    <a class="button light-button" href="{{ url_for('breeds') }}">Explore My Options</a>
+    <p class="registration-status">Submitted application?<br><a href="#registration-form">Check my registration status</a></p>
+  </div>
+</section>
+<nav class="registration-tabs" aria-label="Registration sections">
+  <a href="#registration-form">Register</a><span>Why Register</span><span>What's Included</span><span>FAQs</span><span>Registration Options</span>
+</nav>
+<section class="auth-panel" id="registration-form">
+  <form method="post">
+    <h2>Create AKC Profile</h2>
+    <label>Name <input name="display_name" required></label>
+    <label>Username <input name="username" required></label>
+    <label>Email <input name="email" type="email" required></label>
+    <label>Password <input name="password" type="password" minlength="8" required></label>
+    <label>Household <select name="household">{% for item in household_options %}<option>{{ item }}</option>{% endfor %}</select></label>
+    <label>Activity level <select name="activity_level">{% for item in activity_options %}<option>{{ item }}</option>{% endfor %}</select></label>
+    <label>Experience <select name="experience">{% for item in experience_options %}<option>{{ item }}</option>{% endfor %}</select></label>
+    <button type="submit">Create Profile</button>
+  </form>
+</section>
+
+<section class="registration-benefits section">
+  <div class="section-head centered"><h2>Register Your Dog, Reap the Rewards</h2></div>
+  <div class="registration-benefit-grid">
+    <article><img src="{{ url_for('static', filename='images/akc-home/register-today.webp') }}" alt="Dog with owner"><h3>Support a Better Future for All Dogs</h3></article>
+    <article><img src="{{ url_for('static', filename='images/akc-home/training.webp') }}" alt="Dog training"><h3>Unlock Training and Care Resources</h3></article>
+    <article><img src="{{ url_for('static', filename='images/akc-home/find-puppies.webp') }}" alt="Finding a puppy"><h3>Create a Lasting Legacy</h3></article>
+    <article><img src="{{ url_for('static', filename='images/akc-home/sports.webp') }}" alt="AKC sports"><h3>Make Memories With AKC Sports</h3></article>
+  </div>
+</section>
+
+<section class="registration-included">
+  <div class="section-head centered"><h2>Included With Your Registration</h2></div>
+  <div class="included-grid"><span>Personalized AKC Registration Certificate</span><span>Online Training Basics Course</span><span>AKC Family Dog Magazine</span><span>Initial Veterinary Visit</span><span>Coverage and care resources</span><span>Access to owner education</span></div>
+</section>
+
+<section class="registration-faq section">
+  <div><h2>Frequently Asked Questions</h2><img src="{{ url_for('static', filename='images/akc-home/expert-advice-feature.jpg') }}" alt="Dog care advice"></div>
+  <div class="faq-list"><details open><summary>Why should I register my dog?</summary><p>Registration helps keep an enduring record and connects owners with AKC programs and resources.</p></details><details><summary>How do I register my dog?</summary><p>Complete the profile above and follow the registration instructions for your household.</p></details><details><summary>Can I check my registration status?</summary><p>Use the registration status link above to return to your application.</p></details></div>
+</section>
+
+<section class="registration-options">
+  <div class="section-head centered"><h2>Registration Is for All Dogs</h2></div>
+  <div class="registration-option-grid"><article><h3>AKC Dog Registration</h3><p>For purebred dogs with an AKC registration application.</p><a class="button primary" href="#registration-form">Register My Dog</a></article><article><h3>AKC Canine Partners Enrollment</h3><p>For mixed breed dogs and family companions.</p><a class="button primary" href="#registration-form">Enroll My Dog</a></article></div>
+</section>
+
+<section class="registration-resources">
+  <h2>Additional Services &amp; Resources</h2>
+  <nav><a href="#registration-form">Update Dog Ownership</a><a href="#registration-form">Register My Litter</a><a href="#registration-form">Check Registration Status</a><a href="#registration-form">Downloadable Forms</a><a href="{{ url_for('articles') }}">AKC Breeder Toolkit</a><a href="{{ url_for('account') if current_user else url_for('login') }}">Manage My Dogs</a><a href="{{ url_for('breeds') }}">Shop AKC Pedigrees</a><a href="{{ url_for('events') }}">Points Progression</a></nav>
+</section>
+
+<section class="registration-impact">
+  <div class="section-head centered"><h2>Your Registration Helps Dogs Everywhere</h2><p>AKC programs support canine health, responsible ownership, rescue, education, and the future of dogs.</p></div>
+  <div class="registration-impact-grid"><article>Canine Health Foundation</article><article>AKC Reunite</article><article>Humane Fund</article><article>Museum of the Dog</article><article><img src="{{ url_for('static', filename='images/akc-home/akc-wordmark.png') }}" alt="American Kennel Club"></article><article>Government Relations</article></div>
+  <div class="registration-stats"><span><strong>200+</strong>Dog Breeds</span><span><strong>12M+</strong>Dogs Registered</span><span><strong>600K</strong>Dog Owners</span><span><strong>25K</strong>Sports &amp; Events</span><span><strong>$55M+</strong>Donated</span></div>
+</section>
+{% endblock %}

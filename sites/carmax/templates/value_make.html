@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ make }} used car values | CarMax{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:24px">
+  <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ url_for('value_index') }}">Used car value</a> / {{ make }}</nav>
+  <h1>{{ make }} used car values</h1>
+  <p>Choose a model, then a year to explore prices across our current inventory.</p>
+  <div class="grid grid-3">
+    {% for model, slug in models %}
+    <a class="kpi" href="{{ url_for('value_model', make=make_slug, model=slug) }}">{{ make }} {{ model }}</a>
+    {% endfor %}
+  </div>
+  <p>Inventory asking prices are not trade-in offers. <a href="{{ url_for('sell_my_car') }}">Get an offer for your car</a>.</p>
+</div>
+{% endblock %}

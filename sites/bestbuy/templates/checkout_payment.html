@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Payment · Best Buy Demo{% endblock %}
+{% block body_class %}checkout-page{% endblock %}
+{% block content %}
+  <section class="shell page-section">
+    {% set current_step = 2 %}
+    {% include "_checkout_steps.html" %}
+    <div class="checkout-layout">
+      <div class="panel">
+        <p class="eyebrow">Payment</p>
+        <h1>Enter payment details</h1>
+        <form method="post" class="auth-form">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <label>Payment label
+            <select name="payment_brand" required>
+              <option value="" disabled {% if not checkout.get('payment_brand') %}selected{% endif %}>Select a payment label</option>
+              {% for brand in payment_brands %}
+                <option value="{{ brand }}" {% if checkout.get('payment_brand') == brand %}selected{% endif %}>{{ brand }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>Last four digits
+            <input type="text" name="payment_last4" maxlength="4" value="{{ checkout.get('payment_last4', '') }}" required>
+          </label>
+          <p class="auth-note">Local benchmark only. No real card or processor is involved.</p>
+          <button class="button" type="submit">Continue to review</button>
+        </form>
+      </div>
+    </div>
+  </section>
+{% endblock %}

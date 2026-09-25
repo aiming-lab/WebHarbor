@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Community Tagging - FlightAware{% endblock %}
+{% block content %}
+<div class="tab-bar">
+  <a href="/photos/">FEATURED</a>
+  <a href="/photos/all/sort/votes">ALL PHOTOS</a>
+  <a href="/photos/recentcomments.rvt">RECENT COMMENTS</a>
+  <a class="active" href="/photos/crowdsource">COMMUNITY TAGGING</a>
+</div>
+<div class="panel">
+  <div class="panel-head">Community Tagging</div>
+  <div class="panel-body">
+    <p>Help improve the photo database by tagging aircraft, airlines and airports in recent photos.</p>
+    <div class="photo-grid">
+      {% for p in photos %}
+      <div class="photo-card">
+        <a href="{{ p.href }}"><img src="/static/images/photos/{{ p.image_file }}" alt="{{ p.title }}"></a>
+        <div class="cap"><div class="t">{{ p.title }}</div><div class="m">{{ p.votes | commas }} votes</div></div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

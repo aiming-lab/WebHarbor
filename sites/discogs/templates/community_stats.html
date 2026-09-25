@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}{{ heading }} | Discogs{% endblock %}
+{% block content %}
+<h1>{{ heading }}</h1>
+<p class="muted">{{ intro }}</p>
+<div class="card">
+  <div class="table-scroll" role="region" aria-label="{{ heading }}" tabindex="0">
+  <table class="stats-table">
+    <thead>
+      <tr><th>#</th><th>User</th><th>Reviews</th><th>Lists</th><th>Listings</th><th>Collection</th><th>Wantlist</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td><a href="{{ url_for('user_profile', username=row.user.username) }}">{{ row.user.username }}</a></td>
+        <td>{{ row.reviews }}</td><td>{{ row.lists }}</td><td>{{ row.listings }}</td><td>{{ row.collection }}</td><td>{{ row.wantlist }}</td>
+        <td><strong>{{ row.total }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+</div>
+<p class="muted tiny">Counts reflect synthetic benchmark accounts and their activity in this snapshot; they are not live Discogs contributor statistics.</p>
+{% endblock %}

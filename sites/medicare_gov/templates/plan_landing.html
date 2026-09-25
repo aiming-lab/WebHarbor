@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Find the plan that works for you | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container"><p class="small muted">Offline demonstration: plan names and prices are a fixed sample catalog, not current plan offers.</p></div>
+<section class="home-hero">
+  <div class="ds-container">
+    <div class="home-hero__inner">
+      <div>
+        <h1 class="home-hero__title" style="font-size:44px">Find the plan that works for you</h1>
+        <p class="home-hero__text">
+          Enter your ZIP code and choose the type of plan (health or drug) you want to find.
+        </p>
+        <form action="{{ url_for('plan_search') }}" method="get" class="coverage-search" style="margin-top:18px;background:#fff;max-width:560px">
+          <div class="field">
+            <label for="plan-zip">What's your ZIP code?</label>
+            <input id="plan-zip" type="text" name="zip" inputmode="numeric" pattern="[0-9]{5}" placeholder="00000" required>
+          </div>
+          <div class="field">
+            <label for="plan-choice">What type of plan do you want to find?</label>
+            <select id="plan-choice" name="plan_choice">
+              <option value="health">Medicare health plans (Medicare Advantage)</option>
+              <option value="drug" {{ 'selected' if request.args.get('plan_choice') == 'drug' else '' }}>Medicare drug plans (Part D)</option>
+            </select>
+          </div>
+          <button class="btn btn--solid" type="submit">Continue</button>
+        </form>
+        <p class="small muted" style="margin-top:12px">
+          Already have Medicare Part A and/or Part B? You can compare plan options in your area.
+        </p>
+      </div>
+      <div class="home-hero__image">
+        <img src="{{ url_for('static', filename='images/plan_compare_hero.jpg') }}" alt="An older couple planning together at home">
+      </div>
+    </div>
+  </div>
+</section>
+<section class="section ds-container">
+  <h2>Save time by logging in</h2>
+  <div class="card-grid" style="margin-top:16px">
+    <div class="list-card">
+      <h3>Get a summary of your current coverage</h3>
+      <p>Log in to see your current Medicare plan information in one place.</p>
+      <a class="btn btn--outline btn--small card-cta" href="{{ url_for('login') }}">Log in</a>
+    </div>
+    <div class="list-card">
+      <h3>Don't have a Medicare account?</h3>
+      <p>You'll need to answer a few questions before we show you plans. These questions help us give you better cost estimates, but won't change which plans you see.</p>
+      <a class="btn btn--outline btn--small card-cta" href="{{ url_for('plan_landing') + '#plan-zip' }}">Find plans without logging in</a>
+    </div>
+    <div class="list-card">
+      <h3>Medicare Advantage vs Original Medicare</h3>
+      <p>Learn about your coverage options before choosing a plan.</p>
+      <a class="btn btn--outline btn--small card-cta" href="{{ url_for('health_drug_plans') }}">Learn about coverage options</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

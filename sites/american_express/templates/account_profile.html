@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Profile | American Express{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="account-grid">
+    <aside class="account-side">
+      <a href="{{ url_for('account_home') }}">Account Home</a>
+      <a href="{{ url_for('account_statements') }}">Statements &amp; Activity</a>
+      <a href="{{ url_for('account_payments') }}">Make a Payment</a>
+      <a href="{{ url_for('account_rewards') }}">Rewards &amp; Benefits</a>
+      <a href="{{ url_for('account_offers') }}">Amex Offers</a>
+      <a href="{{ url_for('account_benefits') }}">Card Benefits</a>
+      <a class="active" href="{{ url_for('account_profile') }}">Profile</a>
+    </aside>
+    <div class="account-main">
+      <h1 class="section-title">Profile</h1>
+      <p class="section-sub">Keep your contact details up to date.</p>
+      <div class="form-card" style="max-width:620px;margin:0;">
+        <form method="post" action="{{ url_for('account_profile') }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field">
+            <label for="display_name">Name</label>
+            <input id="display_name" value="{{ current_user.display_name }}" disabled>
+          </div>
+          <div class="field">
+            <label for="email">Email (User ID)</label>
+            <input id="email" value="{{ current_user.email }}" disabled>
+          </div>
+          <div class="field">
+            <label for="phone">Phone</label>
+            <input id="phone" name="phone" maxlength="20" value="{{ current_user.phone }}">
+          </div>
+          <div class="field">
+            <label for="address_line1">Street address</label>
+            <input id="address_line1" name="address_line1" maxlength="160" value="{{ current_user.address_line1 }}">
+          </div>
+          <div class="field">
+            <label for="city">City</label>
+            <input id="city" name="city" maxlength="60" value="{{ current_user.city }}">
+          </div>
+          <div class="field">
+            <label for="state">State</label>
+            <input id="state" name="state" maxlength="40" value="{{ current_user.state }}">
+          </div>
+          <div class="field">
+            <label for="postal_code">Postal code</label>
+            <input id="postal_code" name="postal_code" maxlength="10" value="{{ current_user.postal_code }}">
+          </div>
+          <div class="form-actions">
+            <button class="btn btn-primary" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

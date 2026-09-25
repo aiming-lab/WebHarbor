@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} - Local Benchmark News Fixture{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a><span>&rsaquo;</span>
+  <a href="{{ url_for('news_index') }}">Medical News fixtures</a><span>&rsaquo;</span>
+  <span>{{ article.category }}</span>
+</nav>
+
+<article class="news-article">
+  <header class="news-article-header">
+    <span class="badge">{{ article.category }}</span>
+    <h1>{{ article.title }}</h1>
+    <p class="news-meta">{{ article.source }} &middot; Fixture date {{ article.published_at.strftime('%B %d, %Y') }}</p>
+    <p class="mirror-notice"><strong>Simulated article.</strong> This local benchmark record has no claimed author, medical reviewer, journal citation, or current regulatory status.</p>
+  </header>
+
+  <div class="article-body">
+    {% for paragraph in (article.body or '').split('\n\n') %}
+      {% if paragraph.strip() %}<p>{{ paragraph }}</p>{% endif %}
+    {% endfor %}
+  </div>
+
+  <section class="article-source-status">
+    <h2>Source status</h2>
+    <p>This article is a deterministic WebHarbor interface fixture. Verify real medical news and regulatory decisions through current official sources.</p>
+  </section>
+
+  {% if related %}
+  <section class="related-articles">
+    <h2>Related simulated fixtures</h2>
+    <ul>
+      {% for item in related %}<li><a href="{{ url_for('news_article', article_id=item.id) }}">{{ item.title }}</a></li>{% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</article>
+{% endblock %}

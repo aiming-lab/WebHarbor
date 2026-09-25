@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}{{ author.name }} | WebMD{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumbs"><a href="{{ url_for('index') }}">Home</a> &rsaquo; Our Team &rsaquo; {{ author.name }}</div>
+  <div class="author-head">
+    <img src="{{ url_for('static', filename='images/' + author.image) }}" alt="{{ author.name }}">
+    <div>
+      <h1>{{ author.name }}</h1>
+      <div class="author-role">{{ author.role }}{% if author.credentials %} &middot; {{ author.credentials }}{% endif %}</div>
+    </div>
+  </div>
+  <p class="author-bio">{{ author.bio }}</p>
+
+  {% if written %}
+  <div class="home-block">
+    <h2>Articles by {{ author.name }}</h2>
+    <ul class="item-list">
+      {% for a in written %}
+      <li>
+        <span class="item-name"><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></span>
+        <span class="item-meta">{{ a.section.name }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+
+  {% if reviewed %}
+  <div class="home-block">
+    <h2>Medically reviewed by {{ author.name }}</h2>
+    <ul class="item-list">
+      {% for a in reviewed %}
+      <li>
+        <span class="item-name"><a href="{{ url_for('article_detail', slug=a.slug) }}">{{ a.title }}</a></span>
+        <span class="item-meta">{{ a.section.name }}</span>
+      </li>
+      {% endfor %}
+    </ul>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

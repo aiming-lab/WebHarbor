@@ -1,0 +1,78 @@
+{% macro us_map(states, colors, measure, bins) -%}
+<svg class="us-map" viewBox="0 0 800 570" role="img"
+     aria-label="Map of the U.S. with states color-coded by ranking quintile.">
+  {% for st in states if st.map_path %}
+  <path d="{{ st.map_path }}" fill="{{ colors.get(st.code, '#d1d1d1') }}"
+        stroke="#fff" stroke-width="0.6">
+    <title>{{ st.name }}{% if colors.get(st.code) and colors.get(st.code) != '#d1d1d1' %}{% endif %}</title>
+  </path>
+  {% endfor %}
+</svg>
+{%- endmacro %}
+
+{% macro legend(bins) -%}
+<div class="legend" aria-label="Legend">
+  {% for b in bins %}
+  <span class="key"><span class="swatch" style="background:{{ quintile_color(loop.index0) }}"></span>{{ '%0.1f'|format(b[0]) }} - {{ '%0.1f'|format(b[1]) }}</span>
+  {% endfor %}
+  <span class="key"><span class="swatch" style="background:#d1d1d1"></span>No Data</span>
+</div>
+{%- endmacro %}
+
+{% macro trend_chart(series_list, width=860, height=300) -%}
+{% set all_points = [] %}
+{% for s in series_list %}{% for p in s.points %}{{ all_points.append(p.value) or '' }}{% endfor %}{% endfor %}
+{% set vals = all_points | select('number') | list %}
+{% set ymin = vals | map('float') | min if vals else 0 %}
+{% set ymax = vals | map('float') | max if vals else 1 %}
+{% set pad = (ymax - ymin) * 0.15 if ymax > ymin else 1 %}
+{% set lo = ymin - pad %}
+{% set hi = ymax + pad %}
+{% set left, right, top, bottom = 70, 20, 16, 46 %}
+{% set plot_w = width - left - right %}
+{% set plot_h = height - top - bottom %}
+<svg class="trend-svg" viewBox="0 0 {{ width }} {{ height }}" role="img">
+  {% for i in range(5) %}
+  {% set gy = top + plot_h * i / 4 %}
+  <line x1="{{ left }}" y1="{{ gy }}" x2="{{ width - right }}" y2="{{ gy }}" stroke="#eceef0"/>
+  <text x="{{ left - 8 }}" y="{{ gy + 4 }}" text-anchor="end" font-size="11" fill="#666">
+    {{ '%0.1f'|format(hi - (hi - lo) * i / 4) }}</text>
+  {% endfor %}
+  {% for s in series_list %}
+  {% set pts = s.points %}
+  {% if pts %}
+  <polyline fill="none" stroke="{{ s.color }}" stroke-width="2.2"
+    points="{% for p in pts %}{{ left + plot_w * loop.index0 / (pts|length - 1 if pts|length > 1 else 1) }},{{ top + plot_h * (hi - p.value) / (hi - lo) if p.value is not none else top + plot_h }} {% endfor %}"/>
+  {% for p in pts %}
+  {% set x = left + plot_w * loop.index0 / (pts|length - 1 if pts|length > 1 else 1) %}
+  {% set y = top + plot_h * (hi - p.value) / (hi - lo) if p.value is not none else top + plot_h %}
+  <circle cx="{{ x }}" cy="{{ y }}" r="3.5" fill="{{ s.color }}"><title>{{ p.year }}: {{ p.label }}</title></circle>
+  {% endfor %}
+  {% endif %}
+  {% endfor %}
+  {% set n = (series_list[0].points | length) if series_list else 0 %}
+  {% if n %}
+  {% set step = ((n - 1) // 5) + 1 %}
+  {% for i in range(0, n, step) %}
+  {% set p = series_list[0].points[i] %}
+  {% set x = left + plot_w * i / (n - 1 if n > 1 else 1) %}
+  <text x="{{ x }}" y="{{ height - 18 }}" text-anchor="middle" font-size="11" fill="#666">{{ p.year }}</text>
+  {% endfor %}
+  {% endif %}
+</svg>
+<div class="legend">
+  {% for s in series_list %}
+  <span class="key"><span class="swatch" style="background:{{ s.color }}"></span>{{ s.label }}</span>
+  {% endfor %}
+</div>
+{%- endmacro %}
+
+{% macro pagination(page, pages, q='') -%}
+{% if pages > 1 %}
+<div class="pagination">
+  {% if page > 1 %}<a class="btn btn-outline btn-sm" href="?q={{ q }}&page={{ page - 1 }}">Previous Page</a>{% endif %}
+  <span>Page {{ page }} of {{ pages }}</span>
+  {% if page < pages %}<a class="btn btn-outline btn-sm" href="?q={{ q }}&page={{ page + 1 }}">Next Page</a>{% endif %}
+</div>
+{% endif %}
+{%- endmacro %}

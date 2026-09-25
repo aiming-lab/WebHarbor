@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}{{ origin.name }} to {{ dest.name }} bus | megabus{% endblock %}
+{% block content %}
+<div class="price-ribbon">
+  <div class="container-md">
+    <div class="price-ribbon-inner">
+      {% for r in ribbon %}
+        <a class="ribbon-item {{ 'selected' if r.selected }}" href="{{ route_args(origin.id, dest.id, r.date, passengers) }}"
+           aria-label="View tickets for {{ r.label }}">
+          <span>{{ r.label }}</span>
+          {% if r.price is not none %}
+            <span class="ribbon-price">From {{ '%.2f'|format(r.price) }}</span>
+          {% else %}
+            <span class="ribbon-price text-grey">—</span>
+          {% endif %}
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<div class="container-md">
+  <div class="results-header">
+    <h1>{{ origin.name }} to {{ dest.name }}</h1>
+    <span class="results-count" data-testid="showing-results-count">Showing {{ journeys|length }} results</span>
+    <a href="{{ url_for('home') }}">Edit search</a>
+  </div>
+
+  {% if carriers %}
+    <div class="carrier-filter">
+      <span class="text-grey">Carrier:</span>
+      <a class="{{ 'selected' if not carrier_filter }}" href="{{ route_args(origin.id, dest.id, day, passengers) }}">All</a>
+      {% for c in carriers %}
+        <a class="{{ 'selected' if carrier_filter == c }}" href="{{ route_args(origin.id, dest.id, day, passengers) }}&carrier={{ c|urlencode }}">{{ c }}</a>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% for j in journeys %}
+    <div class="journey-card" id="journey-{{ j.id }}">
+      <div class="journey-summary">
+        <div class="journey-times">
+          <span>{{ j.dep_label }}</span>
+          <span class="arrow">→</span>
+          <span>{{ j.arr_label }}</span>
+        </div>
+        <div class="journey-price">{{ '%.2f'|format(j.price) }}</div>
+      </div>
+      <div class="journey-meta">
+        {{ j.duration_label }}, {{ j.transfers }} transfer{{ 's' if j.transfers != 1 }} — for {{ passengers }} traveler{{ 's' if passengers != 1 }}
+        on {{ day_label }}
+      </div>
+      <div class="carrier-line">
+        {% if j.legs and j.legs[0].carrier_icon %}
+          <img src="{{ url_for('static', filename='images/carriers/' ~ j.legs[0].carrier_icon) }}"
+               alt="{{ j.legs[0].carrier }}">
+        {% endif %}
+        <span>{{ j.legs[0].carrier if j.legs else '' }}</span>
+      </div>
+      <details class="journey-details" {% if loop.first %}open{% endif %}>
+        <summary class="underline text-purple">Show journey details</summary>
+        {% for leg in j.legs %}
+          <div class="journey-leg">
+            <div class="journey-leg-time">{{ fmt_time(leg.dep_datetime[11:16]) }}</div>
+            <div>
+              <div class="journey-leg-place">{{ leg.origin_stop.split(' at ')[0] if ' at ' in leg.origin_stop else origin.name }}</div>
+              <div class="journey-leg-stop">{{ leg.origin_stop }}</div>
+              <a class="text-purple underline" href="{{ url_for('stop_detail', slug=origin.slug) }}">Map &amp; Info</a>
+            </div>
+          </div>
+          <div class="journey-leg">
+            <div class="journey-leg-time">{{ fmt_time(leg.arr_datetime[11:16]) }}</div>
+            <div>
+              <div class="journey-leg-place">{{ leg.dest_stop.split(' at ')[0] if ' at ' in leg.dest_stop else dest.name }}</div>
+              <div class="journey-leg-stop">{{ leg.dest_stop }}</div>
+              <a class="text-purple underline" href="{{ url_for('stop_detail', slug=dest.slug) }}">Map &amp; Info</a>
+            </div>
+          </div>
+        {% endfor %}
+        <div class="journey-duration">Duration: {{ j.duration_label }} · Route {{ j.route_name }}</div>
+        <div class="checkin-note"><b>Check-in &amp; Boarding:</b> Please be at your stop at least 15 minutes before departure.</div>
+      </details>
+      <form action="{{ url_for('basket_add') }}" method="post" class="mt-1">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="journey_id" value="{{ j.id }}">
+        <input type="hidden" name="passengers" value="{{ passengers }}">
+        <button type="submit" class="btn btn-primary btn-sm" data-testid="add-ticket-to-basket"
+                style="float:right">Add to basket</button>
+      </form>
+      <div style="clear:both"></div>
+    </div>
+  {% else %}
+    <div class="no-results">
+      <h2>No journeys found</h2>
+      <p>There are no megabus services between {{ origin.name }} and {{ dest.name }} on {{ day_label }}.</p>
+      <p><a href="{{ url_for('home') }}">Try a different date or route</a></p>
+    </div>
+  {% endfor %}
+  <p class="text-grey">Prices shown are per traveler and include taxes. A {{ BOOKING_FEE }} booking fee applies at checkout.</p>
+</div>
+{% endblock %}

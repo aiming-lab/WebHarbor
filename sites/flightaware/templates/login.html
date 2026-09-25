@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Login - FlightAware{% endblock %}
+{% block content %}
+<div class="auth-box">
+  <div class="panel">
+    <div class="panel-head">Login</div>
+    <div class="panel-body">
+      <form method="post" action="{{ url_for('login', next=request.args.get('next')) }}">
+        <div class="form-row"><label>Email</label><input type="text" name="email" value="{{ request.form.get('email','') }}"></div>
+        <div class="form-row"><label>Password</label><input type="password" name="password"></div>
+        <button class="btn-primary" type="submit">Login</button>
+        <div class="note"><a href="{{ url_for('login') }}">Forgot password?</a></div>
+      </form>
+      <div class="note">Don't have an account? <a href="{{ url_for('register') }}">Register now (free)</a> for customized features, flight alerts, and more!</div>
+      <div class="note">Join FlightAware</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

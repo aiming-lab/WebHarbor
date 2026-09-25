@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}Michaels Cart{% endblock %}
+{% block content %}
+<h1>Michaels Cart</h1>
+<div class="cart-layout">
+  <section class="cart-items">
+    {% for item in s.rows %}
+    <article class="cart-row">
+      {% set imgs = item.product.image_list() %}
+      <a href="/product/{{ item.product.slug }}">
+        {% if imgs %}<img class="cart-img" src="{{ url_for('static', filename='images/' + imgs[0]) }}" alt="{{ item.product.name }}">{% endif %}
+      </a>
+      <div class="cart-info">
+        <a class="cart-name" href="/product/{{ item.product.slug }}">{{ item.product.name }}</a>
+        {% if item.color %}<div class="cart-variant">Color: {{ item.color }}</div>{% endif %}
+        <div class="cart-variant">SKU: {{ item.variant_sku or item.product.sku }}</div>
+        <div class="cart-promo">{{ item.product.promo_text or '30% off every regular price purchase with code GETMY30' }}</div>
+        <form action="/cart/remove" method="post" class="cart-remove-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="item_id" value="{{ item.id }}">
+          <button type="submit" class="link-btn">Remove</button>
+        </form>
+      </div>
+      <div class="cart-qty">
+        <form action="/cart/update" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="item_id" value="{{ item.id }}">
+          <input type="number" name="qty" value="{{ item.qty }}" min="0" max="99" aria-label="Quantity">
+          <button type="submit" class="btn-secondary">Update</button>
+        </form>
+      </div>
+      <div class="cart-price">${{ '%.2f' % (item.product.price_for(item.variant_sku) * item.qty) }}</div>
+    </article>
+    {% else %}
+    <div class="empty-state">
+      <h2>Your cart is empty</h2>
+      <p><a href="/">Continue shopping</a></p>
+    </div>
+    {% endfor %}
+  </section>
+  <aside class="order-summary">
+    <h2>Order Summary</h2>
+    <div class="sum-row"><span>Subtotal</span><span>${{ '%.2f' % s.subtotal }}</span></div>
+    {% if s.bogo_discount %}
+    <div class="sum-row discount"><span>Buy One Get One mix &amp; match</span><span>-${{ '%.2f' % s.bogo_discount }}</span></div>
+    {% endif %}
+    {% if s.code_discount %}
+    <div class="sum-row discount"><span>Promo code {{ s.code }} (30% off)</span><span>-${{ '%.2f' % s.code_discount }}</span></div>
+    {% endif %}
+    <div class="sum-row"><span>Shipping</span><span>{{ 'FREE' if s.shipping == 0 else '$%.2f' % s.shipping }}</span></div>
+    <div class="sum-row"><span>Estimated Tax</span><span>${{ '%.2f' % s.tax }}</span></div>
+    <div class="sum-row total"><span>Order Total</span><span>${{ '%.2f' % s.total }}</span></div>
+    <form action="/cart/coupon" method="post" class="coupon-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      {% if s.code %}
+      <input type="hidden" name="action" value="remove">
+      <button type="submit" class="link-btn">Remove promo code {{ s.code }}</button>
+      {% else %}
+      <label for="code">Promo code</label>
+      <input type="text" id="code" name="code" placeholder="Enter promo code">
+      <button type="submit" class="btn-secondary">Apply</button>
+      {% endif %}
+    </form>
+    {% if s.rows %}<a class="btn-primary checkout-btn" href="/checkout">Proceed to Checkout</a>{% endif %}
+    <p class="sum-note">Free on Orders $49+ for shipping. Store pickup always free.</p>
+  </aside>
+</div>
+{% endblock %}

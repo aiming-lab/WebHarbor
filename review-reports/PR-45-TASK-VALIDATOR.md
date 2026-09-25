@@ -4,7 +4,47 @@ This reviewer-owned continuation preserves XuanRui LI's original contribution an
 from [PR #45](https://github.com/aiming-lab/WebHarbor/pull/45), then brings it onto the
 current WebHarbor task and grading contract.
 
-## Scope and versions
+## Current main synchronization — 2026-09-25
+
+Merged upstream `main` at `b3275d75fdfcfea6ca142ddd59e20b7e4cb3d454`, preserving contributor and reviewer history.
+The validator and its 31 tests are byte-identical to pre-sync head `fdc58de0f179eec31da85f6094d78f57b69b5ac1`.
+Usage documentation moved from the root README to [docs/task-validation.md](../docs/task-validation.md)
+to follow the current repository policy. No task, verifier, site runtime, or asset differs from upstream.
+
+Fresh checks: **31/31 tests PASS** on Python 3.12; Pyright reports 0 errors; Ruff lint and
+format checks pass; upstream registry validation passes for 94 sites, ports 40000–40093.
+The full strict corpus scan covers **94 sites / 2,315 tasks and exits 1**, with
+**261 errors and 10 warnings**:
+
+| Finding | Count | Interpretation |
+|---|---:|---|
+| `bad-task-identity` | 156 | Existing naming/alias conventions differ from the validator contract; adjudication remains. |
+| `bad-judge-rubric` | 54 | Object-valued rubrics in Healthgrades, Kelley Blue Book, and Uniqlo; the current judge expects strings. |
+| `duplicate-verifier` | 51 | Shared dispatcher paths conflict with the one-verifier-per-task rule; adjudication remains. |
+| `suspicious-term` | 10 | Heuristic warnings, including ordinary payment vocabulary; not confirmed secret exposure. |
+
+An executable probe of the actual `trajectory_text` function in `agent_demo/eval_judge.py`
+confirms that passing an object as `judge_rubric` raises `TypeError` at string joining.
+The other findings are diagnostic results, not 207 independently established site defects.
+The synchronization does not weaken validation rules or rewrite unrelated task sets.
+Current-corpus compatibility needs follow-up before claiming a clean repository-wide result.
+The historical 18-scenario blind review below does **not** cover this enlarged corpus.
+
+Reproduce the current results:
+
+```bash
+python3.12 -B -m unittest discover -s scripts -p 'test_validate_tasks.py' -v
+python3.12 -B scripts/validate_tasks.py --strict  # expected exit 1; findings above
+python3.12 -B scripts/check_site_registry.py
+pyright scripts/validate_tasks.py scripts/test_validate_tasks.py
+ruff check scripts/validate_tasks.py scripts/test_validate_tasks.py
+ruff format --check scripts/validate_tasks.py scripts/test_validate_tasks.py
+```
+
+No Docker build/runtime smoke or new independent review was performed in this sync.
+This is a tooling-only delta against main; no HF action is needed.
+
+## Historical review versions
 
 - Original contributor commit: `6b2a41a600bd0e1b260c3c80494f2d50f2b1d2fa`
 - Reviewed upstream base: `36004932bdf82afbe36dc14e00f66841eccf9946`
@@ -31,7 +71,7 @@ they were not executed or represented as passing.
 | Heuristic false positives | substrings such as `todo` in “Mastodon” and the ordinary word “Secret” triggered warnings | markers use word boundaries; secret warnings require credential context such as “client secret” |
 | Human output | warning-only files were printed as `[OK]`, including strict-mode failures | output distinguishes `[WARN]` and `[FAIL]` |
 
-## Executed validation
+## Historical validation — 2026-09-10
 
 The reviewed test suite contains 31 tests. It covers valid contributor rows, valid reviewer
 rows, current acronym naming, normal/strict warning behavior, invalid JSON and encoding,
@@ -45,7 +85,7 @@ Python 3.11.3: 31 tests passed
 Python 3.12:   31 tests passed
 ```
 
-The current repository corpus was executed in strict mode:
+The historical 24-site corpus was executed in strict mode:
 
 ```text
 Checked 24 site(s), 24 task file(s), 805 task(s)
@@ -71,7 +111,7 @@ pyright:           0 errors, 0 warnings
 git diff --check:  passed
 ```
 
-## Independent blind review
+## Historical independent blind review
 
 A fresh Claude Code session reviewed a frozen, checksum-verified packet containing the
 18 scenario requirements, inputs, recorded invocations/results, and before/after state.
@@ -112,13 +152,12 @@ pyright scripts/validate_tasks.py scripts/test_validate_tasks.py
 git diff --check
 ```
 
-## Evidence use and current status
+## Historical evidence scope
 
 - Engineering evidence: unit/static checks and the 18 guided contract executions above.
 - Independent review: checksum-verified, oracle-free first pass, 18 PASS / 0 FAIL, followed
   by result/state/hash reconciliation against the task contracts.
 - Public maintainer evidence: this report, the committed tests, and the reproduction commands.
 
-The reviewed behavior and current corpus are ready for maintainer review. The report-only
-commit after the blind-reviewed head does not change validator behavior or frozen inputs.
-No Hugging Face action is applicable, and this review performs no GitHub merge.
+These results describe the historical candidate only. The current corpus and its
+remaining findings are reported above. No new independent blind-review PASS is claimed.

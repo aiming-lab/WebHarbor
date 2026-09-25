@@ -15,6 +15,7 @@ OPTIONAL=(static/images static/external_cache)
 
 missing=0
 warnings=0
+python3 scripts/check_site_registry.py
 for site in sites/*/; do
     s=$(basename "$site")
     for sub in "${REQUIRED[@]}"; do
@@ -37,10 +38,14 @@ for site in sites/*/; do
     if [[ -f "sites/$s/asset_inventory.json" ]]; then
         python3 scripts/check_asset_inventory.py "sites/$s"
     fi
+    if [[ -f "sites/$s/generated_asset_inventory.json" && -f "sites/$s/check_generated_assets.py" ]]; then
+        python3 "sites/$s/check_generated_assets.py"
+    fi
 done
 
 if (( missing > 0 )); then
     echo "[check] $missing required asset dirs missing — run scripts/fetch_assets.sh"
     exit 1
 fi
-echo "[check] all sites have instance_seed/ ($warnings sites lack at least one optional asset dir — that's OK)"
+python3 scripts/check_seed_databases.py sites --allow-build-generated
+echo "[check] all non-build-generated sites have one valid SQLite seed database ($warnings sites lack at least one optional asset dir — that's OK)"

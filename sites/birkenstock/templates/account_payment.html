@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block title %}Payment Methods | BIRKENSTOCK{% endblock %}
+{% block content %}
+<div class="page">
+  <h1>Payment Methods</h1>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <div class="you">
+        <div class="name">{{ current_user.name }}</div>
+        <div class="tier">{{ current_user.vip_tier }} &middot; {{ current_user.vip_points }} points</div>
+      </div>
+      <a href="/us/account/">Overview</a>
+      <a href="/us/account/profile">Profile &amp; Addresses</a>
+      <a href="/us/account/payment">Payment Methods</a>
+      <a href="/us/orders/">Orders</a>
+      <a href="/us/wishlist/">Wish List</a>
+      <a href="/us/logout">Log Out</a>
+    </aside>
+    <section>
+      {% if current_user.payment_methods %}
+      {% for pm in current_user.payment_methods %}
+      <div class="radio-row">
+        <span><strong>{{ pm.label }}</strong> ending in {{ pm.last_four }} &middot; exp {{ '%02d' % pm.exp_month }}/{{ pm.exp_year }}</span>
+      </div>
+      {% endfor %}
+      {% else %}
+      <p style="color:#494954">You have no saved payment methods.</p>
+      {% endif %}
+      <h2 style="font-size:15px;margin-top:24px;text-transform:uppercase;letter-spacing:.06em">Add a new card</h2>
+      <form method="post" class="form-card">
+        <div class="field">
+          <label for="label">Card label* <span style="text-transform:none">(e.g. Visa)</span></label>
+          <input type="text" id="label" name="label" required>
+        </div>
+        <div class="field">
+          <label for="card_number">Card number*</label>
+          <input type="text" id="card_number" name="card_number" inputmode="numeric" required>
+        </div>
+        <div class="field">
+          <label for="holder">Name on card</label>
+          <input type="text" id="holder" name="holder" value="{{ current_user.name }}">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="exp_month">Exp. month</label>
+            <input type="number" id="exp_month" name="exp_month" min="1" max="12" value="12">
+          </div>
+          <div class="field">
+            <label for="exp_year">Exp. year</label>
+            <input type="number" id="exp_year" name="exp_year" min="2026" max="2040" value="2028">
+          </div>
+        </div>
+        <button type="submit" class="btn btn-dark">ADD CARD</button>
+      </form>
+    </section>
+  </div>
+</div>
+{% endblock %}

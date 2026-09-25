@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% from "_drug_sidebar.html" import drug_status_sidebar %}
+{% block title %}{{ drug.generic_name|title }} Pregnancy Fixture - {{ site_name }}{% endblock %}
+{% block content %}
+<nav class="breadcrumb" aria-label="Breadcrumb">
+  <a href="{{ url_for('index') }}">Home</a><span class="sep">&rsaquo;</span>
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}">{{ drug.generic_name|title }}</a><span class="sep">&rsaquo;</span>
+  <span class="current">Pregnancy fixture</span>
+</nav>
+
+<div class="drug-page-type-tabs">
+  <span class="drug-page-type-tab active">Consumer section</span>
+  <a href="{{ url_for('drug_pro_monograph', slug=drug.slug) }}" class="drug-page-type-tab">Professional</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}" class="drug-page-type-tab">FAQ</a>
+</div>
+
+<div class="page-with-sidebar">
+<div class="main-col">
+<nav class="section-tabs section-tabs--subpage" aria-label="Drug sections">
+  <a href="{{ url_for('drug_detail', slug=drug.slug) }}#uses">Uses</a>
+  <a href="{{ url_for('drug_warnings', slug=drug.slug) }}">Warnings</a>
+  <a href="{{ url_for('drug_dosage', slug=drug.slug) }}">Dosage</a>
+  <a href="{{ url_for('drug_side_effects', slug=drug.slug) }}">Side effects</a>
+  <a href="{{ url_for('drug_interactions_page', slug=drug.slug) }}">Interactions</a>
+  <a href="{{ url_for('drug_faq_page', slug=drug.slug) }}">FAQ</a>
+</nav>
+
+<h1>{{ drug.generic_name|title }} pregnancy fixture</h1>
+<section class="pregnancy-section pregnancy-risk-summary">
+  <h2>Stored pregnancy fixture field</h2>
+  {% if drug.pregnancy_risk %}<p>{{ drug.pregnancy_risk }}</p>{% else %}<p class="muted">Not stored.</p>{% endif %}
+</section>
+
+<section class="pregnancy-section pregnancy-clinical">
+  <h2>Data not stored</h2>
+  <p>This record contains no verified pregnancy study, trimester-specific risk, lactation, fertility, neonatal, monitoring, or clinical recommendation data. The displayed field is not interpreted or converted into guidance.</p>
+</section>
+
+<section id="further-information">
+  <h2>External verification</h2>
+  <p>Consult current official labeling and a qualified healthcare professional for real pregnancy, lactation, or medication decisions.</p>
+</section>
+
+<p class="is-146"><a href="{{ url_for('drug_detail', slug=drug.slug) }}">&larr; Back to {{ drug.generic_name|title }} drug information</a></p>
+</div>
+{{ drug_status_sidebar(drug) }}
+</div>
+{% endblock %}

@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% block title %}Service Alerts · Amtrak Demo Mirror{% endblock %}
+{% block content %}
+  <section class="page-hero">
+    <div>
+      <div class="eyebrow">Service alerts</div>
+      <h2>Review route and station advisories that affect seeded trips.</h2>
+      <p>These alerts power the homepage, status board, search results, and booking-result warnings.</p>
+      <form class="form-panel" action="{{ url_for('service_alerts_page') }}" method="get" style="margin-top: 18px; max-width: 420px;">
+        <div class="field-wide">
+          <label for="severity">Severity</label>
+          <select id="severity" name="severity">
+            <option value="">All severities</option>
+            {% for item in severities %}
+              <option value="{{ item }}" {% if severity == item %}selected{% endif %}>{{ item }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="hero-actions">
+          <button class="button" type="submit">Filter alerts</button>
+        </div>
+      </form>
+    </div>
+    <div class="hero-art">
+      <img src="{{ url_for('static', filename=alerts[0].badge_icon if alerts else 'images/alerts/nyp-platform-adjustment.svg') }}" alt="Alert art">
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="detail-list">
+      {% for alert in alerts %}
+        <article class="card alert-card {% if 'Major' in alert.severity %}major{% elif alert.severity == 'Service Alert' %}service{% endif %}">
+          <div class="two-column-layout">
+            <div>
+              <div class="badge-row">
+                <span class="status-badge {% if 'Major' in alert.severity %}danger{% elif alert.severity == 'Service Alert' %}warning{% else %}success{% endif %}">{{ alert.severity }}</span>
+                <span class="badge">{{ alert.scope_type|title }}</span>
+              </div>
+              <h3 class="card-title" style="margin-top: 14px;">{{ alert.title }}</h3>
+              <p class="muted">{{ alert.message }}</p>
+              <div class="subtle">{{ alert.next_step }}</div>
+            </div>
+            <div class="card">
+              <img src="{{ url_for('static', filename=alert.badge_icon) }}" alt="{{ alert.severity }}" style="max-width: 120px; margin-bottom: 12px;">
+              <div class="subtle">Active {{ alert.start_date|date_label }} through {{ alert.end_date|date_label }}</div>
+              {% if alert.route %}
+                <div class="detail-item" style="margin-top: 12px;"><strong>Route</strong><div class="muted">{{ alert.route.name }}</div></div>
+              {% endif %}
+              {% if alert.station %}
+                <div class="detail-item" style="margin-top: 12px;"><strong>Station</strong><div class="muted">{{ alert.station.city_name }} ({{ alert.station.code }})</div></div>
+              {% endif %}
+            </div>
+          </div>
+        </article>
+      {% else %}
+        <div class="empty-state">No alerts matched that severity filter.</div>
+      {% endfor %}
+    </div>
+  </section>
+{% endblock %}

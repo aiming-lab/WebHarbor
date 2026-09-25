@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block title %}Search | Carnival Cruise Line{% endblock %}
+{% block content %}
+<section class="section">
+  <div class="results-count">
+    <h1>Search Results for &ldquo;{{ q }}&rdquo;</h1>
+  </div>
+  <form class="cruise-search-widget" style="margin-top:10px;box-shadow:none;border:1px solid var(--line);" action="{{ url_for('global_search') }}" method="get">
+    <div class="search-field" style="flex:2;">
+      <label for="gq">SEARCH THE SITE</label>
+      <input id="gq" type="search" name="q" value="{{ q }}" placeholder="Cruises, ships, ports, excursions">
+    </div>
+    <button class="btn btn-red" type="submit">SEARCH</button>
+  </form>
+
+  {% if itins %}
+  <h2 style="color:var(--navy);margin-top:26px;">Cruises ({{ itins | length }})</h2>
+  {% for itin in itins %}
+  <article class="result-card">
+    <div class="result-photo">
+      <img src="{{ url_for('static', filename=itin.image.replace('static/', '')) }}" alt="{{ itin.title }}">
+    </div>
+    <div class="result-body">
+      <h3 class="result-title"><a href="{{ itin.url_path }}?itinportcode={{ itin.departure_port.code }}" style="color:inherit">{{ itin.title }}</a></h3>
+      <div class="result-ship">{{ itin.ship.name }}</div>
+      <div class="result-route">{{ itin.route_display }}</div>
+    </div>
+    <div class="result-price-box">
+      <div class="price-from">From*</div>
+      <div class="price-big">${{ itin.from_price }}</div>
+      <div class="price-note">per person</div>
+    </div>
+  </article>
+  {% endfor %}
+  {% endif %}
+
+  {% if ships %}
+  <h2 style="color:var(--navy);margin-top:26px;">Ships ({{ ships | length }})</h2>
+  {% for ship in ships %}
+  <article class="ship-card">
+    <img src="{{ url_for('static', filename=ship.hero_image.replace('static/', '')) }}" alt="{{ ship.name }}">
+    <div style="flex:1;">
+      <h3><a href="{{ url_for('ship_detail', slug=ship.slug) }}" style="color:inherit">{{ ship.name }}</a></h3>
+      <div class="meta">Sails to {{ ship.sail_to_list | join(', ') }}</div>
+    </div>
+    <a class="btn btn-blue btn-small" href="{{ url_for('cruise_search', shipcode=ship.code) }}">SEARCH CRUISES</a>
+  </article>
+  {% endfor %}
+  {% endif %}
+
+  {% if ports %}
+  <h2 style="color:var(--navy);margin-top:26px;">Ports ({{ ports | length }})</h2>
+  <div class="feature-grid">
+    {% for port in ports %}
+    <a class="feature-card" href="{{ url_for('excursions_port', port_slug=port.slug) }}" style="text-decoration:none;">
+      <div class="fc-body" style="padding:14px 16px;">
+        <h4>{{ port.name }}</h4>
+        <div class="small muted">{% if port.is_homeport %}Home Port{% else %}Port of Call{% endif %}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if excs %}
+  <h2 style="color:var(--navy);margin-top:26px;">Shore Excursions ({{ excs | length }})</h2>
+  {% for exc in excs %}
+  <article class="exc-card">
+    <img src="{{ url_for('static', filename=exc.image.replace('static/', '')) }}" alt="{{ exc.title }}">
+    <div class="exc-body">
+      <h3><a href="{{ url_for('excursion_detail', port_slug=exc.port_slug, exc_slug=exc.slug) }}" style="color:inherit">{{ exc.title }}</a></h3>
+      <div class="exc-meta"><span>{{ exc.port_slug.replace('-', ' ').title() }}</span>{% if exc.duration %}<span>{{ exc.duration }}</span>{% endif %}</div>
+    </div>
+    <div class="exc-price">
+      {% if exc.price %}<div class="price-big">${{ '%.2f' % exc.price }}</div>{% endif %}
+      <a class="btn btn-blue btn-small" href="{{ url_for('excursion_detail', port_slug=exc.port_slug, exc_slug=exc.slug) }}">More Details</a>
+    </div>
+  </article>
+  {% endfor %}
+  {% endif %}
+
+  {% if feats %}
+  <h2 style="color:var(--navy);margin-top:26px;">Onboard Experiences ({{ feats | length }})</h2>
+  <div class="feature-grid">
+    {% for feat in feats %}
+    <a class="feature-card" href="{{ url_for('ship_detail', slug=feat.ship.slug) }}" style="text-decoration:none;">
+      {% if feat.image_url %}<img src="{{ url_for('static', filename=feat.image_url.replace('static/', '')) }}" alt="{{ feat.title }}">{% endif %}
+      <div class="fc-body" style="padding:14px 16px;">
+        <h4>{{ feat.title }}</h4>
+        <div class="small muted">On {{ feat.ship.name }}</div>
+        {% if feat.cost %}<div class="cost-pill {{ feat.cost }}">{{ feat.cost | capitalize }}</div>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  {% if not itins and not ships and not ports and not excs and not feats %}
+  <div class="text-center" style="padding:40px 0;">
+    <h2>No results found.</h2>
+    <p class="muted">Try a different search — for example &ldquo;Bahamas&rdquo;, &ldquo;Cozumel&rdquo;, &ldquo;Mardi Gras&rdquo; or &ldquo;dolphin&rdquo;.</p>
+    <a class="btn btn-blue" href="{{ url_for('cruise_search') }}">Browse all cruises</a>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

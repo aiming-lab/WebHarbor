@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "snapshot_date": "2026-09-21",
+  "records": [
+    {
+      "path": "app.py",
+      "classification": "mirror-code",
+      "scope": "Flask application implementing the cboe.com mirror: quotes, option chains, market statistics, insights, Options Institute, products, account flows. Route/URL patterns and page structure follow the upstream site."
+    },
+    {
+      "path": "seed_data.py",
+      "classification": "mirror-code",
+      "scope": "Build-time conversion of the scraped upstream snapshot into the SQLite seed database. Idempotent seed functions; runtime DB is frozen from the snapshot, not live data."
+    },
+    {
+      "path": "scraped_data/ (not shipped)",
+      "classification": "captured-upstream-content",
+      "scope": "Build-time only (gitignored): captured JSON/HTML from www.cboe.com and its public data APIs (delayed_quotes quotes/intraday/options/symbol_book endpoints, market statistics pages, Insights article pages, Options Institute pages, tradable product pages) plus the image download manifest. Source of the seed content."
+    },
+    {
+      "path": "instance_seed/cboe.db (HF-managed)",
+      "classification": "captured-upstream-data",
+      "scope": "Frozen mirror snapshot: 8 symbols with delayed quotes and 3,113 intraday bars, 83,136 real option contracts, 35,648-row symbol directory, 9 dates of daily market statistics, 319 Insights articles with bodies, 21 Options Institute experts, 3 upcoming classes, 4 product pages, static/about/hours/GTH pages, benchmark users."
+    },
+    {
+      "path": "static/images/ (HF-managed)",
+      "classification": "source-backed-media-inventory",
+      "scope": "Every HF-managed runtime image has a local byte count, SHA-256 and source URL in asset_inventory.json: 844 files downloaded directly from cdn.cboe.com (expert headshots, article charts, OI heroes/banners, associate profiles, meganav ads, footer patterns, quotes-page art). No placeholders, no generated images."
+    },
+    {
+      "path": "static/fonts/",
+      "classification": "open-license-fonts",
+      "scope": "Inter, Open Sans and Montserrat woff2 subsets from Google Fonts (SIL OFL), Source Sans Pro woff2 from cboe.com's own font hosting (SIL OFL), plus the Cboe-hosted Noto/Hanken/Ubuntu Mono subsets referenced by the live stylesheet."
+    },
+    {
+      "path": "static/icons/",
+      "classification": "source-backed-icons",
+      "scope": "Social/link icons and favicon downloaded directly from cdn.cboe.com; the Cboe wordmark logo is reproduced inline in the templates from the live header markup."
+    },
+    {
+      "path": "templates/ + static/css/site.css + static/js/site.js",
+      "classification": "adapted-visual-structure",
+      "scope": "Layout, color tokens (cboe navy/green/cyan scale), typography and component structure adapted from the live site's rendered pages and stylesheet variables. Frozen mirror copy, not a live representation of cboe.com."
+    },
+    {
+      "path": "tasks.jsonl",
+      "classification": "benchmark-tasks",
+      "scope": "30 contributor-defined benchmark tasks (web_name, id, ques, web, upstream_url only). No answers, no verifier keys; the reviewer adds the grading contract."
+    },
+    {
+      "path": "NOTICE.md",
+      "classification": "attribution-notice",
+      "scope": "Mirror provenance, trademark attribution, and takedown contact."
+    }
+  ]
+}

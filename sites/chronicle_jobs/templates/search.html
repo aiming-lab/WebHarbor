@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="search-layout">
+  <aside class="filter-sidebar">
+    <div class="filter-panel">
+      <h2>Filter jobs</h2>
+      <form action="{{ request.path if path else '/searchjobs/' }}" method="get">
+        <label for="filter-keywords">Keywords</label>
+        <input id="filter-keywords" type="text" name="Keywords" placeholder="e.g. Job Title or Organization" value="{{ keywords }}">
+        <label for="filter-location">Location</label>
+        <input id="filter-location" type="text" name="radialtown" placeholder="e.g. Country, City or ZIP Code" value="{{ location_text }}">
+        <input type="submit" value="Search">
+      </form>
+      <a class="filter-panel__advanced" href="/searchjobs/">Advanced search</a>
+    </div>
+
+    <div class="refine">
+      <h3>Refine your search</h3>
+      <details class="refine-group" open>
+        <summary>Position Type</summary>
+        <ul>
+          {% if sidebar_categories %}
+            {% for entry in sidebar_categories %}
+            <li>
+              {% if entry.kind == "chain" %}
+                <span class="selected">{{ entry.item.label }}</span>
+              {% else %}
+                <a href="{{ chain_url(entry.item.slug, 'category') }}">{{ entry.item.label }}</a>
+                <small>{{ base_query.filter(Job.categories.contains(entry.item)).count() }}</small>
+              {% endif %}
+            </li>
+            {% endfor %}
+            <li><a class="remove" href="{{ clear_categories_url() }}">Clear selection</a></li>
+          {% else %}
+            {% for cat in top_categories %}
+            <li>
+              <a href="{{ chain_url(cat.slug, 'category') }}">{{ cat.label }}</a>
+              <small>{{ base_query.filter(Job.categories.contains(cat)).count() }}</small>
+            </li>
+            {% endfor %}
+          {% endif %}
+        </ul>
+      </details>
+      {% for group_label, values in [
+           ("Employment Level", employment_levels()),
+           ("Location", locations()),
+           ("Institution Type", institution_types()),
+           ("Salary Band", salary_bands()),
+           ("Employment Type", employment_types())] %}
+      <details class="refine-group">
+        <summary>{{ group_label }}</summary>
+        <ul>
+          {% for fv in values %}
+          <li>
+            {% if fv.id in selected_facet_ids %}
+              <span class="selected">{{ fv.label }}</span>
+              <a class="remove" href="{{ remove_url(fv.slug) }}" title="Remove selection">x</a>
+            {% else %}
+              <a href="{{ chain_url(fv.slug, fv.group) }}">{{ fv.label }}</a>
+              <small>{{ base_query.filter(Job.facet_values.contains(fv)).count() }}</small>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ul>
+      </details>
+      {% endfor %}
+    </div>
+  </aside>
+
+  <div class="results-column">
+    <div class="results-heading">
+      {% if heading %}<h1>{{ heading }}</h1>{% else %}<h1>Found {{ "{:,}".format(total) }} jobs</h1>{% endif %}
+      {% if heading_is_label %}<p class="results-sub">Found {{ "{:,}".format(total) }} jobs</p>{% endif %}
+    </div>
+    <h2 class="results-heading" style="font-size:20px; margin:6px 0 2px">Job Results</h2>
+    <nav class="sort-nav" aria-label="sort">
+      <ul>
+        <li><a class="{% if sort == 'Relevance' %}is-current{% endif %}" href="{{ sort_url('Relevance') }}">Relevance</a></li>
+        <li><a class="{% if sort == 'Date' %}is-current{% endif %}" href="{{ sort_url('Date') }}">Newest first</a></li>
+      </ul>
+    </nav>
+
+    <div class="alert-cta">
+      <p>Get new jobs for this search by email</p>
+      <a href="/newalert?keywords={{ keywords | urlencode }}">Create alert</a>
+    </div>
+
+    {% if jobs %}
+    <ul class="lister">
+      {% for job in jobs %}
+      {% include "_job_card.html" %}
+      {% endfor %}
+    </ul>
+
+    <nav class="paginator" aria-label="pagination">
+      <p class="paginator__rss"><a href="/jobsrss/">Subscribe to RSS</a></p>
+      <ul class="paginator__items">
+        {% for item in pagination %}
+        <li><a class="{% if item.current %}is-current{% endif %}" href="{{ item.url }}">{{ item.label }}</a></li>
+        {% endfor %}
+      </ul>
+    </nav>
+    {% else %}
+    <div class="empty-note">
+      <p>No jobs matched your search. Try removing keywords or location filters.</p>
+    </div>
+    {% endif %}
+
+    <div class="alert-cta">
+      <p>Get new jobs for this search by email</p>
+      <a href="/newalert?keywords={{ keywords | urlencode }}">Create alert</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

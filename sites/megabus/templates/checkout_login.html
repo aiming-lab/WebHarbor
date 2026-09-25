@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}Sign in | megabus{% endblock %}
+{% block content %}
+<div class="container-md checkout-wrap">
+  <h1>Almost there</h1>
+  <div class="checkout-steps">
+    <span class="step">1. Basket</span> <span>›</span>
+    <span class="step active">2. Sign in / guest</span> <span>›</span>
+    <span class="step">3. Passenger details</span> <span>›</span>
+    <span class="step">4. Payment</span>
+  </div>
+  <div class="row">
+    <div class="col-md-6">
+      <h2>New customers</h2>
+      <form action="{{ url_for('checkout_login') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="guest">
+        <button type="submit" class="btn btn-primary btn-block" data-testid="checkout-guest">Guest checkout</button>
+      </form>
+      <p class="text-grey">(If you would like to create an account to manage your booking, you can do this after your purchase)</p>
+      <div>or</div>
+      <h2>Sign in</h2>
+      <form action="{{ url_for('checkout_login') }}" method="post">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="signin">
+        <div class="mb-1">
+          <label class="field-label" for="emailAddress">Email address</label>
+          <input class="form-control" type="email" id="emailAddress" name="email" autocomplete="email">
+        </div>
+        <div class="mb-1">
+          <label class="field-label" for="password">Password</label>
+          <input class="form-control" type="password" id="password" name="password" autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign in securely</button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

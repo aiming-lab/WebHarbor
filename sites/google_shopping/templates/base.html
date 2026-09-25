@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Google Shopping - Shop Online, Compare Prices &amp; Where to Buy{% endblock %}</title>
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/site.css') }}">
+</head>
+<body class="{% block bodyclass %}{% endblock %}">
+
+<header class="site-header">
+  <button class="hamburger" aria-label="Main menu" onclick="var m=document.getElementById('apps-menu'); if(m) m.classList.toggle('open')">
+    <svg viewBox="0 0 24 24"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+  </button>
+  <a class="brand" href="{{ url_for('index') }}" aria-label="Google Shopping">
+    <span class="bag"><img src="{{ url_for('static', filename='icons/favicon.png') }}" alt=""></span>
+    <span class="g-word">Google Shopping</span>
+  </a>
+  <div class="searchbar">
+    <form id="header-search-form" action="{{ url_for('search') }}" method="get" role="search">
+      <input type="text" name="q" placeholder="Shop for anything" value="{{ request.args.get('q', '') }}" aria-label="Search">
+      {% if request.args.get('q') %}<button class="sb-ico" type="button" aria-label="Clear" onclick="this.parentElement.querySelector('input').value='';this.style.display='none'">
+        <svg viewBox="0 0 24 24"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+      </button>{% endif %}
+    </form>
+    <button class="sb-ico" aria-label="Search by voice" type="button">
+      <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.91-3c-.49 0-.9.36-.98.85C16.52 13.98 14.47 16 12 16s-4.52-2.02-4.93-4.15c-.08-.49-.49-.85-.98-.85-.6 0-1.07.54-.98 1.12.53 3.01 3.03 5.37 5.89 5.77V20h-2c-.55 0-1 .45-1 1s.45 1 1 1h4c.55 0 1-.45 1-1s-.45-1-1-1h-2v-2.12c2.86-.4 5.36-2.76 5.89-5.77.09-.58-.38-1.11-.98-1.11z"/></svg>
+    </button>
+    <button class="sb-ico" aria-label="Search by image" type="button">
+      <svg viewBox="0 0 24 24"><path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/></svg>
+    </button>
+    <button class="sb-ico" type="submit" form="header-search-form" aria-label="Search">
+      <svg viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+    </button>
+  </div>
+  <div class="header-right">
+    <button class="apps-grid" aria-label="Google apps" type="button">
+      <svg viewBox="0 0 24 24"><path d="M6 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm6-12c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 6c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2z"/></svg>
+    </button>
+    {% if current_user.is_authenticated %}
+      <a class="account-chip" href="{{ url_for('account') }}">
+        <span>{{ current_user.display_name.split(' ')[0] }}</span>
+        <span class="avatar">{{ current_user.display_name[0] }}</span>
+      </a>
+    {% else %}
+      <a class="signin-btn" href="{{ url_for('login') }}">Sign in</a>
+    {% endif %}
+  </div>
+</header>
+
+<nav class="tabrow">
+  <a class="g-pill" href="{{ url_for('index') }}" aria-label="Google">
+    <svg class="back-arrow" viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg>
+    <img src="{{ url_for('static', filename='icons/googleg_standard_color_128dp.png') }}" alt="">
+  </a>
+  {% set active_tab = request.path %}
+  <a class="tab {% if active_tab in ('/departments', '/search') %}selected{% endif %}" href="{{ url_for('departments') }}">Search</a>
+  <a class="tab {% if active_tab == '/nearby' %}selected{% endif %}" href="{{ url_for('nearby') }}">Nearby</a>
+  <a class="tab {% if active_tab == '/deals' %}selected{% endif %}" href="{{ url_for('deals') }}">Deals</a>
+  <a class="tab {% if active_tab == '/' %}selected{% endif %}" href="{{ url_for('index') }}">
+    <span class="bag-mini"><svg viewBox="0 0 24 24"><path d="M15.7793 4.57524C15.4628 4.57524 15.18 4.35108 15.1174 4.02852C14.8205 2.49828 13.5687 1.47012 12.002 1.47012C10.4352 1.47012 9.17957 2.49828 8.88269 4.02852C8.81165 4.39476 8.45693 4.63476 8.09165 4.56276C7.72565 4.49172 7.48637 4.13772 7.55741 3.77172C7.97429 1.6218 9.80045 0.120117 11.9981 0.120117C14.1958 0.120117 16.0258 1.6218 16.4427 3.77172C16.5137 4.13772 16.2744 4.49172 15.9084 4.56276C15.865 4.57116 15.8218 4.57524 15.7793 4.57524Z"/><path clip-rule="evenodd" d="M21.9561 6.84438C21.5183 6.34542 20.8885 6.06006 20.2266 6.06006H3.77366C3.11174 6.06006 2.48174 6.34566 2.04422 6.84438C1.60718 7.34262 1.40486 8.00574 1.48886 8.66454L3.1799 21.8645C3.32774 23.017 4.30598 23.8801 5.4647 23.8801H18.5358C19.6945 23.8801 20.6728 23.017 20.8206 21.8645L22.5117 8.66454C22.5959 8.00574 22.3933 7.34262 21.9563 6.84438H21.9561ZM7.65446 19.3513C10.0655 16.9328 10.0638 13.0088 7.6487 10.5867C10.0633 13.0078 13.9763 13.0112 16.3885 10.5922C13.9768 13.0112 13.9792 16.9354 16.3941 19.3573C13.9789 16.9352 10.0665 16.933 7.65422 19.3513H7.65446Z" fill-rule="evenodd"/></svg></span>
+    For you
+  </a>
+</nav>
+
+<div class="page">
+  {% with messages = get_flashed_messages() %}
+    {% for m in messages %}<div class="flash">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  {% block content %}{% endblock %}
+</div>
+
+<footer class="site-footer">
+  <div class="footer-location">
+    <span>Midtown Manhattan, New York, NY</span>
+    <span class="dot-sep">-</span>
+    <span>From your IP address</span>
+    <span class="dot-sep">-</span>
+    <a href="{{ url_for('nearby') }}">Update location</a>
+  </div>
+  <div class="footer-links">
+    <a href="https://support.google.com/googleshopping?hl=en&amp;fg=1#topic=9112782">Help</a>
+    <a href="#">Send feedback</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">Information for Merchants</a>
+  </div>
+</footer>
+
+</body>
+</html>

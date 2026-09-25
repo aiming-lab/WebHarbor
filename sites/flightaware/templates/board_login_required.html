@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ airport.name }} ({{ airport.code }}) {{ board_name }} - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">{{ airport.name | upper }}{% if airport.city %} ({{ airport.city | upper }}, {{ (airport.region or airport.country) | upper }}){% endif %} {{ airport.iata or airport.code }}</div>
+
+<div class="tab-bar">
+  <a href="/resources/airport/{{ airport.code }}/weather">OVERVIEW AND FBOS</a>
+  <a class="active" href="/live/airport/{{ airport.code }}">FLIGHT TRACKER</a>
+  <a href="/resources/airport/{{ airport.code }}/weather">WEATHER</a>
+  <a href="/resources/airport/{{ airport.code }}/map">MAP &amp; DIAGRAM</a>
+  <a href="/resources/airport/{{ airport.code }}/map">IFR PLATES</a>
+  <a href="/resources/airport/{{ airport.code }}/map">VFR SECTIONAL</a>
+  <a href="/resources/airport/{{ airport.code }}/remarks">REMARKS</a>
+  <a href="/about/">BUY DATA</a>
+</div>
+
+<div class="login-note">
+  This service requires an account, please <a href="{{ url_for('login') }}">login</a> or <a href="{{ url_for('register') }}">create one</a>.
+</div>
+<div class="auth-box">
+  <div class="panel">
+    <div class="panel-head">Login</div>
+    <div class="panel-body">
+      <form method="post" action="{{ url_for('login', next='/live/airport/' + airport.code + '/' + board) }}">
+        <div class="form-row"><label>Email</label><input type="text" name="email"></div>
+        <div class="form-row"><label>Password</label><input type="password" name="password"></div>
+        <button class="btn-primary" type="submit">Login</button>
+        <div class="note"><a href="{{ url_for('login') }}">Forgot password?</a></div>
+      </form>
+      <div class="note">Don't have an account? <a href="{{ url_for('register') }}">Register now (free)</a> for customized features, flight alerts, and more!</div>
+      <div class="note">Join FlightAware</div>
+    </div>
+  </div>
+</div>
+{% endblock %}

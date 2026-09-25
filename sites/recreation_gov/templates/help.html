@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Help - Recreation.gov{% endblock %}
+{% block content %}
+<section class="section help-hero">
+  <div class="wrap">
+    <p class="eyebrow">Support</p>
+    <h1>Help Center</h1>
+    <p class="help-deck">Find account guidance, reservation policy summaries, accessibility support details, and common trip-planning answers modeled after current Recreation.gov help topics.</p>
+    <form class="help-search-bar" action="{{ url_for('help_center') }}" method="get">
+      <span aria-hidden="true">⌕</span>
+      <input name="q" placeholder="Search help topics, reservation rules, accessibility, and account questions">
+      <button class="btn" type="submit">Search</button>
+    </form>
+  </div>
+</section>
+
+<section class="section">
+  <div class="wrap help-topic-grid">
+    {% for topic in topic_cards %}
+      <a class="help-topic-card" href="{{ topic.href }}">
+        <strong>{{ topic.title }}</strong>
+        <p>{{ topic.body }}</p>
+      </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section alt" id="reservations">
+  <div class="wrap two-col help-content-grid">
+    <div>
+      <h2>Reservation Questions</h2>
+      <div class="help-faq-list">
+        {% for entry in faq_entries %}
+          <article class="help-faq-card">
+            <strong>{{ entry.question }}</strong>
+            <p>{{ entry.answer }}</p>
+          </article>
+        {% endfor %}
+      </div>
+    </div>
+    <aside class="booking-box help-aside-card" id="account-help">
+      <h2>Account & Sign-In</h2>
+      <p>Create an account to save trip ideas, keep reservation details in one place, receive important updates, and complete checkout using a consistent profile.</p>
+      <p><a href="{{ url_for('register') }}">Create Account</a> · <a href="{{ url_for('login') }}">Log In</a></p>
+      <p class="muted">Benchmark users can sign in with password <code>TestPass123!</code>.</p>
+      <h3>Call Center Support</h3>
+      <p>Reservation changes and cancellations can also be managed by calling <strong>1-877-444-6777</strong>.</p>
+    </aside>
+  </div>
+</section>
+
+<section class="section" id="passes-permits">
+  <div class="wrap two-col help-content-grid">
+    <div class="booking-box">
+      <h2>Rules & Reservation Policies</h2>
+      <ul class="list-clean">
+        {% for point in policy_points %}
+          <li>{{ point }}</li>
+        {% endfor %}
+      </ul>
+      <p class="muted">Policy details vary by facility. Local rules on individual listings override site-wide defaults.</p>
+    </div>
+    <div class="booking-box" id="accessibility">
+      <h2>Accessibility Support</h2>
+      <p>Recreation.gov states that the service is designed to meet or exceed Section 508 accessibility requirements and that the Help Center team can assist with reservations, website questions, and alternate-format support.</p>
+      <p>If you require accessibility assistance, use the contact pathway below or the TDD line <strong>877-833-6777</strong> from <strong>10 a.m. to 12 a.m. Eastern Time</strong>.</p>
+      <p>Use the Accessible filter in search to find campgrounds, tours, and day-use inventory with accessibility-related features.</p>
+    </div>
+  </div>
+</section>
+
+<section class="section alt" id="contact">
+  <div class="wrap help-contact-band">
+    <div>
+      <p class="eyebrow">Need More Help?</p>
+      <h2>Contact & Support Paths</h2>
+      <p>Use your account for self-service first, then escalate to support for reservation changes, accessibility assistance, or post-trip refund questions.</p>
+    </div>
+    <div class="help-contact-grid">
+      <div class="help-contact-card">
+        <strong>Reservations & Changes</strong>
+        <p>1-877-444-6777</p>
+      </div>
+      <div class="help-contact-card">
+        <strong>TDD Line</strong>
+        <p>877-833-6777</p>
+      </div>
+      <div class="help-contact-card">
+        <strong>Self-Service</strong>
+        <p><a href="{{ url_for('reservations') if current_user.is_authenticated else url_for('login') }}">My Reservations</a></p>
+      </div>
+      <div class="help-contact-card">
+        <strong>Policies</strong>
+        <p><a href="#passes-permits">Rules & Reservation Policies</a></p>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

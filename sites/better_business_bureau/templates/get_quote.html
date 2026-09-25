@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Get a Quote from a BBB Accredited Business | Better Business Bureau{% endblock %}
+{% block content %}
+<div class="page-hero">
+  <div class="container">
+    <h1>Get a Quote</h1>
+    <p>Search for a BBB Accredited Business and request a free, no-obligation quote.</p>
+  </div>
+</div>
+<div class="container">
+  <div class="lookup-bar">
+    <form action="{{ url_for('get_a_quote') }}" method="get" style="display:flex;gap:.8rem;flex-wrap:wrap;flex:1;">
+      <input type="text" name="find_text" value="{{ find_text }}" placeholder="Businesses">
+      <button class="btn btn-yellow" type="submit">Search</button>
+    </form>
+  </div>
+  {% if find_text %}
+    {% if rows %}
+    <h2 style="color:#032160;">Businesses that offer quotes</h2>
+    {% for biz in rows %}
+    <div class="article-card">
+      <h3><a href="{{ url_for('get_quote_form', biz_id=biz.id) }}">{{ biz.name }}</a></h3>
+      <div class="meta">{{ biz.primary_category }} &middot; {{ biz.city }}, {{ biz.state }} &middot; BBB Rating: {{ biz.rating }}{% if biz.accredited %} &middot; BBB Accredited{% endif %}</div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <p>No businesses offering quotes matched your search. Try a different term.</p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}

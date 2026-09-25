@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block content %}
+{% if banner %}
+<section class="hero">
+  <div class="container">
+    <div class="hero-banner">
+      <img src="{{ image_url(banner.image) }}" alt="Amazon careers campaign banner" class="hero-img-wide">
+      <a class="hero-btn-overlay" href="{{ banner.button_link }}">{{ banner.button_text }}</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="cards-band">
+  <div class="container">
+    <div class="card-row">
+      <div class="info-card">
+        <h2>Student opportunities</h2>
+        <p>At Amazon, what we&rsquo;re building today defines tomorrow. Explore internships, apprenticeships, and full-time roles where you can think big, learn from others, and make an impact.</p>
+        <a class="card-btn" href="{{ url_for('search', category_type='Student Programs') }}">Find your role</a>
+      </div>
+      <div class="info-card">
+        <h2>Hourly jobs</h2>
+        <p>From the warehouse floor to customer doorsteps, every role has an impact. Search open jobs and discover how you can help shape the future of everyday life.</p>
+        <a class="card-btn" href="{{ url_for('search', category='fulfillment-center-warehouse-associate') }}">Find your role</a>
+      </div>
+      <div class="info-card">
+        <h2>AI careers</h2>
+        <p>From personalized shopping to intelligent robotics, our AI teams shape how customers live and work every day. Explore open roles and see how you can shape what&rsquo;s next.</p>
+        <a class="card-btn" href="{{ url_for('business_category_detail', slug='agi') }}">Find your role</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="innovate-band">
+  <div class="container">
+    <h2 class="section-heading">Innovate with us</h2>
+    <div class="innovate-grid">
+      <a class="innovate-card" href="{{ url_for('business_categories') }}">
+        <img src="{{ image_url('innovate-image-283-29.jpg') }}" alt="Amazonians collaborating outdoors">
+        <h3>Teams</h3>
+        <p>Get to know Amazon teams and how we&rsquo;re impacting the future.</p>
+        <span class="link-more">Discover teams</span>
+      </a>
+      <a class="innovate-card" href="{{ url_for('job_categories') }}">
+        <img src="{{ image_url('innovate-job-categories-cropped.jpg') }}" alt="Amazonian holding a laptop covered in stickers">
+        <h3>Job categories</h3>
+        <p>Find the right role to shape your future at Amazon.</p>
+        <span class="link-more">Browse categories</span>
+      </a>
+      <a class="innovate-card" href="{{ url_for('locations') }}">
+        <img src="{{ image_url('innovate-locations-696x462px.jpg') }}" alt="Amazonians walking down outdoor steps">
+        <h3>Locations</h3>
+        <p>See where Amazonians worldwide are making every day better.</p>
+        <span class="link-more">Explore locations</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+{% if hero_story %}
+<section class="story-band">
+  <div class="container story-wrap">
+    <div class="story-photo">
+      <img src="{{ image_url(hero_story.photo) }}" alt="Employee profile image of {{ hero_story.name }}" class="story-img">
+    </div>
+    <div class="story-copy">
+      <h2>{{ hero_story.heading }}</h2>
+      <p class="story-role">{{ hero_story.role }} | {{ hero_story.team }} | {{ hero_story.location }}</p>
+      <p class="story-text">{{ hero_story.story }}</p>
+      <a class="story-btn" href="{{ url_for('business_category_detail', slug=hero_story.team_slug or 'shopping') }}">Read more</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<section class="impact-band">
+  <div class="container">
+    <h2>Impact the future, today</h2>
+    <p>Every Amazonian, from warehouse floor to corporate HQ, shares a drive to impact the future, today. Our unmatched scale offers every employee endless opportunities to reimagine how customers shop, stream, eat, connect and live. United by our peculiar culture of curiosity, bold ownership and fearless initiative, we channel our customer obsession into making everyday impact&mdash;big and small.</p>
+    <a class="impact-btn" href="{{ url_for('inclusive_experiences') }}">Learn about working at Amazon</a>
+  </div>
+</section>
+{% endblock %}

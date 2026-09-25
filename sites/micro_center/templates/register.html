@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Create Account : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="form-card">
+    <h1>Create Your Account</h1>
+    <p class="small muted">Join Micro Center Insider for exclusive deals and faster checkout.</p>
+    <form method="POST" action="/account/register">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <label>Display name <span class="req">*</span></label>
+        <input type="text" name="display_name" required>
+      </div>
+      <div class="form-row">
+        <label>Email address <span class="req">*</span></label>
+        <input type="email" name="email" required>
+      </div>
+      <div class="form-row">
+        <label>Phone</label>
+        <input type="tel" name="phone" placeholder="555-555-1234">
+      </div>
+      <div class="two-col">
+        <div class="form-row">
+          <label>Password <span class="req">*</span></label>
+          <input type="password" name="password" required minlength="8">
+        </div>
+        <div class="form-row">
+          <label>Confirm password <span class="req">*</span></label>
+          <input type="password" name="confirm_password" required minlength="8">
+        </div>
+      </div>
+      <button class="btn btn-primary" type="submit" style="width:100%">Create Account</button>
+    </form>
+    <p class="auth-alt">Already have an account? <a href="/account/signin">Sign in</a></p>
+  </div>
+</div>
+{% endblock %}

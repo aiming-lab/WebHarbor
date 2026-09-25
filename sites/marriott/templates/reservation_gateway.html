@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+{% block title %}Reservation | {{ hotel.name }}{% endblock %}
+{% block content %}
+<div class="hotel-page container booking-page">
+  <header class="booking-header">
+    <h1>Complete Your Reservation</h1>
+    <p>{{ hotel.name }} · {% if hotel.address_line %}{{ hotel.address_line }}, {% endif %}{{ hotel.city }}{% if hotel.state %}, {{ hotel.state }}{% endif %}</p>
+  </header>
+
+  <div class="booking-columns">
+    <div class="booking-main">
+      <h2>Room</h2>
+      <div class="booking-room-summary">
+        <p class="room-name">{{ room.name }}</p>
+        <ul class="room-specs">
+          <li>{{ room.bed_description }}</li>
+          <li>Sleeps {{ room.max_occupancy }}</li>
+          <li>{{ room.size_sqft }} sq ft{% if room.view %} · {{ room.view }}{% endif %}</li>
+        </ul>
+      </div>
+
+      <h2>Guest Information</h2>
+      <form method="post" action="/reservation/reservationGateway.mi" class="booking-form">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="propertyCode" value="{{ hotel.marsha }}">
+        <input type="hidden" name="roomId" value="{{ room.id }}">
+        <input type="hidden" name="fromDate" value="{{ from_date.strftime('%m/%d/%Y') }}">
+        <input type="hidden" name="toDate" value="{{ to_date.strftime('%m/%d/%Y') }}">
+        <input type="hidden" name="rooms" value="{{ rooms_count }}">
+        <input type="hidden" name="adults" value="{{ adults }}">
+        <div class="form-row">
+          <div class="field"><label for="guest_first_name">First name</label>
+            <input id="guest_first_name" name="guest_first_name" type="text" required></div>
+          <div class="field"><label for="guest_last_name">Last name</label>
+            <input id="guest_last_name" name="guest_last_name" type="text" required></div>
+        </div>
+        <div class="field"><label for="guest_email">Email address</label>
+          <input id="guest_email" name="guest_email" type="email" required></div>
+        <div class="field"><label for="special_requests">Special requests (optional)</label>
+          <textarea id="special_requests" name="special_requests" rows="3"></textarea></div>
+
+        <h2>Rate Options</h2>
+        <div class="rate-options">
+          <label class="rate-option">
+            <input type="radio" name="rate_option" value="cash" {{ 'checked' if rate_option != 'points' }}>
+            <span class="rate-option-body"><strong>Cash rate</strong>
+              <em>${{ '{:,}'.format(total_cash) }} total · ${{ '{:,}'.format(room.base_rate) }}/night</em></span>
+          </label>
+          <label class="rate-option">
+            <input type="radio" name="rate_option" value="points" {{ 'checked' if rate_option == 'points' }}>
+            <span class="rate-option-body"><strong>Marriott Bonvoy Points</strong>
+              <em>{{ '{:,}'.format(total_points) }} points total · {{ '{:,}'.format(room.points_rate or 0) }}/night</em></span>
+          </label>
+        </div>
+        {% if rate_option == 'points' and not current_user.is_authenticated %}
+        <p class="form-note form-note-points">Redeeming points requires signing in to a Marriott Bonvoy account.</p>
+        {% elif rate_option == 'points' and member_points < total_points %}
+        <p class="form-note form-note-points">This redemption needs {{ '{:,}'.format(total_points) }} points; the signed-in account has {{ '{:,}'.format(member_points) }}.</p>
+        {% endif %}
+
+        <div id="payment-section">
+        <h2>Payment Details</h2>
+        <p class="form-note">Your card is used to guarantee the reservation. You will not be charged today.</p>
+        <div class="field"><label for="card_number">Card number</label>
+          <input id="card_number" name="card_number" type="text" inputmode="numeric" placeholder="0000 0000 0000 0000" required></div>
+        <div class="form-row">
+          <div class="field"><label for="exp_month">Expiration month</label>
+            <input id="exp_month" name="exp_month" type="number" min="1" max="12" placeholder="MM" required></div>
+          <div class="field"><label for="exp_year">Expiration year</label>
+            <input id="exp_year" name="exp_year" type="number" min="2026" max="2040" placeholder="YYYY" required></div>
+        </div>
+        </div>
+        <button type="submit" class="btn-find btn-block">Complete Reservation</button>
+      </form>
+      <script>
+        (function () {
+          var radios = document.querySelectorAll('input[name="rate_option"]');
+          var pay = document.getElementById('payment-section');
+          function refresh() {
+            var points = document.querySelector('input[name="rate_option"]:checked');
+            var isPoints = points && points.value === 'points';
+            pay.style.display = isPoints ? 'none' : '';
+            pay.querySelectorAll('input').forEach(function (i) { i.disabled = isPoints; });
+            var total = document.getElementById('selected-rate-total');
+            if (total) {
+              total.querySelector('span').textContent = isPoints ? 'Total (points)' : 'Total';
+              total.querySelector('strong').textContent = isPoints ? ({{ total_points | tojson }}).toLocaleString() + ' pts' : '$' + ({{ total_cash | tojson }}).toLocaleString();
+            }
+          }
+          radios.forEach(function (r) { r.addEventListener('change', refresh); });
+          refresh();
+          document.addEventListener('DOMContentLoaded', refresh);
+        })();
+      </script>
+    </div>
+
+    <aside class="booking-side">
+      <h2>Stay Summary</h2>
+      <ul class="stay-summary">
+        <li><span>Check-in</span><strong>{{ from_date.strftime('%a, %b %d, %Y') }}</strong></li>
+        <li><span>Check-out</span><strong>{{ to_date.strftime('%a, %b %d, %Y') }}</strong></li>
+        <li><span>Nights</span><strong>{{ nights }}</strong></li>
+        <li><span>Rooms</span><strong>{{ rooms_count }}</strong></li>
+        <li><span>Guests</span><strong>{{ adults }} adult{{ 's' if adults != 1 else '' }}</strong></li>
+        <li><span>Nightly rate</span><strong>${{ '{:,}'.format(room.base_rate) }}</strong></li>
+        <li><span>Points/night</span><strong>{{ '{:,}'.format(room.points_rate or 0) }} pts</strong></li>
+        {% if rate_option == 'points' %}
+        <li class="stay-total" id="selected-rate-total" aria-live="polite"><span>Total (points)</span><strong>{{ '{:,}'.format(total_points) }} pts</strong></li>
+        {% else %}
+        <li class="stay-total" id="selected-rate-total" aria-live="polite"><span>Total</span><strong>${{ '{:,}'.format(total_cash) }}</strong></li>
+        {% endif %}
+      </ul>
+      <p class="stay-tax-note">Taxes and fees are due at the property.</p>
+    </aside>
+  </div>
+</div>
+{% endblock %}

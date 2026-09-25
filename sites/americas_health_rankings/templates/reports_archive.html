@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Reports Archive{% endblock %}
+{% block content %}
+<div class="container page-head">
+  <h1>Reports Archive</h1>
+  <p class="section-sub">America’s Health Rankings has published state-by-state health assessments since 1990. Browse the archive of past reports below.</p>
+</div>
+<div class="container" style="padding-bottom:60px">
+  <h2 style="font-size:22px">Edition Reports</h2>
+  <div class="pub-grid three" style="margin-top:16px">
+    {% for r in reports %}
+    <div class="report-card">
+      <span class="pub-tag">Report</span>
+      <h3><a href="{{ url_for('report_page', slug=r.slug) }}">{{ r.title }}</a></h3>
+      <div class="published">{{ r.date[5:7] }}/{{ r.date[8:10] }}/{{ r.date[0:4] }}</div>
+      <p>{{ r.excerpt }}</p>
+      <a href="{{ url_for('report_page', slug=r.slug) }}">View Report ›</a>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if non_edition %}
+  <h2 style="font-size:22px;margin-top:36px">Spotlights &amp; Data Briefs</h2>
+  <div class="pub-grid three" style="margin-top:16px">
+    {% for r in non_edition %}
+    <div class="report-card">
+      <span class="pub-tag">Report</span>
+      <h3><a href="{{ url_for('report_page', slug=r.slug) }}">{{ r.title }}</a></h3>
+      <div class="published">{{ r.date[5:7] }}/{{ r.date[8:10] }}/{{ r.date[0:4] }}</div>
+      <p>{{ r.excerpt }}</p>
+      <a href="{{ url_for('report_page', slug=r.slug) }}">View Report ›</a>
+    </div>
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

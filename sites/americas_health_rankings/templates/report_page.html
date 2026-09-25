@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<div class="container report-layout">
+  <nav class="report-nav" aria-label="Report sections">
+    <a href="{{ url_for('report_page', slug=report.slug) }}"><strong>{{ report.title }}</strong></a>
+    {% for node in nav %}
+    <div class="nav-section" style="margin-top:10px">
+      <a href="{{ url_for('report_page', slug=report.slug, section=node.url_slug) }}">{{ node.section.title }}</a>
+      {% if node.children %}
+      <div class="nav-children">
+        {% for ch in node.children %}
+        <a href="{{ url_for('report_page', slug=report.slug, section=ch.url_slug) }}">{{ ch.section.title }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </nav>
+  <article class="report-content">
+    {% if crumbs %}
+    <div class="breadcrumbs">
+      {% for label, href in crumbs %}
+      {% if href %}<a href="{{ href }}">{{ label }}</a> › {% else %}{{ label }}{% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+    <h1>{{ title }}</h1>
+    {% if current and current.subtitle %}<p class="section-sub">{{ current.subtitle }}</p>{% endif %}
+    {% if downloads %}
+    <div class="download-list">
+      <h3>Downloads</h3>
+      {% for d in downloads %}
+      <a href="{{ d.url }}" {% if d.external %}target="_blank" rel="noopener"{% endif %}>{{ d.title }} {% if d.external %}↗{% else %}⬇{% endif %}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if state_table %}
+    <div class="state-summary-downloads">
+      {% for d in state_table.downloads %}
+      <a class="btn btn-outline btn-sm" href="{{ d.url }}">{{ d.title }} ⬇</a>
+      {% endfor %}
+    </div>
+    <table class="data-table">
+      <thead>
+        <tr><th>Measure</th><th>Score</th><th class="num">{{ state_table.state.name }} Value</th><th class="num">Rank</th></tr>
+      </thead>
+      <tbody>
+        {% for r in state_table.rows %}
+        <tr class="{% if r.is_summation %}cat-row{% endif %}">
+          <td>{% if r.is_summation %}<strong>{{ r.measure_name }}</strong>{% if r.category not in ('Label', 'Demographics') %} *{% endif %}{% elif r.category == 'Demographics' %}{{ r.measure_name }}†{% else %}<a href="{{ url_for('measure_detail', slug=r.measure_slug) }}">{{ r.measure_name }}</a>{% endif %}</td>
+          <td>{% if r.rank %}{{ '+' * (5 - (r.rank - 1) // 10) }}{% else %}•{% endif %}</td>
+          <td class="num">{{ r.value_display if r.value_display else '•' }}</td>
+          <td class="num">{{ r.rank if r.rank is not none else '•' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="footnote">* Value indicates a score. Higher scores are healthier and lower scores are less healthy. For measure definitions and data source information, see the Appendix.<br>† Not included in the overall score.<br>• Data unavailable.<br>Rank based on: Sum of weighted z-scores of all ranked measures. Line breaks indicate a change in methodology and may not be comparable.</p>
+    {% endif %}
+    <div class="report-body">{{ content | safe }}</div>
+  </article>
+</div>
+{% endblock %}

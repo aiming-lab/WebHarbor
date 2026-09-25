@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Create an account{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Create an account</div>
+  <h1>Create your My MTA account</h1>
+</div>
+<div class="card">
+  {% if errors %}
+  <div class="errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+  {% endif %}
+  <form class="stack" method="post" action="{{ url_for('account_register') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="display_name">Full name</label>
+    <input type="text" id="display_name" name="display_name" value="{{ form.get('display_name', '') }}">
+    <label for="username">Username</label>
+    <input type="text" id="username" name="username" value="{{ form.get('username', '') }}" required>
+    <label for="email">Email address</label>
+    <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" required>
+    <label for="password">Password (at least 8 characters)</label>
+    <input type="password" id="password" name="password" required>
+    <button class="btn" type="submit">Create account</button>
+  </form>
+  <p style="margin-top:14px">Already have an account? <a href="{{ url_for('account_login') }}">Sign in</a>.</p>
+</div>
+{% endblock %}

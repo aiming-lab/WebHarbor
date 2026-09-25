@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% from '_planner.html' import planner %}
+{% block title %}{{ guide.title }} with megabus{% endblock %}
+{% block content %}
+<div class="page-hero">
+  {% if guide.banner and 'route-guides/hero-images' in guide.banner %}
+    <img src="{{ url_for('static', filename='images/' ~ guide.banner.split('/siteassets/')[1]) }}" alt="{{ guide.title }}">
+  {% else %}
+    <img src="{{ url_for('static', filename='images/route-guide/US-route-guide-hero.jpg') }}" alt="{{ guide.title }}">
+  {% endif %}
+  <div class="hero-text"><h1>{{ guide.title }}</h1></div>
+</div>
+
+<div class="content-main">
+  <div class="container-md">
+    <h2>{{ guide.subtitle }}</h2>
+    <div class="stat-strip">
+      <div class="stat"><b>Duration</b><span>{{ guide.stats.get('duration', '') }}</span></div>
+      <div class="stat"><b>Departures</b><span>{{ guide.stats.get('departures', '') }}</span></div>
+    </div>
+    {% if origin and dest %}
+      <p><a class="btn btn-primary" href="{{ url_for('journey_results', originId=origin.id, destinationId=dest.id, departureDate='2026-10-03', totalPassengers=1) }}">Book now</a></p>
+    {% endif %}
+
+    <div class="prose">
+      {{ guide.details | mdlite | safe }}
+    </div>
+
+    {% if journeys %}
+      <h2>Departure schedule</h2>
+      <p>View our departure schedule and book your trip:</p>
+      <div class="price-ribbon-inner">
+        {% for j in journeys %}
+          <a class="ribbon-item" href="{{ url_for('journey_results', originId=origin.id, destinationId=dest.id, departureDate=j.day, totalPassengers=1) }}"
+             aria-label="View tickets for {{ j.label }}">
+            <span>{{ j.label }}</span>
+            <span class="ribbon-price">View tickets</span>
+          </a>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    <h2 class="section-title">Why travel with Megabus?</h2>
+    <div class="row">
+      <div class="col-md-4">
+        <div class="panel"><h3>Multiple Stops, One Transaction</h3>
+          <p>We serve 500+ North American cities through partner operated routes, bookable in one transaction.</p></div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel"><h3>Real Time Bus Tracking</h3>
+          <p>Follow your bus live from stop to stop with our bus tracker.</p></div>
+      </div>
+      <div class="col-md-4">
+        <div class="panel"><h3>Award Winning Customer Service</h3>
+          <p>Our team and our virtual travel assistant Chuck are here to help around the clock.</p></div>
+      </div>
+    </div>
+
+    {% if guide.faqs %}
+      <h2 class="section-title">Frequently Asked Questions</h2>
+      <div class="accordion">
+        {% for f in guide.faqs %}
+          <details class="card">
+            <summary class="card-heading"><span class="card-title"><a>{{ f.q }}</a></span></summary>
+            <div class="card-body">{{ f.a }}</div>
+          </details>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% if guide.related %}
+      <h2 class="section-title">Related routes</h2>
+      <div class="route-chip-grid">
+        {% for r in guide.related %}
+          {% if r.slug != guide.slug and r.slug in guide_slugs %}
+            <a class="route-chip" href="{{ url_for('route_guide_detail', slug=r.slug) }}">{{ r.title }}</a>
+          {% endif %}
+        {% endfor %}
+      </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

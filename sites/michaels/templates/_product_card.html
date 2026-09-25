@@ -1,0 +1,29 @@
+<article class="product-card">
+  <a class="card-img" href="/product/{{ p.slug }}">
+    {% set imgs = p.image_list() %}
+    {% if imgs %}<img src="{{ url_for('static', filename='images/' + imgs[0]) }}" alt="{{ p.name }}" loading="lazy">{% endif %}
+  </a>
+  <div class="card-body">
+    <a class="card-name" href="/product/{{ p.slug }}">{{ p.name }}</a>
+    <div class="card-rating">
+      <span class="stars" aria-label="{{ p.rating }} out of 5 stars">
+        {% for i in range(5) %}<span class="star {% if p.rating >= i + 0.75 %}on{% endif %}">&#9733;</span>{% endfor %}
+      </span>
+      <span class="rating-count">({{ p.review_count }})</span>
+    </div>
+    <div class="card-price">
+      <span class="price">${{ '%.2f' % p.price_low }}</span>
+      {% if p.price_high != p.price_low %}<span class="price-range"> - ${{ '%.2f' % p.price_high }}</span>{% endif %}
+      {% if p.unit_price %}<span class="unit">{{ p.unit_price }}</span>{% endif %}
+    </div>
+    {% if p.promo_text %}<div class="card-promo">{{ p.promo_text }}</div>{% endif %}
+    <div class="card-fulfillment">
+      {% if p.is_online_only %}
+      <span class="fulfill-tag">Online Only</span>
+      {% else %}
+      <span class="fulfill-tag">Store Pickup</span>
+      {% endif %}
+      <span class="fulfill-tag">Ship to Me</span>
+    </div>
+  </div>
+</article>

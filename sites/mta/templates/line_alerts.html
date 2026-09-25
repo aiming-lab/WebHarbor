@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block title %}{{ line }} service status{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Service Status</div>
+  <h1>
+    {% if branch %}
+      {{ branch }} — service status
+    {% else %}
+      <span class="line line-{{ line }}">{{ line }}</span> {{ route.name if route else line ~ ' train' }} — service details
+    {% endif %}
+  </h1>
+</div>
+
+<div class="card alert-dialog">
+  {% if current_user.is_authenticated %}
+  <form method="post" action="{{ url_for('favorites_toggle') }}" style="float:right"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <input type="hidden" name="service_type" value="{{ 'rail' if branch else 'subway' }}">
+    <input type="hidden" name="service_id" value="{{ line }}">
+    <input type="hidden" name="back" value="{{ request.path }}">
+    <button class="btn secondary" type="submit">{{ '★ Favorited' if fav else '☆ Add to favorites' }}</button>
+  </form>
+  {% endif %}
+
+  {% if alerts %}
+    {% for a in alerts %}
+    <div class="alert-entry">
+      <div class="alert-type">{{ a.alert_type }}</div>
+      {% if a.start_ts %}
+      <div class="dates">
+        In effect from {{ MIRROR_NOW.fromtimestamp(a.start_ts).strftime('%-I:%M %p, %B %-d') }}
+        {% if a.end_ts %} until {{ MIRROR_NOW.fromtimestamp(a.end_ts).strftime('%-I:%M %p, %B %-d, %Y') }}{% endif %}
+      </div>
+      {% endif %}
+      {% if a.header_html %}{{ a.header_html | safe }}{% else %}<p>{{ a.header_text }}</p>{% endif %}
+      {% if a.desc_html %}{{ a.desc_html | safe }}{% else %}<p>{{ a.desc_text }}</p>{% endif %}
+    </div>
+    {% endfor %}
+  {% else %}
+    <p><strong>Good Service</strong></p>
+    <p>There are no active alerts for the {{ branch or line ~ ' train' }} at this time.</p>
+  {% endif %}
+</div>
+
+{% if not branch and stations %}
+<div class="card">
+  <h2>Stations served by the {{ line }} train</h2>
+  <ul>
+    {% for s in stations %}
+    <li><a href="{{ url_for('station_page', sid=s.id) }}">{{ s.name }}</a>{% if s.wheelchair %} ♿{% endif %}</li>
+    {% endfor %}
+  </ul>
+  <p><a href="{{ url_for('subway_schedule', line=SUBWAY_SLUGS.get(line, line.lower())) }}">View the {{ line }} train schedule &rarr;</a></p>
+</div>
+{% endif %}
+{% endblock %}

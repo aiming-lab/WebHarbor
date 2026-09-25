@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}{{ cat.title }} | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--faq">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <section class="odx-content-section odx-content-section--landing-page-intro">
+                    <header id="odx-content-header" class="odx-content__header">
+                        <div class="odx-title">
+                            <h1 class="odx-content__title">{{ cat.title }}</h1>
+                        </div>
+                    </header>
+                </section>
+
+                <section class="odx-content-section odx-content-section__body odx-content__body">
+                    <p>Let us answer your questions. If you can't find what you're looking for, try asking the&nbsp;<a href="{{ url_for('ohio_assistant') }}">Ohio Assistant</a>.</p>
+                </section>
+
+                <section class="odx-content-section odx-content-section--component-2">
+                    <div class="odx-collapsable__container">
+                        {% for f in items %}
+                        <button class="odx-collapsable__title odx-background-color-gray40" type="button" data-toggle="collapse" data-target="#faq-{{ f.id }}" aria-expanded="false" aria-controls="faq-{{ f.id }}">
+                            <i class="odx-collapsable__chevron fa fa-chevron-down"></i>
+                            <div class="odx-bold">
+                                {{ f.question }}
+                            </div>
+                        </button>
+                        <div class="collapse" id="faq-{{ f.id }}">
+                            <div class="odx-collapsable__body">{{ f.answer_html | mirror_wps | safe }}</div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                {% if cat.slug == 'consumers' %}
+                <section class="odx-content-section">
+                    <div class="odx-site-alert-wrapper">
+                        <div class="odx-ads-item__content">
+                            <div class="odx-ads-item__main">
+                                <p class="odx-ads-item__title">
+                                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+                                    Want to file a complaint about a scam?
+                                </p>
+                                <p class="odx-ads-item__summary">
+                                    Use the <a href="{{ url_for('report_scam') }}">online scam report form</a>
+                                    to file a consumer complaint with the Ohio Attorney General&rsquo;s office &mdash;
+                                    no OHID sign-in needed.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                {% endif %}
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">Other question categories</h2>
+                        <ul class="list-unstyled">
+                            {% for o in others %}
+                            <li class="margin-bottom-xs"><a href="{{ url_for('faq_category', cat=o.slug) }}">{{ o.title }}</a></li>
+                            {% endfor %}
+                        </ul>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Registry {{ registry.registry_number }} | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/registry">Registry</a> &rsaquo; {{ registry.title() }}</div>
+  <div class="page-head">
+    <h1>{{ registry.title() }}'s {{ registry.kind|capitalize }} Registry</h1>
+    <div class="items-count">Registry # {{ registry.registry_number }}{% if registry.event_date %} &middot; Event date: {{ registry.event_date.strftime('%B %d, %Y') }}{% endif %}</div>
+  </div>
+  {% if registry.items %}
+    {% for item in registry.items %}
+      <div class="registry-item">
+        <a href="{{ item.product.url }}"><img src="/static/images/{{ item.product.main_image }}" alt="{{ item.product.full_name }}"></a>
+        <div>
+          <a class="brand-name" href="{{ item.product.brand.url }}">{{ item.product.brand.name }}</a>
+          <div><a href="{{ item.product.url }}">{{ item.product.full_name }}</a></div>
+          <div class="price{% if item.product.on_sale() %} sale{% endif %}">${{ '%.2f'|format(item.product.price() or 0) }}</div>
+          <div class="priority">Priority: {{ item.priority }} &middot; Requested: {{ item.quantity }} &middot; <span class="purchased-mark">Purchased: {{ item.purchased }}</span></div>
+        </div>
+        <div>
+          <form method="post" action="/bag/add/{{ item.product.pid }}">
+            <input type="hidden" name="size" value="{{ item.product.variants[0].size if item.product.variants else '' }}">
+            <input type="hidden" name="color" value="{{ item.product.variants[0].color if item.product.variants else '' }}">
+            <input type="hidden" name="quantity" value="1">
+            <button class="btn-secondary" type="submit">Add to Bag</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  {% else %}
+    <p class="muted">This registry has no items yet.</p>
+  {% endif %}
+</div>
+{% endblock %}
