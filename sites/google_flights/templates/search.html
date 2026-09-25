@@ -39,7 +39,12 @@
       {% for f in flights %}
         <a href="{{ url_for('flight_detail', flight_id=f.id) }}" class="flight-row">
           <div class="airline-logo">
-            <img src="{{ f.airline_logo }}" alt="{{ f.airline }}" onerror="this.style.display='none'">
+            {% set logo = airline_logo_url(f) %}
+            {% if logo %}
+            <img src="{{ logo }}" alt="{{ f.airline }}">
+            {% else %}
+            <span class="airline-logo-fallback" aria-hidden="true">{{ f.airline_code }}</span>
+            {% endif %}
           </div>
           <div class="flight-row-main">
             <div>

@@ -13,6 +13,7 @@ Data model adapted for flight booking:
 import os
 import json
 import random
+import re
 import string
 from datetime import datetime, date, timedelta
 from pathlib import Path
@@ -321,6 +322,72 @@ def make_pnr():
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
 
 
+# Airline logos. Seeded rows still store /static/images/airlines/<slug>.svg
+# (letter-tile placeholders in the published HF bundle). Real Google Flights
+# 70px gstatic PNGs are committed under static/icons/airlines/{IATA}.png so
+# this site does not depend on merging a logos-only google_flights.tar.gz.
+# If a later asset bundle ships the named PNG/SVG, that file is used first.
+
+def static_exists(relpath: str) -> bool:
+    """True when relpath exists under this app's static/ directory."""
+    if not relpath or relpath.startswith('/') or '\\' in relpath:
+        return False
+    parts = relpath.split('/')
+    if any(p in ('', '.', '..') for p in parts):
+        return False
+    full = os.path.normpath(os.path.join(app.static_folder, *parts))
+    root = os.path.abspath(app.static_folder)
+    if full != root and not full.startswith(root + os.sep):
+        return False
+    return os.path.isfile(full)
+
+
+def _safe_airline_code(value) -> str:
+    text = (value or '').strip().upper()
+    if not text or not re.fullmatch(r'[A-Z0-9]{2,3}', text):
+        return ''
+    return text
+
+
+def _rel_from_public_path(path: str) -> str:
+    """Map a stored /static/... URL onto a path relative to static/."""
+    text = (path or '').strip()
+    prefix = '/static/'
+    if text.startswith(prefix):
+        return text[len(prefix):]
+    return ''
+
+
+def airline_logo_relpath(flight) -> str:
+    """Relative static path for an airline mark that exists on disk."""
+    db_rel = _rel_from_public_path(getattr(flight, 'airline_logo', '') or '')
+    code = _safe_airline_code(getattr(flight, 'airline_code', ''))
+    if not code and db_rel:
+        from seed_data import AIRLINES
+        slug = Path(db_rel).stem.lower()
+        code = next((c.upper() for _name, c, s in AIRLINES if s == slug), '')
+        if not code:
+            code = _safe_airline_code(slug)
+    if code:
+        icon_rel = f'icons/airlines/{code}.png'
+        if static_exists(icon_rel):
+            return icon_rel
+        png_rel = f'images/airlines/{code}.png'
+        if static_exists(png_rel):
+            return png_rel
+    if db_rel and static_exists(db_rel):
+        return db_rel
+    return ''
+
+
+def airline_logo_url(flight) -> str:
+    """Public URL for a real on-disk airline logo; empty if none exists."""
+    rel = airline_logo_relpath(flight)
+    if rel:
+        return url_for('static', filename=rel)
+    return ''
+
+
 @app.context_processor
 def inject_globals():
     cart_count = 0
@@ -332,6 +399,7 @@ def inject_globals():
         'now': datetime.utcnow(),
         'current_year': datetime.utcnow().year,
         'csrf_token_value': generate_csrf(),
+        'airline_logo_url': airline_logo_url,
     }
 
 
