@@ -19,7 +19,7 @@ class TaskContractTests(unittest.TestCase):
                      for line in (SITE_DIR / "tasks.jsonl").read_text(encoding="utf-8").splitlines() if line.strip()]
 
     def test_task_schema(self):
-        self.assertEqual(len(self.rows), 30)
+        self.assertEqual(len(self.rows), 18)
         contributor_keys = ["web_name", "id", "ques", "web", "upstream_url"]
         reviewer_keys = ["verifier_path", "judge_rubric"]
         for row in self.rows:
@@ -51,7 +51,12 @@ class TaskContractTests(unittest.TestCase):
         # Natural requests need not start with a prescribed imperative.
         for row in self.rows:
             self.assertGreater(len(row["ques"]), 80)
+            self.assertLessEqual(len(row["ques"].split()), 100,
+                                 "task prompts stay within the 100-word budget")
             self.assertNotIn("Return JSON", row["ques"])
+            # goal-oriented wording: no mechanical click-by-click instruction chains
+            self.assertNotIn("click the", row["ques"])
+            self.assertNotIn("Click the", row["ques"])
 
 
 
