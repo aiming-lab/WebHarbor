@@ -270,14 +270,25 @@ RUN cd /opt/WebSyn/marriott && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && \
     rm -rf instance __pycache__
 
-# ohiomeansjobs: deterministic seed from the frozen catalog + asset gate.
-RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohiomeansjobs
-RUN cd /opt/WebSyn/ohiomeansjobs && rm -rf instance instance_seed && \
+# megabus: deterministic seed from tracked source snapshots + asset gate.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/megabus
+RUN cd /opt/WebSyn/megabus && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && \
-    rm -rf instance __pycache__ instance_build
+    mkdir -p instance_seed && cp instance/megabus.db instance_seed/megabus.db && \
+    rm -rf instance __pycache__
+
+# michaels: deterministic seed from tracked source snapshots + asset gate.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/michaels
+RUN cd /opt/WebSyn/michaels && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/michaels.db instance_seed/michaels.db && \
+    rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/micro_center
+RUN python3 /opt/WebSyn/micro_center/migrate_seed.py
 
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40113
+EXPOSE 8101 40000-40089
 
 CMD ["/opt/websyn_start.sh"]

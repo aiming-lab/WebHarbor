@@ -1,0 +1,74 @@
+{% macro planner(origin_label='From', origin_id='startingAt', default_date='2026-09-24') %}
+<div class="journey-planner-card">
+  <h2 class="text-blue-dark">Book now</h2>
+  <form id="journey-planner-form" class="journey-planner__form" novalidate>
+    <div class="trip-type">
+      <label><input type="radio" name="tripType" value="one" checked> One way</label>
+      <label><input type="radio" name="tripType" value="return"> Round trip</label>
+    </div>
+    <div class="row">
+      <div class="col-lg-5">
+        <div class="mb-1">
+          <label class="field-label" for="startingAt">{{ origin_label }} <span class="sr-only">(type text or use the arrow keys)</span></label>
+          <div class="autocomplete">
+            <input class="form-control" type="text" id="startingAt" placeholder="Enter a town or city"
+                   autocomplete="off" aria-label="Leaving from">
+            <input type="hidden" id="originId" name="originId">
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <div class="mb-1">
+          <label class="field-label" for="goingTo">To <span class="sr-only">(type text or use the arrow keys)</span></label>
+          <div class="autocomplete">
+            <input class="form-control" type="text" id="goingTo" placeholder="Enter a town or city"
+                   autocomplete="off" aria-label="Going to">
+            <input type="hidden" id="destinationId" name="destinationId">
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-2">
+        <div class="mb-1">
+          <label class="field-label">&nbsp;</label>
+          <button type="button" class="btn btn-outline btn-block" id="swap-stops" aria-label="Swap origin and destination">⇅</button>
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-md-4">
+        <div class="mb-1">
+          <label class="field-label" for="departureDateInput">Leaving</label>
+          <input class="form-control" type="date" id="departureDateInput" value="{{ default_date }}"
+                 min="2026-09-23" max="2026-12-31">
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="mb-1">
+          <label class="field-label" for="returnDateInput">Returning</label>
+          <input class="form-control" type="date" id="returnDateInput" min="2026-09-23" max="2026-12-31">
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="mb-1">
+          <label class="field-label" for="totalPassengers">How many travelers?</label>
+          <div class="stepper">
+            <button type="button" id="totalPassengers_minus" aria-label="Remove traveller">−</button>
+            <input class="form-control" type="number" id="totalPassengers" value="1" min="1" max="9"
+                   aria-label="Total tickets">
+            <button type="button" id="totalPassengers_plus" aria-label="Add traveller">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="notice error" id="planner-error" style="display:none"></div>
+    <div class="row mt-2">
+      <div class="col-md-5 offset-md-7">
+        <button type="submit" class="btn btn-primary btn-block" id="journey-planner-find-tickets"
+                data-testid="journey-planner-find-tickets"> Find tickets </button>
+      </div>
+    </div>
+    <p class="text-grey mt-1">Need accessible travel? See
+      <a href="{{ url_for('disabilities') }}">special needs travel</a>.</p>
+  </form>
+</div>
+{% endmacro %}

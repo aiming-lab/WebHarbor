@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}My Account : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">My Account</h1>
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section>
+      <h2>Welcome back, {{ current_user.display_name }}</h2>
+      <p class="muted small">{{ current_user.email }}{% if current_user.phone %} &middot; {{ current_user.phone }}{% endif %}</p>
+      <div class="two-col" style="gap:14px">
+        <div class="surface">
+          <h3>Recent Orders</h3>
+          {% for order in orders %}
+          <div class="summary-row"><a href="/account/orders/{{ order.order_number }}">#{{ order.order_number }}</a> <span>{{ order.placed_at.strftime('%b %d, %Y') }} — ${{ "%.2f"|format(order.total) }}</span></div>
+          {% else %}
+          <p class="small muted">No orders yet.</p>
+          {% endfor %}
+          <a class="small" href="/account/orders">All orders &rsaquo;</a>
+        </div>
+        <div class="surface">
+          <h3>My Lists</h3>
+          <p class="small muted">{{ list_count }} saved item(s).</p>
+          <a class="small" href="/account/lists">View lists &rsaquo;</a>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

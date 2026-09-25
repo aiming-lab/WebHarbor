@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Micro Center - Computer & Electronics Retailer - Shop Now{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='icons/favicon.png') }}">
+</head>
+<body>
+<nav id="utility" aria-label="Site Selections: Account Login, Store Selection, Cart Information">
+  <div class="hdrRow1" id="siteSelections">
+    <div id="logo">
+      <a href="/" title="Micro Center Home Page">
+        <img src="{{ url_for('static', filename='images/site/MClogoWhiteStacked.svg') }}" alt="Micro Center">
+      </a>
+    </div>
+
+    <div id="headerSearch" aria-label="Product Search Form">
+      <form id="searchForm" method="GET" action="/search/search_results.aspx">
+        <label for="search-query" class="hide-text">Search for product</label>
+        <input id="search-query" name="Ntt" type="text"
+               placeholder="What can we help you find?" autocomplete="off"
+               value="{{ request.args.get('Ntt', '') }}">
+        <button class="submit btn" type="submit" aria-label="Begin Product Search">
+          <span class="hide-text">search</span>
+        </button>
+      </form>
+    </div>
+
+    <div class="rightItems">
+      <ul class="myStore inline">
+        <li class="title">
+          <div class="storeicon"><img src="{{ url_for('static', filename='images/site/storeWHITE.svg') }}" alt="get store info"></div>
+          <a href="/site/stores/default.aspx" id="My-Store">
+            <span class="storeName">{% if selected_store %}{{ selected_store.label() }}{% else %}Shippable Items{% endif %}</span>
+          </a>
+          <div class="storeDownArrow"><img src="{{ url_for('static', filename='images/site/chevron-downWhite.svg') }}" alt="store selector"></div>
+        </li>
+      </ul>
+      <ul class="account inline">
+        <li>
+          <a href="{% if current_user.is_authenticated %}/account{% else %}/account/signin{% endif %}" class="accountLink">
+            <img src="{{ url_for('static', filename='images/site/UWhite.svg') }}" alt="account">
+            <span>{% if current_user.is_authenticated %}{{ current_user.display_name }}{% else %}Sign In / Register{% endif %}</span>
+          </a>
+        </li>
+      </ul>
+      <ul class="cartIcon inline">
+        <li>
+          <a href="/cart" class="cartLink">
+            <img src="{{ url_for('static', filename='images/site/EPScart.svg') }}" alt="cart">
+            <span class="cartCount" id="cartItemCount">{{ cart_count }}</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<nav id="megaNav" aria-label="Product navigation">
+  <ul class="mainMenu">
+    <li class="mainDropdownNav"><a href="/site/content/top-deals.aspx" class="upperNav">Top Deals</a></li>
+    <li class="mainDropdownNav hasMenu">
+      <a href="/site/products/computer-parts.aspx" class="upperNav">PC Parts</a>
+      <div class="megaDrop">
+        <div class="megaCol">
+          <h4>Core Components</h4>
+          <ul>
+            {% for slug, label in [('computer-processors','Processors/CPUs'),('graphics-cards','Graphics Cards'),('motherboards','Motherboards'),('computer-memory','Computer Memory'),('drives-and-storage','Drives &amp; Storage')] %}
+            <li><a href="/site/products/{{ slug }}.aspx">{{ label|safe }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+        <div class="megaCol">
+          <h4>Build</h4>
+          <ul>
+            {% for slug, label in [('computer-cases','Computer Cases'),('power-supplies','Power Supplies'),('cpu-coolers','Air &amp; Water Cooling'),('case-fans','Case Fans &amp; Coolers')] %}
+            <li><a href="/site/products/{{ slug }}.aspx">{{ label|safe }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </li>
+    <li class="mainDropdownNav hasMenu">
+      <a href="/site/products/computers.aspx" class="upperNav">Computers</a>
+      <div class="megaDrop">
+        <div class="megaCol">
+          <h4>Computers</h4>
+          <ul>
+            <li><a href="/site/products/laptops-notebooks.aspx">Laptops/Notebooks</a></li>
+            <li><a href="/site/products/desktop-computers.aspx">Desktops</a></li>
+            <li><a href="/site/products/computer_monitors.aspx">Computer Monitors</a></li>
+            <li><a href="/site/products/ipads-tablets.aspx">iPads &amp; Tablets</a></li>
+          </ul>
+        </div>
+        <div class="megaCol">
+          <h4>More</h4>
+          <ul>
+            <li><a href="/site/products/tvs.aspx">TVs</a></li>
+            <li><a href="/site/products/headphones.aspx">Headphones &amp; Earbuds</a></li>
+            <li><a href="/site/products/keyboards-mice.aspx">Keyboards &amp; Mice</a></li>
+          </ul>
+        </div>
+      </div>
+    </li>
+    <li class="mainDropdownNav"><a href="/site/products/open-box.aspx" class="upperNav">Open Box</a></li>
+    <li class="mainDropdownNav"><a href="/site/products/clearance.aspx" class="upperNav">Clearance</a></li>
+    <li class="mainDropdownNav"><a href="/endeca/CompareV2.aspx" class="upperNav">Compare{% if compare_count %} ({{ compare_count }}){% endif %}</a></li>
+    <li class="mainDropdownNav"><a href="/site/stores/default.aspx" class="upperNav">Stores</a></li>
+    <li class="mainDropdownNav"><a href="/site/service/service.aspx" class="upperNav">Service &amp; Repair</a></li>
+  </ul>
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main id="content">
+{% block content %}{% endblock %}
+</main>
+
+<footer id="footer" class="footer2022" aria-label="footer with navigation">
+  <section id="prefooter">
+    <div class="callouts">
+      <div class="callout signup">
+        <h2>Sign Up for Special Offers</h2>
+        <p>As an email subscriber, you'll have <b>premier access</b> to our best offers, exclusive deals and more.</p>
+        <a href="/account/register"><div class="btnSignUp">SIGN ME UP</div></a>
+      </div>
+      <div class="callout guarantee">
+        <h2>Satisfaction Guaranteed</h2>
+        <p>We guarantee your satisfaction on every product we sell with a full refund in accordance with our return policy – no receipt needed if you have a Micro Center Insider Account.</p>
+      </div>
+      <div class="callout service">
+        <h2>Service &amp; Repair</h2>
+        <p>We're your trusted local service and repair professionals.</p>
+        <a href="/site/service/service.aspx"><div class="btnSupport">SUPPORT &amp; REPAIR</div></a>
+      </div>
+    </div>
+  </section>
+  <div id="footerContainer">
+    <nav id="footerNav">
+      <ul class="ftrNavContainer">
+        <li class="topLvl">
+          <h3>Customer Service</h3>
+          <ul>
+            <li><a href="/account">My Account and Orders</a></li>
+            <li><a href="/site/service/service.aspx">Services</a></li>
+            <li><a href="/site/stores/default.aspx">Store Locator</a></li>
+            <li><a href="/endeca/CompareV2.aspx">Compare Items</a></li>
+          </ul>
+        </li>
+        <li class="topLvl">
+          <h3>Shopping</h3>
+          <ul>
+            <li><a href="/search/search_results.aspx?fq=Micro+Center+Deals:Top+Deals">Top Deals</a></li>
+            <li><a href="/site/products/open-box.aspx">Open Box</a></li>
+            <li><a href="/site/products/clearance.aspx">Closeouts</a></li>
+            <li><a href="/site/content/top-deals.aspx">Weekly Ad</a></li>
+          </ul>
+        </li>
+        <li class="topLvl">
+          <h3>Departments</h3>
+          <ul>
+            <li><a href="/site/products/computers.aspx">Computers</a></li>
+            <li><a href="/site/products/computer-parts.aspx">Computer Parts</a></li>
+            <li><a href="/site/products/electronics.aspx">Electronics</a></li>
+            <li><a href="/search/search_results.aspx?fq=category:Wireless+Routers">Networking</a></li>
+          </ul>
+        </li>
+        <li class="topLvl">
+          <h3>Company</h3>
+          <ul>
+            <li><a href="/site/content/about_microcenter.aspx">About Micro Center</a></li>
+            <li><a href="/site/stores/default.aspx">Careers</a></li>
+          </ul>
+        </li>
+      </ul>
+    </nav>
+    <div class="copyright">&copy; 2026 Micro Electronics, Inc. — offline benchmark mirror; not affiliated with Micro Center.</div>
+  </div>
+</footer>
+</body>
+</html>

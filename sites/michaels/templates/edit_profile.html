@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Edit Profile | Michaels{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <aside class="account-nav">
+    <h2>My Account</h2>
+    <ul>
+      <li><a href="{{ url_for('account') }}">Orders</a></li>
+      <li><a class="active" href="{{ url_for('account_profile') }}">Profile</a></li>
+      <li><a href="{{ url_for('account_addresses') }}">Addresses</a></li>
+      <li><a href="{{ url_for('account_payment') }}">Payment Methods</a></li>
+      <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
+      <li><a href="{{ url_for('account_registrations') }}">Class Registrations</a></li>
+      <li><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign Out</button></form></li>
+    </ul>
+  </aside>
+  <section class="account-main">
+    <h1>Profile</h1>
+    <form method="post" class="profile-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label>Name<input type="text" name="name" value="{{ current_user.name }}"></label>
+      <label>Phone<input type="text" name="phone" value="{{ current_user.phone }}"></label>
+      <label>Email<input type="email" value="{{ current_user.email }}" disabled></label>
+      <button type="submit" class="btn-primary">Save</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

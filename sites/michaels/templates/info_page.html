@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ page.title }} | Michaels{% endblock %}
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a> &rsaquo; <span>{{ page.heading }}</span></nav>
+<h1>{{ page.heading }}</h1>
+<div class="policy-page">
+  <section>
+    {% for paragraph in page.paragraphs %}
+    <p>{{ paragraph }}</p>
+    {% endfor %}
+  </section>
+  {% if page.links %}
+  <section>
+    <h2>Related</h2>
+    <ul>
+      {% for label, href in page.links %}
+      <li><a href="{{ href }}">{{ label }}</a></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endif %}
+</div>
+{% endblock %}
