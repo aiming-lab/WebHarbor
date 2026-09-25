@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block title %}Configure {{ model.model_name if model else code }}{% endblock %}
+{% block content %}
+<section class="wrap">
+  <p class="mb1"><a href="/configurator/">&larr; Build your Porsche</a></p>
+  <h1 class="page-title">Configure{% if model %} {{ model.model_name }}{% endif %}</h1>
+  <p class="page-sub">Model code {{ code }} · {{ options|length }} options · base price {{ money(base) }}</p>
+
+  <div class="cfg-layout">
+    <form method="get" action="/configurator/en-US/mode/model/{{ code }}" id="cfgform">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="grid">
+        {% for o in options %}
+        <label class="option-row">
+          <input type="checkbox" name="opt" value="{{ o.option_id }}"
+                 {% if o.option_id in selected_ids %}checked{% endif %}>
+          {% if o.swatch %}<img class="option-swatch" src="{{ o.swatch }}" alt="{{ o.name }}">{% endif %}
+          <span class="option-name">{{ o.name }}</span>
+          <span class="option-price {% if o.price == 0 %}zero{% endif %}">{% if o.price %}+ {{ money(o.price) }}{% else %}Included{% endif %}</span>
+        </label>
+        {% endfor %}
+      </div>
+    </form>
+
+    <aside class="cfg-summary">
+      <h3>Your configuration</h3>
+      <p class="muted">{{ model.model_name if model else code }}</p>
+      <div class="flex-between"><span>Base price</span><span>{{ money(base) }}</span></div>
+      {% for c in chosen %}
+      <div class="flex-between"><span>{{ c.name }}</span><span>+ {{ money(c.price) }}</span></div>
+      {% else %}
+      <p class="form-note">No options selected yet.</p>
+      {% endfor %}
+      <div class="total">{{ money(total) }}</div>
+      <p class="form-note mb2">Total incl. selected options. Excludes taxes, title, registration and delivery.</p>
+      <div class="filter-group mb1">
+        <label for="build_name">Name this build</label>
+        <input id="build_name" name="build_name" type="text" maxlength="80" form="cfgform"
+               value="{{ build_name }}" placeholder="e.g. Weekend Taycan" style="min-width:0;">
+      </div>
+      <button class="btn btn-secondary" style="width:100%; margin-bottom:0.6rem;" type="submit" form="cfgform">Update total</button>
+      <button class="btn btn-red" style="width:100%;" type="submit" form="cfgform"
+              formmethod="post" formaction="/configurator/en-US/mode/model/{{ code }}/save">Save this build</button>
+      <p class="form-note mt2">Saving a build requires a signed-in My Porsche account.</p>
+    </aside>
+  </div>
+</section>
+{% endblock %}

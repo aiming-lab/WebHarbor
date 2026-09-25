@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Porsche USA - Sports Cars, SUVs, Sedans{% endblock %}
+{% block content %}
+<section class="hero">
+  <h1>Your Porsche journey starts now.</h1>
+  <p>Explore the Porsche model lineup, find your vehicle in stock at a Porsche Center, build your own, or browse the Porsche Shop.</p>
+  <a class="btn btn-red" href="/usa/models/">Explore the models</a>
+  <a class="btn btn-secondary" href="/finder/us/en-US/search">Find a vehicle</a>
+</section>
+
+<section class="wrap">
+  <h2 class="section-title">Our models</h2>
+  <div class="grid grid-3">
+    {% for m in lineup %}
+    <a class="card" href="/usa/models/{{ m.range_slug }}/{{ m.series_slug }}/{{ m.detail_slug }}/">
+      <img class="card-img" src="{{ m.image }}" alt="{{ m.model_name }}">
+      <div class="card-body">
+        <div class="card-title">{{ m.model_name }}</div>
+        <div class="card-meta">{{ m.body_type }} · {{ m.fuel_type }} · {{ m.hp_formatted }}</div>
+        <div class="card-price">{{ m.price_formatted or money(m.price_value) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <h2 class="section-title">New in stock</h2>
+  <p class="page-sub">{{ vehicle_count }} vehicles available nationwide through Porsche Finder.</p>
+  <div class="grid grid-4">
+    {% for v in new_arrivals %}
+    <a class="card" href="/finder/us/en-US/details/{{ v.slug }}">
+      <img class="card-img" src="{{ v.image }}" alt="{{ v.name }}">
+      <div class="card-body">
+        <span class="badge badge-new">{{ v.condition_badge }}</span>
+        <div class="card-title">{{ v.name }}</div>
+        <div class="card-meta">{{ v.color }} · {{ v.hp }} hp</div>
+        <div class="card-price">{{ money(v.price) }}</div>
+        <div class="card-meta">{{ v.dealer_name }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+
+  <div class="grid grid-2 mt3">
+    <div class="card">
+      <img class="card-img" src="/static/images/site/hero_finder.webp" alt="Porsche Finder">
+      <div class="card-body">
+        <div class="card-title">Find your new or pre-owned Porsche</div>
+        <p class="card-meta">Making it easy to find your dream Porsche. Browse the best car offers available near you.</p>
+        <a class="btn btn-sm" href="/finder/us/en-US/search">Start your search</a>
+      </div>
+    </div>
+    <div class="card">
+      <img class="card-img" src="/static/images/site/hero_contentinfo.webp" alt="Porsche Center">
+      <div class="card-body">
+        <div class="card-title">Find your Porsche Center</div>
+        <p class="card-meta">A Porsche Center, and your dream Porsche vehicle, may be closer than you think. Search our network of {{ dealer_count }} centers.</p>
+        <a class="btn btn-sm" href="/usa/dealersearch/">Search now</a>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Shop exclusive Porsche products</h2>
+  <div class="flex-between mb2">
+    <p class="page-sub" style="margin:0">Vehicle accessories, clothing, and home &amp; lifestyle products.</p>
+    <a class="btn btn-sm" href="/shop/">Go to online shop</a>
+  </div>
+</section>
+{% endblock %}

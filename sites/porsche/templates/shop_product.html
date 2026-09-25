@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}{{ p.name }}{% endblock %}
+{% block content %}
+<section class="wrap">
+  <p class="mb1"><a href="/shop/">&larr; Porsche Shop</a> · <a href="/shop/us/en-US/c/{{ p.shop_category|lower|replace(' & ', '-')|replace(' ', '-') }}">{{ p.shop_category }}</a></p>
+  <div class="detail-grid">
+    <div>
+      {% if p.image_list %}
+      <div class="grid grid-2 mb2">
+        {% for img in p.image_list %}
+        <img src="{{ img }}" alt="{{ p.name }} - image {{ loop.index }}" style="border-radius:6px; aspect-ratio:1/1; object-fit:cover;">
+        {% endfor %}
+      </div>
+      {% endif %}
+      <h1 class="page-title">{{ p.name }}</h1>
+      <p class="page-sub">{{ p.brand }} · SKU {{ p.sku }}{% if p.main_category %} · {{ p.main_category }}{% endif %}</p>
+      {% if p.description %}<p class="mb2">{{ p.description }}</p>{% endif %}
+      {% if p.category_list %}
+      <div class="chips">
+        {% for c in p.category_list %}<span class="chip">{{ c }}</span>{% endfor %}
+      </div>
+      {% endif %}
+    </div>
+    <aside>
+      <div class="cfg-summary">
+        <div class="total">{{ p.price_display }}</div>
+        <p class="muted mb2">{% if p.in_stock %}In stock{% else %}Currently sold out{% endif %}
+          {% if p.size %} · Size {{ p.size }}{% endif %}</p>
+        {% if p.label_list %}<p class="mb2">{% for l in p.label_list %}<span class="badge">{{ l }}</span> {% endfor %}</p>{% endif %}
+        <form method="post" action="/shop/cart/add">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="product_id" value="{{ p.id }}">
+          <div class="filter-group mb1">
+            <label for="quantity">Quantity</label>
+            <input id="quantity" name="quantity" type="number" min="1" max="10" value="1" style="max-width:110px;">
+          </div>
+          <button class="btn btn-red" style="width:100%;" type="submit" {% if not p.in_stock %}disabled{% endif %}>Add to bag</button>
+        </form>
+      </div>
+      {% if related %}
+      <h3 class="section-title">More from this category</h3>
+      <table class="data">
+        {% for r in related %}
+        <tr>
+          <td><a href="/shop/us/en-US/p/{{ r.slug }}">{{ r.name }}</a></td>
+          <td class="right">{{ r.price_display }}</td>
+        </tr>
+        {% endfor %}
+      </table>
+      {% endif %}
+    </aside>
+  </div>
+</section>
+{% endblock %}

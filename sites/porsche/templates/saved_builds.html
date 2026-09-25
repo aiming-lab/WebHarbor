@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Saved builds - My Porsche{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Saved builds</h1>
+  <p class="page-sub"><a href="/my-porsche/profile">&larr; My Porsche</a></p>
+  {% if builds %}
+  <table class="data">
+    <tr><th>Build</th><th>Model</th><th>Options</th><th class="right">Total</th><th>Saved</th></tr>
+    {% for b in builds %}
+    <tr>
+      <td>{{ b.build_name }}</td>
+      <td>{{ b.model_name }} ({{ b.model_code }})</td>
+      <td>
+        {% for o in b.options %}{{ o.name }} (+ {{ money(o.price) }}){% if not loop.last %}<br>{% endif %}{% endfor %}
+      </td>
+      <td class="right"><strong>{{ money(b.total_price) }}</strong></td>
+      <td>{{ b.created_on }}</td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% else %}
+  <p class="muted">No saved builds yet. <a href="/configurator/">Configure your Porsche</a> and save the build.</p>
+  {% endif %}
+</section>
+{% endblock %}

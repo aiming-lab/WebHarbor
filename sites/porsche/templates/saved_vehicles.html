@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Saved vehicles - My Porsche{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Saved vehicles</h1>
+  <p class="page-sub"><a href="/my-porsche/profile">&larr; My Porsche</a></p>
+  {% if saved %}
+  <div class="grid grid-3">
+    {% for sv in saved %}
+    <a class="card" href="/finder/us/en-US/details/{{ sv.vehicle.slug }}">
+      <img class="card-img" src="{{ sv.vehicle.image }}" alt="{{ sv.vehicle.name }}">
+      <div class="card-body">
+        <span class="badge {% if sv.vehicle.condition == 'new' %}badge-new{% else %}badge-pre{% endif %}">{{ sv.vehicle.condition_badge }}</span>
+        <div class="card-title">{{ sv.vehicle.name }}</div>
+        <div class="card-meta">Saved {{ sv.saved_on }} · {{ sv.vehicle.dealer_name }}</div>
+        <div class="card-price">{{ money(sv.vehicle.price) }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="muted">You haven't saved any vehicles yet. Browse the <a href="/finder/us/en-US/search">Porsche Finder</a> and save vehicles you like.</p>
+  {% endif %}
+</section>
+{% endblock %}

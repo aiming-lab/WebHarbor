@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Porsche USA{% endblock %} - Porsche USA</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/porsche.css') }}">
+</head>
+<body>
+<header class="site-header">
+  <div class="header-inner">
+    <a href="/" class="brand" aria-label="Porsche home">
+      <span class="brand-crest">PORSCHE</span>
+    </a>
+    <nav class="main-nav" aria-label="Main navigation">
+      {% for item in nav %}
+      <a href="{{ item.href }}" class="nav-link {% if request.path == item.href %}active{% endif %}">{{ item.label }}</a>
+      {% endfor %}
+    </nav>
+    <div class="header-actions">
+      <a href="/shop/cart" class="cart-link">Bag ({{ cart_count }})</a>
+      {% if current_user.is_authenticated %}
+      <a href="/my-porsche/profile" class="account-link">Hi, {{ current_user.first_name }}</a>
+      {% else %}
+      <a href="/my-porsche/sign-in" class="account-link">My Porsche</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flashes" role="status">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+{% endwith %}
+
+<main>
+{% block content %}{% endblock %}
+</main>
+
+<footer class="site-footer">
+  <div class="footer-inner">
+    <div class="footer-col">
+      <h4>Vehicles</h4>
+      <a href="/usa/models/911/">911</a>
+      <a href="/usa/models/718/">718</a>
+      <a href="/usa/models/taycan/">Taycan</a>
+      <a href="/usa/models/panamera/">Panamera</a>
+      <a href="/usa/models/macan/">Macan</a>
+      <a href="/usa/models/cayenne/">Cayenne</a>
+    </div>
+    <div class="footer-col">
+      <h4>Shopping</h4>
+      <a href="/finder/us/en-US/search">Porsche Finder</a>
+      <a href="/configurator/">Build your Porsche</a>
+      <a href="/shop/">Porsche Shop</a>
+      <a href="/usa/dealersearch/">Find a Porsche Center</a>
+    </div>
+    <div class="footer-col">
+      <h4>My Porsche</h4>
+      <a href="/my-porsche/sign-in">Sign in</a>
+      <a href="/my-porsche/register">Create account</a>
+      <a href="/my-porsche/saved-vehicles">Saved vehicles</a>
+      <a href="/my-porsche/saved-builds">Saved builds</a>
+    </div>
+    <div class="footer-col">
+      <h4>Services</h4>
+      <a href="/usa/dealersearch/">Dealer search</a>
+      <a href="/shop/cart">Shopping bag</a>
+    </div>
+  </div>
+  <div class="footer-legal">
+    <span>© 2026 Porsche Cars North America, Inc. - Mirror for offline benchmark use.</span>
+    <span>MSRP excludes options; taxes; title; registration; delivery, processing and handling fee; dealer charges.</span>
+  </div>
+</footer>
+</body>
+</html>

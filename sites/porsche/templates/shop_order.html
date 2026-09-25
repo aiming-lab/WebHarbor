@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Order confirmed{% endblock %}
+{% block content %}
+<section class="order-box">
+  <h2>Thank you - your order is confirmed.</h2>
+  <p class="mb2">Order number <strong>{{ order.order_number }}</strong> · placed {{ order.placed_on }}</p>
+  <table class="data mb2">
+    {% for it in order.items %}
+    <tr>
+      <td>{{ it.product.name }} × {{ it.quantity }}</td>
+      <td class="right">${{ '{:,.2f}'.format(it.unit_price_cents * it.quantity / 100) }}</td>
+    </tr>
+    {% endfor %}
+    <tr><td>Subtotal</td><td class="right">${{ '{:,.2f}'.format(order.subtotal_cents / 100) }}</td></tr>
+    <tr><td>Shipping</td><td class="right">${{ '{:,.2f}'.format(order.shipping_cents / 100) }}</td></tr>
+    <tr><td><strong>Total</strong></td><td class="right"><strong>${{ '{:,.2f}'.format(order.total_cents / 100) }}</strong></td></tr>
+  </table>
+  <p class="muted">Shipping to {{ order.first_name }} {{ order.last_name }}, {{ order.street }}, {{ order.city }}, {{ order.state }} {{ order.zip }}.</p>
+  <p class="muted">A confirmation was sent to {{ order.email }}.</p>
+  <p class="mt3"><a class="btn btn-secondary" href="/shop/">Continue shopping</a></p>
+</section>
+{% endblock %}

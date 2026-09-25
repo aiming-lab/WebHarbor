@@ -1,0 +1,111 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-24",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the porsche.com/usa mirror: the model lineup (overview with range/body/fuel/transmission filters and price/power sorts, per-range pages, per-variant detail pages with the live site's technical data tables, highlights and standard equipment), the configurator (8 real model codes with their real US-market option catalogs, selectable options with prices, running total, saveable builds), the Porsche Finder (search over real in-stock listings with condition/model/body/transmission/drivetrain/fuel/color/dealer/price/year/mileage filters, six sort orders, pagination, detail pages with VIN, price breakdown and lease estimate, saveable vehicles), the dealer search (218 US Porsche Centers, state browse + name/city/ZIP search, opening hours), the Porsche Shop (3 categories, product pages, cart, checkout with validation and order confirmation), and the My Porsche account domain (register/sign-in, profile, saved vehicles, saved builds, orders). Route and URL shapes follow the live site (/usa/models/, /configurator/en-US/mode/model/<code>, /finder/us/en-US/search, /finder/us/en-US/details/<slug>, /usa/dealersearch/, shop.porsche.com paths, /my-porsche/)."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time/boot-time seeder. All content rows come from the tracked source_data/ snapshots; benchmark users share one frozen bcrypt digest so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0)."
+  },
+  {
+   "path": "source_data/models.json",
+   "classification": "captured-upstream-content",
+   "scope": "Frozen snapshot of the live /usa/models/ ModelOverview island as served on 2026-09-24: all 76 US model variants with the live site's own MSRP (value + formatted), max power (hp), model year, body type, drivetrain, seats, fuel and transmission labels, 0-60 and top-track-speed highlights, standard equipment highlights, leasing example, detail-page URL and configurator code. Merged with each variant's live detail page (/usa/models/<range>/<series>/<slug>/) technical data categories (Motor, Performance, Transmission, Chassis, Dimensions, Capacities...) and highlights attributes, extracted verbatim from the captured renders by scripts_dev/extract_model_cards.py + scripts_dev/build_source_data.py."
+  },
+  {
+   "path": "source_data/configurator_options.json",
+   "classification": "captured-upstream-content",
+   "scope": "Real configurator option catalogs captured from configurator.porsche.com/en-US/mode/model/<code> for 8 model codes (992142 911 Carrera GTS, 9921B2 911 Carrera, Y1AAI1 Taycan, YAAAA1 Panamera, 95BAU1 Macan, XABBB1 Macan 4 Electric, 9YAAI1 Cayenne, X1ABB1 Cayenne S Electric): each option's id, on-page label with live US price (e.g. 'Jet Black Metallic, Price: $880') and its swatch image URL. 331 options total."
+  },
+  {
+   "path": "source_data/configurator_sections.txt",
+   "classification": "captured-upstream-content",
+   "scope": "The full rendered option panel text of the 911 Carrera GTS configurator page (992142) as displayed on configurator.porsche.com, captured 2026-09-24."
+  },
+  {
+   "path": "source_data/vehicles.json",
+   "classification": "captured-upstream-content",
+   "scope": "Real in-stock vehicle listings captured from finder.porsche.com/us/en-US/search on 2026-09-24: 442 unique listings harvested from the search result pages' embedded RSC payloads (listing id, URL slug, full title, condition, price, VIN, model year, exterior/interior color, transmission, drivetrain, engine type, hp/kW, mileage, previous owners, body type, dimensions, weight, selling Porsche Center with partner number, distance text, price breakdown incl. base MSRP / equipment price / delivery fee / dealer add-ons / dealer fees / total, and Porsche Financial Services lease/finance estimate) joined with the schema.org JSON-LD Car entities embedded in the same result pages. 395 of 442 listings carry the live site's own payment estimate; every listing carries a VIN."
+  },
+  {
+   "path": "source_data/dealers.json",
+   "classification": "captured-upstream-content",
+   "scope": "All 218 US Porsche Centers exactly as served by the live /usa/dealersearch/ page's embedded island state on 2026-09-24: PPN org id, partner number, name, street/city/state/ZIP, phone, email, homepage, contact and service opening hours per weekday, and coordinates for all 45 states with a center."
+  },
+  {
+   "path": "source_data/shop_products.json",
+   "classification": "captured-upstream-content",
+   "scope": "Porsche Shop catalog captured from shop.porsche.com/us/en-US (vehicle accessories, clothing, home & lifestyle category pages) on 2026-09-24: 188 unique products with the Algolia InstantSearch payloads embedded in the pages - name, SKU, slug, brand, main category, category taxonomy, description, USD gross price, stock flag, color/size attributes, labels, and real product photo URLs from the shop's own CDN."
+  },
+  {
+   "path": "source_data/homepage_text.txt",
+   "classification": "captured-upstream-content",
+   "scope": "Rendered copy of the live https://www.porsche.com/usa/ homepage on 2026-09-24 (model line blurbs, prices, section copy) used for the mirror homepage."
+  },
+  {
+   "path": "asset_inventory.json",
+   "classification": "asset-manifest",
+   "scope": "Per-file inventory (bytes, SHA-256, upstream source URL) for every managed image under static/images/; enforced by the image build's check_asset_inventory.py gate."
+  },
+  {
+   "path": "static/images/models/",
+   "classification": "captured-upstream-content",
+   "scope": "Model cards and detail-page gallery imagery captured from images.porsche.com (bounded 870x260 renditions of the live site's own side/technical shots), 660 files."
+  },
+  {
+   "path": "static/images/vehicles/",
+   "classification": "captured-upstream-content",
+   "scope": "One real photo per in-stock listing, captured from the finder.porsche.com image CDN (the exact 480px rendition the live search cards embed), 442 files."
+  },
+  {
+   "path": "static/images/shop/",
+   "classification": "captured-upstream-content",
+   "scope": "Product photos from the Porsche Shop's own product CDN (product-domain-assets.ppim.aws.porsche.cloud), up to two per product, 347 files."
+  },
+  {
+   "path": "static/images/configurator/",
+   "classification": "captured-upstream-content",
+   "scope": "Option swatches captured from configurator.porsche.com's own asset paths (/assets/exteriors/...), 158 files (options without a visual swatch on the live page have none here either)."
+  },
+  {
+   "path": "static/images/site/",
+   "classification": "captured-upstream-content",
+   "scope": "Homepage hero imagery captured from images.porsche.com as referenced by the live homepage markup."
+  },
+  {
+   "path": "static/css/porsche.css",
+   "classification": "mirror-code",
+   "scope": "Site chrome written for the mirror (Porsche design language: black wordmark header, red accents, neutral palette). No upstream stylesheets are copied."
+  },
+  {
+   "path": "benchmark users (casey.taylor@test.com, jordan.morgan@test.com)",
+   "classification": "benchmark-fixture",
+   "scope": "Two My Porsche demo accounts with the frozen WebHarbor benchmark password (TestPass123!), following the standard per-site benchmark-user pattern. Their saved vehicles/builds/orders start empty and are created by agent interaction."
+  },
+  {
+   "path": "scripts_dev/",
+   "classification": "mirror-code",
+   "scope": "Build-time harvest and assembly tooling (offline extractors for the cached captures, the source_data builder, the image downloader). Not shipped in the image."
+  },
+  {
+   "path": "tests/",
+   "classification": "mirror-code",
+   "scope": "Pytest suite (not shipped in the image): tasks contract (5-key rows, 15-25 count, no answer keys, goal-style <=100 words, domain spread), seed determinism (integrity, source-snapshot match, idempotent re-import, byte-reproducible canonical rebuild), and app robustness (all surfaces render, filters/sorts behave, CSRF enforced on every POST, auth/save-build/cart/checkout flows persist, bad input fails cleanly, catalog richness supports the task set)."
+  },
+  {
+   "path": "CSRF protection",
+   "classification": "mirror-code",
+   "scope": "All state-changing POST routes (sign-in, register, save vehicle, save build, cart add/update, checkout) validate a per-session token; forms render it and missing/mismatched tokens fail with 400."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "20 goal-style agent tasks (29-92 words, 5 contributor keys only, no answer key) spanning the model lineup, configurator, Porsche Finder, dealer search, Porsche Shop and My Porsche account domains. Every task requires multi-page navigation plus multi-fact extraction (15-22 honest steps by per-fact count; scripted-headless-browser minimal paths run 7-19 actions as the conservative lower bound). Ground truth is anchored exclusively to the deterministic seed (VINs, prices, hours, partner numbers, SKUs)."
+  }
+ ]
+}

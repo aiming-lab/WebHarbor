@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Build your Porsche{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Build your Porsche</h1>
+  <p class="page-sub">Choose a model to configure. Option catalogs with real US market prices.</p>
+  <div class="grid grid-3">
+    {% for entry in models %}
+    <a class="card" href="/configurator/en-US/mode/model/{{ entry.code }}">
+      {% if entry.model and entry.model.image %}
+      <img class="card-img" src="{{ entry.model.image }}" alt="{{ entry.model.model_name }}">
+      {% endif %}
+      <div class="card-body">
+        <div class="card-meta">{{ entry.code }}</div>
+        <div class="card-title">{{ entry.model.model_name if entry.model else entry.code }}</div>
+        <div class="card-meta">{{ entry.option_count }} options available</div>
+        {% if entry.model %}<div class="card-price">{{ entry.model.price_formatted or money(entry.model.price_value) }}</div>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

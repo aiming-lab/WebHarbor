@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Model overview{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Model overview</h1>
+  <p class="page-sub">Every Porsche model line with its variants, prices and technical highlights.</p>
+
+  <form method="get" class="filter-bar">
+    <div class="filter-group">
+      <label for="range">Model line</label>
+      <select id="range" name="range">
+        <option value="">All model lines</option>
+        {% for r in ranges %}<option value="{{ r }}" {% if r == range_f %}selected{% endif %}>{{ r }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="body">Body type</label>
+      <select id="body" name="body">
+        <option value="">All body types</option>
+        {% for b in bodies %}<option value="{{ b }}" {% if b == body_f %}selected{% endif %}>{{ b }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="fuel">Fuel type</label>
+      <select id="fuel" name="fuel">
+        <option value="">All fuel types</option>
+        {% for x in fuels %}<option value="{{ x }}" {% if x == fuel_f %}selected{% endif %}>{{ x }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="gear">Transmission</label>
+      <select id="gear" name="gear">
+        <option value="">All transmissions</option>
+        {% for g in gears %}<option value="{{ g }}" {% if g == gear_f %}selected{% endif %}>{{ g }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label for="sort">Sort by</label>
+      <select id="sort" name="sort">
+        <option value="range" {% if sort == 'range' %}selected{% endif %}>Model line</option>
+        <option value="price-asc" {% if sort == 'price-asc' %}selected{% endif %}>Price - low to high</option>
+        <option value="price-desc" {% if sort == 'price-desc' %}selected{% endif %}>Price - high to low</option>
+        <option value="hp-desc" {% if sort == 'hp-desc' %}selected{% endif %}>Power - high to low</option>
+      </select>
+    </div>
+    <div class="filter-actions">
+      <button class="btn btn-sm" type="submit">Apply</button>
+      <a class="btn btn-sm btn-secondary" href="/usa/models/">Reset</a>
+    </div>
+  </form>
+
+  <p class="muted mb2">{{ models|length }} model variants</p>
+  <div class="grid grid-3">
+    {% for m in models %}
+    <a class="card" href="/usa/models/{{ m.range_slug }}/{{ m.series_slug }}/{{ m.detail_slug }}/">
+      <img class="card-img" src="{{ m.image }}" alt="{{ m.model_name }}">
+      <div class="card-body">
+        <div class="card-meta">{{ m.model_range }} · {{ m.body_type }} · Model year {{ m.model_year }}</div>
+        <div class="card-title">{{ m.model_name }}</div>
+        <div class="card-meta">{{ m.fuel_type }} · {{ m.gear_type }} · {{ m.wheel_drive }} · {{ m.seats }} seats</div>
+        <div class="card-price">{{ m.price_formatted or money(m.price_value) }}</div>
+        {% if m.hp_formatted %}<div class="card-meta">{{ m.hp_formatted }} max. power</div>{% endif %}
+        {% if m.accel_0_60 %}<div class="card-meta">0-60 mph: {{ m.accel_0_60 }}</div>{% endif %}
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

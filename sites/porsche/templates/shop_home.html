@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Porsche Shop{% endblock %}
+{% block content %}
+<section class="wrap">
+  <h1 class="page-title">Porsche Shop</h1>
+  <p class="page-sub">Shop exclusive Porsche products - vehicle accessories, clothing, and home &amp; lifestyle.</p>
+  {% for c in cats %}
+  <h2 class="section-title">{{ c.name }} ({{ c.count }})</h2>
+  <div class="grid grid-4">
+    {% for p in c.products %}
+    <a class="card" href="/shop/us/en-US/p/{{ p.slug }}">
+      {% if p.image_list %}<img class="card-img" src="{{ p.image_list[0] }}" alt="{{ p.name }}">{% endif %}
+      <div class="card-body">
+        <div class="card-meta">{{ p.brand }}</div>
+        <div class="card-title" style="font-size:0.95rem;">{{ p.name }}</div>
+        <div class="card-price">{{ p.price_display }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  <p class="mt2 mb3"><a class="btn btn-sm btn-secondary" href="/shop/us/en-US/c/{{ c.name|lower|replace(' & ', '-')|replace(' ', '-') }}">All {{ c.name }}</a></p>
+  {% endfor %}
+</section>
+{% endblock %}
