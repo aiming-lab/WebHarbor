@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}My Account | Public Storage{% endblock %}
+{% block content %}
+<div class="account-wrap">
+  <h1>Hi {{ current_user.first_name }}!</h1>
+  <p>Manage your reservations, rentals and saved locations.</p>
+  <div class="account-grid">
+    <div>
+      <div class="account-card">
+        <h2>Your Reservations</h2>
+        {% for reservation in reservations %}
+        <div class="res-row">
+          <div class="res-top">
+            <div>
+              <strong>{{ reservation.unit.category }} {{ reservation.unit.dims }} at {{ reservation.facility.address }}</strong><br>
+              {{ reservation.facility.city }}, {{ reservation.facility.state }} {{ reservation.facility.zip }}
+            </div>
+            <span class="status-pill status-{{ reservation.status }}">{{ reservation.status|upper }}</span>
+          </div>
+          <div class="kv"><span class="k">Reservation code</span><span class="v">{{ reservation.code }}</span></div>
+          <div class="kv"><span class="k">Move-in date</span><span class="v">{{ reservation.move_in_date }}</span></div>
+          <div class="kv"><span class="k">Online price</span><span class="v">${{ '%d'|format(reservation.unit.web_price) }}/mo</span></div>
+          {% if reservation.status == 'held' %}
+          <form method="post" action="/reservation/cancel/{{ reservation.code }}" style="margin-top:10px;">
+            <button class="btn btn-outline btn-sm" type="submit">Cancel Reservation</button>
+          </form>
+          {% endif %}
+        </div>
+        {% else %}
+        <p>No reservations yet. <a href="/find-storage">Find a storage unit</a> to hold one for free.</p>
+        {% endfor %}
+      </div>
+
+      <div class="account-card">
+        <h2>Your Rentals</h2>
+        {% for rental in rentals %}
+        <div class="res-row">
+          <div class="res-top">
+            <div>
+              <strong>{{ rental.unit.category }} {{ rental.unit.dims }} at {{ rental.facility.address }}</strong><br>
+              {{ rental.facility.city }}, {{ rental.facility.state }}
+            </div>
+            <span class="status-pill status-held">RENTING</span>
+          </div>
+          <div class="kv"><span class="k">Started</span><span class="v">{{ rental.started_on }}</span></div>
+          <div class="kv"><span class="k">Monthly rate</span><span class="v">${{ '%.2f'|format(rental.monthly_rate) }}</span></div>
+          <div class="kv"><span class="k">Current balance</span><span class="v">${{ '%.2f'|format(rental.balance_due) }}</span></div>
+          <div class="kv"><span class="k">Next bill date</span><span class="v">{{ rental.next_bill_date }}</span></div>
+          <div class="kv"><span class="k">Gate code</span><span class="v">{{ rental.gate_code }}</span></div>
+          <p style="margin:10px 0 0;"><a class="btn btn-primary btn-sm" href="/simplified/bill-pay">Pay your bill</a></p>
+        </div>
+        {% else %}
+        <p>No active rentals on this account.</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div>
+      <div class="account-card">
+        <h2>Account Details</h2>
+        <div class="kv"><span class="k">Name</span><span class="v">{{ current_user.full_name }}</span></div>
+        <div class="kv"><span class="k">Email</span><span class="v">{{ current_user.email }}</span></div>
+        <div class="kv"><span class="k">Phone</span><span class="v">{{ current_user.phone }}</span></div>
+        <div class="kv"><span class="k">Account number</span><span class="v">{{ current_user.account_number }}</span></div>
+        <p style="margin-top:14px;"><a class="btn btn-outline btn-sm" href="/myaccount/edit">Edit account details</a></p>
+      </div>
+
+      <div class="account-card">
+        <h2>Saved Locations</h2>
+        {% for facility in saved %}
+        <div class="kv"><span class="k">{{ facility.city }}, {{ facility.state }}</span>
+          <span class="v"><a href="{{ facility.detail_url }}">{{ facility.address }}</a></span></div>
+        {% else %}
+        <p>No saved locations yet.</p>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

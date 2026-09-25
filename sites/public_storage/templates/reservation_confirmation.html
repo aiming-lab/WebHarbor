@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Reservation Confirmed | Public Storage{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="max-width:640px;">
+  <div class="auth-card confirm-hero">
+    <h1>Your unit is on hold!</h1>
+    <p>Reservation received on {{ reservation.created_at }}. We've emailed your confirmation to <strong>{{ reservation.holder_email }}</strong>.</p>
+    <div class="confirm-code">{{ reservation.code }}</div>
+    <p style="color: var(--ps-gray); font-size:13.5px;">Keep this code — you'll use it with your email to manage the reservation from the <a href="/access-reservation">Your Reservation</a> page.</p>
+    <div class="hold-summary" style="text-align:left;">
+      <div class="kv"><span class="k">Facility</span><span class="v">{{ reservation.facility.address }}, {{ reservation.facility.city }}, {{ reservation.facility.state }} {{ reservation.facility.zip }}</span></div>
+      <div class="kv"><span class="k">Unit</span><span class="v">{{ reservation.unit.category }} {{ reservation.unit.dims }}</span></div>
+      <div class="kv"><span class="k">Features</span><span class="v">{{ reservation.unit.feature_list|join(', ') }}</span></div>
+      <div class="kv"><span class="k">Online price</span><span class="v">${{ '%d'|format(reservation.unit.web_price) }}/mo</span></div>
+      {% if reservation.unit.promo %}<div class="kv"><span class="k">Promotion</span><span class="v">{{ reservation.unit.promo }}</span></div>{% endif %}
+      <div class="kv"><span class="k">Move-in date</span><span class="v">{{ reservation.move_in_date }}</span></div>
+      <div class="kv"><span class="k">Status</span><span class="v">{{ reservation.status|upper }}</span></div>
+    </div>
+    <p style="font-size:14px; color: var(--ps-gray);">This hold is free with no obligation and lasts seven days. Complete your rental online or at the property to lock in your space.</p>
+    <p>
+      <a class="btn btn-outline" href="/access-reservation">Manage this reservation</a>
+      <a class="btn btn-primary" href="{{ reservation.facility.detail_url }}">Back to the facility</a>
+    </p>
+  </div>
+</div>
+{% endblock %}

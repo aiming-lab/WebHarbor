@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Find a Self Storage Unit | Public Storage{% endblock %}
+{% block content %}
+<div class="results-wrap">
+  <div class="results-head">
+    <h1>{% if location %}Find a Storage Unit Near You In {{ location }}{% else %}Results for Public Storage locations near your location{% endif %}</h1>
+    <div class="sort-links">
+      {% for sort_key, sort_label in [('recommended','Recommended'), ('closest','Closest'), ('price','Lowest Price')] %}
+      <a class="{{ 'active' if sort == sort_key else '' }}" href="{{ request.path }}?{% if type_param %}type={{ type_param }}&amp;{% endif %}{% if size_param %}sz={{ size_param|urlencode }}&amp;{% endif %}sort={{ sort_key }}">{{ sort_label }}</a>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="results-toolbar">
+    <form action="/self-storage-search" method="get">
+      <input type="hidden" name="sort" value="{{ sort }}">
+      <input type="hidden" name="location" value="{{ location }}">
+      <label for="rt-location"><strong>Location:</strong></label>
+      <input type="text" id="rt-location" name="location" value="{{ location }}" style="padding:7px 10px; border:1px solid #ccc; border-radius:3px; width:220px;" placeholder="Address, City or Zip">
+      <label for="rt-type"><strong>Type:</strong></label>
+      <select id="rt-type" name="type">
+        <option value="">Storage Units</option>
+        <option value="IsVehicleUnit" {% if type_param == 'IsVehicleUnit' %}selected{% endif %}>Vehicle Units</option>
+      </select>
+      <label for="rt-size"><strong>Size:</strong></label>
+      <select id="rt-size" name="sz">
+        {% for value, label in size_filters %}
+        <option value="{{ value }}" {% if size_param == value %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+      </select>
+      <button class="btn btn-primary btn-sm" type="submit">Update</button>
+    </form>
+    <span style="color: var(--ps-gray);">{{ total }} location{{ '' if total == 1 else 's' }} found</span>
+  </div>
+
+  {% for card in cards %}
+  {% set facility = card.facility %}
+  <div class="facility-card">
+    <div class="fc-head">
+      <div class="fc-rank">{{ loop.index }}</div>
+      <div class="fc-main">
+        <a class="fc-addr" href="{{ facility.detail_url }}">{{ facility.address }},</a>
+        <span class="fc-city">{{ facility.city }}, {{ facility.state }} {{ facility.zip }}</span>
+        <div class="fc-badges">
+          {% for badge in facility.badge_list %}
+          <span class="badge">{{ badge }}</span>
+          {% endfor %}
+          {% if facility.featured %}<span class="badge badge-green">Featured</span>{% endif %}
+        </div>
+        <div class="fc-rating">
+          <span class="stars">★★★★★</span>
+          <strong>{{ '%.1f'|format(facility.rating) }}</strong>
+          <span class="count">{{ facility.review_count }} Reviews</span>
+        </div>
+      </div>
+      <div class="fc-distance">{{ '%.1f'|format(card.distance) }} miles</div>
+    </div>
+    <div class="fc-units">
+      {% for unit in card.units %}
+      <div class="unit-mini">
+        <div class="um-size">
+          <span class="cat">{{ unit.category }}</span>
+          {{ unit.dims }}
+        </div>
+        <div class="um-feats">
+          {{ unit.feature_list|join(', ') }}
+          {% if unit.urgency %}<span class="ur-urgency" style="margin-left:8px;">{{ unit.urgency }}</span>{% endif %}
+        </div>
+        <div>
+          <div class="um-price">In Store ${{ '%d'|format(unit.list_price) }}</div>
+          <div class="um-web">${{ '%d'|format(unit.web_price) }}<small>/mo</small></div>
+        </div>
+        <a class="btn btn-hold btn-sm" href="/reservation/hold/{{ unit.unit_id }}">Hold Now (No Obligation)</a>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="see-all">
+      <a href="{{ facility.detail_url }}">See all units at this facility</a>
+    </div>
+  </div>
+  {% else %}
+  <div style="text-align:center; padding: 60px 20px;">
+    <h2>No locations matched your search.</h2>
+    <p>Try a different ZIP code, city, or widen your filters above.</p>
+    <a class="btn btn-primary" href="/find-storage">Start a new search</a>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

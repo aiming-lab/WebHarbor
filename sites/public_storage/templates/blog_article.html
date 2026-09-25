@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} | Public Storage Blog{% endblock %}
+{% block content %}
+<div class="page-wrap" style="max-width:760px;">
+  <p><a href="/blog/{{ article.category }}">← Back to {{ article.category|replace('-',' ')|title }}</a></p>
+  <h1>{{ article.title }}</h1>
+  <div class="article-meta">{{ article.published }} &middot; Public Storage Blog</div>
+  {% if article.image_path %}
+  <img src="/{{ article.image_path }}" alt="{{ article.title }}" style="width:100%; border-radius:6px; margin-bottom:22px;">
+  {% endif %}
+  <div class="article-body">
+    {% for para in article.body_list %}
+    <p>{{ para }}</p>
+    {% endfor %}
+  </div>
+  <div style="margin-top:36px; background: var(--ps-light); border-radius:6px; padding:20px;">
+    <h3 style="margin-top:0;">Need space for your things?</h3>
+    <p>Reserve a storage unit for free with no obligation — rentals are month-to-month.</p>
+    <a class="btn btn-primary" href="/find-storage">Find Storage Near You</a>
+  </div>
+</div>
+{% endblock %}

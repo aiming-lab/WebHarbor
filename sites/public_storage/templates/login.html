@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Account Log In | Public Storage{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Log into your account</h1>
+    <form method="post" action="/lease/sign-elease{% if request.args.get('next') %}?next={{ request.args.get('next')|urlencode }}{% endif %}">
+      <div class="form-field">
+        <label for="login-form-email">Email</label>
+        <input type="email" id="login-form-email" name="loginEmail" required>
+      </div>
+      <div class="form-field">
+        <label for="login-form-password">Password</label>
+        <input type="password" id="login-form-password" name="loginPassword" required>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Log In</button>
+    </form>
+    <p class="auth-alt">New to Public Storage? <a href="/myaccount/identity/create-account">Create an Account</a></p>
+    <p class="auth-alt">Looking for a reservation you placed? <a href="/access-reservation">Access your reservation</a> with your code and email.</p>
+    <p class="auth-alt">Paying rent? <a href="/simplified/bill-pay/login">Pay your bill online</a> with your account number.</p>
+  </div>
+</div>
+{% endblock %}

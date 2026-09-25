@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Find a Self Storage Unit | Public Storage{% endblock %}
+{% block content %}
+<div class="hero" style="padding: 52px 20px 60px;">
+  <div class="hero-inner">
+    <h1>Find Storage Near You</h1>
+    <p class="hero-sub">Search by address, city or ZIP code.</p>
+    <form class="search-form" action="/self-storage-search" method="get" role="search" style="margin-top:22px;">
+      <div class="field">
+        <label for="fs-location">Address, City or Zip</label>
+        <input type="text" id="fs-location" name="location" value="{{ location or '' }}" placeholder="Address, City or Zip" required>
+      </div>
+      <div class="field">
+        <label for="fs-type">Storage Type</label>
+        <select id="fs-type" name="type">
+          <option value="">Select</option>
+          <option value="IsStorageUnit" {% if type_param == 'IsStorageUnit' %}selected{% endif %}>Storage Units</option>
+          <option value="IsVehicleUnit" {% if type_param == 'IsVehicleUnit' %}selected{% endif %}>Vehicle Units</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="fs-size">Size</label>
+        <select id="fs-size" name="sz">
+          <option value="">Select</option>
+          {% for value, label in size_filters %}
+          <option value="{{ value }}" {% if size_param == value %}selected{% endif %}>{{ label }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+  </div>
+</div>
+
+<div class="promo-strip">
+  <div class="promo-items">
+    <span>$1 First Month Rent Where Available</span>
+    <span>All Rentals Month to Month</span>
+    <span>Complete Your Storage Rental Online in Minutes</span>
+  </div>
+</div>
+
+<section class="section">
+  <div class="section-head">
+    <h2>Not sure what size you need?</h2>
+    <p>Compare unit sizes, square footage and what fits with the size guide.</p>
+  </div>
+  <p style="text-align:center;">
+    <a class="btn btn-outline" href="/size-guide">Open the Size Guide</a>
+  </p>
+</section>
+{% endblock %}

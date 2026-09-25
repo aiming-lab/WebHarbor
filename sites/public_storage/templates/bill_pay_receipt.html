@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Payment Confirmed | Public Storage{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="max-width:640px;">
+  <div class="auth-card confirm-hero">
+    <h1>Thank you — your payment went through!</h1>
+    <div class="confirm-code">{{ payment.confirmation }}</div>
+    <table class="pay-table" style="text-align:left;">
+      <tr><td>Amount paid</td><td>${{ '%.2f'|format(payment.amount) }}</td></tr>
+      <tr><td>Card</td><td>****{{ payment.card_last4 }}</td></tr>
+      <tr><td>Paid on</td><td>{{ payment.paid_on }}</td></tr>
+      <tr><td>Rental</td><td>{{ rental.unit.category }} {{ rental.unit.dims }} at {{ rental.facility.address }}, {{ rental.facility.city }}</td></tr>
+      <tr><td>Remaining balance</td><td>${{ '%.2f'|format(rental.balance_due) }}</td></tr>
+      <tr><td>Next bill date</td><td>{{ rental.next_bill_date }}</td></tr>
+    </table>
+    <p><a class="btn btn-primary" href="/">Back to Public Storage</a></p>
+  </div>
+</div>
+{% endblock %}

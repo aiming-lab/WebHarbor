@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Pay Bill | Public Storage{% endblock %}
+{% block content %}
+<div class="auth-wrap" style="max-width:640px;">
+  <div class="auth-card">
+    <h1>Pay Your Bill</h1>
+    <table class="pay-table">
+      <tr><td>Rental</td><td>{{ rental.unit.category }} {{ rental.unit.dims }} at {{ rental.facility.address }}, {{ rental.facility.city }}</td></tr>
+      <tr><td>Monthly rate</td><td>${{ '%.2f'|format(rental.monthly_rate) }}</td></tr>
+      <tr><td>Current balance due</td><td>${{ '%.2f'|format(rental.balance_due) }}</td></tr>
+      <tr><td>Next bill date</td><td>{{ rental.next_bill_date }}</td></tr>
+    </table>
+    <form method="post" action="/simplified/bill-pay">
+      <div class="form-field">
+        <label for="bp-card">Card Number</label>
+        <input type="text" id="bp-card" name="cardNumber" placeholder="Card number" required>
+      </div>
+      <div style="display:flex; gap:12px;">
+        <div class="form-field" style="flex:1;">
+          <label for="bp-expiry">Expiration (MM/YY)</label>
+          <input type="text" id="bp-expiry" name="expiry" placeholder="MM/YY" required>
+        </div>
+        <div class="form-field" style="flex:1;">
+          <label for="bp-cvv">Security Code</label>
+          <input type="text" id="bp-cvv" name="cvv" placeholder="CVV" required>
+        </div>
+      </div>
+      <div class="form-field">
+        <label for="bp-amount">Payment Amount ($)</label>
+        <input type="text" id="bp-amount" name="amount" value="{{ '%.2f'|format(rental.balance_due) }}" required>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Pay ${{ '%.2f'|format(rental.balance_due) }}</button>
+    </form>
+    <p class="auth-alt" style="font-size:12.5px;">Payments post immediately. A confirmation number is provided for your records.</p>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title or page.h1 }} | Public Storage{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <h1>{{ page.h1 }}</h1>
+  {% if page.paragraphs %}
+    <p class="lede">{{ page.paragraphs[0] }}</p>
+    {% for para in page.paragraphs[1:] %}
+    <p>{{ para }}</p>
+    {% endfor %}
+  {% endif %}
+
+  {% if page.h2s %}
+  <div style="margin-top:28px;">
+    {% for h in page.h2s %}
+    <h2>{{ h }}</h2>
+    {% endfor %}
+  </div>
+  {% endif %}
+
+  <div style="margin-top:30px;">
+    <h2>Ready to store?</h2>
+    <p>Reserve a unit for free with no obligation, and complete your rental online to save time on move-in day.</p>
+    <a class="btn btn-primary" href="/find-storage">Find Storage Near You</a>
+  </div>
+</div>
+{% endblock %}

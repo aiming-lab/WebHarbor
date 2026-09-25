@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}{{ category|replace('-',' ')|title }} Tips & Advice | Public Storage Blog{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <h1>{{ category|replace('-',' ')|title }} Tips &amp; Advice</h1>
+  <p class="lede"><a href="/blog">← All blog categories</a></p>
+  <div class="blog-grid" style="margin-top:22px;">
+    {% for article in articles %}
+    <a class="blog-card" href="/blog/{{ article.category }}/{{ article.slug }}.html">
+      {% if article.image_path %}
+      <img src="/{{ article.image_path }}" alt="{{ article.title }}">
+      {% endif %}
+      <div class="bc-body">
+        <div class="bc-cat">{{ article.category|replace('-',' ') }}</div>
+        <h3>{{ article.title }}</h3>
+        <div class="bc-date">{{ article.published }}</div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

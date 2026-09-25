@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Edit Account Details | Public Storage{% endblock %}
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <h1>Edit Account Details</h1>
+    <form method="post" action="/myaccount/edit">
+      <div class="form-field">
+        <label for="edit-first">First Name</label>
+        <input type="text" id="edit-first" name="firstName" value="{{ current_user.first_name }}" required>
+      </div>
+      <div class="form-field">
+        <label for="edit-last">Last Name</label>
+        <input type="text" id="edit-last" name="lastName" value="{{ current_user.last_name }}" required>
+      </div>
+      <div class="form-field">
+        <label for="edit-phone">Phone Number</label>
+        <input type="tel" id="edit-phone" name="phone" value="{{ current_user.phone }}" required>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Save Changes</button>
+    </form>
+    <p class="auth-alt"><a href="/myaccount">← Back to your account</a></p>
+  </div>
+</div>
+{% endblock %}

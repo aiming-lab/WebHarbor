@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ page.title or page.h1 }}{% endblock %}
+{% block content %}
+<div class="page-wrap">
+  <h1>{{ page.h1 }}</h1>
+  {% if page.paragraphs %}
+    <p class="lede">{{ page.paragraphs[0] }}</p>
+    {% for para in page.paragraphs[1:] %}
+    <p>{{ para }}</p>
+    {% endfor %}
+  {% endif %}
+
+  {% if page.h2s %}
+  <h2 style="margin-top:30px;">On this page</h2>
+  <ul>
+    {% for h in page.h2s %}
+    <li>{{ h }}</li>
+    {% endfor %}
+  </ul>
+  {% endif %}
+
+  <div style="margin-top:34px;">
+    <h2>Find {{ page.h1 }} near you</h2>
+    <p>Search by address, city or ZIP code to see available units, features and today's online prices.</p>
+    <form class="search-form" action="/self-storage-search" method="get" style="max-width:640px;">
+      <div class="field">
+        <label for="tp-location">Address, City or Zip</label>
+        <input type="text" id="tp-location" name="location" placeholder="Address, City or Zip" required>
+      </div>
+      <button class="btn btn-primary" type="submit">Search</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

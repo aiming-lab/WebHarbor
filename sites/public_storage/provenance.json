@@ -1,0 +1,76 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-24",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the publicstorage.com mirror: the zip/city storage search (captured zip result sets plus scored token search with Storage Units/Vehicle Units type filters and Small/Medium/Large/Up-to-20'/35'/50' size filters, Recommended/Closest/Lowest-Price sorts), facility detail pages (full unit lists with in-store vs online pricing, features, promotions, urgency flags; address, phone, office and access hours, amenities, security note, FAQs, customer reviews, nearby locations), city pages with average and cheapest unit stats, the free Hold Now reservation flow (hold form with move-in date and contact validation → confirmation code → lookup by code + email → cancel), the account domain (register, log in, profile edit, reservations, rentals with gate codes, saved locations), the tenant bill-pay flow (account number + email login, card validation, payment receipt), and the content surfaces (homepage, size guide hub + 11 per-size FAQ pages, 8 storage-type pages, 8 storage-solutions pages, blog index/categories/articles, help center, company pages). Route shapes follow the live site (/self-storage-<state>-<city>/<id>.html, /self-storage-search/<slug>, /size-guide/<slug>/<slug>.html, /lease/sign-elease, /myaccount/identity/create-account, /access-reservation, /simplified/bill-pay/login)."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Deterministic build-time/boot-time seeder. All catalog rows come from the tracked source_data/ snapshots; benchmark users share one frozen bcrypt digest and fixed reservation codes so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0 plus index recreation + VACUUM canonicalization)."
+  },
+  {
+   "path": "source_data/facilities.json",
+   "classification": "captured-upstream-content",
+   "scope": "Frozen snapshot of the live site's facility pages (https://www.publicstorage.com/self-storage-<state>-<city>/<id>.html) as served on 2026-09-24: per facility the real upstream property id, address, city, state, ZIP, phone line, geo coordinates from the page's schema.org JSON-LD, guest rating and review count, office and access hours, amenity list, real photo rendition URLs (images.publicstorage.com/Property/...), and the full rendered unit list — each unit's real upstream unit id (V_...), size category, dimensions, features (Ground Floor / Elevator access / Climate controlled / Inside-Outside Unit / Swing-Rollup Door / Near Door or Elevator / Drive up access / Enclosed / Vehicle Parking), the in-store (list) price, the online (pricebook) price, the site's minimum-rate marker, the unit's promotion ($1 FIRST MONTH RENT / 50% OFF 1ST MONTH / 2ND MONTH FREE / NO ADMIN FEE & FREE LOCK) and its urgency flag (HURRY! / 1 UNIT LEFT! / 2 UNITS LEFT!) — plus the facility's most recent customer reviews (author, star rating, date, body) as captured from the page's embedded review JSON."
+  },
+  {
+   "path": "source_data/zip_searches.json",
+   "classification": "captured-upstream-content",
+   "scope": "The live site's own zip-search behavior captured on 2026-09-24 by driving the homepage typeahead: for each of 52 ZIP codes across the 17 harvested metro areas, the slug the live site redirects to (/self-storage-search/<city>-<state>-<zip>) and the facility result set the live site returns with its own displayed distances (500 facility/distance pairs)."
+  },
+  {
+   "path": "source_data/site_content.json",
+   "classification": "captured-upstream-content",
+   "scope": "Frozen copy snapshot from the live site's static pages captured on 2026-09-24: the homepage copy (hero, promo strip, process steps, 50-years bullets, testimonials, app banner), the size-guide hub (11 size cards with blurbs and right-size-for lists, the 11-row unit comparison chart, the five storage tips), the per-size FAQ pages (99 question/answer pairs captured from the pages' embedded FAQ content), the 8 storage-type landing pages (Self Storage, 24 Hour, Business, Vehicle & RV, Boat, Climate Controlled, Drive Up Access, Indoor) with their intro paragraphs and section headings, the storage-solutions pages (Decluttering, Living Abroad, Military, Seasonal, Security, Deals, Lockers, Life Transitions), 38 blog articles (title, date, category, body paragraphs, real thumbnail image URLs from publicstorage.blog), and the help-center topic set."
+  },
+  {
+   "path": "asset_inventory.json",
+   "classification": "asset-manifest",
+   "scope": "Per-file inventory (bytes, SHA-256, upstream source URL) for every managed image under static/images/; enforced by the image build's check_asset_inventory.py gate."
+  },
+  {
+   "path": "static/images/",
+   "classification": "captured-upstream-content",
+   "scope": "Real imagery served by the live site: per-facility property photos (images.publicstorage.com/Property/<id>/property-<id>_N.jpg renditions the facility pages themselves display, plus the shared Property/common gallery photos used on facility pages), the size-guide illustrations and comparison-chart art (Website/SizeGuide), the storage-type hero and industry imagery (Website/StorageTypes), homepage feature and testimonial art (demandware static ps-images), the eRental PLP banner and security icons (cdnflex.com), and the blog article thumbnails (publicstorage.blog). No placeholders, no third-party stock imagery, no AI-generated images."
+  },
+  {
+   "path": "static/icons/",
+   "classification": "captured-upstream-chrome",
+   "scope": "Site chrome served by images.publicstorage.com/Branding: the Public Storage logo (SVG + PNG crops) and the PS favicon."
+  },
+  {
+   "path": "static/css/site.css",
+   "classification": "mirror-code",
+   "scope": "Hand-written stylesheet reproducing the live site's design tokens captured on 2026-09-24: Roboto body + ITC Avant Garde headings, #0F274d ink navy, #00a1e0 brand blue, #FF6200 orange accent, #008827 hold-button green, facility-card and unit-row layouts with in-store strike-through vs online pricing, urgency and promo styling, and the responsive breakpoints."
+  },
+  {
+   "path": "benchmark users / reservations / rentals",
+   "classification": "environment-native-derived",
+   "scope": "The four benchmark accounts (alice.j@test.com, bob.c@test.com, carol.d@test.com, david.k@test.com, password TestPass123!) are environment-native fixtures. Their pre-existing holds and in-force leases reference real captured units at real captured facilities (Bellevue WA, Chicago IL, Orlando FL, Denver CO) with the unit's own captured online price as the monthly rate; reservation codes, account numbers, gate codes and move-in dates are fixed environment-native values so the seed is byte-reproducible. Documented as derived (not scraped) in NOTICE.md."
+  },
+  {
+   "path": "templates/",
+   "classification": "mirror-code",
+   "scope": "30 Jinja2 templates mirroring the live site's page furniture: header with the Find Storage / Size Guide / Storage Types flyouts, phone line and Pay Bill, account links; footer with the Storage Types / Support / Company Info / Size Guide columns and the legal block; homepage hero with the 40%-off banner and search form; search results with rank, badges, distance, top-3 unit rows and Hold Now buttons; facility pages with photo, hours, unit rows, amenities, FAQs and reviews; size guide and per-size FAQ pages; type and solutions pages; blog; auth, account, hold, reservation and bill-pay flows; help center; 404."
+  },
+  {
+   "path": "scripts_dev/",
+   "classification": "mirror-code",
+   "scope": "Offline harvest and staging toolchain that produced the tracked snapshots: live facility-page capture, homepage typeahead driving for the zip-search behavior, static-content and blog parsers emitting source_data/*.json, image collection/download/staging with magic-number verification, and final data reconciliation. Development-time only; excluded from the runtime image by .dockerignore."
+  },
+  {
+   "path": "tests/",
+   "classification": "mirror-code",
+   "scope": "Regression suite (34 tests): task contract (5-key rows, port/URL consistency against the registry), seed determinism (byte-identical rebuilds from the tracked source_data snapshots), and app robustness (route rendering, search filters/sorts, hold-form validation and confirmation flow, reservation lookup/cancel, account and bill-pay flows, CSRF on every POST, 404s)."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "21 goal-style benchmark tasks, contributor keys only (web_name, id, ques, web, upstream_url), 37-73 words each: zip/city search with filters and sorts, facility unit selection against live pricing rules, Hold Now with move-in/contact validation, reservation lookup and cancel, account registration/login/profile/reservations, tenant bill pay, size-guide and FAQ research, blog and help-center research. No answer keys, no verifier paths."
+  }
+ ]
+}
