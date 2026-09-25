@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}My account | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Sign in</h1>
+    <div class="row">
+      <div class="col-md-6">
+        <div class="panel">
+          <form action="{{ url_for('account_login', next=next) }}" method="post">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <div class="mb-1">
+              <label class="field-label" for="emailAddress">Email address</label>
+              <input class="form-control" type="email" id="emailAddress" name="email" required>
+            </div>
+            <div class="mb-1">
+              <label class="field-label" for="password">Password</label>
+              <input class="form-control" type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-block">Sign in securely</button>
+          </form>
+          <p class="mt-1"><a href="{{ url_for('account_register') }}">Log in/Sign up — create a new account</a></p>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="panel">
+          <h2>Why create an account?</h2>
+          <ul>
+            <li>See all your upcoming trips in one place</li>
+            <li>Manage or change bookings in seconds</li>
+            <li>Save travelers for faster checkout</li>
+          </ul>
+          <a class="btn btn-outline" href="{{ url_for('account_register') }}">Sign up now</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

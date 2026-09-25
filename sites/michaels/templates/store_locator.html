@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}Michaels Locations in the United States | Arts and Crafts Stores Near You{% endblock %}
+{% block content %}
+<h1>Store Locator</h1>
+<p class="page-sub">Search by ZIP code, city or state to find a Michaels near you.</p>
+<form method="get" class="store-search" action="/store-locator">
+  <input type="text" name="q" value="{{ q }}" placeholder="Enter ZIP, city or state" aria-label="Search stores">
+  <button type="submit" class="btn-primary">Search</button>
+</form>
+{% if q %}
+<p class="result-count">{{ stores|length }} store{{ 's' if stores|length != 1 }} found for "{{ q }}"</p>
+<div class="store-grid">
+  {% for s in stores %}
+  <article class="store-card">
+    <h2>{{ s.name }}</h2>
+    <div class="store-addr">{{ s.address }}, {{ s.city }}, {{ s.state }} {{ s.zip }}</div>
+    <div class="store-phone">{{ s.phone }}</div>
+    <p><a href="/store-locator/{{ s.number }}">Store details and opening hours</a></p>
+    <div class="store-services">
+      {% set svcs = s.service_list() %}
+      {% for key, on in svcs.items() %}
+      {% if on %}<span class="fulfill-tag">{{ key.replace('_',' ') }}</span>{% endif %}
+      {% endfor %}
+    </div>
+  </article>
+  {% else %}
+  <div class="empty-state"><h2>No stores found</h2><p>Try another ZIP code, city, or state.</p></div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state"><h2>Find your store</h2><p>Enter a ZIP code, city or state to see stores, hours and services like Custom Framing, balloon inflation and curbside pickup.</p></div>
+{% endif %}
+{% endblock %}

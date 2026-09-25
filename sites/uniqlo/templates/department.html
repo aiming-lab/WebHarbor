@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}{{ department.upper() }} | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <h1 class="page-title">{{ department.upper() }}</h1>
+
+    <div class="category-tiles">
+        {% for c in categories %}
+        <a href="{{ url_for('category_page', department=c.department, category_slug=c.slug) }}" class="category-tile">{{ c.name }}</a>
+        {% endfor %}
+    </div>
+
+    <section class="product-section">
+        <h2>Shop {{ department|capitalize }}</h2>
+        <div class="product-grid">
+            {% for product in products %}
+                {% include '_product_card.html' %}
+            {% endfor %}
+        </div>
+    </section>
+</div>
+{% endblock %}

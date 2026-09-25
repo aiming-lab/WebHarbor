@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Address Book | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/account">My Dillard's Account</a> &rsaquo; Address Book</div>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <a href="/account">My Dillard's Account</a>
+      <a href="/account/orders">Order History</a>
+      <a href="/account/returns">Returns</a>
+      <a href="/account/paybill">Pay My Bill</a>
+      <a href="/account/wishlist">My Wish List</a>
+      <a href="/account/profile">Profile &amp; Settings</a>
+      <a href="/account/addresses" class="active">Address Book</a>
+    </aside>
+    <section class="panel">
+      <h2>Address Book</h2>
+      {% if addresses %}
+        <table>
+          <tr><th>Label</th><th>Address</th><th>City</th><th>State</th><th>ZIP</th><th>Phone</th><th>Default</th></tr>
+          {% for address in addresses %}
+            <tr>
+              <td>{{ address.label }}</td>
+              <td>{{ address.one_line() }}</td>
+              <td>{{ address.city }}</td>
+              <td>{{ address.state }}</td>
+              <td>{{ address.zipcode }}</td>
+              <td>{{ address.phone }}</td>
+              <td>{% if address.is_default_shipping %}Yes{% else %}No{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p class="muted">No saved addresses.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

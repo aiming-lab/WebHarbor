@@ -1,0 +1,482 @@
+/* NFL.com mirror — chrome + content styles (snapshot 2026-09-24). */
+
+:root {
+  --nfl-navy: #013369;
+  --nfl-red: #d50a0a;
+  --nfl-black: #0b0b0b;
+  --nfl-dark: #1a1a1a;
+  --nfl-gray: #f2f2f2;
+  --nfl-line: #e0e0e0;
+  --nfl-text: #111111;
+  --nfl-muted: #6b6b6b;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, "Segoe UI", sans-serif;
+  color: var(--nfl-text);
+  background: #fff;
+  font-size: 16px;
+  line-height: 1.45;
+}
+a { color: var(--nfl-navy); text-decoration: none; }
+a:hover { text-decoration: underline; }
+img { max-width: 100%; display: block; }
+h1, h2, h3, h4 { margin: 0 0 .4em; line-height: 1.15; }
+
+.btn {
+  display: inline-block; padding: 10px 22px; border-radius: 3px;
+  font-weight: 700; font-size: 14px; letter-spacing: .04em;
+  border: 2px solid transparent; cursor: pointer; text-align: center;
+}
+.btn:hover { text-decoration: none; }
+.btn-red { background: var(--nfl-red); color: #fff; border-color: var(--nfl-red); }
+.btn-red:hover { background: #b30808; }
+.btn-outline { background: transparent; color: #fff; border-color: #fff; }
+.btn-outline:hover { background: rgba(255,255,255,.12); }
+.btn-sm { padding: 6px 14px; font-size: 12px; }
+.page .btn-outline { color: var(--nfl-navy); border-color: var(--nfl-navy); }
+
+/* utility bar */
+.utility-bar { background: var(--nfl-black); color: #fff; font-size: 12px; }
+.utility-inner {
+  max-width: 1280px; margin: 0 auto; padding: 6px 16px;
+  display: flex; align-items: center; gap: 18px;
+}
+.utility-promo { font-weight: 800; letter-spacing: .06em; }
+.utility-links { display: flex; gap: 14px; }
+.utility-links a { color: #fff; font-weight: 600; }
+.utility-actions { margin-left: auto; display: flex; gap: 8px; }
+
+/* scores ribbon */
+.scores-ribbon {
+  background: var(--nfl-dark); border-bottom: 1px solid #333;
+  overflow-x: auto; position: relative;
+}
+.ribbon-week {
+  position: absolute; left: 12px; top: 12px; z-index: 2;
+  color: #fff; font-size: 11px; font-weight: 800; letter-spacing: .08em;
+}
+.ribbon-track {
+  display: flex; gap: 2px; padding: 34px 12px 10px 110px; min-width: max-content;
+}
+.ribbon-game {
+  min-width: 132px; background: #242424; border-radius: 4px;
+  padding: 8px 10px; color: #fff; font-size: 11px;
+}
+.ribbon-game:hover { background: #333; text-decoration: none; }
+.ribbon-day { display: block; font-weight: 700; color: #bbb; margin-bottom: 4px; }
+.ribbon-teams { display: grid; gap: 3px; }
+.ribbon-team { display: flex; align-items: center; gap: 6px; }
+.ribbon-team img { width: 18px; height: 18px; }
+.ribbon-abbr { font-weight: 800; }
+.ribbon-record { color: #999; margin-left: auto; }
+.ribbon-final {
+  display: inline-block; margin-top: 4px; color: #fff; background: var(--nfl-red);
+  border-radius: 2px; padding: 1px 5px; font-weight: 700; font-size: 10px;
+}
+
+/* header */
+.site-header { border-bottom: 3px solid var(--nfl-red); background: #fff; position: sticky; top: 0; z-index: 50; }
+.header-inner {
+  max-width: 1280px; margin: 0 auto; padding: 8px 16px;
+  display: flex; align-items: center; gap: 18px;
+}
+.brand .shield { width: 54px; height: 54px; }
+.main-nav { display: flex; gap: 20px; }
+.nav-link {
+  font-weight: 800; font-size: 14px; letter-spacing: .05em; color: var(--nfl-text);
+  padding: 8px 0; border-bottom: 3px solid transparent;
+}
+.nav-link:hover { border-bottom-color: var(--nfl-navy); text-decoration: none; }
+.header-right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.header-search { display: flex; }
+.header-search input {
+  border: 1px solid var(--nfl-line); border-radius: 3px 0 0 3px; padding: 7px 10px; width: 170px; font-size: 13px;
+}
+.header-search button {
+  border: 1px solid var(--nfl-navy); background: var(--nfl-navy); color: #fff;
+  border-radius: 0 3px 3px 0; padding: 0 10px; cursor: pointer;
+}
+.nav-shop { color: var(--nfl-red); }
+
+/* subnav */
+.subnav { background: var(--nfl-navy); }
+.subnav-inner {
+  max-width: 1280px; margin: 0 auto; padding: 8px 16px;
+  display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+}
+.subnav-title { color: #fff; font-weight: 800; font-size: 13px; letter-spacing: .08em; }
+.subnav a { color: #d7e3f4; font-size: 13px; font-weight: 600; }
+
+/* page scaffolding */
+.page { max-width: 1280px; margin: 0 auto; padding: 20px 16px 48px; min-height: 55vh; }
+.page-head { margin-bottom: 18px; }
+.page-head h1 { font-size: 30px; letter-spacing: .01em; text-transform: uppercase; }
+.page-head.center { text-align: center; padding: 60px 0; }
+.page-sub { color: var(--nfl-muted); margin: 4px 0 0; }
+.section { margin: 34px 0; }
+.section-title {
+  font-size: 20px; text-transform: uppercase; letter-spacing: .04em;
+  border-left: 6px solid var(--nfl-red); padding-left: 10px;
+}
+.section-title a { color: inherit; }
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+.fine-print { color: var(--nfl-muted); font-size: 13px; }
+.strong { font-weight: 800; }
+.kicker {
+  display: inline-block; color: var(--nfl-red); font-size: 11px;
+  font-weight: 800; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px;
+}
+.byline { color: var(--nfl-muted); font-size: 13px; margin: 4px 0 0; }
+
+/* cards */
+.card { display: block; background: #fff; }
+.card figure { margin: 0; position: relative; overflow: hidden; aspect-ratio: 16/9; background: var(--nfl-gray); }
+.card figure img { width: 100%; height: 100%; object-fit: cover; }
+.card-body { padding: 10px 4px; }
+.card-body h3, .card-body h4 { font-size: 16px; }
+.headline-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin: 16px 0; }
+.headline-row .card-news--compact h4 { font-size: 14px; }
+@media (max-width: 1000px) { .headline-row { grid-template-columns: repeat(2, 1fr); } }
+
+/* home hero */
+.home-grid { display: grid; grid-template-columns: 2.4fr 1fr; gap: 22px; }
+@media (max-width: 1000px) { .home-grid { grid-template-columns: 1fr; } }
+.headline-hero { display: block; }
+.headline-hero figure { aspect-ratio: 16/9; }
+.headline-hero h1 { font-size: 28px; margin-top: 10px; }
+.headline-hero p { color: var(--nfl-muted); margin: 6px 0 0; }
+.hero-band { background: var(--team-color); color: #fff; margin-bottom: 18px; border-radius: 4px; }
+.hero-band-inner { max-width: 1280px; margin: 0 auto; padding: 16px; display: flex; align-items: center; gap: 18px; }
+.hero-band-logo { width: 64px; height: 64px; }
+.hero-band-eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .1em; margin: 0; }
+.hero-band h2 { margin: 2px 0; font-size: 24px; }
+.hero-band-sub { margin: 0; opacity: .9; font-size: 14px; }
+.hero-band .btn { margin-left: auto; }
+
+/* panels */
+.panel { background: #fff; border: 1px solid var(--nfl-line); border-radius: 4px; padding: 16px; margin-bottom: 18px; }
+.panel-title {
+  font-size: 16px; text-transform: uppercase; letter-spacing: .05em;
+  border-bottom: 2px solid var(--nfl-navy); padding-bottom: 6px; margin-bottom: 12px;
+}
+.panel-title a { color: inherit; }
+.panel-sub { font-weight: 700; font-size: 13px; margin: 10px 0 6px; color: var(--nfl-navy); }
+.panel-plus { text-align: center; }
+.panel-plus img { margin: 8px auto; max-height: 90px; width: auto; }
+.panel-plus--wide { text-align: left; }
+.perk-list { columns: 2; margin: 0; padding-left: 18px; }
+.perk-list li { margin-bottom: 8px; }
+
+/* tables */
+.data-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.data-table th {
+  text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--nfl-muted); border-bottom: 2px solid var(--nfl-navy); padding: 8px 8px;
+}
+.data-table td { border-bottom: 1px solid var(--nfl-line); padding: 8px; vertical-align: middle; }
+.data-table--center th, .data-table--center td { text-align: center; }
+.data-table--compact th, .data-table--compact td { padding: 6px; font-size: 13px; white-space: nowrap; }
+.table-scroll { overflow-x: auto; }
+.team-cell img { width: 22px; height: 22px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+.roster-photo { width: 54px; }
+.roster-photo img { width: 44px; height: 44px; border-radius: 3px; }
+.mini-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 10px; }
+.mini-table caption { text-align: left; font-weight: 800; font-size: 11px; padding: 4px 0; letter-spacing: .06em; }
+.mini-table td { border-bottom: 1px solid var(--nfl-line); padding: 5px 2px; }
+.mini-team { font-weight: 700; }
+
+/* scores page */
+.scores-list { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+@media (max-width: 900px) { .scores-list { grid-template-columns: 1fr; } }
+.game-card { border: 1px solid var(--nfl-line); border-radius: 4px; overflow: hidden; background: #fff; }
+.game-card-meta {
+  display: flex; gap: 10px; padding: 8px 12px; background: var(--nfl-navy);
+  color: #fff; font-size: 12px; font-weight: 700; letter-spacing: .05em;
+}
+.game-card-body { display: block; padding: 6px 12px; }
+.gc-team { display: flex; align-items: center; gap: 12px; padding: 10px 0; }
+.gc-team img { width: 40px; height: 40px; }
+.gc-team-name strong { display: block; font-size: 16px; }
+.gc-team-name em { color: var(--nfl-muted); font-style: normal; font-size: 12px; }
+.gc-score { margin-left: auto; font-size: 26px; font-weight: 800; }
+.gc-team.winner .gc-score { color: var(--nfl-navy); }
+.game-card-foot {
+  display: flex; gap: 12px; padding: 8px 12px; font-size: 12px; color: var(--nfl-muted);
+  border-top: 1px solid var(--nfl-line);
+}
+.link-more { margin-left: auto; font-weight: 700; color: var(--nfl-red); }
+.badge {
+  display: inline-block; padding: 2px 7px; border-radius: 2px; font-size: 10px;
+  font-weight: 800; letter-spacing: .06em; background: var(--nfl-gray); color: var(--nfl-navy);
+}
+.badge-final { background: var(--nfl-red); color: #fff; }
+.week-picker { display: flex; gap: 4px; flex-wrap: wrap; }
+.week-link {
+  min-width: 30px; text-align: center; padding: 4px 6px; border-radius: 3px;
+  color: #d7e3f4; font-weight: 700; font-size: 13px;
+}
+.week-link.active, .week-link:hover { background: #fff; color: var(--nfl-navy); text-decoration: none; }
+.subnav .week-link { color: #d7e3f4; }
+.subnav .week-link.active { color: var(--nfl-navy); }
+
+/* game center */
+.game-hero { background: linear-gradient(100deg, var(--away), var(--home)); color: #fff; padding: 26px 0; }
+.game-hero-inner { max-width: 1280px; margin: 0 auto; padding: 0 16px; text-align: center; }
+.game-hero-meta { font-weight: 700; letter-spacing: .08em; font-size: 13px; margin-bottom: 14px; }
+.game-hero-teams { display: flex; align-items: center; justify-content: center; gap: 30px; }
+.ght { display: flex; flex-direction: column; align-items: center; gap: 4px; min-width: 220px; }
+.ght img { width: 84px; height: 84px; }
+.ght h1 { font-size: 22px; }
+.ght p { margin: 0; opacity: .85; font-size: 13px; }
+.ght-score { font-size: 44px; font-weight: 800; }
+.ght.winner .ght-score { color: #ffd166; }
+.ght-sep { font-size: 18px; font-weight: 800; opacity: .7; }
+.game-hero-venue { margin-top: 10px; font-size: 13px; opacity: .85; }
+.game-hero-note { margin-top: 6px; font-size: 12px; color: #ffd166; font-weight: 700; }
+.glance-table td { text-align: center; width: 30%; }
+.glance-label { font-weight: 800; font-size: 12px; letter-spacing: .05em; color: var(--nfl-muted); width: 40%; }
+.leader-row { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid var(--nfl-line); }
+.leader-label { font-size: 11px; font-weight: 800; color: var(--nfl-red); width: 84px; }
+.leader-name { font-weight: 700; }
+.leader-stats { margin-left: auto; font-size: 12px; color: var(--nfl-muted); }
+.inj-team { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; }
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--nfl-navy); margin: 0 0 18px; }
+.tab {
+  padding: 9px 16px; font-weight: 800; font-size: 13px; letter-spacing: .05em;
+  border-radius: 3px 3px 0 0; color: var(--nfl-muted);
+}
+.tab.active { background: var(--nfl-navy); color: #fff; }
+.tabs .tab:hover { text-decoration: none; color: var(--nfl-navy); }
+.tabs .tab.active:hover { color: #fff; }
+
+/* standings */
+.divisions-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; }
+@media (max-width: 900px) { .divisions-grid { grid-template-columns: 1fr; } }
+
+/* teams */
+.team-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 12px 0 26px; }
+@media (max-width: 900px) { .team-grid { grid-template-columns: repeat(2, 1fr); } }
+.team-tile {
+  border: 1px solid var(--nfl-line); border-top: 4px solid var(--team, var(--nfl-navy));
+  border-radius: 4px; padding: 16px 10px; text-align: center; background: #fff;
+}
+.team-tile:hover { box-shadow: 0 2px 10px rgba(1,51,105,.18); text-decoration: none; }
+.team-tile img { width: 64px; height: 64px; margin: 0 auto 8px; }
+.team-tile strong { display: block; font-size: 15px; }
+.team-tile span { color: var(--nfl-muted); font-size: 12px; }
+.division-label { font-size: 13px; letter-spacing: .08em; color: var(--nfl-muted); margin: 14px 0 0; }
+
+/* team page */
+.team-hero { background: var(--team); color: #fff; padding: 26px 0; }
+.team-hero-inner { max-width: 1280px; margin: 0 auto; padding: 0 16px; display: flex; align-items: center; gap: 20px; }
+.team-hero-logo { width: 90px; height: 90px; }
+.team-hero h1 { font-size: 30px; }
+.team-hero p { margin: 4px 0 0; opacity: .9; }
+.team-hero-actions { margin-left: auto; display: flex; gap: 10px; }
+.mini-game { font-size: 15px; font-weight: 700; padding: 6px 0; }
+.info-list { margin: 0; }
+.info-list > div { display: flex; border-bottom: 1px solid var(--nfl-line); padding: 7px 0; }
+.info-list dt { width: 160px; color: var(--nfl-muted); font-size: 13px; font-weight: 700; }
+.info-list dd { margin: 0; font-weight: 600; }
+
+/* players */
+.filter-bar {
+  display: flex; gap: 16px; align-items: end; flex-wrap: wrap;
+  background: var(--nfl-gray); padding: 12px 14px; border-radius: 4px; margin-bottom: 16px;
+}
+.filter-bar label { font-size: 12px; font-weight: 800; letter-spacing: .05em; display: grid; gap: 4px; }
+.filter-bar input, .filter-bar select {
+  border: 1px solid #ccc; border-radius: 3px; padding: 8px 10px; font-size: 14px; min-width: 180px;
+}
+.opponent img { width: 20px; height: 20px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+
+/* player page */
+.player-hero { border-bottom: 1px solid var(--nfl-line); margin-bottom: 18px; }
+.player-hero-inner { max-width: 1280px; margin: 0 auto; padding: 22px 16px; display: flex; gap: 24px; align-items: center; }
+.player-headshot { width: 180px; height: 180px; border-radius: 4px; }
+.player-headshot--blank { background: var(--nfl-gray); }
+.player-hero h1 { font-size: 34px; }
+.player-hero-meta { margin: 4px 0; font-size: 16px; color: var(--nfl-muted); font-weight: 600; }
+.player-hero-status { display: inline-block; background: var(--nfl-navy); color: #fff; font-size: 11px; font-weight: 800; padding: 3px 8px; border-radius: 2px; letter-spacing: .06em; }
+.table-title { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; margin: 12px 0 6px; color: var(--nfl-navy); }
+
+/* news */
+.news-list { display: grid; gap: 18px; }
+.news-row { display: grid; grid-template-columns: 260px 1fr; gap: 18px; align-items: start; }
+.news-row figure { margin: 0; aspect-ratio: 16/9; border-radius: 4px; overflow: hidden; }
+.news-row h3 { font-size: 20px; }
+.news-row p { margin: 6px 0 0; color: var(--nfl-muted); }
+.pager { display: flex; gap: 14px; align-items: center; justify-content: center; margin: 24px 0; }
+.pager-info { color: var(--nfl-muted); font-size: 13px; }
+
+/* article */
+.article { max-width: 860px; margin: 0 auto; }
+.article-head h1 { font-size: 32px; margin-top: 6px; }
+.article-byline { color: var(--nfl-muted); font-size: 14px; margin: 8px 0 14px; }
+.article-hero { margin: 0 0 16px; border-radius: 4px; overflow: hidden; }
+.article-body { font-size: 17px; line-height: 1.65; }
+.article-body p { margin: 0 0 16px; }
+.article-desc { font-weight: 700; font-size: 19px; }
+
+/* videos */
+.channel-tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 18px; }
+.channel-tab {
+  padding: 8px 18px; border-radius: 3px; background: var(--nfl-gray);
+  font-weight: 800; font-size: 13px; letter-spacing: .05em; color: var(--nfl-navy);
+}
+.channel-tab.active, .channel-tab:hover { background: var(--nfl-navy); color: #fff; text-decoration: none; }
+.video-grid, .video-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.video-row { grid-auto-flow: column; grid-template-columns: repeat(6, 1fr); overflow-x: auto; }
+@media (max-width: 1000px) { .video-grid { grid-template-columns: repeat(2, 1fr); } .video-row { grid-template-columns: repeat(3, 1fr); } }
+.play-badge {
+  position: absolute; inset: 0; display: grid; place-items: center;
+  color: #fff; font-size: 34px; background: rgba(11,11,11,.25);
+}
+.play-badge--lg { font-size: 60px; }
+.video-player-page { display: grid; grid-template-columns: 2.2fr 1fr; gap: 20px; }
+@media (max-width: 900px) { .video-player-page { grid-template-columns: 1fr; } }
+.video-player h1 { font-size: 24px; margin-top: 12px; }
+.video-frame { margin: 0; position: relative; aspect-ratio: 16/9; border-radius: 4px; overflow: hidden; }
+.video-frame-cap { position: absolute; left: 0; bottom: 0; background: var(--nfl-red); color: #fff; font-size: 11px; font-weight: 800; padding: 4px 10px; letter-spacing: .06em; }
+.video-playlist .playlist-row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--nfl-line); }
+.video-playlist .playlist-row figure { margin: 0; aspect-ratio: 16/9; border-radius: 3px; overflow: hidden; }
+.video-playlist h4 { font-size: 13px; margin: 2px 0 0; }
+
+/* NFL+ */
+.plus-hero { background: linear-gradient(120deg, #013369, #001a33); color: #fff; padding: 44px 0; }
+.plus-hero-inner { max-width: 1280px; margin: 0 auto; padding: 0 16px; display: grid; grid-template-columns: 1.4fr 1fr; gap: 30px; align-items: center; }
+.plus-hero h1 { font-size: 34px; }
+.plus-hero p { font-size: 17px; opacity: .92; }
+.plus-hero-ctas { display: flex; gap: 12px; margin-top: 14px; }
+.plus-hero-art img { margin: 0 auto; max-height: 180px; width: auto; }
+.plan-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+@media (max-width: 1000px) { .plan-grid { grid-template-columns: repeat(2, 1fr); } }
+.plan-card { border: 1px solid var(--nfl-line); border-top: 5px solid var(--nfl-navy); border-radius: 4px; padding: 20px 16px; text-align: center; }
+.plan-card--premium { border-top-color: var(--nfl-red); }
+.plan-card h3 { font-size: 18px; text-transform: uppercase; letter-spacing: .03em; }
+.plan-price { font-size: 34px; font-weight: 800; margin: 8px 0; }
+.plan-price span { font-size: 14px; color: var(--nfl-muted); font-weight: 600; }
+.plan-blurb { color: var(--nfl-muted); font-size: 13px; min-height: 72px; }
+
+/* auth / checkout / account */
+.auth-page, .checkout-wrap { max-width: 640px; margin: 0 auto; }
+.auth-panel h1 { font-size: 26px; }
+.auth-choice { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 14px; }
+.auth-choice-box { border: 1px solid var(--nfl-line); border-radius: 4px; padding: 18px; text-align: center; }
+.auth-choice-box h3 { font-size: 15px; }
+.checkout-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 800; letter-spacing: .04em; margin-bottom: 14px; }
+.checkout-form input, .checkout-form select {
+  border: 1px solid #ccc; border-radius: 3px; padding: 10px 12px; font-size: 15px; font-weight: 400;
+}
+.checkout-form input:focus { outline: 2px solid var(--nfl-navy); border-color: var(--nfl-navy); }
+.form-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+.check-label { display: flex !important; align-items: center; gap: 8px; font-weight: 600 !important; }
+.check-label input { width: auto; }
+.cta-row { display: flex; gap: 12px; margin-top: 16px; }
+.order-summary .info-list dt { width: 150px; }
+
+/* search */
+.inline-logo { width: 20px; height: 20px; display: inline-block; vertical-align: middle; }
+
+/* flashes */
+.flashes { max-width: 1280px; margin: 12px auto 0; padding: 0 16px; }
+.flash {
+  background: #fff3f3; border-left: 4px solid var(--nfl-red); color: #7a0d0d;
+  padding: 10px 14px; border-radius: 3px; margin-bottom: 8px; font-size: 14px;
+}
+
+/* footer */
+.site-footer { background: var(--nfl-black); color: #ccc; margin-top: 40px; }
+.footer-inner {
+  max-width: 1280px; margin: 0 auto; padding: 34px 16px 10px;
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 20px; font-size: 12px;
+}
+.footer-col h4 { color: #fff; font-size: 12px; letter-spacing: .08em; margin-bottom: 10px; }
+.footer-col ul { list-style: none; margin: 0; padding: 0; }
+.footer-col li { margin-bottom: 6px; }
+.footer-col a { color: #ccc; }
+.footer-col a:hover { color: #fff; }
+.footer-legal { border-top: 1px solid #333; padding: 16px; }
+.footer-legal p { max-width: 1100px; margin: 0 auto; font-size: 11px; color: #888; }
+
+/* cookie banner */
+.cookie-banner {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  background: rgba(11,11,11,.97); color: #eee; padding: 14px 20px;
+  font-size: 12px; display: grid; grid-template-columns: 1fr auto; gap: 16px; align-items: center;
+}
+.cookie-banner.hidden { display: none; }
+.cookie-banner p { margin: 0; max-width: 980px; }
+.cookie-actions { display: flex; gap: 10px; }
+
+/* footer newsletter */
+.footer-newsletter { margin-top: 14px; display: grid; gap: 6px; }
+.footer-newsletter label { color: #fff; font-weight: 700; font-size: 11px; letter-spacing: .06em; }
+.footer-newsletter input, .footer-newsletter select {
+  border: 1px solid #444; background: #1a1a1a; color: #eee;
+  border-radius: 3px; padding: 7px 9px; font-size: 12px;
+}
+.footer-newsletter button { justify-self: start; }
+
+/* ---- narrow-viewport fixes (audit V1: 390/320px horizontal overflow) ----
+   The desktop chrome (utility bar, header nav row, 7-column footer) has a
+   min-content wider than phone screens, which pushed every page to
+   scrollWidth 657-727px beyond the 390/320px viewports. */
+@media (max-width: 760px) {
+  .utility-inner { flex-wrap: wrap; gap: 6px 10px; }
+  .utility-actions { margin-left: 0; }
+  .header-inner { flex-wrap: wrap; row-gap: 10px; }
+  .main-nav { order: 3; flex: 1 1 100%; flex-wrap: wrap; gap: 10px 18px; }
+  .header-right { margin-left: auto; flex-wrap: wrap; gap: 10px; }
+  .header-search input { width: 130px; }
+  .footer-inner { grid-template-columns: repeat(2, 1fr); }
+  .footer-newsletter input, .footer-newsletter select { width: 100%; box-sizing: border-box; }
+}
+@media (max-width: 480px) {
+  .header-search input { width: 100px; }
+  .header-right .nav-link { display: none; }
+  .footer-inner { grid-template-columns: 1fr; }
+  .plan-grid { grid-template-columns: 1fr; }
+}
+
+/* ---- narrow-viewport fixes, round 2 (page-level overflow at 390/320px) ---- */
+@media (max-width: 760px) {
+  /* grid items must be allowed to shrink below their tables' min-content;
+     the .table-scroll wrappers then scroll the tables horizontally */
+  .panel { min-width: 0; }
+  .two-col > div { min-width: 0; }
+  /* game tab row wraps instead of overflowing */
+  .tabs { flex-wrap: wrap; }
+  /* tables without a .table-scroll wrapper scroll inside their panel */
+  table.data-table { display: block; overflow-x: auto; }
+  /* game hero: let the two team blocks wrap and shrink */
+  .game-hero-teams { flex-wrap: wrap; gap: 14px; }
+  .ght { min-width: 150px; }
+  .ght img { width: 64px; height: 64px; }
+  .ght h1 { font-size: 18px; }
+  .ght-score { font-size: 34px; }
+  /* team hero: action buttons wrap below the title */
+  .team-hero-inner { flex-wrap: wrap; }
+  .team-hero-actions { margin-left: 0; }
+  /* newsroom rows stack (the fixed 260px thumb column cannot fit) */
+  .news-row { grid-template-columns: 1fr; }
+  /* player hero wraps below the headshot */
+  .player-hero-inner { flex-wrap: wrap; }
+  .player-headshot { width: 120px; height: 120px; }
+  /* checkout form: fields fill their grid cells instead of forcing width */
+  .checkout-form input, .checkout-form select { width: 100%; box-sizing: border-box; }
+  .form-row { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.logout-form {display:inline; margin:0} .logout-form button {background:none; border:0; color:inherit; font:inherit; cursor:pointer; padding:0}
+
+@media (max-width: 760px) {
+  .cookie-banner { display: flex; flex-direction: column; align-items: stretch; gap: 10px; padding: 12px; max-height: 45vh; overflow-y: auto; }
+  .cookie-banner p { width: 100%; flex: none; font-size: 12px; line-height: 1.4; }
+  .cookie-actions { flex-wrap: wrap; width: 100%; }
+  .cookie-actions button { flex: 1; min-width: 0; white-space: normal; }
+}

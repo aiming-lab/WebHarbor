@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ company }} | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container content-page" style="padding-top:18px">
+  <div class="breadcrumb"><a href="{{ url_for('jobs_search') }}" onclick="if (document.referrer) { history.back(); return false; }">&lt; Back to search</a></div>
+  <h1>{{ company }}</h1>
+  <p>{{ jobs|length }} active job posting{{ 's' if jobs|length != 1 }} on OhioMeansJobs
+    {% if industry %}&middot; {{ industry }}{% endif %}</p>
+
+  {% if jobs %}
+    <div class="list-box">
+      {% for job in jobs %}
+        <div class="list-row">
+          <div class="sr_jobsummary">
+            <h3><a href="{{ url_for('job_detail', jobid=job.jobid) }}">{{ job.title }}</a>
+              {% if job.remote %}<span class="badge remote">Remote</span>{% endif %}
+            </h3>
+          </div>
+          <div class="company">{{ job.company }}</div>
+          <div class="loc">{{ job.city }}</div>
+          <div class="loc">{{ job.posted_date }}</div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="empty-note">No active postings from this company right now.</div>
+  {% endif %}
+</div>
+{% endblock %}

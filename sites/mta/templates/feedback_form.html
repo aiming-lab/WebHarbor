@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Give feedback{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('contact_page') }}">Contact the MTA</a> › Give feedback</div>
+  <h1>Customer feedback form</h1>
+</div>
+<div class="card">
+  {% if errors %}
+  <div class="errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+  {% endif %}
+  <form class="stack" method="post" action="{{ url_for('feedback_form') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <label for="category">What is this about?</label>
+    <select id="category" name="category" required>
+      {% for c in ['Train or bus service', 'Elevator or escalator outage', 'Station or facility',
+                   'Fares and tolls', 'Employee feedback', 'Safety concern', 'Website feedback', 'Other'] %}
+      <option value="{{ c }}" {% if form.get('category') == c %}selected{% endif %}>{{ c }}</option>
+      {% endfor %}
+    </select>
+    <label for="subject">Subject</label>
+    <input type="text" id="subject" name="subject" value="{{ form.get('subject', '') }}" required>
+    <label for="message">Message</label>
+    <textarea id="message" name="message" required>{{ form.get('message', '') }}</textarea>
+    <label for="contact_name">Your name</label>
+    <input type="text" id="contact_name" name="contact_name" value="{{ form.get('contact_name', current_user.display_name if current_user.is_authenticated else '') }}" required>
+    <label for="contact_email">Your email</label>
+    <input type="email" id="contact_email" name="contact_email" value="{{ form.get('contact_email', current_user.email if current_user.is_authenticated else '') }}" required>
+    <button class="btn" type="submit">Submit</button>
+  </form>
+</div>
+{% endblock %}

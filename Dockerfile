@@ -1,5 +1,5 @@
 # WebHarbor — slim, self-contained image.
-# 62 Flask mirror sites + control plane on :8101.
+# 85 Flask mirror sites + control plane on :8101.
 
 FROM python:3.12-slim-bookworm@sha256:782412e85d0f0984994c290652577d4018aff08145c85b262bb63dc0c7522254
 
@@ -203,12 +203,112 @@ RUN test -n "$(ls -A /opt/WebSyn/chase/static/images)" && \
 RUN cd /opt/WebSyn/chase && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/flightaware
+RUN test -n "$(ls -A /opt/WebSyn/flightaware/static/images)" && \
+    test -f /opt/WebSyn/flightaware/.build-generated-seed
+RUN cd /opt/WebSyn/flightaware && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/chronicle_jobs
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/dillards && \
+    cd /opt/WebSyn/dillards && rm -rf instance instance_seed && \
+    WEBSYN_SKIP_BOOTSTRAP=1 PYTHONHASHSEED=0 python3 seed_data.py && \
+    rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/google_shopping
+RUN test -n "$(ls -A /opt/WebSyn/google_shopping/static/images)" && \
+    test -f /opt/WebSyn/google_shopping/.build-generated-seed
+RUN cd /opt/WebSyn/google_shopping && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/imgur
+# Imgur's seed is rebuilt deterministically from the tracked source snapshot
+# (PYTHONHASHSEED=0, frozen reference date; see .build-generated-seed); its real
+# upstream imagery ships via the pinned asset bundle.
+RUN cd /opt/WebSyn/imgur && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/imgur.db instance_seed/imgur.db && \
+    rm -rf instance __pycache__
+
 # Fail closed after all registered-site seed migrations/generators.
 RUN cd /opt/WebSyn/youtube && python3 build_seed.py
 RUN cd /opt/WebSyn/weather && python3 build_seed.py
 
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/instructure
+RUN cd /opt/WebSyn/instructure && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/instructure.db instance_seed/instructure.db && \
+    rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/league_of_legends && \
+    cd /opt/WebSyn/league_of_legends && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+# Fail closed after all registered-site seed migrations/generators.
+RUN cd /opt/WebSyn/youtube && python3 build_seed.py
+RUN cd /opt/WebSyn/weather && python3 build_seed.py
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/macys_wine_shop && \
+    cd /opt/WebSyn/macys_wine_shop && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/jcpenney && \
+    cd /opt/WebSyn/jcpenney && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/landwatch && \
+    cd /opt/WebSyn/landwatch && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/medicare_gov && \
+    cd /opt/WebSyn/medicare_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/marriott
+RUN cd /opt/WebSyn/marriott && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    rm -rf instance __pycache__
+
+# megabus: deterministic seed from tracked source snapshots + asset gate.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/megabus
+RUN cd /opt/WebSyn/megabus && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/megabus.db instance_seed/megabus.db && \
+    rm -rf instance __pycache__
+
+# michaels: deterministic seed from tracked source snapshots + asset gate.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/michaels
+RUN cd /opt/WebSyn/michaels && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && \
+    mkdir -p instance_seed && cp instance/michaels.db instance_seed/michaels.db && \
+    rm -rf instance __pycache__
+
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/micro_center
+RUN python3 /opt/WebSyn/micro_center/migrate_seed.py
+
+# OhioMeansJobs: source-backed images and deterministic catalog seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohiomeansjobs
+RUN cd /opt/WebSyn/ohiomeansjobs && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__ instance_build
+
+# Ohio.gov: source-backed images and database-backed landing content.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohio_gov
+RUN cd /opt/WebSyn/ohio_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+# nfl: validate source assets and build the deterministic seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/nfl
+RUN cd /opt/WebSyn/nfl && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
+# mta: validate source assets and build the deterministic seed.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/mta
+RUN cd /opt/WebSyn/mta && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40071
+EXPOSE 8101 40000-40093
 
 CMD ["/opt/websyn_start.sh"]

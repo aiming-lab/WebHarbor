@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Claims & appeals | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container" style="padding-top:30px">
+  <div class="my-layout">
+    <aside class="my-nav">
+      <ul>
+        <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+        <li><a class="active" href="{{ url_for('claims') }}">Claims &amp; appeals</a></li>
+        <li><a href="{{ url_for('premiums') }}">Pay premiums</a></li>
+        <li><a href="{{ url_for('messages') }}">Messages</a></li>
+        <li><a href="{{ url_for('account_settings') }}">Account settings</a></li>
+        <li><a href="{{ url_for('replace_card') }}">Get my Medicare card</a></li>
+      </ul>
+    </aside>
+    <div class="my-content">
+      <h1>Claims &amp; appeals</h1>
+      <p class="lede">Your Medicare claims, newest first.</p>
+      <table class="data-table">
+        <thead><tr><th>Service date</th><th>Description</th><th>Provider</th><th>Billed</th><th>Medicare paid</th><th>You owe</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for claim in claims | reverse %}
+          <tr>
+            <td>{{ claim.service_date }}</td>
+            <td>{{ claim.description }}</td>
+            <td>{{ claim.provider_name }}<br><span class="small muted">{{ claim.provider_city }}</span></td>
+            <td>{{ claim.billed }}</td>
+            <td>{{ claim.medicare_paid }}</td>
+            <td>{{ claim.you_owed }}</td>
+            <td><span class="pill pill--paid">{{ claim.status }}</span></td>
+            <td><a class="btn btn--ghost btn--small" href="{{ url_for('claim_detail', claim_id=claim.id) }}">Details</a></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+      <p class="small muted">
+        If you disagree with a coverage or payment decision, you can file an appeal. See
+        <a href="{{ url_for('content_page', slug='your-medicare-rights/your-protections') }}">your protections</a> for how to respond to unexpected bills.
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

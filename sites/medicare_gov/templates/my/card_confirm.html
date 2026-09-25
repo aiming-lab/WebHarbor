@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Replacement card confirmation | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container" style="padding-top:30px">
+  <div class="content-page" style="max-width:720px">
+    <h1>Thanks — your replacement card is on its way</h1>
+    <div class="inline-alert flash-msg flash-msg--ok" style="max-width:none">
+      <p>
+        We received your request (reason: {{ req.reason.replace('-', ' ') }}) on
+        {{ req.requested_at }}. Your new Medicare card will be mailed to the address on file
+        — expect it in 7-10 days. Your Medicare Number stays the same:
+        <strong>{{ current_user.medicare_number }}</strong>.
+      </p>
+    </div>
+    <p><a class="btn btn--outline btn--small" href="{{ url_for('account_settings') }}">Back to account settings</a></p>
+  </div>
+</div>
+{% endblock %}

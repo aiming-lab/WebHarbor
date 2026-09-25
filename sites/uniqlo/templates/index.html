@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}UNIQLO US | Simple Made Better{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-inner">
+        <h1>LifeWear</h1>
+        <p>Simple made better — everyday essentials for the whole family.</p>
+    </div>
+</section>
+
+<section class="dept-tiles">
+    {% for slug, label in departments %}
+    <a href="{{ url_for('department_page', department=slug) }}" class="dept-tile">{{ label }}</a>
+    {% endfor %}
+</section>
+
+<section class="product-section">
+    <h2>Featured</h2>
+    <div class="product-grid">
+        {% for product in featured %}
+            {% include '_product_card.html' %}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="product-section">
+    <h2>Best Sellers</h2>
+    <div class="product-grid">
+        {% for product in bestsellers %}
+            {% include '_product_card.html' %}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

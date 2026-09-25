@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% block title %}{{ label }} | Instructure{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>{{ label }}</h1>
+    {% if seg == 'case-studies' %}
+    <p>Every organization is unique—but there's a good chance we've already helped one with needs similar to yours. Check out a few of our favorite customer success stories from across the Instructure product family.</p>
+    {% elif seg == 'ebooks' %}
+    <p>Dig into our ebooks and buyer's guides for everything you need to know to make smart decisions about learning technology.</p>
+    {% elif seg == 'videos' %}
+    <p>Watch product demos, customer stories, and thought leadership from across the learnosphere.</p>
+    {% elif seg == 'blog' %}
+    <p>Perspectives, advice, and news from the learnosphere—written by educators, for educators.</p>
+    {% elif seg == 'webinars' %}
+    <p>Join our on-demand webinars to hear from experts and practitioners about the topics shaping education.</p>
+    {% elif seg == 'research-reports' %}
+    <p>Evidence-based research reports on the state of teaching and learning.</p>
+    {% elif seg == 'podcast' %}
+    <p>Join the Educast 3000 podcast for conversations about education technology and the future of learning.</p>
+    {% elif seg == 'infographic' %}
+    <p>Data and insights about education technology, visualized.</p>
+    {% elif seg == 'product-overviews' %}
+    <p>One-pagers and overview sheets for every product in the Instructure learning ecosystem.</p>
+    {% endif %}
+  </div>
+</section>
+
+<section class="container">
+  <div class="hub-layout">
+    <aside class="filters-card">
+      <form id="hub-filters" method="get" action="/resources/{{ seg }}">
+        <div class="filters-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4.2-4.2"/></svg>
+          <input type="text" name="hubs_search" value="{{ query }}" aria-label="Search resources" placeholder="Search..." maxlength="128">
+        </div>
+        {% if seg != 'podcast' and seg != 'infographic' %}
+        <div class="filter-group {% if products %}open{% endif %}">
+          <div class="legend-label"><span>Product</span><span class="chev">▾</span></div>
+          <div class="filter-options">
+            {% for p in PRODUCT_FILTERS %}
+            <label><input type="checkbox" name="product" value="{{ p }}" {% if p in products %}checked{% endif %}> {{ p }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="filter-group {% if orgs %}open{% endif %}">
+          <div class="legend-label"><span>Org Type</span><span class="chev">▾</span></div>
+          <div class="filter-options">
+            {% for o in ORG_FILTERS %}
+            <label><input type="checkbox" name="org" value="{{ o }}" {% if o in orgs %}checked{% endif %}> {{ o }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        <div class="filter-group {% if topics %}open{% endif %}">
+          <div class="legend-label"><span>Topic</span><span class="chev">▾</span></div>
+          <div class="filter-options">
+            {% for t in TOPIC_FILTERS %}
+            <label><input type="checkbox" name="topic" value="{{ t }}" {% if t in topics %}checked{% endif %}> {{ t }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        {% else %}
+        <div class="filter-group {% if topics %}open{% endif %}">
+          <div class="legend-label"><span>Topic</span><span class="chev">▾</span></div>
+          <div class="filter-options">
+            {% for t in TOPIC_FILTERS %}
+            <label><input type="checkbox" name="topic" value="{{ t }}" {% if t in topics %}checked{% endif %}> {{ t }}</label>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
+      </form>
+    </aside>
+
+    <div>
+      <h2 style="font-size:1.9rem;">{{ label }}</h2>
+      {% if products or orgs or topics or query %}
+      <div class="active-filters">
+        {% for p in products %}<span>Product: {{ p }}</span>{% endfor %}
+        {% for o in orgs %}<span>Org Type: {{ o }}</span>{% endfor %}
+        {% for t in topics %}<span>Topic: {{ t }}</span>{% endfor %}
+        {% if query %}<span>Search: {{ query }}</span>{% endif %}
+      </div>
+      {% endif %}
+      <div class="results-count">{{ total }} result{{ 's' if total != 1 else '' }}</div>
+
+      {% if rows %}
+      <div class="card-grid">
+        {% for r in rows %}
+        {% include "_resource_card.html" %}
+        {% endfor %}
+      </div>
+      {% else %}
+      <div class="no-results">
+        <h2>No results found</h2>
+        <p class="muted">Try clearing a filter or searching for something else.</p>
+      </div>
+      {% endif %}
+
+      {% if total_pages > 1 %}
+      <nav class="pagination">
+        {% set qs = [] %}
+        {% for p in products %}{% set _ = qs.append(('product', p)) %}{% endfor %}
+        {% if page > 1 %}<a href="?page={{ page - 1 }}{% if query %}&amp;hubs_search={{ query }}{% endif %}{% for p in products %}&amp;product={{ p }}{% endfor %}{% for o in orgs %}&amp;org={{ o }}{% endfor %}{% for t in topics %}&amp;topic={{ t }}{% endfor %}">‹</a>{% endif %}
+        {% for n in range(1, total_pages + 1) %}
+          {% if n == page %}
+            <span class="is-current">{{ n }}</span>
+          {% elif n > page - 3 and n < page + 3 or n == 1 or n == total_pages %}
+            <a href="?page={{ n }}{% if query %}&amp;hubs_search={{ query }}{% endif %}{% for p in products %}&amp;product={{ p }}{% endfor %}{% for o in orgs %}&amp;org={{ o }}{% endfor %}{% for t in topics %}&amp;topic={{ t }}{% endfor %}">{{ n }}</a>
+          {% elif n == page - 3 or n == page + 3 %}
+            <span>…</span>
+          {% endif %}
+        {% endfor %}
+        {% if page < total_pages %}<a href="?page={{ page + 1 }}{% if query %}&amp;hubs_search={{ query }}{% endif %}{% for p in products %}&amp;product={{ p }}{% endfor %}{% for o in orgs %}&amp;org={{ o }}{% endfor %}{% for t in topics %}&amp;topic={{ t }}{% endfor %}">›</a>{% endif %}
+      </nav>
+      {% endif %}
+    </div>
+  </div>
+</section>
+{% endblock %}

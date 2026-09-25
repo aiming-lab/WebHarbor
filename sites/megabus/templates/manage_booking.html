@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block title %}Change trip | megabus{% endblock %}
+{% block content %}
+<div class="container-md checkout-wrap">
+  <h1>Find a ticket</h1>
+  <p>To view or change a ticket, please enter your details or
+    <a href="{{ url_for('account_login') }}">log in</a></p>
+
+  {% if not booking %}
+    <form action="{{ url_for('manage_booking') }}" method="post" class="pay-section">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="mb-1">
+        <label class="field-label" for="reference">Order or reservation number</label>
+        <input class="form-control" type="text" id="reference" name="reference"
+               placeholder="e.g. AEG7CWY" value="{{ ref }}" required>
+      </div>
+      <div class="mb-1">
+        <label class="field-label" for="email">Email or last name used for order</label>
+        <input class="form-control" type="text" id="email" name="email" required>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Search</button>
+    </form>
+    {% if not_found %}
+      <div class="notice error">We could not find a booking with those details. Check the
+        order number and the email (or last name) used when booking.</div>
+    {% endif %}
+  {% else %}
+    <div class="notice success">Booking {{ booking.reference }} found.</div>
+    <div class="basket-ticket">
+      <div class="ticket-top">
+        <span class="ref" style="font-weight:800;color:var(--mb-blue);letter-spacing:1px">{{ booking.reference }}</span>
+        <span class="status-tag {{ booking.status }}">{{ booking.status }}</span>
+      </div>
+      <p class="text-grey">Booked {{ booking.created_on }} · {{ booking.email }}
+        {% if booking.passenger_names %} · Travelers: {{ booking.passenger_names }}{% endif %}</p>
+      {% for e in entries %}
+        <div class="booking-line">
+          <div class="journey-summary">
+            <div class="journey-times">
+              <span>{{ e.journey.dep_label }}</span><span class="arrow">→</span><span>{{ e.journey.arr_label }}</span>
+            </div>
+            <div class="journey-price">{{ '%.2f'|format(e.bj.price) }}</div>
+          </div>
+          <div class="journey-meta">{{ e.journey.origin.name }} to {{ e.journey.destination.name }} —
+            {{ e.journey.departure_date }}, {{ e.journey.duration_label }},
+            {{ e.bj.passengers }} traveler{{ 's' if e.bj.passengers != 1 }}</div>
+          {% if booking.status == 'confirmed' %}
+            <div class="mt-1" style="display:flex;gap:10px;flex-wrap:wrap">
+              <a class="btn btn-outline btn-sm"
+                 href="{{ url_for('manage_booking_change', ref=booking.reference, bj=e.bj.id) }}">Change date/time</a>
+              <form action="{{ url_for('manage_booking_cancel') }}" method="post"
+                    onsubmit="return confirm('Cancel booking {{ booking.reference }}?')">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="reference" value="{{ booking.reference }}">
+                <button type="submit" class="btn btn-outline btn-sm" style="color:var(--mb-red);border-color:var(--mb-red)">
+                  Cancel booking
+                </button>
+              </form>
+            </div>
+          {% endif %}
+        </div>
+      {% endfor %}
+      <div class="basket-summary">
+        <div class="line"><span>Total paid</span><span>{{ '%.2f'|format(booking.total) }}</span></div>
+      </div>
+      <p class="text-grey">Changes carry a {{ AMENDMENT_FEE }} amendment fee plus any fare difference.
+        Cancellations are refunded as travel credit.</p>
+    </div>
+    <p><a href="{{ url_for('manage_booking') }}">Search for another booking</a></p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% from "_macros.html" import card %}
+{% block title %}{% if q %}Search: {{ results|length }} results found for "{{ q }}"{% else %}Search{% endif %} – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="search-head">
+  <h1>{% if q %}Search: {{ results|length }} results found for "{{ q }}"{% else %}Search the shop{% endif %}</h1>
+  {% if q %}
+  <div class="sort-control" style="margin-top:10px">
+    <label for="search-sort">Sort By:</label>
+    <select id="search-sort" data-sort>
+      <option value="relevance" {% if sort == 'relevance' %}selected{% endif %}>Most relevant</option>
+      <option value="best-selling" {% if sort == 'best-selling' %}selected{% endif %}>Best selling</option>
+      <option value="title-ascending" {% if sort == 'title-ascending' %}selected{% endif %}>Alphabetically, A-Z</option>
+      <option value="title-descending" {% if sort == 'title-descending' %}selected{% endif %}>Alphabetically, Z-A</option>
+      <option value="price-ascending" {% if sort == 'price-ascending' %}selected{% endif %}>Price, low to high</option>
+      <option value="price-descending" {% if sort == 'price-descending' %}selected{% endif %}>Price, high to low</option>
+      <option value="created-ascending" {% if sort == 'created-ascending' %}selected{% endif %}>Date, old to new</option>
+      <option value="created-descending" {% if sort == 'created-descending' %}selected{% endif %}>Date, new to old</option>
+    </select>
+  </div>
+  {% endif %}
+</div>
+<div class="product-grid" style="padding:26px 48px 70px;max-width:1280px;margin:0 auto">
+  {% for p in results %}{{ card(p, ship_state) }}{% endfor %}
+  {% if not results %}<p style="grid-column:1/-1;text-align:center;color:var(--ada-gray)">Your search for "{{ q }}" did not match any products.</p>{% endif %}
+</div>
+<script>
+(function () {
+  var sel = document.querySelector("#search-sort");
+  if (sel) {
+    sel.addEventListener("change", function () {
+      var params = new URLSearchParams(window.location.search);
+      params.set("sort_by", sel.value);
+      window.location.search = params.toString();
+    });
+  }
+})();
+</script>
+{% endblock %}

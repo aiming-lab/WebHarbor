@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}All Photos (page {{ page }}) - FlightAware{% endblock %}
+{% block content %}
+<div class="tab-bar">
+  <a href="/photos/">FEATURED</a>
+  <a class="active" href="/photos/all/sort/votes">ALL PHOTOS</a>
+  <a href="/photos/recentcomments.rvt">RECENT COMMENTS</a>
+  <a href="/photos/crowdsource">COMMUNITY TAGGING</a>
+</div>
+
+<div class="panel">
+  <div class="panel-head">All Photos <span class="more">sort: <a href="/photos/all/sort/votes">votes</a> &middot; <a href="/photos/all/sort/date">date</a> &middot; <a href="/photos/all/sort/views">views</a></span></div>
+  <div class="panel-body photo-grid">
+    {% for p in photos %}
+    <div class="photo-card">
+      <a href="{{ p.href }}"><img src="/static/images/photos/{{ p.image_file }}" alt="{{ p.title }}"></a>
+      <div class="cap">
+        <div class="t"><a href="{{ p.href }}">{{ p.title }}</a></div>
+        <div class="m">{{ p.votes | commas }} votes ({{ p.vote_average }} average) &middot; {{ p.views | commas }} views</div>
+        <div class="m">by {{ p.photographer }} &middot; submitted {{ p.submitted_text }}</div>
+      </div>
+    </div>
+    {% else %}
+    <div>No photos.</div>
+    {% endfor %}
+  </div>
+  <div class="panel-body pagination">
+    {% set pages = ((total + per_page - 1) // per_page) %}
+    {% for n in range(1, pages + 1) %}
+      {% if n == page %}<span class="cur">{{ n }}</span>
+      {% else %}<a href="/photos/all/sort/{{ sort }}/page/{{ n }}{% if q %}?q={{ q }}{% endif %}">{{ n }}</a>{% endif %}
+    {% endfor %}
+    <span class="small muted">{{ total }} photos total{% if q %} &middot; search: &quot;{{ q }}&quot;{% endif %}</span>
+  </div>
+</div>
+{% endblock %}

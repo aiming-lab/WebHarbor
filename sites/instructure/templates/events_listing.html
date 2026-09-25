@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Upcoming Events | Instructure{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>Upcoming Events</h1>
+    <p>Connect with the Instructure team at conferences and trade shows around the world—or tune in to one of our live webinars from anywhere.</p>
+  </div>
+</section>
+
+<section class="container" style="padding: 40px 0 70px;">
+  <aside class="filters-card" style="margin-bottom: 30px; position: static; max-width: 640px;">
+    <form method="get" action="/events">
+      <div class="filter-group open">
+        <div class="legend-label"><span>Time</span><span class="chev">▾</span></div>
+        <div class="filter-options" style="display:block;">
+          <label><input type="radio" name="time" value="Upcoming" {% if time_filter != 'Past' %}checked{% endif %}> Upcoming</label>
+          <label><input type="radio" name="time" value="Past" {% if time_filter == 'Past' %}checked{% endif %}> Past</label>
+        </div>
+      </div>
+      <div class="filter-group open">
+        <div class="legend-label"><span>Event Type</span><span class="chev">▾</span></div>
+        <div class="filter-options" style="display:block;">
+          {% for t in ['In Person', 'Webinar', 'On Demand'] %}
+          <label><input type="radio" name="event_type" value="{{ t }}" {% if event_type == t %}checked{% endif %}> {{ t }}</label>
+          {% endfor %}
+          <label><input type="radio" name="event_type" value="" {% if not event_type %}checked{% endif %}> Any type</label>
+        </div>
+      </div>
+      <div class="filter-group open">
+        <div class="legend-label"><span>Region</span><span class="chev">▾</span></div>
+        <div class="filter-options" style="display:block;">
+          {% for r in EVENT_REGION_FILTERS %}
+          <label><input type="radio" name="region" value="{{ r }}" {% if region == r %}checked{% endif %}> {{ r }}</label>
+          {% endfor %}
+          <label><input type="radio" name="region" value="" {% if not region %}checked{% endif %}> Any region</label>
+        </div>
+      </div>
+      <div style="padding: 12px 20px;">
+        <button class="btn btn-primary btn-sm" type="submit">Filter Results</button>
+        <a class="btn btn-outline btn-sm" href="/events">Clear All</a>
+      </div>
+    </form>
+  </aside>
+
+  {% if rows %}
+  <div class="events-grid">
+    {% for e in rows %}
+    <div class="event-tile">
+      <div class="thumb">
+        {% if e.img %}<img src="{{ e.img|img }}" alt="{{ e.title }}">{% endif %}
+      </div>
+      <div class="body">
+        <div class="meta">{{ e.event_type }} <span class="dot">•</span> {{ e.event_date }}</div>
+        <h3>{{ e.title }}</h3>
+        {% if e.external_url and e.external_url.startswith('/') %}
+        <a class="learn" style="font-weight:700; color: var(--ink);" href="{{ e.external_url }}">Learn More <span class="chev" style="color:var(--blue);">›</span></a>
+        {% elif e.external_url %}
+        <a class="learn" style="font-weight:700; color: var(--ink);" href="{{ e.external_url }}" target="_blank" rel="noopener">Learn More <span class="chev" style="color:var(--blue);">›</span></a>
+        {% else %}
+        <a class="learn" style="font-weight:700; color: var(--ink);" href="/listed-event/{{ e.slug }}">Learn More <span class="chev" style="color:var(--blue);">›</span></a>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="no-results">
+    <h2>No events found</h2>
+    <p class="muted">Try clearing the filters to see all upcoming events.</p>
+  </div>
+  {% endif %}
+</section>
+{% endblock %}

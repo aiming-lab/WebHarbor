@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Staff Picks (page 1) - FlightAware{% endblock %}
+{% block content %}
+<div class="tab-bar">
+  <a href="/photos/">FEATURED</a>
+  <a href="/photos/all/sort/votes">ALL PHOTOS</a>
+  <a href="/photos/recentcomments.rvt">RECENT COMMENTS</a>
+  <a class="active" href="/photos/crowdsource">COMMUNITY TAGGING</a>
+</div>
+<div class="panel">
+  <div class="panel-head">Staff Picks</div>
+  <div class="panel-body photo-grid">
+    {% for p in photos %}
+    <div class="photo-card">
+      <a href="{{ p.href }}"><img src="/static/images/photos/{{ p.image_file }}" alt="{{ p.title }}"></a>
+      <div class="cap">
+        <div class="t">{{ p.title }}</div>
+        <div class="m">{{ p.votes | commas }} votes ({{ p.vote_average }} average) &middot; by {{ p.photographer }}</div>
+      </div>
+    </div>
+    {% else %}
+    <div>No staff picks yet.</div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

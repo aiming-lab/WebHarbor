@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Messages | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container" style="padding-top:30px">
+  <div class="my-layout">
+    <div class="my-content" style="grid-column:1/-1;max-width:820px">
+      <h1>Message center</h1>
+      <p class="lede">Secure messages from Medicare about your account and coverage.</p>
+      <table class="data-table">
+        <thead><tr><th></th><th>Subject</th><th>Received</th><th></th></tr></thead>
+        <tbody>
+          {% for msg in messages | reverse %}
+          <tr>
+            <td>{% if not msg.is_read %}<span class="pill pill--new">New</span>{% endif %}</td>
+            <td><a href="{{ url_for('message_detail', message_id=msg.id) }}">{{ msg.subject }}</a></td>
+            <td>{{ msg.received_at }}</td>
+            <td><a class="btn btn--ghost btn--small" href="{{ url_for('message_detail', message_id=msg.id) }}">Read</a></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

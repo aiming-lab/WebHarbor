@@ -1,0 +1,30 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-22",
+ "records": [
+  {"path": "app.py", "classification": "mirror-code",
+   "scope": "Flask application implementing the jcpenney.com mirror: the promo carousel, header with store picker and mega-nav, upstream-faithful homepage sections, /g/<path> gallery pages with facet filters and sort, /p/<slug>/<ppid> product pages with swatches/sizes/reviews/specifications, scored search, guest + user bag, multi-step checkout with validation, order history + guest order lookup, wish list, JCPenney Rewards, coupons, gift-card balance check, customer-service pages, and the store locator backed by real store records."},
+  {"path": "seed_data.py", "classification": "mirror-code",
+   "scope": "Deterministic build-time and boot-time seeder. All content rows come from the tracked source_data.json snapshot; every seed function early-returns on a populated DB and every date is pinned relative to MIRROR_DATE (2026-09-22) so the SQLite seed is byte-reproducible on every build (PYTHONHASHSEED=0). Benchmark users use a frozen password digest."},
+  {"path": "source_data.json", "classification": "captured-upstream-content",
+   "scope": "Frozen snapshot of the live jcpenney.com as served on 2026-09-22: the 32-entry category taxonomy, 116 real products (names, brands, price/coupon pricing, ratings, review counts, full Bazaarvoice review bodies, colors, per-color size availability, specifications, badges) captured from the live gallery JSON-LD and the site's own hydrated PDP payloads, 6 active coupons with their exclusions, the homepage layout content, and the customer-service page bodies."},
+  {"path": "asset_inventory.json", "classification": "asset-manifest",
+   "scope": "Per-file inventory (bytes, SHA-256, upstream source URL) for every managed image under static/images/ and static/external_cache/; enforced by the image build's check_asset_inventory.py gate."},
+  {"path": "static/images/products/", "classification": "captured-upstream-content",
+   "scope": "Real product gallery images served by sc-images.jcpenney.com at the product_detail 500x500 policy, up to 6 per product in the upstream gallery order."},
+  {"path": "static/images/swatches/", "classification": "captured-upstream-content",
+   "scope": "Real per-color swatch thumbnails served by sc-images.jcpenney.com, one per seeded product color, named after the upstream sc-images asset id."},
+  {"path": "static/images/home/", "classification": "captured-upstream-content",
+   "scope": "Real homepage section imagery served by sc-images.jcpenney.com / www.mkt-jcpenney.com and referenced by the live homepage layout JSON: the Customer Appreciation Days hero, Feeding America banner, Bridal and Watch event banners, Scent Studio banner, MESSI and hairspray tiles, fall-favorites and clearance From-$ tiles, category circles, seasonal grid, Homecoming and Hispanic Heritage tiles, EXTRA 30% band, Clearance banner, and the red Rewards Access tiles."},
+  {"path": "static/images/giftcards/", "classification": "captured-upstream-content",
+   "scope": "Gift-card page imagery captured from the live gift-cards flow."},
+  {"path": "static/icons/", "classification": "captured-upstream-content",
+   "scope": "The JCPenney wordmark SVG symbol and inline UI sprite extracted from the live homepage markup, plus the jcpenney.com favicon."},
+  {"path": "templates/", "classification": "mirror-code",
+   "scope": "Jinja templates reproducing the captured upstream layout: promo carousel and header/nav with mega menus, the homepage section stack in upstream order, gallery pages with the upstream filter sidebar and sort control, product detail pages with the swatch/size picker and review list, search results, bag and checkout steps, account surfaces, order lookup, wish list, rewards, coupons, gift cards, customer service, store locator and store detail pages, plus 404/500 handlers."},
+  {"path": "tests/", "classification": "mirror-code",
+   "scope": "Pytest suite: tasks.jsonl contract (five basic keys only, no ground truth leaks, sequential ids, port 40073 URLs), route/behavior robustness against a scratch DB (auth, cart, checkout, order lookup, wish list, rewards, coupons, gift cards, stores, CSRF guard), and seed determinism (byte-reproducible seed, image-reference integrity, no placeholder files)."},
+  {"path": "scraped_data/", "classification": "build-time-only",
+   "scope": "Resumable capture pipeline and raw upstream captures (gitignored, never shipped): homepage layout JSON + rendered DOM, per-category gallery captures with JSON-LD and DOM cards, hydrated PDP payloads with reviews, store-locator state and store pages, flow-page renders for design reference, and the download manifest that feeds asset_inventory.json."}
+ ]
+}

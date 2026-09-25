@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% from "_macros.html" import card %}
+{% block title %}{{ product.title }} – MacysWine Shop{% endblock %}
+{% block content %}
+<div class="breadcrumb"><a href="/">Home</a> / {{ product.title }}</div>
+<div class="product-layout">
+  <div class="pdp-gallery">
+    <div class="main-img">
+      <img src="{{ product.first_image.path if product.first_image else '' }}" alt="{{ product.title }}">
+    </div>
+    {% for variant in product.variants %}
+      {% set case = variant.case_bottles %}
+      {% if case %}
+      <div class="case-contents" data-case-variant="{{ variant.id }}" style="{{ '' if loop.first else 'display:none' }}">
+        <p class="case-head">{{ variant.bottle_count }} Bottles In This Case</p>
+        <p class="case-split">{{ variant.case_split }}</p>
+        <div class="case-thumbs">
+          {% for b in case %}
+          <div class="case-thumb {{ 'selected' if loop.first }}" data-bottle-thumb="{{ loop.index }}">
+            <img src="{{ b.image_path }}" alt="{{ b.title }}">
+            <div class="num">{{ loop.index }}</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% for b in case %}
+        <div class="case-detail" data-bottle-detail="{{ loop.index }}" style="{{ 'display:flex' if loop.first else 'display:none' }}">
+          <div class="bottle-img">
+            <img src="{{ b.image_path }}" alt="{{ b.title }}">
+            <div class="num-badge">{{ loop.index }}</div>
+            <div class="bottle-label">bottle</div>
+          </div>
+          <div>
+            <h3>{{ b.title }}</h3>
+            <table class="spec-table">
+              {% if b.winery %}<tr><td>Winery</td><td>{{ b.winery }}</td></tr>{% endif %}
+              {% if b.varietal %}<tr><td>Varietal</td><td>{{ b.varietal }}</td></tr>{% endif %}
+              {% if b.year %}<tr><td>Year</td><td>{{ b.year }}</td></tr>{% endif %}
+              {% if b.type %}<tr><td>Type</td><td>{{ b.type }}</td></tr>{% endif %}
+              {% if b.abv %}<tr><td>ABV</td><td>{{ b.abv }}</td></tr>{% endif %}
+              {% if b.country %}<tr><td>Country</td><td>{{ b.country }}</td></tr>{% endif %}
+              {% if b.region %}<tr><td>Region</td><td>{{ b.region }}</td></tr>{% endif %}
+            </table>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+
+  <div class="pdp-info">
+    <h1>{{ product.title }}</h1>
+    <div class="pdp-rating">
+      {% if product.rating_count %}
+      <span class="stars">{{ product.rating_average|stars }}</span>
+      <span>{{ product.rating_average|round(1) }} · {{ product.rating_count }} review{{ '' if product.rating_count == 1 else 's' }}</span>
+      {% else %}
+      <span style="color:var(--ada-gray)">No reviews yet</span>
+      {% endif %}
+    </div>
+    {% if product.subheading %}<p class="pdp-subheading">{{ product.subheading }}</p>{% endif %}
+
+    {% set cheapest = product.variants|sort(attribute='price') %}
+    {% set best = cheapest[0] %}
+    <div class="pdp-price {{ 'sale' if product.on_sale }}">
+      {% set display_variant = product.first_variant %}
+      <span class="now" data-price-now>{{ display_variant.price|money }}</span>
+      {% if product.on_sale %}
+      <span class="off" data-price-off {% if not product.pct_off %}style="display:none"{% endif %}>{{ display_variant.pct_off if display_variant.pct_off else product.pct_off }}% Off</span>
+      <span class="strike" data-price-compare>{{ display_variant.compare_at_price|money if display_variant.compare_at_price > display_variant.price else '' }}</span>
+      {% endif %}
+    </div>
+    <p class="per" data-per-bottle style="color:var(--dark-gray);font-size:15px">
+      {{ (display_variant.price / display_variant.bottle_count)|money }} per bottle
+    </p>
+
+    {% set blocked = not product.shippable_to(ship_state) %}
+    {% if blocked %}
+    <div class="ship-state-note">Item cannot ship to your state</div>
+    {% endif %}
+
+    <form data-pack-form onsubmit="return false">
+      <p class="pack-legend">Select Pack Size:</p>
+      <div class="pack-options">
+        {% for variant in product.variants %}
+        <button type="button" class="pack-option {{ 'selected' if loop.first }}"
+                data-pack-option
+                data-variant-id="{{ variant.id }}"
+                data-price="{{ variant.price|money }}"
+                data-compare="{{ variant.compare_at_price|money if variant.compare_at_price > variant.price else '' }}"
+                data-off="{{ ((variant.compare_at_price - variant.price) / variant.compare_at_price * 100)|round|int if variant.compare_at_price > variant.price else 0 }}"
+                data-per-bottle="{{ (variant.price / variant.bottle_count)|money }}"
+                {{ 'disabled' if not variant.available or blocked }} >
+          <span>{{ variant.label }}{{ ':' if loop.first else '' }} {{ variant.price|money }}</span>
+          <span class="per">{{ (variant.price / variant.bottle_count)|money }} per bottle</span>
+        </button>
+        {% endfor %}
+      </div>
+      <input type="hidden" name="variant_id" value="{{ product.first_variant.id }}">
+      <div class="qty-row">
+        <div class="qty-stepper" data-qty>
+          <button type="button" data-qty-dec aria-label="Decrement">−</button>
+          <input type="text" value="1" data-qty-input aria-label="Quantity">
+          <button type="button" data-qty-inc aria-label="Increment">+</button>
+        </div>
+        <button class="btn-primary" data-add-to-cart data-variant-id="{{ product.first_variant.id }}" type="button" {{ 'disabled' if blocked }}>Add to Cart</button>
+      </div>
+    </form>
+
+    {% if product.spec_rows %}
+    <table class="spec-table">
+      {% for key, value in product.spec_rows %}
+      <tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+      {% endfor %}
+    </table>
+    {% endif %}
+
+    <div class="pdp-section">
+      <h2>Description</h2>
+      <div class="page-body">{{ product.description_html|safehtml }}</div>
+    </div>
+  </div>
+</div>
+
+{% if product.reviews %}
+<div class="page-layout">
+  <h2>Reviews ({{ product.rating_count }})</h2>
+  <p>{{ product.rating_average|stars }} {{ product.rating_average|round(1) }} out of 5 · {{ product.recommended_percentage|round(0)|int }}% would recommend</p>
+  {% for review in product.reviews %}
+  <div style="border-bottom:1px solid var(--gainsboro);padding:16px 0">
+    <div><span class="stars" style="color:var(--star)">{{ review.rating|stars }}</span> <b>{{ review.title or 'Review' }}</b></div>
+    <p style="color:var(--dark-gray);font-size:14.5px">{{ review.body }}</p>
+    <p style="color:var(--ada-gray);font-size:13px">{{ review.customer_name }}{% if review.verified_buyer %} · Verified buyer{% endif %} · {{ review.created_at.strftime('%B %d, %Y') if review.created_at else '' }}</p>
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<section style="padding:0 48px 60px;max-width:1280px;margin:0 auto">
+  <h2 class="section-heading" style="text-align:left">You May Also Like</h2>
+  <div class="product-grid">
+    {% for p in related %}{{ card(p, ship_state) }}{% endfor %}
+  </div>
+</section>
+{% endblock %}

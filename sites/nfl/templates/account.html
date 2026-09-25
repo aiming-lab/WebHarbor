@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}My Account | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>MY NFL.COM ACCOUNT</h1>
+  <p class="page-sub">{{ current_user.display_name }} · {{ current_user.email }}</p>
+</div>
+<div class="two-col">
+  <section class="panel">
+    <h2 class="panel-title">PROFILE</h2>
+    <dl class="info-list">
+      <div><dt>Display name</dt><dd>{{ current_user.display_name }}</dd></div>
+      <div><dt>Email</dt><dd>{{ current_user.email }}</dd></div>
+      <div><dt>Favorite team</dt>
+        <dd>
+          {% set fav = (all_teams | selectattr('abbr','equalto', current_user.favorite_team) | list | first) %}
+          {% if fav %}{{ fav.full_name }}{% elif current_user.favorite_team %}{{ current_user.favorite_team }}{% else %}Not set{% endif %}
+        </dd>
+      </div>
+      <div><dt>Newsletter</dt><dd>{{ 'Subscribed' if current_user.newsletter else 'Not subscribed' }}</dd></div>
+    </dl>
+    <div class="cta-row">
+      <a class="btn btn-outline btn-sm" href="{{ url_for('account_edit') }}">Edit Profile</a>
+      <form class="logout-form" method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign out</button></form>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2 class="panel-title">NFL+ SUBSCRIPTION</h2>
+    {% if sub %}
+    <dl class="info-list">
+      <div><dt>Plan</dt><dd>{{ sub.plan_title }}</dd></div>
+      <div><dt>Status</dt><dd class="strong">{{ sub.status | upper }}</dd></div>
+      <div><dt>Price</dt><dd>${{ '%.2f' | format(sub.amount) }} per {{ sub.cycle }}</dd></div>
+      <div><dt>Started</dt><dd>{{ sub.started_at.strftime('%B %-d, %Y') }}</dd></div>
+      <div><dt>Renews</dt><dd>{{ sub.renews_at.strftime('%B %-d, %Y') }}</dd></div>
+    </dl>
+    <form method="post" action="{{ url_for('cancel_subscription') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="btn btn-outline btn-sm" type="submit">Cancel Subscription</button>
+    </form>
+    {% else %}
+    <p class="fine-print">You don't have an active NFL+ subscription.</p>
+    <a class="btn btn-red btn-sm" href="{{ url_for('plus') }}">Subscribe Now</a>
+    {% endif %}
+  </section>
+</div>
+
+<section class="panel">
+  <h2 class="panel-title">ORDER HISTORY</h2>
+  {% if orders %}
+  <table class="data-table">
+    <thead><tr><th>Order</th><th>Plan</th><th>Cycle</th><th>Amount</th><th>Tax</th><th>Total</th><th>Card</th><th>Date</th></tr></thead>
+    <tbody>
+      {% for o in orders %}
+      <tr>
+        <td>{{ o.order_ref }}</td>
+        <td>{{ o.plan_title }}</td>
+        <td>{{ 'Monthly' if o.cycle == 'month' else 'Annual' }}</td>
+        <td>${{ '%.2f' | format(o.amount) }}</td>
+        <td>${{ '%.2f' | format(o.tax) }}</td>
+        <td class="strong">${{ '%.2f' | format(o.total) }}</td>
+        <td>•••• {{ o.card_last4 }}</td>
+        <td>{{ o.created_at.strftime('%b %-d, %Y') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="fine-print">No NFL+ orders yet.</p>
+  {% endif %}
+</section>
+{% endblock %}

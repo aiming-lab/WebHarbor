@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Port Jervis Line' if line == 'port-jervis' else 'Pascack Valley Line' }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('schedules_hub') }}">Schedules</a> › {{ 'Port Jervis Line' if line == 'port-jervis' else 'Pascack Valley Line' }}</div>
+  <h1>{{ 'Port Jervis Line' if line == 'port-jervis' else 'Pascack Valley Line' }}</h1>
+</div>
+<div class="card">
+  <p>For Port Jervis and Pascack Valley Line schedules, please use NJ TRANSIT's schedule lookup tool or download a PDF version.</p>
+  <p><a href="{{ pdf_url }}">Download the current PDF timetable</a></p>
+</div>
+<div class="card">
+  <h2>Fares by station</h2>
+  <p>Fares effective July 1, 2025. Two destinations are shown: Hoboken/Secaucus and Penn Station-NY.</p>
+  <table class="data">
+    <thead><tr><th>Station</th><th>Ticket type</th><th>To Hoboken/Secaucus</th><th>To Penn Station-NY</th></tr></thead>
+    <tbody>
+      {% for s in stations %}
+        {% set sfares = fares[s] %}
+        {% for ticket, prices in sfares.items() %}
+        <tr>
+          <td>{% if loop.first %}{{ s }}{% endif %}</td>
+          <td>{{ ticket }}</td>
+          <td>{{ '$%.2f' | format(prices[0]) if prices[0] else '' }}</td>
+          <td>{{ '$%.2f' | format(prices[1]) if prices|length > 1 and prices[1] else '' }}</td>
+        </tr>
+        {% endfor %}
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

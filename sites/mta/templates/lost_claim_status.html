@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Claim {{ claim.claim_ref }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('lost_found') }}">Lost &amp; Found</a> › Claim {{ claim.claim_ref }}</div>
+  <h1>Lost item claim {{ claim.claim_ref }}</h1>
+</div>
+<div class="card">
+  <table class="data">
+    <tr><th>Status</th><td>{{ claim.status }}</td></tr>
+    <tr><th>Agency</th><td>{{ {'nyct': 'Subway, Bus and Staten Island Railway', 'lirr': 'Long Island Rail Road', 'mnr': 'Metro-North Railroad'}[claim.agency] }}</td></tr>
+    <tr><th>Date lost</th><td>{{ claim.date_lost }}</td></tr>
+    <tr><th>Line or route</th><td>{{ claim.line_route }}</td></tr>
+    <tr><th>Station</th><td>{{ claim.station }}</td></tr>
+    <tr><th>Item</th><td>{{ claim.item_type }} — {{ claim.item_description }}</td></tr>
+    <tr><th>Filed</th><td>{{ claim.created_at.strftime('%B %-d, %Y') if claim.created_at else '' }}</td></tr>
+  </table>
+  <p>Keep your claim reference handy. Lost &amp; Found staff update the status as the search progresses.</p>
+</div>
+{% endblock %}

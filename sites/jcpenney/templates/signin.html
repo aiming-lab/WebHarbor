@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Sign In | JCPenney{% endblock %}
+{% block content %}
+<div class="wrap">
+  <div class="auth-wrap">
+    <div class="auth-card">
+      <h1>Sign In</h1>
+      <form class="auth-form" method="post" action="/signin{% if request.args.get('next') %}?next={{ request.args.get('next')|urlencode }}{% endif %}">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+        <label for="email">Email</label>
+        <input type="email" id="email" name="email" value="{{ email }}" required>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+        <div class="checkbox-row">
+          <input type="checkbox" id="keep" name="keep_signed_in">
+          <label for="keep">Keep Me Signed In</label>
+        </div>
+        <button type="submit">Sign In</button>
+        <a class="link-btn" href="/m/customer-service/password-help">Forgot Password?</a>
+      </form>
+    </div>
+    <div class="auth-side">
+      <h2>New to JCPenney?</h2>
+      <p>Create an account to get all the benefits of shopping with us:</p>
+      <ul>
+        <li>Track your orders easily</li>
+        <li>Save your wish list</li>
+        <li>Join JCPenney Rewards and earn CashPass rewards</li>
+        <li>Speed through checkout with saved addresses and payment methods</li>
+      </ul>
+      <a class="btn-primary" style="display:inline-block;text-align:center;margin-top:10px;" href="/register">Create Account</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

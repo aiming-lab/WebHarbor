@@ -1,0 +1,86 @@
+"""Reviewed task contracts: scoped factual checks and exact account deltas.
+
+The answer checks accept prose, bullets and tables, but are deterministic lexical
+checks, not general semantic reasoning. Browser evidence and state are checked
+separately; action counts never determine a grading verdict.
+"""
+import json
+import re
+from pathlib import Path
+from verify_lib import (check_trajectory_identity, check_signed_in_as,
+    check_read_only, check_only_tables_changed, navigated_to_path, final_answer,
+    table_delta, row_dict, SEED_USERS)
+
+CONFIG = json.loads(Path(__file__).with_name('reviewed_tasks.json').read_text())
+
+
+def fact_scope(answer, entity, entities=()):
+    # Split prose at sentence boundaries without splitting decimals, and split
+    # tables/bullets at line boundaries. Keep a named entity's contiguous text.
+    answer = answer.replace('’', "'").replace('“', '"').replace('”', '"')
+    answer = re.sub(r'(?i)\bUSD\s*([\d,.]+)', r'$\1', answer)
+    answer = re.sub(r'(?i)([\d,.]+)\s+dollars\b', r'$\1', answer)
+    # A quoted post title may contain whole sentences. Protect its sentence
+    # breaks while retaining decimals and the actual words for matching.
+    answer = re.sub(r'"[^"]*"', lambda m: re.sub(r'([.!?])(?=\s+[A-Z])', ' ', m.group()), answer)
+    segments = re.split(r'\n|(?<=[.!?])\s+(?=[A-Z])', answer)
+    if entities:
+        labels = '|'.join('(?:' + e + ')' for e in entities)
+        # Product/comment comparisons often use semicolons, table cells, or
+        # "and" within one sentence. Keep each explicitly named entity with
+        # its own following facts; do not pool all values in that sentence.
+        boundary = r'(?:;\s*|,\s*|\s+and\s+|\|\s*)(?=["\']?(?:[A-Za-z][A-Za-z\'_-]*\s+){0,4}(?:' + labels + r'))'
+        segments = [part for segment in segments for part in re.split(boundary, segment, flags=re.I)]
+
+    return ' '.join(s for s in segments if re.search(entity, s, re.I))
+
+
+def check_facts(judge, answer, facts):
+    for index, fact in enumerate(facts):
+        scoped = fact_scope(answer, fact['entity'], [f['entity'] for f in facts])
+        judge.check(f'fact_{index}_entity', bool(scoped), fact['entity'])
+        for n, pattern in enumerate(fact['patterns']):
+            matches = list(re.finditer(pattern, scoped, re.I))
+            # Reject an explicitly denied positive value, but allow requirements
+            # whose expected fact is itself negative (e.g. no tumble drying).
+            negative_fact = bool(re.search(r'no |not |unknown|missing|unavailable|too wide|exceed|ineligible', pattern))
+            denied = False
+            if not negative_fact:
+                for m in matches:
+                    before = scoped[max(0,m.start()-35):m.start()]
+                    after = scoped[m.end():m.end()+30]
+                    denied |= bool(re.search(r'\b(?:not|never|incorrect(?:ly)?|wrong)\s*(?:a |an |at |is |was )?$', before, re.I)
+                                   or re.match(r'\s+(?:is|was)\s+(?:wrong|incorrect|false)', after, re.I))
+            judge.check(f'fact_{index}_{n}', bool(matches) and not denied,
+                        f'{fact["entity"]}: expected {pattern}')
+
+
+def run_checks(judge, traj, initial_db, after_db):
+    tid = str(traj.get('task_id', ''))
+    key = judge.task_id.rsplit('--', 1)[1]
+    spec = CONFIG[key]
+    check_trajectory_identity(judge, traj, judge.task_id)
+    for path in spec['paths']:
+        judge.check('visited_' + path, navigated_to_path(traj, path), path)
+    if spec.get('login'):
+        email = spec['email']
+        check_signed_in_as(judge, traj, email, SEED_USERS[email][1])
+    check_facts(judge, final_answer(traj), spec['facts'])
+    tables = set(spec['add']) | set(spec['remove'])
+    if not tables:
+        check_read_only(judge, initial_db, after_db)
+        return
+    check_only_tables_changed(judge, initial_db, after_db, tables)
+    uid = SEED_USERS[spec['email']][0]
+    for table in tables:
+        delta = table_delta(initial_db, after_db, table)
+        # SQLite may reuse a deleted row ID when a user removes before adding.
+        # Compare the requested semantic removal/addition in either order.
+        delta['removed'] += [old for old, new in delta['changed']]
+        delta['added'] += [new for old, new in delta['changed']]
+        for kind, expected in [('added', spec['add'].get(table, [])),
+                               ('removed', spec['remove'].get(table, []))]:
+            observed = sorted((r['user_id'], r['product_id']) for row in delta[kind]
+                              for r in [row_dict(initial_db, table, row)])
+            judge.check(f'exact_{table}_{kind}', observed == sorted((uid, p) for p in expected),
+                        f'expected user={uid}, products={expected}; observed={observed}')

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Edit Profile - League of Legends{% endblock %}
+{% block content %}
+
+<section class="masthead">
+  <div class="masthead-kicker">Riot Account</div>
+  <h1>Edit Profile</h1>
+</section>
+
+<section class="auth-shell" style="max-width:560px">
+  <form method="post">
+    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+    <div class="auth-field">
+      <label for="display_name">Display Name</label>
+      <input type="text" id="display_name" name="display_name" value="{{ current_user.display_name }}" required>
+    </div>
+    <div class="auth-field">
+      <label for="summoner_name">Summoner Name</label>
+      <input type="text" id="summoner_name" name="summoner_name" value="{{ current_user.summoner_name or '' }}">
+    </div>
+    <div class="auth-field">
+      <label for="region">Region</label>
+      <select id="region" name="region">
+        {% for region in regions %}
+        <option value="{{ region }}" {% if current_user.region == region %}selected{% endif %}>{{ region }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button class="btn-gold auth-submit" type="submit">Save Changes</button>
+  </form>
+</section>
+
+{% endblock %}

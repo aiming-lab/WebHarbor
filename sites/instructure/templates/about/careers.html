@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Instructure Careers: Build the Future of Learning{% endblock %}
+{% block content %}
+<section class="page-hero">
+  <div class="container">
+    <h1>Careers at Instructure</h1>
+    <p>We're looking for people who get fired up about education—who want to build something meaningful and have fun doing it.</p>
+  </div>
+</section>
+
+<section class="container" style="padding: 44px 0 70px;">
+  <div class="account-panel" style="max-width: 100%; margin-bottom: 30px;">
+    <h2>See why our people tend to stick around</h2>
+    <p class="muted" style="margin: 0;">Great benefits, meaningful work, and a mission worth getting out of bed for. Explore what a career at Instructure looks like—then check out the open roles below.</p>
+  </div>
+
+  <h2 class="jobs-count" data-jobs-count>Current Openings ({{ jobs|length }})</h2>
+
+  <div class="jobs-controls">
+    <select data-jobs-filter="department" aria-label="Department">
+      <option value="">Department</option>
+      {% for d in departments %}<option value="{{ d }}">{{ d }}</option>{% endfor %}
+    </select>
+    <select data-jobs-filter="location" aria-label="Location">
+      <option value="">Location</option>
+      {% for l in locations %}<option value="{{ l }}">{{ l }}</option>{% endfor %}
+    </select>
+    <select data-jobs-filter="employment" aria-label="Employment Type">
+      <option value="">Employment Type</option>
+      {% for e in employments %}<option value="{{ e }}">{{ e }}</option>{% endfor %}
+    </select>
+  </div>
+
+  <div class="jobs-list">
+    {% for j in jobs %}
+    <div class="job-item" data-job-row data-department="{{ j.department }}" data-location="{{ j.location }}" data-employment="{{ j.employment_type }}">
+      <h4><a href="{{ j.external_url }}" target="_blank" rel="noopener">{{ j.title }}</a></h4>
+      <div class="meta">
+        {% if j.team %}<span>{{ j.team }}</span>{% endif %}
+        <span>{{ j.department }}</span>
+        <span>{{ j.location }}</span>
+        {% if j.work_style %}<span>{{ j.work_style }}</span>{% endif %}
+      </div>
+      {% if j.comp %}<div class="comp">{{ j.comp }}</div>{% endif %}
+      <div class="actions">
+        <a class="btn btn-primary btn-sm" href="{{ j.external_url }}" target="_blank" rel="noopener">Apply</a>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

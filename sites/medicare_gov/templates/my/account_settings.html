@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Account settings | Medicare{% endblock %}
+{% block content %}
+<div class="ds-container" style="padding-top:30px">
+  <div class="my-layout">
+    <div class="my-content" style="grid-column:1/-1;max-width:860px">
+      <h1>Account settings</h1>
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}<div class="flash-band">{% for m in messages %}<div class="flash-msg flash-msg--ok">{{ m }}</div>{% endfor %}</div>{% endif %}
+      {% endwith %}
+
+      <div class="my-panel">
+        <h2>Personal information</h2>
+        <table class="data-table">
+          <tbody>
+            <tr><th>Name</th><td>{{ current_user.display_name }}</td></tr>
+            <tr><th>Medicare Number</th><td>{{ current_user.medicare_number }}</td></tr>
+            <tr><th>Email</th><td>{{ current_user.email }}</td></tr>
+            <tr><th>Phone</th><td>{{ current_user.phone }}</td></tr>
+            <tr><th>Part A effective date</th><td>{{ current_user.part_a_effective }}</td></tr>
+            <tr><th>Part B effective date</th><td>{{ current_user.part_b_effective }}</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="my-panel">
+        <h2>Your Medicare card</h2>
+        <div class="medicare-card">
+          <p class="mc-title">Medicare Health Insurance</p>
+          <p class="mc-number">{{ current_user.medicare_number }}</p>
+          <p class="mc-name">{{ current_user.display_name }}</p>
+          <p class="mc-meta">Part A effective {{ current_user.part_a_effective }} · Part B effective {{ current_user.part_b_effective }}</p>
+        </div>
+        <p class="small" style="margin-top:12px">Is your card lost, damaged, or stolen? Order a free replacement.</p>
+        <a class="btn btn--outline btn--small" href="{{ url_for('replace_card') }}">Get my Medicare card</a>
+        {% for req in card_requests %}
+        <p class="small muted" style="margin-top:8px">
+          Replacement requested {{ req.requested_at }} (reason: {{ req.reason.replace('-', ' ') }}) — status: {{ req.status }}.
+        </p>
+        {% endfor %}
+      </div>
+
+      <div class="my-panel">
+        <h2>Mailing address</h2>
+        {% set addr = current_user.current_address %}
+        {% if addr %}
+        <p>
+          <strong>Current address</strong><br>
+          {{ addr.line1 }}{% if addr.line2 %}<br>{{ addr.line2 }}{% endif %}<br>
+          {{ addr.city }}, {{ addr.state }} {{ addr.zip }}
+        </p>
+        {% endif %}
+        <h3>Change your mailing address</h3>
+        <p class="small muted">
+          Report address changes to Social Security so you get your Medicare correspondence.
+          You can also update it here for your Medicare account records.
+        </p>
+        <form action="{{ url_for('change_address') }}" method="post" class="form-grid" style="max-width:640px"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="field" style="grid-column:1/-1"><label for="addr-line1">Street address</label><input id="addr-line1" type="text" name="line1" required></div>
+          <div class="field" style="grid-column:1/-1"><label for="addr-line2">Apt / Unit (optional)</label><input id="addr-line2" type="text" name="line2"></div>
+          <div class="field"><label for="addr-city">City</label><input id="addr-city" type="text" name="city" required></div>
+          <div class="field"><label for="addr-state">State (2 letters)</label><input id="addr-state" type="text" name="state" maxlength="2" required></div>
+          <div class="field"><label for="addr-zip">ZIP code</label><input id="addr-zip" type="text" name="zip" required></div>
+          <div class="field" style="display:flex;align-items:flex-end">
+            <button class="btn btn--solid btn--small" type="submit">Save address</button>
+          </div>
+        </form>
+        {% if current_user.addresses | length > 1 %}
+        <h3>Address history</h3>
+        <ul class="small muted">
+          {% for a in current_user.addresses %}
+          <li>{{ a.line1 }}, {{ a.city }} {{ a.state }} {{ a.zip }} — effective {{ a.effective_date }}{{ ' (current)' if a.is_current else '' }}</li>
+          {% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+
+      <div class="my-panel">
+        <h2>Login history</h2>
+        <table class="data-table">
+          <thead><tr><th>Date</th><th>Method</th><th>Device</th></tr></thead>
+          <tbody>
+            {% for e in events | reverse %}
+            <tr><td>{{ e.when }}</td><td>{{ e.method }}</td><td>{{ e.device }}</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        <p class="small muted">
+          See a login you don't recognize? Change your password and report possible fraud.
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

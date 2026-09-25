@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Order Confirmation : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="confirm-box">
+    <h1>Thank you! Your order is confirmed.</h1>
+    <div class="order-num">Order #{{ order.order_number }}</div>
+    <p class="muted">Placed {{ order.placed_at.strftime('%B %d, %Y') }} &middot; Status: {{ order.status }}</p>
+    {% if order.method == 'pickup' and order.store %}
+    <p><b>Store Pickup</b> — {{ order.store.name }}<br>{{ order.store.address }}<br>{{ order.store.city }}, {{ order.store.state }}</p>
+    <p class="small muted">We'll notify you when your order is ready. Bring a photo ID.</p>
+    {% else %}
+    <p><b>Shipping to:</b> {{ order.address_text() }}</p>
+    {% endif %}
+<div class="table-wrap">    <table class="data" style="max-width:520px;margin:18px auto">
+      {% for item in order.items() %}
+      <tr><td>{{ item.qty }} &times; {{ item.name }}</td><td class="t-right">${{ "%.2f"|format(item.price * item.qty) }}</td></tr>
+      {% endfor %}
+      <tr><td><b>Subtotal</b></td><td class="t-right">${{ "%.2f"|format(order.subtotal) }}</td></tr>
+      <tr><td>Tax</td><td class="t-right">${{ "%.2f"|format(order.tax) }}</td></tr>
+      {% if order.shipping_fee %}<tr><td>Shipping</td><td class="t-right">${{ "%.2f"|format(order.shipping_fee) }}</td></tr>{% endif %}
+      <tr><td><b>Total</b></td><td class="t-right"><b>${{ "%.2f"|format(order.total) }}</b></td></tr>
+    </table></div>
+    <p>Payment: {{ order.payment }}</p>
+    {% if current_user.is_authenticated %}
+    <a class="btn btn-primary" href="/account/orders/{{ order.order_number }}">View Order Status</a>
+    {% else %}
+    <p class="small muted">You checked out as a guest. Keep your order number for reference.</p>
+    {% endif %}
+    <a class="btn btn-secondary" href="/">Continue Shopping</a>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% from "_macros.html" import vote_well, comment_tree with context %}
+{% block title %}{{ post.title }} - Imgur{% endblock %}
+{% block header_extra %}
+  {% if next_post %}
+  <a class="btn btn-nextpost" href="/gallery/{{ next_post.route_slug() }}">Next<svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg></a>
+  {% endif %}
+{% endblock %}
+{% block body %}
+<div class="gallerywrap">
+  <div class="votecolumn">
+    {% if post.accolades %}
+    <button class="accolade-btn" title="{{ post.accolades[0].name }}">
+      <img src="{{ post.accolades[0].image_path|asset }}" alt="{{ post.accolades[0].name }}">
+    </button>
+    {% endif %}
+    {{ vote_well(post, faved, '/gallery/' ~ post.route_slug()) }}
+  </div>
+  <div class="postcolumn">
+    <div class="postpanel">
+      <div class="postmeta">
+        <a href="/user/{{ post.author.username }}"><img class="avatar" src="{{ post.author.avatar|asset }}" alt="{{ post.author.username }}"></a>
+        <a class="author" href="/user/{{ post.author.username }}">{{ post.author.username }}</a>
+        <span class="dot">·</span>
+        <span>{{ post.view_count|count }} Views</span>
+        <span class="dot">·</span>
+        <span>{{ post.created_at|ago }}</span>
+        {% if post.platform and post.platform != 'web' %}<span class="dot">·</span><span>via {{ platform_label }}</span>{% endif %}
+        <span class="dot">·</span>
+        <form method="post" action="/follow/user/{{ post.author.username }}" class="followform">
+          <input type="hidden" name="back" value="/gallery/{{ post.route_slug() }}">
+          <button class="followmini" type="submit">{{ 'FOLLOWING' if following else '+ FOLLOW' }}</button>
+        </form>
+      </div>
+      <h1 class="posttitle">{{ post.title }}</h1>
+      {% if post.accolades %}
+      <div class="postaward"><img src="{{ post.accolades[0].image_path|asset }}" alt="">{{ post.accolades[0].name }}</div>
+      {% endif %}
+      {% for media in post.media %}
+      <div class="mediaitem">
+        {% if media.type == 'video' %}
+          <video controls poster="{{ media.poster_path|asset }}" preload="metadata">
+            <source src="{{ media.detail_path|asset }}" type="video/mp4">
+          </video>
+        {% else %}
+          <img src="{{ media.detail_path|asset }}" alt="{{ post.title }}">
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% if post.tags %}
+      <div class="tagpills">
+        {% for tag in post.tags %}
+        <a class="tagpill" href="/t/{{ tag.name }}"><span class="swatch" style="background: #{{ tag.accent }}"></span>{{ tag.display_name }}</a>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <div class="commentbar" id="comments">
+      {% if session_user %}
+      <form method="post" action="/comment">
+        <input type="hidden" name="post_id" value="{{ post.id }}">
+        <input type="hidden" name="back" value="/gallery/{{ post.route_slug() }}">
+        <input class="comment-input" type="text" name="comment" placeholder="Add a comment" maxlength="2000">
+        <button class="btn btn-post" type="submit">Post</button>
+      </form>
+      {% else %}
+      <span>Sign in to leave a comment</span>
+      <span style="margin-left:auto;display:flex;gap:10px">
+        <a class="btn btn-post" href="/signin">Sign In</a>
+        <a class="btn btn-signup" href="/register">Sign Up</a>
+      </span>
+      {% endif %}
+    </div>
+
+    <div class="commentshead">
+      <span class="n">{{ post.comment_count }} COMMENTS</span>
+      <span class="tools">
+        <a href="#">Expand All</a>
+        <a href="/gallery/{{ post.route_slug() }}?sort=new" class="sortopt {{ 'active' if sort == 'new' }}">new</a>
+        <a href="/gallery/{{ post.route_slug() }}?sort=best" class="sortopt {{ 'active' if sort == 'best' }}">Best ▾</a>
+      </span>
+    </div>
+    {% if comments %}
+      {{ comment_tree(comments, post, '/gallery/' ~ post.route_slug()) }}
+    {% else %}
+      <div class="emptynote">No comments yet. Be the first!</div>
+    {% endif %}
+  </div>
+
+  <div class="sidebar">
+    <div class="panel">
+      <h3>NEWEST IN MOST VIRAL</h3>
+      {% for side in sidebar %}
+      <a class="side-post" href="/gallery/{{ side.route_slug() }}">
+        {% if side.cover %}
+        <img src="{{ side.cover.feed_path|asset }}" alt="">
+        {% endif %}
+        <span class="t">{{ side.title }}</span>
+      </a>
+      {% endfor %}
+    </div>
+    <div class="store-ad">
+      <div class="big">THE IMGUR STORE</div>
+      <button type="button" onclick="location.href='/about'">Shop Now</button>
+    </div>
+  </div>
+</div>
+{% endblock %}

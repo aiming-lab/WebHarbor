@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ team.full_name }} 2026 Schedule | NFL.com{% endblock %}
+{% block content %}
+<div class="page-head">
+  <h1>{{ team.full_name | upper }} 2026 SCHEDULE</h1>
+  <p class="page-sub">{{ team.record }} · 2026 Regular Season</p>
+</div>
+<section class="panel">
+  <table class="data-table">
+    <thead>
+      <tr><th>Week</th><th>Date</th><th>Opponent</th><th>Time</th><th>Result</th><th></th></tr>
+    </thead>
+    <tbody>
+      {% for g in games %}
+      <tr>
+        <td>REG {{ g.week }}</td>
+        <td>{{ g.date or 'TBD' }}</td>
+        <td>
+          {% if g.home_abbr == team.abbr %}
+          <span class="opponent"><img src="{{ g.away.logo }}" alt=""> vs {{ g.away.full_name }}</span>
+          {% else %}
+          <span class="opponent"><img src="{{ g.home.logo }}" alt=""> @ {{ g.home.full_name }}</span>
+          {% endif %}
+        </td>
+        <td>{{ g.time_display or 'TBD' }}</td>
+        <td>
+          {% if g.status.startswith('FINAL') %}
+          <span class="badge badge-final">{{ g.status }}</span>
+          {{ g.away_score }} — {{ g.home_score }}
+          {% if g.winner == team.abbr %}W{% elif g.winner %}L{% else %}T{% endif %}
+          {% else %}
+          <span class="badge">UPCOMING</span>
+          {% endif %}
+        </td>
+        <td><a class="link-more" href="{{ url_for('game_detail', slug=g.slug) }}">Game Center →</a></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</section>
+{% endblock %}

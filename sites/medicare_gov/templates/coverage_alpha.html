@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Find services alphabetically | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('coverage_home') }}">What's covered?</a></li><li>Find services alphabetically</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Find services alphabetically</h1>
+    <p class="lede">Browse all covered items, tests, and services by their first letter.</p>
+  </div>
+  <nav class="letter-nav" aria-label="Browse alphabetically">
+    {% for l in letters %}
+    <a href="{{ url_for('coverage_alpha', letter=l) }}" class="{{ 'active' if l == letter else '' }}">{{ l }}</a>
+    {% endfor %}
+  </nav>
+  <p class="muted small">{{ items|length }} result{{ 's' if items|length != 1 else '' }} starting with “{{ letter }}”</p>
+  {% for item in items %}
+  <article class="coverage-item-card">
+    <div>
+      <h3><a href="{{ url_for('coverage_detail', slug=item.slug) }}" style="text-decoration:none">{{ item.title }}</a></h3>
+      <p class="coverage-item-card__summary">{{ item.summary }}</p>
+      <p class="coverage-item-card__cost">{{ item.cost_summary }}</p>
+    </div>
+    <div class="badges">
+      {% if item.covered_by %}<span class="badge badge--part">{{ item.covered_by }}</span>{% endif %}
+      {% if item.is_preventive %}<span class="badge badge--preventive">Preventive Service</span>{% endif %}
+    </div>
+  </article>
+  {% else %}
+  <p>No covered items, tests, or services start with “{{ letter }}”. <a href="{{ url_for('coverage_search') }}">Try searching instead</a>.</p>
+  {% endfor %}
+  <p class="small muted" style="margin-top:26px">
+    Ask your doctor or healthcare provider how much your test, item, or service will cost.
+  </p>
+</div>
+{% endblock %}

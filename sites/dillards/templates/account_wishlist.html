@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}My Wish List | Dillard's{% endblock %}
+{% block content %}
+<div class="container">
+  <div class="breadcrumb"><a href="/">Home</a> &rsaquo; <a href="/account">My Dillard's Account</a> &rsaquo; My Wish List</div>
+  <div class="account-layout">
+    <aside class="account-nav">
+      <a href="/account">My Dillard's Account</a>
+      <a href="/account/orders">Order History</a>
+      <a href="/account/returns">Returns</a>
+      <a href="/account/paybill">Pay My Bill</a>
+      <a href="/account/wishlist" class="active">My Wish List</a>
+      <a href="/account/profile">Profile &amp; Settings</a>
+      <a href="/account/addresses">Address Book</a>
+    </aside>
+    <section class="panel">
+      <h2>My Wish List</h2>
+      {% if items %}
+        <table>
+          <tr><th>Item</th><th>Brand</th><th>Price</th><th></th></tr>
+          {% for item in items %}
+            <tr>
+              <td><a href="{{ item.product.url }}">{{ item.product.full_name }}</a></td>
+              <td><a href="{{ item.product.brand.url }}">{{ item.product.brand.name }}</a></td>
+              <td class="num">${{ '%.2f'|format(item.product.price() or 0) }}</td>
+              <td>
+                <form style="display:inline" method="post" action="/bag/add/{{ item.product.pid }}">
+                  <input type="hidden" name="size" value="{{ item.product.variants[0].size if item.product.variants else '' }}">
+                  <input type="hidden" name="color" value="{{ item.product.variants[0].color if item.product.variants else '' }}">
+                  <input type="hidden" name="quantity" value="1">
+                  <button class="btn-link" type="submit">Add to Bag</button>
+                </form>
+                &nbsp;
+                <form style="display:inline" method="post" action="/wishlist/remove/{{ item.id }}">
+                  <button class="btn-danger" type="submit">Remove</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p class="muted">Your wish list is empty. Browse the site and add items you love.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Edit Your Account | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:22px">
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section class="content-page">
+      <h1 style="font-size:26px">Edit Your Account</h1>
+      <div class="form-card">
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="two-col">
+            <div class="form-row">
+              <label for="first_name">First name</label>
+              <input type="text" id="first_name" name="first_name" value="{{ user.first_name }}">
+            </div>
+            <div class="form-row">
+              <label for="last_name">Last name</label>
+              <input type="text" id="last_name" name="last_name" value="{{ user.last_name }}">
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="form-row">
+              <label for="phone">Phone</label>
+              <input type="text" id="phone" name="phone" value="{{ user.phone }}">
+            </div>
+            <div class="form-row">
+              <label for="zip_code">Zip code</label>
+              <input type="text" id="zip_code" name="zip_code" value="{{ user.zip_code }}">
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="city">City</label>
+            <input type="text" id="city" name="city" value="{{ user.city }}">
+          </div>
+          <div class="two-col">
+            <div class="form-row">
+              <label for="military_status">Military service</label>
+              <select id="military_status" name="military_status">
+                {% for opt in ['', 'Veteran', 'Active Duty', 'Military Spouse', 'National Guard / Reserve'] %}
+                  <option value="{{ opt }}" {% if user.military_status == opt %}selected{% endif %}>{{ opt or 'None' }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="form-row">
+              <label for="employment_status">Current work status</label>
+              <select id="employment_status" name="employment_status">
+                {% for opt in ['', 'Unemployed', 'Employed', 'Student', 'Underemployed'] %}
+                  <option value="{{ opt }}" {% if user.employment_status == opt %}selected{% endif %}>{{ opt or 'Prefer not to say' }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="two-col">
+            <div class="form-row">
+              <label for="target_job_title">Target job title</label>
+              <input type="text" id="target_job_title" name="target_job_title" value="{{ user.target_job_title }}">
+            </div>
+            <div class="form-row">
+              <label for="career_level">Career level</label>
+              <select id="career_level" name="career_level">
+                {% for opt in ['', 'Entry level', 'Mid-level (2-5 years)', 'Experienced (5+ years)', 'Management'] %}
+                  <option value="{{ opt }}" {% if user.career_level == opt %}selected{% endif %}>{{ opt or 'Select' }}</option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+          <div class="form-row">
+            <label for="education">Highest degree attained</label>
+            <select id="education" name="education">
+              <option value="">Select</option>
+              {% for code, name in education_names.items() %}
+                <option value="{{ name }}" {% if user.education == name %}selected{% endif %}>{{ name }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="form-row">
+            <label><input type="checkbox" name="willing_relocate" {% if user.willing_relocate %}checked{% endif %}> I am willing to relocate</label>
+          </div>
+          <button class="btn" type="submit">Update Account</button>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

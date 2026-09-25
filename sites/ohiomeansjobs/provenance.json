@@ -1,0 +1,61 @@
+{
+ "schema_version": 1,
+ "snapshot_date": "2026-09-24",
+ "records": [
+  {
+   "path": "app.py",
+   "classification": "mirror-code",
+   "scope": "Flask application implementing the ohiomeansjobs.ohio.gov mirror: portal pages (home, job-seeker/employer/student hubs, news & events, help center, contact), the job-search engine with upstream-style Search.aspx query parameters (tjt, cnme, rad, sort, pg) and facet filters (omjindustry, saltyp, lv, jtype, cert, remote, internship), job detail pages with the upstream Job Summary sidebar, company profile pages, scored token-overlap search with city-radius filtering, account area (register/login, profile, saved jobs, saved searches with alerts, applications, resume with SkillsMatch, cover letters with the upstream 5-letter limit, career plan), the RIASEC Career Profile Quiz, county job-center lookup, state agency roster, and site search."
+  },
+  {
+   "path": "seed_data.py",
+   "classification": "mirror-code",
+   "scope": "Build-time conversion of source_catalog.json into the SQLite seed database. Idempotent (both seed functions gate on populated tables and take the db/models as parameters); seeds 4 benchmark users (alice.j/bob.c/carol.d/david.k @test.com) with saved jobs, applications, saved searches with alert frequencies, active resumes, 2-3 cover letters each, and career-plan tasks. Deterministic fixed-RNG reference dates anchored to 2026-09-24."
+  },
+  {
+   "path": "source_catalog.json",
+   "classification": "captured-upstream-content",
+   "scope": "Frozen catalog captured from the live site on 2026-09-24: 160 real job postings (title, employer, city, job types, reference code, full description, posted date, apply URL, OMJ job id) harvested from the public OhioMeansJobs job board; 104 real employers; 10 news items (titles/teasers/dates/topics from the portal news list, bodies captured where the upstream article pages exist); the 89-county OhioMeansJobs Center directory with real street addresses; 4 help-center articles (common questions, job seeker, employer, education) with the real upstream FAQ text; the 40-agency State of Ohio roster; and the career-quiz question set following the upstream RIASEC trait model (Artistic, Conventional, Enterprising, Investigative, Realistic, Social)."
+  },
+  {
+   "path": "build_source_catalog.py",
+   "classification": "mirror-code",
+   "scope": "Regenerates source_catalog.json from scraped_data/ (gitignored). Classification rules: industry/salary-band/education/certification values follow the upstream facet taxonomy captured from the live search results page; per-job values are title-first with description fallback, seniority nudges for senior/junior titles, and override from pay figures and degree requirements explicitly stated in the real posting text."
+  },
+  {
+   "path": "scraped_data/ (not shipped)",
+   "classification": "captured-upstream-content",
+   "scope": "Build-time only (gitignored, dockerignored): Playwright captures of the live portal (home, job-seeker/employer/student hubs, find-a-job, local-help, state-jobs, news, help-center, career-quiz pages) and the public job board (Search.aspx results across 40 occupation queries and 108 JobDetail.aspx pages), plus the raw image downloads and curation map that produced static/images/."
+  },
+  {
+   "path": "instance_seed/ohiomeansjobs.db (HF-managed)",
+   "classification": "captured-upstream-data",
+   "scope": "Frozen mirror snapshot: 160 real job postings across 13 industries, 5 salary bands, 6 education levels; 104 real employers; 10 news items; 89 real county job-center addresses; 4 help articles; 40 state agencies; 4 benchmark users with 3 saved jobs, 1-2 applications, 2 saved searches, an active resume, 2-3 cover letters, and 2-3 career-plan tasks each."
+  },
+  {
+   "path": "static/images/ (HF-managed)",
+   "classification": "source-backed-media-inventory",
+   "scope": "Every HF-managed runtime image has a byte count, SHA-256, and upstream source URL in asset_inventory.json: 93 real images captured from ohiomeansjobs.ohio.gov and its CDNs — the OMJ logo, page heroes and section photography (Getty-hosted upstream assets), audience card images, student-section art, the 40 State of Ohio agency logos, and UI icons. Two oversized hero originals (8.6 MB and 16 MB upstream JPEGs) were Pillow-resized to max width 1600px, marked 'resized_from_upstream_original' in the inventory; every other file is byte-identical to the upstream download. No placeholders, no generated images."
+  },
+  {
+   "path": "static/css/, static/js/, static/icons/",
+   "classification": "mirror-code",
+   "scope": "Hand-written stylesheet matching the upstream ODX (Ohio.gov) design system: header gradient #06467A→#0A305F, primary navigation #0B2E5D→#0d2552, selected state #14396A, border #003366, Helvetica Neue typography, the gold search button, Monster-style job result rows, and the Ohio.gov official-site banner — sampled from the live ODXTheme stylesheets and rendered pages."
+  },
+  {
+   "path": "tasks.jsonl",
+   "classification": "benchmark-tasks",
+   "scope": "18 goal-oriented tasks in the WebVoyager schema (web_name, id, ques, web, upstream_url) covering job search with facets, registration and application chains, saved-job and saved-search management, the career quiz, resume SkillsMatch, county job centers, state jobs, news, help center, employer resources, and site search. Contributor-authored only; no verifier, rubric, or answer keys."
+  },
+  {
+   "path": "build_asset_inventory.py, curate_images.py",
+   "classification": "mirror-code",
+   "scope": "Asset pipeline: curate_images.py maps the raw upstream downloads to semantic shipped paths (resizing only the two oversized heroes); build_asset_inventory.py regenerates asset_inventory.json (byte counts, SHA-256, source URLs) for every managed asset."
+  },
+  {
+   "path": "tests/test_mirror.py",
+   "classification": "mirror-code",
+   "scope": "35-case self-check suite (routes, health, search filters and pagination, job detail, auth, save/apply/saved-search/cover-letter flows, county filter, news filter, help content, site search, contact form, quiz, idempotent seeding, no-leak assertions) run against a temporary copy of the seed DB."
+  }
+ ]
+}

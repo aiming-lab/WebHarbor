@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Search results | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('coverage_home') }}">What's covered?</a></li><li>Search results</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Coverage search results</h1>
+    <p class="lede">Showing {{ items|length }} result{{ 's' if items|length != 1 else '' }} for “{{ query }}”</p>
+  </div>
+
+  <section class="coverage-search">
+    <form action="{{ url_for('coverage_search') }}" method="get" role="search">
+      <div class="coverage-search__row">
+        <label class="visually-hidden" for="coverage-q" style="position:absolute;left:-9999px;">Find your item, test, or service</label>
+        <input id="coverage-q" type="text" name="q" value="{{ query }}" required>
+        <button class="btn btn--solid" type="submit">Search</button>
+      </div>
+    </form>
+  </section>
+
+  {% for item in items %}
+  <article class="coverage-item-card">
+    <div>
+      <h3><a href="{{ url_for('coverage_detail', slug=item.slug) }}" style="text-decoration:none">{{ item.title }}</a></h3>
+      <p class="coverage-item-card__summary">{{ item.summary }}</p>
+      <p class="coverage-item-card__cost">{{ item.cost_summary }}</p>
+    </div>
+    <div class="badges">
+      {% if item.covered_by %}<span class="badge badge--part">{{ item.covered_by }}</span>{% endif %}
+      {% if item.is_preventive %}<span class="badge badge--preventive">Preventive Service</span>{% endif %}
+    </div>
+  </article>
+  {% else %}
+  <p>We couldn't find any covered items, tests, or services matching “{{ query }}”. Try another search term, or <a href="{{ url_for('coverage_alpha') }}">browse alphabetically</a>.</p>
+  {% endfor %}
+  <p class="small muted" style="margin-top:26px">
+    Ask your doctor or healthcare provider how much your test, item, or service will cost.
+  </p>
+</div>
+{% endblock %}

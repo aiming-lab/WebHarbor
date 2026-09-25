@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Nearby Stations &amp; Stops{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Nearby Stations &amp; Stops</div>
+  <h1>Nearby Stations &amp; Stops</h1>
+</div>
+<div class="card">
+  <p>Search for subway stations by name, borough, or the lines that serve them.</p>
+  <form class="filters" method="get" action="{{ url_for('nearby') }}">
+    <div>
+      <label for="q">Station name</label>
+      <input type="text" name="q" id="q" value="{{ q }}" placeholder="e.g. Grand Central, 42 St">
+    </div>
+    <div>
+      <label for="borough">Borough</label>
+      <select name="borough" id="borough">
+        <option value="">All boroughs</option>
+        {% for b in boroughs %}
+        <option value="{{ b }}" {% if b == borough %}selected{% endif %}>{{ b }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div>
+      <label for="line">Line</label>
+      <input type="text" name="line" id="line" value="{{ line }}" placeholder="e.g. 7, A, G">
+    </div>
+    <button class="btn" type="submit">Find stations</button>
+  </form>
+
+  <p>{{ stations | length }} station{{ '' if stations|length == 1 else 's' }} found.</p>
+  {% for s in stations %}
+  <div class="rail-item">
+    <a href="{{ url_for('station_page', sid=s.id) }}"><span class="rail-title">{{ s.name }}</span></a>
+    <span>
+      {% for line in s.lines | fromjson %}
+      <span class="line line-{{ line }}" style="width:20px;height:20px">{{ line }}</span>
+      {% endfor %}
+    </span>
+    <span class="rail-status"><a href="{{ url_for('station_page', sid=s.id) }}">View station details</a></span>
+  </div>
+  {% else %}
+  <p>No stations match this search.</p>
+  {% endfor %}
+</div>
+{% endblock %}

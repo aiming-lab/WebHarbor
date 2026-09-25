@@ -4,13 +4,13 @@ Original contribution: [aiming-lab/WebHarbor#46](https://github.com/aiming-lab/W
 
 ## Scope and fixed versions
 
-- Current upstream base: `1ec9d6c74b6b814bbf3585464b4c57099aeeaecf`
-- Integrated and tested implementation: `1fc4278cc1948fdd6aa87ae53369f9d0234ff0b2`
+- Current upstream base: `b3275d75fdfcfea6ca142ddd59e20b7e4cb3d454`
+- Pre-sync candidate (audit source and tests unchanged): `609f4cbb833b524f786bd5b610eaee0720d65106`
 - Original review base: `f20b5ee8377ba31bcb825b4dfe30ad96c416e477`
 - Original contribution: `6e5d77b0af6c2b7dfcd82039361df4228f2c3c65`
 - Isolated-review fixed point: `80bd5817109563313d1ae30fac684a8b918599f7`
 - Reconciled implementation commit: `839c74dc0dd1a2967552b9d6df991701c61aafe6`
-- Assets pin inherited from current upstream: `741c9e428835e9355a71ae64e28ac43aac57dcb0`
+- Assets pin inherited from current upstream: `d7b4e614ba7d5dbf59c6326e96d10c6ef304fac1`
 
 Relative to current upstream, this PR adds repository-level tooling, tests, the canonical pre-PR checklist entry, and this report. It also removes two empty tracked `.gitkeep` files from CarMax runtime-only directories so the strict repository audit starts clean. It does not modify mirror behavior, task sets, deterministic task verifiers, or Hugging Face assets. The asset pin is identical to upstream; the original review used `ad6f424f72cada9e6f5c09a58093d0ceeab9c52b`.
 
@@ -50,17 +50,22 @@ The frozen candidate was independently reviewed at `80bd581`. The reviewer repro
 
 Affected tests and the full validation set were rerun after reconciliation. A direct regression check also confirmed that restricting Python assignments to module scope does not reject valid indented shell declarations.
 
-## Upstream synchronization — 2026-09-23
+## Upstream synchronization — 2026-09-25
 
-Merged upstream `main` at `1ec9d6c`, preserving the original contribution and reviewer commits. The only text conflict was in the `AGENTS.md` pre-PR checklist. The resolution keeps the audit step and consecutive numbering while adopting the current control-token requirement. It also refreshes the documented 72-site range to container ports `40000–40071` and host ports `41000–41071`.
+Merged upstream `main` at `b3275d7`, preserving the original contribution and reviewer commits.
+There were no text conflicts. Audit source and tests are unchanged from `609f4cb`;
+only the inherited main tree and documentation change. The documented registry now
+covers 94 sites, container ports `40000–40093` and host ports `41000–41093`.
 
-Upstream includes `scripts/check_site_registry.py`, called by `scripts/check_assets.sh` during the build. That check verifies exact task URLs and referenced verifier paths. It remains enabled and unchanged. The supplemental audit adds structured JSON diagnostics, per-site selection, asset-path coverage, and tracked runtime-artifact checks. An older explanatory README section was removed because current repository policy limits root README edits to the Websites table.
-
-The historical isolated review remains applicable to the previously reviewed implementation. This synchronization adds one scoped behavior correction: ignored local runtime data no longer fails a repository audit, while Git-tracked runtime artifacts still do. That change was driven by a red-then-green regression test and the complete validation matrix below. No new independent review is claimed. Integration checks were rerun against all 72 current sites; no asset archives were downloaded or modified.
+Upstream `scripts/check_site_registry.py` remains enabled and unchanged. The supplemental
+audit adds structured JSON diagnostics, per-site selection, asset-path coverage, and
+tracked runtime-artifact checks. Both checks pass on the current corpus.
+The historical isolated code review remains scoped to its original fixed point; no
+new independent review is claimed. No asset archives were downloaded or modified.
 
 ## Validation
 
-All commands below were run on 2026-09-23 from the tree committed as `1fc4278`; the subsequent report update changes documentation only:
+The following checks were rerun on 2026-09-25 after integration with `b3275d7`:
 
 ```bash
 python3.12 -m py_compile scripts/audit_site_registry.py scripts/test_audit_site_registry.py
@@ -73,12 +78,12 @@ pyright scripts/audit_site_registry.py scripts/test_audit_site_registry.py
 Results:
 
 - 23/23 unit and adversarial tests passed.
-- Current repository scan covered 72 site directories, 72 registered sites, 72 ports, 72 task files, and 1,830 tasks.
+- Current repository scan covered 94 site directories, 94 registered sites, 94 ports, 94 task files, and 2,315 tasks.
 - Strict scan: 0 errors, 0 warnings, exit 0.
-- Upstream registry check: all 72 sites, task URLs, and referenced verifier paths passed; Docker exposure is `8101 40000-40071`.
+- Upstream registry check: all 94 sites, task URLs, and referenced verifier paths passed; Docker exposure is `8101 40000-40093`.
 - Pyright: 0 errors, 0 warnings.
 - Python byte-compilation: passed.
-- Git whitespace/conflict checks: passed; only the audit, its tests, the pre-PR documentation, this report, and removal of two empty ignored runtime placeholders differ from current upstream.
+- Reviewer-delta whitespace/conflict checks: passed; only the audit, its tests, the pre-PR documentation, this report, and removal of two empty ignored runtime placeholders differ from current upstream.
 
 The original 2026-09-13 validation covered 26 sites and 843 tasks. Those historical counts are superseded by the current integration results above.
 

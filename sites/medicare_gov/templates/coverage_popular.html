@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Popular coverage topics | Medicare{% endblock %}
+{% block breadcrumb %}
+<div class="ds-container"><nav class="breadcrumb" aria-label="Breadcrumb"><ol><li><a href="{{ url_for('home') }}">Home</a></li><li><a href="{{ url_for('coverage_home') }}">What's covered?</a></li><li>Popular coverage topics</li></ol></nav></div>
+{% endblock %}
+{% block content %}
+<div class="ds-container">
+  <div class="page-hero__inner">
+    <h1>Popular coverage topics</h1>
+    <p class="lede">Common groups of covered items, tests, and services.</p>
+  </div>
+  {% for group in groups %}
+  <section class="topic-block" id="{{ group.topic.slug }}">
+    <h2>{{ group.topic.name }}</h2>
+    <p class="muted small">{{ group.topic.blurb }}</p>
+    <ul>
+      {% for member in group.members %}
+      <li><a href="{{ url_for('coverage_detail', slug=member.item.slug) }}">{{ member.label }}</a></li>
+      {% endfor %}
+    </ul>
+  </section>
+  {% endfor %}
+  <p class="small muted">
+    Ask your doctor or healthcare provider how much your test, item, or service will cost.
+  </p>
+</div>
+{% endblock %}

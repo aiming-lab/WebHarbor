@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% block title %}Order #{{ order.order_number }} : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <div class="crumbs"><a href="/account">My Account</a> &rsaquo; <a href="/account/orders">Orders</a> &rsaquo; #{{ order.order_number }}</div>
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section>
+      <div class="section-head"><h2>Order #{{ order.order_number }}</h2></div>
+      <p class="small muted">Placed {{ order.placed_at.strftime('%B %d, %Y at %I:%M %p') }} &middot; Payment: {{ order.payment }}</p>
+      <p><span class="status-badge status-{{ order.status|lower|replace(' ','') }}">{{ order.status }}</span></p>
+      {% if order.status not in ('Delivered', 'Picked Up', 'Cancelled') %}
+      <form method="POST" action="/account/orders/{{ order.order_number }}/cancel">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="btn btn-danger" type="submit">Cancel Order</button>
+      </form>
+      {% endif %}
+      {% if order.method == 'pickup' and order.store %}
+      <h3>Pickup Store</h3>
+      <p>{{ order.store.name }}<br>{{ order.store.address }}<br>{{ order.store.city }}, {{ order.store.state }}</p>
+      {% else %}
+      <h3>Shipping To</h3>
+      <p>{{ order.address_text() }}</p>
+      {% endif %}
+      <h3>Items</h3>
+<div class="table-wrap">      <table class="data">
+        <tr><th>Item</th><th>SKU</th><th>Qty</th><th>Price</th><th class="t-right">Total</th></tr>
+        {% for item in order.items() %}
+        <tr>
+          <td><a href="/product/{{ '%07d'|format(item.product_id) }}/{{ item.name|lower|replace(' ', '-')|replace('"', '')|replace('&quot;', '') }}">{{ item.name }}</a></td>
+          <td class="small">{{ '%06d'|format(item.sku) }}</td>
+          <td>{{ item.qty }}</td>
+          <td>${{ "%.2f"|format(item.price) }}</td>
+          <td class="t-right">${{ "%.2f"|format(item.price * item.qty) }}</td>
+        </tr>
+        {% endfor %}
+      </table></div>
+      <div class="summary-box" style="position:static;max-width:360px">
+        <div class="summary-row"><span>Subtotal</span><span>${{ "%.2f"|format(order.subtotal) }}</span></div>
+        <div class="summary-row"><span>Tax</span><span>${{ "%.2f"|format(order.tax) }}</span></div>
+        {% if order.shipping_fee %}<div class="summary-row"><span>Shipping</span><span>${{ "%.2f"|format(order.shipping_fee) }}</span></div>{% endif %}
+        <div class="summary-row total"><span>Total</span><span>${{ "%.2f"|format(order.total) }}</span></div>
+      </div>
+    </section>
+  </div>
+</div>
+{% endblock %}

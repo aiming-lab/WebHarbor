@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}City guides | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>City guides</h1>
+    <p>Traveling by bus is one of the best ways to explore North America. Our city
+      guides cover where to go, what to see and how to get there with megabus.</p>
+    <h2 class="section-title">Guides by city</h2>
+    <div class="teaser-grid">
+      {% for g in cities %}
+        <a class="teaser" href="{{ url_for('city_guide_detail', slug=g.slug) }}">
+          {% if g.hero and 'city-guides/hero-images' in g.hero %}
+            <img src="{{ url_for('static', filename='images/' ~ g.hero.split('/siteassets/')[1]) }}" alt="{{ g.title }}">
+          {% else %}
+            <img src="{{ url_for('static', filename='images/home/megabus-website-hero-image-2024.jpg') }}" alt="{{ g.title }}">
+          {% endif %}
+          <div class="teaser-body"><h3>{{ g.title or g.page_title }}</h3></div>
+        </a>
+      {% endfor %}
+    </div>
+    <h2 class="section-title">Travel inspiration</h2>
+    <div class="teaser-grid">
+      {% for g in articles %}
+        <a class="teaser" href="{{ url_for('city_guide_detail', slug=g.slug) }}">
+          {% if g.hero and 'city-guides/hero-images' in g.hero %}
+            <img src="{{ url_for('static', filename='images/' ~ g.hero.split('/siteassets/')[1]) }}" alt="{{ g.title }}">
+          {% else %}
+            <img src="{{ url_for('static', filename='images/home/megabus-website-hero-image-2024.jpg') }}" alt="{{ g.title }}">
+          {% endif %}
+          <div class="teaser-body"><h3>{{ g.title or g.page_title }}</h3></div>
+        </a>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

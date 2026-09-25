@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Check your {{ kind }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Check your {{ kind }}</div>
+  <h1>Check your {{ kind }} status</h1>
+</div>
+<div class="card">
+  <p>Enter the reference number we gave you when you filed your {{ kind }}.</p>
+  <form class="filters" method="get" action="{{ action }}">
+    <div>
+      <label for="ref">Reference number</label>
+      <input type="text" name="ref" id="ref" value="{{ ref }}" placeholder="e.g. LF-26094217">
+    </div>
+    <button class="btn" type="submit">Look up</button>
+  </form>
+</div>
+{% endblock %}

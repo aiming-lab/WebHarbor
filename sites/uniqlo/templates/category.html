@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}{{ category.name }} | {{ department.upper() }} | UNIQLO US{% endblock %}
+{% block content %}
+<div class="page-inner">
+    <div class="breadcrumb">
+        <a href="{{ url_for('department_page', department=department) }}">{{ department.upper() }}</a> / {{ category.name }}
+    </div>
+    <div class="category-header">
+        <h1 class="page-title">{{ category.name }}</h1>
+        <form class="sort-form" method="get">
+            <label for="sort">Sort</label>
+            <select name="sort" id="sort" onchange="this.form.submit()">
+                <option value="" {% if not current_sort %}selected{% endif %}>Featured</option>
+                <option value="price_low" {% if current_sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+                <option value="price_high" {% if current_sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+                <option value="rating" {% if current_sort == 'rating' %}selected{% endif %}>Customer Rating</option>
+            </select>
+        </form>
+    </div>
+    <p class="result-count">{{ products|length }} item{{ 's' if products|length != 1 else '' }}</p>
+    <div class="product-grid">
+        {% for product in products %}
+            {% include '_product_card.html' %}
+        {% else %}
+        <p>No products found in this category.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

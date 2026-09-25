@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Press Releases{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Press Releases</div>
+  <h1>Press Releases</h1>
+</div>
+<div class="card">
+  {% for art in releases %}
+  <div class="rail-item">
+    <a href="{{ url_for('press_article', slug=art.path.rsplit('/', 1)[-1]) }}"><span class="rail-title">{{ art.title }}</span></a>
+    <span class="rail-status">{{ art.date }}</span>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

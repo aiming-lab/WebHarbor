@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="hero">
+  <div class="hero-media">
+    <img src="/static/images/home/hero-city-lights.jpg" alt="City lights over a downtown skyline at night">
+  </div>
+  <div class="container hero-content">
+    <h1 class="hero-title">Your Next Trip Starts Here</h1>
+    <form class="search-widget" action="/search/findHotels.mi" method="get">
+      <div class="field field-dest">
+        <label for="destinationAddress">Destination</label>
+        <input id="destinationAddress" name="destinationAddress" type="text"
+               placeholder="City, state, country, or hotel" list="destination-list" autocomplete="off">
+        <datalist id="destination-list">
+          {% for d in destinations %}
+          <option value="{{ d.city }}{% if d.state %}, {{ d.state }}{% endif %}">
+          {% endfor %}
+        </datalist>
+      </div>
+      <div class="field field-date">
+        <label for="fromDate">Check-in</label>
+        <input id="fromDate" name="fromDate" type="date" value="{{ reference_date.strftime('%Y-%m-%d') }}">
+      </div>
+      <div class="field field-date">
+        <label for="toDate">Check-out</label>
+        <input id="toDate" name="toDate" type="date" value="{{ (reference_date + timedelta(days=1)).strftime('%Y-%m-%d') }}">
+      </div>
+      <div class="field field-rooms">
+        <label for="roomCount">Rooms</label>
+        <select id="roomCount" name="roomCount">
+          <option value="1">1 Room</option>
+          <option value="2">2 Rooms</option>
+          <option value="3">3 Rooms</option>
+        </select>
+      </div>
+      <div class="field field-guests">
+        <label for="numAdultsPerRoom">Guests per room</label>
+        <select id="numAdultsPerRoom" name="numAdultsPerRoom">
+          <option value="1">1 Adult</option>
+          <option value="2">2 Adults</option>
+          <option value="3">3 Adults</option>
+          <option value="4">4 Adults</option>
+        </select>
+      </div>
+      <div class="field field-rates">
+        <label for="clusterCode">Special Rates</label>
+        <select id="clusterCode" name="clusterCode">
+          <option value="none">Lowest Regular Rate</option>
+          <option value="AAA" disabled>AAA Auto Club (unavailable in demo)</option>
+          <option value="GOV" disabled>Government (unavailable in demo)</option>
+          <option value="SENIOR" disabled>Senior Discount (unavailable in demo)</option>
+        </select>
+      </div>
+      <div class="field field-points">
+        <label class="checkbox-label">
+          <input type="checkbox" id="useRewardsPoints" name="useRewardsPoints" value="true">
+          <span>Use Points/Awards</span>
+        </label>
+      </div>
+      <div class="field field-submit">
+        <button type="submit" class="btn-find"><span class="icon-search" aria-hidden="true"></span>Find Hotels</button>
+      </div>
+    </form>
+    <p class="hero-sub">Marriott Bonvoy members always get our best rate — guaranteed.</p>
+  </div>
+</section>
+
+<section class="container section">
+  <h2 class="section-title">Destinations We Love</h2>
+  <div class="card-grid">
+    {% for d in destinations %}
+    <a class="dest-card" href="{{ d.page_path }}">
+      <div class="dest-media">
+        {% if d.hero_image %}<img src="{{ d.hero_image }}" alt="{{ d.destination_name or d.city }}">{% endif %}
+      </div>
+      <div class="dest-body">
+        <h3>{{ d.city }}{% if d.state %}, {{ d.state }}{% endif %}</h3>
+        <p>{{ d.hotel_count }} Marriott Bonvoy hotels</p>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="container section">
+  <div class="offers-strip">
+    <h2 class="section-title">Limited-Time Offers</h2>
+    <div class="offer-cards">
+      {% for o in offers %}
+      <a class="offer-card" href="{{ o.cta_href or '/offers.mi' }}">
+        <div class="offer-media">{% if o.image_path %}<img src="{{ o.image_path }}" alt="{{ o.title }}">{% endif %}</div>
+        <div class="offer-body">
+          <p class="offer-tag">Limited-time offer</p>
+          <h3>{{ o.title }}</h3>
+          <p>{{ o.blurb }}</p>
+          <span class="offer-cta">{{ o.cta_label }} →</span>
+        </div>
+      </a>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<section class="container section">
+  <h2 class="section-title">Your Lifelong Travel Partner for Every Journey</h2>
+  <div class="brand-categories">
+    {% for cat, brands in brand_groups %}
+    <div class="brand-cat">
+      <h3>{{ cat }}</h3>
+      <ul>
+        {% for b in brands %}
+        <li><a href="/brands.mi">{{ b.name }}</a></li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% endblock %}

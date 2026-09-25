@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}My Profile | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:22px">
+  <div class="account-layout">
+    <aside class="account-nav">
+      <div class="who">
+        <div class="nm">{{ current_user.full_name }}</div>
+        <div style="font-size:13px">{{ current_user.email }}</div>
+      </div>
+      <ul>
+        <li><a href="{{ url_for('account_profile') }}" class="active">Dashboard</a></li>
+        <li><a href="{{ url_for('account_edit') }}">Edit Your Account</a></li>
+        <li><a href="{{ url_for('account_change_password') }}">Change Password</a></li>
+        <li><a href="{{ url_for('account_saved_jobs') }}">Saved Jobs</a></li>
+        <li><a href="{{ url_for('account_saved_searches') }}">Saved Searches</a></li>
+        <li><a href="{{ url_for('account_applications') }}">Applications</a></li>
+        <li><a href="{{ url_for('account_resume') }}">My Resume</a></li>
+        <li><a href="{{ url_for('account_cover_letters') }}">My Cover Letters</a></li>
+        <li><a href="{{ url_for('account_career_plan') }}">Make a Plan</a></li>
+        <li><form method="post" action="{{ url_for('account_logout') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="" style="font:inherit;cursor:pointer">Sign Out</button></form></li>
+      </ul>
+    </aside>
+
+    <section class="content-page">
+      <h1 style="font-size:26px">Dashboard</h1>
+      <div class="stat-row">
+        <div class="stat-box"><div class="n">{{ saved|length }}</div><div class="l">Saved jobs</div></div>
+        <div class="stat-box"><div class="n">{{ applications|length }}</div><div class="l">Applications</div></div>
+        <div class="stat-box"><div class="n">{{ searches|length }}</div><div class="l">Saved searches</div></div>
+        <div class="stat-box"><div class="n">{{ letters }}</div><div class="l">Cover letters</div></div>
+        <div class="stat-box"><div class="n">{{ open_tasks }}</div><div class="l">Open plan tasks</div></div>
+      </div>
+
+      <h2>Recent saved jobs</h2>
+      {% if saved %}
+        <table class="data">
+          <tr><th>Job</th><th>Company</th><th>Location</th><th>Saved</th></tr>
+          {% for s in saved[:5] %}
+            <tr>
+              <td><a href="{{ url_for('job_detail', jobid=s_job.jobid) if False else url_for('job_detail', jobid=s.job.jobid) }}">{{ s.job.title }}</a></td>
+              <td>{{ s.job.company }}</td>
+              <td>{{ s.job.city }}</td>
+              <td>{{ s.saved_at.strftime('%Y-%m-%d') }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p>No saved jobs yet. <a href="{{ url_for('jobs_search') }}">Search jobs</a> and save the ones you like.</p>
+      {% endif %}
+
+      <h2>Recent applications</h2>
+      {% if applications %}
+        <table class="data">
+          <tr><th>Job</th><th>Applied</th><th>Status</th></tr>
+          {% for a in applications[:5] %}
+            <tr>
+              <td><a href="{{ url_for('job_detail', jobid=a.job.jobid) }}">{{ a.job.title }}</a></td>
+              <td>{{ a.applied_at.strftime('%Y-%m-%d') }}</td>
+              <td>{{ a.status }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p>You have not applied to any jobs yet.</p>
+      {% endif %}
+
+      <h2>Saved searches</h2>
+      {% if searches %}
+        <table class="data">
+          <tr><th>Name</th><th>Alerts</th><th>Frequency</th><th>Created</th></tr>
+          {% for s in searches[:5] %}
+            <tr>
+              <td><a href="{{ url_for('jobs_search', **s.params) }}">{{ s.name }}</a></td>
+              <td>{{ 'On' if s.alerts_enabled else 'Off' }}</td>
+              <td>{{ s.frequency }}</td>
+              <td>{{ s.created_at.strftime('%Y-%m-%d') }}</td>
+            </tr>
+          {% endfor %}
+        </table>
+      {% else %}
+        <p>No saved searches yet. Save one from any job search results page.</p>
+      {% endif %}
+
+      <h2>Career plan</h2>
+      {% if plan_tasks %}
+        <ul>
+          {% for t in plan_tasks[:5] %}
+            <li>{{ t.description }}{% if t.deadline %} &mdash; due {{ t.deadline }}{% endif %} {% if t.done %}&#9989;{% endif %}</li>
+          {% endfor %}
+        </ul>
+        <p><a class="btn secondary small" href="{{ url_for('account_career_plan') }}">Open my career plan</a></p>
+      {% else %}
+        <p>No plan tasks yet. <a href="{{ url_for('account_career_plan') }}">Make a plan</a> to keep your search on track.</p>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

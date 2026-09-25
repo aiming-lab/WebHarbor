@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}My Resume | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:22px">
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section class="content-page">
+      <h1 style="font-size:26px">My Resume</h1>
+      <p>A modern resume is the best way to present yourself. Create a resume that highlights your skills &amp; strengths. An active resume also powers SkillsMatch below.</p>
+      <div class="form-card">
+        <form method="post">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <div class="form-row">
+            <label for="title">Resume title</label>
+            <input type="text" id="title" name="title" value="{{ resume.title if resume else '' }}">
+          </div>
+          <div class="form-row">
+            <label for="summary">Summary</label>
+            <textarea id="summary" name="summary">{{ resume.summary if resume else '' }}</textarea>
+          </div>
+          <div class="form-row">
+            <label for="skills">Skills (comma separated)</label>
+            <textarea id="skills" name="skills">{{ resume.skills if resume else '' }}</textarea>
+            <div class="hint">Example: nursing, patient care, medication administration</div>
+          </div>
+          <div class="form-row">
+            <label for="experience">Work experience</label>
+            <textarea id="experience" name="experience">{{ resume.experience if resume else '' }}</textarea>
+          </div>
+          <div class="form-row">
+            <label><input type="checkbox" name="active" {% if resume and resume.active %}checked{% endif %}> Make this resume active (visible to employers)</label>
+          </div>
+          <button class="btn" type="submit">Save resume</button>
+        </form>
+      </div>
+
+      {% if matches %}
+        <h2 style="margin-top:28px">SkillsMatch: jobs that fit your skills</h2>
+        <div class="list-box">
+          {% for job, score in matches %}
+            <div class="list-row">
+              <div class="sr_jobsummary"><h3><a href="{{ url_for('job_detail', jobid=job.jobid) }}">{{ job.title }}</a></h3></div>
+              <div class="company">{{ job.company }}</div>
+              <div class="loc">{{ job.city }}</div>
+              <div class="loc">{{ job.posted_date }}</div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</div>
+{% endblock %}

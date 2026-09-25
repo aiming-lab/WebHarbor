@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+{% block title %}{{ s.name }} | Michaels{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('store_locator', q=s.state) }}">All {{ s.state }} stores</a></p>
+<h1>{{ s.name }}</h1>
+<p>{{ s.address }}, {{ s.city }}, {{ s.state }} {{ s.zip }}</p>
+<p><a href="tel:{{ s.phone }}">{{ s.phone }}</a></p>
+<section class="store-card"><h2>Store hours</h2><div class="store-hours">
+{% for day, hours in s.hours_list() %}<div><span>{{ day }}</span><span>{{ hours }}</span></div>{% endfor %}
+</div><h2>Services</h2><ul>{% for key, on in s.service_list().items() %}{% if on %}<li>{{ key.replace('_', ' ')|title }}</li>{% endif %}{% endfor %}</ul></section>
+{% endblock %}

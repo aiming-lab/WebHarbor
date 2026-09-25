@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Live Airline Flight Cancellations Info & Statistics - FlightAware{% endblock %}
+{% block content %}
+<div class="page-title-bar">FLIGHTAWARE.COM LIVE FLIGHT DELAY AND CANCELLATION STATISTICS FOR TODAY</div>
+
+<div class="panel">
+  <div class="panel-head">Today's totals</div>
+  <div class="panel-body kv">
+    {% for key, label in [
+      ('world_delays_today', 'Total delays today:'),
+      ('us_delays_today', 'Total delays within, into, or out of the United States today:'),
+      ('world_cancel_today', 'Total cancellations today:'),
+      ('us_cancel_today', 'Total cancellations within, into, or out of the United States today:'),
+    ] %}
+      {% if totals.get(key) %}
+      <div><span class="k">{{ label }}</span>&nbsp;&nbsp;<b>{{ totals[key].value_int | commas }}</b></div>
+      {% endif %}
+    {% endfor %}
+    <p>
+      <a href="/live/airport/delays/">See all delays.</a><br>
+      See the <a href="/miserymap/">MiseryMap</a> for a live visualization of flight delays.
+    </p>
+  </div>
+</div>
+
+{% for scope, title in [('airline', 'BY AIRLINE'), ('origin', 'BY ORIGIN AIRPORT'), ('dest', 'BY DESTINATION AIRPORT')] %}
+<div class="panel">
+  <div class="panel-head">{{ title }} &mdash; CANCELLED / DELAYED</div>
+  <div class="table-scroll"><table class="data">
+    <tr><th colspan="2">Cancelled</th><th colspan="2">Delayed</th><th>{{ 'AIRLINE' if scope == 'airline' else 'AIRPORT' }}</th></tr>
+    <tr><th>#</th><th>%</th><th>#</th><th>%</th><th></th></tr>
+    {% for row in stats_by.get(scope, []) %}
+    <tr>
+      <td>{{ row.cancelled }}</td>
+      <td>{{ row.cancelled_pct }}</td>
+      <td>{{ row.delayed }}</td>
+      <td>{{ row.delayed_pct }}</td>
+      <td>{{ row.label }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="5">No data.</td></tr>
+    {% endfor %}
+  </table></div>
+</div>
+{% endfor %}
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Healthgrades - Find a Doctor{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="hero-inner">
+        <h1>Feel better about finding healthcare</h1>
+        <p>Profiles for every doctor in America. Search by what matters most to you.</p>
+        <form class="hero-search-form" action="{{ url_for('search') }}" method="get">
+            <input type="text" name="q" placeholder="Doctor, condition, or specialty" autocomplete="off">
+            <button type="submit">Search</button>
+        </form>
+    </div>
+</section>
+
+<section class="specialty-tiles">
+    {% for s in top_specialties %}
+    <a href="{{ url_for('specialty_page', slug=s.slug) }}" class="specialty-tile">{{ s.name }}</a>
+    {% endfor %}
+</section>
+
+<section class="doctor-section">
+    <h2>Top Rated Doctors</h2>
+    <div class="doctor-grid">
+        {% for doctor in top_rated %}
+            {% include '_doctor_card.html' %}
+        {% endfor %}
+    </div>
+</section>
+
+<section class="doctor-section">
+    <h2>Explore More Providers</h2>
+    <div class="doctor-grid">
+        {% for doctor in featured %}
+            {% include '_doctor_card.html' %}
+        {% endfor %}
+    </div>
+</section>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Deals - Google Shopping{% endblock %}
+{% block content %}
+<h1 class="page-title">Deals</h1>
+{% if products %}
+<div class="deal-grid">
+  {% for p in products %}
+  <a class="pcard" href="{{ url_for('product', upstream_id=p.upstream_id) }}">
+    <div class="tile">
+      {% if p.discount_pct %}<span class="badge">{{ p.discount_pct }}% OFF</span>{% endif %}
+      <img src="{{ url_for('static', filename='images/' + p.image) }}" alt="{{ p.title }}">
+    </div>
+    <div class="caption">
+      <div class="title">{{ p.title }}</div>
+      <div class="meta">
+        <span class="merchant">
+          {% if p.merchant_favicon %}<img src="{{ url_for('static', filename='images/' + p.merchant_favicon) }}" alt="">{% endif %}
+          {{ p.merchant_name }}
+        </span>
+        <span class="dot">&middot;</span>
+        <span class="pricegroup">
+          <span class="price">{{ p.price_display }}</span>
+          {% if p.was_display %}<span class="was">{{ p.was_display }}</span>{% endif %}
+        </span>
+      </div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+{% else %}
+<div class="empty-state">
+  <h1>Nothing to see here</h1>
+  <p>Browse the rest of Google Shopping</p>
+  <a class="home-btn" href="{{ url_for('index') }}">Go to Shopping home</a>
+</div>
+{% endif %}
+{% endblock %}

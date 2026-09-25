@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+{% block title %}{{ station.name }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('nearby') }}">Stations</a> › {{ station.name }}</div>
+  <h1>{{ station.name }}</h1>
+</div>
+
+<div class="card">
+  {% if station.agency == 'subway' %}
+  <p>Lines serving this station:
+    {% for line in station.lines | fromjson %}
+      <a class="line-link" href="{{ url_for('line_alerts', line=line) }}"><span class="line line-{{ line }}">{{ line }}</span></a>
+    {% endfor %}
+  </p>
+  <p>Borough: {{ station.borough }}</p>
+  {% else %}
+  <p>{{ 'Long Island Rail Road' if station.agency == 'lirr' else 'Metro-North Railroad' }} station{% if station.zone %} — fare zone {{ station.zone }}{% endif %}</p>
+  {% endif %}
+  <p>{% if station.wheelchair %}This is an accessible station with ramps, tactile warning strips, and&nbsp;audiovisual passenger information systems.{% if station.access_note %} Accessibility applies {{ station.access_note }}.{% endif %}{% else %}This station is not listed as accessible.{% endif %}</p>
+  {% if transfers %}
+  <p>Free transfers to:
+    {% for t in transfers %}<a href="{{ url_for('station_page', sid=t.id) }}">{{ t.name }}</a>{% if not loop.last %}, {% endif %}{% endfor %}
+  </p>
+  {% endif %}
+</div>
+
+{% if alerts %}
+<div class="card">
+  <h2>Service alerts affecting this station</h2>
+  {% for a in alerts %}
+  <div class="alert-entry">
+    <div class="alert-type">{{ a.alert_type }}</div>
+    {% if a.header_html %}{{ a.header_html | safe }}{% else %}<p>{{ a.header_text }}</p>{% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% endif %}
+
+{% if elevators %}
+<div class="card">
+  <h2>Elevators and escalators at this station</h2>
+  <table class="data">
+    <thead><tr><th>Equipment</th><th>Type</th><th>Serving</th><th>ADA</th></tr></thead>
+    <tbody>
+      {% for e in elevators %}
+      <tr>
+        <td>{{ e.equipmentno }}</td>
+        <td>{{ 'Elevator' if e.equipmenttype == 'EL' else 'Escalator' }}</td>
+        <td>{{ e.serving }}</td>
+        <td>{{ 'Yes' if e.ada else 'No' }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p><a href="{{ url_for('elevator_status') }}">Check elevator and escalator status &rarr;</a></p>
+</div>
+{% endif %}
+
+{% if outages %}
+<div class="card">
+  <h2>Current outages at this station</h2>
+  <table class="data">
+    <thead><tr><th>Equipment</th><th>Serving</th><th>Outage date</th><th>Estimated return</th><th>Reason</th></tr></thead>
+    <tbody>
+      {% for o in outages %}
+      <tr>
+        <td>{{ o.equipmentno }}</td>
+        <td>{{ o.serving }}</td>
+        <td>{{ o.outage_date }}</td>
+        <td>{{ o.estimated_return }}</td>
+        <td>{{ o.reason }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% if station.agency == 'subway' %}
+<div class="card">
+  <h2>Schedules</h2>
+  <ul class="quick-links">
+    {% for line in station.lines | fromjson %}
+    <li><a href="{{ url_for('subway_schedule', line=SUBWAY_SLUGS.get(line, line.lower())) }}">{{ line }} train schedule</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+{% endblock %}

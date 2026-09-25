@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}{{ job.title }} | OhioMeansJobs | Ohio.gov{% endblock %}
+{% block content %}
+<div class="container content-page" style="padding-top:18px">
+  <div class="breadcrumb"><a href="{{ url_for('jobs_search') }}" onclick="if (document.referrer) { history.back(); return false; }">&lt; Back to previous page</a></div>
+
+  <div class="detail-layout">
+    <aside class="jobsummary">
+      <div class="navHeader">Job Summary</div>
+      <dl>
+        <dt>Company</dt>
+        <dd><a href="{{ url_for('company_profile', slug=job.company_slug) }}">{{ job.company }}</a></dd>
+        <dt>Location</dt>
+        <dd>{{ job.city }}</dd>
+        <dt>Posted</dt>
+        <dd>{{ job.posted_date }}</dd>
+        <dt>Job Type</dt>
+        <dd>
+          <ul>
+            {% for t in job.type_list %}<li>{{ t }}</li>{% endfor %}
+          </ul>
+        </dd>
+        <dt>Job Reference Code</dt>
+        <dd>{{ job.ref_code or 'NA' }}</dd>
+        {% if job.industry_code %}
+          <dt>Industry</dt>
+          <dd>{{ industry_names.get(job.industry_code, job.industry_code) }}</dd>
+        {% endif %}
+        {% if job.salary_band %}
+          <dt>Salary Range</dt>
+          <dd>{{ salary_names.get(job.salary_band, '') }}</dd>
+        {% endif %}
+        {% if job.education_level %}
+          <dt>Education</dt>
+          <dd>{{ education_names.get(job.education_level, '') }}</dd>
+        {% endif %}
+        {% if job.cert_list %}
+          <dt>Certificates</dt>
+          <dd>
+            <ul>
+              {% for c in job.cert_list %}<li>{{ cert_names.get(c, c) }}</li>{% endfor %}
+            </ul>
+          </dd>
+        {% endif %}
+      </dl>
+      <p style="padding:0 14px 12px">
+        <a href="{{ url_for('company_profile', slug=job.company_slug) }}">See all jobs from this company</a>
+      </p>
+    </aside>
+
+    <div class="jobdescription">
+      <h2>{{ job.title }}</h2>
+      <div class="company-line">{{ job.company }} &middot; {{ job.city }} &middot; Job ID {{ job.jobid }}</div>
+
+      <div class="buttons">
+        {% if current_user.is_authenticated %}
+          {% if not applied %}
+            <a class="btn" href="{{ url_for('job_apply', jobid=job.jobid) }}">Apply</a>
+          {% else %}
+            <a class="btn secondary" href="{{ url_for('account_applications') }}">View my applications</a>
+          {% endif %}
+          <form method="post" action="{{ url_for('job_save', jobid=job.jobid) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="btn secondary" type="submit">{{ 'Remove from My Profile' if saved else 'Save to My Profile' }}</button>
+          </form>
+        {% else %}
+          <a class="btn" href="{{ url_for('account_login', next=request.path) }}">Apply</a>
+          <a class="btn secondary" href="{{ url_for('account_login', next=request.path) }}">Save to My Profile</a>
+        {% endif %}
+        <a class="btn secondary" href="{{ url_for('contact_us') }}">Report this job</a>
+      </div>
+
+      {% if applied %}
+        <div class="apply-note">You have already applied to this job. Track it under My Profile &rarr; Applications.</div>
+      {% endif %}
+
+      <h3>About the Job</h3>
+      <div class="about">{{ job.description }}</div>
+
+      {% if similar %}
+        <h3>More jobs from {{ job.company }}</h3>
+        <div class="list-box">
+          {% for s in similar %}
+            <div class="list-row">
+              <div class="sr_jobsummary"><h3><a href="{{ url_for('job_detail', jobid=s.jobid) }}">{{ s.title }}</a></h3></div>
+              <div class="company">{{ s.company }}</div>
+              <div class="loc">{{ s.city }}</div>
+              <div></div>
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

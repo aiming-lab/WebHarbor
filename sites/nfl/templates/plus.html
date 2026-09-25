@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}NFL+ | Live Games on mobile, NFL RedZone, NFL Network and More!{% endblock %}
+{% block content %}
+<section class="plus-hero">
+  <div class="plus-hero-inner">
+    <div class="plus-hero-copy">
+      <h1>Live Games on Mobile. NFL RedZone. NFL Network.</h1>
+      <p>Stream live local and prime-time games, catch every touchdown from around the league with NFL RedZone, and watch NFL Network 24/7 — all with NFL+.</p>
+      <div class="plus-hero-ctas">
+        <a class="btn btn-red" href="{{ url_for('plus_subscribe', code='nfl_plus_premium_annual') }}">Subscribe Now</a>
+        <a class="btn btn-outline" href="#plans">Learn More</a>
+      </div>
+    </div>
+    <div class="plus-hero-art">
+      <img src="/static/images/global/nflplus-mlp-logo-premium.png" alt="NFL+ Premium">
+    </div>
+  </div>
+</section>
+
+<section class="section" id="plans">
+  <h2 class="section-title">CHOOSE YOUR PLAN</h2>
+  <div class="plan-grid">
+    {% for code, plan in plans.items() %}
+    <article class="plan-card {{ 'plan-card--premium' if 'premium' in code else '' }}">
+      <h3>{{ plan.title }}</h3>
+      <p class="plan-price">${{ '%.2f' | format(plan.amount) }}<span> /{{ 'month' if plan.cycle == 'month' else 'year' }}</span></p>
+      <p class="plan-blurb">{{ plan.blurb }}</p>
+      <a class="btn btn-red" href="{{ url_for('plus_subscribe', code=code) }}">Subscribe Now</a>
+    </article>
+    {% endfor %}
+  </div>
+  <p class="fine-print">Plans auto-renew at the then-current rate until cancelled. See Subscription Terms &amp; Conditions.</p>
+</section>
+
+<section class="section">
+  <h2 class="section-title">WATCH WITH NFL+ PREMIUM</h2>
+  <div class="video-grid">
+    {% for v in chrome_headlines[:0] %}{% endfor %}
+    <a class="card card-video" href="{{ url_for('videos_index', channel='latest-buzz') }}">
+      <figure><img src="/static/images/global/nflplus-mlp-redzone.png" alt="NFL RedZone"><span class="play-badge">▶</span></figure>
+      <div class="card-body"><span class="kicker">NFL REDZONE</span><h4>NFL RedZone</h4><p class="byline">Catch every touchdown from every game, Sunday afternoons.</p></div>
+    </a>
+    <a class="card card-video" href="{{ url_for('videos_index', channel='latest-buzz') }}">
+      <figure><img src="/static/images/global/nflplus-mlp-network.png" alt="NFL Network"><span class="play-badge">▶</span></figure>
+      <div class="card-body"><span class="kicker">NFL NETWORK</span><h4>NFL Network</h4><p class="byline">24/7 football coverage, live on NFL+.</p></div>
+    </a>
+    <a class="card card-video" href="{{ url_for('videos_index', channel='game-highlights') }}">
+      <figure><img src="/static/images/global/nflplus-mlp-desktop.png" alt="Game replays"><span class="play-badge">▶</span></figure>
+      <div class="card-body"><span class="kicker">REPLAYS</span><h4>Full Game Replays</h4><p class="byline">Watch full-game and condensed replays on demand.</p></div>
+    </a>
+    <a class="card card-video" href="{{ url_for('videos_index', channel='the-insiders') }}">
+      <figure><img src="/static/images/global/nflplus-badge.png" alt="NFL+ originals"><span class="play-badge">▶</span></figure>
+      <div class="card-body"><span class="kicker">ORIGINALS</span><h4>NFL+ Originals</h4><p class="byline">The Insiders, GMFB and more, ad-free with Premium.</p></div>
+    </a>
+  </div>
+</section>
+
+<section class="panel panel-plus panel-plus--wide">
+  <h2 class="panel-title">NFL+ PERKS</h2>
+  <ul class="perk-list">
+    <li>Live local &amp; prime-time games on mobile &amp; tablet</li>
+    <li>Live out-of-market preseason games</li>
+    <li>Live game audio (home, away &amp; national calls)</li>
+    <li>Ad-free game replays and condensed games (Premium)</li>
+    <li>NFL RedZone and Coaches Film (Premium)</li>
+    <li>The Athletic Premium included with annual plans</li>
+  </ul>
+</section>
+{% endblock %}

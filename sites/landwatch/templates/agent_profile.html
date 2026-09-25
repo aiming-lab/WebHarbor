@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% from "_listing_card.html" import listing_card %}
+{% block title %}{{ agent.name }} | {{ agent.company }} | Listings &amp; Information{% endblock %}
+
+{% block content %}
+<div class="lw-profile-banner">
+  <div class="lw-profile-portrait">
+    {% if agent.portrait_path() %}<img src="{{ agent.portrait_path() }}" alt="{{ agent.name }}">{% endif %}
+  </div>
+  <div class="lw-profile-tiles">
+    {% for listing in listings[:6] %}
+    <div class="lw-profile-tile">
+      <img src="{{ listing.card_photo() }}" alt="Listing by {{ agent.name }}">
+      <span class="lw-tile-price">For Sale {{ listing.price_display }}</span>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="lw-profile-body">
+  <div>
+    <div class="lw-profile-id">
+      <h1>{{ agent.name }}</h1>
+      <div class="lw-profile-company">{{ agent.company }}</div>
+      <div class="lw-profile-location">{% if agent.city %}{{ agent.city }}{% if agent.state_code %}, {{ agent.state_code }}{% endif %}{% endif %}</div>
+    </div>
+    <div class="lw-stats">
+      <div class="lw-stat">
+        <div class="lw-stat-value">{{ listings | length }}</div>
+        <div class="lw-stat-label">Total Listings</div>
+      </div>
+      <div class="lw-stat">
+        {% if listings %}
+        {% set prices = listings | map(attribute='price') | select | list %}
+        <div class="lw-stat-value">{{ prices | min | short_money }} - {{ prices | max | short_money }}</div>
+        {% else %}<div class="lw-stat-value">-</div>{% endif %}
+        <div class="lw-stat-label">Price Range</div>
+      </div>
+      <div class="lw-stat">
+        {% if listings %}
+        {% set acres = listings | map(attribute='acres') | select | list %}
+        <div class="lw-stat-value">{{ '%.2f' | format(acres | min) }} - {{ '%.0f' | format(acres | max) }} ac</div>
+        {% else %}<div class="lw-stat-value">-</div>{% endif %}
+        <div class="lw-stat-label">Acre Range</div>
+      </div>
+    </div>
+    <div class="lw-stats-note">Last five years</div>
+
+    {% if agent.about %}
+    <h2 class="lw-h2">About {{ agent.name }}</h2>
+    <div class="lw-profile-about">{{ agent.about }}</div>
+    {% endif %}
+    {% if agent.website %}
+    <p style="margin-top: 14px;"><a href="{{ agent.website }}" rel="noopener noreferrer" target="_blank">Company Website</a></p>
+    {% endif %}
+
+    <h2 class="lw-h2">Listings by {{ agent.name }}</h2>
+    <div class="lw-listings-grid">
+      {% for listing in listings %}{{ listing_card(listing) }}{% endfor %}
+    </div>
+  </div>
+
+  <aside class="lw-agent-panel">
+    <div class="lw-agent-panel-head">
+      {% if agent.portrait_path() %}<img src="{{ agent.portrait_path() }}" alt="{{ agent.name }}">{% endif %}
+      <div>
+        <div class="lw-agent-panel-name">{{ agent.name }}</div>
+        <div class="lw-agent-panel-company">{{ agent.company }}</div>
+      </div>
+    </div>
+    <div class="lw-agent-panel-phone">
+      <img src="/static/icons/Call.svg" alt="" width="15" height="15"> {{ agent.phone }}
+    </div>
+    <form class="lw-contact-form" method="post" action="/contact-agent/{{ agent.account_id }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="text" name="name" placeholder="Name" aria-label="Name" required>
+      <input type="email" name="email" placeholder="Email Address" aria-label="Email Address" required>
+      <textarea name="message" placeholder="Write a message..." aria-label="Message" required></textarea>
+      <button class="lw-btn lw-btn-primary" type="submit">Send Message</button>
+    </form>
+    <a class="lw-btn lw-btn-outline-dark" style="width: 100%; margin-top: 12px;" href="/find-agent?state={{ agent.state_code }}">View All Listings by {{ agent.name }}</a>
+  </aside>
+</div>
+{% endblock %}
