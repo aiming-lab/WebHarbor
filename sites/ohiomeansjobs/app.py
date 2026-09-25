@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import json
 import os
+from urllib.parse import urlsplit
 import re
 from datetime import datetime
 
@@ -222,7 +223,7 @@ class NewsItem(db.Model):
     @property
     def paragraphs(self):
         try:
-            return json.loads(self.body)
+            return [re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m[1], 16)), p).replace('\\"', '"') for p in json.loads(self.body)]
         except Exception:
             return []
 
@@ -247,7 +248,7 @@ class HelpArticle(db.Model):
     @property
     def paragraphs(self):
         try:
-            return json.loads(self.body)
+            return [re.sub(r'\\u([0-9a-fA-F]{4})', lambda m: chr(int(m[1], 16)), p).replace('\\"', '"') for p in json.loads(self.body)]
         except Exception:
             return []
 
@@ -547,6 +548,22 @@ def search_url(args, **overrides):
 
 # ------------------------------------------------------------------ routes
 
+def valid_password(value):
+    return (8 <= len(value) <= 20 and any(c.isdigit() for c in value)
+            and any(c.isupper() for c in value) and any(c.islower() for c in value)
+            and any(not c.isalnum() and not c.isspace() for c in value)
+            and not any(c in value for c in "'@-\"<"))
+
+
+def local_redirect(target, fallback):
+    """Accept only paths on this mirror; browsers normalize backslashes."""
+    if target and target.startswith('/') and not target.startswith('//') and '\\' not in target and not any(ord(c) < 32 for c in target):
+        parts = urlsplit(target)
+        if not parts.scheme and not parts.netloc:
+            return target
+    return fallback
+
+
 @app.route('/')
 def home():
     total_jobs = Job.query.count()
@@ -643,7 +660,7 @@ def job_save(jobid):
         db.session.add(SavedJob(user_id=current_user.id, job_id=job.id))
         db.session.commit()
         flash('Job saved to your profile.', 'success')
-    return redirect(request.referrer or url_for('job_detail', jobid=jobid))
+    return redirect(local_redirect(request.referrer.removeprefix(request.host_url.rstrip('/')) if request.referrer and request.referrer.startswith(request.host_url) else None, url_for('job_detail', jobid=jobid)))
 
 
 @app.route('/jobs/apply/<jobid>', methods=['GET', 'POST'])
@@ -664,6 +681,8 @@ def job_apply(jobid):
         if not (first and last and '@' in email):
             flash('Please provide your first name, last name, and a valid email address.', 'danger')
             return render_template('job_apply.html', job=job, letters=letters, form=request.form)
+        if cl and not any(str(letter.id) == cl for letter in letters):
+            abort(400, 'Choose one of your own cover letters.')
         application = Application(user_id=current_user.id, job_id=job.id,
                                   first_name=first, last_name=last, email=email,
                                   phone=phone,
@@ -715,7 +734,7 @@ def career_quiz():
         picks = {}
         for i, question in enumerate(QUIZ_QUESTIONS):
             raw = request.form.get(f'q{i}')
-            if raw is None:
+            if raw not in {'0', '0.5', '1'}:
                 flash('Please answer every question to see your profile.', 'danger')
                 return render_template('career_quiz_form.html', questions=QUIZ_QUESTIONS)
             try:
@@ -874,10 +893,8 @@ def account_register():
             errors.append('Enter a valid email address.')
         if User.query.filter_by(email=email).first():
             errors.append('An account with that email already exists.')
-        if len(password) < 8:
-            errors.append('Password must be at least 8 characters long.')
-        if not any(c.isdigit() for c in password):
-            errors.append('Password must contain at least one number.')
+        if not valid_password(password):
+            errors.append('Password must be at least 8 characters and at most 20, with upper and lower case letters, a number and an allowed symbol.')
         if password != confirm:
             errors.append('Passwords do not match.')
         if errors:
@@ -906,14 +923,14 @@ def account_login():
             login_user(user)
             flash('Signed in. Welcome back!', 'success')
             nxt = request.args.get('next')
-            if nxt and nxt.startswith('/'):
-                return redirect(nxt)
+            if nxt:
+                return redirect(local_redirect(nxt, url_for('account_profile')))
             return redirect(url_for('account_profile'))
         flash('Invalid email or password.', 'danger')
     return render_template('login.html', form={})
 
 
-@app.route('/account/logout')
+@app.route('/account/logout', methods=['POST'])
 @login_required
 def account_logout():
     logout_user()
@@ -972,8 +989,8 @@ def account_change_password():
         confirm = request.form.get('confirm') or ''
         if not current_user.check_password(current_pw):
             flash('Your current password is incorrect.', 'danger')
-        elif len(new_pw) < 8 or not any(c.isdigit() for c in new_pw):
-            flash('New password must be at least 8 characters and contain a number.', 'danger')
+        elif not valid_password(new_pw):
+            flash('Use 8 to 20 characters with upper and lower case letters, a number and an allowed symbol.', 'danger')
         elif new_pw != confirm:
             flash('New passwords do not match.', 'danger')
         else:
@@ -1009,6 +1026,12 @@ def account_saved_searches():
         params_json = request.form.get('params') or '{}'
         frequency = request.form.get('frequency') or 'Daily'
         alerts = request.form.get('alerts') == 'on'
+        try:
+            params = json.loads(params_json)
+        except (ValueError, TypeError):
+            abort(400, 'Invalid search parameters.')
+        if not isinstance(params, dict) or any(not isinstance(v, (str, int, float)) for v in params.values()) or frequency not in {'Daily', 'Weekly', 'Monthly'}:
+            abort(400, 'Invalid saved search.')
         if not name:
             flash('Give your saved search a name.', 'danger')
             return redirect(url_for('account_saved_searches'))

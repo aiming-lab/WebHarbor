@@ -56,6 +56,10 @@ def run_checks(judge, traj, initial_db, after_db):
         latest = results[-1]
         judge.check("quiz_top_trait_enterprising", latest["top_trait"] == "Enterprising",
                    f"top_trait={latest['top_trait']!r}")
+    if results:
+        import json
+        scores = json.loads(results[-1]['scores'])
+        judge.check('quiz_preferences', scores.get('Enterprising') == 2 and scores.get('Realistic') == 0 and scores.get('Conventional') == 0, 'lead/persuade yes, tools/records no')
     check_only_tables_changed(judge, initial_db, after_db, STATEFUL_TABLES)
 
 

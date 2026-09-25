@@ -78,7 +78,9 @@ def run_checks(judge, traj, initial_db, after_db):
                 "Regional Health Center" and job["posted_date"] == "2026-09-24",
                 f"seed job row: {job['title'] if job else None!r}")
     # read-only task: nothing may change
-    check_read_only(judge, initial_db, after_db)
+    from verify_lib import check_signed_in_as, db_query
+    check_signed_in_as(judge, traj, 'alice.j@test.com')
+    judge.check('nurse_aide_saved', bool(db_query(after_db, "SELECT * FROM saved_jobs s JOIN jobs j ON j.id=s.job_id WHERE s.user_id=1 AND j.jobid='6931551303'")), 'requested opening saved')
 
 
 if __name__ == "__main__":

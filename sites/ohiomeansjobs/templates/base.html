@@ -31,7 +31,7 @@
       {% if current_user.is_authenticated %}
         <span>Hi, {{ current_user.first_name }}!</span>
         <a href="{{ url_for('account_profile') }}">My Profile</a>
-        <a href="{{ url_for('account_logout') }}">Sign Out</a>
+        <form method="post" action="{{ url_for('account_logout') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="" style="font:inherit;cursor:pointer">Sign Out</button></form>
       {% else %}
         <a href="{{ url_for('account_login') }}">Log In</a>
         <a href="{{ url_for('account_register') }}">Sign Up</a>

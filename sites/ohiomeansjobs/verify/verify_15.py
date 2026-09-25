@@ -62,7 +62,13 @@ def run_checks(judge, traj, initial_db, after_db):
                 f"expected {VETERAN_RESULTS} job results for the Hire a Veteran resource")
     judge.check("answer_first_faq_topic", contains_phrase(answer, FIRST_FAQ),
                 f"expected the first FAQ topic '{FIRST_FAQ}'")
-    check_read_only(judge, initial_db, after_db)
+    from verify_lib import db_query
+    old = {r['id'] for r in db_query(initial_db, 'SELECT id FROM contact_messages')}
+    rows = [r for r in db_query(after_db, 'SELECT * FROM contact_messages') if r['id'] not in old]
+    judge.check('onboarding_inquiry', len(rows) == 1 and rows[0]['name'] == 'Taylor Reed' and rows[0]['email'] == 'taylor.reed@example.com' and rows[0]['subject'] == 'Veteran hiring support', 'requested sender and subject')
+    if rows:
+        judge.check('company_hiring_goal', all(x in rows[0]['message'].lower() for x in ['lakefront manufacturing', 'veteran', 'onboarding']), 'company and recruiting goal')
+    judge.check('submission_confirmed', contains_phrase(answer, 'sent') or contains_phrase(answer, 'submitted'), 'inquiry confirmation')
 
 
 if __name__ == "__main__":

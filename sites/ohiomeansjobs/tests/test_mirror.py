@@ -211,7 +211,7 @@ def test_register_validation():
 def test_register_creates_account():
     c = fresh_client()
     r = c.post('/account/register', data={'email': 'new.user@test.com',
-                                          'password': 'NewUser123', 'confirm': 'NewUser123',
+                                          'password': 'NewUser123!', 'confirm': 'NewUser123!',
                                           'first_name': 'New', 'last_name': 'User'},
                follow_redirects=True)
     assert 'Dashboard' in r.get_data(as_text=True)
@@ -397,3 +397,52 @@ def test_search_results_do_not_leak_answer_fields():
     for row in rows[1:]:
         assert 'High Income Jobs' not in row
         assert 'Upper Middle Income' not in row
+
+
+def test_foreign_cover_letter_rejected():
+    from app import CoverLetter
+    c = login('alice.j@test.com', 'TestPass123!')
+    with app.app_context():
+        target = Job.query.filter(Job.id.notin_([a.job_id for a in Application.query.filter_by(user_id=1)])).first()
+        foreign = CoverLetter.query.filter(CoverLetter.user_id != 1).first().id
+        before = Application.query.count()
+    response = c.post('/jobs/apply/' + target.jobid, data={'first_name': 'Alice', 'last_name': 'Johnson', 'email': 'alice.j@test.com', 'cover_letter_id': str(foreign)})
+    assert response.status_code == 400
+    with app.app_context():
+        assert Application.query.count() == before
+
+
+def test_post_logout_and_safe_redirect():
+    c = fresh_client()
+    assert c.get('/account/logout').status_code == 405
+    for nxt in ['https://example.org', '//example.org', '/\\example.org']:
+        c = fresh_client()
+        r = c.post('/account/login', query_string={'next': nxt}, data={'email': 'alice.j@test.com', 'password': 'TestPass123!'})
+        assert r.headers['Location'] == '/account/profile'
+    c = fresh_client()
+    r = c.post('/account/login?next=/account/resume', data={'email': 'alice.j@test.com', 'password': 'TestPass123!'})
+    assert r.headers['Location'] == '/account/resume'
+
+
+def test_quiz_rejects_out_of_range_and_nonfinite():
+    from app import CareerQuizResult
+    for value in ['NaN', 'Infinity', '-1', '100']:
+        with app.app_context():
+            before = CareerQuizResult.query.count()
+        data = {f'q{i}': '0' for i in range(12)}; data['q0'] = value
+        fresh_client().post('/career-quiz/start', data=data)
+        with app.app_context():
+            assert CareerQuizResult.query.count() == before
+
+
+def test_saved_search_rejects_unusable_parameters():
+    c = login('carol.d@test.com', 'TestPass123!')
+    for params in ['[]', 'null', '{bad', '{"tjt": []}']:
+        assert c.post('/account/saved-searches', data={'name': 'invalid', 'params': params}).status_code == 400
+
+
+def test_password_matches_documented_rules():
+    from app import valid_password
+    assert valid_password('Nursing2026!')
+    for value in ['abcdefgh1', 'ONLYUPPER1!', 'NoDigits!!', 'Has@Sign1', 'A' * 21 + '1!']:
+        assert not valid_password(value)
