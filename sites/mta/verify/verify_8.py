@@ -51,6 +51,9 @@ def run_checks(judge, traj, initial_db, after_db):
         judge.check("added_trip_purpose", "medical" in (t["purpose"] or "").lower(),
                     f"purpose={t['purpose']!r}")
         judge.check("added_trip_status", t["status"] == "Scheduled", f"status={t['status']!r}")
+    if added:
+        judge.check("one_passenger", added[0]["passengers"] == 1, "Carol travels alone")
+        judge.check("destination_street", "79-01" in added[0]["destination_address"] and "broadway" in added[0]["destination_address"].lower(), "Hospital address must match")
     check_only_tables_changed(judge, initial_db, after_db, ("aar_trips",))
 
 

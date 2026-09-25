@@ -462,11 +462,17 @@ class Judge:
 
 
 def _png_ok(path):
+    from PIL import Image
     try:
-        head = Path(path).read_bytes()[:8]
-    except OSError:
+        with Image.open(path) as image:
+            if image.format != "PNG":
+                return False
+            image.verify()
+        with Image.open(path) as image:
+            image.load()
+        return True
+    except (OSError, ValueError, SyntaxError):
         return False
-    return head == b"\x89PNG\r\n\x1a\n"
 
 
 def check_trajectory_identity(judge, traj, task_id):
@@ -502,6 +508,21 @@ def check_visited_path(judge, traj, name, path):
     judge.check(name, navigated_to_path(traj, path), f"required: {path}")
 
 
+
+def check_precise_state(judge, task_id, initial_db, after_db):
+    # Preserve prior cases, claims, trips and account rows, including on writes.
+    for table in ("feedback_cases", "lost_claims", "aar_trips", "users"):
+        before = {r["id"]: r for r in rows_of(initial_db, table)}
+        after = {r["id"]: r for r in rows_of(after_db, table)}
+        judge.check(f"prior_{table}_preserved", all(after.get(k) == row for k, row in before.items()), f"Existing {table} rows must be preserved")
+    owners = {"MTA--8": ("aar_trips", "carol.d@test.com"), "MTA--19": ("feedback_cases", "david.k@test.com")}
+    if task_id in owners:
+        table, email = owners[task_id]
+        owner = user_by_email(initial_db, email)
+        added = added_rows(after_db, initial_db, table, "id")
+        judge.check("added_row_owner", len(added) == 1 and added[0]["user_id"] == owner["id"], "New record must belong to the requested user")
+    judge.check("large_reference_tables_unchanged", big_tables_fp(initial_db) == big_tables_fp(after_db), "Trips and stop-time reference tables must not change")
+
 def run_verifier(task_id, run_checks):
     ap = sys.argv
     args = {"--run_dir": None, "--initial_db": None, "--after_db": None, "--container": None}
@@ -523,6 +544,7 @@ def run_verifier(task_id, run_checks):
         initial_db, after_db = resolve_dbs(args["--run_dir"], args["--initial_db"],
                                            args["--after_db"], container)
         run_checks(judge, traj, initial_db, after_db)
+        check_precise_state(judge, task_id, initial_db, after_db)
     except Exception as exc:  # noqa: BLE001 — fail closed on any infra error
         print(json.dumps({"task_id": task_id, "pass": False,
                           "reason": f"infra_error: {type(exc).__name__}: {exc}",

@@ -9,7 +9,7 @@
   {% if errors %}
   <div class="errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
   {% endif %}
-  <form class="stack" method="post" action="{{ url_for('aar_book') }}">
+  <form class="stack" method="post" action="{{ url_for('aar_book') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="pickup">Pickup address</label>
     <input type="text" id="pickup" name="pickup" value="{{ form.get('pickup', '') }}" required>
     <label for="destination">Destination address</label>

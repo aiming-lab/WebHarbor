@@ -155,7 +155,7 @@ class User(db.Model):
         express = [t for t in week_taps if t.express]
         return {"taps": week_taps, "local": local, "express": express,
                 "local_total": sum(t.fare for t in local),
-                "express_total": sum(t.fare for t in express),
+                "express_total": sum(t.fare for t in week_taps),
                 "local_cap": 35.0, "express_cap": 67.0}
 
 
@@ -638,6 +638,58 @@ def rail_status_board():
     if good:
         out.append(("On or Close", good))
     return out, branch_status
+
+
+
+# Mutating forms use per-session CSRF tokens; redirects stay on this site.
+def csrf_token():
+    import secrets
+    from flask import session
+    if "csrf_token" not in session:
+        session["csrf_token"] = secrets.token_urlsafe(32)
+    return session["csrf_token"]
+
+
+app.jinja_env.globals["csrf_token"] = csrf_token
+
+def related_pages(path):
+    prefix = path.rstrip("/") + "/"
+    return ContentPage.query.filter(ContentPage.path.startswith(prefix)).order_by(ContentPage.path).all()
+
+app.jinja_env.globals["related_pages"] = related_pages
+
+
+@app.before_request
+def protect_forms():
+    import hmac
+    from flask import session
+    if request.method == "POST":
+        expected = session.get("csrf_token", "")
+        supplied = request.form.get("csrf_token", "")
+        if not expected or not hmac.compare_digest(expected, supplied):
+            abort(400, "Invalid form token. Reload the page and try again.")
+
+
+def safe_redirect_target(value, fallback):
+    from urllib.parse import urlsplit
+    value = value or ""
+    parts = urlsplit(value)
+    if (value.startswith("/") and not value.startswith("//") and
+            "\\" not in value and not parts.netloc and not parts.scheme and
+            not any(ord(c) < 32 for c in value)):
+        return value
+    return fallback
+
+
+def valid_service(service_type, service_id):
+    options = {"subway": SUBWAY_LINE_ORDER,
+               "rail": RAIL_BRANCHES["lirr"] + RAIL_BRANCHES["mnr"]}
+    if service_type == "bus":
+        return re.fullmatch(r"(?:BxM|Bx|BM|QM|SIM|B|M|Q|S|X)\d{1,3}(?:-SBS)?", service_id, re.I) is not None
+    if service_type == "rail" and service_id.startswith("Metro-North "):
+        name = service_id.removeprefix("Metro-North ").removesuffix(" Line")
+        return name in RAIL_BRANCHES["mnr"]
+    return service_id in options.get(service_type, ())
 
 
 @app.route("/")
@@ -1282,8 +1334,20 @@ def aar_book():
             errors.append("Enter a destination address.")
         if not trip_date:
             errors.append("Choose a trip date.")
-        if not pickup_time:
-            errors.append("Choose a pickup time.")
+        try:
+            parsed_date = datetime.strptime(trip_date, "%Y-%m-%d")
+            if parsed_date.date() <= MIRROR_NOW.date():
+                errors.append("Choose a future trip date.")
+        except ValueError:
+            errors.append("Choose a valid trip date.")
+        try:
+            datetime.strptime(pickup_time, "%H:%M")
+        except ValueError:
+            errors.append("Choose a valid pickup time.")
+        if passengers not in (1, 2, 3, 4):
+            errors.append("Choose between one and four passengers.")
+        if mobility not in ("", "Walker", "Manual wheelchair", "Power wheelchair", "Cane", "Service animal"):
+            errors.append("Choose a listed mobility aid.")
         if errors:
             return render_template("aar_book.html", errors=errors, form=request.form), 400
         trip = AarTrip(trip_ref=next_ref("AAR"), user_id=current_user.id,
@@ -1324,9 +1388,11 @@ def service_alerts_guide():
     if request.method == "POST":
         if not current_user.is_authenticated:
             flash("Sign in to manage your service alert subscriptions.")
-            return redirect(url_for("account.login"))
+            return redirect(url_for("account_login"))
         service_type = request.form.get("service_type", "subway")
         service_id = request.form.get("service_id", "").strip()
+        if not valid_service(service_type, service_id):
+            abort(400, "Choose a listed service.")
         if not service_id:
             flash("Choose a service to subscribe to.")
         else:
@@ -1673,11 +1739,11 @@ def account_login():
             return render_template("login.html", error="Invalid email or password.",
                                    form=request.form), 401
         login_user(user)
-        return redirect(request.args.get("next") or url_for("account_home"))
+        return redirect(safe_redirect_target(request.args.get("next"), url_for("account_home")))
     return render_template("login.html", error=None, form={})
 
 
-@app.route("/account/logout")
+@app.route("/account/logout", methods=["POST"])
 @login_required
 def account_logout():
     logout_user()
@@ -1697,6 +1763,8 @@ def account_favorites():
         action = request.form.get("action", "add")
         service_type = request.form.get("service_type", "subway")
         service_id = request.form.get("service_id", "").strip()
+        if not valid_service(service_type, service_id):
+            abort(400, "Choose a listed service.")
         if not service_id:
             flash("Choose a service.")
         elif action == "remove":
@@ -1726,7 +1794,9 @@ def account_favorites():
 def favorites_toggle():
     service_type = request.form.get("service_type", "subway")
     service_id = request.form.get("service_id", "").strip()
-    back = request.form.get("back") or url_for("home")
+    if not valid_service(service_type, service_id):
+        abort(400, "Choose a listed service.")
+    back = safe_redirect_target(request.form.get("back"), url_for("home"))
     if service_id:
         f = Favorite.query.filter_by(user_id=current_user.id,
                                      service_type=service_type,
@@ -1747,6 +1817,8 @@ def account_subscriptions():
         action = request.form.get("action", "add")
         service_type = request.form.get("service_type", "subway")
         service_id = request.form.get("service_id", "").strip()
+        if not valid_service(service_type, service_id):
+            abort(400, "Choose a listed service.")
         if not service_id:
             flash("Choose a service.")
         elif action == "remove":

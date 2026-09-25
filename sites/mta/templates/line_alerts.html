@@ -14,7 +14,7 @@
 
 <div class="card alert-dialog">
   {% if current_user.is_authenticated %}
-  <form method="post" action="{{ url_for('favorites_toggle') }}" style="float:right">
+  <form method="post" action="{{ url_for('favorites_toggle') }}" style="float:right"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <input type="hidden" name="service_type" value="{{ 'rail' if branch else 'subway' }}">
     <input type="hidden" name="service_id" value="{{ line }}">
     <input type="hidden" name="back" value="{{ request.path }}">

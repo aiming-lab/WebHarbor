@@ -25,7 +25,7 @@
     {% else %}
       <span class="rail-title">{{ f.service_id }} ({{ f.service_type }})</span>
     {% endif %}
-    <form method="post" action="{{ url_for('account_favorites') }}" style="margin:0 0 0 auto">
+    <form method="post" action="{{ url_for('account_favorites') }}" style="margin:0 0 0 auto"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
       <input type="hidden" name="action" value="remove">
       <input type="hidden" name="service_type" value="{{ f.service_type }}">
       <input type="hidden" name="service_id" value="{{ f.service_id }}">
@@ -38,7 +38,7 @@
 </div>
 <div class="card">
   <h2>Add a favorite</h2>
-  <form class="stack" method="post" action="{{ url_for('account_favorites') }}">
+  <form class="stack" method="post" action="{{ url_for('account_favorites') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="service_type">Service type</label>
     <select name="service_type" id="service_type">
       <option value="subway">Subway line</option>

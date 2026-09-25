@@ -11,7 +11,7 @@
     <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
   </div>
   {% endif %}
-  <form class="stack" method="post" action="{{ url_for('lost_claim_form', agency=agency_slug) }}">
+  <form class="stack" method="post" action="{{ url_for('lost_claim_form', agency=agency_slug) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="date_lost">Date you lost the item</label>
     <input type="date" id="date_lost" name="date_lost" value="{{ form.get('date_lost', '') }}" required>
     <label for="line_route">Line or route</label>

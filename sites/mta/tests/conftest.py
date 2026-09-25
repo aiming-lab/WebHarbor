@@ -10,6 +10,17 @@ import shutil
 import sys
 
 import pytest
+from flask.testing import FlaskClient
+
+
+class FormClient(FlaskClient):
+    def post(self, *args, **kwargs):
+        self.get("/account/login")
+        with self.session_transaction() as sess:
+            token = sess.get("csrf_token")
+        kwargs["data"] = {**kwargs.get("data", {}), "csrf_token": token}
+        return super().post(*args, **kwargs)
+
 
 SITE = pathlib.Path(__file__).resolve().parent.parent
 SEED = SITE / "instance_seed" / "mta.db"
@@ -29,6 +40,7 @@ def app(tmp_path):
         import importlib
         import app as app_module
         importlib.reload(app_module)
+        app_module.app.test_client_class = FormClient
         yield app_module.app
     finally:
         os.environ.pop("MTA_DB_PATH", None)

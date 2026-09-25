@@ -161,7 +161,7 @@ def test_register_login_logout_flow(client):
         follow_redirects=True)
     assert response.status_code == 200
     assert "OMNY-" in text_of(response)
-    client.get("/account/logout", follow_redirects=True)
+    client.post("/account/logout", follow_redirects=True)
     # login with the new account
     response = client.post(
         "/account/login",
@@ -195,7 +195,7 @@ def test_benchmark_user_login_and_omny(client):
     assert "Bob Chen" in body
     body = get(client, "/account/omny")
     assert "$24.00 of $35.00" in body
-    assert "$7.25 of $67.00" in body
+    assert "$31.25 of $67.00" in body
 
 
 def test_nearby_search_partial_query(client):

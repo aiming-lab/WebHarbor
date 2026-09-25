@@ -9,7 +9,7 @@
   {% if errors %}
   <div class="errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
   {% endif %}
-  <form class="stack" method="post" action="{{ url_for('feedback_form') }}">
+  <form class="stack" method="post" action="{{ url_for('feedback_form') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="category">What is this about?</label>
     <select id="category" name="category" required>
       {% for c in ['Train or bus service', 'Elevator or escalator outage', 'Station or facility',

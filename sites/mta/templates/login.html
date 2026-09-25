@@ -9,7 +9,7 @@
   {% if error %}
   <div class="errors"><p>{{ error }}</p></div>
   {% endif %}
-  <form class="stack" method="post" action="{{ url_for('account_login') }}">
+  <form class="stack" method="post" action="{{ url_for('account_login') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
     <label for="email">Email address</label>
     <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" required>
     <label for="password">Password</label>
