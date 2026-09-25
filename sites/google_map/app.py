@@ -1016,8 +1016,10 @@ def _apply_place_sort(results, sort):
 
 
 @app.route("/search")
-def search():
-    q = request.args.get("q", "").strip()
+@app.route("/maps/search/")
+@app.route("/maps/search/<path:maps_query>")
+def search(maps_query=""):
+    q = (maps_query or request.args.get("q", "")).strip()
     sort = request.args.get("sort", "")
     args = request.args
 
