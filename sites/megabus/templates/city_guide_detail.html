@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% block title %}{{ guide.page_title or guide.title }} | megabus{% endblock %}
+{% block content %}
+<div class="page-hero">
+  {% if guide.hero and 'city-guides/hero-images' in guide.hero %}
+    <img src="{{ url_for('static', filename='images/' ~ guide.hero.split('/siteassets/')[1]) }}" alt="{{ guide.title }}">
+  {% else %}
+    <img src="{{ url_for('static', filename='images/home/megabus-website-hero-image-2024.jpg') }}" alt="{{ guide.title }}">
+  {% endif %}
+  <div class="hero-text"><h1>{{ guide.title or guide.page_title }}</h1></div>
+</div>
+<div class="content-main">
+  <div class="container-md prose">
+    {% for s in guide.sections %}
+      <div class="guide-section">
+        <h2>{{ s.heading }}</h2>
+        <div>{{ s.body | replace('\n', '<br>') | safe }}</div>
+      </div>
+    {% endfor %}
+    <p><a class="btn btn-primary" href="{{ url_for('home') }}">Book a trip</a></p>
+  </div>
+</div>
+{% endblock %}

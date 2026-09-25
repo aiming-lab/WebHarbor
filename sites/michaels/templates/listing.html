@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}{{ name }} | Michaels{% endblock %}
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <a href="/">Home</a> &rsaquo; {% if slug != 'search' %}<a href="/shop/{{ slug }}">{{ name.split(' results')[0] if 'results' in name else name }}</a>{% if sub_slug %} &rsaquo; <span>{{ subcategories | selectattr('slug','equalto',sub_slug) | map(attribute='name') | join(', ') }}</span>{% endif %}{% else %}<span>{{ name }}{% if query %}: "{{ query }}"{% endif %}</span>{% endif %}
+</nav>
+<div class="listing-layout">
+  <aside class="filters" aria-label="Filters">
+    <h3>Filters</h3>
+    {% if ways %}
+    <div class="filter-group">
+      <span class="filter-label">Shopping</span>
+      <a class="filter-chip {% if not ways %}active{% endif %}" href="{{ url_for_page(1, ways='') }}">All items</a>
+      <a class="filter-chip {% if ways == 'sale' %}active{% endif %}" href="{{ url_for_page(1, ways='sale') }}">Sale</a>
+      <a class="filter-chip {% if ways == 'clearance' %}active{% endif %}" href="{{ url_for_page(1, ways='clearance') }}">Clearance</a>
+      <a class="filter-chip {% if ways == 'new-arrivals' %}active{% endif %}" href="{{ url_for_page(1, ways='new-arrivals') }}">New Arrivals</a>
+    </div>
+    {% endif %}
+    <div class="filter-group">
+      <span class="filter-label">Price</span>
+      {% for key, meta in price_filters.items() %}
+      <a class="filter-chip {% if f_price == key %}active{% endif %}" href="{{ url_for_page(1, price=key if f_price != key else '') }}">{{ meta[0] }}</a>
+      {% endfor %}
+    </div>
+    <div class="filter-group">
+      <span class="filter-label">Customer Rating</span>
+      {% for r in [4.5, 4.0, 3.5] %}
+      <a class="filter-chip {% if f_rating == r|string %}active{% endif %}" href="{{ url_for_page(1, rating=r|string if f_rating != r|string else '') }}">{{ '%.1f'|format(r) }} &amp; Up</a>
+      {% endfor %}
+    </div>
+    {% if brands %}
+    <div class="filter-group">
+      <span class="filter-label">Brand</span>
+      {% for b in brands %}
+      <a class="filter-chip {% if f_brand == b %}active{% endif %}" href="{{ url_for_page(1, brand=b if f_brand != b else '') }}">{{ b }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if colors %}
+    <div class="filter-group">
+      <span class="filter-label">Color</span>
+      {% for c in colors %}
+      <a class="filter-chip {% if f_color == c %}active{% endif %}" href="{{ url_for_page(1, color=c if f_color != c else '') }}">{{ c }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    <div class="filter-group">
+      <span class="filter-label">Availability</span>
+      <a class="filter-chip {% if f_avail == 'pickup' %}active{% endif %}" href="{{ url_for_page(1, availability='pickup' if f_avail != 'pickup' else '') }}">Store Pickup</a>
+      <a class="filter-chip {% if f_avail == 'online' %}active{% endif %}" href="{{ url_for_page(1, availability='online' if f_avail != 'online' else '') }}">Online Only</a>
+    </div>
+  </aside>
+  <section class="listing-main">
+    <div class="listing-head">
+      <div>
+        <h1>{{ name }}{% if query %}: "{{ query }}"{% endif %}</h1>
+        <p class="result-count">{{ total }} result{{ 's' if total != 1 }}</p>
+      </div>
+      <form method="get" class="sort-form">
+        {% for k in ['q','sub','ways','price','brand','rating','color','availability'] %}
+          {% set v = request.args.get(k, '') %}
+          {% if v %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endif %}
+        {% endfor %}
+        <label for="sort">Sort by:</label>
+        <select id="sort" name="sort" onchange="this.form.submit()">
+          <option value="best" {% if sort == 'best' %}selected{% endif %}>Best Sellers</option>
+          <option value="newest" {% if sort == 'newest' %}selected{% endif %}>New Arrivals</option>
+          <option value="price_low" {% if sort == 'price_low' %}selected{% endif %}>Price: Low to High</option>
+          <option value="price_high" {% if sort == 'price_high' %}selected{% endif %}>Price: High to Low</option>
+          <option value="rating" {% if sort == 'rating' %}selected{% endif %}>Top Rated</option>
+        </select>
+      </form>
+    </div>
+    {% if subcategories %}
+    <div class="subcat-row">
+      <a class="subcat-chip {% if not sub_slug %}active{% endif %}" href="{{ url_for_page(1, sub='') }}">All {{ name }}</a>
+      {% for s in subcategories %}
+      <a class="subcat-chip {% if sub_slug == s.slug %}active{% endif %}" href="{{ url_for_page(1, sub=s.slug) }}">{{ s.name }}</a>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if products %}
+    <div class="product-grid">
+      {% for p in products %}
+        {% include '_product_card.html' %}
+      {% endfor %}
+    </div>
+    <div class="pagination">
+      {% if page > 1 %}<a href="{{ url_for_page(page - 1) }}">&lsaquo; Previous</a>{% endif %}
+      <span>Page {{ page }} of {{ pages }}</span>
+      {% if page < pages %}<a href="{{ url_for_page(page + 1) }}">Next &rsaquo;</a>{% endif %}
+    </div>
+    {% else %}
+    <div class="empty-state">
+      <h2>No results found</h2>
+      <p>Try a different search or remove some filters.</p>
+    </div>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}

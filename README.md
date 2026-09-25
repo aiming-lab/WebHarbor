@@ -34,7 +34,7 @@ WebHarbor takes a different approach. We leverage coding agent (e.g., Claude Cod
 - **Deep features unlocked** — carts, checkouts, accounts, all fully testable
 - **Evolving** — harder tasks drive richer mirrors; the environment grows with agents
 - **RL-ready** — sub-second database resets between rollouts
-- **Community-driven** — 87 sites today, scaling to 100+ together
+- **Community-driven** — 91 sites today, scaling to 100+ together
 
 ## 🚀 Quickstart
 
@@ -42,10 +42,10 @@ Build this checkout to run its registered web environments (published image tags
 
 ```bash
 ./scripts/build.sh webharbor:dev
-docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40086:40000-40086 webharbor:dev
+docker run -e WEBSYN_CONTROL_TOKEN -p 8101:8101 -p 40000-40090:40000-40090 webharbor:dev
 ```
 
-Then point your agent at `http://localhost:40000` through `http://localhost:40086` to explore 87 local mirrors. The table below lists every site in port order.
+Then point your agent at `http://localhost:40000` through `http://localhost:40090` to explore 91 local mirrors. The table below lists every site in port order.
 
 For sub-second reset between rollouts, expose the control plane and call `/reset/<site>`:
 
@@ -97,7 +97,8 @@ All registered websites and their default ports, in registration order from left
 | League of Legends | 40078 | Healthgrades | 40079 | Kelley Blue Book | 40080 |
 | UNIQLO | 40081 | Macy's Wine Shop | 40082 | JCPenney | 40083 |
 | LandWatch | 40084 | Medicare.gov | 40085 | Marriott | 40086 |
-| Ohio.gov | 40114 |  |  |  |  |
+| Megabus | 40087 | Michaels | 40088 | Micro Center | 40089 |
+| OhioMeansJobs | 40090 | | | | |
 
 ## 🤝 Contribute
 

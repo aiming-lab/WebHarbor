@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+{% block title %}Addresses | Michaels{% endblock %}
+{% block content %}
+<div class="account-layout">
+  <aside class="account-nav">
+    <h2>My Account</h2>
+    <ul>
+      <li><a href="{{ url_for('account') }}">Orders</a></li>
+      <li><a href="{{ url_for('account_profile') }}">Profile</a></li>
+      <li><a class="active" href="{{ url_for('account_addresses') }}">Addresses</a></li>
+      <li><a href="{{ url_for('account_payment') }}">Payment Methods</a></li>
+      <li><a href="{{ url_for('wishlist') }}">Wishlist</a></li>
+      <li><a href="{{ url_for('account_registrations') }}">Class Registrations</a></li>
+      <li><form method="post" action="{{ url_for('logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit">Sign Out</button></form></li>
+    </ul>
+  </aside>
+  <section class="account-main">
+    <h1>Addresses</h1>
+    {% for a in addresses %}
+    <article class="address-card">
+      <div><strong>{{ a.label }}</strong></div>
+      <div>{{ a.line1 }}{% if a.line2 %}, {{ a.line2 }}{% endif %}</div>
+      <div>{{ a.city }}, {{ a.state }} {{ a.zip_code }}</div>
+      <form action="{{ url_for('account_addresses') }}" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" value="{{ a.id }}">
+        <button type="submit" class="link-btn">Remove</button>
+      </form>
+    </article>
+    {% endfor %}
+    <h2>Add a new address</h2>
+    <form method="post" class="profile-form"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="action" value="add">
+      <label>Label<input type="text" name="label" value="Home"></label>
+      <label>Street address<input type="text" name="line1" required></label>
+      <label>Apt / Suite (optional)<input type="text" name="line2"></label>
+      <div class="form-row">
+        <label>City<input type="text" name="city" required></label>
+        <label>State<input type="text" name="state" required></label>
+        <label>ZIP<input type="text" name="zip_code" required></label>
+      </div>
+      <button type="submit" class="btn-primary">Add address</button>
+    </form>
+  </section>
+</div>
+{% endblock %}

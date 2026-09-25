@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ article.title }} | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container content-page" style="padding-top:18px">
+  <div class="breadcrumb"><a href="{{ url_for('help_center') }}">&lt; Back to Help Center</a></div>
+  <h1>{{ article.title }}</h1>
+  <div class="article-body">
+    {% for p in article.paragraphs %}
+      <p>{{ p }}</p>
+    {% endfor %}
+  </div>
+  <h2>Other help topics</h2>
+  <ul class="resource-list">
+    {% for a in others %}
+      <li><a href="{{ url_for('help_article', slug=a.slug) }}">{{ a.title }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

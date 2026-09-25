@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Bus Stops | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Bus Stops</h1>
+    <p>{{ stops_count }} stops across {{ grouped|length }} states and provinces, exactly as
+      served by megabus.com partner routes. Pick a city for stop details and boarding notes.</p>
+    {% for state in grouped|sort %}
+      <div class="state-block">
+        <h3>{{ state }}</h3>
+        {% for c in grouped[state] %}
+          <div class="city-line">
+            <b><a href="{{ url_for('stop_detail', slug=c.slug) }}">{{ c.name }}</a></b>
+            {% for name in stops_by_city.get(c.id, []) %}
+              <span class="stopname">{{ name }}</span>
+            {% endfor %}
+          </div>
+        {% endfor %}
+      </div>
+    {% endfor %}
+  </div>
+</div>
+{% endblock %}

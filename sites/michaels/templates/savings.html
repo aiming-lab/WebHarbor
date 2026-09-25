@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+{% block title %}Savings &amp; Deals on Crafts, Décor &amp; More | Michaels{% endblock %}
+{% block content %}
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a href="/">Home</a> &rsaquo; <span>Savings</span></nav>
+<h1>Savings</h1>
+<p class="page-sub">Today's coupons and featured deals. Print or apply to cart.</p>
+<div class="coupon-grid">
+  {% for c in coupons %}
+  <article class="coupon-card">
+    <div class="coupon-head">{{ c.headline }}</div>
+    <div class="coupon-scope">{{ c.scope }}</div>
+    <div class="coupon-meta">{{ 'In-Store Only' if c.channel == 'instore' else ('Online Only' if c.channel == 'online' else 'Online &amp; In-Store') }} &middot; Valid {{ c.valid_from }} - {{ c.valid_to }}</div>
+    <p class="coupon-desc">{{ c.description }}</p>
+    {% if c.code %}
+    <form action="/cart/coupon" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <input type="hidden" name="code" value="{{ c.code }}">
+      <button type="submit" class="btn-primary">Apply to cart ({{ c.code }})</button>
+    </form>
+    {% else %}
+    <span class="coupon-print">Print</span>
+    {% endif %}
+  </article>
+  {% endfor %}
+</div>
+<section class="home-section">
+  <div class="section-head"><h2>Featured Deals</h2></div>
+  <div class="product-grid">
+    {% for p in featured[:8] %}
+      {% include '_product_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+<section class="home-section">
+  <div class="section-head"><h2>Get 20% off when you open a Michaels™ Credit Card account</h2></div>
+  <p class="page-sub">Details &amp; Apply — earn rewards faster with the Michaels credit card.</p>
+</section>
+{% endblock %}

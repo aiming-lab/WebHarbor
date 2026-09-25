@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="hero">
+  <img src="{{ url_for('static', filename='images/' + banners[0]) }}" alt="{{ banners[0].split('_', 1)[1].replace('.jpg','').replace('-',' ') if '_' in banners[0] else 'Michaels' }}">
+</section>
+<div class="promo-strip">
+  <div class="container promo-inner">
+    <a href="/savings"><strong>30% off</strong> every regular price purchase with code <strong>GETMY30</strong></a>
+    <a href="/savings">Savings &amp; Deals</a>
+    <a href="/rewards">Michaels Rewards: Earn $5 when you spend $30+</a>
+  </div>
+</div>
+<section class="home-banners">
+  {% for b in banners[1:7] %}
+  <a class="banner-tile" href="/savings">
+    <img src="{{ url_for('static', filename='images/' + b) }}" alt="{{ b.split('_', 1)[1].replace('.jpg','').replace('-',' ') if '_' in b else 'banner' }}">
+  </a>
+  {% endfor %}
+</section>
+<section class="home-section">
+  <div class="section-head">
+    <h2>Best Sellers</h2>
+    <a href="/shop/art-supplies">View all</a>
+  </div>
+  <div class="product-grid">
+    {% for p in bestsellers[:8] %}
+      {% include '_product_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+<section class="home-section">
+  <div class="section-head">
+    <h2>New Arrivals</h2>
+    <a href="/shop/paint">View all</a>
+  </div>
+  <div class="product-grid">
+    {% for p in new_arrivals[:8] %}
+      {% include '_product_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+<section class="home-section home-classes">
+  <div class="section-head">
+    <h2>Learn With Michaels</h2>
+    <a href="/classes">View all classes</a>
+  </div>
+  <div class="class-strip">
+    {% for c in live_classes %}
+    <a class="class-card" href="/classes">
+      {% if c.image %}<img src="{{ url_for('static', filename='images/' + c.image) }}" alt="{{ c.title }}">{% endif %}
+      <span class="class-kind">Live Learning</span>
+      <span class="class-title">{{ c.title }}</span>
+      <span class="class-meta">{{ c.platform }}</span>
+      <span class="class-meta">{{ c.date }} &middot; {{ c.time_text }}</span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+<section class="home-section">
+  <div class="section-head">
+    <h2>Clearance</h2>
+    <a href="/shop/halloween">View all</a>
+  </div>
+  <div class="product-grid">
+    {% for p in clearance[:8] %}
+      {% include '_product_card.html' %}
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

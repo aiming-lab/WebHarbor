@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% block title %}My account | megabus{% endblock %}
+{% block content %}
+<div class="content-main">
+  <div class="container-md">
+    <h1>Hi {{ current_user.first_name }}</h1>
+    <p class="text-grey">{{ current_user.email }}</p>
+    <div class="account-grid">
+      <div class="panel">
+        <h2>Upcoming trips</h2>
+        {% for b in upcoming %}
+          <div class="booking-line">
+            <span class="ref">{{ b.reference }}</span>
+            <span class="status-tag {{ b.status }}">{{ b.status }}</span>
+            {% for bj, j in entries_of[b.id] %}
+              {% if j %}
+                <div class="journey-meta">{{ j.origin.name }} → {{ j.destination.name }} —
+                  {{ j.departure_date }} {{ fmt_time(j.dep_time) }} ({{ bj.passengers }} traveler{{ 's' if bj.passengers != 1 }})</div>
+              {% endif %}
+            {% endfor %}
+            <div class="journey-meta">Total {{ '%.2f'|format(b.total) }}</div>
+            <a href="{{ url_for('manage_booking', ref=b.reference) }}">Manage this booking</a>
+          </div>
+        {% else %}
+          <p class="text-grey">No upcoming trips yet. <a href="{{ url_for('home') }}">Book one now</a>.</p>
+        {% endfor %}
+      </div>
+      <div class="panel">
+        <h2>Past and cancelled trips</h2>
+        {% for b in past %}
+          <div class="booking-line">
+            <span class="ref">{{ b.reference }}</span>
+            <span class="status-tag {{ b.status }}">{{ b.status }}</span>
+            {% for bj, j in entries_of[b.id] %}
+              {% if j %}
+                <div class="journey-meta">{{ j.origin.name }} → {{ j.destination.name }} —
+                  {{ j.departure_date }} {{ fmt_time(j.dep_time) }}</div>
+              {% endif %}
+            {% endfor %}
+            <div class="journey-meta">Total {{ '%.2f'|format(b.total) }}</div>
+            <a href="{{ url_for('manage_booking', ref=b.reference) }}">View</a>
+          </div>
+        {% else %}
+          <p class="text-grey">No past trips yet.</p>
+        {% endfor %}
+      </div>
+      <div class="panel">
+        <h2>Saved travelers</h2>
+        {% for p in saved %}
+          <div class="city-line">{{ p.title }} {{ p.first_name }} {{ p.last_name }}
+            <span class="text-grey">· born {{ p.date_of_birth }}</span></div>
+        {% else %}
+          <p class="text-grey">No saved travelers yet.</p>
+        {% endfor %}
+      </div>
+      <div class="panel">
+        <h2>My details</h2>
+        <p>{{ current_user.full_name }}</p>
+        <p class="text-grey">{{ current_user.phone or 'No phone number saved' }}</p>
+        <a class="btn btn-outline btn-sm" href="{{ url_for('account_profile') }}">Edit my details</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

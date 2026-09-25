@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Log In | OhioMeansJobs{% endblock %}
+{% block content %}
+<div class="container" style="padding-top:26px">
+  <div class="form-card">
+    <h1>Log In</h1>
+    <p>All users of OhioMeansJobs.com must have an account to sign in.</p>
+    <form method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="form-row">
+        <label for="email">Email address</label>
+        <input type="email" id="email" name="email" value="{{ form.get('email','') }}" required>
+      </div>
+      <div class="form-row">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required>
+      </div>
+      <button class="btn" type="submit">Log In</button>
+      <p style="margin-top:14px">Don&rsquo;t have an account? <a href="{{ url_for('account_register') }}">Sign Up</a></p>
+    </form>
+  </div>
+</div>
+{% endblock %}
