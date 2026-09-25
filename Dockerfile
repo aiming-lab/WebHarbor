@@ -292,8 +292,13 @@ RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohiomeansjobs
 RUN cd /opt/WebSyn/ohiomeansjobs && rm -rf instance instance_seed && \
     PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__ instance_build
 
+# Ohio.gov: source-backed images and database-backed landing content.
+RUN python3 /opt/check_asset_inventory.py /opt/WebSyn/ohio_gov
+RUN cd /opt/WebSyn/ohio_gov && rm -rf instance instance_seed && \
+    PYTHONHASHSEED=0 python3 seed_data.py && rm -rf instance __pycache__
+
 RUN python3 /opt/check_seed_databases.py /opt/WebSyn
 
-EXPOSE 8101 40000-40090
+EXPOSE 8101 40000-40091
 
 CMD ["/opt/websyn_start.sh"]
