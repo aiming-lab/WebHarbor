@@ -11,10 +11,12 @@
   {% macro team_card(team) %}
     <div class="team-card">
       <a href="/team/{{ sport.slug }}/{{ team.slug }}">
-        <img class="team-logo-img"
-             src="{{ url_for('static', filename='images/espn/teams/' ~ sport.slug ~ '/' ~ (team.abbreviation or '').lower() ~ '.png') }}"
-             onerror="this.outerHTML='<div class=\'team-swatch\' style=\'background:{{ team.color_primary or '#333' }};\'></div>';"
-             alt="">
+        {% set logo = team_logo_url(sport.slug, team.abbreviation) %}
+        {% if logo %}
+        <img class="team-logo-img" src="{{ logo }}" alt="">
+        {% else %}
+        <div class="team-swatch" style="background:{{ team.color_primary or '#333' }};"></div>
+        {% endif %}
         <div class="team-card-body">
           <div class="team-fullname">{{ team.full_name or team.name }}</div>
           <div class="team-record">{{ team.wins }}-{{ team.losses }}</div>

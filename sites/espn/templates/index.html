@@ -29,8 +29,7 @@
         {% for sp in nav_sports %}
         <li>
           <a href="{{ sp.url_prefix }}">
-            <img src="{{ url_for('static', filename='images/espn/leagues/' ~ sp.slug ~ '.png') }}"
-                 onerror="this.style.display='none'" alt="">
+            <img src="{{ league_icon_url(sp.slug) }}" alt="">
             <span>{{ sp.display_name or sp.name }}</span>
           </a>
         </li>
@@ -78,7 +77,7 @@
       {% if data.news %}
       <section class="sport-collection">
         <header class="sport-collection__header">
-          <a href="/{{ sport_slug }}/"><img src="{{ url_for('static', filename='images/espn/leagues/' ~ sport_slug ~ '.png') }}" onerror="this.style.display='none'" alt=""></a>
+          <a href="/{{ sport_slug }}/"><img src="{{ league_icon_url(sport_slug) }}" alt=""></a>
           <h3><a href="/{{ sport_slug }}/">{{ sport_slug | upper }}</a></h3>
           <a class="see-all" href="/{{ sport_slug }}/news">See All</a>
         </header>
@@ -131,14 +130,14 @@
             <div class="score-strip__league">{{ sport_slug | upper }}</div>
             <div class="score-strip__row">
               <span class="score-strip__team">
-                <img class="score-row__logo" src="{{ url_for('static', filename='images/espn/teams/' ~ sport_slug ~ '/' ~ (game.away_team.abbreviation or '').lower() ~ '.png') }}" onerror="this.style.display='none'" alt="">
+                <img class="score-row__logo" src="{{ team_icon_url(sport_slug, game.away_team.abbreviation if game.away_team else '') }}" alt="">
                 <span>{{ game.away_team.abbreviation if game.away_team else '—' }}</span>
               </span>
               <span class="score {{ 'winner' if game.away_score > game.home_score else '' }}">{{ game.away_score }}</span>
             </div>
             <div class="score-strip__row">
               <span class="score-strip__team">
-                <img class="score-row__logo" src="{{ url_for('static', filename='images/espn/teams/' ~ sport_slug ~ '/' ~ (game.home_team.abbreviation or '').lower() ~ '.png') }}" onerror="this.style.display='none'" alt="">
+                <img class="score-row__logo" src="{{ team_icon_url(sport_slug, game.home_team.abbreviation if game.home_team else '') }}" alt="">
                 <span>{{ game.home_team.abbreviation if game.home_team else '—' }}</span>
               </span>
               <span class="score {{ 'winner' if game.home_score > game.away_score else '' }}">{{ game.home_score }}</span>

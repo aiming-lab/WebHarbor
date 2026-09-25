@@ -32,14 +32,14 @@
           <div class="score-header">{{ game.date_display or game.date }} &bull; {{ game.network }}</div>
           <div class="score-row">
             <span class="score-row__team">
-              {% if game.away_team %}<img class="score-row__logo" src="{{ url_for('static', filename='images/espn/teams/' ~ sport.slug ~ '/' ~ (game.away_team.abbreviation or '').lower() ~ '.png') }}" onerror="this.style.display='none'" alt="">{% endif %}
+              {% if game.away_team %}<img class="score-row__logo" src="{{ team_icon_url(sport.slug, game.away_team.abbreviation) }}" alt="">{% endif %}
               <span class="team-full">{{ game.away_team.full_name if game.away_team else 'Away' }}</span>
             </span>
             <span class="score-val {{ 'winner' if game.away_score > game.home_score else '' }}">{{ game.away_score }}</span>
           </div>
           <div class="score-row">
             <span class="score-row__team">
-              {% if game.home_team %}<img class="score-row__logo" src="{{ url_for('static', filename='images/espn/teams/' ~ sport.slug ~ '/' ~ (game.home_team.abbreviation or '').lower() ~ '.png') }}" onerror="this.style.display='none'" alt="">{% endif %}
+              {% if game.home_team %}<img class="score-row__logo" src="{{ team_icon_url(sport.slug, game.home_team.abbreviation) }}" alt="">{% endif %}
               <span class="team-full">{{ game.home_team.full_name if game.home_team else 'Home' }}</span>
             </span>
             <span class="score-val {{ 'winner' if game.home_score > game.away_score else '' }}">{{ game.home_score }}</span>
