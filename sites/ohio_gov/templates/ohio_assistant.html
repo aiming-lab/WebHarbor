@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% block title %}Meet the Ohio Assistant | Ohio.gov | Official Website of the State of Ohio{% endblock %}
+{% block content %}
+<article class="odx-content odx-content--resource">
+    <div class="container">
+        <div class="row">
+            <div class="col-xs-12 col-sm-12 col-md-8 col-lg-9">
+                <header id="odx-content-header" class="odx-content__header">
+                    <div class="odx-title">
+                        <h1 class="odx-content__title">Meet the Ohio Assistant</h1>
+                        <div class="odx-content__summary">
+                            Search multiple State of Ohio websites from one location.
+                        </div>
+                    </div>
+                </header>
+
+                <section class="odx-content-section">
+                    <h2>How to Use the Ohio Assistant</h2>
+                    <p>Type your question below. The Ohio Assistant searches Ohio.gov resources and returns the most relevant pages.</p>
+                    <form method="get" action="{{ url_for('ohio_assistant') }}" class="margin-bottom-md">
+                        <div class="form-group">
+                            <label for="q">Ask a question</label>
+                            <input type="text" class="form-control" id="q" name="q" value="{{ q }}" placeholder="e.g. How do I replace a lost driver license?">
+                        </div>
+                        <button class="btn btn-primary" type="submit">Ask</button>
+                    </form>
+
+                    {% if answer %}
+                    <div class="odx-collapsable__body margin-bottom-md" style="border-left: 4px solid #bb0000; padding: 12px;">
+                        <p class="odx-bold">{{ answer.text }}</p>
+                        <ul>
+                            {% for r in answer.results %}
+                            <li><a href="{{ r.path }}">{{ r.title }}</a> &mdash; {{ r.summary }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </section>
+
+                <section class="odx-content-section">
+                    <h2>Tips for Best Results</h2>
+                    <ul>
+                        <li>Use plain language and full sentences.</li>
+                        <li>Include important keywords such as "license", "benefits", or "unemployment".li>
+                        <li>One question at a time works best.</li>
+                    </ul>
+                </section>
+
+                <section class="odx-content-section">
+                    <h2>What the Ohio Assistant Can Do</h2>
+                    <ul>
+                        <li>Find official Ohio.gov resources and services.</li>
+                        <li>Point you to the right agency, board, or commission.</li>
+                        <li>Answer common questions using the Help Center FAQs.</li>
+                    </ul>
+                </section>
+
+                <section class="odx-content-section">
+                    <h2>What the Ohio Assistant Cannot Do</h2>
+                    <ul>
+                        <li>It cannot access your personal accounts or benefits.</li>
+                        <li>It cannot process applications or payments.</li>
+                        <li>It cannot give legal advice.</li>
+                    </ul>
+                </section>
+
+                <section class="odx-content-section">
+                    <h2>Is the Ohio Assistant Generative AI?</h2>
+                    <p>The Ohio Assistant searches official State of Ohio content and returns links to the pages that answer your question. It does not write new content.</p>
+                </section>
+            </div>
+
+            <div class="col-xs-12 col-sm-12 col-md-4 col-lg-3 margin-top-md">
+                <aside class="odx-content-column odx-content-column--right">
+                    <section class="odx-content-section margin-bottom-sm">
+                        <h2 class="odx-bold">Where to Go for More Help</h2>
+                        <ul class="list-unstyled">
+                            <li class="margin-bottom-xs"><a href="{{ url_for('faqs_all') }}">Frequently Asked Questions</a></li>
+                            <li class="margin-bottom-xs"><a href="{{ url_for('phone_search') }}">State of Ohio Phone Search</a></li>
+                            <li class="margin-bottom-xs"><a href="{{ url_for('state_directory') }}">State Directory</a></li>
+                        </ul>
+                    </section>
+                </aside>
+            </div>
+        </div>
+    </div>
+</article>
+{% endblock %}

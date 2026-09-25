@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}My Orders : Micro Center{% endblock %}
+{% block content %}
+<div class="shell">
+  <h1 class="mt0">My Orders</h1>
+  <div class="account-layout">
+    {% include "_account_nav.html" %}
+    <section>
+      {% for order in orders %}
+      <div class="surface" style="margin-bottom:12px">
+        <div class="summary-row">
+          <a href="/account/orders/{{ order.order_number }}"><b>#{{ order.order_number }}</b></a>
+          <span>{{ order.item_count() }} item(s) — ${{ "%.2f"|format(order.total) }}</span>
+        </div>
+        <div class="summary-row small">
+          <span class="muted">{{ order.placed_at.strftime('%B %d, %Y') }} &middot;
+            {% if order.method == 'pickup' %}Store Pickup{% else %}Shipping{% endif %}
+          </span>
+          <span class="status-badge status-{{ order.status|lower|replace(' ','') }}">{{ order.status }}</span>
+        </div>
+      </div>
+      {% else %}
+      <div class="empty-state"><h2>No orders yet</h2><p>Orders you place will appear here.</p></div>
+      {% endfor %}
+    </section>
+  </div>
+</div>
+{% endblock %}
