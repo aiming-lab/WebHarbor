@@ -261,3 +261,10 @@ class AssistantQuery(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.Text, nullable=False)
     created_at = db.Column(db.DateTime, default=MIRROR_REFERENCE_DATE)
+
+
+class SiteContent(db.Model):
+    """Captured landing content, materialized at build time."""
+    __tablename__ = 'site_content'
+    name = db.Column(db.String(80), primary_key=True)
+    payload = db.Column(db.Text, nullable=False)

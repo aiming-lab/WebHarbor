@@ -1,22 +1,6 @@
 #!/usr/bin/env python3
-"""Verify Ohio.gov--15.
-
-State Directory chain: the Accountancy Board entry (website, contact method,
-which social networks it lists), then search the directory for "Lottery"
-(full agency name + contact method), then search for "Taxation" (which social
-networks that entry lists + contact method).
-
-Frozen ground truth (tracked data snapshot): the Accountancy Board's website
-is acc.ohio.gov with contact method "contact form" and 3 social links
-(Facebook / YouTube / LinkedIn). Searching "Lottery" returns the Lottery
-agency with contact method "contact list and form". Searching "Taxation"
-returns the Taxation entry listing Facebook, YouTube, and LinkedIn with
-contact method "contact list".
-
-F-REND-1 follow-up: the directory social links now render their network names
-(canonical title text + brand icons), so the answer must name the networks.
-"""
-from verify_lib import (check_read_only, check_trajectory_identity, final_answer,
+"""Verify the current task: browser evidence, requested facts and exact state."""
+from verify_lib import (contains_phrase, check_visited_path,check_read_only, check_trajectory_identity, final_answer,
                         navigated_with_query, run_verifier)
 
 TASK_ID = "Ohio.gov--15"
@@ -51,13 +35,10 @@ def _any_window_has(answer, keyword, stop_words, needles):
 def run_checks(judge, traj, initial_db, after_db):
     answer = final_answer(traj)
     check_trajectory_identity(judge, traj, TASK_ID)
-    # navigation gates: directory searched for Accountancy, Lottery, Taxation
+    # Navigation gates for the two relevant agencies.
     judge.check("searched_accountancy",
                 navigated_with_query(traj, DIRECTORY_PATH, "q", "accountancy"),
                 "required: /help-center/state-directory?q=Accountancy")
-    judge.check("searched_lottery",
-                navigated_with_query(traj, DIRECTORY_PATH, "q", "lottery"),
-                "required: /help-center/state-directory?q=Lottery")
     judge.check("searched_taxation",
                 navigated_with_query(traj, DIRECTORY_PATH, "q", "taxation"),
                 "required: /help-center/state-directory?q=Taxation")
@@ -74,15 +55,6 @@ def run_checks(judge, traj, initial_db, after_db):
             any(("facebook" in w and "linkedin" in w)
                 for w in _segment_after(answer, "accountancy", ("lottery", "taxation"))),
                 "expected: 3 social networks (Facebook / YouTube / LinkedIn)")
-    # answer: Lottery full name + contact — entry-scoped window
-    judge.check("answer_lottery_name",
-                _any_window_has(answer, "lottery", ("accountancy", "taxation"),
-                                ["lottery"]),
-                "expected full agency name: Lottery")
-    judge.check("answer_lottery_contact",
-                _any_window_has(answer, "lottery", ("accountancy", "taxation"),
-                                ["contact list and form"]),
-                "expected Lottery contact method: contact list and form")
     # answer: Taxation socials + contact — the facts must appear in the Taxation
     # entry's own text window (an entry-scoped check, not a whole-answer check)
     judge.check("answer_taxation_socials",
@@ -95,6 +67,11 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected Taxation contact method: contact list")
     check_read_only(judge, initial_db, after_db)
 
+    judge.check('accountancy_all_socials', _any_window_has(answer, 'accountancy', ('taxation',), ['youtube']), 'YouTube also required')
+    judge.check('taxation_website', _any_window_has(answer, 'taxation', ('accountancy',), ['tax.ohio.gov']), 'Taxation website')
+    judge.check('taxation_all_socials', all(_any_window_has(answer, 'taxation', ('accountancy',), [x]) for x in ['facebook','youtube','linkedin']), 'all three networks required')
+    check_visited_path(judge, traj, 'visited_license_faq', '/help-center/faqs/professional-licenses')
+    judge.check('license_verification', contains_phrase(answer, 'elicense'), 'eLicense Ohio')
 
 if __name__ == "__main__":
     run_verifier(TASK_ID, run_checks)

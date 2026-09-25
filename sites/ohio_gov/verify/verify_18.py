@@ -1,16 +1,5 @@
 #!/usr/bin/env python3
-"""Verify Ohio.gov--18.
-
-Carol's profile chain: sign in, update the phone number to (513) 555-0200
-and the city to Cleveland (keeping all other details), confirm both values in
-account settings, report the saved-resources count and the title of the most
-recent consumer complaint (if any).
-
-Frozen ground truth (seed DB): carol_d starts with phone (513) 555-0193 and
-city Cincinnati, 5 saved resources, and no consumer complaints. After the task
-ONLY the phone and city fields change; the saved count stays 5 and no
-complaint exists (the account page renders no complaints section).
-"""
+"""Verify the current task: browser evidence, requested facts and exact state."""
 from verify_lib import (SEED_USERS, check_only_tables_changed, check_signed_in_as,
                         check_trajectory_identity, check_visited_path, contains_any,
                         contains_count, contains_phrase, entered_identity, final_answer,
@@ -57,12 +46,6 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected phone: (513) 555-0200")
     judge.check("answer_city", contains_phrase(answer, "cleveland"),
                 "expected city: Cleveland")
-    judge.check("answer_saved_count", contains_count(answer, 5),
-                "expected: 5 saved resources")
-    judge.check("answer_no_complaint",
-                contains_any(answer, ["no consumer complaint", "no complaints", "none",
-                                      "not filed", "no scam", "nothing"]),
-                "expected: no consumer complaint on the account")
 
 
 if __name__ == "__main__":

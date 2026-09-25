@@ -83,7 +83,7 @@
 
                 <section class="odx-content-section margin-bottom-sm">
                     <div class="odx-save-resource margin-bottom-sm">
-                        <form method="post" action="{{ url_for('toggle_saved', resource_id=res.id) }}">
+                        <form method="post" action="{{ url_for('toggle_saved', resource_id=res.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             {% if current_user.is_authenticated %}
                             <button class="btn btn-secondary btn-block" type="submit">
                                 <i class="far {{ 'fas' if saved else 'far' }} fa-bookmark" aria-hidden="true"></i>

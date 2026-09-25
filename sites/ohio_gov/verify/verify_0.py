@@ -45,12 +45,13 @@ def run_checks(judge, traj, initial_db, after_db):
                 "expected: med.ohio.gov")
     judge.check("answer_contact_method", contains_phrase(answer, "contact list and form"),
                 "expected: contact list and form")
-    judge.check("answer_social_links_count", contains_count(answer, 4),
+    judge.check("answer_social_links_count", bool(__import__('re').search(r'(?:4|four)\s+social', answer, __import__('re').I)),
                 "expected: 4 social media links")
-    judge.check("answer_medical_board_license_total", contains_count(answer, 12),
+    judge.check("answer_medical_board_license_total", bool(__import__('re').search(r'(?:12|twelve)\s+(?:different\s+)?licenses', answer, __import__('re').I)),
                 "expected: 12 licenses issued by the Medical Board in total")
     check_read_only(judge, initial_db, after_db)
 
+    judge.check('all_social_channels', all(contains_phrase(answer, x) for x in ['Facebook', 'YouTube', 'LinkedIn']) and __import__('re').search(r'\b(?:X|Twitter)\b', answer, __import__('re').I), 'X, Facebook, YouTube, LinkedIn')
 
 if __name__ == "__main__":
     run_verifier(TASK_ID, run_checks)

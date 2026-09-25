@@ -44,7 +44,7 @@
                             <td><a href="{{ r.path }}">{{ r.title }}</a></td>
                             <td>{{ r.audience | capitalize }}</td>
                             <td>
-                                <form method="post" action="{{ url_for('toggle_saved', resource_id=r.id) }}">
+                                <form method="post" action="{{ url_for('toggle_saved', resource_id=r.id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <button class="btn btn-sm btn-secondary" type="submit">Remove</button>
                                 </form>
                             </td>
@@ -102,7 +102,7 @@
                             <li class="margin-bottom-xs"><a href="{{ url_for('alerts') }}">Alerts &amp; subscriptions</a></li>
                             <li class="margin-bottom-xs"><a href="{{ url_for('travel_guide') }}">Request the Travel Guide</a></li>
                             <li class="margin-bottom-xs"><a href="{{ url_for('report_scam') }}">Report a scam</a></li>
-                            <li class="margin-bottom-xs"><a href="{{ url_for('logout') }}">Sign out</a></li>
+                            <li class="margin-bottom-xs"><form method="post" action="{{ url_for('logout') }}" style="display:inline"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button type="submit" class="" style="font:inherit;cursor:pointer">Sign out</button></form></li>
                         </ul>
                     </section>
                 </aside>

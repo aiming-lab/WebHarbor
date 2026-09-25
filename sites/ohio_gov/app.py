@@ -8,16 +8,18 @@ buttons keep their real upstream URLs, exactly like the live site.
 """
 import json
 import os
+from urllib.parse import urlsplit
 import re
 from datetime import datetime
 
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    request, url_for)
+from flask_wtf.csrf import CSRFProtect
 from flask_login import (LoginManager, current_user, login_required,
                          login_user, logout_user)
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from models import (MIRROR_REFERENCE_DATE, Agency, AlertItem, AlertSubscription,
+from models import (SiteContent, MIRROR_REFERENCE_DATE, Agency, AlertItem, AlertSubscription,
                    AssistantQuery, ContactMessage, FAQ, FAQCategory, License,
                    NewsArticle, PhoneEntry, Resource, SavedResource, ScamReport,
                    TopicHub, TravelGuideRequest, User, db)
@@ -29,6 +31,8 @@ os.makedirs(INSTANCE_DIR, exist_ok=True)
 app = Flask(__name__, instance_path=INSTANCE_DIR)
 app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{INSTANCE_DIR}/ohio_gov.db"
 app.config["SECRET_KEY"] = "webharbor-ohio-gov-dev-key"
+
+csrf = CSRFProtect(app)
 
 db.init_app(app)
 login_manager = LoginManager(app)
@@ -115,8 +119,16 @@ def phone_digits(s):
 # ---------------------------------------------------------------------------
 
 def _load_json(name):
-    path = os.path.join(BASE_DIR, "data", name)
-    return json.loads(open(path).read())
+    return json.loads(db.session.get(SiteContent, name).payload)
+
+
+def local_redirect(target, fallback):
+    """Accept only paths on this mirror; browsers normalize backslashes."""
+    if target and target.startswith('/') and not target.startswith('//') and '\\' not in target and not any(ord(c) < 32 for c in target):
+        parts = urlsplit(target)
+        if not parts.scheme and not parts.netloc:
+            return target
+    return fallback
 
 
 @app.route("/")
@@ -302,7 +314,7 @@ def topic_hub(audience, hub):
 
 @app.route("/<audience>/resources/<slug>")
 @app.route("/resources/<slug>")
-def resource_detail(audience, slug):
+def resource_detail(slug, audience=None):
     res = Resource.query.filter_by(slug=slug).first_or_404()
     related = []
     if res.related_agencies:
@@ -550,7 +562,7 @@ def login():
             login_user(user)
             flash("You are now signed in with your OHID.", "success")
             nxt = request.args.get("next")
-            return redirect(nxt or url_for("account"))
+            return redirect(local_redirect(nxt, url_for("account")))
         flash("Invalid OHID or password. Please try again.", "danger")
     return render_template("login.html")
 
@@ -582,7 +594,7 @@ def register():
     return render_template("register.html")
 
 
-@app.route("/logout")
+@app.route("/logout", methods=["POST"])
 @login_required
 def logout():
     logout_user()
@@ -638,7 +650,7 @@ def toggle_saved(resource_id):
         db.session.add(SavedResource(user_id=current_user.id, resource_id=resource_id))
         db.session.commit()
         flash(f"Saved {res.title} to your OHID account.", "success")
-    return redirect(request.referrer or url_for("account"))
+    return redirect(local_redirect(request.referrer.removeprefix(request.host_url.rstrip("/")) if request.referrer and request.referrer.startswith(request.host_url) else None, url_for("account")))
 
 
 # ---------------------------------------------------------------------------
@@ -662,7 +674,13 @@ def alerts_subscribe():
     if not email or "@" not in email:
         flash("Please enter a valid email address.", "danger")
         return redirect(url_for("alerts"))
+    allowed = {'All alerts', 'Ohio Business Gateway', 'Unemployment system', 'Outage notifications', 'Weather safety'}
+    if alert_type not in allowed:
+        abort(400, 'Choose a listed alert type.')
     uid = current_user.id if current_user.is_authenticated else None
+    if AlertSubscription.query.filter_by(user_id=uid, email=email, alert_type=alert_type).first():
+        flash('You are already subscribed to these alerts.', 'success')
+        return redirect(url_for('alerts'))
     db.session.add(AlertSubscription(user_id=uid, email=email, alert_type=alert_type))
     db.session.commit()
     flash(f"You are now subscribed to {alert_type} at {email}.", "success")
@@ -677,7 +695,7 @@ def alerts_subscribe():
 def travel_guide():
     if request.method == "POST":
         required = ["full_name", "email", "address_line1", "city", "state", "zip", "format"]
-        if all(request.form.get(f, "").strip() for f in required):
+        if all(request.form.get(f, "").strip() for f in required) and request.form.get("format") in {"Standard print", "Large print"}:
             req = TravelGuideRequest(
                 user_id=current_user.id if current_user.is_authenticated else None,
                 full_name=request.form["full_name"].strip(),

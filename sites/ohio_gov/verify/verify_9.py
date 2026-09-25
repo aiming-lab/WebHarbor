@@ -58,6 +58,8 @@ def run_checks(judge, traj, initial_db, after_db):
                 contains_phrase(answer, "1-855-961-7226"),
                 "expected romance scam hotline 1-855-961-7226")
 
+    judge.check('complainant_identity', bool(added) and added[0]['full_name'] == 'Ellen Morgan' and added[0]['email'] == 'ellen.morgan@example.com', 'requested complainant')
+    judge.check('complaint_details', bool(added) and 'gift' in added[0]['description'].lower() and 'emergency' in added[0]['description'].lower(), 'romance scam gift-card emergency')
 
 if __name__ == "__main__":
     run_verifier(TASK_ID, run_checks)
