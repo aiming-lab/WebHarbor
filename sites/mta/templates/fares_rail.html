@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}LIRR and Metro-North fares{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('fares_hub') }}">Fares and tolls</a> › LIRR and Metro-North fares</div>
+  <h1>LIRR and Metro-North fares</h1>
+</div>
+<div class="card">
+  <p>Each railroad station is assigned a fare zone. Tickets are valid to any station in the listed zone. The easiest way to see what your trip will cost is by using our fare finder, or see the fare tables below.</p>
+  <a class="btn" href="{{ url_for('rail_fare_finder') }}">Use the fare finder</a>
+</div>
+<div class="card blocks">
+  {% for b in (page.blocks | fromjson) if page %}
+    {% if b['type'] == 'h2' %}<h2>{{ b['text'] }}</h2>
+    {% elif b['type'] == 'h3' %}<h3>{{ b['text'] }}</h3>
+    {% elif b['type'] == 'prose' %}<div class="prose-block">{{ b['text'] }}</div>
+    {% elif b['type'] == 'list' %}<ul>{% for item in b['items'] %}<li>{{ item }}</li>{% endfor %}</ul>
+    {% elif b['type'] == 'links' %}<ul class="quick-links">{% for l in b['links'] %}<li><a href="{{ l['href'] }}">{{ l['text'] }}</a></li>{% endfor %}</ul>
+    {% endif %}
+  {% endfor %}
+</div>
+{% endblock %}

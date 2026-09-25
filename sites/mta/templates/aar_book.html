@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Book an Access-A-Ride trip{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('aar_page') }}">Access-A-Ride Paratransit</a> › Book a trip</div>
+  <h1>Book an Access-A-Ride trip</h1>
+</div>
+<div class="card">
+  {% if errors %}
+  <div class="errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+  {% endif %}
+  <form class="stack" method="post" action="{{ url_for('aar_book') }}">
+    <label for="pickup">Pickup address</label>
+    <input type="text" id="pickup" name="pickup" value="{{ form.get('pickup', '') }}" required>
+    <label for="destination">Destination address</label>
+    <input type="text" id="destination" name="destination" value="{{ form.get('destination', '') }}" required>
+    <label for="date">Trip date</label>
+    <input type="date" id="date" name="date" value="{{ form.get('date', '') }}" required>
+    <label for="time">Pickup time</label>
+    <input type="time" id="time" name="time" value="{{ form.get('time', '') }}" required>
+    <label for="passengers">Passengers</label>
+    <select id="passengers" name="passengers">
+      {% for n in [1, 2, 3, 4] %}
+      <option value="{{ n }}" {% if form.get('passengers', '1')|string == n|string %}selected{% endif %}>{{ n }}</option>
+      {% endfor %}
+    </select>
+    <label for="mobility_aid">Mobility aid (optional)</label>
+    <select id="mobility_aid" name="mobility_aid">
+      {% for m in ['', 'Walker', 'Manual wheelchair', 'Power wheelchair', 'Cane', 'Service animal'] %}
+      <option value="{{ m }}" {% if form.get('mobility_aid') == m %}selected{% endif %}>{{ m or 'None' }}</option>
+      {% endfor %}
+    </select>
+    <label for="purpose">Trip purpose (optional)</label>
+    <input type="text" id="purpose" name="purpose" value="{{ form.get('purpose', '') }}" placeholder="e.g. Medical appointment">
+    <button class="btn" type="submit">Book trip</button>
+  </form>
+</div>
+{% endblock %}

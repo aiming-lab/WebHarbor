@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Case {{ case.case_ref }}{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › <a href="{{ url_for('contact_page') }}">Contact the MTA</a> › Case {{ case.case_ref }}</div>
+  <h1>Case {{ case.case_ref }}</h1>
+</div>
+<div class="card">
+  <table class="data">
+    <tr><th>Status</th><td>{{ case.status }}</td></tr>
+    <tr><th>Category</th><td>{{ case.category }}</td></tr>
+    <tr><th>Subject</th><td>{{ case.subject }}</td></tr>
+    <tr><th>Message</th><td>{{ case.message }}</td></tr>
+    <tr><th>Filed</th><td>{{ case.created_at.strftime('%B %-d, %Y') if case.created_at else '' }}</td></tr>
+  </table>
+</div>
+{% endblock %}

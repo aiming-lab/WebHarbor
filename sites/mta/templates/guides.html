@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Guides{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Guides</div>
+  <h1>Guides</h1>
+</div>
+<div class="card">
+  <p>How-to guides for riding the MTA network.</p>
+  <ul class="quick-links">
+    {% for slug, label in guides %}
+    <li><a href="{{ url_for('guide_page', slug=slug) }}">{{ label }}</a></li>
+    {% endfor %}
+  </ul>
+</div>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% block title %}Schedules{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Schedules</div>
+  <h1>Schedules</h1>
+</div>
+
+<div class="card">
+  <p>View LIRR and Metro-North schedules and fares and railroad, bus, and subway timetables.</p>
+  <h2>LIRR and Metro-North schedules and fares</h2>
+  <p>View schedules and fares for the Long Island Rail Road and Metro-North Railroad.</p>
+  <ul class="quick-links">
+    <li><a href="{{ url_for('agency_page', slug='long-island-rail-road') }}">Long Island Rail Road schedules</a></li>
+    <li><a href="{{ url_for('agency_page', slug='metro-north-railroad') }}">Metro-North Railroad schedules</a></li>
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Printable subway schedules</h2>
+  <p>Each line's page shows the full timetable for weekday, Saturday, and Sunday service, and links to the printable PDF timetable.</p>
+  <ul style="list-style:none; padding:0; display:flex; flex-wrap:wrap; gap:10px;">
+    {% for r in routes %}
+    <li>
+      <a class="line-link" href="{{ url_for('subway_schedule', line=SUBWAY_SLUGS.get(r.id, r.id.lower())) }}">
+        <span class="line line-{{ r.id }}">{{ r.id }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+
+<div class="card">
+  <h2>Printable bus schedules</h2>
+  <ul class="quick-links">
+    <li><a href="{{ url_for('bus_schedule', borough='bronx') }}">Bronx bus schedules</a></li>
+    <li><a href="{{ url_for('bus_schedule', borough='Brooklyn') }}">Brooklyn bus schedules</a></li>
+    <li><a href="{{ url_for('bus_schedule', borough='manhattan') }}">Manhattan bus schedules</a></li>
+    <li><a href="{{ url_for('bus_schedule', borough='queens') }}">Queens bus schedules</a></li>
+    <li><a href="{{ url_for('bus_schedule', borough='si') }}">Staten Island bus schedules</a></li>
+  </ul>
+</div>
+{% endblock %}

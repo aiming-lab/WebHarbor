@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}Access-A-Ride trips{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › My MTA › Access-A-Ride trips</div>
+  <h1>Your Access-A-Ride trips</h1>
+</div>
+<ul class="account-nav">
+  <li><a href="{{ url_for('account_home') }}">Overview</a></li>
+  <li><a href="{{ url_for('account_favorites') }}">Favorites</a></li>
+  <li><a href="{{ url_for('account_subscriptions') }}">Alert subscriptions</a></li>
+  <li><a href="{{ url_for('account_omny') }}">OMNY</a></li>
+  <li><a href="{{ url_for('account_claims') }}">Lost &amp; Found claims</a></li>
+  <li class="active"><a href="{{ url_for('account_aar') }}">Access-A-Ride trips</a></li>
+  <li><a href="{{ url_for('account_cases') }}">Feedback cases</a></li>
+</ul>
+<div class="card">
+  {% for t in user.aar_trips %}
+  <div class="rail-item">
+    <span class="rail-title">{{ t.trip_ref }} — {{ t.trip_date }} at {{ t.pickup_time }}</span>
+    <span>{{ t.pickup_address }} to {{ t.destination_address }}</span>
+    <span class="rail-status">{{ t.status }}</span>
+  </div>
+  {% else %}
+  <p>You have no Access-A-Ride trips booked.</p>
+  {% endfor %}
+  <p style="margin-top:14px"><a class="btn" href="{{ url_for('aar_book') }}">Book a trip</a></p>
+</div>
+{% endblock %}

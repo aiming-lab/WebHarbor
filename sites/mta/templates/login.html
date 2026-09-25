@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}Sign in{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › Sign in</div>
+  <h1>Sign in to My MTA</h1>
+</div>
+<div class="card">
+  {% if error %}
+  <div class="errors"><p>{{ error }}</p></div>
+  {% endif %}
+  <form class="stack" method="post" action="{{ url_for('account_login') }}">
+    <label for="email">Email address</label>
+    <input type="email" id="email" name="email" value="{{ form.get('email', '') }}" required>
+    <label for="password">Password</label>
+    <input type="password" id="password" name="password" required>
+    <button class="btn" type="submit">Sign in</button>
+  </form>
+  <p style="margin-top:14px">Need an account? <a href="{{ url_for('account_register') }}">Create one</a>.</p>
+</div>
+{% endblock %}

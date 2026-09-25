@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+{% block hero %}
+<section class="hero-banner">
+  <img src="{{ url_for('static', filename='images/home__FTC_5181_desktop__1_.jpg') }}" alt="MTA service banner">
+</section>
+{% endblock %}
+{% block content %}
+
+<details class="trip-planner card" open>
+  <summary>Plan a Trip</summary>
+  <div class="form-row">
+    <div>
+      <label for="from">From</label>
+      <input id="from" name="from" placeholder="Enter a station or address">
+    </div>
+    <div>
+      <label for="to">To</label>
+      <input id="to" name="to" placeholder="Enter a station or address">
+    </div>
+    <div>
+      <label for="when">When</label>
+      <input id="when" type="date" value="2026-09-24">
+    </div>
+    <div>
+      <label for="time">Time</label>
+      <input id="time" type="time" value="09:00">
+    </div>
+  </div>
+</details>
+
+<section class="card">
+  <h2 class="ss-title">Service Status</h2>
+  <p>Updated as of {{ MIRROR_NOW.strftime('%I:%M %p') }} on {{ MIRROR_NOW.strftime('%B %-d, %Y') }}</p>
+  <ul class="ss-tabs" role="tablist" aria-label="Service Status Tabs">
+    <li{% if not fav_lines %} class="active"{% endif %}><a href="#subway">Subway</a></li>
+    <li><a href="#rail">Rail</a></li>
+    <li{% if fav_lines %} class="active"{% endif %}><a href="#favorites">Favorites</a></li>
+  </ul>
+
+  <div id="subway">
+    {% for status, lines in subway_groups %}
+    <div class="by-status">
+      <h5>{{ status }}</h5>
+      <ul class="line-buttons">
+        {% for line in lines %}
+        <li>
+          <a class="mta-line-button line-link" href="{{ url_for('line_alerts', line=line) }}"
+             aria-label="{{ line }} train - View service details">
+            <span class="line line-{{ line }}">{{ line }}</span>
+          </a>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="rail" style="display:none">
+    {% for status, branches in rail_groups %}
+    <div class="by-status">
+      <h5>{{ status }}</h5>
+      {% for branch in branches %}
+      <div class="rail-item">
+        <a href="{{ url_for('branch_alerts', branch=branch.replace(' ', '-')) }}">
+          <span class="rail-title">{{ branch }}</span>
+        </a>
+        <span class="rail-status {{ 'on-or-close' if status == 'On or Close' else 'delayish' }}">{{ status }}</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endfor %}
+  </div>
+
+  <div id="favorites" style="{% if not fav_lines %}display:none{% endif %}">
+    {% if fav_lines %}
+      {% for f in fav_lines %}
+      <div class="rail-item">
+        {% if f.service_type == 'subway' %}
+          <a class="line-link" href="{{ url_for('line_alerts', line=f.service_id) }}"><span class="line line-{{ f.service_id }}">{{ f.service_id }}</span></a>
+        {% else %}
+          <span class="rail-title">{{ f.service_id }}</span>
+        {% endif %}
+        <span class="rail-status">
+          {% if f.service_type == 'subway' and line_status.get(f.service_id) %}
+            {{ line_status[f.service_id]['status'] }}
+          {% elif f.service_type == 'rail' and branch_status.get(f.service_id) %}
+            {{ branch_status[f.service_id]['status'] }}
+          {% else %}
+            No Active Alerts
+          {% endif %}
+        </span>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="good-service">
+        <p>Your favorite subway, bus and rail services will appear here.</p>
+        <p><a href="{{ url_for('account_login') }}">Sign in</a> and star a line on its status page to add favorites.</p>
+      </div>
+    {% endif %}
+  </div>
+</section>
+
+<div class="home-grid">
+  <section class="card">
+    <h2>Quick links</h2>
+    <ul class="quick-links">
+      <li><a href="{{ url_for('planned_changes') }}">Planned Work — check service changes before you travel</a></li>
+      <li><a href="{{ url_for('service_alerts_guide') }}">Sign up for service alerts</a></li>
+      <li><a href="{{ url_for('elevator_status') }}">Check elevator and escalator status</a></li>
+      <li><a href="{{ url_for('lost_found') }}">Contact Lost &amp; Found</a></li>
+      <li><a href="{{ url_for('board_meetings') }}">Get details on this month's MTA Board meeting</a></li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>Nearby Stations &amp; Stops</h2>
+    <a href="{{ url_for('nearby') }}">
+      <img src="{{ url_for('static', filename='icons/nearby_map.png') }}" alt="An image of a New York City Map. Click to be taken to the Nearby Stations and Stops page.">
+    </a>
+    <p>Find the stations and stops closest to you, and the lines that serve them.</p>
+  </section>
+</div>
+
+<h2 class="section-title">What's happening</h2>
+<div class="card-grid">
+  {% for art in press %}
+  <div class="news-card">
+    <div class="date">{{ art.date }}</div>
+    <a href="{{ url_for('press_article', slug=art.path.rsplit('/', 1)[-1]) }}">{{ art.title }}</a>
+  </div>
+  {% endfor %}
+</div>
+
+<h2 class="section-title">Featured projects</h2>
+<div class="card-grid">
+  {% for slug, label in featured %}
+  <div class="news-card">
+    <a href="{{ url_for('project_page', slug=slug) }}">{{ label }}</a>
+  </div>
+  {% endfor %}
+</div>
+
+<h2 class="section-title">Guides</h2>
+<div class="card-grid">
+  {% for slug, label in guide_cards %}
+  <div class="news-card">
+    <a href="{{ url_for('guide_page', slug=slug) }}">{{ label }}</a>
+  </div>
+  {% endfor %}
+</div>
+
+<script>
+  var tabs = document.querySelectorAll('.ss-tabs a');
+  var panes = {subway: document.getElementById('subway'), rail: document.getElementById('rail'), favorites: document.getElementById('favorites')};
+  tabs.forEach(function (t) {
+    t.addEventListener('click', function (e) {
+      e.preventDefault();
+      tabs.forEach(function (x) { x.parentElement.classList.remove('active'); });
+      t.parentElement.classList.add('active');
+      Object.keys(panes).forEach(function (k) { panes[k].style.display = 'none'; });
+      panes[t.getAttribute('href').slice(1)].style.display = 'block';
+    });
+  });
+</script>
+{% endblock %}

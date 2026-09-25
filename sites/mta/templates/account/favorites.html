@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Favorites{% endblock %}
+{% block content %}
+<div class="page-head">
+  <div class="breadcrumb"><a href="{{ url_for('home') }}">Home</a> › My MTA › Favorites</div>
+  <h1>Your favorite services</h1>
+</div>
+<ul class="account-nav">
+  <li><a href="{{ url_for('account_home') }}">Overview</a></li>
+  <li class="active"><a href="{{ url_for('account_favorites') }}">Favorites</a></li>
+  <li><a href="{{ url_for('account_subscriptions') }}">Alert subscriptions</a></li>
+  <li><a href="{{ url_for('account_omny') }}">OMNY</a></li>
+  <li><a href="{{ url_for('account_claims') }}">Lost &amp; Found claims</a></li>
+  <li><a href="{{ url_for('account_aar') }}">Access-A-Ride trips</a></li>
+  <li><a href="{{ url_for('account_cases') }}">Feedback cases</a></li>
+</ul>
+<div class="card">
+  <h2>Current favorites</h2>
+  {% for f in user.favorites %}
+  <div class="rail-item">
+    {% if f.service_type == 'subway' %}
+      <a class="line-link" href="{{ url_for('line_alerts', line=f.service_id) }}"><span class="line line-{{ f.service_id }}">{{ f.service_id }}</span></a>
+    {% elif f.service_type == 'rail' %}
+      <a href="{{ url_for('branch_alerts', branch=f.service_id.replace(' ', '-')) }}"><span class="rail-title">{{ f.service_id }}</span></a>
+    {% else %}
+      <span class="rail-title">{{ f.service_id }} ({{ f.service_type }})</span>
+    {% endif %}
+    <form method="post" action="{{ url_for('account_favorites') }}" style="margin:0 0 0 auto">
+      <input type="hidden" name="action" value="remove">
+      <input type="hidden" name="service_type" value="{{ f.service_type }}">
+      <input type="hidden" name="service_id" value="{{ f.service_id }}">
+      <button class="btn secondary" type="submit">Remove</button>
+    </form>
+  </div>
+  {% else %}
+  <p>You haven't added any favorites yet.</p>
+  {% endfor %}
+</div>
+<div class="card">
+  <h2>Add a favorite</h2>
+  <form class="stack" method="post" action="{{ url_for('account_favorites') }}">
+    <label for="service_type">Service type</label>
+    <select name="service_type" id="service_type">
+      <option value="subway">Subway line</option>
+      <option value="rail">Railroad branch</option>
+      <option value="bus">Bus route</option>
+    </select>
+    <label for="service_id">Service</label>
+    <input type="text" name="service_id" id="service_id" placeholder="e.g. 2, G, Babylon Branch, M15" required>
+    <button class="btn" type="submit">Add favorite</button>
+  </form>
+</div>
+{% endblock %}
