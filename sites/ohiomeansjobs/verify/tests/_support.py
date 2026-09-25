@@ -26,7 +26,7 @@ from typing import Any
 
 VERIFY_DIR = Path(__file__).resolve().parents[1]
 SITE_DIR = VERIFY_DIR.parent
-BASE = "http://localhost:40113"
+BASE = "http://localhost:40090"
 PASSWORD = "TestPass123!"
 CONTAINER = "wh-omj-review"
 CACHE = Path(tempfile.gettempdir()) / "omj_verify_tests_seed.db"
