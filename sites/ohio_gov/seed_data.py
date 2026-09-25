@@ -222,6 +222,15 @@ def materialize_seed() -> None:
     shutil.copyfile(RUNTIME_DB, SEED_DB)
 
 
+def seed_landing_content():
+    from models import SiteContent, db
+    if SiteContent.query.count():
+        return
+    for name in ('home_sections.json', 'landing_sections.json'):
+        db.session.add(SiteContent(name=name, payload=json.dumps(_load(name), sort_keys=True)))
+    db.session.commit()
+
+
 def main() -> None:
     # Importing app runs its bootstrap (create_all + the gated seed functions),
     # which populates instance/ohio_gov.db from the tracked data snapshot when
@@ -230,6 +239,7 @@ def main() -> None:
     from app import Resource, User, app  # noqa: F401
 
     with app.app_context():
+        seed_landing_content()
         counts = {
             "resources": Resource.query.count(),
             "users": User.query.count(),

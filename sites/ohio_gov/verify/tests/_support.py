@@ -37,6 +37,9 @@ SEED_DB = Path(os.environ.get("OHIO_GOV_TEST_SEED_DB") or "")
 def _acquire_seed() -> Path:
     if SEED_DB.is_file():
         return SEED_DB
+    local = SITE_DIR / 'instance_seed/ohio_gov.db'
+    if local.is_file():
+        return local
     if CACHE.is_file():
         return CACHE
     CACHE.parent.mkdir(parents=True, exist_ok=True)

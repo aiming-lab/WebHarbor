@@ -50,11 +50,11 @@ SITE = "ohio_gov"
 DEFAULT_CONTAINER = os.environ.get("WH_CONTAINER", "wh-ohio-gov-review")
 
 # ---------------------------------------------------------------- frozen seed contract
-TABLES = ("agencies", "alert_items", "alert_subscriptions", "assistant_queries",
+TABLES = ("site_content", "agencies", "alert_items", "alert_subscriptions", "assistant_queries",
           "contact_messages", "faq_categories", "faqs", "licenses", "news_articles",
           "phone_entries", "resources", "saved_resources", "scam_reports", "topic_hubs",
           "travel_guide_requests", "users")
-SEED_COUNTS = {"agencies": 190, "alert_items": 4, "alert_subscriptions": 4,
+SEED_COUNTS = {"site_content": 2, "agencies": 190, "alert_items": 4, "alert_subscriptions": 4,
                "assistant_queries": 0, "contact_messages": 0, "faq_categories": 23,
                "faqs": 119, "licenses": 272, "news_articles": 14, "phone_entries": 179,
                "resources": 242, "saved_resources": 17, "scam_reports": 1,
@@ -63,9 +63,9 @@ SEED_COUNTS = {"agencies": 190, "alert_items": 4, "alert_subscriptions": 4,
 # rebuilt deterministically at image build time (PYTHONHASHSEED=0) from the tracked
 # data snapshot. Reproduced independently during review (in-container rebuild md5
 # 16563ff30f7fceaada12f9f1ab7e0b22).
-SCHEMA_SHA256 = "15f1053c1150b980c904988e0edfcf968a81c329592eda29a6e6092cc3c3dc96"
+SCHEMA_SHA256 = "07b886756a3e5ce942fe89842cd9739b0f9997102caddcb871ea1cc226d90dcc"
 # sha256 over every seed row (table-canonical, ORDER BY all columns).
-SEED_ROWS_SHA256 = "cdfae935a1976f4b183c31475029ec785b6e5e8f0a25d1f90392a3769ade4ff6"
+SEED_ROWS_SHA256 = "9c42f9da1926c221bc59993c17a41610766398f2d2382219351af38fea8658b0"
 SEED_USERS = {  # email -> (id, username); identity columns never change
     "alice.j@test.com": (1, "alice_j"),
     "bob.c@test.com": (2, "bob_c"),
@@ -462,6 +462,7 @@ def run_verifier(task_id, run_checks):
     judge = Judge(task_id, no_llm=args.no_llm)
     try:
         run_checks(judge, traj, initial_db, after_db)
+        check_precise_delta(judge, initial_db, after_db)
     except Exception as exc:  # noqa: BLE001 — any verifier error fails closed
         fail_closed(task_id, "verifier_error", f"{type(exc).__name__}: {exc}")
     judge.emit()
@@ -562,3 +563,34 @@ def check_only_tables_changed(judge, initial_db, after_db, allowed):
     changed = changed_tables(initial_db, after_db, others)
     return judge.check("no_collateral_writes", not changed,
                        f"tables_outside_allowed={list(others)!r}, changed={changed!r}")
+
+
+STATE_RULES = {6: {'saved_resources': [1, [], [], 2]}, 7: {'users': [None, [], [], 1]}, 8: {'travel_guide_requests': [None, [], [], 2]}, 9: {'scam_reports': [None, [], [], 1]}, 10: {'alert_subscriptions': [2, [], [], 2]}, 18: {'users': [3, ['phone', 'city'], [], 0]}}
+
+
+def check_precise_delta(judge, initial_db, after_db):
+    """Preserve old rows and other owners, including inside mutable tables."""
+    rules = STATE_RULES.get(int(judge.task_id.rsplit('--', 1)[1]), {})
+    for table in TABLES:
+        before = [dict(r) for r in db_query(initial_db, f'SELECT * FROM "{table}"')]
+        after = [dict(r) for r in db_query(after_db, f'SELECT * FROM "{table}"')]
+        if table not in rules:
+            judge.check('preserved_' + table, before == after, 'unchanged table')
+            continue
+        owner, fields, deletion, new_count = rules[table]
+        old = {r['id']: r for r in before};new = {r['id']: r for r in after}
+        def owned(r):
+            return owner is None or r.get('user_id', r.get('id') if table == 'users' else None) == owner
+        deleted = []
+        for pk, row in old.items():
+            if pk not in new:
+                permitted = bool(deletion) and owned(row) and row.get(deletion[0]) == deletion[1]
+                judge.check('allowed_delete_' + table, permitted, f'id={pk}')
+                deleted.append(pk)
+            else:
+                changed = {k for k in row if row[k] != new[pk][k]}
+                judge.check('preserved_row_' + table, not changed or (owned(row) and changed <= set(fields)), f'id={pk}, changed={sorted(changed)}')
+        judge.check('deletion_count_' + table, len(deleted) == (1 if deletion else 0), str(deleted))
+        added = [r for pk, r in new.items() if pk not in old]
+        judge.check('addition_count_' + table, len(added) == new_count, f'expected={new_count}, observed={len(added)}')
+        judge.check('addition_owner_' + table, all(owned(r) for r in added), 'requested account only')

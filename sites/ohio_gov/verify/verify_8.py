@@ -31,7 +31,8 @@ ORDER_2 = {"full_name": "Sam Rivers", "email": "sam.r@example.com",
 
 
 def _matches(row, spec):
-    return ((row["full_name"] or "") == spec["full_name"]
+    return ((row["state"] or "").lower() in {"ohio", "oh"}
+            and (row["full_name"] or "") == spec["full_name"]
             and (row["email"] or "").lower() == spec["email"]
             and (row["address_line1"] or "") == spec["address_line1"]
             and (row["city"] or "") == spec["city"]
